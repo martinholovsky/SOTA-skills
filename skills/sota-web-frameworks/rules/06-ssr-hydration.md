@@ -100,7 +100,9 @@ Caching is where SSR bugs become cross-user data leaks.
 - **Personalized (auth/cookie-dependent) responses must be `Cache-Control: private`**
   (browser only) or uncached — never `public`/`s-maxage` at a shared CDN.
 - **`Vary` is not a reliable isolation mechanism at CDNs.** Cloudflare ignores `Vary`
-  values; CloudFront strips `Vary` before returning. If correctness depends on the
+  values; CloudFront keys only on what its cache policy includes and removes from `Vary`
+  any header it was not configured to forward (only `Accept-Encoding`, `Cookie` and
+  forwarded headers survive). If correctness depends on the
   cache keying by a header, verify your CDN actually honors it — prefer explicit
   per-user cache keys or no shared caching.
 - **Web cache deception / poisoning** (PortSwigger "Gotta cache 'em all", 2024) exploit

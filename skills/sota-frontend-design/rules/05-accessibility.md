@@ -1,8 +1,8 @@
 # 05 — Accessibility (WCAG 2.2 AA Floor)
 
-WCAG 2.2 AA is the legal and ethical floor (EAA in force since June 2025 — national enforcement
-and fines now active across EU member states, with EN 301 549 being updated to incorporate
-WCAG 2.2; ADA Title II deadlines extended to April 2027/2028 by DOJ interim final rule, Apr 2026 —
+WCAG 2.2 AA is the legal and ethical floor (EAA applies since 28 June 2025, with penalties set per
+member state under its Art. 30; EN 301 549 V4.1.1 (2026-09), the harmonised standard, incorporates
+WCAG 2.2 and maps to the EAA in Annex ZB — presumption of conformity follows its OJEU citation; ADA Title II deadlines extended to April 2027/2028 by DOJ interim final rule, Apr 2026 —
 its standard is WCAG 2.1 AA, so building to 2.2 AA exceeds it). WCAG 3.0 remains a Working Draft (latest dated 10 September 2026, read
 2026-09-26) — informative only, never the conformance target.
 Build to 2.2 AA by default; treat select AAA criteria (focus appearance, target size 44px) as

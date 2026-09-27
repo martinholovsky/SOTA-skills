@@ -243,7 +243,8 @@ encryption:
   datastore for multi-server, and apply the same etcd encryption discipline (§4) — k3s
   supports `--secrets-encryption` to enable at-rest encryption. Its default provider is
   `aescbc` with a key on the server's disk; `--secrets-encryption-provider=secretbox` is the
-  alternative (available since the April 2025 releases, e.g. v1.32.4+k3s1). Either way the
+  alternative (available since the April 2025 releases, e.g. v1.32.4+k3s1; still labelled
+  experimental in the flag help). Either way the
   key sits on the server's disk, unlike a KMS v2 KEK.
 - k3s bundles components; pin the version, track its CVE feed, and disable bundled add-ons
   you don't use (`--disable traefik,servicelb` etc.) to shrink surface.

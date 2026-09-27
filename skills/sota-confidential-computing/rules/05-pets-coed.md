@@ -66,9 +66,9 @@ is a design error (Medium): the workaround circuits eat the performance budget.
 
 - **ISO/IEC 28033** (JTC 1/SC 27) is standardizing exactly these families:
   Part 1 general, Part 2 BGV/BFV, Part 3 CKKS, Part 4 lookup-table (TFHE-style)
-  evaluation, Part 5 scheme switching. As of mid-2026, Parts 1–4 are at **DIS**
-  stage (Part 2 DIS voting closed April 2026) and Part 5 is a Working Draft —
-  i.e., **not yet published**; publication was expected around end of 2026.
+  evaluation, Part 5 scheme switching. Observed at iso.org on 2026-09-27: Parts
+  1–2 at DIS close of voting (40.60), Parts 3–4 at FDIS ballot (50.20), Part 5 a
+  Working Draft (20.60) — i.e., **not yet published**.
   Verify current stage at iso.org before citing it as "standardized".
 - **ISO/IEC 18033-6:2019** already covers *partially* homomorphic mechanisms
   (ElGamal/Paillier-style) — sufficient for additive-only aggregation designs.

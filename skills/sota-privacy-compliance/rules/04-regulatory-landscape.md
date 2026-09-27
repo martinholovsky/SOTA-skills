@@ -66,9 +66,11 @@ DPAs — rules/05 §5).
 
 ## 2. US state privacy laws — the patchwork
 
-As of 2026, **twenty states** have comprehensive consumer privacy laws in effect;
-Indiana, Kentucky, and Rhode Island took effect 1 Jan 2026 (verified via IAPP/
-MultiState trackers — re-check the tracker for new states before scoping).
+As of September 2026, **19 states** (IAPP's scope; 20 counting Florida) have
+comprehensive consumer privacy laws in effect, and **four more were enacted in 2026**
+(Oklahoma, Alabama, Louisiana, Vermont) with effective dates from 2027; Indiana,
+Kentucky, and Rhode Island took effect 1 Jan 2026 (IAPP tracker, updated 8 Sept 2026 —
+re-check the tracker for new states before scoping).
 Applicability thresholds vary (typically 100k consumers, or 25k + revenue share
 from data sales; Rhode Island as low as 35k).
 
@@ -99,7 +101,8 @@ from data sales; Rhode Island as low as 35k).
   periods vary and are disappearing — don't architect around "we'll fix it if
   warned."
 
-No federal comprehensive law as of June 2026; FTC Act §5 (unfair/deceptive)
+No federal comprehensive law as of September 2026 (the SECURE Data Act, H.R. 8413,
+is in committee); FTC Act §5 (unfair/deceptive)
 still applies everywhere — your privacy policy is a promise your code must keep.
 
 ## 2b. Children's & minors' data — strictest tier everywhere

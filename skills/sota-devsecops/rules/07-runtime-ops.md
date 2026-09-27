@@ -37,7 +37,8 @@ spec:
             # for several repos use an anchored subjectRegExp, never `[^/]+` for the repo
             - subject: "https://github.com/myorg/app/.github/workflows/release.yml@refs/heads/main"
               issuer: "https://token.actions.githubusercontent.com"
-        ctlog: { url: "https://rekor.sigstore.dev" }
+        ctlog: { url: "https://rekor.sigstore.dev" }   # Rekor v1, the public-good default;
+        # Kyverno's Rekor v2 verification is still tracked as untested upstream (kyverno#15557)
   attestations:
     - name: provenance
       intoto: { type: https://slsa.dev/provenance/v1 }  # require provenance, not just a signature

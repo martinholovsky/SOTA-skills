@@ -75,7 +75,8 @@ Budget by category, enforce in code:
   endpoint). Never use another provider's tokenizer, and never a chars/4 rule of
   thumb. The error is **not a rounding error**: on prose it runs 15–20%+, and on
   **markdown- and code-dense text it is far worse** — one 42.8 KB instruction file
-  measured **16,934** tokens via Anthropic's `count_tokens` against **10,995** from
+  (this library's router; `count_tokens` on `claude-sonnet-5`, 2026-08-26 — counts are
+  per model) measured **16,934** tokens via Anthropic's `count_tokens` against **10,995** from
   `o200k_base` — the foreign tokenizer sits **35% below** the real count, which is the same
   gap seen from the other end as the real count being **54% above** it. A chars/4 estimate
   in that project's own docs was **38% below** a 16,442-token file (2026-08-26). *State

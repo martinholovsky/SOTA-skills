@@ -126,8 +126,14 @@ decode and look:
 ```bash
 # Inspect a GitHub/cosign attestation attached to an image
 cosign download attestation ghcr.io/myorg/app@${DIGEST} \
-  | jq -r '.payload' | base64 -d | jq '{subject: ._type, pt: .predicateType, s: .subject}'
+  | jq -r '.payload // .dsseEnvelope.payload' | base64 -d \
+  | jq '{type: ._type, pt: .predicateType, s: .subject}'
 ```
+
+Cosign v3 attaches attestations as Sigstore bundles by default, so the DSSE payload sits under
+`.dsseEnvelope.payload`; only legacy attestations carry a top-level `.payload`. Reading
+`.payload` alone base64-decodes the string `null` into garbage (reproduced 2026-09-27, cosign
+v3.1.2, `attest` then `download attestation`).
 
 Common failure causes, in observed order: subject digest mismatch (you attested the
 local build, pushed a different manifest — multi-arch index vs platform manifest digests

@@ -39,8 +39,9 @@ taxonomy → `sota-devsecops`.
 the step because of `-e`; verify the effective shell options for your CI (GitLab Runner's
 bash/sh shell sets `errexit`, and `pipefail` wherever the shell supports it — so an image
 with no bash whose `sh` is an older dash (e.g. Debian bookworm's) silently runs without it;
-source: `shells/bash.go`, present since at least v15.0.0, checked 2026-09-26; Jenkins `sh`
-step is `/bin/sh -xe`).
+source: `shells/bash.go`, present since at least v15.0.0, checked 2026-09-26; a Jenkins
+`sh` step with no `#!` line runs as `sh -xe` — the global Shell executable, default `sh`
+on PATH — and a `#!` first line drops both flags; durable-task `BourneShellScript.java`).
 YAML quoting compounds shell quoting: prefer `run: |` literal blocks; avoid `run: "..."`
 double-quoted YAML where `\` and `"` get re-escaped.
 

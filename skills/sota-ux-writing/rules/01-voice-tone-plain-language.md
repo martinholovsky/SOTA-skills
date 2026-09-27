@@ -23,9 +23,9 @@ product sounds like (constant); tone is how that voice adapts to the moment
 
 ## 2. Plain language: the ISO 24495-1 spine
 
-ISO 24495-1:2023 defines plain language by outcome — for the *reader*, the
-content must be **relevant, findable, understandable, and actionable**. Apply
-it per string:
+ISO 24495-1:2023 defines plain language by outcome — its four governing
+principles (clause 4) say the *reader* gets content that is **relevant,
+findable, understandable, and usable**. Apply them per string:
 
 - **Relevant** — say only what the user needs *at this moment in the task*.
   Background, caveats, and internal reasoning go to docs, not dialogs.
@@ -36,8 +36,9 @@ it per string:
   present tense. Target roughly conversational reading level for
   general-audience products; readability scores (Flesch etc.) are directional
   tools, not gates — a developer tool may correctly use "idempotent".
-- **Actionable** — end at the action: what the user does next is explicit and
-  usually *is* the button.
+- **Usable** — "readers can easily use the information": in an interface that
+  means ending at the action — what the user does next is explicit and usually
+  *is* the button.
 
 Concrete rewrites:
 

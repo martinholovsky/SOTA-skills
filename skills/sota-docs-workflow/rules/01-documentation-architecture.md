@@ -222,9 +222,9 @@ Docs are now read by agents as well as humans. Same content, two consumers.
   keep an `@AGENTS.md` import in `CLAUDE.md`, which older versions and, before
   v2.1.281, some sessions (e.g. Bedrock) also need (code.claude.com/docs/en/memory,
   checked 2026-09-26). One canonical file; symlink or include, never fork it.
-- **Keep agent docs minimal and high-signal.** Evidence as of 2026: bloated or
-  auto-generated context files often *reduce* agent performance and raise cost;
-  short, human-curated files with genuinely non-obvious repo knowledge help.
+- **Keep agent docs minimal and high-signal.** Gloaguen et al. (arXiv 2602.11988): context
+  files did not significantly change task success (generated ones slightly lower, hand-written
+  slightly higher) but raised inference cost 20%+ — only non-obvious repo knowledge pays for it.
   Content that earns its place: exact build/test commands with flags, deviations
   from language defaults, files/dirs the agent must not touch, commit/PR
   conventions, known traps. Content that doesn't: anything the agent can read

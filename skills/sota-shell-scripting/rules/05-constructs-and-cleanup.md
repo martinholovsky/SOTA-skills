@@ -79,6 +79,19 @@ trap 'trap - TERM; kill -TERM -- -$$' INT TERM   # forward to process group, the
 - Cleanup must be **idempotent** (EXIT can follow INT) and must not assume variables are
   set (it can run before initialization completes — hence `tmpdir=""` first, guards inside).
 - Don't put logic after `exit` relying on the trap having "finished": the trap *is* the end.
+- **An ERR trap without `set -E` is silent exactly where scripts fail — inside functions.**
+  bash does not inherit `trap … ERR` into functions, `$( )` or subshells unless `set -E`
+  (`errtrace`) is on. Measured 2026-09-27, bash 3.2.57 and 5.3.15: with
+  `set -eu; trap 'echo "failed at $LINENO" >&2' ERR` and a `false` inside a function, the
+  script exits 1 and **prints nothing**; add `set -E` and it reports line and status. The
+  rest varies by shell, so test on the target: in a subshell bash 5.3 fired the trap without
+  `-E` and bash 3.2 did not, and with `-E` 5.3 fired it **twice** (child, then parent); 3.2's
+  `$LINENO` named the enclosing `case` line, not the failing command; zsh fires in functions
+  without `-E` but reports `$LINENO` as 0 there; dash rejects `trap … ERR` outright
+  (`bad trap`, exit 1 before any work — ERR is not POSIX). ERR fires where `set -e` would, so
+  a failure inside an `if` condition triggers neither. Use `set -eEuo pipefail` when you
+  install an ERR trap, and keep the EXIT trap as the portable "it died" signal — it fired
+  with status 1 in the same function case.
 - `mktemp -d` for dirs, `mktemp` for files; honor `TMPDIR`. GNU vs BSD `mktemp` differ on
   templates — `mktemp -d "${TMPDIR:-/tmp}/myscript.XXXXXX"` is portable enough; plain
   `mktemp -d` works on both modern GNU and macOS.
@@ -297,6 +310,9 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
       `$$`-suffixed paths → HIGH (race), must be `mktemp`.
 - [ ] Cleanup: every `mktemp` has a reachable `trap ... EXIT`; cleanup function is
       idempotent and preserves `$?`.
+- [ ] ERR trap without errtrace (§3): `grep -rlE "trap .*ERR" --include='*.sh' . | xargs grep -LE
+      'set -[a-zA-Z]*E|set -o errtrace'` lists files whose ERR trap misses function failures
+      (bash; in a `#!/bin/sh` script the ERR trap itself is the defect).
 - [ ] `grep -rn 'echo .*\$' --include='*.sh'` — variable data through `echo` (SC2028 area);
       MEDIUM unless value is constrained.
 - [ ] Glob loops without nullglob/failglob or `[[ -e $f ]]` guard.

@@ -39,7 +39,7 @@ When writing or changing interface text:
 1. **Write the unhappy paths first** — errors, empty states, and confirmations
    carry more consequence than the happy path (`rules/03`).
 2. **Apply the plain-language spine** to every string: relevant, findable,
-   understandable, actionable (ISO 24495-1) — front-load the point, one idea
+   understandable, usable (ISO 24495-1) — front-load the point, one idea
    per sentence, common words (`rules/01`).
 3. **Name things once.** Check the product glossary before introducing a term;
    never let the UI, docs, and API call the same concept different names

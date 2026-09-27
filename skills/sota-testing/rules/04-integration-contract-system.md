@@ -144,7 +144,9 @@ Discipline that makes it work:
 
 **Schema-based / bi-directional alternative:** provider publishes its schema
 (typically OpenAPI); the broker statically checks consumer pacts against it
-instead of replaying against a running provider. Cheaper, weaker (no
+instead of replaying against a running provider (bi-directional contract
+testing is a PactFlow feature — the open-source Pact Broker does not run this
+check). Cheaper, weaker (no
 provider-state semantics, only shape compatibility). Reasonable for: public
 APIs with many unknown consumers, org boundaries where CDC coordination won't
 happen, GraphQL/gRPC where the schema is first-class (then: schema-diff

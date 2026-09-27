@@ -204,12 +204,21 @@ spec:
       selectors:
         - matchArgs:
             - index: 0
-              operator: "Equal"
+              operator: "Prefix"
               values:
-                - "/var/run/secrets/kubernetes.io/serviceaccount/token"
+                - "/var/run/secrets/kubernetes.io/serviceaccount/"
+                - "/run/secrets/kubernetes.io/serviceaccount/"
           matchActions:
             - action: Sigkill      # in-kernel enforcement; omit for detect-only
 ```
+
+**Match the path the kernel opened, not the one you typed.** A `file` argument is the opened
+`struct file`'s `f_path` (Tetragon `bpf/process/types/basic.h` at v1.7.1), i.e. *after* symlinks
+are followed. The projected service-account token is `token -> ..data/token ->
+..<timestamp>/token` (Kubernetes `atomic_writer.go`), so an `Equal` on `.../serviceaccount/token`
+never fires — a kill rule that is silently a no-op. Match the directory with `Prefix` (this
+also covers `ca.crt` and `namespace`) and watch the policy fire in detect-only before enabling
+`Sigkill` (source-read 2026-09-27; not run in a cluster).
 
 Enforcement actions (`Sigkill`/`Override`) are powerful and dangerous — pilot in
 detect-only, scope by pod/namespace selectors, and treat enabling kill like
@@ -258,6 +267,9 @@ Use when correlation, sequencing, joins, or statistics exceed Sigma's model:
       or fire on "any exec / any connection"?
 - [ ] If Tetragon enforcement (`Sigkill`/`Override`) is enabled, is it scoped by
       selector and piloted in detect-only, with the same guardrails as IPS?
+- [ ] Do Tetragon `file`/`path` `Equal` matches name a path that is a symlink (the
+      projected service-account `token`)? The kernel reports the resolved path, so the
+      rule never fires: `grep -rn -A4 'operator: "Equal"' --include='*.yaml' . | grep serviceaccount`.
 - [ ] Do SIEM-native queries bound their time windows and avoid unbounded
       joins/regexes that cause noise or cluster load?
 - [ ] Is every rule evasion-aware (anchored on unavoidable behavior, not a

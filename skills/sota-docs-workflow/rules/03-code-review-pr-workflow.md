@@ -176,8 +176,8 @@ name.
 - **Stacked PRs for large changes**: a sequence of dependent, individually
   reviewable PRs (each targeting the previous branch), reviewed and merged in
   order. This is how you keep §1's size discipline on multi-thousand-line
-  features. GitHub now ships native stacked PRs (in preview as of mid-2026 —
-  private vs public status needs verification; `gh stack` is the
+  features. GitHub now ships native stacked PRs (public preview since 2026-07-30,
+  rolling out to all repositories; `gh stack` is the
   `github/gh-stack` CLI extension, a stack map in the PR UI, branch protection and CI
   evaluated against the final target branch, auto-rebase of the remaining
   stack after each merge) — prefer it where enabled, since reviewers need no

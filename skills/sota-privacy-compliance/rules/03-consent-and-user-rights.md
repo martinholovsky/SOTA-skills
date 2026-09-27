@@ -77,7 +77,10 @@ in the catalog; reserve consent for genuinely optional processing.
 ## 2. Cookie & tracker governance
 
 **Rule:** No non-essential tag, SDK, or cookie executes before consent for its
-category, in jurisdictions requiring opt-in (EU/UK ePrivacy). Technical
+category, in jurisdictions requiring opt-in (EU ePrivacy; UK PECR, where since
+5 Feb 2026 first-party statistical/analytics storage may instead run with clear
+information and a free, simple objection — PECR Sch. A1 para 5, inserted by the Data
+(Use and Access) Act 2025). Technical
 enforcement, not banner theater:
 
 - Tag manager / CMP integration gates script injection by consent category;

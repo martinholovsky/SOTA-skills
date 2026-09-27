@@ -223,8 +223,8 @@ surreal start --deny-all \
 ### Rule: A SurrealDB you can't restore is file 06's "backup that isn't" — rehearse both layers.
 - Logical: `surreal export` produces a `.surql` script (scope what's included:
   records, accesses, users, functions). Note the emitted `OPTION IMPORT`
-  line — it disables events/side effects on import (required for
-  `surreal import` on current versions); that's correct for restores, but
+  line — it disables events and table views on import (required by
+  `surreal import` since SurrealDB 3.0.4); that's correct for restores, but
   means imports don't re-fire events.
 - Storage-engine level: snapshot/back up the underlying datastore per your
   deployment (embedded RocksDB file copies only when consistent, or the

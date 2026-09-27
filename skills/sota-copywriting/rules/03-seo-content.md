@@ -104,7 +104,11 @@ name these; violating them risks the page *and* the domain:
   fake-review problem (`rules/04` §3).
 - Disclose AI usage where your editorial policy, platform, or jurisdiction
   requires it; a published AI-usage policy is becoming a standard trust
-  surface for content sites.
+  surface for content sites. In the EU, AI Act Art. 50(4) makes it a duty for
+  AI-generated text published to inform the public on matters of public
+  interest — waived only where the text underwent human review or editorial
+  control **and** a person holds editorial responsibility — the human gate in
+  this section's first bullet. Dates and the rest of Art. 50: `sota-privacy-compliance` rules/04 §5.
 
 ## 6. Generative AI search surfaces (AI Overviews / AI Mode)
 
@@ -166,7 +170,8 @@ the core Search ranking and quality systems, so **"GEO"/"AEO" is still SEO** —
       links to primary sources present
 - [ ] AI-assisted content: human domain review recorded, all numbers/
       citations verified, no fabricated experience framing; AI-usage policy
-      published if applicable
+      published if applicable; EU public-interest text either disclosed as
+      AI-generated or carries a named editor (AI Act Art. 50(4))
 - [ ] No GEO/AEO folklore in the strategy: no llms.txt-for-Google, chunking,
       AI-rewriting, or special-schema tactics sold as AI-visibility work;
       AI-surface appearance managed via the standard preview controls /
