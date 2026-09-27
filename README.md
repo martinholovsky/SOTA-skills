@@ -1445,7 +1445,10 @@ agreeing with itself, every eval case set declaring how its cases were chosen,
 no audit-checklist bullet being stranded inside a code fence, **no absence reported
 through a stderr-suppressed `|| echo`** — `cmd 2>/dev/null || echo "missing X"` fires on
 *every* non-zero exit, so it **manufactures findings about other people's code**, and it
-shipped in nine of these skills until a field report caught it — and **every top-level area
+shipped in nine of these skills until a field report caught it — no grep probe whose
+`--include` filters out the very file it names, **no version pin on a claim about what is
+current** (a "latest release is X.Y" rots silently; the rules say "latest stable" and keep
+version numbers for boundaries such as "fixed in"), and **every top-level area
 declaring which gates cover it**, because enforcement density is uneven and an ungated area
 looks exactly like a covered one (the *Coverage by area* table in
 [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)) — plus gitleaks
