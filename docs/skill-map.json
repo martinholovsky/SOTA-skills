@@ -1176,6 +1176,15 @@
       ]
     },
     {
+      "from": "sota-copywriting",
+      "to": "sota-privacy-compliance",
+      "weight": 4,
+      "targets": [
+        "rules/03",
+        "rules/04 \u00a75"
+      ]
+    },
+    {
       "from": "sota-devsecops",
       "to": "sota-secrets-management",
       "weight": 4,
@@ -1364,14 +1373,6 @@
       ]
     },
     {
-      "from": "sota-copywriting",
-      "to": "sota-privacy-compliance",
-      "weight": 3,
-      "targets": [
-        "rules/03"
-      ]
-    },
-    {
       "from": "sota-data-engineering",
       "to": "sota-databases",
       "weight": 3,
@@ -1503,6 +1504,16 @@
       "targets": [
         "rules/02 \u00a75",
         "rules/02 \u00a77"
+      ]
+    },
+    {
+      "from": "sota-performance",
+      "to": "sota-golang",
+      "weight": 3,
+      "targets": [
+        "rules/03 \u00a76",
+        "rules/06",
+        "rules/06 \u00a75"
       ]
     },
     {
@@ -2877,14 +2888,6 @@
       "to": "sota-databases",
       "weight": 1,
       "targets": []
-    },
-    {
-      "from": "sota-performance",
-      "to": "sota-golang",
-      "weight": 1,
-      "targets": [
-        "rules/06"
-      ]
     },
     {
       "from": "sota-performance",

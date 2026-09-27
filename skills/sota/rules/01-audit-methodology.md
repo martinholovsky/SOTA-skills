@@ -149,7 +149,7 @@ option where capability is equivalent.
 | Rust | cargo-audit; cargo-deny; clippy `-D warnings` | cargo-deny also covers licenses and banned crates; clippy ships with the toolchain. |
 | Go | gosec; govulncheck; staticcheck; `go test -race` | govulncheck is the official Go team scanner — call-graph-aware, low false positives. |
 | JS/TS + Node | eslint-plugin-security (eslint-community); `npm audit`/`pnpm audit`; osv-scanner | Socket.dev (commercial, free tier) adds behavioral malicious-package detection beyond CVE lookup. |
-| Multi-language SAST | Opengrep or Semgrep CE + community rulesets | Opengrep (LGPL fork, multi-vendor consortium) restores cross-function taint analysis that Semgrep CE gated commercially; rule format is compatible across both. |
+| Multi-language SAST | Opengrep or Semgrep CE + community rulesets | Opengrep (LGPL fork, multi-vendor consortium) adds cross-function taint within one file, opt-in via `--taint-intrafile` (Semgrep CE is intraprocedural only; cross-file taint stays Semgrep Pro-only); rule format is compatible across both. |
 | SCA — any ecosystem | osv-scanner (Google); trivy; grype | Run one as primary; a second only to cross-check noisy results. |
 | Containers / images | trivy; grype; dockle | Verify base-image digest pinning manually. dockle's release cadence is slow — treat as supplementary lint, not the primary gate. |
 | SBOM | syft (generate) → grype (scan) | trivy can also emit SBOMs (CycloneDX/SPDX). |

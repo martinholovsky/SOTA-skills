@@ -18,6 +18,44 @@ Ten batch-4 deferrals with triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batch 4.
 
 LAST-VERIFIED: 2026-07-08 -> 2026-09-26 (full-library sweep, batches 1–4 plus #472).
 
+### Fixed (resume pass, 2026-09-27)
+
+- **Two controls that never fired.** The `sota-detection-engineering` rules/03 Tetragon kill
+  example matched `Equal` on the service-account `token`, which is a symlink; Tetragon reports the
+  resolved path, so the rule was a no-op. It now uses `Prefix` on the directory, with a new
+  checklist probe. The `sota-devsecops` rules/02 `cosign download attestation | jq .payload`
+  recipe decoded `null` under cosign v3 bundles; it now reads `.dsseEnvelope.payload`
+  (reproduced on v3.1.2).
+- **A recipe that failed when run:** `sota-data-engineering` rules/05's Iceberg
+  `expire_snapshots(older_than => now() - INTERVAL 7 DAYS)` is rejected by the CALL grammar on
+  Spark 3.5 and 4.0; it now takes a rendered literal.
+- **Wrong facts:** ISO 24495-1's fourth principle is "usable", not "actionable"
+  (`sota-ux-writing`); Opengrep's taint is cross-function within one file and opt-in via
+  `--taint-intrafile`, not Semgrep Pro's cross-file analysis (router tool matrix,
+  `sota-devsecops` rules/05); the "Netflix, Cash App scale" Compose Multiplatform attribution is
+  removed (`sota-mobile`).
+- **Corrected or sharpened, each against a primary source:** the podman EPERM (a crun < 1.30
+  filter-cache bug), push-protection bypass default and scope, ISO/IEC 28033 stages, PIPE_BUF
+  on regular files, `opengrep ci` exit codes (1.23.0 vs 1.30.0), k3s secretbox's experimental
+  label, a Kyverno Rekor v2 caveat, jqwik 1.10.1's masking default, Impeller on Android,
+  EN 301 549 V4.1.1, CloudFront `Vary`, Material 2 vs 3 easing, PactFlow-only bi-directional
+  contracts, SurrealDB `OPTION IMPORT` since 3.0.4, Play vitals wake-lock thresholds, the router
+  token-count provenance, ePrivacy Art. 13(2), GitHub stacked PRs, the context-files evidence,
+  Jenkins `sh -xe`, the US state-law count, UK PECR analytics storage since 5 Feb 2026, and the
+  click-to-cancel vacatur. 52 claims the 2026-09-26 sweep had left unverified were checked;
+  five remain, listed in `docs/ADOPTION-LOG.md`, 2026-09-27.
+
+### Added (resume pass, 2026-09-27)
+
+- **`sota-shell-scripting` rules/05 §3 — an ERR trap without `set -E` is silent inside
+  functions** (measured on bash 3.2 and 5.3, zsh and dash), with a checklist probe run under
+  three grep binaries.
+- **`sota-copywriting` rules/03 §5 — AI Act Art. 50(4)** disclosure for AI-generated text
+  published to inform the public, and its editorial-responsibility exemption.
+- **`sota-performance` rules/03 §4** points to Go's Green Tea GC default and container-aware
+  GOMAXPROCS in `sota-golang`.
+- Three ADOPTION-LOG deferrals resolved, their triggers having fired (deferrals 48 → 45).
+
 ### Added (field report, self-hosted platform session, 2026-09-26)
 
 - **`sota-shell-scripting` rules/01 §2 — the inverse of the "where `set -e` does NOT fire"

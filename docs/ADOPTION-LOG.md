@@ -6769,6 +6769,7 @@ BSD grep, the ugrep wrapper, bash and zsh.
 **Still unverified:** JEP 483 says the AOT cache cannot be combined with `--illegal-native-access`
 and similar flags, which conflicts with the jvm skill's advice to run `--illegal-native-access=deny`.
 It is noted in rules/05 §2 and put to the review pass.
+*Superseded 2026-09-27: the review pass settled it — `sota-jvm` rules/04 §7 and rules/05 §2 now state it as a trade-off (the AOT cache refuses any `--illegal-native-access` value, so run the `deny` gate in a separate CI job). It is no longer unverified.*
 
 **Review of this entry's diff, and one gate extension.**
 - **Review.** A fresh reviewer read the whole deferred-items diff. It raised 17 defects; 16 were fixed and re-tested on bad, good and edge fixtures under three grep modes. The 17th was refuted: Node's `v24.x` `modules.md` does list v24.15.0 beside v25.4.0 for require(esm) leaving experimental. The reviewer also settled the JVM open question from JEP 483: any `--illegal-native-access` value, `deny` included, makes the JVM skip the AOT cache with only a warning. `sota-jvm` rules/05 §2 now states the trade-off, with the deny gate in a cache-free CI job. This comes from the documents; it was not measured, since no JDK was available.
@@ -6918,6 +6919,7 @@ resolve symlinks (`sota-detection-engineering` rules/03 — needs a cluster test
 citation); the ISO/IEC 28033 part stages (search results agree with the text; the stage pages
 were not opened); why podman+crun delivered EPERM instead of the requested ENOSYS for a
 one-rule allow-default profile (the rule tells readers to check their runtime).
+*Superseded 2026-09-27 (see that day's entry): all four checked. Push-protection wording corrected (bypass default, scope, settings path). Tetragon matches the resolved path, so the token `Equal` example never fired — fixed to `Prefix`. ISO/IEC 28033 stages re-read at iso.org (Parts 3–4 now FDIS). The EPERM is a crun < 1.30 filter-cache bug, reproduced, fix commit cited.*
 
 ## 2026-09-26 — full-library sweep, batch 2 of 4: the platform skills re-verified
 
@@ -7000,7 +7002,7 @@ GHSA date; and an unguarded `scheduler.yield()` in frontend-design.
 - **DEFERRED — SDK-specific presign-expiry patterns (Go `WithPresignExpires`, Java `Duration`, computed seconds); revisit trigger: the presign probe gets a labelled corpus. The literal-only limit is stated in the rule meanwhile.**
 - **DEFERRED — Speculation Rules / prerender in `sota-performance` rules/06; revisit trigger: MDN BCD shows Firefox or Safari shipping `speculationrules`.**
 - **DEFERRED — C# `MethodImplOptions.Synchronized` and Kotlin `@Synchronized` in `sota-async-concurrency` rules/02's lock probe; revisit trigger: the next edit of that probe, or a missed .NET/Kotlin finding.**
-- **DEFERRED — a `sota-performance` pointer to Go's Green Tea GC and container-aware GOMAXPROCS; revisit trigger: `sota-golang` rules/06 covers them.**
+- **RESOLVED 2026-09-27 (was deferred; the trigger was already met when written — `sota-golang` rules/06 §5 has carried Green Tea since 2026-06-17 and rules/03 §6 GOMAXPROCS; see the 2026-09-27 entry) — a `sota-performance` pointer to Go's Green Tea GC and container-aware GOMAXPROCS; revisit trigger: `sota-golang` rules/06 covers them.**
 - **DEFERRED — native package-manager cooldowns (pnpm 11, Bundler 4 `--cooldown`) in `sota-devsecops` rules/03; revisit trigger: the next §3.7 edit, or Renovate/Dependabot docs pointing at them.**
 
 **Still unverified, left as written:** Elastic Universal Profiling status, Spring Actuator
@@ -7012,6 +7014,7 @@ has differed between releases; and the piped flamegraph command (from the FlameG
 `perf` needs Linux). The fix agents sourced Talos VolumeConfig, k3s secretbox, the Next.js 16
 build-column removal, pnpm 11 `strictDepBuilds`, Argo CD 3.5 repo-server mTLS, ADR-43
 `Nats-TTL: never` and the extractPayload shape; the reviewer did not independently re-check them.
+*Superseded 2026-09-27 (see that day's entry): all seventeen checked — 13 confirmed; the cosign v3 `download attestation | jq .payload` recipe was wrong (bundles put it under `.dsseEnvelope.payload`, reproduced) and is fixed; PIPE_BUF's regular-file half, the `opengrep ci` exit status (now measured on 1.23.0 vs 1.30.0) and k3s secretbox's experimental label corrected; a Kyverno Rekor v2 caveat added (kyverno#15557, open); whether the Actions runner accepts a tag-object SHA remains unverifiable without a scratch workflow, and the skill makes no claim about it.*
 
 ## 2026-09-26 — full-library sweep, batch 3 of 4: the data, AI and product skills re-verified
 
@@ -7112,6 +7115,7 @@ wake-lock threshold (mobile); EN 301 549 / EU enforcement, CloudFront `Vary` str
 motion heuristics (frontend); an internal token-count measurement and 1M-context claims for
 non-Anthropic providers (llm-engineering); and MongoDB CVE-2025-14847's per-line fix versions,
 which the refuter took from NVD but the reviewer did not re-check.
+*Superseded 2026-09-27 (see that day's entry): all sixteen checked — the Iceberg `older_than => now() - INTERVAL 7 DAYS` form fails on Spark 3.5 and 4.0 (reproduced) and is fixed; the "Netflix, Cash App scale" CMP attribution was wrong and is removed; jqwik 1.10.1, Impeller, EN 301 549, CloudFront `Vary`, the Material curve and the PactFlow wording corrected; MongoDB CVE-2025-14847 fix versions confirmed against MongoDB's own JIRA.*
 
 ## 2026-09-26 — full-library sweep, batch 4 of 4: docs, writing and meta skills — and the sweep is complete
 
@@ -7157,7 +7161,7 @@ exception, a wrapped code span in the router, and a probe with no file operand.
 fix agent and again before commit), so `ROUTER_BUILD_SHA` and invariant 20 are untouched.
 
 - **DEFERRED — a bats-core / ShellSpec section in `sota-shell-scripting`; revisit trigger: a field report or eval case about testing shell scripts.**
-- **DEFERRED — `set -E` / ERR trap guidance in `sota-shell-scripting` rules/01 §2; revisit trigger: a field report of a missed ERR-trap failure, or the next §2 edit.**
+- **RESOLVED 2026-09-27 (was deferred; the trigger fired when #481 edited rules/01 §2 without it; landed in rules/05 §3 because rules/01 is at 499 of 500 lines — see the 2026-09-27 entry) — `set -E` / ERR trap guidance in `sota-shell-scripting` rules/01 §2; revisit trigger: a field report of a missed ERR-trap failure, or the next §2 edit.**
 - **DEFERRED — `curl --proto '=https' --proto-redir '=https' --tlsv1.2` in `sota-shell-scripting` rules/03 §5; revisit trigger: the next §5 edit or an install-script audit finding.**
 - **DEFERRED — CLI login via the RFC 8628 device grant or loopback redirect in `sota-cli-ux`; revisit trigger: an auth section is added there, or the next `sota-identity-access` sweep.**
 - **DEFERRED — `DO_NOT_TRACK` as an informal convention with no maintained spec in `sota-cli-ux` rules/03; revisit trigger: a primary spec appears.**
@@ -7165,7 +7169,7 @@ fix agent and again before commit), so `ROUTER_BUILD_SHA` and invariant 20 are u
 - **DEFERRED — the CAN-SPAM rule that the opt-out must keep working >=30 days after sending, in `sota-copywriting` rules/04 §5; revisit trigger: the next email-law edit.**
 - **DEFERRED — Google's back-button-hijacking violation and the EEA site-reputation enforcement change in `sota-copywriting` rules/03; revisit trigger: the next rules/03 edit.**
 - **DEFERRED — WCAG 3.3.1 and 3.3.3 in `sota-ux-writing` rules/04 §1; revisit trigger: the next rules/04 edit.**
-- **DEFERRED — a cross-reference from `sota-copywriting` rules/03 to AI Act Art. 50 in `sota-privacy-compliance` rules/04; revisit trigger: Art. 50 obligations apply, or privacy-compliance restructures.**
+- **RESOLVED 2026-09-27 (was deferred; Art. 50 applies from 2 August 2026 under Art. 113 of Regulation (EU) 2024/1689, so the trigger had fired — see the 2026-09-27 entry) — a cross-reference from `sota-copywriting` rules/03 to AI Act Art. 50 in `sota-privacy-compliance` rules/04; revisit trigger: Art. 50 obligations apply, or privacy-compliance restructures.**
 
 **Still unverified, left as written:** ISO 24495-1's fourth principle ("actionable" vs "usable" —
 iso.org refused access; likely wrong); US click-to-cancel status after *Custom Communications v.
@@ -7175,6 +7179,7 @@ Ubuntu's default coreutils; a field-reported git push double-delivery; Jenkins `
 listing-budget units; Opengrep's taint scope; staticcheck SA1019 exit behaviour; and, in
 privacy-compliance, the "twenty states" count, "no federal comprehensive law", ISO 27001:2013
 expiry, UK DUAA 2025 and a CPPA date.
+*Superseded 2026-09-27 (see that day's entry): ISO 24495-1's fourth principle is "usable", read from the standard's own clause 4, and the skill is corrected. Of the other fifteen: 7 confirmed; ePrivacy Art. 13(2), GitHub stacked PRs, the context-files evidence, Jenkins `sh -xe`, Opengrep's taint scope and the state count corrected; click-to-cancel, UK DUAA and the federal-law line sharpened. Unverified still: the git push double-delivery (labelled field-reported in the skill), Vermont's effective date, and the CPPA 31 Dec 2027 date (search snippet only).*
 
 **The sweep is complete.** Every one of the 42 skills was re-verified against primary sources:
 the nine language skills on 2026-09-25 (#472) and the other 33 in four batches on 2026-09-26.
@@ -7237,3 +7242,77 @@ at its narrowest home (1a). If the trigger fires, the reporter's wording is a so
 
 **Not taken in, from the report's own "considered and NOT proposed":** all four stand as the
 reporter judged them; none is re-litigated here.
+
+## 2026-09-27 — a `/sota-resume` pass: three deferrals whose triggers had fired, one wrong ISO fact, and the sweep's unverified claims settled
+
+**Intake shape: a resume pass over this ledger's 48 gated deferrals, the five "still unverified"
+lists the 2026-09-25/26 sweeps left, and the release backlog.** The operator chose to execute
+every READY item, to verify all of the unverified claims now rather than defer them to the next
+sweep (option b of three; the alternatives were a next-sweep trigger on each list, or verifying
+only the legal and security ones), and to cut a MINOR release after this lands. The CPython
+upstream report (2026-09-25) and the CAA date trigger (2026-09-26 batch 1) were put to the
+operator as decisions and left as they are.
+
+**Deferrals whose trigger had already fired** — each flipped to RESOLVED in place:
+- **Go GC pointer in `sota-performance`.** The trigger ("`sota-golang` rules/06 covers them") was
+  met *before the deferral was written*: rules/06 §5 has carried Green Tea since 2026-06-17 and
+  rules/03 §6 container-aware GOMAXPROCS. Pointer added at `sota-performance` rules/03 §4;
+  GOMAXPROCS re-read from `go doc runtime.GOMAXPROCS` and `doc/godebug.md` on go1.27.1, and the
+  Green Tea default from `internal/buildcfg/exp.go`.
+- **`set -E` / ERR trap.** #481 edited `sota-shell-scripting` rules/01 §2 twice without it. The
+  guidance landed in **rules/05 §3** (trap-based cleanup), not rules/01 as the deferral named,
+  because rules/01 is at 499 of 500 lines. Measured on bash 3.2.57 and 5.3.15, zsh 5.9 and dash:
+  without `set -E`, a failure inside a function exits 1 with the ERR trap printing **nothing**. The
+  new checklist probe was run on four labelled fixtures under the ugrep wrapper, BSD grep and GNU
+  grep 3.8 (in a container) and flags only the bad one.
+- **AI Act Art. 50 cross-reference.** Art. 113 of Regulation (EU) 2024/1689 applies Art. 50 from
+  2 August 2026, so the trigger had fired. Art. 50(4) — disclosure for AI-generated text published
+  to inform the public, waived under human editorial review and responsibility — was read from the
+  Official Journal text (EUR-Lex returned an empty page to WebFetch; the same URL in a browser
+  worked). Added to `sota-copywriting` rules/03 §5 and its checklist.
+
+**A shipped fact the ledger had flagged "likely wrong", now corrected:** `sota-ux-writing` named
+ISO 24495-1's fourth principle "actionable". The standard's clause 4 reads *"Principle 4: Readers
+can easily use the information (usable)"* — read from ISO's published preview sample, since the
+OBP preview sits behind a terms-of-use acceptance this session did not give. Corrected in SKILL.md
+and rules/01 §2.
+
+**The sweep's unverified claims — 52 checked by four agents, each claim located with `git grep`
+and a positive control, and every load-bearing correction spot-checked here** (Tetragon and crun
+source via `gh api`, the cosign bundle keys and opengrep exit codes from the agents' saved output,
+the Iceberg failure re-run on Spark 3.5.9, jqwik 1.10.1 source, Opengrep README, Jenkins
+durable-task source). Each list carries a superseding note above. The ones that changed guidance:
+- **Two controls that never fired:** the Tetragon kill example matched `Equal` on the service-account
+  `token`, a symlink — Tetragon reports the opened file's resolved `f_path`, so the rule was a no-op
+  (source-read, not cluster-run). The cosign v3 `.payload` recipe decoded `null` into garbage,
+  because bundles put the payload under `.dsseEnvelope.payload` (reproduced on v3.1.2).
+- **A recipe that failed when run:** Iceberg `expire_snapshots(older_than => now() - INTERVAL 7 DAYS)`
+  is rejected by the CALL grammar on Spark 3.5 and 4.0 — CALL takes literals only.
+- **A wrong attribution:** "Netflix, Cash App scale" for Compose Multiplatform on iOS; both use
+  KMP for shared logic, not CMP UI.
+- **Overstated scope:** Opengrep's taint is cross-function **within one file** and opt-in
+  (`--taint-intrafile`), not a restoration of Semgrep Pro's cross-file analysis — corrected in the
+  router's tool matrix and `sota-devsecops` rules/05.
+- **Stale or imprecise:** the podman EPERM (a crun < 1.30 filter-cache bug), push-protection bypass
+  default, ISO/IEC 28033 stages, PIPE_BUF on regular files, jqwik 1.10.1's masking default, Impeller
+  on Android, EN 301 549 V4.1.1, CloudFront `Vary`, Material 2 vs 3 easing, ePrivacy Art. 13(2),
+  GitHub stacked PRs, the context-files evidence, Jenkins `sh -xe`, the US state count, UK PECR
+  analytics storage since 5 Feb 2026, and the click-to-cancel vacatur.
+
+**Still unverified after this pass:** whether the Actions runner accepts a tag-object SHA (needs a
+scratch workflow — an outside side effect; the skill makes no claim), Kyverno under Rekor v2
+(tracked upstream as untested, kyverno#15557; the skill now says so), the git push double-delivery
+(labelled field-reported in the skill), Vermont's privacy-law effective date (the legislature site
+was unreachable), and the CPPA 31 Dec 2027 date (search snippet only).
+
+**What the pass found about the ledger itself.** A "still unverified" list is a deferral with no
+trigger and no marker, so invariant 27 cannot count it; five such lists held about 45 claims, and
+one of them was a fact the ledger already believed wrong while the skill kept shipping it. No gate
+is proposed — this is the first occurrence and the three filters in CONVENTIONS-LEDGER are not met
+— but a sweep that leaves an unverified list should give it a `**DEFERRED —` marker and a trigger.
+
+**Found outside every item, not taken here:** `sota-performance` rules/01 says to always enable
+`net/http/pprof` in services, which sits against `sota-observability` rules/05 and `sota-golang`
+rules/04 (a dedicated internal mux); and `sota-shell-scripting` rules/02 still describes GNU
+coreutils as what `sh` environments ship, while Ubuntu moved to the Rust coreutils (search result
+only, not opened).

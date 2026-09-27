@@ -128,8 +128,12 @@ patterns enforcement; EU DSA Article 25 for platforms; GDPR consent validity):
   available *throughout the withdrawal period*, and a confirmation step
   labelled only "confirm withdrawal" (or equivalent) — a withdrawal-period
   obligation, not a general cancel button. Ending a subscription *after*
-  the withdrawal period, and US federal/state negative-option rules, stay
-  jurisdiction-specific: verify current status at use time.
+  the withdrawal period, and US rules, stay jurisdiction-specific: the FTC's
+  2024 "click-to-cancel" amendments were vacated in full (*Custom
+  Communications v. FTC*, 8th Cir., 8 Jul 2025), the pre-2024 Negative Option
+  Rule was recodified (FR doc 2026-02866), and a new rulemaking is only at
+  ANPRM stage (FR doc 2026-04952, Mar 2026); ROSCA and state
+  automatic-renewal laws still apply — verify current status at use time.
 - Visual-hierarchy manipulation (giant accept, ghost decline) is the same
   pattern in CSS — audit copy and presentation together.
 
@@ -143,8 +147,10 @@ Two regimes cover most senders; apply the stricter when audiences mix:
   than a reply/click. Applies per-message to commercial content.
 - **GDPR + ePrivacy (EU)**: direct marketing needs **opt-in consent** (an
   affirmative act, granular, withdrawable as easily as given) or the
-  narrow **soft opt-in** (existing customers, similar products/services,
-  opt-out offered at collection and in every message). Consent records are
+  narrow **soft opt-in** (email only: contact details obtained from a
+  customer in the context of a sale, used by the same seller for its own
+  similar products/services, free opt-out offered at collection and in
+  every message — Directive 2002/58/EC Art. 13(2)). Consent records are
   kept; "we emailed everyone who ever signed up" is not a lawful basis.
 - **Transactional vs marketing is a content test, not a template flag**:
   receipts and security notices aren't marketing — until promotional content

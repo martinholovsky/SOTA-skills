@@ -15,7 +15,8 @@ Two complementary layers; mature setups run both:
   `shell=True`". PR runs scan the diff; full scans run on schedule, because new rules
   apply to old code.
   It is the **LGPL-2.1 fork of Semgrep CE**, governed by a multi-vendor consortium, and
-  it restores cross-function taint analysis that CE gated commercially; the **rule format
+  it adds cross-function taint *within one file*, opt-in via `--taint-intrafile` (CE is
+  intraprocedural only; cross-file taint stays Semgrep Pro-only); the **rule format
   is compatible**, so existing rules and community rulesets port unchanged
   (`sota/rules/01` §2). Prefer it for anything you need to keep running. Semgrep CE
   remains a drop-in alternative.
@@ -36,7 +37,8 @@ Two complementary layers; mature setups run both:
 restricts reporting to what the diff introduced. **Do not port a `semgrep ci` workflow as
 `opengrep ci`**: the subcommand exists but is hidden from `--help` (which lists
 `scan`/`test`/`validate`/`show`/`lsp`; checked on 1.30.0), and its exit status on blocking
-findings has differed between releases — gate on `scan --error`. `--config` accepts a directory, a URL, a `git+<url>` remote rule repo, or a
+findings has differed between releases (measured 2026-09-27 on one fixture: 1.23.0 printed a
+blocking finding, summarised "0 blocking" and exited 0; 1.30.0 exited 1) — gate on `scan --error`. `--config` accepts a directory, a URL, a `git+<url>` remote rule repo, or a
 Semgrep registry entry name; **vendor or `git+`-clone the community rulesets you depend on
 rather than resolving a registry you do not control** — that registry is operated by the
 vendor whose licence change caused the fork.

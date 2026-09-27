@@ -99,8 +99,8 @@ CALL catalog.system.rewrite_data_files(
   table => 'db.events', strategy => 'sort',
   options => map('target-file-size-bytes', '536870912'));
 CALL catalog.system.expire_snapshots(
-  table => 'db.events', older_than => now() - INTERVAL 7 DAYS,
-  retain_last => 20);
+  table => 'db.events', older_than => TIMESTAMP '{{ run_date_minus_7d }}',
+  retain_last => 20);  -- CALL takes literals only: render the cutoff in the scheduler
 CALL catalog.system.remove_orphan_files(table => 'db.events');
 
 -- Delta equivalents: OPTIMIZE events; VACUUM events RETAIN 168 HOURS;

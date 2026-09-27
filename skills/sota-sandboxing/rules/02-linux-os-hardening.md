@@ -98,7 +98,10 @@ compatibility, not least privilege. For a real sandbox, profile the workload
 tries `clone3` first and falls back to `clone` only on `ENOSYS` (`clone-internal.c`), so
 an `EPERM` default breaks every thread start (measured 2026-09-26, podman+crun: Python
 `can't start new thread`; with the rule above, threads start). Confirm the errno your
-runtime actually delivers — a one-rule allow-default test profile returned `EPERM` anyway.
+runtime actually delivers: crun before 1.30 caches compiled filters under a checksum that
+omits per-rule `errnoRet`, so a profile differing from an earlier one only in `errnoRet`
+silently reuses the old filter (reproduced 2026-09-27 on crun 1.24 — `errnoRet` 38, then 95,
+on the same rule set both returned 38; fixed in crun 1.30, commit `10b754c`).
 
 **R3.2 — Syscalls that must never appear in an untrusted-workload allowlist** unless
 specifically justified: `ptrace`, `process_vm_readv/writev`, `bpf`, `perf_event_open`,

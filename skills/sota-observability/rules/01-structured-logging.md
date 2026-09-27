@@ -315,8 +315,10 @@ a log line, an attacker can cause a million.
   go through a single writer (one queue plus one listener thread, or the
   collector reading per-process stdout), not N handles on one file. POSIX
   only promises that pipe writes of at most `PIPE_BUF` bytes are not
-  interleaved — a stack trace is larger than that, and a regular file shared
-  between processes has no such promise.
+  interleaved — a stack trace is larger than that — and for a regular file
+  shared between processes POSIX promises only that an `O_APPEND` write lands
+  at end-of-file with no intervening modification; a short write, or a writer
+  without `O_APPEND`, still tears records.
 - **Test the failure modes, and write down the answer.** Cover: sink
   unreachable, disk full, write permission removed, and the logger itself
   throwing (a serializer raising on an odd object). For each, the test

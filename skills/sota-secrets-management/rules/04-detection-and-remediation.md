@@ -125,11 +125,15 @@ gate disabled within a week. Instead:
   `*.key`, `*.p12`, `*.pfx`, `*.jks`, `id_rsa*`, `*.kubeconfig`, `credentials.json`,
   `terraform.tfstate*`, `.netrc`. gitignore is a guardrail, not a control — files added with
   `git add -f` still need the scanner to catch them.
-- **GitHub push protection** (Settings → Code security) on for all repos/orgs; it blocks pushes
-  containing known token patterns server-side, including from devs without hooks. Coverage
-  expands continuously (through H1 2026: dozens of new provider detectors, more patterns
-  push-protection-enabled by default, validity checks, and owner/expiry metadata on alerts) —
-  treat alerts marked *active* by validity checks as §3 incidents, not backlog.
+- **GitHub push protection** (Settings → *Security and quality* → Advanced Security; at
+  repository level it needs GitHub Secret Protection) on for all repos/orgs; it blocks pushes,
+  web-UI commits, uploads and REST API writes containing supported secret patterns server-side,
+  including from devs without hooks. **By default anyone with write access can bypass it** by
+  giving a reason — restrict that with delegated bypass — and it covers only the newest token
+  format of a provider's patterns, never passwords. Coverage expands continuously (GitHub
+  changelog 2026-03-10: 28 new detectors, 39 more push-protected by default; validity checks;
+  owner/expiry metadata for a few token types) — treat alerts marked *active* by validity
+  checks as §3 incidents, not backlog.
 - **Fork PR safety:** secret-bearing workflows never run on `pull_request` from forks; audit
   any `pull_request_target` usage that checks out PR code (classic exfil vector — High).
 - **Install-time harvesting worms:** the Shai-Hulud npm worms (Sept/Nov 2025, hundreds of

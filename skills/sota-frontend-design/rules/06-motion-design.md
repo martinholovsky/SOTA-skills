@@ -37,7 +37,7 @@ duration slightly (small element 150ms, full-screen 350ms) — never linearly.
 
 - **Enter: ease-out** (fast start, gentle landing) — `cubic-bezier(0, 0, 0.2, 1)` or `cubic-bezier(0.16, 1, 0.3, 1)` (expo-out, snappier).
 - **Exit: ease-in** or faster ease-out; users don't watch exits.
-- **Move/morph on screen: ease-in-out** — `cubic-bezier(0.4, 0, 0.2, 1)` (the Material "standard").
+- **Move/morph on screen: ease-in-out** — `cubic-bezier(0.4, 0, 0.2, 1)` (Material Design 2's "standard" curve; Material 3's standard is `cubic-bezier(0.2, 0, 0, 1)`).
 - **Never `linear`** for entrances/exits (mechanical), never default CSS `ease` for anything deliberate (too lazy at the end). `linear()` *function* is fine — it's how you encode springs in CSS.
 - Tokenize: `--ease-out`, `--ease-in-out`, `--duration-fast: 150ms`, `--duration-base: 250ms`. Grep-able, theme-able, and the reduced-motion override has one place to zero them.
 

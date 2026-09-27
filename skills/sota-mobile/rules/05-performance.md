@@ -95,7 +95,7 @@ LazyColumn {
 
 - **Radio wake-ups dominate network battery cost** — one request every 30 s keeps the radio in high-power state continuously. Batch small requests, coalesce via WorkManager/BGTaskScheduler (rules/03), prefer push-triggered sync over polling, and enable gzip/Brotli + HTTP/2 connection reuse.
 - **Location is the top battery-complaint generator:** request the coarsest accuracy and longest interval the feature tolerates; stop updates the instant the feature ends (audit for dangling `startUpdatingLocation`/`requestLocationUpdates`); use geofencing and significant-change APIs instead of continuous GPS; background location triggers extra store review scrutiny on both platforms and must be product-essential.
-- No wakelocks for convenience — Android vitals tracks excessive wakeups and partial wakelocks as bad behavior. No iOS background audio/location modes kept alive to fake background execution (App Review and the battery screen both catch it).
+- No wakelocks for convenience — Android vitals tracks excessive wakeups and partial wakelocks as bad behavior (≥ 2 h of partial wake locks in 24 h is excessive; above 5% of sessions over 28 days it can affect Play visibility). No iOS background audio/location modes kept alive to fake background execution (App Review and the battery screen both catch it).
 - Defer non-urgent work to charging+unmetered constraints; users notice the app that drained 8% overnight, and the OS battery screen names you.
 
 ### 5.7 App size is a conversion metric
@@ -113,7 +113,7 @@ Install conversion drops measurably with download size, and storage-pressure uni
   - **Compose:** read state at the lowest scope; `derivedStateOf` for derived values; defer reads with lambda modifiers (`Modifier.graphicsLayer { translationY = offset }` instead of recomposing on every scroll tick); check skippability with compiler reports for hot composables; hoist unstable lambdas.
   - **SwiftUI:** keep `body` cheap and value-typed; split observed state so unrelated changes don't invalidate large trees (`@Observable` fine-grained tracking helps but doesn't absolve giant views); profile with Instruments' SwiftUI template; avoid `AnyView` in hot paths.
   - **React Native:** animations on the UI thread via Reanimated worklets; no per-frame bridge/JSI chatter; `React.memo` + stable props for list rows; Hermes profiles for JS hot spots.
-  - **Flutter:** `const` constructors everywhere applicable; `RepaintBoundary` around expensive repainting subtrees; DevTools rebuild stats; shader-compilation jank addressed (impeller default on both platforms — verify if targeting older Flutter).
+  - **Flutter:** `const` constructors everywhere applicable; `RepaintBoundary` around expensive repainting subtrees; DevTools rebuild stats; shader-compilation jank addressed (Impeller is the only renderer on iOS and the default on Android API 29+ since Flutter 3.27; older or non-Vulkan Android devices fall back to the legacy OpenGL renderer — profile those separately).
 - Animations: drive them from the compositor/render thread (platform animation APIs, Reanimated, Core Animation) — main-thread-tick animations jank under any load.
 
 ### 5.9 Production performance telemetry, not just lab numbers
