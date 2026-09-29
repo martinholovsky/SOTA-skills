@@ -5,7 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.46.0] - 2026-09-29
+
+A minor: `verify-setup.sh` gains check 1g and a shared `skill-listing-sources.sh`, and the
+skill-listing budget checks now measure what the listing actually holds, at the context
+window the user actually runs.
+
+**Front door checked:** skill-listing-sources.sh · context window · installed twice
 
 ### Fixed
 
@@ -10710,6 +10716,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.46.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.46.0
 [1.45.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.45.0
 [1.44.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.4
 [1.44.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.3
