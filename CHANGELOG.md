@@ -5,6 +5,17 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`sota-shell-scripting` rules/05 §3:** dash's `bad trap` for `trap … ERR` ends the script only
+  under `set -e`; without it the script runs on with no ERR trap. The 1.44.4 text said it always
+  exited 1 (re-measured on macOS dash and Debian bookworm).
+- **ADOPTION-LOG:** four deferrals whose triggers #482 fired are marked due; two findings from the
+  2026-09-27 pass are now `DEFERRED` rows with triggers; four overstated sentences in that pass's
+  entry are superseded.
+
 ## [1.44.4] - 2026-09-27
 
 A patch: no new skill, script or command. The full-library sweep completes, a version pin on
@@ -35,6 +46,8 @@ LAST-VERIFIED: 2026-07-08 -> 2026-09-26 (full-library sweep, batches 1–4 plus 
 - **A recipe that failed when run:** `sota-data-engineering` rules/05's Iceberg
   `expire_snapshots(older_than => now() - INTERVAL 7 DAYS)` is rejected by the CALL grammar on
   Spark 3.5 and 4.0; it now takes a rendered literal.
+  *Corrected 2026-09-29: 3.5 fails at parse time and 4.0 at argument binding — only 3.5 is a
+  grammar rejection.*
 - **Wrong facts:** ISO 24495-1's fourth principle is "usable", not "actionable"
   (`sota-ux-writing`); Opengrep's taint is cross-function within one file and opt-in via
   `--taint-intrafile`, not Semgrep Pro's cross-file analysis (router tool matrix,

@@ -7095,13 +7095,13 @@ the advisory ranges settle, a WCAG AAA label, and two stray downloaded HTML file
 - **DEFERRED — Spring `@RequestMapping(method = POST)` in `sota-api-design` rules/01's consumes probe; revisit trigger: the next rules/01 §3 edit, or a field report of a missed write handler.**
 - **DEFERRED — gRPC `max_receive_message_length` on a continuation line and C++ `SetMaxReceiveMessageSize(-1)` in `sota-testing` rules/09; revisit trigger: the next edit of that gRPC checklist line.**
 - **DEFERRED — AsyncAPI and CloudEvents as event-contract artifacts; revisit trigger: an intake or field report that needs event-API contract guidance.**
-- **DEFERRED — Iceberg `rewrite_position_delete_files` / `rewrite_manifests` in `sota-data-engineering` rules/05's maintenance example; revisit trigger: the next table-format maintenance edit.**
+- **DEFERRED — Iceberg `rewrite_position_delete_files` / `rewrite_manifests` in `sota-data-engineering` rules/05's maintenance example; revisit trigger: the next table-format maintenance edit.** *Trigger fired 2026-09-27: #482 edited this maintenance example (the `expire_snapshots` cutoff) and did not do the item — it is due.*
 - **DEFERRED — runnable audit probes for `sota-data-engineering`'s CRITICAL/HIGH BUILD rules (blind INSERT…SELECT, NOW()-relative filters, `SELECT *` in staging, incremental models without `unique_key`), lakehouse catalog governance, and ODCS; revisit trigger: the next data-engineering intake or audit-probe batch.**
 - **DEFERRED — Apple's Declared Age Range API as an age signal in `sota-mobile` rules/04; revisit trigger: the next age-gate edit, or Apple making the API mandatory for age-rated apps.**
 - **DEFERRED — Swift 6.4 SwiftPM SBOM generation and Swift Testing↔XCTest interop in `sota-mobile` rules/07; revisit trigger: the next SwiftPM or testing edit there.**
 - **DEFERRED — "keep DOMPurify patched; avoid IN_PLACE mode" in `sota-javascript-typescript` rules/09; revisit trigger: that skill's next sweep batch.**
 - **DEFERRED — React 19.3 features (`<ViewTransition>`, `<Activity>`, `useEffectEvent`, Trusted Types) in `sota-web-frameworks` rules/02; revisit trigger: the next rules/02 edit.**
-- **DEFERRED — invoker commands, `dialog closedby`, `interpolate-size`, `field-sizing` and `contrast-color()` in `sota-frontend-design`; revisit trigger: the next rules/02, 05 or 06 edit, or the Interop 2026 results.**
+- **DEFERRED — invoker commands, `dialog closedby`, `interpolate-size`, `field-sizing` and `contrast-color()` in `sota-frontend-design`; revisit trigger: the next rules/02, 05 or 06 edit, or the Interop 2026 results.** *Trigger fired 2026-09-27: #482 edited rules/05 (EN 301 549) and rules/06 (Material easing) and did not do the item — it is due.*
 - **DEFERRED — the PG18 `NOT NULL … NOT VALID` shortcut in `sota-databases` rules/02; revisit trigger: the next expand/contract edit, or the PG17 EOL sweep.**
 - **DEFERRED — PG18 `WITHOUT OVERLAPS` temporal keys in `sota-databases` rules/01; revisit trigger: the same.**
 - **DEFERRED — replacing LinkFinder and jsluice (both dormant since 2024, already noted as such) in `sota-api-design` rules/07; revisit trigger: a maintained JS-bundle endpoint extractor is verified.**
@@ -7166,8 +7166,8 @@ fix agent and again before commit), so `ROUTER_BUILD_SHA` and invariant 20 are u
 - **DEFERRED — CLI login via the RFC 8628 device grant or loopback redirect in `sota-cli-ux`; revisit trigger: an auth section is added there, or the next `sota-identity-access` sweep.**
 - **DEFERRED — `DO_NOT_TRACK` as an informal convention with no maintained spec in `sota-cli-ux` rules/03; revisit trigger: a primary spec appears.**
 - **DEFERRED — Keep a Changelog 2.0 section ordering and "don't gate PRs on changelog edits" in `sota-docs-workflow` rules/02; revisit trigger: 2.0.0 becomes the site default.**
-- **DEFERRED — the CAN-SPAM rule that the opt-out must keep working >=30 days after sending, in `sota-copywriting` rules/04 §5; revisit trigger: the next email-law edit.**
-- **DEFERRED — Google's back-button-hijacking violation and the EEA site-reputation enforcement change in `sota-copywriting` rules/03; revisit trigger: the next rules/03 edit.**
+- **DEFERRED — the CAN-SPAM rule that the opt-out must keep working >=30 days after sending, in `sota-copywriting` rules/04 §5; revisit trigger: the next email-law edit.** *Trigger fired 2026-09-27: #482 edited rules/04 §5 (the ePrivacy soft opt-in) and did not do the item — it is due.*
+- **DEFERRED — Google's back-button-hijacking violation and the EEA site-reputation enforcement change in `sota-copywriting` rules/03; revisit trigger: the next rules/03 edit.** *Trigger fired 2026-09-27: #482 edited rules/03 §5 (AI Act Art. 50(4)) and did not do the item — it is due.*
 - **DEFERRED — WCAG 3.3.1 and 3.3.3 in `sota-ux-writing` rules/04 §1; revisit trigger: the next rules/04 edit.**
 - **RESOLVED 2026-09-27 (was deferred; Art. 50 applies from 2 August 2026 under Art. 113 of Regulation (EU) 2024/1689, so the trigger had fired — see the 2026-09-27 entry) — a cross-reference from `sota-copywriting` rules/03 to AI Act Art. 50 in `sota-privacy-compliance` rules/04; revisit trigger: Art. 50 obligations apply, or privacy-compliance restructures.**
 
@@ -7316,3 +7316,30 @@ is proposed — this is the first occurrence and the three filters in CONVENTION
 rules/04 (a dedicated internal mux); and `sota-shell-scripting` rules/02 still describes GNU
 coreutils as what `sh` environments ship, while Ubuntu moved to the Rust coreutils (search result
 only, not opened).
+
+*Corrected 2026-09-29 (session close) — four statements above were wrong or overstated, and are
+kept as written:*
+- *"to cut a MINOR release": the cut re-read `RELEASING.md` — nothing new to run is a patch — and
+  the operator chose **v1.44.4**.*
+- *"each claim located with `git grep`": two of the 52 named topics that are not in the skills as
+  written (Ubuntu's Rust coreutils; the UK Data (Use and Access) Act, mapped to an implied PECR
+  passage), and one — the git push double-delivery — was checked for its label only, with no
+  source opened.*
+- *"read from ISO's published preview sample": the PDF is the standard's own first pages, served
+  by iTeh Standards' sample CDN, not by iso.org.*
+- *"rejected by the CALL grammar on Spark 3.5 and 4.0": 3.5.9 fails at parse time (`mismatched
+  input '('`, re-run here); 4.0.4 parses and fails at argument binding (agent's run). "CALL takes
+  literals only" holds on both.*
+- *And the pass repeated the failure it reported in #481: it edited four files named by "next
+  edit" deferral triggers without doing those items. They are marked due in place (Iceberg
+  maintenance, frontend-design rules/05–06, the CAN-SPAM 30-day rule, copywriting rules/03).
+  That is the second occurrence; a check that lists deferrals whose named file a branch touches
+  is the obvious gate, not built here.*
+- *The rules/05 §3 dash clause said `trap … ERR` exits 1 "before any work"; only under `set -e`
+  — without it dash prints `bad trap` and runs on (re-measured 2026-09-29 on macOS dash and
+  Debian bookworm). The rule text is corrected.*
+
+**Open from the 2026-09-27 pass, as trackable rows** (they sat above as prose, which invariant 27
+cannot count and `/sota-resume` does not list):
+- **DEFERRED — `sota-performance` rules/01 says to always enable `net/http/pprof`, against `sota-observability` rules/05 and `sota-golang` rules/04 (an internal-only mux, never the public `DefaultServeMux`); revisit trigger: the operator approves the one-line fix offered 2026-09-27, or the next rules/01 edit.**
+- **DEFERRED — `sota-shell-scripting` rules/02 describes GNU coreutils as what `sh` environments ship, while Ubuntu reportedly moved to the Rust coreutils (search result only, no page opened); revisit trigger: the next rules/02 edit, or a field report of a coreutils behaviour difference.**
