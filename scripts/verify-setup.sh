@@ -310,6 +310,66 @@ else
     "all $n_cmd_src installed in $CLAUDE_HOME/commands"
 fi
 
+# --- 1e. is the install LIVE, or a snapshot? --------------------------------
+# A copied skill directory reads identically to a linked one everywhere above — it
+# is present, it is counted, it loads. It just never changes again: `git pull`
+# updates links, not copies. Git Bash's `ln -s` makes a deep copy and exits 0 when
+# Windows will not grant a symlink (msys2.org/docs/symlinks), so a default install
+# there became a snapshot with no warning — field-reported 2026-09-29. Plugin
+# installs are excluded: the plugin cache is a copy by design and updates itself.
+n_real=0; n_linked=0
+for d in "$CLAUDE_HOME/skills" "$HOME/.agents/skills" ".claude/skills"; do
+  [ -d "$d" ] || continue
+  for s in "$d"/sota "$d"/sota-*; do
+    if [ -L "$s" ]; then n_linked=$((n_linked + 1))
+    elif [ -d "$s" ]; then n_real=$((n_real + 1)); fi
+  done
+done
+if [ $((n_real + n_linked)) -eq 0 ]; then
+  row "N/A" "1e. install is live" "no personal/project sota skills to inspect (plugin installs update themselves)"
+elif [ "$n_real" -gt 0 ]; then
+  row "PARTIAL" "1e. install is live" \
+    "$n_real of $((n_real + n_linked)) sota skill dirs are COPIES, not links — they will not update on git pull. Deliberate --copy? fine. Otherwise (Windows: enable Developer Mode) re-run scripts/install.sh"
+else
+  row "PASS" "1e. install is live" "all $n_linked sota skill dirs are symlinks — git pull updates them"
+fi
+
+# --- 1f. do the OTHER agents on this machine reach the library? ------------
+# Copilot CLI, Codex and Gemini CLI do not document ~/.claude/skills; the one personal
+# path all of them (and Cursor, and Copilot in VS Code) document is ~/.agents/skills
+# — vendor docs fetched 2026-09-29, table in docs/MULTI-AGENT.md. So an install that
+# passes check 1 is invisible to them, which is what the field report found.
+# Detection is by the agent's home directory, honouring the documented overrides.
+# PARTIAL, never FAIL: this library is native to Claude Code, and another agent
+# being installed is not evidence the user wants the skills in it.
+oa_found=""
+[ -d "${COPILOT_HOME:-$HOME/.copilot}" ] && oa_found="$oa_found Copilot"
+[ -d "${CODEX_HOME:-$HOME/.codex}" ]     && oa_found="$oa_found Codex"
+[ -d "$HOME/.gemini" ]                   && oa_found="$oa_found Gemini"
+oa_found="${oa_found# }"
+oa_dir="$HOME/.agents/skills"
+if [ -z "$oa_found" ]; then
+  row "N/A" "1f. other agents reach skills" "no Copilot CLI / Codex / Gemini CLI home found (~/.copilot, ~/.codex, ~/.gemini)"
+else
+  oa_n=0; oa_missing=""
+  if [ -n "$LIB_ROOT" ] && [ -d "$LIB_ROOT/skills" ]; then
+    for s in "$LIB_ROOT"/skills/*/; do
+      [ -d "$s" ] || continue
+      nm="$(basename "$s")"
+      if [ -e "$oa_dir/$nm" ]; then oa_n=$((oa_n + 1)); else oa_missing="${oa_missing:+$oa_missing, }$nm"; fi
+    done
+  fi
+  if [ ! -e "$oa_dir/sota" ]; then
+    row "PARTIAL" "1f. other agents reach skills" \
+      "found $oa_found, but $oa_dir has no sota router — the one skills path they all document is empty; run scripts/install.sh --target all"
+  elif [ -n "$oa_missing" ]; then
+    row "PARTIAL" "1f. other agents reach skills" \
+      "found $oa_found; $oa_n of $n_src skills in $oa_dir — missing: $oa_missing; re-run scripts/install.sh --target all"
+  else
+    row "PASS" "1f. other agents reach skills" "found $oa_found; all $oa_n skills in $oa_dir"
+  fi
+fi
+
 [ -f "$CLAUDE_HOME/CLAUDE.md" ] && grep -qi 'sota' "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null && directive=1
 if [ -f "$CLAUDE_HOME/settings.json" ]; then
   # Substring test, not a JSON parse: the hook may be a shell one-liner, a script
@@ -327,6 +387,36 @@ elif [ "$hook" -eq 1 ]; then
   row "PARTIAL" "2. always-on routing" "UserPromptSubmit hook only — no global directive in $CLAUDE_HOME/CLAUDE.md"
 else
   row "FAIL" "2. always-on routing" "neither a sota directive in CLAUDE.md nor a UserPromptSubmit hook — routing depends on how each prompt is phrased"
+fi
+
+# --- 2b. the same directive in the other agents' global instruction files ---
+# Claude Code's hook has no equivalent written here, so for another agent the
+# directive IS the always-on layer. Per vendor docs (docs/MULTI-AGENT.md):
+# Copilot CLI + VS Code Agent Host read $COPILOT_HOME|~/.copilot/copilot-instructions.md,
+# Codex reads $CODEX_HOME|~/.codex/AGENTS.md (AGENTS.override.md first, when present),
+# Gemini CLI ~/.gemini/GEMINI.md. Only agents whose home exists are checked.
+oa_have=""; oa_lack=""
+oa_check() {  # <label> <home> <file...> — the first existing file wins, as the agents read it
+  local label="$1" home="$2" f hit=""; shift 2
+  [ -d "$home" ] || return 0
+  for f in "$@"; do
+    [ -f "$home/$f" ] || continue
+    grep -qi 'sota' "$home/$f" 2>/dev/null && hit="$f"
+    break
+  done
+  if [ -n "$hit" ]; then oa_have="${oa_have:+$oa_have, }$label ($hit)"
+  else oa_lack="${oa_lack:+$oa_lack, }$label"; fi
+}
+oa_check Copilot "${COPILOT_HOME:-$HOME/.copilot}" copilot-instructions.md
+oa_check Codex   "${CODEX_HOME:-$HOME/.codex}"     AGENTS.override.md AGENTS.md
+oa_check Gemini  "$HOME/.gemini"                  GEMINI.md
+if [ -z "$oa_have$oa_lack" ]; then
+  row "N/A" "2b. other agents' directive" "no Copilot CLI / Codex / Gemini CLI home found"
+elif [ -n "$oa_lack" ]; then
+  row "PARTIAL" "2b. other agents' directive" \
+    "no sota directive for: $oa_lack${oa_have:+ (present: $oa_have)} — scripts/install.sh --routing mirrors it"
+else
+  row "PASS" "2b. other agents' directive" "sota directive in: $oa_have"
 fi
 
 # Profile: report the FILENAME only. Its contents are the user's stack.

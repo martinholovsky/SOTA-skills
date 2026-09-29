@@ -1114,16 +1114,27 @@ cleanup_vs() { rm -rf "${VS:?}"; }
 trap 'cleanup; cleanup_vs' EXIT   # part A's worktree AND this fixture
 
 build_fixture() {  # a machine+repo where every check passes
-  rm -rf "${VS:?}/home" "${VS:?}/repo" "${VS:?}/bin"
+  rm -rf "${VS:?}/home" "${VS:?}/repo" "${VS:?}/bin" "${VS:?}/uhome"
   mkdir -p "$VS/home/skills" "$VS/home/profiles" "$VS/bin" "$VS/repo/.github/workflows"
-  # library reach: the router plus a couple of domain skills
-  mkdir -p "$VS/home/skills/sota" "$VS/home/skills/sota-testing" "$VS/home/skills/sota-golang"
   # …and the SOURCE side, which is what makes the installed count a denominator
   # rather than a lone number (verify-setup check 1). verify-setup resolves the
   # library from ITS OWN path, not the cwd, so the fixture has to carry a copy of
   # the script for that resolution to land inside the fixture. Copy, then assert
   # the copy is identical — a stale fixture copy would test yesterday's script.
   mkdir -p "$VS/repo/skills/sota" "$VS/repo/skills/sota-testing" "$VS/repo/skills/sota-golang"
+  # library reach: the router plus a couple of domain skills, LINKED as install.sh
+  # links them — a real directory here is a snapshot, which check 1e reports.
+  for _s in sota sota-testing sota-golang; do
+    ln -sfn "$VS/repo/skills/$_s" "$VS/home/skills/$_s"
+  done
+  # $HOME for the run, so the machine's own ~/.copilot / ~/.codex / ~/.agents never
+  # reach a probe (checks 1f and 2b read $HOME). One other agent, fully configured,
+  # so the positive control exercises the PASS branch of both before a probe breaks it.
+  mkdir -p "$VS/uhome/.codex" "$VS/uhome/.agents/skills"
+  printf 'consult the sota router skill\n' > "$VS/uhome/.codex/AGENTS.md"
+  for _s in sota sota-testing sota-golang; do
+    ln -sfn "$VS/repo/skills/$_s" "$VS/uhome/.agents/skills/$_s"
+  done
   mkdir -p "$VS/repo/scripts"
   cp "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh"
   cmp -s "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh" \
@@ -1175,7 +1186,8 @@ run_vs() {  # sets VS_OUT / VS_RC
   # SOTA_SEARCHERS pinned to one searcher so section F is deterministic across
   # machines (whether rg or ugrep happens to be installed must not change a probe's
   # result), and so a probe can swap in a blind one.
-  VS_OUT=$( cd "$VS/repo" && CLAUDE_CONFIG_DIR="$VS/home" PATH="$VS/bin:$PATH" \
+  VS_OUT=$( cd "$VS/repo" && CLAUDE_CONFIG_DIR="$VS/home" HOME="$VS/uhome" PATH="$VS/bin:$PATH" \
+            COPILOT_HOME='' CODEX_HOME='' \
             SOTA_SEARCHERS="${VS_SEARCHERS:-grep}" \
             bash "$VS/repo/scripts/verify-setup.sh" 2>&1 ) || VS_RC=$?
 }
@@ -1268,6 +1280,17 @@ vs_probe "report command is a dangling symlink" "1c. report command installed"
 # the same `git pull` creates no link for a new command, exactly as for a new skill.
 rm -f "$VS/home/commands/sota-close.md"
 vs_probe_partial "a shipped command is not installed" "1d. commands match the checkout"
+# 1e: a skill that is a COPY, not a link — what Git Bash's deepcopy `ln -s` leaves
+# behind on Windows without symlink privilege (field-reported 2026-09-29).
+rm -f "$VS/home/skills/sota-golang"; mkdir -p "$VS/home/skills/sota-golang"
+vs_probe_partial "a skill is a copied snapshot, not a link" "1e. install is live"
+# 1f: another agent is installed but ~/.agents/skills is empty — check 1 still PASSES
+# here, which is the whole report: the Claude install is invisible to Copilot CLI.
+rm -rf "$VS/uhome/.agents"
+vs_probe_partial "another agent present, ~/.agents/skills empty" "1f. other agents reach skills"
+# 2b: skills reach it, but its global instruction file carries no directive.
+rm -f "$VS/uhome/.codex/AGENTS.md"
+vs_probe_partial "another agent present, no directive in its global file" "2b. other agents' directive"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
@@ -1356,5 +1379,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 1c, 1d, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1c, 1d, 1e, 1f, 2, 2b, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

@@ -19,7 +19,9 @@ lessons-log — its own best structural idea, applied to ourselves.
   resolves change that marker in place rather than recording the outcome only in a later
   entry.** Invariant 27 asserts every `**DEFERRED —` marker names a trigger, in the
   marker's own cell. It matches the marker **case-sensitively**, so `**Deferred —` is not a
-  deferral as far as the gate knows, and it does **not** check that the rest of the repo
+  deferral as far as the gate knows; it counts a marker only where it **opens** a line, a
+  bullet or a table cell, so one written mid-sentence is invisible to it (two were, until
+  2026-09-29); and it does **not** check that the rest of the repo
   agrees with this log — this sentence claimed that second half until 2026-09-25, and no
   code ever implemented it. Keep other files pointing at the gate's count rather than
   listing deferrals. Added
@@ -7316,3 +7318,50 @@ is proposed — this is the first occurrence and the three filters in CONVENTION
 rules/04 (a dedicated internal mux); and `sota-shell-scripting` rules/02 still describes GNU
 coreutils as what `sh` environments ship, while Ubuntu moved to the Rust coreutils (search result
 only, not opened).
+
+## 2026-09-29 — field report: an install invisible to Copilot CLI, and a Windows install that was silently a copy
+
+Source: a field report from the operator, working on a Windows machine with GitHub Copilot CLI
+(no Developer Mode). It had four asks. **Every path claim was checked against the vendor's own
+docs, fetched this session** (Copilot CLI, VS Code, Codex, Cursor, Gemini CLI, agentskills.io).
+Pages were saved and grepped, and four key quotes were re-checked by hand after the research
+agent reported them. Table, URLs and quotes are in [MULTI-AGENT.md](MULTI-AGENT.md).
+
+| idea | verdict | landed in |
+|---|---|---|
+| 1 — `--target claude\|copilot\|all`, linking into `~/.copilot/skills` and `~/.agents/skills` | **adopted with a correction** — `~/.agents/skills` only. It is the one personal path all five non-Claude agents document. VS Code already reads `~/.copilot`, `~/.claude` and `~/.agents`, so a third copy adds nothing. The values are `claude\|agents\|all`, and the default detects and offers rather than writing everywhere | `scripts/install.sh` `install_into`, `detected_agents`, `--target` · unreleased |
+| 2 — mirror the routing directive to `~/.copilot/copilot-instructions.md` | **adopted, widened** — also `~/.codex/AGENTS.md` and `~/.gemini/GEMINI.md`, each only when that agent's home exists (the operator's call). It keeps the `CLAUDE.md` contract (`.bak`, append, refresh between markers) and warns when the directive would name a skill the agent cannot see | `scripts/install.sh` `setup_directive`, `mirror_directives` · unreleased |
+| 3 — warn on the symlink→copy fallback | **adopted with a correction** — the fallback is not install.sh's. Git Bash/MSYS2 `ln -s` deep-copies and exits 0 by default (`winsymlinks:deepcopy`, msys2.org/docs/symlinks). A warning alone would still leave a Developer-Mode machine copying, so the installer also sets `nativestrict` and probes `-L` once | `scripts/install.sh` `can_symlink` · unreleased |
+| 4 — `verify-setup.sh` checks the Copilot paths | **adopted** as 1e (live vs copy), 1f (other agents reach `~/.agents/skills`) and 2b (their global directive). All three are PARTIAL, never FAIL. Each has a part-B probe, and the fixture now owns its `$HOME` | `scripts/verify-setup.sh`, `scripts/check-negative-controls.sh` · unreleased |
+
+**What we reproduced rather than took on trust.**
+
+- **The symptom, on this machine.** It has `~/.copilot` and `~/.gemini` and a Claude-only
+  install. Check 1 passed, and the new 1f reported `~/.agents/skills` empty for both.
+  That is the report's finding, reproduced by the check written for it — as a path check;
+  neither agent was run to observe what it actually lists.
+- **The report's premise was half right.** *"Per GitHub's spec, Copilot CLI/VS Code look in
+  `~/.copilot/skills` or `~/.agents/skills`"* holds for Copilot CLI. **VS Code also reads
+  `~/.claude/skills`**, so the default install already reached VS Code. Cursor reads it too.
+- **Git Bash, not only MSYS2.** gitforwindows.org/symbolic-links: *"By default, the ln -s
+  command in Git Bash does not create symbolic links. Instead, it creates copies."* The same
+  page says directory junctions need no privilege, which would give a live install without
+  Developer Mode. It does not mention `MSYS=winsymlinks`, so `nativestrict` working in Git
+  Bash is unverified.
+- **"Do not read `~/.claude/skills`" was an overstatement, corrected 2026-09-29 before merge.** Codex's
+  and Gemini's pages simply never mention it, and Copilot CLI lists other personal paths.
+  That is *not documented*, not *does not read*. Every copy now says the former.
+- **The copy path.** It was tested with an `ln` shim that copies and exits 0, as deepcopy does:
+  0 links and 42 directories, with the warning printed. A real `ln` still produced 42 links.
+  **It was not run on Windows.**
+
+- **DEFERRED — revisit when a Windows machine is available: run install.sh there, confirm `nativestrict` yields a real link and `-L` sees it, and try `mklink /J` junctions as the no-privilege fallback instead of copying.**
+- **DEFERRED — revisit on the first report from a Copilot, VS Code, Cursor or Gemini user whose linked skills fail to load, or at the next full sweep (~2027-03-26): the unverified list below.**
+
+**Unverified, and said so in MULTI-AGENT.md:**
+- whether Copilot, VS Code, Cursor and Gemini follow symlinked skill folders (only Codex
+  documents it);
+- how VS Code and Cursor treat the same skill name in two directories;
+- whether `COPILOT_HOME` moves the skills directory;
+- the Windows form of `~`;
+- Antigravity CLI's skill paths.

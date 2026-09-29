@@ -50,6 +50,7 @@ every skill (and your profile, if you have one):
 git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
 ./scripts/install.sh                 # personal: ~/.claude/skills (all projects)
 ./scripts/install.sh --project DIR   # one project: DIR/.claude/skills
+./scripts/install.sh --target all    # also ~/.agents/skills: Copilot CLI/VS Code, Codex, Cursor, Gemini CLI
 ./scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 ```
 
@@ -726,6 +727,15 @@ read, hack on, or pin). A few details on the clone path:
 - Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
   (personal, all projects); `install.sh` symlinks every skill and your profile.
 - `--project DIR` scopes to one repo; `--copy` pins a snapshot instead of linking.
+- **Other agents need `--target all`.** Copilot CLI, Codex and Gemini CLI do not document
+  `~/.claude/skills`; `--target all` also links `~/.agents/skills`, the one personal path
+  all five non-Claude agents document, and `--routing` then mirrors the directive into
+  each installed agent's global file. With no flag, the installer offers this when it
+  detects one of them. Paths, sources and what is still unverified:
+  [docs/MULTI-AGENT.md](docs/MULTI-AGENT.md).
+- **On Windows without Developer Mode, the install is a copy.** Git Bash's `ln -s` copies
+  silently when a symlink is refused; the installer now detects that and **says so** —
+  re-run it after every `git pull`, or enable Developer Mode and re-run for live links.
 - Prefer no script? Symlink `skills/*/` into `~/.claude/skills/` and `commands/*.md`
   into `~/.claude/commands/` by hand. You then skip what the script adds beyond links:
   the update-reminder hook, the routing-hook and listing-budget offers, and the reach check.
@@ -1181,8 +1191,12 @@ it's opt-in.
 
 ### Other AI agents (Codex, Copilot, Gemini, …)
 
-The skill *content* is plain Markdown — any model reads it. To route a non-Claude
-agent through the library, generate an `AGENTS.md` (the cross-tool open standard
+The skill *content* is plain Markdown — any model reads it. **To make the skills
+themselves discoverable** by Copilot CLI, Copilot in VS Code, Codex, Cursor or Gemini
+CLI, install with `./scripts/install.sh --target all` — it links `~/.agents/skills`,
+which all of them read, and `--routing` writes the directive into each one's global
+instructions file (table and sources: [docs/MULTI-AGENT.md](docs/MULTI-AGENT.md)). To
+route a project's agent through the library, generate an `AGENTS.md` (the cross-tool open standard
 read by Codex, Cursor, Copilot, Antigravity CLI, Windsurf, Zed, and more):
 
 ```sh
