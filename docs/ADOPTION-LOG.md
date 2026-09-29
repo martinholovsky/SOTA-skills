@@ -7388,9 +7388,9 @@ session's own skill list.
 - the plugin prefix cost (24 chars for 2 skills = 2 × `sota-skills:`).
 
 **What the fixed checks said on the reporter's machine**, after the plugin was uninstalled:
-the observed 1M window gives a 280,000-char budget for ~61.5k, so it passes. The original
-notice was a false alarm on the window alone, even before the duplicate.
+the 1M window observed in *this* session gives a 280,000-char budget for ~61.5k, so it
+passes. Whether the original notice was a false alarm depends on the other session's
+window, which was **not observed**. The global model setting is `opus[1m]`, so 1M is
+likely unless that project or session chose a different model.
 
-**Unverified:**
-- whether the hook's `model` field carries the `[1m]` suffix (the docs example shows none);
-- the size of the built-in skills, still covered by the +25% allowance rather than counted.
+- **DEFERRED — revisit when a SessionStart hook's stdin is captured from a 1M session (log it once from `plugin-budget-check.sh`), or when the Claude Code docs state the `model` field's form: whether that field carries the `[1m]` suffix, and the real size of the built-in skills the +25% allowance stands in for.** Until then a `[1m]` in the hook input is used if present and never required; the status line's observed window outranks it.
