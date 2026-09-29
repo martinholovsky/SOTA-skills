@@ -1187,7 +1187,7 @@ run_vs() {  # sets VS_OUT / VS_RC
   # machines (whether rg or ugrep happens to be installed must not change a probe's
   # result), and so a probe can swap in a blind one.
   VS_OUT=$( cd "$VS/repo" && CLAUDE_CONFIG_DIR="$VS/home" HOME="$VS/uhome" PATH="$VS/bin:$PATH" \
-            COPILOT_HOME= CODEX_HOME= \
+            COPILOT_HOME='' CODEX_HOME='' \
             SOTA_SEARCHERS="${VS_SEARCHERS:-grep}" \
             bash "$VS/repo/scripts/verify-setup.sh" 2>&1 ) || VS_RC=$?
 }
