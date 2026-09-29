@@ -727,7 +727,7 @@ read, hack on, or pin). A few details on the clone path:
 - Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
   (personal, all projects); `install.sh` symlinks every skill and your profile.
 - `--project DIR` scopes to one repo; `--copy` pins a snapshot instead of linking.
-- **Other agents need `--target all`.** Copilot CLI, Codex and Gemini CLI do not read
+- **Other agents need `--target all`.** Copilot CLI, Codex and Gemini CLI do not document
   `~/.claude/skills`; `--target all` also links `~/.agents/skills`, the one personal path
   all five non-Claude agents document, and `--routing` then mirrors the directive into
   each installed agent's global file. With no flag, the installer offers this when it

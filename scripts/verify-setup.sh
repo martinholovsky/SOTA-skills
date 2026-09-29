@@ -335,7 +335,7 @@ else
 fi
 
 # --- 1f. do the OTHER agents on this machine reach the library? ------------
-# Copilot CLI, Codex and Gemini CLI do not read ~/.claude/skills; the one personal
+# Copilot CLI, Codex and Gemini CLI do not document ~/.claude/skills; the one personal
 # path all of them (and Cursor, and Copilot in VS Code) document is ~/.agents/skills
 # — vendor docs fetched 2026-09-29, table in docs/MULTI-AGENT.md. So an install that
 # passes check 1 is invisible to them, which is what the field report found.
@@ -361,7 +361,7 @@ else
   fi
   if [ ! -e "$oa_dir/sota" ]; then
     row "PARTIAL" "1f. other agents reach skills" \
-      "found $oa_found, but $oa_dir has no sota router — they cannot see the library; run scripts/install.sh --target all"
+      "found $oa_found, but $oa_dir has no sota router — the one skills path they all document is empty; run scripts/install.sh --target all"
   elif [ -n "$oa_missing" ]; then
     row "PARTIAL" "1f. other agents reach skills" \
       "found $oa_found; $oa_n of $n_src skills in $oa_dir — missing: $oa_missing; re-run scripts/install.sh --target all"

@@ -53,7 +53,7 @@ readonly SKILLS_SRC="$REPO/skills"
 
 TARGET="$HOME/.claude/skills"
 # The cross-agent skills directory, and the homes whose presence says an agent that
-# cannot see ~/.claude/skills is installed. Each honours its vendor's documented
+# does not document ~/.claude/skills is installed. Each honours its vendor's documented
 # override (COPILOT_HOME, CODEX_HOME), so detection looks where the agent looks.
 AGENTS_TARGET="$HOME/.agents/skills"
 COPILOT_DIR="${COPILOT_HOME:-$HOME/.copilot}"
@@ -672,13 +672,15 @@ fi
 
 # --- can this machine make a symlink at all? ---------------------------------
 # Git Bash and MSYS2 do NOT fail `ln -s` when a real symlink is unavailable: their
-# default (`winsymlinks:deepcopy`, msys2.org/docs/symlinks) makes a DEEP COPY and
-# exits 0. So on Windows without Developer Mode or Administrator the default install
+# default makes a COPY and exits 0 (msys2.org/docs/symlinks: `winsymlinks:deepcopy`;
+# gitforwindows.org/symbolic-links: "the ln -s command in Git Bash does not create
+# symbolic links. Instead, it creates copies"). So on Windows without Developer Mode or Administrator the default install
 # became a stale snapshot, `git pull` stopped reaching it, and nothing said so —
 # field-reported 2026-09-29. Two fixes, both needed:
 #   1. ask the runtime for a NATIVE link and to fail rather than copy
-#      (`nativestrict`). Without this, even a machine that CAN make symlinks gets
-#      a copy, because deepcopy is the default whatever the privilege.
+#      (`nativestrict`, documented by MSYS2; Git for Windows' own page says only that
+#      Git Bash's `ln -s` "creates copies" by default — whether this variable gives
+#      Git Bash a real link is NEEDS VERIFICATION on Windows).
 #   2. probe once, and if no symlink results, say so loudly and copy on purpose,
 #      instead of copying by accident. The probe asserts `-L` on the result rather
 #      than trusting ln's exit status, which is exactly what deepcopy lies about.
@@ -753,8 +755,10 @@ install_into() {
 # Gemini CLI (vendor docs fetched 2026-09-29 — docs/MULTI-AGENT.md has the table and
 # URLs). Deliberately NOT ~/.copilot/skills as well: VS Code reads ~/.copilot,
 # ~/.claude AND ~/.agents, so a third copy of every skill buys nothing.
-# Copilot CLI, Codex and Gemini CLI do NOT read ~/.claude/skills, so they are the
-# ones whose presence makes the offer; Cursor and VS Code already see ~/.claude.
+# Copilot CLI, Codex and Gemini CLI do not DOCUMENT ~/.claude/skills (Copilot CLI's
+# personal list is ~/.copilot and ~/.agents only; Codex and Gemini never mention it —
+# an absence in docs, not a measured behaviour), so they are the ones whose presence
+# makes the offer; Cursor and VS Code document reading ~/.claude/skills.
 detected_agents() {
   local out=""
   [ -d "$COPILOT_DIR" ] && out="$out Copilot"
@@ -775,10 +779,10 @@ case "$INSTALL_TARGET" in
     found="$(detected_agents)"
     if [ -n "$found" ] && [ "$TARGET" = "$HOME/.claude/skills" ]; then
       if [ "$INTERACTIVE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
-        ask_yn "Found $found, which do not read ~/.claude/skills — also link the skills into $AGENTS_TARGET (read by Copilot CLI, VS Code, Codex, Cursor, Gemini CLI)?" y && want_agents=1
+        ask_yn "Found $found, which do not document reading ~/.claude/skills — also link the skills into $AGENTS_TARGET (read by Copilot CLI, VS Code, Codex, Cursor, Gemini CLI)?" y && want_agents=1
       else
         # shellcheck disable=SC2088  # ~ is display text in the hint, not a path
-        chg "found $found, which do not read ~/.claude/skills — re-run with --target all to link $AGENTS_TARGET too"
+        chg "found $found, which do not document reading ~/.claude/skills — re-run with --target all to link $AGENTS_TARGET too"
       fi
     fi ;;
 esac

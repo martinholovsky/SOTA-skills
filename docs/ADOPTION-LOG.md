@@ -19,7 +19,9 @@ lessons-log — its own best structural idea, applied to ourselves.
   resolves change that marker in place rather than recording the outcome only in a later
   entry.** Invariant 27 asserts every `**DEFERRED —` marker names a trigger, in the
   marker's own cell. It matches the marker **case-sensitively**, so `**Deferred —` is not a
-  deferral as far as the gate knows, and it does **not** check that the rest of the repo
+  deferral as far as the gate knows; it counts a marker only where it **opens** a line, a
+  bullet or a table cell, so one written mid-sentence is invisible to it (two were, until
+  2026-09-29); and it does **not** check that the rest of the repo
   agrees with this log — this sentence claimed that second half until 2026-09-25, and no
   code ever implemented it. Keep other files pointing at the gate's count rather than
   listing deferrals. Added
@@ -7335,14 +7337,26 @@ agent reported them. Table, URLs and quotes are in [MULTI-AGENT.md](MULTI-AGENT.
 **What we reproduced rather than took on trust.**
 
 - **The symptom, on this machine.** It has `~/.copilot` and `~/.gemini` and a Claude-only
-  install. Check 1 passed, and the new 1f reported both agents unable to see the library.
-  That is the report's finding, reproduced by the check written for it.
+  install. Check 1 passed, and the new 1f reported `~/.agents/skills` empty for both.
+  That is the report's finding, reproduced by the check written for it — as a path check;
+  neither agent was run to observe what it actually lists.
 - **The report's premise was half right.** *"Per GitHub's spec, Copilot CLI/VS Code look in
   `~/.copilot/skills` or `~/.agents/skills`"* holds for Copilot CLI. **VS Code also reads
   `~/.claude/skills`**, so the default install already reached VS Code. Cursor reads it too.
+- **Git Bash, not only MSYS2.** gitforwindows.org/symbolic-links: *"By default, the ln -s
+  command in Git Bash does not create symbolic links. Instead, it creates copies."* The same
+  page says directory junctions need no privilege, which would give a live install without
+  Developer Mode. It does not mention `MSYS=winsymlinks`, so `nativestrict` working in Git
+  Bash is unverified.
+- **"Do not read `~/.claude/skills`" was an overstatement, corrected 2026-09-29 before merge.** Codex's
+  and Gemini's pages simply never mention it, and Copilot CLI lists other personal paths.
+  That is *not documented*, not *does not read*. Every copy now says the former.
 - **The copy path.** It was tested with an `ln` shim that copies and exits 0, as deepcopy does:
   0 links and 42 directories, with the warning printed. A real `ln` still produced 42 links.
   **It was not run on Windows.**
+
+- **DEFERRED — revisit when a Windows machine is available: run install.sh there, confirm `nativestrict` yields a real link and `-L` sees it, and try `mklink /J` junctions as the no-privilege fallback instead of copying.**
+- **DEFERRED — revisit on the first report from a Copilot, VS Code, Cursor or Gemini user whose linked skills fail to load, or at the next full sweep (~2027-03-26): the unverified list below.**
 
 **Unverified, and said so in MULTI-AGENT.md:**
 - whether Copilot, VS Code, Cursor and Gemini follow symlinked skill folders (only Codex

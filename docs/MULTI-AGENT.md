@@ -1,7 +1,7 @@
 # Using the library from other agents — where each one looks
 
 `scripts/install.sh` is native to Claude Code, which reads `~/.claude/skills`. Most other
-agents **do not read that directory**, so a default install is invisible to them. A
+agents **do not document that directory**, so a default install may be invisible to them. A
 field report (2026-09-29) found this on a Copilot CLI machine: the skills were installed,
 `verify-setup.sh` passed, and Copilot saw none of them.
 
@@ -11,14 +11,14 @@ These paths move. Re-check the linked page before relying on a row.
 
 ## The table
 
-| agent | personal skills | global instructions | reads `~/.claude/skills`? |
+| agent | personal skills | global instructions | documents `~/.claude/skills`? |
 |---|---|---|---|
 | **Claude Code** | `~/.claude/skills` | `~/.claude/CLAUDE.md` | yes (native) |
 | **GitHub Copilot CLI** | `~/.copilot/skills`, `~/.agents/skills` | `~/.copilot/copilot-instructions.md` (`COPILOT_HOME` replaces `~/.copilot`) | **no** — `.claude/skills` is project-level only |
 | **Copilot in VS Code** | `~/.copilot/skills`, `~/.claude/skills`, `~/.agents/skills` | `~/.copilot/copilot-instructions.md` (Agent Host); `~/.claude/CLAUDE.md` (Local agent, `chat.useClaudeMdFile`) | yes |
-| **OpenAI Codex CLI** | `$HOME/.agents/skills` (admin: `/etc/codex/skills`) | `~/.codex/AGENTS.override.md`, else `~/.codex/AGENTS.md` (`CODEX_HOME`) | **no** |
+| **OpenAI Codex CLI** | `$HOME/.agents/skills` (admin: `/etc/codex/skills`) | `~/.codex/AGENTS.override.md`, else `~/.codex/AGENTS.md` (`CODEX_HOME`) | **no** (not mentioned — undocumented, not tested) |
 | **Cursor** | `~/.agents/skills`, `~/.cursor/skills`, plus `~/.claude/skills` and `~/.codex/skills` for compatibility | *User Rules* in Customize → Rules — a settings screen, **no documented file** | yes |
-| **Gemini CLI** | `~/.gemini/skills`, `~/.agents/skills` | `~/.gemini/GEMINI.md` | **no** |
+| **Gemini CLI** | `~/.gemini/skills`, `~/.agents/skills` | `~/.gemini/GEMINI.md` | **no** (not mentioned — undocumented, not tested) |
 
 Project-level equivalents: `.agents/skills` is read by all five non-Claude agents. Copilot
 (CLI and VS Code) and Cursor also read `.claude/skills`, so `install.sh --project DIR` already
@@ -47,7 +47,7 @@ and Google One users. Antigravity's skill paths were **not** researched here.
   - `--target agents` links into `~/.agents/skills` alone.
   - `--target claude` keeps the old behaviour.
   - With no `--target`, the installer links Claude only. If it finds `~/.copilot`, `~/.codex`
-    or `~/.gemini` (the agents that cannot see `~/.claude/skills`), it **offers** the fan-out
+    or `~/.gemini` (the agents that do not document `~/.claude/skills`), it **offers** the fan-out
     on an interactive run, or accepts it under `--yes`. A non-interactive run prints a
     one-line hint instead.
 - **Directive: every agent that is installed.** With `--routing`, the managed routing block
@@ -73,13 +73,17 @@ and Google One users. Antigravity's skill paths were **not** researched here.
 
 ## Windows: a copy that looks like a link
 
-Git Bash and MSYS2 do **not** fail `ln -s` when Windows refuses a symlink. Their default,
-`winsymlinks:deepcopy` ([msys2.org/docs/symlinks](https://www.msys2.org/docs/symlinks/)),
-makes a deep copy and exits 0. Without Developer Mode or Administrator rights, the default
+Git Bash and MSYS2 do **not** fail `ln -s` when Windows refuses a symlink. They copy and
+exit 0: MSYS2's default is `winsymlinks:deepcopy`
+([msys2.org/docs/symlinks](https://www.msys2.org/docs/symlinks/)), and Git for Windows
+says *"the ln -s command in Git Bash does not create symbolic links. Instead, it creates
+copies"* ([gitforwindows.org/symbolic-links](https://gitforwindows.org/symbolic-links)). Without Developer Mode or Administrator rights, the default
 install was therefore a **snapshot that `git pull` never reaches**, and nothing said so.
 
 The installer now does three things:
-- It sets `MSYS=winsymlinks:nativestrict`, so a machine that *can* link gets a real link.
+- It sets `MSYS=winsymlinks:nativestrict`. MSYS2 documents this as enabling native
+  symlinks; whether it does so in **Git Bash** is not stated by Git for Windows and is
+  **not verified**.
 - It probes once, asserting `-L` on the result rather than trusting the exit status.
 - When no link results, it copies **on purpose** with a warning to re-run after every pull.
 
