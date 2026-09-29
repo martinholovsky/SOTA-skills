@@ -146,7 +146,7 @@ list_sources() {
   disabled="$(disabled_plugins)"
   here="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
   while IFS="$(printf '\037')" read -r id scope proj path; do
-    [ -n "$id" ] && [ -d "$path/skills" ] || continue
+    if [ -z "$id" ] || [ ! -d "$path/skills" ]; then continue; fi
     printf '%s\n' "$disabled" | grep -qxF -- "$id" && continue
     case "$scope" in
       project|local) [ "$proj" = "$here" ] || continue ;;
