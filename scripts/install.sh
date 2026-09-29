@@ -26,6 +26,11 @@
 #   scripts/install.sh --update        # git pull --ff-only first, then re-link
 #                                      #   (scripts/update.sh is an alias for it)
 #   scripts/install.sh --version       # report which release is installed, and where
+#   scripts/install.sh --target all    # ALSO link into ~/.agents/skills, the directory
+#                                      #   Copilot CLI/VS Code, Codex, Cursor and Gemini
+#                                      #   CLI read (claude | agents | all; default:
+#                                      #   Claude only, offering the rest when one of
+#                                      #   those agents is detected)
 #   scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 #   scripts/install.sh --routing       # also set up always-on routing (force)
 #   scripts/install.sh --no-routing    # skip the routing offer
@@ -47,6 +52,14 @@ REPO="$(cd -- "$SCRIPT_DIR/.." && pwd)"; readonly REPO
 readonly SKILLS_SRC="$REPO/skills"
 
 TARGET="$HOME/.claude/skills"
+# The cross-agent skills directory, and the homes whose presence says an agent that
+# cannot see ~/.claude/skills is installed. Each honours its vendor's documented
+# override (COPILOT_HOME, CODEX_HOME), so detection looks where the agent looks.
+AGENTS_TARGET="$HOME/.agents/skills"
+COPILOT_DIR="${COPILOT_HOME:-$HOME/.copilot}"
+CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
+GEMINI_DIR="$HOME/.gemini"
+INSTALL_TARGET=auto   # auto | claude | agents | all  (--target)
 DO_UPDATE=0
 # Every run ends by asking the verifier whether the install actually took.
 # "Linked 42 skills" is what this script DID; reachability is what the agent GETS,
@@ -275,17 +288,19 @@ refresh_block() {  # $1 file
   rm -f "$blk" "$tmp"
 }
 
-setup_claude_md() {
-  # shellcheck disable=SC2088  # ~ here is display text shown to the user, not a path
-  local f="$HOME/.claude/CLAUDE.md" tgt="" where="~/.claude/CLAUDE.md"
+# setup_directive <file> <display-name>: write/refresh the managed routing block in
+# ONE agent's global instruction file. Claude Code's ~/.claude/CLAUDE.md is the
+# original; the same block goes to each other agent's equivalent (mirror_directives).
+setup_directive() {
+  local f="$1" name="$2" tgt="" where
+  where="$name"
   [ -L "$f" ] && tgt="$(readlink "$f")"
   [ -n "$tgt" ] && where="$where (symlink → $tgt; likely managed by your dotfiles — commit it there)"
 
   if [ -f "$f" ] && grep -qxF "$RT_BEGIN" "$f" 2>/dev/null; then
     if ! grep -qxF "$RT_END" "$f" 2>/dev/null; then
-      # shellcheck disable=SC2088  # ~ is display text in the message, not a path
-      warn "~/.claude/CLAUDE.md has the start marker but no end marker — leaving it untouched; fix by hand or delete the block and re-run"
-      return
+      warn "$name has the start marker but no end marker — leaving it untouched; fix by hand or delete the block and re-run"
+      return 0
     fi
     if [ "$(extract_block "$f" | tail -n 1)" != "$RT_END" ]; then
       # extract_block stops at an EXACT end-marker line. If its last line is not
@@ -295,39 +310,69 @@ setup_claude_md() {
       # `[ -z "$(extract_block ...)" ]`, which an altered END passes (the block
       # extends to EOF, so it is non-empty). Proven to delete user content; the
       # marker greps above are `-qxF` for the same reason.
-      # shellcheck disable=SC2088  # ~ is display text in the message, not a path
-      warn "~/.claude/CLAUDE.md has sota routing markers that are altered (indented?) — leaving it untouched; restore the exact marker lines or delete the block and re-run"
-      return
+      warn "$name has sota routing markers that are altered (indented?) — leaving it untouched; restore the exact marker lines or delete the block and re-run"
+      return 0
     fi
     if [ "$(extract_block "$f")" = "$(emit_routing_block)" ]; then
-      log "routing directive in ~/.claude/CLAUDE.md — up to date"; return
+      log "routing directive in $name — up to date"; return 0
     fi
     if ask_yn "The managed SOTA routing directive in $where is out of date — refresh it in place?" y; then
-      backup "$f"; refresh_block "$f"; ok "refreshed routing directive in ~/.claude/CLAUDE.md"
+      backup "$f"; refresh_block "$f"; ok "refreshed routing directive in $name"
     else
-      log "left existing directive unchanged"
+      log "left existing directive in $name unchanged"
     fi
-    return
+    return 0
   fi
   if [ -L "$f" ] && [ ! -e "$f" ]; then           # dangling symlink
-    # shellcheck disable=SC2088  # ~ is display text in the prompt, not a path
-    ask_yn "~/.claude/CLAUDE.md is a broken symlink — replace it with a real file holding the directive?" y \
-      && { rm -f "$f"; emit_routing_block >"$f"; ok "wrote ~/.claude/CLAUDE.md (real file)"; }
+    ask_yn "$name is a broken symlink — replace it with a real file holding the directive?" y \
+      && { rm -f "$f"; emit_routing_block >"$f"; ok "wrote $name (real file)"; }
     return 0
   fi
   if [ -e "$f" ]; then
     if ask_yn "Append the SOTA routing directive to $where?" y; then
-      backup "$f"; { printf '\n'; emit_routing_block; } >>"$f"; ok "appended directive to ~/.claude/CLAUDE.md"
+      backup "$f"; { printf '\n'; emit_routing_block; } >>"$f"; ok "appended directive to $name"
     else
-      log "skipped — copy the block from README's 'Always-on routing' yourself"
+      log "skipped $name — copy the block from README's 'Always-on routing' yourself"
     fi
   else
-    ask_yn "Create ~/.claude/CLAUDE.md with the SOTA routing directive?" y \
-      && { mkdir -p "$(dirname "$f")"; emit_routing_block >"$f"; ok "created ~/.claude/CLAUDE.md"; }
+    ask_yn "Create $name with the SOTA routing directive?" y \
+      && { mkdir -p "$(dirname "$f")"; emit_routing_block >"$f"; ok "created $name"; }
   fi
   # Declining any prompt above is a valid outcome, not an error — return
   # success so `set -e` doesn't abort the installer before pre-commit setup
   # and the final instructions (2026-07-10 audit Q-MED-4).
+  return 0
+}
+
+setup_claude_md() {
+  # shellcheck disable=SC2088  # ~ here is display text shown to the user, not a path
+  setup_directive "$HOME/.claude/CLAUDE.md" "~/.claude/CLAUDE.md"
+}
+
+# The same managed block in every OTHER agent's global instruction file — but only
+# for an agent actually installed here (its home directory exists): creating
+# ~/.codex on a machine with no Codex would be clutter that looks like an install.
+# An existing file is appended to (after a .bak), never replaced; your content
+# outside the markers is kept, exactly as for CLAUDE.md. Paths per vendor docs,
+# fetched 2026-09-29 (docs/MULTI-AGENT.md):
+#   Copilot CLI + VS Code Agent Host  $COPILOT_HOME|~/.copilot/copilot-instructions.md
+#   Codex                             $CODEX_HOME|~/.codex/AGENTS.md
+#   Gemini CLI                        ~/.gemini/GEMINI.md
+# Cursor keeps User Rules in its settings UI, with no documented file — a hint only.
+mirror_directives() {
+  local any=0
+  if [ -d "$COPILOT_DIR" ]; then any=1; setup_directive "$COPILOT_DIR/copilot-instructions.md" "$COPILOT_DIR/copilot-instructions.md (Copilot)"; fi
+  if [ -d "$CODEX_DIR" ];   then any=1; setup_directive "$CODEX_DIR/AGENTS.md" "$CODEX_DIR/AGENTS.md (Codex)"; fi
+  if [ -d "$GEMINI_DIR" ];  then any=1; setup_directive "$GEMINI_DIR/GEMINI.md" "$GEMINI_DIR/GEMINI.md (Gemini CLI)"; fi
+  if [ -d "$HOME/.cursor" ]; then
+    any=1
+    chg "Cursor keeps global rules in its settings (Customize → Rules), not a file — paste the block from README's 'Always-on routing' there"
+  fi
+  [ "$any" -eq 1 ] || log "no other agent detected (~/.copilot, ~/.codex, ~/.gemini, ~/.cursor) — nothing to mirror"
+  # A directive naming a skill the agent cannot see is an instruction to fail.
+  if [ -n "$(detected_agents)" ] && [ ! -e "$AGENTS_TARGET/sota" ]; then
+    warn "the directive names the 'sota' skill, but $AGENTS_TARGET has no skills — Copilot CLI, Codex and Gemini CLI will not find it; re-run with --target all"
+  fi
   return 0
 }
 
@@ -539,8 +584,11 @@ maybe_setup_precommit() {
 }
 
 maybe_setup_routing() {
-  # personal install only; never for --project or --copy snapshots
-  [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ] || return 0
+  # personal install only; never for --project or a deliberate --copy snapshot. A
+  # copy forced by missing symlink support is still a personal install, so it keeps
+  # the offer — the directive and hook are written as real files either way.
+  [ "$TARGET" = "$HOME/.claude/skills" ] || return 0
+  [ "$USE_COPY" -eq 0 ] || [ "$LINK_FALLBACK" -eq 1 ] || return 0
   local go=0
   case "$DO_ROUTING" in
     1) section '🧭' 'Always-on routing'; go=1 ;;
@@ -556,6 +604,7 @@ maybe_setup_routing() {
   # valid outcome, so never let it abort the installer before pre-commit setup
   # and the final instructions (2026-07-10 audit Q-MED-4).
   setup_claude_md || true
+  mirror_directives || true
   setup_hook || true
   setup_update_reminder || true
   return 0
@@ -566,7 +615,10 @@ while [ $# -gt 0 ]; do
     --update)     DO_UPDATE=1 ;;
     --version)    DO_VERSION=1 ;;
     --copy)       USE_COPY=1 ;;
-    --project)    shift; [ $# -gt 0 ] || die "--project needs a directory"; TARGET="$1/.claude/skills" ;;
+    --project)    shift; [ $# -gt 0 ] || die "--project needs a directory"
+                  TARGET="$1/.claude/skills"; AGENTS_TARGET="$1/.agents/skills" ;;
+    --target)     shift; [ $# -gt 0 ] || die "--target needs claude|agents|all"; INSTALL_TARGET="$1" ;;
+    --target=*)   INSTALL_TARGET="${1#*=}" ;;
     --routing)    DO_ROUTING=1 ;;
     --no-verify)  DO_VERIFY=0 ;;
     --no-routing) DO_ROUTING=0 ;;
@@ -580,6 +632,10 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+case "$INSTALL_TARGET" in
+  auto|claude|agents|all) ;;
+  *) die "--target takes claude|agents|all (got: $INSTALL_TARGET)" ;;
+esac
 case "$COLOR_MODE" in
   auto|always|never) ;;
   *) die "--color takes always|never|auto (got: $COLOR_MODE)" ;;
@@ -614,48 +670,119 @@ if [ "$DO_UPDATE" -eq 1 ]; then
   fi
 fi
 
-mkdir -p "$TARGET"
-
-# --- link (or copy) every skill, idempotently --------------------------------
-section '🔗' 'Skills'
-linked=0; created=0
-for src in "$SKILLS_SRC"/*/; do
-  name="$(basename "$src")"
-  dest="$TARGET/$name"
-  [ -e "$dest" ] || [ -L "$dest" ] || created=$((created + 1))
-  if [ "$USE_COPY" -eq 1 ]; then
-    rm -rf "$dest"
-    cp -R "${src%/}" "$dest"
-  else
-    if [ -e "$dest" ] && [ ! -L "$dest" ]; then
-      # ln -sfn cannot replace a real directory — it would nest the link
-      # INSIDE it and leave the stale copy in place while we report success
-      # (the --copy → default-install switch). Ask, then replace for real.
-      if ask_yn "$name at $dest is a real directory (previous --copy install?) — replace it with a symlink?" y; then
-        rm -rf "$dest"
-      else
-        warn "kept $dest as-is — it is a snapshot and will NOT update; re-run with --copy to refresh it"
-        continue
-      fi
-    fi
-    ln -sfn "${src%/}" "$dest"
-  fi
-  linked=$((linked + 1))
-done
-
-# --- prune stale links: ours (point into this repo) but source now gone -------
-pruned=0
-if [ "$USE_COPY" -eq 0 ] && [ -d "$TARGET" ]; then
-  for dest in "$TARGET"/*; do
-    [ -L "$dest" ] || continue
-    tgt="$(readlink "$dest")"
-    case "$tgt" in
-      "$SKILLS_SRC"/*) [ -e "$tgt" ] || { rm -f "$dest"; pruned=$((pruned + 1)); chg "pruned stale link: $(basename "$dest")"; } ;;
-    esac
-  done
+# --- can this machine make a symlink at all? ---------------------------------
+# Git Bash and MSYS2 do NOT fail `ln -s` when a real symlink is unavailable: their
+# default (`winsymlinks:deepcopy`, msys2.org/docs/symlinks) makes a DEEP COPY and
+# exits 0. So on Windows without Developer Mode or Administrator the default install
+# became a stale snapshot, `git pull` stopped reaching it, and nothing said so —
+# field-reported 2026-09-29. Two fixes, both needed:
+#   1. ask the runtime for a NATIVE link and to fail rather than copy
+#      (`nativestrict`). Without this, even a machine that CAN make symlinks gets
+#      a copy, because deepcopy is the default whatever the privilege.
+#   2. probe once, and if no symlink results, say so loudly and copy on purpose,
+#      instead of copying by accident. The probe asserts `-L` on the result rather
+#      than trusting ln's exit status, which is exactly what deepcopy lies about.
+case "$(uname -s 2>/dev/null || true)" in
+  MINGW*|MSYS*) export MSYS="${MSYS:+$MSYS }winsymlinks:nativestrict" ;;
+  CYGWIN*)      export CYGWIN="${CYGWIN:+$CYGWIN }winsymlinks:nativestrict" ;;
+esac
+can_symlink() {
+  local d rc=1
+  d="$(mktemp -d 2>/dev/null)" || return 1
+  if mkdir "$d/t" && ln -s "$d/t" "$d/l" 2>/dev/null && [ -L "$d/l" ]; then rc=0; fi
+  rm -rf "$d"
+  return "$rc"
+}
+LINK_FALLBACK=0   # 1 = symlinks were wanted and are impossible here; copying instead
+if [ "$USE_COPY" -eq 0 ] && ! can_symlink; then
+  LINK_FALLBACK=1; USE_COPY=1
+  warn "this machine cannot create symlinks — COPYING the skills instead. A copy is a snapshot: 'git pull' will NOT update it, so re-run install.sh after every pull. On Windows, enable Developer Mode (Settings → System → For developers) or run as Administrator, then re-run install.sh to switch to live links."
 fi
 
-ok "linked $linked skill(s) into $TARGET ($created new, $pruned pruned)$([ "$USE_COPY" -eq 1 ] && echo ' [copied]')"
+# --- link (or copy) every skill, idempotently --------------------------------
+# install_into <skills-dir>: one destination. Called once for Claude Code's own
+# directory and, with --target agents|all (or a yes to the offer below), once more
+# for the cross-agent one — the same links fanned out, never a second source.
+install_into() {
+  local dir="$1" src name dest tgt linked=0 created=0 pruned=0 copy_note=""
+  mkdir -p "$dir"
+  for src in "$SKILLS_SRC"/*/; do
+    name="$(basename "$src")"
+    dest="$dir/$name"
+    [ -e "$dest" ] || [ -L "$dest" ] || created=$((created + 1))
+    if [ "$USE_COPY" -eq 1 ]; then
+      rm -rf "$dest"
+      cp -R "${src%/}" "$dest"
+    else
+      if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+        # ln -sfn cannot replace a real directory — it would nest the link
+        # INSIDE it and leave the stale copy in place while we report success
+        # (the --copy → default-install switch). Ask, then replace for real.
+        if ask_yn "$name at $dest is a real directory (previous --copy install?) — replace it with a symlink?" y; then
+          rm -rf "$dest"
+        else
+          warn "kept $dest as-is — it is a snapshot and will NOT update; re-run with --copy to refresh it"
+          continue
+        fi
+      fi
+      ln -sfn "${src%/}" "$dest"
+    fi
+    linked=$((linked + 1))
+  done
+
+  # prune stale links: ours (point into this repo) but source now gone. Only OUR
+  # links — ~/.agents/skills is shared by every agent on the machine.
+  if [ "$USE_COPY" -eq 0 ] && [ -d "$dir" ]; then
+    for dest in "$dir"/*; do
+      [ -L "$dest" ] || continue
+      tgt="$(readlink "$dest")"
+      case "$tgt" in
+        "$SKILLS_SRC"/*) [ -e "$tgt" ] || { rm -f "$dest"; pruned=$((pruned + 1)); chg "pruned stale link: $(basename "$dest")"; } ;;
+      esac
+    done
+  fi
+
+  [ "$USE_COPY" -eq 1 ] && copy_note=' [copied]'
+  [ "$LINK_FALLBACK" -eq 1 ] && copy_note=' [COPIED — symlinks unavailable; re-run after each git pull]'
+  ok "linked $linked skill(s) into $dir ($created new, $pruned pruned)$copy_note"
+}
+
+# --- which agents are on this machine? --------------------------------------
+# Only the path every non-Claude agent documents: ~/.agents/skills is listed as a
+# personal skills directory by Copilot CLI, Copilot in VS Code, Codex, Cursor and
+# Gemini CLI (vendor docs fetched 2026-09-29 — docs/MULTI-AGENT.md has the table and
+# URLs). Deliberately NOT ~/.copilot/skills as well: VS Code reads ~/.copilot,
+# ~/.claude AND ~/.agents, so a third copy of every skill buys nothing.
+# Copilot CLI, Codex and Gemini CLI do NOT read ~/.claude/skills, so they are the
+# ones whose presence makes the offer; Cursor and VS Code already see ~/.claude.
+detected_agents() {
+  local out=""
+  [ -d "$COPILOT_DIR" ] && out="$out Copilot"
+  [ -d "$CODEX_DIR" ]   && out="$out Codex"
+  [ -d "$GEMINI_DIR" ]  && out="$out Gemini"
+  printf '%s' "${out# }"
+}
+
+section '🔗' 'Skills'
+case "$INSTALL_TARGET" in
+  claude|all) install_into "$TARGET" ;;
+esac
+want_agents=0
+case "$INSTALL_TARGET" in
+  agents|all) want_agents=1 ;;
+  auto)
+    install_into "$TARGET"
+    found="$(detected_agents)"
+    if [ -n "$found" ] && [ "$TARGET" = "$HOME/.claude/skills" ]; then
+      if [ "$INTERACTIVE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
+        ask_yn "Found $found, which do not read ~/.claude/skills — also link the skills into $AGENTS_TARGET (read by Copilot CLI, VS Code, Codex, Cursor, Gemini CLI)?" y && want_agents=1
+      else
+        # shellcheck disable=SC2088  # ~ is display text in the hint, not a path
+        chg "found $found, which do not read ~/.claude/skills — re-run with --target all to link $AGENTS_TARGET too"
+      fi
+    fi ;;
+esac
+if [ "$want_agents" -eq 1 ]; then install_into "$AGENTS_TARGET"; fi
 
 # --- profile convenience (personal install only) -----------------------------
 if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then

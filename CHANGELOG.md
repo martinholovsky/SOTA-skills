@@ -5,6 +5,38 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`install.sh --target claude|agents|all`** links the skills into `~/.agents/skills`
+  too. That is the one personal skills directory Copilot CLI, Copilot in VS Code, Codex,
+  Cursor and Gemini CLI all document (vendor docs fetched 2026-09-29,
+  `docs/MULTI-AGENT.md`). The default stays Claude-only. When the installer finds
+  `~/.copilot`, `~/.codex` or `~/.gemini` it offers the fan-out, accepts it under
+  `--yes`, and prints a hint on a non-interactive run.
+- **`--routing` mirrors the directive** into `copilot-instructions.md`, `~/.codex/AGENTS.md`
+  and `~/.gemini/GEMINI.md`, for each agent actually installed. It follows the same contract
+  as `CLAUDE.md`: `.bak` first, appended to your content, refreshed in place.
+- **`verify-setup.sh` checks 1e, 1f and 2b:**
+  - **1e** — the install is live links, not copies.
+  - **1f** — each detected agent reaches `~/.agents/skills`.
+  - **2b** — each detected agent's global file carries the directive.
+
+  Each has a negative-control probe, and the part-B fixture now sets its own `$HOME`, so
+  the machine's real agent directories never reach a probe.
+
+### Fixed
+
+- **A Windows install silently became a snapshot.** Git Bash's `ln -s` deep-copies and
+  exits 0 when Windows refuses a symlink (`winsymlinks:deepcopy`), so `git pull` stopped
+  reaching the skills with no warning. The installer now:
+  - asks for `winsymlinks:nativestrict`;
+  - probes once, asserting `-L` on the result;
+  - copies deliberately with a warning when no link results.
+
+  Tested on macOS with a copying `ln` shim; **not yet run on Windows**.
+
 ## [1.44.4] - 2026-09-27
 
 A patch: no new skill, script or command. The full-library sweep completes, a version pin on
