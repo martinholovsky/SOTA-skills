@@ -5,7 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.45.0] - 2026-09-29
+
+A minor: the installer reaches agents other than Claude Code. A field report found a
+`~/.claude` install invisible to Copilot CLI, and a Windows install that had silently become a
+copy.
+
+**Front door checked:** ~/.agents/skills · MULTI-AGENT.md · Git Bash
 
 ### Added
 
@@ -10672,6 +10678,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.45.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.45.0
 [1.44.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.4
 [1.44.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.3
 [1.44.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.2
