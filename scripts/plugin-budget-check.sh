@@ -40,31 +40,27 @@ CLAUDE_HOME="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 settings="$CLAUDE_HOME/settings.json"
 data="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/sota-skills-data}"
 
-# Sum `- name: description` the way the listing counts it. awk only: no jq, no python3 —
-# this runs on every session start on machines we do not control.
-measure() {
-  # shellcheck disable=SC2016  # this is an awk program, not a shell expansion
-  find -L "$@" -maxdepth 4 -name SKILL.md 2>/dev/null | tr '\n' '\0' | xargs -0 awk '
-    FNR == 1 {
-      if (seen) total += len + nlen + 6
-      seen = 1; len = 0; fm = 0; ind = 0
-      n = FILENAME; sub(/\/SKILL\.md$/, "", n); sub(/.*\//, "", n); nlen = length(n)
-    }
-    /^---[[:space:]]*$/ { fm = !fm; next }
-    fm && /^description:/ { ind = 1; sub(/^description:[[:space:]]*/, ""); gsub(/^[[:space:]]+|[[:space:]]+$/, ""); len += length($0); next }
-    fm && ind && /^[[:space:]]/ { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); len += length($0) + 1; next }
-    fm { ind = 0 }
-    END { total += len + nlen + 6; print total + 0 }
-  ' 2>/dev/null
-}
-
-dirs=""
-for d in "$CLAUDE_HOME/skills" "$CLAUDE_HOME/plugins"; do
-  [ -d "$d" ] && dirs="$dirs $d"
-done
-[ -n "$dirs" ] || exit 0
-# shellcheck disable=SC2086  # word splitting is intended: a list of directories
-visible="$(measure $dirs)"
+# WHAT is measured comes from skill-listing-sources.sh, shared with verify-setup.sh and
+# install.sh. This script used to walk `$CLAUDE_HOME/skills` and `$CLAUDE_HOME/plugins`
+# itself, with `find -maxdepth 4` — which reaches no plugin skill at all (the shallowest
+# sits at depth 5), and counted every synced account set rather than the signed-in one.
+# Field-reported 2026-09-29: it printed ~66.7k for a listing whose on-disk half was ~88k,
+# because the sota-skills plugin installed beside a clone doubled the library unseen.
+here="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+lister="$here/skill-listing-sources.sh"
+[ -x "$lister" ] || exit 0
+# The hook's stdin JSON carries the session's `model` (optional per the hooks docs —
+# omitted after /clear, for one). Hand it to the lister, which uses a `[1m]` suffix as
+# proof of a 1M window. Read stdin only when it is not a terminal: run by hand, `cat`
+# would wait forever.
+session_model=""
+if [ ! -t 0 ]; then
+  session_model="$(sed -n 's/.*"model"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' 2>/dev/null | head -1)"
+fi
+summary="$(SOTA_SESSION_MODEL="$session_model" "$lister" 2>/dev/null)"
+val() { printf '%s\n' "$summary" | sed -n "s/^$1=//p" | head -1; }
+visible="$(val total)"
+dup="$(val duplicate_library)"
 [ -n "${visible:-}" ] && [ "$visible" -gt 0 ] 2>/dev/null || exit 0
 
 # +25% for the bundled skills no script can enumerate — they are compiled into the binary,
@@ -78,19 +74,48 @@ frac="$(sed -n 's/.*"skillListingBudgetFraction"[[:space:]]*:[[:space:]]*\([0-9.
 # not pessimistic: this warns exactly when the shipped default is in force.
 [ -n "${frac:-}" ] || frac="0.01"
 
-# Size against a 200k context: the documented fallback, the common case, and the only
-# one a hook can assume. A fraction that fits there fits a larger window too.
-budget="$(awk -v f="$frac" 'BEGIN { printf "%d", 200000 * 4 * f }')"
-[ "$need" -gt "$budget" ] 2>/dev/null || exit 0
+# Size against the window this machine actually runs, when anything knows it (the lister
+# reads, in order: the window our status line last observed, CLAUDE_CODE_DISABLE_1M_CONTEXT,
+# a `[1m]` model). Until 2026-09-29 this assumed 200K unconditionally, so a 1M-context
+# user — whose budget is five times larger — was told their skills were being truncated
+# when nothing was. Unknown still means 200K: the smaller window, so it errs to warning.
+window="$(val window)"; case "$window" in ''|*[!0-9]*) window=200000 ;; esac
+wsrc="$(val window_source)"; [ -n "$wsrc" ] || wsrc=unknown
+budget="$(awk -v f="$frac" -v w="$window" 'BEGIN { printf "%d", w * 4 * f }')"
+case "$wsrc" in
+  observed) wnote="your context window, as the status line last saw it" ;;
+  disabled) wnote="CLAUDE_CODE_DISABLE_1M_CONTEXT=1 caps every model at 200K" ;;
+  model)    wnote="your model ($(val window_model)) runs the 1M window" ;;
+  *)        wnote="window UNKNOWN, so the smaller 200K is assumed — on a 1M-context model the budget is 5x this and this notice does not apply" ;;
+esac
+over=0; [ "$need" -gt "$budget" ] 2>/dev/null && over=1
+# Silent only when it fits AND the library is installed once. A duplicate is worth saying
+# even when it fits: it spends the budget twice and is fixed by removing a copy, not by
+# raising a setting — the opposite remedy to the one below.
+[ "$over" -eq 1 ] || [ -n "$dup" ] || exit 0
 
 # Speak once per (need, frac) pair: silent again once it is fixed, and it speaks again if
 # the corpus grows. Nagging every session is how a real warning gets tuned out.
 mkdir -p "$data" 2>/dev/null || true
-marker="$data/.budget-notice-$need-$frac"
+marker="$data/.budget-notice-$need-$frac-${dup:-once}"
 [ -e "$marker" ] && exit 0
 : > "$marker" 2>/dev/null || true
 
-want="$(awk -v n="$need" 'BEGIN { f = (n / 800000 * 100); f = int(f) + (f > int(f)); f = f / 100
+if [ -n "$dup" ]; then
+  cat <<MSG
+[sota-skills — relay this to the user now, briefly, then continue with their request.]
+SOTA-skills is installed TWICE: as the '$dup' plugin and as a personal copy in
+$CLAUDE_HOME/skills. Every skill is listed twice, so the library costs double its share of
+the skill-listing budget, and two versions can disagree about the same rule.
+
+Offer to keep one: '/plugin uninstall $dup@<marketplace>' keeps the clone (live on git pull);
+or remove the ~/.claude/skills/sota* links to keep the plugin (updates with the plugin).
+MSG
+  [ "$over" -eq 1 ] || exit 0
+  echo
+fi
+
+want="$(awk -v n="$need" -v w="$window" 'BEGIN { f = (n / (w * 4) * 100); f = int(f) + (f > int(f)); f = f / 100
                                   if (f < 0.02) f = 0.02; if (f > 0.10) f = 0.10; printf "%.2f", f }')"
 cat <<MSG
 [sota-skills — relay this to the user now, briefly, then continue with their request.]
@@ -99,7 +124,8 @@ some skills are being listed as a bare name with NO description. Those cannot be
 on what they do — the model can only reach them if something names them explicitly.
 
   descriptions found   ~${need} characters (incl. an allowance for built-in skills)
-  listing budget       ${budget} characters at a 200k context (skillListingBudgetFraction=${frac})
+  listing budget       ${budget} characters at a ${window}-token context (skillListingBudgetFraction=${frac})
+                       (${wnote})
 
 Claude Code logs this to ~/.claude/debug/ and shows it nowhere, which is why it goes unnoticed.
 

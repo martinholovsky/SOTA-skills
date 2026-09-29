@@ -424,51 +424,57 @@ setup_update_reminder() {
 # still OFFERED and never imposed: it writes to the user's GLOBAL settings and reserves a
 # slice of every context window, which is their call, not ours.
 setup_listing_budget() {
-  local s="$HOME/.claude/settings.json" tmp need frac cur
+  local s="$HOME/.claude/settings.json" tmp need frac cur dup
   command -v jq >/dev/null 2>&1 || { warn "jq not found — skipping skill-listing budget"; return; }
   [ -d "$TARGET" ] || return 0
 
-  # Measure, never assume: sum the real descriptions of what is actually linked, plus
-  # each entry's "- name: " overhead, the way the listing itself counts them.
-  # Cross-checked against an independent implementation before being trusted: the first
-  # draft read 17,402 against a real 38,283 because `/^---/ { next }` fires on line 1 and
-  # skipped the per-file bookkeeping entirely — an under-report with no symptom. This one
-  # reads 38,507 vs 38,283 (+0.58%, the `>-` block indicator and folded-scalar join
-  # spacing), and errs HIGH, which is the safe direction when sizing a budget.
-  need="$(awk '
-    FNR == 1 {
-      if (seen) total += len + nlen + 6
-      seen = 1; len = 0; fm = 0; ind = 0
-      n = FILENAME; sub(/\/SKILL\.md$/, "", n); sub(/.*\//, "", n); nlen = length(n)
-    }
-    /^---[[:space:]]*$/ { fm = !fm; next }
-    fm && /^description:/ {
-      ind = 1; sub(/^description:[[:space:]]*/, ""); gsub(/^[[:space:]]+|[[:space:]]+$/, "")
-      len += length($0); next
-    }
-    fm && ind && /^[[:space:]]/ {
-      gsub(/^[[:space:]]+|[[:space:]]+$/, ""); len += length($0) + 1; next
-    }
-    fm { ind = 0 }
-    END { total += len + nlen + 6; print total + 0 }
-  ' "$TARGET"/*/SKILL.md 2>/dev/null)"
+  # Measure, never assume — and measure what the LISTING holds, not what this run linked.
+  # skill-listing-sources.sh is shared with verify-setup.sh and the plugin hook. Until
+  # 2026-09-29 this summed "$TARGET"/*/SKILL.md alone, so a plugin copy of the same library,
+  # the synced claude.ai skills and every other plugin cost nothing here; field-reported
+  # the day it was fixed, on a machine where the listing held the library twice.
+  local lister="$REPO/scripts/skill-listing-sources.sh" sum n_sk window wsrc budget cur_eff fracw
+  [ -x "$lister" ] || return 0
+  sum="$("$lister" 2>/dev/null || true)"
+  need="$(printf '%s\n' "$sum" | sed -n 's/^total=//p' | head -1)"
+  n_sk="$(printf '%s\n' "$sum" | sed -n 's/^skills=//p' | head -1)"
   [ -n "${need:-}" ] && [ "$need" -gt 0 ] 2>/dev/null || return 0
-  # `find -L`, not `find`: an install links each skill as a SYMLINK into the checkout,
-  # and find does not follow those without -L. The first draft printed "0 skills" on
-  # every real install while the awk glob above (globs do follow) read 38,507.
+  need=$((need * 125 / 100))   # +25% for built-in skills, compiled in and not on disk
+  dup="$(printf '%s\n' "$sum" | sed -n 's/^duplicate_library=//p' | head -1)"
+  [ -z "$dup" ] || warn "the library is installed TWICE (the '$dup' plugin and these links) — every skill is listed twice; keep one: /plugin uninstall $dup@<marketplace>"
 
-  # Size against a 200k context — the documented fallback and the common case. A
-  # fraction that fits there also fits a larger window, because the budget scales with
-  # it. +25% headroom for bundled and plugin skills we cannot enumerate from here.
-  frac="$(jq -n --argjson n "$need" '(($n * 1.25) / 800000 * 100 | ceil) / 100 | if . < 0.02 then 0.02 elif . > 0.10 then 0.10 else . end')"
+  # The budget is `contextTokens x 4 x fraction`, so it depends on the window — which only
+  # a live session knows. The lister's evidence, in order: what our status line last
+  # observed, CLAUDE_CODE_DISABLE_1M_CONTEXT, a `[1m]` model; else unknown -> 200K.
+  window="$(printf '%s\n' "$sum" | sed -n 's/^window=//p' | head -1)"
+  case "$window" in ''|*[!0-9]*) window=200000 ;; esac
+  wsrc="$(printf '%s\n' "$sum" | sed -n 's/^window_source=//p' | head -1)"
   cur="$(jq -r '.skillListingBudgetFraction // empty' "$s" 2>/dev/null || true)"
+  cur_eff="${cur:-0.01}"
+  budget="$(jq -n --argjson f "$cur_eff" --argjson w "$window" '$w * 4 * $f | floor')"
+  frac="$(jq -n --argjson n "$need" '($n / 800000 * 100 | ceil) / 100 | if . < 0.02 then 0.02 elif . > 0.10 then 0.10 else . end')"
+  fracw="$(jq -n --argjson n "$need" --argjson w "$window" '($n / ($w * 4) * 100 | ceil) / 100 | if . < 0.01 then 0.01 elif . > 0.10 then 0.10 else . end')"
+
+  printf '  %s%s %s%s\n' "$C_DIM" "$G_INFO" \
+    "$(printf '%s skills need ~%s chars of listing; your budget is %s at a %s-token context (%s)' \
+       "${n_sk:-?}" "$need" "$budget" "$window" \
+       "$(case "$wsrc" in observed) echo 'as your status line last observed it' ;; disabled) echo 'CLAUDE_CODE_DISABLE_1M_CONTEXT=1' ;; model) echo 'your model setting carries [1m]' ;; *) echo 'window unknown, so 200K is assumed' ;; esac)")" "$C_RESET"
+
+  if [ "$need" -le "$budget" ]; then
+    if [ "$wsrc" = unknown ]; then
+      log "fits — skillListingBudgetFraction ${cur:-default 0.01} is enough"
+    else
+      log "fits at your ${window}-token context; a 200K-context session would need ~$frac — set it only if you switch models"
+    fi
+    return 0
+  fi
+  # Over budget. At a KNOWN window, size for it; at an unknown one, size for 200K, which
+  # also fits any larger window because the budget scales with it.
+  [ "$wsrc" = unknown ] || frac="$fracw"
   if [ -n "$cur" ] && jq -n --argjson a "$cur" --argjson b "$frac" -e '$a >= $b' >/dev/null 2>&1; then
     log "skillListingBudgetFraction already $cur (needs ~$frac) — leaving it alone"; return
   fi
-
-  printf '  %s%s %s%s\n' "$C_DIM" "$G_INFO" \
-    "$(printf '%s skills need ~%s chars of listing; the default budget is 8,000 on a 200k context' \
-       "$(find -L "$TARGET" -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')" "$need")" "$C_RESET"
+  warn "over budget by $((need - budget)) chars — the least-used skills are listed with NO description, so they cannot be auto-selected"
   ask_yn "Set skillListingBudgetFraction=$frac so every skill keeps its description (reserves ~$frac of each context window, every turn)?" y || {
     log "left unset — expect skills beyond the first few to be listed name-only"; return; }
 
