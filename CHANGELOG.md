@@ -5,6 +5,38 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The skill-listing budget checks measured the wrong thing.** This was field-reported
+  2026-09-29 from a machine where the library was installed twice, as the `sota-skills`
+  plugin (1.44.3) beside a clone (1.45.0). Three defects:
+  - `plugin-budget-check.sh` and `verify-setup.sh` check 1b walked directories with
+    `find -maxdepth 3/4`, which reaches **no** plugin skill: the shallowest of 250 sits at
+    depth 5. The duplicate therefore cost nothing on paper.
+  - Both counted every synced claude.ai account set (two, 27 skills) instead of the
+    signed-in one (14).
+  - `install.sh` measured only the skills it had just linked.
+
+  The result: 1b printed **PASS, 38,642 within 56,000** while the listing held about 88k
+  on disk. The three now share `scripts/skill-listing-sources.sh`, which reads what the
+  engine reads: personal skills, the account's synced set, and each enabled plugin's
+  `installPath` from `installed_plugins.json`. It matched a live session's own listing
+  exactly: 65 skills.
+- **The budget was always sized for a 200K window.** A 1M-context session has five times
+  the budget, so it was warned about truncation that wasn't happening. The checks now use
+  the window the status line last observed, `CLAUDE_CODE_DISABLE_1M_CONTEXT`, or a `[1m]`
+  model, and otherwise say the window is **unknown** and assume 200K.
+
+### Added
+
+- **`verify-setup.sh` check 1g** reports the library installed twice. The plugin hook and
+  `install.sh` warn about the same thing, since the fix is removing a copy, not raising the
+  budget.
+- **`statusline.sh` records the context window** in `~/.claude/sota-skills-data/`.
+- Negative-control probes for 1b (an enabled plugin's skills overrun the budget) and 1g.
+
 ## [1.45.0] - 2026-09-29
 
 A minor: the installer reaches agents other than Claude Code. A field report found a

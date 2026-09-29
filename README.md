@@ -867,12 +867,27 @@ What is genuinely lost is *direct* auto-selection of a domain skill when the rou
 fired, which is most likely for the skills you have never used.
 
 **`scripts/install.sh` offers to fix this**, on install and on `--update`, in the same
-shape as everything else it touches: it **measures** your actually-installed descriptions
-rather than assuming a number, sizes the fraction against a 200k context (a fraction that
-fits there also fits a larger window) with headroom for skills from other sources, asks
-before writing, backs the file up, and writes *through* a symlink so dotfiles stay in
-charge. It never lowers a value you already set. On this library's 42 skills that works out
-to about **0.07**.
+shape as everything else it touches.
+- **It measures what the listing actually holds**, not what the installer just linked:
+  personal skills, your account's synced claude.ai skills, every *enabled* plugin, and the
+  project's own. `scripts/skill-listing-sources.sh` does this for all three checks
+  (installer, `verify-setup.sh`, the plugin hook). It adds 25% for the built-in skills,
+  which are compiled in and not on disk.
+- **It sizes the budget for the context window you actually run.** The budget scales with
+  the window, and 1M context gives five times the budget of 200K. Only a live session
+  knows the window exactly, so the checks use, in order:
+  - the window `scripts/statusline.sh` last **observed**, which it records;
+  - `CLAUDE_CODE_DISABLE_1M_CONTEXT=1`, which forces 200K;
+  - a `[1m]` model setting.
+
+  Otherwise the window is **unknown** and 200K is assumed. The model name alone can't rule
+  1M out, because several current models run 1M natively with no suffix.
+- **When it fits, it does nothing and says so.** When it doesn't, it asks before writing,
+  backs the file up, writes *through* a symlink so dotfiles stay in charge, and never
+  lowers a value you already set. For this library's 42 skills alone that is about
+  **0.07** at 200K, or **0.02** at a known 1M window.
+- **It warns if the library is installed twice** (a clone *and* the plugin). Every skill is
+  then listed twice, and the fix is to remove one copy, not to raise the budget.
 
 To set it by hand instead, in `~/.claude/settings.json`:
 
@@ -889,14 +904,15 @@ cap — no description here exceeds it, so it does not apply.
 `["userSettings","projectSettings","localSettings","flagSettings","policySettings"]` — there
 is **no plugin scope** — and a plugin contributes skills, hooks, agents, commands and MCP
 servers only. So the plugin ships a `SessionStart` hook
-(`scripts/plugin-budget-check.sh`) that measures your installed descriptions, compares them
-against the budget, and **says so with the numbers and the exact setting** when they do not
-fit. It does not write your settings: that reserves a share of every context window, so it is
+(`scripts/plugin-budget-check.sh`). It measures the same sources as the installer and
+compares them against the budget at your session's window; a `[1m]` model in the hook's
+input counts as proof of 1M. It **says so with the numbers, the window it assumed and the
+exact setting** when they do not fit, and separately when the library is installed twice. It does not write your settings: that reserves a share of every context window, so it is
 your call. It speaks once per (size, fraction) pair — silent once fixed, and audible again if
 you install more skills.
 
 **To check your own install:** `scripts/verify-setup.sh` reports it as check **1b**, with the
-arithmetic (`descriptions total N chars vs an M-char budget…`). By hand: look at the skill
+arithmetic, the per-source breakdown and the window it used, and a double install as **1g**. By hand: look at the skill
 list Claude is given and count entries that are a bare name with no text after the colon.
 Any such skill is installed, correct, and unreachable except by name.
 
@@ -1263,8 +1279,11 @@ Opus 4.8 │ ctx 63% │ my-service ⎇ main │ skills▸ code-security, testin
 
 Claude Code's status-line input doesn't expose loaded skills, but it passes the
 transcript path; the script reads back the `Skill` invocations recorded there,
-falling back to a count of installed skills before any are used. Wire it up in
-`settings.json` (requires `jq`):
+falling back to a count of installed skills before any are used. It also records the
+context window Claude Code reports (`context_window.context_window_size`) in
+`~/.claude/sota-skills-data/context-window`, rewriting it only when the value changes. That
+is the one exact source for the skill-listing budget checks, since nothing outside a live
+session can know the window. Wire it up in `settings.json` (requires `jq`):
 
 ```json
 "statusLine": { "type": "command", "command": "/path/to/SOTA-skills/scripts/statusline.sh" }

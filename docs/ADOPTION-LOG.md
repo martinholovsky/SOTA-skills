@@ -7365,3 +7365,32 @@ agent reported them. Table, URLs and quotes are in [MULTI-AGENT.md](MULTI-AGENT.
 - whether `COPILOT_HOME` moves the skills directory;
 - the Windows form of `~`;
 - Antigravity CLI's skill paths.
+
+## 2026-09-29 — field report II: a budget notice with the wrong numbers, and a library installed twice
+
+Source: the operator, opening a session in another project. The plugin's SessionStart hook
+said the descriptions totalled ~66.7k against a 56k budget and suggested 0.09. The operator
+then asked for the checks to learn the user's real context window. **Every number below was
+re-measured on that machine this session**, and the lister was checked against the live
+session's own skill list.
+
+| idea | verdict | landed in |
+|---|---|---|
+| investigate the notice | **adopted — the conclusion was right and every input was wrong.** 66,673 = 53,339 × 1.25: 42 clone skills plus **two** synced account sets (27; only 14 load). It missed all 250 plugin `SKILL.md` files (`-maxdepth 4`, shallowest at depth 5), including the `sota-skills` plugin duplicating the clone. The real on-disk listing was ~88k; the suggested 0.09 would not have fitted | `scripts/skill-listing-sources.sh`, shared by `plugin-budget-check.sh`, `verify-setup.sh` 1b and `install.sh` · unreleased |
+| report a double install | **adopted** — its own row, because the remedy is the opposite of the budget's (remove a copy, do not raise a setting) | `verify-setup.sh` 1g, the hook, `install.sh` · unreleased |
+| tell the user their context window and whether they are in trouble | **adopted with a correction** — no script can know the window outside a live session. The hook gets `model` at most (code.claude.com/docs/en/hooks) and the installer gets nothing. A model string can prove 1M (`[1m]`) but not rule it out: several current models run 1M natively (docs/en/model-config). So the order is: what `statusline.sh` last **observed** (`context_window.context_window_size`, now recorded), then `CLAUDE_CODE_DISABLE_1M_CONTEXT`, then `[1m]`, then **unknown**, said as such, with 200K assumed. No model→window table, because it would be wrong at the next release | `statusline.sh`, the lister's `context_window` · unreleased |
+
+**Reproduced rather than taken on trust:**
+- the 66,673 figure (the hook's own awk, re-run);
+- the plugin depths (`find -L ~/.claude/plugins -name SKILL.md`: 250, depths 5–10);
+- which synced set loads (`synced/<organizationUuid>_<accountUuid>` from `~/.claude.json`, the 14-skill set this session lists);
+- the lister's 65 skills against the live listing;
+- the plugin prefix cost (24 chars for 2 skills = 2 × `sota-skills:`).
+
+**What the fixed checks said on the reporter's machine**, after the plugin was uninstalled:
+the observed 1M window gives a 280,000-char budget for ~61.5k, so it passes. The original
+notice was a false alarm on the window alone, even before the duplicate.
+
+**Unverified:**
+- whether the hook's `model` field carries the `[1m]` suffix (the docs example shows none);
+- the size of the built-in skills, still covered by the +25% allowance rather than counted.

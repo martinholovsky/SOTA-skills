@@ -207,36 +207,62 @@ fi
 # INFO-only and never fatal: the real budget depends on the model's context window
 # at runtime, which this script cannot know, and the user may have set the fraction
 # deliberately. It reports the arithmetic and lets the operator judge.
-listing_need=0
-for d in $skill_dirs; do
-  n="$(find -L "$d" -maxdepth 3 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
-  [ "${n:-0}" -gt 0 ] || continue
-  # shellcheck disable=SC2016  # awk program, not a shell expansion
-  add="$(find -L "$d" -maxdepth 3 -name SKILL.md -exec awk '
-    FNR == 1 {
-      if (seen) total += len + nlen + 6
-      seen = 1; len = 0; fm = 0; ind = 0
-      nm = FILENAME; sub(/\/SKILL\.md$/, "", nm); sub(/.*\//, "", nm); nlen = length(nm)
-    }
-    /^---[[:space:]]*$/ { fm = !fm; next }
-    fm && /^description:/ { ind = 1; sub(/^description:[[:space:]]*/, ""); gsub(/^[[:space:]]+|[[:space:]]+$/, ""); len += length($0); next }
-    fm && ind && /^[[:space:]]/ { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); len += length($0) + 1; next }
-    fm { ind = 0 }
-    END { total += len + nlen + 6; print total + 0 }
-  ' {} + 2>/dev/null)"
-  listing_need=$((listing_need + ${add:-0}))
-done
+#
+# WHAT is measured comes from skill-listing-sources.sh (shared with the plugin hook and
+# install.sh): personal skills, the signed-in account's synced set, each ENABLED plugin's
+# install path, and the project's own. This check used to walk $skill_dirs with
+# `find -maxdepth 3`, which reaches no plugin skill at all, and on 2026-09-29 it printed
+# "38,642 chars, within the 56,000-char budget — PASS" on a machine whose listing held the
+# library twice (a clone plus the sota-skills plugin) and ran ~88k before built-ins.
+# PASS now needs the +25% built-in allowance to fit too, as the hook requires: built-in
+# skills are compiled into the binary, so the on-disk figure alone is always optimistic.
+listing_need=0; listing_dup=""; listing_breakdown=""; listing_window=200000; listing_wsrc=unknown
+lister="${LIB_ROOT:+$LIB_ROOT/scripts/skill-listing-sources.sh}"
+if [ -n "$lister" ] && [ -x "$lister" ]; then
+  listing_sum="$("$lister" 2>/dev/null || true)"
+  listing_need="$(printf '%s\n' "$listing_sum" | sed -n 's/^total=//p' | head -1)"
+  listing_dup="$(printf '%s\n' "$listing_sum" | sed -n 's/^duplicate_library=//p' | head -1)"
+  w="$(printf '%s\n' "$listing_sum" | sed -n 's/^window=//p' | head -1)"
+  case "$w" in ''|*[!0-9]*) ;; *) listing_window="$w" ;; esac
+  listing_wsrc="$(printf '%s\n' "$listing_sum" | sed -n 's/^window_source=//p' | head -1)"
+  listing_breakdown="$(printf '%s\n' "$listing_sum" | sed -n 's/^\([a-z-]*\)_chars=\(.*\)/\1 \2/p' | sort | tr '\n' ',' | sed 's/,$//; s/,/, /g')"
+fi
+listing_need="${listing_need:-0}"
 cfg_frac="$(jq -r '.skillListingBudgetFraction // empty' "$CLAUDE_HOME/settings.json" 2>/dev/null || true)"
 eff_frac="${cfg_frac:-0.01}"
-budget_200k="$(awk -v f="$eff_frac" 'BEGIN { printf "%d", 200000 * 4 * f }')"
-if [ "$listing_need" -eq 0 ]; then
+# The budget scales with the context window, and only a live session knows that. The
+# lister's best evidence, in order: the window our status line last observed,
+# CLAUDE_CODE_DISABLE_1M_CONTEXT, a `[1m]` model; otherwise 200K, the smaller one.
+listing_budget="$(awk -v f="$eff_frac" -v w="$listing_window" 'BEGIN { printf "%d", w * 4 * f }')"
+case "$listing_wsrc" in
+  observed) wnote="${listing_window}-token context, as your status line last observed it" ;;
+  disabled) wnote="200K context: CLAUDE_CODE_DISABLE_1M_CONTEXT=1" ;;
+  model)    wnote="1M context: your model setting carries [1m]" ;;
+  *)        wnote="200K context ASSUMED — window unknown (a 1M model has 5x this budget; scripts/statusline.sh records the real one)" ;;
+esac
+listing_est=$((listing_need * 125 / 100))
+if [ -z "$lister" ] || [ ! -x "$lister" ]; then
+  row "INFO" "1b. listing budget" "scripts/skill-listing-sources.sh not found beside this script — cannot measure"
+elif [ "$listing_need" -eq 0 ]; then
   row "INFO" "1b. listing budget" "no SKILL.md descriptions found to measure — nothing to report"
-elif [ "$listing_need" -le "$budget_200k" ]; then
+elif [ "$listing_est" -le "$listing_budget" ]; then
   row "PASS" "1b. listing budget" \
-    "descriptions total ${listing_need} chars, within the ${budget_200k}-char budget at a 200k context (fraction ${eff_frac})"
+    "~${listing_est} chars incl. a 25% built-in allowance (on disk ${listing_need}: ${listing_breakdown}), within the ${listing_budget}-char budget (fraction ${eff_frac}; ${wnote})"
 else
   row "INFO" "1b. listing budget" \
-    "descriptions total ${listing_need} chars vs a ${budget_200k}-char budget at a 200k context (fraction ${eff_frac}) — over by $((listing_need - budget_200k)); the lowest-USED skills will be listed name-only, with no trigger text. Raise skillListingBudgetFraction (scripts/install.sh offers this) or disable skills you do not use"
+    "~${listing_est} chars incl. a 25% built-in allowance (on disk ${listing_need}: ${listing_breakdown}) vs a ${listing_budget}-char budget (fraction ${eff_frac}; ${wnote}) — over by $((listing_est - listing_budget)); the lowest-USED skills will be listed name-only, with no trigger text. Raise skillListingBudgetFraction (scripts/install.sh offers this) or disable skills you do not use"
+fi
+
+# --- 1g. the library is installed ONCE ---------------------------------------
+# A clone link AND the sota-skills plugin: every skill listed twice, the library's
+# budget share doubled, and two versions that can disagree about one rule. The fix is
+# to remove a copy, not to raise the budget — which is why it is its own row rather
+# than a line inside 1b. Field-reported 2026-09-29 (plugin 1.44.3 beside a 1.45.0 clone).
+if [ -n "$listing_dup" ]; then
+  row "PARTIAL" "1g. library installed once" \
+    "installed twice — the '$listing_dup' plugin AND personal/project links; keep one: '/plugin uninstall $listing_dup@<marketplace>' keeps the clone"
+else
+  row "PASS" "1g. library installed once" "no plugin copy beside a personal/project one"
 fi
 
 # Always-on routing is THREE layers; report which of them are actually present.

@@ -26,15 +26,32 @@ fi
 
 # one jq pass extracts every field, joined by a unit separator (0x1F) — a
 # non-whitespace delimiter so `read` preserves empty fields (e.g. absent ctx)
-IFS=$'\037' read -r model ctx cwd transcript <<EOF
+IFS=$'\037' read -r model ctx cwd transcript ctxsize <<EOF
 $(printf '%s' "$input" | jq -r '[
   (.model.display_name // .model.id // "?"),
   (if .context_window.used_percentage then (.context_window.used_percentage | floor | tostring) else "" end),
   (.workspace.current_dir // .cwd // ""),
-  (.transcript_path // "")
+  (.transcript_path // ""),
+  (.context_window.context_window_size // "" | tostring)
 ] | join("")' 2>/dev/null)
 EOF
 [ -n "$model" ] || model="?"
+
+# Remember the context window this machine actually runs. Nothing outside a live
+# session can know it: the SessionStart hook gets a model id at most, the installer and
+# verify-setup get nothing, and a model string cannot rule 1M OUT (Sonnet 5+, Opus 4.7+
+# and Fable run 1M natively with no `[1m]` suffix — code.claude.com/docs/en/model-config).
+# The status line is the one place Claude Code hands over the exact number, so the
+# skill-listing budget checks read it back from here. Written only when it changes, and
+# never allowed to fail the line.
+case "$ctxsize" in
+  ''|*[!0-9]*) ;;
+  *) cw_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sota-skills-data"
+     cw_file="$cw_dir/context-window"
+     if [ "$(cut -d' ' -f1 "$cw_file" 2>/dev/null || true)" != "$ctxsize" ]; then
+       { mkdir -p "$cw_dir" && printf '%s %s\n' "$ctxsize" "$(date +%s)" > "$cw_file"; } 2>/dev/null || true
+     fi ;;
+esac
 
 # current branch (best-effort; never fail the line on it)
 branch=""

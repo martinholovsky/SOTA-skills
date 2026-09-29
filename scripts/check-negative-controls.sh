@@ -1122,6 +1122,12 @@ build_fixture() {  # a machine+repo where every check passes
   # the script for that resolution to land inside the fixture. Copy, then assert
   # the copy is identical — a stale fixture copy would test yesterday's script.
   mkdir -p "$VS/repo/skills/sota" "$VS/repo/skills/sota-testing" "$VS/repo/skills/sota-golang"
+  # Real SKILL.md files, so check 1b measures something and PASSES in the known-good
+  # fixture — a budget probe needs a PASS to break (an INFO "nothing to measure" baseline
+  # would let a blind 1b pass every probe). ~100 chars of listing across the three.
+  for _s in sota sota-testing sota-golang; do
+    printf -- '---\nname: %s\ndescription: fixture skill %s\n---\n' "$_s" "$_s" > "$VS/repo/skills/$_s/SKILL.md"
+  done
   # library reach: the router plus a couple of domain skills, LINKED as install.sh
   # links them — a real directory here is a snapshot, which check 1e reports.
   for _s in sota sota-testing sota-golang; do
@@ -1137,6 +1143,10 @@ build_fixture() {  # a machine+repo where every check passes
   done
   mkdir -p "$VS/repo/scripts"
   cp "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh"
+  # check 1b/1g measure through the shared lister, resolved beside verify-setup.sh
+  cp "$REPO/scripts/skill-listing-sources.sh" "$VS/repo/scripts/skill-listing-sources.sh"
+  cmp -s "$REPO/scripts/skill-listing-sources.sh" "$VS/repo/scripts/skill-listing-sources.sh" \
+    || { echo "fixture copy of skill-listing-sources.sh differs from the original — aborting"; exit 1; }
   cmp -s "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh" \
     || { echo "fixture copy of verify-setup.sh differs from the original — aborting"; exit 1; }
   # the report command (check 1c). A real file in the fixture would only reach the
@@ -1154,7 +1164,10 @@ build_fixture() {  # a machine+repo where every check passes
   ln -sfn "$VS/repo/commands/sota-close.md" "$VS/home/commands/sota-close.md"
   # always-on routing: both layers
   printf 'routing: consult the sota router.\n' > "$VS/home/CLAUDE.md"
-  printf '{"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
+  # skillListingBudgetFraction 0.0002 = a 160-char budget at the 200K the fixture's
+  # unknown window assumes: the three fixture skills (~130 with the built-in allowance)
+  # fit, and ANY plugin skill counted on top of them does not. That margin is the probe.
+  printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
   printf 'stack\n' > "$VS/home/profiles/example.md"
   # repo context
   cd "$VS/repo"
@@ -1291,6 +1304,43 @@ vs_probe_partial "another agent present, ~/.agents/skills empty" "1f. other agen
 # 2b: skills reach it, but its global instruction file carries no directive.
 rm -f "$VS/uhome/.codex/AGENTS.md"
 vs_probe_partial "another agent present, no directive in its global file" "2b. other agents' directive"
+
+# 1b/1g: what the skill LISTING holds, not what one directory holds. Field-reported
+# 2026-09-29: 1b printed PASS while an enabled plugin's skills were never counted —
+# `find -maxdepth 3` cannot reach <installPath>/skills/<name>/SKILL.md. A fixture plugin,
+# registered the way Claude Code registers one (installed_plugins.json -> installPath).
+vs_fixture_plugin() {  # <plugin name> <skill name> <description>
+  local root="$VS/home/plugins/cache/fx/$1/1.0"
+  mkdir -p "$root/.claude-plugin" "$root/skills/$2"
+  printf '{"name":"%s"}' "$1" > "$root/.claude-plugin/plugin.json"
+  printf -- '---\nname: %s\ndescription: %s\n---\n' "$2" "$3" > "$root/skills/$2/SKILL.md"
+  printf '{"version":2,"plugins":{"%s@fx":[{"scope":"user","installPath":"%s"}]}}' "$1" "$root" \
+    > "$VS/home/plugins/installed_plugins.json"
+}
+vs_probe_info() {  # <name> <label> <needle> — a row that must turn INFO (1b never fails)
+  local name="$1" want="$2" needle="$3" line hit=0
+  tested=$((tested + 1))
+  run_vs
+  while IFS= read -r line; do
+    case "$line" in INFO*"$want"*"$needle"*) hit=1 ;; esac
+  done <<VSEOF
+$VS_OUT
+VSEOF
+  if [ "$hit" -eq 1 ]; then
+    echo "  [vs] $name — caught (INFO)"; caught=$((caught + 1))
+  else
+    echo "  [vs] $name — NOT CAUGHT: no INFO '${want}' row containing '${needle}'. This check is INERT."
+    printf '%s\n' "$VS_OUT" | grep -F "$want" | head -1 | sed 's/^/        got: /'
+    failed=$((failed + 1))
+  fi
+  build_fixture
+}
+# a DIFFERENT library's plugin: only the budget may move, never 1g
+vs_fixture_plugin other-plugin other-skill "an unrelated plugin skill whose description alone overruns the fixture budget"
+vs_probe_info "an enabled plugin's skills overrun the budget" "1b. listing budget" "over by"
+# the SAME library as a plugin beside the personal links: the double install
+vs_fixture_plugin sota-skills sota "fixture router"
+vs_probe_partial "the library installed twice (plugin + links)" "1g. library installed once"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
@@ -1379,5 +1429,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 1c, 1d, 1e, 1f, 2, 2b, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 2, 2b, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."
