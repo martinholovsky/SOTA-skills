@@ -1092,6 +1092,62 @@ p.write_text(t.replace(old, '\\n    return []\\n', 1))
 probe 38b "the pin detector regresses against its own corpus" \
   "the pin detector failed its own labelled corpus"
 
+# 39 — a branch edits a rules file an ADOPTION-LOG deferral is waiting on, and leaves the
+# row alone (#481 and #482 both did). The target is ASKED of the detector, never a literal:
+# a literal row goes stale the day that deferral is resolved, and the probe would then
+# accuse a healthy gate. The file is one the surrounding branch does not already touch, so
+# the probe's result depends on its own mutation only (rules/12 §1d), and the ledger is
+# restored to the merge base for the same reason probe 31 restores it.
+pick39() {  # <restore|keep> — prints "<rules file><TAB><ledger line>" for a deferral the branch
+  # leaves alone. 39 restores the ledger to the merge base; 39b must NOT, or a branch that
+  # acknowledges fired triggers of its own would lose those acknowledgements and go red.
+  ( cd "$WT" && b=$(for r in origin/main main; do git merge-base HEAD "$r" 2>/dev/null && break; done) \
+      && [ -n "$b" ] \
+      && { [ "$1" = keep ] || git show "$b:docs/ADOPTION-LOG.md" > docs/ADOPTION-LOG.md; } \
+      && python3 scripts/lib/check-deferral-triggers.py --list docs/ADOPTION-LOG.md \
+         | while IFS="$(printf '\t')" read -r f n; do
+             git diff --quiet "$b" HEAD -- "$f" && { printf '%s\t%s\n' "$f" "$n"; break; }
+           done )
+}
+t39=$(pick39 restore)
+f39=${t39%%"$(printf '\t')"*}; n39=${t39##*"$(printf '\t')"}
+[ -n "$f39" ] && [ -f "$WT/$f39" ] \
+  || { echo "FATAL: probe 39 found no deferral-guarded file — the detector's --list is empty."; exit 1; }
+( cd "$WT" && perl -pi -e 's/$/ (probe 39)/ if $. == 1' "$f39" )
+wt_commit "probe: edit a file a deferral waits on, leave the row untouched"
+probe_committed 39 "a branch fires a deferral's edit trigger and ignores the row" \
+  "the deferral at docs/ADOPTION-LOG.md:$n39 waits on it"
+
+# 39b — THE ESCAPE HAS TO HOLD. Same edit, and this time the row is annotated. The gate must
+# stay green AND report the acknowledgement — "ok" alone is also what a skipped check prints
+# (probe 29b's lesson). Baseline first: the branch may fire and acknowledge rows of its own.
+run_gate
+ack_before=$(printf '%s\n' "$GATE_OUT" | sed -n 's/.*, \([0-9][0-9]*\) acknowledged in the ledger.*/\1/p' | head -1)
+[ -n "$ack_before" ] || ack_before=0
+t39=$(pick39 keep)
+f39=${t39%%"$(printf '\t')"*}; n39=${t39##*"$(printf '\t')"}
+[ -n "$f39" ] && [ -f "$WT/$f39" ] || { echo "FATAL: probe 39b found no deferral-guarded file."; exit 1; }
+( cd "$WT" && perl -pi -e 's/$/ (probe 39b)/ if $. == 1' "$f39" \
+    && N="$n39" perl -pi -e 's/$/ *Probe 39b: trigger fired, still due.*/ if $. == $ENV{N}' docs/ADOPTION-LOG.md \
+    && grep -q 'Probe 39b: trigger fired' docs/ADOPTION-LOG.md ) \
+  || { echo "FATAL: probe 39b could not annotate docs/ADOPTION-LOG.md:$n39."; exit 1; }
+wt_commit "probe: edit a file a deferral waits on, and annotate the row"
+probe_committed_green 39b "an annotated row acknowledges the fired trigger — the gate must stay green" \
+  "$((ack_before + 1)) acknowledged in the ledger"
+
+# 39c — the trigger detector regresses: it stops recognising any edit trigger, so every
+# deferral reads as out of scope and the tree reads clean. Its labelled corpus must catch it.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('scripts/lib/check-deferral-triggers.py')
+t = p.read_text()
+old = '    if not EDIT.search(trig):\\n        return None\\n'
+assert t.count(old) == 1, 'probe stale: the EDIT test in resolve() not found'
+p.write_text(t.replace(old, '    return None\\n', 1))
+" )
+probe 39c "the trigger detector regresses against its own corpus" \
+  "the trigger detector failed its own labelled corpus"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1425,7 +1481,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38 (35 of 38)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39 (36 of 39)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
