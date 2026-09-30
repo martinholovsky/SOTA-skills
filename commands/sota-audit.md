@@ -87,7 +87,9 @@ Three things join the standard beside the skills:
 
 - **The stack profile.** `~/.claude/profiles/*.md`, if one exists, is the expected baseline
   in AUDIT mode (router principle 4) — a deviation from it is a finding even when the
-  generic rule is satisfied.
+  generic rule is satisfied. It can raise a finding's *default* severity, never skip chain
+  closure: a profile's "Critical by default" still walks the legs of `sota/rules/03` §1 rule 3,
+  and the report states both ratings when they differ.
 - **The project's own written conventions.** `CLAUDE.md`/`AGENTS.md`, `CONTRIBUTING`, ADRs,
   the invariants a repo enforces on itself. Inside its own tree a project's stated convention
   outranks a general default. Where the two genuinely conflict, **say which you followed and

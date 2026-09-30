@@ -57,6 +57,17 @@ name these; violating them risks the page *and* the domain:
 - **Site reputation policy** ("site reputation abuse") — third-party
   content hosted mainly to ride the host's ranking signals ("parasite SEO":
   coupon/review sections rented out on a news domain). If you're the host, it's your domain at stake.
+  **In the EEA the manual action no longer demotes** (Google's change for the
+  EEA, in force 2026-08-30, after a Digital Markets Act investigation): the
+  pages may be classified as separate from the main domain instead. Outside
+  the EEA the demotion still applies — the host's exposure is region-dependent,
+  not gone.
+- **Back button hijacking** (under *malicious practices*) — interfering with
+  browser navigation so Back does not return to the page the user came from:
+  `history.pushState`/`replaceState` entries injected on load, back-press
+  interstitials, "recommended for you" traps. The site is answerable for its
+  ad-network and engagement scripts too. Audit: grep the bundle for
+  `pushState` calls outside the router and test Back from a landing page.
 - **Doorway abuse** — near-duplicate pages funneling to the same destination.
 - **Keyword stuffing** — and its modern denial: there is **no keyword-density
   target**; that metric is folklore. Use the topic's natural vocabulary

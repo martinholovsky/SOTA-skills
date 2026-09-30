@@ -103,7 +103,7 @@ el.animate(
 | Dialog | Scrim fade 200ms; panel fade + `scale(0.96→1)` or 8–16px rise, 250ms ease-out; exit 150–200ms |
 | Drawer/sheet | Slide from its edge 250–300ms expo-out; gesture-dismissible sheets use springs |
 | Toast | Slide + fade in from its screen edge 250ms; exit fade 150ms; stack pushes existing toasts via FLIP |
-| Accordion | Height via grid-template-rows `0fr→1fr` (or FLIP) 200–250ms + content fade; never `height: auto` transition hacks with magic max-height |
+| Accordion | Height via grid-template-rows `0fr→1fr` (or FLIP) 200–250ms + content fade — or `interpolate-size: allow-keywords` on `:root` to transition to `height: auto` directly (Chromium only, not Baseline: keep the grid fallback); never `height: auto` transition hacks with magic max-height |
 | Tab indicator | Slide between tabs 200ms ease-in-out (FLIP or `view-transition-name`); panel cross-fade 150ms |
 | Reorder/drag | Lifted item: scale 1.02–1.05 + shadow raise 150ms; siblings FLIP around it (springy); drop settles with spring |
 | Invalid shake | translate ±4px, 2 cycles, ~250ms total — small and fast, not cartoon |

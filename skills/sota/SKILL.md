@@ -113,7 +113,10 @@ rules files that match the code in front of you. Never load all skills at once.
 4. **Stack profile.** If the repo or `~/.claude` contains a `profiles/*.md`
    stack profile (preferred stores, auth provider, license policy, platform
    conventions), its choices are the defaults for BUILD mode and the expected
-   baseline for AUDIT mode.
+   baseline for AUDIT mode. A profile may make a deviation a finding and raise its
+   *default* severity; a Critical or High still needs chain closure (`rules/03` §1
+   rule 3). When they disagree, report the chain's rating with the profile's beside
+   it — "Critical by profile default; Medium on the chain: the cluster is local".
 5. **Universal build non-negotiables (apply regardless of routing).** On **any
    network-reachable endpoint or handler** (HTTP, RPC, queue, webhook, upload),
    always include: **(a)** abuse control — rate limiting / quotas keyed to the
