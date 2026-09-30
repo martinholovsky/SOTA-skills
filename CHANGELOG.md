@@ -5,6 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Invariant 39 — a branch that fires a deferral's edit trigger touches that deferral's row.**
+  An ADOPTION-LOG deferral whose trigger is "the next rules/NN edit" was waiting on a file,
+  and nothing said so when the file was edited: #481 fired two and #482 fired four, noticed
+  only at the next session's close. `scripts/lib/check-deferral-triggers.py` resolves each
+  edit trigger to its rules file from the row (the skill and `rules/NN` in the subject or the
+  trigger), runs a 13-row labelled `--self-test` first, and fails a branch that edits such a
+  file without touching the row. Replayed against #481 and #482 it flags exactly those six
+  rows, and it passes #487 and #488. Edit triggers naming no file are printed `UNRESOLVED`
+  (2 of 20). Probes 39, 39b (the annotate-the-row escape holds) and 39c (detector
+  regression); negative controls 79 → **82**, measured `PASS: 82/82`. Operator decision
+  2026-09-30, over a report-only lister: the failure had happened twice, is silent, and is
+  mechanical for path-resolvable triggers.
+
 ## [1.46.0] - 2026-09-29
 
 A minor: `verify-setup.sh` gains check 1g and a shared `skill-listing-sources.sh`, and the

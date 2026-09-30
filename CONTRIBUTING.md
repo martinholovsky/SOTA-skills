@@ -557,7 +557,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38 — 35 of 38; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39 — 36 of 39; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -683,6 +683,14 @@ CI scans the full git history, the pre-commit hook scans each commit.
     and runs `--self-test` first, so a detector regression fails the gate instead of reading
     as a clean tree. Found a new pin shape it misses? Add the line to its corpus, then fix
     the model.
+39. **A branch fires a deferral's edit trigger and leaves the row alone.** An ADOPTION-LOG
+    deferral whose trigger is "the next rules/NN edit" (or "the next email-law edit" on a
+    row naming `sota-copywriting` rules/04) is waiting on that file. Edit it and either do
+    the item — flip the row to RESOLVED — or annotate the row *"trigger fired <date>: <PR>
+    edited <file>, still due"*. The check names the row and line. The detector,
+    `scripts/lib/check-deferral-triggers.py`, runs its labelled `--self-test` first; a
+    trigger it cannot resolve to one file is printed `UNRESOLVED` and not enforced, so
+    naming the skill and `rules/NN` in a new deferral is what puts it under the gate.
 
 ## Local setup
 
