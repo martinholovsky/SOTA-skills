@@ -1111,8 +1111,9 @@ pick39() {  # <restore|keep> — prints "<rules file><TAB><ledger line>" for a d
 }
 t39=$(pick39 restore)
 f39=${t39%%"$(printf '\t')"*}; n39=${t39##*"$(printf '\t')"}
-[ -n "$f39" ] && [ -f "$WT/$f39" ] \
-  || { echo "FATAL: probe 39 found no deferral-guarded file — the detector's --list is empty."; exit 1; }
+if [ -z "$f39" ] || [ ! -f "$WT/$f39" ]; then
+  echo "FATAL: probe 39 found no deferral-guarded file — the detector's --list is empty."; exit 1
+fi
 ( cd "$WT" && perl -pi -e 's/$/ (probe 39)/ if $. == 1' "$f39" )
 wt_commit "probe: edit a file a deferral waits on, leave the row untouched"
 probe_committed 39 "a branch fires a deferral's edit trigger and ignores the row" \
@@ -1126,7 +1127,9 @@ ack_before=$(printf '%s\n' "$GATE_OUT" | sed -n 's/.*, \([0-9][0-9]*\) acknowled
 [ -n "$ack_before" ] || ack_before=0
 t39=$(pick39 keep)
 f39=${t39%%"$(printf '\t')"*}; n39=${t39##*"$(printf '\t')"}
-[ -n "$f39" ] && [ -f "$WT/$f39" ] || { echo "FATAL: probe 39b found no deferral-guarded file."; exit 1; }
+if [ -z "$f39" ] || [ ! -f "$WT/$f39" ]; then
+  echo "FATAL: probe 39b found no deferral-guarded file."; exit 1
+fi
 ( cd "$WT" && perl -pi -e 's/$/ (probe 39b)/ if $. == 1' "$f39" \
     && N="$n39" perl -pi -e 's/$/ *Probe 39b: trigger fired, still due.*/ if $. == $ENV{N}' docs/ADOPTION-LOG.md \
     && grep -q 'Probe 39b: trigger fired' docs/ADOPTION-LOG.md ) \
