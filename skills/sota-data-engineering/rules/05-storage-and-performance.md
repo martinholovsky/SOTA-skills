@@ -93,7 +93,7 @@ vectors and liquid clustering matured in 3.x).
     `rewrite_position_delete_files` compacts small **format-v2** position
     delete files and drops entries pointing at data files no longer live
     (format v3 encodes position deletes as deletion vectors instead — Iceberg
-    spec). `rewrite_data_files` alone leaves this debt in place.
+    spec).
   - *Manifest rewrite* (`rewrite_manifests`) when scan planning slows: it
     re-clusters manifests by partition (`sort_by` for the hot filter column).
   - *Manifest/metadata cleanup + orphan file removal* on a slower cadence.
