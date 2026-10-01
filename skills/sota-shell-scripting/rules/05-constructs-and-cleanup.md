@@ -87,8 +87,10 @@ trap 'trap - TERM; kill -TERM -- -$$' INT TERM   # forward to process group, the
   rest varies by shell, so test on the target: in a subshell bash 5.3 fired the trap without
   `-E` and bash 3.2 did not, and with `-E` 5.3 fired it **twice** (child, then parent); 3.2's
   `$LINENO` named the enclosing `case` line, not the failing command; zsh fires in functions
-  without `-E` but reports `$LINENO` as 0 there; dash rejects `trap … ERR` outright
-  (`bad trap`, exit 1 before any work — ERR is not POSIX). ERR fires where `set -e` would, so
+  without `-E` but reports `$LINENO` as 0 there; dash rejects `trap … ERR` (`bad trap`;
+  ERR is not POSIX): under `set -e` that ends the script with status 1 at the `trap` line, and
+  without it the script runs on with no ERR trap at all (measured 2026-09-29, dash on macOS and
+  Debian bookworm). ERR fires where `set -e` would, so
   a failure inside an `if` condition triggers neither. Use `set -eEuo pipefail` when you
   install an ERR trap, and keep the EXIT trap as the portable "it died" signal — it fired
   with status 1 in the same function case.

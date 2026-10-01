@@ -89,6 +89,13 @@ vectors and liquid clustering matured in 3.x).
   - *Snapshot expiry* (`expire_snapshots` / `VACUUM`): unexpired snapshots
     = unbounded storage growth; retention window = your time-travel and
     concurrent-reader safety window (don't vacuum to zero).
+  - *Delete-file compaction* on merge-on-read tables: Iceberg
+    `rewrite_position_delete_files` compacts small **format-v2** position
+    delete files and drops entries pointing at data files no longer live
+    (format v3 encodes position deletes as deletion vectors instead — Iceberg
+    spec).
+  - *Manifest rewrite* (`rewrite_manifests`) when scan planning slows: it
+    re-clusters manifests by partition (`sort_by` for the hot filter column).
   - *Manifest/metadata cleanup + orphan file removal* on a slower cadence.
   - **AUDIT:** An Iceberg/Delta table with no scheduled maintenance job =
     MEDIUM, HIGH for streaming/CDC-fed tables (they degrade fastest).
@@ -101,6 +108,8 @@ CALL catalog.system.rewrite_data_files(
 CALL catalog.system.expire_snapshots(
   table => 'db.events', older_than => TIMESTAMP '{{ run_date_minus_7d }}',
   retain_last => 20);  -- CALL takes literals only: render the cutoff in the scheduler
+CALL catalog.system.rewrite_position_delete_files(table => 'db.events');  -- v2 MoR tables
+CALL catalog.system.rewrite_manifests(table => 'db.events');
 CALL catalog.system.remove_orphan_files(table => 'db.events');
 
 -- Delta equivalents: OPTIMIZE events; VACUUM events RETAIN 168 HOURS;

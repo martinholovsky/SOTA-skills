@@ -21,6 +21,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   regression); negative controls 79 → **82**, measured `PASS: 82/82`. Operator decision
   2026-09-30, over a report-only lister: the failure had happened twice, is silent, and is
   mechanical for path-resolvable triggers.
+- **Five due deferrals done** (each fact re-checked at its primary source 2026-09-30):
+  CAN-SPAM's 30-day opt-out window (`sota-copywriting` rules/04 §5); Google's back button
+  hijacking violation and the EEA change to site-reputation manual actions (rules/03 §3);
+  Iceberg `rewrite_position_delete_files` (format v2) and `rewrite_manifests`
+  (`sota-data-engineering` rules/05); invoker commands, `field-sizing`, `dialog closedby`,
+  `contrast-color()` — not a contrast guarantee on mid-tone backgrounds — and
+  `interpolate-size`, each with its Baseline status (`sota-frontend-design` rules/02, 05, 06).
+- **Field report (vulnerability-scanner audit), 3 of 5 adopted:** an empty operand list hands
+  the callee its default scope, and zsh `NOMATCH` inside `$(…)` drops the matched globs too
+  (`sota-shell-scripting` rules/06 §1, §2b); §2f now covers backslash class escapes — `\s`
+  and `\w` match nothing in macOS `git grep -E` while `\d` matches nothing anywhere
+  (measured on macOS, Debian and Alpine); a stack profile may raise a finding's default
+  severity but not skip chain closure (router principle 4, `/sota-audit` step 2).
+
+### Fixed
+
+- **`sota-shell-scripting` rules/05 §3:** dash's `bad trap` for `trap … ERR` ends the script only
+  under `set -e`; without it the script runs on with no ERR trap. The 1.44.4 text said it always
+  exited 1 (re-measured on macOS dash and Debian bookworm).
+- **`sota-performance` rules/01:** "always enable `net/http/pprof`" contradicted
+  `sota-observability` rules/05; it now says to register it on an internal-only mux, never the
+  public `DefaultServeMux` (operator decision 2026-09-30).
+- **ADOPTION-LOG:** the four deferrals #482 fired, and the pprof row, are resolved (above); the
+  coreutils finding from the 2026-09-27 pass is a `DEFERRED` row with a trigger; four overstated
+  sentences in that pass's entry are superseded. Landed from the unmerged #484.
 
 ## [1.46.0] - 2026-09-29
 
@@ -128,6 +153,8 @@ LAST-VERIFIED: 2026-07-08 -> 2026-09-26 (full-library sweep, batches 1–4 plus 
 - **A recipe that failed when run:** `sota-data-engineering` rules/05's Iceberg
   `expire_snapshots(older_than => now() - INTERVAL 7 DAYS)` is rejected by the CALL grammar on
   Spark 3.5 and 4.0; it now takes a rendered literal.
+  *Corrected 2026-09-29: 3.5 fails at parse time and 4.0 at argument binding — only 3.5 is a
+  grammar rejection.*
 - **Wrong facts:** ISO 24495-1's fourth principle is "usable", not "actionable"
   (`sota-ux-writing`); Opengrep's taint is cross-function within one file and opt-in via
   `--taint-intrafile`, not Semgrep Pro's cross-file analysis (router tool matrix,

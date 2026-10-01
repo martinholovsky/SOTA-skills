@@ -23,6 +23,7 @@ rather than assuming; then treat the table below as live.
 | unquoted `$var` with spaces **or newlines** — incl. any `$(…)` file list | splits into words | **joins** into one argument (`rules/01` §3) | **loudly** — a usage error, exit 2, from the callee — but a *file-list* command then searches **nothing**, and empty output reads as a clean tree |
 | `$?` after a pipeline | last stage (`${PIPESTATUS[0]}` for the first) | same, but `${pipestatus[1]}` (`rules/01` §3) | **quietly** — a wrong status, read as truth |
 | unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
+| one unmatched glob among several, inside `$(ls a b* 2>/dev/null)` | the literal word errors, the matches still print | the **whole** inner command aborts — matched files lost too; `2>/dev/null` inside `$(…)` does not silence zsh's own error | **silently** — the list is empty, and the callee picks its own scope (§2b) |
 | `cmd \| python3 - <<'PY'` (pipe **and** heredoc on fd 0) | heredoc wins, piped data **discarded** | `MULTIOS` **concatenates** them: the data runs as the program's first lines | bash **quietly** (script reads empty stdin); zsh an error naming *your data* (below), or **silently** when the data parses as code (`echo 42` runs) |
 
 **The third is the dangerous one: a failed glob means the command never runs at all.**
@@ -274,10 +275,11 @@ person commit?"*, answered *"what is in this repo?"* Quoted, so this is not SC20
 
 **Which flags do this, measured 2026-09-13 — the split is the useful part:**
 
-| the flag filters by… | an empty value | measured |
+| the empty value is a… | it becomes | measured |
 |---|---|---|
 | **pattern / substring** | **matches everything** | `git log --author=""` and `--grep=""` 373 of 373 · `grep -e ""` 3 of 3 |
 | **identifier** | rejected, or matches nothing | `ps -p ""` exit **1** on BSD *and* procps-ng 4.0.4 · `find -name ""` 0 hits, exit 0 |
+| **positional operands** (a file list) | the callee's **default scope** — often everything | `pytest $(ls …)` emptied by zsh `NOMATCH` ran `testpaths`, 3 of 3 tests for 1 intended (pytest 9.1.1, 2026-09-30). Build lists with `find`, print the count, refuse zero |
 
 So a `--filter`-shaped flag is dangerous when it filters by *pattern*, merely useless when it
 filters by *id*. (Separately: `ps -axo … -p "$pid"` lists **every** process even for a valid
@@ -402,7 +404,7 @@ the **consumer**, derived from the value it actually received. **The tell on rev
 line beginning `^`, `(` or `<-` that asserts a *state* rather than naming a *quantity*. Read
 the output above it before believing it — including your own.
 
-## 2f. A word-boundary escape is a property of the machine, not of the tool
+## 2f. A backslash escape (`\b` `\<` `\s` `\w` `\d`) is a property of the machine, not of the tool
 
 `\b` and `\<` are not portable, and failing them is **silent**: no match, exit 1,
 indistinguishable from a true absence. The same pattern, the same git and the same repository
@@ -427,6 +429,7 @@ Measured 2026-09-18 over a file containing `53`, control (`53` alone) matching i
 **There is no version to pin** — three older gits match `\b` and the newest does not. The GNU
 and BSD forms are **mutually exclusive**, so neither is portable. Use `-P` where PCRE is
 compiled in, or drop the boundary and filter afterwards.
+**Class escapes split the same way** (measured 2026-09-30, control `7687` matching everywhere): `\s` and `\w` match on Debian git 2.39.5 (glibc) and Alpine git 2.54.0 (musl) and **match nothing** on macOS git 2.55.0; `\d` matches nothing on **all three** — it was never ERE. Write `[[:space:]]`, `[[:alnum:]_]`, `[[:digit:]]`, or use `-P`.
 
 This cost two false absences in one session: a count search over an agent file that plainly
 contained the number, and a reference sweep that reported zero while five references existed.
@@ -447,7 +450,8 @@ filed under the wrong thing** — index it by what it is *for*.
 
 - [ ] **Command substitutions that supply a filter are guarded for empty** (§2b) — an empty
       value makes a **pattern** flag match everything (`git log --author=""` returned 373 of
-      373); an identifier flag rejects it instead. An implausibly LARGE result is the tell
+      373); an identifier flag rejects it instead. An implausibly LARGE result is the tell; an
+      empty **file list** hands the callee its default scope — print the count, refuse zero
 
 - [ ] **No `rg -r` used to mean "recursive"** (§2a) — it is `--replace`, it rewrites every
       match to the next argument and exits 0, so the output is false *content* rather than a
@@ -470,7 +474,7 @@ filed under the wrong thing** — index it by what it is *for*.
       propagate a contradiction. Sweep your own scripts and scrollback for `; *echo` beside
       a counting command; print the value and derive any verdict from the variable the
       command produced
-- [ ] **Does any search rely on `\b` or `\<`?** (§2f) — absent from BSD/macOS regex, and
+- [ ] **Does any search rely on `\b`, `\<`, `\s`, `\w` or `\d`?** (§2f) — absent from BSD/macOS regex, and
       `git grep` inherits the platform's, so the same pattern silently returns zero on one
       machine and matches on another. There is no version to pin. Use `-P`, the POSIX
       bracket form, or no boundary at all — and control the search

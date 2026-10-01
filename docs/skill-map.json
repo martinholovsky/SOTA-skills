@@ -1908,6 +1908,15 @@
       "targets": []
     },
     {
+      "from": "sota-performance",
+      "to": "sota-observability",
+      "weight": 2,
+      "targets": [
+        "rules/02 \u00a74a",
+        "rules/05 \u00a73"
+      ]
+    },
+    {
       "from": "sota-php",
       "to": "sota-testing",
       "weight": 2,
@@ -2874,14 +2883,6 @@
       "to": "sota-async-concurrency",
       "weight": 1,
       "targets": []
-    },
-    {
-      "from": "sota-performance",
-      "to": "sota-observability",
-      "weight": 1,
-      "targets": [
-        "rules/02 \u00a74a"
-      ]
     },
     {
       "from": "sota-performance",

@@ -116,7 +116,7 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   02 robustness & correctness, 03 security, 04 CI & operational scripts, 05 constructs & cleanup
   (arrays, IFS, traps/mktemp, tests, globbing), 06 ad-hoc commands (zsh deviations,
   searcher exclusions, patterns parsed as flags, stderr-suppressed absence checks, a hardcoded
-  verdict label, non-portable word-boundary escapes — split out of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
+  verdict label, non-portable backslash escapes (`\b` `\s` `\d`) — split out of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
   `set -euo pipefail`, disagreeing status variables, GitHub Actions shell defaults, execution
   policy, PSScriptAnalyzer), 08 ad-hoc side effects (blast radius, process-table exhaustion —
   split out of 06 in v1.42.2),

@@ -24,7 +24,9 @@ Per-runtime profilers (sampling, production-safe unless noted):
 - **Linux native / mixed**: `perf record -g -F 99`, eBPF tools, flamegraphs via
   `perf script | stackcollapse-perf.pl | flamegraph.pl > out.svg` or `samply`.
 - **Go**: built-in `pprof` (CPU, heap, mutex, block, goroutine), continuous
-  profiling via Pyroscope/Parca. Always enable `net/http/pprof` in services.
+  profiling via Pyroscope/Parca. Enable `net/http/pprof` in services on a
+  dedicated internal-only mux/port — never the public `DefaultServeMux`, which
+  importing the package registers on (`sota-observability` rules/05 §3).
 - **JVM**: async-profiler (CPU + alloc + locks, no safepoint bias), JFR
   (always-on flight recorder, < 2% overhead).
 - **Node.js**: `node --prof`, `--cpu-prof`, Chrome DevTools, `0x` for

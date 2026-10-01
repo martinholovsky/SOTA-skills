@@ -112,6 +112,11 @@ Prefer content-aware keywords over hardcoded dimensions:
 - `aspect-ratio: 16/9` on media frames (with `object-fit: cover` on the child); never padding-top
   percentage hacks; never width+height pairs that fight responsive images.
 
+- **Auto-growing fields:** `field-sizing: content` makes `<textarea>` and text `<input>`
+  fit their content (Baseline newly available, Jun 2026). Pair it with `min-*`/`max-*`
+  sizes, not a fixed `width`/`height` (which reimposes fixed sizing); `rows`/`cols` and
+  `size` stop applying. Replaces JS autosize where supported.
+
 ## 3c. Viewport units & mobile chrome
 
 - Use **`dvh`** for full-height app shells (`min-height: 100dvh`) — `100vh` overflows under
@@ -177,6 +182,11 @@ label:has(+ input:disabled) { color: var(--text-disabled); }
 
 ## 7. Anchor positioning, popover & view transitions (progressive enhancement)
 
+- **Invoker commands** (`<button commandfor="id" command="…">`) open and close dialogs and
+  popovers with no script: `show-modal`, `close`, `request-close` (fires a cancellable
+  `cancel`), `show-popover`, `hide-popover`, `toggle-popover`, and custom `--name` commands
+  that dispatch a `CommandEvent`. Baseline newly available (Dec 2025) — keep a scripted
+  fallback for older engines.
 - **Popover API** (`popover` attribute) for menus/tooltips/toasts: free top-layer rendering, light-dismiss, focus handling — before reaching for a positioning library. Pair with **CSS anchor positioning**:
 
 ```css

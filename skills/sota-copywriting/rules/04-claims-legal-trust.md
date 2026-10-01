@@ -144,7 +144,10 @@ Two regimes cover most senders; apply the stricter when audiences mix:
 - **CAN-SPAM (US, commercial email)**: truthful header/sender, non-deceptive
   subject line, physical postal address in the message, clear unsubscribe
   that works, is honored **within 10 business days**, and costs nothing more
-  than a reply/click. Applies per-message to commercial content.
+  than a reply/click. The opt-out address or link must **keep working for at
+  least 30 days after the send** (15 U.S.C. 7704(a)(3)(A)) — a per-campaign
+  unsubscribe URL that expires with the campaign, or a retired sending domain,
+  breaks this. Applies per-message to commercial content.
 - **GDPR + ePrivacy (EU)**: direct marketing needs **opt-in consent** (an
   affirmative act, granular, withdrawable as easily as given) or the
   narrow **soft opt-in** (email only: contact details obtained from a
@@ -231,7 +234,8 @@ Two regimes cover most senders; apply the stricter when audiences mix:
       scarcity/viewer counts, no drip pricing, no pre-ticked consent,
       cancellation effort ≈ signup effort; EU online contracts expose a
       "withdraw from contract here" function throughout the withdrawal period
-- [ ] Email: unsubscribe present/working/honored ≤ 10 business days;
+- [ ] Email: unsubscribe present, working for ≥ 30 days after each send, honored
+      ≤ 10 business days;
       physical address present; EU sends have consent or soft-opt-in records;
       subjects truthful; no promotions disguised as transactional mail
 - [ ] Bulk sends (5,000+/day): SPF + DKIM + DMARC aligned, RFC 8058

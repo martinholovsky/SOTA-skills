@@ -78,6 +78,11 @@ panel gets `tabindex="0"` when it has no focusable content.
 </script>
 ```
 
+`closedby` sets how a `<dialog>` may be dismissed: `any` (adds click-outside light dismiss),
+`closerequest` (Esc / platform back — the default for `showModal()`), `none` (only your own
+controls — the default for non-modal `show()`). **Not Baseline** (no Safari support), so treat
+light dismiss as an enhancement and keep a visible close button either way.
+
 Custom (non-`<dialog>`) modals must implement: `role="dialog"` `aria-modal="true"`, labelled,
 focus-in on open, full trap, Esc, restore on close, background `inert`. If that list isn't fully
 implemented, it's a Blocker — use `<dialog>`.
@@ -136,6 +141,10 @@ must not be hidden under sticky headers/footers (2.4.11) — `scroll-padding` fi
 ## 5. Visual & motion criteria (cross-references)
 
 - Contrast: text 4.5:1, large 3:1, UI/graphics 3:1 — full math in rules/01 §5. Both themes.
+- `contrast-color(<bg>)` returns `white` or `black`, whichever contrasts more (Baseline newly
+  available, Apr 2026). It is **not** a contrast guarantee: on mid-tone backgrounds neither
+  is readable for small text (MDN's own example: `#2277d3` yields black). Use it only on
+  light or dark backgrounds, and still verify the ratio.
 - Reflow at 320px / 400% zoom without 2-D scrolling (1.4.10); text spacing survives override (1.4.12) — rules/01–02.
 - `prefers-reduced-motion` honored everywhere; no flashing > 3/sec (2.3.1) — rules/06.
 - Target size 24px minimum + spacing (2.5.8 AA), 44px build standard — rules/04 §8.
