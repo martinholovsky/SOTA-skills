@@ -6908,11 +6908,11 @@ would have failed loudly rather than passed.
 
 - **DEFERRED — OWASP Top 10:2025 A10 is unmapped in `sota-code-security` rules/01, 07, 09; revisit trigger: the next OWASP mapping pass, or the first audit finding that needs A10.**
 - **DEFERRED — DBSC (device-bound session credentials) browser support in `sota-code-security`; revisit trigger: DBSC ships beyond one OS or a second engine commits to it.**
-- **DEFERRED — verifying good bots by forward-confirmed rDNS or published IP ranges, and the Web Bot Auth draft; revisit trigger: draft-ietf-webbotauth reaches WG last call, or rules/19 is next edited.**
+- **DEFERRED — verifying good bots by forward-confirmed rDNS or published IP ranges, and the Web Bot Auth draft, in `sota-code-security` rules/19; revisit trigger: draft-ietf-webbotauth reaches WG last call, or rules/19 is next edited.** *(Skill named 2026-09-30 so invariant 39 can resolve the trigger; meaning unchanged.)*
 - **DEFERRED — naming constant-time test tools (dudect, ctgrind) and a `==`-on-MAC probe in `sota-code-security` rules/22; revisit trigger: the next edit of rules/22.**
 - **DEFERRED — the NTLM-off roadmap in `sota-identity-access`; revisit trigger: Microsoft ships a default that disables NTLM.**
 - **DEFERRED — the OAuth identity-assertion authorization grant (ID-JAG); revisit trigger: draft-ietf-oauth-identity-assertion-authz-grant reaches WG last call.**
-- **DEFERRED — DMARC `np=` and `t=` tags in `sota-network-security`; revisit trigger: the next DMARC/email-authentication edit.**
+- **DEFERRED — DMARC `np=` and `t=` tags in `sota-network-security` rules/06; revisit trigger: the next DMARC/email-authentication edit.** *(File named 2026-09-30 — rules/06 is the skill's only file covering DMARC — so invariant 39 can resolve the trigger.)*
 - **DEFERRED — CAA `accounturi`/`validationmethods` in `sota-network-security`; revisit trigger: before the CA/Browser Forum Baseline Requirements date of 2027-03-15.**
 
 **Still unverified, left as written:** GitHub push-protection coverage wording
@@ -7105,7 +7105,7 @@ the advisory ranges settle, a WCAG AAA label, and two stray downloaded HTML file
 - **DEFERRED — React 19.3 features (`<ViewTransition>`, `<Activity>`, `useEffectEvent`, Trusted Types) in `sota-web-frameworks` rules/02; revisit trigger: the next rules/02 edit.**
 - **RESOLVED 2026-09-30 (was deferred; done across rules/02, 05 and 06 with each feature's Baseline status from web-features 3.40.0 — see the 2026-09-30 entry) — invoker commands, `dialog closedby`, `interpolate-size`, `field-sizing` and `contrast-color()` in `sota-frontend-design`; revisit trigger: the next rules/02, 05 or 06 edit, or the Interop 2026 results.** *Trigger fired 2026-09-27: #482 edited rules/05 (EN 301 549) and rules/06 (Material easing) and did not do the item — it is due.*
 - **DEFERRED — the PG18 `NOT NULL … NOT VALID` shortcut in `sota-databases` rules/02; revisit trigger: the next expand/contract edit, or the PG17 EOL sweep.**
-- **DEFERRED — PG18 `WITHOUT OVERLAPS` temporal keys in `sota-databases` rules/01; revisit trigger: the same.**
+- **DEFERRED — PG18 `WITHOUT OVERLAPS` temporal keys in `sota-databases` rules/01; revisit trigger: the next expand/contract edit (rules/02), or the PG17 EOL sweep.** *(Was "the same", meaning the row above; spelled out 2026-09-30 because invariant 39 cannot read a relative trigger. It now also guards rules/01, the item's home.)*
 - **DEFERRED — replacing LinkFinder and jsluice (both dormant since 2024, already noted as such) in `sota-api-design` rules/07; revisit trigger: a maintained JS-bundle endpoint extractor is verified.**
 
 **Still unverified, left as written:** bi-directional contract testing as a PactFlow-only
@@ -7207,7 +7207,7 @@ opened: `sota-shell-scripting/SKILL.md:106`, `rules/03:58`, `rules/01` §2, `rul
 | 1a — `sh -x script` while debugging traces secrets | **adopted** | `sota-shell-scripting` top-10 #6 + `rules/03` (the `set -x` bullets) |
 | 5 — `kubectl logs deploy/X` answers about one selector-matched pod, possibly another workload's | **adopted with a correction** — placement | `sota-shell-scripting/rules/09` §5a (table row, bullet, checklist) instead of the proposed rules/06, which is at 495/500 and whose §5a is literally *"the selector picked a different member"*; `sota-docs-workflow/rules/01` runbook example now `--all-pods` |
 | 3 — principle 7 should cover a project's own index / tracker row | **adopted** — second source is ours: `commands/sota-resume.md:60-62` already says *"the summary is always the stale half"*, scoped to a resume pass the field session was not running | router principle 7, one clause (outside §BUILD — `ROUTER_BUILD_SHA` unchanged) |
-| 1b — router BUILD step 2: "routing is not done until you have opened a domain `SKILL.md`" | **DEFERRED — revisit on a second independent session that invoked the router and opened no domain `SKILL.md`, or on a routing eval that measures domain-file opens after `Skill(sota)`** | — |
+| 1b — router BUILD step 2: "routing is not done until you have opened a domain `SKILL.md`" | **DEFERRED — revisit on a second independent session that invoked the router and opened no domain `SKILL.md`, or on a routing eval that measures domain-file opens after `Skill(sota)`** *Near-miss 2026-09-30, trigger NOT met: the vulnerability-scanner field report had the router, `/sota-audit` and an agent file citing `rules/06` by section and never opened `rules/06` in its main context — a cited rule not opened, but it does not say no domain `SKILL.md` was opened.* | — |
 | 4 — a "judged N of M, fail on N = 0" line in router BUILD step 4 | **rejected — already covered**: router principle 3 (`skills/sota/SKILL.md:109`, print a denominator beside a zero), AUDIT step 4 (`:395`), and `sota-code-security/rules/11` §2.2 (`:88-91`, *"must fail closed when that number is unexpectedly zero"*). The report itself proposed no wording change | — |
 
 **What we reproduced, rather than took on trust.**
