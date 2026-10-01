@@ -5,7 +5,20 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.46.1] - 2026-10-01
+
+A patch: a new CI invariant and rule content inside existing surfaces — nothing new to run
+(`RELEASING.md`: a new invariant on its own ships as a patch).
+
+**Front door checked:** deferral trigger · default scope · backslash escape
+
+- **Every deferral trigger now resolves to a file.** The three that invariant 39 printed
+  `UNRESOLVED` (or could not read: a relative "the same") were rewritten to name their skill
+  and `rules/NN`, meaning unchanged; 18 of 18 edit triggers are now enforced. The router
+  BUILD step 2 deferral records the 2026-09-30 field report as a near-miss — trigger not met.
+- A **backslash escape** in `git grep -E` (`\s`, `\w`, `\d`) is now covered by
+  `sota-shell-scripting` rules/06 §2f, and an empty operand list's fallback to the callee's
+  **default scope** by §2b (details under Added).
 
 ### Added
 
@@ -17,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trigger), runs a 13-row labelled `--self-test` first, and fails a branch that edits such a
   file without touching the row. Replayed against #481 and #482 it flags exactly those six
   rows, and it passes #487 and #488. Edit triggers naming no file are printed `UNRESOLVED`
-  (2 of 20). Probes 39, 39b (the annotate-the-row escape holds) and 39c (detector
+  (2 of 20 at first; 0 after the three blind triggers were rewritten to name their file). Probes 39, 39b (the annotate-the-row escape holds) and 39c (detector
   regression); negative controls 79 → **82**, measured `PASS: 82/82`. Operator decision
   2026-09-30, over a report-only lister: the failure had happened twice, is silent, and is
   mechanical for path-resolvable triggers.
@@ -10760,6 +10773,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.46.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.46.1
 [1.46.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.46.0
 [1.45.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.45.0
 [1.44.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.4
