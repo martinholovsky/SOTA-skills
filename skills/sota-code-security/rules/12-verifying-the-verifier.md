@@ -164,6 +164,38 @@ produce *an* outcome at all. With it, the mechanism reproduced on the first run.
   should be labelled *"did not reproduce here"*, never *"refuted"* — the first is about your
   instrument, the second about the world.
 
+### 1a.2 A reproduction has three outcomes, and only the sink proves the second
+
+A security reproduction ends in one of three states. Mantis's authors single out conflating
+the last two as a common false negative in agent reproductions:
+
+- **Reproduced** — the defect fired, observed through the target's own behaviour.
+- **Reached, did not fire** — execution got to the sink *carrying the triggering state* (an
+  earlier normaliser in the harness can reach the sink with the value already defused), and
+  §1a.1's control arm shows the harness can produce a firing at all. Only this state supports
+  §1a.1's *"did not reproduce here"* — and "refuted" still needs that control arm.
+- **Not attempted** — the harness never reached the sink. A build or compile failure, exit
+  127 (command not found), a missing input file, or a crash in your own wrapper all land
+  here. It is retry-eligible and says nothing about the code.
+
+**Proof of reaching the sink comes from the target, not from your wrapper.** A marker your
+script writes *before* launching the target proves only that a launch was attempted. Prefer
+evidence that does not edit the target — coverage output (`llvm-cov`, `gcov`, `coverage.py`)
+or a debugger breakpoint on the sink. If you must add an in-path marker, write it to a file
+(stdout can be truncated by the very crash you are looking for) and keep it in every run you
+compare (`sota/rules/05` §5, identical instrumentation).
+
+**A crash that needs a direct-call harness is "reached in isolation", not yet a
+reproduction.** Feeding a private or static function a hand-built input — a buffer at a size
+the library's own wrappers never produce, a state no public entry point can create — shows
+the function is fragile. It is **needs verification**, not a downgrade (`sota/rules/03` §1):
+find the public path an attacker can reach (the *reaches* leg) and rate on that chain once
+found. Rate it as hardening only when reading every caller shows no entry point can produce
+the state. Where the called function *is* the exported API — a library, or a fuzz harness on
+an exported function — the direct call is the public path.
+
+Source: Google's Mantis toolkit (Apache-2.0) reproduction gates; adopted 2026-10-02.
+
 ## 1b. Where the probe lives decides whether it survives
 
 §1 and §1a describe probes as things you *run*. In any suite that keeps them they
@@ -369,6 +401,11 @@ n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
 
 ## Audit checklist
 
+- [ ] **Does every "did not reproduce here" rest on the sink being reached with the
+      triggering state, plus a control arm?** (§1a.2) A build failure, exit 127, a missing
+      input or a wrapper crash is *not attempted*; a marker written before launch proves only
+      the launch. Is any direct-call-harness crash still marked *needs verification* until
+      a public path is found or every caller has been read?
 - [ ] **Does any probe mutate by a fixed delta *smaller than the cap it must cross*?** (§1d)
       That, not "a numeric threshold", is the shape that decays: the probe's strength is the
       subject's current slack, so improving the subject disarms it while the mutation still

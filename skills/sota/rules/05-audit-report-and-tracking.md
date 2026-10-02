@@ -1,8 +1,9 @@
 # Audit Report & Tracking — Reproduction, Finding Lifecycle, Report Provenance
 
 Scope: the fields that let a finding be **re-run by someone else** and **followed to closure**
-after the report is delivered, and the provenance a report needs so a reader can judge who
-looked and against what. It extends two sections of `rules/03` without restating them: the
+after the report is delivered, the provenance a report needs so a reader can judge who
+looked and against what, and the two rules that keep a verdict honest once the code moves —
+a verdict expires with its commit (§4) and "fixed" needs three runs (§5). It extends two sections of `rules/03` without restating them: the
 eight-field evidence block (`rules/03` §2) and the report order (`rules/03` §5). `rules/01`
 owns how the audit is run; `rules/03` owns rating and evidence; this file owns what keeps a
 delivered report usable once remediation starts.
@@ -24,8 +25,8 @@ fixing it how to see it happen. Add a **Reproduction** field to every finding, a
 - **Keep it safe to run.** Steps target a test environment, use placeholder credentials, and
   never contain a live secret or a payload aimed at production (`rules/01` §4).
 - **It is what the re-audit re-runs.** The fix is confirmed when these steps stop producing
-  the result *and* a fresh search cannot get round the fix (`rules/01` §4) — so write them
-  to be re-executed, not narrated.
+  the result *and* a fresh search cannot get around the fix (`rules/01` §4; the full bar for
+  an executable reproduction is §5) — so write them to be re-executed, not narrated.
 
 OWASP: Secure Code Review cheat sheet; Code Review Guide v2.
 
@@ -43,7 +44,8 @@ does, because a finding with no owner is the one that is silently dropped.
 | **Ticket** | a link to the issue tracker item that owns the work |
 
 - **"Fixed" means verified, not merged.** It carries the commit at which the reproduction
-  was re-run and failed to reproduce; a merged PR with no re-run stays *in progress*.
+  was re-run and failed to reproduce — by §5's three checks where the reproduction is
+  executable — and a merged PR with no re-run stays *in progress*.
 - **"Risk accepted" names who accepted it and until when.** An acceptance with no owner and
   no expiry is an unowned open finding with a nicer label; it belongs in the decision ledger
   (`rules/03` §3) where its expiry gets re-checked.
@@ -69,6 +71,69 @@ Add these to the **Scope & methodology** section (`rules/03` §5, item 2):
 
 OWASP: Code Review Guide v2.
 
+## 4. A verdict is bound to the commit it was made at
+
+Every code-bound verdict — *false positive*, *fixed*, *risk accepted*, *dead code / test-only*
+— is a claim about **specific code at a specific commit**. Record that commit beside the
+verdict, and treat the verdict as **expired** once the code it rests on changes. (*Withdrawn as
+a duplicate or out of scope* is a claim about the audit, not the code, and does not expire.)
+
+- **A dismissal lapses when the code it rests on changes — in either direction of the
+  dependency graph.** A false positive or accepted risk on `auth.go` was true of `auth.go` at
+  `<sha>`; if `auth.go` or a file it depends on has changed, re-examine it. A *reachability*
+  verdict — dead code, test-only, "sanitised upstream" — is a claim about the code's
+  **callers**, so it also lapses when any caller or importer changes (the dependents set of
+  `rules/01` §1): a new call into `util.go` revives a dead-code verdict on `util.go` without
+  touching `util.go`. Judge the cited region, not the file's timestamp — a whitespace-only or
+  formatter commit that leaves the cited code identical (`git diff -w`) does not expire it.
+- **A "fixed" finding that reappears is a possible regression, never a duplicate.** When a new
+  finding matches one already marked fixed, but on code that changed since the fix was
+  verified, keep it **open** and note the history. Filtering it as "already reported" hides a
+  reverted or bypassed fix — the one outcome a re-audit exists to catch.
+- **A finding inherited from another commit is re-located, not dropped.** `rules/01` §4b fails a
+  citation that does not resolve; that rule assumes the finding and the reader are at the same
+  commit. For a finding from an earlier report, ticket or wave, a moved or renamed file is
+  drift, not hallucination: find the code again at the current commit, then apply the citation
+  check to the new location. Drop it only if the code is genuinely gone.
+- **Evidence from another commit cannot raise a rating.** A crash log, trace or PoC captured at
+  an earlier commit supports *"this happened at `<old sha>`"*. It upgrades severity at the
+  current commit only after it is re-run there.
+
+Source: Google's Mantis toolkit (Apache-2.0) keys every carried-over verdict to the snapshot it
+was made against and re-discovers it when the file changed; adopted 2026-10-02 (ADOPTION-LOG).
+
+## 5. A fix is verified by three runs, not one
+
+`rules/01` §4 sets the bar: *"a fresh search cannot get around it"*. **For a finding with an
+executable reproduction**, three checks make that bar mechanical, and each closes a known way
+to record a false "fixed":
+
+1. **The unpatched baseline still fires on the current tree** — run the reproduction against
+   current `HEAD` *with the fix reverted* (before merge: the base the fix applies to). If it no
+   longer fires there, something else changed the code: find the commit that did and record
+   **resolved by `<sha>`** after re-running the reproduction against it; if no commit explains
+   it, the verdict is **inconclusive**, never "fixed".
+2. **Identical instrumentation per comparison.** The baseline, patched and re-attack runs of a
+   given check use the same build flags, sanitizers and configuration — per pair, since some
+   sanitizers cannot share a build (ASan and TSan; `sota-c-cpp` rules/02). A crash that only a
+   sanitizer reports vanishes when that sanitizer is dropped, and reads exactly like a fix.
+3. **Same-class bypass attempts, all of which fail — at least three, a chosen default.** Vary
+   the input along the axis the fix guards — off-by-one lengths, zero and maximum sizes,
+   another entry point, an alternate encoding. A variant that triggers a *different* defect is
+   a new finding, not a bypass. An empty or short attempt set is **verification incomplete**:
+   "all attempts failed" is vacuously true of zero attempts (`sota-code-security` rules/11 §2.2).
+
+Check 3 targets a failure Mantis's authors call the dominant one for automated repair: a patch
+that blocks only the exact bytes of the reported PoC.
+
+**For a finding with no executable reproduction** — a static read path (§1), a leaked secret, a
+config or header fix, an authorisation or logic flaw — "fixed" means: the observable check the
+finding named (the read path no longer reaches the sink, the secret is rotated *and* revoked,
+the header is served, the request is refused) re-run at the fixed commit, plus a fresh search
+for the same class. Check 1's "resolved by `<sha>`" and "inconclusive" apply unchanged.
+
+Source: Google's Mantis toolkit (Apache-2.0) patch gate; adopted 2026-10-02 (ADOPTION-LOG).
+
 ---
 
 ## Audit checklist — quality gate on reproduction, tracking and provenance
@@ -82,6 +147,19 @@ OWASP: Code Review Guide v2.
 - [ ] **Medium** — If any finding has tracking fields, do all of them have status, assignee,
       due date and ticket; does every "fixed" name the verifying commit, and every "risk
       accepted" an owner and an expiry (§2)?
+- [ ] **High** — Does every code-bound verdict (false positive, fixed, risk accepted, dead
+      code) carry the commit it was made at, and was each one re-examined when its file, a
+      dependency, or — for a reachability verdict — a caller changed since (§4)? First prove
+      the commit still exists: `git cat-file -e <sha>^{commit}` failing (squash or rebase
+      orphaned it) means **expired**. Then `git diff -w --name-only <sha> -- <file> <deps...>`
+      (no `..HEAD`, so uncommitted edits count); any output means expired.
+- [ ] **High** — Was a new finding matching an already-fixed one kept **open** as a possible
+      regression rather than filtered as a duplicate (§4)?
+- [ ] **High** — Does every "fixed" with an executable reproduction record all three checks:
+      baseline firing at `HEAD` with the fix reverted (or "resolved by `<sha>`"), identical
+      instrumentation per comparison, and at least three failed same-class bypass attempts
+      (§5)? Fewer than three is "verification incomplete". A non-executable finding records
+      its observable check re-run at the fixed commit plus a fresh class search.
 - [ ] **Low** — Scope & methodology names the author, the reviewer and the checklist with
       its version (§3)? Expect three hits:
       `grep -iE '^[*_ -]*(Author|Reviewer|Checklist)[^:]*:' report.md`

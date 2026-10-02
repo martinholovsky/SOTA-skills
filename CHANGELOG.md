@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Intake from Google's Mantis toolkit (Apache-2.0), batch 1 — eight ideas, two of them
+  correcting rules of ours that pointed the wrong way.** A verdict now expires with its commit
+  and a reappearing fixed finding is a possible regression (`sota/rules/05` §4 — `sota/rules/01`
+  §4 used to carry findings forward as an unconditional exclusion); "fixed" needs three runs
+  (§5); a reproduction has three outcomes and a direct-call harness proves nothing
+  (`sota-code-security/rules/12` §1a.2); a diff review covers the diff's dependents; a dead-code
+  or test-only downgrade fails closed; an inherited finding is re-located, not dropped.
+- **Fixed in our own sandbox probe** (`sota-sandboxing/rules/05` §5): it tested only a named
+  rogue resolver, so a sandbox whose default resolver recursed to the internet passed. Verified
+  in podman on busybox and glibc, with and without network.
+
 ### Changed
 
 - **Code is now Apache-2.0; content stays CC BY 4.0.** Every `*.sh` and `*.py` file,

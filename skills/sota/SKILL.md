@@ -433,7 +433,8 @@ Read it when you know the domain but not the file. When you are already opening 
 when…" guidance the map drops.
 
 What keeps a delivered audit report usable once remediation starts — reproduction steps on every
-finding, the finding lifecycle and retest, report provenance: **[rules/05-audit-report-and-tracking.md](rules/05-audit-report-and-tracking.md)**,
+finding, the finding lifecycle and retest, report provenance, verdicts that expire with their
+commit, and the three-run bar for "fixed": **[rules/05-audit-report-and-tracking.md](rules/05-audit-report-and-tracking.md)**,
 read with `rules/03`.
 
 ## Context budget discipline

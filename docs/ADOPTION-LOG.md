@@ -7479,3 +7479,46 @@ verified-done hook reduces unverified "done" claims, and to re-measure the publi
 inside a real agent session instead of one chat-completion call. Measure before building more
 enforcement (adapters, supervisor).
 
+## 2026-10-02 — Google's Mantis toolkit: verdicts that expire, fixes and reproductions that prove themselves
+
+Source: [google/mantis](https://github.com/google/mantis) (Apache-2.0; 19 agent skills, ~9,100
+lines, plus a reference harness), read in full by three partitioned agents, each idea checked
+against this library by content with file:line; every claim below re-verified here before landing.
+Ideas only, no text copied. Batch 1 of 2 (A–H); the medium tier follows in its own change.
+
+| idea | verdict | landed in |
+|---|---|---|
+| A — a verdict (false positive, fixed, dead code, accepted) expires when its file changes; a match for a fixed finding on changed code is a possible regression | **adopted** — and it corrects a rule that pointed the wrong way: `sota/rules/01` §4 carried earlier findings forward as an exclusion with no lapse, so a reverted fix stayed hidden. Flagged independently by all three agents | `sota/rules/05` §4; `sota/rules/01` §4 keyed to the commit |
+| B — a diff review covers the diff's dependents (callers/importers two hops out, both paths of a rename) | **adopted** — a gap: diff-only was the stated default | `sota/rules/01` §1; `sota-threat-modeling` SKILL.md micro-STRIDE |
+| C — "fixed" needs the unpatched baseline firing at the current commit, identical instrumentation, and ≥3 failed same-class bypass attempts; an empty set is "incomplete" | **adopted** — extends `sota/rules/01` §4's *fresh search cannot get round the fix* into three mechanical checks | `sota/rules/05` §5 |
+| D — a reproduction has three outcomes; a setup failure is *not attempted*; a pre-launch marker proves only the launch | **adopted** — extends §1a.1's control-arm rule into a verdict | `sota-code-security/rules/12` §1a.2 |
+| E — a crash reachable only through a direct-call harness is not a reproduction | **adopted** — a gap (68 skill files mention reproduction; none rules this out) | `sota-code-security/rules/12` §1a.2 |
+| F — the R5.0 sandbox probe tested only a named rogue resolver, so a default resolver recursing to the internet passed | **adopted, as a fix to our own probe** — reproduced in podman: the new check reports HOLE with network on busybox and glibc, clean with `--network=none` on both | `sota-sandboxing/rules/05` §5 |
+| G — a finding inherited from another commit whose citation no longer resolves is re-located, not dropped | **adopted** — corrects `sota/rules/01` §4b's "fix the location or drop the finding", which assumed one commit | `sota/rules/05` §4; `sota/rules/01` §4b |
+| H — "dead / test-only / sample code" is a claim with an evidence bar that fails closed; an assert- or debug-only crash does not exist in production | **adopted** — `sota/rules/01` §3 allowed the downgrade with no bar | `sota/rules/01` §3 |
+| a cheap model deciding which files get a deep audit | **rejected** — the sampling filter `sota/rules/01` §3 (*collect deterministically, then judge*) rules out | — |
+| a numeric Impact × Likelihood × multiplier risk score | **rejected** — conflicts with `sota-threat-modeling` rules/04 (*don't multiply made-up numbers*) | — |
+| blanket reviewer rejection of DoS and hygiene findings | **rejected** — deliberately different from this library's severity model | — |
+
+**A hostile second read of these rules, before merge, returned 19 defects — every invariant
+was green on all of them.** The ones that changed a rule's meaning:
+- **H as first written pointed the wrong way**: *"a crash that needs an `assert` … does not
+  exist in production"* contradicted `sota-code-security` rules/11 §4 — a stripped assert lets
+  the bad state run on, and whether release strips it depends on the build (`python -O`,
+  `NDEBUG`; Rust's `assert!` never). Now: an assert dismisses nothing; re-analyse past it.
+- **A expired verdicts in one direction only**: dead-code and "sanitised upstream" verdicts are
+  claims about *callers*, so a new call into the file must expire them too (measured: a stale
+  dead-code verdict survived `git diff -- util.go` after a caller was added).
+- **C as first written made "fixed" unreachable** for static, secret, config and logic findings,
+  and left no exit when an unrelated commit removed the code: now scoped to executable
+  reproductions, with an explicit bar for the rest and a **resolved by `<sha>`** outcome.
+- **E failed open** (a direct-call crash "rated as hardening") against `sota/rules/03` §1's
+  *needs verification*; now it stays needs-verification until the public path is found.
+- **F overclaimed**: "a resolver that answers is a hole" is false for a local sinkhole, and a
+  forward-then-NXDOMAIN resolver leaks while passing; the line is now labelled a heuristic,
+  prefers `nslookup` over `getent` (`/etc/hosts` false positives), and names the canary-domain
+  test as the discriminating one. Re-verified in podman after the change.
+- Checklist commands fixed: `git diff --name-only` drops a rename's old path (use
+  `--name-status -M`); a squash-orphaned commit made the expiry check fail open (check
+  `git cat-file -e` first). "Two hops" and "at least three" are now labelled chosen defaults.
+
