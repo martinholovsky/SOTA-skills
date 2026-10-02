@@ -60,12 +60,24 @@ DEFAULT_VERIFY = [
     r"\bmvn\b.*\b(test|verify)\b", r"\bgradlew?\b.*\b(test|check)\b",
     r"\b(rspec|phpunit|pest)\b", r"\bbundle exec (rspec|rake)\b",
 ]
-UNSAFE = re.compile(r"(?<![|])\|(?![|])|;|\|\||(?<![&])&(?![&])")  # pipe, ;, ||, background &
+# pipe, ;, ||, or a backgrounding & — not the & of a redirect (2>&1, &>), which keeps the
+# verifier's own exit status
+UNSAFE = re.compile(r"(?<![|])\|(?![|])|;|\|\||(?<![&>])&(?![&>])")
 
 
 def git(cwd, *args, env=None):
     return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True,
                           env=env, timeout=60)
+
+
+def seed_index(real, idx):
+    """copy2, NOT copyfile: git trusts an entry's cached stat only when the file is older than
+    the INDEX FILE's mtime ("racy git"). copyfile gives the copy a fresh mtime, so a same-size
+    edit landing in the same second as the last index write was not rehashed and the OLD tree
+    id came back — a false allow on an unverified edit. Found as a 5-in-12 flaky self-test
+    (2026-10-02); the self-test now asserts this invariant directly, which a timing case could
+    catch only 6-7 times in 20."""
+    shutil.copy2(real, idx)
 
 
 def tree_id(cwd):
@@ -79,7 +91,7 @@ def tree_id(cwd):
         idx = os.path.join(tmp, "index")
         real = os.path.join(gitdir, "index")
         if os.path.exists(real):
-            shutil.copyfile(real, idx)          # seeded copy: add -A only rehashes changes
+            seed_index(real, idx)
         env = dict(os.environ, GIT_INDEX_FILE=idx)
         if git(cwd, "add", "-A", env=env).returncode != 0:
             return gitdir, None
@@ -237,12 +249,32 @@ def self_test():
         check("  ...and the reason names the pipe", {"decision": "block"} if r and "piped" in r["reason"] else None, "block")
         handle(bash("pytest -q", ok=False))
         check("failing verifier -> block", handle(ev("Stop")), "block")
-        handle(bash("cd sub && pytest -q"))
-        check("passing verifier on this tree -> allow", handle(ev("Stop")), "allow")
+        handle(bash("cd sub && pytest -q 2>&1"))
+        check("passing verifier on this tree (2>&1 keeps its status) -> allow", handle(ev("Stop")), "allow")
         edit("3\n")
         check("edit after the passing run -> block", handle(ev("Stop")), "block")
         handle(bash("ls -la"))
         check("non-verifier command is not evidence -> block", handle(ev("Stop")), "block")
+        # Racy git: a same-size edit in the same second must still change the tree id. Ten
+        # pass-then-edit cycles make a regression to an mtime-losing index copy fail instead of
+        # flaking (old shutil.copyfile: 5 of 12 before this case; see the measurement below).
+        missed = 0
+        for i in range(10):
+            handle(bash("pytest -q"))
+            # the real trigger: something (here `git status`) rewrites the index, caching this
+            # second's stat, and a same-size edit lands in that same second
+            subprocess.run(["git", "status", "--porcelain"], cwd=tmp, capture_output=True)
+            edit("%s\n" % "abcdefghij"[i])         # 2 bytes, same size; never the baseline "1\n"
+            missed += handle(ev("Stop")) is None
+        check("same-size edit after a passing run, x10 -> every one blocks",
+              {"decision": "block"} if missed == 0 else None, "block")
+        seeded = os.path.join(tempfile.mkdtemp(prefix="sota-vd-idx-"), "index")
+        real = os.path.join(tmp, ".git", "index")
+        seed_index(real, seeded)
+        same = os.stat(seeded).st_mtime_ns == os.stat(real).st_mtime_ns
+        check("seeded index keeps the real index's mtime (git's racy-clean guard)",
+              {"decision": "block"} if same else None, "block")
+        shutil.rmtree(os.path.dirname(seeded), ignore_errors=True)
         check("background task pending -> allow", handle(ev("Stop", background_tasks=[{"id": "x"}])), "allow")
         for _ in range(MAX_BLOCKS):
             handle(ev("Stop"))

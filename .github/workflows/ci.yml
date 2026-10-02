@@ -148,7 +148,8 @@ jobs:
         # An opt-in hook (scripts/verified-done-hook.py) that blocks "done" on a changed tree
         # until a verification command has passed on it. Its self-test is mostly KNOWN-BAD
         # sessions (no run, a piped run, a failing run, an edit after the passing run) that
-        # must block; a mutant that never blocks fails 7 of 13 (measured 2026-10-02).
+        # must block; a mutant that never blocks fails 8 of 15, and one that loses the index
+        # mtime (the racy-git false allow found 2026-10-02) fails every run (measured 20 of 20).
         run: python3 scripts/verified-done-hook.py --self-test
 
   claims:
