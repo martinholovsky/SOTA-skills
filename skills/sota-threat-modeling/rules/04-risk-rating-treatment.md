@@ -209,6 +209,17 @@ Rules:
   dispute is relitigated. Write the appetite line once ("we mitigate all
   High+, accept Medium with director sign-off, batch Lows quarterly") and
   point at it.
+- **No marginal capability.** Rating a bug by what it *does* rather than what it
+  *adds*: an administrator "exploiting" a flaw to download a file the UI already
+  lets them download gains nothing. Impact is the access the attacker did **not**
+  already hold. The exceptions are where the start position is narrower than it
+  looks — a tenant reaching another tenant, a guest reaching its host, a
+  build-time position reaching production (supply chain).
+- **Attacker position read off the transport.** "It's an HTTP API, so Network"
+  — the position is the outermost boundary the *first untrusted actor* must
+  cross, traced back through any trusted proxy, queue or job runner. A service
+  bound to localhost and fed only by a local job is Local, whatever protocol it
+  speaks; an internal RPC fed by a public webhook is Network.
 - **Probability theater.** "0.3 likelihood × $2.4M = $720k expected loss"
   built on gut numbers. Either do the FAIR-style estimation with calibrated
   ranges and document the basis, or keep honest bands.
@@ -259,6 +270,9 @@ Management cheat sheet, Code Review Guide v2.
 
 ## Audit checklist
 
+- [ ] **Marginal capability and attacker position** (§7): does each rating reflect access
+      the attacker did not already hold, and is the position the boundary the first
+      untrusted actor crosses — not the transport protocol?
 - [ ] A single, anchored rating scheme is defined and used consistently;
       anchors written down, not folklore.
 - [ ] No raw DREAD means or unadjusted CVSS base scores used as priority;

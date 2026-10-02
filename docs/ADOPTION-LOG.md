@@ -7522,3 +7522,19 @@ was green on all of them.** The ones that changed a rule's meaning:
   `--name-status -M`); a squash-orphaned commit made the expiry check fail open (check
   `git cat-file -e` first). "Two hops" and "at least three" are now labelled chosen defaults.
 
+## 2026-10-02 — Google's Mantis toolkit, batch 2 (the medium tier)
+
+Same source and method as batch 1 above; ideas only.
+
+| idea | verdict | landed in |
+|---|---|---|
+| mine version control for past security fixes, including silent ones; a shallow clone is partial history | **adopted** — `sota/rules/01` §2 asked for past incidents but never for the history itself | `sota-threat-modeling/rules/06` §1.3 |
+| read a file's security history before changing its guards | **adopted** — a gap on the BUILD side | `sota/rules/02` §4a |
+| call graphs and indexes decide reading order, never membership | **adopted** — the dependency-scanner version existed (`sota-devsecops` rules/13 §13.4), the code-audit version did not | `sota-threat-modeling/rules/06` §5 |
+| deliberately sweep one component the threat model calls safe | **adopted** — a gap; the model only ever narrowed the audit | `sota-threat-modeling/rules/06` §1.4 |
+| severity by marginal capability; attacker position by the first untrusted actor's boundary, not the transport | **adopted** — `sota/rules/03` §1 stated the trust-boundary leg only through positive examples | `sota-threat-modeling/rules/04` §7 |
+| a chain carries its strictest precondition and is "reproduced" only end to end | **adopted** — extends "chain before rating" | `sota-threat-modeling/rules/06` §3.4 |
+| an absent or unparsed verdict is never a class label | **adopted**, with Mantis's own scorer as the worked example — reproduced in a container against its real `eval_reviewer`/`eval_critic` and reported upstream as [google/mantis#8](https://github.com/google/mantis/issues/8) | `sota-llm-engineering/rules/01` §8 |
+| retry in a fresh context with a structured attempt ledger; agent memory stamped with its commit | **DEFERRED — `sota-llm-engineering` rules/04 is at 493 of 500 lines; revisit trigger: the next split of rules/04, or a field report of an agent looping on a stale context or memory.** | — |
+| availability tiers anchoring DoS severity | **rejected — already covered** by `sota-threat-modeling/rules/04` §8 (application and module risk tiers) and §3's impact anchors | — |
+

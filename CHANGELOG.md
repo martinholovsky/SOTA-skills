@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (§5); a reproduction has three outcomes and a direct-call harness proves nothing
   (`sota-code-security/rules/12` §1a.2); a diff review covers the diff's dependents; a dead-code
   or test-only downgrade fails closed; an inherited finding is re-located, not dropped.
+- **Mantis intake, batch 2:** mine git history for past security fixes (a shallow clone is
+  partial history); sweep one component the threat model calls safe; call graphs decide order,
+  never scope; severity by marginal capability and attacker position by boundary, not
+  transport; chains carry their strictest precondition; read a file's security history before
+  changing its guards; an absent eval verdict is never a class label (worked example:
+  google/mantis#8, reported upstream after reproducing it).
 - **Fixed in our own sandbox probe** (`sota-sandboxing/rules/05` §5): it tested only a named
   rogue resolver, so a sandbox whose default resolver recursed to the internet passed. Verified
   in podman on busybox and glibc, with and without network.
