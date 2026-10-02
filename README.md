@@ -5,7 +5,7 @@
   <a href="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml"><img src="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <img src="https://img.shields.io/badge/skills-42-2fa45f" alt="42 skills">
   <img src="https://img.shields.io/badge/modes-BUILD%20%2B%20AUDIT-2fa45f" alt="BUILD + AUDIT">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC%20BY%204.0-blue" alt="License: CC BY 4.0"></a>
+  <a href="#license"><img src="https://img.shields.io/badge/license-CC%20BY%204.0%20%2B%20Apache--2.0-blue" alt="License: CC BY 4.0 (content) + Apache-2.0 (code)"></a>
 </p>
 
 <p align="center">
@@ -1534,10 +1534,16 @@ rejection isn't re-litigated. Security issues and conduct:
 
 ## License
 
-© 2026 Martin Holovsky. Licensed under [CC BY 4.0](LICENSE) — Creative Commons
-Attribution 4.0 International. Use, adapt, and share freely (including
-commercially); just give attribution: *"SOTA Engineering Skills by Martin
-Holovsky, CC BY 4.0."*
+© 2026 Martin Holovsky. Two licences, split by what the file is:
+
+- **Content** — skills, rules, docs, eval cases and everything else not listed below — is
+  [CC BY 4.0](LICENSE), Creative Commons Attribution 4.0 International. Use, adapt, and share
+  freely (including commercially); just give attribution: *"SOTA Engineering Skills by Martin
+  Holovsky, CC BY 4.0."*
+- **Code** — every `*.sh` and `*.py` file, `hooks/hooks.json` and `.github/workflows/*` — is
+  [Apache-2.0](LICENSE-APACHE) (from 2026-10-02; earlier releases shipped it under CC BY 4.0).
+  CC licences are not designed for software; Apache-2.0 adds the patent grant and the
+  warranty disclaimer code needs.
 
 `profiles/` holds personal stack profiles and is git-ignored except
 `profiles/example.md.template` — copy that to `profiles/<you>.md` and edit it;

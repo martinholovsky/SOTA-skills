@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Code is now Apache-2.0; content stays CC BY 4.0.** Every `*.sh` and `*.py` file,
+  `hooks/hooks.json` and `.github/workflows/*` are licensed under [Apache-2.0](LICENSE-APACHE)
+  from 2026-10-02 (operator decision; sole author of every code file, 239 commits checked, so
+  no contributor consent was needed). Earlier releases shipped that code under CC BY 4.0 and
+  stay so. `plugin.json`'s `license` is now the SPDX expression `CC-BY-4.0 AND Apache-2.0`.
+
 ### Added
 
 - **`scripts/verified-done-hook.py` — an opt-in Stop hook that makes "done" require
