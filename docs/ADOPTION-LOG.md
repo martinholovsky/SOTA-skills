@@ -7522,3 +7522,31 @@ was green on all of them.** The ones that changed a rule's meaning:
   `--name-status -M`); a squash-orphaned commit made the expiry check fail open (check
   `git cat-file -e` first). "Two hops" and "at least three" are now labelled chosen defaults.
 
+## 2026-10-02 — Google's Mantis toolkit, batch 2 (the medium tier)
+
+Same source and method as batch 1 above; ideas only.
+
+| idea | verdict | landed in |
+|---|---|---|
+| mine version control for past security fixes, including silent ones; shallow or late-starting history is partial | **adopted** — `sota/rules/01` §2 already ranks churn and scans history for leaked secrets; mining *fix commits* for variant hunts was the new part | `sota-threat-modeling/rules/06` §1.3 |
+| read a guard's history before changing it | **adopted** — a gap on the BUILD side; first placed in `sota/rules/02`, which holds reasoning not imperatives, so moved to where BUILD loads it | `sota-code-security` SKILL.md BUILD step 7 |
+| a call graph is never the sole basis for dropping code from an audit | **adopted, narrowed** from Mantis's "order, never membership": `sota/rules/03` §2 accepts a call graph as one of two independent methods, and `sota-devsecops` rules/13 §13.4 lets a *validated* reachability tool decide | `sota-threat-modeling/rules/06` §5 |
+| deliberately sweep one component the threat model calls safe | **adopted** — a gap; the model only ever narrowed the audit | `sota-threat-modeling/rules/06` §1.4 |
+| severity by marginal capability; attacker position by the first untrusted actor's boundary, not the transport | **adopted** — `sota/rules/03` §1 stated the trust-boundary leg only through positive examples | `sota-threat-modeling/rules/04` §7 |
+| a chain carries its strictest precondition and is "reproduced" only end to end | **adopted** — extends "chain before rating" | `sota-threat-modeling/rules/06` §3.4 |
+| an absent or unparsed verdict is never a class label | **adopted**, with Mantis's own scorer as the worked example — reproduced in a container against its real `eval_reviewer`/`eval_critic` and reported upstream as [google/mantis#8](https://github.com/google/mantis/issues/8) | `sota-llm-engineering/rules/01` §8 |
+| retry in a fresh context with a structured attempt ledger; agent memory stamped with its commit | **DEFERRED — `sota-llm-engineering` rules/04 is at 493 of 500 lines; revisit trigger: the next split of rules/04, or a field report of an agent looping on a stale context or memory.** | — |
+| availability tiers anchoring DoS severity | **DEFERRED — revisit trigger: the next `sota-threat-modeling` rules/04 §3 edit, or a field report of a mis-rated availability finding.** First recorded as "already covered by §8"; the review found §8 tiers modelling *depth*, not DoS severity, and §3 has a single availability anchor | — |
+
+**A hostile second read of batch 2, before merge, returned 12 defects with every invariant
+green** — the same shape as batch 1. Those that changed a rule: the "safe component" sweep could
+cross the rules of engagement (now excluded, and chosen by rule); the attacker-position bullet
+used "Network/Local" against CVSS v3.1's own User Guide, which scores data passed from a network
+component to a separate vulnerable one as AV:Local (verified verbatim) — now a *risk* position
+recorded beside the CVSS vector; "Local" was judged by the intended feeder rather than
+reachability (pod-shared localhost, DNS rebinding); "marginal capability" missed lost audit,
+approval and MFA conditions and victim-mediated reach; a chain's "strictest precondition" would
+have demanded the very privilege the chain obtains; the eval checklist's "metrics drop" probe
+passed on the scorer it condemned; the guard-history step failed open on shallow clones; and
+this row's own "already covered" verdict for availability tiers was false.
+
