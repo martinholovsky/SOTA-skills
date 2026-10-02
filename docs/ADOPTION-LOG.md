@@ -7469,5 +7469,13 @@ was checked against the tree or the vendor's own docs on 2026-10-02.
 | Claude Code is closed, so its loop cannot be enforced; nothing can block an unverified "done" | **refuted** | hooks docs: a `Stop` hook returning `decision: "block"` stops the turn ending, `PreToolUse` can deny or rewrite tool calls; the Agent SDK exposes the same loop with hooks and permissions. Built: `scripts/verified-done-hook.py` |
 | The router is a 43 KB always-on blob | **refuted** — the size is right (43,506 bytes), the "always-on" is not: only descriptions are listed every turn | README section; INDEX row |
 | The published numbers come from raw-API single calls, not the harness the library runs in | **correct, narrowed** | every runner script is a chat-completion call with no tools and no execution (27 files read); a few results were hand-driven live sub-agents. `evals/README` → *What the evals do not measure* |
-| Build the six layers as a standalone harness | **not adopted (operator discussion open)** | layers 1, 2 and most of 3–4 are what Claude Code / the Agent SDK already are; `sota-devsecops` rules/10 §6 (do not reimplement). The open question is hosts whose own enforcement is weak — see the discussion recorded with the operator, not decided here |
+| Build the six layers as a standalone harness | **rejected as stated; replaced by an enforcement ladder (operator decision 2026-10-02)** | layers 1, 2 and most of 3–4 are what Claude Code / the Agent SDK already are; `sota-devsecops` rules/10 §6 (do not reimplement). Hosts differ per layer rather than good-vs-poor (aider's `--auto-test` already runs tests after every edit; Cursor's stop hook reportedly cannot veto), so each guarantee goes to the strongest boundary every host shares: rung 0 git hooks + CI (every host), rung 1 one policy core with per-host hook adapters, rung 2 an outer supervisor for hook-less hosts — never our own agent loop |
+
+**Operator decisions, 2026-10-02.** (1) Small opt-in enforcement components live **in this
+repo** (`scripts/verified-done-hook.py`), the precedent being `scripts/init-gates.sh`; only
+something with its own runtime dependency goes to a separate repo. (2) The next build is an
+**Agent SDK eval runner, in a separate repo**: it is the only way to measure whether the
+verified-done hook reduces unverified "done" claims, and to re-measure the published lifts
+inside a real agent session instead of one chat-completion call. Measure before building more
+enforcement (adapters, supervisor).
 
