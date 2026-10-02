@@ -47,8 +47,9 @@ Agree these before reading a single line of code:
   incident. A diff review that turns up a serious concern **escalates** to a baseline of
   the affected component — the defect class it exposed rarely lives only in the diff.
   **A diff review covers the diff's dependents too**: the callers and importers of every
-  changed file, two hops out, and both paths of a renamed file. A changed contract breaks
-  code that is not in the diff, and a review scoped to the diff cannot see it.
+  changed file and both paths of a renamed file — two hops out is a chosen default. A changed
+  contract breaks code that is not in the diff. A hub module (logging, a shared header) whose
+  dependents are the whole repo escalates to §1a partitioning, not to a skim.
   Where a full baseline is out of reach, extend it one component per cycle and record
   the covered set, and hold a recurring joint review in which security, development and
   operations read code together. OWASP: Secure Code Review cheat sheet; DSOMM.
@@ -174,12 +175,14 @@ command line (needed for §4 reproducibility).
   reported by four tools is one finding.
 - **Re-rate exploitability in this context.** A tool's "high" in dead code
   may be Info; a tool's "low" on an internet-facing auth path may be your
-  worst finding. Tool severity is an input, never the output. **"Dead, test-only or
-  sample code" is a claim with an evidence bar, and it fails closed**: no deploy
-  descriptor, entry point or published package reaches the code, every path is under a
-  test/example directory, and no untrusted input crosses into it — any doubt, and it is
-  production. The converse also holds: a crash that needs an `assert` or a debug-only path
-  that release builds compile out (`NDEBUG`) does not exist in production.
+  worst finding. Tool severity is an input, never the output. **"Dead" and "test-only"
+  are claims with evidence bars, and both fail closed** (any doubt: production). *Dead*:
+  no reference from any entry point — show the call-graph or symbol search. *Test or
+  sample*: every path under a test/example directory, not packaged or deployed, and not run
+  by a CI trigger that takes untrusted input (a PR's tests execute attacker code). An
+  `assert` is not a dismissal either: whether release strips it depends on the build
+  (`NDEBUG`, `python -O`; Rust's `assert!` never), and a stripped check usually *is* the
+  finding — re-analyse what runs past it (`sota-code-security` rules/11 §4).
 - **Suppressions are findings too**: inspect existing `#nosec`,
   `# nosemgrep`, `nolint`, audit-ignore files and the like — each one is
   either justified (note it) or a hidden finding.
@@ -426,10 +429,11 @@ one covers coverage, tooling and hygiene. Both run.
 
 **Coverage**
 - [ ] **Diff review: were the diff's dependents reviewed too** — callers and importers of
-      each changed file two hops out, both paths of any rename (§1)? Seed the list with
-      `git diff --name-only <base>...HEAD` and grep each changed module's import name.
-- [ ] **Every dead-code / test-only / sample downgrade passed all of its checks**, and no
-      assert- or debug-only crash was rated as a production defect (§3)?
+      each changed file, both paths of any rename (§1)? `git diff --name-status -M
+      <base>...HEAD` prints both paths on `R` lines (`--name-only` drops the old one); find
+      dependents by symbol reference, not import name alone (relative and directory imports).
+- [ ] **Every dead-code / test-only downgrade passed its own bar** (§3), and no `assert`
+      was treated as dismissing a finding without checking the release build's flags?
 - [ ] Scope agreed: repos, branch, pinned commit, environments,
       static-vs-dynamic — and exclusions documented?
 - [ ] Standards set named up front (ASVS level, OWASP Top 10 2025,

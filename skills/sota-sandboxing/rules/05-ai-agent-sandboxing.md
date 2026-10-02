@@ -290,8 +290,9 @@ for u in http://169.254.169.254/latest/meta-data/ http://example.com/ http://1.1
   curl -m3 -s -o /dev/null "$u"; denied $? || hole "egress $u"   # resolvable name + live IP
 done
 need nslookup && nslookup example.com 8.8.8.8 >/dev/null 2>&1 && hole "rogue-resolver DNS"
-if command -v getent >/dev/null 2>&1; then getent hosts example.com >/dev/null 2>&1 && hole "default resolver answers a non-allowlisted name (R4.2)"
-elif need nslookup; then nslookup example.com >/dev/null 2>&1 && hole "default resolver answers a non-allowlisted name (R4.2)"; fi
+if command -v nslookup >/dev/null 2>&1; then nslookup example.com >/dev/null 2>&1 && hole "default resolver answers a non-allowlisted name (R4.2)"
+elif command -v getent >/dev/null 2>&1; then getent hosts example.com >/dev/null 2>&1 && hole "default resolver answers a non-allowlisted name (R4.2)"
+else echo "INCONCLUSIVE: no nslookup or getent"; inc=1; fi
 for d in /etc / "${AGENT_CONFIG_DIR:-}"; do
   [ -n "$d" ] || continue; p="$d/.sbx-probe.$$"
   touch -- "$p" 2>/dev/null && { rm -f -- "$p"; hole "writable $d"; }
@@ -309,11 +310,16 @@ from a broken-but-fail-closed one (exit 2); so does a missing `nslookup` or `uns
 would otherwise read as "denied". Verified 2026-09-26 under busybox sh in podman: exit 0 in a
 no-network, read-only, non-root box whose seccomp profile denies `unshare`; 1 with egress open
 or a writable root; 2 with `unshare` absent from PATH.
-**The default-resolver line closes a hole the curl checks cannot see**: curl's exit 7 ("resolved,
-connection refused") counts as denied, yet the name *resolved* — and resolution is the R4.2 exfil
-channel. A resolver that answers a non-allowlisted name is a hole even when no connection follows.
-Verified 2026-10-02 in podman: HOLE with network on busybox (`nslookup`) and glibc (`getent`), clean
-with `--network=none` on both. (Gap found in Google's Mantis toolkit's in-guest probe, Apache-2.0.)
+**The default-resolver line is a cheap heuristic for a hole the curl checks cannot see**: curl's
+exit 7 ("resolved, connection refused") counts as denied, yet the name *resolved* — and the R4.2
+channel is the query leaving the sandbox. It errs both ways: a local sinkhole that answers every
+name gives a false HOLE (check the answer is the real record), and a resolver that forwards the
+query upstream, then returns NXDOMAIN, gives a false clean while `<b32>.attacker.com` still leaks.
+`nslookup` is preferred because `getent` consults `/etc/hosts` first (a pinned hosts entry reads
+as a HOLE). **The discriminating test** is a unique random subdomain of a canary domain whose
+authoritative query log you read: any logged query is the leak. Verified 2026-10-02 in podman:
+HOLE with network on busybox (`nslookup`) and glibc (`getent`), clean with `--network=none` on both.
+(Gap found in Google's Mantis toolkit's in-guest probe, Apache-2.0.)
 
 ## 6. Multi-agent and computer-use specifics
 

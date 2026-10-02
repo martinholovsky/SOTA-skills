@@ -7500,3 +7500,25 @@ Ideas only, no text copied. Batch 1 of 2 (A–H); the medium tier follows in its
 | a numeric Impact × Likelihood × multiplier risk score | **rejected** — conflicts with `sota-threat-modeling` rules/04 (*don't multiply made-up numbers*) | — |
 | blanket reviewer rejection of DoS and hygiene findings | **rejected** — deliberately different from this library's severity model | — |
 
+**A hostile second read of these rules, before merge, returned 19 defects — every invariant
+was green on all of them.** The ones that changed a rule's meaning:
+- **H as first written pointed the wrong way**: *"a crash that needs an `assert` … does not
+  exist in production"* contradicted `sota-code-security` rules/11 §4 — a stripped assert lets
+  the bad state run on, and whether release strips it depends on the build (`python -O`,
+  `NDEBUG`; Rust's `assert!` never). Now: an assert dismisses nothing; re-analyse past it.
+- **A expired verdicts in one direction only**: dead-code and "sanitised upstream" verdicts are
+  claims about *callers*, so a new call into the file must expire them too (measured: a stale
+  dead-code verdict survived `git diff -- util.go` after a caller was added).
+- **C as first written made "fixed" unreachable** for static, secret, config and logic findings,
+  and left no exit when an unrelated commit removed the code: now scoped to executable
+  reproductions, with an explicit bar for the rest and a **resolved by `<sha>`** outcome.
+- **E failed open** (a direct-call crash "rated as hardening") against `sota/rules/03` §1's
+  *needs verification*; now it stays needs-verification until the public path is found.
+- **F overclaimed**: "a resolver that answers is a hole" is false for a local sinkhole, and a
+  forward-then-NXDOMAIN resolver leaks while passing; the line is now labelled a heuristic,
+  prefers `nslookup` over `getent` (`/etc/hosts` false positives), and names the canary-domain
+  test as the discriminating one. Re-verified in podman after the change.
+- Checklist commands fixed: `git diff --name-only` drops a rename's old path (use
+  `--name-status -M`); a squash-orphaned commit made the expiry check fail open (check
+  `git cat-file -e` first). "Two hops" and "at least three" are now labelled chosen defaults.
+
