@@ -164,6 +164,33 @@ produce *an* outcome at all. With it, the mechanism reproduced on the first run.
   should be labelled *"did not reproduce here"*, never *"refuted"* — the first is about your
   instrument, the second about the world.
 
+### 1a.2 A reproduction has three outcomes, and only the sink proves the second
+
+A security reproduction ends in one of three states, and conflating the last two is the
+most common false negative an agent produces:
+
+- **Reproduced** — the defect fired, observed through the target's own behaviour.
+- **Reached, did not fire** — evidence shows execution got to the sink and the defect did
+  not occur. Only this state supports *"not reproducible"*.
+- **Not attempted** — the harness never reached the sink. A build or compile failure, exit
+  127 (command not found), a missing input file, or a crash in your own wrapper all land
+  here. It is retry-eligible and says nothing about the code.
+
+**Proof of reaching the sink comes from the target, not from your wrapper.** A marker your
+script writes *before* launching the target proves only that a launch was attempted. Use
+evidence the target produces on the path itself — a log line or trace naming the sink
+function, or an in-path marker written to a file (stdout can be truncated by the very crash
+you are looking for).
+
+**A crash that needs a direct-call harness is not a reproduction.** Feeding a private or
+static function a hand-built input — a buffer allocated at a size the library's own
+wrappers never produce, a state no public entry point can create — proves the function is
+fragile, not that the program is vulnerable. Reproduce through the public entry point that
+an attacker can reach (`sota/rules/03` §1, the *reaches* leg); until then the finding is
+"reached in isolation", rated as hardening.
+
+Source: Google's Mantis toolkit (Apache-2.0) reproduction gates; adopted 2026-10-02.
+
 ## 1b. Where the probe lives decides whether it survives
 
 §1 and §1a describe probes as things you *run*. In any suite that keeps them they
@@ -369,6 +396,10 @@ n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
 
 ## Audit checklist
 
+- [ ] **Does every "not reproducible" rest on evidence that the sink was reached?** (§1a.2)
+      A build failure, exit 127, a missing input or a wrapper crash is *not attempted*, and a
+      marker written before launch proves only the launch. Is any "reproduced" claim built
+      on a direct-call harness rather than a public entry point?
 - [ ] **Does any probe mutate by a fixed delta *smaller than the cap it must cross*?** (§1d)
       That, not "a numeric threshold", is the shape that decays: the probe's strength is the
       subject's current slack, so improving the subject disarms it while the mutation still

@@ -1,8 +1,9 @@
 # Audit Report & Tracking — Reproduction, Finding Lifecycle, Report Provenance
 
 Scope: the fields that let a finding be **re-run by someone else** and **followed to closure**
-after the report is delivered, and the provenance a report needs so a reader can judge who
-looked and against what. It extends two sections of `rules/03` without restating them: the
+after the report is delivered, the provenance a report needs so a reader can judge who
+looked and against what, and the two rules that keep a verdict honest once the code moves —
+a verdict expires with its commit (§4) and "fixed" needs three runs (§5). It extends two sections of `rules/03` without restating them: the
 eight-field evidence block (`rules/03` §2) and the report order (`rules/03` §5). `rules/01`
 owns how the audit is run; `rules/03` owns rating and evidence; this file owns what keeps a
 delivered report usable once remediation starts.
@@ -69,6 +70,55 @@ Add these to the **Scope & methodology** section (`rules/03` §5, item 2):
 
 OWASP: Code Review Guide v2.
 
+## 4. A verdict is bound to the commit it was made at
+
+Every terminal verdict — *false positive*, *withdrawn*, *fixed*, *risk accepted*, *dead code /
+test-only* — is a claim about **specific code at a specific commit**. Record that commit beside
+the verdict, and treat the verdict as **expired** once the code under it changes:
+
+- **A dismissal lapses when its file changes.** A false positive, a test-only or dead-code
+  classification, or an accepted risk on `auth.go` was true of `auth.go` at `<sha>`. If
+  `auth.go` — or a file it depends on — has changed since, the finding is re-examined, not
+  inherited. Carrying old verdicts forward unchanged steers the next pass away from exactly the
+  code where a regression would sit.
+- **A "fixed" finding that reappears is a possible regression, never a duplicate.** When a new
+  finding matches one already marked fixed, but on code that changed since the fix was
+  verified, keep it **open** and note the history. Filtering it as "already reported" hides a
+  reverted or bypassed fix — the one outcome a re-audit exists to catch.
+- **A finding inherited from another commit is re-located, not dropped.** `rules/01` §4b fails a
+  citation that does not resolve; that rule assumes the finding and the reader are at the same
+  commit. For a finding from an earlier report, ticket or wave, a moved or renamed file is
+  drift, not hallucination: find the code again at the current commit, then apply the citation
+  check to the new location. Drop it only if the code is genuinely gone.
+- **Evidence from another commit cannot raise a rating.** A crash log, trace or PoC captured at
+  an earlier commit supports *"this happened at `<old sha>`"*. It upgrades severity at the
+  current commit only after it is re-run there.
+
+Source: Google's Mantis toolkit (Apache-2.0) keys every carried-over verdict to the snapshot it
+was made against and re-discovers it when the file changed; adopted 2026-10-02 (ADOPTION-LOG).
+
+## 5. A fix is verified by three runs, not one
+
+`rules/01` §4 makes the bar *"a fresh search cannot get round the fix"*. Three checks make
+that bar mechanical, and each closes a known way to record a false "fixed":
+
+1. **The unpatched baseline still fires on the current tree.** Re-run the reproduction against
+   the *unpatched* code at today's commit before testing the patch. If it no longer fires
+   there, something else changed; the verdict is **inconclusive**, never "fixed".
+2. **Identical instrumentation for every run.** Baseline, patched and re-attack runs use the
+   same build flags, sanitizers and configuration. Dropping a sanitizer between runs makes the
+   crash disappear and reads exactly like a fix (`sota-c-cpp` rules/02).
+3. **At least three same-class bypass attempts, all of which fail.** Vary the input along the
+   axis the fix guards — off-by-one lengths, zero and maximum sizes, another entry point, an
+   alternate encoding. A variant that triggers a *different* defect is a new finding, not a
+   bypass. An empty or short attempt set is **verification incomplete**: "all attempts failed"
+   is vacuously true of zero attempts (`sota-code-security` rules/11 §2.2).
+
+The most common failed auto-repair blocks only the exact bytes of the reported PoC; check 3 is
+what catches it.
+
+Source: Google's Mantis toolkit (Apache-2.0) patch gate; adopted 2026-10-02 (ADOPTION-LOG).
+
 ---
 
 ## Audit checklist — quality gate on reproduction, tracking and provenance
@@ -82,6 +132,15 @@ OWASP: Code Review Guide v2.
 - [ ] **Medium** — If any finding has tracking fields, do all of them have status, assignee,
       due date and ticket; does every "fixed" name the verifying commit, and every "risk
       accepted" an owner and an expiry (§2)?
+- [ ] **High** — Does every terminal verdict (false positive, withdrawn, fixed, risk
+      accepted, dead code) carry the commit it was made at, and was each one re-examined when
+      its file or a dependency changed since (§4)? List files changed since a verdict's commit:
+      `git diff --name-only <verdict-sha>..HEAD -- <file>`. Any output means the verdict expired.
+- [ ] **High** — Was a new finding matching an already-fixed one kept **open** as a possible
+      regression rather than filtered as a duplicate (§4)?
+- [ ] **High** — Does every "fixed" record all three runs: unpatched baseline firing at the
+      current commit, identical instrumentation, and at least three failed same-class bypass
+      attempts (§5)? Fewer than three is "verification incomplete", not "fixed".
 - [ ] **Low** — Scope & methodology names the author, the reviewer and the checklist with
       its version (§3)? Expect three hits:
       `grep -iE '^[*_ -]*(Author|Reviewer|Checklist)[^:]*:' report.md`

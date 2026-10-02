@@ -46,6 +46,9 @@ Agree these before reading a single line of code:
   over legacy code, a compliance cycle, a change to the architecture, and after an
   incident. A diff review that turns up a serious concern **escalates** to a baseline of
   the affected component — the defect class it exposed rarely lives only in the diff.
+  **A diff review covers the diff's dependents too**: the callers and importers of every
+  changed file, two hops out, and both paths of a renamed file. A changed contract breaks
+  code that is not in the diff, and a review scoped to the diff cannot see it.
   Where a full baseline is out of reach, extend it one component per cycle and record
   the covered set, and hold a recurring joint review in which security, development and
   operations read code together. OWASP: Secure Code Review cheat sheet; DSOMM.
@@ -171,7 +174,12 @@ command line (needed for §4 reproducibility).
   reported by four tools is one finding.
 - **Re-rate exploitability in this context.** A tool's "high" in dead code
   may be Info; a tool's "low" on an internet-facing auth path may be your
-  worst finding. Tool severity is an input, never the output.
+  worst finding. Tool severity is an input, never the output. **"Dead, test-only or
+  sample code" is a claim with an evidence bar, and it fails closed**: no deploy
+  descriptor, entry point or published package reaches the code, every path is under a
+  test/example directory, and no untrusted input crosses into it — any doubt, and it is
+  production. The converse also holds: a crash that needs an `assert` or a debug-only path
+  that release builds compile out (`NDEBUG`) does not exist in production.
 - **Suppressions are findings too**: inspect existing `#nosec`,
   `# nosemgrep`, `nolint`, audit-ignore files and the like — each one is
   either justified (note it) or a hidden finding.
@@ -283,7 +291,9 @@ HTML is only a redirect stub.
   prompt, same salient files, nothing carried over. Carry the already-reported
   findings into the next wave as an explicit exclusion so it is steered past them
   instead of re-deriving them, and treat a wave that returns the previous wave's
-  list as a failed wave.
+  list as a failed wave. **Key each exclusion to the commit it was found at**: a file
+  changed since drops out of the exclusion and is re-examined, and a new match for an
+  already-*fixed* finding stays open as a possible regression (`rules/05` §4).
 
 ---
 
@@ -364,7 +374,9 @@ after** — resolve every citation mechanically:
       basename. `src/auth/session.go` and `src/authz/session.go` both exist.
 
 A citation that does not resolve **fails the finding, it does not soften it**. Fix the
-location or drop the finding; never ship it with an approximate one. The cost
+location or drop the finding; never ship it with an approximate one. (A finding
+inherited from an earlier commit is re-located first, not dropped: drift is not
+hallucination — `rules/05` §4.) The cost
 asymmetry is the whole argument for putting this first: this check is mechanical and
 takes seconds, the refutation pass in `rules/03` §4 is expensive, and a finding that
 cannot even be located does not deserve a refuter's attention.
@@ -413,6 +425,11 @@ Finding quality and report structure are checked by `rules/03`'s checklist; this
 one covers coverage, tooling and hygiene. Both run.
 
 **Coverage**
+- [ ] **Diff review: were the diff's dependents reviewed too** — callers and importers of
+      each changed file two hops out, both paths of any rename (§1)? Seed the list with
+      `git diff --name-only <base>...HEAD` and grep each changed module's import name.
+- [ ] **Every dead-code / test-only / sample downgrade passed all of its checks**, and no
+      assert- or debug-only crash was rated as a production defect (§3)?
 - [ ] Scope agreed: repos, branch, pinned commit, environments,
       static-vs-dynamic — and exclusions documented?
 - [ ] Standards set named up front (ASVS level, OWASP Top 10 2025,

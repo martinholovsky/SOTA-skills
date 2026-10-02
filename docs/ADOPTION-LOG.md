@@ -7479,3 +7479,24 @@ verified-done hook reduces unverified "done" claims, and to re-measure the publi
 inside a real agent session instead of one chat-completion call. Measure before building more
 enforcement (adapters, supervisor).
 
+## 2026-10-02 — Google's Mantis toolkit: verdicts that expire, fixes and reproductions that prove themselves
+
+Source: [google/mantis](https://github.com/google/mantis) (Apache-2.0; 19 agent skills, ~9,100
+lines, plus a reference harness), read in full by three partitioned agents, each idea checked
+against this library by content with file:line; every claim below re-verified here before landing.
+Ideas only, no text copied. Batch 1 of 2 (A–H); the medium tier follows in its own change.
+
+| idea | verdict | landed in |
+|---|---|---|
+| A — a verdict (false positive, fixed, dead code, accepted) expires when its file changes; a match for a fixed finding on changed code is a possible regression | **adopted** — and it corrects a rule that pointed the wrong way: `sota/rules/01` §4 carried earlier findings forward as an exclusion with no lapse, so a reverted fix stayed hidden. Flagged independently by all three agents | `sota/rules/05` §4; `sota/rules/01` §4 keyed to the commit |
+| B — a diff review covers the diff's dependents (callers/importers two hops out, both paths of a rename) | **adopted** — a gap: diff-only was the stated default | `sota/rules/01` §1; `sota-threat-modeling` SKILL.md micro-STRIDE |
+| C — "fixed" needs the unpatched baseline firing at the current commit, identical instrumentation, and ≥3 failed same-class bypass attempts; an empty set is "incomplete" | **adopted** — extends `sota/rules/01` §4's *fresh search cannot get round the fix* into three mechanical checks | `sota/rules/05` §5 |
+| D — a reproduction has three outcomes; a setup failure is *not attempted*; a pre-launch marker proves only the launch | **adopted** — extends §1a.1's control-arm rule into a verdict | `sota-code-security/rules/12` §1a.2 |
+| E — a crash reachable only through a direct-call harness is not a reproduction | **adopted** — a gap (68 skill files mention reproduction; none rules this out) | `sota-code-security/rules/12` §1a.2 |
+| F — the R5.0 sandbox probe tested only a named rogue resolver, so a default resolver recursing to the internet passed | **adopted, as a fix to our own probe** — reproduced in podman: the new check reports HOLE with network on busybox and glibc, clean with `--network=none` on both | `sota-sandboxing/rules/05` §5 |
+| G — a finding inherited from another commit whose citation no longer resolves is re-located, not dropped | **adopted** — corrects `sota/rules/01` §4b's "fix the location or drop the finding", which assumed one commit | `sota/rules/05` §4; `sota/rules/01` §4b |
+| H — "dead / test-only / sample code" is a claim with an evidence bar that fails closed; an assert- or debug-only crash does not exist in production | **adopted** — `sota/rules/01` §3 allowed the downgrade with no bar | `sota/rules/01` §3 |
+| a cheap model deciding which files get a deep audit | **rejected** — the sampling filter `sota/rules/01` §3 (*collect deterministically, then judge*) rules out | — |
+| a numeric Impact × Likelihood × multiplier risk score | **rejected** — conflicts with `sota-threat-modeling` rules/04 (*don't multiply made-up numbers*) | — |
+| blanket reviewer rejection of DoS and hygiene findings | **rejected** — deliberately different from this library's severity model | — |
+

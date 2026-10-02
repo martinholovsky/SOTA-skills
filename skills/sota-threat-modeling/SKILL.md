@@ -62,7 +62,8 @@ full STRIDE-per-interaction model for a new service or auth flow.
   design docs and PR descriptions for any change matching a re-model trigger:
   new dependency, new endpoint/route/queue/cron/webhook, new trust boundary,
   new data class, auth/authz change, file/deserialization handling.
-- In PR review, run a micro-STRIDE on the diff only: what new input enters?
+- In PR review, run a micro-STRIDE on the diff and its dependents (callers and importers
+  of each changed file — `sota/rules/01` §1): what new input enters?
   whose privilege executes it? what does it write or call? Takes 5 minutes;
   catches the majority of design-level regressions.
 
