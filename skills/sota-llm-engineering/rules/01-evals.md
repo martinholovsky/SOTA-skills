@@ -225,12 +225,14 @@ Production is the only honest distribution. Build the loop:
 
 - **An absent or unparsed verdict is its own outcome — never a class label.** A
   scorer that initialises the prediction to the negative class and swallows
-  exceptions scores every failed call as a correct rejection. Worked example
-  (reproduced 2026-10-02, reported upstream as google/mantis#8): with the model
-  call raising on every case, that toolkit's reviewer eval reported
-  `precision: 1.0` and `noise_admitted: 0`. Initialise to `None`, count
-  `no_verdict` and `errors` beside the metrics, and treat precision as undefined
-  when nothing was predicted positive (`sota-code-security` rules/13 §4a).
+  exceptions scores every failed call as a negative prediction — a correct rejection
+  on negative cases, a miss on positive ones. Worked example (reproduced 2026-10-02,
+  reported upstream as google/mantis#8): with the model call raising on every case,
+  that toolkit's reviewer eval reported `precision: 1.0` and `noise_admitted: 0`
+  beside `recall: 0.0` — so the failure was visible in one metric and scored as
+  perfect in two. Initialise to `None`, count `no_verdict` and `errors` beside the
+  metrics, and treat precision as undefined when nothing was predicted positive
+  (`sota-code-security` rules/13 §4a).
 - **Prove the instrument can *see* the change before you run it.** An eval whose
   treated arm never reads the thing you modified returns `+0.00` — and that null is
   **structural, not a result**, while looking exactly like a real one. Before spending,
@@ -362,7 +364,9 @@ published claim rested on that 0.00 for several hours.
 
 - [ ] **No-verdict rows** (§8): does the scorer initialise predictions to "none" rather
       than a class, count failed and unparsed calls as their own outcome, and report that
-      count beside every metric? Kill the model call in one run and check the metrics drop.
+      count beside every metric? Kill the model call in one run: it must report
+      `no_verdict == N`, precision as undefined (not 1.0), and the run as invalid. "Some
+      metrics dropped" is not the test — the condemned scorer passes it.
 - [ ] **Can the rubric distinguish "correctly declined" from "omitted"?** (§8a) A
       completeness rubric scores both at zero — measured here, a guided arm scored **0.00**
       for asking a security-relevant clarifying question its own guidance prescribed. If the

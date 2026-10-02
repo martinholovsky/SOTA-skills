@@ -190,9 +190,15 @@ def main(argv):
     else:                                      # replaying a past commit: its own ledger
         lines = git("show", "%s:%s" % (head, ledger)).split("\n")
     resolved, unresolved = mapping(lines)
-    rng = "%s...%s" % (base, head)
-    changed = set(p for p in git("diff", "--name-only", rng).split("\n") if p)
-    added = set(l[1:] for l in git("diff", "--unified=0", rng, "--", ledger).split("\n")
+    # Read the diff from the SAME state the ledger was read from. For HEAD that is the
+    # working tree against the merge base (`git diff <base>`), which includes staged and
+    # unstaged edits: reading the ledger from the work tree but the diff from base...HEAD
+    # blocked a commit whose staged ledger row acknowledged the very file it edited
+    # (found 2026-10-02 by this check's first real use). In CI the tree is clean, so both
+    # forms agree. A replayed past commit keeps base...<commit>.
+    rng = [base] if head == "HEAD" else ["%s...%s" % (base, head)]
+    changed = set(p for p in git("diff", "--name-only", *rng).split("\n") if p)
+    added = set(l[1:] for l in git("diff", "--unified=0", *rng, "--", ledger).split("\n")
                 if l.startswith("+") and not l.startswith("+++"))
     fired = acked = 0
     bad = []

@@ -123,16 +123,6 @@ Attention is not an enforcement mechanism; a test is.
   (`sota-code-security` rules/11 §2.2): "0 checked, 0 failed" is a pass shaped exactly
   like a real one.
 
-## 4a. Read a file's security history before changing its guards
-
-Before editing code that validates, escapes, authorises, bounds or rate-limits, read
-why it is shaped that way: `git log -p --follow -- <file>` for the commits that
-added each check, and the project's security advisories. A guard that looks
-redundant is often a past fix, and "simplifying" it re-opens the hole — a regression
-no test catches unless the fix shipped one. The same goes for a finding once
-triaged as a false positive because of a guard: removing the guard expires the
-verdict (`sota/rules/05` §4).
-
 ## 5. Changing BUILD? Change these too
 
 The BUILD workflow is **mirrored in four places**. They drift independently, and three of

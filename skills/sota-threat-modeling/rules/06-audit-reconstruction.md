@@ -31,16 +31,21 @@ boundary/control level, not line-by-line).
    a test target. **Mine version control for past security fixes** — including
    the silent ones, which carry no CVE or keyword: commits that add a bounds
    check, an escape, an authorisation check or a size limit. Each fixed class is
-   a variant hunt across the rest of the code. A shallow clone
-   (`git rev-parse --is-shallow-repository` prints `true`) is **partial**
-   history: record it as such, never as "no prior vulnerabilities".
+   a variant hunt across the rest of the code. Search the history for the guard
+   idioms themselves (`git log -G'<bounds|escape|authz|limit pattern>'`) and record
+   the query and the number of commits it covered. History is **partial** when the
+   clone is shallow (`git rev-parse --is-shallow-repository` prints `true`) — and also
+   when it is not: an "initial import", a migration from another VCS or a squash-import
+   starts history late, so compare the root commit's date with the project's age.
+   Record partial history as such, never as "no prior vulnerabilities".
 4. **Run the catalogs (`03`)** against each component → control-presence
    matrix (§2 below). Prioritize components on paths to top-3 assets when
    time-boxed; record de-scoping explicitly. **Then spend part of the budget on
-   one component the model marks safe, low-risk or out of scope**, read fresh,
-   ignoring the model's assumptions about it: a threat model's "safe" is its
-   least-tested claim, and an audit steered only by its own model inherits its
-   blind spots.
+   one component the model marks safe or low-risk, or that the time-box de-scoped**
+   — never one excluded by the rules of engagement (`sota/rules/01` §1). Pick it by
+   rule, not by hunch: the lowest-rated component on a path to a top-3 asset. Read it
+   fresh, ignoring the model's assumptions: a threat model's "safe" is its least-tested
+   claim, and an audit steered only by its own model inherits its blind spots.
 5. **Test assumptions from step 3:** for each, find the code/config that makes
    it true. No evidence = broken assumption = finding (these are usually the
    Criticals: "gateway-only trust" with services bound to 0.0.0.0).
@@ -110,10 +115,13 @@ For each Absent/Partial cell:
    Critical path get ONE chained finding rated for the chain (SSRF [M] +
    IMDSv1 [M] + over-privileged role [M] = metadata-credential takeover [C]),
    with member gaps listed as remediation points. Report the chain, not three
-   medium tickets nobody connects. A chain carries the **strictest** precondition
-   of its links — the privilege the entry step needs, and user interaction if
-   any step needs it — and it is "reproduced" only when run end to end:
-   reproducing each link proves the links, so say *not end-to-end reproduced*.
+   medium tickets nobody connects. A chain's preconditions are the entry step's
+   privilege plus any precondition a later link needs that no earlier link supplies
+   (user interaction, a non-default configuration, a race window) — not the privilege
+   a link *obtains*, which the chain provides. It is "reproduced" only when run end to
+   end, in a non-production environment within the rules of engagement; reproducing
+   each link proves the links, so until then rate it *needs verification*
+   (`sota/rules/03` §1).
 
 ## 4. Severity calibration (audit-specific)
 
@@ -149,11 +157,13 @@ Tools feed the audit; they are never the audit:
   becomes the structural regression guard you recommend (`04` §5 VER-2).
 - **Read IaC before code.** Network policy, IAM, and bucket policy answer
   reachability questions that would take hours to establish from app code.
-- **Call graphs and semantic indexes decide reading ORDER, never MEMBERSHIP.**
-  They miss indirect calls — function pointers, virtual dispatch, macros,
-  reflection, framework routing — so a component is never dropped because the
-  index shows no caller. "No callers found" is an absence claim: text search over
-  the whole tree is the floor (`sota` rules/03 §2).
+- **A call graph or semantic index is never the sole basis for dropping code from
+  the audit.** It misses indirect calls — function pointers, virtual dispatch,
+  macros, reflection, framework routing — so "no callers found" is an absence claim
+  and needs a second, independent method (`sota/rules/03` §2): a text search over
+  the whole tree, *including* config, route tables and annotations, since
+  string-built reflection and declared routes escape a call graph and plain grep
+  alike. Use the index to order reading.
 
 Timebox tiers (state which tier the report represents):
 
@@ -227,11 +237,11 @@ Meta-findings — the audit also rates the team's PROCESS:
 
 ## Audit checklist (meta — quality bar for the audit itself)
 
-- [ ] **History, the "safe" corner, chains and index-scoped absences** (§1.3, §1.4, §3.4, §5):
-      were past security fixes (including silent ones) mined and their classes hunted, with
-      a shallow clone recorded as partial history? Was one component the model calls safe
-      swept fresh? Does every chain carry its strictest precondition and say whether it was
-      run end to end? Was anything dropped only because a call graph showed no caller?
+- [ ] **History mined** (§1.3): the guard-idiom query and its commit count recorded, shallow
+      or late-starting history marked partial, and each fixed class hunted across the code?
+- [ ] **One "safe" component swept** (§1.4), chosen by rule and inside the rules of engagement?
+- [ ] **Chains** (§3.4): preconditions stated, and *needs verification* until run end to end?
+- [ ] **No code dropped on a call graph alone** (§5): a second method, config and routes included?
 - [ ] Artifact inventory recorded, including what was NOT provided; nothing
       silently skipped — unverifiable surface reported as such.
 - [ ] Reconstructed DFD + entry-point sweep completed per 02 §B before any

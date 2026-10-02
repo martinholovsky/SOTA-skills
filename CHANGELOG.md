@@ -19,9 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mantis intake, batch 2:** mine git history for past security fixes (a shallow clone is
   partial history); sweep one component the threat model calls safe; call graphs decide order,
   never scope; severity by marginal capability and attacker position by boundary, not
-  transport; chains carry their strictest precondition; read a file's security history before
-  changing its guards; an absent eval verdict is never a class label (worked example:
+  transport (kept separate from the CVSS Attack Vector); chains carry the preconditions no
+  earlier link supplies; read a guard's history before changing it (`sota-code-security` BUILD
+  step 7); an absent eval verdict is never a class label (worked example:
   google/mantis#8, reported upstream after reproducing it).
+- **Invariant 39 read two different states**: the ledger from the working tree, the diff from
+  `base...HEAD`. At pre-commit time a staged ledger row acknowledging the edited file was
+  invisible, so the check blocked a correct commit (found on its first real use). Both now come
+  from the working tree against the merge base; CI, with a clean tree, is unaffected.
 - **Fixed in our own sandbox probe** (`sota-sandboxing/rules/05` §5): it tested only a named
   rogue resolver, so a sandbox whose default resolver recursed to the internet passed. Verified
   in podman on busybox and glibc, with and without network.

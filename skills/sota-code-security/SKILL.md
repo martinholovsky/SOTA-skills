@@ -61,7 +61,14 @@ adversary-readable; every privileged operation needs an explicit, code-enforced
    Assert on real loaded artifacts (not `exists()`), fail closed *and* loudly,
    never truncate what you are about to inspect or parse, and make degradation
    a distinct, metered state. rules/10 is the full catalog.
-7. **Finish with the file's audit checklist.** Before declaring code complete,
+7. **Read a guard's history before changing it.** Before editing code that validates,
+   escapes, authorises, bounds or rate-limits, find why it is there: `git log -L
+   <start>,<end>:<file>` or `git log -S'<guard expression>'` on the guard lines (`--follow`
+   tracks renames only, not a guard moved between files), plus the project's advisories. A
+   guard that looks redundant can be a past fix. **Check `git rev-parse
+   --is-shallow-repository` first**: a shallow clone (CI and agent sandboxes often are) hides
+   the commit that added the guard, and an empty history is not "no reason for this check".
+8. **Finish with the file's audit checklist.** Before declaring code complete,
    run the relevant rules files' end-of-file checklists against your own diff;
    fix every "no".
 

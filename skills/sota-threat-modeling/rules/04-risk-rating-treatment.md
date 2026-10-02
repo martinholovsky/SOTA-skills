@@ -209,17 +209,25 @@ Rules:
   dispute is relitigated. Write the appetite line once ("we mitigate all
   High+, accept Medium with director sign-off, batch Lows quarterly") and
   point at it.
-- **No marginal capability.** Rating a bug by what it *does* rather than what it
-  *adds*: an administrator "exploiting" a flaw to download a file the UI already
-  lets them download gains nothing. Impact is the access the attacker did **not**
-  already hold. The exceptions are where the start position is narrower than it
-  looks — a tenant reaching another tenant, a guest reaching its host, a
-  build-time position reaching production (supply chain).
-- **Attacker position read off the transport.** "It's an HTTP API, so Network"
-  — the position is the outermost boundary the *first untrusted actor* must
-  cross, traced back through any trusted proxy, queue or job runner. A service
-  bound to localhost and fed only by a local job is Local, whatever protocol it
-  speaks; an internal RPC fed by a public webhook is Network.
+- **Ignoring marginal capability.** Rating a bug by what it *does* rather than
+  what it *adds* to **the attacker**: an administrator "exploiting" a flaw to
+  download a file the UI already lets them download gains nothing. Impact is
+  access the attacker did not already hold — which includes reaching another
+  tenant, the host from a guest, or production from a build step. It also includes
+  **lost conditions on a held capability**: the same download *without* the audit
+  log, approval step, step-up MFA, rate limit or expiry it normally carries is new
+  capability (STRIDE's Repudiation). And the attacker is not always the privileged
+  user: CSRF or stored XSS against an admin-only endpoint, or prompt injection
+  steering an admin's agent, gives a non-admin the admin's reach.
+- **Attacker position read off the transport.** "It's an HTTP API, so remote" —
+  for *likelihood*, the position is the least-privileged place from which the
+  vulnerable code is **reachable**, traced back through any proxy, queue or job
+  runner. Bind address alone does not decide it: every container in a Kubernetes
+  pod shares localhost, a browser on the host can reach loopback through DNS
+  rebinding or CSRF, and other local users can reach it too. This is a risk
+  position, not the CVSS Attack Vector: CVSS v3.1's User Guide scores data received
+  over a network and passed to a separate vulnerable component as AV:Local. Record
+  both, and say which one a rating uses (§2).
 - **Probability theater.** "0.3 likelihood × $2.4M = $720k expected loss"
   built on gut numbers. Either do the FAIR-style estimation with calibrated
   ranges and document the basis, or keep honest bands.
@@ -270,9 +278,10 @@ Management cheat sheet, Code Review Guide v2.
 
 ## Audit checklist
 
-- [ ] **Marginal capability and attacker position** (§7): does each rating reflect access
-      the attacker did not already hold, and is the position the boundary the first
-      untrusted actor crosses — not the transport protocol?
+- [ ] **Marginal capability and attacker position** (§7): does each rating count only what
+      the attacker gains — including lost audit, approval or MFA conditions and
+      victim-mediated reach — and is the position where the code is actually reachable
+      from, recorded beside (not instead of) the CVSS Attack Vector?
 - [ ] A single, anchored rating scheme is defined and used consistently;
       anchors written down, not folklore.
 - [ ] No raw DREAD means or unadjusted CVSS base scores used as priority;
