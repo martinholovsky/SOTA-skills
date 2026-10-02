@@ -5,6 +5,34 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`scripts/verified-done-hook.py` — an opt-in Stop hook that makes "done" require
+  evidence.** It records a verification command's result per working-tree id
+  (`PostToolUse`/`PostToolUseFailure` on Bash) and blocks the turn from ending on a tree
+  changed this session until a test or gate command has passed, unpiped, on exactly that tree.
+  It never traps a session: background work pending, three blocks on one tree, not a git
+  repo, or `SOTA_VERIFIED_DONE=off` all allow, the cap with a visible `UNVERIFIED` message;
+  an internal error fails open with a stderr line. Not registered in `hooks/hooks.json`, so no
+  plugin user gets it unasked. Self-test 15/15 in CI (negative-controls job); a never-blocks
+  mutant fails 8 of them. Building it found its own worst bug: seeding the throwaway index
+  with `shutil.copyfile` lost the index mtime git's racy-clean check depends on, so a
+  same-size edit in the same second kept the OLD tree id — a false allow on an unverified
+  edit, visible only as a 5-in-12 flaky self-test. Fixed with `copy2`, and the invariant is
+  now asserted directly (that mutant: caught 20 of 20). The unpiped test also stopped
+  rejecting `2>&1`, which keeps the verifier's own exit status.
+
+### Fixed
+
+- **Three readings that led an outside analysis to "nothing here can enforce anything".**
+  README's *Advisory vs enforced* section, `evals/README` → *What the evals do not measure* and
+  three `docs/INDEX.md` rows now say, at the place each misreading starts: the host can enforce
+  (Claude Code `Stop`/`PreToolUse`, the Agent SDK, git hooks); the router body is not always in
+  context (only descriptions are); and every eval runner is a chat-completion call with no
+  tools and nothing executed, while a few hand-driven results used live sub-agents.
+
 ## [1.46.1] - 2026-10-01
 
 A patch: a new CI invariant and rule content inside existing surfaces — nothing new to run
