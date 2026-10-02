@@ -144,6 +144,12 @@ jobs:
         env:
           SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
         run: ./scripts/check-negative-controls.sh
+      - name: Prove the verified-done Stop hook still blocks unverified sessions
+        # An opt-in hook (scripts/verified-done-hook.py) that blocks "done" on a changed tree
+        # until a verification command has passed on it. Its self-test is mostly KNOWN-BAD
+        # sessions (no run, a piped run, a failing run, an edit after the passing run) that
+        # must block; a mutant that never blocks fails 7 of 13 (measured 2026-10-02).
+        run: python3 scripts/verified-done-hook.py --self-test
 
   claims:
     name: Executable claims (${{ matrix.os }})

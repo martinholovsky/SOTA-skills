@@ -372,6 +372,22 @@ audit STRAT-HIGH-2).
 Each line is one case with an `id` and an `expect` list (see `score.py` header
 for the schema). Add cases freely; keep `expect` to unambiguous must-haves.
 
+## What the evals do not measure
+
+**Every runner script here is a chat-completion call, not an agent loop.** Verified
+2026-10-02 over all 27 `evals/*.py`: each runner that calls a model ends in an OpenRouter
+`chat/completions` request (nine reuse another runner's caller through `importlib`); some are
+multi-turn (`run-decay.py`); **none passes `tools`, and none executes what the model writes** —
+scoring reads the returned text. So a published lift is a lift for *"the rules in the prompt,
+one response"*, and is unmeasured inside a full agent session with tools, tests and a growing
+context.
+
+The exceptions are hand-driven: several results (from 2026-07-30) used **live sub-agents**
+launched from a session, with their own failure modes — see
+[Live-agent A/B runs](#live-agent-ab-runs-learned-2026-07-30). There is no runner that drives
+an agent loop reproducibly. Building one (for example on the Claude Agent SDK) is what would
+let the completeness and audit numbers be re-measured in the condition the library is used in.
+
 ## How to run
 
 1. **Baseline (no skills):** in a session with the SOTA skills NOT loaded, give

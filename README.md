@@ -991,8 +991,34 @@ the marker `install.sh` uses to recognise the hook as its own. Reword past it an
 your hook stops receiving updates, and a later `--update` adds a second one
 beside it instead of refreshing it.
 
-No mechanism *forces* a model to run a skill — the three layers feed it
+No mechanism *in the skills* forces a model to run a skill — the three layers feed it
 instructions it chooses to follow, making routing reliable, not phrasing-dependent.
+
+#### Advisory vs enforced — read this before calling the library "only advisory"
+
+That sentence is about the **skills**, and it is often read as "nothing here can enforce
+anything". Three corrections, each re-checked 2026-10-02:
+
+- **The host can enforce, and some of it ships here.** Claude Code hooks are not advice: a
+  `Stop` hook can block the turn from ending, `PreToolUse` can deny or rewrite any tool call
+  ([hooks docs](https://code.claude.com/docs/en/hooks)), and the
+  [Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) exposes the same loop with
+  hooks and permissions programmatically. **`scripts/verified-done-hook.py`** uses that: an
+  opt-in Stop hook that refuses "done" on a changed tree until a verification command has
+  passed on exactly that tree (router principle 6, enforced). The git hooks from
+  `scripts/init-gates.sh` and CI are enforcement on every host, whatever the agent.
+- **The router is not an always-on 43 KB blob.** Only each skill's frontmatter `description`
+  is in every turn's listing; the router's body loads when the skill is invoked
+  ([CONTEXT-MANAGEMENT](docs/CONTEXT-MANAGEMENT.md#the-precondition-all-six-defenses-assume-measured-in-the-field-2026-08-05)).
+- **The evals measure guidance, not an agent loop.** Every runner script in `evals/` is a
+  chat-completion call with the rules in the prompt; no tools run and nothing the model writes
+  is executed. A few results were hand-driven with live sub-agents, but no runner drives an
+  agent loop reproducibly, so the lifts are real for the measured condition and unmeasured
+  inside a full agent session ([evals/README](evals/README.md#what-the-evals-do-not-measure)).
+
+What stays advisory is everything a hook cannot check mechanically: whether a rule was
+*applied well*. The line is "can a program decide it from the tree or the tool log", not
+"skills vs harness".
 
 **With the hook in place, re-typing the same instruction adds nothing mechanically.**
 Rule (1) is already prepended to every prompt you send, so "always validate your
