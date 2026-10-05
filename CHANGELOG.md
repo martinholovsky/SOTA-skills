@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   until the CA says it honours them; DMARC `t=` (replaces `pct=`) and `np=` (RFC 9989); and R12's
   "`p=reject` is the goal" scoped by RFC 9989 §7.4 — not for domains whose users post to mailing
   lists, and never without DKIM. Two deferrals resolved.
+- **`sota-code-security` rules/14:** DMARC `t=y` joins `p=none` in the observe-only list — a rollout
+  stage, not a destination.
 
 ## [1.47.0] - 2026-10-05
 

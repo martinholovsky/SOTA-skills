@@ -263,7 +263,7 @@ existed and was correct — the reader stopped at the first affirmative one.
 A control in audit / warn / dry-run / report-only mode is a *plan* to enforce,
 and it renders on every dashboard exactly like one that enforces: Kyverno
 `failureAction: Audit` (or the deprecated spec-level `validationFailureAction`), Pod Security Admission `warn`, a WAF in
-detection-only, seccomp `SCMP_ACT_LOG`, CSP `report-only`, DMARC `p=none`, a
+detection-only, seccomp `SCMP_ACT_LOG`, CSP `report-only`, DMARC `p=none` (or `t=y`, which applies one level below the published policy), a
 scanner wired `--soft-fail`. Each is correct **as a rollout stage** and inert as
 a destination — the staged ladders are `sota-devsecops` rules/07 (audit → triage
 to zero → enforce) and `sota-network-security` rules/06 (DMARC).
