@@ -13,8 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   correcting rules of ours that pointed the wrong way.** A verdict now expires with its commit
   and a reappearing fixed finding is a possible regression (`sota/rules/05` §4 — `sota/rules/01`
   §4 used to carry findings forward as an unconditional exclusion); "fixed" needs three runs
-  (§5); a reproduction has three outcomes and a direct-call harness proves nothing
-  (`sota-code-security/rules/12` §1a.2); a diff review covers the diff's dependents; a dead-code
+  (§5); a reproduction has three outcomes and a crash reached only through a direct-call
+  harness is "reached in isolation" — needs verification, not a reproduction, unless the called
+  function is the exported API (`sota-code-security/rules/12` §1a.2); a diff review covers the diff's dependents; a dead-code
   or test-only downgrade fails closed; an inherited finding is re-located, not dropped.
 - **Mantis intake, batch 2:** mine git history for past security fixes (a shallow clone is
   partial history); sweep one component the threat model calls safe; call graphs decide order,
