@@ -5,40 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.47.0] - 2026-10-05
 
-### Added
+A minor: `scripts/verified-done-hook.py` is a new opt-in hook someone can run (`RELEASING.md`:
+a new hook or script is a minor), shipped with the code/content licence split and two Mantis
+intake batches of rule content.
 
-- **Intake from Google's Mantis toolkit (Apache-2.0), batch 1 — eight ideas, two of them
-  correcting rules of ours that pointed the wrong way.** A verdict now expires with its commit
-  and a reappearing fixed finding is a possible regression (`sota/rules/05` §4 — `sota/rules/01`
-  §4 used to carry findings forward as an unconditional exclusion); "fixed" needs three runs
-  (§5); a reproduction has three outcomes and a crash reached only through a direct-call
-  harness is "reached in isolation" — needs verification, not a reproduction, unless the called
-  function is the exported API (`sota-code-security/rules/12` §1a.2); a diff review covers the diff's dependents; a dead-code
-  or test-only downgrade fails closed; an inherited finding is re-located, not dropped.
-- **Mantis intake, batch 2:** mine git history for past security fixes (a shallow clone is
-  partial history); sweep one component the threat model calls safe; call graphs decide order,
-  never scope; severity by marginal capability and attacker position by boundary, not
-  transport (kept separate from the CVSS Attack Vector); chains carry the preconditions no
-  earlier link supplies; read a guard's history before changing it (`sota-code-security` BUILD
-  step 7); an absent eval verdict is never a class label (worked example:
-  google/mantis#8, reported upstream after reproducing it).
-- **Invariant 39 read two different states**: the ledger from the working tree, the diff from
-  `base...HEAD`. At pre-commit time a staged ledger row acknowledging the edited file was
-  invisible, so the check blocked a correct commit (found on its first real use). Both now come
-  from the working tree against the merge base; CI, with a clean tree, is unaffected.
-- **Fixed in our own sandbox probe** (`sota-sandboxing/rules/05` §5): it tested only a named
-  rogue resolver, so a sandbox whose default resolver recursed to the internet passed. Verified
-  in podman on busybox and glibc, with and without network.
-
-### Changed
-
-- **Code is now Apache-2.0; content stays CC BY 4.0.** Every `*.sh` and `*.py` file,
-  `hooks/hooks.json` and `.github/workflows/*` are licensed under [Apache-2.0](LICENSE-APACHE)
-  from 2026-10-02 (operator decision; sole author of every code file, 239 commits checked, so
-  no contributor consent was needed). Earlier releases shipped that code under CC BY 4.0 and
-  stay so. `plugin.json`'s `license` is now the SPDX expression `CC-BY-4.0 AND Apache-2.0`.
+**Front door checked:** verified-done · Apache-2.0 · possible regression · past security fixes
 
 ### Added
 
@@ -56,9 +29,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   edit, visible only as a 5-in-12 flaky self-test. Fixed with `copy2`, and the invariant is
   now asserted directly (that mutant: caught 20 of 20). The unpiped test also stopped
   rejecting `2>&1`, which keeps the verifier's own exit status.
+- **Intake from Google's Mantis toolkit (Apache-2.0), batch 1 — eight ideas, two of them
+  correcting rules of ours that pointed the wrong way.** A verdict now expires with its commit
+  and a reappearing fixed finding is a possible regression (`sota/rules/05` §4 — `sota/rules/01`
+  §4 used to carry findings forward as an unconditional exclusion); "fixed" needs three runs
+  (§5); a reproduction has three outcomes and a crash reached only through a direct-call
+  harness is "reached in isolation" — needs verification, not a reproduction, unless the called
+  function is the exported API (`sota-code-security/rules/12` §1a.2); a diff review covers the diff's dependents; a dead-code
+  or test-only downgrade fails closed; an inherited finding is re-located, not dropped.
+- **Mantis intake, batch 2:** mine git history for past security fixes (a shallow clone is
+  partial history); sweep one component the threat model calls safe; call graphs decide order,
+  never scope; severity by marginal capability and attacker position by boundary, not
+  transport (kept separate from the CVSS Attack Vector); chains carry the preconditions no
+  earlier link supplies; read a guard's history before changing it (`sota-code-security` BUILD
+  step 7); an absent eval verdict is never a class label (worked example:
+  google/mantis#8, reported upstream after reproducing it).
+
+### Changed
+
+- **Code is now Apache-2.0; content stays CC BY 4.0.** Every `*.sh` and `*.py` file,
+  `hooks/hooks.json` and `.github/workflows/*` are licensed under [Apache-2.0](LICENSE-APACHE)
+  from 2026-10-02 (operator decision; sole author of every code file, 239 commits checked, so
+  no contributor consent was needed). Earlier releases shipped that code under CC BY 4.0 and
+  stay so. `plugin.json`'s `license` is now the SPDX expression `CC-BY-4.0 AND Apache-2.0`.
 
 ### Fixed
 
+- **Invariant 39 read two different states**: the ledger from the working tree, the diff from
+  `base...HEAD`. At pre-commit time a staged ledger row acknowledging the edited file was
+  invisible, so the check blocked a correct commit (found on its first real use). Both now come
+  from the working tree against the merge base; CI, with a clean tree, is unaffected.
+- **Fixed in our own sandbox probe** (`sota-sandboxing/rules/05` §5): it tested only a named
+  rogue resolver, so a sandbox whose default resolver recursed to the internet passed. Verified
+  in podman on busybox and glibc, with and without network.
 - **Three readings that led an outside analysis to "nothing here can enforce anything".**
   README's *Advisory vs enforced* section, `evals/README` → *What the evals do not measure* and
   three `docs/INDEX.md` rows now say, at the place each misreading starts: the host can enforce
@@ -10834,6 +10837,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.47.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.0
 [1.46.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.46.1
 [1.46.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.46.0
 [1.45.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.45.0

@@ -1395,7 +1395,12 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
    → findings → **refute before reporting**. Scoping, evidence standard, severity
    model and report structure come from `sota/rules/03-audit-findings.md` (scoping
    and tooling from `rules/01`); the report ends in a roadmap sequenced by
-   risk-reduction-per-effort.
+   risk-reduction-per-effort. A verdict carried over from an earlier audit is bound to
+   the commit it was made at and expires when that code changes, so a "fixed" finding
+   that reappears stays open as a **possible regression**, never a duplicate
+   (`sota/rules/05` §4); the threat-model pass also mines version control for
+   **past security fixes** and hunts each fixed class across the rest of the code
+   (`sota-threat-modeling` rules/06).
 4. If `profiles/<you>.md` exists, its stack choices are BUILD defaults and the
    AUDIT baseline (deviations get flagged).
 
