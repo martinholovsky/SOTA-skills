@@ -5,6 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Deferral closed by measurement:** a SessionStart hook's `model` field carries the `[1m]`
+  suffix in a 1M session (captured once, 2026-10-05); the built-in-skills size half of that
+  row is re-deferred on its own trigger. Every external deferral trigger re-tested — none fired
+  (`docs/ADOPTION-LOG.md`, 2026-10-05).
+
 ## [1.47.0] - 2026-10-05
 
 A minor: `scripts/verified-done-hook.py` is a new opt-in hook someone can run (`RELEASING.md`:

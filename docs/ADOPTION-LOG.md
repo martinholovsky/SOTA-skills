@@ -7420,7 +7420,8 @@ passes. Whether the original notice was a false alarm depends on the other sessi
 window, which was **not observed**. The global model setting is `opus[1m]`, so 1M is
 likely unless that project or session chose a different model.
 
-- **DEFERRED — revisit when a SessionStart hook's stdin is captured from a 1M session (log it once from `plugin-budget-check.sh`), or when the Claude Code docs state the `model` field's form: whether that field carries the `[1m]` suffix, and the real size of the built-in skills the +25% allowance stands in for.** Until then a `[1m]` in the hook input is used if present and never required; the status line's observed window outranks it.
+- **RESOLVED 2026-10-05 (was deferred; the trigger's capture half fired — see the 2026-10-05 entry) — whether a SessionStart hook's `model` field carries the `[1m]` suffix in a 1M session.** It does: a one-off user-level hook (`cat >>` a file, removed afterwards) logged a fresh `startup` session as `"model":"claude-opus-5-5[1m]"`. One sample, one `source`; the docs (code.claude.com/docs/en/hooks, read 2026-10-05) still say the field "can be omitted, for example after `/clear`", so a `[1m]` stays used-if-present and never required — no code change.
+- **DEFERRED — the real size of the built-in skills the +25% listing allowance stands in for; revisit trigger: the Claude Code docs state that size, or a session's skill listing is measured with only built-in skills installed.** Split out 2026-10-05 from the row above, whose capture answered the suffix half only.
 
 ## 2026-09-30 — a `/sota-resume` pass and a field report: five due deferrals done, invariant 39, empty operand lists and backslash escapes
 
@@ -7550,3 +7551,25 @@ have demanded the very privilege the chain obtains; the eval checklist's "metric
 passed on the scorer it condemned; the guard-history step failed open on shallow clones; and
 this row's own "already covered" verdict for availability tiers was false.
 
+
+## 2026-10-05 — a `/sota-resume` pass: one deferral half closed by measurement, every external trigger re-tested
+
+**Re-tested, not fired** (each against a primary source opened 2026-10-05): Keep a Changelog
+2.0 as the site default (the root still sets `DEFAULT = "/en/1.1.0/"`; 2.0.0 is a preview);
+Speculation Rules in Firefox or Safari (BCD: Firefox `false`, Safari 26.2 behind a flag);
+ID-JAG and webbotauth at WG last call (datatracker: both plain WG documents, no WGLC on either
+list); NTLM disabled by default (Microsoft: "target … next major release", NTLMv1 removal only
+so far); DBSC beyond Windows or a second engine (Gecko negative, WebKit no position);
+`DO_NOT_TRACK` with a primary spec (none — only informal sites). Side note: consoledonottrack.com
+now serves an unrelated site; nothing here cites it.
+
+**Closed by measurement:** the hook-input `model` field carries `[1m]` in a 1M session (the
+RESOLVED row in the 2026-09-29 section). The row asked two questions under one trigger, and the
+capture answered only one; the other — the built-in skills' real size — is re-deferred as its
+own row rather than closed on half the evidence.
+
+**Fired but not yet done:** CAA `accounturi`/`validationmethods` (its "before 2027-03-15"
+trigger is met now). Verified 2026-10-05: BR §4.2.2.1.2 (ballot SC098v2) moves CA processing
+of RFC 8657 parameters from SHOULD to MUST on 2027-03-15; DMARC is now RFC 9989 (May 2026,
+obsoletes 7489 and 9091), which also settles the DMARC `np=`/`t=` row's facts. The rules/06
+edit is pending an operator permission decision, so both rows stay DEFERRED until it lands.
