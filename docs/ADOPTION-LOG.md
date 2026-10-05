@@ -6912,8 +6912,8 @@ would have failed loudly rather than passed.
 - **DEFERRED — naming constant-time test tools (dudect, ctgrind) and a `==`-on-MAC probe in `sota-code-security` rules/22; revisit trigger: the next edit of rules/22.**
 - **DEFERRED — the NTLM-off roadmap in `sota-identity-access`; revisit trigger: Microsoft ships a default that disables NTLM.**
 - **DEFERRED — the OAuth identity-assertion authorization grant (ID-JAG); revisit trigger: draft-ietf-oauth-identity-assertion-authz-grant reaches WG last call.**
-- **DEFERRED — DMARC `np=` and `t=` tags in `sota-network-security` rules/06; revisit trigger: the next DMARC/email-authentication edit.** *(File named 2026-09-30 — rules/06 is the skill's only file covering DMARC — so invariant 39 can resolve the trigger.)*
-- **DEFERRED — CAA `accounturi`/`validationmethods` in `sota-network-security`; revisit trigger: before the CA/Browser Forum Baseline Requirements date of 2027-03-15.**
+- **RESOLVED 2026-10-05 (was deferred; done in rules/06 R12 from RFC 9989 §4.7 and §7.4 — see the 2026-10-05 entry) — DMARC `np=` and `t=` tags in `sota-network-security` rules/06; revisit trigger: the next DMARC/email-authentication edit.** *(File named 2026-09-30 — rules/06 is the skill's only file covering DMARC — so invariant 39 can resolve the trigger.)*
+- **RESOLVED 2026-10-05 (was deferred; done in rules/06 R4 from BR §4.2.2.1.2 / ballot SC098v2 and RFC 8657 §5 — see the 2026-10-05 entry) — CAA `accounturi`/`validationmethods` in `sota-network-security`; revisit trigger: before the CA/Browser Forum Baseline Requirements date of 2027-03-15.**
 
 **Still unverified, left as written:** GitHub push-protection coverage wording
 (`sota-secrets-management` rules/04 — no single primary page); whether Tetragon file selectors
@@ -7568,8 +7568,18 @@ RESOLVED row in the 2026-09-29 section). The row asked two questions under one t
 capture answered only one; the other — the built-in skills' real size — is re-deferred as its
 own row rather than closed on half the evidence.
 
-**Fired but not yet done:** CAA `accounturi`/`validationmethods` (its "before 2027-03-15"
-trigger is met now). Verified 2026-10-05: BR §4.2.2.1.2 (ballot SC098v2) moves CA processing
-of RFC 8657 parameters from SHOULD to MUST on 2027-03-15; DMARC is now RFC 9989 (May 2026,
-obsoletes 7489 and 9091), which also settles the DMARC `np=`/`t=` row's facts. The rules/06
-edit is pending an operator permission decision, so both rows stay DEFERRED until it lands.
+**Fired and done — CAA, and the DMARC row its edit fired:** the CAA row's "before 2027-03-15"
+trigger is met at any date before it, and editing rules/06 fires the DMARC `np=`/`t=` row
+(invariant 39), so both land together (operator decision A1). Verified 2026-10-05 against
+primary text: BR v2.3.1 §4.2.2.1.2 (ballot SC098v2) moves CA processing of RFC 8657
+`accounturi`/`validationmethods` from SHOULD to **MUST effective 2027-03-15**; RFC 8657 §5.1–5.2
+(no effect on other CAs; owners "MUST NOT assume" effect without the CA's word); RFC 9989 §4.7
+(`np=` inherits `sp=` then `p=`; `t=y` steps the policy down one level and replaces `pct=`, now
+historic). The ballot's own summary says §4.2.2.1.3 while the BR has it at §4.2.2.1.2 — the
+renumbering is not verified; the rule cites the BR.
+
+**A rule of ours pointed slightly the wrong way, found by this edit:** R12 called `p=reject`
+"the goal" for every domain. RFC 9989 §7.4 says domains whose users might post to mailing lists
+SHOULD NOT publish it, and a `p=reject` domain MUST DKIM-sign rather than lean on SPF. R12 and
+its checklist line now carry that scope; "quarantine as the end state for user-mail domains" is
+our reading of §7.4, not its text.

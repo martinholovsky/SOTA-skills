@@ -117,6 +117,16 @@ OWASP: Transport Layer Security cheat sheet, Zero Trust Architecture cheat sheet
 **R4 — Registrar & issuance hygiene.** (Setup is cloud-infra rules/03; the *security* controls:)
 - **CAA records on every public zone** restricting issuance to your CA(s) — limits who can mint a
   cert for your domains.
+  - **Bind the record to your account and method** with the RFC 8657 parameters:
+    `example.com. CAA 0 issue "ca.example; accounturi=https://ca.example/acct/1234; validationmethods=dns-01"`.
+    A bare `issue "ca.example"` lets *anyone* with an account at that CA pass, so a hijacked web
+    root or DNS path at any customer of your CA can mint your cert. The CA/Browser Forum Baseline
+    Requirements Section 4.2.2.1.2 (ballot SC098v2) make processing both parameters a CA **MUST
+    effective 2027-03-15**; before that date it is a SHOULD. **Until your CA states that it
+    honours them, they are not a control** — RFC 8657 Section 5.2: domain owners "MUST NOT assume" the
+    restrictions are effective without that indication. They also do nothing about *other* CAs
+    (RFC 8657 Section 5.1), so keep the `issue` list itself tight. Labels come from the IANA ACME validation-method
+    registry (`dns-01`, `http-01`, …) or the BRs' `ca-tbr-<n>` form.
 - Registrar in a corporate account with MFA + transfer/registry lock for crown-jewel domains.
 - **Dangling records** (pointing at deprovisioned resources) = subdomain-takeover vector;
   lifecycle-couple DNS to resources in IaC and scan zones for danglers. Not only CNAME/A:
@@ -244,8 +254,20 @@ consent) is sota-copywriting rules/04.
   **alignment** — a pass only counts if the SPF or DKIM domain *aligns* with the From domain, which
   is what blocks look-alike spoofing. **Roll the policy forward, monitoring aggregate (RUA) reports
   at each step:** `p=none` (observe only — collect reports, fix your legitimate senders) →
-  `p=quarantine` → `p=reject` (the goal; forged mail is refused). Stopping at `p=none` gives
+  `p=quarantine` → `p=reject` (forged mail is refused). Stopping at `p=none` gives
   visibility but **zero protection** — a common finding.
+  - **`p=reject` is the goal for sending-only domains, not for every domain.** RFC 9989 Section 7.4:
+    domains whose users might post to mailing lists **SHOULD NOT** publish `p=reject` (lists and
+    forwarders break SPF and often DKIM), and a domain that does publish it **MUST** DKIM-sign
+    rather than rely on SPF alone. For a user-mail domain, `p=quarantine` with reports watched is
+    the defensible end state; transactional/marketing subdomains still go to `reject`.
+  - **`t=y` is the staging switch** (it replaces RFC 7489's `pct=`, now historic): it asks
+    receivers to apply one level *below* the published policy — `reject` → `quarantine`,
+    `quarantine` → `none` — while reports keep flowing. Default `t=n`. A record left at `t=y`
+    after the rollout is a policy that is not being applied; treat it like a stuck `p=none`.
+  - **`np=`** sets the policy for **non-existent** subdomains (inherits `sp=`, then `p=`, when
+    absent). `np=reject` stops forged mail from `random.example.com` names that have no DNS
+    records, at no cost to any real sender.
 
 **R13 — Lock down transport and non-sending domains too.**
 - **MTA-STS** (RFC 8461) + **TLS-RPT** (RFC 8460): MTA-STS publishes a policy requiring senders to
@@ -255,7 +277,8 @@ consent) is sota-copywriting rules/04.
   alternative/complement (TLSA records) — only where the zone is DNSSEC-signed (R6).
 - **Parked/non-sending domains and subdomains** are prime spoofing targets: publish
   `v=spf1 -all` + `p=reject` (and an empty DKIM) on every domain that never sends mail, so
-  attackers can't send *as* them. Set the DMARC subdomain policy (`sp=`) explicitly.
+  attackers can't send *as* them. Set the DMARC subdomain policy (`sp=`) explicitly, and
+  `np=reject` for non-existent subdomains (R12).
 - **ARC** (RFC 8617) preserves authentication results across legitimate forwarders/mailing lists
   that would otherwise break SPF/DKIM — enable it if you forward mail.
 
@@ -290,7 +313,10 @@ reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, no
       older is still served?
 - [ ] HSTS on web origins? OCSP stapling only where the CA still runs OCSP (Let's Encrypt ended it
       Aug 2025 — don't flag its absence on LE certs)?
-- [ ] CAA records on public zones restrict issuance to your CA(s)?
+- [ ] CAA records on public zones restrict issuance to your CA(s)? **Low — unbound CAA (R4):**
+      `dig +short CAA <domain>` — an `issue` value with no `accounturi=` lets any account at that
+      CA issue; credit `accounturi`/`validationmethods` as a control only where the CA documents
+      support (mandatory for CAs from 2027-03-15).
 - [ ] Split-horizon: no internal hostnames in public DNS; zones scanned for dangling records?
 - [ ] **High — dangling or claimable targets (R4).** Triage every record aimed at a
       reclaimable service; each hit needs a live target you own:
@@ -313,7 +339,10 @@ reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, no
       not skipped verification? Hunt `InsecureSkipVerify|--insecure|sslmode=disable`.
 - [ ] Email: SPF (`-all`, under the 10-lookup limit), DKIM (>=2048-bit, rotated), and DMARC
       published — and is DMARC actually enforcing (`p=quarantine`/`p=reject`), not stuck at
-      `p=none`? (`dig TXT _dmarc.<domain>`.) RUA reports monitored?
+      `p=none`? (`dig TXT _dmarc.<domain>`.) RUA reports monitored? A `t=y` left after rollout
+      is the same finding as a stuck `p=none`; a `p=reject` domain signing nothing with DKIM, or a
+      user-mail domain at `p=reject`, contradicts RFC 9989 Section 7.4; `np=` set (or inherited) to
+      `reject` for non-existent subdomains?
 - [ ] Parked/non-sending domains and subdomains publish `v=spf1 -all` + `p=reject` so they can't be
       spoofed? Inbound transport hardened (MTA-STS enforce + TLS-RPT, or DANE on DNSSEC zones)?
 - [ ] Bulk senders (5,000+/day to Gmail/Yahoo): SPF+DKIM+aligned DMARC, RFC 8058 one-click

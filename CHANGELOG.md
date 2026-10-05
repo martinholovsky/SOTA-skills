@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   suffix in a 1M session (captured once, 2026-10-05); the built-in-skills size half of that
   row is re-deferred on its own trigger. Every external deferral trigger re-tested — none fired
   (`docs/ADOPTION-LOG.md`, 2026-10-05).
+- **`sota-network-security` rules/06:** CAA records bound to an account and method with RFC 8657
+  `accounturi`/`validationmethods` — a CA MUST from 2027-03-15 (BR §4.2.2.1.2), and not a control
+  until the CA says it honours them; DMARC `t=` (replaces `pct=`) and `np=` (RFC 9989); and R12's
+  "`p=reject` is the goal" scoped by RFC 9989 §7.4 — not for domains whose users post to mailing
+  lists, and never without DKIM. Two deferrals resolved.
 
 ## [1.47.0] - 2026-10-05
 
