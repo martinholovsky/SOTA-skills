@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.47.1] - 2026-10-06
+
+A patch: rule text and deferral bookkeeping only — nothing new to run (`RELEASING.md`).
 
 - **Deferral closed by measurement:** a SessionStart hook's `model` field carries the `[1m]`
   suffix in a 1M session (captured once, 2026-10-05); the built-in-skills size half of that
@@ -18,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lists, and never without DKIM. Two deferrals resolved.
 - **`sota-code-security` rules/14:** DMARC `t=y` joins `p=none` in the observe-only list — a rollout
   stage, not a destination.
+- **README:** the `sota-network-security` row now names CAA account binding and email auth
+  (SPF/DKIM/DMARC), which rules/06 has covered since before this release and the front door never said.
+
+**Front door checked:** CAA · DMARC
 
 ## [1.47.0] - 2026-10-05
 
@@ -10851,6 +10857,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.47.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.1
 [1.47.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.0
 [1.46.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.46.1
 [1.46.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.46.0
