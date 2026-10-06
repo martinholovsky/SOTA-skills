@@ -1,5 +1,5 @@
 ---
-description: Audit this codebase against the library — agree and pin the scope, map the trust boundaries, run the scanners, route from the surfaces rather than from whatever happened to get loaded, walk every applicable rules file's Audit checklist item by item, ask the questions that need a decision, then fix what you agree to. Run it when a piece of work is finished, or on arriving in a codebase you did not write.
+description: Audit this codebase against the library — agree and pin the scope, route from the surfaces rather than from whatever happened to get loaded, map the trust boundaries, run the scanners, walk every applicable rules file's Audit checklist item by item, ask the questions that need a decision, then fix what you agree to. Run it when a piece of work is finished, or on arriving in a codebase you did not write.
 ---
 
 Audit this codebase against the library's rules — how far they were applied, not how good
@@ -14,13 +14,10 @@ asks *which of the library's rules own this surface, and does the code satisfy t
 dominant finding is not a bug. It is a rule that owns real surface area and was never
 applied — and behind it, a control that is present and enforces nothing.
 
-**What separates it from `/sota-deep-audit`.** Not *what* is checked — both commands look
-for the same classes of defect against the same standard, the `sota` router's AUDIT workflow
-and its `rules/01`, `rules/03` and `rules/05`. The deep audit buys things one context cannot
-supply: refuters that did not find the finding, partitions on separate agents, decisions
-re-measured this session, a forward look at the plan, and the *full* threat-model
-reconstruction. Where this command says "point at a rules section", that section is the
-procedure; this file is the order to run it in.
+**What separates it from `/sota-deep-audit`.** Both look for the same classes of defect, and
+the cited `sota` router rules sections are the procedure for both; this file is the order to
+run them in one context. The deep audit adds what one context cannot: independent refuters,
+fan-out across agents, expensive re-measurement, a forward look, and the full threat model.
 
 ## 0. The work is the subject. Your memory of it is not
 
@@ -49,7 +46,7 @@ git ls-files | wc -l                            # the whole repo
 # git says why it failed, and that reason is the thing you report.
 BASE="$(git merge-base HEAD origin/HEAD)"
 if [ -n "$BASE" ]; then
-  git diff --name-status -M "$BASE" | wc -l     # this branch vs its base, renames kept
+  git diff --name-status -M "$BASE"...HEAD | wc -l   # committed branch vs base, renames kept
 else
   printf 'base did not resolve — ask which branch to compare against\n' >&2
 fi
@@ -71,13 +68,16 @@ answers (`sota-code-security` rules/11 §2.2).
 Then, before reading code:
 
 - **Pin it.** Record the SHA from the first command, plus a dirty flag or a hash of the
-  uncommitted diff. Every finding *and every dismissal* is bound to it — a "false positive" or
+  uncommitted diff, and re-pin after step 10 changes the tree. Every finding *and every
+  dismissal* is bound to it — a "false positive" or
   "dead code" verdict with no commit never expires when a caller changes (`sota` router
   `rules/05` §4).
-- **A diff scope includes its dependents.** The callers and importers of every changed file,
-  and both paths of a rename, two hops out — found by symbol reference, not by guessing. A
-  changed contract breaks code that is not in the diff. A diff that turns up a serious concern
-  **escalates** to a baseline of that component (`sota` router `rules/01` §1).
+- **A diff scope includes its dependents — and they are sized too.** The callers and importers
+  of every changed file, and both paths of a rename, two hops out — found by symbol reference,
+  not by guessing — counted into the denominator beside the diff. A changed contract breaks code
+  that is not in the diff. A hub module whose dependents are the whole repo escalates to
+  partitioning, not to a skim; a diff that turns up a serious concern **escalates** to a
+  baseline of that component (`sota` router `rules/01` §1).
 - **Name the yardstick** the findings assert against — ASVS with its level, the OWASP Top 10
   lists, CWE; the LLM and agent lists where that surface exists (`sota` router `rules/01` §1).
 
@@ -85,36 +85,14 @@ Then say what the chosen scope *excludes*, and do not quietly widen it later. A 
 grew mid-pass makes every count in the report unreconcilable.
 
 **If what I pick is larger than you can hold at once, partition it and say how** — by
-subsystem, by entry point, by directory — **crown jewels first** (authentication and
+subsystem, by entry point, by directory — **crown jewels first**, confirmed against step 3's
+boundary map once it exists (authentication and
 sessions, secrets, money and sensitive-data flows, internet-facing entry points, untrusted LLM
 input reaching a tool), and finish each partition before opening the next. Skimming a large
 scope returns a clean result for the same reason the wrong scope does, and nothing in the
 output distinguishes the two (`sota` router `rules/01` §1, §1a).
 
-## 2. Map the trust boundaries — the light threat model
-
-A Critical or High must name the chain that makes it one, and a chain crosses a trust boundary
-(`sota` router `rules/03` §1). Rated without a boundary map, every severity is a guess. So
-before any domain pass, build one table from the **code**, not the docs:
-
-| entry point (route, consumer, cron, webhook, CLI, agent tool) | authn / authz checkpoint, `file:line` | asset or store reached | privilege it runs with |
-
-Then write down the **assumptions** the code implies — *services trust the gateway's headers*,
-*that bucket is private*, *only the worker reaches the queue* — and check each against the
-code or config that would make it true. One with no evidence is not *probably fine*; it is a
-broken assumption, and those are usually the Criticals. One you cannot check is marked
-**unverified**, never assumed.
-
-For a **diff** scope, do this for the diff and its dependents only: which boundaries does the
-change touch, and what does each one now let through (`sota-threat-modeling` SKILL.md, the
-continuous / incremental mode).
-
-This is deliberately the *light* model — entry points, boundaries, assets, assumptions — sized
-to prioritise and to rate. The full reconstruction (the DFD, the component threat catalogs,
-the control-presence matrix with its sampling rule) is `/sota-deep-audit`'s, and
-`sota-threat-modeling` rules/06 is its procedure. Say in the report which one you ran.
-
-## 3. Route from the surfaces, not from what happened to be loaded
+## 2. Route from the surfaces, not from what happened to be loaded
 
 **This is the step that decides whether the audit can find anything at all.** A session that
 never routed will look perfectly compliant, because nothing was being compared against.
@@ -158,26 +136,56 @@ Three things join the standard beside the skills:
   short history together mean nothing enforces any of this, and that is the first finding —
   above whatever the code does. Offer `scripts/init-gates.sh`; never run it unasked.
 
+## 3. Map the trust boundaries — the light threat model
+
+A Critical or High must name the chain that makes it one, and a chain crosses a trust boundary
+(`sota` router `rules/03` §1). Rated without a boundary map, every severity is a guess. So
+before any domain pass, build one table from the **code**, not the docs, over the entry points
+and stores step 2's recon found:
+
+| entry point (route, consumer, cron, webhook, CLI, agent tool) | authn / authz checkpoint, `file:line` | asset or store reached | privilege it runs with |
+
+Then write down the **assumptions** the code implies — *services trust the gateway's headers*,
+*that bucket is private*, *only the worker reaches the queue* — and check each against the
+code or config that would make it true. One with no evidence is not *probably fine*; it is a
+broken assumption, and those are usually the Criticals. One you cannot check is marked
+**unverified**, never assumed.
+
+For a **diff** scope, do this for the diff and its dependents only: which boundaries does the
+change touch, and what does each one now let through (`sota-threat-modeling` SKILL.md, the
+continuous / incremental mode).
+
+This is the *light* model, sized to prioritise and to rate; the full reconstruction is
+`/sota-deep-audit`'s (`sota-threat-modeling` rules/06). Say in the report which one ran.
+
 ## 4. Run the scanners — tools find what reading misses
 
 Checklists are read; a leaked key in a deleted commit, a lockfile pinning a package with a
 published CVE, and a workflow with a template injection are *found*. The router's standard is
 "Tools find the mechanical 60%; manual review finds the design flaws. Run both, never just
-one" (`sota` router `rules/01` §3). For each ecosystem step 3 found, run one row of that file's
+one" (`sota` router `rules/01` §3). For each ecosystem step 2 found, run one row of that file's
 tool matrix at the pinned commit: **secrets over the full git history**, dependency/SCA, SAST,
 and IaC and CI-workflow scanners where those surfaces exist.
 
+**A history scan on a shallow clone scans almost nothing and says "no leaks".** Check
+`git rev-parse --is-shallow-repository` first; `true` means the history pass is reported as
+partial, never as clean.
+
 - **Run what is installed; never install a tool, and never run one against a live system,
   unasked.** Live credential verification and scanners pointed at deployed endpoints are
-  stop-and-ask actions (`sota` router `rules/01` §1). A scanner that is not present is reported
+  stop-and-ask actions (`sota` router `rules/01` §1, and the secrets row of §3's matrix). A scanner that is not present is reported
   under **not reached** — never counted as a clean result.
 - **Record the tool, its version and the exact command line**, so the result can be re-run.
 - **Triage before anything becomes a finding.** Tool severity is an input: re-rate it in
   context; "dead" and "test-only" are claims with evidence bars that fail closed; existing
   suppressions and deprecated APIs are findings in their own right (`sota` router `rules/01` §3).
   Never paste a raw dump into the report.
-- **No secret value leaves the scanner.** A found secret is reported by location, type and
-  commit, redacted, with rotation first in the fix (`sota` router `rules/01` §4).
+- **No secret value leaves the scanner — enforce it with a flag, not with intent.** gitleaks
+  prints the raw value unless run with `--redact` (`gitleaks git --redact .`), and anything it
+  prints lands in this transcript. A scanner that **verifies** credentials against the provider
+  (trufflehog's verification does) is contacting a live system: run it with verification off,
+  or ask. A found secret is reported by location, type and commit, with rotation first in the
+  fix (`sota` router `rules/01` §3, §4).
 
 ## 5. Walk the checklists — silence is not a verdict
 
@@ -207,11 +215,13 @@ silently a no-op, would anything observable differ?* No log, no metric, no faili
 then it is not a control (`sota-code-security` rules/10 §1). Where it emits an artifact, read
 back **the one this run produced**, not an example of one.
 
-Then two counts, because presence and reach are different claims:
+Find *where* to look first with the sweep in `sota-code-security` rules/11 — stage duration
+against the work claimed, every gate's denominator, size-gated paths no fixture crosses. Then
+two counts, because presence and reach are different claims:
 
 - **Population.** A real control applied to part of what it is credited with is the finding —
-  count the sites it guards against the sites the prose claims (`sota-code-security`
-  rules/14 §6).
+  count the sites it guards against the sites the prose claims, then falsify the prose
+  (`sota-code-security` rules/14 §6, §7).
 - **Enforcement.** A rule written in prose with nothing mechanical behind it is the same
   defect one level up: an instruction standing in for a control (`sota-code-security`
   rules/14 §3). Where a gate exists, say how deep it reaches — a gate that stops at the
@@ -239,14 +249,18 @@ and no longer reproduces. No rule is violated, so no checklist fires.
 
 Reconstruct the decisions that are expensive to reverse — ADRs, design docs, the CHANGELOG,
 the PRs behind each major component — and classify each **JUSTIFIED · STALE · UNJUSTIFIED ·
-UNVERIFIABLE**. Where a decision rests on a number, **re-measure it this session** if it is
-cheap to; where it is not, mark the verdict UNVERIFIABLE and name the measurement — re-measuring
-the expensive ones is what `/sota-deep-audit` is for. Full procedure — `sota` router `rules/03`
-§3.
+UNVERIFIABLE**. Where a decision rests on a number, **re-measure it this session**: a number
+carried forward from the commit that introduced it is the claim itself, not evidence for it.
+UNVERIFIABLE is for a measurement you *cannot* run here — name it, and the environment it
+needs; that is the case `/sota-deep-audit` exists for. "Expensive" alone is not a reason.
+Full procedure — `sota` router `rules/03` §3.
 
 **Read the history for where to look.** Past incidents, earlier findings and commits that
-quietly fixed a security bug mark the components that failed once; complexity × churn orders
-the reading inside the crown jewels (`sota` router `rules/01` §2).
+quietly fixed a security bug mark the components that failed once — hunt each fixed class for
+its variants elsewhere, and search for the guard idioms themselves (`git log -G`), recording
+the query and how many commits it covered. A shallow clone is **partial** history, never "no
+prior vulnerabilities". Complexity × churn orders the reading inside the crown jewels
+(`sota` router `rules/01` §2; `sota-threat-modeling` rules/06 §1).
 
 **Then ask where else this project's knowledge lives.** An agent's private memory store, an
 IDE's notes, a chat log. Anything there that is a *fact about the repository* with no home in
@@ -275,15 +289,16 @@ One table, canonical format, deduplicated across domains:
 `file:line | rule violated | severity | effort | fix`
 
 That row is the **working** format. Severity resolves on the `sota` router's `rules/03` §1 — a
-Critical or High names the chain that makes it one, using the boundary map from step 2, and a
+Critical or High names the chain that makes it one, using the boundary map from step 3, and a
 diff is rated against the code it replaced, not against perfection. A finding you could not
 confirm is marked **needs verification**; it is never asserted and never dropped. Borderline
 severities state the deciding assumption.
 
-Every surviving Critical, High and Medium then expands to the full evidence block — location
-at the pinned commit, minimal evidence, CWE/OWASP mapping, the impact in the sentence an
-attacker would use, a diff-level remediation, effort (`sota` router `rules/03` §2) — plus a
-**reproduction**: the steps or command that show it (`sota` router `rules/05` §1). Lead with a
+Every surviving finding then expands to the full evidence block — all eight fields of `sota`
+router `rules/03` §2, title and severity justification included, with the output that produced
+it kept — plus a **reproduction** (`sota` router `rules/05` §1): runnable steps, or for a
+static finding the read path from entry point to sink as `file:line` hops. "See evidence" is
+not one. Lead with a
 one-line posture verdict capped by the worst standing blocker (`sota` router `rules/03` §5).
 **Before anything ships, resolve every `file:line` and every rules citation against the tree
 as it is now** — positions drift while an audit runs (`sota` router `rules/01` §4b).
@@ -291,8 +306,9 @@ as it is now** — positions drift while an audit runs (`sota` router `rules/01`
 <!-- count-check: ^- \*\* -->
 Then three things a findings table cannot carry, and which are the point of this command:
 
-- **Coverage** — the per-rules-file table from step 3, as it ended: what was walked, what was
-  skipped, why; which threat model ran (step 2); which scanners ran, at which versions (step 4).
+- **Coverage** — the per-rules-file table from step 2, as it ended: what was walked, what was
+  skipped, why; the yardstick asserted (step 1); which threat model ran (step 3); which scanners
+  ran, at which versions, and whether history was partial (step 4).
 - **Depth reached** — for anything you checked by running something, what the check could
   actually see.
 - **Not reached** — scope you did not cover, scanners that were not installed, assumptions
@@ -325,9 +341,11 @@ first:
 3. **Watch it fail before trusting it to pass.** A suite that matched zero files exits 0 and
    prints `ok`. If you never saw the check reject anything, you do not know it ran.
 4. **Verify the finding, not just the suite.** A green suite says nothing about whether the
-   class is closed. Run the reproduction against the fix *and* with the fix reverted — the
-   baseline must still fire — then try at least three same-class variants, all of which must
-   fail (`sota` router `rules/05` §5). A fix is verified when a fresh search cannot get around
+   class is closed. For an executable reproduction, the three checks of `sota` router `rules/05`
+   §5: the baseline still fires with the fix reverted (if it does not, find the commit that
+   changed it and record **resolved by `<sha>`**, else **inconclusive** — never "fixed"),
+   identical instrumentation for each pair of runs, and at least three same-class variants that
+   all fail. For a static finding, re-walk the read path against the patched code. A fix is verified when a fresh search cannot get around
    it, not when the reported input stops working (`sota` router `rules/01` §4). A leaked
    secret is fixed by rotating and revoking it, not by deleting the line.
 5. **Update the docs the fix makes false in the same change** — README, comments, runbooks,

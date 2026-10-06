@@ -7617,6 +7617,24 @@ contradicted `rules/01` §2 ("The threat model output prioritizes every later pa
 | 8 | Fix verified by a green suite only | **adopted** | step 10 · unreleased |
 | 9 | No citation-resolution pass, no second method for absences, no yardstick, no history mining | **adopted** | steps 1, 6, 7, 9 · unreleased |
 
+**A second independent review of the rewrite** (same standard, read-only, every cited section
+opened) confirmed gaps 1 and 3–5 closed and every strength of the old command kept, and found
+defects the rewrite itself introduced — all fixed in the same PR: redaction stated but not
+enforced (gitleaks prints raw values without `--redact`, checked against `gitleaks git --help`
+8.30.1) and trufflehog's live verification not routed to stop-and-ask; a full-history scan with
+no shallow-clone check (this repo's own gitleaks incident: 1 commit scanned, exit 0); the
+evidence block silently narrowed to Critical/High/Medium against `rules/03` §2 and `rules/05` §1
+("every finding") — **my narrowing, reverted**; the boundary map ordered before the recon that
+feeds it (now step 2 recon → step 3 map, matching the router); re-measurement softened to "if
+cheap", against `rules/03` §3 — reverted, UNVERIFIABLE only when it *cannot* run here; deep-audit
+pointing at `/sota-audit`'s file (not loaded when deep-audit runs) and claiming a fix step it
+does not have — now cites the rules sections; plus the diff denominator counting the working
+tree against a HEAD pin (`"$BASE"...HEAD`), unsized dependents, no hub-module escalation, no
+`resolved by <sha>`/inconclusive outcome in fix verification, the history-mining idioms, and one
+mis-cited section. Not adopted: its ~450-word trim list was taken in part only (the deep-audit
+contrast and the threat-model hand-off were cut); the attention-effect paragraph stays, because
+it is the reason the cross-cutting items get re-checked at all.
+
 **Not verified:** whether an agent following the new text actually finds these classes. That is
 a behaviour question no read can settle; the measurement would be an audit eval run against both
 versions of the command, which costs live calls and was not run.

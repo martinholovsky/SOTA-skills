@@ -18,9 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   missing ones reported as not reached); coverage **per rules file** plus each skill's AUDIT mode
   and top-10; the router's cross-cutting rules walked after the table lookup; explicit manual
   passes for logic, per-object authz and boundary validation; the full evidence block and a
-  reproduction per serious finding, secrets redacted; citations resolved before shipping; and
-  fixes verified against the finding (baseline fires with the fix reverted, three same-class
-  variants), not just the suite.
+  reproduction on every finding; secrets redacted by flag (`gitleaks --redact`), live credential
+  verification treated as stop-and-ask, and a shallow clone reported as partial history;
+  citations resolved before shipping; and fixes verified against the finding (baseline fires
+  with the fix reverted, three same-class variants), not just the suite.
 - **`/sota-deep-audit` checks the same standard and differs only in how it runs** — independent
   refuters, fan-out across agents, decisions re-measured, a forward look, and the *full*
   threat-model reconstruction where `/sota-audit` builds a boundary map. README, `docs/INDEX.md`
