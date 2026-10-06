@@ -5,7 +5,10 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.47.2] - 2026-10-06
+
+A patch: `/sota-audit`, `/sota-deep-audit` and `sota-network-security` rules/06 change inside surfaces
+that already exist — nothing new to run (`RELEASING.md`).
 
 - **`/sota-audit` now looks for every class the library protects against, not only what a
   checklist names.** A hostile review against the router's AUDIT standard (`rules/01`, `rules/03`,
@@ -33,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "matches any account"); and the DMARC line grouped forwarders with DKIM breakage, where RFC 9989
   Section 7.4 says DKIM "will generally remain valid" through relays — it is modifying lists that
   break it.
+
+**Front door checked:** boundary map · not reached · CAA
 
 ## [1.47.1] - 2026-10-06
 
@@ -10886,6 +10891,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.47.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.2
 [1.47.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.1
 [1.47.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.0
 [1.46.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.46.1

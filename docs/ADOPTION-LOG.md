@@ -7607,15 +7607,15 @@ contradicted `rules/01` §2 ("The threat model output prioritizes every later pa
 
 | # | Gap the review found | Verdict | Landed in |
 |---|---|---|---|
-| 1 | No scanner pass — SCA, secrets history, SAST, IaC/CI | **adopted** | step 4 · unreleased |
-| 2 | A diff scope reviews changed lines only, not dependents; `--name-only` drops a rename's old path | **adopted** | step 1 · unreleased |
-| 3 | Coverage per skill while checklists are per file; skill AUDIT modes and top-10s never invoked | **adopted** | steps 3, 5 · unreleased |
-| 4 | No asset / trust-boundary map, so chain closure and crown-jewel ordering have nothing to stand on | **adopted** (the light model; full stays in deep-audit) | step 2 · unreleased |
-| 5 | Router cross-cutting rules bypassed (stacking, suite health, ingestion, personal data, evidence scripts) | **adopted** | step 3 · unreleased |
-| 6 | Findings short of the evidence standard; no reproduction; no secret redaction | **adopted** | steps 4, 9 · unreleased |
-| 7 | "The pinned commit" referenced but never recorded | **adopted** | step 1 · unreleased |
-| 8 | Fix verified by a green suite only | **adopted** | step 10 · unreleased |
-| 9 | No citation-resolution pass, no second method for absences, no yardstick, no history mining | **adopted** | steps 1, 6, 7, 9 · unreleased |
+| 1 | No scanner pass — SCA, secrets history, SAST, IaC/CI | **adopted** | step 4 · v1.47.2 |
+| 2 | A diff scope reviews changed lines only, not dependents; `--name-only` drops a rename's old path | **adopted** | step 1 · v1.47.2 |
+| 3 | Coverage per skill while checklists are per file; skill AUDIT modes and top-10s never invoked | **adopted** | steps 3, 5 · v1.47.2 |
+| 4 | No asset / trust-boundary map, so chain closure and crown-jewel ordering have nothing to stand on | **adopted** (the light model; full stays in deep-audit) | step 2 · v1.47.2 |
+| 5 | Router cross-cutting rules bypassed (stacking, suite health, ingestion, personal data, evidence scripts) | **adopted** | step 3 · v1.47.2 |
+| 6 | Findings short of the evidence standard; no reproduction; no secret redaction | **adopted** | steps 4, 9 · v1.47.2 |
+| 7 | "The pinned commit" referenced but never recorded | **adopted** | step 1 · v1.47.2 |
+| 8 | Fix verified by a green suite only | **adopted** | step 10 · v1.47.2 |
+| 9 | No citation-resolution pass, no second method for absences, no yardstick, no history mining | **adopted** | steps 1, 6, 7, 9 · v1.47.2 |
 
 **A second independent review of the rewrite** (same standard, read-only, every cited section
 opened) confirmed gaps 1 and 3–5 closed and every strength of the old command kept, and found
