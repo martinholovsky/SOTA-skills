@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   refuters, fan-out across agents, decisions re-measured, a forward look, and the *full*
   threat-model reconstruction where `/sota-audit` builds a boundary map. README, `docs/INDEX.md`
   (whose "four things" listed five) and the README's threat-model paragraph rewritten to match.
+- **Correction to v1.47.1's `sota-network-security` rules/06 wording** (found by the 2026-10-06
+  session-close re-read against the RFCs): the CAA line said a bare `issue` let an attacker at "any
+  customer of your CA" mint your cert — the risk is anyone who can pass domain validation for
+  *your* name, through their own account (RFC 8657 Section 3: a property without `accounturi`
+  "matches any account"); and the DMARC line grouped forwarders with DKIM breakage, where RFC 9989
+  Section 7.4 says DKIM "will generally remain valid" through relays — it is modifying lists that
+  break it.
 
 ## [1.47.1] - 2026-10-06
 

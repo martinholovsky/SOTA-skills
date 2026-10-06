@@ -119,8 +119,9 @@ OWASP: Transport Layer Security cheat sheet, Zero Trust Architecture cheat sheet
   cert for your domains.
   - **Bind the record to your account and method** with the RFC 8657 parameters:
     `example.com. CAA 0 issue "ca.example; accounturi=https://ca.example/acct/1234; validationmethods=dns-01"`.
-    A bare `issue "ca.example"` lets *anyone* with an account at that CA pass, so a hijacked web
-    root or DNS path at any customer of your CA can mint your cert. The CA/Browser Forum Baseline
+    A bare `issue "ca.example"` matches *any* account at that CA (RFC 8657 Section 3), so whoever
+    can pass domain validation for your name — a hijacked web root, a DNS path — can mint your cert
+    through an account of their own. The CA/Browser Forum Baseline
     Requirements Section 4.2.2.1.2 (ballot SC098v2) make processing both parameters a CA **MUST
     effective 2027-03-15**; before that date it is a SHOULD. **Until your CA states that it
     honours them, they are not a control** — RFC 8657 Section 5.2: domain owners "MUST NOT assume" the
@@ -257,8 +258,8 @@ consent) is sota-copywriting rules/04.
   `p=quarantine` → `p=reject` (forged mail is refused). Stopping at `p=none` gives
   visibility but **zero protection** — a common finding.
   - **`p=reject` is the goal for sending-only domains, not for every domain.** RFC 9989 Section 7.4:
-    domains whose users might post to mailing lists **SHOULD NOT** publish `p=reject` (lists and
-    forwarders break SPF and often DKIM), and a domain that does publish it **MUST** DKIM-sign
+    domains whose users might post to mailing lists **SHOULD NOT** publish `p=reject` (forwarders
+    break SPF, and lists that modify messages break DKIM too), and a domain that does publish it **MUST** DKIM-sign
     rather than rely on SPF alone. For a user-mail domain, `p=quarantine` with reports watched is
     the defensible end state; transactional/marketing subdomains still go to `reject`.
   - **`t=y` is the staging switch** (it replaces RFC 7489's `pct=`, now historic): it asks
