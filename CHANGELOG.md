@@ -5,6 +5,15 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Measured: `/sota-audit` old vs new on Harbor v2.5.1** (four live agents, pre-registered,
+  [SOTA-AUDIT-AB](evals/results/2026-10-06/SOTA-AUDIT-AB.md)). The rewrite reliably changes the
+  process — redacted secrets scan, boundary map, per-rules-file coverage, 2/2 vs 0/2 — at authz
+  parity (15.0 vs 14.0 of 16). Its one directional prediction is **refuted**: dependency recall
+  3.0 (new) vs 5.5 (old) of 19, because every arm ran trivy and reported a count rather than
+  findings. Follow-up opened as ROADMAP 67.
+
 ## [1.47.2] - 2026-10-06
 
 A patch: `/sota-audit`, `/sota-deep-audit` and `sota-network-security` rules/06 change inside surfaces
