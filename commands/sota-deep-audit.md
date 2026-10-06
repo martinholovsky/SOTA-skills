@@ -12,6 +12,18 @@ reach for it by default: [`/sota-audit`](sota-audit.md) answers *were the rules 
 surface applied?* in one context, cheaply enough to run repeatedly. **Tell me the plan and the
 split before you fan anything out**, so I can stop it if the scope is wrong.
 
+**Both commands look for the same classes of defect.** The standard is the `sota` router's
+AUDIT workflow and the rules sections behind it, which load with the router — not
+`/sota-audit`'s file, which does not load here. Owed in full: scope pinned to a commit, with a
+diff's callers and importers sized in and the yardstick named (`sota` router `rules/01` §1);
+the scanner pass, secrets redacted (`rules/01` §3, §4); the eight-field evidence block and a
+reproduction on every finding (`rules/03` §2, `rules/05` §1); every citation resolved before
+the report ships (`rules/01` §4b); and the stack profile, the project's own conventions and the
+day-zero check as part of the baseline (router principle 4, Day zero). What this command adds
+is *how* the audit runs, and heavier deliverables. Reach for it when you need to trust the
+result without trusting the auditor: inheriting a codebase, a go/no-go or security sign-off,
+or a repository too large for one context.
+
 ## What this adds that `/sota-audit` structurally cannot
 
 <!-- count-check: ^[0-9]+\. \*\* -->
@@ -30,10 +42,12 @@ point me back at the cheap command.
    awkward to stand up.
 4. **A forward look.** Whether the current plan is still the right one, given what the audit
    actually found.
-5. **A reconstructed threat model.** `/sota-audit` checks the code against rules that already
-   exist; it never asks what this system is *worth attacking for*. That reconstruction is a
-   timeboxed pass of its own, run ahead of the lenses because its output decides what
-   everything after it weights.
+5. **The full threat-model reconstruction.** `/sota-audit` maps entry points, trust boundaries,
+   assets and the assumptions they imply — enough to rate a finding and order the reading.
+   Here the model is rebuilt in full: the DFD, the component threat catalogs, every assumption
+   tested, and a control-presence matrix with its sampling rule stated. It is a timeboxed pass
+   of its own, run ahead of the lenses because its output decides what everything after it
+   weights.
 
 ## Ground rules
 
@@ -62,9 +76,12 @@ No confident summary papering over a gap.
 
 Recon first — languages, entry points, data stores, CI, IaC, LLM surfaces, anything an agent
 loads as instructions — then map what you found onto the domain skills with the `sota` router's
-routing table. Those skills' AUDIT sections and per-rules-file Audit checklists are the **what**
-of lenses 2 and 3; the lenses are the **how**. Load lean: only the rules files with real surface
-area here.
+routing table, then walk the router's cross-cutting rules against the same list — they are
+where a surface's second and third skill come from. Those skills' AUDIT sections and
+per-rules-file Audit checklists are the **what** of lenses 2 and 3; the lenses are the **how**.
+Load lean: only the rules files with real surface area here — but record coverage **per rules
+file**, so a skill counted as covered because one of its files was opened cannot hide the
+checklist nobody walked.
 
 **Record which domains you skipped and why.** A domain with no matching surface is a legitimate
 skip. A domain nobody opened is a hole in the audit and is reported as one.
@@ -125,6 +142,13 @@ Rate what falls out of this in **deployment context** rather than in the abstrac
 (`sota-threat-modeling` rules/04 §3), and hand the reconstructed model back as the team's new
 baseline — `sota-threat-modeling` rules/06 §1 calls that the audit's lasting value, and for a
 team that has never had one drawn it usually is.
+
+**Run the scanners after the threat model and before the lenses** — secrets over the full git
+history (checked for a shallow clone first, and run with redaction on — `gitleaks git --redact`;
+a scanner that verifies credentials live is a stop-and-ask action), dependency/SCA, SAST, IaC
+and CI workflows: one row of the `sota` router's `rules/01` §3 matrix per ecosystem, at the
+pinned commit, tool versions recorded, nothing installed unasked. Their triaged output feeds
+lenses 2 and 3; a scanner that could not run is reported as not reached.
 
 ## The four lenses — cover all, weight by what this project actually is
 

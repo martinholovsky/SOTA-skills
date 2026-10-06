@@ -7583,3 +7583,58 @@ renumbering is not verified; the rule cites the BR.
 SHOULD NOT publish it, and a `p=reject` domain MUST DKIM-sign rather than lean on SPF. R12 and
 its checklist line now carry that scope; "quarantine as the end state for user-mail domains" is
 our reading of §7.4, not its text.
+
+## 2026-10-06 — `/sota-audit` reviewed against the router's AUDIT standard: nine gaps, one shared standard for both audit commands
+
+**Source:** an independent hostile read (a separate agent, read-only) of `commands/sota-audit.md`
+against `skills/sota/SKILL.md` §AUDIT, `rules/01`, `rules/03`, `rules/05`, `sota-threat-modeling`
+and `commands/sota-deep-audit.md`. Its load-bearing citations were spot-checked before use
+(`rules/01` lines 49–52 and 142, router line 385, `sota-audit.md` line 103), and its absence claims
+re-run: the four hits for `gitleaks|SCA|dependen|caller` were all false matches ("scan", "scale",
+"independent" twice).
+
+**Operator decision, 2026-10-06 — keep both commands, one standard.** The question was whether to
+merge them. Kept apart because what genuinely differs is *how* an audit runs (independent refuters,
+fan-out, re-measurement, a forward look), which costs real spend and cannot happen in one context;
+a merged prompt would be paid in full on every cheap run, and removing a command name strands
+existing installs. What must *not* differ is what gets looked for — the review showed the cheap
+command silently missing whole classes. So both now point at the router's rules sections as the
+procedure, and the threat model is light in `/sota-audit` (boundary map) and full in
+`/sota-deep-audit` (DFD, catalogs, control-presence matrix). This reverses the earlier design note
+that `/sota-audit` "never asks what this system is *worth attacking for*" — that omission
+contradicted `rules/01` §2 ("The threat model output prioritizes every later pass") and left
+`rules/03` §1's chain closure with nothing to stand on.
+
+| # | Gap the review found | Verdict | Landed in |
+|---|---|---|---|
+| 1 | No scanner pass — SCA, secrets history, SAST, IaC/CI | **adopted** | step 4 · unreleased |
+| 2 | A diff scope reviews changed lines only, not dependents; `--name-only` drops a rename's old path | **adopted** | step 1 · unreleased |
+| 3 | Coverage per skill while checklists are per file; skill AUDIT modes and top-10s never invoked | **adopted** | steps 3, 5 · unreleased |
+| 4 | No asset / trust-boundary map, so chain closure and crown-jewel ordering have nothing to stand on | **adopted** (the light model; full stays in deep-audit) | step 2 · unreleased |
+| 5 | Router cross-cutting rules bypassed (stacking, suite health, ingestion, personal data, evidence scripts) | **adopted** | step 3 · unreleased |
+| 6 | Findings short of the evidence standard; no reproduction; no secret redaction | **adopted** | steps 4, 9 · unreleased |
+| 7 | "The pinned commit" referenced but never recorded | **adopted** | step 1 · unreleased |
+| 8 | Fix verified by a green suite only | **adopted** | step 10 · unreleased |
+| 9 | No citation-resolution pass, no second method for absences, no yardstick, no history mining | **adopted** | steps 1, 6, 7, 9 · unreleased |
+
+**A second independent review of the rewrite** (same standard, read-only, every cited section
+opened) confirmed gaps 1 and 3–5 closed and every strength of the old command kept, and found
+defects the rewrite itself introduced — all fixed in the same PR: redaction stated but not
+enforced (gitleaks prints raw values without `--redact`, checked against `gitleaks git --help`
+8.30.1) and trufflehog's live verification not routed to stop-and-ask; a full-history scan with
+no shallow-clone check (this repo's own gitleaks incident: 1 commit scanned, exit 0); the
+evidence block silently narrowed to Critical/High/Medium against `rules/03` §2 and `rules/05` §1
+("every finding") — **my narrowing, reverted**; the boundary map ordered before the recon that
+feeds it (now step 2 recon → step 3 map, matching the router); re-measurement softened to "if
+cheap", against `rules/03` §3 — reverted, UNVERIFIABLE only when it *cannot* run here; deep-audit
+pointing at `/sota-audit`'s file (not loaded when deep-audit runs) and claiming a fix step it
+does not have — now cites the rules sections; plus the diff denominator counting the working
+tree against a HEAD pin (`"$BASE"...HEAD`), unsized dependents, no hub-module escalation, no
+`resolved by <sha>`/inconclusive outcome in fix verification, the history-mining idioms, and one
+mis-cited section. Not adopted: its ~450-word trim list was taken in part only (the deep-audit
+contrast and the threat-model hand-off were cut); the attention-effect paragraph stays, because
+it is the reason the cross-cutting items get re-checked at all.
+
+**Not verified:** whether an agent following the new text actually finds these classes. That is
+a behaviour question no read can settle; the measurement would be an audit eval run against both
+versions of the command, which costs live calls and was not run.
