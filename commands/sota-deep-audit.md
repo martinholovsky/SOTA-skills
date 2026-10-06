@@ -12,6 +12,15 @@ reach for it by default: [`/sota-audit`](sota-audit.md) answers *were the rules 
 surface applied?* in one context, cheaply enough to run repeatedly. **Tell me the plan and the
 split before you fan anything out**, so I can stop it if the scope is wrong.
 
+**Both commands look for the same classes of defect, against the same standard** — the `sota`
+router's AUDIT workflow and its `rules/01`, `rules/03` and `rules/05`. Everything `/sota-audit`
+does is owed here too: a pinned scope that includes a diff's dependents, a trust-boundary map,
+the scanner pass, per-rules-file coverage, the full evidence block and reproduction per
+finding, and fixes verified against the finding rather than the suite. What this command adds
+is *how* the audit runs, and one heavier deliverable. Reach for it when you need to trust the
+result without trusting the auditor: inheriting a codebase, a go/no-go or security sign-off,
+or a repository too large for one context.
+
 ## What this adds that `/sota-audit` structurally cannot
 
 <!-- count-check: ^[0-9]+\. \*\* -->
@@ -30,10 +39,12 @@ point me back at the cheap command.
    awkward to stand up.
 4. **A forward look.** Whether the current plan is still the right one, given what the audit
    actually found.
-5. **A reconstructed threat model.** `/sota-audit` checks the code against rules that already
-   exist; it never asks what this system is *worth attacking for*. That reconstruction is a
-   timeboxed pass of its own, run ahead of the lenses because its output decides what
-   everything after it weights.
+5. **The full threat-model reconstruction.** `/sota-audit` maps entry points, trust boundaries,
+   assets and the assumptions they imply — enough to rate a finding and order the reading.
+   Here the model is rebuilt in full: the DFD, the component threat catalogs, every assumption
+   tested, and a control-presence matrix with its sampling rule stated. It is a timeboxed pass
+   of its own, run ahead of the lenses because its output decides what everything after it
+   weights.
 
 ## Ground rules
 
@@ -62,9 +73,18 @@ No confident summary papering over a gap.
 
 Recon first — languages, entry points, data stores, CI, IaC, LLM surfaces, anything an agent
 loads as instructions — then map what you found onto the domain skills with the `sota` router's
-routing table. Those skills' AUDIT sections and per-rules-file Audit checklists are the **what**
-of lenses 2 and 3; the lenses are the **how**. Load lean: only the rules files with real surface
-area here.
+routing table, then walk the router's cross-cutting rules against the same list — they are
+where a surface's second and third skill come from. Those skills' AUDIT sections and
+per-rules-file Audit checklists are the **what** of lenses 2 and 3; the lenses are the **how**.
+Load lean: only the rules files with real surface area here — but record coverage **per rules
+file**, so a skill counted as covered because one of its files was opened cannot hide the
+checklist nobody walked.
+
+**Run the scanners before the lenses** — secrets over the full git history, dependency/SCA,
+SAST, IaC and CI workflows, one row of the `sota` router's `rules/01` §3 matrix per ecosystem,
+at the pinned commit, with tool versions recorded and nothing installed or pointed at a live
+system unasked. Their triaged output feeds lenses 2 and 3; a scanner that could not run is
+reported as not reached.
 
 **Record which domains you skipped and why.** A domain with no matching surface is a legitimate
 skip. A domain nobody opened is a hole in the audit and is reported as one.

@@ -5,6 +5,27 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **`/sota-audit` now looks for every class the library protects against, not only what a
+  checklist names.** A hostile review against the router's AUDIT standard (`rules/01`, `rules/03`,
+  `rules/05`) found it would miss known-vulnerable dependencies, secrets in git history, breakage
+  in a diff's callers, and authz/logic flaws no checklist line names. New: a pinned commit for
+  every finding and dismissal; a diff scope that includes its callers and importers and keeps
+  renames; a **light threat model** (entry point → authn/authz checkpoint → asset → privilege,
+  plus the implied assumptions, each checked against the code) before any severity is rated; a
+  **scanner pass** (secrets over full history, SCA, SAST, IaC/CI — only tools already installed,
+  missing ones reported as not reached); coverage **per rules file** plus each skill's AUDIT mode
+  and top-10; the router's cross-cutting rules walked after the table lookup; explicit manual
+  passes for logic, per-object authz and boundary validation; the full evidence block and a
+  reproduction per serious finding, secrets redacted; citations resolved before shipping; and
+  fixes verified against the finding (baseline fires with the fix reverted, three same-class
+  variants), not just the suite.
+- **`/sota-deep-audit` checks the same standard and differs only in how it runs** — independent
+  refuters, fan-out across agents, decisions re-measured, a forward look, and the *full*
+  threat-model reconstruction where `/sota-audit` builds a boundary map. README, `docs/INDEX.md`
+  (whose "four things" listed five) and the README's threat-model paragraph rewritten to match.
+
 ## [1.47.1] - 2026-10-06
 
 A patch: rule text and deferral bookkeeping only — nothing new to run (`RELEASING.md`).
