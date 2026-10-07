@@ -152,6 +152,15 @@ jobs:
         # mtime (the racy-git false allow found 2026-10-02) fails every run (measured 20 of 20).
         run: python3 scripts/verified-done-hook.py --self-test
 
+      - name: Prove the MCP server answers correctly and refuses hostile input
+        # scripts/sota-mcp-server.py serves the library read-only to agents without a skills
+        # loader. The test drives it over real stdio: lifecycle, version negotiation, every
+        # tool, resources, prompts, and hostile input (path traversal in every name-bearing
+        # argument, a non-string uri, malformed and oversized lines, notifications that must
+        # get no reply). Mutation-checked 2026-10-07: answering notifications, echoing any
+        # protocol version, a path-joining file lookup and a missing uri type check each fail it.
+        run: python3 scripts/test-mcp-server.py
+
   claims:
     name: Executable claims (${{ matrix.os }})
     # TWO RUNNERS ON PURPOSE. Several claims in skills/ are PLATFORM SPLITS -- BSD

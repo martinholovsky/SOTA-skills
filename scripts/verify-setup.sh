@@ -425,6 +425,41 @@ else
   fi
 fi
 
+# --- 1h. the optional MCP server, for agents that call tools ----------------
+# scripts/sota-mcp-server.py serves the library read-only over MCP. Every agent detected
+# here also loads SKILL.md folders natively, so a missing registration is INFO with the
+# command that adds it — never a failure. A registration whose server file is GONE is
+# PARTIAL: that agent starts a server that cannot run, which is broken, not optional.
+# File locations per vendor docs fetched 2026-10-07 (docs/MULTI-AGENT.md).
+mcp_have=""; mcp_lack=""; mcp_stale=""
+mcp_probe() {  # <label> <home that marks the agent installed> <config file>
+  local label="$1" home="$2" f="$3" path
+  [ -d "$home" ] || return 0
+  path=""
+  [ -f "$f" ] && path="$(grep -oE '[^"[:space:]]*/scripts/sota-mcp-server\.py' "$f" 2>/dev/null | head -n 1)"
+  if [ -z "$path" ]; then mcp_lack="${mcp_lack:+$mcp_lack, }$label"
+  elif [ ! -f "$path" ]; then mcp_stale="${mcp_stale:+$mcp_stale, }$label ($path)"
+  else mcp_have="${mcp_have:+$mcp_have, }$label"; fi
+}
+mcp_probe Copilot     "${COPILOT_HOME:-$HOME/.copilot}" "${COPILOT_HOME:-$HOME/.copilot}/mcp-config.json"
+mcp_probe Codex       "${CODEX_HOME:-$HOME/.codex}"     "${CODEX_HOME:-$HOME/.codex}/config.toml"
+mcp_probe "Gemini CLI" "$HOME/.gemini"                  "$HOME/.gemini/settings.json"
+if [ -d "$HOME/.gemini/config" ] || [ -d "$HOME/.gemini/antigravity-cli" ] || [ -d "$HOME/.gemini/antigravity" ]; then
+  mcp_probe Antigravity "$HOME/.gemini" "$HOME/.gemini/config/mcp_config.json"
+fi
+mcp_probe Cursor      "$HOME/.cursor"                   "$HOME/.cursor/mcp.json"
+if [ -z "$mcp_have$mcp_lack$mcp_stale" ]; then
+  row "N/A" "1h. MCP server (optional)" "no Copilot / Codex / Gemini CLI / Antigravity / Cursor home found — Claude Code reads the skills natively"
+elif [ -n "$mcp_stale" ]; then
+  row "PARTIAL" "1h. MCP server (optional)" \
+    "registered but the server file is gone: $mcp_stale — re-run scripts/install.sh --mcp from your current checkout"
+elif [ -n "$mcp_lack" ]; then
+  row "INFO" "1h. MCP server (optional)" \
+    "not registered for: $mcp_lack${mcp_have:+ (registered: $mcp_have)}. Optional — these agents load the skills directly. To add the read-only tool path: scripts/install.sh --mcp"
+else
+  row "PASS" "1h. MCP server (optional)" "registered for: $mcp_have"
+fi
+
 [ -f "$CLAUDE_HOME/CLAUDE.md" ] && grep -qi 'sota' "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null && directive=1
 if [ -f "$CLAUDE_HOME/settings.json" ]; then
   # Substring test, not a JSON parse: the hook may be a shell one-liner, a script
