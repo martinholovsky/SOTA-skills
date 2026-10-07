@@ -1,7 +1,7 @@
 # 08 — Tooling, CI gates and testing
 
-What makes a Swift build reproducible and its checks enforceable. Testing guidance moved from
-`sota-mobile` rules/07 §7.11 on 2026-10-07. Test strategy itself is `sota-testing`.
+What makes a Swift build reproducible and its checks enforceable. Testing guidance moved from the
+former Swift-language file in `sota-mobile` on 2026-10-07. Test strategy itself is `sota-testing`.
 
 ## 1. Pinned toolchain, reproducible build
 

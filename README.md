@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/martinholovsky/SOTA-skills/releases"><img src="https://img.shields.io/github/v/release/martinholovsky/SOTA-skills?color=2fa45f&label=release" alt="Latest release"></a>
   <a href="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml"><img src="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/skills-42-2fa45f" alt="42 skills">
+  <img src="https://img.shields.io/badge/skills-43-2fa45f" alt="43 skills">
   <img src="https://img.shields.io/badge/modes-BUILD%20%2B%20AUDIT-2fa45f" alt="BUILD + AUDIT">
   <a href="#license"><img src="https://img.shields.io/badge/license-CC%20BY%204.0%20%2B%20Apache--2.0-blue" alt="License: CC BY 4.0 (content) + Apache-2.0 (code)"></a>
 </p>
@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Antigravity CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **42 skills (336 files, ~88k lines)** of state-of-the-art 2026
+Under the hood: **43 skills (346 files, ~88k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source **as of the last full sweep** (the root
@@ -687,7 +687,7 @@ are load-bearing, because the ones that aren't are labelled.
 | `sota-data-engineering` | Pipelines & orchestration, streaming/CDC, lakehouse & Parquet, data quality/contracts, governance |
 | `sota-privacy-compliance` | Data inventory, privacy by design, consent & user rights, GDPR/CCPA/HIPAA/PCI/AI Act, SOC 2/ISO 27001, breach readiness |
 | `sota-security-compliance` | Control-frameworks-as-code: NIST CSF 2.0, 800-53, 800-171/CMMC, SSDF, FedRAMP, EU Cyber Resilience Act (SBOM/CVD/updates), ISA/IEC 62443 (OT zones & security levels) |
-| `sota-mobile` | Platform/stack choice, offline-first & push, mobile security, performance budgets, store releases, Swift-language rules (Swift 6 concurrency, ARC, SPM) |
+| `sota-mobile` | Platform/stack choice, offline-first & push, mobile security, performance budgets, store releases, Swift in apps (the language is `sota-swift`) |
 | `sota-cli-ux` | Command/flag design, output & exit-code contracts, lifecycle behavior, distribution |
 | `sota-shell-scripting` | Bash safety baseline, robustness, script security, CI/entrypoint/Makefile scripts, and **PowerShell** — `pwsh` CI steps and deploy scripts, where `$ErrorActionPreference` is not the `set -e` it looks like |
 | `sota-docs-workflow` | Documentation architecture, API docs & changelogs, code review/PR workflow, commits & releases |
@@ -702,6 +702,7 @@ are load-bearing, because the ones that aren't are labelled.
 | `sota-dotnet` | C#/.NET idioms (records, NRT, patterns, spans), disposal/DI design, async (ConfigureAwait/cancellation), security (EF/Dapper, deserialization, ASP.NET Core auth, crypto), GC/Span/AOT, NuGet supply chain & analyzers/CI |
 | `sota-php` | strict_types & modern idioms (enums, readonly, match), OWASP security (PDO, output escaping, uploads/LFI, unserialize/Phar, sessions), Composer supply chain, PHPStan/Psalm, OPcache/FPM/JIT |
 | `sota-ruby` | Idioms & typing (RBS/Sorbet), security (SQLi, ERB escaping, strong params, Marshal/YAML.load, ReDoS), Bundler supply chain, RuboCop/Brakeman, GVL/Ractors/YJIT |
+| `sota-swift` | Swift on any target — Swift 6 data-race safety, optionals & errors, ARC & unsafe code, security (CryptoKit, Codable, SQLKit, TLS), Vapor/Hummingbird defaults, SwiftPM supply chain (plugins & macros, SBOM) |
 
 Every garbage-collected language skill also covers its **escape hatch into raw memory**: JNI/FFM/`Unsafe`, `ctypes`/`cffi`, native addons, `unsafe`/P/Invoke, PHP FFI, Fiddle. The class is stated once in `sota-code-security` rules/06 §3, and each language skill carries its own detectors.
 
@@ -716,7 +717,7 @@ Each language skill was also **gap-checked** against an external, tool-backed li
 
 ### Coverage & non-goals
 
-Deliberately **not covered**: Scala/Elixir, standalone C (inside `sota-c-cpp`), platform-engineering/IDP depth. File a *skill request* issue.
+Deliberately **not covered**: Scala/Elixir, standalone C (inside `sota-c-cpp`), platform-engineering/IDP depth. File a *skill request* issue. A language with no skill still routes: the router applies the domain skills and says no language skill covers it.
 
 ## Installation
 
@@ -889,8 +890,8 @@ shape as everything else it touches.
   1M out, because several current models run 1M natively with no suffix.
 - **When it fits, it does nothing and says so.** When it doesn't, it asks before writing,
   backs the file up, writes *through* a symlink so dotfiles stay in charge, and never
-  lowers a value you already set. For this library's 42 skills alone that is about
-  **0.07** at 200K, or **0.02** at a known 1M window.
+  lowers a value you already set. For this library's skills alone that is about
+  **0.07** at 200K, or **0.02** at a known 1M window (measured at 42 skills).
 - **It warns if the library is installed twice** (a clone *and* the plugin). Every skill is
   then listed twice, and the fix is to remove one copy, not to raise the budget.
 

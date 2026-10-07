@@ -1,8 +1,10 @@
 # The language tier — what is aligned, what is not, and how to add one
 
-The nine language skills (`sota-rust`, `sota-golang`, `sota-c-cpp`, `sota-jvm`,
-`sota-python`, `sota-javascript-typescript`, `sota-dotnet`, `sota-php`, `sota-ruby`) share
-a spine and diverge deliberately. This file records which is which, so that a real gap gets
+The ten language skills (`sota-rust`, `sota-golang`, `sota-c-cpp`, `sota-jvm`,
+`sota-python`, `sota-javascript-typescript`, `sota-dotnet`, `sota-php`, `sota-ruby`,
+`sota-swift`) share a spine and diverge deliberately. **`sota-swift` joined on 2026-10-07**
+(ROADMAP 68), with the full spine in nine files plus a server-side file for Vapor/Hummingbird
+defaults; the tables below were measured on the nine and are not re-derived for it. This file records which is which, so that a real gap gets
 closed and a principled difference does not get "fixed".
 
 `sota-shell-scripting` is grouped with the languages in the router's families but is **not

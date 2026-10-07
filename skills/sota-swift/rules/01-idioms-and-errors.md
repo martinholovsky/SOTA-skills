@@ -1,7 +1,7 @@
 # 01 — Idioms, optionals, errors, numbers and time
 
-The baseline every Swift file is held to. Moved from `sota-mobile` rules/07 (§7.4–7.7) on
-2026-10-07, when Swift became its own skill, and extended with numeric and time rules.
+The baseline every Swift file is held to. Moved from the former Swift-language file in `sota-mobile`
+(its value-type, optionals and errors sections) on 2026-10-07, when Swift became its own skill, and extended with numeric and time rules.
 
 ## 1. Value types by default; classes only for identity
 

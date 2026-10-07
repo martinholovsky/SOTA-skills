@@ -1,6 +1,6 @@
 # 09 — Supply chain: SwiftPM dependencies, build-time code, SBOM
 
-Moved from `sota-mobile` rules/07 §7.10 on 2026-10-07 and extended. Pipeline-wide controls
+Moved from the former Swift-language file in `sota-mobile` on 2026-10-07 and extended. Pipeline-wide controls
 (signing, provenance, CI hardening) are `sota-devsecops`.
 
 ## 1. Pin and enforce the resolution

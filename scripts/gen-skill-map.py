@@ -106,6 +106,10 @@ LANG_TOPICS = {
     "ruby": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Security", "Memory / UB"], "03": ["Web / HTTP"],
              "04": ["Tooling / CI / supply chain", "Testing"],
              "05": ["Concurrency", "Performance"]},
+    "swift": {"01": ["Idioms / baseline", "Errors", "Typing"], "02": ["API / design"],
+              "03": ["Concurrency"], "04": ["Memory / UB"], "05": ["Security"],
+              "06": ["Web / HTTP", "Security"], "07": ["Performance"],
+              "08": ["Tooling / CI / supply chain", "Testing"], "09": ["Tooling / CI / supply chain"]},
 }
 # A topic carried by a file that also carries another is marked shared; a topic present
 # only as a section inside a broader file is marked inline. Both are read off the tree.

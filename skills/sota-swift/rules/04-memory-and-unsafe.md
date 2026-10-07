@@ -1,8 +1,8 @@
 # 04 — Memory, resources and unsafe code
 
-ARC, ownership of resources, and the places the compiler stops checking. Moved from
-`sota-mobile` rules/07 §7.4 (noncopyable types), §7.8 and §7.9 on 2026-10-07, plus strict memory
-safety.
+ARC, ownership of resources, and the places the compiler stops checking. Moved from the
+former Swift-language file in `sota-mobile` (noncopyable types, ARC, unsafe interop) on
+2026-10-07, plus strict memory safety.
 
 ## 1. Retain cycles: closures capturing `self`
 

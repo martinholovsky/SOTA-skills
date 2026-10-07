@@ -1,6 +1,6 @@
 # 03 — Concurrency: data-race safety, isolation, cancellation
 
-Moved from `sota-mobile` rules/07 §7.1–7.3 on 2026-10-07 and extended. Applies to every target:
+Moved from the former Swift-language file in `sota-mobile` on 2026-10-07 and extended. Applies to every target:
 a server under load turns a latent race into a statistical certainty.
 
 ## 1. Build in Swift 6 language mode; migrate module by module

@@ -1,7 +1,7 @@
 # 02 — API design: protocols, generics, access control, evolution
 
-How a Swift module or package presents itself to callers. Partly moved from `sota-mobile`
-rules/07 §7.5 (2026-10-07). The naming baseline is swift.org's API Design Guidelines:
+How a Swift module or package presents itself to callers. Partly moved from the former
+Swift-language file in `sota-mobile` (2026-10-07). The naming baseline is swift.org's API Design Guidelines:
 *"Clarity at the point of use"*.
 
 ## 1. Protocols and generics
