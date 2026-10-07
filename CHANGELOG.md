@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`verify-setup.sh` check 1 compares skill names, not a count.**
+  - **The bug:** after `git pull` brought in `sota-swift`, check 1 read "48 sota\* skills
+    (source offers 43)" and passed, although the new skill was not linked. Five plugin
+    container dirs (`plugins/cache/sota-skills`, `…/sota-skills-synced`,
+    `plugins/synced/*/sota-skills`) matched `sota-*` and padded the count.
+  - **The fix:** check 1 now counts only dirs holding a `SKILL.md`, and reports PARTIAL with
+    the missing names unless every checkout skill is found. Its name lookup also reaches the
+    depth the scan does: the old one looked only one level down.
+  - **The probe:** a new part-B negative control rebuilds the padded layout with one skill
+    removed, and requires a PARTIAL that names that skill.
 - **Session gaps closed.**
   - `sota-jvm` rules/06 no longer contradicts `sota-testing` on jqwik (≥ 1.10.0 is protestware).
   - `sota-c-cpp` rules/01 §8b covers text encoding, measured on glibc vs musl (ROADMAP 69).

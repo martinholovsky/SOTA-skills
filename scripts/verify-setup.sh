@@ -137,12 +137,20 @@ for d in "$CLAUDE_HOME/skills" ".claude/skills" "$CLAUDE_HOME/plugins"; do
 done
 n_sota=0
 router_seen=0
+# Every installed skill NAME, newline-delimited with a leading newline so a lookup can
+# match "\nNAME\n" exactly (bash 3.2 on macOS has no associative arrays).
+seen_names=$'\n'
 for d in $skill_dirs; do
   # -L: a symlinked skill dir is the recommended install, so follow links.
   while IFS= read -r s; do
     [ -n "$s" ] || continue
+    # A skill is a dir holding SKILL.md. Plugin CONTAINER dirs match the name too --
+    # plugins/cache/sota-skills, plugins/data/sota-skills-synced, plugins/synced/*/sota-skills --
+    # and on 2026-10-07 five of them padded "48 found" past the 43 the checkout offers.
+    [ -f "$s/SKILL.md" ] || continue
     n_sota=$((n_sota + 1))
     case "$(basename "$s")" in sota) router_seen=1 ;; esac
+    seen_names="$seen_names$(basename "$s")"$'\n'
   done <<EOF
 $(find -L "$d" -maxdepth 3 -type d -name 'sota' -o -maxdepth 3 -type d -name 'sota-*' 2>/dev/null || true)
 EOF
@@ -164,11 +172,13 @@ if [ -n "$LIB_ROOT" ] && [ -d "$LIB_ROOT/skills" ]; then
     [ -d "$s" ] || continue
     n_src=$((n_src + 1))
     nm="$(basename "$s")"
-    found=0
-    for d in $skill_dirs; do
-      if [ -e "$d/$nm" ] || [ -L "$d/$nm" ]; then found=1; break; fi
-    done
-    [ "$found" -eq 1 ] || missing_names="${missing_names:+$missing_names, }$nm"
+    # Look the name up in what the scan above FOUND, at any depth it reached. The
+    # previous lookup tested only "$d/$nm", one level down, and so could not see a
+    # plugin install's nested copy.
+    case "$seen_names" in
+      *$'\n'"$nm"$'\n'*) ;;
+      *) missing_names="${missing_names:+$missing_names, }$nm" ;;
+    esac
   done
 fi
 
@@ -178,12 +188,18 @@ elif [ "$n_sota" -eq 0 ]; then
   row "FAIL" "1. sota skills reachable" "skills dir(s) exist but contain no sota* skill:$skill_dirs"
 elif [ "$router_seen" -eq 0 ]; then
   row "PARTIAL" "1. sota skills reachable" "$n_sota sota* skills, but the 'sota' ROUTER is not among them — routing is what loads the rest"
-elif [ "$n_src" -gt 0 ] && [ "$n_sota" -lt "$n_src" ]; then
+elif [ -n "$missing_names" ]; then
   # A count with nothing to compare it against is not a check (rules/11 §2.2).
   # This one printed "41 sota* skills" and PASSED while the tree held 42: a
   # `git pull` updates every EXISTING symlink and can create none, so a newly
   # added skill stays uninstalled and silent. A missing skill has no symptom —
   # it looks like the model simply not choosing it.
+  #
+  # NAMES, not counts (2026-10-07). The count comparison above it read "48 sota*
+  # skills (source offers 43)" and PASSED while sota-swift was not installed:
+  # five plugin copies under ~/.claude/plugins outnumbered the one missing link.
+  # Any count over a union of directories can be padded by another directory, so the
+  # verdict now rests on every checkout skill's name being found somewhere.
   row "PARTIAL" "1. sota skills reachable" \
     "$n_sota sota* skills installed but $n_src in $LIB_ROOT/skills — $missing_names missing; re-run scripts/install.sh (a git pull cannot create a link)"
 else
