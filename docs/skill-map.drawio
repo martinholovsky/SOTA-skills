@@ -4,7 +4,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 1 — the router reaches a skill by its DESCRIPTION.&lt;br&gt;&lt;br&gt;Only the frontmatter description auto-loads; it is the entire trigger classifier, and the router BODY is inert until the Skill tool fires. So these edges are not links — they are a classifier choosing among 41 competing descriptions.&lt;br&gt;&lt;br&gt;Measured 2026-09-20: correct=0.900 on the 10-case golden set, 1.000 on the 5-case SSO set." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 1 — the router reaches a skill by its DESCRIPTION.&lt;br&gt;&lt;br&gt;Only the frontmatter description auto-loads; it is the entire trigger classifier, and the router BODY is inert until the Skill tool fires. So these edges are not links — they are a classifier choosing among 42 competing descriptions.&lt;br&gt;&lt;br&gt;Measured 2026-09-20: correct=0.900 on the 10-case golden set, 1.000 on the 5-case SSO set." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="30" width="620" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="router" value="sota  (router)&lt;br&gt;routing table · 21 cross-cutting rules&lt;br&gt;BUILD mode · AUDIT mode" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
@@ -2807,6 +2807,122 @@
         </mxCell>
         <mxCell id="cn2_8" value="8/10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1360" y="1566" width="84" height="22" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="p7" name="7 · Commands, hooks &amp; agents">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1960" pageHeight="760" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="note" value="Page 7 — what wraps the skills: the slash commands, the hooks that run them or remind, where each agent reads the library from, and the gates that keep it honest. Every box is read out of the tree (commands/, hooks/hooks.json, scripts/install.sh, check-invariants.sh, .github/workflows/ci.yml); the run aborts if an installer path it expects has moved." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1860" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="h_cmd" value="Slash commands  (5)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="420" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="h_hook" value="Hooks" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="520" y="110" width="420" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="h_reach" value="Agent reach" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="110" width="420" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="h_gate" value="Gates  (39 invariants)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="110" width="420" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="cmd_sota_audit" value="/sota-audit&lt;br&gt;Audit this codebase against the library&lt;br&gt;names: /sota-close, /sota-deep-audit, /sota-report, /sota-resume" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="170" width="420" height="84" as="geometry"/>
+        </mxCell>
+        <mxCell id="cmd_sota_close" value="/sota-close&lt;br&gt;End-of-session closure pass" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="274" width="420" height="84" as="geometry"/>
+        </mxCell>
+        <mxCell id="cmd_sota_deep_audit" value="/sota-deep-audit&lt;br&gt;The heavy audit&lt;br&gt;names: /sota-audit, /sota-report" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="378" width="420" height="84" as="geometry"/>
+        </mxCell>
+        <mxCell id="cmd_sota_report" value="/sota-report&lt;br&gt;Write a SOTA-skills field report for this session" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="482" width="420" height="84" as="geometry"/>
+        </mxCell>
+        <mxCell id="cmd_sota_resume" value="/sota-resume&lt;br&gt;Find and finish the open work in this project&lt;br&gt;names: /sota-close" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="586" width="420" height="84" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg0" value="installed by the plugin (hooks/hooks.json)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="170" width="420" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg0_0" value="SessionStart · plugin-budget-check.sh" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="hg0">
+          <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg0_1" value="SessionStart · plugin-notice.sh" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="hg0">
+          <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg0_2" value="SessionStart · update-reminder.sh" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="hg0">
+          <mxGeometry x="10" y="90" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg1" value="written by install.sh --routing" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="520" y="324" width="420" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg1_0" value="UserPromptSubmit · routing re-injection" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="hg1">
+          <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg1_1" value="SessionStart · update-reminder.sh" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="hg1">
+          <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg2" value="opt-in, Claude Code only" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="520" y="448" width="420" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg2_0" value="Stop + PostToolUse · verified-done-hook.py" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hg2">
+          <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rs" value="skills directories (install.sh --target all)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="170" width="420" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="rs_0" value="Claude Code  →  ~/.claude/skills" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="rs">
+          <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rs_1" value="Copilot · Codex · Cursor · Gemini CLI  →  ~/.agents/skills" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="rs">
+          <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rs_2" value="Antigravity 2.0 app / IDE  →  ~/.gemini/config/skills" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="rs">
+          <mxGeometry x="10" y="90" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rs_3" value="Antigravity CLI  →  ~/.gemini/antigravity-cli/skills" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="rs">
+          <mxGeometry x="10" y="120" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rd" value="always-on directive (install.sh --routing)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="354" width="420" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="rd_0" value="~/.claude/CLAUDE.md" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="rd">
+          <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rd_1" value="~/.copilot/copilot-instructions.md (Copilot)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="rd">
+          <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rd_2" value="~/.codex/AGENTS.md (Codex)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="rd">
+          <mxGeometry x="10" y="90" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rd_3" value="~/.gemini/GEMINI.md (Gemini CLI, Antigravity)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="rd">
+          <mxGeometry x="10" y="120" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="gc" value="CI jobs (.github/workflows/ci.yml)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="170" width="420" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="gc_0" value="Repository invariants" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="gc">
+          <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="gc_1" value="Negative controls (the gate can fail)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="gc">
+          <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="gc_2" value="Executable claims (per OS)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="gc">
+          <mxGeometry x="10" y="90" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="gc_3" value="Shell lint (shellcheck)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="gc">
+          <mxGeometry x="10" y="120" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="gc_4" value="Secret scan (gitleaks)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="gc">
+          <mxGeometry x="10" y="150" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="gi" value="scripts/check-invariants.sh — 39 checks, each with a known-bad probe or a pinned reason it has none; scripts/check-negative-controls.sh proves they still fail. Run the harness for its live total; a static count of probes under-reads." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="384" width="420" height="110" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>

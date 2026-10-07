@@ -3382,5 +3382,64 @@
       "weight": 1,
       "targets": []
     }
-  ]
+  ],
+  "surfaces": {
+    "commands": [
+      "sota-audit",
+      "sota-close",
+      "sota-deep-audit",
+      "sota-report",
+      "sota-resume"
+    ],
+    "command_references": [
+      [
+        "sota-audit",
+        "sota-close"
+      ],
+      [
+        "sota-audit",
+        "sota-deep-audit"
+      ],
+      [
+        "sota-audit",
+        "sota-report"
+      ],
+      [
+        "sota-audit",
+        "sota-resume"
+      ],
+      [
+        "sota-deep-audit",
+        "sota-audit"
+      ],
+      [
+        "sota-deep-audit",
+        "sota-report"
+      ],
+      [
+        "sota-resume",
+        "sota-close"
+      ]
+    ],
+    "skill_dirs": [
+      "~/.claude/skills",
+      "~/.agents/skills",
+      "~/.gemini/config/skills",
+      "~/.gemini/antigravity-cli/skills"
+    ],
+    "directives": [
+      "~/.claude/CLAUDE.md",
+      "~/.copilot/copilot-instructions.md (Copilot)",
+      "~/.codex/AGENTS.md (Codex)",
+      "~/.gemini/GEMINI.md (Gemini CLI, Antigravity)"
+    ],
+    "invariants": 39,
+    "ci_jobs": [
+      "Repository invariants",
+      "Negative controls (the gate can fail)",
+      "Executable claims (per OS)",
+      "Shell lint (shellcheck)",
+      "Secret scan (gitleaks)"
+    ]
+  }
 }

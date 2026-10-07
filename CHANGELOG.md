@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Skill map, page 7: what wraps the skills** — the slash commands (and which names which), the
+  plugin / installer / opt-in hooks, the skills directories and directive files each agent reads
+  (Claude, `~/.agents`, Antigravity), and the gates (invariant count, CI jobs), all read from the
+  tree; the run aborts if an installer path it expects moves. Pages 1–2 no longer hard-code the
+  rule and description counts (one had already gone stale at 41).
 - **New skill: `sota-swift`** — Swift on any target (server-side Vapor/Hummingbird/SwiftNIO, CLIs,
   packages, apps), 9 rules files: idioms & errors, API design, concurrency, memory & unsafe,
   security, server-side, performance, tooling/CI/testing, supply chain. Absorbs the former
