@@ -1200,6 +1200,11 @@ build_fixture() {  # a machine+repo where every check passes
   for _s in sota sota-testing sota-golang; do
     ln -sfn "$VS/repo/skills/$_s" "$VS/uhome/.agents/skills/$_s"
   done
+  # Antigravity CLI, fully configured: it reads neither ~/.claude/skills nor
+  # ~/.agents/skills, so 1f must find the router under its OWN path to pass.
+  mkdir -p "$VS/uhome/.gemini/antigravity-cli/skills"
+  ln -sfn "$VS/repo/skills/sota" "$VS/uhome/.gemini/antigravity-cli/skills/sota"
+  printf 'consult the sota router skill\n' > "$VS/uhome/.gemini/GEMINI.md"
   mkdir -p "$VS/repo/scripts"
   cp "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh"
   # check 1b/1g measure through the shared lister, resolved beside verify-setup.sh
@@ -1360,6 +1365,10 @@ vs_probe_partial "a skill is a copied snapshot, not a link" "1e. install is live
 # here, which is the whole report: the Claude install is invisible to Copilot CLI.
 rm -rf "$VS/uhome/.agents"
 vs_probe_partial "another agent present, ~/.agents/skills empty" "1f. other agents reach skills"
+# 1f, Antigravity: ~/.agents/skills is complete, but Antigravity's own skills path is
+# empty — the gap a ~/.agents-only installer leaves (the 2026-10-06 external review).
+rm -rf "$VS/uhome/.gemini/antigravity-cli/skills"
+vs_probe_partial "Antigravity present, its own skills path empty" "1f. other agents reach skills"
 # 2b: skills reach it, but its global instruction file carries no directive.
 rm -f "$VS/uhome/.codex/AGENTS.md"
 vs_probe_partial "another agent present, no directive in its global file" "2b. other agents' directive"

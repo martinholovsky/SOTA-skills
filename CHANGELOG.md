@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Antigravity reaches the library.** Antigravity reads neither `~/.claude/skills` nor
+  `~/.agents/skills` (antigravity.google/docs/skills, fetched 2026-10-06): `install.sh --target
+  all` now also links `~/.gemini/config/skills` (2.0 app/IDE) and `~/.gemini/antigravity-cli/skills`
+  (CLI) when those homes exist, and never creates them otherwise. `~/.gemini/GEMINI.md` was
+  already mirrored and is read by Antigravity too. `verify-setup.sh` check 1f now reports each
+  detected Antigravity surface, with a new negative-control probe (the surface's own skills path
+  emptied → PARTIAL). `docs/MULTI-AGENT.md` carries the verified rows; its "not researched" line
+  is gone.
+- **The routing directive names the router's file.** The managed block now ends with the
+  absolute path to `skills/sota/SKILL.md`, so an agent with no skills loader is told what to
+  read; agents that load skills ignore it. Existing installs are offered a refresh in place.
 - **Measured: `/sota-audit` old vs new on Harbor v2.5.1** (four live agents, pre-registered,
   [SOTA-AUDIT-AB](evals/results/2026-10-06/SOTA-AUDIT-AB.md)). The rewrite reliably changes the
   process — redacted secrets scan, boundary map, per-rules-file coverage, 2/2 vs 0/2 — at authz
