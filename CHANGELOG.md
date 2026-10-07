@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`/sota-audit` step 4: every Critical/High advisory is its own finding** (ROADMAP 67) — one row
+  per module@version with advisory ids, fixed version and how reachability was checked; a count is
+  never the finding. `/sota-deep-audit` carries the same rule. Re-measured on the 2026-10-06
+  Harbor A/B: dependency recall **3.0 → 19.0 of 19** (strict 0 → 17), authz unchanged at 15/16
+  ([SOTA-AUDIT-AB-C](evals/results/2026-10-07/SOTA-AUDIT-AB-C.md)).
 - **Router: a language with no skill is not a dead end.** Cross-cutting rule 1 now says what to do
   with Scala, Elixir, Dart and the like — apply the domain skills, say once that no language skill
   covers it, take idioms from the language's official docs — and points Swift on **any** target

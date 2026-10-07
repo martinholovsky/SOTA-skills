@@ -180,6 +180,13 @@ partial, never as clean.
   context; "dead" and "test-only" are claims with evidence bars that fail closed; existing
   suppressions and deprecated APIs are findings in their own right (`sota` router `rules/01` §3).
   Never paste a raw dump into the report.
+- **Every Critical or High advisory becomes its own finding — a count is never the finding.**
+  One row per vulnerable **module@version**, carrying its advisory ids, the fixed version, and
+  whether the vulnerable code is reachable from an entry point *and how you checked* (a
+  call-graph scanner, a symbol search, or "not checked"). Medium and below may be summarised by
+  count. Measured 2026-10-06: four audit arms all ran the scanner, all saw the same 128
+  advisories, and all reported "128 advisories, 4 Critical" plus a few examples — 2 to 6 of the
+  19 vulnerable modules named, none by full path.
 - **No secret value leaves the scanner — enforce it with a flag, not with intent.** gitleaks
   prints the raw value unless run with `--redact` (`gitleaks git --redact .`), and anything it
   prints lands in this transcript. A scanner that **verifies** credentials against the provider
