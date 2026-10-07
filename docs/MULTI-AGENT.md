@@ -19,8 +19,12 @@ These paths move. Re-check the linked page before relying on a row.
 | **OpenAI Codex CLI** | `$HOME/.agents/skills` (admin: `/etc/codex/skills`) | `~/.codex/AGENTS.override.md`, else `~/.codex/AGENTS.md` (`CODEX_HOME`) | **no** (not mentioned — undocumented, not tested) |
 | **Cursor** | `~/.agents/skills`, `~/.cursor/skills`, plus `~/.claude/skills` and `~/.codex/skills` for compatibility | *User Rules* in Customize → Rules — a settings screen, **no documented file** | yes |
 | **Gemini CLI** | `~/.gemini/skills`, `~/.agents/skills` | `~/.gemini/GEMINI.md` | **no** (not mentioned — undocumented, not tested) |
+| **Antigravity 2.0 app / IDE** *(fetched 2026-10-06)* | `~/.gemini/config/skills` (legacy `~/.gemini/antigravity/skills`) — **not** `~/.agents/skills` | `~/.gemini/GEMINI.md`, `~/.gemini/AGENTS.md`, `~/.gemini/config/{AGENTS,GEMINI}.md`, `~/.gemini/config/rules/*.md` | **no** |
+| **Antigravity CLI** *(fetched 2026-10-06)* | `~/.gemini/antigravity-cli/skills` — **not** `~/.agents/skills` | `~/.gemini/GEMINI.md`, `~/.gemini/AGENTS.md`, `~/.gemini/config/rules/*.md`, `~/.gemini/antigravity-cli/rules/*.md` | **no** |
 
-Project-level equivalents: `.agents/skills` is read by all five non-Claude agents. Copilot
+Project-level equivalents: `.agents/skills` is read by all six non-Claude agents (Antigravity:
+*"Antigravity defaults to .agents/skills"*; its workspace rules are `AGENTS.md`/`GEMINI.md` and
+`.agents/rules/*.md`). Copilot
 (CLI and VS Code) and Cursor also read `.claude/skills`, so `install.sh --project DIR` already
 reaches them. Codex and Gemini do not.
 
@@ -33,39 +37,50 @@ Sources: [Copilot CLI skills](https://docs.github.com/en/copilot/how-tos/copilot
 [Cursor skills](https://cursor.com/docs/skills) · [Cursor rules](https://cursor.com/docs/rules) ·
 [Gemini CLI skills](https://geminicli.com/docs/cli/skills/) ·
 [Gemini CLI GEMINI.md](https://geminicli.com/docs/cli/gemini-md/) ·
-[agentskills.io client guide](https://agentskills.io/client-implementation/adding-skills-support.md).
+[agentskills.io client guide](https://agentskills.io/client-implementation/adding-skills-support.md) ·
+[Antigravity skills](https://antigravity.google/docs/skills) ·
+[Antigravity rules](https://antigravity.google/docs/rules).
 Gemini CLI's own page says it *"was replaced by Antigravity CLI on June 18th, 2026"* for unpaid
-and Google One users. Antigravity's skill paths were **not** researched here.
+and Google One users, which makes Antigravity the more likely Google agent on a new machine.
+Gemini CLI reads `AGENTS.md` only when configured to (`context.fileName`); `GEMINI.md` is its
+default (gemini-cli `docs/cli/gemini-md.md`, fetched 2026-10-06).
 
 ## What the installer does with it
 
-- **Skills: `~/.agents/skills`, and only that.** It is the one personal path that all five
-  non-Claude agents document. `~/.copilot/skills` is deliberately *not* also written: VS
+- **Skills: `~/.agents/skills`, plus Antigravity's own directories.** `~/.agents/skills` is
+  the personal path Copilot, Codex, Cursor and Gemini CLI all document; Antigravity reads its
+  own (`~/.gemini/config/skills`, `~/.gemini/antigravity-cli/skills`) and is linked there only
+  when its home exists (`~/.gemini/config` or `~/.gemini/antigravity` for the app/IDE,
+  `~/.gemini/antigravity-cli` for the CLI). A `--project` install needs nothing extra:
+  Antigravity's workspace path is `.agents/skills`. `~/.copilot/skills` is deliberately *not* also written: VS
   Code reads `~/.copilot`, `~/.claude` **and** `~/.agents`, so a third copy of each skill
   would add nothing.
-  - `--target all` links into both `~/.claude/skills` and `~/.agents/skills`.
+  - `--target all` links into `~/.claude/skills`, `~/.agents/skills` and each detected
+    Antigravity skills directory.
   - `--target agents` links into `~/.agents/skills` alone.
   - `--target claude` keeps the old behaviour.
   - With no `--target`, the installer links Claude only. If it finds `~/.copilot`, `~/.codex`
-    or `~/.gemini` (the agents that do not document `~/.claude/skills`), it **offers** the fan-out
+    or `~/.gemini` (the agents that do not document `~/.claude/skills`, Antigravity among them), it **offers** the fan-out
     on an interactive run, or accepts it under `--yes`. A non-interactive run prints a
     one-line hint instead.
 - **Directive: every agent that is installed.** With `--routing`, the managed routing block
-  also goes into `copilot-instructions.md`, `~/.codex/AGENTS.md` and `~/.gemini/GEMINI.md`,
-  but only for an agent whose home directory exists.
+  also goes into `copilot-instructions.md`, `~/.codex/AGENTS.md` and `~/.gemini/GEMINI.md`
+  (read by both Gemini CLI and Antigravity), but only for an agent whose home directory exists.
+  - The block ends with the router's **absolute path**: an agent that cannot load a skill by
+    name is told which file to read. Agents with a skills loader ignore the line.
   - It follows the same contract as `CLAUDE.md`: a `.bak` before the first change, the block
     **appended** to your own content (never replacing it), and refreshed in place between the
     markers on later runs.
   - Cursor has no file to write, so the installer tells you to paste the block into User
     Rules.
-  - It warns if a directive names the `sota` skill while `~/.agents/skills` is empty, because
-    such an instruction cannot be followed.
+  - It warns if a directive names the `sota` skill while `~/.agents/skills` — or a detected
+    Antigravity skills directory — is empty, because such an instruction cannot be followed.
 - **No hook.** The `UserPromptSubmit` re-injection is Claude Code's. For other agents the
   directive is the only always-on layer.
 - **Check it:** `scripts/verify-setup.sh` reports three rows:
   - **1e** — skills are live links, not copies.
   - **1f** — each detected agent reaches `~/.agents/skills`, compared against the checkout's
-    count.
+    count, and each detected Antigravity surface finds the router under its own path.
   - **2b** — each detected agent's global file carries the directive.
 
   All three report PARTIAL, never FAIL. Another agent being installed is not evidence that
@@ -104,5 +119,8 @@ deepcopy does. It has **not** been run on a real Windows machine.
 - **`COPILOT_HOME` and skills.** The Copilot CLI page says the variable moves *both
   user-level instruction locations*. It does not say whether the skills directory moves
   with it.
+- **Antigravity detection.** A `~/.gemini/config` directory is taken to mean the Antigravity
+  2.0 app or IDE is installed. Its docs name that path; whether anything else creates it is not
+  known. Whether Antigravity follows **symlinked** skill folders is not documented.
 - **Windows home.** No vendor page gives a `%USERPROFILE%` form of these paths; `~` is
   assumed to mean the user's home folder there.
