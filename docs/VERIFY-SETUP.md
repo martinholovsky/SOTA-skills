@@ -25,7 +25,11 @@ symlink (**PASS**), absent or dangling (**FAIL**), a `--copy` snapshot that will
 check 1's *denominator* applied to `commands/`, comparing what is installed against what the
 checkout ships. A `git pull` refreshes every existing symlink and creates none, so a command
 added upstream stays uninstalled and silent — the same failure that made check 1 grow a
-denominator after it printed "41 skills" over a tree of 42. **PARTIAL**, not FAIL: a missing
+denominator after it printed "41 skills" over a tree of 42. (A count was not enough either:
+on 2026-10-07 check 1 read "48 found, source offers 43" and PASSED while `sota-swift` was not
+installed — plugin container dirs named `sota-skills` matched `sota-*`. It now counts only
+dirs holding a `SKILL.md` and passes only when every checkout skill's **name** is found.)
+**PARTIAL**, not FAIL: a missing
 workflow command costs a workflow. It goes **INFO** when no `commands/` directory resolves,
 rather than passing over an empty scope.
 
