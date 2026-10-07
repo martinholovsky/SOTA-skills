@@ -35,6 +35,9 @@
 #   scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 #   scripts/install.sh --routing       # also set up always-on routing (force)
 #   scripts/install.sh --no-routing    # skip the routing offer
+#   scripts/install.sh --mcp           # also register the read-only MCP server for every
+#                                      #   detected non-Claude agent (offered otherwise)
+#   scripts/install.sh --no-mcp        # skip the MCP offer
 #   scripts/install.sh --no-verify     # skip the reachability check that ends every run
 #   scripts/install.sh --yes           # assume the recommended answer to prompts
 #   scripts/install.sh --color=WHEN    # always | never | auto (default; --no-color = never)
@@ -76,6 +79,7 @@ DO_VERIFY=1
 DO_VERSION=0
 USE_COPY=0
 DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
+DO_MCP=-1       # -1 = offer, 0 = skip, 1 = force  (--mcp / --no-mcp)
 ASSUME_YES=0
 COLOR_MODE=auto # auto | always | never  (--color=WHEN / --no-color)
 
@@ -615,6 +619,122 @@ maybe_setup_precommit() {
   fi
 }
 
+# --- the MCP server, for agents that would rather call tools ----------------------
+# scripts/sota-mcp-server.py serves the library read-only over MCP (stdio): list_skills,
+# get_skill, get_rules_file, the commands as prompts. Every agent detected below also loads
+# SKILL.md folders natively, so this is a SECOND path, offered and never imposed (operator
+# decision 2026-10-07, ADOPTION-LOG). Claude Code is not offered it: it reads the skills.
+# File formats per vendor docs fetched 2026-10-07 (docs/MULTI-AGENT.md):
+#   Copilot CLI (+ VS Code's portable file)  $COPILOT_DIR/mcp-config.json  mcpServers, tools REQUIRED
+#   Codex                                    $CODEX_DIR/config.toml        [mcp_servers.<name>]
+#   Gemini CLI                               ~/.gemini/settings.json       mcpServers
+#   Antigravity (app, IDE, CLI)              ~/.gemini/config/mcp_config.json  mcpServers
+#   Cursor                                   ~/.cursor/mcp.json            mcpServers, type stdio
+MCP_NAME="sota-skills"
+MCP_SCRIPT="$REPO/scripts/sota-mcp-server.py"
+MCP_BEGIN="# >>> sota-skills mcp (managed by install.sh) >>>"
+MCP_END="# <<< sota-skills mcp <<<"
+
+mcp_targets() {  # one "label|file|kind" per line, only for agents installed here
+  [ -d "$COPILOT_DIR" ] && printf '%s\n' "Copilot|$COPILOT_DIR/mcp-config.json|copilot"
+  [ -d "$CODEX_DIR" ] && printf '%s\n' "Codex|$CODEX_DIR/config.toml|codex"
+  [ -d "$GEMINI_DIR" ] && printf '%s\n' "Gemini CLI|$GEMINI_DIR/settings.json|gemini"
+  { [ -d "$AG_APP_HOME" ] || [ -d "$AG_CLI_HOME" ] || [ -d "$GEMINI_DIR/antigravity" ]; } \
+    && printf '%s\n' "Antigravity|$AG_APP_HOME/mcp_config.json|antigravity"
+  [ -d "$HOME/.cursor" ] && printf '%s\n' "Cursor|$HOME/.cursor/mcp.json|cursor"
+  return 0
+}
+
+mcp_entry() {  # $1 kind -> the JSON value for mcpServers["sota-skills"]
+  case "$1" in
+    copilot) jq -n --arg s "$MCP_SCRIPT" '{type:"local",command:"python3",args:[$s],tools:["*"]}' ;;
+    cursor)  jq -n --arg s "$MCP_SCRIPT" '{type:"stdio",command:"python3",args:[$s]}' ;;
+    *)       jq -n --arg s "$MCP_SCRIPT" '{command:"python3",args:[$s]}' ;;
+  esac
+}
+
+mcp_configured() {  # $1 file, $2 kind -> 0 when it already registers THIS checkout's server
+  local f="$1"
+  [ -f "$f" ] || return 1
+  if [ "$2" = codex ]; then
+    grep -qxF "$MCP_BEGIN" "$f" && grep -qF "$MCP_SCRIPT" "$f"
+  else
+    jq -e --arg n "$MCP_NAME" --argjson v "$(mcp_entry "$2")" '.mcpServers[$n] == $v' "$f" >/dev/null 2>&1
+  fi
+}
+
+mcp_write() {  # $1 label, $2 file, $3 kind
+  local label="$1" f="$2" kind="$3" tmp
+  if [ "$kind" = codex ]; then
+    [ -e "$f" ] && backup "$f"
+    if [ -f "$f" ] && grep -qxF "$MCP_BEGIN" "$f"; then
+      tmp="$(mktemp)"; track "$tmp"
+      awk -v b="$MCP_BEGIN" -v e="$MCP_END" '$0==b{skip=1;next} skip&&$0==e{skip=0;next} !skip' "$f" >"$tmp"
+      cat "$tmp" >"$f"; rm -f "$tmp"
+    fi
+    mkdir -p "$(dirname "$f")"
+    { printf '\n%s\n[mcp_servers.%s]\ncommand = "python3"\nargs = ["%s"]\n%s\n' \
+        "$MCP_BEGIN" "$MCP_NAME" "$MCP_SCRIPT" "$MCP_END"; } >>"$f"
+    ok "registered the MCP server for $label ($f)"
+    return 0
+  fi
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$f" ]; then
+    backup "$f"
+    if jq --arg n "$MCP_NAME" --argjson v "$(mcp_entry "$kind")" '.mcpServers[$n] = $v' "$f" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$f"   # cat (not mv) so a symlinked config keeps its link
+      ok "registered the MCP server for $label ($f)"
+    else
+      warn "could not parse $f as JSON — left unchanged; add the entry by hand (docs/MULTI-AGENT.md)"
+    fi
+  else
+    mkdir -p "$(dirname "$f")"
+    jq -n --arg n "$MCP_NAME" --argjson v "$(mcp_entry "$kind")" '{mcpServers:{($n):$v}}' >"$f"
+    ok "created $f with the MCP server for $label"
+  fi
+  rm -f "$tmp"
+}
+
+maybe_setup_mcp() {
+  # Personal installs only, and never a deliberate --copy snapshot (its server path would be
+  # this checkout anyway). --mcp forces, --no-mcp skips; otherwise offered when interactive or
+  # under --yes, on install AND on --update, until every detected agent has it.
+  [ "$TARGET" = "$HOME/.claude/skills" ] || return 0
+  [ "$DO_MCP" -eq 0 ] && return 0
+  local line label f kind todo="" n=0
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    IFS='|' read -r label f kind <<EOF_MCP
+$line
+EOF_MCP
+    if mcp_configured "$f" "$kind"; then log "MCP server for $label — up to date"; else todo="$todo$line
+"; n=$((n + 1)); fi
+  done <<EOF_T
+$(mcp_targets)
+EOF_T
+  [ "$n" -gt 0 ] || return 0
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping MCP registration; docs/MULTI-AGENT.md has each agent's snippet"; return 0
+  fi
+  if [ "$DO_MCP" -ne 1 ]; then
+    if [ "$INTERACTIVE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
+      ask_yn "Register the read-only SOTA MCP server for $n agent(s) without it ($(printf '%s' "$todo" | cut -d'|' -f1 | paste -sd, - | sed 's/,/, /g'))? Optional: they already load the skills directly." n || return 0
+    else
+      chg "the read-only MCP server is not registered for $n agent(s) — re-run with --mcp to add it (optional)"; return 0
+    fi
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    IFS='|' read -r label f kind <<EOF_MCP
+$line
+EOF_MCP
+    mcp_write "$label" "$f" "$kind" || true
+  done <<EOF_T
+$todo
+EOF_T
+  return 0
+}
+
 maybe_setup_routing() {
   # personal install only; never for --project or a deliberate --copy snapshot. A
   # copy forced by missing symlink support is still a personal install, so it keeps
@@ -654,6 +774,8 @@ while [ $# -gt 0 ]; do
     --routing)    DO_ROUTING=1 ;;
     --no-verify)  DO_VERIFY=0 ;;
     --no-routing) DO_ROUTING=0 ;;
+    --mcp)        DO_MCP=1 ;;
+    --no-mcp)     DO_MCP=0 ;;
     --yes|-y)     ASSUME_YES=1 ;;
     --color)      shift; [ $# -gt 0 ] || die "--color needs always|never|auto"; COLOR_MODE="$1" ;;
     --color=*)    COLOR_MODE="${1#*=}" ;;
@@ -923,6 +1045,8 @@ section '💬' 'Slash commands'
 setup_commands || true
 
 maybe_setup_routing
+section '🔌' 'MCP server (optional)'
+maybe_setup_mcp || true
 # Independent of the routing opt-in on purpose: the listing budget matters MORE when
 # always-on routing is declined, because that is exactly when per-skill auto-selection
 # is the only path and a name-only entry has nothing to match on.

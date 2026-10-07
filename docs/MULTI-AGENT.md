@@ -86,6 +86,35 @@ default (gemini-cli `docs/cli/gemini-md.md`, fetched 2026-10-06).
   All three report PARTIAL, never FAIL. Another agent being installed is not evidence that
   you want the library in it.
 
+## The optional MCP server
+
+`scripts/sota-mcp-server.py` serves the library **read-only** over MCP (stdio, standard library
+only): `list_skills` returns every skill's description so the agent's own model chooses,
+`get_skill` and `get_rules_file` return the files, the files are also MCP resources, and the five
+commands are MCP prompts. It does not route, write, execute anything or open a connection, and
+every request is a lookup in an index built at startup, so no path is ever built from request
+input. Dual-era: it answers the 2026-07-28 protocol (`server/discover`, per-request `_meta`) and
+the older `initialize` handshake.
+
+Every agent below already loads the skills directly, so this is a second path, **offered, never
+imposed**: `install.sh --mcp` registers it for each detected agent (backup first, existing
+entries kept), an interactive install or `--update` offers it, and `verify-setup.sh` check **1h**
+reports which agents have it, with the enable command where they do not. Formats, from vendor
+docs fetched 2026-10-07:
+
+| agent | file | entry under `mcpServers` (Codex: a TOML table) |
+|---|---|---|
+| Copilot CLI (and VS Code's portable file) | `~/.copilot/mcp-config.json` (`$COPILOT_HOME`) | `{"type":"local","command":"python3","args":[…],"tools":["*"]}` — `tools` is required |
+| Codex | `~/.codex/config.toml` (`$CODEX_HOME`) | `[mcp_servers.sota-skills]` `command`/`args`, inside managed markers |
+| Gemini CLI | `~/.gemini/settings.json` | `{"command":"python3","args":[…]}` |
+| Antigravity | `~/.gemini/config/mcp_config.json` | `{"command":"python3","args":[…]}` |
+| Cursor | `~/.cursor/mcp.json` | `{"type":"stdio","command":"python3","args":[…]}` |
+
+Claude Code is not offered it: it reads the skills natively. Tested: a stdio test suite
+(`scripts/test-mcp-server.py`, in CI, mutation-checked) and a real client — Claude Code connected
+in the modern era and fetched a rules file; that run is also what found a missing required field
+(`cacheScope`) the suite had not asserted. Not run against the other five clients.
+
 ## Windows: a copy that looks like a link
 
 Git Bash and MSYS2 do **not** fail `ln -s` when Windows refuses a symlink. They copy and
@@ -138,6 +167,8 @@ deepcopy does. It has **not** been run on a real Windows machine.
 - **`COPILOT_HOME` and skills.** The Copilot CLI page says the variable moves *both
   user-level instruction locations*. It does not say whether the skills directory moves
   with it.
+- **The 2.0 app's MCP file.** Antigravity's docs give `~/.gemini/config/mcp_config.json` for the IDE and
+  the CLI; the 2.0 app's tab describes only its Settings UI.
 - **Antigravity detection.** A `~/.gemini/config` directory is taken to mean the Antigravity
   2.0 app or IDE is installed. Its docs name that path; whether anything else creates it is not
   known. Whether Antigravity follows **symlinked** skill folders is not documented.

@@ -52,6 +52,7 @@ git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
 ./scripts/install.sh --project DIR   # one project: DIR/.claude/skills
 ./scripts/install.sh --target all    # also ~/.agents/skills (Copilot, Codex, Cursor, Gemini CLI) + Antigravity's own dirs
 ./scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
+./scripts/install.sh --mcp           # optional: register the read-only MCP server for other agents
 ```
 
 The installer colour-codes what it did (`✓` done · `↻` changed or act on this ·
@@ -1249,6 +1250,8 @@ directories where it is installed, and `--routing` writes the directive into eac
 instructions file (table and sources: [docs/MULTI-AGENT.md](docs/MULTI-AGENT.md)). To
 route a project's agent through the library, generate an `AGENTS.md` (the cross-tool open standard
 read by Codex, Cursor, Copilot, Antigravity CLI, Windsurf, Zed, and more):
+
+**Or over MCP.** `scripts/sota-mcp-server.py` serves the same files read-only as MCP tools (`list_skills`, `get_skill`, `get_rules_file`), resources and prompts, for an agent that would rather call tools than read a skills folder. `./scripts/install.sh --mcp` registers it for Copilot, Codex, Gemini CLI, Antigravity and Cursor where they are installed; `verify-setup.sh` shows where it is missing. It does not route: the agent's model picks from the descriptions, as it does with skills ([docs/MULTI-AGENT.md](docs/MULTI-AGENT.md#the-optional-mcp-server)).
 
 ```sh
 cd /path/to/your/project

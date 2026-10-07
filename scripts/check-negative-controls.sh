@@ -1212,6 +1212,16 @@ build_fixture() {  # a machine+repo where every check passes
   ln -sfn "$VS/repo/skills/sota" "$VS/uhome/.gemini/antigravity-cli/skills/sota"
   printf 'consult the sota router skill\n' > "$VS/uhome/.gemini/GEMINI.md"
   mkdir -p "$VS/repo/scripts"
+  # The optional MCP server, registered for every agent present (Codex, Gemini CLI,
+  # Antigravity), so check 1h reads PASS and a probe has something to break. Without
+  # this the fixture already reads INFO and an INFO probe would be caught by nothing.
+  : > "$VS/repo/scripts/sota-mcp-server.py"
+  printf '[mcp_servers.sota-skills]\ncommand = "python3"\nargs = ["%s"]\n' \
+    "$VS/repo/scripts/sota-mcp-server.py" > "$VS/uhome/.codex/config.toml"
+  printf '{"mcpServers":{"sota-skills":{"command":"python3","args":["%s"]}}}\n' \
+    "$VS/repo/scripts/sota-mcp-server.py" > "$VS/uhome/.gemini/settings.json"
+  mkdir -p "$VS/uhome/.gemini/config"
+  cp "$VS/uhome/.gemini/settings.json" "$VS/uhome/.gemini/config/mcp_config.json"
   cp "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh"
   # check 1b/1g measure through the shared lister, resolved beside verify-setup.sh
   cp "$REPO/scripts/skill-listing-sources.sh" "$VS/repo/scripts/skill-listing-sources.sh"
@@ -1409,6 +1419,13 @@ VSEOF
   fi
   build_fixture
 }
+# 1h: one agent's MCP registration removed — optional, so INFO with the enable command.
+rm -f "$VS/uhome/.gemini/settings.json"
+vs_probe_info "an agent without the MCP server" "1h. MCP server (optional)" "not registered for: Gemini CLI"
+# 1h: a registration pointing at a server file that is gone — broken, so PARTIAL.
+printf '[mcp_servers.sota-skills]\ncommand = "python3"\nargs = ["/gone/scripts/sota-mcp-server.py"]\n' \
+  > "$VS/uhome/.codex/config.toml"
+vs_probe_partial "an MCP registration whose server file is gone" "1h. MCP server (optional)"
 # a DIFFERENT library's plugin: only the budget may move, never 1g
 vs_fixture_plugin other-plugin other-skill "an unrelated plugin skill whose description alone overruns the fixture budget"
 vs_probe_info "an enabled plugin's skills overrun the budget" "1b. listing budget" "over by"
@@ -1503,5 +1520,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 2, 2b, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

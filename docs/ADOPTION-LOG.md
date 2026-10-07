@@ -7715,3 +7715,27 @@ concepts absent** for Swift; each was a real wording gap (or, for the version fl
 checklist item) and was fixed; every Swift cell's matched substring was then read with
 `--explain all all`, and one false presence (module boundaries lit by `@preconcurrency import`)
 was replaced by a genuine item. The gate's own "9/9" output literal now derives the count.
+
+## 2026-10-07 — an MCP server, built as the operator chose: serve the library, do not route
+
+**Operator decision, 2026-10-07: build it** — option 1A (serve the files; the host's model
+chooses from `list_skills`), 2a (standard library only, hand-written protocol, no dependency),
+3 (opt-in: `install.sh --mcp`, offered on install and `--update`, reported by verify-setup with
+the enable command). Reasoning recorded with the decision: a tool path costs nothing for agents
+that ignore it, helps a host that would rather call tools than read folders, and keeping routing
+in the model preserves the measured recall (0.88–0.975) instead of replacing it with a keyword
+match.
+
+**The earlier deferral still stands as written** — it is for a *routing* MCP server
+(`get_sota_guidance(task)`), which this is not; its trigger is unchanged.
+
+**Two findings while building, both from running something:**
+- The current MCP spec (2026-07-28) removed the `initialize` handshake; a server built against
+  `initialize` alone is "legacy" and fails modern-only clients. The server is dual-era. Checked
+  against the spec's own schema (`schema/2026-07-28/schema.ts`) and versioning page.
+- The test suite passed 36/36 while Claude Code — a modern client — rejected every list result:
+  `CacheableResult` requires `cacheScope` beside `ttlMs`, and the schema read had stopped at
+  `ttlMs`. A real client found what a suite written by the server's author could not; the field
+  is now asserted. Four mutations (answering notifications, echoing any version, a path-joining
+  lookup, no uri type check) each fail the suite; a fifth, removing the catch-all exception
+  handler, does not — it has no reachable trigger, and the code says so.
