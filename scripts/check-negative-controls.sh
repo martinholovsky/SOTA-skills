@@ -1363,6 +1363,14 @@ rm -rf "$VS/home/skills";                       vs_probe "no skills installed"  
 # skill stays uninstalled while the count still looks plausible. Observed on a real
 # machine at 41 of 42.
 rm -rf "$VS/home/skills/sota-golang";           vs_probe_partial "installed count below the source count" "1. sota skills reachable"
+# The same missing skill, now HIDDEN by a count: three plugin CONTAINER dirs (the real
+# shapes from 2026-10-07 -- cache/sota-skills, data/sota-skills-synced, synced/*/sota-skills)
+# match `sota-*` and padded "48 found" past the checkout's 43 while sota-swift was not
+# installed, so the count-based check PASSED. The want is the missing NAME, so a PARTIAL
+# for any other reason is refused.
+mkdir -p "$VS/home/plugins/cache/sota-skills/sota-skills" "$VS/home/plugins/data/sota-skills-synced" \
+  "$VS/home/plugins/synced/a_b/sota-skills"
+rm -rf "$VS/home/skills/sota-golang";           vs_probe_partial "a missing skill hidden by plugin container dirs" "sota-golang missing"
 rm -f "$VS/home/commands/sota-report.md";       vs_probe "report command not installed"    "1c. report command installed"
 # The dangling case is a SEPARATE branch: `-e` follows a symlink, so `[ ! -e ]` is true
 # for a dangling link and the first draft's dangling branch was unreachable dead code.
