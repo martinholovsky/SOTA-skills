@@ -189,7 +189,7 @@
         <mxCell id="r1" value="1. Language skills stack on domain skills." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
           <mxGeometry x="40" y="214" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="rs1" value="api-design · code-security · golang" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+        <mxCell id="rs1" value="api-design · code-security · golang · mobile" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
           <mxGeometry x="520" y="214" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r2" value="2. Security tasks usually need three skills." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
