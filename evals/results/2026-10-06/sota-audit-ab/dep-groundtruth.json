@@ -1,0 +1,179 @@
+{
+ "source": "trivy 0.72.0 fs --scanners vuln src/go.mod @ harbor v2.5.1 b0506782b4, 2026-10-06",
+ "criterion": "module@version with >=1 CRITICAL or HIGH advisory",
+ "modules": [
+  {
+   "module": "github.com/beego/beego",
+   "version": "v1.12.9",
+   "ids": [
+    "CVE-2021-27116",
+    "CVE-2021-27117",
+    "CVE-2021-30080",
+    "CVE-2022-31836",
+    "CVE-2025-30223"
+   ]
+  },
+  {
+   "module": "github.com/containerd/containerd",
+   "version": "v1.5.10",
+   "ids": [
+    "CVE-2024-25621"
+   ]
+  },
+  {
+   "module": "github.com/distribution/distribution",
+   "version": "v2.8.0+incompatible",
+   "ids": [
+    "CVE-2026-33540",
+    "CVE-2026-35172"
+   ]
+  },
+  {
+   "module": "github.com/docker/cli",
+   "version": "v20.10.7+incompatible",
+   "ids": [
+    "CVE-2025-15558"
+   ]
+  },
+  {
+   "module": "github.com/docker/docker",
+   "version": "v20.10.9+incompatible",
+   "ids": [
+    "CVE-2023-28840",
+    "CVE-2024-41110",
+    "CVE-2026-41567",
+    "CVE-2026-42306"
+   ]
+  },
+  {
+   "module": "github.com/golang-jwt/jwt/v4",
+   "version": "v4.1.0",
+   "ids": [
+    "CVE-2025-30204"
+   ]
+  },
+  {
+   "module": "github.com/jackc/pgproto3/v2",
+   "version": "v2.1.1",
+   "ids": [
+    "CVE-2026-32286",
+    "GHSA-7jwh-3vrq-q3m8"
+   ]
+  },
+  {
+   "module": "github.com/jackc/pgx/v4",
+   "version": "v4.12.0",
+   "ids": [
+    "CVE-2024-27289",
+    "CVE-2024-27304"
+   ]
+  },
+  {
+   "module": "github.com/prometheus/client_golang",
+   "version": "v1.11.0",
+   "ids": [
+    "CVE-2022-21698"
+   ]
+  },
+  {
+   "module": "github.com/sirupsen/logrus",
+   "version": "v1.8.1",
+   "ids": [
+    "CVE-2025-65637"
+   ]
+  },
+  {
+   "module": "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux",
+   "version": "v0.22.0",
+   "ids": [
+    "CVE-2023-45142"
+   ]
+  },
+  {
+   "module": "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp",
+   "version": "v0.22.0",
+   "ids": [
+    "CVE-2023-45142"
+   ]
+  },
+  {
+   "module": "golang.org/x/crypto",
+   "version": "v0.0.0-20210921155107-089bfa567519",
+   "ids": [
+    "CVE-2021-43565",
+    "CVE-2022-27191",
+    "CVE-2024-45337",
+    "CVE-2025-22869",
+    "CVE-2025-47913",
+    "CVE-2026-39828",
+    "CVE-2026-39829",
+    "CVE-2026-39830",
+    "CVE-2026-39831",
+    "CVE-2026-39832",
+    "CVE-2026-39835",
+    "CVE-2026-42508",
+    "CVE-2026-46595",
+    "CVE-2026-46597",
+    "CVE-2026-56854"
+   ]
+  },
+  {
+   "module": "golang.org/x/net",
+   "version": "v0.0.0-20211013171255-e13a2654a71e",
+   "ids": [
+    "CVE-2021-44716",
+    "CVE-2022-27664",
+    "CVE-2022-41723",
+    "CVE-2023-39325",
+    "CVE-2023-45288",
+    "CVE-2024-45338",
+    "CVE-2026-25681",
+    "CVE-2026-27136",
+    "CVE-2026-33814",
+    "CVE-2026-39821",
+    "CVE-2026-46600"
+   ]
+  },
+  {
+   "module": "golang.org/x/oauth2",
+   "version": "v0.0.0-20210628180205-a41e5a781914",
+   "ids": [
+    "CVE-2025-22868"
+   ]
+  },
+  {
+   "module": "golang.org/x/text",
+   "version": "v0.3.7",
+   "ids": [
+    "CVE-2022-32149",
+    "CVE-2026-56852"
+   ]
+  },
+  {
+   "module": "google.golang.org/grpc",
+   "version": "v1.41.0",
+   "ids": [
+    "CVE-2026-33186",
+    "CVE-2026-84304",
+    "CVE-2026-84445",
+    "GHSA-hrxh-6v49-42gf",
+    "GHSA-m425-mq94-257g"
+   ]
+  },
+  {
+   "module": "gopkg.in/yaml.v3",
+   "version": "v3.0.0-20210107192922-496545a6307b",
+   "ids": [
+    "CVE-2022-28948"
+   ]
+  },
+  {
+   "module": "helm.sh/helm/v3",
+   "version": "v3.7.1",
+   "ids": [
+    "CVE-2024-26147",
+    "CVE-2025-53547"
+   ]
+  }
+ ]
+}
