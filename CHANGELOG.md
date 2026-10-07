@@ -13,6 +13,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   recall 0.925 / 0.883 (frontier 0.975) and a completeness lift of +0.47 / +0.44, every case
   positive — the lift again largest where the unguided baseline is lowest. Not tested: a small
   *agent* opening the files with tools.
+- **A copied install can no longer pass for a current one.** `install.sh` stamps every copied
+  skills directory with the release and commit it came from (`.sota-install`). The session-start
+  update reminder read the checkout's `VERSION`, so after a `git pull` it reported the new
+  release over a copy still serving the old one; it now compares each stamp with the checkout and
+  says so on every session while they differ (no timer, no network). `verify-setup.sh` check 1e
+  names the gap. Directory junctions on Windows stay deferred: untestable without a Windows
+  machine.
+- **Antigravity reaches the library.** Antigravity reads neither `~/.claude/skills` nor
+  `~/.agents/skills` (antigravity.google/docs/skills, fetched 2026-10-06): `install.sh --target
+  all` now also links `~/.gemini/config/skills` (2.0 app/IDE) and `~/.gemini/antigravity-cli/skills`
+  (CLI) when those homes exist, and never creates them otherwise. `~/.gemini/GEMINI.md` was
+  already mirrored and is read by Antigravity too. `verify-setup.sh` check 1f now reports each
+  detected Antigravity surface, with a new negative-control probe (the surface's own skills path
+  emptied → PARTIAL). `docs/MULTI-AGENT.md` carries the verified rows; its "not researched" line
+  is gone.
+- **The routing directive names the router's file.** The managed block now ends with the
+  absolute path to `skills/sota/SKILL.md`, so an agent with no skills loader is told what to
+  read; agents that load skills ignore it. Existing installs are offered a refresh in place.
+- **Measured: `/sota-audit` old vs new on Harbor v2.5.1** (four live agents, pre-registered,
+  [SOTA-AUDIT-AB](evals/results/2026-10-06/SOTA-AUDIT-AB.md)). The rewrite reliably changes the
+  process — redacted secrets scan, boundary map, per-rules-file coverage, 2/2 vs 0/2 — at authz
+  parity (15.0 vs 14.0 of 16). Its one directional prediction is **refuted**: dependency recall
+  3.0 (new) vs 5.5 (old) of 19, because every arm ran trivy and reported a count rather than
+  findings. Follow-up opened as ROADMAP 67.
 
 ## [1.47.2] - 2026-10-06
 
