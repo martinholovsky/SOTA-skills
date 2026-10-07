@@ -5,6 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **A copied install can no longer pass for a current one.** `install.sh` stamps every copied
+  skills directory with the release and commit it came from (`.sota-install`). The session-start
+  update reminder read the checkout's `VERSION`, so after a `git pull` it reported the new
+  release over a copy still serving the old one; it now compares each stamp with the checkout and
+  says so on every session while they differ (no timer, no network). `verify-setup.sh` check 1e
+  names the gap. Directory junctions on Windows stay deferred: untestable without a Windows
+  machine.
+
 ## [1.47.2] - 2026-10-06
 
 A patch: `/sota-audit`, `/sota-deep-audit` and `sota-network-security` rules/06 change inside surfaces

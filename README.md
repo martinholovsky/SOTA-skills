@@ -793,7 +793,10 @@ cannot tell whether a new version exists, only how long since it last spoke: the
 useful part was the reminder, and a real check from every session start would turn a
 documentation library into something that reports when and how often you work. You
 run the check. Installed by `install.sh` (clone) and by the plugin's own hook; silence
-it with `SOTA_UPDATE_REMINDER_DAYS=0`, or set your own interval in days.
+it with `SOTA_UPDATE_REMINDER_DAYS=0`, or set your own interval in days. The one thing it
+*can* know locally it says every session: a **copied** install (no symlinks, e.g. Git Bash
+without Developer Mode) is stamped with its release, and once `git pull` moves the checkout past
+it, the hook names the stale copy and the re-install command.
 
 **Which version am I on?** `scripts/install.sh --version` reports the release, the
 checkout (`git describe`), whether your remote is ahead as of the last fetch, and

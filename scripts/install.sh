@@ -752,6 +752,20 @@ install_into() {
 
   [ "$USE_COPY" -eq 1 ] && copy_note=' [copied]'
   [ "$LINK_FALLBACK" -eq 1 ] && copy_note=' [COPIED — symlinks unavailable; re-run after each git pull]'
+  # A copy cannot say which release it is: the checkout's VERSION moves on `git pull`
+  # and the copy does not, so anything reading VERSION reports the NEW release over OLD
+  # guidance. Stamp the copy with what it was copied from; update-reminder.sh compares
+  # the stamp with the checkout at session start. A linked install needs no stamp —
+  # it IS the checkout — so a switch back to links removes it.
+  if [ "$USE_COPY" -eq 1 ]; then
+    {
+      printf 'version=%s\n' "$(read_version "$REPO")"
+      printf 'commit=%s\n' "$(git -C "$REPO" rev-parse HEAD 2>/dev/null || printf unknown)"
+      printf 'source=%s\n' "$REPO"
+    } >"$dir/.sota-install"
+  else
+    rm -f "$dir/.sota-install"
+  fi
   ok "linked $linked skill(s) into $dir ($created new, $pruned pruned)$copy_note"
 }
 
