@@ -399,6 +399,10 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       code the author did not list; replace with a fixed dict of handlers)
 - [ ] **Subprocess [HIGH]** — `grep -rn "shell=True" --include="*.py" src/` ;
       `grep -rn "os.system\|os.popen" --include="*.py" src/`
+- [ ] **Child exit status ignored (§2) [MEDIUM, HIGH when the next step trusts the output]** —
+      `grep -rnE 'subprocess\.(run|call)\(' --include="*.py" src/ | grep -v 'check=True'`
+      (`run` returns a non-zero `returncode` without raising unless `check=True`; each hit
+      must read `.returncode` itself, or the failed command reads as success)
 - [ ] **SQL [CRITICAL]** —
       `grep -rn 'execute(f"\|execute(".*%s" *%\|execute(.*+ ' --include="*.py" src/` ;
       `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` (Django edges);

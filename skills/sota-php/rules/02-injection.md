@@ -84,6 +84,11 @@ $cmd = 'ping -c1 ' . escapeshellarg($host);
 - `proc_open` with an **array** command bypasses the shell entirely — the
   strongest option (php.net proc_open). Symfony Process (array syntax) is a
   neutral-example wrapper doing the same.
+- **Check the child's exit status.** `exec()` writes it to `$result_code` only when
+  `$output` is passed too; `system()`/`passthru()` take `$result_code`; `proc_close()` returns
+  it. `shell_exec()` cannot report it at all — php.net: "It is not possible to detect
+  execution failures using this function" — so use `exec()` or `proc_open` where a failure
+  must be seen.
 - `escapeshellarg()` escapes one argument; `escapeshellcmd()` escapes a whole
   command *but leaves argument splitting possible* — it is not a substitute.
 - Watch argument injection even with perfect quoting: a value starting with `-`
@@ -360,6 +365,8 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
 - [ ] **Shell — CRITICAL with tainted input** —
       `grep -rnE '\b(exec|shell_exec|system|passthru|popen|pcntl_exec)\s*\(' --include='*.php' src/`
       ; `grep -rn 'proc_open' --include='*.php' src/` (array command = good sign);
+      `grep -rnE '(^|[^A-Za-z0-9_>:$])shell_exec[[:space:]]*\(|(^|[^A-Za-z0-9_>:$])exec[[:space:]]*\([^,()]*(,[^,()]*)?\)' --include='*.php' src/`
+      (exit status unobservable: `shell_exec`, or `exec` without `$output, $result_code` — §2);
       ``grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'`` ;
       `grep -rnE '\b(eval|assert)\s*\(\s*\$' --include='*.php' src/`
 - [ ] **Dynamic code evaluation and templates compiled from strings (§2a) — CRITICAL with input

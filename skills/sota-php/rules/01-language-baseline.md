@@ -278,10 +278,22 @@ or make a constructor parameter required. Everything else is a minor. `rules/05`
   `array_merge` in loops (quadratic — use spreads/`array_push`),
   `register_shutdown_function` as error handling.
 
+## 7a. Multibyte text: the byte functions cut characters
+
+- `strlen`, `substr`, `strtoupper`, `str_split` and friends count and cut **bytes**. Measured on
+  PHP 8.5: `substr("café", 0, 4)` returns `caf` plus half of `é` — an invalid UTF-8 string —
+  while `mb_substr` returns `café`; `strlen("é")` is `2`, `mb_strlen("é")` is `1`. A length limit,
+  a truncation for display or storage, or a case fold on user text uses the `mb_*` function.
+- Validate text at the boundary with `mb_check_encoding($s, 'UTF-8')` (false on `"\xff"`,
+  measured); invalid bytes reaching `htmlspecialchars` or `json_encode` fail at the far end.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually.
 
+- [ ] **Byte functions on user text (§7a) — MEDIUM, HIGH when the cut value is stored or
+      signed** — `grep -rnE '(^|[^_a-z])(substr|strlen|strtoupper|strtolower|ucfirst|str_split|wordwrap)\(' --include='*.php' src/ | grep -iE 'name|title|text|comment|message|body|bio|label'`
+      ; `grep -rn 'mb_check_encoding' --include='*.php' src/` (none: nothing validates UTF-8 at the boundary)
 - [ ] **Public surface / BC (§6a) -- PHP fails most of these at LOAD time, in the consumer every
       method here is frozen: adding one is FATAL for existing implementers ("must therefore be
       declared abstract"). If the contract must grow, use an abstract class with defaults, or
@@ -341,6 +353,12 @@ Run from repo root; verify each hit manually.
       (no explicit zone: the process default decides) ;
       `grep -rnE 'strtotime\([[:space:]]*\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' src/`
       (request input parsed unvalidated; `strtotime` returns `false` on garbage)
+- [ ] **Blocking I/O on an event loop (§6) — HIGH in a long-running async runtime, not a
+      finding in classic FPM** — `grep -rlE 'Revolt\\EventLoop|React\\EventLoop|Amp\\|new Fiber\(' --include='*.php' src/`
+      lists the files that run on a loop; in each,
+      `grep -nE 'new \\?PDO\(|mysqli_|file_get_contents\(|fopen\(|curl_exec\(|[^a-z_]sleep\(' "$f"`
+      (each hit stalls every request the loop is serving: use the runtime's async client or
+      move the call to a worker; zero files from the first command means no loop, so stop)
 
 Severity guide: EOL PHP in production HIGH; missing strict_types project-wide
 MEDIUM; loose `==` on security decisions HIGH; `@`-suppressed security function

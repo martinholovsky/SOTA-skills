@@ -1005,8 +1005,8 @@ def page_concepts(cm):
         ("Universal, not yet required — an empty cell is a CANDIDATE gap, not a finding "
          "until the file is opened",
          [n for n, k, _ in cm.CONCEPTS if k == "universal" and n not in floor], "candidate"),
-        ("Conditional — applies only where the language has the mechanism. An empty cell is "
-         "NOT triaged here: it may not apply, or it may be unwritten (docs/LANGUAGE-TIER.md)",
+        ("Conditional — applies only where the language has the mechanism. A dashed empty "
+         "cell is untriaged: it may not apply, or it may be unwritten (docs/LANGUAGE-TIER.md)",
          # `n not in floor`: the floor wins over a concept's kind. TLS was pinned in step
          # 3a while its kind still read conditional, and it was drawn twice until the
          # count guard below refused.
@@ -1026,7 +1026,10 @@ def page_concepts(cm):
               "RED = a required concept is missing (CI should already have failed). AMBER = "
               "a universal concept not yet required is absent: a candidate gap. GREY dashed "
               "= a conditional concept is absent -- either the mechanism does not exist in "
-              "that language or nobody has written it; this page does not decide which.\n\n"
+              "that language or nobody has written it; this page does not decide which. "
+              "WHITE n/a or delegated = an empty cell already TRIAGED (the mechanism does not "
+              "exist, or another skill owns it); bold AMBER open gap = triaged and real. "
+              "Verdicts and reasons: TRIAGED in scripts/gen-concept-matrix.py.\n\n"
               "HONEST LIMIT: cells come from wording matchers over checklist items, so a "
               "count says the wording appears, not that the rule is good. Check any cell "
               "with: python3 scripts/gen-concept-matrix.py --explain CONCEPT LANG. Items "
@@ -1061,10 +1064,18 @@ def page_concepts(cm):
             have = 0
             for j, lang in enumerate(LANGS):
                 n = counts[lang].get(name, 0)
+                verdict = cm.TRIAGED.get((name, lang), (None, ""))[0]
                 if n:
                     have += 1
                     style = BOX + "fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
                     txt = str(n)
+                elif verdict in ("n/a", "delegated"):
+                    style = (BOX + "fillColor=#ffffff;strokeColor=#bbbbbb;"
+                             "fontColor=#555555;fontSize=9;")
+                    txt = "n/a" if verdict == "n/a" else "delegated"
+                elif verdict == "open":
+                    style = BOX + "fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;fontStyle=1;"
+                    txt = "open gap"
                 elif mode == "required":
                     red += 1
                     style = BOX + "fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;fontStyle=1;"

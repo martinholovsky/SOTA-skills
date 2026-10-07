@@ -51,6 +51,11 @@ former Swift-language file in `sota-mobile` on 2026-10-07. Test strategy itself 
   async work: await it, or use `confirmation()`.
 - Sanitizers in CI, per swift.org's server guide: `swift test --sanitize=thread` and
   `--sanitize=address` on the deployment OS.
+- **Fuzz the parsers** with Swift's built-in libFuzzer integration: `-sanitize=fuzzer` (plus
+  `-parse-as-library`), or `swift build --sanitize=fuzzer`, on a **swift.org Linux toolchain** —
+  Apple's Xcode toolchain rejects the option (measured: `unsupported option '-sanitize=fuzzer'`
+  on macOS, Swift 6.3.2). SwiftCheck is unmaintained since 2021; `@Test(arguments:)` is
+  parameterised, not property-based.
 
 ## Audit checklist
 
@@ -60,3 +65,4 @@ former Swift-language file in `sota-mobile` on 2026-10-07. Test strategy itself 
 - [ ] Test suite health & determinism: tests run in parallel without `.serialized` except with a stated reason; no `sleep`/`Task.sleep` waits in tests; CI runs the suite under `--sanitize=thread` and `--sanitize=address`.
 - [ ] Version floor / EOL awareness: the minimum supported Swift version is declared (`swift-tools-version`, `swiftLanguageModes:` language version) and documented; swift.org publishes no end of life policy, so the project states which toolchains it supports and bumps deliberately.
 - [ ] New unit tests use Swift Testing; XCTest is kept knowingly for UI automation and `measure` performance tests.
+- [ ] Property-based / fuzz testing of parsers (LOW, MEDIUM for a parser of untrusted bytes): `grep -rnE 'sanitize[= ]fuzzer|LLVMFuzzerTestOneInput|import SwiftCheck' --include='*.swift' --include='*.yml' --include='*.yaml' --include='Package.swift' .` — none means nothing is fuzzed; a fuzz job must run on a swift.org Linux toolchain, and `import SwiftCheck` is an unmaintained dependency.

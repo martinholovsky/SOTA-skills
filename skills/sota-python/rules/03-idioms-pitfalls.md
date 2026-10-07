@@ -340,6 +340,9 @@ own deprecations without noticing.
 
 ## Audit checklist
 
+- [ ] **Text I/O without an explicit encoding (§5, below a 3.15 floor) — MEDIUM** —
+      `grep -rnE '(open|read_text|write_text)\(' --include="*.py" src/ | grep -v 'encoding=' | grep -vE "['\"](rb|wb|ab|r\+b|w\+b)['\"]"`
+      (each hit reads or writes text in the locale encoding: cp1252 on many Windows hosts)
 - [ ] **Ruff covers most of this file — run first** —
       `uvx ruff check --select B006,B008,B023,B904,E722,BLE,G,T20,DTZ,PTH,SIM,A,C4 --statistics .`
 - [ ] **Bare/broad excepts [HIGH if swallowing, MEDIUM otherwise]** —

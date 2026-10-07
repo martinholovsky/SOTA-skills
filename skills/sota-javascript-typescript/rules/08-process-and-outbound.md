@@ -118,6 +118,12 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 
 - [ ] `grep -rn "exec(\|execSync(" src/` — template/concat input = CRITICAL; migrate to execFile array form.
 - [ ] `grep -rn "child_process" src/ | grep "shell"` — `shell: true` (HIGH).
+- [ ] **Child exit status never read — MEDIUM, HIGH when the output is trusted** — `execFileSync`
+      and `execSync` throw on a non-zero exit and the `exec`/`execFile` callback receives an
+      error, but `spawnSync` returns `{status, signal, error}` without throwing and `spawn`
+      reports only through the `'close'`/`'exit'` event's `code` (Node.js `child_process` docs).
+      Files that spawn and never read either:
+      `grep -rlE 'spawnSync\(|spawn\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' src/ | while IFS= read -r f; do grep -qE "\.status|[\"'](close|exit)[\"']" "$f" || echo "$f"; done`
 - [ ] **SSRF: a request value becoming an outbound request's URL (§"SSRF and server-side validation")** —
       ``grep -rnE '(fetch|axios(\.[a-z]+)?|got(\.[a-z]+)?|https?\.(get|request)|goto|new URL)\( *(`\$\{ *)?req\.(body|query|params|headers)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
       — each hit must go through a connect-time `lookup` guard plus a literal-IP check, with

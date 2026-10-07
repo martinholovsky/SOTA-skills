@@ -63,6 +63,10 @@ IO.popen(["grep", "--", pattern, "log.txt"])
 
 - Prefer `Open3.capture2/capture3` (argv form) when you need output + status;
   backticks give no status separation and invite interpolation.
+- **Check the result.** `system` returns `true` on exit status zero, `false` on a non-zero
+  status and `nil` when the command could not run — it raises only with `exception: true`
+  (Ruby ≥ 2.6, `Kernel#system` docs). A bare `system(...)` statement discards all three;
+  with `Open3.capture*`, test `status.success?`.
 - `--` before positional user args stops option injection (`-oProxyCommand=`
   class attacks).
 - `Shellwords.escape` is a last resort for legacy shell-string call sites —
@@ -285,6 +289,9 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 - [ ] **Command injection — CRITICAL with external input** —
       `grep -rnE '(system|exec|spawn)\s*\(\s*["'"'"'][^,)]*#\{' --include='*.rb' .` ;
       ``grep -rnE '`[^`]*#\{|%x[({\[][^)}\]]*#\{' --include='*.rb' .`` ;
+      `grep -rnE '^[[:space:]]*system[[:space:](]' --include='*.rb' . | grep -v 'exception:[[:space:]]*true'`
+      (a bare `system` statement: its exit status is discarded with the `false`/`nil` result, so a failed command
+      reads as success — MEDIUM, HIGH when the next step trusts it) ;
       `grep -rnE 'IO\.popen\s*\(\s*["'"'"']' --include='*.rb' .` ;
       `grep -rnE '(Kernel#?open|URI\.open|[^.]open)\s*\(\s*(params|.*user|.*input)' --include='*.rb' . | head`
 - [ ] **Deserialization — CRITICAL on external data** —

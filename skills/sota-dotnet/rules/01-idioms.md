@@ -109,8 +109,34 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
   result type for expected failures on hot paths. `ArgumentNullException.ThrowIfNull`
   and `ArgumentException.ThrowIf...` for guard clauses.
 - Exceptions are unchecked in C#; document what a public API throws.
+- **A child process's failure raises nothing.** Read `Process.ExitCode` after
+  `WaitForExit`/`WaitForExitAsync`; its only exceptions are for a process that has not exited,
+  so an unchecked non-zero exit reads as success.
+
+## 7. Strings: ordinal by default, culture only for display
+
+- **The string APIs default to the current culture.** `String.Compare` and `CompareTo` without
+  a `StringComparison`, `StartsWith(string)`/`EndsWith(string)` and the `IndexOf(string)`
+  overloads compare culture-sensitively, and `ToUpper()`/`ToLower()` use the current culture
+  (Microsoft, *Best practices for comparing strings*; CA1311). Identifiers, keys, protocol
+  tokens, file paths and security decisions use `StringComparison.Ordinal` /
+  `OrdinalIgnoreCase` and `ToUpperInvariant()`.
+- **The Turkish-I is a security bug.** Microsoft's own example: a scheme check that is true
+  under en-US and false under tr-TR — *"someone could circumvent security measures"*.
+- **The analyzers that catch it are off by default.** CA1304, CA1305, CA1307, CA1309, CA1310
+  and CA1311 are all *"Enabled by default: No"* in .NET 10; enable them in `.editorconfig`.
+- Since .NET 5 globalization uses ICU by default where it is available; Windows falls back to
+  NLS without it, and `System.Globalization.UseNls` opts back in — so the same comparison can
+  differ by host. Ordinal comparison is the only one that cannot.
 
 ## Audit checklist
+
+- [ ] **Child exit status never read (§6) — MEDIUM, HIGH when the output is trusted** —
+      `grep -rlE 'Process\.Start|new Process\(' --include='*.cs' . | while IFS= read -r f; do grep -q 'ExitCode' "$f" || echo "$f"; done`
+- [ ] **Culture-sensitive string comparison on identifiers (§7) — MEDIUM, HIGH on a security
+      decision** — `grep -rnE '\.(StartsWith|EndsWith|IndexOf|LastIndexOf)\("[^"]*"\)|string\.Compare\([^,()]+,[^,()]+\)|\.To(Upper|Lower)\(\)' --include='*.cs' .`
+      ; `grep -rnE 'CA1307|CA1309|CA1310|CA1311' .editorconfig *.props 2>/dev/null` (none: the
+      analyzers that flag these are off — they are not enabled by default)
 
 - [ ] **Null-forgiving overuse — MEDIUM (defeats NRT)** —
       `grep -rnE '[A-Za-z0-9_)\]]\!\.' --include='*.cs' . | grep -v '!=' | head` (x!.Member)
