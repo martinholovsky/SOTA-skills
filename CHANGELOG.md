@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are recorded once in `TRIAGED` (`scripts/gen-concept-matrix.py`); page 6 draws them as
   n/a / delegated / open gap, and CI fails on a stale entry. One real gap remains, c/c++ text
   encoding (ROADMAP 69).
+- **Optional MCP server** — `scripts/sota-mcp-server.py` serves the library read-only over MCP
+  (stdio, standard library only, dual-era: 2026-07-28 `server/discover` and the legacy
+  `initialize`). Tools `list_skills`/`get_skill`/`get_rules_file`, every file as a resource, the
+  five commands as prompts. It does not route — the agent's model chooses from the descriptions.
+  `install.sh --mcp` (or the offer on install/`--update`) registers it for Copilot, Codex, Gemini
+  CLI, Antigravity and Cursor; `verify-setup.sh` check 1h reports it (INFO with the enable
+  command when missing, PARTIAL when a registration points at a vanished server). Tested by
+  `scripts/test-mcp-server.py` in CI and end to end with Claude Code as the client.
 - **`sota-mobile` rules/07 renamed `07-swift-in-apps.md`**, matching its content since the Swift
   language moved to `sota-swift`.
 - **Skill map, page 7: what wraps the skills** — the slash commands (and which names which), the
