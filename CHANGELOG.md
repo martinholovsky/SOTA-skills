@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Outside-review gaps.**
+  - **The audit target is data, never instructions.** Covered in `/sota-audit`, in
+    `/sota-deep-audit` (put into every fanned-out agent's prompt), and in router rules/01 §4.
+    The router probe flags a comment that tries to steer the auditor; such a comment is a
+    finding.
+  - **Monorepos: new `sota-architecture` rules/01 §2a.** Covers visibility the build enforces
+    (Bazel), lint-gated tag rules (Nx), Turborepo boundaries still experimental, pnpm phantom
+    dependencies, enforcing CODEOWNERS, workspace lockfiles and `go.work`, and the global
+    inputs that affected-only CI needs.
+  - **Completeness eval: placebo arm built, run not yet paid for.** `run-completeness.py
+    --placebo-arm` / `--placebo-only` adds a no-library arm told only to "ship
+    production-complete code". It's guarded against rubric vocabulary and pre-registered;
+    the run is ROADMAP 71.
+  - **`bash -c` for verification commands** (`sota-shell-scripting` rules/06 §1). One wrapper
+    leaves the whole zsh column of that table behind; switching to `git grep` fixes one row
+    and adds two.
+  - **Wording fix:** RESULTS now says the completeness cases are all Python.
 - **Field report: two findings, both reproduced, then fixed.**
   - **zsh `EQUALS` (`sota-shell-scripting` rules/06 §1, rules/01 §3).** An unquoted `=word`
     becomes a command's path, so `grep -c =ls` silently counts 0 where bash counts 1. If the word

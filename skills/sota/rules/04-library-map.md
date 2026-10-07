@@ -26,7 +26,7 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   findings (severity & chain closure, evidence, decision ledger, refutation, report template),
   04 library map (this file — which `rules/NN` holds what, across every skill), 05 audit report &
   tracking (reproduction steps, finding lifecycle and retest, report provenance)
-- **sota-architecture/rules**: 01 styles & decisions, 02 domain modeling, 03 distributed systems &
+- **sota-architecture/rules**: 01 styles & decisions (incl. monorepos), 02 domain modeling, 03 distributed systems &
   events, 04 resilience, 05 scalability & state, 06 cloud-native config & delivery, 07 anti-
   patterns catalog, 08 NATS JetStream messaging
 - **sota-code-security/rules**: 01 input & injection, 02 authentication, 03 authorization, 04

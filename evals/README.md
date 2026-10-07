@@ -313,6 +313,16 @@ audit STRAT-HIGH-2).
   ([GATE-ABSORPTION](results/2026-09-06/GATE-ABSORPTION.md)). The follow-up at n≥3, temp 0.7
   is ROADMAP 43 and needs its **own** pre-registration — reporting it against the original
   threshold would not be one. 28 build + 28 judge calls per arm-set.
+- **`run-completeness.py --placebo-arm` / `--placebo-only`** — added 2026-10-07 for an outside
+  review's "verbosity confounder": is the lift the library, or just being *asked* for more? The
+  placebo arm carries **no library** and only `PLACEBO_INSTRUCTION`, a generic order to ship
+  production-complete code and self-review it. `--placebo-arm` runs it beside the usual two arms
+  and prints `LIBRARY-OVER-PLACEBO`; `--placebo-only` runs it alone, to compare against a recorded
+  run at the same build model, judge, samples and temp. Guards, both watched to fail before any
+  spend: the run **refuses a placebo that names rubric vocabulary** (`PLACEBO_FORBIDDEN`: tests,
+  logging, rate limits, TLS…, which would make it a weak treatment arm), and **refuses one
+  byte-identical to the bare prompt**. Pre-registration, frozen wording and falsifiers:
+  [results/2026-10-07/PLACEBO-PREREG.md](results/2026-10-07/PLACEBO-PREREG.md).
 - `cases/prompt-independence.jsonl` (6) + `run-prompt-independence.py` — **the only
   instrument that varies the prompt against the rule.** Every other set here asks the model
   to do the right thing under a *neutral* prompt; this one renders the same task at three
