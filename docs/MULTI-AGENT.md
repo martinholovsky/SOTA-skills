@@ -115,6 +115,14 @@ Claude Code is not offered it: it reads the skills natively. Tested: a stdio tes
 in the modern era and fetched a rules file; that run is also what found a missing required field
 (`cacheScope`) the suite had not asserted. Not run against the other five clients.
 
+The installer never edits a Codex `config.toml` it cannot edit safely. It leaves the file
+unchanged, with a warning, when the start marker has no end marker: stripping that block would
+run to the end of the file and delete every table after it. It also leaves the file unchanged
+when a `[mcp_servers.sota-skills]` table already exists outside the markers, for example from
+`codex mcp add`, because a second copy would be a duplicate table that TOML forbids. The server
+path is TOML-escaped. The test suite counts one reply per request and pins its total, so a
+server that silently drops a request fails it (2026-10-07 audit).
+
 ## Windows: a copy that looks like a link
 
 Git Bash and MSYS2 do **not** fail `ln -s` when Windows refuses a symlink. They copy and

@@ -632,6 +632,9 @@ maybe_setup_precommit() {
 #   Cursor                                   ~/.cursor/mcp.json            mcpServers, type stdio
 MCP_NAME="sota-skills"
 MCP_SCRIPT="$REPO/scripts/sota-mcp-server.py"
+# The same path as a TOML basic-string body: `\` and `"` escaped, or a checkout path holding
+# either would end the string early and leave Codex an unparseable config.
+MCP_SCRIPT_TOML="$(printf '%s' "$MCP_SCRIPT" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"
 MCP_BEGIN="# >>> sota-skills mcp (managed by install.sh) >>>"
 MCP_END="# <<< sota-skills mcp <<<"
 
@@ -657,7 +660,7 @@ mcp_configured() {  # $1 file, $2 kind -> 0 when it already registers THIS check
   local f="$1"
   [ -f "$f" ] || return 1
   if [ "$2" = codex ]; then
-    grep -qxF "$MCP_BEGIN" "$f" && grep -qF "$MCP_SCRIPT" "$f"
+    grep -qxF "$MCP_BEGIN" "$f" && grep -qF "$MCP_SCRIPT_TOML" "$f"
   else
     jq -e --arg n "$MCP_NAME" --argjson v "$(mcp_entry "$2")" '.mcpServers[$n] == $v' "$f" >/dev/null 2>&1
   fi
@@ -666,15 +669,28 @@ mcp_configured() {  # $1 file, $2 kind -> 0 when it already registers THIS check
 mcp_write() {  # $1 label, $2 file, $3 kind
   local label="$1" f="$2" kind="$3" tmp
   if [ "$kind" = codex ]; then
-    [ -e "$f" ] && backup "$f"
-    if [ -f "$f" ] && grep -qxF "$MCP_BEGIN" "$f"; then
+    if [ -f "$f" ]; then
+      # An unpaired marker: the strip below would skip from the start marker to the END OF
+      # THE FILE, deleting every table after it (measured 2026-10-07: 8 lines -> 1). Every
+      # other managed-block writer here refuses this case; so does this one.
+      if grep -qxF "$MCP_BEGIN" "$f" && ! grep -qxF "$MCP_END" "$f"; then
+        warn "$f has the sota-skills MCP start marker but no end marker — left unchanged; fix it by hand or delete the block and re-run"
+        return 0
+      fi
       tmp="$(mktemp)"; track "$tmp"
       awk -v b="$MCP_BEGIN" -v e="$MCP_END" '$0==b{skip=1;next} skip&&$0==e{skip=0;next} !skip' "$f" >"$tmp"
-      cat "$tmp" >"$f"; rm -f "$tmp"
+      # The user's own table (`codex mcp add`, or by hand) outside our markers: appending ours
+      # would declare it twice, which TOML forbids. Leave theirs alone.
+      if grep -qE "^[[:space:]]*\\[mcp_servers\\.\"?${MCP_NAME}\"?\\][[:space:]]*(#.*)?\$" "$tmp"; then
+        warn "$f already defines [mcp_servers.$MCP_NAME] outside install.sh's markers — left unchanged; remove it to let install.sh manage it"
+        rm -f "$tmp"; return 0
+      fi
+      backup "$f"
+      cat "$tmp" >"$f"; rm -f "$tmp"   # cat (not mv) so a symlinked config keeps its link
     fi
     mkdir -p "$(dirname "$f")"
     { printf '\n%s\n[mcp_servers.%s]\ncommand = "python3"\nargs = ["%s"]\n%s\n' \
-        "$MCP_BEGIN" "$MCP_NAME" "$MCP_SCRIPT" "$MCP_END"; } >>"$f"
+        "$MCP_BEGIN" "$MCP_NAME" "$MCP_SCRIPT_TOML" "$MCP_END"; } >>"$f"
     ok "registered the MCP server for $label ($f)"
     return 0
   fi
