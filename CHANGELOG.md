@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   CLI, Antigravity and Cursor; `verify-setup.sh` check 1h reports it (INFO with the enable
   command when missing, PARTIAL when a registration points at a vanished server). Tested by
   `scripts/test-mcp-server.py` in CI and end to end with Claude Code as the client.
+- **`sota-mobile` rules/07 renamed `07-swift-in-apps.md`**, matching its content since the Swift
+  language moved to `sota-swift`.
 - **Skill map, page 7: what wraps the skills** — the slash commands (and which names which), the
   plugin / installer / opt-in hooks, the skills directories and directive files each agent reads
   (Claude, `~/.agents`, Antigravity), and the gates (invariant count, CI jobs), all read from the

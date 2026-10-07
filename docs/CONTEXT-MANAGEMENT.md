@@ -159,7 +159,8 @@ lines predict tokens only as well as line length allows, and across this repo's
 
 **132 of 301 files exceed 5,000 tokens** — every one of them passing invariant 1, most
 comfortably. `sota-mobile/rules/07-swift-language.md` is 254 lines, half the cap, and
-**10,116 tokens**. A line cap cannot see that: density ranges from ~24 to **46 tokens per
+**10,116 tokens** (as measured then; on 2026-10-07 its content moved to `sota-swift` and the
+file became the short `07-swift-in-apps.md`). A line cap cannot see that: density ranges from ~24 to **46 tokens per
 line** across the tree, so two files at the same length differ ~2× in what they cost.
 
 > **Corrected 2026-08-27 — this paragraph was itself a casualty of the heuristic.** It
