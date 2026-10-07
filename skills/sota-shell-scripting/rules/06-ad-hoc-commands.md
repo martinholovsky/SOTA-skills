@@ -12,11 +12,10 @@ way. Quoting itself stays in
 
 ## 1. zsh is not bash — the deviations that bite *pasted* commands
 
-Committed scripts are immune: every one carries a `#!/usr/bin/env bash` shebang, so bash
-runs them whatever your login shell is. The exposure is **interactive, pasted, and
-agent-issued commands** — including the audit checklists in this library, which are
-written to be pasted, and **macOS's interactive shell is zsh**. Check the operator's shell
-rather than assuming; then treat the table below as live.
+Committed scripts are immune: every one carries a `#!/usr/bin/env bash` shebang, so bash runs them
+whatever your login shell is. The exposure is **interactive, pasted, and agent-issued commands** —
+including the audit checklists in this library, which are written to be pasted, and **macOS's
+interactive shell is zsh**. Check the operator's shell rather than assuming; then treat the table below as live.
 
 | | bash | zsh | how it fails |
 |---|---|---|---|
@@ -25,6 +24,7 @@ rather than assuming; then treat the table below as live.
 | unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
 | one unmatched glob among several, inside `$(ls a b* 2>/dev/null)` | the literal word errors, the matches still print | the **whole** inner command aborts — matched files lost too; `2>/dev/null` inside `$(…)` does not silence zsh's own error | **silently** — the list is empty, and the callee picks its own scope (§2b) |
 | `cmd \| python3 - <<'PY'` (pipe **and** heredoc on fd 0) | heredoc wins, piped data **discarded** | `MULTIOS` **concatenates** them: the data runs as the program's first lines | bash **quietly** (script reads empty stdin); zsh an error naming *your data* (below), or **silently** when the data parses as code (`echo 42` runs) |
+| an unquoted word starting with `=` (`echo =====`, `grep -c =ls f`) | a literal word | `EQUALS` (on by default) rewrites `=ls` to `/bin/ls`; a word naming no command **aborts the whole `;` list** | loudly for `=====` (`==== not found`, exit 1); **silently** for a real command name — measured zsh 5.9: `grep -c =ls` counted 0 where bash counted 1. Quote it, or `setopt noequals` |
 
 **The third is the dangerous one: a failed glob means the command never runs at all.**
 zsh's `NOMATCH` is on by default, so a glob matching nothing is a hard error rather than a
@@ -497,3 +497,4 @@ filed under the wrong thing** — index it by what it is *for*.
       **usage error (exit 2) from the callee**, which looks like the tool is broken.
 - [ ] **Does any command pipe into `interpreter - <<EOF`?** (§1) Both claim fd 0: bash drops
       the pipe, zsh prepends it to the program. Sweep with `grep -nE '\| *[a-z0-9]+ +- *<<'`.
+- [ ] **An unquoted `=word` in a zsh command** (§1, `EQUALS`): `grep -nE '(^|[[:space:]])(=[^[:space:]=]|==+[^[:space:]=]|={3,})' <snippet>` — quote each hit; `=cmd` silently becomes that command's path, and a word naming no command aborts the list.
