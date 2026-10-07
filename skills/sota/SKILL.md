@@ -212,7 +212,9 @@ rules files that match the code in front of you. Never load all skills at once.
 
 1. **Language skills stack on domain skills.** Auditing a Go API server → `sota-golang` + `sota-
    api-design` + `sota-code-security`. The language skill covers idioms and runtime-specific
-   traps; domain skills cover the design.
+   traps; domain skills cover the design. **A language with no skill** (Scala, Elixir, Dart, …) is
+   not a dead end: apply the domain skills, say once that no language skill covers it, and take its
+   idioms from that language's official docs. Swift on **any** target → `sota-mobile` rules/07.
 2. **Security tasks usually need three skills.** Code-level flaws → `sota-code-security`; design-
    level gaps → `sota-threat-modeling`; leaked or mishandled credentials → `sota-secrets-
    management`. Pipeline/supply-chain → `sota-devsecops`; isolation blast-radius → `sota-

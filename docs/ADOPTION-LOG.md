@@ -7638,3 +7638,12 @@ it is the reason the cross-cutting items get re-checked at all.
 **Not verified:** whether an agent following the new text actually finds these classes. That is
 a behaviour question no read can settle; the measurement would be an audit eval run against both
 versions of the command, which costs live calls and was not run.
+
+## 2026-10-07 — a router rule for languages with no skill; Swift's placement filed as a decision
+
+From the response to the 2026-10-06 outside review (row 11 there, and claim 3). **Adopted:** the
+router's cross-cutting rule 1 now covers a language with no skill — domain skills, one sentence
+saying no language skill covers it, idioms from the official docs — instead of leaving it to
+whatever the model does. **Operator observation, adopted as a decision item:** Swift is a
+language on any target but lives under `sota-mobile`; the router now points any-target Swift at
+rules/07 as a stopgap, and promoting it to `sota-swift` is ROADMAP 68.

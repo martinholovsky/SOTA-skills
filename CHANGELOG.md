@@ -5,6 +5,14 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Router: a language with no skill is not a dead end.** Cross-cutting rule 1 now says what to do
+  with Scala, Elixir, Dart and the like — apply the domain skills, say once that no language skill
+  covers it, take idioms from the language's official docs — and points Swift on **any** target
+  (not only mobile) at `sota-mobile` rules/07. Whether Swift gets its own skill is ROADMAP 68, a
+  decision. The router's BUILD and AUDIT sections are unchanged (hashes re-checked).
+
 ## [1.47.2] - 2026-10-06
 
 A patch: `/sota-audit`, `/sota-deep-audit` and `sota-network-security` rules/06 change inside surfaces
