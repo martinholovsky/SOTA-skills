@@ -147,7 +147,9 @@ team that has never had one drawn it usually is.
 history (checked for a shallow clone first, and run with redaction on — `gitleaks git --redact`;
 a scanner that verifies credentials live is a stop-and-ask action), dependency/SCA, SAST, IaC
 and CI workflows: one row of the `sota` router's `rules/01` §3 matrix per ecosystem, at the
-pinned commit, tool versions recorded, nothing installed unasked. Their triaged output feeds
+pinned commit, tool versions recorded, nothing installed unasked. Every Critical or High
+advisory becomes its own finding row — module@version, advisory ids, fixed version, reachability
+and how it was checked — never a count. Their triaged output feeds
 lenses 2 and 3; a scanner that could not run is reported as not reached.
 
 ## The four lenses — cover all, weight by what this project actually is
