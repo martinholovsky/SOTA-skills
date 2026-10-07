@@ -28,9 +28,10 @@
 #   scripts/install.sh --version       # report which release is installed, and where
 #   scripts/install.sh --target all    # ALSO link into ~/.agents/skills, the directory
 #                                      #   Copilot CLI/VS Code, Codex, Cursor and Gemini
-#                                      #   CLI read (claude | agents | all; default:
-#                                      #   Claude only, offering the rest when one of
-#                                      #   those agents is detected)
+#                                      #   CLI read, and into Antigravity's own global
+#                                      #   skills dirs where it is installed (claude |
+#                                      #   agents | all; default: Claude only, offering
+#                                      #   the rest when one of those agents is detected)
 #   scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 #   scripts/install.sh --routing       # also set up always-on routing (force)
 #   scripts/install.sh --no-routing    # skip the routing offer
@@ -59,6 +60,12 @@ AGENTS_TARGET="$HOME/.agents/skills"
 COPILOT_DIR="${COPILOT_HOME:-$HOME/.copilot}"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 GEMINI_DIR="$HOME/.gemini"
+# Antigravity does NOT read ~/.agents/skills (antigravity.google/docs/skills, fetched
+# 2026-10-06): global skills live in ~/.gemini/config/skills (2.0 app + IDE; legacy
+# ~/.gemini/antigravity/skills) and ~/.gemini/antigravity-cli/skills (CLI). Its
+# workspace path IS .agents/skills, so --project already covers it.
+AG_APP_HOME="$GEMINI_DIR/config"
+AG_CLI_HOME="$GEMINI_DIR/antigravity-cli"
 INSTALL_TARGET=auto   # auto | claude | agents | all  (--target)
 DO_UPDATE=0
 # Every run ends by asking the verifier whether the install actually took.
@@ -240,6 +247,9 @@ backup() {
 }
 
 emit_routing_block() {
+  # The block is a QUOTED heredoc on purpose: its backticks are Markdown, and an
+  # unquoted heredoc would run them as commands. The one machine-specific line (the
+  # router's absolute path) is printed separately.
   cat <<'MD'
 <!-- >>> sota-skills routing (managed by install.sh) >>> -->
 ## Engineering standing rules
@@ -259,8 +269,15 @@ consult the `sota` router skill first, load the matching `sota-*` skills, and
 apply their rules before acting — even when "SOTA" or "audit" is never said. If a
 stack profile exists (`~/.claude/profiles/*.md`), treat it as the BUILD default
 and AUDIT baseline; stop and ask on security-relevant decisions.
-<!-- <<< sota-skills routing <<< -->
 MD
+  # For an agent with no skills loader, "the sota router skill" names nothing it can
+  # open; give it the file. Every agent that loads SKILL.md folders ignores the line.
+  # shellcheck disable=SC2016  # the backticks are Markdown code spans, meant literally
+  printf 'If your agent cannot load a skill by name, read `%s` first — it lists\n' \
+    "$SKILLS_SRC/sota/SKILL.md"
+  # shellcheck disable=SC2016  # Markdown code spans, not command substitution
+  printf 'which `sota-*/SKILL.md` and `rules/` files to open next.\n'
+  printf '%s\n' "$RT_END"
 }
 
 # Print the managed routing block (markers inclusive) currently in a file.
@@ -363,7 +380,9 @@ mirror_directives() {
   local any=0
   if [ -d "$COPILOT_DIR" ]; then any=1; setup_directive "$COPILOT_DIR/copilot-instructions.md" "$COPILOT_DIR/copilot-instructions.md (Copilot)"; fi
   if [ -d "$CODEX_DIR" ];   then any=1; setup_directive "$CODEX_DIR/AGENTS.md" "$CODEX_DIR/AGENTS.md (Codex)"; fi
-  if [ -d "$GEMINI_DIR" ];  then any=1; setup_directive "$GEMINI_DIR/GEMINI.md" "$GEMINI_DIR/GEMINI.md (Gemini CLI)"; fi
+  # One file, two readers: Gemini CLI and Antigravity (CLI, 2.0 app and IDE) all read
+  # ~/.gemini/GEMINI.md as a global rule file (antigravity.google/docs/rules, 2026-10-06).
+  if [ -d "$GEMINI_DIR" ];  then any=1; setup_directive "$GEMINI_DIR/GEMINI.md" "$GEMINI_DIR/GEMINI.md (Gemini CLI, Antigravity)"; fi
   if [ -d "$HOME/.cursor" ]; then
     any=1
     chg "Cursor keeps global rules in its settings (Customize → Rules), not a file — paste the block from README's 'Always-on routing' there"
@@ -373,6 +392,13 @@ mirror_directives() {
   if [ -n "$(detected_agents)" ] && [ ! -e "$AGENTS_TARGET/sota" ]; then
     warn "the directive names the 'sota' skill, but $AGENTS_TARGET has no skills — Copilot CLI, Codex and Gemini CLI will not find it; re-run with --target all"
   fi
+  local ag_dir
+  while IFS= read -r ag_dir; do
+    [ -n "$ag_dir" ] || continue
+    [ -e "$ag_dir/sota" ] || warn "Antigravity is installed but $ag_dir has no skills — it reads neither ~/.claude/skills nor ~/.agents/skills; re-run with --target all"
+  done <<EOF_AG
+$(antigravity_skill_dirs)
+EOF_AG
   return 0
 }
 
@@ -784,7 +810,18 @@ detected_agents() {
   [ -d "$COPILOT_DIR" ] && out="$out Copilot"
   [ -d "$CODEX_DIR" ]   && out="$out Codex"
   [ -d "$GEMINI_DIR" ]  && out="$out Gemini"
+  [ -n "$(antigravity_skill_dirs)" ] && out="$out Antigravity"
   printf '%s' "${out# }"
+}
+
+# Antigravity's global skills directories, one per line, for each surface whose home
+# exists here — never created on a machine without it. The 2.0 app/IDE home is
+# ~/.gemini/config (also the legacy ~/.gemini/antigravity); the CLI's is
+# ~/.gemini/antigravity-cli. Detection by directory, the same rule as every agent above.
+antigravity_skill_dirs() {
+  if [ -d "$AG_APP_HOME" ] || [ -d "$GEMINI_DIR/antigravity" ]; then printf '%s\n' "$AG_APP_HOME/skills"; fi
+  if [ -d "$AG_CLI_HOME" ]; then printf '%s\n' "$AG_CLI_HOME/skills"; fi
+  return 0
 }
 
 section '🔗' 'Skills'
@@ -799,14 +836,26 @@ case "$INSTALL_TARGET" in
     found="$(detected_agents)"
     if [ -n "$found" ] && [ "$TARGET" = "$HOME/.claude/skills" ]; then
       if [ "$INTERACTIVE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
-        ask_yn "Found $found, which do not document reading ~/.claude/skills — also link the skills into $AGENTS_TARGET (read by Copilot CLI, VS Code, Codex, Cursor, Gemini CLI)?" y && want_agents=1
+        ask_yn "Found $found, which do not document reading ~/.claude/skills — also link the skills into $AGENTS_TARGET (read by Copilot CLI, VS Code, Codex, Cursor, Gemini CLI) and into Antigravity's own skills directory where it is installed?" y && want_agents=1
       else
         # shellcheck disable=SC2088  # ~ is display text in the hint, not a path
         chg "found $found, which do not document reading ~/.claude/skills — re-run with --target all to link $AGENTS_TARGET too"
       fi
     fi ;;
 esac
-if [ "$want_agents" -eq 1 ]; then install_into "$AGENTS_TARGET"; fi
+if [ "$want_agents" -eq 1 ]; then
+  install_into "$AGENTS_TARGET"
+  # Antigravity reads neither ~/.claude/skills nor ~/.agents/skills globally. Personal
+  # installs only: a --project install lands in <dir>/.agents/skills, which Antigravity
+  # already reads as its workspace path.
+  if [ "$TARGET" = "$HOME/.claude/skills" ]; then
+    while IFS= read -r ag_dir; do
+      [ -n "$ag_dir" ] && install_into "$ag_dir"
+    done <<EOF_AG
+$(antigravity_skill_dirs)
+EOF_AG
+  fi
+fi
 
 # --- profile convenience (personal install only) -----------------------------
 if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then

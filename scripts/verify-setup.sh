@@ -385,8 +385,26 @@ oa_found=""
 [ -d "$HOME/.gemini" ]                   && oa_found="$oa_found Gemini"
 oa_found="${oa_found# }"
 oa_dir="$HOME/.agents/skills"
+# Antigravity reads neither ~/.claude/skills nor ~/.agents/skills globally: its 2.0 app
+# and IDE read ~/.gemini/config/skills (legacy ~/.gemini/antigravity/skills), its CLI
+# ~/.gemini/antigravity-cli/skills (antigravity.google/docs/skills, fetched 2026-10-06).
+# Each surface whose home exists must reach the router through its OWN path.
+ag_have=""; ag_lack=""
+if [ -d "$HOME/.gemini/config" ] || [ -d "$HOME/.gemini/antigravity" ]; then
+  if [ -e "$HOME/.gemini/config/skills/sota" ] || [ -e "$HOME/.gemini/antigravity/skills/sota" ]; then
+    ag_have="Antigravity app/IDE"
+  else ag_lack="Antigravity app/IDE (~/.gemini/config/skills)"; fi
+fi
+if [ -d "$HOME/.gemini/antigravity-cli" ]; then
+  if [ -e "$HOME/.gemini/antigravity-cli/skills/sota" ]; then
+    ag_have="${ag_have:+$ag_have, }Antigravity CLI"
+  else ag_lack="${ag_lack:+$ag_lack, }Antigravity CLI (~/.gemini/antigravity-cli/skills)"; fi
+fi
 if [ -z "$oa_found" ]; then
-  row "N/A" "1f. other agents reach skills" "no Copilot CLI / Codex / Gemini CLI home found (~/.copilot, ~/.codex, ~/.gemini)"
+  row "N/A" "1f. other agents reach skills" "no Copilot CLI / Codex / Gemini CLI / Antigravity home found (~/.copilot, ~/.codex, ~/.gemini)"
+elif [ -n "$ag_lack" ]; then
+  row "PARTIAL" "1f. other agents reach skills" \
+    "no sota router where $ag_lack looks — Antigravity reads neither ~/.claude/skills nor ~/.agents/skills; run scripts/install.sh --target all"
 else
   oa_n=0; oa_missing=""
   if [ -n "$LIB_ROOT" ] && [ -d "$LIB_ROOT/skills" ]; then
@@ -403,7 +421,7 @@ else
     row "PARTIAL" "1f. other agents reach skills" \
       "found $oa_found; $oa_n of $n_src skills in $oa_dir — missing: $oa_missing; re-run scripts/install.sh --target all"
   else
-    row "PASS" "1f. other agents reach skills" "found $oa_found; all $oa_n skills in $oa_dir"
+    row "PASS" "1f. other agents reach skills" "found $oa_found; all $oa_n skills in $oa_dir${ag_have:+; router reachable for $ag_have}"
   fi
 fi
 
