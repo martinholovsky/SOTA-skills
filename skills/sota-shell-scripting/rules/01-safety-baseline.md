@@ -266,7 +266,7 @@ The failure mode is what makes this expensive: the callee reports a **usage erro
 (exit 2)**, which reads as a bug in the tool being tested rather than in the harness
 calling it. `for x in "a b"; do cmd $x; done` and `${var:+--flag $var}` are where it
 bites hardest. Same family: `$?` after a pipeline is the **last** stage's status —
-`${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash (rules/02 §4).
+`${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash (rules/02 §4). And zsh's `EQUALS`: an unquoted `=word` becomes a command's path, or aborts the list (rules/06 §1).
 
 **The status-discarding pipe is usually in the scaffolding, not the payload.** `cmd | tail`,
 `cmd | head`, `cmd | grep -q` are typed to shorten output or make a decision; the exit status

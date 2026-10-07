@@ -121,7 +121,16 @@ def load_cases():
 # measured against the current router.
 # RE-RUN 2026-09-23 at this hash, 2 runs x 3 samples at temp 0.7 (the baseline config):
 # +0.39 and +0.42, mean 0.58 -> 0.98 (+0.41). It holds. evals/results/2026-09-23/.
-ROUTER_BUILD_SHA = "273a969bbe2994e4"
+# BUMPED 2026-10-07 (273a969bbe2994e4 -> 832fec9ba3c70138), field report "PYSCANNER" F2: step 4
+# now opens by listing the rules files step 2 loaded, and fails on an empty list or on a missing
+# rules/06 when a claim was verified by command. Clause by clause, per rules/02 §5:
+#   steps 1-3                         -> untouched
+#   step 4, the new opening clause    -> NOT mirrored: it audits step 2's FILE SELECTION, which this
+#                                        eval short-circuits by pasting the skills (see above), so
+#                                        its condition can never fire here
+#   step 4, the rest                  -> mirror clause (3), unchanged
+# The treatment arm is unchanged: hash bumped alone, no re-sync, the published lift unaffected.
+ROUTER_BUILD_SHA = "832fec9ba3c70138"
 
 
 def _assert_mirror_fresh():

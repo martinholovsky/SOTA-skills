@@ -355,7 +355,8 @@ It is mirrored in four places — `rules/02` §5 lists them, and three fail sile
    done/not-done ("rate-limit login to N/min per IP", not "add rate limiting") — covering
    the top-10 non-negotiables of each loaded skill plus operating principle 5. Vague items
    don't survive to step 4. Then implement against that list.
-4. **Self-audit gate (do this LAST — do not present code until it passes).** Re-read each
+4. **Self-audit gate (do this LAST — do not present code until it passes).** **First list the rules files step 2
+   loaded**: none, or no `sota-shell-scripting` rules/06 when you verified by command, and this gate has FAILED — go back. Re-read each
    loaded rules file's **Audit checklist** *and* operating principle 5, and verify your
    diff satisfies every item. For each unmet item, **implement it** or state why it is out
    of scope — silence is not allowed. For every control, ask the **falsification

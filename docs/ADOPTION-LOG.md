@@ -7780,3 +7780,13 @@ confirmed by running it, not by reading it.
 | A table from `codex mcp add` plus ours is a duplicate table (TOML 1.0); the path was unescaped | **adopted (defect fixed)**. Whether Codex itself refuses the file needs verification: the binary was not installed | `scripts/install.sh` · unreleased |
 | `sota-llm-engineering` rules/04 §6 forbade hand-rolled MCP with no exception, while the operator had chosen a dependency-free server | **adopted** — a scoped, recorded exception with its measured cost (the missed `cacheScope`); fixed in place instead of through `/sota-report`, because the reporter maintains the library | `sota-llm-engineering` rules/04 §6 and its checklist · unreleased |
 
+## 2026-10-07 — field report from a session that used the library (a Python scanner build), two findings
+
+**Source:** a field report (git-ignored, local) from a session that applied v1.47.2. Every
+falsifiable claim was reproduced here before anything changed.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| zsh `EQUALS` (on by default): an unquoted `=word` becomes a command's path, or aborts the whole `;` list. Reproduced on zsh 5.9 with a bash control: `echo =====` aborts with exit 1, `grep -c =ls` counts 0 where bash counts 1. Absence confirmed two ways: a corpus grep (0 hits, with `zsh` as control in 10 of 10 files) and a read of the §1 trap table. This session hit the loud form too | **adopted with a correction** — the message is `==== not found`, four `=`, not five. Probe tested on a labelled set of 3 positives and 5 negatives, with BSD grep and ugrep agreeing; its first draft flagged `[[ $x == y ]]` and was tightened | `sota-shell-scripting` rules/06 §1 table + checklist; rules/01 §3 pointer · unreleased |
+| Router BUILD step 4 audits only the files the agent chose to load, so an empty step 2 leaves it nothing to check | **adopted with a correction** — the gate is never fully empty (principle 5 and the falsification question stay), but every rules-file checklist drops out. Second observation, after 2026-09-26. Step 4 now opens by listing step 2's files. The eval mirror was re-read clause by clause and the hash bumped alone: the new clause audits file selection, which the eval does not model | `skills/sota/SKILL.md` BUILD step 4; `evals/run-completeness.py` `ROUTER_BUILD_SHA` · unreleased |
+

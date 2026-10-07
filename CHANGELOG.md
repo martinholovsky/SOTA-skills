@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Field report: two findings, both reproduced, then fixed.**
+  - **zsh `EQUALS` (`sota-shell-scripting` rules/06 §1, rules/01 §3).** An unquoted `=word`
+    becomes a command's path, so `grep -c =ls` silently counts 0 where bash counts 1. If the word
+    names no command, zsh aborts the whole command list instead. Added as a table row and a
+    tested checklist probe.
+  - **Router BUILD step 4 now opens by listing the rules files step 2 loaded.** None, or no
+    rules/06 when a claim was verified by command, fails the gate; before, it silently audited
+    nothing. `ROUTER_BUILD_SHA` was bumped alone after a clause-by-clause check: the treatment arm
+    is unchanged.
 - **Six fixes from a `/sota-audit` of today's scripts (scope A at `46631ca`).**
   - **MCP test suite (Medium).** It now counts one reply per request and pins its total. A
     server that silently dropped a reply had passed with "35/35".
