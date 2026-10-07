@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Measured below the frontier** ([SMALL-MODEL](evals/results/2026-10-07/SMALL-MODEL.md),
+  pre-registered, $7.24). An outside review called the router-then-skills design brittle on
+  weaker models. On `claude-haiku-4.5` and `gemini-3.8-flash` both predictions held: routing
+  recall 0.925 / 0.883 (frontier 0.975) and a completeness lift of +0.47 / +0.44, every case
+  positive — the lift again largest where the unguided baseline is lowest. Not tested: a small
+  *agent* opening the files with tools.
 - **A copied install can no longer pass for a current one.** `install.sh` stamps every copied
   skills directory with the release and commit it came from (`.sota-install`). The session-start
   update reminder read the checkout's `VERSION`, so after a `git pull` it reported the new

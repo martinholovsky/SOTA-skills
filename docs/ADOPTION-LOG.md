@@ -7663,3 +7663,13 @@ defer the MCP router; a dedicated Swift skill is agreed in principle and filed a
 | 11 | Proposal: a router rule for languages with no skill | **adopted** (raised in the response, not the review) | Planned |
 
 - **DEFERRED — a routing MCP server; revisit trigger: a measured routing failure on a host that cannot load SKILL.md folders, which the directive's router-path line does not fix, or the small-model eval showing skills read-skipping that a tool call would prevent.**
+## 2026-10-07 — the outside review's claim 4, measured: small models route and lift
+
+Claim 4 of the 2026-10-06 outside review (*"brittle for any LLM other than the absolute
+frontier"*) was recorded as **open — measure it**. Measured the next day, pre-registered, $7.24
+([SMALL-MODEL](../evals/results/2026-10-07/SMALL-MODEL.md)): routing recall 0.925
+(`claude-haiku-4.5`) and 0.883 (`gemini-3.8-flash`) against the frontier's 0.975; completeness
+lift +0.47 and +0.44, every case positive on both. **Verdict: refuted for the two instruments that
+exist** — both paste text, so whether a small *agent* opens the router and the right `rules/` file
+with its own tools remains unmeasured; that residual belongs to the agentic harness in the
+separate `sota-agent-evals` repository.

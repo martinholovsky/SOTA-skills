@@ -1,0 +1,12 @@
+== START routing-haiku (spent so far $0.0000, est $0.60) 05:59:23Z
+== END routing-haiku rc=0 spent_after=$0.3171 06:01:30Z
+== START routing-flash (spent so far $0.3171, est $0.60) 06:01:30Z
+== END routing-flash rc=0 spent_after=$0.6569 06:11:08Z
+== START completeness-haiku (spent so far $0.6569, est $4.50) 06:11:08Z
+== END completeness-haiku rc=0 spent_after=$6.2352 06:48:53Z
+== SKIP completeness-flash: spent $6.2352 + est $4.50 > cap $10.00
+== ALL DONE total spent $6.2352
+RUNALL_EXIT=0
+== START completeness-flash-n1 (spent $6.2352, est $2.20)
+== END rc=0 spent_after=$7.2353
+FLASH_EXIT=0
