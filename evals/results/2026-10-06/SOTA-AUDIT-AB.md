@@ -8,7 +8,7 @@ prediction — that the new text finds more vulnerable dependencies — is **ref
 3.0 of 19 (lenient rule). Every arm ran trivy and saw the same 128 advisories; every arm then
 reported them as a count plus a few examples. The new text says to run the scanner; it does not
 say to report each Critical/High advisory as a finding, and that is the step that was missing.
-Follow-up: ROADMAP item 67.
+Follow-up: ROADMAP item 67. **Followed up 2026-10-07:** with that rule added, dependency recall went to 19, 19 of 19 ([SOTA-AUDIT-AB-C](../2026-10-07/SOTA-AUDIT-AB-C.md)).
 
 Pre-registration, frozen before any arm ran: [sota-audit-ab/PREREG.md](sota-audit-ab/PREREG.md)
 (sha256 of the frozen part `9aa6fe5c1c5fcab4`; one dated deviation appended, D1, below).
