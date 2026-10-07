@@ -7638,3 +7638,14 @@ it is the reason the cross-cutting items get re-checked at all.
 **Not verified:** whether an agent following the new text actually finds these classes. That is
 a behaviour question no read can settle; the measurement would be an audit eval run against both
 versions of the command, which costs live calls and was not run.
+
+## 2026-10-07 — the outside review's claim 4, measured: small models route and lift
+
+Claim 4 of the 2026-10-06 outside review (*"brittle for any LLM other than the absolute
+frontier"*) was recorded as **open — measure it**. Measured the next day, pre-registered, $7.24
+([SMALL-MODEL](../evals/results/2026-10-07/SMALL-MODEL.md)): routing recall 0.925
+(`claude-haiku-4.5`) and 0.883 (`gemini-3.8-flash`) against the frontier's 0.975; completeness
+lift +0.47 and +0.44, every case positive on both. **Verdict: refuted for the two instruments that
+exist** — both paste text, so whether a small *agent* opens the router and the right `rules/` file
+with its own tools remains unmeasured; that residual belongs to the agentic harness in the
+separate `sota-agent-evals` repository.

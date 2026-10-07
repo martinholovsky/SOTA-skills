@@ -5,6 +5,15 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Measured below the frontier** ([SMALL-MODEL](evals/results/2026-10-07/SMALL-MODEL.md),
+  pre-registered, $7.24). An outside review called the router-then-skills design brittle on
+  weaker models. On `claude-haiku-4.5` and `gemini-3.8-flash` both predictions held: routing
+  recall 0.925 / 0.883 (frontier 0.975) and a completeness lift of +0.47 / +0.44, every case
+  positive — the lift again largest where the unguided baseline is lowest. Not tested: a small
+  *agent* opening the files with tools.
+
 ## [1.47.2] - 2026-10-06
 
 A patch: `/sota-audit`, `/sota-deep-audit` and `sota-network-security` rules/06 change inside surfaces
