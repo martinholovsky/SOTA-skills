@@ -62,6 +62,11 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
 - **Commands**: `Process` with `executableURL` and an `arguments` array (`launchPath` is legacy);
   never `/bin/sh -c` with interpolated input. swift-subprocess (1.0 with Swift 6.4) — prefer an
   absolute `.path(...)` executable over a PATH lookup by name.
+- **A failed child does not throw.** `Process.run()` throws only when the launch fails; after
+  `waitUntilExit()` check `terminationReason == .exit` **and** `terminationStatus == 0` — on
+  `.uncaughtSignal` the status holds the signal number (swift-corelibs-foundation
+  `Process.swift`). swift-subprocess says it directly: *"A non-zero exit code is a normal
+  result, not a thrown error"* — test `terminationStatus.isSuccess`.
 - **Dynamic code evaluation**: Swift has no `eval`, but these evaluate strings: JavaScriptCore
   `JSContext.evaluateScript`, `NSExpression(format:)`, `NSPredicate(format:)` built by string
   interpolation (use `%@` arguments or `evaluate(with:substitutionVariables:)`), `dlopen`/`dlsym`
@@ -98,6 +103,7 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
 - [ ] Logging hygiene: no logging secrets, tokens, passwords, `Authorization` headers or PII in messages or metadata (swift-log does not redact) (grep `logger\.\w+\(.*(token|password|secret|apiKey|authorization)`); no `privacy: .public` on secrets; credentials never in query strings.
 - [ ] SQL injection: no `\(unsafeRaw:`, `\(raw:`, `\(unescaped:` or `unsafeSQL:` (grep) reachable by input — no raw query built by string interpolation; queries are parameterized with `\(bind:)`/plain `PostgresQuery` interpolation.
 - [ ] Command / subprocess injection: `Process`/swift-subprocess use an argv array with an absolute executable; no `"/bin/sh"` + `"-c"` with interpolation (grep `"/bin/(ba)?sh"`).
+- [ ] Child exit status read (MEDIUM, HIGH when the output is trusted): `grep -rlE 'Process\(\)|import Subprocess' --include='*.swift' . | while IFS= read -r f; do grep -qE 'terminationStatus|isSuccess' "$f" || echo "$f"; done` — and every `terminationStatus` check also tests `terminationReason`.
 - [ ] Dynamic code evaluation: no `evaluateScript`, `NSExpression(format:`, interpolated `NSPredicate(format:`, `dlopen` or `NSClassFromString` fed by input.
 - [ ] Path traversal: file paths built from input are resolved (`lexicallyResolving` + symlink resolution) and contained under the base directory.
 - [ ] SSRF / outbound requests: user-supplied URLs are validated against private/loopback/metadata addresses before connecting; AsyncHTTPClient redirect policy is explicit.

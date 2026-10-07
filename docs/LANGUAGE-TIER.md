@@ -357,6 +357,28 @@ floor, which then held 25 (29 since 2026-09-25, when ROADMAP 66 step 3a pinned f
 With the listing widened, the MOSTLY ABSENT block reads `(none)`: no other universal concept
 is missing in six or more languages.
 
+**Sixth pass, 2026-10-07: every empty cell, and the present cells of two rows.** 34 empty
+cells across the ten languages were opened. Reading the matched substrings of the rows they
+sat in (`--explain`) found that two rows were **almost entirely false presences**, the same
+shape as the shell `$?` finding: a cell lit by the probe's own plumbing rather than by a rule.
+The decided empties are now recorded once, in `TRIAGED` in `scripts/gen-concept-matrix.py`,
+and page 6 of the skill map draws them as n/a, delegated or open gap instead of "gap?". CI's
+`--assert-universal` fails on a stale entry, meaning a cell that has since turned present.
+
+| cell | verdict | evidence |
+|---|---|---|
+| exit status — **every** cell outside go | **matcher artefact, then REAL** | all lit by probe plumbing (`rc=$?`, `case $? in`, "read the exit code" of a linter). Matcher now reads child-process APIs; rules + probes added: c/c++ 01 §7, jvm 04 §2, python 05, js/ts 08, .NET 01 §6, php 02 §2, rust 08 R9.9, ruby 02, swift 05 — each API fact from its primary doc |
+| encoding — **seven** cells | **matcher artefact** | bare `decode` (`json_decode`, `XMLDecoder`, "JWT decoded"), `locale` (tenant-variable regexes), `"encoding/json"`, path `normalize()`. Matcher tightened to text-handling terms |
+| encoding — go, python | **REAL, closed** | rules stated (go 05 §1 `utf8.ValidString`, python 03 §5 `encoding=`), unprobed; probes added (go's in 04, the security file is at the cap) |
+| encoding — jvm, php, ruby, .NET, swift | **REAL, closed** | no rule; jvm 01 §6, php 01 §7a, ruby 01 §9, .NET 01 §7, swift 01 §6 — every behaviour measured (Temurin 25 under `LANG=C`, PHP 8.5, Ruby 4.0.6, Swift 6.3.2) |
+| encoding — c/c++ | **REAL, open** | no rule; ROADMAP 69 |
+| fuzz/property — jvm, .NET, php, ruby, swift | **REAL, closed** | no rule; tools checked against their repos 2026-10-07 (jqwik maintenance-only, OneFuzz archived, SwiftCheck dead, `-sanitize=fuzzer` refused by Apple's toolchain — measured) |
+| fuzz — js/ts; blocking — php, ruby; exit — python | **REAL, closed** | stated (js/ts 07 Practices, php 01 §6, ruby 05 §3, python 05 §2), unprobed; probes added |
+| memory safety — go, jvm, python, php, ruby, swift | **matcher artefact** | each probes its escape hatch (`unsafe.Pointer`/cgo, off-heap, ctypes/cffi, FFI, Fiddle, `strictMemorySafety`); condition relabelled "has an unsafe/FFI escape hatch" |
+| rust immutability, jvm blocking, php backpressure, swift N+1 | **matcher artefact** | `static mut`/`RefCell`; virtual-thread pinning/`runBlocking`; `pm.max_children`; copy-on-write copies |
+| c/c++ blocking; go and swift request-scoped context | **n/a** | no event loop; no goroutine-local storage; `@TaskLocal` unbinds when `withValue` returns (measured) |
+| php task leaks, module boundaries; c/c++ backpressure; rust, c/c++, jvm N+1 | **delegated** (already decided) | earlier passes above |
+
 ### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
 
 Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a

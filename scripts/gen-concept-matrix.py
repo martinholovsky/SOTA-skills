@@ -86,7 +86,9 @@ CONCEPTS = [
      # interfaces and package-level mutable state).
      r"fat interface|returned interface|grab[- ]bag|package-level|interface \{"),
     ("immutability / const discipline", "conditional:has a const or freeze mechanism",
-     r"immutab|const\b|constexpr|readonly|frozen|freeze|final field|mutat|defensive copy"),
+     r"immutab|const\b|constexpr|readonly|frozen|freeze|final field|mutat|defensive copy|"
+     # Triage 2026-10-07: rust probes `static mut` and interior mutability, its own terms.
+     r"static mut|refcell|interior mutab"),
     ("typing / generics discipline", "conditional:gradual or explicit typing",
      r"type hint|typing|mypy|generic|any\b|unknown\b|strict(ness)?|nullable ref|rbs|sorbet"),
 
@@ -104,11 +106,16 @@ CONCEPTS = [
      r"unjoined|thread\.new|async void|task\.run"),
     ("blocking the event loop / executor", "conditional:has an event loop or async runtime",
      r"event loop|blocking (call|io|the)|block_on|run_until|sync over async|\.result\(\)|"
-     r"configureawait|deadlock|sync\(|scryptsync"),
+     r"configureawait|deadlock|sync\(|scryptsync|"
+     # Triage 2026-10-07: jvm states this as virtual-thread pinning and `runBlocking`. Bare
+     # `pinning` lit c/c++ from "(verify pinning)" -- dependency pinning -- so it is anchored.
+     r"pinning is|runblocking|pin(s|ning)? the carrier"),
     ("backpressure / unbounded queues", "universal",
      r"unbounded (queue|channel|fan-out|parallelism|concurren)|parallelism unbounded|"
      r"backpressure|bounded (queue|channel)|buffer size|queue depth|executors\.new|"
-     r"linkedblockingqueue|sizedqueue|semaphore"),
+     r"linkedblockingqueue|sizedqueue|semaphore|"
+     # Triage 2026-10-07: php bounds concurrency at the FPM pool, not in a queue type.
+     r"max_children"),
 
     # --- memory / resources
     ("resource lifecycle (close/dispose/RAII)", "universal",
@@ -116,9 +123,15 @@ CONCEPTS = [
      r"context manager|finaliz|file handle|connection (leak|pool)|`ensure`|ensure (block|clause)|"
      r"block form|impl drop|mem::forget|"
      r"session_write_close"),
-    ("memory safety (bounds, UAF, overflow)", "conditional:manual memory management",
+    # Condition relabelled 2026-10-07 (triage): every language in the tier has an escape hatch
+    # into raw memory -- Go `unsafe.Pointer`/cgo, JVM JNI/FFM off-heap, Python ctypes/cffi,
+    # PHP FFI, Ruby Fiddle/C extensions, Swift `UnsafePointer` -- and six skills probed it in
+    # those words while the matcher only knew C's vocabulary, so the cells read absent.
+    ("memory safety (bounds, UAF, overflow)", "conditional:has an unsafe/FFI escape hatch",
      r"use[- ]after[- ]free|buffer overflow|bounds|out of bounds|dangling pointer|"
-     r"double free|integer overflow|sanitizer|asan|ubsan|valgrind|miri|allocunsafe"),
+     r"double free|integer overflow|sanitizer|asan|ubsan|valgrind|miri|allocunsafe|"
+     r"unsafe\.pointer|unsafe(mutable)?(raw)?(buffer)?pointer|ctypes|cffi|(?<![\w-])ffi\b|fiddle|"
+     r"(?<![\w-])jni\b|off-heap|\bg115\b|strictmemorysafety|\bcgo\b"),
 
     # --- security
     ("SQL / query injection", "universal",
@@ -210,7 +223,9 @@ CONCEPTS = [
      r"preload|select_related|"
      # Third pass, 2026-09-24: go's `rules/06` probe is titled "O(n²)" with a superscript,
      # which neither spelling above matches -- an artefact.
-     r"o\(n²\)|uselazyloadingproxies"),
+     r"o\(n²\)|uselazyloadingproxies|"
+     # Triage 2026-10-07: swift's accidental-quadratic is a copy-on-write copy in a loop.
+     r"copy-on-write cop"),
 
     # --- concepts added 2026-09-21 after the first run's UNCLASSIFIED list named them.
     # Every one came from reading items this file could not classify, which is the
@@ -238,11 +253,26 @@ CONCEPTS = [
      r"clock_gettime|clock_monotonic|systemtime|\binstant\b|stopwatch|localtime|"
      r"time\.time\(\)|date\.now|hrtime|microtime|hrtime\(|process\.clock"),
     ("encoding, unicode & text", "conditional:the skill handles text decoding explicitly",
-     r"unicode|utf-8|encoding|decode|normaliz(e|ation)|locale|collation|byte order mark"),
+     # Tightened 2026-10-07: bare `decode` lit seven languages from deserialization probes
+     # (`json_decode`, `XMLDecoder`, "JWT decoded"), bare `locale` from tenant-variable regexes,
+     # bare `encoding` from `"encoding/json"` and `normaliz` from PATH normalisation. Every term
+     # below names text handling itself.
+     r"unicode|utf-?8|utf-16|character encoding|text encoding|encoding=|default (charset|encoding)|"
+     r"charset|from_utf8|invalid (utf|byte)|lossy|char(acter)? boundar|string slicing|"
+     r"unicode normaliz|nfc|nfkc|collation|byte order mark|iconv|mb_str|mbstring|"
+     r"culture-sensitive|stringcomparison|grapheme|setlocale|locale-(sensitive|dependent)|"
+     r"valid_encoding|force_encoding|encoding tag"),
 
     # --- cross-cutting operational
     ("exit status / error signalling of tools", "conditional:the skill drives external commands",
-     r"exit (status|code)|\$\?|errorlevel|pipestatus|pipefail|nonzero|non-zero exit"),
+     # Triage 2026-10-07: every present cell outside shell was lit by PROBE PLUMBING --
+     # `rc=$?`, `case $? in`, "read the exit code" of the linter the probe runs -- never by a
+     # rule about a child process's status. The row now matches the language's own API.
+     r"exit status of|child(-process)? (exit|status)|errorlevel|pipestatus|pipefail|"
+     r"exitvalue|\.exitcode|wexitstatus|status\(\)\.success|\.success\(\)|"
+     r"check=true|checkreturncode|calledprocesserror|terminationstatus|result_code|"
+     r"proc_close|exiterror|os\.exit|exception: true|exitstatus|\$\?\.success|"
+     r"exit status (ignored|never read|read|is discarded)|status\.success|success\(\)"),
     ("version floor / EOL awareness", "universal",
      r"\beol\b|end of life|minimum (version|supported)|msrv|version floor|"
      r"unsupported version|\blts\b|deprecated (runtime|version)|language version|"
@@ -362,6 +392,42 @@ UNIVERSAL_FLOOR = [
     "app-set cookie defaults",
     "debug / dev mode in production",
 ]
+
+
+# --- triaged absences ----------------------------------------------------------------
+# An EMPTY cell whose file has been opened and judged. Page 6 of the skill map draws these
+# with their verdict instead of "gap?"/"—", because an amber cell that was triaged months ago
+# reads as fresh work to anyone who did not read docs/LANGUAGE-TIER.md (2026-10-07: 34 empty
+# cells were re-triaged, and 8 of them had already been decided). Verdicts:
+#   n/a       -- the mechanism does not exist in the language (or cannot leak by design)
+#   delegated -- another skill owns the concept, with a probe
+#   open      -- a real gap, recorded and not yet written
+# `--assert-universal` (run in CI) fails on a STALE entry: a cell that is now present, or a
+# key that names no concept or language. Each reason cites where the decision is recorded.
+TRIAGED = {
+    ("task / thread leaks", "php"):
+        ("delegated", "FPM is shared-nothing per request; LANGUAGE-TIER triage ledger, 3rd pass"),
+    ("blocking the event loop / executor", "c-cpp"):
+        ("n/a", "no event loop or async runtime in the language; triage 2026-10-07"),
+    ("backpressure / unbounded queues", "c-cpp"):
+        ("delegated", "no standard queue abstraction; sota-async-concurrency owns bounding"),
+    ("N+1 and accidental quadratic", "rust"):
+        ("delegated", "sota-performance rules/02 §1-§2"),
+    ("N+1 and accidental quadratic", "c-cpp"):
+        ("delegated", "sota-performance rules/02, sota-databases rules/03"),
+    ("N+1 and accidental quadratic", "jvm"):
+        ("delegated", "sota-databases rules/03 (Hibernate), sota-performance rules/02 (JPA)"),
+    ("module boundaries & imports", "php"):
+        ("delegated", "no language-level visibility; sota-architecture rules/01 §2 (deptrac)"),
+    ("encoding, unicode & text", "c-cpp"):
+        ("open", "no rule: locale-dependent mbstowcs/wide chars and UTF-8 validation unwritten "
+                 "(triage 2026-10-07, ROADMAP 69)"),
+    ("request-scoped context cleanup", "golang"):
+        ("n/a", "goroutines have no local storage by design (Go FAQ); LANGUAGE-TIER spine"),
+    ("request-scoped context cleanup", "swift"):
+        ("n/a", "@TaskLocal is bound only inside withValue and unbound when it returns "
+                "(measured, Swift 6.3.2; SE-0311); triage 2026-10-07"),
+}
 
 def classify(text):
     """Concepts this item matches. An item may match several -- a probe for
@@ -598,6 +664,23 @@ def main():
             print("UNIVERSAL_FLOOR and record why in docs/LANGUAGE-TIER.md's triage ledger.")
             return 1
         print("  ok (all %d still present in %d/%d)" % (len(UNIVERSAL_FLOOR), len(E.LANGS), len(E.LANGS)))
+
+        names = {c for c, _k, _p in CONCEPTS}
+        stale = []
+        for (concept, lang), (verdict, _why) in sorted(TRIAGED.items()):
+            if concept not in names or lang not in E.LANGS:
+                stale.append("%s / %s: names no concept or language" % (concept, lang))
+            elif lang in present.get(concept, set()):
+                stale.append("%s / %s: the cell is now PRESENT -- delete the entry"
+                             % (concept, E.label(lang)))
+            elif verdict not in ("n/a", "delegated", "open"):
+                stale.append("%s / %s: unknown verdict %r" % (concept, lang, verdict))
+        print("\nTRIAGED ABSENCES (%d recorded verdicts)" % len(TRIAGED))
+        if stale:
+            for x in stale:
+                print("  STALE: " + x)
+            return 1
+        print("  ok (every entry still names an empty cell)")
 
     if args.min_coverage and worst < args.min_coverage:
         print("\nFAIL: lowest coverage %.1f%% is below the required %.1f%%"

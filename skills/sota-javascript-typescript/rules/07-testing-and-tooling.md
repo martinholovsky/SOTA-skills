@@ -251,6 +251,11 @@ steps:
 - [ ] `grep -rn "querySelector\|container\." src/**/*.test.tsx` and `getByTestId` density — implementation-coupled tests (LOW/MEDIUM).
 - [ ] `grep -rn "fireEvent" src/` in component tests — should be `userEvent` (LOW).
 - [ ] `grep -rn "waitForTimeout\|setTimeout" e2e/ tests/` — sleep-based waits = flake (MEDIUM).
+- [ ] **Parsers and serializers with no property-based test (Practices: `fast-check`) — LOW,
+      MEDIUM for a parser of untrusted input** —
+      `grep -nE '"(fast-check|@fast-check/[a-z]+)"' package.json` (absent: no property test can
+      exist) ; `grep -rlE 'export (async )?(function|const) (parse|decode|deserialize|serialize|encode)[A-Za-z]*' --include='*.ts' --include='*.js' src/`
+      (each listed module with no `fc.assert(fc.property(` in its tests is a candidate)
 - [ ] `grep -rn "vi.mock(\|jest.mock(" src/ | wc -l` high vs test count — module-mock-heavy suite; check MSW present for network (`grep -rn "msw" package.json`) (MEDIUM if fetch wrappers are mocked instead).
 - [ ] MSW server with `onUnhandledRequest: 'error'`? Real network calls in unit tests (`grep -rn "localhost\|https://" src/**/*.test.ts`) = MEDIUM (flaky + slow).
 - [ ] Coverage thresholds configured and honest (no `**/index.ts` exclusion games) — absent = LOW; tests asserting nothing (`grep -rn "expect(" -L` on test files) = HIGH for the affected area.

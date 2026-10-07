@@ -123,12 +123,22 @@ OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.
 For the isolation the child itself needs — seccomp/Landlock, fd-only interfaces,
 memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
 
+**R9.9 — `Ok` is not success.** `status()` and `output()` return `Ok` when the child ran and
+then failed: the docs say they do "not return an error if the child runs and then exits
+unsuccessfully, or is terminated by a signal … the outcome is reflected in the returned
+`ExitStatus`". So `cmd.output()?` propagates only a *spawn* failure. Check
+`.status.success()` (a signal is not success) before trusting stdout, and turn a failure
+into an error that carries the code and stderr.
+
 ## Audit checklist
 
 - [ ] Subprocess: `rg 'Command::new\("(sh|bash|cmd|powershell)"' -t rust` and
       `rg '\.arg\("-c"\)' -t rust` — a shell with any interpolated value = Critical.
       `rg 'Command::new\(' -t rust` for non-absolute program names on
       attacker-reachable paths = Medium (R9.1, R9.7).
+- [ ] Exit status read, not just the `Result` (R9.9) — Medium, High when the output is
+      trusted: `rg -l '\.(output|status)\(\)' -t rust | while IFS= read -r f; do grep -q 'success()' "$f" || echo "$f"; done`
+      (each file printed treats `Ok` as success; read it — a helper may check elsewhere).
 - [ ] Every spawned `Child` is killed **and** waited on every exit path, including
       `?` early-returns and cancellation — `rg 'spawn\(\)' -t rust` and read the
       error paths; a dropped `Child` keeps running and then becomes a zombie

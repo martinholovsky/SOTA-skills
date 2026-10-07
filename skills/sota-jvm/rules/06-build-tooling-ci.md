@@ -124,6 +124,10 @@ lives in `sota-testing`.
   **Testcontainers** for real-dependency
   integration tests (DB/broker) — wire them here; *strategy* is `sota-testing`.
   Run with a fixed timezone/locale/seed for determinism.
+- **Fuzz and property-test the parsers.** Jazzer (coverage-guided, libFuzzer-based) runs as a
+  JUnit test: annotate a method `@FuzzTest` (JUnit 5.9+). For properties, kotest-property is
+  maintained; jqwik declares itself in *"pure maintenance mode"*, so weigh that before adopting
+  it. Target code that parses untrusted bytes or holds an invariant (encode/decode round-trip).
 - Build reproducibly: `-Dproject.build.outputTimestamp` / Gradle reproducible
   archives; pin plugin versions.
 - **The production artifact carries no debug mode** (read from the Spring Boot 4.1.1 sources).
@@ -203,3 +207,6 @@ lives in `sota-testing`.
       `grep -rniE 'jacoco|junit-jupiter|testcontainers' pom.xml build.gradle* 2>/dev/null`
 - [ ] **Repository over HTTPS, trusted only** —
       `grep -rnE 'http://|maven \{|repositories' pom.xml build.gradle* settings.* 2>/dev/null | grep -i 'http://'`
+- [ ] **Fuzz / property-based tests on the parsers (§4) — LOW, MEDIUM for a parser of untrusted
+      bytes** — `grep -rnE '@FuzzTest|com\.code_intelligence\.jazzer|net\.jqwik|io\.kotest[:.]property' --include='*.java' --include='*.kt' --include='pom.xml' --include='build.gradle*' .`
+      (none: no parser in the repo is fuzzed; a `net.jqwik` hit is maintenance-mode, note it)

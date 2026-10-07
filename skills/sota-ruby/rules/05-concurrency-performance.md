@@ -197,6 +197,13 @@ Run from repo root; verify each hit manually.
       threads?)
 - [ ] **Fiber-local mistaken for thread-local** —
       `grep -rnE "Thread\.current\[" --include='*.rb' . | head`
+- [ ] **Blocking the fiber-scheduler loop (§3) — HIGH on a fiber-per-request server** —
+      `grep -rnE 'Fiber\.set_scheduler|Async[[:space:]]*(do|\{)|falcon' --include='*.rb' --include='Gemfile' .`
+      (no hit: no scheduler, skip) ; then list the gems with native extensions, which can
+      hold the GVL and stall the whole loop:
+      `bundle exec ruby -e 'all = Gem.loaded_specs.values; puts all.reject { |s| s.extensions.empty? }.map(&:name); warn "#{all.size} gems loaded"'`
+      (each name needs a fiber-safe answer; a pure-Ruby gem using core I/O yields
+      automatically)
 - [ ] **Request-scoped tenant/user in thread-local or fiber storage without an `ensure`
       reset (§2) — HIGH in multi-tenant code** —
       `grep -rnE '(Thread\.current|Fiber)\[:[a-z_]*(tenant|user|account|locale|org)[a-z_]*\]\s*=[^=]|thread_variable_set\(:[a-z_]*(tenant|user|account|locale|org)|RequestStore\.(store\[|write)' --include='*.rb' . | grep -vE '\]\s*=\s*(nil|prev|previous|old|saved)\b'`

@@ -113,6 +113,10 @@ public:
   `errno` the caller forgets to check.
 - `noexcept` on functions that truly can't throw (destructors, swaps, moves);
   a `throw` escaping `noexcept` calls `std::terminate`.
+- **A child process's failure is a return value you must decode.** `system()` and `pclose()`
+  return the *termination status* in `waitpid()` format, not an exit code, and `-1` when the
+  child could not be created or waited for (POSIX.1-2024). Check `-1`, then
+  `WIFEXITED(s) && WEXITSTATUS(s) == 0`; ignoring it makes a failed command a silent success.
 
 ## 7a. In-band sentinels, and the platform that changes the answer
 
@@ -272,6 +276,9 @@ existing parameter means.
 
 ## Audit checklist
 
+- [ ] **Child exit status ignored or read raw (§7) — MEDIUM, HIGH when the next step trusts
+      the child's output** — files that run a child and never decode its status:
+      `grep -rlE '(^|[^A-Za-z0-9_])(system|pclose)[[:space:]]*\(' --include='*.c' --include='*.cc' --include='*.cpp' . | while IFS= read -r f; do grep -qE 'WIFEXITED|WEXITSTATUS|WIFSIGNALED' "$f" || echo "$f"; done`
 - [ ] **Owning raw pointers / manual new-delete — MEDIUM (CRITICAL if leak/double-free)** —
       `grep -rnE '\bnew\b[^=]*;' --include='*.cpp' --include='*.h' --include='*.hpp' . | grep -v make_`
       ; `grep -rnE '\bdelete\b\s' --include='*.cpp' --include='*.hpp' .` ;

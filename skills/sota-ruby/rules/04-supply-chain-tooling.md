@@ -225,6 +225,10 @@ mechanics only:
   or the timecop gem as neutral examples); no `sleep`-based assertions.
 - HTTP in tests: stub at the boundary (WebMock/VCR as neutral examples) and
   **disable real network** (`WebMock.disable_net_connect!`).
+- **Fuzz the parsers and C extensions.** Ruzzy (Trail of Bits) is a coverage-guided,
+  libFuzzer-based fuzzer for pure Ruby and C extensions (Linux; macOS on Apple Silicon with
+  Homebrew LLVM). Property-testing gems (prop_check, rantly) are low-activity — check their
+  last release before adopting one.
 
 ## 7. CI gates (the minimum green wall)
 
@@ -306,6 +310,11 @@ Run from repo root; verify each hit manually.
 - [ ] **Test determinism** —
       `grep -rn "order = :random\|--seed" .rspec spec/spec_helper.rb 2>/dev/null | head -2` ;
       `grep -rn "disable_net_connect" spec/ test/ 2>/dev/null | head -1`
+
+- [ ] **Fuzz / property-based tests on parsers and C extensions (§6) — LOW, MEDIUM for a C
+      extension parsing untrusted input** —
+      `grep -nE "ruzzy|prop_check|rantly" Gemfile Gemfile.lock 2>/dev/null`
+      (none: nothing generates inputs; a native extension in the bundle is the first target)
 
 Severity guide: no lockfile / unfrozen production installs MEDIUM (HIGH if
 deploys resolve fresh); unpinned git gems, missing vulnerability gate MEDIUM;

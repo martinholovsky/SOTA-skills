@@ -268,6 +268,17 @@ module you reopen is a promise a consumer may already rely on.
   cycle, and emit a `warn` naming the replacement. Removing a public method is a major bump,
   and Ruby gives the consumer no compile step that would have caught it.
 
+## 9. Text encoding: tagged is not valid
+
+- A Ruby `String` carries an encoding **tag**, and tagging does not validate:
+  `"caf\xC3".force_encoding("UTF-8").valid_encoding?` is `false` (measured, Ruby 4.0.6). Bytes
+  from a socket, a file read in binary or a C extension are checked with `valid_encoding?` at
+  the boundary.
+- Decide what bad bytes become: `scrub("?")` replaces them, `encode("UTF-8", invalid: :replace,
+  replace: "?")` replaces during conversion, and a plain `encode` raises
+  `Encoding::InvalidByteSequenceError` (all measured). Rejecting is right for identifiers,
+  signatures and stored keys; replacing is right for display.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually.
@@ -275,6 +286,9 @@ Run from repo root; verify each hit manually.
 **Public surface** (§8) — Ruby hides nothing by default, so the question is what you
 failed to hide, not what you exported:
 
+- [ ] **Encoding tagged but never validated (§9) — MEDIUM, HIGH when the text is stored or
+      signed** — `grep -rnE 'force_encoding\(' --include='*.rb' .` ; `grep -rnE 'valid_encoding\?|\.scrub|invalid: *:replace' --include='*.rb' .`
+      (a `force_encoding` with no validation in the same flow is the finding)
 - [ ] ** `private` does NOT apply to `def self.` -- measured on 4.0.6, the class method stayed
       callable while the instance method raised NoMethodError. A private that applies to nothing
       looks identical to one that works.** —

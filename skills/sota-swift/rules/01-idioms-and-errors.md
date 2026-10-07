@@ -71,7 +71,20 @@ register(email)
   transmit instants as UTC / ISO 8601 (`ISO8601FormatStyle`); pass `TimeZone` and `Calendar`
   explicitly — `TimeZone.current` on a server is the host's zone, a deployment accident.
 
+## 6. Strings: graphemes, bytes and decoding
+
+- `String.count` counts **grapheme clusters** (`Character`s), not bytes or UTF-16 units: measured
+  on Swift 6.3.2, `"e\u{301}".count` is `1` and its `.utf8.count` is `3`. A byte limit (a
+  column width, a header cap, a buffer) is checked on `.utf8.count`; a length shown to a user is
+  `.count`. `NSString.length` is UTF-16 units — a third answer.
+- `==` is **canonical equivalence**: `"e\u{301}" == "\u{e9}"` is `true` although their UTF-8
+  bytes differ. Normalise before a byte-level comparison, hash or signature, never after.
+- `String(data:encoding:)` returns `nil` on invalid input (measured: `[0xff,0xfe,0xfd]` as UTF-8);
+  handle it — a force-unwrap turns hostile bytes into a crash.
+
 ## Audit checklist
+
+- [ ] Encoding, unicode & text (§6): `grep -rnE 'String\(data:[^)]*\)!' --include='*.swift' .` (a force-unwrapped decode crashes on invalid bytes) ; `grep -rnE '\.count[[:space:]]*[<>]=?' --include='*.swift' . | grep -iE 'byte|header|column|limit|max'` (a byte limit checked on grapheme count — it must be `.utf8.count`).
 
 - [ ] Types default to `struct`/`let`; classes are `final` unless designed for subclassing; owned-enum `switch`es are exhaustive without `default`.
 - [ ] Absence / null handling: no force unwraps on input-derived optionals — grep `[A-Za-z0-9_)\]]!(\.|\s|\)|$)`, `as!`, `try!`; IUO `T!` only in two-phase init; no in-band sentinel (`-1`, `""`) where an optional or enum belongs.

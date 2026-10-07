@@ -174,6 +174,10 @@ lives in `sota-testing`.
 - **Testcontainers for .NET** for real-dependency integration tests (DB/broker) —
   wire them here; *strategy* is `sota-testing`. Run with fixed culture/timezone
   for determinism (`InvariantGlobalization` where applicable).
+- **Fuzz and property-test the parsers.** SharpFuzz instruments .NET assemblies for AFL and
+  libFuzzer; FsCheck and CsCheck are maintained property-testing libraries. Microsoft OneFuzz
+  is **archived** (2023) — do not adopt it, and treat a pipeline still calling it as a dead
+  control. Target code that parses untrusted bytes or holds an invariant.
 - Build deterministically (`<Deterministic>true</Deterministic>`, ContinuousIntegrationBuild)
   and produce symbols.
 
@@ -265,5 +269,8 @@ lives in `sota-testing`.
       `grep -rniE 'TrustServerCertificate *= *(true|yes)|SSL ?Mode *= *(Disable|Allow|Prefer|Require)' --include='*.cs' --include='*.json' --include='*.config' .` ;
       Npgsql strings left on the `Prefer` default (also try `Server=`):
       `grep -rniE 'Host *= *[^;"]+;' --include='*.cs' --include='*.json' --include='*.config' . | grep -viE 'SSL ?Mode *='` ;
+      Fuzz / property-based tests on the parsers (§4; LOW, MEDIUM for a parser of untrusted
+      bytes — a OneFuzz hit is a dead control):
+      `grep -rnE 'SharpFuzz|FsCheck|CsCheck|OneFuzz|onefuzz' --include='*.csproj' --include='*.cs' --include='*.yml' --include='*.yaml' .` ;
       MessagePack deserialization in a file that never opts into `UntrustedData`:
       `grep -rlE 'MessagePackSerializer[.]Deserialize' --include='*.cs' . | while IFS= read -r f; do grep -q 'UntrustedData' "$f" || echo "$f: MessagePack on TrustedData default"; done`

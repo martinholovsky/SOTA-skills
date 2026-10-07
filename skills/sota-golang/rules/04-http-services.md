@@ -372,6 +372,10 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
 
 ## Audit checklist
 
+- [ ] **Invalid UTF-8 stored or forwarded (rules/05 §1) — MEDIUM, HIGH when the text feeds
+      another parser** — files that turn a body into a string and never validate it:
+      `grep -rlE 'string\((body|b|buf|data|raw)\)|io\.ReadAll' --include='*.go' . | while IFS= read -r f; do grep -qE 'utf8\.(Valid|ValidString)' "$f" || echo "$f"; done`
+      (`utf8.ValidString(string([]byte{0x63, 0xff}))` is `false`, measured on go1.27.1)
 - [ ] **Naked servers — HIGH** —
       `grep -rn 'http.ListenAndServe\|http.ListenAndServeTLS' --include='*.go' .` ;
       `grep -rn -A8 'http.Server{' --include='*.go' .` (verify all four timeouts present)

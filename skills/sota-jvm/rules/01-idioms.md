@@ -126,8 +126,26 @@ the type system, and expression-oriented code**. References:
 - Mark classes not designed for inheritance `final` (Java) — Kotlin classes are
   final by default (`open` to allow). Favor composition over inheritance.
 
+## 6. Text: name the charset, decide what happens to bad bytes
+
+- **Name the charset** on every byte↔text conversion: `new String(bytes, StandardCharsets.UTF_8)`,
+  `getBytes(UTF_8)`, `Files.readString(path, UTF_8)`. JDK 18 made UTF-8 the default charset (JEP
+  400), so a no-charset call is only portable on a floor of 18+; file names and the console still
+  follow the host. Measured on Temurin 25.0.4 under `LANG=C`: `file.encoding=UTF-8` while
+  `native.encoding` and `sun.jnu.encoding` are `ANSI_X3.4-1968`.
+- **The convenient constructors replace bad bytes silently.** `new String(bytes, UTF_8)` on
+  `{0x63, 0xFF}` returns a 2-char string ending in U+FFFD; a `CharsetDecoder` from
+  `UTF_8.newDecoder()` (default action REPORT) throws `MalformedInputException` (both measured).
+  Where invalid input must be rejected — a signature, an identifier, a stored key — decode with
+  the decoder.
+
 ## Audit checklist
 
+- [ ] **Byte↔text conversion with no charset, or silent replacement where rejection is needed
+      (§6) — LOW on a 18+ floor, MEDIUM below it or on a signed/stored value** —
+      `grep -rnE 'new String\([^,()]+\)|\.getBytes\(\)|new (InputStreamReader|OutputStreamWriter)\([^,()]+\)' --include='*.java' --include='*.kt' .`
+      ; `grep -rn 'newDecoder()' --include='*.java' --include='*.kt' .` (none: every decode replaces
+      invalid bytes with U+FFFD)
 - [ ] **Kotlin !! (non-null assertion) — MEDIUM (latent NPE)** —
       `grep -rnE '!!' --include='*.kt' . | grep -v '!!='`
 - [ ] **`data class` whose non-public constructor leaks through `copy()` (§2) — MEDIUM, HIGH

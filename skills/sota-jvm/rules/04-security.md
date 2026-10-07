@@ -75,6 +75,10 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   "internal" values. `ORDER BY`/identifiers can't be bound: allowlist them.
 - **OS command**: `ProcessBuilder` with an argument **list** and no shell; never
   `Runtime.exec("sh -c " + input)`. Validate/allowlist the program.
+  **A non-zero exit is a return value, not an exception**: `waitFor()` returns the exit value
+  and `exitValue()` reads it; nothing in `start()`, `waitFor()` or `exitValue()`'s documented
+  throws concerns exit status (JDK 21 `Process` Javadoc). Compare it to `0` before trusting
+  the output.
   **`Runtime.getRuntime().exec(String)` tokenizes its argument on whitespace** — it is
   the `shell:true` of Java, and one tainted value carrying a space becomes two
   arguments. The JDK agrees: the three `String`-taking overloads are
@@ -367,6 +371,9 @@ with a cache run this gate in a cache-free CI job instead (`rules/05` §2).
       continues onto later lines needs a read)
       ;
       `grep -rnE 'Runtime\.getRuntime\(\)\.exec|new ProcessBuilder' --include='*.java' --include='*.kt' .`
+- [ ] **Child exit status never read (§2) — MEDIUM, HIGH when the output is trusted** — files
+      that start a process and never compare its exit value:
+      `grep -rlE 'new ProcessBuilder|Runtime\.getRuntime\(\)\.exec' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE 'exitValue\(\)|=[[:space:]]*[A-Za-z_.()]*\.waitFor\(\)|\.waitFor\(\)[[:space:]]*[!=<>]' "$f" || echo "$f"; done`
 - [ ] **The String-taking exec overloads TOKENIZE on whitespace and are @Deprecated(since=18): a
       hit here is a finding on the deprecation alone, before any taint analysis.** —
       `grep -rnE 'Runtime\.getRuntime\(\)\.exec\(\s*"' --include='*.java' --include='*.kt' .`

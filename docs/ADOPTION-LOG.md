@@ -7739,3 +7739,18 @@ match.
   is now asserted. Four mutations (answering notifications, echoing any version, a path-joining
   lookup, no uri type check) each fail the suite; a fifth, removing the catch-all exception
   handler, does not — it has no reachable trigger, and the code says so.
+
+## 2026-10-07 — concept-matrix re-triage: two rows were false presences, 23 cells closed
+
+**Source:** applying the library to itself. The operator asked whether the empty cells on page 6
+of the skill map were real gaps. Each cell was opened, and the matched substrings of every
+present cell in the affected rows were read with `--explain`. Full verdict table:
+`docs/LANGUAGE-TIER.md`, sixth pass.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| Child exit status is checked, per language API (POSIX `system`/`pclose`, `Process.waitFor`, `subprocess.run(check=)`, `spawnSync`, `Process.ExitCode`, `exec` `$result_code`, `Command::status`, `Kernel#system`, `Process.terminationReason`) | **adopted** — every fact from its primary doc, read 2026-10-07 | c/c++ rules/01 §7, jvm rules/04 §2, python rules/05, js/ts rules/08, .NET rules/01 §6, php rules/02 §2, rust rules/08 R9.9, ruby rules/02, swift rules/05 · unreleased |
+| Text encoding as a section where the language had none | **adopted** — behaviour measured, not recalled | jvm rules/01 §6, php rules/01 §7a, ruby rules/01 §9, .NET rules/01 §7, swift rules/01 §6 · unreleased |
+| Fuzz and property testing where the language had none | **adopted with corrections** — jqwik maintenance-only, OneFuzz archived, SwiftCheck unmaintained, Swift's fuzzer needs a swift.org Linux toolchain | jvm rules/06 §4, .NET rules/06 §4, php rules/05 §4, ruby rules/04 §6, swift rules/08 §4 · unreleased |
+| c/c++ text encoding | **deferred** — revisit trigger: ROADMAP 69 (measure `mbstowcs` under the `C` locale first) | — |
+| Record a triaged empty cell where the map draws it | **adopted** | `TRIAGED` in `scripts/gen-concept-matrix.py`; skill map page 6 · unreleased |

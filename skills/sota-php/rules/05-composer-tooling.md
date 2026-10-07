@@ -200,6 +200,9 @@ parameters:
   mode — CI-only; never on prod (`rules/06` §6).
 - Mutation testing (e.g. Infection) as a periodic quality probe on core
   domains, not a per-PR gate.
+- **Property-test and fuzz the parsers.** Eris (maintained, PHPUnit 10–13) generates inputs
+  for invariant-bearing code; nikic/PHP-Fuzzer is a coverage-guided fuzzer for PHP libraries
+  that describes itself as *experimental* — useful on a parser, not a CI gate to depend on.
 
 ## 5. CI pipeline: the minimum gate set
 
@@ -301,6 +304,10 @@ Run from repo root; verify each hit manually.
       (each floor change: did the same PR carry Rector's diff and a matrix change?)
 - [ ] **Dev deps leaking into prod artifacts** —
       `grep -rn 'composer install' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' . | grep -v -- --no-dev`
+
+- [ ] **Property-based / fuzz tests on the parsers (§4) — LOW, MEDIUM for a parser of
+      untrusted input** — `grep -nE '"(giorgiosironi/eris|nikic/php-fuzzer)"' composer.json`
+      (none: no generated-input test exists; a parser of request data is the first target)
 
 Severity guide: app with no committed lock or CI running `composer update`
 MEDIUM (HIGH once envs drift); no advisory gate MEDIUM; known-vulnerable dep

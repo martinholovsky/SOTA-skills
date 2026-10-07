@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Concept matrix re-triaged; skill map page 6 shows verdicts.** Every empty cell was opened.
+  Two rows were mostly **false presences**: exit status was lit by probe plumbing (`rc=$?`), and
+  encoding by `json_decode` and tenant-variable regexes. Both matchers now read the concept's own
+  APIs. Closed with rules and probes: child exit status in nine languages; text encoding in
+  jvm, php, ruby, .NET, swift (rules) and go, python (probes); fuzz and property testing in jvm,
+  .NET, php, ruby, swift; four stated-but-unprobed rules. Matcher vocabulary fixed for six cells.
+  The memory-safety condition was relabelled "has an unsafe/FFI escape hatch". Decided empty cells
+  are recorded once in `TRIAGED` (`scripts/gen-concept-matrix.py`); page 6 draws them as
+  n/a / delegated / open gap, and CI fails on a stale entry. One real gap remains, c/c++ text
+  encoding (ROADMAP 69).
 - **Optional MCP server** — `scripts/sota-mcp-server.py` serves the library read-only over MCP
   (stdio, standard library only, dual-era: 2026-07-28 `server/discover` and the legacy
   `initialize`). Tools `list_skills`/`get_skill`/`get_rules_file`, every file as a resource, the
