@@ -47,6 +47,28 @@ are clean of every fix-only symbol.
 Every arm missed the same authz site, `preheat.go:ListProvidersUnderProject` — the site all four
 arms missed on 2026-08-13. w4's other two misses: `UpdatePolicy`, `updateV2Robot`.
 
+## Addendum 2026-10-07 — nested agents probed (supersedes footnote ¹)
+
+The limit above was closed after the fact. `score.py` now takes an arm's nested transcripts as
+extra arguments: the `subagents/agent-<id>.jsonl` files whose `.meta.json` names the arm in
+`parentAgentId`. Contamination reads all of them; P1–P4 stay top-level only, as pre-registered.
+Positive control: passing PREREG.md as a fake nested transcript counted all four symbols.
+
+| arm | nested agents read | fix-only symbols | network / cross-arm / PREREG reads |
+|---|---|---|---|
+| w1 | 4 (partitions A, B, C, refuter) | **`requirePolicyAccess` × 2, both in partition B** | 0 |
+| w3 | 1 (refuter) | 0 | 0 |
+
+**The w1 hit is ambiguous, and it is recorded rather than resolved.** Partition B typed the
+symbol once, as one of about twenty guessed guard names in an awk/grep alternation, beside
+`requireRetention` and `requireNotificationPolicy`. The symbol is absent from v2.5.1, so the
+search matched nothing, and it appears in no report. That is consistent with recalling the fixed
+Harbor code, and also with guessing names. Read literally, PREREG item 4 ("in the transcript …
+voids the arm for recall") voids w1. **With w1 voided, no conclusion changes:**
+- **H1:** A authz is 13/16 (n = 1, w4) against B's 15, still not claimed as a lift.
+- **H2:** stays refuted, since A's 5 ≥ B's 3.0.
+- **ROADMAP 67's C arms:** their 19/19 never compared against w1 alone.
+
 ## Against the predictions
 
 - **H1 — authz parity: held.** Means 14.0 (A) vs 15.0 (B); the gap is one sample (w4's 13).

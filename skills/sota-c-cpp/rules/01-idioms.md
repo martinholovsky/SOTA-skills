@@ -195,6 +195,24 @@ this right by construction; if you hand-write `operator=`, either guard `if (thi
 or build the copy before releasing anything. Rule of five (§1) says *declare* all five — it
 does not say the bodies are correct.
 
+## 8b. Text: bytes, locales and UTF-8
+
+- **`char` data is bytes.** `strlen` counts bytes, and truncating at a byte offset can split a
+  UTF-8 sequence; a length shown to a user or a cut for storage is computed on code points.
+- **The `mb*`/`wc*` functions follow the locale, and the locale is a process-wide switch.** A
+  program starts in the `C` locale whatever `LANG` says; only `setlocale(LC_ALL, "")` adopts the
+  environment's. Measured 2026-10-07 with one binary decoding `"café"` and `"c\xff"`:
+  - **glibc (gcc 16.2.0 image):** in the `C` locale, `mbstowcs` returns `(size_t)-1` even for
+    valid UTF-8. After `setlocale(LC_ALL, "")` with `LANG=C.UTF-8` it decodes, and rejects the
+    invalid input.
+  - **musl (Alpine):** in the `C` locale it never fails. Each high byte becomes a `0xDFxx`
+    escape, so invalid input passes as "decoded". `setlocale(LC_ALL, "")` gives `C.UTF-8` even
+    with `LANG` unset.
+- So the same call **neither validates nor decodes portably**. Validate untrusted text with an
+  explicit UTF-8 decoder that rejects overlongs, surrogates and truncated sequences (a
+  maintained library, or a hand-written one with tests over those cases), at the boundary. Do
+  not call `setlocale` from a library: it changes behaviour for every thread in the process.
+
 ## 9. Designing a public surface — what a released header promises
 
 The shared design rules (what belongs in a public API at all, deprecation policy, semver)
@@ -276,6 +294,12 @@ existing parameter means.
 
 ## Audit checklist
 
+- [ ] **Untrusted text decoded or validated through the locale (§8b) — MEDIUM, HIGH when the
+      result is stored, compared or signed** —
+      `grep -rnE '(^|[^A-Za-z0-9_])(mbstowcs|mbsrtowcs|mbrtowc|mbtowc|mblen|wcstombs)[[:space:]]*\(' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' --include='*.hpp' .`
+      ; `grep -rnE 'setlocale[[:space:]]*\(' --include='*.c' --include='*.cc' --include='*.cpp' .`
+      (a decode with no `setlocale` fails on glibc for valid UTF-8 and passes invalid bytes on
+      musl; a `setlocale` inside a library changes the whole process)
 - [ ] **Child exit status ignored or read raw (§7) — MEDIUM, HIGH when the next step trusts
       the child's output** — files that run a child and never decode its status:
       `grep -rlE '(^|[^A-Za-z0-9_])(system|pclose)[[:space:]]*\(' --include='*.c' --include='*.cc' --include='*.cpp' . | while IFS= read -r f; do grep -qE 'WIFEXITED|WEXITSTATUS|WIFSIGNALED' "$f" || echo "$f"; done`

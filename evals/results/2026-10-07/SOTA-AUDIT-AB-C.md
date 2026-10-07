@@ -41,6 +41,9 @@ each row was read by hand. Every arm, in all three runs, missed the same authz s
   model, subject, arguments block and scorers, one day apart.
 - Nested agents (both C arms used one refuter each) were not probed; both reports are clean of
   every fix-only symbol.
+  **Superseded 2026-10-07:** only w6 spawned an agent (one Explore refuter); w5's transcript has no
+  Agent call, so "both C arms" was wrong. The refuter was then probed with the extended scorer:
+  0 fix-only symbols, 0 network calls, 0 cross-arm reads. See SOTA-AUDIT-AB.md's addendum.
 - The history-dependent classes (#501's secrets-in-history and diff-callers steps) remain
   untestable on a `.git`-stripped subject.
 

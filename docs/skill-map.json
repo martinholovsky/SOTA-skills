@@ -1035,6 +1035,14 @@
       ]
     },
     {
+      "from": "sota-jvm",
+      "to": "sota-testing",
+      "weight": 5,
+      "targets": [
+        "rules/06"
+      ]
+    },
+    {
       "from": "sota-kubernetes",
       "to": "sota-identity-access",
       "weight": 5,
@@ -1472,12 +1480,6 @@
       "targets": [
         "rules/04"
       ]
-    },
-    {
-      "from": "sota-jvm",
-      "to": "sota-testing",
-      "weight": 3,
-      "targets": []
     },
     {
       "from": "sota-kubernetes",

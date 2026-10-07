@@ -379,6 +379,10 @@ and page 6 of the skill map draws them as n/a, delegated or open gap instead of 
 | c/c++ blocking; go and swift request-scoped context | **n/a** | no event loop; no goroutine-local storage; `@TaskLocal` unbinds when `withValue` returns (measured) |
 | php task leaks, module boundaries; c/c++ backpressure; rust, c/c++, jvm N+1 | **delegated** (already decided) | earlier passes above |
 
+**Superseded the same day (2026-10-07):** `encoding — c/c++` is closed by `sota-c-cpp` rules/01
+§8b, written from a glibc-vs-musl measurement (ROADMAP 69). Its `TRIAGED` entry was deleted
+after the gate flagged it STALE, which was the first live run of that check.
+
 ### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
 
 Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a

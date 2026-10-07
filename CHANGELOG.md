@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Session gaps closed.**
+  - `sota-jvm` rules/06 no longer contradicts `sota-testing` on jqwik (≥ 1.10.0 is protestware).
+  - `sota-c-cpp` rules/01 §8b covers text encoding, measured on glibc vs musl (ROADMAP 69).
+  - The `/sota-audit` eval scorer now probes nested agents. That found an ambiguous fix-only
+    symbol in one old-command arm, and an addendum shows no conclusion changes.
+  - The history-dependent audit classes left inside closed ROADMAP 67 now have their own row (70).
 - **Concept matrix re-triaged; skill map page 6 shows verdicts.** Every empty cell was opened.
   Two rows were mostly **false presences**: exit status was lit by probe plumbing (`rc=$?`), and
   encoding by `json_decode` and tenant-variable regexes. Both matchers now read the concept's own

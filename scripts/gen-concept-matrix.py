@@ -404,6 +404,10 @@ UNIVERSAL_FLOOR = [
 #   open      -- a real gap, recorded and not yet written
 # `--assert-universal` (run in CI) fails on a STALE entry: a cell that is now present, or a
 # key that names no concept or language. Each reason cites where the decision is recorded.
+# Watched failing twice, both 2026-10-07: a planted entry on a present cell (exit 1), and the
+# live case -- the c/c++ encoding entry, still marked `open` the moment rules/01 §8b landed,
+# printed `STALE: ... c/c++: the cell is now PRESENT`. It is not in the negative-control
+# harness, whose gate is check-invariants.sh; neither are --assert-universal/--assert-format.
 TRIAGED = {
     ("task / thread leaks", "php"):
         ("delegated", "FPM is shared-nothing per request; LANGUAGE-TIER triage ledger, 3rd pass"),
@@ -419,9 +423,6 @@ TRIAGED = {
         ("delegated", "sota-databases rules/03 (Hibernate), sota-performance rules/02 (JPA)"),
     ("module boundaries & imports", "php"):
         ("delegated", "no language-level visibility; sota-architecture rules/01 §2 (deptrac)"),
-    ("encoding, unicode & text", "c-cpp"):
-        ("open", "no rule: locale-dependent mbstowcs/wide chars and UTF-8 validation unwritten "
-                 "(triage 2026-10-07, ROADMAP 69)"),
     ("request-scoped context cleanup", "golang"):
         ("n/a", "goroutines have no local storage by design (Go FAQ); LANGUAGE-TIER spine"),
     ("request-scoped context cleanup", "swift"):
