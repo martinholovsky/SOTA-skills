@@ -35,6 +35,34 @@ case "$days" in
 esac
 [ "$days" -eq 0 ] && exit 0
 
+# --- a COPIED install that the checkout has moved past --------------------
+# install.sh --copy (or its forced fallback where symlinks are unavailable, e.g. Git
+# Bash without Developer Mode) stamps each copied skills dir with the release and
+# commit it came from. `git pull` moves the checkout and never the copy, so the copy
+# silently serves old guidance. This is not a timer: it compares two local facts,
+# and says so on every session while they differ — a stale copy is a defect, not news.
+repo=$(unset CDPATH; cd -- "$(dirname -- "$0")/.." 2>/dev/null && pwd) || repo=""
+if [ -n "$repo" ]; then
+  now_v=""; now_c=""
+  [ -r "$repo/VERSION" ] && now_v=$(tr -d '[:space:]' < "$repo/VERSION" 2>/dev/null)
+  now_c=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || now_c=""
+  for d in "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills" "$HOME/.agents/skills" \
+           "$HOME/.gemini/config/skills" "$HOME/.gemini/antigravity-cli/skills"; do
+    f="$d/.sota-install"
+    [ -r "$f" ] || continue
+    was_v=$(sed -n 's/^version=//p' "$f" 2>/dev/null | head -n 1)
+    was_c=$(sed -n 's/^commit=//p' "$f" 2>/dev/null | head -n 1)
+    stale=0
+    [ -n "$now_v" ] && [ -n "$was_v" ] && [ "$was_v" != "$now_v" ] && stale=1
+    [ -n "$now_c" ] && [ -n "$was_c" ] && [ "$was_c" != "unknown" ] && [ "$was_c" != "$now_c" ] && stale=1
+    if [ "$stale" -eq 1 ]; then
+      printf '[sota-skills: stale copied install. Relay this to the user in one line, then continue with their request.]\n'
+      printf 'The skills in %s are a COPY of SOTA-skills %s (commit %.7s), but the checkout at %s is now %s (commit %.7s). A copy does not update on git pull: re-run %s/scripts/install.sh to refresh it.\n' \
+        "$d" "${was_v:-unknown}" "${was_c:-unknown}" "$repo" "${now_v:-unknown}" "${now_c:-unknown}" "$repo"
+    fi
+  done
+fi
+
 # --- where we remember the last nudge -------------------------------------
 data="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/sota-skills-data}"
 stamp="${data}/.update-reminder-last"

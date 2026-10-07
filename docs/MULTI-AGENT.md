@@ -104,6 +104,25 @@ The installer now does three things:
 
 `verify-setup.sh` check 1e catches an install copied earlier.
 
+**A copy now says which release it is.** Every copied skills directory gets a `.sota-install`
+stamp (version, commit, source checkout). Before this, nothing could tell a stale copy from a
+current one: the update reminder read the *checkout's* `VERSION`, so after a `git pull` it
+reported the new release while the copy still served the old guidance. Now:
+- the session-start reminder (`scripts/update-reminder.sh`, installed with always-on routing)
+  compares each stamp with the checkout and, while they differ, names the copy, both versions and
+  the re-install command — on every session, not on a timer, and with no network request;
+- check 1e adds the same comparison (`STALE: … a copy of X, checkout is Y`);
+- switching back to links removes the stamp.
+
+A deliberate `--copy` is a pin, so the installer does not offer the reminder hook for it; the
+forced copy on a machine without symlinks keeps the offer.
+
+**Not done: directory junctions.** Git for Windows documents that *"Directory junctions can be
+created by non-administrator users by default"*, which would make the copy unnecessary. How a
+junction behaves under Git Bash (`-L`, `readlink`, this installer's pruning) cannot be checked
+without a Windows machine, so it stays with the existing Windows deferral in
+`docs/ADOPTION-LOG.md`.
+
 **Unverified:** this path was tested on macOS with an `ln` shim that copies and exits 0, as
 deepcopy does. It has **not** been run on a real Windows machine.
 

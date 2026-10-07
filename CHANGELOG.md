@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **A copied install can no longer pass for a current one.** `install.sh` stamps every copied
+  skills directory with the release and commit it came from (`.sota-install`). The session-start
+  update reminder read the checkout's `VERSION`, so after a `git pull` it reported the new
+  release over a copy still serving the old one; it now compares each stamp with the checkout and
+  says so on every session while they differ (no timer, no network). `verify-setup.sh` check 1e
+  names the gap. Directory junctions on Windows stay deferred: untestable without a Windows
+  machine.
 - **Antigravity reaches the library.** Antigravity reads neither `~/.claude/skills` nor
   `~/.agents/skills` (antigravity.google/docs/skills, fetched 2026-10-06): `install.sh --target
   all` now also links `~/.gemini/config/skills` (2.0 app/IDE) and `~/.gemini/antigravity-cli/skills`

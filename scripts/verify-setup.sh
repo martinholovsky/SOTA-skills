@@ -354,8 +354,19 @@ done
 if [ $((n_real + n_linked)) -eq 0 ]; then
   row "N/A" "1e. install is live" "no personal/project sota skills to inspect (plugin installs update themselves)"
 elif [ "$n_real" -gt 0 ]; then
+  # install.sh stamps a copy with the release it came from (.sota-install); say how
+  # far behind the checkout it is when the stamp exists, since "a copy" alone does not.
+  stale_note=""
+  cur_v=""; [ -n "$LIB_ROOT" ] && [ -r "$LIB_ROOT/VERSION" ] && cur_v=$(tr -d '[:space:]' < "$LIB_ROOT/VERSION")
+  for d in "$CLAUDE_HOME/skills" "$HOME/.agents/skills" ".claude/skills"; do
+    [ -r "$d/.sota-install" ] || continue
+    st_v=$(sed -n 's/^version=//p' "$d/.sota-install" | head -n 1)
+    if [ -n "$cur_v" ] && [ -n "$st_v" ] && [ "$st_v" != "$cur_v" ]; then
+      stale_note="$stale_note $d is a copy of $st_v, checkout is $cur_v;"
+    fi
+  done
   row "PARTIAL" "1e. install is live" \
-    "$n_real of $((n_real + n_linked)) sota skill dirs are COPIES, not links — they will not update on git pull. Deliberate --copy? fine. Otherwise (Windows: enable Developer Mode) re-run scripts/install.sh"
+    "$n_real of $((n_real + n_linked)) sota skill dirs are COPIES, not links — they will not update on git pull.${stale_note:+ STALE:$stale_note} Deliberate --copy? fine. Otherwise (Windows: enable Developer Mode) re-run scripts/install.sh"
 else
   row "PASS" "1e. install is live" "all $n_linked sota skill dirs are symlinks — git pull updates them"
 fi
