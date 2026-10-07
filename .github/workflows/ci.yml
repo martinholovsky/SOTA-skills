@@ -158,7 +158,9 @@ jobs:
         # tool, resources, prompts, and hostile input (path traversal in every name-bearing
         # argument, a non-string uri, malformed and oversized lines, notifications that must
         # get no reply). Mutation-checked 2026-10-07: answering notifications, echoing any
-        # protocol version, a path-joining file lookup and a missing uri type check each fail it.
+        # protocol version, a path-joining file lookup and a missing uri type check each fail it;
+        # since the same day's audit it also counts one reply per request and pins its total, so a
+        # server that silently drops a reply (which printed 35/35 before) or a deleted check fails.
         run: python3 scripts/test-mcp-server.py
 
   claims:

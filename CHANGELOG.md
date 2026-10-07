@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Six fixes from a `/sota-audit` of today's scripts (scope A at `46631ca`).**
+  - **MCP test suite (Medium).** It now counts one reply per request and pins its total. A
+    server that silently dropped a reply had passed with "35/35".
+  - **Codex registration in `install.sh`:**
+    - refuses a start marker with no end marker; stripping that block deleted the rest of the
+      file, 8 lines → 1;
+    - leaves a user's own `[mcp_servers.sota-skills]` table alone instead of duplicating it;
+    - TOML-escapes the server path.
+  - **MCP server.** It type-checks a prompt name and a rules-file name, which had reached the
+    internal-error catch-all. Its comment claiming that catch-all had no trigger was false.
+  - **`gen-skill-map.py`.** Its concept cross-check now raises under `CI` instead of skipping
+    with exit 0.
+  - **`sota-llm-engineering` rules/04 §6.** "Use the official SDKs" gains a scoped, recorded
+    exception for a dependency-free stdio server tested against a real client on each revision.
 - **`verify-setup.sh` check 1 compares skill names, not a count.**
   - **The bug:** after `git pull` brought in `sota-swift`, check 1 read "48 sota\* skills
     (source offers 43)" and passed, although the new skill was not linked. Five plugin

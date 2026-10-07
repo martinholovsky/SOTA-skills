@@ -31,7 +31,7 @@ looking at it, which no XML check can do.
 
 Usage: python3 scripts/gen-skill-map.py [--min-weight N] [--out PATH] [--json PATH]
 """
-import argparse, collections, html, json, math, pathlib, re, subprocess, sys
+import argparse, collections, html, json, os, pathlib, re, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -810,7 +810,12 @@ def assert_matrix_matches_tree():
     """Abort if the hand-declared LANG_TOPICS contradicts what the tree actually contains."""
     try:
         cm = load_concept_matrix()
-    except Exception as e:                      # never let the cross-check break the map
+    except Exception as e:  # noqa: BLE001 -- locally, never let the cross-check break the map
+        # ...but in CI a skip is a gate that verifies nothing while exiting 0 (2026-10-07
+        # audit, ruff BLE001). CI's own concept-matrix step happens to fail on the same load
+        # error today; this no longer depends on that step staying in the workflow.
+        if os.environ.get("CI"):
+            raise
         print("NOTE: concept cross-check skipped (%s)" % e, file=sys.stderr)
         return
     present, _classified, _un = cm.build(LANGS)

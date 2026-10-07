@@ -120,7 +120,7 @@ INSTRUCTIONS = ("Engineering skills for building and auditing software. Call lis
 
 def resolve_rules(skill, name):
     """`07`, `07-performance` or `07-performance.md` → the indexed file. Lookup only."""
-    m = RULES_RE.match(name or "")
+    m = RULES_RE.match(name) if isinstance(name, str) else None
     if not m:
         raise ToolError("file must look like '07' or '07-name.md'")
     rules = skill["rules"]
@@ -199,7 +199,7 @@ class Server:
 
     # --- prompts -----------------------------------------------------------------------
     def get_prompt(self, name, args):
-        if name not in self.prompts:
+        if not isinstance(name, str) or name not in self.prompts:
             raise ToolError("unknown prompt %r" % (name,))
         _, body = frontmatter(read(self.prompts[name]["path"]))
         steer = ""
@@ -327,10 +327,11 @@ def serve(server, stream):
                 if e.data is not None:
                     err["data"] = e.data
                 reply({"jsonrpc": "2.0", "id": msg["id"], "error": err})
-        # Defence in depth: every input the tests can construct is validated before it gets
-        # here, so this branch has no known trigger (mutation-tested 2026-10-07: removing it
-        # changes no test result). It stays so an unforeseen input degrades to an error reply
-        # rather than killing the host's server process.
+        # Defence in depth, and it HAS been reached: the 2026-10-07 audit drove a list as a
+        # prompt name and an int as a rules file here (TypeError, -32603) while an earlier
+        # comment claimed no known trigger. Both are now type-checked and are test cases. It
+        # stays so the next unforeseen input degrades to an error reply instead of killing the
+        # host's server process -- it is not dead code, and no test is evidence that it is.
         except Exception as e:  # noqa: BLE001 — the server must answer, never crash the host
             log("internal error on %s: %r" % (msg.get("method"), e))
             if is_request:

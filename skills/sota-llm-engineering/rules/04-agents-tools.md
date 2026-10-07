@@ -299,7 +299,11 @@ consequences:
 
 - **Pin the protocol revision** you build against and plan the move from
   2025-11-25 to 2026-07-28 — don't hand-roll protocol handling; use maintained
-  official SDKs that absorb revision churn. 2026-07-28 deprecates the Roots,
+  official SDKs that absorb revision churn. **The exception is a deliberate one:** a
+  small stdio server kept dependency-free on purpose may hand-roll, if it records that
+  decision, names its revisions and runs against a real client on each one — the churn
+  is then yours. Measured 2026-10-07: a hand-rolled server missed a required
+  2026-07-28 field (`cacheScope`) that only a real client caught. 2026-07-28 deprecates the Roots,
   Sampling, and Logging features (removal eligible from the first revision on or
   after 2027-07-28) and removes protocol-level sessions and the `Mcp-Session-Id`
   header — new servers shouldn't adopt those features or depend on session state.
@@ -484,7 +488,7 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
       eval coverage, memory with limits/expiry/erasability, artifacts by
       reference not by paste.
 - [ ] MCP: protocol revision pinned (2025-11-25 servers have a tracked migration
-      to 2026-07-28), official SDKs used, third-party servers version-pinned with
+      to 2026-07-28), official SDKs used (or a recorded dependency-free exception tested against a real client per revision), third-party servers version-pinned with
       reviewed descriptions and an own gating layer; MCP credentials in a
       vault.
 - [ ] Multi-agent: pattern is context-isolation/parallelism or fresh-context

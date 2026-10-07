@@ -6,6 +6,12 @@ The hostile cases matter most: path traversal in every name-bearing argument, un
 a malformed line, an oversized line and a notification (which must get NO reply). A case
 that expects an error also asserts the error is the RIGHT one, so a server that rejects
 everything cannot pass. Prints a denominator; exits 1 on any failure.
+
+THE DENOMINATOR IS PINNED (2026-10-07 audit). Every run() asserts one reply per request that
+carries an id, and one per raw line (a malformed line is still answered), and the total check
+count must equal EXPECTED_CHECKS. Before this, a mutant server that silently dropped the reply
+to one hostile request printed "35/35 checks passed" and exited 0 -- the zip below truncated
+to the replies that came back, and the total shrank with them.
 """
 import json
 import subprocess
@@ -25,7 +31,12 @@ def run(lines):
                        text=True, timeout=30)
     if p.returncode != 0:
         raise AssertionError("server exited %d: %s" % (p.returncode, p.stderr[-400:]))
-    return [json.loads(l) for l in p.stdout.splitlines() if l.strip()]
+    replies = [json.loads(l) for l in p.stdout.splitlines() if l.strip()]
+    want = sum(1 for x in lines if not isinstance(x, dict) or "id" in x)
+    if len(replies) != want:
+        raise AssertionError("expected %d replies, got %d -- a request went unanswered "
+                             "(or a notification was answered)" % (want, len(replies)))
+    return replies
 
 
 def call(i, name, args):
@@ -106,9 +117,10 @@ hostile = [("get_skill", {"name": "../../etc/passwd"}), ("get_skill", {"name": "
            ("get_rules_file", {"skill": "sota", "file": "01/../../SKILL.md"}),
            ("get_rules_file", {"skill": "sota", "file": "99"}),
            ("get_rules_file", {"skill": "../sota", "file": "01"}),
+           ("get_rules_file", {"skill": "sota", "file": 5}),
            ("no_such_tool", {})]
 r = run([INIT] + [call(i + 1, n, a) for i, (n, a) in enumerate(hostile)])
-for (n, a), rep in zip(hostile, r[1:]):
+for (n, a), rep in zip(hostile, r[1:], strict=True):
     res = rep.get("result", {})
     txt = res.get("content", [{}])[0].get("text", "")
     check("rejects %s %s" % (n, a), res.get("isError") is True and "root:" not in txt, txt[:80])
@@ -134,12 +146,15 @@ check("server alive after a non-string uri", r[6].get("result") == {})
 r = run([INIT, {"jsonrpc": "2.0", "id": 1, "method": "prompts/list"},
          {"jsonrpc": "2.0", "id": 2, "method": "prompts/get",
           "params": {"name": "sota-audit", "arguments": {"arguments": "STEER-TOKEN"}}},
-         {"jsonrpc": "2.0", "id": 3, "method": "prompts/get", "params": {"name": "../sota-audit"}}])
+         {"jsonrpc": "2.0", "id": 3, "method": "prompts/get", "params": {"name": "../sota-audit"}},
+         {"jsonrpc": "2.0", "id": 4, "method": "prompts/get", "params": {"name": []}}])
 pnames = {p["name"] for p in r[1]["result"]["prompts"]}
 check("five command prompts", pnames == {"sota-audit", "sota-close", "sota-deep-audit", "sota-report", "sota-resume"}, str(pnames))
 body = r[2]["result"]["messages"][0]["content"]["text"]
 check("prompt body substitutes $ARGUMENTS", "STEER-TOKEN" in body and "$ARGUMENTS" not in body and not body.startswith("---"))
 check("unknown prompt rejected", r[3].get("error", {}).get("code") == -32602)
+check("non-string prompt name is invalid params, not an internal error",
+      r[4].get("error", {}).get("code") == -32602, str(r[4]))
 
 # 6. framing robustness
 r = run([INIT, "{not json", "x" * (1 << 20 + 1), {"jsonrpc": "2.0", "id": 9, "method": "bogus/method"},
@@ -148,8 +163,12 @@ codes = [x.get("error", {}).get("code") for x in r[1:]]
 check("parse error, oversize, unknown method, bad jsonrpc", codes[:4] == [-32700, -32600, -32601, -32600], str(codes))
 check("server still answers after bad input", r[-1].get("result") == {})
 
+EXPECTED_CHECKS = 38  # bump deliberately when adding a check; a SHRINKING total is a failure
 total = passed + len(failed)
 print("test-mcp-server: %d/%d checks passed" % (passed, total))
+if total != EXPECTED_CHECKS:
+    failed.append("ran %d checks, expected %d -- a check went missing (or was added without "
+                  "bumping EXPECTED_CHECKS)" % (total, EXPECTED_CHECKS))
 for f in failed:
     print("  FAIL:", f)
 sys.exit(1 if failed else 0)

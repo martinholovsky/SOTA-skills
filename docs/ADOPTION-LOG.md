@@ -7766,3 +7766,17 @@ items were found by re-reading the session's own output, and each was checked ag
 | c/c++ text encoding (ROADMAP 69) | **adopted** — measured: glibc's `C` locale rejects valid UTF-8 in `mbstowcs`; musl's maps invalid bytes to `0xDFxx` and never fails | `sota-c-cpp` rules/01 §8b · unreleased |
 | Nested agents were never probed for contamination (a limit in both 2026-10-06/07 write-ups) | **adopted** — `score.py` reads them; the first run found an **ambiguous fix-only-symbol hit in w1's partition B**, and no conclusion changes when w1 is voided; it also showed one AB-C limit line was false (only w6 spawned a refuter) | `evals/results/2026-10-06/` addendum, `2026-10-07/SOTA-AUDIT-AB-C.md` superseded line, RESULTS.md · unreleased |
 | History-dependent `/sota-audit` classes untestable on the eval subject, stranded inside closed ROADMAP 67 | **deferred** — revisit trigger: ROADMAP 70 (an operator budget decision on a subject that keeps its git history) | — |
+
+## 2026-10-07 — a `/sota-audit` of the library's own scripts: six fixes and one rule scoped
+
+**Source:** `/sota-audit`, scope A (today's executable changes and their dependents, 19 files, at
+`46631ca`). It was run on code written the same day, so it was a self-audit. Every finding was
+confirmed by running it, not by reading it.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| A test suite with no expected count can't see a missing reply: a reply-dropping mutant passed "35/35" | **adopted (defect fixed)** — per-run reply count plus a pinned total; three mutants now fail | `scripts/test-mcp-server.py` · unreleased |
+| The new Codex writer lacked the unpaired-marker refusal its three sibling writers have, and deleted 7 of 8 lines | **adopted (defect fixed)** | `scripts/install.sh` · unreleased |
+| A table from `codex mcp add` plus ours is a duplicate table (TOML 1.0); the path was unescaped | **adopted (defect fixed)**. Whether Codex itself refuses the file needs verification: the binary was not installed | `scripts/install.sh` · unreleased |
+| `sota-llm-engineering` rules/04 §6 forbade hand-rolled MCP with no exception, while the operator had chosen a dependency-free server | **adopted** — a scoped, recorded exception with its measured cost (the missed `cacheScope`); fixed in place instead of through `/sota-report`, because the reporter maintains the library | `sota-llm-engineering` rules/04 §6 and its checklist · unreleased |
+
