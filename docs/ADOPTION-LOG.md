@@ -7752,5 +7752,17 @@ present cell in the affected rows were read with `--explain`. Full verdict table
 | Child exit status is checked, per language API (POSIX `system`/`pclose`, `Process.waitFor`, `subprocess.run(check=)`, `spawnSync`, `Process.ExitCode`, `exec` `$result_code`, `Command::status`, `Kernel#system`, `Process.terminationReason`) | **adopted** — every fact from its primary doc, read 2026-10-07 | c/c++ rules/01 §7, jvm rules/04 §2, python rules/05, js/ts rules/08, .NET rules/01 §6, php rules/02 §2, rust rules/08 R9.9, ruby rules/02, swift rules/05 · unreleased |
 | Text encoding as a section where the language had none | **adopted** — behaviour measured, not recalled | jvm rules/01 §6, php rules/01 §7a, ruby rules/01 §9, .NET rules/01 §7, swift rules/01 §6 · unreleased |
 | Fuzz and property testing where the language had none | **adopted with corrections** — jqwik maintenance-only, OneFuzz archived, SwiftCheck unmaintained, Swift's fuzzer needs a swift.org Linux toolchain | jvm rules/06 §4, .NET rules/06 §4, php rules/05 §4, ruby rules/04 §6, swift rules/08 §4 · unreleased |
-| c/c++ text encoding | **deferred** — revisit trigger: ROADMAP 69 (measure `mbstowcs` under the `C` locale first) | — |
+| c/c++ text encoding | **RESOLVED 2026-10-07 (was deferred; the trigger, ROADMAP 69, was worked the same day)** — measured on glibc and musl | `sota-c-cpp` rules/01 §8b · unreleased |
 | Record a triaged empty cell where the map draws it | **adopted** | `TRIAGED` in `scripts/gen-concept-matrix.py`; skill map page 6 · unreleased |
+
+## 2026-10-07 — closing the session's own gaps: one contradiction, one measured rule, one hidden hit
+
+**Source:** the operator asked for every issue this session had identified to be fixed. Four
+items were found by re-reading the session's own output, and each was checked against the tree:
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| jvm rules/06 called jqwik merely "maintenance mode", while `sota-testing` rules/06 already rated jqwik ≥ 1.10.0 as protestware (a prompt injection aimed at agents) — a contradiction written in #512 | **adopted (defect fixed)** — jvm now points at the testing rule, and its probe rates the hit HIGH | `sota-jvm` rules/06 §4 · unreleased |
+| c/c++ text encoding (ROADMAP 69) | **adopted** — measured: glibc's `C` locale rejects valid UTF-8 in `mbstowcs`; musl's maps invalid bytes to `0xDFxx` and never fails | `sota-c-cpp` rules/01 §8b · unreleased |
+| Nested agents were never probed for contamination (a limit in both 2026-10-06/07 write-ups) | **adopted** — `score.py` reads them; the first run found an **ambiguous fix-only-symbol hit in w1's partition B**, and no conclusion changes when w1 is voided; it also showed one AB-C limit line was false (only w6 spawned a refuter) | `evals/results/2026-10-06/` addendum, `2026-10-07/SOTA-AUDIT-AB-C.md` superseded line, RESULTS.md · unreleased |
+| History-dependent `/sota-audit` classes untestable on the eval subject, stranded inside closed ROADMAP 67 | **deferred** — revisit trigger: ROADMAP 70 (an operator budget decision on a subject that keeps its git history) | — |
