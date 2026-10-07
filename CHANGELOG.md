@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **New skill: `sota-swift`** — Swift on any target (server-side Vapor/Hummingbird/SwiftNIO, CLIs,
+  packages, apps), 9 rules files: idioms & errors, API design, concurrency, memory & unsafe,
+  security, server-side, performance, tooling/CI/testing, supply chain. Absorbs the former
+  `sota-mobile` rules/07, which now holds only Swift-in-apps. Every new default quoted is from a
+  primary source read 2026-10-07 (Vapor session cookies insecure by default; SwiftPM plugins
+  unsandboxed on Linux; NIOSSL client minimum TLS 1.0; SBOM in Swift 6.4). Registered as the tenth
+  language (all 36 universal concepts present); router row, library map, README and counts
+  updated (43 skills). ROADMAP 68 closed.
+
+**Routing checked:** evals/results/2026-10-07/ROUTING-CHECK-SWIFT.md
 - **`/sota-audit` step 4: every Critical/High advisory is its own finding** (ROADMAP 67) — one row
   per module@version with advisory ids, fixed version and how reachability was checked; a count is
   never the finding. `/sota-deep-audit` carries the same rule. Re-measured on the 2026-10-06

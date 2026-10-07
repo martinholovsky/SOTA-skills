@@ -108,8 +108,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   800-53/800-171/CMMC/FedRAMP, 03 SSDF secure SDLC, 04 EU Cyber Resilience Act, 05 ISA/IEC 62443
   (OT/ICS)
 - **sota-mobile/rules**: 01 platform & stack, 02 architecture & state, 03 offline/background/push,
-  04 security, 05 performance, 06 release & operations, 07 Swift language (Swift 6 concurrency,
-  ARC, SPM)
+  04 security, 05 performance, 06 release & operations, 07 Swift in apps (UI isolation, SwiftUI
+  task lifetimes, XCTest-only suites; the language itself is `sota-swift`)
 - **sota-cli-ux/rules**: 01 commands/flags/config, 02 output & interaction, 03 behavior &
   lifecycle, 04 distribution & docs
 - **sota-shell-scripting/rules**: 01 safety baseline (shebang, `set -e`, quoting, zsh deviations),
@@ -154,6 +154,9 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   performance & runtime
 - **sota-ruby/rules**: 01 language & idioms, 02 security, 03 web hardening, 04 supply chain &
   tooling, 05 concurrency & performance
+- **sota-swift/rules**: 01 idioms, optionals & errors, 02 API design, 03 concurrency, 04 memory &
+  unsafe, 05 security, 06 server-side (Vapor/Hummingbird/NIO), 07 performance, 08 tooling, CI &
+  testing, 09 supply chain
 
 ## Audit checklist
 

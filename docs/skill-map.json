@@ -37,12 +37,13 @@
     "sota-security-compliance",
     "sota-shell-scripting",
     "sota-skill-security",
+    "sota-swift",
     "sota-testing",
     "sota-threat-modeling",
     "sota-ux-writing",
     "sota-web-frameworks"
   ],
-  "routing_table_rows": 41,
+  "routing_table_rows": 42,
   "cross_cutting_rules": [
     {
       "n": 1,
@@ -51,7 +52,7 @@
         "sota-api-design",
         "sota-code-security",
         "sota-golang",
-        "sota-mobile"
+        "sota-swift"
       ]
     },
     {
@@ -438,6 +439,19 @@
       ]
     },
     {
+      "from": "sota-mobile",
+      "to": "sota-swift",
+      "weight": 10,
+      "targets": [
+        "rules/01",
+        "rules/03 \u00a71",
+        "rules/03 \u00a74",
+        "rules/04 \u00a71",
+        "rules/08 \u00a74",
+        "rules/09 \u00a71"
+      ]
+    },
+    {
       "from": "sota-php",
       "to": "sota-code-security",
       "weight": 10,
@@ -773,6 +787,12 @@
       "targets": []
     },
     {
+      "from": "sota-swift",
+      "to": "sota-mobile",
+      "weight": 7,
+      "targets": []
+    },
+    {
       "from": "sota-architecture",
       "to": "sota-async-concurrency",
       "weight": 6,
@@ -1064,6 +1084,17 @@
       "to": "sota-testing",
       "weight": 5,
       "targets": []
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/01",
+        "rules/03",
+        "rules/04",
+        "rules/17"
+      ]
     },
     {
       "from": "sota-testing",
@@ -2060,6 +2091,18 @@
       ]
     },
     {
+      "from": "sota-swift",
+      "to": "sota-sandboxing",
+      "weight": 2,
+      "targets": []
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-observability",
+      "weight": 2,
+      "targets": []
+    },
+    {
       "from": "sota-testing",
       "to": "sota-performance",
       "weight": 2,
@@ -2794,32 +2837,6 @@
       ]
     },
     {
-      "from": "sota-mobile",
-      "to": "sota-architecture",
-      "weight": 1,
-      "targets": [
-        "rules/02 \u00a78a"
-      ]
-    },
-    {
-      "from": "sota-mobile",
-      "to": "sota-testing",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-mobile",
-      "to": "sota-sandboxing",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-mobile",
-      "to": "sota-observability",
-      "weight": 1,
-      "targets": []
-    },
-    {
       "from": "sota-network-security",
       "to": "sota-dotnet",
       "weight": 1,
@@ -3196,6 +3213,46 @@
       "targets": [
         "rules/04 \u00a77"
       ]
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-architecture",
+      "weight": 1,
+      "targets": [
+        "rules/02 \u00a78a"
+      ]
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-secrets-management",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-network-security",
+      "weight": 1,
+      "targets": [
+        "rules/06"
+      ]
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-performance",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-testing",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-devsecops",
+      "weight": 1,
+      "targets": []
     },
     {
       "from": "sota-testing",

@@ -7100,7 +7100,7 @@ the advisory ranges settle, a WCAG AAA label, and two stray downloaded HTML file
 - **RESOLVED 2026-09-30 (was deferred; done in rules/05 (format-v2 scope per the Iceberg spec) and its maintenance example — see the 2026-09-30 entry) — Iceberg `rewrite_position_delete_files` / `rewrite_manifests` in `sota-data-engineering` rules/05's maintenance example; revisit trigger: the next table-format maintenance edit.** *Trigger fired 2026-09-27: #482 edited this maintenance example (the `expire_snapshots` cutoff) and did not do the item — it is due.*
 - **DEFERRED — runnable audit probes for `sota-data-engineering`'s CRITICAL/HIGH BUILD rules (blind INSERT…SELECT, NOW()-relative filters, `SELECT *` in staging, incremental models without `unique_key`), lakehouse catalog governance, and ODCS; revisit trigger: the next data-engineering intake or audit-probe batch.**
 - **DEFERRED — Apple's Declared Age Range API as an age signal in `sota-mobile` rules/04; revisit trigger: the next age-gate edit, or Apple making the API mandatory for age-rated apps.**
-- **DEFERRED — Swift 6.4 SwiftPM SBOM generation and Swift Testing↔XCTest interop in `sota-mobile` rules/07; revisit trigger: the next SwiftPM or testing edit there.**
+- **RESOLVED 2026-10-07 (was deferred; the trigger fired when the Swift language moved to `sota-swift`: SBOM generation is `sota-swift` rules/09 §4 from SE-0509 "Implemented (Swift 6.4)", Swift Testing↔XCTest coexistence is rules/08 §4 — see the 2026-10-07 entry) — Swift 6.4 SwiftPM SBOM generation and Swift Testing↔XCTest interop in `sota-mobile` rules/07; revisit trigger: the next SwiftPM or testing edit there.**
 - **DEFERRED — "keep DOMPurify patched; avoid IN_PLACE mode" in `sota-javascript-typescript` rules/09; revisit trigger: that skill's next sweep batch.**
 - **DEFERRED — React 19.3 features (`<ViewTransition>`, `<Activity>`, `useEffectEvent`, Trusted Types) in `sota-web-frameworks` rules/02; revisit trigger: the next rules/02 edit.**
 - **RESOLVED 2026-09-30 (was deferred; done across rules/02, 05 and 06 with each feature's Baseline status from web-features 3.40.0 — see the 2026-09-30 entry) — invoker commands, `dialog closedby`, `interpolate-size`, `field-sizing` and `contrast-color()` in `sota-frontend-design`; revisit trigger: the next rules/02, 05 or 06 edit, or the Interop 2026 results.** *Trigger fired 2026-09-27: #482 edited rules/05 (EN 301 549) and rules/06 (Material easing) and did not do the item — it is due.*
@@ -7681,3 +7681,37 @@ saying no language skill covers it, idioms from the official docs — instead of
 whatever the model does. **Operator observation, adopted as a decision item:** Swift is a
 language on any target but lives under `sota-mobile`; the router now points any-target Swift at
 rules/07 as a stopgap, and promoting it to `sota-swift` is ROADMAP 68.
+
+## 2026-10-07 — `sota-swift`: Swift promoted to its own language skill (ROADMAP 68)
+
+**Operator decision, 2026-10-07: yes** — Swift is a language on any target, and filing it under
+`sota-mobile` routed a Vapor service or a CLI into app-store and push-notification rules. The
+former `sota-mobile` rules/07 (twelve sections, all adopted unchanged in substance) became
+`sota-swift` rules/01–09; mobile keeps a short app-specific file that points across.
+
+**Source for what is new:** a research pass over primary sources only (shallow clones of
+swiftlang/swift-evolution, swift-org-website, swift-package-manager, swift-foundation,
+swift-testing, swift-subprocess, swiftly; vapor/vapor at bf77fc6, sql-kit, postgres-nio,
+hummingbird, hummingbird-auth, async-http-client, swift-nio-ssl, swift-log, swift-format,
+realm/SwiftLint, google/osv-scanner, github/docs). Four load-bearing defaults were re-read in the
+source by hand before use: Vapor `SessionsConfiguration.default()` (`isSecure: false,
+isHTTPOnly: false`), SwiftPM's plugin sandbox (`sandbox-exec` only under `#if os(macOS)`), SE-0509
+(*"Implemented (Swift 6.4)"*), NIOSSL `makeClientConfiguration()` (`minimumTLSVersion: .tlsv1`).
+
+| Area | Verdict | Landed in |
+|---|---|---|
+| No swift.org EOL policy exists; SSWG support bar | **adopted** (stated, not invented) | SKILL.md, rules/08 · unreleased |
+| Escape hatches per SE-0458/SE-0412; default isolation SE-0466; `withDeadline` SE-0526 accepted-not-shipped | **adopted** | rules/03 · unreleased |
+| Strict memory safety (SE-0458), `Span`, `~Copyable` | **adopted** | rules/04 · unreleased |
+| Decimal float-literal trap (swift-foundation source), overflow traps, `ContinuousClock` | **adopted** | rules/01 · unreleased |
+| Regex backtracks (SE-0351), SQLKit `unsafeRaw`, PostgresNIO `unsafeSQL`, Process argv, `FilePath.lexicallyResolving`, AsyncHTTPClient 5 redirects, NIOSSL TLS 1.0 default | **adopted** | rules/05 · unreleased |
+| Vapor/Hummingbird cookie defaults, Vapor compile-time `isRelease` trap, 16kb body default, guard middleware order | **adopted** | rules/06 · unreleased |
+| Warning control SE-0443/0480/0522, swift-format in toolchain, SwiftLint opt-in safety rules, Swift Testing parallel default | **adopted** | rules/08 · unreleased |
+| `--force-resolved-versions`, package identity (SE-0292), plugins/manifests unsandboxed on Linux, SBOM (SE-0509), Dependabot `swift`, OSV `SwiftURL` | **adopted** | rules/09 · unreleased |
+| Linux XMLParser internal-entity expansion; macro sandboxing on Linux; osv-scanner `Package.resolved` in practice; AsyncHTTPClient connect-time filter absence | **adopted as "needs verification"** — stated in the rule, not asserted | rules/05, rules/09 |
+
+The universal concept gate (`gen-concept-matrix.py --assert-universal`) first read **six floor
+concepts absent** for Swift; each was a real wording gap (or, for the version floor, a missing
+checklist item) and was fixed; every Swift cell's matched substring was then read with
+`--explain all all`, and one false presence (module boundaries lit by `@preconcurrency import`)
+was replaced by a genuine item. The gate's own "9/9" output literal now derives the count.

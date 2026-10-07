@@ -1,0 +1,3 @@
+{"id": "p1_vapor_audit", "task": "Audit our Vapor API service running on Linux: the session handling, the Fluent queries and the Package.swift dependencies.", "expect": "sota-swift", "distractor": "sota-mobile"}
+{"id": "p2_swift_cli", "task": "I'm writing a Swift command-line tool with swift-argument-parser that shells out to git and parses JSON. Review it for correctness and safety.", "expect": "sota-swift", "distractor": "sota-cli-ux"}
+{"id": "p3_swiftui_app", "task": "Our SwiftUI iOS app needs offline sync and push notifications before App Store submission. Plan the architecture.", "expect": "sota-mobile", "distractor": "sota-swift"}

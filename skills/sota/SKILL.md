@@ -8,14 +8,14 @@ description: >-
   diff, responding to code review, evaluating someone else's patch, or preparing an upstream
   contribution — including mid-session, once you are already reading source, a diff, or CI config.
   It maps the task (build or audit mode) to the right domain and language skills (Rust, Go, C/C++,
-  JVM, Python, JS/TS, .NET/C#, PHP, Ruby). Trigger keywords: SOTA, best practices, audit my code,
+  JVM, Python, JS/TS, .NET/C#, PHP, Ruby, Swift). Trigger keywords: SOTA, best practices, audit my code,
   security review, compliance, hardening, prod readiness, code quality, pull request, PR review,
   review comment, maintainer feedback, patch, diff, upstream, contribute, merge request.
 ---
 
 # SOTA Engineering Skills — Master Router
 
-A library of 41 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 42 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (each under 500 lines). Each skill works in two
 modes:
 
@@ -207,6 +207,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-dotnet` | Any C#/.NET code — modern idioms (records, nullable reference types, pattern matching, spans), API/disposal/DI design, async/await & concurrency (ConfigureAwait, cancellation, channels), security (EF/Dapper SQL, deserialization, ASP.NET Core auth, crypto), GC/Span/AOT performance, NuGet supply chain & analyzers/CI |
 | `sota-php` | Any PHP code — strict_types/modern idioms (enums, readonly, match), security (PDO/SQLi, XSS escaping, uploads/LFI, unserialize/Phar, sessions, password_hash/sodium), framework-neutral web hardening, Composer supply chain, PHPStan/Psalm, OPcache/FPM/JIT performance |
 | `sota-ruby` | Any Ruby code — idioms (frozen strings, pattern matching, RBS/Sorbet), security (AR/SQLi, ERB escaping, strong params, Marshal/YAML.load, command injection, ReDoS), Bundler supply chain (bundler-audit, lockfile checksums), RuboCop/Brakeman, GVL/Ractors/YJIT performance |
+| `sota-swift` | Any Swift code — on any target (server-side Vapor/Hummingbird/SwiftNIO, CLIs, packages, apps): optionals/errors, Swift 6 data-race safety (Sendable, actors, cancellation), ARC/retain cycles, unsafe pointers & strict memory safety, security (CryptoKit, Codable/NSKeyedUnarchiver, SQLKit raw SQL, Process, TLS), server defaults (auth middleware, cookies, release builds), SwiftPM supply chain (Package.resolved, plugins/macros, SBOM) |
 
 ## Cross-cutting routing rules
 
@@ -214,7 +215,7 @@ rules files that match the code in front of you. Never load all skills at once.
    api-design` + `sota-code-security`. The language skill covers idioms and runtime-specific
    traps; domain skills cover the design. **A language with no skill** (Scala, Elixir, Dart, …) is
    not a dead end: apply the domain skills, say once that no language skill covers it, and take its
-   idioms from that language's official docs. Swift on **any** target → `sota-mobile` rules/07.
+   idioms from that language's official docs. Swift on **any** target → `sota-swift`.
 2. **Security tasks usually need three skills.** Code-level flaws → `sota-code-security`; design-
    level gaps → `sota-threat-modeling`; leaked or mishandled credentials → `sota-secrets-
    management`. Pipeline/supply-chain → `sota-devsecops`; isolation blast-radius → `sota-
@@ -429,7 +430,7 @@ For a focused audit, load the matching skills and follow their AUDIT sections. F
 
 ## Library map (rules files per skill)
 
-Which `rules/NN` file holds what, for all 42 skills (41 domain skills + this router): **[rules/04-library-map.md](rules/04-library-map.md)**.
+Which `rules/NN` file holds what, for all 43 skills (42 domain skills + this router): **[rules/04-library-map.md](rules/04-library-map.md)**.
 Read it when you know the domain but not the file. When you are already opening a skill's
 `SKILL.md` (BUILD step 2), use that skill's own index instead — it carries the "read this
 when…" guidance the map drops.

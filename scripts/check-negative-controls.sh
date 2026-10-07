@@ -1027,8 +1027,14 @@ probe 35 "the template omits a concept the floor pins" \
 import pathlib
 p = pathlib.Path('scripts/gen-skill-map.py')
 t = p.read_text()
-t2 = t.replace(', \"ruby\"]', ']', 1)
-assert t2 != t, 'probe stale: ruby not found at the end of LANGS'
+# Remove the entry wherever it sits in the list: pinning it to the LAST position went
+# stale the day sota-swift was registered after ruby (2026-10-07).
+import re
+m = re.search(r'(?ms)^LANGS = \\[.*?\\]', t)
+assert m, 'probe stale: no LANGS list in gen-skill-map.py'
+blk = re.sub(r'\\s*\"ruby\",?', '', m.group(0), count=1)
+t2 = t[:m.start()] + blk + t[m.end():]
+assert t2 != t and '\"ruby\"' not in blk, 'probe stale: ruby not found in LANGS'
 p.write_text(t2)
 " )
 probe 36 "a routed language skill is missing from LANGS" \

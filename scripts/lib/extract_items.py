@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 # is carried here as its own group rather than a tenth column -- mixing them would
 # manufacture "gaps" that are just a different spine.
 LANGS = ["rust", "golang", "c-cpp", "jvm", "python", "javascript-typescript",
-         "dotnet", "php", "ruby"]
+         "dotnet", "php", "ruby", "swift"]
 SHELL = ["shell-scripting"]
 
 LABEL = {"javascript-typescript": "js/ts", "c-cpp": "c/c++", "dotnet": ".NET",
