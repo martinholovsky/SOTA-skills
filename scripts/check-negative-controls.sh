@@ -243,7 +243,7 @@ probe 7 "skill missing from the router routing table" "routing table missing:"
 probe 8 "internal markdown link does not resolve" "BROKEN LINK"
 
 # 13 — a scoreboard row with an empty Samples cell.
-( cd "$WT" && perl -pi -e 's/\| 2 runs × 3, temp 0\.7 \|/|  |/ if /\*\*Completeness\*\* \(7 build tasks\)/' evals/results/RESULTS.md )
+( cd "$WT" && perl -pi -e 's/\| 2 runs × 3, temp 0\.7 \|/|  |/ if /\*\*Completeness\*\* \(7 build tasks/' evals/results/RESULTS.md )  # prefix only: the row's wording grew on 2026-10-07 and broke a full-literal match
 probe 13 "scoreboard row with no sample size" "NO SAMPLE SIZE:"
 
 # 17 — a document that describes the checks, disagreeing with them. This is the
