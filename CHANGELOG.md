@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unsandboxed on Linux; NIOSSL client minimum TLS 1.0; SBOM in Swift 6.4). Registered as the tenth
   language (all 36 universal concepts present); router row, library map, README and counts
   updated (43 skills). ROADMAP 68 closed.
+
+**Routing checked:** evals/results/2026-10-07/ROUTING-CHECK-SWIFT.md
 - **`/sota-audit` step 4: every Critical/High advisory is its own finding** (ROADMAP 67) — one row
   per module@version with advisory ids, fixed version and how reachability was checked; a count is
   never the finding. `/sota-deep-audit` carries the same rule. Re-measured on the 2026-10-06

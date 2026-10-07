@@ -1,0 +1,93 @@
+{
+ "model": "anthropic/claude-sonnet-4.6",
+ "samples": 3,
+ "temp": 0.0,
+ "cases": {
+  "p1_vapor_audit": {
+   "task": "Audit our Vapor API service running on Linux: the session handling, the Fluent queries and the Package.swift dependencies.",
+   "expect": "sota-swift",
+   "distractor": "sota-mobile",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-swift",
+      "sota-swift",
+      "sota-swift"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-swift",
+      "sota-swift",
+      "sota-swift"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "p2_swift_cli": {
+   "task": "I'm writing a Swift command-line tool with swift-argument-parser that shells out to git and parses JSON. Review it for correctness and safety.",
+   "expect": "sota-swift",
+   "distractor": "sota-cli-ux",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-swift",
+      "sota-swift",
+      "sota-swift"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-swift",
+      "sota-swift",
+      "sota-swift"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "p3_swiftui_app": {
+   "task": "Our SwiftUI iOS app needs offline sync and push notifications before App Store submission. Plan the architecture.",
+   "expect": "sota-mobile",
+   "distractor": "sota-swift",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-mobile",
+      "sota-mobile",
+      "sota-mobile"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-mobile",
+      "sota-mobile",
+      "sota-mobile"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  }
+ },
+ "summary": {
+  "with-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  },
+  "without-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  }
+ },
+ "ablation": "xref"
+}
