@@ -8,14 +8,18 @@ this repo exists to gate against. So the map is DERIVED: every node and edge is 
 of the tree at generation time, every extracted skill name is validated against the real
 skills/ directory listing, and the run prints its denominators so a drop is visible.
 
-Six pages:
+Seven pages:
   1. Router -> skills, grouped by family (the routing table in skills/sota/SKILL.md).
-  2. The 21 cross-cutting routing rules and the skills each one names.
+  2. The cross-cutting routing rules and the skills each one names (count read from the router).
   3. The MEASURED cross-skill reference graph, aggregated to families.
   4. A worked slice: what an SSO task actually traverses.
   5. Section x language: which topics each language skill gives its own rules file.
   6. Concept x language: every audit concept gen-concept-matrix.py tracks, with the
      number of Audit-checklist items each language skill has for it.
+  7. What wraps the skills: slash commands (and which names which), plugin / installer /
+     opt-in hooks, the skills directories and directive files each agent reads, and the
+     gates (invariant count, CI jobs) -- read from commands/, hooks/hooks.json,
+     scripts/install.sh, check-invariants.sh and the CI workflow.
 
 LAYOUT IS A CORRECTNESS CONCERN HERE, not decoration. Three of these pages were first
 drawn in forms that RENDER but cannot be READ: 63 bipartite edges collapsed into one
@@ -303,9 +307,17 @@ def main():
         sys.exit("gen-skill-map: topics not in TOPIC_ORDER: %s" % sorted(unknown))
 
     assert_matrix_matches_tree()
-    pages = [page_router(), page_rules(rules),
+    surf = surfaces_inventory()
+    print("commands            : %d (%d cross-references)" % (len(surf["commands"]), len(surf["cmd_edges"])))
+    print("hooks               : %d plugin, %d installer, %d opt-in" % (
+        len(surf["plugin_hooks"]), len(surf["installer_hooks"]), len(surf["optin_hooks"])))
+    print("agent reach         : %d skills dirs, %d directive files" % (
+        len(surf["skill_dirs"]), len(surf["directives"])))
+    print("gates               : %d invariants, %d CI jobs" % (surf["invariants"], len(surf["ci_jobs"])))
+    pages = [page_router(len(rules), len(skills) - 1), page_rules(rules),
              page_graph(edges, indeg, args.min_weight), page_slice(),
-             page_matrix(lang_files), page_concepts(load_concept_matrix())]
+             page_matrix(lang_files), page_concepts(load_concept_matrix()),
+             page_surfaces(surf)]
     xml = ('<mxfile host="gen-skill-map.py" type="device">\n'
            + "\n".join(pages) + "\n</mxfile>\n")
     (ROOT / args.out).write_text(xml, encoding="utf-8")
@@ -317,6 +329,11 @@ def main():
         "cross_cutting_rules": [{"n": n, "title": t, "skills": s} for n, t, s in rules],
         "edges": [{"from": a, "to": b, "weight": w, "targets": sorted(detail[(a, b)])}
                   for (a, b), w in sorted(edges.items(), key=lambda kv: -kv[1])],
+        "surfaces": {"commands": [n for n, _ in surf["commands"]],
+                     "command_references": [list(e) for e in surf["cmd_edges"]],
+                     "skill_dirs": [p for _, p in surf["skill_dirs"]],
+                     "directives": surf["directives"], "invariants": surf["invariants"],
+                     "ci_jobs": surf["ci_jobs"]},
     }, indent=2) + "\n", encoding="utf-8")
 
     print("skill files scanned : %d" % len(files))
@@ -387,24 +404,181 @@ def page(pid, name, cells, w=1600, h=1200):
             % (pid, esc(name), w, h, "\n".join(cells)))
 
 
+# --- page 7: what wraps the skills ----------------------------------------------------
+# Commands, hooks, where each agent reads the library, and the gates. Derived like every
+# other page: commands from commands/*.md, plugin hooks from hooks/hooks.json, installer
+# targets from scripts/install.sh, gates from check-invariants.sh and the CI workflow.
+# The installer's skills directories are DECLARED below with the exact assignment that
+# defines each, and the run aborts if one is gone -- a moved path must not leave a stale
+# box on the map.
+SKILL_DIR_ANCHORS = [
+    ("Claude Code", "~/.claude/skills", 'TARGET="$HOME/.claude/skills"'),
+    ("Copilot · Codex · Cursor · Gemini CLI", "~/.agents/skills",
+     'AGENTS_TARGET="$HOME/.agents/skills"'),
+    ("Antigravity 2.0 app / IDE", "~/.gemini/config/skills", 'AG_APP_HOME="$GEMINI_DIR/config"'),
+    ("Antigravity CLI", "~/.gemini/antigravity-cli/skills",
+     'AG_CLI_HOME="$GEMINI_DIR/antigravity-cli"'),
+]
+
+
+def surfaces_inventory():
+    inv = {}
+    cmds = sorted((ROOT / "commands").glob("*.md"))
+    if not cmds:
+        sys.exit("no commands/*.md found -- refusing to draw an empty page 7")
+    names = [c.stem for c in cmds]
+    inv["commands"] = []
+    inv["cmd_edges"] = []
+    for c in cmds:
+        t = c.read_text(encoding="utf-8")
+        m = re.search(r"(?m)^description: (.*)$", t)
+        desc = m.group(1) if m else ""
+        inv["commands"].append((c.stem, desc))
+        body = t.split("---", 2)[-1]
+        for other in names:
+            if other != c.stem and re.search(r"/%s\b" % re.escape(other), body):
+                inv["cmd_edges"].append((c.stem, other))
+    hj = json.loads((ROOT / "hooks/hooks.json").read_text(encoding="utf-8"))
+    inv["plugin_hooks"] = [(ev, pathlib.Path(h["command"].strip('"')).name)
+                           for ev, groups in hj.get("hooks", {}).items()
+                           for g in groups for h in g.get("hooks", [])]
+    ins = (ROOT / "scripts/install.sh").read_text(encoding="utf-8")
+    missing = [a for _, _, a in SKILL_DIR_ANCHORS if a not in ins]
+    if missing:
+        sys.exit("install.sh no longer defines %s -- update SKILL_DIR_ANCHORS" % missing)
+    inv["skill_dirs"] = [(lbl, path) for lbl, path, _ in SKILL_DIR_ANCHORS]
+    dirs = re.findall(r'setup_directive "([^"]+)" "([^"]+)"', ins)
+    # Resolve the installer's home variables to their defaults (COPILOT_DIR -> ~/.copilot),
+    # read from install.sh itself, so the page shows paths a reader recognises.
+    homes = {v: "~/" + d for v, d in re.findall(
+        r'(?m)^(\w+_DIR)="(?:\$\{\w+:-)?\$HOME/([^"}]+)\}?"', ins)}
+    def resolve(x):
+        for v, d in homes.items():
+            x = x.replace("$" + v, d)
+        return x.replace("$HOME", "~")
+    inv["directives"] = [resolve(disp) for _, disp in dirs]
+    if any("$" in d for d in inv["directives"]):
+        sys.exit("unresolved variable in a directive path: %s" % inv["directives"])
+    if not inv["directives"]:
+        sys.exit("no setup_directive calls found in install.sh -- extraction is broken")
+    inv["installer_hooks"] = []
+    if "UserPromptSubmit" in ins:
+        inv["installer_hooks"].append(("UserPromptSubmit", "routing re-injection"))
+    if "update-reminder.sh" in ins:
+        inv["installer_hooks"].append(("SessionStart", "update-reminder.sh"))
+    inv["optin_hooks"] = []
+    if (ROOT / "scripts/verified-done-hook.py").exists():
+        inv["optin_hooks"].append(("Stop + PostToolUse", "verified-done-hook.py"))
+    ci = (ROOT / "scripts/check-invariants.sh").read_text(encoding="utf-8")
+    nums = re.findall(r'(?m)^echo "\[(\d+)/(\d+)\]', ci)
+    if not nums:
+        sys.exit("no '[N/M]' check banners in check-invariants.sh -- extraction is broken")
+    inv["invariants"] = int(nums[0][1])
+    if len(nums) != inv["invariants"]:
+        sys.exit("check-invariants.sh prints %d banners but declares %d checks"
+                 % (len(nums), inv["invariants"]))
+    wf = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    inv["ci_jobs"] = [re.sub(r"\$\{\{\s*matrix\.\w+\s*\}\}", "per OS", n)
+                      for _, n in re.findall(r"(?m)^  ([a-z0-9_-]+):\n    name: (.+)$", wf)]
+    return inv
+
+
+def page_surfaces(inv):
+    """Four columns and no edges: which command names which is written inside each box."""
+    col = {"cmd": 40, "hook": 520, "reach": 1000, "gate": 1480}
+    w = 420
+    c = [cell("note",
+              "Page 7 — what wraps the skills: the slash commands, the hooks that run them "
+              "or remind, where each agent reads the library from, and the gates that keep "
+              "it honest. Every box is read out of the tree (commands/, hooks/hooks.json, "
+              "scripts/install.sh, check-invariants.sh, .github/workflows/ci.yml); the run "
+              "aborts if an installer path it expects has moved.",
+              NOTE, 40, 20, 1860, 70)]
+    heads = [("cmd", "Slash commands  (%d)" % len(inv["commands"])),
+             ("hook", "Hooks"), ("reach", "Agent reach"),
+             ("gate", "Gates  (%d invariants)" % inv["invariants"])]
+    for k, title in heads:
+        c.append(cell("h_" + k, title, BOX + "fillColor=#000000;fontColor=#ffffff;"
+                      "strokeColor=#000000;fontStyle=1;fontSize=13;", col[k], 110, w, 36))
+    y = 170
+    names_of = collections.defaultdict(list)
+    for a, b in inv["cmd_edges"]:
+        names_of[a].append("/" + b)
+    for name, desc in inv["commands"]:
+        short = desc.split(" — ")[0].split(". ")[0][:150]
+        refs = ("\nnames: " + ", ".join(sorted(names_of[name]))) if names_of[name] else ""
+        c.append(cell("cmd_" + slug(name), "/%s\n%s%s" % (name, short, refs),
+                      BOX + "fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=6;",
+                      col["cmd"], y, w, 84))
+        y += 104
+    # No edges: 7 cross-references between boxes stacked in one column rendered as a single
+    # trunk down the right side (seen 2026-10-07) -- the page-2 lesson again. Text instead.
+    y = 170
+    groups = [("installed by the plugin (hooks/hooks.json)", inv["plugin_hooks"], "#dae8fc", "#6c8ebf"),
+              ("written by install.sh --routing", inv["installer_hooks"], "#d5e8d4", "#82b366"),
+              ("opt-in, Claude Code only", inv["optin_hooks"], "#fff2cc", "#d6b656")]
+    for gi, (label, items, fill, stroke) in enumerate(groups):
+        h = 40 + 30 * max(1, len(items))
+        gid = "hg%d" % gi
+        c.append(cell(gid, label, "swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;"
+                      "startSize=26;fillColor=%s;strokeColor=%s;" % (fill, stroke), col["hook"], y, w, h))
+        for ii, (ev, what) in enumerate(items):
+            c.append(cell("%s_%d" % (gid, ii), "%s · %s" % (ev, what),
+                          BOX + "fillColor=#ffffff;strokeColor=%s;" % stroke, 10, 30 + 30 * ii,
+                          w - 20, 24, parent=gid))
+        y += h + 24
+    y = 170
+    h = 40 + 30 * len(inv["skill_dirs"])
+    c.append(cell("rs", "skills directories (install.sh --target all)",
+                  "swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;"
+                  "fillColor=#ffe6cc;strokeColor=#d79b00;", col["reach"], y, w, h))
+    for i, (lbl, path) in enumerate(inv["skill_dirs"]):
+        c.append(cell("rs_%d" % i, "%s  →  %s" % (lbl, path),
+                      BOX + "fillColor=#ffffff;strokeColor=#d79b00;", 10, 30 + 30 * i, w - 20, 24,
+                      parent="rs"))
+    y += h + 24
+    h = 40 + 30 * len(inv["directives"])
+    c.append(cell("rd", "always-on directive (install.sh --routing)",
+                  "swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;"
+                  "fillColor=#ffe6cc;strokeColor=#d79b00;", col["reach"], y, w, h))
+    for i, d in enumerate(inv["directives"]):
+        c.append(cell("rd_%d" % i, d, BOX + "fillColor=#ffffff;strokeColor=#d79b00;",
+                      10, 30 + 30 * i, w - 20, 24, parent="rd"))
+    y = 170
+    h = 40 + 30 * len(inv["ci_jobs"])
+    c.append(cell("gc", "CI jobs (.github/workflows/ci.yml)",
+                  "swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;"
+                  "fillColor=#f8cecc;strokeColor=#b85450;", col["gate"], y, w, h))
+    for i, j in enumerate(inv["ci_jobs"]):
+        c.append(cell("gc_%d" % i, j, BOX + "fillColor=#ffffff;strokeColor=#b85450;",
+                      10, 30 + 30 * i, w - 20, 24, parent="gc"))
+    y += h + 24
+    c.append(cell("gi", "scripts/check-invariants.sh — %d checks, each with a known-bad probe "
+                  "or a pinned reason it has none; scripts/check-negative-controls.sh proves "
+                  "they still fail. Run the harness for its live total; a static count of "
+                  "probes under-reads." % inv["invariants"],
+                  NOTE, col["gate"], y, w, 110))
+    return page("p7", "7 · Commands, hooks & agents", c, 1960, 760)
+
+
 NOTE = ("shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;"
         "fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;")
 BOX = "rounded=1;whiteSpace=wrap;html=1;fontSize=11;"
 
 
-def page_router():
+def page_router(n_rules, n_domain):
     c = [cell("note",
-              "Page 1 — the router reaches a skill by its DESCRIPTION.\n\n"
-              "Only the frontmatter `description` auto-loads; it is the entire trigger "
-              "classifier, and the router BODY is inert until the Skill tool fires. So "
-              "these edges are not links — they are a classifier choosing among 41 "
-              "competing descriptions.\n\n"
-              "Measured 2026-09-20: correct=0.900 on the 10-case golden set, 1.000 on "
-              "the 5-case SSO set.",
+              ("Page 1 — the router reaches a skill by its DESCRIPTION.\n\n"
+               "Only the frontmatter `description` auto-loads; it is the entire trigger "
+               "classifier, and the router BODY is inert until the Skill tool fires. So "
+               "these edges are not links — they are a classifier choosing among %d "
+               "competing descriptions.\n\n"
+               "Measured 2026-09-20: correct=0.900 on the 10-case golden set, 1.000 on "
+               "the 5-case SSO set." % n_domain),
               NOTE, 40, 30, 620, 170)]
     c.append(cell("router",
-                  "sota  (router)\nrouting table · 21 cross-cutting rules\n"
-                  "BUILD mode · AUDIT mode",
+                  ("sota  (router)\nrouting table · %d cross-cutting rules\n"
+                  "BUILD mode · AUDIT mode" % n_rules),
                   BOX + "fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;"
                         "fontStyle=1;fontSize=13;",
                   1050, 120, 340, 100))
@@ -441,12 +615,12 @@ def page_rules(rules):
     not tell which rule reached which skill. The information is 'rule N names X, Y, Z', so
     the readable form is the row itself."""
     c = [cell("note",
-              "Page 2 — the 21 cross-cutting routing rules, verbatim from "
-              "skills/sota/SKILL.md.\n\n"
-              "These are the explicit hand-offs: which skill wins when two look plausible. "
-              "The right column lists exactly the skills each rule NAMES — drawn as text "
-              "rather than as edges, because 63 edges between two columns render as one "
-              "unreadable trunk.",
+              ("Page 2 — the %d cross-cutting routing rules, verbatim from "
+               "skills/sota/SKILL.md.\n\n"
+               "These are the explicit hand-offs: which skill wins when two look plausible. "
+               "The right column lists exactly the skills each rule NAMES — drawn as text "
+               "rather than as edges, because 63 edges between two columns render as one "
+               "unreadable trunk." % len(rules)),
               NOTE, 40, 20, 700, 120)]
     y = 180
     c.append(cell("hdr_r", "rule",
