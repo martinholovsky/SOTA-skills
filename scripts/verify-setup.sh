@@ -354,8 +354,19 @@ done
 if [ $((n_real + n_linked)) -eq 0 ]; then
   row "N/A" "1e. install is live" "no personal/project sota skills to inspect (plugin installs update themselves)"
 elif [ "$n_real" -gt 0 ]; then
+  # install.sh stamps a copy with the release it came from (.sota-install); say how
+  # far behind the checkout it is when the stamp exists, since "a copy" alone does not.
+  stale_note=""
+  cur_v=""; [ -n "$LIB_ROOT" ] && [ -r "$LIB_ROOT/VERSION" ] && cur_v=$(tr -d '[:space:]' < "$LIB_ROOT/VERSION")
+  for d in "$CLAUDE_HOME/skills" "$HOME/.agents/skills" ".claude/skills"; do
+    [ -r "$d/.sota-install" ] || continue
+    st_v=$(sed -n 's/^version=//p' "$d/.sota-install" | head -n 1)
+    if [ -n "$cur_v" ] && [ -n "$st_v" ] && [ "$st_v" != "$cur_v" ]; then
+      stale_note="$stale_note $d is a copy of $st_v, checkout is $cur_v;"
+    fi
+  done
   row "PARTIAL" "1e. install is live" \
-    "$n_real of $((n_real + n_linked)) sota skill dirs are COPIES, not links — they will not update on git pull. Deliberate --copy? fine. Otherwise (Windows: enable Developer Mode) re-run scripts/install.sh"
+    "$n_real of $((n_real + n_linked)) sota skill dirs are COPIES, not links — they will not update on git pull.${stale_note:+ STALE:$stale_note} Deliberate --copy? fine. Otherwise (Windows: enable Developer Mode) re-run scripts/install.sh"
 else
   row "PASS" "1e. install is live" "all $n_linked sota skill dirs are symlinks — git pull updates them"
 fi
@@ -374,8 +385,26 @@ oa_found=""
 [ -d "$HOME/.gemini" ]                   && oa_found="$oa_found Gemini"
 oa_found="${oa_found# }"
 oa_dir="$HOME/.agents/skills"
+# Antigravity reads neither ~/.claude/skills nor ~/.agents/skills globally: its 2.0 app
+# and IDE read ~/.gemini/config/skills (legacy ~/.gemini/antigravity/skills), its CLI
+# ~/.gemini/antigravity-cli/skills (antigravity.google/docs/skills, fetched 2026-10-06).
+# Each surface whose home exists must reach the router through its OWN path.
+ag_have=""; ag_lack=""
+if [ -d "$HOME/.gemini/config" ] || [ -d "$HOME/.gemini/antigravity" ]; then
+  if [ -e "$HOME/.gemini/config/skills/sota" ] || [ -e "$HOME/.gemini/antigravity/skills/sota" ]; then
+    ag_have="Antigravity app/IDE"
+  else ag_lack="Antigravity app/IDE (~/.gemini/config/skills)"; fi
+fi
+if [ -d "$HOME/.gemini/antigravity-cli" ]; then
+  if [ -e "$HOME/.gemini/antigravity-cli/skills/sota" ]; then
+    ag_have="${ag_have:+$ag_have, }Antigravity CLI"
+  else ag_lack="${ag_lack:+$ag_lack, }Antigravity CLI (~/.gemini/antigravity-cli/skills)"; fi
+fi
 if [ -z "$oa_found" ]; then
-  row "N/A" "1f. other agents reach skills" "no Copilot CLI / Codex / Gemini CLI home found (~/.copilot, ~/.codex, ~/.gemini)"
+  row "N/A" "1f. other agents reach skills" "no Copilot CLI / Codex / Gemini CLI / Antigravity home found (~/.copilot, ~/.codex, ~/.gemini)"
+elif [ -n "$ag_lack" ]; then
+  row "PARTIAL" "1f. other agents reach skills" \
+    "no sota router where $ag_lack looks — Antigravity reads neither ~/.claude/skills nor ~/.agents/skills; run scripts/install.sh --target all"
 else
   oa_n=0; oa_missing=""
   if [ -n "$LIB_ROOT" ] && [ -d "$LIB_ROOT/skills" ]; then
@@ -392,7 +421,7 @@ else
     row "PARTIAL" "1f. other agents reach skills" \
       "found $oa_found; $oa_n of $n_src skills in $oa_dir — missing: $oa_missing; re-run scripts/install.sh --target all"
   else
-    row "PASS" "1f. other agents reach skills" "found $oa_found; all $oa_n skills in $oa_dir"
+    row "PASS" "1f. other agents reach skills" "found $oa_found; all $oa_n skills in $oa_dir${ag_have:+; router reachable for $ag_have}"
   fi
 fi
 

@@ -22,7 +22,7 @@ to defect-avoidance between February and June 2026, and it is stated rather than
 
 | Dimension | What it tests | Clean lift |
 |---|---|---|
-| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) `sonnet-4.6` · **+0.44** `gpt-5.1` · **+0.38** (0.62 → 1.00) on **`sonnet-5`, the current flagship** — it did not expire |
+| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) `sonnet-4.6` · **+0.44** `gpt-5.1` · **+0.38** (0.62 → 1.00) on **`sonnet-5`, the current flagship** — it did not expire · small models **+0.47** `haiku-4.5`, **+0.44** `gemini-3.8-flash` ([SMALL-MODEL](../evals/results/2026-10-07/SMALL-MODEL.md)) |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) — `sonnet-4.6` · **+0.30** (0.69 → 0.99) on **`sonnet-5`** with that same set once aged · **+0.67** (0.33 → 1.00) on a set **re-authored 2026-08-25** — the *set* ages, not the library |
 | **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) on `sonnet-4.6`; **+0.00** on `gpt-5.1`, whose bare arm already scores 1.00 |
 | **Prompt independence** | the same tasks under a **competing** prompt — the user's own words arguing against the rule (6 tasks) | **+0.509** (0.491 → 1.000) on `sonnet-4.6`, 3 samples; the guided arm was perfect in **18 of 18** runs. The lift *grows* with the pressure: +0.083 supportive → +0.236 neutral → **+0.509 competing** |
@@ -189,7 +189,7 @@ near-zero variance while the unguided arm both scores lower and wobbles.**
 Completeness holds at **0.59 → 0.98 (+0.39)**, a two-run mean with the with-arm at
 ±0.004 between runs (re-verified 2026-07-20/21 against the workflow that actually
 *ships*, after the eval's `BUILD_WORKFLOW` mirror was found drifted; see
-[MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); and it is **not sonnet-specific — three model families from three labs all show a positive lift: `openai/gpt-5.1` +0.44 ([CROSS-MODEL](../evals/results/2026-07-22/CROSS-MODEL.md)) and `google/gemini-3.1-pro-preview` 0.38 → 0.96, **+0.58 at 3 samples/arm** ([CROSS-FAMILY-GEMINI](../evals/results/2026-08-13/CROSS-FAMILY-GEMINI.md))**. The lift tracks the *baseline*, not the lab: the weaker the unguided arm, the larger the gain. Routing sits at **0.90 → 1.00 (+0.10)**,
+[MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); and it is **not sonnet-specific — three model families from three labs all show a positive lift: `openai/gpt-5.1` +0.44 ([CROSS-MODEL](../evals/results/2026-07-22/CROSS-MODEL.md)) and `google/gemini-3.1-pro-preview` 0.38 → 0.96, **+0.58 at 3 samples/arm** ([CROSS-FAMILY-GEMINI](../evals/results/2026-08-13/CROSS-FAMILY-GEMINI.md))**. The lift tracks the *baseline*, not the lab: the weaker the unguided arm, the larger the gain — and it holds **below the frontier**: `claude-haiku-4.5` 0.45 → 0.92 (+0.47) and `gemini-3.8-flash` 0.53 → 0.97 (+0.44, one sample), with routing recall 0.925 / 0.883 against the frontier's 0.975 ([SMALL-MODEL](../evals/results/2026-10-07/SMALL-MODEL.md), 2026-10-07). Routing sits at **0.90 → 1.00 (+0.10)**,
 with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00 — both
 re-measured on `claude-sonnet-5` 2026-08-25 at **+0.13** and **+0.30**
 ([ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md)). The

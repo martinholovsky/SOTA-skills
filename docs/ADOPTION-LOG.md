@@ -7639,6 +7639,40 @@ it is the reason the cross-cutting items get re-checked at all.
 a behaviour question no read can settle; the measurement would be an audit eval run against both
 versions of the command, which costs live calls and was not run.
 
+## 2026-10-06 — an outside review (Gemini): multi-agent installs, language gaps, an MCP router
+
+**Source:** a model-written review of this repository and a follow-up "how to make it state of
+the art" proposal, pasted by the operator. Every falsifiable claim was checked against this tree
+or against vendor documentation fetched 2026-10-06 (antigravity.google/docs/skills and /rules,
+agentskills.io, Copilot/VS Code/Cursor/Codex/Gemini CLI docs, Git for Windows'
+`symbolic-links.md`, the MCP spec). Operator decision 2026-10-06: build items 1–3 and 5 below,
+defer the MCP router; a dedicated Swift skill is agreed in principle and filed as a decision.
+
+| # | Claim or proposal | Verdict | Reason / where it landed |
+|---|---|---|---|
+| 1 | "The installer misses Antigravity" | **adopted** | True for skills — Antigravity reads `~/.gemini/config/skills` / `~/.gemini/antigravity-cli/skills`, not `~/.agents/skills`. False for rules: Antigravity also reads `~/.gemini/GEMINI.md`, which was already mirrored. `install.sh`, verify-setup 1f + probe, MULTI-AGENT.md · unreleased |
+| 2 | "Agents told to 'consult the router skill' with no path will hallucinate" | **adopted with a correction** | The gap is real only for an agent with no skills loader — Gemini CLI, Copilot, Cursor, Codex and Antigravity all load SKILL.md folders. The directive now ends with the router's absolute path · unreleased |
+| 3 | "No Swift, Dart, Elixir, Scala, Haskell" | **refuted in part** | Swift is covered (`sota-mobile` rules/07, any target); Scala/Elixir are declared non-goals (README "Coverage & non-goals", 2026-07-04). Dart has no language rules file; Haskell and Objective-C are absent. **The operator's point stands: Swift filed under mobile is misplaced** for server-side Swift — filed as a decision (ROADMAP) |
+| 4 | "Progressive disclosure is brittle on weaker models" | **open — measure it** | The lift is measured on three frontier families and is *largest* where the baseline is lowest, but no small model was ever run. Small-model completeness + routing evals planned |
+| 5 | "Windows copies rot silently" | **adopted with a correction** | Not silent: the install warns, and verify-setup 1e reports copies. Missed by the review: the update reminder reads the checkout's `VERSION`, so after a pull it reports the new version while a copy stays old. Plan: directory junctions first (Git for Windows: "Directory junctions can be created by non-administrator users by default"), a version stamp on any copy |
+| 6 | Proposal: an MCP server that routes (`get_sota_guidance`) | **deferred** | A local router would classify by keyword where the host's model routes on meaning (a PowerShell task routed correctly with 0 descriptions naming it, 2026-09-14); a model that skips reading files skips the tool too; Copilot's cloud agent supports MCP **tools only**. The directive's path line covers the hosts actually left out. **DEFERRED** row below |
+| 7 | Proposal: compile skills into each agent's native format | **rejected** | Agent Skills (SKILL.md) is the shared format — agentskills.io lists ~45 adopters; a compiled copy per vendor is drift by construction |
+| 8 | Proposal: workspace rules under `.gemini/rules/` | **rejected: false premise** | Not in Antigravity's docs; its workspace rules are `.agents/rules/*.md`, and `--project` already lands in `.agents/skills` |
+| 9 | Proposal: the agent submits a filled checklist to a validation script | **rejected** | Validates an attestation, not the work — the 2026-08-13 Harbor run caught two agents narrating a diff they never ran. The opt-in `scripts/verified-done-hook.py` (v1.47.0) already enforces the observable half: no "done" on a changed tree without a passing verification on that tree |
+| 10 | Proposal: small-model evals | **adopted** | Planned: completeness + routing on a small Claude and a small Gemini model |
+| 11 | Proposal: a router rule for languages with no skill | **adopted** (raised in the response, not the review) | Planned |
+
+- **DEFERRED — a routing MCP server; revisit trigger: a measured routing failure on a host that cannot load SKILL.md folders, which the directive's router-path line does not fix, or the small-model eval showing skills read-skipping that a tool call would prevent.**
+## 2026-10-07 — the outside review's claim 4, measured: small models route and lift
+
+Claim 4 of the 2026-10-06 outside review (*"brittle for any LLM other than the absolute
+frontier"*) was recorded as **open — measure it**. Measured the next day, pre-registered, $7.24
+([SMALL-MODEL](../evals/results/2026-10-07/SMALL-MODEL.md)): routing recall 0.925
+(`claude-haiku-4.5`) and 0.883 (`gemini-3.8-flash`) against the frontier's 0.975; completeness
+lift +0.47 and +0.44, every case positive on both. **Verdict: refuted for the two instruments that
+exist** — both paste text, so whether a small *agent* opens the router and the right `rules/` file
+with its own tools remains unmeasured; that residual belongs to the agentic harness in the
+separate `sota-agent-evals` repository.
 ## 2026-10-07 — a router rule for languages with no skill; Swift's placement filed as a decision
 
 From the response to the 2026-10-06 outside review (row 11 there, and claim 3). **Adopted:** the
