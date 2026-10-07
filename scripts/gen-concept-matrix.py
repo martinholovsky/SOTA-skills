@@ -463,7 +463,7 @@ def main():
     ap.add_argument("--assert-format", action="store_true",
                     help="exit 1 if any skill's rules-file Audit checklist is not tickable")
     ap.add_argument("--assert-universal", action="store_true",
-                    help="exit 1 if any UNIVERSAL_FLOOR concept is not present in all 9")
+                    help="exit 1 if any UNIVERSAL_FLOOR concept is not present in every registered language")
     ap.add_argument("--explain", nargs=2, metavar=("CONCEPT", "LANG"),
                     help="print the items that light CONCEPT for LANG (label, e.g. .NET, "
                          "or skill name) and the substring each matched, then exit. "
@@ -597,7 +597,7 @@ def main():
             print("Either restore it, or -- if it is now delegated -- remove it from")
             print("UNIVERSAL_FLOOR and record why in docs/LANGUAGE-TIER.md's triage ledger.")
             return 1
-        print("  ok (all %d still present in 9/9)" % len(UNIVERSAL_FLOOR))
+        print("  ok (all %d still present in %d/%d)" % (len(UNIVERSAL_FLOOR), len(E.LANGS), len(E.LANGS)))
 
     if args.min_coverage and worst < args.min_coverage:
         print("\nFAIL: lowest coverage %.1f%% is below the required %.1f%%"

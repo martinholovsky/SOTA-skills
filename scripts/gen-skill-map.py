@@ -55,7 +55,7 @@ FAMILIES = [
     ("Languages", "#f8cecc", "#b85450", [
         "sota-rust", "sota-golang", "sota-c-cpp", "sota-jvm", "sota-python",
         "sota-javascript-typescript", "sota-dotnet", "sota-php", "sota-ruby",
-        "sota-shell-scripting"]),
+        "sota-swift", "sota-shell-scripting"]),
 ]
 
 
@@ -64,10 +64,10 @@ FAMILIES = [
 # skill must appear below, or the run aborts. A file added without a topic would otherwise
 # vanish from the matrix silently, which is the exact failure this map exists to avoid.
 LANGS = ["rust", "golang", "c-cpp", "jvm", "python", "javascript-typescript",
-         "dotnet", "php", "ruby"]
+         "dotnet", "php", "ruby", "swift"]
 LANG_LABEL = {"javascript-typescript": "js/ts", "c-cpp": "c/c++", "dotnet": ".NET",
               "golang": "go", "python": "python", "rust": "rust", "jvm": "jvm",
-              "php": "php", "ruby": "ruby"}
+              "php": "php", "ruby": "ruby", "swift": "swift"}
 TOPIC_ORDER = ["Idioms / baseline", "API / design", "Errors", "Typing", "Concurrency",
                "Memory / UB", "Security", "Web / HTTP", "Performance",
                "Tooling / CI / supply chain", "Testing"]
