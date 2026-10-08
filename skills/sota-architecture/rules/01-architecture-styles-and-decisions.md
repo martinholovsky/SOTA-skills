@@ -49,7 +49,41 @@ package and/or published events). Cross-module calls go through that surface.
 Cross-module data access goes through that surface — never through the other
 module's tables.
 
-## 3. Choose style by problem shape, not fashion
+## 2a. Monorepos: the build enforces the boundary, and CI selects honestly
+
+One repository holding many packages makes §2 easier to break: every package can reach every
+other. Facts below were read in each tool's own docs on 2026-10-07; re-check before relying
+on one.
+
+- **Prefer a boundary the build refuses to cross over one a linter reports.** Bazel's default
+  visibility is `//visibility:private`, and a target *"will fail to build during the analysis
+  phase if it violates the visibility of one of its dependencies"*. The docs advise against
+  `default_visibility` public. Nx's `@nx/enforce-module-boundaries` (tag `depConstraints`) is a
+  **lint** error, so it enforces only where lint gates CI. Turborepo's `turbo boundaries` (2.4+)
+  is still **experimental**, and it checks imports outside a package or of undeclared
+  dependencies, not architectural tags.
+- **Phantom dependencies are a boundary leak.** pnpm is *"semistrict"* by default: your code
+  sees only declared dependencies. `shamefully-hoist` / `publicHoistPattern` give application
+  code *"access to phantom dependencies"* again. `workspace:` refuses to resolve anything but a
+  local package.
+- **Ownership is enforced only when it is required.** CODEOWNERS lives in `.github/`, the root
+  or `docs/`, and the first location found wins. The *last* matching pattern takes precedence,
+  and a line with invalid syntax is skipped silently. Owners are merely *requested* unless
+  branch protection or a ruleset has "Require review from Code Owners". Own the CODEOWNERS file
+  itself.
+- **One lockfile per workspace, and know which workspace files to commit.** A Cargo workspace
+  shares one `Cargo.lock` at its root. Go: *"It is generally inadvisable to commit go.work
+  files"*, because CI may *"test the wrong versions of a module's dependencies"*. The exception
+  is modules developed exclusively together, and that should be a recorded decision.
+- **Affected-only CI is a selection rule, so give it its inputs.** `nx affected` derives the
+  set from git plus the project graph; take the base SHA from the last successful run on `main`.
+  Nx marks **every** project affected when the lockfile changes, as a failsafe. Its
+  `sharedGlobals` input (toolchain and runtime versions, root config) is **empty by default**,
+  so a change there selects nothing until a team declares it. Turborepo's `--affected` treats a
+  too-shallow checkout as "all changed", and its global hash covers the root lockfile,
+  `globalDependencies` and `globalEnv`. A selection that misses a global input reads as a green
+  build that tested nothing (`sota-code-security` rules/11 §2.2).
+
 
 | Style | Wins when | Loses when |
 |---|---|---|
@@ -312,6 +346,12 @@ tied to a measurable symptom (incident class, lead-time drag, cost line).
 
 ## Audit checklist
 
+- [ ] **Monorepo boundaries are build-enforced or lint-gated (§2a)** — `grep -rnE 'default_visibility[[:space:]]*=[[:space:]]*\[[^]]*"//visibility:public"' --include=BUILD --include=BUILD.bazel .`
+      (a package defaulting to public) ; `grep -nE '^[[:space:]]*(shamefully-hoist[[:space:]]*=[[:space:]]*true|shamefullyHoist:[[:space:]]*true|public-?[hH]oist-?[pP]attern)' .npmrc pnpm-workspace.yaml 2>/dev/null`
+      (phantom dependencies re-opened) ; `git ls-files | grep -E '(^|/)go\.work(\.sum)?$'` (a committed `go.work` needs a recorded reason)
+- [ ] **Ownership and affected-only CI actually hold (§2a)** — `gh api repos/OWNER/REPO/branches/main/protection --jq .required_pull_request_reviews.require_code_owner_reviews`
+      (not `true`, or no ruleset doing it: CODEOWNERS only requests review) ; for `nx affected`, read `nx.json` `namedInputs.sharedGlobals`
+      (empty: a toolchain or root-config change selects no project)
 - [ ] **Every deferral with a "revisit if…" trigger names where the evidence accrues and
       who reads it** (§4b), and the trigger is stated so that some observation could close
       it. Probe: list every deferred entry, then ask when each was last checked and what

@@ -237,7 +237,21 @@ def rules_padding(n, exclude):
     return "\n\n---\nAdditional engineering standards (also loaded):\n\n" + body
 
 
-def gen_prompt(case, with_lib, pad=0, gate=True):
+# THE PLACEBO (2026-10-07, an outside review's "verbosity confounder"): is the lift the
+# library, or just being ASKED for more? This arm carries no library and no rubric
+# vocabulary -- only a generic order to ship production-complete code and self-review it.
+# If it closes most of the gap, the lift is mostly "asked"; if not, it is the rules.
+# Pre-registered in evals/results/2026-10-07/PLACEBO-PREREG.md; the wording is frozen there.
+PLACEBO_INSTRUCTION = (
+    "Write this as complete, production-ready code that a senior engineer would ship, not a "
+    "minimal example. Before finishing, review it for anything a real production deployment "
+    "of it would need, and add whatever is missing.\n\nTask: ")
+# Words that would leak the rubric into the placebo and turn it into a weak treatment arm.
+PLACEBO_FORBIDDEN = ("rate", "limit", "tls", "https", "hsts", "test", "log", "valid", "auth",
+                     "secret", "idempot", "timeout", "retry", "sql", "inject", "csrf", "hash")
+
+
+def gen_prompt(case, with_lib, pad=0, gate=True, placebo=False):
     """ROADMAP 32: `gate=False` drops BUILD_WORKFLOW -- the four-step build workflow whose
     step 4 is the terminal self-audit re-read. Item 25 padded an arm that ALSO ran step 4,
     so its -0.01 says "lean plus a terminal re-read is robust to competing context" and
@@ -251,6 +265,8 @@ def gen_prompt(case, with_lib, pad=0, gate=True):
         workflow = BUILD_WORKFLOW if gate else "\n\n"
         return (f"ALWAYS-APPLY OPERATING PRINCIPLE (from the router):\n\n{p5}\n\n"
                 f"---\nApply the following engineering standards:\n\n{ctx}{workflow}{case['task']}")
+    if placebo:
+        return PLACEBO_INSTRUCTION + case["task"]
     return case["task"]
 
 
@@ -350,9 +366,25 @@ def main():
                          "measured lean-plus-gate and read it as lean; this separates them. "
                          "Requires --pad-rules, and asserts the ablation actually changed the "
                          "prompt before spending anything.")
+    ap.add_argument("--placebo-arm", action="store_true",
+                    help="add an arm with NO library and a generic 'ship production-complete code, "
+                         "then self-review' instruction (PLACEBO_INSTRUCTION): separates the "
+                         "library's lift from merely asking for more")
+    ap.add_argument("--placebo-only", action="store_true",
+                    help="run ONLY the placebo arm (cheapest); compare its mean against a recorded "
+                         "run at the same build model, judge, samples and temp")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     _assert_mirror_fresh()   # never measure a workflow that isn't shipped
+    if a.placebo_arm or a.placebo_only:
+        leaked = [w for w in PLACEBO_FORBIDDEN if w in PLACEBO_INSTRUCTION.lower()]
+        if leaked:
+            sys.exit(f"FAIL: PLACEBO_INSTRUCTION names rubric vocabulary {leaked} -- it would be a "
+                     "weak treatment arm, not a placebo.")
+        _probe = load_cases()[0]
+        if gen_prompt(_probe, False, placebo=True) == gen_prompt(_probe, False):
+            sys.exit("FAIL: the placebo prompt is identical to the bare arm's -- it measures nothing.")
+        print(f"placebo asserted: {len(PLACEBO_INSTRUCTION)} chars, no rubric vocabulary.\n")
     if a.no_gate_arm:
         # `evals/README.md`: guards ABORT rather than warn, and a scripted edit is
         # asserted to have landed. run-prompt-independence.py refuses when no case's
@@ -378,22 +410,29 @@ def main():
     note_work(len(cases), "cases")
     print(f"build={a.build_model}  judge={a.judge_model}  cases={len(cases)}  "
           f"samples={a.samples}  temp={a.temp}  (clean API, blind judge)\n")
-    results, tot_wo, tot_wl, tot_wp, tot_ng = {}, 0.0, 0.0, 0.0, 0.0
+    results, tot_wo, tot_wl, tot_wp, tot_ng, tot_pl = {}, 0.0, 0.0, 0.0, 0.0, 0.0
     for c in cases:
         row = {"rubric_n": len(c["rubric"]), "arms": {}}
-        arms = [(False, 0, True), (True, 0, True)] + ([(True, a.pad_rules, True)] if a.pad_rules else [])
+        arms = [(False, 0, True, False), (True, 0, True, False)] + (
+            [(True, a.pad_rules, True, False)] if a.pad_rules else [])
         if a.no_gate_arm:
-            arms.append((True, a.pad_rules, False))
-        for with_lib, pad, gate in arms:
+            arms.append((True, a.pad_rules, False, False))
+        if a.placebo_arm:
+            arms.append((False, 0, True, True))
+        if a.placebo_only:
+            arms = [(False, 0, True, True)]
+        for with_lib, pad, gate, placebo in arms:
             arm = ("with+pad" if pad else "with") if with_lib else "without"
             if not gate:
                 arm = "pad-nogate"
+            if placebo:
+                arm = "placebo"
             recalls, last_present, last_art = [], [], ""
             for s in range(a.samples):
                 print(f"  {c['id']:16s} {arm:8s} generating… (sample {s+1}/{a.samples})", flush=True)
                 # 32k: the self-audit with-arm emits substantially longer output;
                 # 16k truncated tests/logging off the end and scored them absent.
-                art = call(a.build_model, gen_prompt(c, with_lib, pad, gate), k,
+                art = call(a.build_model, gen_prompt(c, with_lib, pad, gate, placebo), k,
                            max_tokens=a.max_tokens, temp=a.temp)
                 verdict = judge(art, c["rubric"], a.judge_model, k)
                 last_present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
@@ -405,6 +444,13 @@ def main():
             row["arms"][arm] = {"recall": recall, "recalls": recalls, "present": last_present,
                                 "missing": [r["id"] for r in c["rubric"] if r["id"] not in last_present],
                                 "artifact": last_art}
+        if "placebo" in row["arms"]:
+            tot_pl += row["arms"]["placebo"]["recall"]
+        if a.placebo_only:
+            results[c["id"]] = row
+            print(f"{c['id']:16s} placebo={row['arms']['placebo']['recall']:.2f}   "
+                  f"placebo-missing: {', '.join(row['arms']['placebo']['missing']) or '-'}")
+            continue
         wo = row["arms"]["without"]["recall"]
         wl = row["arms"]["with"]["recall"]
         tot_wo += wo
@@ -420,8 +466,15 @@ def main():
         print(f"{c['id']:16s} without={wo:.2f}  with={wl:.2f}  lift={wl-wo:+.2f}{pad_txt}   "
               f"without-missing: {', '.join(row['arms']['without']['missing']) or '-'}")
     n = len(cases)
-    print(f"\nMEAN completeness  without={tot_wo/n:.2f}  with={tot_wl/n:.2f}  "
-          f"LIFT={((tot_wl-tot_wo)/n):+.2f}")
+    if a.placebo_only:
+        print(f"\nMEAN completeness  placebo={tot_pl/n:.2f}  (placebo-only run: compare against a "
+              "recorded run at the same build model, judge, samples and temp)")
+    else:
+        print(f"\nMEAN completeness  without={tot_wo/n:.2f}  with={tot_wl/n:.2f}  "
+              f"LIFT={((tot_wl-tot_wo)/n):+.2f}")
+    if a.placebo_arm:
+        print(f"MEAN placebo={tot_pl/n:.2f}  PLACEBO-LIFT={((tot_pl-tot_wo)/n):+.2f} (vs without)  "
+              f"LIBRARY-OVER-PLACEBO={((tot_wl-tot_pl)/n):+.2f}")
     if a.pad_rules:
         # The question ROADMAP 25 asks: does competing guidance cost rule APPLICATION?
         # A negative pad-delta is the load-lean thesis showing up as a number; ~0.00 says
@@ -444,6 +497,8 @@ def main():
                              "samples": a.samples, "temp": a.temp,
                              "pad_rules": a.pad_rules,
                              "no_gate_arm": a.no_gate_arm,
+                             "placebo_arm": a.placebo_arm, "placebo_only": a.placebo_only,
+                             "placebo_instruction": PLACEBO_INSTRUCTION if (a.placebo_arm or a.placebo_only) else None,
                              "router_build_sha": ROUTER_BUILD_SHA},
                    **scrub_secrets(results)}
         json.dump(out_obj, open(a.out, "w"), indent=1)

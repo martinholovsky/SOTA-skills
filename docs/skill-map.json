@@ -1300,6 +1300,15 @@
     },
     {
       "from": "sota-architecture",
+      "to": "sota-code-security",
+      "weight": 3,
+      "targets": [
+        "rules/03 \u00a78",
+        "rules/11 \u00a72.2"
+      ]
+    },
+    {
+      "from": "sota-architecture",
       "to": "sota-identity-access",
       "weight": 3,
       "targets": [
@@ -1649,15 +1658,6 @@
       "targets": [
         "rules/05",
         "rules/07 \u00a77.2"
-      ]
-    },
-    {
-      "from": "sota-architecture",
-      "to": "sota-code-security",
-      "weight": 2,
-      "targets": [
-        "rules/03 \u00a78",
-        "rules/11 \u00a72.2"
       ]
     },
     {
