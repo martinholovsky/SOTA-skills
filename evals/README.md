@@ -394,9 +394,19 @@ context.
 
 The exceptions are hand-driven: several results (from 2026-07-30) used **live sub-agents**
 launched from a session, with their own failure modes — see
-[Live-agent A/B runs](#live-agent-ab-runs-learned-2026-07-30). There is no runner that drives
-an agent loop reproducibly. Building one (for example on the Claude Agent SDK) is what would
-let the completeness and audit numbers be re-measured in the condition the library is used in.
+[Live-agent A/B runs](#live-agent-ab-runs-learned-2026-07-30).
+
+**The reproducible agent-loop runner lives in its own repository: [sota-agent-evals](https://github.com/martinholovsky/sota-agent-evals).**
+Each run is a Claude Agent SDK session with tools, in four arms (bare, library, hook,
+library+hook) and a fresh config directory per run. It is scored by **hidden tests run in a
+container with no network**, plus whether the agent ended without a passing test after its
+last edit. No model judges anything. As of its last commit (2026-10-04):
+- v1 was compromised by a credit outage;
+- **v2 was clean (240/240) and every hypothesis read *not supported***, on near-saturated cases;
+- **v3** (20 change tasks on one multi-module app) is frozen and piloted, and the measurement
+  awaits budget.
+
+Its results are not on this repo's scoreboard; it publishes its own.
 
 ## How to run
 

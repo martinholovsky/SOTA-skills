@@ -48,6 +48,7 @@ set, so the instrument under-reads its own claim as it ages). Routing held.
 The lift is only "small" if you measure the easy dimensions. The two that matter
 most for *building* software are the two that are large:
 
+- **Measured since (2026-10-08): most of the completeness lift is the asking.** A no-library placebo told to "ship production-complete code" reaches 0.86 against the library's 0.98 ([PLACEBO](../evals/results/2026-10-07/PLACEBO.md)). The library's distinct share is the security controls a thorough-but-unguided model still omits: transport, rate limiting, CSRF, size limits, session invalidation.
 - **Completeness is the thesis.** Told to "build X" (an API, an upload handler, a
   webhook receiver, a password-reset flow…) with **no** security or logging cues,
   a base model embeds ~60% of best practices and *systematically* skips tests,
