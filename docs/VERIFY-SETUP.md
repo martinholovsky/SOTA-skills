@@ -111,7 +111,9 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    they answer different questions.
 2. Always-on routing: does `~/.claude/CLAUDE.md` contain a sota routing
    directive, and does `~/.claude/settings.json` define a `UserPromptSubmit`
-   hook whose command mentions sota? PASS = both. If only the CLAUDE.md
+   hook whose command mentions sota — **or is the sota-skills plugin installed, whose own
+   `UserPromptSubmit` hook (`plugin-routing-hook.sh`) does the same unless
+   `SOTA_ROUTING_HOOK=off`**? PASS = both. If only the CLAUDE.md
    directive exists, say so — routing then depends on the model reading it
    rather than on a per-prompt injection.
 3. Stack profile: does `~/.claude/profiles/*.md` exist and resolve (not a

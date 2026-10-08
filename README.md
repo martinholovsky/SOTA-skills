@@ -1332,14 +1332,16 @@ session can know the window. Wire it up in `settings.json` (requires `jq`):
 
 ### Optional extras (for plugin users)
 
-The plugin installs the skills; it deliberately does **not** touch your global
-config or status line — plugins are sandboxed by design, so the imperative setup
-the clone installer does can't be automated. To match the clone experience, opt
-in to any of these (the scripts ship *with* the plugin, under its cache dir):
+The plugin installs the skills **and, since 2026-10-08, the always-on routing reminder** as its
+own `UserPromptSubmit` hook, on by default. Without it the skills were not used: across 166
+agent runs with every skill installed and no routing layer, the model invoked a SOTA skill
+**zero** times ([sota-agent-evals v3](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-08-v3/REPORT.md)).
+Turn it off with `SOTA_ROUTING_HOOK=off` (for example in `settings.json` `"env"`). If you also
+installed the installer's hook, the plugin's stays silent, so the reminder is never doubled.
 
-- **Always-on routing** — add the `UserPromptSubmit` hook from
-  [Always-on routing](#always-on-routing-recommended) so the skills apply without
-  trigger words.
+The plugin does **not** touch your global config or status line. To match the clone experience,
+opt in to any of these; the scripts ship *with* the plugin, under its cache dir:
+
 - **Status line** — point `settings.json` `statusLine` at the bundled
   `scripts/statusline.sh` (see [Status line](#status-line-optional)).
 - **Pre-commit gates** / **AGENTS.md** — run the bundled `scripts/init-gates.sh`

@@ -7828,3 +7828,17 @@ notes read 2026-10-08), and `sota-agent-evals` v3 (run 2026-10-08, pre-registere
 | §7's uncited "~10–15× a single chat" | **corrected** — the primary source (Anthropic's multi-agent research-system post) says about 4× for one agent and about 15× for multi-agent systems, against chats | `sota-llm-engineering` rules/04 §7 · unreleased |
 | v3: hidden_pass 1.00 in every arm; **library arms invoked 0 skills (0 of 166 since v2)** | **recorded; deferred** — revisit trigger: ROADMAP 72, an arm installed exactly as `install.sh` installs, with skill calls as the primary manipulation check. Until then, no agent-loop result says anything about the rules | README, `evals/README.md`, `docs/INDEX.md` · unreleased |
 
+## 2026-10-08 — acting on "0 of 166": the routing layer is load-bearing
+
+**Source:** the v3 manipulation-check finding above, plus two in-session listing probes ($0.19)
+that measured what the eval's library arm saw. In a fresh session the router through
+`sota-network-security` kept their descriptions; 16 skills from `sota-observability` on were
+name-only.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| Ship the routing reminder in the plugin, on by default, with an opt-out | **adopted** (operator decision 2026-10-08: on by default, opt out with `SOTA_ROUTING_HOOK=off`). The docs say plugin hooks *"merge with your user and project hooks"*. The text is read from `HOOK_CMD`, and the hook stays silent when the installer's hook is present | `hooks/hooks.json`, `scripts/plugin-routing-hook.sh`, `scripts/plugin-notice.sh`, README · unreleased |
+| Shrink every description to fit the default budget (~186 characters each) | **rejected** — routing recall was measured on the full descriptions, and the router is a budget-proof entry point instead | `docs/CONTEXT-MANAGEMENT.md` · unreleased |
+| verify-setup should name the skills that go dark | **adopted with a correction** — the proportional estimate contradicted the measurement (35 of 43 vs 16 of 42), so the row states the measurement and how to check a live session | `scripts/verify-setup.sh` 1b · unreleased |
+| (found while testing) check 1h aborts the whole script on an agent config without the MCP server | **adopted (defect fixed)**, with a probe that leaves such a file in place | `scripts/verify-setup.sh`, `scripts/check-negative-controls.sh` · unreleased |
+
