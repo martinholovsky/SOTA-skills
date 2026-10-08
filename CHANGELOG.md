@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The agent-loop evals have not yet tested the rules (ROADMAP 72).**
+  - `sota-agent-evals` v3 hit the ceiling (hidden_pass 1.00 in every arm).
+  - Its library arms invoked **0 skills: 0 of 166 library runs since v2**. Each run installs
+    the skills without the routing hook and directive that `install.sh` adds.
+  - README, `evals/README.md` and `docs/INDEX.md` now say so; they had said v3 "awaits budget".
+- **`sota-llm-engineering` rules/04 §7 is cited.** Token multiplication now quotes Anthropic's
+  measured 4× (one agent) and 15× (multi-agent). It also cites an exploratory MIT pilot (a
+  four-role committee at 6.6–7.3× one agent's tokens, no success gain, at ceiling) in place of
+  an uncited "~10–15×".
 - **Placebo result (ROADMAP 71 closed): most of the completeness lift is the asking, not all
   of it.** A pre-registered no-library arm told only to "ship production-complete code" reaches
   0.86 (without 0.58, with 0.98). Asking recovers 69%; the library adds +0.125, concentrated in

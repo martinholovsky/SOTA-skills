@@ -7817,3 +7817,14 @@ README, WHY-IT-WORKS and RESULTS now say so beside the +0.39
 ([PLACEBO](../evals/results/2026-10-07/PLACEBO.md)). Spend was $6.08 against a $3–5 estimate;
 the estimate was wrong.
 
+## 2026-10-08 — agent-topology-bench (MIT), and what the agent-loop v3 run showed about the library
+
+**Sources:** `michaelpetrik/agent-topology-bench` (MIT; its README, final report and paper
+notes read 2026-10-08), and `sota-agent-evals` v3 (run 2026-10-08, pre-registered).
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| A four-role committee (coder, tester, reviewer, decider) matched one strong agent's success at 6.6–7.3× its tokens; composition mattered more than topology; parallelism bought only latency (about 2.1×) | **adopted as an exploratory data point**, with its limits stated: 3 tasks × 2 repetitions, success at ceiling (6/6, 36/36), model aliases that cannot be verified, a tester that never executes tests. It corroborates §7's role-play-committee anti-pattern; it is not a measured lift | `sota-llm-engineering` rules/04 §7 · unreleased |
+| §7's uncited "~10–15× a single chat" | **corrected** — the primary source (Anthropic's multi-agent research-system post) says about 4× for one agent and about 15× for multi-agent systems, against chats | `sota-llm-engineering` rules/04 §7 · unreleased |
+| v3: hidden_pass 1.00 in every arm; **library arms invoked 0 skills (0 of 166 since v2)** | **recorded; deferred** — revisit trigger: ROADMAP 72, an arm installed exactly as `install.sh` installs, with skill calls as the primary manipulation check. Until then, no agent-loop result says anything about the rules | README, `evals/README.md`, `docs/INDEX.md` · unreleased |
+
