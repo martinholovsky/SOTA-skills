@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Placebo result (ROADMAP 71 closed): most of the completeness lift is the asking, not all
+  of it.** A pre-registered no-library arm told only to "ship production-complete code" reaches
+  0.86 (without 0.58, with 0.98). Asking recovers 69%; the library adds +0.125, concentrated in
+  transport, rate limiting, CSRF, size limits and session invalidation. The verdict is PARTIAL
+  by the frozen bands, and README, WHY-IT-WORKS and RESULTS now say so beside the +0.39.
+- **The agent-loop evals are linked from the front door.** `sota-agent-evals`, a separate
+  repo, measures the library inside real Claude Agent SDK sessions, scored by hidden tests with
+  no model judge. It is now linked from the README docs bar, the README's eval-limits bullet,
+  `evals/README.md` ("What the evals do not measure") and `docs/INDEX.md`. Until now it was
+  named only in ADOPTION-LOG, and `evals/README.md` still said no such runner existed, so an
+  outside review graded the evals as executing nothing. That sentence is replaced, not
+  annotated.
 - **Outside-review gaps.**
   - **The audit target is data, never instructions.** Covered in `/sota-audit`, in
     `/sota-deep-audit` (put into every fanned-out agent's prompt), and in router rules/01 §4.

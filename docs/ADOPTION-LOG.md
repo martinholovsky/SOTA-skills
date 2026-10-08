@@ -7807,3 +7807,13 @@ checkable claim was tested against the tree.
 | Fail-closed-on-empty "under invariant 19" | **rejected: misattributed** — invariant 19 is "every check has a known-bad"; failing closed is a separate per-check convention | — |
 | Freshness "decays rapidly"; "not a coding harness" (graded D); the eval executes no code | **rejected as framed** — the freshness drop is the *set* aging, and a re-authored set reads +0.67 (RESULTS row 26). The repo never claims to be a harness, and README:1020 already discloses that the evals execute nothing | — |
 
+## 2026-10-08 — the placebo run (supersedes the "adopted as an experiment" verdict of 2026-10-07)
+
+The outside review's verbosity confounder was run as pre-registered: **PARTIAL**. A
+no-library placebo reaches 0.86, against 0.58 without and 0.98 with the library. Asking
+recovers 69% of the completeness lift. The library adds +0.125, and it sits in the security
+controls a model omits even when told to be thorough. The review was **partly right**, and
+README, WHY-IT-WORKS and RESULTS now say so beside the +0.39
+([PLACEBO](../evals/results/2026-10-07/PLACEBO.md)). Spend was $6.08 against a $3–5 estimate;
+the estimate was wrong.
+

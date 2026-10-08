@@ -20,6 +20,7 @@ Same model, same task, library loaded vs. nothing.
 | Dimension | Without | With SOTA | Lift | Samples | Source |
 |---|---|---|---|---|---|
 | **Completeness** (7 build tasks, **all Python** — breadth rows below add Go, IaC, frontend) | 0.59 | **0.98** | **+0.39** | 2 runs × 3, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md); **re-measured 2026-09-23 against the current router: 0.58 → 0.98, +0.41, holds** ([RERUN](2026-09-23/COMPLETENESS-RERUN.md)) |
+| **Completeness — placebo arm** (no library; told only to ship production-complete code and self-review; pre-registered) | 0.58 | placebo **0.86** (with 0.98) | placebo **+0.28**; library over placebo **+0.125** — *partial*: asking recovers 69% | 3×, temp 0.7 (placebo run 2026-10-08, vs the recorded 2026-09-23 arms) | [PLACEBO](2026-10-07/PLACEBO.md) |
 | **Completeness — `claude-sonnet-5`** (current flagship, 2026-06): **holds** | 0.62 | **1.00** | **+0.38** | 1×, temp 0.0 | [SONNET-5](2026-08-21/COMPLETENESS-SONNET-5.md) |
 | **Freshness** (32 current-2026 facts) — `claude-sonnet-4.6` | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | **Freshness — `claude-sonnet-5`**, same set once **aged**: the set ages, not the library | 0.69 | **0.99** | **+0.30** | 3×, temp 0.7 | [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) |
