@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Agent-loop v4 measured (ROADMAP 72 closed, 73 opened).** The library was installed as
+  `install.sh` installs it, with skills plus the routing hook, directive and budget, on
+  `sonnet-5.5`.
+  - **The routing layer works:** 20/20 runs invoked a skill, against 0/166 without it.
+  - **Pass rates were at the ceiling** in both arms, so whether the rules help is still
+    unmeasured.
+  - **The chain stops at the router:** 3/20 went past it, and **0/20 read a rules file**.
+    ROADMAP 73 targets that depth, which a ceiling cannot hide ([v4 report](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-09-v4/REPORT.md)).
 - **The plugin now ships the routing reminder, on by default.** `hooks/hooks.json` gains a
   `UserPromptSubmit` hook (`scripts/plugin-routing-hook.sh`). Opt out with
   `SOTA_ROUTING_HOOK=off`.
