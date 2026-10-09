@@ -22,8 +22,7 @@ mkdir -p "$data" 2>/dev/null || true
 
 cat <<'MSG'
 [sota-skills plugin — first-run notice. Relay this to the user once, briefly, then continue with their request.]
-The SOTA engineering skills are installed and route automatically. A few extras are NOT enabled by the plugin (by design — a plugin can't change your global config or status line). Offer to set up any the user wants:
-  - Always-on routing reminder (a UserPromptSubmit hook) — applies the skills without trigger words.
+The SOTA engineering skills are installed, with a per-prompt routing reminder ON by default: without it, skills are rarely invoked (0 of 166 agent runs, 2026-10-08). Turn it off with SOTA_ROUTING_HOOK=off. A few extras are NOT enabled by the plugin (by design — a plugin does not edit your global config or status line). Offer to set up any the user wants:
   - Status line showing which skills were used this session.
   - Pre-commit gates for the current repo (scripts/init-gates.sh).
   - AGENTS.md so Codex/Copilot/Gemini/Cursor use the skills too (scripts/gen-agents-md.sh).

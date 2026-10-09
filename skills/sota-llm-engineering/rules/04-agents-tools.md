@@ -370,11 +370,11 @@ consequences:
 
 ## 7. Multi-agent: patterns and their real costs
 
-Multi-agent is tier 5 for a reason. Costs that proposals systematically
-ignore: token multiplication (each agent re-carries context — orchestrator+
-subagent systems commonly burn ~10–15× a single chat's tokens), inter-agent
-information loss (agents communicate by lossy summary), debugging across N
-interleaved traces, and eval complexity (judge trajectories and handoffs,
+Multi-agent is tier 5 for a reason. Costs that proposals systematically ignore: token multiplication (each
+agent re-carries context — Anthropic measured *"about 4× more tokens than chat"* for one agent and *"about 15×"* for
+multi-agent systems, engineering post *How we built our multi-agent research system*; an exploratory MIT pilot,
+`michaelpetrik/agent-topology-bench`, measured a four-role committee at 6.6–7.3× one strong agent's tokens with no
+success gain — 36/36 vs 6/6, at ceiling), inter-agent information loss (lossy summaries), debugging across N traces, and eval complexity (judge trajectories and handoffs,
 not just final output).
 
 Patterns that earn their cost:

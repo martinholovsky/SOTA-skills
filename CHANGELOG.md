@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The plugin now ships the routing reminder, on by default.** `hooks/hooks.json` gains a
+  `UserPromptSubmit` hook (`scripts/plugin-routing-hook.sh`). Opt out with
+  `SOTA_ROUTING_HOOK=off`.
+  - **Why:** in 166 agent runs with every skill installed and no routing layer, which is what a
+    plugin install was, the model invoked a SOTA skill **zero** times. A fresh session's listing
+    budget also leaves the alphabet's tail name-only, from `sota-observability` on (including
+    `sota-python` and `sota-testing`).
+  - **Single source:** the text is read at run time from `install.sh`'s `HOOK_CMD`. The hook
+    stays silent when the installer's own hook is already present.
+  - **Notice:** the plugin's first-run notice no longer claims the skills "route
+    automatically".
+- **`verify-setup.sh` check 1h no longer kills the whole script.** An agent config that exists
+  but does not register the MCP server made `grep` exit 1 under `pipefail`, the last command of
+  an `&&` list. So `set -e` aborted silently after check 1f, with exit 1 and no row. It came
+  from #513 and was found on a real machine. A new part-B probe leaves such a file in place;
+  the old probe had only deleted it.
+- **`verify-setup.sh` check 2** recognises the plugin's routing hook.
+- **Check 1b** names the measured alphabetical cut. A proportional estimate was tried and
+  rejected: it said 35 of 43 where the measurement said 16 of 42.
+- **`docs/CONTEXT-MANAGEMENT.md`** explains why the router is the budget-proof entry point. It
+  keeps its description, the hook names it, and it loads name-only skills by name.
+- **The agent-loop evals have not yet tested the rules (ROADMAP 72).**
+  - `sota-agent-evals` v3 hit the ceiling (hidden_pass 1.00 in every arm).
+  - Its library arms invoked **0 skills: 0 of 166 library runs since v2**. Each run installs
+    the skills without the routing hook and directive that `install.sh` adds.
+  - README, `evals/README.md` and `docs/INDEX.md` now say so; they had said v3 "awaits budget".
+- **`sota-llm-engineering` rules/04 §7 is cited.** Token multiplication now quotes Anthropic's
+  measured 4× (one agent) and 15× (multi-agent). It also cites an exploratory MIT pilot (a
+  four-role committee at 6.6–7.3× one agent's tokens, no success gain, at ceiling) in place of
+  an uncited "~10–15×".
 - **Placebo result (ROADMAP 71 closed): most of the completeness lift is the asking, not all
   of it.** A pre-registered no-library arm told only to "ship production-complete code" reaches
   0.86 (without 0.58, with 0.98). Asking recovers 69%; the library adds +0.125, concentrated in

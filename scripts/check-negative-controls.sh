@@ -1430,6 +1430,11 @@ VSEOF
 # 1h: one agent's MCP registration removed — optional, so INFO with the enable command.
 rm -f "$VS/uhome/.gemini/settings.json"
 vs_probe_info "an agent without the MCP server" "1h. MCP server (optional)" "not registered for: Gemini CLI"
+# 1h, the other half: the config file EXISTS but registers no server. Deleting it (above) never
+# ran the grep that, under pipefail, killed the whole script after check 1f (2026-10-08). The
+# needle is the 1h row itself, so a silent abort -- no 1h row at all -- cannot pass.
+printf '{"theme":"dark"}\n' > "$VS/uhome/.gemini/settings.json"
+vs_probe_info "an agent config that exists but registers no MCP server" "1h. MCP server (optional)" "not registered for: Gemini CLI"
 # 1h: a registration pointing at a server file that is gone — broken, so PARTIAL.
 printf '[mcp_servers.sota-skills]\ncommand = "python3"\nargs = ["/gone/scripts/sota-mcp-server.py"]\n' \
   > "$VS/uhome/.codex/config.toml"

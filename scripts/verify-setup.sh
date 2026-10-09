@@ -265,8 +265,14 @@ elif [ "$listing_est" -le "$listing_budget" ]; then
   row "PASS" "1b. listing budget" \
     "~${listing_est} chars incl. a 25% built-in allowance (on disk ${listing_need}: ${listing_breakdown}), within the ${listing_budget}-char budget (fraction ${eff_frac}; ${wnote})"
 else
+  # WHICH skills go dark, not just that some do. Measured 2026-10-08 in a fresh session (no usage
+  # history): the cut was ALPHABETICAL -- 16 of 42, from sota-observability on, were name-only,
+  # including sota-python, sota-testing, sota-shell-scripting and sota-threat-modeling. A
+  # proportional estimate computed here was tried the same day and rejected: it said 35 of 43,
+  # against that measured 16 of 42. So the row states the measurement and how to check a live
+  # session, and computes nothing.
   row "INFO" "1b. listing budget" \
-    "~${listing_est} chars incl. a 25% built-in allowance (on disk ${listing_need}: ${listing_breakdown}) vs a ${listing_budget}-char budget (fraction ${eff_frac}; ${wnote}) — over by $((listing_est - listing_budget)); the lowest-USED skills will be listed name-only, with no trigger text. Raise skillListingBudgetFraction (scripts/install.sh offers this) or disable skills you do not use"
+    "~${listing_est} chars incl. a 25% built-in allowance (on disk ${listing_need}: ${listing_breakdown}) vs a ${listing_budget}-char budget (fraction ${eff_frac}; ${wnote}) — over by $((listing_est - listing_budget)); the lowest-USED skills will be listed name-only, with no trigger text. Raise skillListingBudgetFraction (scripts/install.sh offers this) or disable skills you do not use. Measured 2026-10-08 in a fresh session: the cut is alphabetical, and 16 of 42 SOTA skills from sota-observability on (incl. sota-python, sota-testing) went name-only. To check yours, ask the agent which sota skills it sees with no description"
 fi
 
 # --- 1g. the library is installed ONCE ---------------------------------------
@@ -452,7 +458,13 @@ mcp_probe() {  # <label> <home that marks the agent installed> <config file>
   local label="$1" home="$2" f="$3" path
   [ -d "$home" ] || return 0
   path=""
-  [ -f "$f" ] && path="$(grep -oE '[^"[:space:]]*/scripts/sota-mcp-server\.py' "$f" 2>/dev/null | head -n 1)"
+  # `|| path=""`: a config that EXISTS but does not register the server makes grep exit 1, and
+  # under pipefail that failed substitution was the last command of an && list -- set -e then
+  # killed the whole script after check 1f, silently, exit 1 (found 2026-10-08 on a real
+  # machine; the probe below had only ever deleted the file, never left one without the server).
+  if [ -f "$f" ]; then
+    path="$(grep -oE '[^"[:space:]]*/scripts/sota-mcp-server\.py' "$f" 2>/dev/null | head -n 1)" || path=""
+  fi
   if [ -z "$path" ]; then mcp_lack="${mcp_lack:+$mcp_lack, }$label"
   elif [ ! -f "$path" ]; then mcp_stale="${mcp_stale:+$mcp_stale, }$label ($path)"
   else mcp_have="${mcp_have:+$mcp_have, }$label"; fi
@@ -484,6 +496,17 @@ if [ -f "$CLAUDE_HOME/settings.json" ]; then
      && grep -qi 'sota' "$CLAUDE_HOME/settings.json"; then
     hook=1
   fi
+fi
+# The plugin ships the same reminder as its own UserPromptSubmit hook since 2026-10-08
+# (scripts/plugin-routing-hook.sh), ON unless SOTA_ROUTING_HOOK=off. Found by the plugin's
+# hooks.json naming that script; whether the plugin is ENABLED is not checked here.
+if [ "$hook" -eq 0 ] && [ -d "$CLAUDE_HOME/plugins" ]; then
+  case "${SOTA_ROUTING_HOOK:-on}" in
+    off | OFF | 0 | false | FALSE | no) ;;
+    *) if find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*hooks/hooks.json' -exec grep -l 'plugin-routing-hook.sh' {} + 2>/dev/null | grep -q .; then
+         hook=1
+       fi ;;
+  esac
 fi
 if [ "$directive" -eq 1 ] && [ "$hook" -eq 1 ]; then
   row "PASS" "2. always-on routing" "CLAUDE.md directive + UserPromptSubmit hook mentioning sota"

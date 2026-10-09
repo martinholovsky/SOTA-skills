@@ -403,8 +403,11 @@ container with no network**, plus whether the agent ended without a passing test
 last edit. No model judges anything. As of its last commit (2026-10-04):
 - v1 was compromised by a credit outage;
 - **v2 was clean (240/240) and every hypothesis read *not supported***, on near-saturated cases;
-- **v3** (20 change tasks on one multi-module app) is frozen and piloted, and the measurement
-  awaits budget.
+- **v3** (20 change tasks on one multi-module app), measured 2026-10-08: hidden_pass **1.00 in every
+  arm**, so every comparison is uninformative by the frozen ceiling rule. **And the library arms
+  never invoked a skill: 0 of 166 library-arm runs since v2.** Each run gets the skills without
+  the routing hook and directive that `install.sh` adds, so "library vs bare" has so far
+  measured descriptions in the listing, not rules applied ([report](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-08-v3/REPORT.md); ROADMAP 72).
 
 Its results are not on this repo's scoreboard; it publishes its own.
 

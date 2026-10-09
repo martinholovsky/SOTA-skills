@@ -287,6 +287,24 @@ description edit is a change to the whole classifier and is measured like one â€
 invariant 29 requires a declared routing check on any release that changes one.
 See [ROUTING-FIX-DEVSECOPS](../evals/results/2026-09-12/ROUTING-FIX-DEVSECOPS.md).
 
+### Measured again in an agent loop (2026-10-08): skills alone are not used
+
+`sota-agent-evals` v3 gave every library-arm run all the skills and no routing layer, which is
+what a plugin install was until 2026-10-08. In 166 such runs the model invoked a SOTA skill
+**zero** times. Two causes, both measured with in-session probes:
+- **The listing budget hides the alphabet's tail.** In a fresh session with no usage history,
+  the cut fell alphabetically. The router and everything through `sota-network-security` kept
+  their descriptions; the 16 from `sota-observability` on (`sota-python`, `sota-testing`,
+  `sota-shell-scripting`, `sota-threat-modeling`, â€¦) were **name-only**.
+- **Visible descriptions still did not trigger.** The router's description was in view in every
+  run, and it was invoked zero times.
+
+So **the router is the entry point that does not depend on the budget**. It is first in the
+alphabet, so it keeps its description in a fresh session. The routing hook names it outright
+("invoke the sota skill FIRST"). And it loads every other skill **by name** through the `Skill`
+tool, which a name-only listing still allows. The hook is the load-bearing part; the plugin now
+ships it on by default (`scripts/plugin-routing-hook.sh`, opt out with `SOTA_ROUTING_HOOK=off`).
+
 ## A platform behaviour the six defenses do not cover (recorded 2026-08-02)
 
 Auto-compaction **truncates a re-attached skill**. Per the Claude Code skills
