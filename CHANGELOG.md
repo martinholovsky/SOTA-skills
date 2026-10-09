@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **A `402` is not always an empty account (`sota-llm-engineering` rules/05 §2, §4; ROADMAP 74
+  closed).** One gateway documents a `402` that arrives "even though your balance is positive":
+  each running request holds input + `max_tokens` of cost, and one that does not fit is refused.
+  That case carries `Retry-After` and is retried, not paged; a `402` without the header is not.
+  §4 sizes prepaid headroom for concurrency × `max_tokens` and reads spend twice, hours apart,
+  because a usage counter was observed lagging (mechanism unverified). One checklist item.
 - **Agent-loop v4 measured (ROADMAP 72 closed, 73 opened).** The library was installed as
   `install.sh` installs it, with skills plus the routing hook, directive and budget, on
   `sonnet-5.5`.

@@ -7862,8 +7862,8 @@ reproduced or measured; the plan was written the same day.
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| F1 — with routing in place, agents invoke the router and stop (20/20 router, 0/20 rules files) | **DEFERRED —** revisit trigger: ROADMAP 73. Options (a)/(b)/(c) and measurement (i)/(ii) are recorded there; the operator decides | — |
+| F1 — with routing in place, agents invoke the router and stop (20/20 router, 0/20 rules files) | **DEFERRED —** revisit trigger: ROADMAP 73. **Operator decision 2026-10-09: option (a) with measurement (i)**, ~$16 — see the row | — |
 | F2 — rules/02's bolded rule is scoped to counts; a no-match *extraction* in `$( )` escaped it | **DEFERRED —** revisit trigger: ROADMAP 75 (widen the bullet; probe built on a labelled set first) | — |
-| F3 — billing meter lag and in-flight credit reservation are undocumented | **DEFERRED —** revisit trigger: ROADMAP 74 | — |
-| (found while planning) rules/05 §2's "`402` → page, don't retry" is wrong for a provider's documented in-flight-budget 402, which is transient and carries `Retry-After` | **DEFERRED —** revisit trigger: ROADMAP 74. Quoted from the provider's limits and errors docs, fetched 2026-10-09 | — |
+| F3 — billing meter lag and in-flight credit reservation are undocumented | **adopted 2026-10-09 (was deferred; ROADMAP 74 closed)** — the reservation as the provider documents it; the lag written as an observation whose mechanism is unverified | `sota-llm-engineering` rules/05 §4 + checklist |
+| (found while planning) rules/05 §2's "`402` → page, don't retry" is wrong for a provider's documented in-flight-budget 402, which is transient and carries `Retry-After` | **adopted 2026-10-09 (was deferred; ROADMAP 74 closed)** — re-fetched both pages before writing, which added two points the plan lacked: a 402 *without* `Retry-After` is not a wait-and-retry case, and clients branch on `limit_source`, not on the message | `sota-llm-engineering` rules/05 §2 + checklist |
 

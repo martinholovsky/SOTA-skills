@@ -62,6 +62,17 @@ request_too_large` and the rest of the `400` family (NOT retryable — fix the
 request; a spend limit you set yourself also answers `400`), `401/402/403`
 (credentials, billing, permissions — page, don't retry).
 
+**A `402` is not always an empty account.** Verified 2026-10-09 against one gateway
+(OpenRouter, `openrouter.ai/docs/api-reference/limits` and `/errors`): each paid request
+holds an estimate of its input plus the completion `max_tokens` allows while it runs, and a
+request that does not fit beside the running and recently completed ones is rejected `402`
+"even though your balance is positive" (`error.metadata.limit_source:
+openrouter_in_flight_budget`). That case is **transient**: it carries `Retry-After`, so wait
+and retry — never page. A `402` *without* the header is not a wait-and-retry case (one
+request's estimate can exceed the whole budget: lower `max_tokens` or the input). Branch on
+the structured field, never on the message text, and re-check your own provider's table:
+the SDKs named there retry no `402` on their own.
+
 - **Retry policy:** exponential backoff with full jitter, honoring
   `retry-after` when present; retry 429 (with `retry-after`)/500/504/529 and
   transport timeouts; never retry other 4xx (408 aside, and 409 only after the
@@ -130,6 +141,13 @@ Cost is a feature requirement with a number, not a postmortem surprise.
 - Watch the multipliers: thinking/reasoning tokens bill as output; agent
   loops multiply everything (rules/04 §3 budgets are the cap); retries and
   repair loops compound — trace them.
+- **Prepaid credit is held per request, not only spent.** Where a provider reserves
+  input + `max_tokens` per running request (§2), **concurrency × `max_tokens`** decides
+  when requests are refused, while an auto top-up watches the *balance*, not the holds.
+  Size headroom for the concurrency you run, or lower `max_tokens`. And read spend
+  **twice, hours apart**, before reporting a run's cost: one provider's usage counter was
+  observed (2026-10, three runs) lagging hours behind; its docs name only "a short
+  settlement window", so the lag's mechanism is **unverified**.
 
 ## 5. Observability
 
@@ -286,7 +304,10 @@ them follows the same pipeline:
 - [ ] Retries: jittered exponential backoff, `retry-after` honored, 4xx not
       retried, a 429 without `retry-after` treated as a spend cap (breaker,
       not retry), attempt+elapsed caps, typed error classes; client-side
-      throttling and per-tenant fairness before provider 429s.
+      throttling and per-tenant fairness before provider 429s. A `402` is
+      split by its structured field: a transient in-flight-budget `402` with
+      `Retry-After` is retried, an exhausted balance pages (§2); prepaid
+      headroom sized for concurrency × `max_tokens` (§4).
 - [ ] Streaming on user-facing and long-running generations; TTFT and idle
       timeouts; no >1-minute non-streaming calls.
 - [ ] Latency levers applied in order (stream, cache, parallelize,
