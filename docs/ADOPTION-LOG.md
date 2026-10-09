@@ -7765,7 +7765,7 @@ items were found by re-reading the session's own output, and each was checked ag
 | jvm rules/06 called jqwik merely "maintenance mode", while `sota-testing` rules/06 already rated jqwik ≥ 1.10.0 as protestware (a prompt injection aimed at agents) — a contradiction written in #512 | **adopted (defect fixed)** — jvm now points at the testing rule, and its probe rates the hit HIGH | `sota-jvm` rules/06 §4 · unreleased |
 | c/c++ text encoding (ROADMAP 69) | **adopted** — measured: glibc's `C` locale rejects valid UTF-8 in `mbstowcs`; musl's maps invalid bytes to `0xDFxx` and never fails | `sota-c-cpp` rules/01 §8b · unreleased |
 | Nested agents were never probed for contamination (a limit in both 2026-10-06/07 write-ups) | **adopted** — `score.py` reads them; the first run found an **ambiguous fix-only-symbol hit in w1's partition B**, and no conclusion changes when w1 is voided; it also showed one AB-C limit line was false (only w6 spawned a refuter) | `evals/results/2026-10-06/` addendum, `2026-10-07/SOTA-AUDIT-AB-C.md` superseded line, RESULTS.md · unreleased |
-| History-dependent `/sota-audit` classes untestable on the eval subject, stranded inside closed ROADMAP 67 | **deferred** — revisit trigger: ROADMAP 70 (an operator budget decision on a subject that keeps its git history) | — |
+| History-dependent `/sota-audit` classes untestable on the eval subject, stranded inside closed ROADMAP 67 | **DEFERRED —** revisit trigger: ROADMAP 70 (an operator budget decision on a subject that keeps its git history) | — |
 
 ## 2026-10-07 — a `/sota-audit` of the library's own scripts: six fixes and one rule scoped
 
@@ -7851,6 +7851,19 @@ name-only.
 |---|---|---|
 | The routing layer is what makes the library get used | **confirmed by measurement** — 20/20 runs invoked a skill with it, 0/166 without it. That supports the plugin shipping the hook on by default | ROADMAP 72 closed; [v4 report](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-09-v4/REPORT.md) |
 | Whether the rules improve outcomes | **unmeasured** — hidden_pass hit the ceiling at 1.00 in both arms, as in v1–v3 | — |
-| Routing depth: 3/20 runs go past the router, 0/20 read a rules file | **deferred** — revisit trigger: ROADMAP 73 (design a depth fix, then measure depth, which does not saturate) | — |
+| Routing depth: 3/20 runs go past the router, 0/20 read a rules file | **DEFERRED —** revisit trigger: ROADMAP 73 (design a depth fix, then measure depth, which does not saturate) | — |
 | An early account reading reported v3's spend as $3.77, then $12.44 | **retracted twice** — OpenRouter's usage counter lags for hours. The settled figure is ≈ $14.62 (v3 report). Spend is read twice, after the counter settles | `sota-agent-evals` reports · — |
+
+## 2026-10-09 — field report on this repo's own maintenance session (findings F1–F3), planned
+
+**Source:** a field report written at the close of the 2026-10-07 → 2026-10-09 session (local,
+gitignored; extract as `FIELD-REPORT-SOTA-SKILLS-2026-10-09-EXTRACT.local.md`). Every finding was
+reproduced or measured; the plan was written the same day.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| F1 — with routing in place, agents invoke the router and stop (20/20 router, 0/20 rules files) | **DEFERRED —** revisit trigger: ROADMAP 73. Options (a)/(b)/(c) and measurement (i)/(ii) are recorded there; the operator decides | — |
+| F2 — rules/02's bolded rule is scoped to counts; a no-match *extraction* in `$( )` escaped it | **DEFERRED —** revisit trigger: ROADMAP 75 (widen the bullet; probe built on a labelled set first) | — |
+| F3 — billing meter lag and in-flight credit reservation are undocumented | **DEFERRED —** revisit trigger: ROADMAP 74 | — |
+| (found while planning) rules/05 §2's "`402` → page, don't retry" is wrong for a provider's documented in-flight-budget 402, which is transient and carries `Retry-After` | **DEFERRED —** revisit trigger: ROADMAP 74. Quoted from the provider's limits and errors docs, fetched 2026-10-09 | — |
 
