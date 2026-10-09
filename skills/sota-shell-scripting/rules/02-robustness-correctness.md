@@ -164,14 +164,18 @@ yes | head -n 3                               # SIGPIPE on `yes` → status 141;
 out=$(produce | head -n 3) || (( $? == 141 ))  # accept SIGPIPE only
 ```
 
-- **A count in a command substitution is the form that ships, and it aborts silently.**
-  `n=$(… | grep -c .)` under `set -euo pipefail` is fine while the count is positive. On
-  zero, `grep -c` prints `0` **and exits 1**, the assignment fails, and `-e` ends the script
-  with no error message: the log just stops. It sits on a path only an *empty* input
-  reaches, so a run with data passes and the next run without data dies. Field-measured in
-  this library's own test harness: the default branch went red on the first empty run
-  (`sota-devsecops` rules/09 §2c). Write every count as `{ grep -c . || true; }`, and never
-  as a bare `grep -c` inside `$( )`.
+- **Any substitution whose producer can legitimately find nothing aborts silently.** A
+  count is the form that ships first: `n=$(… | grep -c .)` under `set -euo pipefail` is fine
+  while the count is positive, but on zero `grep -c` prints `0` **and exits 1**, the
+  assignment fails, and `-e` ends the script with no error message: the log just stops. The
+  same holds for an *extraction* — `grep -o`, `grep -m1`, `git grep`, `pgrep`, `jq -e` (a
+  plain `jq` select that matches nothing exits 0; `-e` exits 4) — and most of all as the last
+  command of an `&&` list, which `-e` does not exempt: `[ -f "$f" ] && url=$(grep -o PAT "$f"
+  | head -n 1)` ended a setup checker silently when the file existed without the match. It
+  sits on a path only an *empty* input reaches, so a run with data passes and the next run
+  without data dies (`sota-devsecops` rules/09 §2c). This library's own gates had 7 such
+  sites in 2 scripts; the worst killed its checker mid-run with 16 checks unreached. Close every
+  such substitution with `|| true` (or test it in an `if`), never bare inside `$( )`.
 
 - Prefer process substitution over pipes into `while read` — the pipe runs the loop in a
   subshell, so variable updates vanish (SC2031):
@@ -233,7 +237,10 @@ Decide per script and enforce with the shebang + `shellcheck -s sh`.
   (measured 2026-09-26: bash, zsh, busybox 1.38 and trixie dash enable it; bookworm dash
   reaches the `else`). Only in the `else` branch do you need the old workaround: run each
   stage to a temp file, or a fifo/status-file trick.
-- `--` (end of options) is **not universal**. GNU coreutils accept it nearly everywhere;
+- `--` (end of options) is **not universal**. GNU coreutils accept it nearly everywhere,
+  and so do the uutils (Rust) coreutils that Ubuntu ships since 26.04 LTS for `chmod` and
+  `mkdir` (measured 2026-10-09 in the `ubuntu:26.04` image: `chmod (uutils coreutils)
+  0.10.0`; 24.04 and Debian trixie still ship GNU — check `chmod --version`, never assume);
   BSD/macOS `chmod` does not — `chmod 700 -- dir` fails with `chmod: --: No such file or
   directory`, which names the wrong thing and reads as a path bug. Adjacent calls mislead
   further: `mkdir -p -- dir` succeeds on the same system (both verified on macOS
@@ -431,11 +438,14 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
 
 ## Audit checklist
 
-- [ ] **Counts in substitutions survive zero** (§4) — under `set -e`, any `$(… grep -c …)`
-      without `|| true` aborts the script silently on an empty input. Each hit is a
-      *candidate*; it is a defect only if the script runs with `-e` **and** the count can be
-      zero there (a count guarded by a non-empty test cannot).
-      `grep -rnE '\$\([^)]*grep -c[^)]*\)' --include='*.sh' . | grep -v '|| true'`
+- [ ] **No-match substitutions survive an empty input** (§4) — under `set -e`, any
+      `$(… grep …)` or `$(… jq -e …)` without `|| true` aborts the script silently when
+      nothing matches. Each hit is a *candidate*: a defect only if the script runs with `-e`
+      **and** the producer can find nothing there (a non-empty guard, a heredoc, which
+      discards the status, or an `if` condition cannot). The probe is line-based, so read
+      a hit's continuation lines for a trailing `|| true`. Tested on a labelled set of 8
+      bad and 10 good lines (8/8 caught, 0/10 flagged) with BSD grep and ugrep:
+      `grep -rnE '[$][(][^)]*(grep|jq -e)' --include='*.sh' . | grep -vE '[|][|]|^[^:]*:[0-9]+:[[:space:]]*(#|if[[:space:]]|elif[[:space:]]|while[[:space:]]|until[[:space:]])'`
 - [ ] **Missing-tool behaviour classified**: does every `command -v` failure `die`,
       skip-with-a-named-note, or ask an interactive human — and does the summary ever
       read clean while a check did not execute? Probe:

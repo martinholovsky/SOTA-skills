@@ -318,6 +318,13 @@ probe 22 "checklist bullet stranded inside a code fence" "CHECKLIST BULLET INSID
 ( cd "$WT" && perl -0pi -e 's/^\[1\.32\.0\]: .*\n//m' CHANGELOG.md )
 probe 23 "a CHANGELOG version heading has no link ref" "NO LINK REF for CHANGELOG version"
 
+# 23b — a CHANGELOG file with NO link refs at all. Probe 23 removes one ref, so `refs`
+# stayed non-empty and the empty case was never reached: there, grep's no-match exit
+# under -e/pipefail ended the whole script silently at check 23, with 24 onward unreached
+# (ROADMAP 75, reproduced 2026-10-09). This probe read FALSE PASS before that fix.
+( cd "$WT" && perl -0pi -e 's/^\[\d+\.\d+\.\d+\]: .*\n//mg' docs/CHANGELOG-archive-2.md )
+probe 23b "a CHANGELOG file has no link refs at all" "NO LINK REF for CHANGELOG version"
+
 # 24 — AGENTS.md over its own 200-line target. The real defect twice over: 201 on
 # 2026-09-05 and 202 on 2026-09-06, each time from adding an invariant's table row,
 # each time caught only by a hand-run `awk`. Appends to a file no other check reads

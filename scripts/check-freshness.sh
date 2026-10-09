@@ -51,7 +51,7 @@ fi
 # docs/MAINTENANCE.md and this script's header — three copies, all far from the
 # file — and two sessions still proposed bumping it wrongly (see
 # docs/CONVENTIONS-LEDGER.md). Proximity beats repetition.
-stamp=$(grep -v '^[[:space:]]*#' LAST-VERIFIED | tr -d '[:space:]')
+stamp=$(grep -v '^[[:space:]]*#' LAST-VERIFIED | tr -d '[:space:]' || true)  # empty must reach the error below, not abort under -e
 case "$stamp" in
   [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
   *) echo "error: LAST-VERIFIED must contain a YYYY-MM-DD date, got: '$stamp'" >&2; exit 1 ;;
@@ -140,7 +140,7 @@ if [ ! -f evals/ROUTING-BASELINE ]; then
   echo "Run: scripts/routing-baseline.sh   (local; needs OPENROUTER_API_KEY in env or ./.env)"
   routing_stale=1
 else
-  rstamp=$(grep -v '^[[:space:]]*#' evals/ROUTING-BASELINE | head -1 | awk '{print $1}')
+  rstamp=$(grep -v '^[[:space:]]*#' evals/ROUTING-BASELINE | head -1 | awk '{print $1}' || true)
   case "$rstamp" in
     [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
     *) echo "error: evals/ROUTING-BASELINE must start with YYYY-MM-DD, got: '$rstamp'" >&2; exit 1 ;;

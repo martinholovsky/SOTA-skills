@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Any no-match substitution aborts silently under `set -e`, not only a count
+  (`sota-shell-scripting` rules/02 §4; ROADMAP 75 closed).** The bolded rule now names
+  `grep -o`, `grep -m1`, `git grep`, `pgrep` and `jq -e`, and the last command of an `&&` list.
+  The checklist probe was built on a labelled set (8/8 bad caught, 0/10 good flagged, on BSD
+  grep and ugrep). Running it over this repo's own scripts found **7 real sites**, all fixed:
+  - `check-invariants.sh` check 23 died silently on a CHANGELOG file with no link refs, so
+    checks 24–39 never ran and nothing was printed. New negative-control probe **23b** pins it.
+  - `check-freshness.sh` exited 1 with no output on a stamp file holding only comments, so its
+    own "must contain a YYYY-MM-DD date" error was unreachable.
+  - Three more `check-invariants.sh` sites (checks 5, 6 and 21) that an empty CHANGELOG or
+    skill tree would have ended the same way.
+- **rules/02 §5: Ubuntu 26.04 LTS ships the uutils (Rust) coreutils**, measured in the image
+  (`chmod (uutils coreutils) 0.10.0`). Its `chmod` and `mkdir` accept `--` like GNU's. This
+  resolves the ADOPTION-LOG deferral that the rules/02 edit fired.
 - **A `402` is not always an empty account (`sota-llm-engineering` rules/05 §2, §4; ROADMAP 74
   closed).** One gateway documents a `402` that arrives "even though your balance is positive":
   each running request holds input + `max_tokens` of cost, and one that does not fit is refused.
