@@ -441,7 +441,7 @@ if ! printf '%s' "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
 fi
 pj=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | head -n 1)
 [ "$pj" = "$ver" ] || { note "plugin.json version '$pj' != VERSION '$ver'"; v5=1; }
-top=$(grep -m 1 -E '^## \[' CHANGELOG.md | sed 's/^## \[\([^]]*\)\].*/\1/')
+top=$(grep -m 1 -E '^## \[' CHANGELOG.md | sed 's/^## \[\([^]]*\)\].*/\1/' || true)
 case "$top" in
   Unreleased|"$ver") ;;
   *) note "CHANGELOG top entry is [$top] — expected [Unreleased] or [$ver]"; v5=1 ;;
@@ -480,7 +480,7 @@ ck_floor() { # ck_floor <found-floor> <actual> <surface> — "N+" surfaces (the
 }
 n_skills=$(git ls-files 'skills/*/SKILL.md' | wc -l | tr -d ' ')
 n_files=$(git ls-files 'skills/' | grep -c '\.md$' || true)
-n_lines=$(git ls-files 'skills/' | grep '\.md$' | tr '\n' '\0' | xargs -0 cat | awk 'END{print NR}')
+n_lines=$(git ls-files 'skills/' | grep '\.md$' | tr '\n' '\0' | xargs -0 cat | awk 'END{print NR}' || true)
 n_klines=$(awk -v l="$n_lines" 'BEGIN{printf "%d", (l + 500) / 1000}')
 n_domains=$((n_skills - 1))   # every skill except the router
 
@@ -1569,7 +1569,7 @@ if [ -z "$(git tag -l 'v*' 2>/dev/null)" ]; then
   echo "    ok (skipped)"
 else
   top21=$(grep -m 1 -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md \
-          | sed 's/^## \[\([^]]*\)\].*/\1/')
+          | sed 's/^## \[\([^]]*\)\].*/\1/' || true)
   while IFS= read -r ver; do
     [ "$ver" = "$top21" ] && continue        # tagged after the merge, by design
     seen21=$((seen21 + 1))
@@ -1696,8 +1696,11 @@ for f in CHANGELOG.md docs/CHANGELOG-archive.md docs/CHANGELOG-archive-2.md; do
   fi
   # Sets, not counts: `comm` needs both sides sorted, and the version strings are
   # compared as text (they only ever have to match each other, never to order).
-  heads=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' "$f" | tr -d '#[] ' | sort -u)
-  refs=$(grep -oE '^\[[0-9]+\.[0-9]+\.[0-9]+\]:' "$f" | tr -d '[]:' | sort -u)
+  # `|| true`: a file with no refs (or no headings) is the finding this check exists to
+  # report; without it, grep's no-match exit under -e/pipefail ended the whole script here,
+  # silently, with checks 24 onward unreached (ROADMAP 75, reproduced 2026-10-09).
+  heads=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' "$f" | tr -d '#[] ' | sort -u || true)
+  refs=$(grep -oE '^\[[0-9]+\.[0-9]+\.[0-9]+\]:' "$f" | tr -d '[]:' | sort -u || true)
   n=$(printf '%s\n' "$heads" | grep -c '[0-9]' || true)
   seen23=$((seen23 + n))
   while IFS= read -r ver; do
