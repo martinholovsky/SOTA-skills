@@ -291,16 +291,17 @@ See [ROUTING-FIX-DEVSECOPS](../evals/results/2026-09-12/ROUTING-FIX-DEVSECOPS.md
 
 `sota-agent-evals` v3 gave every library-arm run all the skills and no routing layer, which is
 what a plugin install was until 2026-10-08. In 166 such runs the model invoked a SOTA skill
-**zero** times. Two causes, both measured with in-session probes:
-- **The listing budget hides the alphabet's tail.** In a fresh session with no usage history,
-  the cut fell alphabetically. The router and everything through `sota-network-security` kept
+**zero** times. Two causes, from in-session probes of the same configuration:
+- **The listing budget hid the alphabet's tail.** In the one fresh session probed (no usage
+  history), the cut fell alphabetically. The router and everything through `sota-network-security` kept
   their descriptions; the 16 from `sota-observability` on (`sota-python`, `sota-testing`,
   `sota-shell-scripting`, `sota-threat-modeling`, …) were **name-only**.
-- **Visible descriptions still did not trigger.** The router's description was in view in every
-  run, and it was invoked zero times.
+- **Visible descriptions still did not trigger.** The router's description was in view in the
+  probed session, and every run used that same configuration; it was invoked zero times.
 
 So **the router is the entry point that does not depend on the budget**. It is first in the
-alphabet, so it keeps its description in a fresh session. The routing hook names it outright
+alphabet, and it kept its description in the one fresh session probed (the alphabetical cut is an
+inference from that single observation, not a documented rule). The routing hook names it outright
 ("invoke the sota skill FIRST"). And it loads every other skill **by name** through the `Skill`
 tool, which a name-only listing still allows. The hook is the load-bearing part; the plugin now
 ships it on by default (`scripts/plugin-routing-hook.sh`, opt out with `SOTA_ROUTING_HOOK=off`).

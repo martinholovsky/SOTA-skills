@@ -272,7 +272,7 @@ else
   # against that measured 16 of 42. So the row states the measurement and how to check a live
   # session, and computes nothing.
   row "INFO" "1b. listing budget" \
-    "~${listing_est} chars incl. a 25% built-in allowance (on disk ${listing_need}: ${listing_breakdown}) vs a ${listing_budget}-char budget (fraction ${eff_frac}; ${wnote}) — over by $((listing_est - listing_budget)); the lowest-USED skills will be listed name-only, with no trigger text. Raise skillListingBudgetFraction (scripts/install.sh offers this) or disable skills you do not use. Measured 2026-10-08 in a fresh session: the cut is alphabetical, and 16 of 42 SOTA skills from sota-observability on (incl. sota-python, sota-testing) went name-only. To check yours, ask the agent which sota skills it sees with no description"
+    "~${listing_est} chars incl. a 25% built-in allowance (on disk ${listing_need}: ${listing_breakdown}) vs a ${listing_budget}-char budget (fraction ${eff_frac}; ${wnote}) — over by $((listing_est - listing_budget)); the lowest-USED skills will be listed name-only, with no trigger text. Raise skillListingBudgetFraction (scripts/install.sh offers this) or disable skills you do not use. In one fresh session measured 2026-10-08 the cut was alphabetical: 16 of 42 SOTA skills from sota-observability on (incl. sota-python, sota-testing) went name-only. To check yours, ask the agent which sota skills it sees with no description"
 fi
 
 # --- 1g. the library is installed ONCE ---------------------------------------

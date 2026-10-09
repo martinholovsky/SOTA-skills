@@ -4,9 +4,9 @@
 #
 # WHY THIS EXISTS. Skills alone are not used. Measured 2026-10-08 in sota-agent-evals: across
 # 166 agent-loop runs with all skills installed but no routing layer, the model invoked a
-# SOTA skill ZERO times — including the router, whose description was visible. A fresh
-# install's listing budget also drops descriptions alphabetically from `sota-observability`
-# onward (name-only: sota-python, sota-testing, ...). The installer's per-prompt routing hook
+# SOTA skill ZERO times — including the router, whose description was visible. In one fresh
+# session probed that day, the listing budget had dropped descriptions alphabetically from
+# `sota-observability` onward (name-only: sota-python, sota-testing, ...). The installer's per-prompt routing hook
 # is what makes Claude reach for the router; a plugin user had no such hook, while the
 # first-run notice told them the skills "route automatically". Claude Code merges plugin hooks
 # with user and project hooks (code.claude.com/docs/en/hooks), so the plugin can ship it.
