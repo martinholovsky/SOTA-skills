@@ -30,7 +30,6 @@ one drifted three times in a single session (items 12, 32's follow-up, and 38).
 |---|---|---|---|---|
 | **1** | **Use the library on real work and write a field brief** (not a roadmap row) | Build or audit something real with `sota-*` loaded, then report every defect it did *not* prevent | a session | nothing — this is the highest-yield input available |
 | **2** | **Item 73 — get agents past the router** (field report F1, plan P3) | Decided 2026-10-09: option (a), measured by (i). Write the router's top block, then pre-register v5 and check account headroom before the ~$16 run | design + ~$16 | nothing |
-| **3** | **Cut a release** (plan P4; not a roadmap row) | Decided 2026-10-09: cut **MINOR** now that 74 and 75 have landed — RELEASING.md lists "a hook" as a minor surface, and the plugin's routing hook is in `[Unreleased]` | small | nothing |
 | — | **The deferred rows in [ADOPTION-LOG.md](ADOPTION-LOG.md)** | Nothing: read their own trigger ledgers rather than re-searching | — | a second implementation |
 
 **The actionable set was empty from 2026-09-12 until 2026-09-21**, when building the

@@ -7650,8 +7650,8 @@ defer the MCP router; a dedicated Swift skill is agreed in principle and filed a
 
 | # | Claim or proposal | Verdict | Reason / where it landed |
 |---|---|---|---|
-| 1 | "The installer misses Antigravity" | **adopted** | True for skills — Antigravity reads `~/.gemini/config/skills` / `~/.gemini/antigravity-cli/skills`, not `~/.agents/skills`. False for rules: Antigravity also reads `~/.gemini/GEMINI.md`, which was already mirrored. `install.sh`, verify-setup 1f + probe, MULTI-AGENT.md · unreleased |
-| 2 | "Agents told to 'consult the router skill' with no path will hallucinate" | **adopted with a correction** | The gap is real only for an agent with no skills loader — Gemini CLI, Copilot, Cursor, Codex and Antigravity all load SKILL.md folders. The directive now ends with the router's absolute path · unreleased |
+| 1 | "The installer misses Antigravity" | **adopted** | True for skills — Antigravity reads `~/.gemini/config/skills` / `~/.gemini/antigravity-cli/skills`, not `~/.agents/skills`. False for rules: Antigravity also reads `~/.gemini/GEMINI.md`, which was already mirrored. `install.sh`, verify-setup 1f + probe, MULTI-AGENT.md · v1.48.0 |
+| 2 | "Agents told to 'consult the router skill' with no path will hallucinate" | **adopted with a correction** | The gap is real only for an agent with no skills loader — Gemini CLI, Copilot, Cursor, Codex and Antigravity all load SKILL.md folders. The directive now ends with the router's absolute path · v1.48.0 |
 | 3 | "No Swift, Dart, Elixir, Scala, Haskell" | **refuted in part** | Swift is covered (`sota-mobile` rules/07, any target); Scala/Elixir are declared non-goals (README "Coverage & non-goals", 2026-07-04). Dart has no language rules file; Haskell and Objective-C are absent. **The operator's point stands: Swift filed under mobile is misplaced** for server-side Swift — filed as a decision (ROADMAP) |
 | 4 | "Progressive disclosure is brittle on weaker models" | **open — measure it** | The lift is measured on three frontier families and is *largest* where the baseline is lowest, but no small model was ever run. Small-model completeness + routing evals planned |
 | 5 | "Windows copies rot silently" | **adopted with a correction** | Not silent: the install warns, and verify-setup 1e reports copies. Missed by the review: the update reminder reads the checkout's `VERSION`, so after a pull it reports the new version while a copy stays old. Plan: directory junctions first (Git for Windows: "Directory junctions can be created by non-administrator users by default"), a version stamp on any copy |
@@ -7700,14 +7700,14 @@ isHTTPOnly: false`), SwiftPM's plugin sandbox (`sandbox-exec` only under `#if os
 
 | Area | Verdict | Landed in |
 |---|---|---|
-| No swift.org EOL policy exists; SSWG support bar | **adopted** (stated, not invented) | SKILL.md, rules/08 · unreleased |
-| Escape hatches per SE-0458/SE-0412; default isolation SE-0466; `withDeadline` SE-0526 accepted-not-shipped | **adopted** | rules/03 · unreleased |
-| Strict memory safety (SE-0458), `Span`, `~Copyable` | **adopted** | rules/04 · unreleased |
-| Decimal float-literal trap (swift-foundation source), overflow traps, `ContinuousClock` | **adopted** | rules/01 · unreleased |
-| Regex backtracks (SE-0351), SQLKit `unsafeRaw`, PostgresNIO `unsafeSQL`, Process argv, `FilePath.lexicallyResolving`, AsyncHTTPClient 5 redirects, NIOSSL TLS 1.0 default | **adopted** | rules/05 · unreleased |
-| Vapor/Hummingbird cookie defaults, Vapor compile-time `isRelease` trap, 16kb body default, guard middleware order | **adopted** | rules/06 · unreleased |
-| Warning control SE-0443/0480/0522, swift-format in toolchain, SwiftLint opt-in safety rules, Swift Testing parallel default | **adopted** | rules/08 · unreleased |
-| `--force-resolved-versions`, package identity (SE-0292), plugins/manifests unsandboxed on Linux, SBOM (SE-0509), Dependabot `swift`, OSV `SwiftURL` | **adopted** | rules/09 · unreleased |
+| No swift.org EOL policy exists; SSWG support bar | **adopted** (stated, not invented) | SKILL.md, rules/08 · v1.48.0 |
+| Escape hatches per SE-0458/SE-0412; default isolation SE-0466; `withDeadline` SE-0526 accepted-not-shipped | **adopted** | rules/03 · v1.48.0 |
+| Strict memory safety (SE-0458), `Span`, `~Copyable` | **adopted** | rules/04 · v1.48.0 |
+| Decimal float-literal trap (swift-foundation source), overflow traps, `ContinuousClock` | **adopted** | rules/01 · v1.48.0 |
+| Regex backtracks (SE-0351), SQLKit `unsafeRaw`, PostgresNIO `unsafeSQL`, Process argv, `FilePath.lexicallyResolving`, AsyncHTTPClient 5 redirects, NIOSSL TLS 1.0 default | **adopted** | rules/05 · v1.48.0 |
+| Vapor/Hummingbird cookie defaults, Vapor compile-time `isRelease` trap, 16kb body default, guard middleware order | **adopted** | rules/06 · v1.48.0 |
+| Warning control SE-0443/0480/0522, swift-format in toolchain, SwiftLint opt-in safety rules, Swift Testing parallel default | **adopted** | rules/08 · v1.48.0 |
+| `--force-resolved-versions`, package identity (SE-0292), plugins/manifests unsandboxed on Linux, SBOM (SE-0509), Dependabot `swift`, OSV `SwiftURL` | **adopted** | rules/09 · v1.48.0 |
 | Linux XMLParser internal-entity expansion; macro sandboxing on Linux; osv-scanner `Package.resolved` in practice; AsyncHTTPClient connect-time filter absence | **adopted as "needs verification"** — stated in the rule, not asserted | rules/05, rules/09 |
 
 The universal concept gate (`gen-concept-matrix.py --assert-universal`) first read **six floor
@@ -7749,11 +7749,11 @@ present cell in the affected rows were read with `--explain`. Full verdict table
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| Child exit status is checked, per language API (POSIX `system`/`pclose`, `Process.waitFor`, `subprocess.run(check=)`, `spawnSync`, `Process.ExitCode`, `exec` `$result_code`, `Command::status`, `Kernel#system`, `Process.terminationReason`) | **adopted** — every fact from its primary doc, read 2026-10-07 | c/c++ rules/01 §7, jvm rules/04 §2, python rules/05, js/ts rules/08, .NET rules/01 §6, php rules/02 §2, rust rules/08 R9.9, ruby rules/02, swift rules/05 · unreleased |
-| Text encoding as a section where the language had none | **adopted** — behaviour measured, not recalled | jvm rules/01 §6, php rules/01 §7a, ruby rules/01 §9, .NET rules/01 §7, swift rules/01 §6 · unreleased |
-| Fuzz and property testing where the language had none | **adopted with corrections** — jqwik maintenance-only, OneFuzz archived, SwiftCheck unmaintained, Swift's fuzzer needs a swift.org Linux toolchain | jvm rules/06 §4, .NET rules/06 §4, php rules/05 §4, ruby rules/04 §6, swift rules/08 §4 · unreleased |
-| c/c++ text encoding | **RESOLVED 2026-10-07 (was deferred; the trigger, ROADMAP 69, was worked the same day)** — measured on glibc and musl | `sota-c-cpp` rules/01 §8b · unreleased |
-| Record a triaged empty cell where the map draws it | **adopted** | `TRIAGED` in `scripts/gen-concept-matrix.py`; skill map page 6 · unreleased |
+| Child exit status is checked, per language API (POSIX `system`/`pclose`, `Process.waitFor`, `subprocess.run(check=)`, `spawnSync`, `Process.ExitCode`, `exec` `$result_code`, `Command::status`, `Kernel#system`, `Process.terminationReason`) | **adopted** — every fact from its primary doc, read 2026-10-07 | c/c++ rules/01 §7, jvm rules/04 §2, python rules/05, js/ts rules/08, .NET rules/01 §6, php rules/02 §2, rust rules/08 R9.9, ruby rules/02, swift rules/05 · v1.48.0 |
+| Text encoding as a section where the language had none | **adopted** — behaviour measured, not recalled | jvm rules/01 §6, php rules/01 §7a, ruby rules/01 §9, .NET rules/01 §7, swift rules/01 §6 · v1.48.0 |
+| Fuzz and property testing where the language had none | **adopted with corrections** — jqwik maintenance-only, OneFuzz archived, SwiftCheck unmaintained, Swift's fuzzer needs a swift.org Linux toolchain | jvm rules/06 §4, .NET rules/06 §4, php rules/05 §4, ruby rules/04 §6, swift rules/08 §4 · v1.48.0 |
+| c/c++ text encoding | **RESOLVED 2026-10-07 (was deferred; the trigger, ROADMAP 69, was worked the same day)** — measured on glibc and musl | `sota-c-cpp` rules/01 §8b · v1.48.0 |
+| Record a triaged empty cell where the map draws it | **adopted** | `TRIAGED` in `scripts/gen-concept-matrix.py`; skill map page 6 · v1.48.0 |
 
 ## 2026-10-07 — closing the session's own gaps: one contradiction, one measured rule, one hidden hit
 
@@ -7762,9 +7762,9 @@ items were found by re-reading the session's own output, and each was checked ag
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| jvm rules/06 called jqwik merely "maintenance mode", while `sota-testing` rules/06 already rated jqwik ≥ 1.10.0 as protestware (a prompt injection aimed at agents) — a contradiction written in #512 | **adopted (defect fixed)** — jvm now points at the testing rule, and its probe rates the hit HIGH | `sota-jvm` rules/06 §4 · unreleased |
-| c/c++ text encoding (ROADMAP 69) | **adopted** — measured: glibc's `C` locale rejects valid UTF-8 in `mbstowcs`; musl's maps invalid bytes to `0xDFxx` and never fails | `sota-c-cpp` rules/01 §8b · unreleased |
-| Nested agents were never probed for contamination (a limit in both 2026-10-06/07 write-ups) | **adopted** — `score.py` reads them; the first run found an **ambiguous fix-only-symbol hit in w1's partition B**, and no conclusion changes when w1 is voided; it also showed one AB-C limit line was false (only w6 spawned a refuter) | `evals/results/2026-10-06/` addendum, `2026-10-07/SOTA-AUDIT-AB-C.md` superseded line, RESULTS.md · unreleased |
+| jvm rules/06 called jqwik merely "maintenance mode", while `sota-testing` rules/06 already rated jqwik ≥ 1.10.0 as protestware (a prompt injection aimed at agents) — a contradiction written in #512 | **adopted (defect fixed)** — jvm now points at the testing rule, and its probe rates the hit HIGH | `sota-jvm` rules/06 §4 · v1.48.0 |
+| c/c++ text encoding (ROADMAP 69) | **adopted** — measured: glibc's `C` locale rejects valid UTF-8 in `mbstowcs`; musl's maps invalid bytes to `0xDFxx` and never fails | `sota-c-cpp` rules/01 §8b · v1.48.0 |
+| Nested agents were never probed for contamination (a limit in both 2026-10-06/07 write-ups) | **adopted** — `score.py` reads them; the first run found an **ambiguous fix-only-symbol hit in w1's partition B**, and no conclusion changes when w1 is voided; it also showed one AB-C limit line was false (only w6 spawned a refuter) | `evals/results/2026-10-06/` addendum, `2026-10-07/SOTA-AUDIT-AB-C.md` superseded line, RESULTS.md · v1.48.0 |
 | History-dependent `/sota-audit` classes untestable on the eval subject, stranded inside closed ROADMAP 67 | **DEFERRED —** revisit trigger: ROADMAP 70 (an operator budget decision on a subject that keeps its git history) | — |
 
 ## 2026-10-07 — a `/sota-audit` of the library's own scripts: six fixes and one rule scoped
@@ -7775,10 +7775,10 @@ confirmed by running it, not by reading it.
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| A test suite with no expected count can't see a missing reply: a reply-dropping mutant passed "35/35" | **adopted (defect fixed)** — per-run reply count plus a pinned total; three mutants now fail | `scripts/test-mcp-server.py` · unreleased |
-| The new Codex writer lacked the unpaired-marker refusal its three sibling writers have, and deleted 7 of 8 lines | **adopted (defect fixed)** | `scripts/install.sh` · unreleased |
-| A table from `codex mcp add` plus ours is a duplicate table (TOML 1.0); the path was unescaped | **adopted (defect fixed)**. Whether Codex itself refuses the file needs verification: the binary was not installed | `scripts/install.sh` · unreleased |
-| `sota-llm-engineering` rules/04 §6 forbade hand-rolled MCP with no exception, while the operator had chosen a dependency-free server | **adopted** — a scoped, recorded exception with its measured cost (the missed `cacheScope`); fixed in place instead of through `/sota-report`, because the reporter maintains the library | `sota-llm-engineering` rules/04 §6 and its checklist · unreleased |
+| A test suite with no expected count can't see a missing reply: a reply-dropping mutant passed "35/35" | **adopted (defect fixed)** — per-run reply count plus a pinned total; three mutants now fail | `scripts/test-mcp-server.py` · v1.48.0 |
+| The new Codex writer lacked the unpaired-marker refusal its three sibling writers have, and deleted 7 of 8 lines | **adopted (defect fixed)** | `scripts/install.sh` · v1.48.0 |
+| A table from `codex mcp add` plus ours is a duplicate table (TOML 1.0); the path was unescaped | **adopted (defect fixed)**. Whether Codex itself refuses the file needs verification: the binary was not installed | `scripts/install.sh` · v1.48.0 |
+| `sota-llm-engineering` rules/04 §6 forbade hand-rolled MCP with no exception, while the operator had chosen a dependency-free server | **adopted** — a scoped, recorded exception with its measured cost (the missed `cacheScope`); fixed in place instead of through `/sota-report`, because the reporter maintains the library | `sota-llm-engineering` rules/04 §6 and its checklist · v1.48.0 |
 
 ## 2026-10-07 — field report from a session that used the library (a Python scanner build), two findings
 
@@ -7787,8 +7787,8 @@ falsifiable claim was reproduced here before anything changed.
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| zsh `EQUALS` (on by default): an unquoted `=word` becomes a command's path, or aborts the whole `;` list. Reproduced on zsh 5.9 with a bash control: `echo =====` aborts with exit 1, `grep -c =ls` counts 0 where bash counts 1. Absence confirmed two ways: a corpus grep (0 hits, with `zsh` as control in 10 of 10 files) and a read of the §1 trap table. This session hit the loud form too | **adopted with a correction** — the message is `==== not found`, four `=`, not five. Probe tested on a labelled set of 3 positives and 5 negatives, with BSD grep and ugrep agreeing; its first draft flagged `[[ $x == y ]]` and was tightened | `sota-shell-scripting` rules/06 §1 table + checklist; rules/01 §3 pointer · unreleased |
-| Router BUILD step 4 audits only the files the agent chose to load, so an empty step 2 leaves it nothing to check | **adopted with a correction** — the gate is never fully empty (principle 5 and the falsification question stay), but every rules-file checklist drops out. Second observation, after 2026-09-26. Step 4 now opens by listing step 2's files. The eval mirror was re-read clause by clause and the hash bumped alone: the new clause audits file selection, which the eval does not model | `skills/sota/SKILL.md` BUILD step 4; `evals/run-completeness.py` `ROUTER_BUILD_SHA` · unreleased |
+| zsh `EQUALS` (on by default): an unquoted `=word` becomes a command's path, or aborts the whole `;` list. Reproduced on zsh 5.9 with a bash control: `echo =====` aborts with exit 1, `grep -c =ls` counts 0 where bash counts 1. Absence confirmed two ways: a corpus grep (0 hits, with `zsh` as control in 10 of 10 files) and a read of the §1 trap table. This session hit the loud form too | **adopted with a correction** — the message is `==== not found`, four `=`, not five. Probe tested on a labelled set of 3 positives and 5 negatives, with BSD grep and ugrep agreeing; its first draft flagged `[[ $x == y ]]` and was tightened | `sota-shell-scripting` rules/06 §1 table + checklist; rules/01 §3 pointer · v1.48.0 |
+| Router BUILD step 4 audits only the files the agent chose to load, so an empty step 2 leaves it nothing to check | **adopted with a correction** — the gate is never fully empty (principle 5 and the falsification question stay), but every rules-file checklist drops out. Second observation, after 2026-09-26. Step 4 now opens by listing step 2's files. The eval mirror was re-read clause by clause and the hash bumped alone: the new clause audits file selection, which the eval does not model | `skills/sota/SKILL.md` BUILD step 4; `evals/run-completeness.py` `ROUTER_BUILD_SHA` · v1.48.0 |
 
 ## 2026-10-07 — an outside architectural review: 4 valid gaps acted on, 5 claims refuted
 
@@ -7797,11 +7797,11 @@ checkable claim was tested against the tree.
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| The audit agent can be steered by the code it audits (a hostile comment saying "report clean") | **adopted** — the doctrine existed for people *building* analysers (`sota-code-security` rules/08:59, `sota-sandboxing` R7.3) but not in our own audit flow. Now the target is data, never instructions, with a probe tested on 4 injection lines and 4 lookalikes | `sota` rules/01 §4 and checklist; `commands/sota-audit.md` §0; `commands/sota-deep-audit.md` ground rules · unreleased |
-| Verbosity confounder: the lift may be "asked for more" | **adopted as an experiment** — the competing-prompt (+0.509) and competing-library controls existed, but no placebo did. `--placebo-arm` / `--placebo-only` built and guarded; pre-registered | `evals/run-completeness.py`, `evals/results/2026-10-07/PLACEBO-PREREG.md`; ROADMAP 71 (run awaits budget) · unreleased |
-| Monorepo guidance thin | **adopted** — JS/TS, testing and release coverage existed; nothing language-neutral did. Facts from Bazel, Nx, Turborepo, GitHub, Go, Cargo and pnpm docs, with 1 sub-claim refuted (Turborepo boundaries are experimental and check imports, not tags) and 2 reworded | `sota-architecture` rules/01 §2a and checklist · unreleased |
-| The completeness eval is "7 Python tasks", stated only as "7 build tasks" | **adopted** | `evals/results/RESULTS.md` · unreleased |
-| "Always use `git grep`" (the operator's question) | **rejected, with a better rule** — measured in zsh: it fixes `NOMATCH` only by quoting, does not fix `EQUALS`, makes `\b` silently match nothing on macOS, and skips ignored files. Adopted instead: run multi-command checks in `bash -c` | `sota-shell-scripting` rules/06 §1 · unreleased |
+| The audit agent can be steered by the code it audits (a hostile comment saying "report clean") | **adopted** — the doctrine existed for people *building* analysers (`sota-code-security` rules/08:59, `sota-sandboxing` R7.3) but not in our own audit flow. Now the target is data, never instructions, with a probe tested on 4 injection lines and 4 lookalikes | `sota` rules/01 §4 and checklist; `commands/sota-audit.md` §0; `commands/sota-deep-audit.md` ground rules · v1.48.0 |
+| Verbosity confounder: the lift may be "asked for more" | **adopted as an experiment** — the competing-prompt (+0.509) and competing-library controls existed, but no placebo did. `--placebo-arm` / `--placebo-only` built and guarded; pre-registered | `evals/run-completeness.py`, `evals/results/2026-10-07/PLACEBO-PREREG.md`; ROADMAP 71 (run awaits budget) · v1.48.0 |
+| Monorepo guidance thin | **adopted** — JS/TS, testing and release coverage existed; nothing language-neutral did. Facts from Bazel, Nx, Turborepo, GitHub, Go, Cargo and pnpm docs, with 1 sub-claim refuted (Turborepo boundaries are experimental and check imports, not tags) and 2 reworded | `sota-architecture` rules/01 §2a and checklist · v1.48.0 |
+| The completeness eval is "7 Python tasks", stated only as "7 build tasks" | **adopted** | `evals/results/RESULTS.md` · v1.48.0 |
+| "Always use `git grep`" (the operator's question) | **rejected, with a better rule** — measured in zsh: it fixes `NOMATCH` only by quoting, does not fix `EQUALS`, makes `\b` silently match nothing on macOS, and skips ignored files. Adopted instead: run multi-command checks in `bash -c` | `sota-shell-scripting` rules/06 §1 · v1.48.0 |
 | No data-engineering skill; no gRPC/protobuf or OpenTelemetry guidance | **rejected: already covered** — `sota-data-engineering` exists (Kafka in 15 files, dbt in 7); protobuf and gRPC in 13, OpenTelemetry in 12 (`sota-api-design`, `sota-observability`) | — |
 | `--project DIR` "argument splitting" | **rejected** — one quoted argument, used quoted everywhere (`install.sh:786-787`), shellcheck clean; only the installing user supplies it | — |
 | Fail-closed-on-empty "under invariant 19" | **rejected: misattributed** — invariant 19 is "every check has a known-bad"; failing closed is a separate per-check convention | — |
@@ -7824,9 +7824,9 @@ notes read 2026-10-08), and `sota-agent-evals` v3 (run 2026-10-08, pre-registere
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| A four-role committee (coder, tester, reviewer, decider) matched one strong agent's success at 6.6–7.3× its tokens; composition mattered more than topology; parallelism bought only latency (about 2.1×) | **adopted as an exploratory data point**, with its limits stated: 3 tasks × 2 repetitions, success at ceiling (6/6, 36/36), model aliases that cannot be verified, a tester that never executes tests. It corroborates §7's role-play-committee anti-pattern; it is not a measured lift | `sota-llm-engineering` rules/04 §7 · unreleased |
-| §7's uncited "~10–15× a single chat" | **corrected** — the primary source (Anthropic's multi-agent research-system post) says about 4× for one agent and about 15× for multi-agent systems, against chats | `sota-llm-engineering` rules/04 §7 · unreleased |
-| v3: hidden_pass 1.00 in every arm; **library arms invoked 0 skills (0 of 166 since v2)** | **recorded; deferred** — revisit trigger: ROADMAP 72, an arm installed exactly as `install.sh` installs, with skill calls as the primary manipulation check. Until then, no agent-loop result says anything about the rules | README, `evals/README.md`, `docs/INDEX.md` · unreleased |
+| A four-role committee (coder, tester, reviewer, decider) matched one strong agent's success at 6.6–7.3× its tokens; composition mattered more than topology; parallelism bought only latency (about 2.1×) | **adopted as an exploratory data point**, with its limits stated: 3 tasks × 2 repetitions, success at ceiling (6/6, 36/36), model aliases that cannot be verified, a tester that never executes tests. It corroborates §7's role-play-committee anti-pattern; it is not a measured lift | `sota-llm-engineering` rules/04 §7 · v1.48.0 |
+| §7's uncited "~10–15× a single chat" | **corrected** — the primary source (Anthropic's multi-agent research-system post) says about 4× for one agent and about 15× for multi-agent systems, against chats | `sota-llm-engineering` rules/04 §7 · v1.48.0 |
+| v3: hidden_pass 1.00 in every arm; **library arms invoked 0 skills (0 of 166 since v2)** | **recorded; deferred** — revisit trigger: ROADMAP 72, an arm installed exactly as `install.sh` installs, with skill calls as the primary manipulation check. Until then, no agent-loop result says anything about the rules | README, `evals/README.md`, `docs/INDEX.md` · v1.48.0 |
 
 ## 2026-10-08 — acting on "0 of 166": the routing layer is load-bearing
 
@@ -7837,10 +7837,10 @@ name-only.
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| Ship the routing reminder in the plugin, on by default, with an opt-out | **adopted** (operator decision 2026-10-08: on by default, opt out with `SOTA_ROUTING_HOOK=off`). The docs say plugin hooks *"merge with your user and project hooks"*. The text is read from `HOOK_CMD`, and the hook stays silent when the installer's hook is present | `hooks/hooks.json`, `scripts/plugin-routing-hook.sh`, `scripts/plugin-notice.sh`, README · unreleased |
-| Shrink every description to fit the default budget (~186 characters each) | **rejected** — routing recall was measured on the full descriptions, and the router is a budget-proof entry point instead | `docs/CONTEXT-MANAGEMENT.md` · unreleased |
-| verify-setup should name the skills that go dark | **adopted with a correction** — the proportional estimate contradicted the measurement (35 of 43 vs 16 of 42), so the row states the measurement and how to check a live session | `scripts/verify-setup.sh` 1b · unreleased |
-| (found while testing) check 1h aborts the whole script on an agent config without the MCP server | **adopted (defect fixed)**, with a probe that leaves such a file in place | `scripts/verify-setup.sh`, `scripts/check-negative-controls.sh` · unreleased |
+| Ship the routing reminder in the plugin, on by default, with an opt-out | **adopted** (operator decision 2026-10-08: on by default, opt out with `SOTA_ROUTING_HOOK=off`). The docs say plugin hooks *"merge with your user and project hooks"*. The text is read from `HOOK_CMD`, and the hook stays silent when the installer's hook is present | `hooks/hooks.json`, `scripts/plugin-routing-hook.sh`, `scripts/plugin-notice.sh`, README · v1.48.0 |
+| Shrink every description to fit the default budget (~186 characters each) | **rejected** — routing recall was measured on the full descriptions, and the router is a budget-proof entry point instead | `docs/CONTEXT-MANAGEMENT.md` · v1.48.0 |
+| verify-setup should name the skills that go dark | **adopted with a correction** — the proportional estimate contradicted the measurement (35 of 43 vs 16 of 42), so the row states the measurement and how to check a live session | `scripts/verify-setup.sh` 1b · v1.48.0 |
+| (found while testing) check 1h aborts the whole script on an agent config without the MCP server | **adopted (defect fixed)**, with a probe that leaves such a file in place | `scripts/verify-setup.sh`, `scripts/check-negative-controls.sh` · v1.48.0 |
 
 ## 2026-10-09 — agent-loop v4: the routing layer is load-bearing; depth is the new gap
 
