@@ -5,7 +5,7 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.48.0] - 2026-10-10
 
 - **Any no-match substitution aborts silently under `set -e`, not only a count
   (`sota-shell-scripting` rules/02 §4; ROADMAP 75 closed).** The bolded rule now names
@@ -208,6 +208,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   parity (15.0 vs 14.0 of 16). Its one directional prediction is **refuted**: dependency recall
   3.0 (new) vs 5.5 (old) of 19, because every arm ran trivy and reported a count rather than
   findings. Follow-up opened as ROADMAP 67.
+
+**Front door checked:** sota-swift · SOTA_ROUTING_HOOK · sota-agent-evals · placebo
 
 ## [1.47.2] - 2026-10-06
 
@@ -11095,6 +11097,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.48.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.48.0
 [1.47.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.2
 [1.47.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.1
 [1.47.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.0
