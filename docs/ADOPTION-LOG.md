@@ -7842,3 +7842,15 @@ name-only.
 | verify-setup should name the skills that go dark | **adopted with a correction** — the proportional estimate contradicted the measurement (35 of 43 vs 16 of 42), so the row states the measurement and how to check a live session | `scripts/verify-setup.sh` 1b · unreleased |
 | (found while testing) check 1h aborts the whole script on an agent config without the MCP server | **adopted (defect fixed)**, with a probe that leaves such a file in place | `scripts/verify-setup.sh`, `scripts/check-negative-controls.sh` · unreleased |
 
+## 2026-10-09 — agent-loop v4: the routing layer is load-bearing; depth is the new gap
+
+**Source:** `sota-agent-evals` v4, pre-registered, on `sonnet-5.5`, comparing `bare` with
+`installed`, pinned at SOTA-skills `1d19530`.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| The routing layer is what makes the library get used | **confirmed by measurement** — 20/20 runs invoked a skill with it, 0/166 without it. That supports the plugin shipping the hook on by default | ROADMAP 72 closed; [v4 report](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-09-v4/REPORT.md) |
+| Whether the rules improve outcomes | **unmeasured** — hidden_pass hit the ceiling at 1.00 in both arms, as in v1–v3 | — |
+| Routing depth: 3/20 runs go past the router, 0/20 read a rules file | **deferred** — revisit trigger: ROADMAP 73 (design a depth fix, then measure depth, which does not saturate) | — |
+| An early account reading reported v3's spend as $3.77, then $12.44 | **retracted twice** — OpenRouter's usage counter lags for hours. The settled figure is ≈ $14.62 (v3 report). Spend is read twice, after the counter settles | `sota-agent-evals` reports · — |
+

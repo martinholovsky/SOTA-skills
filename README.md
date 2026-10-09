@@ -1023,7 +1023,7 @@ anything". Three corrections, each re-checked 2026-10-02:
   is executed. So the lifts here are real for that condition. **The agent-loop condition is
   measured in a separate repo, [sota-agent-evals](https://github.com/martinholovsky/sota-agent-evals)**: Claude Agent SDK sessions with tools,
   scored by hidden tests in a no-network container with no model judge. Its v2 run (2026-10-02)
-  was clean and read **not supported** on near-saturated cases. v3 (2026-10-08) hit the ceiling in every arm, and **its library arms never invoked a skill**: 0 of 166 library runs since v2. The arm installs skills without the routing layer `install.sh` adds, so the agent loop has not yet measured the rules ([v3 report](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-08-v3/REPORT.md))
+  was clean and read **not supported** on near-saturated cases. v3 (2026-10-08) hit the ceiling in every arm, and **its library arms never invoked a skill**: 0 of 166 library runs since v2. That arm installed skills without the routing layer `install.sh` adds. **v4 (2026-10-09) added it: 20/20 runs then invoked the library**, but the router is mostly where they stopped (3/20 went further, 0/20 read a rules file). Pass rates were at the ceiling in both arms, so whether the rules help is still unmeasured ([v4 report](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-09-v4/REPORT.md)))
   ([evals/README](evals/README.md#what-the-evals-do-not-measure)).
 
 What stays advisory is everything a hook cannot check mechanically: whether a rule was
