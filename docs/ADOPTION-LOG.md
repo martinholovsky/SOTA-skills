@@ -7854,3 +7854,16 @@ name-only.
 | Routing depth: 3/20 runs go past the router, 0/20 read a rules file | **deferred** — revisit trigger: ROADMAP 73 (design a depth fix, then measure depth, which does not saturate) | — |
 | An early account reading reported v3's spend as $3.77, then $12.44 | **retracted twice** — OpenRouter's usage counter lags for hours. The settled figure is ≈ $14.62 (v3 report). Spend is read twice, after the counter settles | `sota-agent-evals` reports · — |
 
+## 2026-10-09 — field report on this repo's own maintenance session (findings F1–F3), planned
+
+**Source:** a field report written at the close of the 2026-10-07 → 2026-10-09 session (local,
+gitignored; extract as `FIELD-REPORT-SOTA-SKILLS-2026-10-09-EXTRACT.local.md`). Every finding was
+reproduced or measured; the plan was written the same day.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| F1 — with routing in place, agents invoke the router and stop (20/20 router, 0/20 rules files) | **deferred** — revisit trigger: ROADMAP 73. Options (a)/(b)/(c) and measurement (i)/(ii) are recorded there; the operator decides | — |
+| F2 — rules/02's bolded rule is scoped to counts; a no-match *extraction* in `$( )` escaped it | **deferred** — revisit trigger: ROADMAP 75 (widen the bullet; probe built on a labelled set first) | — |
+| F3 — billing meter lag and in-flight credit reservation are undocumented | **deferred** — revisit trigger: ROADMAP 74 | — |
+| (found while planning) rules/05 §2's "`402` → page, don't retry" is wrong for a provider's documented in-flight-budget 402, which is transient and carries `Retry-After` | **deferred** — revisit trigger: ROADMAP 74. Quoted from the provider's limits and errors docs, fetched 2026-10-09 | — |
+
