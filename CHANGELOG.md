@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **A git-mode secret scan never reads uncommitted work (`sota-secrets-management` rules/04
+  §1).** `gitleaks git .` and the legacy `detect --source .` scan commits. With a token in an
+  uncommitted file they printed `scanned ~1492 bytes` and `no leaks found`, exit 0; `gitleaks dir`
+  found it (gitleaks 8.30.1). A field report had read the same event as an entropy difference.
+  One checklist item.
+- **A hand-edited generated file drifts (`sota-docs-workflow` rules/03 §5a).** Once edited, a
+  generator's output is never re-run, so the next input change leaves the untouched numbers
+  stale (field-reported: a coverage doc's Totals shipped 58 against data saying 66). Keep files
+  fully generated or fully hand-written. One checklist item.
 - **Opt-in hook: after a sota skill loads, name the rules files to open (ROADMAP 73, option
   (c)).** `scripts/skill-depth-hook.py` is a PostToolUse hook on the `Skill` tool. After the
   router loads, it names the language skill for the file types in the working directory. After
