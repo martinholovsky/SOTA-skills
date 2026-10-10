@@ -15,6 +15,15 @@ description: >-
 
 # SOTA Engineering Skills — Master Router
 
+**Next actions — this router is a map; no rule lives in it.** Rules and Audit checklists
+live in each skill's `rules/*.md`; this file alone applies nothing. Before you write or review:
+
+1. **Invoke the language skill** for each file type you touch, by name (`.py` →
+   `sota-python`, `.sh` → `sota-shell-scripting`; table below), plus the domain skills.
+2. **Open the `rules/NN` files** that skill's index names for this work — only those.
+3. **Before finishing, check your diff against each opened file's `## Audit
+   checklist`** (BUILD step 4). No rules file read = no rule applied.
+
 A library of 42 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (each under 500 lines). Each skill works in two
 modes:
@@ -28,10 +37,6 @@ modes:
   Critical/High/Medium/Low table may refine it *within that skill's domain* and must
   say that it is doing so; an unscoped per-skill table does not outrank the model, and
   a cross-domain roll-up is always rated on it.
-
-Read only what the task needs: first the relevant skill's `SKILL.md` (it has its
-own index of `rules/` files with "read this when..." guidance), then only the
-rules files that match the code in front of you. Never load all skills at once.
 
 ## Operating principles (always apply)
 
@@ -443,15 +448,12 @@ read with `rules/03`.
 
 ## Context budget discipline
 
-Rules files run **52–500 lines, median 262.5** (re-measured over all 294 on
-2026-09-26; the 2026-09-13 figures — 77–500, median 237 over 271 — and the 2026-09-11
-ones before them were correct when written and went stale, and before them this
-said "200–310", a range half of them fall
-outside, which is why the count and the date are stated). So budget by
-the file you are actually opening, not by an average: 2–5 files is a typical
-focused task and can be 400 lines or 2,000. A full audit pass should load one
-skill at a time, finish its findings, then move on. If context is tight, prefer
-the skill's top-10 non-negotiables plus the single most relevant rules file.
+Rules files run **52–500 lines, median 262.5** (all 294, measured 2026-09-26 — a dated
+figure that has gone stale three times; re-measure before repeating it). So budget by the
+file you are actually opening, not by an average: 2–5 files is a typical focused task and
+can be 400 lines or 2,000. A full audit pass should load one skill at a time, finish its
+findings, then move on. If context is tight, prefer the skill's top-10 non-negotiables
+plus the single most relevant rules file.
 
 ## When this library is wrong or missing something
 
@@ -484,11 +486,9 @@ only auto-loading text and is the whole classifier, provided it survives the lis
 `evals/cases/desc-routing-regressions.jsonl`, which pins the mis-route so it cannot return.
 **Run that case against the PRE-change tree and watch it fail first.** A case that passes in
 both arms pins nothing, and an absent *string* is not an absent *capability* — a model routes
-on meaning, so grep cannot tell you whether a task is reachable. Measured 2026-09-14: a
-PowerShell task claimed to be a routing gap already routed correctly with **0 of 42
-descriptions naming PowerShell**, and the case written to pin the "fix" scored 1.00 before
-*and* after. Same doctrine as every gate here — watch it fail first, or you have added a
-control that cannot fail.
+on meaning, so grep cannot tell you whether a task is reachable (measured 2026-09-14: a
+PowerShell "gap" routed correctly with 0 of 42 descriptions naming it, and its pinning case
+scored 1.00 before *and* after). Watch it fail first, or the control cannot fail.
 
 Report: `https://github.com/martinholovsky/SOTA-skills/issues/new/choose`
 (bad-guidance / skill-request templates). Anything dangerous or

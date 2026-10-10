@@ -5,6 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **The router now opens with "Next actions" (ROADMAP 73, option (a)).** Three numbered steps
+  sit directly under the title: invoke the language skill for each file type by name, open
+  only the `rules/NN` files its index names, and check the diff against each opened file's
+  Audit checklist before finishing. In v4, 20 of 20 agents loaded the router and 0 of 20 read
+  a rules file, where every rule lives. The block sits outside the pinned BUILD and AUDIT
+  sections (both hashes unchanged, guard run). Its effect is measured by a pre-registered v5
+  in `sota-agent-evals` before this is called done.
+
 ## [1.48.0] - 2026-10-10
 
 - **Any no-match substitution aborts silently under `set -e`, not only a count
