@@ -208,6 +208,16 @@ must not happen is a diff where hand-written and generated lines are interleaved
 the reviewer cannot tell which is which. Say which in `CONTRIBUTING.md`, and keep the
 regeneration in its own commit even inside one PR.
 
+**A generated file you then hand-edit can no longer be regenerated, so it drifts.** Re-running
+the generator would erase the edits, so nobody re-runs it, and the next change to its input
+leaves stale every number in the parts no one touched. This applies to docs and reports
+(coverage tables, totals, inventories) as much as to code. Field-reported 2026-10-09: a coverage
+doc's prose was updated by hand after a data change, and its generated Totals line shipped
+saying 58 when the data said 66. The session's closing re-count caught it. Keep each file
+**fully generated** (put the prose in the generator's input, or in a hand-written file that links
+the generated one) or **fully hand-written**, never both. Reviewing a change to a generated
+file's *input*, ask whether the output was regenerated in the same change.
+
 **Decompose by reviewability, not by size.** A 600-line PR that is one mechanical
 rename plus one 20-line behaviour change is *two* PRs — and the behaviour change is
 the one that needs eyes. The test is not "how many lines" but "can a reviewer hold
@@ -322,6 +332,8 @@ claim that turns out to be false still burns the credibility.
       make the change invisible and misattribute `git blame` (§5a).
 - [ ] **Is there a stated policy for generated files**, and are generated and hand-written
       lines in separate commits rather than interleaved (§5a)?
+- [ ] **No generated file has been hand-edited** — a doc or report holding a generator's output
+      plus hand-written prose cannot be regenerated, so its derived numbers go stale (§5a).
 - [ ] **Was the PR decomposed by reviewability** — mechanical split from semantic, migration
       from the code that uses it — rather than by line count (§5a)?
 - [ ] **Is every commit in a migration sequence independently deployable and rollback-safe**

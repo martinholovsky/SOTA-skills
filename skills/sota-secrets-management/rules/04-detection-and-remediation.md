@@ -99,6 +99,17 @@ non-git surfaces: S3 buckets, container images, CI logs exports — secrets leak
   first instinct, suspecting the commit, burns the most time. Field-reported: 22 hits, all
   `generic-api-key` false positives on `key=value` shapes in one daemon log dump, left in the
   tree by tooling.
+- **The reverse holds too: a git-mode scan never reads uncommitted work.** `gitleaks git .`, and
+  the legacy `gitleaks detect --source .` without `--no-git`, scan **commits**. A file you have
+  not committed is out of scope, and the run still looks healthy. Verified 2026-10-10 on gitleaks
+  8.30.1, with a `generic-api-key`-shaped token in an uncommitted file: both printed `scanned
+  ~1492 bytes` (the history) and `no leaks found`, exit 0; `gitleaks dir .` read the file and
+  reported `leaks found: 1`. The byte count is not a tell, because the history fills it. So an
+  inner-loop "check my working tree" gate must be `gitleaks dir` (or `--no-git`), and the
+  pre-commit `git --pre-commit --staged` sees only what is staged. Field-reported 2026-10-09: a
+  working-tree pass written as `detect --source .` passed, and the pre-push history scan then
+  blocked the same token once it was committed. Read as an entropy difference, it was a scope
+  difference.
 
 ### Adopting scanning on a legacy repo (baseline workflow)
 
@@ -329,6 +340,9 @@ inventory that does not name the transcript path = **Medium**.
       dev setup; custom rules cover internal token prefixes.
 - [ ] Blocking CI secret-scan on every PR; scheduled full-history scan; built images scanned;
       scanner output redacted.
+- [ ] **Every gate described as a working-tree scan really reads uncommitted files** — it is
+      `gitleaks dir` or `--no-git`, not `gitleaks git` / `detect --source .`, which scan commits
+      only and print a healthy byte count while missing the file you just wrote (§1).
 - [ ] **A red working-tree scan against a clean history pass was triaged by file, not by
       diff.** Directory scanners do not honour `.gitignore`, so an untracked artifact
       `git status` never shows is still in scope — confirm whether the finding is even in a
