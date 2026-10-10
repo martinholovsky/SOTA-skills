@@ -5,6 +5,17 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Opt-in hook: after a sota skill loads, name the rules files to open (ROADMAP 73, option
+  (c)).** `scripts/skill-depth-hook.py` is a PostToolUse hook on the `Skill` tool. After the
+  router loads, it names the language skill for the file types in the working directory. After
+  a `sota-*` skill loads, it says the skill's `SKILL.md` is only an index and lists the absolute
+  path of each rules file. Agents load the router 20/20 times and read a rules file 0/20 (v4);
+  a "Next actions" block in the router moved that to 1/20 (v5, NULL), so PR #527 was closed
+  unmerged. The hook is **not** in `hooks/hooks.json` until v6 in `sota-agent-evals` measures
+  it. `--self-test` (58 checks) runs in CI, and three mutants each fail it.
+
 ## [1.48.0] - 2026-10-10
 
 - **Any no-match substitution aborts silently under `set -e`, not only a count
