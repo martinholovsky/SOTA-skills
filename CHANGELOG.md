@@ -13,8 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a `sota-*` skill loads, it says the skill's `SKILL.md` is only an index and lists the absolute
   path of each rules file. Agents load the router 20/20 times and read a rules file 0/20 (v4);
   a "Next actions" block in the router moved that to 1/20 (v5, NULL), so PR #527 was closed
-  unmerged. The hook is **not** in `hooks/hooks.json` until v6 in `sota-agent-evals` measures
-  it. `--self-test` (58 checks) runs in CI, and three mutants each fail it.
+  unmerged. v6 in `sota-agent-evals` measured it INCONCLUSIVE: the next skill was
+  invoked in 18/20 runs vs 0/20, but rules text reached the model in 4/20 vs 2/20 (p = 0.33). So
+  it stays opt-in and is **not** in `hooks/hooks.json`. `--self-test` (58 checks) runs in CI, and three mutants each fail it.
 
 ## [1.48.0] - 2026-10-10
 
