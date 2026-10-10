@@ -7867,3 +7867,22 @@ reproduced or measured; the plan was written the same day.
 | F3 — billing meter lag and in-flight credit reservation are undocumented | **adopted 2026-10-09 (was deferred; ROADMAP 74 closed)** — the reservation as the provider documents it; the lag written as an observation whose mechanism is unverified | `sota-llm-engineering` rules/05 §4 + checklist |
 | (found while planning) rules/05 §2's "`402` → page, don't retry" is wrong for a provider's documented in-flight-budget 402, which is transient and carries `Retry-After` | **adopted 2026-10-09 (was deferred; ROADMAP 74 closed)** — re-fetched both pages before writing, which added two points the plan lacked: a 402 *without* `Retry-After` is not a wait-and-retry case, and clients branch on `limit_source`, not on the message | `sota-llm-engineering` rules/05 §2 + checklist |
 
+
+## 2026-10-09 — field report from a session applying the library (LLM-guardrail red-team harness), taken in 2026-10-10
+
+**Source:** a field report from a session that extended a black-box red-team harness for an
+LLM guardrail (stdlib Python, a podman container, a gitleaks pre-push hook), on SOTA-skills
+1.47.2. It was written 2026-10-09 and kept local (`FIELD-REPORT-*-2026-10-09.local.md`). It went
+unprocessed for a day because its date matched two other 2026-10-09 sections here. Both findings
+are POSITIVE: a control caught what discipline missed. Its own self-grade: no routing gap and no
+rule that caused a defect. All 151 lines were read. F2 was reproduced; it corrected the report's
+mechanism.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| F1 — a coverage doc was script-generated, then hand-edited; a later data change left its Totals stale (58 → 66), and `/sota-close`'s re-count caught it. Proposed: keep a doc fully generated or fully hand-written | **adopted with a correction** — the report's coverage check (13 `hand-edit` hits, none for docs) missed that `sota-docs-workflow` rules/03 §5a already says generated and hand-written lines must not be interleaved. That rule is about **review**, though (a reviewer cannot tell them apart). The **drift** angle (a hand-edited generated file is never re-run, so untouched numbers go stale) was absent, and it lands beside it. The report's other candidate home, rules/01, is at the 500-line cap | `sota-docs-workflow` rules/03 §5a (`:211`) + one checklist item |
+| F2 — a working-tree `gitleaks detect --source .` passed a high-entropy canary token, then the pre-push history scan blocked it once committed; the report inferred an entropy rule firing only on the committed blob | **adopted with a correction — the mechanism was scope, not entropy.** Reproduced on gitleaks 8.30.1 in a repo with history: with the token in an uncommitted file, `detect --source .` and `gitleaks git .` both print `scanned ~1492 bytes`, `no leaks found`, exit 0 — they scan commits, so the new file is never read, and the history fills the byte count. `gitleaks dir .` reports `leaks found: 1`. The library had the converse (`dir` reads untracked and ignored files, rules/04 §1) and not this direction | `sota-secrets-management` rules/04 §1 (`:102`) + one checklist item |
+| F2's side proposal — make canary/test tokens low-entropy so `generic-api-key` ignores them | **rejected: already covered** — `sota-secrets-management` rules/04 `:85` ("one standard fake value per type, org-wide"). Also measured: the same token with no key-like word beside it (`"forbid_markers": [...]`) is not flagged at all, so the trigger was its context, not only its entropy | — |
+| (considered, not proposed by the report) `sota-llm-engineering` was not loaded for LLM eval-harness work, where rules/01 §8a fits almost exactly | **rejected: no defect shown** (the target repo's own agent file already carried those disciplines). Kept as routing data: the right skill existed and was not reached, the same shape ROADMAP 73 measures | — |
+| (considered, not proposed) a spreadsheet deliverable routed to a document skill, not a `sota-*` one | **rejected: out of scope** — document artifacts are outside the library's build/audit remit | — |
+| (considered, not proposed) "push every technique to the deep tier" (a user instruction) vs anti-Goodhart honesty | **rejected: not a library contradiction** — a user instruction against a library principle, resolved by flagging stretch results instead of mislabelling them, which is the principle working | — |

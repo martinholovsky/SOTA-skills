@@ -5,6 +5,18 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **A git-mode secret scan never reads uncommitted work (`sota-secrets-management` rules/04
+  §1).** `gitleaks git .` and the legacy `detect --source .` scan commits. With a token in an
+  uncommitted file they printed `scanned ~1492 bytes` and `no leaks found`, exit 0; `gitleaks dir`
+  found it (gitleaks 8.30.1). A field report had read the same event as an entropy difference.
+  One checklist item.
+- **A hand-edited generated file drifts (`sota-docs-workflow` rules/03 §5a).** Once edited, a
+  generator's output is never re-run, so the next input change leaves the untouched numbers
+  stale (field-reported: a coverage doc's Totals shipped 58 against data saying 66). Keep files
+  fully generated or fully hand-written. One checklist item.
+
 ## [1.48.0] - 2026-10-10
 
 - **Any no-match substitution aborts silently under `set -e`, not only a count
