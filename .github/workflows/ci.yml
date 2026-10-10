@@ -152,6 +152,13 @@ jobs:
         # mtime (the racy-git false allow found 2026-10-02) fails every run (measured 20 of 20).
         run: python3 scripts/verified-done-hook.py --self-test
 
+      - name: Prove the skill-depth hook names the rules files after a skill loads
+        # An opt-in PostToolUse hook on the Skill tool (scripts/skill-depth-hook.py, ROADMAP 73
+        # option c). The self-test drives it over stdin as Claude Code does and sizes every
+        # skill's hint against the 10,000-character cap. Mutation-checked 2026-10-10: a silent
+        # hook fails 7 of 58, one that drops the paths 2, one that counts dot dirs 1.
+        run: python3 scripts/skill-depth-hook.py --self-test
+
       - name: Prove the MCP server answers correctly and refuses hostile input
         # scripts/sota-mcp-server.py serves the library read-only to agents without a skills
         # loader. The test drives it over real stdio: lifecycle, version negotiation, every
