@@ -12,6 +12,12 @@ This hook moves the instruction from the index to the moment after the load, wit
 MEASURED: v6 (2026-10-10) next skill 0/20 -> 18/20, rules text 2/20 -> 4/20, INCONCLUSIVE. v7
 (2026-10-11, cases-v4 rule tests) reached a cited rules file in 12/20 runs vs 5/20, but read ~79
 lines vs ~448 when the files were named, and moved rule tests +0.019: NULL. Naming the right files
+was SUPPORTED (+0.17). So the instruction now asks for a choice of one or two files and a FULL read
+of each (ROADMAP 73 (d')). Matching files to the task's wording instead was rejected offline: the
+prompt omits the rule's vocabulary by construction, and a BM25 match found a cited file for 6/20.
+MEASURED: v6 (2026-10-10) next skill 0/20 -> 18/20, rules text 2/20 -> 4/20, INCONCLUSIVE. v7
+(2026-10-11, cases-v4 rule tests) reached a cited rules file in 12/20 runs vs 5/20, but read ~79
+lines vs ~448 when the files were named, and moved rule tests +0.019: NULL. Naming the right files
 was SUPPORTED (+0.17), so what is missing is a full read of the right file (ROADMAP 73).
 
 WHAT IT SAYS (as `additionalContext`, which Claude reads next to the tool result):
@@ -112,11 +118,16 @@ def skill_text(name: str, d: Path) -> str:
     rules = sorted((d / "rules").glob("*.md"))
     if not rules:
         return ""
+    # v7 (2026-10-11): with "Read the ones whose topic matches", agents reached a cited rules file
+    # in 12/20 runs but read ~79 of its lines, and rule outcomes did not move; given the right files
+    # and read whole (~448 lines), they rose 0.698 -> 0.868. So the action is ONE concrete step:
+    # choose, then read in full. ROADMAP 73 (d').
     head = ("SOTA: `%s` loaded its index (SKILL.md) only — no rule from it is applied yet. The "
-            "rules are in the files below. Before writing or changing code, Read the ones whose "
-            "topic matches the work (the index you just loaded says which); before finishing, "
-            "check your diff against the Audit checklist at the end of each file you opened.\n"
-            % name)
+            "rules are in the files below. Before writing or changing code, do this: choose the one "
+            "or two files whose topic matches this task (the index you just loaded says which), and "
+            "Read each of them in full — every line, with no offset, limit, head, line range or "
+            "grep, because a rule you did not read cannot be applied. Before finishing, check your "
+            "diff against the Audit checklist at the end of each file you read.\n" % name)
     return head + "\n".join(str(p) for p in rules)
 
 
@@ -193,6 +204,8 @@ def self_test() -> int:
         c = ctx(out)
         check("skill: exit 0", rc == 0)
         check("skill: names the skill", "`sota-python`" in c)
+        check("skill: one concrete action, a full read", "choose the one or two files" in c
+              and "Read each of them in full" in c and "Audit checklist" in c)
         check("skill: absolute path of every rules file",
               str(sk / "01-tooling.md") in c and str(sk / "04-async.md") in c)
         check("skill: event name", out and json.loads(out)["hookSpecificOutput"]["hookEventName"] == "PostToolUse")
