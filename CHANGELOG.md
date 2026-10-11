@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The opt-in skill-depth hook asks for a full read (ROADMAP 73, option (d')).** After a `sota-*`
+  skill loads, `scripts/skill-depth-hook.py` now asks the agent to choose one or two rules files and
+  read each in full: every line, with no offset, limit, head, line range or grep. Before, it asked
+  the agent to "Read the ones whose topic matches". v8 in `sota-agent-evals` measured it: rules lines
+  read per run rose from 79 to 472, but rule tests did not move (0.698 → 0.679, NULL). Agents
+  reached a cited rules file in only 11/20 runs, and 10/20 never loaded `sota-code-security`. v7
+  showed that the *named* right files do raise rule tests (0.868). So the hook stays opt-in, and the
+  open problem is which file gets chosen, not how much of it is read. `--self-test` is 59 checks,
+  and a mutant restoring the old wording fails it.
+
 - **A git-mode secret scan never reads uncommitted work (`sota-secrets-management` rules/04
   §1).** `gitleaks git .` and the legacy `detect --source .` scan commits. With a token in an
   uncommitted file they printed `scanned ~1492 bytes` and `no leaks found`, exit 0; `gitleaks dir`
