@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """skill-depth-hook.py — after a sota skill loads, name the rules files to open next. A Claude Code
-PostToolUse hook on the `Skill` tool (opt-in: it is NOT in hooks/hooks.json until it is measured).
+PostToolUse hook on the `Skill` tool (opt-in: it is NOT in hooks/hooks.json; v7 measured it NULL on outcomes).
 
 WHY. Loading a skill loads its SKILL.md, which is an index; every rule and Audit checklist lives in
 `rules/*.md`, which the model must open itself. Measured in sota-agent-evals with the library and
@@ -9,6 +9,10 @@ file was opened 0/20 (v4, 2026-10-09). A "Next actions" block at the top of the 
 to 1/20 against 0/20 (v5, 2026-10-10, NULL) — and the three runs it did send on to a language skill
 all stopped at that skill's SKILL.md. Text in an index does not carry the model to the next file.
 This hook moves the instruction from the index to the moment after the load, with the paths.
+MEASURED: v6 (2026-10-10) next skill 0/20 -> 18/20, rules text 2/20 -> 4/20, INCONCLUSIVE. v7
+(2026-10-11, cases-v4 rule tests) reached a cited rules file in 12/20 runs vs 5/20, but read ~79
+lines vs ~448 when the files were named, and moved rule tests +0.019: NULL. Naming the right files
+was SUPPORTED (+0.17), so what is missing is a full read of the right file (ROADMAP 73).
 
 WHAT IT SAYS (as `additionalContext`, which Claude reads next to the tool result):
   sota (the router)   it applies no rule; invoke the language skill for the file types found in
