@@ -10,7 +10,11 @@ one in 11/20 runs, and outcomes did not move (v8, NULL); a BM25 match of the pro
 rules index found a cited file for 6/20 tasks. Prompts do not name their risk: "export the orders
 as CSV" never says formula injection, "fetch the callback URL" never says SSRF. The CODE does —
 `csv.writer`, an outbound fetch, `zipfile` — so this hook selects from what was just written.
-MEASURED: (filled in by the v9 report; until then this is unmeasured on outcomes).
+MEASURED: v9 (2026-10-12) reached a cited rules file in 18/20 runs (v8 11/20, files named in the
+prompt 20/20), so the choice of file works, but rule tests went 0.698 -> 0.717 (NULL). In 6 of the
+8 runs that failed a rule test, the agent named the tested risk and left it out as a decision for
+the user ("beyond your spec"). The hook stays opt-in; the open problem is whether a library rule
+counts as part of the task (ROADMAP 73).
 
 WHAT IT SAYS (as `additionalContext`, read next to the tool result): for each trigger the written
 text matches, in table order, the absolute path of the rules file and the section to check, with

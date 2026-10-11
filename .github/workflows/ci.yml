@@ -159,6 +159,13 @@ jobs:
         # hook fails 7 of 58, one that drops the paths 2, one that counts dot dirs 1.
         run: python3 scripts/skill-depth-hook.py --self-test
 
+      - name: Prove the code-rules hook names the rules file for what written code does
+        # An opt-in PostToolUse hook on Edit|Write|MultiEdit (scripts/code-rules-hook.py, ROADMAP
+        # 73 option h). The self-test drives it over stdin and checks that every file the trigger
+        # table names exists. Mutation-checked 2026-10-12: a per-edit cap of 3, a dropped same-file
+        # merge and a test-file filter removed each fail it.
+        run: python3 scripts/code-rules-hook.py --self-test
+
       - name: Prove the MCP server answers correctly and refuses hostile input
         # scripts/sota-mcp-server.py serves the library read-only to agents without a skills
         # loader. The test drives it over real stdio: lifecycle, version negotiation, every
