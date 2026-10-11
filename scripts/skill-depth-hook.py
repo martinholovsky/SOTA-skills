@@ -18,10 +18,6 @@ prompt omits the rule's vocabulary by construction, and a BM25 match found a cit
 v8 (2026-10-11) measured this wording: lines read per run 79 -> 472, but a cited file was opened in
 11/20 runs and rule tests went 0.698 -> 0.679 (NULL). The full read works; the choice of file does
 not, so the hook stays opt-in.
-MEASURED: v6 (2026-10-10) next skill 0/20 -> 18/20, rules text 2/20 -> 4/20, INCONCLUSIVE. v7
-(2026-10-11, cases-v4 rule tests) reached a cited rules file in 12/20 runs vs 5/20, but read ~79
-lines vs ~448 when the files were named, and moved rule tests +0.019: NULL. Naming the right files
-was SUPPORTED (+0.17), so what is missing is a full read of the right file (ROADMAP 73).
 
 WHAT IT SAYS (as `additionalContext`, which Claude reads next to the tool result):
   sota (the router)   it applies no rule; invoke the language skill for the file types found in
