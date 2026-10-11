@@ -15,6 +15,9 @@ lines vs ~448 when the files were named, and moved rule tests +0.019: NULL. Nami
 was SUPPORTED (+0.17). So the instruction now asks for a choice of one or two files and a FULL read
 of each (ROADMAP 73 (d')). Matching files to the task's wording instead was rejected offline: the
 prompt omits the rule's vocabulary by construction, and a BM25 match found a cited file for 6/20.
+v8 (2026-10-11) measured this wording: lines read per run 79 -> 472, but a cited file was opened in
+11/20 runs and rule tests went 0.698 -> 0.679 (NULL). The full read works; the choice of file does
+not, so the hook stays opt-in.
 MEASURED: v6 (2026-10-10) next skill 0/20 -> 18/20, rules text 2/20 -> 4/20, INCONCLUSIVE. v7
 (2026-10-11, cases-v4 rule tests) reached a cited rules file in 12/20 runs vs 5/20, but read ~79
 lines vs ~448 when the files were named, and moved rule tests +0.019: NULL. Naming the right files
