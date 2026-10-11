@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **An opt-in hook names the rules file for what the code just written does (ROADMAP 73, option
+  (h)).** `scripts/code-rules-hook.py` is a PostToolUse hook on `Edit|Write|MultiEdit`. It matches
+  the written text against 19 triggers taken from the skills' rules indexes, such as an outbound
+  fetch, a CSV writer, archive extraction or a login, and names each matching rules file by
+  absolute path with the section to check and one action: read it in full. It names a file at most
+  once per session and at most two per edit, and it skips test files. `--table` renders the same
+  rows as Markdown links. v9 in `sota-agent-evals` measured it:
+  - A cited rules file was opened in 18/20 runs, against 11/20 for the (d') hook.
+  - Rule tests went 0.698 → 0.717 (NULL).
+  - In 6 of the 8 failing runs the agent named the tested risk and left it out as a decision for
+    the user.
+
+  The same table as links in `sota-python`'s index measured 0.755 (INCONCLUSIVE). The hook stays
+  opt-in, and `--self-test` (20 checks) runs in CI. The skill-depth hook's docstring also loses a
+  paragraph #530 had duplicated.
+
 - **The opt-in skill-depth hook asks for a full read (ROADMAP 73, option (d')).** After a `sota-*`
   skill loads, `scripts/skill-depth-hook.py` now asks the agent to choose one or two rules files and
   read each in full: every line, with no offset, limit, head, line range or grep. Before, it asked
