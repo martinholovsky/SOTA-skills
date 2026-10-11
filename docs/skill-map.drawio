@@ -2871,10 +2871,13 @@
           <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
         </mxCell>
         <mxCell id="hg2" value="opt-in, Claude Code only" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
-          <mxGeometry x="520" y="478" width="420" height="70" as="geometry"/>
+          <mxGeometry x="520" y="478" width="420" height="100" as="geometry"/>
         </mxCell>
         <mxCell id="hg2_0" value="Stop + PostToolUse · verified-done-hook.py" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hg2">
           <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="hg2_1" value="PostToolUse on Skill · skill-depth-hook.py" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hg2">
+          <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
         </mxCell>
         <mxCell id="rs" value="skills directories (install.sh --target all)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
           <mxGeometry x="1000" y="170" width="420" height="160" as="geometry"/>

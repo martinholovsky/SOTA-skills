@@ -469,6 +469,8 @@ def surfaces_inventory():
     inv["optin_hooks"] = []
     if (ROOT / "scripts/verified-done-hook.py").exists():
         inv["optin_hooks"].append(("Stop + PostToolUse", "verified-done-hook.py"))
+    if (ROOT / "scripts/skill-depth-hook.py").exists():
+        inv["optin_hooks"].append(("PostToolUse on Skill", "skill-depth-hook.py"))
     ci = (ROOT / "scripts/check-invariants.sh").read_text(encoding="utf-8")
     nums = re.findall(r'(?m)^echo "\[(\d+)/(\d+)\]', ci)
     if not nums:
