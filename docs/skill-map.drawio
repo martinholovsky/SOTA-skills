@@ -2847,7 +2847,7 @@
           <mxGeometry x="40" y="586" width="420" height="84" as="geometry"/>
         </mxCell>
         <mxCell id="hg0" value="installed by the plugin (hooks/hooks.json)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="520" y="170" width="420" height="160" as="geometry"/>
+          <mxGeometry x="520" y="170" width="420" height="190" as="geometry"/>
         </mxCell>
         <mxCell id="hg0_0" value="SessionStart · plugin-budget-check.sh" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="hg0">
           <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
@@ -2861,8 +2861,11 @@
         <mxCell id="hg0_3" value="UserPromptSubmit · plugin-routing-hook.sh" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="hg0">
           <mxGeometry x="10" y="120" width="400" height="24" as="geometry"/>
         </mxCell>
+        <mxCell id="hg0_4" value="PostToolUse · code-rules-hook.py" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="hg0">
+          <mxGeometry x="10" y="150" width="400" height="24" as="geometry"/>
+        </mxCell>
         <mxCell id="hg1" value="written by install.sh --routing" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
-          <mxGeometry x="520" y="354" width="420" height="100" as="geometry"/>
+          <mxGeometry x="520" y="384" width="420" height="130" as="geometry"/>
         </mxCell>
         <mxCell id="hg1_0" value="UserPromptSubmit · routing re-injection" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="hg1">
           <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
@@ -2870,17 +2873,17 @@
         <mxCell id="hg1_1" value="SessionStart · update-reminder.sh" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="hg1">
           <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
         </mxCell>
+        <mxCell id="hg1_2" value="PostToolUse on Edit/Write · code-rules-hook.py" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="hg1">
+          <mxGeometry x="10" y="90" width="400" height="24" as="geometry"/>
+        </mxCell>
         <mxCell id="hg2" value="opt-in, Claude Code only" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
-          <mxGeometry x="520" y="478" width="420" height="130" as="geometry"/>
+          <mxGeometry x="520" y="538" width="420" height="100" as="geometry"/>
         </mxCell>
         <mxCell id="hg2_0" value="Stop + PostToolUse · verified-done-hook.py" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hg2">
           <mxGeometry x="10" y="30" width="400" height="24" as="geometry"/>
         </mxCell>
         <mxCell id="hg2_1" value="PostToolUse on Skill · skill-depth-hook.py" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hg2">
           <mxGeometry x="10" y="60" width="400" height="24" as="geometry"/>
-        </mxCell>
-        <mxCell id="hg2_2" value="PostToolUse on Edit/Write · code-rules-hook.py" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hg2">
-          <mxGeometry x="10" y="90" width="400" height="24" as="geometry"/>
         </mxCell>
         <mxCell id="rs" value="skills directories (install.sh --target all)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=11;startSize=26;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
           <mxGeometry x="1000" y="170" width="420" height="160" as="geometry"/>

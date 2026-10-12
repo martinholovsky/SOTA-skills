@@ -743,7 +743,8 @@ read, hack on, or pin). A few details on the clone path:
   re-run it after every `git pull`, or enable Developer Mode and re-run for live links.
 - Prefer no script? Symlink `skills/*/` into `~/.claude/skills/` and `commands/*.md`
   into `~/.claude/commands/` by hand. You then skip what the script adds beyond links:
-  the update-reminder hook, the routing-hook and listing-budget offers, and the reach check.
+  the update-reminder hook, the routing-hook, code-rules-hook and listing-budget offers, and the
+  reach check.
 
 The plugin (or `--copy`) installs the skills; a few extras (routing reminder,
 status line, pre-commit gates, AGENTS.md) aren't auto-enabled — see
@@ -1338,6 +1339,17 @@ agent runs with every skill installed and no routing layer, the model invoked a 
 **zero** times ([sota-agent-evals v3](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-08-v3/REPORT.md)).
 Turn it off with `SOTA_ROUTING_HOOK=off` (for example in `settings.json` `"env"`). If you also
 installed the installer's hook, the plugin's stays silent, so the reminder is never doubled.
+
+**Since ROADMAP 73 (m) it also ships the code-rules hook**, on by default
+(`scripts/code-rules-hook.py`, a `PostToolUse` hook on `Edit|Write|MultiEdit`). After the agent
+writes code, it names the rules file for what that code does: an outbound fetch → SSRF, a CSV
+writer → formula injection, an archive → Zip Slip, a handler → rate limiting. It tells the agent
+those rules are part of the task, so it builds them instead of handing them back as a question.
+It is the one routing change measured to move outcomes: rule tests 0.717 → 0.906
+([sota-agent-evals v10](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v10/REPORT.md)).
+It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigger table was tuned on the same cases that
+measured it, and it needs `python3`. Turn it off with `SOTA_CODE_RULES_HOOK=off`.
+`install.sh --routing` offers the same hook to clone installs; with both, each file is named once.
 
 The plugin does **not** touch your global config or status line. To match the clone experience,
 opt in to any of these; the scripts ship *with* the plugin, under its cache dir:
