@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **verify-setup 2c: a missing code-rules hook is PARTIAL, and the row says what it costs.**
   It was INFO, on the reasoning that the hook's +68% cost made leaving it out a choice. But it
-  is the shipped default and the largest measured lever, and check 2 FAILs on a weaker one.
+  is the shipped default and the largest measured gain on rule tests.
   - **The row now states the cost:** without the hook, measured agents applied the security rules
     a task needed in 0.698 of rule tests, against 0.906 with it. The misses cluster in SSRF, CSV
     formula guards, login throttling, rate limits and session lifetimes.
