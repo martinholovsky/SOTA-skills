@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`docs/skill-map.drawio` gains page 8: how skill files point at each other, by form.**
+  Cross-skill pointers are written as a skill NAME, never a path or a link: 1,395 mentions of
+  another skill's name across 346 skill files, 727 of them followed by `rules/NN`. There are 0
+  Markdown links into another skill's directory and 0 `@path` imports (the 3 `@` tokens describe
+  the CLAUDE.md mechanism). Following a pointer is therefore an inference: name to directory,
+  number to file by prefix, `§` to heading. The page tabulates each form with what an agent must
+  do to follow it, draws that resolution chain, and adds the full 42 x 42 skill x skill
+  reference matrix that page 3 aggregates to families. The counts are read from the tree, and
+  the classifier aborts if it reads 0 of a form the tree is known to use. **Page 7 also gains the
+  code-rules hook.** Its opt-in list was hand-written with two entries and missed
+  `code-rules-hook.py` (#531); the list is now checked against `scripts/*-hook.py` in both
+  directions, and the run aborts on a mismatch.
 - **The code-rules hook now says the rules it names are part of the task (ROADMAP 73, option
   (j)).** After naming the files, `scripts/code-rules-hook.py` adds one paragraph: the rules are part
   of what was asked, so build each one now with a conservative default, do not hand it back as a

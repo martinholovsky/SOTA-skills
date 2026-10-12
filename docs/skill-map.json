@@ -3385,6 +3385,22 @@
       "targets": []
     }
   ],
+  "link_forms": {
+    "@path import": 3,
+    "generic ('the language skill')": 21,
+    "md link, outside skills/": 3,
+    "md link, same skill": 133,
+    "name (backticked)": 429,
+    "name (bare)": 239,
+    "name+file (backticked)": 566,
+    "name+file (bare)": 161,
+    "own rules/NN": 2996
+  },
+  "rules_index_style": {
+    "backtick": 28,
+    "link": 12,
+    "plain": 2
+  },
   "surfaces": {
     "commands": [
       "sota-audit",
