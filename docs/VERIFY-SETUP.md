@@ -118,9 +118,12 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    rather than on a per-prompt injection.
    2c. Code-rules hook (Claude Code only): does `~/.claude/settings.json` register
    `code-rules-hook.py` as a `PostToolUse` hook, or does the plugin? Does the script path it
-   names still exist, and is `python3` on PATH? A missing hook is INFO, not a failure: it costs
-   about +68% per agent run, so leaving it out is a choice. A registration whose script is gone
-   is PARTIAL: it runs nothing on every edit.
+   names still exist, and is `python3` on PATH? A missing hook is PARTIAL: it is the shipped
+   default, and without it measured agents applied the security rules a task needed in 0.698 of
+   rule tests against 0.906 with it (it costs about +68% per agent run). Say what that costs.
+   INFO only when it is turned off on purpose (`SOTA_CODE_RULES_HOOK=off`). A registration whose
+   script is gone is PARTIAL too: it runs nothing on every edit. A sota-skills plugin copy that
+   predates the hook needs a plugin update, because a plugin updates only on a release.
 3. Stack profile: does `~/.claude/profiles/*.md` exist and resolve (not a
    dangling symlink)? Report the filename only, not its contents.
 

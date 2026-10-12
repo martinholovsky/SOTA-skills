@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Antigravity, from a field report, each claim checked** (docs/MULTI-AGENT.md;
+  ADOPTION-LOG has the verdicts).
+  - **It has lifecycle hooks** (`hooks.json`). `PreInvocation` can inject an `ephemeralMessage`,
+    but it fires before every model call, not once per prompt.
+  - **The code-rules hook can't be ported as written.** Its documented `PostToolUse` gets no tool
+    arguments and returns `{}`. The port is deferred with a trigger.
+  - **Antigravity CLI follows symlinked skill folders.** `agy -p` listed exactly the checkout's 43
+    skills, with a control. The 2.0 app and IDE are still unverified.
+
+- **`/sota-close` step 3a: re-read every doc that describes what the session changed, and
+  nothing else.** Step 3 updated the docs a session *knew* it had made false. Nothing found a
+  README line, index row, runbook step or comment elsewhere describing a changed file.
+  - **The bound:** files changed × docs that mention them. Per-file counts come first, so the
+    denominator is visible.
+  - **Records are skipped:** changelogs and dated reports are superseded, never edited.
+  - **Names instead of generic basenames:** for `README.md` or `install.sh`, search the names the
+    change touched, over all tracked files, so code comments count.
+  - **The pass reports** *N changed, M checked, K fixed*.
+  - **Run in bash and zsh on this branch,** with a control: the doc known to describe a changed
+    file was listed. First run: 7 files changed, about 97 doc mentions, too broad because of
+    generic basenames, hence the rules above. Applying it found one stale line, this file's own
+    earlier 2c entry.
+
+- **verify-setup 2c: a missing code-rules hook is PARTIAL, and the row says what it costs.**
+  It was INFO, on the reasoning that the hook's +68% cost made leaving it out a choice. But it
+  is the shipped default and the largest measured gain on rule tests.
+  - **The row now states the cost:** without the hook, measured agents applied the security rules
+    a task needed in 0.698 of rule tests, against 0.906 with it. The misses cluster in SSRF, CSV
+    formula guards, login throttling, rate limits and session lifetimes.
+  - **INFO only for a deliberate opt-out** (`SOTA_CODE_RULES_HOOK=off`).
+  - **It names a sota-skills plugin copy too old to carry the hook,** with the update command,
+    since a plugin updates only on a release.
+  - **Probes:** missing → PARTIAL, and turned off → INFO.
+  - **A correction where the figure appears as current state:** the README and `install.sh` gave
+    the hook's effect as 0.717 → 0.906, which is v10's paragraph-on-hook comparison. Hook against
+    no hook is 0.698 → 0.906 (v7 `installed` against v10, the same 20 cases). The hook header,
+    ROADMAP and INDEX use 0.717 correctly, in that context.
+
 - **Two field reports taken in** (an LLM-guardrail red-team harness, 2026-10-11, and a guardrail
   proxy, 2026-10-12). Every library-text claim was re-checked and every mechanism reproduced; the
   ADOPTION-LOG section has each verdict.
@@ -34,6 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `python3` is missing.
   - **INFO** when it is turned off or not installed, with the command to add it. It is a cost
     choice, so it is never a FAIL.
+    *Superseded the same day (entry above): a missing hook is now PARTIAL, with its cost; INFO
+    is kept only for a deliberate opt-out.*
 
   Part B's fixture registers the hook as `install.sh` writes it, and two probes break it. Before
   this, the default that #535 shipped was invisible to the setup check. `update.sh` needed no

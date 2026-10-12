@@ -1345,7 +1345,7 @@ installed the installer's hook, the plugin's stays silent, so the reminder is ne
 writes code, it names the rules file for what that code does: an outbound fetch → SSRF, a CSV
 writer → formula injection, an archive → Zip Slip, a handler → rate limiting. It tells the agent
 those rules are part of the task, so it builds them instead of handing them back as a question.
-It moved outcomes when measured: rule tests 0.717 → 0.906
+It moved outcomes when measured: rule tests 0.698 with no hook → 0.906 with it
 ([sota-agent-evals v10](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v10/REPORT.md)).
 It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigger table was written by an author who had read the
 cases that measured it (in-sample), and it needs `python3`. Turn it off with `SOTA_CODE_RULES_HOOK=off`.

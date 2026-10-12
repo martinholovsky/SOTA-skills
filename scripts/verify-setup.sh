@@ -520,10 +520,13 @@ fi
 
 # --- 2c. the code-rules hook (ROADMAP 73 (m), on by default since 2026-10-12) ---
 # A PostToolUse hook on Edit|Write|MultiEdit that names the rules file for what the code just
-# written does. The plugin registers it; install.sh --routing offers it. Measured: rule tests
-# 0.717 -> 0.906 (sota-agent-evals v10) at about +68% cost per run, so a machine without it is
-# a choice, reported as INFO, never a FAIL. A registration whose script path is gone runs
-# nothing and says nothing (the hook command fails on every edit), so that one is PARTIAL.
+# written does. The plugin registers it; install.sh --routing offers it with "yes" preselected.
+# Missing is PARTIAL, not INFO (changed 2026-10-12): it is the shipped default and the largest
+# measured lever -- sota-agent-evals v10, rule tests 0.698 with no hook (v7 `installed`) -> 0.906
+# with it, at about +68% cost per run. INFO only when it is
+# turned off on purpose (SOTA_CODE_RULES_HOOK=off). A registration whose script path is gone runs
+# nothing on every edit, so that is PARTIAL too. A plugin copy too old to carry the hook is named,
+# because a plugin updates only on a release.
 cr_have=""; cr_stale=""
 for s in "$CLAUDE_HOME/settings.json" "$CLAUDE_HOME/settings.local.json"; do
   [ -f "$s" ] || continue
@@ -535,9 +538,14 @@ for s in "$CLAUDE_HOME/settings.json" "$CLAUDE_HOME/settings.local.json"; do
 $(grep -o '/[^"]*code-rules-hook\.py' "$s" 2>/dev/null || true)
 EOF_CR
 done
-if [ -d "$CLAUDE_HOME/plugins" ] && find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*hooks/hooks.json' \
-     -exec grep -l 'code-rules-hook\.py' {} + 2>/dev/null | grep -q .; then
-  cr_have="${cr_have:+$cr_have, }the plugin"
+cr_oldplugin=0
+if [ -d "$CLAUDE_HOME/plugins" ]; then
+  if find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*hooks/hooks.json' \
+       -exec grep -l 'code-rules-hook\.py' {} + 2>/dev/null | grep -q .; then
+    cr_have="${cr_have:+$cr_have, }the plugin"
+  elif find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*sota-skills*/hooks/hooks.json' 2>/dev/null | grep -q .; then
+    cr_oldplugin=1   # the sota-skills plugin is here, in a version from before the hook
+  fi
 fi
 case "${SOTA_CODE_RULES_HOOK:-on}" in
   off | OFF | 0 | false | FALSE | no) cr_off=1 ;;
@@ -552,9 +560,13 @@ elif [ -n "$cr_have" ] && ! command -v python3 >/dev/null 2>&1; then
   row "PARTIAL" "2c. code-rules hook" "registered ($cr_have) but python3 is not on PATH — it cannot run"
 elif [ -n "$cr_have" ]; then
   row "PASS" "2c. code-rules hook" "registered by: $cr_have"
+elif [ "$cr_off" -eq 1 ]; then
+  row "INFO" "2c. code-rules hook" "not installed, and turned off by SOTA_CODE_RULES_HOOK=${SOTA_CODE_RULES_HOOK} — a deliberate opt-out"
 else
-  row "INFO" "2c. code-rules hook" \
-    "not installed. After an edit it names the rules file for what the code does (rule tests 0.717 -> 0.906 measured, about +68% cost per agent run). Add it: scripts/install.sh --routing"
+  cr_fix="scripts/install.sh --routing"
+  [ "$cr_oldplugin" -eq 1 ] && cr_fix="$cr_fix, or update the plugin (your copy predates the hook): /plugin update sota-skills@sota-skills"
+  row "PARTIAL" "2c. code-rules hook" \
+    "not installed — below the default setup. What it costs: in measured agent runs without it, agents applied the security rules a task needed in 0.698 of rule tests, against 0.906 with it; the misses cluster in SSRF checks, CSV formula guards, login throttling, rate limits and session lifetimes (sota-agent-evals v7/v10; clusters from its cases-v4 calibration; in-sample). Having it costs about +68% per agent run. Add it: $cr_fix"
 fi
 
 # --- 2b. the same directive in the other agents' global instruction files ---

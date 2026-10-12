@@ -7928,3 +7928,18 @@ on 2026-10-12 also cited rules/06 throughout and never loaded it.
 | P3 — gate "tracing available" on the SDK import, not the API | **adopted with a correction** — the report's "FastAPI ≥ 0.143" is the wrong boundary: 0.142.0 already requires `opentelemetry-api` (PyPI metadata); written without a version | `sota-observability` rules/03 §1 |
 | P4 — an offline LLM eval must send the bytes the app sends | **adopted, with the report's own caveat** (one specimen) — the principle is train/serve skew, cross-linked; checklist item added | `sota-llm-engineering` rules/01 §4 |
 | P5 — `/sota-close`'s "count, do not compute" caught a stale count in an agent file | **recorded: worked** | — |
+
+
+## 2026-10-12 — field report from an Antigravity CLI session: lifecycle hooks and symlinked skills, taken in 2026-10-12
+
+**Source:** a PR draft written by an Antigravity CLI session working on this repository, citing
+Antigravity's bundled `agy-customizations` skill. Its `docs/hooks.md` (330 lines) and
+`docs/skills.md` were read in full at the path it gave. The symlink claim was re-run here. The
+draft's ADOPTION-LOG diff would have inserted this section inside an existing table, so it is
+appended instead.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| Antigravity supports `hooks.json` lifecycle hooks (`PreInvocation`, `PreToolUse`, `PostToolUse`, `PostInvocation`, `Stop`); prompt re-injection is not Claude Code's alone | **adopted with a correction** — confirmed (hooks.md:67-79, 253-269), but `PreInvocation` fires before **every model call**, not once per user prompt, so it is not equivalent to `UserPromptSubmit`: a reminder there repeats inside one turn and costs tokens each time | `docs/MULTI-AGENT.md` "Hooks" |
+| Antigravity follows symlinked skill folders ("verified, 43/43") | **adopted for the CLI only** — re-run 2026-10-12: 43 symlinks in `~/.gemini/antigravity-cli/skills`, all readable; `agy -p` listed exactly the checkout's 43 names, control (built-in `agy-customizations`) present. Its docs say nothing about symlinks. The draft's claim for `~/.gemini/config/skills` (2.0 app and IDE) was not run, so it stays unverified | `docs/MULTI-AGENT.md` "Not verified" |
+| Port the code-rules hook to Antigravity via `PostToolUse` on `write_to_file\|replace_file_content`, and routing re-injection via `PreInvocation` | **DEFERRED, with a correction** — revisit trigger: a request to support Antigravity hooks in `install.sh`, or Antigravity documenting tool arguments and context output for `PostToolUse`. As documented, `PostToolUse` receives only `stepIdx`/`error` and returns `{}` (hooks.md:227-235): the hook could neither see what was written nor tell the agent anything. A port would read `transcriptPath` from a `PreInvocation` hook instead. The tool names `write_to_file`/`replace_file_content` appear nowhere in the doc (it names `run_command`, `view_file`, `browser_*`) | — |
