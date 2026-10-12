@@ -1,8 +1,8 @@
 # 11 — After the gate fails: can anyone find out why
 
-Scope: the sibling of `rules/09`. That file asks whether a gate *can* fail and whether failing
+Scope: the sibling of [`rules/09`](09-gates-that-hold.md). That file asks whether a gate *can* fail and whether failing
 it *matters*; this one starts one step later — the gate went red, and someone has to find out
-why. Split out of `rules/09` (v1.43.0) when that file reached its 500-line cap; §4, §5 and §6
+why. Split out of [`rules/09`](09-gates-that-hold.md) (v1.43.0) when that file reached its 500-line cap; §4, §5 and §6
 keep their numbers so every existing citation still names the right section.
 
 **The unifying property:** a failure's cause lives in output that is *more perishable than the
@@ -11,7 +11,7 @@ predecessor — and what survives is an exit code, which looks identical for eve
 
 ## 4. A verdict that lives only in a garbage-collected log does not exist
 
-The other half of the same incident. `rules/09` §1 and §2 ask whether a gate *can* fail; the
+The other half of the same incident. [`rules/09`](09-gates-that-hold.md) §1 and §2 ask whether a gate *can* fail; the
 negative-control material asks whether it can still go red. Neither asks whether a human
 can find out **why** it went red once the executor is reaped.
 
@@ -69,7 +69,7 @@ one you actually checked.
 
 **Apply it to every instance of the gate, not just the one that broke.** Gate steps are
 routinely copy-pasted across per-service pipelines, and fixing one leaves the rest mute
-(`rules/01` §1.11a).
+([`rules/01`](01-pipeline-security.md) §1.11a).
 
 **The alert is the other half.** An alert whose description enumerates possible causes
 (*"could indicate X, or Y, or an actual policy failure"*) is the same defect one layer up:
@@ -143,7 +143,7 @@ run_gate() {
 - **Record wall-clock duration beside the verdict.** It is often the only signal separating an
   environment problem from a product one: the same suite at 1599s against a 757s baseline for
   identical code is the tell that two runs were contending, not that the code changed
-  (`sota-performance` rules/01 §9a — a suspiciously *slow* run indicts the measurement first).
+  ([`sota-performance` rules/01](../../sota-performance/rules/01-methodology.md) §9a — a suspiciously *slow* run indicts the measurement first).
 - **A flake you cannot explain is not a flake, it is an unread log.** Before adding a failure
   to a known-intermittent list, check whether its first occurrence was ever preserved. A list
   of "unexplained intermittent failures" is frequently a list of runs whose evidence was
@@ -152,7 +152,7 @@ run_gate() {
   pipeline retries, rolls back or reports a failed push, deploy or tag, read the resource
   back: the write may have landed and the error may be about the attempt, not the state.
   The rule and its field case (a `git push` that failed with its own ref already on the
-  remote) live in `sota-shell-scripting` rules/01 §2b.
+  remote) live in [`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md) §2b.
 
 ## 5. The scoped gate is not the gate — reproduce the invocation, not an equivalent
 
@@ -193,15 +193,15 @@ Where a tool's answer depends on its file selection, say so at the gate definiti
 the next person does not re-derive it. And read **each gate's exit code on its own**: an
 `&&` chain reports only the last command's status, a trailing `echo` makes the shell's
 status 0 whatever the tool did, and a pipe reports the last stage
-(`sota-shell-scripting` rules/01 §3). A locally clean run of "the same" linter is not
+([`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md) §3). A locally clean run of "the same" linter is not
 evidence the gate is clean — it is evidence that a different question has a different
 answer.
 
 ## 6. A bespoke watcher inherits the publishing conventions of what it watches
 
-Some things you pin cannot be seen by an update bot at all (`rules/03` §3.7.1), so you
+Some things you pin cannot be seen by an update bot at all ([`rules/03`](03-dependencies.md) §3.7.1), so you
 write the watcher yourself. It is then an instrument and fails the way instruments fail
-(`sota-code-security` rules/15 §2) — with one twist that makes it worse: **silence is a
+([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2) — with one twist that makes it worse: **silence is a
 watcher's normal state**, so an entry that can *never* report is indistinguishable from an
 entry with nothing to report. Two field-reported failures, both producing a green that
 meant nothing:
@@ -226,7 +226,7 @@ meant nothing:
 2. **Is my threshold finer than the event class I care about?** A patch-level pin needs a
    patch-level threshold, or the watcher excludes its own reason for existing.
 3. **Can I make it fire on demand?** A watcher with no forced-alarm path has never been
-   observed working (§2; `sota-code-security` rules/15 §2.2 — never trust a number from an
+   observed working (§2; [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2 — never trust a number from an
    instrument you have not watched produce a *wrong* answer on purpose).
 4. **Does the comparator behave in the environment the watcher runs in, not in my shell?**
    Version comparison is the classic: a lexical sort ranks `v2.9.1` above `v2.11.4` and
@@ -236,7 +236,7 @@ meant nothing:
    safe direction that time, which is exactly why it is worth one command rather than a
    guess. A shell-less base has no `sort` at all.
 
-An entry that has never reported anything is `sota-code-security` rules/15 §2.2a's
+An entry that has never reported anything is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2a's
 four-state problem in a slower loop: **UNKNOWN** rendered as **NOT DONE**, indefinitely.
 Count the runs in which an entry produced no comparison at all, and alert on that count —
 "I have not been able to read this for six weeks" is a different fact from "up to date".

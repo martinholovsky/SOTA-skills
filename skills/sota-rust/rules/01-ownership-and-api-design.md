@@ -45,7 +45,7 @@ fn process(s: &str, items: &[u32]) -> usize { ... }
   `&str` then immediately `.to_owned()` forces a copy the caller may have been
   able to move; prefer `impl Into<String>` there.
 - Return `&str`/`&[T]` borrowed from `self` where lifetimes allow; `Cow<'_, str>`
-  when sometimes-owned (see rules/06 for perf framing).
+  when sometimes-owned (see [rules/06](06-performance.md) for perf framing).
 
 ## 2. Rc/Arc/Box/RefCell: when shared ownership is right
 
@@ -109,12 +109,12 @@ fn transfer(from: AccountId, to: AccountId, amount: Cents) -> Result<(), Error>
   the cast. An integer above 2^53 that passes through `f64` loses its low bits
   (`9007199254740993` comes back as `...992`, measured), so deserialize amounts and IDs into
   integer or decimal fields.
-- **Arithmetic edge cases on numeric input** (adds to the `checked_*` policy in rules/05 §3).
+- **Arithmetic edge cases on numeric input** (adds to the `checked_*` policy in [rules/05](05-security-supply-chain.md) §3).
   `str::parse::<f64>()` returns `Ok` for `"nan"`, `"inf"`, `"-Infinity"` (any case, per core's
   float grammar) and `Ok(inf)` for `"1e400"`. NaN compares false to everything, so
   `if x < min || x > max { reject }` passes it, and `x.clamp(min, max)` returns it: test
   `!x.is_finite()` first. Integer `/` and `%` panic on a zero divisor **and on `MIN / -1`** in
-  release as well as debug, so a caller-chosen divisor is a panic-DoS (rules/05 §4): use
+  release as well as debug, so a caller-chosen divisor is a panic-DoS ([rules/05](05-security-supply-chain.md) §4): use
   `checked_div`/`checked_rem`, which return `None` for both. Float `x / 0.0` is `inf`, not an
   error. `-MIN` and `MIN.abs()` panic in debug but return `MIN` in release: use `checked_neg`,
   `checked_abs` or `unsigned_abs`. `a * b / c` can overflow in the product when the result
@@ -201,9 +201,9 @@ impl Backend for Postgres { ... }
 - Return-position `impl Trait` (and RPITIT in traits, stable since 1.75) over
   boxed returns where the concrete type is single. For public traits needing
   dyn-compatibility with async, use `async-trait` or hand-rolled
-  `Box<Pin<...>>` returns (see rules/04).
+  `Box<Pin<...>>` returns (see [rules/04](04-async-tokio.md)).
 - Implement standard traits eagerly: `Debug` on everything public (or a manual
-  redacting impl for secrets — rules/05), `Default` where a zero-config value
+  redacting impl for secrets — [rules/05](05-security-supply-chain.md)), `Default` where a zero-config value
   exists, `Display` + `std::error::Error` on errors, `From` for infallible
   conversions, `TryFrom` for fallible ones. Never impl `Into` directly.
 - **`Eq`/`Ord`/`PartialEq`/`PartialOrd`: `#[derive]` them; hand-write only with
@@ -353,7 +353,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       `grep -rnE '^[[:space:]]*pub [a-z_][a-z0-9_]*:|struct [A-Z][A-Za-z0-9_]*(<[^>]*>)?\(pub ' --include='*.rs' .`
       — a `pub` field on a type that also has a validating constructor (`new`/`TryFrom`
       returning `Result`) lets any caller build the invalid value = Medium (High when the
-      invariant is security-relevant, or when `unsafe` code relies on it — rules/03 §1).
+      invariant is security-relevant, or when `unsafe` code relies on it — [rules/03](03-unsafe-discipline.md) §1).
       rustc's `unreachable_pub` (allow-by-default) lists `pub` items that should be
       `pub(crate)`.
 - [ ] Multi-crate repo without `[workspace.dependencies]` → version drift;

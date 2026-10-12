@@ -75,8 +75,8 @@ worker thread serves the next request with the previous tenant. Measured on
 Python 3.14: a 1-worker `ThreadPoolExecutor` job that set a `ContextVar`
 without reset left `"A"` visible to the next job; with `reset` it read
 `None`. On Node 22, the store was still set after an `enterWith()` call had
-returned, while after `run()` it was `undefined`. Language detail: sota-python
-rules/04 §6, sota-jvm rules/03, sota-javascript-typescript rules/04.
+returned, while after `run()` it was `undefined`. Language detail: [sota-python
+rules/04](../../sota-python/rules/04-async.md) §6, [sota-jvm rules/03](../../sota-jvm/rules/03-concurrency.md), [sota-javascript-typescript rules/04](../../sota-javascript-typescript/rules/04-node-backend.md).
 OWASP: Multi-Tenant Security cheat sheet.
 
 ```python

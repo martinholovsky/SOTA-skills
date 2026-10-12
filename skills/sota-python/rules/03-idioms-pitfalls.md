@@ -95,7 +95,7 @@ below 3.15 — before that the default is the locale encoding (cp1252 on many Wi
 the same file reads differently per machine. UTF-8 mode is on by default from 3.15 (PEP 686;
 `sys.flags.utf8_mode` read 1 on 3.15.0b4 and 0 on 3.14.6, measured 2026-09-25), and an
 explicit `encoding=` stays correct on every version. Security note: `Path` does NOT prevent
-traversal; see rules/05 §4.
+traversal; see [rules/05](05-security.md) §4.
 
 ## 6. EAFP vs LBYL
 
@@ -156,7 +156,7 @@ class Status(StrEnum):          # 3.11+: members ARE str — JSON/DB-friendly
 
 Know cold: `itertools.chain`, `batched` (3.12), `pairwise`, `groupby` (input must be sorted by
 the same key — classic bug), `islice`, `product`, `takewhile`;
-`functools.cache`/`lru_cache` (caveats in rules/06), `cached_property`, `partial`, `reduce`
+`functools.cache`/`lru_cache` (caveats in [rules/06](06-performance.md)), `cached_property`, `partial`, `reduce`
 (sparingly), `singledispatch` for type-based dispatch without isinstance ladders;
 `collections.Counter`, `defaultdict`, `deque` (O(1) popleft — never `list.pop(0)` in a loop).
 Hand-rolled chunking/flattening/windowing functions in a utils.py are an audit smell: replace
@@ -246,12 +246,12 @@ except StorageError:
   (interning makes it *sometimes* work, which is worse).
 - Returning `-1`/`0`/`""` to mean "absent" instead of `None`: type-checks, survives a
   truthiness check, and flips ordering comparisons. Producer shape and the three
-  detectors in rules/02 §2a.
+  detectors in [rules/02](02-typing-correctness.md) §2a.
 - Naive datetimes: always `datetime.now(tz=timezone.utc)`; `utcnow()` is deprecated and naive
   (ruff DTZ).
 - `zip(a, b, strict=True)` (3.10+) when silent truncation would hide a length-mismatch bug.
 - Shadowing builtins (`list`, `id`, `type`, `input`) — rename (ruff A).
-- String building in loops: collect + `"".join(parts)` (perf details rules/06).
+- String building in loops: collect + `"".join(parts)` (perf details [rules/06](06-performance.md)).
 - `round()` is banker's rounding; money math uses `Decimal` with explicit quantize.
 - **Non-finite numbers from input.** `float()` accepts `"nan"`, `"inf"`, `"Infinity"` in any
   case and with surrounding whitespace; `Decimal("NaN")`/`Decimal("Infinity")` parse too, and
@@ -275,7 +275,7 @@ except StorageError:
 
 Everything above is about code that works. This is about code other people import, where the
 cost of a change is paid by someone who cannot see your reasoning. The shared design rules
-live in `sota-architecture`; what follows is the Python-specific mechanism.
+live in [`sota-architecture`](../../sota-architecture/SKILL.md); what follows is the Python-specific mechanism.
 
 **`__all__` controls exactly one thing, and it is not privacy.** It is the name list for
 `from mod import *`, and it is what documentation tooling reads as the public surface. It

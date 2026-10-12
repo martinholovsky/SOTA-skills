@@ -1,8 +1,8 @@
 # 04 — Compute Selection: Serverless, Containers, Kubernetes, VMs
 
 Scope: choosing the compute layer, serverless patterns, Kubernetes architecture
-essentials. Container image hardening: see sota-sandboxing. Deploy pipelines and
-GitOps: see sota-devsecops.
+essentials. Container image hardening: see [sota-sandboxing](../../sota-sandboxing/SKILL.md). Deploy pipelines and
+GitOps: see [sota-devsecops](../../sota-devsecops/SKILL.md).
 
 ## 1. The decision tree — simplest thing that meets requirements
 
@@ -86,18 +86,18 @@ resource "aws_sqs_queue" "orders" {
   reset does not clear `/tmp` either; the next invocation may be for a different
   end user. So only what belongs to the *workload* lives in module scope: clients,
   connection pools, the function's own credentials or secrets (cached with a TTL,
-  sota-secrets-management rules/03 §4). Per-request data, user tokens and anything
+  [sota-secrets-management rules/03](../../sota-secrets-management/rules/03-application-patterns.md) §4). Per-request data, user tokens and anything
   user-scoped stay in handler-local variables, and a sensitive file written to
   `/tmp` is deleted before the handler returns (a `finally`, or a per-invocation
   temp directory removed on exit). Lambda Managed Instances run several invocations
   in one environment *concurrently*, which turns a leaked global into a live race
-  (JS mechanics: sota-javascript-typescript rules/04). (OWASP: Serverless FaaS
+  (JS mechanics: [sota-javascript-typescript rules/04](../../sota-javascript-typescript/rules/04-node-backend.md)). (OWASP: Serverless FaaS
   Security cheat sheet)
 - **Egress is the other VPC-attach criterion.** A Lambda function with no VPC
   config runs in a Lambda-managed VPC *with* internet access, and nothing in your
   network can filter it. A function that handles sensitive data or has no need
   for the internet gets VPC-attached into private subnets with a security group
-  whose outbound rules — plus the NAT/firewall path of rules/03 §3 — allow only
+  whose outbound rules — plus the NAT/firewall path of [rules/03](03-networking.md) §3 — allow only
   what it calls; one with no egress need reaches cloud services via private
   endpoints and has no NAT route. Other platforms have the same switch (e.g.
   Cloud Run `--vpc-egress=all-traffic`); check each one's default.
@@ -115,7 +115,7 @@ resource "aws_sqs_queue" "orders" {
   `sleep()`, you chose the wrong orchestrator.
 - Timeouts tuned to p99 + margin, not max — a 15-minute timeout on a 2-second
   function turns retries of a hung dependency into a cost and concurrency incident.
-- Event contracts versioned; consumers tolerant readers (see sota-api-design).
+- Event contracts versioned; consumers tolerant readers (see [sota-api-design](../../sota-api-design/SKILL.md)).
 
 ## 3. Kubernetes architecture essentials
 
@@ -189,7 +189,7 @@ spec:
   manager, secrets operator) is software you now operate. Adopt the minimal set;
   prefer provider-managed add-on variants.
 - Cluster API endpoint: private (or IP-restricted) for prod; authn via cloud IAM
-  (no static kubeconfig certs in CI — see sota-devsecops); RBAC mapped to IdP groups.
+  (no static kubeconfig certs in CI — see [sota-devsecops](../../sota-devsecops/SKILL.md)); RBAC mapped to IdP groups.
 
 ## 4. VMs (when you must)
 
@@ -197,7 +197,7 @@ spec:
   recreate-from-image), built from pipeline-produced images (Packer or provider
   image builder), no SSH mutation in place — access via SSM/IAP for debugging only.
 - Patch via image rebake + rolling replace, not in-place fleet patching.
-- Stateful VM workloads: pin per-AZ, snapshot schedules (rules/05), and a written
+- Stateful VM workloads: pin per-AZ, snapshot schedules ([rules/05](05-data-storage.md)), and a written
   failover story — an ASG won't save your database.
 
 ## Audit checklist

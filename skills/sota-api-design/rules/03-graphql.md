@@ -156,7 +156,7 @@ GraphQL transports over HTTP 200; do not let that destroy observability.
   `application/x-www-form-urlencoded` are CORS "simple requests" with no preflight.
   A server that parses those as JSON is exploitable (CVE-2025-64166 /
   GHSA-v66j-6wwf-jc57: Mercurius, fixed in 16.4.0). Then apply the CORS and CSRF
-  rules in rules/07.
+  rules in [rules/07](07-security-operations.md).
 
 ## 8. Schema snippets — good/bad
 
@@ -198,7 +198,7 @@ type CancelOrderPayload {
 
 - Transport: GraphQL-over-WebSocket (`graphql-ws` protocol — not the legacy
   `subscriptions-transport-ws`) or **GraphQL over SSE** (`graphql-sse`) — prefer
-  SSE for server-push-only subscriptions per rules/05 §1. Everything in rules/05
+  SSE for server-push-only subscriptions per [rules/05](05-realtime-websockets-sse.md) §1. Everything in [rules/05](05-realtime-websockets-sse.md)
   applies: auth (`connection_init` payload = first-message auth, with timeout),
   heartbeats, reconnect/backoff, backpressure.
 - Subscriptions are for **small, fast deltas** ("order 42 changed"), not data
@@ -211,7 +211,7 @@ type CancelOrderPayload {
 - Server restarts drop all subscriptions silently — clients must treat
   subscription data as a cache over a re-fetchable source (snapshot on
   reconnect), never the system of record. No replay buffer exists by default;
-  if gaps matter, add sequence numbers + re-query (rules/05 §2.3).
+  if gaps matter, add sequence numbers + re-query ([rules/05](05-realtime-websockets-sse.md) §2.3).
 - Cap concurrent subscriptions per connection and per principal; subscription
   resolvers go through the same cost analysis as queries.
 
@@ -237,7 +237,7 @@ type CancelOrderPayload {
   data you can never delete anything.
 - Never change a field's type or nullability in place — add `fieldV2`/new name,
   deprecate old.
-- Enums: same open-enum discipline as REST (rules/02 §6) — clients must tolerate
+- Enums: same open-enum discipline as REST ([rules/02](02-versioning-evolution.md) §6) — clients must tolerate
   unknown values.
 
 ## Audit checklist

@@ -6,9 +6,9 @@ own discipline — a green functional suite says nothing about IDOR, injection, 
 broken authz. This file owns security testing as a first-class test type: what to
 test, how to write the regression tests, and where automated scanners fit.
 
-**Boundaries.** The *vulnerability* knowledge lives in `sota-code-security`
-(injection, authz, web), `sota-identity-access`, and `sota-api-design`; the
-*threat enumeration* lives in `sota-threat-modeling`; the *pipeline scanners*
+**Boundaries.** The *vulnerability* knowledge lives in [`sota-code-security`](../../sota-code-security/SKILL.md)
+(injection, authz, web), [`sota-identity-access`](../../sota-identity-access/SKILL.md), and [`sota-api-design`](../../sota-api-design/SKILL.md); the
+*threat enumeration* lives in [`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md); the *pipeline scanners*
 (SAST/DAST/dependency gates) live in `sota-devsecops rules/05`. This file is how a
 **test author** turns all of that into executable, repeatable tests that fail when
 a control regresses. Language-specific runner mechanics live in the language
@@ -23,7 +23,7 @@ skills.
   with the gap treated as a finding.
 - Every confirmed vulnerability (yours or a CVE in a dep you patch) gets a
   **failing regression test first**, then the fix — the same discipline as any bug
-  (`rules/02`). It's the only proof the fix works and the only guard against
+  ([`rules/02`](02-test-design-quality.md)). It's the only proof the fix works and the only guard against
   silent reintroduction.
 - Security tests are **negative tests**: the assertion is that the attack is
   *refused* (403/404/422, rejected, no state change), not that the happy path
@@ -33,7 +33,7 @@ skills.
   policy that refuses *everything* passes every negative test you can write. Pair
   each enforcement control's refusal test with one assertion that a representative
   legitimate request completes **through** that same control — not around it, and
-  not against the bare environment (`sota-code-security` rules/12 §1a).
+  not against the bare environment ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a).
 - **The author of a control is not the only author of its tests.** Tests for
   authn, authz, input validation and crypto are written, or at least reviewed,
   by someone other than whoever wrote the code: a second engineer, or a separate
@@ -41,8 +41,8 @@ skills.
   writes both tends to test what they built, holes included, and the suite goes
   green. **A coding agent is never the sole author of both the security code and its
   tests.** Treat such a change as unreviewed until a second party has read the tests
-  against the requirement (`sota-llm-engineering` rules/04 §3a, *the judge is not
-  the builder*; `sota-docs-workflow` rules/03 §7). OWASP: Secure Coding with AI
+  against the requirement ([`sota-llm-engineering` rules/04](../../sota-llm-engineering/rules/04-agents-tools.md) §3a, *the judge is not
+  the builder*; [`sota-docs-workflow` rules/03](../../sota-docs-workflow/rules/03-code-review-pr-workflow.md) §7). OWASP: Secure Coding with AI
   cheat sheet.
 - **A security property you delegate to a dependency is still yours to test.** Where
   a library does the sanitising, the token verification or the parser limit, write a
@@ -79,7 +79,7 @@ what's stable as regression tests (§3–4), and run the exploratory/recon parts
 (INFO, much of CONF) as DAST or periodic manual review (§5).
 
 **Fingerprint the stack the way an attacker would, then look up the versions.**
-Removing the `Server` and `X-Powered-By` headers (`sota-code-security` rules/05)
+Removing the `Server` and `X-Powered-By` headers ([`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md))
 hides one signal of several. Collect the others against the deployed staging stack:
 version-bearing headers, default error pages (send a malformed request line or an
 unknown HTTP version), framework cookies and HTML markers, default files and
@@ -95,13 +95,13 @@ archives, paste sites, public code hosts and third-party services such as CI log
 issue trackers and shared diagrams. Look for internal hostnames, configuration
 files, stack traces, credentials and design documents, plus dev, test and staging
 sites that were never meant to be public. Credentials found this way go straight to
-the leak runbook (`sota-secrets-management` rules/04 §3); the rest are findings
+the leak runbook ([`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §3); the rest are findings
 against whoever published them. OWASP: WSTG-INFO-01, WSTG-INFO-02, WSTG-INFO-08
 (WSTG-INFO-09 was merged into it).
 
 ## 3. The security-regression set (write these as code)
 
-These are deterministic, fast, and belong in the integration layer (`rules/04`) —
+These are deterministic, fast, and belong in the integration layer ([`rules/04`](04-integration-contract-system.md)) —
 real auth, real DB, real routing. Patterns:
 
 - **Object-level authz / IDOR / BOLA** — the highest-yield test. For every
@@ -120,14 +120,14 @@ real auth, real DB, real routing. Patterns:
   client-set field (`{"role":"admin"}`, `X-Admin: true`).
 - **Injection** — a per-engine hostile-input corpus run against each parameter,
   asserting no injection effect: SQL/NoSQL operators, OS metacharacters, path
-  `../`, template `${}`, and the parser bombs (`rules/06` fuzzing finds the rest).
+  `../`, template `${}`, and the parser bombs ([`rules/06`](06-property-fuzzing-mutation.md) fuzzing finds the rest).
   Assert structural safety (parameterized), not output-string matching. For **XSS**
   add a case per output context (element body, attribute, JS string, URL) plus one
   multi-context polyglot, a single payload built to close whichever of those
   contexts it lands in, so one parameter gets checked everywhere it is echoed. For
   parameters that reach a **directory**, add the LDAP filter metacharacters `*`,
   `(`, `)`, `\` and NUL, and assert that the filter the server builds still
-  matches exactly one entry (`sota-code-security` rules/01 §11). Point the DAST
+  matches exactly one entry ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11). Point the DAST
   injection scan at those parameters too, not only the SQL-backed ones. OWASP:
   Injection Prevention and XSS Filter Evasion cheat sheets.
 - **Mass assignment** — over-post protected fields and assert they're ignored:
@@ -167,8 +167,8 @@ real auth, real DB, real routing. Patterns:
   Intentional cross-tenant paths (share links, delegated access, support/admin
   impersonation, reporting jobs) get their own tests. Each must reach exactly the
   object it grants and nothing next to it: no neighbouring id, sibling row or other
-  operation (`sota-databases` rules/01 § Multi-tenancy and rules/06 § Row-Level
-  Security; `sota-code-security` rules/03 §7). OWASP: Multi Tenant Security cheat sheet.
+  operation ([`sota-databases` rules/01](../../sota-databases/rules/01-choosing-and-modeling.md) § Multi-tenancy and [rules/06](../../sota-databases/rules/06-security-and-compliance.md) § Row-Level
+  Security; [`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md) §7). OWASP: Multi Tenant Security cheat sheet.
 - **Shared caches across identities** — for every cache more than one principal
   reads through (CDN or reverse proxy, the framework's page/data cache, memoized
   server functions, an in-process LRU), **warm it as A, then request the same thing
@@ -177,7 +177,7 @@ real auth, real DB, real routing. Patterns:
   A's role or tenant membership and repeat: the answer computed under the old
   grants must be gone. Run it against the deployed cache configuration, because a
   harness that switches caching off tests nothing here (build rules:
-  `sota-web-frameworks` rules/03, `sota-performance` rules/05 §9). OWASP: Nextjs
+  [`sota-web-frameworks` rules/03](../../sota-web-frameworks/rules/03-nextjs.md), [`sota-performance` rules/05](../../sota-performance/rules/05-caching.md) §9). OWASP: Nextjs
   Security cheat sheet.
 
 ## 3a. Operating the authorization suite: matrix, contract negatives, wiring guard
@@ -203,8 +203,8 @@ a deleted route hides that gap.
 - {role: admin,     method: DELETE, path: /orders/{own},   expect: 204}
 ```
 
-This is the HTTP layer. The decision-function matrix (`sota-code-security` rules/03
-§4, `sota-identity-access` rules/03 §6) tests the policy on its own. You need both,
+This is the HTTP layer. The decision-function matrix ([`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md)
+§4, [`sota-identity-access` rules/03](../../sota-identity-access/rules/03-authorization-models.md) §6) tests the policy on its own. You need both,
 because a correct policy that no route calls still passes the unit matrix.
 
 **Negatives from the OpenAPI contract.** The spec already declares which operations
@@ -246,7 +246,7 @@ stays green on a new, unlisted route. Where a gateway enforces the OpenAPI
 security definitions, send one request **through the deployed gateway** with no
 credentials to a secured operation and expect 401/403. A gateway in pass-through or
 report-only mode passes every test that calls the service directly
-(`sota-code-security` rules/03 §1, rules/14 §5). OWASP: Authorization Regression
+([`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md) §1, [rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §5). OWASP: Authorization Regression
 Testing and Authorization Testing Automation cheat sheets.
 
 **Make the suite cheap to run, and watch its denial counts.** Give the authz tests
@@ -287,7 +287,7 @@ Layer the automation; none of it replaces the regression tests above.
   (`devsecops rules/05 §5.4`); finds header/config/real-injection issues the unit
   layer can't. Treat findings as **leads**, confirm exploitability before filing.
 - **Fuzzing** — parsers of untrusted bytes get a fuzz target in scheduled CI
-  (`rules/06`); the canonical way to find the injection/overflow/DoS long tail.
+  ([`rules/06`](06-property-fuzzing-mutation.md)); the canonical way to find the injection/overflow/DoS long tail.
 - **The ceiling:** tools find *known patterns*. IDOR, broken authz, business-logic,
   and multi-step abuse are found by **human-authored tests and pentest** — which is
   exactly why §3–4 are code you own, not a scanner you outsource to.
@@ -310,7 +310,7 @@ not an event.
 - **Independence.** The tester did not build the system (§1). Review the findings
   before release, and fix or formally accept each one with a date.
 - **Close the loop in both directions.** Hotspots from code review and the risk ranking
-  (`rules/01` §1.4) set the white-box tester's targets. Each pentest finding becomes a
+  ([`rules/01`](01-strategy-and-shape.md) §1.4) set the white-box tester's targets. Each pentest finding becomes a
   §3 regression test and sends a reviewer back into the code around it, because
   the same mistake is rarely made once. A finding in session management, for
   example, means the next change there needs explicit security tests.
@@ -332,7 +332,7 @@ Management cheat sheets.
 
 - Security regression tests are **integration-tier** (real auth/DB/routing) and run
   on every PR — they must be deterministic and fast, like any other test
-  (`rules/02`): seed users/tenants/roles via builders (`rules/03`), no shared
+  ([`rules/02`](02-test-design-quality.md)): seed users/tenants/roles via builders ([`rules/03`](03-doubles-and-test-data.md)), no shared
   mutable state, no real clock for token-expiry tests (inject it).
 - DAST/fuzz/deep-scans run **out-of-band** (staging-on-merge, scheduled), never
   blocking the PR on their latency — but their *baselines* are reviewed in PRs so a
@@ -347,10 +347,10 @@ Management cheat sheets.
 - **Leave production-grade logging on during fuzz, pentest and load runs.** Without
   it a finding cannot be investigated, and the run cannot show whether your
   detections fired. The logging path is itself under test: CR/LF and control
-  characters in logged fields (`sota-code-security` rules/07 §2), side effects of
+  characters in logged fields ([`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) §2), side effects of
   logging, and the sink failing (unreachable, disk full, no write permission). A
   request must neither hang nor fail because logging did, and a lost security event
-  must be counted and alerted, never silently dropped (`sota-observability` rules/01
+  must be counted and alerted, never silently dropped ([`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md)
   §6a). OWASP: Logging cheat sheet, Code Review Guide v2.
 - A merged security test with no assertion, or one that passes against the
   vulnerable code, is **Critical** (it manufactures false safety on the exact paths
@@ -360,7 +360,7 @@ Management cheat sheets.
 
 - [ ] **Every positive control in the suite asserts on the field that carries the
       detection**, not an aggregate over the whole result object
-      (`sota-code-security` rules/16 §2.16) — a result type that mixes derived inputs
+      ([`sota-code-security` rules/16](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.16) — a result type that mixes derived inputs
       with findings stays non-empty while detection is zero.
 
 - [ ] Do security-critical paths (authn/authz, crypto, input parsing, money/quota,
@@ -374,11 +374,11 @@ Management cheat sheets.
 - [ ] Mass-assignment over-post tests on every write endpoint with protected fields?
 - [ ] Rate-limit/anti-automation tests assert **per-account/object**, not per-IP?
 - [ ] Injection: per-parameter hostile-input cases + a fuzz target for each
-      untrusted-bytes parser (`rules/06`)?
+      untrusted-bytes parser ([`rules/06`](06-property-fuzzing-mutation.md))?
 - [ ] SSRF tests on every user-supplied-URL/webhook surface (blocked ranges +
       redirect re-validation)?
 - [ ] Business-logic/abuse cases derived from the threat model
-      (`sota-threat-modeling`), testing observable effect not implementation:
+      ([`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md)), testing observable effect not implementation:
       workflow order, value re-derivation, one-time replay, TOCTOU races?
 - [ ] Every fixed vuln/CVE has a regression test that fails on the vulnerable code?
 - [ ] SAST + SCA in the PR gate; authenticated DAST baseline + fuzzing out-of-band;
@@ -389,7 +389,7 @@ Management cheat sheets.
       exposed category with zero tests is a gap?
 - [ ] Each enforcement control (cap, quota, rate limit, filter, allowlist, policy)
       has an **allow case** beside its refusal cases, so a control that blocks
-      legitimate traffic cannot pass the suite (`sota-code-security` rules/12 §1a)?
+      legitimate traffic cannot pass the suite ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a)?
 - [ ] **Authz suite generated from a role × method × path matrix** (§3a), with
       `anonymous` as a role, failing on unexpected statuses, reconciled against the
       router's route listing both ways? Hand-picked authz tests only → High. Is

@@ -4,8 +4,8 @@ Scope: the gate between "a manifest was submitted" and "the object exists in etc
 Security Admission, the policy engines (Kyverno, Gatekeeper/OPA, ValidatingAdmission
 Policy/MutatingAdmissionPolicy), the AUDIT→ENFORCE rollout discipline, image verification
 at admission, and PolicyException hygiene. **Pod-level securityContext/seccomp field
-internals are `sota-sandboxing` (rules/03);** this file owns *enforcing them at admission*.
-Image *signing/provenance production* is `sota-devsecops` (rules/02); this file owns
+internals are [`sota-sandboxing`](../../sota-sandboxing/SKILL.md) ([rules/03](../../sota-sandboxing/rules/03-containers-microvms.md));** this file owns *enforcing them at admission*.
+Image *signing/provenance production* is [`sota-devsecops`](../../sota-devsecops/SKILL.md) ([rules/02](../../sota-devsecops/rules/02-provenance-signing.md)); this file owns
 *verifying signatures at admission*.
 
 Admission runs after authn/authz, on the object: **validating** webhooks/policies accept
@@ -48,7 +48,7 @@ destination. **PSA's limits** (this is why you also need an engine, §2):
 - Privileged-namespace exemptions (kube-system, some operators) are broad. Don't let a
   workload land in an exempt/privileged namespace to dodge PSA.
 
-The *meaning* of `runAsNonRoot`, `seccompProfile`, capability drops → `sota-sandboxing`.
+The *meaning* of `runAsNonRoot`, `seccompProfile`, capability drops → [`sota-sandboxing`](../../sota-sandboxing/SKILL.md).
 
 ## 2. Policy engines — choosing one
 
@@ -64,7 +64,7 @@ You need a general engine for everything PSA can't express. The 2026 options:
 Guidance: **use VAP for what it cleanly covers** (it's the lowest-risk, in-tree option),
 and one of **Kyverno / Gatekeeper** for the rest (image verification, mutation, generation,
 cross-resource logic). Don't run all three doing overlapping things. Whatever you pick:
-policies live in git, are GitOps-deployed (`rules/04`), and have **CI-tested deny cases**
+policies live in git, are GitOps-deployed ([`rules/04`](04-gitops-controllers.md)), and have **CI-tested deny cases**
 (kyverno CLI `kyverno test`, gatekeeper-library tests, VAP unit tests) so an "improvement"
 can't silently stop blocking.
 
@@ -81,7 +81,7 @@ SSRF/apiCall/namespace-escape advisories that kept coming: CVE-2026-54523 (CVSS 
 verification) — whose only fixed version is **1.19.1**. The practical floor is therefore
 **Kyverno >= 1.19.1** (as of 2026-09-26; re-check github.com/kyverno/kyverno/security/advisories
 before citing it). So: treat create/update on (namespaced) policy CRDs like `bind`/`escalate`
-(`rules/02` §2.2); put an egress NetworkPolicy on policy-engine pods (block the metadata
+([`rules/02`](02-rbac-serviceaccounts.md) §2.2); put an egress NetworkPolicy on policy-engine pods (block the metadata
 endpoint and all unneeded egress); and run a line that carries the fix for *every* published
 advisory, not just CVE-2026-4789.
 
@@ -138,7 +138,7 @@ lists namespaces with no PSA `enforce` label.
 
 ## 4. Image verification at admission
 
-Signing an image (cosign, `sota-devsecops` rules/02) does nothing unless **admission
+Signing an image (cosign, [`sota-devsecops` rules/02](../../sota-devsecops/rules/02-provenance-signing.md)) does nothing unless **admission
 verifies the signature and rejects unsigned/unattested images**. Use a Kyverno
 `ImageValidatingPolicy` (the successor of the deprecated `ClusterPolicy` `verifyImages` rule)
 or the sigstore **policy-controller**:
@@ -192,9 +192,9 @@ Traps:
 - Verify the exact **issuer + subject identity**, not just "a signature exists" — an
   attacker's valid signature from their own identity passes a check that doesn't pin who.
 - Require **provenance attestations** (SLSA) too, not only signatures, for high-value
-  workloads (`sota-devsecops` rules/02).
+  workloads ([`sota-devsecops` rules/02](../../sota-devsecops/rules/02-provenance-signing.md)).
 - **A valid signature does not mean an approved base.** A team can sign an image built
-  on anything. Where the org keeps a blessed base set (`sota-devsecops` rules/04 §4.3),
+  on anything. Where the org keeps a blessed base set ([`sota-devsecops` rules/04](../../sota-devsecops/rules/04-build-containers.md) §4.3),
   admission also checks the image's signed provenance: BuildKit's SLSA provenance lists
   every image the build pulled, by digest, in `buildDefinition.resolvedDependencies` as
   `pkg:docker/...` entries, so a Kyverno attestation check can require all of them to
@@ -260,4 +260,4 @@ discipline these become permanent holes:
 - [ ] Where an approved base set exists: admission requires signed provenance whose `pkg:docker/` dependencies are all approved digests (empty list rejected), and a scheduled job re-checks every running image's base? **Medium** if base approval rests only on a signature or on the self-declared base annotation. (`grep -rnE 'org\.opencontainers\.image\.base\.(name|digest)' <policies>` — each hit is a policy trusting a build-typed label; `grep -rnE 'resolvedDependencies' <policies>` — no hit means provenance bases are never checked)
 - [ ] Policies in git, GitOps-deployed, with CI-tested deny cases (`kyverno test` / gatekeeper tests / VAP units)?
 - [ ] Exceptions scoped, owned, time-bound, PR-reviewed, inventoried, expiry-alerted? (`kubectl get policyexceptions.policies.kyverno.io -A` for the CEL types; `polex` is the short name of the legacy `kyverno.io` kind only; list Gatekeeper excludedNamespaces)
-- [ ] Mutating policies/webhooks reviewed for what they inject (a hostile mutation adds a sidecar/hostPath) — see `rules/05`?
+- [ ] Mutating policies/webhooks reviewed for what they inject (a hostile mutation adds a sidecar/hostPath) — see [`rules/05`](05-operators-crds-webhooks.md)?

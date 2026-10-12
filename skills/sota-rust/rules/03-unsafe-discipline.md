@@ -101,7 +101,7 @@ Audit unsafe code against these, in observed-frequency order:
    C calls a destructor twice; `CString::new(s).unwrap().as_ptr()` — temporary
    dropped at end of statement, dangling pointer (`temporary_cstring_as_ptr`
    lint). Struct layout across FFI requires `#[repr(C)]`.
-6. **Unwinding across FFI** — see rules/02 §5. A Rust panic leaving an `extern "C"`
+6. **Unwinding across FFI** — see [rules/02](02-errors-and-panics.md) §5. A Rust panic leaving an `extern "C"`
    fn **aborts** since 1.81 (a DoS, no longer UB); a foreign exception unwinding
    into Rust through a `"C"` declaration is still UB.
 7. **Data races**: `unsafe impl Send/Sync` on types containing raw pointers or
@@ -199,7 +199,7 @@ must have a valid discriminant, a `fn` pointer and a reference must be non-null,
 include a guarantee that destructors will always run" — which is why §3a forbids unsafe
 code from relying on `Drop`. The operational half is separate: **every leak API skips the
 destructor.** In a long-running service a per-request leak is an unbounded-memory DoS, and
-for a secret it is an erasure that never happens (rules/05 §5).
+for a secret it is an erasure that never happens ([rules/05](05-security-supply-chain.md) §5).
 
 - **`mem::forget`: don't.** To suppress a drop, hold the value in `ManuallyDrop` and hand
   it back with `ManuallyDrop::into_inner` (or drop it explicitly) on every path.
@@ -217,7 +217,7 @@ for a secret it is an erasure that never happens (rules/05 §5).
   path, including errors, and call `from_raw` only on a pointer that came from the same
   type's `into_raw` (§3 item 5). In a crate with no `unsafe`, an `into_raw` has no
   legitimate partner. (MEM-INTOFROMRAWALWAYS, -ONLY, MEM-NORAWPOINTER)
-- `Rc`/`Arc` cycles leak silently — rules/01 §2 (`Weak`). (MEM-MUT-REC-RC)
+- `Rc`/`Arc` cycles leak silently — [rules/01](01-ownership-and-api-design.md) §2 (`Weak`). (MEM-MUT-REC-RC)
 
 ## 4. Miri, sanitizers, fuzzing — CI for the unchecked
 
@@ -242,7 +242,7 @@ Any crate with non-trivial `unsafe` runs **Miri in CI**:
   concurrency claims, and `loom` for testing lock-free/atomic algorithms
   exhaustively.
 - Parsers and any unsafe-touching decoder: fuzz with `cargo fuzz` (libFuzzer)
-  — fuzzing + Miri/ASan is the practical soundness net (see rules/05 §6).
+  — fuzzing + Miri/ASan is the practical soundness net (see [rules/05](05-security-supply-chain.md) §6).
 
 ## 5. Supply-chain visibility of unsafe
 
@@ -255,7 +255,7 @@ Any crate with non-trivial `unsafe` runs **Miri in CI**:
   promise and makes regressions un-mergeable. Workspace-wide:
   `[lints.rust] unsafe_code = "forbid"` with per-crate opt-out.
 - Record unsafe review in `cargo vet` audits (criteria `safe-to-deploy` +
-  unsafe review) — rules/05 §2.
+  unsafe review) — [rules/05](05-security-supply-chain.md) §2.
 
 ## 6. Soundness review protocol (for AUDIT mode)
 

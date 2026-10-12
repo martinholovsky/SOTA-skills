@@ -52,7 +52,7 @@ message User {
   matters (PATCH-like updates, money), use `optional` (proto3 field presence) or
   wrapper types, plus `google.protobuf.FieldMask` for partial updates.
 - Don't repurpose semantics under the same field; add a new field, deprecate old
-  (`[deprecated = true]`) and follow rules/02 §5.
+  (`[deprecated = true]`) and follow [rules/02](02-versioning-evolution.md) §5.
 - **Enforce with `buf breaking` in CI** against the previous commit/main. Protos
   live in one schema repo/module with code review; consumers pin generated
   artifacts. Hand-edited generated code is an audit finding.
@@ -170,7 +170,7 @@ message ListOrdersResponse {
 - `Update` takes `google.protobuf.FieldMask update_mask` — explicit partial
   update beats "absent means unchanged" guessing (§2 presence).
 - Long-running work returns `google.longrunning.Operation` (the gRPC analogue
-  of REST's 202 pattern, rules/01 §11) — pollable, cancellable, with typed
+  of REST's 202 pattern, [rules/01](01-rest-http-design.md) §11) — pollable, cancellable, with typed
   metadata/result.
 - `buf lint` in CI for naming/package/style; one lint config org-wide.
 - Pagination, idempotency (request IDs on Create), and tenant scoping rules
@@ -188,7 +188,7 @@ message ListOrdersResponse {
   `BadRequest.FieldViolation` for validation, `RetryInfo` for pushback,
   `ErrorInfo{reason, domain, metadata}` for machine-readable causes. This is the
   gRPC analogue of RFC 9457.
-- Don't leak internals in messages (mirrors rules/01 §9). Include trace IDs via
+- Don't leak internals in messages (mirrors [rules/01](01-rest-http-design.md) §9). Include trace IDs via
   metadata/interceptors.
 - Interceptors (client+server) are the standard home for auth, deadline floors,
   logging, metrics, panic-to-`INTERNAL` conversion — not per-method copy-paste.

@@ -97,7 +97,7 @@ Policy deny assignments):
   SQS, Secrets Manager, DynamoDB, ECR, CloudWatch Logs, and more). Use an RCP for
   the org-wide data perimeter — deny access from principals outside the org,
   require TLS — instead of repeating those conditions in every bucket/key policy
-  (rules/02 §3, rules/05 §1). RCPs don't affect the management account or
+  ([rules/02](02-iam-design.md) §3, [rules/05](05-data-storage.md) §1). RCPs don't affect the management account or
   service-linked roles.
 
 ```json
@@ -131,7 +131,7 @@ Policy deny assignments):
 - Pair preventive guardrails with detective baseline: AWS Config / Security Hub, GCP
   Security Command Center, Azure Defender for Cloud / Policy compliance — deployed
   org-wide from the security account, findings centralized. (Alert routing and
-  on-call: see sota-observability.)
+  on-call: see [sota-observability](../../sota-observability/SKILL.md).)
 
 ## 4. Centralized logging and billing
 
@@ -148,7 +148,7 @@ Policy deny assignments):
 - **Consolidated billing under the management account** with cost data exported
   (CUR / BigQuery billing export / Cost Management exports) to a queryable store
   available to FinOps tooling. Per-account billing views delegated to team leads.
-  Details: rules/06.
+  Details: [rules/06](06-cost-finops.md).
 
 ## 5. Tagging/labeling standard — non-negotiable
 
@@ -195,15 +195,15 @@ A landing zone is the automated baseline every new account/project receives:
 - Org placement (correct OU/folder) and guardrail inheritance.
 - Baseline IAM: SSO permission sets mapped, no local users, break-glass role.
 - Audit logging wired to central store; security tooling enrolled.
-- Network: either a vended VPC pattern (rules/03) or explicit "no network" for
+- Network: either a vended VPC pattern ([rules/03](03-networking.md)) or explicit "no network" for
   serverless-only accounts.
-- Budget + anomaly alert with an owner (rules/06).
+- Budget + anomaly alert with an owner ([rules/06](06-cost-finops.md)).
 - Mandatory tags applied at the account level.
 
 Use the provider's framework as a starting point (AWS Control Tower / Landing Zone
 Accelerator, GCP project factory blueprints, Azure landing zones) but keep the
 definition in version-controlled IaC — pipeline and IaC-scanning concerns belong to
-sota-devsecops. A landing zone you can't reproduce from code is a liability.
+[sota-devsecops](../../sota-devsecops/SKILL.md). A landing zone you can't reproduce from code is a liability.
 
 Bootstrap exceptions (the only acceptable console-click steps, documented in a runbook):
 org creation, root MFA enrollment, initial SSO/identity-provider connection, billing

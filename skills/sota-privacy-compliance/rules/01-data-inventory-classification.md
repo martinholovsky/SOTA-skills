@@ -66,7 +66,7 @@ A classification scheme without attached controls is taxonomy theater.
 | `confidential` | Business-sensitive, no personal data | Contracts, source code, pricing | Need-to-know access, encryption at rest |
 | `pii` | Relates to an identified/identifiable person | Name, email, IP, device ID, user ID, location, behavioral events | Everything above + purpose binding, retention limit, DSAR/deletion coverage, processor mapping |
 | `pii:special-category` | GDPR Art. 9 / sensitive under US state laws | Health, biometrics for ID, race/ethnicity, religion, sexual orientation, precise geolocation (CPRA), genetic data, children's data | Everything above + explicit lawful basis/consent record, strictest access (break-glass audited), DPIA, encryption with dedicated keys |
-| `financial/regulated` | Payment card data (PCI), bank details, regulated sector data | PAN, CVV, account numbers, PHI under HIPAA | Tier controls of the governing standard (PCI DSS scoping — rules/04; HIPAA safeguards — rules/04) |
+| `financial/regulated` | Payment card data (PCI), bank details, regulated sector data | PAN, CVV, account numbers, PHI under HIPAA | Tier controls of the governing standard (PCI DSS scoping — [rules/04](04-regulatory-landscape.md); HIPAA safeguards — [rules/04](04-regulatory-landscape.md)) |
 
 **Sharp edges to encode in the definitions:**
 - **Identifiers are PII.** IP addresses, cookie IDs, device fingerprints, internal
@@ -76,7 +76,7 @@ A classification scheme without attached controls is taxonomy theater.
 - **Derived data inherits the tier.** An ML embedding of a support ticket, a
   propensity score, a session replay — derived from PII = PII.
 - **Aggregates can drop tier only after a documented anonymization review**
-  (rules/02 §4) — not by assertion.
+  ([rules/02](02-privacy-by-design.md) §4) — not by assertion.
 - **Inference creates special-category data.** Purchase history that reveals health
   conditions or religion is special-category by inference; regulators have treated
   it as such.
@@ -90,7 +90,7 @@ locations that schemas don't show:
 1. **Logs** — request/response bodies, exception messages with user objects, debug
    logging of auth tokens and emails. Grep patterns: log statements interpolating
    `user`, `email`, `req.body`, `params`, `headers`; structured-logging fields
-   without an allowlist. (Redaction mechanics: sota-observability.)
+   without an allowlist. (Redaction mechanics: [sota-observability](../../sota-observability/SKILL.md).)
 2. **Object storage** — uploads, exports, report dumps, CSVs from "one-off"
    scripts. Audit bucket-by-bucket: what writes here, does it contain PII, is
    there a lifecycle rule, who can read it? Use cloud-native scanners (e.g., DLP
@@ -98,7 +98,7 @@ locations that schemas don't show:
    conventions + IaC review for prevention.
 3. **Backups & snapshots** — full copies of everything above, often with longer
    retention than the source and weaker access control. Inventory must record
-   backup retention per datastore (deletion implications: rules/03 §5).
+   backup retention per datastore (deletion implications: [rules/03](03-consent-and-user-rights.md) §5).
 4. **Analytics & event pipelines** — every `track()` call is a collection event.
    Audit the event schema registry (if none exists: HIGH finding); look for
    free-text properties, URLs with query params (tokens, emails in
@@ -109,7 +109,7 @@ locations that schemas don't show:
 6. **ML training data & feature stores** — training snapshots, fine-tuned model
    artifacts, vector stores of user content. Record dataset lineage: which
    training sets contain which user cohorts, so deletion/consent changes can be
-   honored (rules/03 §5).
+   honored ([rules/03](03-consent-and-user-rights.md) §5).
 
 **Audit greps that pay for themselves** (adapt per stack):
 
@@ -161,14 +161,14 @@ controls: [beforeSend PII scrubber — tested in test/sentry_scrub.test.ts]
 A processor in production without a DPA and inventory entry is a HIGH finding
 (CRITICAL if special-category data flows to it). Subprocessors of your processors
 matter too: your vendor's subprocessor list is part of your transfer analysis
-(rules/04 §1) and your customers' subprocessor disclosures.
+([rules/04](04-regulatory-landscape.md) §1) and your customers' subprocessor disclosures.
 
 **Internal flows count as flows.** Map cross-boundary internal movement as well:
 service A's PII landing in team B's warehouse, the data-science sandbox with a
 prod replica, the staging environment seeded from production. Each is an access
 expansion that the inventory must show. Production data in staging/dev is a
 standing HIGH finding — seed non-prod from synthetic or irreversibly masked data
-(masking mechanics: sota-databases), and treat any "temporary" prod copy as
+(masking mechanics: [sota-databases](../../sota-databases/SKILL.md)), and treat any "temporary" prod copy as
 having a TTL and an owner.
 
 ## 4b. Ownership — every data category has a name attached
@@ -176,7 +176,7 @@ having a TTL and an owner.
 **Rule:** Each PII category and each datastore has a designated owner (a team,
 with an individual steward) recorded in the catalog. Owners answer DSAR-scoping
 questions, approve purpose changes, sign retention justifications, and receive
-the violation alerts from retention monitoring (rules/03 §6). Unowned data is
+the violation alerts from retention monitoring ([rules/03](03-consent-and-user-rights.md) §6). Unowned data is
 unmaintained data: when the team that built the feature dissolved, its tables
 became the audit findings of two years later. CI can enforce this too — a catalog
 entry whose `owner` no longer matches an active team in the org chart goes stale
@@ -192,7 +192,7 @@ recorded derivative edges.
 
 **Rationale:** When three services each hold an editable copy of the user's email,
 rectification (GDPR Art. 16) is unimplementable and exports self-contradict. The
-deletion graph (rules/03 §5) is exactly the derivative graph — if it isn't
+deletion graph ([rules/03](03-consent-and-user-rights.md) §5) is exactly the derivative graph — if it isn't
 recorded, deletion is guesswork.
 
 ```text

@@ -19,7 +19,7 @@ Before reading what a skill *says*, establish what it *is*:
   derivative, and are the commonest trap.
 - **The age and the pulse.** A skill last touched two years ago pinning a tool
   version that has since had a CVE is not neutral — it is confidently wrong
-  (`rules/03` §2).
+  ([`rules/03`](03-authoring-and-auditing-skills.md) §2).
 
 Read these from the API or the repository, **not from the page that recommended
 it**. A recommendation is a claim about a skill, and this whole file is about not
@@ -30,7 +30,7 @@ accepting claims.
 **A skill installed from a branch re-installs itself on every pull.** Pin the full
 40-character commit SHA (a Claude Code marketplace git source takes one in its
 `sha` field); a tag is mutable, so keep it only as a comment beside the SHA it
-resolved to — the rule `sota-devsecops` applies to CI actions. If the platform's
+resolved to — the rule [`sota-devsecops`](../../sota-devsecops/SKILL.md) applies to CI actions. If the platform's
 install mechanism cannot pin, record the SHA you reviewed somewhere you will diff
 against.
 
@@ -55,10 +55,10 @@ installed this:
 - the entry file **and every file it references** — a `SKILL.md` that says "see
   `rules/07`" has a body you have not read;
 - **the bytes, not the rendering** — zero-width, bidi and tag characters hide
-  instructions a reviewer cannot see; run the `sota-code-security` rules/09 §4
-  probe over the closure (`rules/03` §5 has it adapted for symlinked skill dirs);
+  instructions a reviewer cannot see; run the [`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md) §4
+  probe over the closure ([`rules/03`](03-authoring-and-auditing-skills.md) §5 has it adapted for symlinked skill dirs);
 - **scripts** shipped alongside, including hooks and install scripts, and any
-  `!`-prefixed shell line in the skill itself (`rules/02` §1);
+  `!`-prefixed shell line in the skill itself ([`rules/02`](02-trust-boundary-and-capability.md) §1);
 - **resources fetched at load or run time** — a skill that pulls a remote ruleset is
   a skill whose content is not what you reviewed;
 - **transitively installed things**: an MCP server the skill tells you to add, a
@@ -82,7 +82,7 @@ places than people remember:
 - a skills or plugins directory, and anything symlinked into it — plus the
   directories that load the same way under other names (`.claude/commands/`,
   `.claude/agents/`, `.github/prompts/`, `.github/agents/`, `.devin/rules/` and
-  `.windsurf/rules/`); the full pattern is `rules/02` §2;
+  `.windsurf/rules/`); the full pattern is [`rules/02`](02-trust-boundary-and-capability.md) §2;
 - marketplace or plugin manifests, and project config that adds hooks or servers
   (`.claude/settings.json`, `.mcp.json`);
 - nested per-directory files, which may exist in a subtree you did not write.

@@ -82,7 +82,7 @@ Decision rules:
   authenticated socket is not treated as access to the service behind it.
   OWASP: WebSocket Security cheat sheet.
 - Security events on the socket (open/close, auth decisions, violations) go to
-  the audit stream: rules/07 §6.
+  the audit stream: [rules/07](07-security-operations.md) §6.
 
 ### 2.2 Heartbeat / ping-pong
 
@@ -179,11 +179,11 @@ WS gives you frames, not a protocol — you must design one and write it down.
 ```
 
 - Every frame has a `type`; unknown types are ignored (tolerant reader,
-  rules/02 §3) — that's what lets you evolve the protocol.
+  [rules/02](02-versioning-evolution.md) §3) — that's what lets you evolve the protocol.
 - Request/response over WS needs explicit correlation IDs + per-command timeout
   client-side; without them you've built RPC with no error handling.
 - Errors over WS follow the same machine-readable code discipline as RFC 9457
-  (rules/01 §9): `{"type":"error","code":"rate_limited","retry_after":5}`.
+  ([rules/01](01-rest-http-design.md) §9): `{"type":"error","code":"rate_limited","retry_after":5}`.
 - Version the protocol (subprotocol negotiation `Sec-WebSocket-Protocol:
   app.v1` or a `hello` exchange) so you can change framing later.
 - One multiplexed connection with channels beats N connections per page — but
@@ -299,11 +299,11 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
   on behalf of a client; an open one lets an attacker reach your internal network
   and reserved ranges. **Allowlist relay peers to non-special addresses only** —
   deny loopback/RFC1918/link-local/broadcast/CGNAT, IPv4 **and** IPv6 (same blocklist
-  as SSRF, sota-code-security rules/01 §5). Bound per-user port/allocation counts so
+  as SSRF, [sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) §5). Bound per-user port/allocation counts so
   one client can't exhaust the relay (resource exhaustion).
 - **Media servers (SFU/MCU/recording) — only if you host them.** Pure browser-to-
   browser P2P is out of scope here. Use **approved DTLS-SRTP cipher suites + protection
-  profiles**, manage the DTLS cert key under your key-management policy (rules/04),
+  profiles**, manage the DTLS cert key under your key-management policy ([rules/04](04-grpc-protocols.md)),
   and **verify SRTP authentication** so an attacker can't inject RTP (media insertion
   or DoS). The server must **survive malformed and flooded SRTP** (input validation,
   bounded buffers, drop excess packets) and must not be vulnerable to the **DTLS

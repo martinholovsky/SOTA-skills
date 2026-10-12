@@ -44,7 +44,7 @@ duckdb.sql("""
   transform and rerun.
 - **Transform before load (ETL) only when justified:** PII must be
   masked/tokenized before it touches the analytical store (see
-  `sota-privacy-compliance`); the source format is pathological (mainframe
+  [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md)); the source format is pathological (mainframe
   copybooks, multi-GB XML) and pre-parsing is cheaper than in-warehouse
   parsing; volume reduction at the edge materially cuts transfer/storage cost.
 - **Never transform-in-flight as an excuse to skip raw retention.** If the
@@ -179,7 +179,7 @@ domain teams *already* have engineers who can own pipelines end-to-end.
 - A central 4-person data team "adopting mesh" is a red flag: it produces
   fragmentation without ownership.
 - The durable, steal-able ideas regardless of mesh: producer-owned data
-  contracts (rules/04), domain-aligned mart ownership, self-serve platform
+  contracts ([rules/04](04-data-quality-and-contracts.md)), domain-aligned mart ownership, self-serve platform
   tooling.
 - **AUDIT:** "Mesh" with no contracts, no per-domain owners on call for their
   data products, and one shared platform team doing all the work = the label

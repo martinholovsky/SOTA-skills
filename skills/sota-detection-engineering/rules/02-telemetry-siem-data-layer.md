@@ -6,7 +6,7 @@ ship detects nothing. Read this when deciding what telemetry to collect,
 choosing a SIEM/data lake, normalizing schemas, sizing retention, or auditing
 whether the data foundation can even support detection and IR.
 
-Boundary: **sota-observability owns the telemetry *pipeline*** — how logs are
+Boundary: **[sota-observability](../../sota-observability/SKILL.md) owns the telemetry *pipeline*** — how logs are
 emitted, structured, shipped, and stored, plus retention plumbing and cost. This
 rule owns it from the *security* angle: which sources are non-negotiable for
 detection, what fidelity detections require, and how to size data for *IR and
@@ -21,9 +21,9 @@ non-negotiable categories:
 |---|---|---|
 | **Endpoint / EDR** | process exec, injection, credential dumping, persistence | most host TTPs; the largest single coverage source |
 | **Cloud audit** (CloudTrail / GCP Audit / Azure Activity) | IAM abuse, persistence, exfil, resource hijack | cloud control-plane attacks (the modern breach path) |
-| **K8s audit log** + admission | `exec`/`attach`, RBAC changes, secret reads, privileged pods | container/orchestrator attacks (see sota-kubernetes) |
-| **Network / flow** (NetFlow, VPC flow, Zeek) | C2 beaconing, lateral movement, exfil volume | east-west movement, DNS exfil (see sota-network-security) |
-| **Identity / auth** (IdP, MFA, directory) | impossible travel, MFA fatigue, token theft, new-device | account takeover (see sota-identity-access) |
+| **K8s audit log** + admission | `exec`/`attach`, RBAC changes, secret reads, privileged pods | container/orchestrator attacks (see [sota-kubernetes](../../sota-kubernetes/SKILL.md)) |
+| **Network / flow** (NetFlow, VPC flow, Zeek) | C2 beaconing, lateral movement, exfil volume | east-west movement, DNS exfil (see [sota-network-security](../../sota-network-security/SKILL.md)) |
+| **Identity / auth** (IdP, MFA, directory) | impossible travel, MFA fatigue, token theft, new-device | account takeover (see [sota-identity-access](../../sota-identity-access/SKILL.md)) |
 | **Application** | business-logic abuse, app-layer attacks, agent/LLM abuse | abuse only your app can see (auth flows, prompt-injection) |
 | **DNS** | DGA, exfil over DNS, C2 resolution | a huge fraction of malware behavior |
 
@@ -48,7 +48,7 @@ and reports the result to the SIEM, and alert when that report stops arriving.
 Make up for thin host logs at the network edge: put the legacy systems in their
 own enclave and alert on flow anomalies at its boundary — volume surges, a first
 connection to or from a host that has never talked to it, new ports. IR
-priority for these systems is rules/06 §2. OWASP: Legacy Application Management
+priority for these systems is [rules/06](06-incident-response-validation.md) §2. OWASP: Legacy Application Management
 cheat sheet; Zero Trust Architecture cheat sheet.
 
 ## 2. Detection data quality
@@ -138,11 +138,11 @@ Ops retention (days–weeks) is far too short for security. Drivers:
 - **Retro-hunting.** When a new IOC/TTP from threat intel lands, you hunt it
   *backwards* across history. No history → no retro-hunt.
 - **Forensics & legal.** IR and potential litigation need defensible retention
-  with integrity (see rules/06 chain of custody).
+  with integrity (see [rules/06](06-incident-response-validation.md) chain of custody).
 
 Tier to control cost: short hot retention for high-volume/low-value sources,
 long cold retention for the security-critical ones. Coordinate the *plumbing*
-with sota-observability; you own the *security minimums*.
+with [sota-observability](../../sota-observability/SKILL.md); you own the *security minimums*.
 
 ## 6. Volume & cost discipline
 
@@ -165,12 +165,12 @@ with someone disabling sources — re-opening blind spots. Discipline:
 Some attacks are visible only to the application: every endpoint, cloud and
 network log looks normal because the attacker is using the product as designed.
 §1 lists application logs as a floor source; this section is the detection
-content that has to run on them. Each rule still follows rules/01 (ADS, test,
-owner) and rules/04 (runbook, severity).
+content that has to run on them. Each rule still follows [rules/01](01-detection-engineering-discipline.md) (ADS, test,
+owner) and [rules/04](04-alerting-triage-soc-soar.md) (runbook, severity).
 
 ### Application-login attacks
 
-The fan-out logic from rules/07 *Password spraying — T1110.003* is not AD-specific.
+The fan-out logic from [rules/07](07-ad-attack-detection.md) *Password spraying — T1110.003* is not AD-specific.
 It applies unchanged to any web, API or mobile login endpoint, and there the app
 or IdP log is often the only witness.
 
@@ -190,13 +190,13 @@ or IdP log is often the only witness.
 - **Impossible travel:** two successful sign-ins to one account from places no
   one could travel between in the elapsed time. Rate it **Critical** as a
   takeover signal, after excluding known VPN and corporate egress ranges; take the
-  IP from the connection, not a client header (sota-identity-access rules/06 §2).
+  IP from the connection, not a client header ([sota-identity-access rules/06](../../sota-identity-access/rules/06-mfa-federation-assurance.md) §2).
   Enrich with what the second session did (MFA change, export, payout edit).
 - **Session-ID guessing and harvesting:** have the app log every request that
   presents a session ID it does not recognise (unknown, malformed, long expired)
   with the source and a truncated hash of the ID, never the ID itself. Count
   *distinct* invalid IDs per source; many from one source is someone guessing or
-  replaying harvested tokens. Session design is sota-code-security rules/17 §2.
+  replaying harvested tokens. Session design is [sota-code-security rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md) §2.
 - **Per role and privilege group:** also count failures grouped by the target's
   role (admins, finance, support). A campaign aimed at twenty administrators stays
   under every per-user and per-IP threshold and still stands out in its group.
@@ -205,8 +205,8 @@ or IdP log is often the only witness.
   leak of your own credential store, not as background noise: require
   out-of-band re-verification (step-up, email or device confirmation) for
   every account that logs in during the window, open an incident to test whether
-  the credential database leaked, and check the honey user rows (rules/05 §4).
-- Prevention (throttling, lockout, MFA) is sota-code-security rules/02. This is
+  the credential database leaked, and check the honey user rows ([rules/05](05-hunting-intel-deception.md) §4).
+- Prevention (throttling, lockout, MFA) is [sota-code-security rules/02](../../sota-code-security/rules/02-authentication.md). This is
   the detective half, and it must fire even when the throttle works: a blocked
   spray still means someone is attacking.
 
@@ -233,7 +233,7 @@ not exist, so the misses are the signal.
 - **Resource-exhaustion patterns as probing:** bursts of `RESOURCE_EXHAUSTED`,
   429s or query-cost rejections concentrated on one identity are someone
   measuring your limits or enumerating through them.
-- For gRPC, sota-api-design rules/04 lists `DEADLINE_EXCEEDED` and `UNAVAILABLE`
+- For gRPC, [sota-api-design rules/04](../../sota-api-design/rules/04-grpc-protocols.md) lists `DEADLINE_EXCEEDED` and `UNAVAILABLE`
   as the key *ops* alerts and adds per-client security metrics. Ship those
   per-client `UNAUTHENTICATED`, `PERMISSION_DENIED`, `UNIMPLEMENTED` and
   `RESOURCE_EXHAUSTED` counts to the SIEM, so the rules above run under a security
@@ -256,7 +256,7 @@ weekday) and firing past a stated deviation, e.g. several standard deviations:
   and serverless invocation counts per function, where a jump is abuse or a
   cost attack.
 
-**Failed deployments and restart loops.** sota-observability rules/04 §4 routes
+**Failed deployments and restart loops.** [sota-observability rules/04](../../sota-observability/rules/04-slos-alerting.md) §4 routes
 single-instance failures the platform self-healed to a ticket rather than a page,
 and that stays right for ops. Still send them to the security queue as a signal:
 a container that keeps crashing (kube-state-metrics
@@ -270,14 +270,14 @@ cheat sheet.
 
 ### LLM / agent runtime detections
 
-Prevention is sota-code-security rules/08; action logging and containment are
-sota-sandboxing rules/05 R4.4/R4.5. This is the detection content over those logs.
+Prevention is [sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md); action logging and containment are
+[sota-sandboxing rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md) R4.4/R4.5. This is the detection content over those logs.
 
 - **Jailbreak campaigns and system-prompt extraction** (ATLAS AML.T0054 LLM
   Jailbreak, AML.T0056 Extract LLM System Prompt). One refused prompt is noise.
   Page on patterns: the same or near-duplicate adversarial prompt across many
   sessions or accounts, or an output containing a canary string planted in the
-  system prompt (confirmed extraction, honeytoken-grade fidelity — rules/05).
+  system prompt (confirmed extraction, honeytoken-grade fidelity — [rules/05](05-hunting-intel-deception.md)).
   Guardrail verdicts are events to aggregate, not the detection itself.
 - **Conversation anomalies:** probing (rapid rewordings of a refused request),
   excessive retries or regenerations, and guardrail-blocked turns per user or
@@ -286,18 +286,18 @@ sota-sandboxing rules/05 R4.4/R4.5. This is the detection content over those log
   calls, the data volume it reads and returns, its action rate and its target
   systems. Alert when it deviates past a stated threshold (a new tool, a new
   target, a volume multiple), and name the response for each alert — normally a
-  step of the graduated containment in sota-sandboxing rules/05 R4.5. A profile
+  step of the graduated containment in [sota-sandboxing rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md) R4.5. A profile
   with no threshold and no response is documentation, not detection. Include
   the classic insider signals: many files read in a short window, a repository
   or dataset the agent has never touched, activity outside its scheduled hours.
-  This only works if each agent acts under its own identity (sota-sandboxing
-  rules/05 R3.2); an agent borrowing a human's or a shared service account's
+  This only works if each agent acts under its own identity ([sota-sandboxing
+  rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md) R3.2); an agent borrowing a human's or a shared service account's
   credentials cannot be profiled or told apart from them.
 - **Guardrail and moderation decisions are telemetry.** Emit one structured
   event per verdict: guardrail name, category or rule ID, verdict
   (allow/block/redact/escalate), model and prompt version, and the user, session
   and agent identity. Where the prompt is sensitive, log the rule ID and a hash
-  of the input, not the text (sota-code-security rules/23 §1). Alert on *drift*
+  of the input, not the text ([sota-code-security rules/23](../../sota-code-security/rules/23-llm-platform-supply-chain.md) §1). Alert on *drift*
   in the rates per verdict and per reason, per user and population-wide: a
   refusal category that jumps is a campaign; approvals that rise after a prompt,
   model or guardrail change may mean a control stopped working. Per-user token
@@ -311,7 +311,7 @@ sota-sandboxing rules/05 R4.4/R4.5. This is the detection content over those log
 
 OWASP: AISVS 12.1.2, 12.2.2, 12.2.3, 12.2.6; LLMSVS 8.1; DSOMM; LLM Prompt
 Injection Prevention cheat sheet; Logging Vocabulary cheat sheet. Incident
-response for these detections: rules/06 §2.
+response for these detections: [rules/06](06-incident-response-validation.md) §2.
 
 ### Data-access analytics: exfiltration, insider misuse, database anomalies
 
@@ -335,7 +335,7 @@ Information Repositories) looks normal everywhere except in *how much* and
 - **Keep it apart from performance monitoring.** A slow-query dashboard is tuned
   to ignore exactly the fast, well-indexed bulk read an exfiltrating account
   makes. Route these to the SIEM under a security owner; the audit-log plumbing
-  (e.g. pgaudit) is sota-databases rules/06.
+  (e.g. pgaudit) is [sota-databases rules/06](../../sota-databases/rules/06-security-and-compliance.md).
 
 OWASP: Code Review Guide v2; NoSQL Security cheat sheet; Zero Trust Architecture
 cheat sheet.

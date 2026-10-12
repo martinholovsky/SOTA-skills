@@ -14,7 +14,7 @@ The defining constraint of mobile: **you cannot roll back a shipped binary.** St
 ### 6.2 Android / Google Play
 
 - **Data safety form** must accurately cover app + every SDK's collection and sharing; Google compares declarations against observed behavior and enforcement actions follow mismatches.
-- **Target API ratchet:** API 36 required for new apps and updates by **Aug 31, 2026** (Wear OS and Android Automotive OS: API 35 by the same date; Android TV: API 34). **16 KB page-size support** is required for apps targeting Android 15+ with native code, and Play blocks updates without it from **Feb 1, 2027** (rules/01 has the behavior-change details for each bump).
+- **Target API ratchet:** API 36 required for new apps and updates by **Aug 31, 2026** (Wear OS and Android Automotive OS: API 35 by the same date; Android TV: API 34). **16 KB page-size support** is required for apps targeting Android 15+ with native code, and Play blocks updates without it from **Feb 1, 2027** ([rules/01](01-platform-and-stack.md) has the behavior-change details for each bump).
 - **Android developer verification** covers apps distributed on *and* off Play: the developer registers and verifies identity in Play Console or the Android Developer Console. The first regional deadline is **September 30, 2026** (Brazil, Indonesia, Singapore, Thailand — installs from participating stores on certified Android 7+ devices), with the global rollout from 2027. Limited-distribution accounts (students, hobbyists) cover up to 20 devices. Register before your market's deadline, and verify the timeline at developer.android.com/developer-verification.
 - **Play App Signing** (Google holds the app signing key) is standard: protect the *upload key*, document the upload-key reset process before you need it, and keep signing entirely in CI. Custody is half of it: 6.10 checks the signature on the artifact itself.
 - AAB is the required upload format. The free **pre-launch report** runs your build on a device farm per track upload — read it; it catches crashes, accessibility, and security warnings at zero cost.
@@ -47,15 +47,15 @@ Some day a shipped version will have a security hole, a data-corrupting bug, or 
 - **Every feature with server interaction, and every risky change, ships behind a remote flag whose hardcoded default is the safe state** (usually OFF). Flags fetch at launch, cache last-known values, and degrade to defaults when the flag service is unreachable — flag-service downtime must not take the app down with it.
 - Maintain the distinction:
   - **Experiment flags** — A/B tests, temporary by definition; a removal ticket is created with the flag; stale experiment flags create 2^n untested configuration combinations.
-  - **Ops kill switches** — permanent, deliberate, documented: certificate-pinning enforcement (rules/04 §4.3), sync engine, each third-party SDK's initialization, chatty/expensive subsystems, any feature that can hammer your backend. Auditors: a server-dependent feature with no kill switch is HIGH — when it misbehaves in a shipped binary, there is no other off button.
+  - **Ops kill switches** — permanent, deliberate, documented: certificate-pinning enforcement ([rules/04](04-security.md) §4.3), sync engine, each third-party SDK's initialization, chatty/expensive subsystems, any feature that can hammer your backend. Auditors: a server-dependent feature with no kill switch is HIGH — when it misbehaves in a shipped binary, there is no other off button.
 - Kill switches are **exercised, not just installed**: flip each one in staging (ideally periodically in production canaries) and verify the app degrades as designed. An untested kill path is a hope, not a control.
-- Flag state is attached to crash reports and APM traces (rules/05 §5.9) — otherwise you can't attribute a regression to a rollout.
+- Flag state is attached to crash reports and APM traces ([rules/05](05-performance.md) §5.9) — otherwise you can't attribute a regression to a rollout.
 
 ### 6.5 Staged rollouts with explicit promotion gates
 
 - Never 0→100%. Standard ladder: internal track/TestFlight internal → beta (open testing / TestFlight external) → production at 1% → 5% → 25% → 50% → 100%.
 - Promotion between stages is a **decision made against written gates**, not a timer:
-  - Crash-free sessions ≥ target (rules/05 budget) and no *new* top-10 crash signature.
+  - Crash-free sessions ≥ target ([rules/05](05-performance.md) budget) and no *new* top-10 crash signature.
   - ANR rate and p95 cold start flat versus the previous release.
   - Core business metrics (activation, purchase success) flat.
 - Automate the gate check against the crash/APM dashboards; a human approves, a dashboard decides.
@@ -106,9 +106,9 @@ enum OrderStatus: RawRepresentable, Decodable {
 
 ### 6.9 Testing strategy: a pyramid with device reality at the top
 
-- **Unit (the bulk):** view models, reducers, repositories, sync/outbox logic against fakes — milliseconds each, every commit. Cheap because the architecture made it cheap (rules/02 §2.9).
+- **Unit (the bulk):** view models, reducers, repositories, sync/outbox logic against fakes — milliseconds each, every commit. Cheap because the architecture made it cheap ([rules/02](02-architecture-and-state.md) §2.9).
 - **Snapshot:** design-system components and key screens per sealed-state case, across dark mode, large dynamic type/font scale, and RTL. This layer catches the visual regressions E2E suites are too slow and flaky to police.
-- **Integration:** repository ↔ real local DB; sync engine against a fake server scripted with the rules/03 edge cases (conflict, resync, poison message); **DB schema migration tests** (Room's `MigrationTestHelper`, GRDB migrator tests) — a failed migration bricks the app for exactly your most loyal, longest-installed users.
+- **Integration:** repository ↔ real local DB; sync engine against a fake server scripted with the [rules/03](03-offline-background-push.md) edge cases (conflict, resync, poison message); **DB schema migration tests** (Room's `MigrationTestHelper`, GRDB migrator tests) — a failed migration bricks the app for exactly your most loyal, longest-installed users.
 - **UI/E2E (a handful):** login, the core loop, purchase — per-PR on emulators/simulators; nightly on a **real-device farm** (Firebase Test Lab, AWS Device Farm, BrowserStack) across an OS × device matrix mirroring your actual user base. Emulators miss OEM skins, real keyboards, memory pressure, and vendor-modified WebViews.
 - **Release-candidate ritual**, written down and checked off:
   1. Upgrade-path test: install the previous production build, log in, create data → upgrade to RC → verify data and session survive (migrations, 2.3 restoration).
@@ -116,7 +116,7 @@ enum OrderStatus: RawRepresentable, Decodable {
   3. Forced-update blocking screen exercised (6.3).
   4. Forced test crash symbolicates (6.6).
   5. Play pre-launch report / TestFlight feedback reviewed.
-  6. The shipped artifact is not debuggable (rules/04 §4.9). `apkanalyzer manifest debuggable` on the release APK prints `false`, and the exported IPA's entitlements carry no `get-task-allow` = true. Check the artifact rather than the build config, because re-signing steps and copied build types change it.
+  6. The shipped artifact is not debuggable ([rules/04](04-security.md) §4.9). `apkanalyzer manifest debuggable` on the release APK prints `false`, and the exported IPA's entitlements carry no `get-task-allow` = true. Check the artifact rather than the build config, because re-signing steps and copied build types change it.
   7. The shipped artifact's signature is checked (6.10): v2+ scheme, release certificate, key size; `codesign` strict verification and CodeDirectory version for the IPA.
 
 ### 6.10 Release cadence and build hygiene

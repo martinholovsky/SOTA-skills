@@ -3388,18 +3388,29 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
+    "md link, other skill": 1492,
     "md link, outside skills/": 3,
-    "md link, same skill": 133,
-    "name (backticked)": 429,
-    "name (bare)": 239,
-    "name+file (backticked)": 566,
-    "name+file (bare)": 161,
-    "own rules/NN": 2996
+    "md link, same skill": 2744,
+    "name (backticked)": 431,
+    "name (bare)": 240,
+    "name+file (backticked)": 564,
+    "name+file (bare)": 160,
+    "own rules/NN": 2886
+  },
+  "link_forms_linked": {
+    "@path import": 0,
+    "generic ('the language skill')": 0,
+    "md link, other skill": 0,
+    "md link, outside skills/": 0,
+    "md link, same skill": 0,
+    "name (backticked)": 416,
+    "name (bare)": 197,
+    "name+file (backticked)": 564,
+    "name+file (bare)": 155,
+    "own rules/NN": 2816
   },
   "rules_index_style": {
-    "backtick": 28,
-    "link": 12,
-    "plain": 2
+    "link": 42
   },
   "surfaces": {
     "commands": [

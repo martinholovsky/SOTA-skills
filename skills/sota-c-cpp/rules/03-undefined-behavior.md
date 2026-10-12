@@ -32,7 +32,7 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
   with GCC 15.3: a 32-byte automatic union whose first member is a `char`, initialized `= {0}`
   on a stack pre-filled with `0xAA`, still had non-zero bytes at both `-O0` and `-O2` (the
   count varies with the surrounding code and optimisation level: 5 to 31 of 32 across runs); `= {}`
-  left none, and so did `-fzero-init-padding-bits=unions` or `=all` (`rules/04` §5). Apple clang
+  left none, and so did `-fzero-init-padding-bits=unions` or `=all` ([`rules/04`](04-security.md) §5). Apple clang
   21 zeroed all 32 either way, so the leak depends on the compiler. Copying such a union to the
   wire, a file or another privilege level discloses stack bytes: write `= {}` (C23, C++) or
   `memset` it before filling.
@@ -41,7 +41,7 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
   delete subsequent null checks.
 - **Strict aliasing violation** (§3) — accessing an object through an
   incompatible type.
-- **Data races** (§5, `rules/05`) — concurrent access where ≥1 is a write,
+- **Data races** (§5, [`rules/05`](05-concurrency.md)) — concurrent access where ≥1 is a write,
   without synchronization, is UB.
 - **Invalid shifts** — shifting by ≥ width, or shifting a negative/by-negative
   (CERT INT34-C). `x << 32` on a 32-bit `int` is UB.
@@ -52,7 +52,7 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
 
 - Validate ranges *before* arithmetic that could overflow, especially when the
   result feeds an allocation size, array index, or loop bound — overflow-to-
-  small-allocation is a classic exploit primitive (`rules/04`).
+  small-allocation is a classic exploit primitive ([`rules/04`](04-security.md)).
 - Use checked arithmetic: GCC/Clang `__builtin_add_overflow`/`mul_overflow`,
   or C23 `<stdckdint.h>` `ckd_add`/`ckd_mul`. For C++ prefer typed wrappers or
   range checks; C++26 adds saturating helpers in `<numeric>` ([numeric.sat]):
@@ -63,7 +63,7 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
   for `INT_MAX` at `-O2` on both GCC 16.2 and Apple clang 21 (measured): the optimiser assumed
   no overflow and folded the test away. `-fwrapv` (signed arithmetic wraps) and GCC's
   `-fno-strict-overflow` each kept it, returning 1. The OpenSSF Compiler Options Hardening
-  Guide lists `-fno-strict-overflow` in its **production** set (`rules/04` §5; in Clang it is a
+  Guide lists `-fno-strict-overflow` in its **production** set ([`rules/04`](04-security.md) §5; in Clang it is a
   synonym for `-fwrapv`), so ship with it. It is still **not the fix**: it makes the wrapped
   value defined, not correct. The fix is to test *before* adding, or to use the checked
   helpers below. OWASP: C-Based Toolchain Hardening cheat sheet.
@@ -128,7 +128,7 @@ T* p = (T*)malloc(bytes);
   mapped (this is what UAF *is* at the language level). Placement-new + manual
   destructor must bracket any reuse of storage.
 
-## 5. Data races are UB (see rules/05)
+## 5. Data races are UB (see [rules/05](05-concurrency.md))
 
 Two threads accessing the same non-atomic object, at least one writing, with no
 happens-before relation, is UB — not "a stale read". Use `std::atomic` or a
@@ -143,7 +143,7 @@ mutex. Build threaded code under TSan.
   unsigned wrap. `-ftrapv` is a blunter alternative for signed overflow.
 - `-Wall -Wextra -Wconversion -Wsign-conversion -Wshadow -Wcast-align` catch
   many at compile time. Static analyzers (clang-analyzer, cppcheck) and
-  Coverity find aliasing/uninit paths (`rules/06`).
+  Coverity find aliasing/uninit paths ([`rules/06`](06-build-tooling-ci.md)).
 - **TypeSanitizer** (`-fsanitize=type`, Clang only; its docs call it brand new and still in
   development) detects strict-aliasing violations (§3) at run time. Measured with Fedora's Clang
   22.1: an `int*` write to a `float` object was reported as a `type-aliasing-violation`, yet the
@@ -170,7 +170,7 @@ mutex. Build threaded code under TSan.
   **Linking needs `-lstdc++exp`** (or your own `handle_contract_violation`): without it `ld`
   failed with an undefined reference to `handle_contract_violation` (measured, GCC 16.2).
 - **Rule:** validate untrusted input (length, index, range, format) with an explicit `if` that
-  returns an error or throws, the same rule as for `assert` (`rules/04` §2). A contract may
+  returns an error or throws, the same rule as for `assert` ([`rules/04`](04-security.md) §2). A contract may
   restate that invariant for internal callers. Where a contract is nonetheless the only guard on
   external data, the build pins `-fcontract-evaluation-semantic=enforce` (or `quick_enforce`)
   for every unit and the release pipeline asserts it; a packager's `observe` or `ignore` turns the

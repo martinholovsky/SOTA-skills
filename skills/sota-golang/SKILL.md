@@ -37,8 +37,8 @@ Two consumers, one source of truth:
    at go.dev/doc/devel/release). Add `golangci-lint`
    config and a CI step
    running `go vet`, `golangci-lint run`, `go test -race ./...`,
-   `govulncheck ./...` from day one (see `rules/07`).
-4. Prefer stdlib. Each dependency must earn its place (see `rules/05` supply
+   `govulncheck ./...` from day one (see [`rules/07`](rules/07-tooling-ci.md)).
+4. Prefer stdlib. Each dependency must earn its place (see [`rules/05`](rules/05-security.md) supply
    chain section).
 5. Write table tests alongside the code, not after. Exported behavior gets a
    test; concurrency gets a `-race` test; parsers get a fuzz target.
@@ -80,40 +80,40 @@ severity, the three highest-leverage fixes, and which checklists were run.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-errors.md` | Writing/reviewing any error path: wrapping with `%w`, `errors.Is/As`, sentinel vs typed errors, **in-band sentinels (absence encoded as `-1`/`0`/`""`)** and comma-ok, panic/recover policy, error API design for libraries vs apps |
-| `rules/02-design.md` | Designing packages or APIs: interface placement and size, package layout and `internal/`, naming, zero values, generics restraint, embedding, functional options, `context.Context` discipline, numeric edges (NaN/Inf from `ParseFloat`, integer divide-by-zero, `MinInt` / -1) |
-| `rules/03-concurrency.md` | Anything with `go`, `chan`, `sync`, or `select`: goroutine lifecycle ownership, leak catalog, errgroup fan-out, channels-vs-mutex decision, race patterns, worker pools, semaphores, `time.After` traps |
-| `rules/04-http-services.md` | Building or auditing HTTP servers/clients: all five server timeouts, client timeouts and body hygiene, connection reuse, graceful shutdown, middleware, CSRF via `http.CrossOriginProtection` (and its bypass/trusted-origin exceptions), JSON duplicate-key probe, cookie attributes (framework helper defaults), debug mode and `/debug/*` endpoints in production, explicit Content-Type (no body sniffing), `slog` structured logging, request-scoped values |
-| `rules/05-security.md` | Any input crossing a trust boundary: SQL parameterization, `os/exec` safety, path traversal and `os.Root`, integer overflow (G115), output encoding (`html/template`), CSPRNG (`crypto/rand` vs `math/rand`), FIPS 140-3 mode (`GOFIPS140`, `GODEBUG=fips140`), TLS config, SSRF (dial-time IP check via `net.Dialer.ControlContext`, redirects, proxy), dynamic code evaluation (template text from input, embedded interpreters, `expr` env), `unsafe`/cgo policy (govulncheck, supply chain and go.sum moved to rules/08) |
-| `rules/06-performance.md` | Latency/memory work: pprof workflow, `testing.B` + `b.Loop`, allocation reduction, `strings.Builder`, `sync.Pool` criteria, escape analysis, GOGC/GOMEMLIMIT, PGO |
-| `rules/07-tooling-ci.md` | Setting up or auditing CI and tests: golangci-lint curated config, staticcheck/gofumpt/vet, table tests, `t.Parallel` correctness, testcontainers, golden files, fuzzing, go.mod hygiene and `tool` directives, dependency adoption (selection checks, insecure library defaults). **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns Go runner mechanics only.** |
-| `rules/08-supply-chain.md` | Adding or auditing dependencies and the module supply chain: the checksum database, `govulncheck`, code that runs at build time (`go:generate`, cgo flags, `-toolexec`, `GOTOOLCHAIN`), keeping the toolchain current (formerly rules/05 section 8, now §1); GODEBUG settings from the `go` line, `godebug` blocks, `//go:debug` and the environment that weaken TLS/x509/archive defaults (§2) |
+| [`rules/01-errors.md`](rules/01-errors.md) | Writing/reviewing any error path: wrapping with `%w`, `errors.Is/As`, sentinel vs typed errors, **in-band sentinels (absence encoded as `-1`/`0`/`""`)** and comma-ok, panic/recover policy, error API design for libraries vs apps |
+| [`rules/02-design.md`](rules/02-design.md) | Designing packages or APIs: interface placement and size, package layout and `internal/`, naming, zero values, generics restraint, embedding, functional options, `context.Context` discipline, numeric edges (NaN/Inf from `ParseFloat`, integer divide-by-zero, `MinInt` / -1) |
+| [`rules/03-concurrency.md`](rules/03-concurrency.md) | Anything with `go`, `chan`, `sync`, or `select`: goroutine lifecycle ownership, leak catalog, errgroup fan-out, channels-vs-mutex decision, race patterns, worker pools, semaphores, `time.After` traps |
+| [`rules/04-http-services.md`](rules/04-http-services.md) | Building or auditing HTTP servers/clients: all five server timeouts, client timeouts and body hygiene, connection reuse, graceful shutdown, middleware, CSRF via `http.CrossOriginProtection` (and its bypass/trusted-origin exceptions), JSON duplicate-key probe, cookie attributes (framework helper defaults), debug mode and `/debug/*` endpoints in production, explicit Content-Type (no body sniffing), `slog` structured logging, request-scoped values |
+| [`rules/05-security.md`](rules/05-security.md) | Any input crossing a trust boundary: SQL parameterization, `os/exec` safety, path traversal and `os.Root`, integer overflow (G115), output encoding (`html/template`), CSPRNG (`crypto/rand` vs `math/rand`), FIPS 140-3 mode (`GOFIPS140`, `GODEBUG=fips140`), TLS config, SSRF (dial-time IP check via `net.Dialer.ControlContext`, redirects, proxy), dynamic code evaluation (template text from input, embedded interpreters, `expr` env), `unsafe`/cgo policy (govulncheck, supply chain and go.sum moved to [rules/08](rules/08-supply-chain.md)) |
+| [`rules/06-performance.md`](rules/06-performance.md) | Latency/memory work: pprof workflow, `testing.B` + `b.Loop`, allocation reduction, `strings.Builder`, `sync.Pool` criteria, escape analysis, GOGC/GOMEMLIMIT, PGO |
+| [`rules/07-tooling-ci.md`](rules/07-tooling-ci.md) | Setting up or auditing CI and tests: golangci-lint curated config, staticcheck/gofumpt/vet, table tests, `t.Parallel` correctness, testcontainers, golden files, fuzzing, go.mod hygiene and `tool` directives, dependency adoption (selection checks, insecure library defaults). **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in [`sota-testing`](../sota-testing/SKILL.md); load it for any build that writes logic. This file owns Go runner mechanics only.** |
+| [`rules/08-supply-chain.md`](rules/08-supply-chain.md) | Adding or auditing dependencies and the module supply chain: the checksum database, `govulncheck`, code that runs at build time (`go:generate`, cgo flags, `-toolexec`, `GOTOOLCHAIN`), keeping the toolchain current (formerly [rules/05](rules/05-security.md) section 8, now §1); GODEBUG settings from the `go` line, `godebug` blocks, `//go:debug` and the environment that weaken TLS/x509/archive defaults (§2) |
 
 ## Top-10 non-negotiables
 
 1. **Every error is handled or wrapped with `%w` and context** — never
    discarded with `_`, never logged-and-ignored on a path that must abort.
-   Compare with `errors.Is`/`errors.As`, never string matching. (`rules/01`)
+   Compare with `errors.Is`/`errors.As`, never string matching. ([`rules/01`](rules/01-errors.md))
 2. **No panics for control flow.** `panic` is for unreachable programmer
-   errors only; servers recover at goroutine boundaries and log. (`rules/01`)
+   errors only; servers recover at goroutine boundaries and log. ([`rules/01`](rules/01-errors.md))
 3. **Every goroutine has an owner and a guaranteed exit path** — tied to a
    `context.Context`, a closed channel, or a `WaitGroup`/`errgroup` join. If
-   you can't say how it stops, don't start it. (`rules/03`)
+   you can't say how it stops, don't start it. ([`rules/03`](rules/03-concurrency.md))
 4. **`go test -race ./...` in CI, always.** A race detector failure is a
-   CRITICAL finding, not flaky-test noise. (`rules/03`, `rules/07`)
+   CRITICAL finding, not flaky-test noise. ([`rules/03`](rules/03-concurrency.md), [`rules/07`](rules/07-tooling-ci.md))
 5. **`http.Server` sets `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout`,
    `IdleTimeout`; clients set timeouts and `defer resp.Body.Close()` (plus a
-   bounded drain before 1.27).** Default zero timeouts are a DoS. (`rules/04`)
+   bounded drain before 1.27).** Default zero timeouts are a DoS. ([`rules/04`](rules/04-http-services.md))
 6. **SQL only via parameterized queries** (`database/sql` placeholders, pgx,
    or sqlc-generated code). String-built SQL is CRITICAL, no exceptions for
-   "internal" values. (`rules/05`)
+   "internal" values. ([`rules/05`](rules/05-security.md))
 7. **`os/exec` with argv lists, never `sh -c` with interpolated input;
    file paths validated against a root** (`os.Root` on 1.24+, else
-   `filepath.Clean` + prefix check after resolving symlinks). (`rules/05`)
+   `filepath.Clean` + prefix check after resolving symlinks). ([`rules/05`](rules/05-security.md))
 8. **`context.Context` is the first parameter, flows down, is never stored in
    a struct**, and carries only request-scoped metadata — never dependencies.
-   (`rules/02`)
+   ([`rules/02`](rules/02-design.md))
 9. **Accept interfaces, return structs; define interfaces at the consumer,
-   keep them small.** No premature interfaces "for mocking". (`rules/02`)
+   keep them small.** No premature interfaces "for mocking". ([`rules/02`](rules/02-design.md))
 10. **`govulncheck ./...` and `golangci-lint` gate CI**; `go.sum` committed;
-    dependencies minimal and justified. (`rules/05`, `rules/07`)
+    dependencies minimal and justified. ([`rules/05`](rules/05-security.md), [`rules/07`](rules/07-tooling-ci.md))

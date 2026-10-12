@@ -1,6 +1,6 @@
 # 05 — Security: the language-level surface
 
-Swift-specific spellings of the classes `sota-code-security` owns. Every API default quoted here
+Swift-specific spellings of the classes [`sota-code-security`](../../sota-code-security/SKILL.md) owns. Every API default quoted here
 was read from the library's source or docs on 2026-10-07; re-check before relying on one.
 
 ## 1. Input validation and untrusted data
@@ -9,7 +9,7 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
   pass the typed value inward — not raw `String`s re-checked three layers down.
 - **Decoding has no size cap**: swift-foundation's `JSONDecoder` caps nesting depth (512) but not
   input size. Bound the body before decoding — Vapor's `defaultMaxBodySize` is `"16kb"` and can be
-  raised per route; raise it deliberately, never to unlimited (rules/06).
+  raised per route; raise it deliberately, never to unlimited ([rules/06](06-server-side.md)).
 - **Regex**: Swift's `Regex` engine backtracks (SE-0351: *"the regex engine backtracks by
   default"*); there is no linear-time guarantee, so ReDoS is possible on input. Validate with
   `wholeMatch(of:)` (anchored), not `firstMatch`; never compile `try Regex(userString)`; escape
@@ -37,12 +37,12 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
 - Randomness for keys, tokens and nonces: `SymmetricKey(size:)`, `SystemRandomNumberGenerator`
   (the default for `.random(in:)`). Never `arc4random`, `srand`/`rand`, `drand48` for secrets.
 - Compare MACs with `HMAC.isValidAuthenticationCode` (constant time); never `==` on a MAC, token
-  or digest. Primitive choice and protocol → `sota-code-security` rules/04.
+  or digest. Primitive choice and protocol → [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md).
 
 ## 4. Secrets handling and logging
 
 - No secrets in source or `Package.swift`; read them from the environment or a secret store at
-  startup (`sota-secrets-management`). Vapor's docs: *"Dotenv files with sensitive information
+  startup ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)). Vapor's docs: *"Dotenv files with sensitive information
   such as passwords should not be committed"* — ignore `.env*` in git.
 - **swift-log has no built-in redaction**: its metadata attributes (SLG-0004) are, in its own
   words, *"classifications, not enforcement"*. Never pass tokens, passwords, `Authorization`
@@ -86,12 +86,12 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
   `.follow(max:allowCycles:)`, and re-validate the target of each hop. Its configuration has no
   connect-time address filter (needs verification: only `dnsOverride` was found), so resolve and
   check the destination against private, loopback and metadata ranges yourself before dialling
-  user-supplied URLs (`sota-code-security` rules/01).
+  user-supplied URLs ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md)).
 - **TLS verification stays on**: never `certificateVerification: .none` or
   `.noHostnameVerification` in NIOSSL. NIOSSL's `makeClientConfiguration()` defaults to
   `minimumTLSVersion: .tlsv1` — set `.tlsv12` explicitly. A `URLSession` delegate that answers
   `serverTrust` challenges with `.useCredential` without evaluating the trust disables
-  verification. Transport policy → `sota-network-security` rules/06.
+  verification. Transport policy → [`sota-network-security` rules/06](../../sota-network-security/rules/06-dns-tls-pki.md).
 
 ## Audit checklist
 

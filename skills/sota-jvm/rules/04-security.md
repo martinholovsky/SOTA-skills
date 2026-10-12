@@ -25,7 +25,7 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   Annotation-driven typing defaults to `DefaultBaseTypeLimitingValidator`. It refuses base types
   such as `Object`, `Serializable` and `Comparable`, but it checks nothing below a narrower
   base. `builder().polymorphicTypeValidator(...)` replaces it, so read what that call installs.
-  Spring Boot 4 / Framework 7 default to Jackson 3. The web-layer view is `rules/08` §1
+  Spring Boot 4 / Framework 7 default to Jackson 3. The web-layer view is [`rules/08`](08-web-layer.md) §1
   ([Jackson 3 migration guide](https://github.com/FasterXML/jackson/blob/main/jackson3/MIGRATING_TO_JACKSON_3.md),
   [Spring: Jackson 3 support](https://spring.io/blog/2025/10/07/introducing-jackson-3-support-in-spring)).
 - If native serialization is unavoidable, install a strict **`ObjectInputFilter`**
@@ -90,11 +90,11 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   only the direct child, orphaning any grandchild holding the inherited pipe. Java is
   the one mainstream runtime with a portable fix: `p.descendants().forEach(
   ProcessHandle::destroyForcibly)` before `p.destroyForcibly()` (Java 9+, verified to
-  kill the grandchild). Cross-language comparison: `sota-sandboxing` rules/04 R5.3a.
+  kill the grandchild). Cross-language comparison: [`sota-sandboxing` rules/04](../../sota-sandboxing/rules/04-process-app-sandboxing.md) R5.3a.
 - **LDAP/JNDI**: never pass attacker-controlled names to `Context.lookup` —
   this is the Log4Shell (CVE-2021-44228) class. Disable remote-codebase loading;
   validate URLs against an allowlist; keep logging libs patched.
-  **LDAP filters are a second sink** (CWE-90; the class is `sota-code-security` rules/01 §11).
+  **LDAP filters are a second sink** (CWE-90; the class is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11).
   Never concatenate into a filter string. Use the JNDI overload that takes arguments,
   `ctx.search(base, "(uid={0})", new Object[]{user}, controls)`: the Javadoc says each
   `{i}` is substituted "with any characters having special significance within filters
@@ -116,8 +116,8 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   user)))`. ESAPI's `Encoder.encodeForDN` does the same job. Measured on Temurin 25.0.4:
   `"uid=" + "bob,ou=admins" + ",ou=people"` parsed as three RDNs, while the `Rdn` form stayed
   at two, and `escapeValue("bob,ou=admins+cn=x")` returned `bob\,ou\=admins\+cn\=x`. Filter
-  escaping does not make a value safe in a DN. The two rule sets are in `sota-code-security`
-  rules/01 §11. OWASP: LDAP Injection Prevention cheat sheet.
+  escaping does not make a value safe in a DN. The two rule sets are in [`sota-code-security`
+  rules/01](../../sota-code-security/rules/01-input-injection.md) §11. OWASP: LDAP Injection Prevention cheat sheet.
 - **XPath injection** (CWE-643): an expression built by concatenation is the SQL-injection
   shape. Bind values with `XPath.setXPathVariableResolver` and reference them as `$name`.
   Measured on Temurin 25.0.4: `count(//user[name='" + in + "'])` with
@@ -134,7 +134,7 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   sandbox is a boundary** (`System.setSecurityManager` threw `UnsupportedOperationException` on
   25.0.4): use a separate process or drop it. OWASP: Code Review Guide, Proactive Controls C3.
 - **Regex from input, and the shapes `java.util.regex` still cannot survive** (CWE-1333;
-  class: `sota-code-security` rules/01 §10). A pattern compiled from request data
+  class: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §10). A pattern compiled from request data
   (`Pattern.compile(userInput)`, `s.matches(userInput)`) hands the caller the regex engine.
   Use `Pattern.quote` when the input is meant literally. **The textbook ReDoS no longer
   reproduces on current JDKs**: measured on Temurin 21.0.12 and 25.0.4, `(a+)+$`,
@@ -195,12 +195,12 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
     - an IV or GCM nonce from a constant, from a string's bytes, or from `new byte[16]`.
       It must come from `SecureRandom` per message.
 
-    For key sizes, `sota-code-security` rules/04 §1 already schedules RSA-2048 (112-bit)
+    For key sizes, [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §1 already schedules RSA-2048 (112-bit)
     for deprecation after 2030. So a `KeyPairGenerator.initialize(1024)` is below a floor
     that is itself on its way out.
   - **Newer JDKs have JCA names for post-quantum and key derivation. Use them, not
     hand-rolled code.** The policy (which algorithm, hybrid or not, when) is
-    `sota-code-security` rules/04 §1; these are only the JVM spellings.
+    [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §1; these are only the JVM spellings.
     - ML-KEM (JEP 496, since JDK 24) is `KeyPairGenerator.getInstance("ML-KEM")` with
       `KEM.getInstance("ML-KEM")`. The parameter sets are `ML-KEM-512`/`-768`/`-1024`.
     - ML-DSA (JEP 497, since JDK 24) is `Signature.getInstance("ML-DSA")`. The parameter
@@ -223,14 +223,14 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
 - TLS: use the platform default protocols/cipher suites (TLS 1.2+/1.3); **never**
   install an all-trusting `TrustManager` or `HostnameVerifier` that returns
   true — disabling certificate validation is HIGH/CRITICAL. See
-  `sota-code-security` rules/04 and `sota-network-security`.
+  [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) and [`sota-network-security`](../../sota-network-security/SKILL.md).
   **Mail clients verify the hostname only if told to in the old API.**
   `mail.smtp.ssl.checkserveridentity` is documented "Defaults to false" in the legacy
   JavaMail (`com.sun.mail`) SMTP provider docs. Angus Mail's compatibility notes say the
   check "is enabled by default" from Angus Mail 1.1.0. Apache Commons Email only sets it to
   `true` when `setSSLCheckServerIdentity(true)` is called, so on the old provider it stays
   off. **SSH host keys are the same control** — the rule is stated once in
-  `sota-code-security` rules/04 §5. The JVM spellings are JSch
+  [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5. The JVM spellings are JSch
   `setConfig("StrictHostKeyChecking", "no")` and MINA SSHD `AcceptAllServerKeyVerifier`.
 
 ## 5. Other boundaries
@@ -238,14 +238,14 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
 - **Path traversal**: canonicalize and verify the result stays under an allowed
   root (`Path.normalize()` + `startsWith`); reject `..`. Use `java.nio.file`.
 - **SSRF / URL fetch**: validate/allowlist destinations; block internal/metadata
-  ranges (see `sota-code-security`). **`java.net.URL` is also a file reader.** Measured on
+  ranges (see [`sota-code-security`](../../sota-code-security/SKILL.md)). **`java.net.URL` is also a file reader.** Measured on
   Temurin 25.0.4: `URI.create("file:///tmp/secret.txt").toURL().openStream()` returned the
   file. `java.net.http.HttpRequest.newBuilder(URI.create("file:///…"))` threw
   `IllegalArgumentException: invalid URI scheme file`. So a fetcher built on
   `URL.openConnection`/`openStream` needs an explicit `http`/`https` scheme allowlist, and
   the JDK `HttpClient` gives you that refusal for free.
 - **SSRF in the JVM clients: check the address the socket dials, and every hop.** The
-  policy is `sota-code-security` rules/01 §5. Take a host key or ID and build the URL from
+  policy is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §5. Take a host key or ID and build the URL from
   your allowlist. When the caller has to name the destination, the check belongs in a
   connect-time hook, because checking a string first and fetching after lets DNS rebinding
   through. All of the following was measured on Temurin 25.0.4 in 2026-09:
@@ -287,18 +287,18 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
 - **Upload filenames are request data.** Servlet `Part.getSubmittedFileName()` and Spring
   `MultipartFile.getOriginalFilename()` return what the client sent. Spring's own Javadoc
   warns the name "could also contain characters such as '..'" and recommends generating
-  your own. Never build a storage path from it; the upload pipeline is `sota-code-security`
-  rules/05.
+  your own. Never build a storage path from it; the upload pipeline is [`sota-code-security`
+  rules/05](../../sota-code-security/rules/05-web-security.md).
 - **Secrets**: never hardcode; load from a secret manager/env; don't log them;
   prefer `char[]`/`byte[]` you can wipe over `String` for passwords (`rules`
-  cross-ref `sota-secrets-management`). **A record logs its secrets for you**: the implicit
+  cross-ref [`sota-secrets-management`](../../sota-secrets-management/SKILL.md)). **A record logs its secrets for you**: the implicit
   `toString` holds *"the names of components of the record, and string representations of
   component values"* (`java.lang.Record`). Measured on Temurin 25, a `record Creds(String
   user, String password)` printed `Creds[user=bob, password=hunter2]`, so `log.info("{}",
   creds)` leaks it. Override `toString` on any record or Kotlin `data class` that carries a
-  credential. Redaction at the logger is `sota-observability` rules/01 §4.
+  credential. Redaction at the logger is [`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §4.
 - **Spring/framework**: keep dependencies patched (Spring4Shell, Log4Shell were
-  dependency CVEs — `rules/06`); the web layer itself is in `rules/08`.
+  dependency CVEs — [`rules/06`](06-build-tooling-ci.md)); the web layer itself is in [`rules/08`](08-web-layer.md).
 - **`assert` is not a control**: assertions are **disabled by default** at
   runtime — Oracle's own guide says so, and adds that once disabled they are
   "essentially equivalent to empty statements in semantics and performance".
@@ -306,7 +306,7 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
   written as `assert` is a no-op in the deployment while reading correct in
   source. Use an explicit `if` + throw (or `Objects.requireNonNull`,
   `Preconditions`-style checks that survive). Class:
-  `sota-code-security` rules/11 §4.
+  [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §4.
 
 The web layer (formerly section 6) moved to [rules/08](08-web-layer.md) §1 on 2026-09-25.
 
@@ -319,7 +319,7 @@ takes down the whole JVM. FFM's restricted methods only **warn** unless
 `--enable-native-access` names the calling module, so set it to the named modules and never
 `ALL-UNNAMED` by habit. `Unsafe`'s memory-access methods are deprecated for removal
 (JDK 23, JEP 471), so migrate to `VarHandle` or FFM. Audit every crossing with the C rules;
-the class is `sota-code-security` rules/06 §3.
+the class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
 
 **JDK 24 brought JNI under the same gate, but only as a warning.** JEP 472 makes loading and
 linking a JNI library a restricted operation, and `--illegal-native-access` defaults to `warn`.
@@ -332,7 +332,7 @@ On JDK 24+, run CI and production with `--illegal-native-access=deny` and
 `--sun-misc-unsafe-memory-access=deny`. Then a new dependency that reaches native code or
 `Unsafe` fails the build instead of printing that warning. Where you do need an exception, grant
 only the named module. **JEP 483's AOT cache refuses any `--illegal-native-access` value**, so
-with a cache run this gate in a cache-free CI job instead (`rules/05` §2).
+with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-performance.md) §2).
 
 ## Audit checklist
 
@@ -466,7 +466,7 @@ with a cache run this gate in a cache-free CI job instead (`rules/05` §2).
       (a pinned list with no ML-KEM hybrid switches JDK 27's default off; a list split over
       several lines also prints, so read it)
 - [ ] **Mail hostname check and SSH host keys — HIGH** (§4; host keys are
-      `sota-code-security` rules/04 §5) —
+      [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5) —
       `grep -rnE 'ssl\.checkserveridentity|setSSLCheckServerIdentity\(false\)|import (javax\.mail|com\.sun\.mail)\.' --include='*.java' --include='*.kt' --include='*.properties' .`
       (on the legacy `com.sun.mail` provider an absent `checkserveridentity=true` is the
       finding) ;
@@ -479,4 +479,4 @@ with a cache run this gate in a cache-free CI job instead (`rules/05` §2).
       (a record or data class holding a credential: the generated `toString` prints it
       unless overridden)
 - [ ] **Static security analysis SpotBugs + Find-Sec-Bugs; OWASP dependency-check / OSV-Scanner
-      (rules/06)**
+      ([rules/06](06-build-tooling-ci.md))**

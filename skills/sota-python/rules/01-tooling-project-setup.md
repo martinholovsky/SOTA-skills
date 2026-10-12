@@ -175,7 +175,7 @@ repos:
 
 Do not hand-type the revs: run `pre-commit autoupdate --freeze`, which resolves each hook repo's
 latest tag and stores its commit SHA with the tag as a comment. A hook repo is third-party code
-that runs on every commit, so it is pinned by SHA for the same reason Actions are (rules/08 §1)
+that runs on every commit, so it is pinned by SHA for the same reason Actions are ([rules/08](08-supply-chain.md) §1)
 — a tag can be moved. Re-run it on a schedule so the pins do not rot.
 
 Keep hooks under ~5s; mypy and pytest belong in CI, not pre-commit. CI must re-run the same
@@ -195,18 +195,18 @@ checks (`pre-commit run --all-files`) — local hooks are convenience, not enfor
 - **`match` statements — judiciously.** Use for structural destructuring (AST nodes, parsed
   messages, tagged unions with a `kind` field, sum types). Do NOT use as a fancy if/elif on a
   single scalar — `if x == "a": ... elif x == "b":` is clearer and faster. Always end with
-  `case _:` that raises or `assert_never(...)` for exhaustiveness (see rules/02).
+  `case _:` that raises or `assert_never(...)` for exhaustiveness (see [rules/02](02-typing-correctness.md)).
 - **f-string improvements (3.12, PEP 701):** nested quotes `f"{d["key"]}"`, multi-line
   expressions and comments inside `{}` are legal. Use; don't contort.
 - **`itertools.batched(iterable, n)`** (3.12) — replaces hand-rolled chunking.
 - **3.13:** improved REPL, clearer error messages, `warnings.deprecated` decorator,
   `copy.replace()`.
 - **3.14 — deferred annotations (PEP 649/749):** forward references work without quotes or
-  `from __future__ import annotations`; pydantic/FastAPI keep working (see rules/02 §10).
+  `from __future__ import annotations`; pydantic/FastAPI keep working (see [rules/02](02-typing-correctness.md) §10).
 - **3.14 — template strings (PEP 750):** `t"..."` returns a `Template` of static parts +
   `Interpolation` objects instead of a string — for t-string-aware APIs that escape or
   parameterize values (HTML, SQL). Not a drop-in f-string; use only with a consuming library.
-  The escaping lives in that consumer, not in the literal: reviewing one is rules/05 §3a.
+  The escaping lives in that consumer, not in the literal: reviewing one is [rules/05](05-security.md) §3a.
 - **3.14 — `compression.zstd`** (PEP 784): stdlib Zstandard, also wired into
   `tarfile`/`zipfile`/`shutil`. Drops the third-party `zstandard` dep on a 3.14+ floor.
 
@@ -240,7 +240,7 @@ grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asyn
   --include='*.py' . 
 ```
 
-Two of these have security weight beyond the bump and are called out again in rules/05:
+Two of these have security weight beyond the bump and are called out again in [rules/05](05-security.md):
 `telnetlib` (plaintext credentials) and `crypt` (weak, platform-dependent hashing). Their
 replacements are not drop-in — `cgi.parse_header` has no stdlib successor, and `crypt` users
 want a password-hashing library, not another stdlib module.
@@ -268,7 +268,7 @@ suffix (`uv python install 3.14t`). Implications:
   and publish `cp314t` wheels.
 - Don't rewrite multiprocessing pools to threads "because no-GIL" until you've profiled on the
   free-threaded build; single-thread perf differs.
-- Decision table for concurrency model is in rules/06.
+- Decision table for concurrency model is in [rules/06](06-performance.md).
 
 ## 9. Docker packaging with uv
 
@@ -305,7 +305,7 @@ images by digest for reproducible rebuilds in regulated environments.
   (imported but only a transitive dep), DEP005 (stdlib shadowed). Treat its output as
   candidates — `importlib`/entry-point/plugin loads read as unused — and prove each by
   removing it in a scratch copy and running the real build and full suite
-  (`sota-devsecops` rules/10).
+  ([`sota-devsecops` rules/10](../../sota-devsecops/rules/10-inert-dependencies.md)).
 
 ## Audit checklist
 

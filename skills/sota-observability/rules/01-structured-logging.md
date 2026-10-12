@@ -100,7 +100,7 @@ that a level change (global, root or per-package) cannot silence. Changing the
 level at runtime goes through an approved path — a change record, or an
 automatic rule that raises verbosity for a bounded window and reverts on a
 timer — and the toggle itself is an authenticated, audited admin action
-(rules/05 §3). A scheduled check compares the level each running instance
+([rules/05](05-operational-readiness.md) §3). A scheduled check compares the level each running instance
 actually reports with the intended one, because a "temporary" DEBUG or OFF
 outlives the incident that caused it. OWASP: Logging cheat sheet.
 
@@ -130,7 +130,7 @@ Rules:
   a parallel `request_id` scheme if tracing exists; if you must keep a legacy
   request_id, log both.
 - Propagate into async work: thread pools, queue consumers, cron-spawned
-  tasks must restore context before logging (see rules/03 §4).
+  tasks must restore context before logging (see [rules/03](03-tracing.md) §4).
 - Also bind stable dimensions once per request: `user_id` (if policy allows),
   `tenant_id`, `service.version`, `deployment.environment.name` — via logger
   context, not repeated at every call site.
@@ -209,7 +209,7 @@ what was actually returned or written: a producer may log its *intent*, only the
 consumer can report the *effect*. Verify it by changing what the function returns and
 reading the emitted line — for anything running unattended (cron, pipeline stage, agent
 loop) the log is the **only witness**, so a log unchanged by that mutation is the
-finding. Full class: `sota-code-security` rules/14 §1. Scattered lines force
+finding. Full class: [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §1. Scattered lines force
 join-by-timestamp archaeology; the wide event makes "show me slow checkouts
 for enterprise tenants on v2.14" a single query.
 
@@ -251,7 +251,7 @@ Rules:
   plan, amounts, flags), infrastructure (version, region, instance).
 - High dimensionality is the point — many fields per event is good. (High
   *cardinality* is fine in logs/events; it is only forbidden in metric
-  labels — see rules/02 §3.)
+  labels — see [rules/02](02-metrics.md) §3.)
 - Same pattern for non-HTTP work: one event per consumed message, per job
   run, per batch — with queue lag, attempt number, batch size.
 - Wide events at INFO are never sampled away independently of their request;
@@ -353,7 +353,7 @@ OWASP: Logging cheat sheet, Proactive Controls 2024 C9.
 
 Logs hold the evidence an intruder most wants to read or erase, so the store
 gets the controls of a sensitive database. Integrity and tamper evidence are
-`sota-code-security` rules/18; this section is who reads, where files live,
+[`sota-code-security` rules/18](../../sota-code-security/rules/18-tamper-evident-logs.md); this section is who reads, where files live,
 and how records travel.
 
 - **Reads are events too.** Record every query or export against the log
@@ -375,7 +375,7 @@ and how records travel.
   exporter, `insecure: true` turns TLS off and `insecure_skip_verify: true`
   keeps TLS but skips server-certificate checks (both default to false).
   Events from clients and other trust zones stay untrusted input
-  (`sota-code-security` rules/07 §2).
+  ([`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) §2).
 
 OWASP: Logging cheat sheet, ASVS 5.0 V16.4.2 and V16.4.3.
 

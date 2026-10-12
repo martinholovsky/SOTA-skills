@@ -1,20 +1,20 @@
 # Dead Paths — the diagnostics that expose a system reporting success while doing nothing
 
-rules/10 asks, one control at a time, *"if this were a no-op, would anything look
+[rules/10](10-silent-control-failure.md) asks, one control at a time, *"if this were a no-op, would anything look
 different?"* This file is the **hunt**: the cheap signals that surface the family
-across a whole codebase without reading every line, five classes rules/10 does
+across a whole codebase without reading every line, five classes [rules/10](10-silent-control-failure.md) does
 not cover (they are not security controls at all — they are correctness), and the
 evidence bar a finding in this family has to clear.
 
-Use it in AUDIT as the sweep that decides *where* to apply rules/10, and in BUILD
+Use it in AUDIT as the sweep that decides *where* to apply [rules/10](10-silent-control-failure.md), and in BUILD
 as the set of properties that make a stage falsifiable before you ship it.
 
-Related: inert controls (the catalog) → rules/10; **proving a control works, and
-validating the instrument or guard that reported it → rules/15**; fail-open authz
-→ rules/03; truncation before inspection → rules/16 §2.7; mutation testing and
-watching a test fail → `sota-testing` rules/06 and rules/09; degradation telemetry →
-`sota-observability` rules/05; scale and cost → `sota-performance` rules/01;
-shell/CI exit-code masking → `sota-shell-scripting` rules/01.
+Related: inert controls (the catalog) → [rules/10](10-silent-control-failure.md); **proving a control works, and
+validating the instrument or guard that reported it → [rules/15](15-instruments-and-guards.md)**; fail-open authz
+→ [rules/03](03-authorization.md); truncation before inspection → [rules/16](16-where-no-ops-hide.md) §2.7; mutation testing and
+watching a test fail → [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) and [rules/09](../../sota-testing/rules/09-security-testing.md); degradation telemetry →
+[`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md); scale and cost → [`sota-performance` rules/01](../../sota-performance/rules/01-methodology.md);
+shell/CI exit-code masking → [`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md).
 
 ---
 
@@ -32,7 +32,7 @@ So the hunting ground is every place where:
 `None`, `0.0`. **If you cannot distinguish "it ran and found nothing" from "it
 never ran", that is a finding — whether or not it has fired yet.**
 
-This is rules/10 §1 turned outward: there, per control; here, per pipeline stage,
+This is [rules/10](10-silent-control-failure.md) §1 turned outward: there, per control; here, per pipeline stage,
 gate, job, and query.
 
 ## 2. The diagnostics, highest yield first
@@ -64,8 +64,8 @@ Two refinements:
   that got 30× faster and found the same number of issues did not get faster.
 
 **And the same arithmetic applied to your own reasoning: a rate computed over a window
-longer than the phenomenon describes the window, not the phenomenon.** `sota-observability`
-rules/02 §4 says averages hide what matters when you *design* a metric; this is the version
+longer than the phenomenon describes the window, not the phenomenon.** [`sota-observability`
+rules/02](../../sota-observability/rules/02-metrics.md) §4 says averages hide what matters when you *design* a metric; this is the version
 that bites when you are *debugging*, and nothing routes you there. Field-reported
 2026-09-05: an importer's failures averaged **~4.2/s over an hour**, which was used to argue
 "steady per-call failure, not an expired-context spin" — and on that basis a correct fix was
@@ -136,11 +136,11 @@ buffer) and treat equality as truncated until shown otherwise. Field-reported
 and reproduced 2026-08-19: a recon call left `max_tokens` unset, inherited a
 4096 default, and a 4,843-character JSON fragment reached `json.loads` as a
 plain string — no exception from the provider, no flag, and a swallowing
-`except` (rules/16 §2.4) then published it as an empty profile. Corollary: **a
+`except` ([rules/16](16-where-no-ops-hide.md) §2.4) then published it as an empty profile. Corollary: **a
 parse-error offset is uninterpretable without the document length.** "Failed at
 char 3,023" argues *against* truncation while you assume 4,096 tokens yield
 12–16k characters, and *for* it the moment you learn 3,023 was the last
-character — so log the size beside the offset. Class and fix: rules/16 §2.7.
+character — so log the size beside the offset. Class and fix: [rules/16](16-where-no-ops-hide.md) §2.7.
 
 ### 2.2a The empty comparand — the zero on the other operand
 
@@ -176,7 +176,7 @@ reference is a legitimate recorded state, require an explicit, greppable opt-out
 flag: the flag is how a human records that they know, and an exit code is not.
 
 Where to look: golden-file tests with an empty golden, approval suites
-(`sota-testing` rules/06 §6.4) whose approved set was never populated, gates
+([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.4) whose approved set was never populated, gates
 seeded from a baseline run that itself failed, and any `set(old) - set(new)`
 regression check.
 
@@ -185,21 +185,21 @@ regression check.
 Run the same stage on a small and a large input. **Output that does not grow with
 input is suspect.** Findings, rows, log lines, bytes written, duration — pick a
 quantity the work should move and compare the two runs. This is the cheap version
-of `rules/13` §1: it catches a threshold-gated path without finding the threshold first.
+of [`rules/13`](13-context-dependent-silence.md) §1: it catches a threshold-gated path without finding the threshold first.
 
 ### 2.4 Telemetry silence
 
 A stage that emits no log lines cannot be distinguished from a stage that did
 nothing. Silence is not evidence of health; it is absence of evidence. Any stage
 on a data path emits at least a start/finish pair carrying its denominator
-(§2.2). See rules/10 §3 for the degraded-control helper and the gauge that stays
+(§2.2). See [rules/10](10-silent-control-failure.md) §3 for the degraded-control helper and the gauge that stays
 1 while a control is degraded.
 
 **The inverse also holds, and it is the harder half: speech is not evidence of health
 either**, when the claim is sited *upstream* of the effect it describes. A line reading
 `1 adjudicated` proves a count was computed there, not that the count survived the rest
 of the function. Site the claim in the consumer, derived from the value received —
-`rules/14` §1.
+[`rules/14`](14-control-not-in-force.md) §1.
 
 ### 2.5 Did the changed code execute?
 
@@ -211,10 +211,10 @@ one-shot `print`), run the real workload, and show the emission. **Placement is 
 precondition of that proof**: an emission establishes that the line it sits on ran, not
 that its result survived the suffix of the function — the filter, early return or
 reassignment that comes after it. Put the emission where the value is *consumed*, or it
-answers a weaker question than the one you asked (`rules/14` §1). The same trap
+answers a weaker question than the one you asked ([`rules/14`](14-control-not-in-force.md) §1). The same trap
 bites mutation testing: an editable install, a copied tree, a stale image, or
 cached bytecode means the code you edited may not be the code that ran
-(rules/12 §1). Assert the runtime effect before trusting any before/after result.
+([rules/12](12-verifying-the-verifier.md) §1). Assert the runtime effect before trusting any before/after result.
 
 ### 2.6 When you cannot state the right answer, state how it must change
 
@@ -228,7 +228,7 @@ functions" for an arbitrary repository, so nothing in the pipeline contradicts
 A **metamorphic relation** gets you an oracle anyway: you cannot state the
 output, but you can state how it must *change*. Commit a fixture with N known
 functions and assert the extracted count is N; add one and assert the count
-rises; remove half and assert it falls. `sota-testing` rules/06 §4 owns the
+rises; remove half and assert it falls. [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §4 owns the
 technique for application code — the use here is different and cheaper. It is a
 **liveness oracle for a tool whose correct output you do not know**, and it is
 the one diagnostic in this file that catches an analyser emitting an
@@ -268,7 +268,7 @@ the larger n. "5,000 samples" outranks "149" in review, and the 149 were the rea
 false positive dies in review; a finding withdrawn on contaminated evidence leaves nothing
 behind at all — no retraction to grep for, no red build, no second look.
 
-Rule for BUILD: the writer stamps, not the reader — `sota-observability` rules/05 §8a.
+Rule for BUILD: the writer stamps, not the reader — [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §8a.
 Rule for AUDIT: every number reported from a shared sink states its **exclusion filter and
 the count on both sides of it** (`149 of 5,000 after excluding test-provider runs`); a bare
 n from a shared sink is not a measurement. And treat an **unexplained** jump in n when you
@@ -277,12 +277,12 @@ legitimately multiplies n, so the test is whether you can name where the new row
 from. If you cannot, you did not widen the sample; you merged two populations. §2.3 reads
 the same arithmetic from the other end.
 
-## 3. Five classes rules/10 does not cover
+## 3. Five classes [rules/10](10-silent-control-failure.md) does not cover
 
 Moved to [`rules/13`](13-context-dependent-silence.md) — scale-dependent silence,
 stale-artifact no-ops, format assumptions generalised from one sample, contract
 drift at an undeclared seam, and location-dependent silence. §2's diagnostics are
-how you notice one; `rules/13` is what you are looking at once you do.
+how you notice one; [`rules/13`](13-context-dependent-silence.md) is what you are looking at once you do.
 
 ## 4. An assert is not a control in production
 
@@ -314,8 +314,8 @@ Rules:
   the purest form of this family: source code that reads correct and does not
   exist at runtime.
 
-Language specifics: `sota-python` rules/05, `sota-c-cpp` rules/04, `sota-jvm`
-rules/04.
+Language specifics: [`sota-python` rules/05](../../sota-python/rules/05-security.md), [`sota-c-cpp` rules/04](../../sota-c-cpp/rules/04-security.md), [`sota-jvm`
+rules/04](../../sota-jvm/rules/04-security.md).
 
 ## 5. Evidence — one discriminating proof per finding
 
@@ -324,7 +324,7 @@ mechanism you did not trigger is not a confirmed finding.
 
 | Class | The proof that discriminates |
 |---|---|
-| Vacuous control | **Mutation test.** Inject the exact failure the control claims to catch, run it, show it still reports green (rules/12 §1) |
+| Vacuous control | **Mutation test.** Inject the exact failure the control claims to catch, run it, show it still reports green ([rules/12](12-verifying-the-verifier.md) §1) |
 | Silent zero | Show the failure return is **identical** to the success-but-empty return, and name **one consumer** that cannot distinguish them |
 | Scale-dependent | State the trigger numerically; show fixtures never cross it; measure both scales where cheap |
 | Stale artifact | Change the omitted input; show the key unchanged and the stale artifact reused |
@@ -336,7 +336,7 @@ Label every finding exactly one of:
 - **LATENT** — mechanism verified in the code; verified **not** to have fired,
   and you say how you checked. Report it; do not inflate it to ACTIVE.
 - **REFUTED** — you suspected it and the evidence says no. **Report these too**:
-  a refuted suspicion stops the next auditor re-raising it (`sota/rules/03` §4).
+  a refuted suspicion stops the next auditor re-raising it ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §4).
 
 **Not findings** (disqualifiers):
 
@@ -362,21 +362,21 @@ control switched off. Say so in the finding rather than shipping the fix blind.
 
 1. **Every gate**: CI jobs, pre-commit hooks, health and readiness checks,
    admission/validation webhooks, authz checks, quality gates. Mutation-test each
-   one — a gate you have never seen reject anything is unverified (rules/14 §4).
+   one — a gate you have never seen reject anything is unverified ([rules/14](14-control-not-in-force.md) §4).
 2. **The tests *of* those gates**: does any test assert the gate **fails** on bad
    input? Happy-path-only tests are how vacuous controls survive review
-   (`sota-testing` rules/09).
+   ([`sota-testing` rules/09](../../sota-testing/rules/09-security-testing.md)).
 3. **Error handling on the main data path** — every catch/except between input
-   and output (rules/16 §2.4).
+   and output ([rules/16](16-where-no-ops-hide.md) §2.4).
 4. **Fallback, retry, degrade, and "continue anyway" branches** — verify the
    fallback *actually engages*. A log line saying it will is not proof that it does.
 5. **Shell and CI glue**: pipelines without `pipefail` mask a non-final failure;
    globs that match nothing; `find -exec` over an empty set; `|| true`; any
-   command whose exit code is discarded (`sota-shell-scripting` rules/01).
-6. **Caches, tags, fingerprints** (`rules/13` §2).
+   command whose exit code is discarded ([`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md)).
+6. **Caches, tags, fingerprints** ([`rules/13`](13-context-dependent-silence.md) §2).
 7. **Feature flags and config**: is the value **read** *and also* **applied**? A
    config field that parses, validates, and is never plumbed to the code path it
-   names is a silent no-op — distinct from rules/16 §2.5, where the flag *is*
+   names is a silent no-op — distinct from [rules/16](16-where-no-ops-hide.md) §2.5, where the flag *is*
    applied, just more broadly than its name claims. Trace one flag end-to-end
    from file to the branch it is supposed to control.
 8. **In-band sentinels on a compared value** — a number whose domain includes an
@@ -387,7 +387,7 @@ control switched off. Say so in the finding rather than shipping the fix blind.
    constant from a not-found branch and an error branch — then look for the
    **asymmetric guard**: a comparison with one operand filtered against the
    sentinel and the other not. That asymmetry, not the constant, is the finding
-   (`sota-architecture` rules/02 §8a).
+   ([`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a).
 
 Start by enumerating every gate, guard, and audit in the codebase. For each: read
 the comment, read the code, then **make it fail on purpose**. The controls you
@@ -404,8 +404,8 @@ environment change (auth switched on) kills them all at once.
 
 Every diagnostic above is run *by* something — a script, a gate, a scorer, a
 grep. Each of those is a control by the definition in §1, and the sweep is not
-finished until they have been held to the same standard: **rules/12** carries the
-mutation probe; **rules/15** carries the bar an instrument must clear before its
+finished until they have been held to the same standard: **[rules/12](12-verifying-the-verifier.md)** carries the
+mutation probe; **[rules/15](15-instruments-and-guards.md)** carries the bar an instrument must clear before its
 number is quoted, and the guard that is an instance of what it guards. A finding produced by an
 unvalidated instrument is not yet a finding.
 
@@ -437,14 +437,14 @@ unvalidated instrument is not yet a finding.
 - [ ] After each fix, the **new path proven to have executed** (emission, counter,
       or asserted runtime effect), not just "tests pass" (§2.5)?
 - [ ] Unbounded traversals/recursion/variable-length queries bounded, and every
-      **size-gated path** exercised by a fixture that crosses the threshold (`rules/13` §1)?
+      **size-gated path** exercised by a fixture that crosses the threshold ([`rules/13`](13-context-dependent-silence.md) §1)?
 - [ ] Truncating budgets degrade **loudly and in the returned value**
-      (`coverage: partial`), never only in a log line (`rules/13` §1)?
+      (`coverage: partial`), never only in a log line ([`rules/13`](13-context-dependent-silence.md) §1)?
 - [ ] Every cache/tag/fingerprint key audited with "what input can change while
-      the key stays constant?" — tool/ruleset **version** included (`rules/13` §2)?
+      the key stays constant?" — tool/ruleset **version** included ([`rules/13`](13-context-dependent-silence.md) §2)?
 - [ ] External-interface parsers validated against the **declared schema** and a
       real sample from the installed version, not one observed response; numeric
-      parsing rejects trailing garbage (`rules/13` §3)?
+      parsing rejects trailing garbage ([`rules/13`](13-context-dependent-silence.md) §3)?
 - [ ] Every aggregate drawn from a sink that **anything but production writes to**
       states its exclusion filter and the count on both sides of it, and no finding was
       withdrawn on a number whose n grew unexplained (§2.7)?
@@ -460,7 +460,7 @@ unvalidated instrument is not yet a finding.
       applied to the branch they name (§6.7)?
 - [ ] Every artifact handed **between stages** has its layout, writer and reader
       named, and any producer change validated by **running the consumer on real
-      output** — not by each side's own tests (`rules/13` §4)?
+      output** — not by each side's own tests ([`rules/13`](13-context-dependent-silence.md) §4)?
 - [ ] Every script CI, a hook or a runbook references **actually executed this
       pass**, the silent ones recorded as dead until proven otherwise (§6)?
 - [ ] **Environment-dependent predicates**: any filter tested against an absolute
@@ -471,4 +471,4 @@ unvalidated instrument is not yet a finding.
 - [ ] **Every collection a suite iterates has a non-empty assertion** — without one an
       empty parameter set reports SKIPPED and the suite passes vacuously.
 - [ ] The tools that produced these findings held to the same standard —
-      mutation probe (**rules/12**), instrument bar and guard recursion (**rules/15**) (§7)?
+      mutation probe (**[rules/12](12-verifying-the-verifier.md)**), instrument bar and guard recursion (**[rules/15](15-instruments-and-guards.md)**) (§7)?

@@ -26,12 +26,12 @@ Per-runtime profilers (sampling, production-safe unless noted):
 - **Go**: built-in `pprof` (CPU, heap, mutex, block, goroutine), continuous
   profiling via Pyroscope/Parca. Enable `net/http/pprof` in services on a
   dedicated internal-only mux/port — never the public `DefaultServeMux`, which
-  importing the package registers on (`sota-observability` rules/05 §3).
+  importing the package registers on ([`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §3).
 - **JVM**: async-profiler (CPU + alloc + locks, no safepoint bias), JFR
   (always-on flight recorder, < 2% overhead).
 - **Node.js**: `node --prof`, `--cpu-prof`, Chrome DevTools, `0x` for
   flamegraphs; `perf_hooks.monitorEventLoopDelay` for event-loop lag
-  (rules/04 §9). Clinic.js is unmaintained (per its own README) — flag it
+  ([rules/04](04-io-network.md) §9). Clinic.js is unmaintained (per its own README) — flag it
   where found; don't adopt.
 - **Python**: `py-spy` (attach to live process, no code change), `cProfile`
   (deterministic, high overhead — dev only), `memray` for allocations.
@@ -89,7 +89,7 @@ Non-negotiables for any benchmark:
 
 **A production metric you cannot re-run has no "run it 30 times".** §3's remedy
 assumes a repeatable benchmark. For a live series the equivalent is sampling more
-*offsets*, never a `now` vs `offset 24h` pair — `sota-observability` rules/02 §4a
+*offsets*, never a `now` vs `offset 24h` pair — [`sota-observability` rules/02](../../sota-observability/rules/02-metrics.md) §4a
 has the measured case where such a pair showed 22x on a series that had not moved.
 
 ## 4. Percentiles, not averages
@@ -134,7 +134,7 @@ Consequences:
 - One avoidable network round trip (~0.5 ms in-DC) costs the same as ~5,000
   DRAM accesses or ~500k L1 hits. **Round trips dominate; count them first.**
 - RAM is the new disk: a cache-missing pointer chase (100 ns) is 100× an L1
-  hit. Data layout (rules/03) matters for hot loops.
+  hit. Data layout ([rules/03](03-memory.md)) matters for hot loops.
 - Anything touching cross-region links is 100,000× slower than memory — cache
   it, move it, or batch it.
 
@@ -213,7 +213,7 @@ testing won't reveal?"* Yes → pathology, fix now. No → demand a profile.
 
 One more invariant: optimizations must not erode security — identity-keyed
 caching, constant-time comparisons, and validation/size limits are not
-overhead to shave (rules/05 §9, sota-code-security).
+overhead to shave ([rules/05](05-caching.md) §9, [sota-code-security](../../sota-code-security/SKILL.md)).
 
 ## 9a. Duration as a correctness signal, not just a cost one
 
@@ -228,11 +228,11 @@ Two forms worth timing deliberately:
 - **Duration vs claimed work** — record the wall time *and* the input size, then
   compare against the order of magnitude the work implies.
 - **Duration constant across scales** — if a 100-item and a 100k-item input take
-  the same time, size is not reaching the work. Same test as `sota-code-security` rules/11 §2.3.
+  the same time, size is not reaching the work. Same test as [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.3.
 
 A stage that got dramatically faster while reporting the same result is a
 regression signal, not a win, until you can say what work was removed. Full class
-and the evidence bar: `sota-code-security` rules/11 §2.1.
+and the evidence bar: [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.1.
 
 **And the inverse: a duration that is suspiciously *slow* indicts the measurement before
 it indicts the subject.** "Suspiciously fast" impugns the work; "suspiciously slow" usually

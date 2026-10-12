@@ -104,7 +104,7 @@ the type system, and expression-oriented code**. References:
 - Don't use exceptions for control flow. For *expected* failures prefer a typed
   return: Java sealed result or `Optional`; Kotlin `Result<T>`/sealed class.
 - Kotlin: don't catch `CancellationException` and swallow it in coroutines (it
-  breaks structured cancellation — `rules/03`). Use `runCatching` judiciously,
+  breaks structured cancellation — [`rules/03`](03-concurrency.md)). Use `runCatching` judiciously,
   not as a blanket swallow.
 - **An `Error` is not a failure to recover from.** A `catch` of `Error`, or of `Throwable`
   (which contains it), may log and rethrow, and nothing else: no fallback, no retry, no
@@ -122,7 +122,7 @@ the type system, and expression-oriented code**. References:
 ## 5. Immutability and finality
 
 - Default to immutable: records, `final` fields/vars, Kotlin `val`, unmodifiable
-  collection views. Immutable objects are inherently thread-safe (`rules/03`).
+  collection views. Immutable objects are inherently thread-safe ([`rules/03`](03-concurrency.md)).
 - Mark classes not designed for inheritance `final` (Java) — Kotlin classes are
   final by default (`open` to allow). Favor composition over inheritance.
 

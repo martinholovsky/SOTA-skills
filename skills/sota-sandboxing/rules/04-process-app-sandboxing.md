@@ -164,7 +164,7 @@ deprecates that spelling**, `DEP0190`, because args are concatenated unescaped);
 `exec.Command` (fine; never wrap in
 `sh -c`); Rust `Command` (fine — measured 2026-08-19, **neither `.arg` nor `.args`
 splits on whitespace**, so the argv guarantee holds; the documented exception is
-Windows `.bat`/`.cmd`, `sota-rust` rules/08 §1); Java `ProcessBuilder` with a
+Windows `.bat`/`.cmd`, [`sota-rust` rules/08](../../sota-rust/rules/08-external-programs.md) §1); Java `ProcessBuilder` with a
 **list** (measured 2026-08-20 on Temurin 25.0.3: it does *not* split on whitespace and
 no shell is involved — `ProcessBuilder("echo", "$HOME")` prints `$HOME` literally).
 Java's footgun is the *other* API: **`Runtime.getRuntime().exec(String)` tokenizes the
@@ -202,9 +202,9 @@ under the same test. Go's `Wait` blocks past context cancellation until
 `cmd.WaitDelay` is set; Python's raises on schedule; **Rust/tokio's `timeout` fires
 on schedule but leaves the child and its grandchild running**, because cancelling
 the future is not killing the process (`.kill_on_drop(true)`, measured 2026-08-19).
-Read that language's subprocess section before trusting the timeout: `sota-golang`
-rules/05 §3, `sota-python` rules/05 §2, `sota-rust` rules/08 §1,
-`sota-javascript-typescript` rules/08 ("Command injection via child_process").
+Read that language's subprocess section before trusting the timeout: [`sota-golang`
+rules/05](../../sota-golang/rules/05-security.md) §3, [`sota-python` rules/05](../../sota-python/rules/05-security.md) §2, [`sota-rust` rules/08](../../sota-rust/rules/08-external-programs.md) §1,
+[`sota-javascript-typescript` rules/08](../../sota-javascript-typescript/rules/08-process-and-outbound.md) ("Command injection via child_process").
 
 **Five** runtimes measured under the same test:
 

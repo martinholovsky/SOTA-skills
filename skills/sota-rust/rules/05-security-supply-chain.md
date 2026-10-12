@@ -99,7 +99,7 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   metadata`, `cargo fetch` and `cargo tree` ran neither. rust-analyzer also runs them on
   opening a project (`rust-analyzer.cargo.buildScripts.enable` and
   `rust-analyzer.procMacro.enable`, both default `true`) — set both `false` before opening an
-  untrusted checkout. `[build] rustc-wrapper` is the same trust from config (rules/07 §4a).
+  untrusted checkout. `[build] rustc-wrapper` is the same trust from config ([rules/07](07-tooling-ci.md) §4a).
   **There is no off switch**: `cargo build --help` and `cargo -Z help` (1.97.1) offer no flag
   that skips build scripts or proc-macros, so the controls are review and isolation.
   Review: list what runs with the audit probe below; on every bump read
@@ -117,7 +117,7 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   names (`--with-metadata` fixes the latter); `cargo +nightly udeps` needs
   nightly and documents false *negatives*. Neither settles it alone: prove a
   candidate by removing it in a scratch copy and running the real build, clippy,
-  and full suite — `sota-devsecops` rules/10.
+  and full suite — [`sota-devsecops` rules/10](../../sota-devsecops/rules/10-inert-dependencies.md).
 
 ## 3. Integer overflow — release mode wraps
 
@@ -151,7 +151,7 @@ Any attacker-reachable panic is a denial-of-service primitive — one request
 kills a worker or (with `panic=abort`) the whole process.
 
 - Hunt the implicit panic surface in request paths: `unwrap`/`expect`
-  (rules/02), slice indexing, `&s[a..b]` on non-char boundaries, integer
+  ([rules/02](02-errors-and-panics.md)), slice indexing, `&s[a..b]` on non-char boundaries, integer
   division by zero, `with_capacity(attacker_len)` (capacity overflow /
   OOM-abort), recursion depth on nested input (stack overflow — **abort, not
   catchable**; see §6 on serde recursion).
@@ -160,7 +160,7 @@ kills a worker or (with `panic=abort`) the whole process.
   tower stacks. With `panic = "abort"`, containment is gone — pair abort with
   a supervisor (systemd `Restart=always`, k8s) and treat reachable panics as
   Critical, plus rate-limit restarts to blunt crash-loop DoS.
-- Resource-exhaustion siblings of panic-DoS: unbounded channels (rules/04),
+- Resource-exhaustion siblings of panic-DoS: unbounded channels ([rules/04](04-async-tokio.md)),
   missing request body limits, decompression bombs (cap decompressed size),
   unbounded `read_to_end` on sockets — set explicit limits at every ingest.
 
@@ -183,8 +183,8 @@ struct DbConfig { url: String, password: SecretString }
   zeroization is a window-shrinker, not a guarantee. Don't structure a security
   argument ("the key is erased after use") on the destructor running; minimize
   the secret's lifetime, avoid leaking/forgetting secret-bearing values, and
-  keep Drop impls panic-free (rules/02 §5) so the erasure path isn't skipped by
-  an abort. (ANSSI `LANG-DROP-SEC`; soundness corollary in rules/03.)
+  keep Drop impls panic-free ([rules/02](02-errors-and-panics.md) §5) so the erasure path isn't skipped by
+  an abort. (ANSSI `LANG-DROP-SEC`; soundness corollary in [rules/03](03-unsafe-discipline.md).)
 - **No `Debug`/`Display`/`Serialize` leaking secrets**: manual `Debug` impls
   redacting sensitive fields; never `#[derive(Debug)]` on a struct holding a
   raw key. Audit `tracing` events for token/password fields.
@@ -225,7 +225,7 @@ network:
   not; use `serde_stacker`/explicit depth caps for deeply-nested formats
   (stack overflow = abort = DoS).
 - Validate after parse: serde checks shape, not semantics. Lengths, ranges,
-  string charsets via `TryFrom` newtypes (rules/01 §3) or `validator`/`garde`
+  string charsets via `TryFrom` newtypes ([rules/01](01-ownership-and-api-design.md) §3) or `validator`/`garde`
   — the deserialized type should already be the validated type
   ("parse, don't validate").
 - `Vec` preallocation from attacker-controlled length prefixes
@@ -237,7 +237,7 @@ network:
 - Don't deserialize to `Box<dyn Trait>`/arbitrary types via
   `typetag`-style registries from untrusted sources without an allowlist.
 - Fuzz every parser of untrusted bytes: `cargo fuzz` target per format, in
-  scheduled CI. Combine with rules/03 sanitizers when the parser has unsafe.
+  scheduled CI. Combine with [rules/03](03-unsafe-discipline.md) sanitizers when the parser has unsafe.
 
 ## 7. Service-edge defaults
 
@@ -252,7 +252,7 @@ network:
   server, use `WebPkiClientVerifier` and authorise on a SAN, not on the subject CN.
   Verified against reqwest 0.13.5, native-tls 0.2.18 and rustls 0.23.45 sources.
 - **Outbound requests to a caller-influenced destination (SSRF)** — policy in
-  `sota-code-security` rules/01 §5; the reqwest idiom (read in reqwest 0.13.5, hyper-util 0.1.20):
+  [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §5; the reqwest idiom (read in reqwest 0.13.5, hyper-util 0.1.20):
   - Take a host key or ID from the caller and build the `Url` from your own allowlist
     entry; relaying a caller-supplied URL is the pattern to design out.
   - **The check belongs on the address being dialled.** Implement `reqwest::dns::Resolve`,
@@ -281,7 +281,7 @@ network:
   `regex` 1.13.1 and `fancy-regex` 0.19.2 sources, behaviour measured on rustc 1.97.1:
   - **Escaping.** Untrusted text spliced into a pattern goes through `regex::escape(&s)`
     (`fancy_regex::escape` for that crate); raw `Regex::new(&format!(..))` lets the caller
-    write `.*`. Propagate the build `Err`, never `unwrap()` it (rules/02 §4).
+    write `.*`. Propagate the build `Err`, never `unwrap()` it ([rules/02](02-errors-and-panics.md) §4).
   - **Anchoring.** Every search, `is_match` included, is unanchored (the crate prepends an
     implicit `(?s:.)*?`), so `[a-z]+` accepts `abc;rm`. Group before anchoring:
     `^(?:a|b)$` — measured, `^a|b$` accepts `axxx`. Without multi-line mode `$` is end of
@@ -302,7 +302,7 @@ network:
     `Err` as a reject, lower the limit on request paths, and prefer staying in `regex`.
   OWASP: Input Validation cheat sheet; Proactive Controls 2024 C3; ASVS 5.0 V1.2.9;
   OWASP Go-SCP (validation, regular expressions).
-- **Cookies the app sets itself** (the session cookie is `sota-code-security` rules/17).
+- **Cookies the app sets itself** (the session cookie is [`sota-code-security` rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md)).
   Measured with cookie 0.18.2, axum-extra 0.12.6, actix-web 4.15.0 and rocket 0.5.1:
   - `Cookie::new("a", "b")` and `Cookie::build(("a", "b")).build()` serialise as a bare
     `a=b`. There is no Secure, HttpOnly, SameSite or Path. axum-extra's `CookieJar::add` and
@@ -340,7 +340,7 @@ network:
   OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
 - Timeouts on **everything**: connect, read, write, total-request, idle
   (`TimeoutLayer`, `tower` middleware). Missing timeouts = slowloris.
-- Error responses: generic client text, full chain only into logs (rules/02
+- Error responses: generic client text, full chain only into logs ([rules/02](02-errors-and-panics.md)
   §9); no `Debug`-formatted internals in HTTP bodies.
 - Path handling on user input: reject `..` traversal — canonicalize then
   verify prefix (`path.canonicalize()?.starts_with(root)`), never just join.
@@ -436,7 +436,7 @@ Running external programs (formerly section 9) moved to
       near parsing code — wrapped math on untrusted values = High;
       `rg 'as u(8|16|32)|as usize' -t rust` in protocol code for truncating
       casts; release profile `overflow-checks` decision documented.
-- [ ] Panic surface in handlers: run rules/02 checklist scoped to
+- [ ] Panic surface in handlers: run [rules/02](02-errors-and-panics.md) checklist scoped to
       request-reachable code; `rg 'with_capacity\(' -t rust` where the arg
       derives from input = High.
 - [ ] `rg '#\[derive\(.*Debug' -t rust` on structs with `password|secret|key|

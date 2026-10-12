@@ -4,7 +4,7 @@ A C/C++ project's safety is only as good as its build and CI gates. The
 toolchain is where warnings-as-errors, static analysis, sanitizers, fuzzing,
 and supply-chain controls are enforced. This file owns build/test *mechanics*;
 test **strategy** (suite shape, doubles, coverage philosophy) lives in
-`sota-testing`.
+[`sota-testing`](../../sota-testing/SKILL.md).
 
 ## 1. CMake hygiene (the de-facto standard)
 
@@ -42,10 +42,10 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 
 - **Name the configurations and keep their flags apart.** *Debug*: `-O0` or `-O1`, `-g3`, `-fno-omit-frame-pointer`, `DEBUG` defined and
   `NDEBUG` not; MSVC `/Od`. *Release*: `-O2` (MSVC `/O2`), `NDEBUG` defined, `DEBUG` not, plus
-  the hardened set in `rules/04` §5 and §5a. Sanitizer and fuzz builds are further Debug
+  the hardened set in [`rules/04`](04-security.md) §5 and §5a. Sanitizer and fuzz builds are further Debug
   variants (§3, §4), never the shipped artifact.
 - **Make a mixed or empty configuration fail loudly, or fall back to release.** CMake with no
-  `CMAKE_BUILD_TYPE` passes neither `-O` nor `-DNDEBUG` (`rules/04` §5). Default it for
+  `CMAKE_BUILD_TYPE` passes neither `-O` nor `-DNDEBUG` ([`rules/04`](04-security.md) §5). Default it for
   single-config generators with `if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)` →
   `set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)`. Measured with CMake 3.31.6, the compile
   line then gained `-O3 -DNDEBUG`. In the source, a shared header refuses both at once and treats
@@ -54,12 +54,12 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   `#if !defined(NDEBUG) && !defined(DEBUG)` → `#define NDEBUG` followed by `#include <assert.h>`
   again, because `assert` follows the `NDEBUG` in force at each inclusion. Measured with Apple clang
   21: `-DNDEBUG -DDEBUG` stopped at the `#error`, a plain build ran `assert(0)` as a no-op, and
-  `-DDEBUG` aborted. The `APP_RELEASE` guard in `rules/04` §5 is the check the release pipeline adds.
+  `-DDEBUG` aborted. The `APP_RELEASE` guard in [`rules/04`](04-security.md) §5 is the check the release pipeline adds.
 - **No "test" configuration that turns private members public** (`-Dprivate=public` and similar).
   The C++ standard forbids a macro named like a keyword ([cpp.replace.general]), and the build
   tests an access model you never ship. Test through the public interface. Where an
   internal really needs a direct test, move it into its own unit with a real interface.
-  (`sota-testing` owns test strategy.)
+  ([`sota-testing`](../../sota-testing/SKILL.md) owns test strategy.)
 - **Flags must reach every compiled unit.** Plain Make does not rebuild when only the flags change.
   Measured with GNU Make 4.4.1: after a `make CFLAGS=-O0`, `make CFLAGS="-O2 -D_FORTIFY_SOURCE=3"`
   printed "Nothing to be done", so a release can link objects built for debug. Clean between
@@ -68,7 +68,7 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - **User flags add to the project's, never replace them.** A command-line `make CFLAGS=-O2`
   replaced a Makefile's `CFLAGS += -fstack-protector-strong` outright, while the same value from
   the environment was appended to (measured, GNU Make 4.4.1). Keep hardening in a variable of its own
-  and write `override CFLAGS += $(HARDEN_CFLAGS)`, or in Automake use `AM_CFLAGS` (`rules/04` §5).
+  and write `override CFLAGS += $(HARDEN_CFLAGS)`, or in Automake use `AM_CFLAGS` ([`rules/04`](04-security.md) §5).
 - **Vendored and bundled libraries get the same hardening.** A third-party tree built by its own
   build system (`ExternalProject_Add`, a vendored Makefile, a prebuilt `.a`) gets none of your
   target's `target_compile_options`. Pass the flags through explicitly (its `CMAKE_ARGS`, its
@@ -107,12 +107,12 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 
 - A dedicated job builds Debug with `-fsanitize=address,undefined
   -fno-sanitize-recover=all` and runs the full test suite; any abort fails CI
-  (`rules/02`, `rules/03`). A second job runs `-fsanitize=thread` for
-  concurrent code (`rules/05`). MSan optionally (needs instrumented libs).
+  ([`rules/02`](02-memory-safety.md), [`rules/03`](03-undefined-behavior.md)). A second job runs `-fsanitize=thread` for
+  concurrent code ([`rules/05`](05-concurrency.md)). MSan optionally (needs instrumented libs).
 - Set `ASAN_OPTIONS=detect_leaks=1:strict_string_checks=1` and
   `UBSAN_OPTIONS=print_stacktrace=1` in CI.
 - Sanitizer builds are for test/CI, not production; production uses the
-  hardened flag set (`rules/04` §5).
+  hardened flag set ([`rules/04`](04-security.md) §5).
 - **One exception: a trap-mode UBSan subset may ship as hardening.** Clang's UBSan docs say its
   full runtime is for testing and may weaken a production executable, and point production at
   trap mode (`-fsanitize-trap=`, no runtime) or the minimal runtime
@@ -122,7 +122,7 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   Fedora's Clang 22.1 minimal runtime printed one line per check (`ubsan: add-overflow by
   0x…`); Apple clang 21 does not support the minimal runtime (warned, then failed to link).
   Benchmark it, and list every check of `-fsanitize=` in `-fsanitize-trap=` too. ASan, TSan
-  and MSan stay out of production (`rules/04` §5's `#error` guard refuses them at compile time).
+  and MSan stay out of production ([`rules/04`](04-security.md) §5's `#error` guard refuses them at compile time).
 
 ## 4. Fuzzing for input parsers
 
@@ -144,7 +144,7 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - Pin versions; review and update deliberately (Dependabot/Renovate where
   supported). Verify checksums/signatures of fetched artifacts. Generate an
   **SBOM** (CycloneDX/SPDX) for releases and scan dependencies for known CVEs.
-  See `sota-devsecops`.
+  See [`sota-devsecops`](../../sota-devsecops/SKILL.md).
 - Minimize the dependency tree; each header-only or binary dep is attack
   surface and a build-integrity risk. Prefer the standard library.
 - **Before adding a dependency** (typed by a person or proposed by an AI assistant),
@@ -165,7 +165,7 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   `SSL_set_verify` changes it (and checks no host name without `SSL_set1_host`);
   libcurl's `CURLOPT_TIMEOUT` defaults to 0, "never times out", and
   `CURLOPT_CONNECTTIMEOUT` to 300 s, so a stalled peer holds the thread; libcurl's
-  `CURLOPT_PROTOCOLS_STR` allows every compiled-in scheme (`rules/04` §4). Audit every
+  `CURLOPT_PROTOCOLS_STR` allows every compiled-in scheme ([`rules/04`](04-security.md) §4). Audit every
   option passed to a library at a trust boundary, and the ones *not* passed.
 - **Sample code is not production code.** curl's own `docs/examples/https.c` carries
   `CURLOPT_SSL_VERIFYPEER, 0L` behind `SKIP_PEER_VERIFICATION`; a copied README snippet
@@ -210,7 +210,7 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - **CI placement.** Run dependency resolution and the first configure in a job that has
   no deploy/publish secrets and no write token, or in an isolated job whose output is
   a cached, hashed artifact. Credentials belong only to the later job that needs them.
-  Details in `sota-devsecops`. *(OWASP: CI/CD Security cheat sheet; Software Supply
+  Details in [`sota-devsecops`](../../sota-devsecops/SKILL.md). *(OWASP: CI/CD Security cheat sheet; Software Supply
   Chain Security cheat sheet; NPM Security cheat sheet, for the `ignore-scripts`
   analogue.)*
 

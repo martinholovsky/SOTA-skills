@@ -1,6 +1,6 @@
 # Authoring a skill others install, and auditing one for being wrong
 
-`rules/01` and `rules/02` treat a skill as a supply-chain artifact. This treats it
+[`rules/01`](01-provenance-and-installation.md) and [`rules/02`](02-trust-boundary-and-capability.md) treat a skill as a supply-chain artifact. This treats it
 as what it is once loaded: **a control**. Controls can be inert, wrong, or
 confidently wrong, and a skill is unusually good at the third.
 
@@ -62,7 +62,7 @@ decides to load it. Three consequences that authors get wrong:
   nothing about the total), and treat "it stopped triggering and we changed nothing"
   as a *corpus* symptom rather than a bug in the skill that stopped firing.
 
-**Changing a description is changing behaviour** (`rules/01` §2). Version it with
+**Changing a description is changing behaviour** ([`rules/01`](01-provenance-and-installation.md) §2). Version it with
 the same care as a rule.
 
 ## 1a. Prove the description separately from the body — and be willing to delete
@@ -145,9 +145,9 @@ author's certainty, including the parts the author never checked.
   example is genuinely needed, make it obviously synthetic and expect scanners to
   flag it.
 - **No unexplained network calls**, and no install-time fetching of guidance
-  (`rules/01` §3 makes such a skill unreviewable).
+  ([`rules/01`](01-provenance-and-installation.md) §3 makes such a skill unreviewable).
 - **No shell unless shell is the point**, and then only the shell the purpose needs
-  (`rules/02` §1).
+  ([`rules/02`](02-trust-boundary-and-capability.md) §1).
 - **Keep it generic.** Internal hostnames, project names and stack assumptions leak
   the author's employer into every consumer's context, and abbreviations leak just
   as effectively as full names.
@@ -164,11 +164,11 @@ Sample rather than read everything, and sample where being wrong is expensive:
 2. **Anything with a version number** — the freshness pass of §2.
 3. **Anything that tells the agent to disable, skip or bypass** a check.
 4. **The descriptions**, as a set: do two overlap, and does anything say which wins
-   (`rules/02` §3)?
+   ([`rules/02`](02-trust-boundary-and-capability.md) §3)?
 5. **The unreached files.** A rules file no index points at is written, capped, and
    never loaded — inert by construction.
 6. **The bytes a reviewer cannot see.** Zero-width, bidi and tag characters
-   (`sota-code-security` rules/09 §4) in any file the `rules/02` §2 inventory lists.
+   ([`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md) §4) in any file the [`rules/02`](02-trust-boundary-and-capability.md) §2 inventory lists.
 
 Report findings as `file:line | rule | severity | effort | fix`, and rate severity by
 **what an operator would do differently if they believed it**.
@@ -206,5 +206,5 @@ Report findings as `file:line | rule | severity | effort | fix`, and rate severi
       (bash/zsh; `-L` because BSD `grep -r` skips symlinked skill dirs; 3/3 planted,
       0 false hits on accented text, BSD and GNU, 2026-09-26). Where `grep` on `PATH`
       is ugrep, swap in `ugrep -nHP` with the code-point class from
-      `sota-code-security` rules/09's checklist. Each hit is a finding, High in a
+      [`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md)'s checklist. Each hit is a finding, High in a
       file an agent auto-loads?

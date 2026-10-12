@@ -34,24 +34,24 @@ When designing or implementing a CLI:
 
 1. **Design the command grammar before writing code.** Write the `--help` text
    first: subcommand tree, every flag (short + long), args, examples. If the
-   help is hard to write, the grammar is wrong (`rules/01`).
+   help is hard to write, the grammar is wrong ([`rules/01`](rules/01-commands-flags-config.md)).
 2. **Defaults carry the common path.** A new user must get a useful result with
-   zero flags. Anything required for the 80% case is a design bug (`rules/01` §3).
+   zero flags. Anything required for the 80% case is a design bug ([`rules/01`](rules/01-commands-flags-config.md) §3).
 3. **Split the streams from day one**: primary output → stdout, everything else
    (logs, progress, prompts, errors) → stderr. Retrofitting this breaks users'
-   pipes (`rules/02` §1).
+   pipes ([`rules/02`](rules/02-output-interaction.md) §1).
 4. **Make it pipe-safe by default**: detect TTY; disable color/progress/prompts
    when piped; honor `NO_COLOR`; ship `--json` with every listing/reading
-   command from v0.1, because output format is API (`rules/02`).
+   command from v0.1, because output format is API ([`rules/02`](rules/02-output-interaction.md)).
 5. **Treat exit codes, flags, env vars, and JSON shapes as a public API**:
    document them, version them, deprecate — never repurpose or remove without a
-   cycle (`rules/02` §3, `rules/03` §7).
+   cycle ([`rules/02`](rules/02-output-interaction.md) §3, [`rules/03`](rules/03-behavior-lifecycle.md) §7).
 6. **Build the unhappy paths with the happy path**: Ctrl-C cleanup, `--dry-run`
    on mutating commands, re-runnable/resumable operations, stdin-closed CI
-   behavior, offline behavior (`rules/03`).
+   behavior, offline behavior ([`rules/03`](rules/03-behavior-lifecycle.md)).
 7. **Plan distribution early**: single static binary if the ecosystem allows,
    checksums + signatures, completions and man page generated from the same
-   source as `--help` (`rules/03` §8, `rules/04`).
+   source as `--help` ([`rules/03`](rules/03-behavior-lifecycle.md) §8, [`rules/04`](rules/04-distribution-docs.md)).
 8. Before declaring done, run every relevant **Audit checklist** against your
    own tool, including the brutal smoke test: `tool cmd | cat`,
    `tool cmd > out.txt 2> err.txt`, `tool cmd < /dev/null`, `echo $?`.
@@ -107,36 +107,36 @@ command line whenever the issue was observed by running the tool.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-commands-flags-config.md` | Designing/auditing the command surface: subcommand grammar (noun-verb consistency), POSIX/GNU flag conventions, short/long forms, `--` separator, args vs flags vs stdin, defaults, dangerous-op flags, config precedence chain, env var naming, help text quality, suggest-on-typo. |
-| `rules/02-output-interaction.md` | Anything the tool prints or asks: stdout vs stderr contract, `--json`/`--plain`, TTY detection, color and `NO_COLOR`/`TERM`, exit codes as API, streaming vs buffering, progress indication, prompts and `--yes`/CI behavior, quiet/verbose levels, error message anatomy, `--debug` vs stack traces, agent-facing design (`--fields`, confirmation envelopes, frozen output contracts). |
-| `rules/03-behavior-lifecycle.md` | Runtime behavior and tool lifecycle: startup latency, idempotent re-runnable commands, `--dry-run`, `--self-test` for tools whose output is a verdict, SIGINT/SIGTERM handling, crash-only resumable design, network-op responsiveness and offline behavior, self-update caution, telemetry consent, XDG base directories, shell completions, semantic versioning of the CLI surface. |
-| `rules/04-distribution-docs.md` | Shipping and documenting: single-binary packaging, install channels (brew/curl-script/registry) with checksums + signatures, docs generated from the `--help` source of truth, man pages, README quickstart, version pinning for CI. |
+| [`rules/01-commands-flags-config.md`](rules/01-commands-flags-config.md) | Designing/auditing the command surface: subcommand grammar (noun-verb consistency), POSIX/GNU flag conventions, short/long forms, `--` separator, args vs flags vs stdin, defaults, dangerous-op flags, config precedence chain, env var naming, help text quality, suggest-on-typo. |
+| [`rules/02-output-interaction.md`](rules/02-output-interaction.md) | Anything the tool prints or asks: stdout vs stderr contract, `--json`/`--plain`, TTY detection, color and `NO_COLOR`/`TERM`, exit codes as API, streaming vs buffering, progress indication, prompts and `--yes`/CI behavior, quiet/verbose levels, error message anatomy, `--debug` vs stack traces, agent-facing design (`--fields`, confirmation envelopes, frozen output contracts). |
+| [`rules/03-behavior-lifecycle.md`](rules/03-behavior-lifecycle.md) | Runtime behavior and tool lifecycle: startup latency, idempotent re-runnable commands, `--dry-run`, `--self-test` for tools whose output is a verdict, SIGINT/SIGTERM handling, crash-only resumable design, network-op responsiveness and offline behavior, self-update caution, telemetry consent, XDG base directories, shell completions, semantic versioning of the CLI surface. |
+| [`rules/04-distribution-docs.md`](rules/04-distribution-docs.md) | Shipping and documenting: single-binary packaging, install channels (brew/curl-script/registry) with checksums + signatures, docs generated from the `--help` source of truth, man pages, README quickstart, version pinning for CI. |
 
 ## Top-10 non-negotiables
 
 1. **Primary output to stdout, everything else to stderr** — logs, progress,
-   prompts, warnings, errors. `tool x | next` must receive only data. (rules/02 §1)
+   prompts, warnings, errors. `tool x | next` must receive only data. ([rules/02](rules/02-output-interaction.md) §1)
 2. **Pipe-safe by default**: TTY-detect; no color, no spinners, no prompts when
    piped; honor `NO_COLOR` (set and non-empty) and `TERM=dumb`; `--json` on
-   every command that lists or reads data. (rules/02 §2, §4)
+   every command that lists or reads data. ([rules/02](rules/02-output-interaction.md) §2, §4)
 3. **Exit 0 only on success; distinct, documented nonzero codes** for usage
-   error vs operational failure; never `exit 0` after printing an error. (rules/02 §3)
+   error vs operational failure; never `exit 0` after printing an error. ([rules/02](rules/02-output-interaction.md) §3)
 4. **Every flag has a long form**; short forms only for the frequent few;
-   GNU/POSIX syntax (`-f`, `--flag`, `--flag=value`, `--` ends flags). (rules/01 §2)
+   GNU/POSIX syntax (`-f`, `--flag`, `--flag=value`, `--` ends flags). ([rules/01](rules/01-commands-flags-config.md) §2)
 5. **No required flags on the common path** — good defaults; and the reverse:
    destructive operations require explicit `--force`/typed confirmation on a
-   TTY and refuse (don't hang) without one. (rules/01 §3, §5)
+   TTY and refuse (don't hang) without one. ([rules/01](rules/01-commands-flags-config.md) §3, §5)
 6. **Every prompt is skippable**: `--yes`/`--no-input` equivalent exists; stdin
    closed or non-TTY ⇒ use default or fail fast with the flag to pass — never
-   block CI. (rules/02 §6)
+   block CI. ([rules/02](rules/02-output-interaction.md) §6)
 7. **Errors say what failed, why, and what to do next** — path, value, and the
-   exact command to run; stack traces only under `--debug`. (rules/02 §7)
+   exact command to run; stack traces only under `--debug`. ([rules/02](rules/02-output-interaction.md) §7)
 8. **Ctrl-C is sacred**: first SIGINT exits promptly with cleanup and exit code
    130, second SIGINT force-quits; terminal state always restored; interrupted
-   work is resumable or rolled back. (rules/03 §3)
+   work is resumable or rolled back. ([rules/03](rules/03-behavior-lifecycle.md) §3)
 9. **`--dry-run` on every mutating command**, printing the real plan through
-   the real code path. (rules/03 §2)
+   the real code path. ([rules/03](rules/03-behavior-lifecycle.md) §2)
 10. **The CLI surface is a semver'd API**: flags, exit codes, JSON fields, env
     vars. Deprecate with warnings for a full cycle; never silently change
     meaning. Config precedence is exactly flags > env > project config > user
-    config > defaults, documented. (rules/01 §6, rules/03 §7)
+    config > defaults, documented. ([rules/01](rules/01-commands-flags-config.md) §6, [rules/03](rules/03-behavior-lifecycle.md) §7)

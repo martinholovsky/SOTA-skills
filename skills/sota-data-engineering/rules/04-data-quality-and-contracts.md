@@ -143,7 +143,7 @@ checks.
   graphs. Use it for impact analysis ("what breaks if I change this?") and
   incident blast-radius.
 - **Column-level lineage pays where:** PII propagation must be traced
-  (which marts contain `email`? — see `sota-privacy-compliance`),
+  (which marts contain `email`? — see [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md)),
   regulated-metric provenance, and deprecating wide legacy tables. Don't
   buy/maintain column-level everywhere for its own sake.
 - Lineage that requires manual upkeep will rot; derive it from code
@@ -161,8 +161,8 @@ quarantine → fix → reprocess → verify → postmortem.**
    debugging. Consumers acting on known-bad data is the real damage.
 3. **Quarantine:** snapshot/copy bad partitions for forensics; with
    Iceberg/Delta, note the pre-incident snapshot ID — time travel is your
-   forensic record (until retention expires it; act fast, see rules/05).
-4. **Fix and reprocess** through the normal backfill path (rules/02) —
+   forensic record (until retention expires it; act fast, see [rules/05](05-storage-and-performance.md)).
+4. **Fix and reprocess** through the normal backfill path ([rules/02](02-pipelines-and-orchestration.md)) —
    never hand-`UPDATE` a mart; if raw is intact, re-derive. This is where
    idempotency pays its rent.
 5. **Verify** with the same checks that should have caught it — and add the
@@ -205,7 +205,7 @@ unit_tests:
 - **CI on sample data:** build changed models + downstream against
   representative samples; full-volume runs are for staging, not per-PR.
 - Pure functions are testable functions: keep transforms free of hidden
-  `NOW()`/env reads (rules/02's logical-time rule makes this automatic).
+  `NOW()`/env reads ([rules/02](02-pipelines-and-orchestration.md)'s logical-time rule makes this automatic).
 - **AUDIT:** A transform repo with zero tests where a one-character SQL
   change can silently flip a company metric = HIGH.
 

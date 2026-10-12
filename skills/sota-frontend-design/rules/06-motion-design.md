@@ -219,7 +219,7 @@ Gestures need physics, thresholds, and escape hatches — not just animations:
   re-derived).
 - Every gesture surface declares `touch-action` correctly (`pan-y` on a horizontally swipeable
   card) so the browser doesn't fight the gesture, and provides the non-gesture path
-  (rules/04 §8, WCAG 2.5.7).
+  ([rules/04](04-ux-patterns.md) §8, WCAG 2.5.7).
 
 ## 7c. Canvas, WebGL & 3D motion hygiene
 
@@ -265,7 +265,7 @@ fast-path, no media queries, no automatic cleanup. You re-implement the hygiene:
   asserting movement is replaced (not feedback-deleted); visual regression captures animation
   *end states*; for flake-free CI, force `animation-duration: 0.01ms` globally except in the
   dedicated motion test suite.
-- **INP discipline**: the 100ms feedback rule (rules/04 §9) means press feedback must not wait on
+- **INP discipline**: the 100ms feedback rule ([rules/04](04-ux-patterns.md) §9) means press feedback must not wait on
   JS work — CSS `:active` styles render before your handler runs; keep handlers under ~50ms or
   yield (`scheduler.yield()` — not Baseline, feature-detect — or `setTimeout` chunking) and let the pressed state + spinner carry
   the wait. An entrance animation that delays event binding (JS-mounted listeners after

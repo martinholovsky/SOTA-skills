@@ -80,7 +80,7 @@ GOOD: Select a project to export.
   about the same object.
 - **Match the user's vocabulary, not the org chart's**: no internal codenames,
   service names, or team jargon in UI strings (also an information-disclosure
-  smell — see `sota-code-security` rules/07).
+  smell — see [`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md)).
 - **Renames are migrations**: update UI + docs + templates + support content
   in one release, with the old term searchable in help for a transition
   period. A half-renamed concept is worse than a badly-named one.
@@ -115,7 +115,7 @@ user, the plainer and calmer the language**:
 - Periods: full sentences in body text get them; fragments, labels, and
   single-sentence tooltips don't. Never on buttons.
 - Numerals for UI numbers ("3 files", not "three files"); locale-format
-  numbers, dates, and currency programmatically (`rules/04` §5) — never
+  numbers, dates, and currency programmatically ([`rules/04`](04-accessibility-localization.md) §5) — never
   hand-write "MM/DD/YYYY" into a string.
 - Contractions ("can't", "you're") are standard product voice; skip them only
   in legal/consent text where precision governs.

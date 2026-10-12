@@ -1,7 +1,7 @@
 # 02 — Microcopy: The Words in Components
 
 Component-level copy, mapped to the component patterns in
-`sota-frontend-design` rules/04 (which owns the interaction mechanics — this
+[`sota-frontend-design` rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) (which owns the interaction mechanics — this
 file owns what the strings say).
 
 ## 1. Buttons & action labels
@@ -26,7 +26,7 @@ file owns what the strings say).
   instruction ("Enter your work email here") — the instruction form breaks
   scanning and translation reuse.
 - **Placeholder is never the label** (it vanishes on input — mechanics in
-  frontend rules/04 §1). Use placeholders only for *format examples*
+  frontend [rules/04](04-accessibility-localization.md) §1). Use placeholders only for *format examples*
   ("name@company.com") and treat them as expendable.
 - Persistent requirements go in **hint text below the field**, present before
   the user types, not revealed as a scolding after failure: "8+ characters
@@ -36,7 +36,7 @@ file owns what the strings say).
 
 ## 3. Empty states: three different scripts
 
-Empty states differ by cause (pattern split in frontend rules/04 §5); the
+Empty states differ by cause (pattern split in frontend [rules/04](04-accessibility-localization.md) §5); the
 copy jobs differ too:
 
 - **First use** — orient + invite: what this area will hold, why it's
@@ -46,7 +46,7 @@ copy jobs differ too:
   "No results for 'invoce'. Check the spelling or clear filters." Never
   reuse first-use copy — "Create your first invoice!" atop a filtered list of
   200 invoices reads as data loss.
-- **Error-empty** — it's an error message (see `rules/03`), not an empty
+- **Error-empty** — it's an error message (see [`rules/03`](03-errors-feedback.md)), not an empty
   state: "Couldn't load projects — retry." Never imply the user has nothing
   when the truth is the fetch failed.
 
@@ -58,7 +58,7 @@ copy jobs differ too:
   control's own label failed.
 - **Tooltips are a last resort**, never a home for critical information —
   they're invisible on touch and to most screen-reader flows. Icon-only
-  buttons get tooltips *and* accessible names (`rules/04` §2), but anything
+  buttons get tooltips *and* accessible names ([`rules/04`](04-accessibility-localization.md) §2), but anything
   the user must know lives in visible text.
 - Progressive disclosure of concepts: name a concept when the user first
   meets it, not in a wall of definitions up front.
@@ -67,7 +67,7 @@ copy jobs differ too:
 
 ## 5. Confirmation dialogs
 
-The words are the safety mechanism (interaction rules in frontend rules/04 §6):
+The words are the safety mechanism (interaction rules in frontend [rules/04](04-accessibility-localization.md) §6):
 
 ```text
 GOOD                                        BAD
@@ -88,18 +88,18 @@ Buttons: [Cancel]  [Delete project]         Buttons: [No]  [Yes]
 
 - A toast is **one sentence, outcome first, optional single action**:
   "Invoice sent — Undo". No stacked clauses, no second sentence; if it needs
-  more, it needs a different surface (toast mechanics: frontend rules/04 §9).
+  more, it needs a different surface (toast mechanics: frontend [rules/04](04-accessibility-localization.md) §9).
 - Notifications (push/in-app) must stand alone on a lock screen: actor +
   action + object ("Ana commented on Q3 budget"), no "You have a new
   notification" (that's the notification's job description, not its content).
-  Interruption budget and delivery: `sota-mobile` rules/03.
+  Interruption budget and delivery: [`sota-mobile` rules/03](../../sota-mobile/rules/03-offline-background-push.md).
 - Badges/counts: a number means *actionable items*, not "stuff exists" —
   a badge that never reaches zero trains users to ignore it.
 
 ## 7. Counts, plurals, time & truncation
 
 - **Plurals via ICU MessageFormat, never string math** — "1 items" is the
-  canonical i18n failure (full rules in `rules/04` §4):
+  canonical i18n failure (full rules in [`rules/04`](04-accessibility-localization.md) §4):
   `{count, plural, one {# item} other {# items}}`.
 - Zero is usually a sentence, not a number: "No results" beats "0 results";
   exceptions are dense dashboards where the column shape matters.
@@ -123,7 +123,7 @@ Buttons: [Cancel]  [Delete project]         Buttons: [No]  [Yes]
 ## 9. Loading & progress text
 
 - Name the work, not the wait: "Importing 3 of 12 contacts…" beats
-  "Loading…" beats a bare spinner (thresholds in frontend rules/04 §4).
+  "Loading…" beats a bare spinner (thresholds in frontend [rules/04](04-accessibility-localization.md) §4).
 - Long operations set expectations honestly ("This usually takes ~2 min");
   never promise "a few seconds" unmeasured.
 - Post-completion, say what changed: "Imported 12 contacts (2 duplicates

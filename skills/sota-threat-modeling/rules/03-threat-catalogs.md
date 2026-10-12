@@ -92,7 +92,7 @@ letters annotate each item for classification.
   card cracking, token cracking, denial of inventory, skewing, spamming and
   the rest. Each gets a disposition like any threat. None of them needs a
   vulnerability, so a vulnerability-shaped catalog misses them. Controls are
-  layered bot management and business limits (`sota-api-design` rules/07).
+  layered bot management and business limits ([`sota-api-design` rules/07](../../sota-api-design/rules/07-security-operations.md)).
   OWASP: Bot Management and Anti-Automation cheat sheet.
 
 ## 3. Database / data tier
@@ -251,7 +251,7 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
   these names in findings (OWASP MCP Top 10 MCP03:2025; MITRE ATLAS
   AML.T0110 AI Agent Tool Poisoning and AML.T0115.002 Publish Poisoned AI
   Artifacts: AI Agent Tools, which replaced AML.T0104 in the ATLAS 2026.07
-  data release); mitigations detailed in sota-code-security rules/23 §1:
+  data release); mitigations detailed in [sota-code-security rules/23](../../sota-code-security/rules/23-llm-platform-supply-chain.md) §1:
   - *Tool poisoning:* hidden instructions in tool descriptions/metadata →
     violates the instruction/data boundary → pin + human-review full
     definitions at install.
@@ -271,7 +271,7 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
   posing as the model's own reasoning steers safety/tool decisions (S);
   OverThink-class decoys in retrieved content force excessive reasoning
   tokens — cost/latency exhaustion (D). Cap reasoning budgets; keep untrusted
-  content out of reasoning scaffolds (sota-code-security rules/23 §1).
+  content out of reasoning scaffolds ([sota-code-security rules/23](../../sota-code-security/rules/23-llm-platform-supply-chain.md) §1).
 - **Memory/state poisoning (T):** persisted conversation memory or scratchpads
   let an injection survive across sessions and users.
 - **DoS / cost (D):** unbounded agent loops, token-expensive inputs, recursive

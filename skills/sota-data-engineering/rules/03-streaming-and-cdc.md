@@ -139,7 +139,7 @@ WHEN MATCHED THEN UPDATE SET ...
 WHEN NOT MATCHED AND s.op != 'd' THEN INSERT ...;
 ```
 - **Outbox pattern** for application-emitted events (avoiding dual-write
-  inconsistency) is owned by `sota-architecture` — use it; don't tail
+  inconsistency) is owned by [`sota-architecture`](../../sota-architecture/SKILL.md) — use it; don't tail
   business tables to fake events.
 - Schema changes on source tables flow through CDC: test ADD COLUMN and
   type-widening paths; alert on incompatible DDL rather than silently
@@ -171,13 +171,13 @@ WHEN NOT MATCHED AND s.op != 'd' THEN INSERT ...;
   the source topic after fix. An unmonitored DLQ is a data black hole —
   MEDIUM.
 - Never DLQ-and-forget messages whose absence corrupts aggregates; for
-  those, halt and page instead (block-tier, by analogy with rules/04).
+  those, halt and page instead (block-tier, by analogy with [rules/04](04-data-quality-and-contracts.md)).
 
 ## Backpressure
 
 Consumers must degrade by slowing intake (pause/resume, bounded buffers),
 not by buffering unboundedly in memory. Mechanics and patterns are owned by
-`sota-async-concurrency`; in Kafka terms: bound in-flight work, watch lag as
+[`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md); in Kafka terms: bound in-flight work, watch lag as
 the system-level backpressure signal, scale consumers before lag approaches
 retention.
 

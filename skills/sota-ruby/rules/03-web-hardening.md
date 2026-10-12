@@ -116,7 +116,7 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
     still `Marshal`-serialized (`serialize_json: false` is the encryptor's
     default; measured). Anyone holding the key can then forge a cookie that
     the server passes to `Marshal.load` — a leaked session secret becomes
-    remote code execution, not just session forgery (`rules/02` §3). With
+    remote code execution, not just session forgery ([`rules/02`](02-security.md) §3). With
     JSON, store only strings, numbers, arrays and hashes in the session.
   - **Sinatra's `enable :sessions` always takes the legacy path**: it passes
     `session_secret` as `secret:` (read from sinatra 4.2.1 `setup_sessions`),
@@ -161,7 +161,7 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   `Content-Security-Policy`.
 - **Outbound TLS is verified.** `verify_mode = OpenSSL::SSL::VERIFY_NONE`
   on `Net::HTTP`, or any HTTP client option that sets it, is a finding. The
-  class and its rationale live in `sota-code-security` rules/04; this is
+  class and its rationale live in [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md); this is
   Ruby's spelling of it. Internal services get a private CA, not disabled
   verification.
 - **SSH host keys are verified too, and `net-ssh` does not do it by
@@ -174,7 +174,7 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
     `Net::SSH.start` (or `net-scp`/`net-sftp` on top of it) that does not set
     it as a finding.
 
-  The class lives in `sota-code-security` rules/04 §5.
+  The class lives in [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5.
 - Match `Host`/origin checking to deployment: Rails
   `config.hosts`; elsewhere validate `Host` against an allowlist — DNS
   rebinding and cache-poisoning use wildcard hosts.
@@ -209,8 +209,8 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   cloud metadata 169.254.169.254), cap redirects and re-validate each hop,
   and set open/read timeouts. `URI.open` on user input additionally risks
   `|command` execution on Ruby ≤ 3.4 and an arbitrary local-file read on
-  every version (see `rules/02` §2). The policy is `sota-code-security`
-  rules/01 §5; the Ruby spelling of each step:
+  every version (see [`rules/02`](02-security.md) §2). The policy is [`sota-code-security`
+  rules/01](../../sota-code-security/rules/01-input-injection.md) §5; the Ruby spelling of each step:
   - **Build the URL, don't relay it.** Where the feature allows, accept a
     key or record ID and look the base URL up in a server-side allowlist.
   - **Scheme first**: `uri = URI(raw)` then require `uri.is_a?(URI::HTTPS)`.
@@ -262,21 +262,21 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
 - Store outside the served docroot (or object storage); serve with an
   explicit `Content-Type` and `Content-Disposition: attachment` for
   user-supplied files; never `send_file params[:path]` (traversal — see
-  `rules/02` §7). **`render file:` is the same sink**: Rails serves any
+  [`rules/02`](02-security.md) §7). **`render file:` is the same sink**: Rails serves any
   existing path given to it raw (`Template::RawFile`), so
   `render file: params[:page]` discloses arbitrary files. Map a user choice
   to a fixed template name instead.
 - Image processing on untrusted files is an RCE-history hotspot
   (ImageTragick class) — keep processors current, restrict formats, consider
-  sandboxing the worker (see `sota-sandboxing`).
+  sandboxing the worker (see [`sota-sandboxing`](../../sota-sandboxing/SKILL.md)).
 
 ## 8. Auth-adjacent essentials
 
-Deep authn/authz design lives in `sota-code-security`; the Ruby-shaped
+Deep authn/authz design lives in [`sota-code-security`](../../sota-code-security/SKILL.md); the Ruby-shaped
 minimums:
 
 - Passwords via bcrypt/argon2 (`has_secure_password` as a neutral example);
-  no home-rolled digests. Constant-time comparison for tokens (`rules/02` §6).
+  no home-rolled digests. Constant-time comparison for tokens ([`rules/02`](02-security.md) §6).
 - Rate-limit login/signup/reset (Rack::Attack middleware or Rails 7.2+
   `rate_limit` as neutral examples).
 - Authorization checked **per record**, not per route: loading
@@ -305,7 +305,7 @@ minimums:
   shown in the logs"* and also masks those columns in Active Record `#inspect` (Rails
   configuring guide). The generated `config/initializers/filter_parameter_logging.rb` starts
   it with `:passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn,
-  :cvv, :cvc`, matched partially. Redaction at the logger is `sota-observability` rules/01 §4.
+  :cvv, :cvc`, matched partially. Redaction at the logger is [`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §4.
 
 ## Audit checklist
 

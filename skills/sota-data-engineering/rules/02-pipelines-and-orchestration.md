@@ -99,9 +99,9 @@ UPDATE etl.watermarks SET wm = :new_wm WHERE tbl='orders';
 COMMIT;
 ```
 - `updated_at` maintained by application code is unreliable (bulk fixes skip
-  it, clock skew). Prefer DB-generated change tracking or CDC (rules/03)
+  it, clock skew). Prefer DB-generated change tracking or CDC ([rules/03](03-streaming-and-cdc.md))
   for correctness-critical syncs; periodically reconcile row counts against
-  the source either way — plus control totals (rules/04, expectation battery).
+  the source either way — plus control totals ([rules/04](04-data-quality-and-contracts.md), expectation battery).
 - **Late data policy is explicit per table:** how late is accepted (e.g.
   reprocess partitions up to 7 days back via merge), and what happens after
   (corrections batch, or documented "closed" partitions).
@@ -183,7 +183,7 @@ docs.getdbt.com.)
 
 - **Tests on every model that matters:** at minimum `unique` + `not_null` on
   the primary key of every core/mart model, relationship tests on critical
-  FKs, accepted-values on enums. Severity-tier them (rules/04).
+  FKs, accepted-values on enums. Severity-tier them ([rules/04](04-data-quality-and-contracts.md)).
 - **No `SELECT *` crossing model boundaries** (staging enumerates; marts
   list final columns). `*` within a CTE chain of one model is fine.
 - **Documentation is part of the model:** description + column docs on all
@@ -193,7 +193,7 @@ docs.getdbt.com.)
   models; materialize hot paths as tables, cheap glue as views/ephemeral.
 - **CI runs build + tests on changed models and their downstream**
   (state/defer-based selection) against a non-prod target before merge.
-  rules/06 covers deployment.
+  [rules/06](06-operations-and-governance.md) covers deployment.
 - Pin package and adapter versions; reproducible builds.
 
 ## Audit checklist

@@ -537,7 +537,8 @@ bt='`'
 for d in skills/sota-*/; do
   name=$(basename "$d")
   seen7=$((seen7 + 1))
-  grep -qE "^\| ${bt}${name}${bt} " "$router" || { note "routing table missing: $name"; v7=1; }
+  # the name may be a relative link since ROADMAP 73 (n): | [`sota-x`](../sota-x/SKILL.md) |
+  grep -qE "^\| \[?${bt}${name}${bt}(\]\([^)]*\))? " "$router" || { note "routing table missing: $name"; v7=1; }
   grep -qF "**${name}/rules**" "$libmap" || { note "library map missing: $name"; v7=1; }
 done
 while IFS= read -r name; do
@@ -1520,7 +1521,11 @@ if [ "$v19" -ne 0 ]; then fail=1; fi
 # `sota/rules/01` and `rules/03`, and a pass that contradicts the file it points at
 # is worse than no pass, because the reader follows whichever they loaded.
 # Bumping this hash is the forcing function to re-read both.
-ROUTER_AUDIT_SHA="a0bcc43c182e67ea"
+# BUMPED 2026-10-12 (a0bcc43c182e67ea -> 41d23c8620eaa4c2), ROADMAP 73 (n): 18 pointers in §AUDIT
+# became relative links. Re-read as required, and checked mechanically: §AUDIT with every link
+# reduced to its text is identical to main's, so it still says exactly what rules/01 and rules/03
+# say; the only new bytes are the link targets, each resolved by check 8.
+ROUTER_AUDIT_SHA="41d23c8620eaa4c2"
 echo "[20/39] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
 v20=0
 audit_sec=$(awk '/^## AUDIT mode — workflow/{f=1} f&&/^## Library map/{exit} f' skills/sota/SKILL.md)
@@ -3002,7 +3007,7 @@ if not m:
     print("LANGS NOT FOUND in scripts/gen-skill-map.py"); raise SystemExit(1)
 langs = {"sota-" + x for x in ast.literal_eval(m.group(1))}
 router = pathlib.Path("skills/sota/SKILL.md").read_text(encoding="utf-8")
-rows = set(re.findall(r'^\| `(sota-[a-z-]+)` \| Any [^|]*? code —', router, re.M))
+rows = set(re.findall(r'^\| \[?`(sota-[a-z-]+)`(?:\]\([^)]*\))? \| Any [^|]*? code —', router, re.M))
 print("SCOPE %d %d" % (len(langs), len(rows)))
 bad = 0
 for s in sorted(rows - langs):

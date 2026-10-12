@@ -5,7 +5,7 @@ DI and options patterns. Idioms are in `01`, async in `03`.
 
 ## 1. Nullability as contract
 
-- With NRT enabled (`rules/01`), the API signature *is* the null contract:
+- With NRT enabled ([`rules/01`](01-idioms.md)), the API signature *is* the null contract:
   return `T?` only when null is meaningful; accept `T` to require non-null.
   Annotate with `[NotNullWhen(true)]` etc. for `Try` patterns.
 - Validate external input at the boundary regardless of annotations
@@ -26,7 +26,7 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
   `HasValue`/pattern matching; a magic `int` participates in nothing.
 - Prefer `TryParse` over `Parse`, and **use the `bool`** — `if (int.TryParse(s, out
   var n))`, never `int.TryParse(s, out var n); use(n);`. A discarded `bool` converts
-  a correct API into the class in `sota-architecture` rules/02 §8a.
+  a correct API into the class in [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a.
 - Nullable reference types cover references only; NRT being on says nothing about a
   `-1` in an `int`. Don't let a clean NRT build read as absence being modeled.
 - Audit: `grep -rnE 'return -1;|out var [a-z]+\);' --include='*.cs' src/` and
@@ -38,7 +38,7 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
   `IReadOnlyDictionary<T>` return types). Don't expose mutable internal
   collections — return read-only views/copies.
 - Choose `struct`/`record struct` for small, short-lived values; `class`/`record`
-  for entities and larger objects (`rules/05` for the perf trade-offs).
+  for entities and larger objects ([`rules/05`](05-performance.md) for the perf trade-offs).
 
 ## 3. Disposal & resource lifetime
 
@@ -66,7 +66,7 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
   (Microsoft's middleware-order docs put it first for that reason). Measured on .NET 10 with a
   throwing middleware registered before it: in Production the client got an empty 500 that skipped
   the handler (no problem response, no handler logging); in Development the auto-added developer
-  exception page returned the exception text (the environment trap is `rules/04` §7).
+  exception page returned the exception text (the environment trap is [`rules/04`](04-security.md) §7).
   *(OWASP: Error Handling cheat sheet.)*
 
 ## 5. Dependency injection & options
@@ -91,7 +91,7 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
 ## 7. Request limits and rate limiting (ASP.NET Core)
 
 The generic rules (a budget per caller, 429 with `Retry-After`, size limits before parsing) are
-`sota-api-design` rules/07 §2–§3. This is the .NET spelling. Sources: Microsoft Learn, "Rate
+[`sota-api-design` rules/07](../../sota-api-design/rules/07-security-operations.md) §2–§3. This is the .NET spelling. Sources: Microsoft Learn, "Rate
 limiting middleware in ASP.NET Core" and "Configure options for the ASP.NET Core Kestrel web
 server". Defaults below were read from the option objects on .NET 10.0.12 (2026-09-25).
 
@@ -112,14 +112,14 @@ server". Defaults below were read from the option objects on .NET 10.0.12 (2026-
   use up the budget for everyone. Build the limiter with `PartitionedRateLimiter.Create` or
   `RateLimitPartition.Get*Limiter`, keyed on the authenticated subject
   (`ClaimTypes.NameIdentifier`) or an API-key id you have already validated. The client IP is a
-  valid key only once forwarded headers trust only your proxies (`rules/04` §7): Microsoft warns
+  valid key only once forwarded headers trust only your proxies ([`rules/04`](04-security.md) §7): Microsoft warns
   that IP partitions are open to spoofed-source DoS. Each distinct key creates and caches its own
   limiter, and Microsoft names memory exhaustion as the result of keying on unbounded
   user-controlled input. So never key on a raw header or path value.
 - **Rate-limit the anonymous authentication endpoints: HIGH if absent.** Login, token, register,
   password reset and OTP/MFA verification are anonymous by design, so `FallbackPolicy` does not
   cover them and the rate limit is the brute-force control. Key them by client IP (after the
-  forwarded-headers fix). Per-account throttling is `sota-code-security`.
+  forwarded-headers fix). Per-account throttling is [`sota-code-security`](../../sota-code-security/SKILL.md).
 - **Request size limits.** Measured defaults: Kestrel `MaxRequestBodySize` 30,000,000 bytes;
   `FormOptions.MultipartBodyLengthLimit` 134,217,728 (128 MiB), `ValueCountLimit` 1024,
   `ValueLengthLimit` 4 MiB, `KeyLengthLimit` 2048; `MaxRequestHeadersTotalSize` 32 KiB;
@@ -197,7 +197,7 @@ public class ShopDb(DbContextOptions<ShopDb> o) : DbContext(o) { public DbSet<Or
 parameters). The `"anon"` fallback key is never used here, because authorization rejects
 anonymous callers before the limiter runs; on an anonymous endpoint, key by client IP (§7).
 Logging a subject id is fine; never log the bearer token, the body, or a credential-bearing
-record (`rules/04` §4).
+record ([`rules/04`](04-security.md) §4).
 
 ## Audit checklist
 
@@ -217,7 +217,7 @@ record (`rules/04` §4).
 - [ ] **Exception handler not first in the pipeline (§4) — MEDIUM** — per file, the first
       `app.Use…` call other than the developer page should be the handler:
       `grep -rlE 'UseExceptionHandler' --include='*.cs' . | while IFS= read -r f; do grep -E 'app\.Use[A-Z]' "$f" | grep -v UseDeveloperExceptionPage | head -n 1 | grep -q UseExceptionHandler || echo "$f: middleware registered before UseExceptionHandler"; done`
-- [ ] **throw ex / swallow — MEDIUM (see rules/01)** —
+- [ ] **throw ex / swallow — MEDIUM (see [rules/01](01-idioms.md))** —
       `grep -rnE 'throw ex;' --include='*.cs' .`
 - [ ] **Mutable collection exposed — LOW** —
       `grep -rnE 'public (List|Dictionary|HashSet)<' --include='*.cs' . | head` (prefer

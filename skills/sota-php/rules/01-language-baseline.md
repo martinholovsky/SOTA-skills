@@ -38,7 +38,7 @@ Verified against php.net/supported-versions.php and php.net/releases (2026-07):
   package still fails the baseline: report it at the EOL severity, and note the vendor's
   coverage in the finding rather than downgrading it. A distro's version string can also
   mislead the other way (a backported fix with no version bump), so read its advisories, not
-  the number (sota-devsecops `rules/03` §3.9). OWASP: PHP Configuration cheat sheet.
+  the number ([sota-devsecops `rules/03`](../../sota-devsecops/rules/03-dependencies.md) §3.9). OWASP: PHP Configuration cheat sheet.
 
 Feature timeline for floor decisions: enums, `readonly` properties, fibers,
 first-class callable syntax (8.1); `readonly` classes, DNF types (8.2); typed class
@@ -135,7 +135,7 @@ fallthrough hazards).
   (8.0+) or `!== false`.
 - Never use `==` on anything security-relevant (tokens, hashes, MACs): juggling
   plus magic-hash pitfalls (`"0e123..." == "0e456..."`). Use `hash_equals()`
-  (see `rules/04`).
+  (see [`rules/04`](04-sessions-auth-web-hardening.md)).
 - **Money is integer minor units (the `Money` class in §2) or a decimal string through
   bcmath, never `float`.** Measured on PHP 8.5: `(int)(19.99 * 100)` is `1998`, and
   `echo 0.1 + 0.2` prints `0.3` (the `precision` ini, 14) while `json_encode` of the same
@@ -168,7 +168,7 @@ PHP's search functions return **`false`** for not-found, and a legitimate match 
 the start returns **`0`** (verified, PHP 8.5.8): `strpos("abc","z")` is `false`,
 `strpos("abc","a")` is `int(0)`. With loose comparison `0 == false` is **true**, so
 `if (strpos($h,$n) == false)` reports "not found" on a match at offset 0 — the
-canonical instance of the class in `sota-architecture` rules/02 §8a, and the reason
+canonical instance of the class in [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a, and the reason
 §4's identity rule exists.
 
 ```php
@@ -201,7 +201,7 @@ if (strpos($h, $n) === false) { /* not found */ }   // === is mandatory, not sty
 - `json_decode(..., flags: JSON_THROW_ON_ERROR)` — silent `null` returns are a
   classic injection/logic hazard. 8.3+ `json_validate()` for validate-only.
 - Since 8.5, uncaught fatal errors include backtraces (php.net/releases/8.5) —
-  make sure stack traces still never reach responses (`rules/04` §5, §5b).
+  make sure stack traces still never reach responses ([`rules/04`](04-sessions-auth-web-hardening.md) §5, §5b).
 - `DateTimeImmutable` over `DateTime`; pass an explicit `DateTimeZone`; never
   parse dates with juggling (`strtotime` on user input needs validation).
 
@@ -215,7 +215,7 @@ code parallel and does not schedule anything by itself.
   runtime built on fibers (e.g. Revolt/AMPHP v3, ReactPHP) where async I/O
   concurrency is genuinely needed.
 - Classic FPM request/response code gains nothing from fibers — concurrency
-  there is process-level (see `rules/06` FPM sizing). Long-running runtimes
+  there is process-level (see [`rules/06`](06-performance-runtime.md) FPM sizing). Long-running runtimes
   (CLI workers, e.g. FrankenPHP/Swoole-style servers as neutral examples) are
   where async PHP pays off; in those, blocking calls (`PDO`, `file_get_contents`)
   stall the whole loop — same discipline as any event loop.
@@ -224,7 +224,7 @@ code parallel and does not schedule anything by itself.
 
 ## 6a. Designing a public surface — what a released class promises
 
-Shared design rules: `sota-architecture` rules/02 and `sota-api-design`. **This is the PHP
+Shared design rules: [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) and [`sota-api-design`](../../sota-api-design/SKILL.md). **This is the PHP
 mechanism**, and PHP enforces more of it at *load* time than most languages — several of the
 changes below are a fatal error in the consumer's process, not a subtle bug.
 
@@ -260,7 +260,7 @@ declaration, so it fails on load rather than on call.
 
 **BC under semver, concretely.** A major is required to add an interface method, add `final`
 or `readonly`, narrow any accepted type, widen any returned type, rename a public property,
-or make a constructor parameter required. Everything else is a minor. `rules/05` covers the
+or make a constructor parameter required. Everything else is a minor. [`rules/05`](05-composer-tooling.md) covers the
 *consumer* half — `^` constraints — which is a different question from what you may ship.
 
 ## 7. Deprecations and legacy constructs to remove on sight
@@ -313,7 +313,7 @@ Run from repo root; verify each hit manually.
       even when the package comes from a vendor that still patches it, §1) ;
       `grep -rnE '"php"[[:space:]]*:[[:space:]]*"([^"]*[^0-9.])?(5\.|7\.|8\.0|8\.1)' --include='composer.json' .`
       (a floor that still admits an EOL branch; the list is fixed text and misses 8.2 from
-      2027-01-01, so prefer the live php.net lookup in `rules/05`'s floor item)
+      2027-01-01, so prefer the live php.net lookup in [`rules/05`](05-composer-tooling.md)'s floor item)
 - [ ] **Supported branch, stale patch (§1) — HIGH when the newer release is tagged `security`**
       — run on the production image:
       `v=$(php -r 'echo PHP_MAJOR_VERSION, ".", PHP_MINOR_VERSION;'); latest=$(curl -sSf "https://www.php.net/releases/?json&version=$v" | php -r 'echo json_decode(stream_get_contents(STDIN))->version ?? "";'); php -r 'if ($argv[1] === "") { echo "LOOKUP FAILED\n"; exit(2); } if (version_compare(PHP_VERSION, $argv[1], "<")) { echo "BEHIND: ", PHP_VERSION, " < ", $argv[1], "\n"; exit(1); }' "$latest"`

@@ -4,7 +4,7 @@ Pick the engine that matches the telemetry and the behavior, then write rules
 that are specific, FP-resistant, and performant. Read this when choosing between
 Sigma, YARA/YARA-X, Suricata, Falco, Tetragon, or SIEM-native query languages,
 or when reviewing rule quality. Defensive framing throughout: these detect and
-hunt; adversary emulation (rules/06) validates them.
+hunt; adversary emulation ([rules/06](06-incident-response-validation.md)) validates them.
 
 ## 1. Engine selection
 
@@ -32,7 +32,7 @@ pySigma plugin directory) to keep the core vendor-neutral. Verify current
 backend/pipeline support at sigmahq.io and github.com/SigmaHQ.
 
 Workflow: write once in Sigma → `sigma convert` with the backend + a pipeline
-that maps fields to your schema (OCSF/ECS, rules/02) → deploy the generated
+that maps fields to your schema (OCSF/ECS, [rules/02](02-telemetry-siem-data-layer.md)) → deploy the generated
 query. CI-validate with `sigma check`.
 
 **Bad** (brittle, over-broad, no context):
@@ -144,14 +144,14 @@ gate module use so the scan short-circuits.
 
 ## 4. Suricata / Snort (network)
 
-Signature-based network IDS/IPS. Detail belongs to **sota-network-security**
+Signature-based network IDS/IPS. Detail belongs to **[sota-network-security](../../sota-network-security/SKILL.md)**
 (IDS tuning, DNS exfil, flow analysis); from a detection-engineering view:
 
 - Prefer protocol/behavioral logic (TLS JA4 fingerprints, HTTP anomalies,
   beaconing intervals, DNS query patterns) over raw payload byte-strings, which
   encryption defeats.
 - Treat `rev`/`sid` and rule metadata like code; version-control your ruleset.
-- IPS (inline block) needs the same FP discipline as auto-containment (rules/04)
+- IPS (inline block) needs the same FP discipline as auto-containment ([rules/04](04-alerting-triage-soc-soar.md))
   — a false drop is an outage.
 
 ## 5. Falco vs. Tetragon (eBPF runtime / K8s)
@@ -222,8 +222,8 @@ also covers `ca.crt` and `namespace`) and watch the policy fire in detect-only b
 
 Enforcement actions (`Sigkill`/`Override`) are powerful and dangerous — pilot in
 detect-only, scope by pod/namespace selectors, and treat enabling kill like
-enabling IPS block (rules/04 auto-containment guardrails). K8s-specific runtime
-detection content is shared with **sota-kubernetes**.
+enabling IPS block ([rules/04](04-alerting-triage-soc-soar.md) auto-containment guardrails). K8s-specific runtime
+detection content is shared with **[sota-kubernetes](../../sota-kubernetes/SKILL.md)**.
 
 ## 6. SIEM-native query languages
 

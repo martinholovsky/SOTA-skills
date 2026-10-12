@@ -33,13 +33,13 @@ question an agent will not ask itself:
 - **After step 1 (spec gate):** are the security acceptance criteria present and
   complete (who may do this, what input is hostile, what must be logged or
   refused), and are scope, non-goals and trust assumptions stated rather than
-  implied? Abuse cases come from the threat model (`sota-threat-modeling`
-  rules/05 §2–§3).
+  implied? Abuse cases come from the threat model ([`sota-threat-modeling`
+  rules/05](../../sota-threat-modeling/rules/05-outputs-operationalization.md) §2–§3).
 - **After step 2 (plan gate):** does every security requirement in the spec map to
   a named part of the design, is each security-relevant choice (auth scheme,
   crypto, storage of secrets, trust of an upstream) justified, and are changes to
   security-critical components flagged so the tasks route to a qualified reviewer
-  (`rules/03` §3)? A requirement with no home in the plan is dropped silently.
+  ([`rules/03`](03-code-review-pr-workflow.md) §3)? A requirement with no home in the plan is dropped silently.
 
 Record the sign-off in the spec itself (a reviewer and date per gate), so an
 auditor can tell a reviewed plan from one an agent approved for itself.
@@ -52,7 +52,7 @@ auditor can tell a reviewed plan from one an agent approved for itself.
   requirements is the most common smell.
 - **Every requirement is testable** — a user story plus acceptance criteria in
   concrete, checkable terms. Vague criteria ("works correctly") generate vague
-  code. Concrete criteria become scenarios/tests (`sota-testing` rules/08).
+  code. Concrete criteria become scenarios/tests ([`sota-testing` rules/08](../../sota-testing/rules/08-bdd-spec-by-example.md)).
   **EARS notation** ("WHEN *trigger* THE SYSTEM SHALL *response*") is a proven
   concrete syntax — unambiguous to humans and agents, and machine-checkable:
   tooling can now verify implementations against EARS-style requirements (e.g.
@@ -68,10 +68,10 @@ auditor can tell a reviewed plan from one an agent approved for itself.
 
 - Specs live **in-repo** (e.g. `specs/<feature>/`), versioned and PR-reviewed
   exactly like docs and tests. The spec changes **in the same PR** as the
-  behavior — the same rule as docs-in-the-same-PR (`rules/01` §2) and
-  tests-in-the-same-PR (`sota-testing` rules/01 §1.8).
+  behavior — the same rule as docs-in-the-same-PR ([`rules/01`](01-documentation-architecture.md) §2) and
+  tests-in-the-same-PR ([`sota-testing` rules/01](../../sota-testing/rules/01-strategy-and-shape.md) §1.8).
 - **Spec drift is the failure mode.** A spec nobody updates is worse than none —
-  it actively misleads the next reader or agent (mirror `rules/01` §4). On a
+  it actively misleads the next reader or agent (mirror [`rules/01`](01-documentation-architecture.md) §4). On a
   behavior change, update the spec or delete it; never let it rot in place.
 
 ## 4. Steering vs per-feature specs
@@ -80,7 +80,7 @@ A per-feature spec captures *this feature's* intended behavior. **Durable house
 rules** — stack, conventions, security baseline, constraints — belong in a
 persistent steering file the agent always reads, not repeated in every spec:
 Spec Kit's *constitution*, Kiro's *steering files*, and in this ecosystem
-`AGENTS.md` / `CLAUDE.md` / `profiles/` (cross-ref `rules/01` §7). Per-feature
+`AGENTS.md` / `CLAUDE.md` / `profiles/` (cross-ref [`rules/01`](01-documentation-architecture.md) §7). Per-feature
 spec = changeable intent; steering = stable rules. Don't conflate them.
 
 **Map phases to the security material they load.** The steering file should say
@@ -90,7 +90,7 @@ language while implementing, the review checklist while verifying — ideally as
 per-phase instruction template, rather than one undifferentiated block loaded
 everywhere or nowhere. Then check that it happens: spot-check a sample of agent
 sessions for evidence the named files were actually read (an instruction that is
-listed is not an instruction that loaded — `sota-skill-security` rules/01 §4),
+listed is not an instruction that loaded — [`sota-skill-security` rules/01](../../sota-skill-security/rules/01-provenance-and-installation.md) §4),
 and revise the rule set after every security incident or review finding the
 existing rules should have prevented. (OWASP: DSOMM)
 
@@ -98,10 +98,10 @@ existing rules should have prevented. (OWASP: DSOMM)
 
 Each concern has one home; the spec **references** it rather than duplicating:
 
-- Architectural **decisions** → ADRs (`sota-architecture`).
-- API **contract** → OpenAPI / GraphQL SDL, spec-first (`sota-api-design`
-  rules/01 §10, rules/03).
-- **Acceptance criteria** → executable scenarios (`sota-testing` rules/08).
+- Architectural **decisions** → ADRs ([`sota-architecture`](../../sota-architecture/SKILL.md)).
+- API **contract** → OpenAPI / GraphQL SDL, spec-first ([`sota-api-design`
+  rules/01](../../sota-api-design/rules/01-rest-http-design.md) §10, [rules/03](../../sota-api-design/rules/03-graphql.md)).
+- **Acceptance criteria** → executable scenarios ([`sota-testing` rules/08](../../sota-testing/rules/08-bdd-spec-by-example.md)).
 
 Copying a contract or decision into the feature spec guarantees the two drift.
 
@@ -110,7 +110,7 @@ Copying a contract or decision into the feature spec guarantees the two drift.
 The library's audience runs these specs through coding agents, so:
 
 - **Each task lands as a small, reviewed PR** with tests and the spec update
-  together — treat agent output like any contribution (`rules/03`, reviewing
+  together — treat agent output like any contribution ([`rules/03`](03-code-review-pr-workflow.md), reviewing
   AI-generated code).
 - **Acceptance criteria are the verification gate.** "Done" means the criteria
   pass, not that the agent reported success — the claim-validation principle

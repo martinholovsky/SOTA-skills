@@ -32,7 +32,7 @@ reset_token = secrets.token_urlsafe(32)
 (gitleaks, GitHub secret scanning partner program) to detect leaks of *your* credentials, and
 make audit greps trivial. The prefix carries zero entropy cost.
 
-**Asymmetric keys:** Ed25519 by default for signing (SSH, artifact signing; JWT algorithm choice: rules/05 §6);
+**Asymmetric keys:** Ed25519 by default for signing (SSH, artifact signing; JWT algorithm choice: [rules/05](05-credential-types.md) §6);
 ECDSA P-256 where Ed25519 unsupported; RSA only for legacy interop and then ≥3072 bits.
 Generate keys *where they will live* (HSM, KMS, TPM, target host) so the private key never
 transits — `aws kms create-key`, `ssh-keygen` on the client, CSR-based TLS issuance. A private
@@ -69,7 +69,7 @@ send it in the same message or channel as the username. Prefer a one-time, short
 set-password link so no reusable secret travels at all; failing that, deliver the value over a
 mutually authenticated channel or a second, separate channel (username by email, password via
 a password-manager share or an authenticated messaging app) and force a change on first use
-(generation and first-use rules: sota-code-security rules/02 §5). OWASP: Secrets Management
+(generation and first-use rules: [sota-code-security rules/02](../../sota-code-security/rules/02-authentication.md) §5). OWASP: Secrets Management
 cheat sheet.
 
 ## 3. Rotation, revocation, expiry
@@ -92,7 +92,7 @@ them rather than duplicating them). OWASP: Secrets Management cheat sheet.
 | Vault dynamic DB creds | TTL ≤ 24 h (automatic) |
 | Service-to-SaaS API keys | 90 days |
 | Webhook/HMAC signing secrets | 180 days, dual-secret overlap |
-| JWT signing keys | 90 days via `kid` rotation (see rules/05) |
+| JWT signing keys | 90 days via `kid` rotation (see [rules/05](05-credential-types.md)) |
 | TLS leaf certs | ≤ 90 days (ACME automation) |
 | Long-lived static keys (last resort) | 90 days, with a ticket explaining why they exist |
 
@@ -101,7 +101,7 @@ compromise, and **a person who could read the value leaving the organisation or 
 Revoking their account does not revoke what they may have copied — a shared database password,
 a team API key, an encryption key they once exported. So the offboarding checklist names every
 shared credential the person could reach and rotates each (for an encryption key: new key
-version, then re-wrap/re-encrypt, rules/05 §7). The cheaper fix is structural: per-identity or
+version, then re-wrap/re-encrypt, [rules/05](05-credential-types.md) §7). The cheaper fix is structural: per-identity or
 dynamic credentials (§4–6) leave nothing shared to rotate — disabling the identity is enough.
 OWASP: Cryptographic Storage cheat sheet; Database Security cheat sheet.
 
@@ -189,7 +189,7 @@ API socket, never from disk-managed certs.
 Actions, GitLab CI, CircleCI, Bitbucket, and Buildkite all issue per-job OIDC tokens; AWS, GCP,
 and Azure all accept them. The same applies to package publishing: npm, PyPI, RubyGems, and
 crates.io accept per-job CI OIDC ("trusted publishing") — a stored long-lived publish token in
-CI where the registry supports trusted publishing is a Medium finding (see rules/05 §8).
+CI where the registry supports trusted publishing is a Medium finding (see [rules/05](05-credential-types.md) §8).
 
 ```yaml
 # BAD — long-lived key stored in repo/org secrets; any workflow (or exfiltrating
@@ -285,14 +285,14 @@ Operational rules for dynamic/leased credentials:
 - **Size `max_ttl` to your deploy cadence** — if leases outlive deployments, every deploy
   naturally rotates creds and `max_ttl` is a backstop, not a disruption.
 - **Revocation drills:** revoke a live lease in staging quarterly and confirm the app recovers
-  via re-fetch (rules/03 §4 retry-on-auth-failure). A dynamic-secrets setup that's never been
+  via re-fetch ([rules/03](03-application-patterns.md) §4 retry-on-auth-failure). A dynamic-secrets setup that's never been
   revoked in anger usually breaks the first real time.
 - **Watch lease floods:** a crash-looping pod minting a new DB user per restart can exhaust
   connection/user limits — alert on lease-creation rate per role.
 
 ## 7. Storage policy summary
 
-(Backends in detail: rules/02.) Lifecycle rules that apply regardless of backend:
+(Backends in detail: [rules/02](02-storage-backends.md).) Lifecycle rules that apply regardless of backend:
 
 - **One source of truth per secret.** Copies in two stores will diverge and one will rot
   unrotated. Replicate via the store's own mechanism (e.g., external-secrets sync), never by
@@ -300,7 +300,7 @@ Operational rules for dynamic/leased credentials:
 - **Version every secret** and keep N-1 readable during rotation windows only.
 - **Tag with owner + rotation metadata** (§3) so expiring-secret reports are automatable.
 - **Audit log every read** in production; alert on reads from unexpected principals. The
-  minimum field set and per-stage detections are rules/03 §8.
+  minimum field set and per-stage detections are [rules/03](03-application-patterns.md) §8.
 - **Maintain a secret inventory.** You cannot rotate what you don't know exists. The secret
   store's listing *is* the inventory only if everything lives there — which is the point.
   Quarterly: export all secrets with age + owner + last-accessed; flag anything unowned,

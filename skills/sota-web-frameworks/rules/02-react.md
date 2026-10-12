@@ -1,8 +1,8 @@
 # 02 — React 19: components, hooks, Actions, memoization
 
 Scope: React itself (any renderer). Next-specific RSC/Server-Action mechanics are in
-`rules/03`; hydration in `rules/06`. TypeScript-with-React lives in
-`sota-javascript-typescript`.
+[`rules/03`](03-nextjs.md); hydration in [`rules/06`](06-ssr-hydration.md). TypeScript-with-React lives in
+[`sota-javascript-typescript`](../../sota-javascript-typescript/SKILL.md).
 
 ## 1. Component and hook fundamentals
 
@@ -20,7 +20,7 @@ Scope: React itself (any renderer). Next-specific RSC/Server-Action mechanics ar
   timers, sockets, subscriptions. A missing cleanup leaks across Strict Mode's
   double-invoke and across remounts.
 - **Stable IDs come from `useId`**, never `Math.random()` or a module counter — this
-  is what keeps SSR and client markup matching (`rules/06`). For form-field `id`/
+  is what keeps SSR and client markup matching ([`rules/06`](06-ssr-hydration.md)). For form-field `id`/
   `htmlFor` pairs and ARIA wiring.
 - **Refs (`useRef`) are escape hatches**: DOM access and mutable non-render values.
   Don't read/write `ref.current` during render. Prefer state for anything that should
@@ -30,7 +30,7 @@ Scope: React itself (any renderer). Next-specific RSC/Server-Action mechanics ar
 
 - **Suspense** declares loading UI for async children (lazy components, RSC/data that
   suspends). Pair every dynamic boundary with a fallback; in Next PPR, uncached data
-  *must* sit inside a `<Suspense>` or the build fails (`rules/03`).
+  *must* sit inside a `<Suspense>` or the build fails ([`rules/03`](03-nextjs.md)).
 - **`useTransition` / `startTransition`** mark state updates as non-urgent so input
   stays responsive; `useDeferredValue` defers re-rendering expensive subtrees. Reach
   for these on measured jank, not preemptively.
@@ -55,9 +55,9 @@ pending/error/optimistic state.
   creates a new promise every render and never resolves.
 - **`ref` is a regular prop** in React 19 (no more `forwardRef` for new code);
   `ref` cleanup callbacks are supported.
-- These integrate with Next Server Actions (`rules/03`): `formAction` can be a
+- These integrate with Next Server Actions ([`rules/03`](03-nextjs.md)): `formAction` can be a
   `"use server"` function. The client-side pending/optimistic UX is React; the
-  security of the action is server-side and covered in `rules/03`/`rules/07`.
+  security of the action is server-side and covered in [`rules/03`](03-nextjs.md)/[`rules/07`](07-security.md).
 
 ## 4. Memoization and the React Compiler
 
@@ -68,7 +68,7 @@ pending/error/optimistic state.
   hand-writing new memo wrappers as a reflex.
 - **Where you still memoize by hand** (no compiler, or a proven hot path): memoize the
   *expensive* computation or a referentially-stable callback passed to a memoized
-  child. Memoizing a cheap value costs more than it saves. Measure (`sota-performance`).
+  child. Memoizing a cheap value costs more than it saves. Measure ([`sota-performance`](../../sota-performance/SKILL.md)).
 - **Never mutate state or props.** Compiler correctness and React's rendering both
   assume immutability; mutation causes stale UI and defeats memoization. Use immutable
   updates (spread, `.map`, or a library).
@@ -78,7 +78,7 @@ pending/error/optimistic state.
 
 ## 5. React-specific XSS: the injection sinks
 
-Generic XSS theory is in `sota-code-security` rules/05; here are the React sinks.
+Generic XSS theory is in [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md); here are the React sinks.
 
 - **`dangerouslySetInnerHTML` is the one HTML-injection sink** JSX gives you (JSX
   text is auto-escaped). Only ever feed it sanitizer output (DOMPurify or a server
@@ -101,8 +101,8 @@ import DOMPurify from 'dompurify';
   objects onto DOM elements.
 - **Rendering into a portal / third-party DOM** you don't control inherits that DOM's
   trust; don't mount React onto server-rendered nodes that contain user HTML
-  (mirrors the Vue rule in `rules/04`; hydration-XSS angle in `rules/06`).
-- CSP is defense-in-depth, not a substitute (`rules/06`, `rules/07`).
+  (mirrors the Vue rule in [`rules/04`](04-vue.md); hydration-XSS angle in [`rules/06`](06-ssr-hydration.md)).
+- CSP is defense-in-depth, not a substitute ([`rules/06`](06-ssr-hydration.md), [`rules/07`](07-security.md)).
 
 ## Audit checklist
 
@@ -113,7 +113,7 @@ import DOMPurify from 'dompurify';
 - [ ] **Effect smells: fetch-in-effect, setState-only effects, missing deps** —
       `grep -rnE 'useEffect\(' --include='*.tsx' src app | head` ;
       `grep -rn 'Math.random()\|Date.now()' --include='*.tsx' src app` (in render => hydration
-      bug (rules/06))
+      bug ([rules/06](06-ssr-hydration.md)))
 - [ ] **Rules of Hooks / compiler-blocking violations rely on lint** —
       `find . -maxdepth 2 -path ./node_modules -prune -o \( -name '.eslintrc*' -o -name 'eslint.config.*' -o -name package.json \) -type f -exec grep -Hn 'react-hooks' {} +`
 - [ ] **Legacy patterns** —

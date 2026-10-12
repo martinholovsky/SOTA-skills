@@ -21,7 +21,7 @@ results = await asyncio.gather(*coros)
 
 - New code uses `asyncio.TaskGroup` (3.11+). `gather` survives only for "collect results
   including failures" reporting — and then every element MUST be isinstance-checked.
-- Handle TaskGroup failures with `except*` (exception groups, see rules/03 §10).
+- Handle TaskGroup failures with `except*` (exception groups, see [rules/03](03-idioms-pitfalls.md) §10).
 - A coroutine should not outlive the scope that created it. If you can't say which `async with`
   owns a task, the design is wrong.
 
@@ -157,7 +157,7 @@ async with aclosing(stream_rows()) as rows:
 - **Forgotten `await`:** `client.get(url)` returns an un-awaited coroutine that never runs;
   the only symptom may be a `RuntimeWarning: coroutine ... was never awaited` on stderr.
   Strict type checking flags this (`Coroutine` where `Response` expected) — another reason
-  rules/01 mandates a checker. Enable `-W error::RuntimeWarning` in tests.
+  [rules/01](01-tooling-project-setup.md) mandates a checker. Enable `-W error::RuntimeWarning` in tests.
 - **`async def` that never awaits** — either it shouldn't be async (caller pays scheduling
   cost, pretends concurrency) or it's missing the await.
 - **Blocking ORM in async views — and the two frameworks fail *differently*:**
@@ -168,7 +168,7 @@ async with aclosing(stream_rows()) as rows:
   2026-09-16). So "works in dev, dies in prod" is the wrong symptom to hunt for in Django —
   hunt for the exception, or for the env var that disabled the guard. A sync SQLAlchemy
   `Session` on a FastAPI async path **does** block silently, because nothing is watching.
-  Django: `await Model.objects.aget(...)` / `sync_to_async`; FastAPI: see rules/07.
+  Django: `await Model.objects.aget(...)` / `sync_to_async`; FastAPI: see [rules/07](07-frameworks-testing.md).
 - **Lock-free check-then-act across awaits:** state can change at every `await`. Guard
   multi-step invariants with `asyncio.Lock`, or design single-writer.
 - **`time.monotonic` vs loop time** for timing inside coroutines; never `time.time()` deltas.

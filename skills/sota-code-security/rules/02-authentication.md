@@ -147,7 +147,7 @@ Sessions and JWT (formerly §2 and §3) moved to [rules/17](17-sessions-and-toke
   NameID (truncation bypasses).
 - Validate `Recipient`, `Audience`, `InResponseTo`, `NotOnOrAfter` (clock-skew
   bounded), enforce single-use assertion IDs (replay cache). XXE hardening from
-  rules/01 §6 applies to the SAML parser itself.
+  [rules/01](01-input-injection.md) §6 applies to the SAML parser itself.
 - **Verify against the key you configured, never the one in the message.** Use the IdP
   certificate from pinned metadata, for the `Issuer` you expect, and ignore `KeyInfo` and
   embedded certificates. A validator that trusts the certificate the response carries
@@ -210,7 +210,7 @@ Sessions and JWT (formerly §2 and §3) moved to [rules/17](17-sessions-and-toke
 - **Password change must exist, and must ask for the current password** before it accepts
   a new one (a fresh re-authentication or MFA for passwordless or federated accounts).
   Without that check, a borrowed unlocked session becomes a permanent takeover. Afterwards,
-  revoke the other sessions (rules/17 §2) and notify the user (below).
+  revoke the other sessions ([rules/17](17-sessions-and-tokens.md) §2) and notify the user (below).
   OWASP: ASVS 5.0 V6.2.2, V6.2.3; Authentication cheat sheet.
 - **Account recovery must be as strong as login** — a password reset email that
   bypasses MFA nullifies MFA (CWE-640). Reset tokens: ≥ 128-bit random,
@@ -226,7 +226,7 @@ Sessions and JWT (formerly §2 and §3) moved to [rules/17](17-sessions-and-toke
 - **Where the reset link or code goes.** Send it only to the email address or phone
   already registered *and verified* on the account, never to one supplied in the request
   (a second `email` field, an array of addresses, a link built from the `Host` header:
-  rules/01 §11). The message carries the link or code and nothing else: no password (not
+  [rules/01](01-input-injection.md) §11). The message carries the link or code and nothing else: no password (not
   even a temporary one), no personal data, no account details.
   OWASP: Code Review Guide v2; Secure Coding Practices QRG.
 - Recovery codes: one-time, hashed at rest, regenerable, shown once. Other lost-factor
@@ -316,7 +316,7 @@ Authorising a payment, a payee change or another high-value operation is not a s
   address (revocable notice) and the new (verification link); re-auth + MFA
   step-up first; keep the old address as recovery for a grace window.
 - Phone verification: rate-limit sends per number AND per requester (SMS
-  pumping fraud, see rules/06 denial-of-wallet), expire codes ≤10 min,
+  pumping fraud, see [rules/06](06-memory-resource-safety.md) denial-of-wallet), expire codes ≤10 min,
   rate-limit attempts (§5 TOTP rules apply).
 - Signup anti-automation: proof-of-work/CAPTCHA escalation under abuse,
   disposable-email policy per product needs, and uniform "if an account
@@ -379,7 +379,7 @@ What each client does with `(real DN, "")`, measured 2026-09-24 against OpenLDAP
 
 | client | empty password | notes |
 |---|---|---|
-| PHP `ldap_bind` | succeeds | also for a DN that does not exist; `sota-php` rules/02 §6 |
+| PHP `ldap_bind` | succeeds | also for a DN that does not exist; [`sota-php` rules/02](../../sota-php/rules/02-injection.md) §6 |
 | Java JNDI, `"simple"` + `SECURITY_CREDENTIALS` `""` | `InitialDirContext` created | `"none"` creates the context even with a principal set, on the default server too |
 | .NET `System.DirectoryServices.Protocols`, `AuthType.Basic` | `Bind()` returns | measured on Linux only; `System.DirectoryServices` `AuthenticationTypes.Anonymous` is documented as "No authentication is performed" |
 | Python `python-ldap` `simple_bind_s` | succeeds | |

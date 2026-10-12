@@ -19,7 +19,7 @@ including the zsh deviations that bite them, are
   no arrays, no `[[ ]]`, no `local` guarantees beyond common practice, no `${var//pat/rep}`,
   and `pipefail` only *sometimes*: POSIX.1-2024 specifies it and busybox ash has it, but dash
   gained it only in upstream 0.5.13 (Debian bookworm's 0.5.12-2 rejects it; trixie's
-  0.5.12-12 accepts it — measured 2026-09-26). Probe it, in a subshell (rules/02 §5).
+  0.5.12-12 accepts it — measured 2026-09-26). Probe it, in a subshell ([rules/02](02-robustness-correctness.md) §5).
 - Never mix: a `#!/bin/sh` script containing bashisms is a time bomb that detonates on the
   first dash/busybox host. ShellCheck's SC3xxx series catches these (SC2039, the old catch-all,
   was split into them in 0.7.2).
@@ -75,7 +75,7 @@ g() ( case $- in *e*) echo "flag IS set";; esac; false; echo RAN )  # prints BOT
 
 Only two constructs are reliable there: **explicit `&&` chaining**, or a **fresh
 `bash -c`**. This is an unfalsifiable control inside the shell itself — the
-`sota-code-security` rules/10 §1 question ("if this were a no-op, would anything
+[`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md) §1 question ("if this were a no-op, would anything
 differ?") applied to bash, and the reason `set -e` is a backstop rather than error
 handling.
 
@@ -178,7 +178,7 @@ Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
   operator later grepped a finished 28-line log for `PASS ebpf_load`, got zero, and nearly
   reported the gate as never having run; **zero `PASS` lines anywhere in the file** showed
   the log never held the table at all, and the gate had in fact *failed* — which was the
-  real finding. `rules/06` §2.
+  real finding. [`rules/06`](06-ad-hoc-commands.md) §2.
 - **A foreground, tool-wrapped command has the same consumer problem, and the fix is
   different.** §2a's remedy above — wait on the artefact, never on the launcher — is for a
   job the launcher *detaches* from. When the harness runs the command in the foreground and
@@ -190,7 +190,7 @@ Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
   code is the command's. **Either way the artefact outranks the notification**: the same
   reporter had the true code in the log and believed the harness anyway, which is the half
   of this rule that is about reading rather than writing.
-- The general form, for any status: `sota/rules/03` §2 — name what the OK is about.
+- The general form, for any status: [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2 — name what the OK is about.
 
 ## 2b. A non-zero exit is evidence about one attempt, not about the world
 
@@ -227,7 +227,7 @@ well-intentioned fix.
   and the error quotes the value just written while naming the stale old-value as expected.
   All four predicates of the field signature hold. Two earlier attempts had *failed* to
   reproduce it — both used git's **local** transport, which has no HTTP layer and so no
-  retry, and neither had a control arm (`sota-code-security` rules/12 §1a). The wider generalisation — *any
+  retry, and neither had a control arm ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a). The wider generalisation — *any
   protocol with an idempotent retry can report failure about its own success* (at-least-once
   delivery, conditional writes, state locks, idempotency-keyed payment APIs) — remains
   **plausible and not established**: one protocol was reproduced, not the class. **The rule
@@ -266,7 +266,7 @@ The failure mode is what makes this expensive: the callee reports a **usage erro
 (exit 2)**, which reads as a bug in the tool being tested rather than in the harness
 calling it. `for x in "a b"; do cmd $x; done` and `${var:+--flag $var}` are where it
 bites hardest. Same family: `$?` after a pipeline is the **last** stage's status —
-`${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash (rules/02 §4). And zsh's `EQUALS`: an unquoted `=word` becomes a command's path, or aborts the list (rules/06 §1).
+`${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash ([rules/02](02-robustness-correctness.md) §4). And zsh's `EQUALS`: an unquoted `=word` becomes a command's path, or aborts the list ([rules/06](06-ad-hoc-commands.md) §1).
 
 **The status-discarding pipe is usually in the scaffolding, not the payload.** `cmd | tail`,
 `cmd | head`, `cmd | grep -q` are typed to shorten output or make a decision; the exit status
@@ -320,7 +320,7 @@ if producer >/dev/null 2>&1; then value=$(producer | transform); else value=""; 
 **no pipe** genuinely yields an empty string, so *its* `[ -n "$var" ]` is correct. A grep
 sweep for the shape would "fix" working code; checking which form each site uses is the
 work. The differential-oracle version of the same defect — a comparand that is empty rather
-than a value that is fake — is `sota-code-security` rules/11 §2.2a.
+than a value that is fake — is [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2a.
 
 **A pipeline is an evidence hazard as well as a status hazard, and `pipefail` only fixes
 the status.** For any command whose output you intend to *reason about* — a test run, a
@@ -474,7 +474,7 @@ splitting/joining class** — no widely-adopted static analyser catches
       and unpiped**, its status is captured on the very next line (`rc=$?`), and any filtering
       is a *separate* invocation afterwards. In committed shell `shellcheck -S style` flags the
       `$?` form (SC2181); in an **ad-hoc command nothing does**, which is where it happens
-      (`rules/06` §1). In zsh the producer's status is `${pipestatus[1]}` — `${PIPESTATUS[0]}`
+      ([`rules/06`](06-ad-hoc-commands.md) §1). In zsh the producer's status is `${pipestatus[1]}` — `${PIPESTATUS[0]}`
       reads as empty, which is itself a silent wrong answer.
 - [ ] **Background jobs: is any outcome read from the launcher's status?** (§2a) The
       completion signal describes `nohup`/the runner detaching; wait on a sentinel the job

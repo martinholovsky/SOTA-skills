@@ -11,7 +11,7 @@ coupling (lockstep deploys, shared data, synchronous chains).
 
 **Detection signals:**
 - Release notes/pipelines deploy multiple services together "because they have to".
-- Service A's PR requires a matching PR in service B to not break (no contract versioning, rules/03 §8).
+- Service A's PR requires a matching PR in service B to not break (no contract versioning, [rules/03](03-distributed-systems-and-events.md) §8).
 - Synchronous call chains ≥ 3 services deep on the request path; availability = product of every link.
 - Shared libraries containing *domain* logic that force coordinated upgrades.
 
@@ -52,9 +52,9 @@ all commits); every cross-team change touches it; its test suite dominates CI
 time; every other service depends on it synchronously; aggregates loading
 hundreds of rows to change one field.
 
-**Fix:** Split along bounded contexts (rules/02 §1) using strangler extraction
-(rules/01 §8). For god aggregates: re-interrogate true invariants and split into
-smaller aggregates linked by events (rules/02 §3).
+**Fix:** Split along bounded contexts ([rules/02](02-domain-modeling-and-boundaries.md) §1) using strangler extraction
+([rules/01](01-architecture-styles-and-decisions.md) §8). For god aggregates: re-interrogate true invariants and split into
+smaller aggregates linked by events ([rules/02](02-domain-modeling-and-boundaries.md) §3).
 
 **Severity default:** High.
 
@@ -70,7 +70,7 @@ CRUD one table); local dev requires running 12 containers; no platform
 engineering yet plenty of services.
 
 **Fix:** Consolidate into a modular monolith with enforced boundaries
-(rules/01 §1–2); keep events/contracts at module seams so future extraction
+([rules/01](01-architecture-styles-and-decisions.md) §1–2); keep events/contracts at module seams so future extraction
 stays cheap.
 
 **Severity default:** High.
@@ -82,9 +82,9 @@ entities as API DTOs, vendor SDK types in domain signatures, HTTP status logic
 in domain code, broker-specific headers in business logic.
 
 **Detection signals:** importing the database/ORM/cloud SDK package in domain
-or use-case layers (architecture test catches this, rules/02 §5); API responses
+or use-case layers (architecture test catches this, [rules/02](02-domain-modeling-and-boundaries.md) §5); API responses
 that change when an internal column is renamed; "port" interfaces that mirror a
-vendor API one-to-one (rules/02 §4).
+vendor API one-to-one ([rules/02](02-domain-modeling-and-boundaries.md) §4).
 
 **Fix:** DTOs at every boundary, consumer-shaped ports, mapping in adapters.
 Cheapest enforced as an import-rule fitness function.
@@ -99,7 +99,7 @@ availability multiplies (0.99^5 ≈ 0.95) and tail latency compounds.
 
 **Detection signals:** traces showing deep sequential fan-out per user request;
 a "simple" page making 30 internal calls; timeout budgets that can't fit
-(rules/04 §1); incident reports where an unrelated service's outage broke checkout.
+([rules/04](04-resilience-and-failure-design.md) §1); incident reports where an unrelated service's outage broke checkout.
 
 **Fix:** Replicate the data you need (event-carried state transfer), accept
 staleness; collapse hops (merge services or compose at the edge); make non-
@@ -116,10 +116,10 @@ on critical paths.
 
 **Detection signals:** no diagram or registry of who consumes what; event
 cycles; an innocuous event causing a 9-hop cascade; debugging requires grepping
-all consumers for a topic name; commands disguised as events (rules/03 §6).
+all consumers for a topic name; commands disguised as events ([rules/03](03-distributed-systems-and-events.md) §6).
 
 **Fix:** Event catalog (producer, consumers, schema, purpose) generated from
-code/registry; orchestrate multi-step workflows explicitly (rules/03 §5);
+code/registry; orchestrate multi-step workflows explicitly ([rules/03](03-distributed-systems-and-events.md) §5);
 detect and break cycles.
 
 **Severity default:** Medium; High once a cycle exists.
@@ -127,7 +127,7 @@ detect and break cycles.
 ## 8. Cache as source of truth (accidental database)
 
 **What:** Data that exists only in Redis/Memcached, or correctness depending on
-cache content (rules/05 §4).
+cache content ([rules/05](05-scalability-state-and-data.md) §4).
 
 **Detection signals:** writes that go to cache without a durable backing write;
 "don't restart Redis, we'll lose X"; missing or infinite TTLs on entries nobody
@@ -150,7 +150,7 @@ entities defined in the shared lib; teams blocked on another team's lib release.
 
 **Fix:** Share only truly generic, stable code (logging, telemetry, auth
 middleware) with strict semver. Domain types are duplicated per context
-(rules/02 §1) or shared via *schemas* (protobuf/OpenAPI), not via code libraries.
+([rules/02](02-domain-modeling-and-boundaries.md) §1) or shared via *schemas* (protobuf/OpenAPI), not via code libraries.
 
 **Severity default:** Medium; High when domain logic lives in the shared lib.
 
@@ -161,7 +161,7 @@ middleware) with strict semver. Domain types are duplicated per context
 foreign keys because microservices" inside a single schema.
 
 **Detection signals:** infrastructure whose capacity exceeds need by 100x; no
-ADR with rejected alternatives (rules/01 §4); ops burden dominated by tools
+ADR with rejected alternatives ([rules/01](01-architecture-styles-and-decisions.md) §4); ops burden dominated by tools
 serving no measured requirement; the only justification on record is an analogy
 to a FAANG blog post.
 
@@ -201,7 +201,7 @@ exists nowhere in git.
 diff (drift); config keys grep to zero readers; staging incident playbooks
 differ from prod's; restoring an environment from code has never been done.
 
-**Fix:** Import live state into IaC, enable drift detection alarms (rules/06
+**Fix:** Import live state into IaC, enable drift detection alarms ([rules/06](06-cloud-native-config-and-delivery.md)
 §2, §11); delete config keys with no readers (after a deprecation log-on-read
 period); rebuild one environment from code per quarter as a fitness function.
 
@@ -212,12 +212,12 @@ rebuildability).
 
 - **Fan-out N+1 over the network:** per-item remote calls in a loop → batch APIs / data replication. High on hot paths.
 - **Chatty two-way coupling:** A calls B and B calls A → merge them or invert one direction with events. High.
-- **Timeout-free integration / retry-everywhere:** see rules/04 §1–2. Critical/High.
-- **Config-in-code, env conditionals, secrets in git:** see rules/06 §2. Critical for secrets.
-- **Anemic domain + transaction-script-everywhere in a complex core domain:** rules/02 §3. Medium.
+- **Timeout-free integration / retry-everywhere:** see [rules/04](04-resilience-and-failure-design.md) §1–2. Critical/High.
+- **Config-in-code, env conditionals, secrets in git:** see [rules/06](06-cloud-native-config-and-delivery.md) §2. Critical for secrets.
+- **Anemic domain + transaction-script-everywhere in a complex core domain:** [rules/02](02-domain-modeling-and-boundaries.md) §3. Medium.
 - **Entity services (`UserService`, `OrderService` as bags of CRUD)** instead of capability-oriented boundaries → re-cut along use cases/contexts. Medium.
 - **Queue as database / years of retention in the broker** for operational reads → project into a store; brokers are transport. Medium.
-- **Unowned components:** no team on-call for a prod service (rules/01 §7). Critical.
+- **Unowned components:** no team on-call for a prod service ([rules/01](01-architecture-styles-and-decisions.md) §7). Critical.
 
 ## Audit checklist
 

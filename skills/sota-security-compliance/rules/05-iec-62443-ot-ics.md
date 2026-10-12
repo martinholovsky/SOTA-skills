@@ -8,7 +8,7 @@ physical-process context that general IT frameworks don't. If your code runs a
 turbine, a PLC, a medical device, or a factory line, this is your frame.
 
 > **Scope honestly.** 62443 is **not** the right frame for general IT / SaaS / web
-> apps — those fit ISO 27001, OWASP/ASVS, and NIST CSF/SSDF (rules/01–03). Reach
+> apps — those fit ISO 27001, OWASP/ASVS, and NIST CSF/SSDF ([rules/01](01-control-frameworks-as-code.md)–03). Reach
 > for 62443 when the system is OT/ICS/IACS/embedded/industrial. Statuses below
 > verified July 2026 against ISA, IEC, ISAGCA, and ISASecure; certification-scheme
 > and CRA-harmonization details are evolving — re-verify at use time.
@@ -29,16 +29,16 @@ The series has four groups: **General (1-x)**, **Policies & Procedures (2-x)**,
 ## 2. 62443-4-1 vs NIST SSDF — companions, not competitors
 
 Both cover secure development. The difference is prescription:
-- **SSDF (rules/03)** is broad, tool-agnostic, and **non-certifiable** — a
+- **SSDF ([rules/03](03-ssdf-secure-sdlc.md))** is broad, tool-agnostic, and **non-certifiable** — a
   reference framework.
 - **62443-4-1** is **narrower and certification-oriented** (measurable process
   requirements, supports the ISASecure **SDLA** certification). It gives
   prescriptive, auditable detail for the same practices SSDF names at a higher
   level.
 
-**Practical stance:** if you already run an SSDF-aligned SDLC (rules/03), you have
+**Practical stance:** if you already run an SSDF-aligned SDLC ([rules/03](03-ssdf-secure-sdlc.md)), you have
 most of 62443-4-1; the gap is the *measurable process artifacts* and end-of-
-life/patch-management rigor that a 4-1 audit expects. Crosswalk them (rules/01) —
+life/patch-management rigor that a 4-1 audit expects. Crosswalk them ([rules/01](01-control-frameworks-as-code.md)) —
 one secure-SDLC, two framings.
 
 ## 3. Zones and conduits — the segmentation model
@@ -54,12 +54,12 @@ communication through controlled **conduits**:
   (firewall, data diode, gateway) where you enforce and monitor traffic. No
   side-channels, no flat OT network.
 - This is the OT expression of segmentation and blast-radius control that
-  `sota-network-security` covers for IT — apply that skill's depth (default-deny,
+  [`sota-network-security`](../../sota-network-security/SKILL.md) covers for IT — apply that skill's depth (default-deny,
   egress control) at the conduit, respecting OT constraints (availability first,
   legacy protocols, no casual patching).
 
 A flat OT network with no zone/conduit model is the equivalent of the flat-network
-finding in rules/02 — it makes everything one blast radius and defeats SL
+finding in [rules/02](02-nist-800-53-171-cmmc-fedramp.md) — it makes everything one blast radius and defeats SL
 assignment.
 
 ## 4. Security Levels (SL 0–4) and the 7 Foundational Requirements
@@ -86,7 +86,7 @@ meet the target, is the core 62443 finding.
 2. **Use Control (UC)** — least privilege / authorized actions only.
 3. **System Integrity (SI)** — code/config/data not tampered. On a device this
    means a verified boot chain and locked debug ports (§6), plus updates that
-   are refused when older than the installed security version (rules/04 §2).
+   are refused when older than the installed security version ([rules/04](04-eu-cyber-resilience-act.md) §2).
 4. **Data Confidentiality (DC)** — protect data at rest/in transit.
 5. **Restricted Data Flow (RDF)** — zones & conduits enforcement.
 6. **Timely Response to Events (TRE)** — detection, logging, response.
@@ -94,10 +94,10 @@ meet the target, is the core 62443 finding.
    FR that most distinguishes OT: availability is the top priority, not
    confidentiality).
 
-The mechanisms behind FR1–FR4, FR6 live in `sota-identity-access`,
-`sota-code-security`, `sota-secrets-management`, `sota-detection-engineering`;
+The mechanisms behind FR1–FR4, FR6 live in [`sota-identity-access`](../../sota-identity-access/SKILL.md),
+[`sota-code-security`](../../sota-code-security/SKILL.md), [`sota-secrets-management`](../../sota-secrets-management/SKILL.md), [`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md);
 FR5 in the zone/conduit design (§3); FR7 in resilience/DR
-(`sota-cloud-infrastructure`, `sota-architecture`) adapted to OT.
+([`sota-cloud-infrastructure`](../../sota-cloud-infrastructure/SKILL.md), [`sota-architecture`](../../sota-architecture/SKILL.md)) adapted to OT.
 
 ## 5. Certification and the CRA link
 
@@ -106,7 +106,7 @@ FR5 in the zone/conduit design (§3); FR7 in resilience/DR
   Assurance) → 4-2 (a component); **SSA** (System Security Assurance) → 3-3 (a
   system). *A separate IECEE CB scheme also covers 62443 — confirm scope from a
   primary IECEE source before relying on it.*
-- **CRA route (rules/04 §4):** CEN/CENELEC (TC65X WG3) is **adapting EN IEC
+- **CRA route ([rules/04](04-eu-cyber-resilience-act.md) §4):** CEN/CENELEC (TC65X WG3) is **adapting EN IEC
   62443-4-1 / 4-2 into CRA harmonized standards** for OT/industrial "important
   products" (CRA Annex III), which would grant presumption of conformity. Target
   dates cluster around **late 2026**, with a compressed runway before CRA
@@ -119,7 +119,7 @@ CRA conformity. Build to it now; certify when the hENs land.
 
 ## 6. The embedded device across its life: root of trust, debug lock, hardware supply chain, decommissioning
 
-The library has **no owner for the embedded systems layer**: `sota-c-cpp` covers
+The library has **no owner for the embedded systems layer**: [`sota-c-cpp`](../../sota-c-cpp/SKILL.md) covers
 firmware's *language*, not its boot or hardware. This section therefore holds the
 minimum for a product that ships as a device (a PLC, gateway, sensor or drone).
 
@@ -140,16 +140,16 @@ minimum for a product that ships as a device (a PLC, gateway, sensor or drone).
   (disable or protect debug interfaces), 5.6-4B (physically protect debug ports).
 - **Development and production are different builds.** Record the fuse and
   lock state per production batch as evidence for FR3 (SI) in the crosswalk
-  (rules/01). Do not count on a later update to fix a unit shipped with
+  ([rules/01](01-control-frameworks-as-code.md)). Do not count on a later update to fix a unit shipped with
   development settings: some of them are one-time fuses, and an attacker with
   an open debug port can act before the update arrives.
 - **Vet the hardware supply chain, not just the software one.** SBOM and provenance
-  (rules/03, `sota-devsecops`) stop at the board. Buy the security-relevant parts (the
+  ([rules/03](03-ssdf-secure-sdlc.md), [`sota-devsecops`](../../sota-devsecops/SKILL.md)) stop at the board. Buy the security-relevant parts (the
   MCU or SoC, secure element, flash, radio module) from the manufacturer or its
   authorised distributors. Keep traceability data per production batch: part number,
   lot or date code, and source. Inspect incoming parts for counterfeits and tampering
   before they are built in, and report any counterfeit you find. The 800-53 home is
-  the SR family (rules/02 §1): SR-4 provenance, SR-5 acquisition strategies, SR-11
+  the SR family ([rules/02](02-nist-800-53-171-cmmc-fedramp.md) §1): SR-4 provenance, SR-5 acquisition strategies, SR-11
   component authenticity. For its third-party-component task PO.1.3, SSDF lists
   IEC 62443-4-1 practices SM-9 and SM-10 as references. Confirm what those two
   require in the 4-1 text itself before citing them in an assessment.
@@ -175,11 +175,11 @@ OWASP: Drone Security cheat sheet
 - [ ] Each zone has a **target Security Level (SL-T)** derived from a documented risk assessment (62443-3-2), not asserted
 - [ ] Components/systems meet the target: **SL-C and SL-A ≥ SL-T** per zone, per FR; components selected/configured to their required capability level
 - [ ] The 7 Foundational Requirements addressed with named mechanisms (IAC, UC, SI, DC, RDF, TRE, RA) — availability (FR7) treated as top priority per OT context
-- [ ] Secure development per **62443-4-1** crosswalked to the SSDF SDLC (rules/03); measurable process artifacts, defect/patch management, and product end-of-life defined
+- [ ] Secure development per **62443-4-1** crosswalked to the SSDF SDLC ([rules/03](03-ssdf-secure-sdlc.md)); measurable process artifacts, defect/patch management, and product end-of-life defined
 - [ ] Component technical requirements (**4-2**) and system requirements (**3-3**) met for the relevant component types
 - [ ] **Embedded device root of trust and debug lock (§6) — HIGH** (CRITICAL where secure boot is the only barrier to code execution): ROM/eFuse-anchored secure boot, each stage verifying the next; JTAG/SWD/UART and ROM download mode disabled or authenticated on production units; fuse state recorded per batch. Probe the production build config: `grep -rnE '^CONFIG_(SECURE_BOOT_INSECURE|SECURE_BOOT_ALLOW_JTAG|SECURE_BOOT_ALLOW_ROM_BASIC|SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT|BOOT_SIGNATURE_TYPE_NONE)=y' .` — any hit in a release config is a finding; `grep -rlE '^CONFIG_SECURE_BOOT=y' .` printing nothing on a device build is a lead to ask where secure boot is enabled
 - [ ] **Hardware supply chain vetted (§6) — MEDIUM** (HIGH where the part holds the root of trust): security-relevant components bought from the manufacturer or authorised distributors, traceability (part number, lot/date code, source) kept per batch, incoming inspection for counterfeits, mapped to 800-53 SR-4/SR-5/SR-11 in the crosswalk
 - [ ] **Unit decommissioning defined and enforced (§6) — HIGH:** stored secrets and data sanitised (cryptographic erase of a per-device key, the storage's sanitize command, or destruction), device certificate and tokens revoked at the back end, serial marked retired, and enrolment refuses a retired serial. Test the last step: re-enrol a retired test unit and expect a refusal
 - [ ] Patch/update strategy fits OT constraints (availability, maintenance windows, legacy) while still delivering security fixes over the support period
-- [ ] If EU-market: 62443 harmonization path to CRA conformity tracked against the current OJ hEN list (rules/04); certification (ISASecure SDLA/CSA/SSA) pursued where required
+- [ ] If EU-market: 62443 harmonization path to CRA conformity tracked against the current OJ hEN list ([rules/04](04-eu-cyber-resilience-act.md)); certification (ISASecure SDLA/CSA/SSA) pursued where required
 - [ ] 62443 part versions, certification-scheme scope, and CRA-harmonization status re-verified against primary sources within the last 6 months

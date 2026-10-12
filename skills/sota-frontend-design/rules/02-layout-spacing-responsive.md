@@ -137,7 +137,7 @@ When you do write them:
 
 - **Mobile-first** (`min-width`), always. Desktop-first `max-width` overrides accumulate into specificity soup.
 - Breakpoints in `rem`/`em` (zoom-friendly): typically `40em / 64em / 90em`. Breakpoints follow *content breaking*, not device names.
-- Preference queries are mandatory plumbing: `prefers-reduced-motion` (see rules/06), `prefers-color-scheme`, `prefers-contrast: more` (strengthen borders/text), `forced-colors: active` (respect system palette: use `currentColor`, `CanvasText`, never `forced-color-adjust: none` without reason).
+- Preference queries are mandatory plumbing: `prefers-reduced-motion` (see [rules/06](06-motion-design.md)), `prefers-color-scheme`, `prefers-contrast: more` (strengthen borders/text), `forced-colors: active` (respect system palette: use `currentColor`, `CanvasText`, never `forced-color-adjust: none` without reason).
 - Pointer queries for touch affordances: `@media (pointer: coarse) { /* ≥44px targets, larger hit areas */ }` — better signal than viewport width for touch.
 - Avoid `@media (hover: none)` to *remove* functionality; provide alternatives instead.
 
@@ -178,7 +178,7 @@ label:has(+ input:disabled) { color: var(--text-disabled); }
 ```
 
   Put third-party CSS into a low layer: `@import url(vendor.css) layer(vendor);`. Unlayered styles beat all layers — keep app code layered so escape hatches stay available, and audit any unlayered rule as a smell.
-- `:focus-visible` not `:focus` for rings (see rules/05); `:where()` to zero out specificity in resets/utilities.
+- `:focus-visible` not `:focus` for rings (see [rules/05](05-accessibility.md)); `:where()` to zero out specificity in resets/utilities.
 
 ## 7. Anchor positioning, popover & view transitions (progressive enhancement)
 
@@ -200,7 +200,7 @@ label:has(+ input:disabled) { color: var(--text-disabled); }
 ```
 
 - The core anchor-positioning properties (`anchor-name`, `position-area`, `position-try-fallbacks`) are **Baseline newly available** since 2026-01-13 (Chromium 125+, Safari 26+, Firefox 147+; `position-anchor` since 2026-09-14), but the web-features `anchor-positioning` feature as a whole is *not* Baseline — the `position-visibility` anchor keywords lag (web-features 3.40.0, read 2026-09-26). It is an Interop 2026 focus area. Newly ≠ widely: keep the **feature-detect** (`@supports (anchor-name: --a)`) with a Floating UI fallback while pre-2026 browsers are in your support matrix.
-- View Transitions API for page/state morphs — covered in rules/06; treat as enhancement, never a functional dependency.
+- View Transitions API for page/state morphs — covered in [rules/06](06-motion-design.md); treat as enhancement, never a functional dependency.
 - General rule: detect features, not browsers; build the working baseline first, layer the modern API on top. A user on the fallback path gets a *plainer* experience, never a *broken* one.
 
 ## 8. Z-index & stacking-context discipline

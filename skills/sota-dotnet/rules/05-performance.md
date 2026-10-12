@@ -2,7 +2,7 @@
 
 .NET performance is mostly about **allocation pressure and the GC**, plus using
 the modern low-allocation primitives. Measure with BenchmarkDotNet and a
-profiler before optimizing. Cross-reference `sota-performance` for methodology.
+profiler before optimizing. Cross-reference [`sota-performance`](../../sota-performance/SKILL.md) for methodology.
 
 ## 1. The GC and allocation pressure
 
@@ -37,13 +37,13 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
 - `Span<T>`/`ReadOnlySpan<T>`/`Memory<T>` for slicing arrays/strings/stack
   buffers **without copying** — parsing, formatting, buffer processing.
   `stackalloc` for small fixed buffers. C# 14 broadens span conversions
-  (`rules/01`).
+  ([`rules/01`](01-idioms.md)).
 - `Utf8` APIs, `System.Text.Json` source-gen, and `IBufferWriter<T>` for
   low-allocation I/O. Pool large/reused buffers with `ArrayPool`/`MemoryPool`.
 
 ## 4. Async & throughput
 
-- Async done right scales I/O (`rules/03`); done wrong (blocking, sync-over-async)
+- Async done right scales I/O ([`rules/03`](03-async-concurrency.md)); done wrong (blocking, sync-over-async)
   it starves the thread pool. `ValueTask`/`ValueTask<T>` for very hot,
   frequently-synchronous paths to avoid a `Task` allocation — but never await a
   `ValueTask` twice, store it, or block on it.
@@ -54,7 +54,7 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
   says *"it is recommended to avoid it"*. Load related data with `Include` or a `Select`
   projection, and consider `AsSplitQuery` where several collection includes multiply rows
   (*"cartesian explosion"*). A query issued inside a loop is the same pattern with no proxy
-  needed. Query design itself is `sota-databases` rules/03.
+  needed. Query design itself is [`sota-databases` rules/03](../../sota-databases/rules/03-queries-and-indexes.md).
 
 ## 5. Measuring
 
@@ -62,7 +62,7 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
   runs, and reports allocations (`[MemoryDiagnoser]`). Never `Stopwatch` around a
   loop. Profile with `dotnet-trace`/`dotnet-counters`/Visual Studio profiler /
   PerfView for allocation and GC analysis. Report distributions
-  (`sota-performance`).
+  ([`sota-performance`](../../sota-performance/SKILL.md)).
 
 ## 6. Native AOT & trimming
 

@@ -1,10 +1,10 @@
 # 08 — Ad-hoc commands: when the check itself does damage
 
-Scope: the sibling of `rules/06`. That file is about a verification command returning the
+Scope: the sibling of [`rules/06`](06-ad-hoc-commands.md). That file is about a verification command returning the
 **wrong answer**; this one is about a verification command with **side effects** — it
 destroys what it was inspecting, or exhausts a resource nobody budgets. Split out of
-`rules/06` at v1.42.2 when that file reached its 500-line cap; §3 and §4 keep their
-numbers so every existing citation still names the right section. `rules/06` §2's
+[`rules/06`](06-ad-hoc-commands.md) at v1.42.2 when that file reached its 500-line cap; §3 and §4 keep their
+numbers so every existing citation still names the right section. [`rules/06`](06-ad-hoc-commands.md) §2's
 discipline — state the traversal, print the denominator, control the sweep — is assumed.
 
 **The unifying property:** "I am only checking something" bounds nothing. A read-only
@@ -38,7 +38,7 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
   a sparse file on the host's, so exhausting the host surfaces *inside* the VM as I/O errors
   and can corrupt the filesystem and image store — minutes later, in an unrelated command,
   long after the one that caused it.
-- Cleanup on a shared runtime is not housekeeping: see `sota-devsecops` rules/07 §7.7.
+- Cleanup on a shared runtime is not housekeeping: see [`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) §7.7.
 
 ## 4. The loop you left running exhausts the process table — and takes cleanup with it
 
@@ -55,9 +55,9 @@ while ! pgrep -f "run-eval.py" >/dev/null; do sleep 60; done &
 ```
 
 Every iteration forks (`pgrep`, `grep`, `ps`, the subshells in a `$(…)`), and a
-backgrounded loop outlives the command that started it — often the whole session. `rules/06` §1's
+backgrounded loop outlives the command that started it — often the whole session. [`rules/06`](06-ad-hoc-commands.md) §1's
 `pgrep -f` self-match is what makes it never stop: the loop's own argv contains the
-pattern, so it matches itself forever. `rules/06` §1 frames that cost as *a burned timeout*. The
+pattern, so it matches itself forever. [`rules/06`](06-ad-hoc-commands.md) §1 frames that cost as *a burned timeout*. The
 larger cost is that it never stops **spawning**.
 
 **How big it gets, measured — and read the attribution note.** At failure on the machine
@@ -68,12 +68,12 @@ per-user table was full, with **≈10,700 `/bin/sh`** in it.
 section's cause.** When this section was first written the numbers were attributed to
 backgrounded wait loops, which had indeed been running that hour — but parentage had not
 been checked, and the section said so. It was checked afterwards, and the `/bin/sh`
-processes belonged to a **self-recursive `PATH` shim** (`rules/03` §3a); deleting one file
+processes belonged to a **self-recursive `PATH` shim** ([`rules/03`](03-security.md) §3a); deleting one file
 took the count to **691**. The tell was in the evidence all along: a `zsh` wait loop spawns
 `zsh`, `sleep` and `pgrep` — never **10,700 `/bin/sh`**.
 
 **Two unrelated causes produce this identical signature** — an unbounded backgrounded loop
-(this section) and a wrapper that shadows a command it calls (`rules/03` §3a) — and **only a
+(this section) and a wrapper that shadows a command it calls ([`rules/03`](03-security.md) §3a) — and **only a
 parentage check distinguishes them**: `ps -axo pid=,ppid=,command=`, grouped by ppid.
 Sequential PIDs with one child each is a recursion; many children under one parent is a pool
 or a loop. Fixing the wrong one leaves the machine exactly as exposed, so **do not pick
@@ -104,7 +104,7 @@ incident's cause.
   loop costs a process per tick and buys the same answer later.
 - **Never background an unbounded wait.** Before writing any repeating loop, ask what
   makes it *stop* — and if the answer is a `pgrep` on a pattern the loop's own argv
-  contains, the answer is **nothing** (`rules/06` §1).
+  contains, the answer is **nothing** ([`rules/06`](06-ad-hoc-commands.md) §1).
 - **Bound the iterations, not just the sleep**: `for i in $(seq 1 60)`, never a bare
   `while true` / `until`. A loop that gives up is a loop that cannot leak forever.
 - **Keep it in the foreground** so it dies with the command that started it, and **watch
@@ -132,5 +132,5 @@ tools you would use to recover.
       — and for polling of work a harness already reports. Headroom for the resource
       being spent is checked (`ps -A | wc -l` vs `ulimit -u`), not just `df -h`. If the
       table is already full, **establish parentage before assigning blame** — a
-      self-recursive wrapper (`rules/03` §3a) produces the same signature, and only
+      self-recursive wrapper ([`rules/03`](03-security.md) §3a) produces the same signature, and only
       `ps -axo pid=,ppid=,command=` tells the two apart.

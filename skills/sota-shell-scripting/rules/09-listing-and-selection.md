@@ -1,16 +1,16 @@
 # 09 — Listing and selection: the tool answered a different question
 
 Scope: the commands that *enumerate* rather than search — a lister, a selector, a
-"which one is latest". `rules/06` §2 is a searcher that traverses less than you think;
+"which one is latest". [`rules/06`](06-ad-hoc-commands.md) §2 is a searcher that traverses less than you think;
 these are tools that return less than you think, or all of a population one step to the
 left of the one you asked about. Both exit `0` with an empty stderr, which is why they
-reach a report as measurements. Split out of `rules/06` (· v1.43.1) when that file
+reach a report as measurements. Split out of [`rules/06`](06-ad-hoc-commands.md) (· v1.43.1) when that file
 reached its 500-line cap, **keeping their section numbers** so existing citations resolve
-— the same move `rules/08` made before it.
+— the same move [`rules/08`](08-ad-hoc-side-effects.md) made before it.
 
 ## 5. The listing tool answered your question about *one page*
 
-`rules/06` §2 is a searcher that traverses less than you think. This is a lister that returns
+[`rules/06`](06-ad-hoc-commands.md) §2 is a searcher that traverses less than you think. This is a lister that returns
 less than you think — and it is worse, because the shortfall is **policy, not a bug**: the tool
 did exactly what it was asked, exited `0`, and wrote nothing to stderr.
 
@@ -62,7 +62,7 @@ this section, the server count said **330** and the paginated read said **339**.
 pagination was right; the *predicate* was wrong — `state=closed` includes the 9 PRs that
 were closed without merging, so the fixed command had quietly started answering a different
 question than the one it replaced. A second method exists to have a **different failure
-mode** (`sota-code-security` rules/11 §7), and the whole return on that is the moment the
+mode** ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §7), and the whole return on that is the moment the
 two numbers differ. Had they agreed, nothing would have been learned; had I run only the
 fixed one, `339` would have shipped as the merged total. Reconcile the gap to a named cause
 (`330 + 9 unmerged = 339`) before reporting either number — an unexplained delta between two
@@ -72,7 +72,7 @@ That last line generalises past `gh`: **a result whose size equals a round numbe
 tool chose is a page until proven otherwise.** 30, 50, 100, 1000. It costs one comparison
 and it is the only signal the tool gives you, because it does not give one.
 
-The reporting rule follows `rules/06` §2's: **say which bound produced the number.** "330 merged PRs
+The reporting rule follows [`rules/06`](06-ad-hoc-commands.md) §2's: **say which bound produced the number.** "330 merged PRs
 (`--limit 1000`, no truncation — the run returned fewer rows than the cap)" is a
 measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" was too.
 
@@ -109,7 +109,7 @@ default". Each of the three is the correct answer to a question nobody asked.
   which prefixes each line with its source.
 - **Three numbers that disagree are three questions, not a discrepancy to average.** None of
   `du`, the tool's report and `df` is wrong; ask which the decision needs. General form:
-  `sota-observability` rules/05 §7a.
+  [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §7a.
 
 ## 5b. A filter that drops the file you named
 
@@ -135,10 +135,10 @@ grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — 
 - **A named file needs no filter, and a filter needs `.` or a directory.** Mixing the two is
   the bug. If you need both, add an `--include` that matches the named file's basename.
 - **Test the probe on a fixture where it must hit.** A probe that cannot fire exits the same
-  way as a clean codebase does. `rules/06` §2's positive control is what catches it.
+  way as a clean codebase does. [`rules/06`](06-ad-hoc-commands.md) §2's positive control is what catches it.
 - **A brace glob inside `--include` has the same effect.** grep does not expand braces, so
   a quoted `--include='*.{py,js}'` matches no file on BSD grep, ugrep or GNU grep. Unquoted,
-  bash expands it and zsh aborts with "no matches found" (`rules/06` §1). Write one
+  bash expands it and zsh aborts with "no matches found" ([`rules/06`](06-ad-hoc-commands.md) §1). Write one
   `--include` per extension. Two shipped probes had this shape (measured 2026-09-25).
 - **BusyBox grep has no `--include` at all** (alpine and busybox images):
   `grep: unrecognized option`, exit `2` — the same status as any read error, so a probe run

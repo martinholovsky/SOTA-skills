@@ -49,14 +49,14 @@ retraining.
 ## 4. Operational & data-quality monitoring
 
 - Monitor the serving system like any service: latency, throughput, error rate,
-  resource use (cross-ref `sota-observability`).
+  resource use (cross-ref [`sota-observability`](../../sota-observability/SKILL.md)).
 - Monitor **input data quality** at serving: schema conformance, null/NaN spikes,
   range violations, unexpected categories, feature freshness/staleness — a broken
   upstream feature is a common silent failure (ML Test Score monitoring tests).
 - Watch for **training/serving skew** continuously by comparing logged served
-  features to training (`rules/02`).
+  features to training ([`rules/02`](02-data-and-features.md)).
 - Record the out-of-distribution flags raised by the inference-time gate
-  (`rules/07` §1) and trend their rate; a rising rate is early drift.
+  ([`rules/07`](07-security-governance.md) §1) and trend their rate; a rising rate is early drift.
 
 ## 5. Retraining strategy
 
@@ -64,18 +64,18 @@ retraining.
   drift rate), or **drift/performance-triggered** (retrain when PSI or metric
   crosses a threshold). Don't retrain blindly on a timer if nothing changed, and
   don't wait for a complaint if drift is detected.
-- Retraining runs the **same validated pipeline** with gates (`rules/03`,
-  `rules/04`) — an automatically-retrained model still passes validation and
+- Retraining runs the **same validated pipeline** with gates ([`rules/03`](03-training-experimentation.md),
+  [`rules/04`](04-evaluation-validation.md)) — an automatically-retrained model still passes validation and
   progressive rollout before it serves. Beware feedback loops contaminating new
-  training data (`rules/01`).
+  training data ([`rules/01`](01-ml-systems-architecture.md)).
 - Keep model/version history and the ability to roll back a bad retrain
-  (`rules/05`).
+  ([`rules/05`](05-deployment-serving.md)).
 
 ## 6. Alerting & ownership
 
 - Drift/decay/data-quality alerts route to an owner with a runbook (what to
-  check, when to retrain, when to roll back) — cross-ref `sota-observability`
-  and `sota-detection-engineering` for alerting discipline. An alert nobody owns
+  check, when to retrain, when to roll back) — cross-ref [`sota-observability`](../../sota-observability/SKILL.md)
+  and [`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md) for alerting discipline. An alert nobody owns
   is noise.
 
 ## Audit checklist

@@ -44,9 +44,9 @@ costs applied rules"* still is not.
 
 ### 1a. The one exception to lean, and why it has to be an exception
 
-Step 2 carries a standing load of `sota-shell-scripting` rules/06 that leanness would
+Step 2 carries a standing load of [`sota-shell-scripting` rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md) that leanness would
 otherwise forbid. The reason is a routing property, not an importance claim: **every other
-rules file is selected by what the task is about, and rules/06 is about the act of
+rules file is selected by what the task is about, and [rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md) is about the act of
 checking**, which is orthogonal to every task's subject. No task description matches it, so
 subject routing cannot reach it however good the classifier is.
 
@@ -58,7 +58,7 @@ instruction about artifacts rather than a BUILD instruction about your own next 
 
 **The cost is real and unmeasured.** This is a near-unconditional load in the step whose
 measured virtue is leanness (§1, and the 63% conflict-rate drop behind it). It is justified
-by a mechanism, not a number. **Falsifier:** if sessions that reach rules/06 by ordinary
+by a mechanism, not a number. **Falsifier:** if sessions that reach [rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md) by ordinary
 subject routing show these traps at a similar rate, the standing load is buying nothing and
 should come back out.
 
@@ -105,7 +105,7 @@ Attention is not an enforcement mechanism; a test is.
 
 - **The falsification question** — *if this control were silently a no-op, would anything
   observable differ?* No log, no metric, no failing test means the control is not done
-  (`sota-code-security` rules/10).
+  ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).
 - **Read back the artifact this run produced.** Where a control emits something — a
   record, a ledger line, a signature — it is wrong in the *output* long before it looks
   wrong in the source. Re-reading the code that writes it re-runs the reasoning that
@@ -120,7 +120,7 @@ Attention is not an enforcement mechanism; a test is.
   yes/no questions grades itself and passes; the same checklist phrased as evidence to
   produce cannot be satisfied without doing the work. This is why step 4 says *re-read*
   the checklist rather than *confirm* it, and why an item's denominator matters
-  (`sota-code-security` rules/11 §2.2): "0 checked, 0 failed" is a pass shaped exactly
+  ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2): "0 checked, 0 failed" is a pass shaped exactly
   like a real one.
 
 ## 5. Changing BUILD? Change these too

@@ -103,7 +103,7 @@ func New(db *sql.DB) *Server { return &Server{db: db} }
   `Validator`) even when slightly awkward.
 - Receiver names: 1–2 letters, consistent across methods (`s *Server`
   everywhere — never `this`/`self`).
-- Errors: `ErrX` sentinels, `XError` types (see `rules/01`).
+- Errors: `ErrX` sentinels, `XError` types (see [`rules/01`](01-errors.md)).
 
 ## 4. Zero values as a design tool
 
@@ -146,7 +146,7 @@ type Limiter struct {
 
 ### Numeric edges: NaN, zero divisors, the most negative integer
 
-Extends `rules/05` §5 (conversions, money). Go never traps on these; it hands back a value.
+Extends [`rules/05`](05-security.md) §5 (conversions, money). Go never traps on these; it hands back a value.
 
 - **`strconv.ParseFloat` accepts `"NaN"`, `"Inf"` and `"Infinity"`** (signed, any case) with a
   nil error; an out-of-range literal like `"1e400"` returns `±Inf` *and* `ErrRange`. A

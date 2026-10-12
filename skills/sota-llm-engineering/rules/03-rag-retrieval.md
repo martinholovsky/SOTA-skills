@@ -13,9 +13,9 @@ stable corpora often no longer need a vector pipeline.)
 
 | Situation | Choice |
 |---|---|
-| Corpus fits comfortably in context (≲ a few hundred K tokens), is stable across requests | **Long context + prompt caching.** Whole corpus in the cached prefix (rules/02 §5); reads at 0.1× input price or less, per model. Simpler, no retrieval-miss class of bugs. Eval still required. |
+| Corpus fits comfortably in context (≲ a few hundred K tokens), is stable across requests | **Long context + prompt caching.** Whole corpus in the cached prefix ([rules/02](02-prompt-context-engineering.md) §5); reads at 0.1× input price or less, per model. Simpler, no retrieval-miss class of bugs. Eval still required. |
 | Corpus is large, changing, per-tenant, or ACL-filtered | **RAG.** Retrieval is the only way to scale, stay fresh, and enforce per-user access. |
-| Need is *behavior/format/style*, not knowledge | **Prompting, then fine-tuning** (rules/06 §1). Fine-tuning is for form, not facts — it does not reliably inject or update knowledge. |
+| Need is *behavior/format/style*, not knowledge | **Prompting, then fine-tuning** ([rules/06](06-data-lifecycle.md) §1). Fine-tuning is for form, not facts — it does not reliably inject or update knowledge. |
 | Need citations / auditability of sources | **RAG** (or long context with inline source markers). Weights can't cite. |
 | Latency-critical + small hot corpus | Long context + caching beats a retrieval round-trip. |
 
@@ -69,7 +69,7 @@ split across a chunk boundary.
 - **Migration is reindex + cutover, never in-place:** new index (or named
   vector set) → re-embed corpus → run the retrieval eval against both → flip
   reads atomically → retire the old index. Dual-write during the window.
-  (rules/06 §4.)
+  ([rules/06](06-data-lifecycle.md) §4.)
 - Use task-specific encoding modes where the model has them (query vs
   document/passage prefixes); skipping the prefix silently degrades recall.
 - Match the index's distance metric to the model's training metric (usually
@@ -90,7 +90,7 @@ Dense-only retrieval is no longer SOTA. The default production stack:
 5. **Metadata filtering** — tenant/ACL/date/type filters applied *in the
    retrieval engine* (pre- or during-search), never client-side after
    over-fetching. ACL filtering after retrieval is a security bug
-   (sota-code-security rules/08 — RAG ACLs).
+   ([sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md) — RAG ACLs).
 
 Each stage exists to fix the previous stage's failure mode; each costs
 latency. Add stages bottom-up only when the retrieval eval shows the failure
@@ -137,7 +137,7 @@ evaluated — a bad rewriter silently caps the whole pipeline.
 ## 6. Retrieval evaluation
 
 Evaluate retrieval separately from generation; end-to-end-only evals can't
-tell you which stage failed (rules/01 §6).
+tell you which stage failed ([rules/01](01-evals.md) §6).
 
 - **Golden retrieval set:** ≥50 real queries mapped to the chunk/document IDs
   that *should* be retrieved. Build from production queries, support
@@ -148,7 +148,7 @@ tell you which stage failed (rules/01 §6).
   context-pollution pressure. Track per stage: recall@50 after fusion vs
   recall@5 after rerank localizes the broken stage.
 - **Generation-side metrics on top:** faithfulness/groundedness (every claim
-  supported by retrieved context — LLM-judge with quoted evidence, rules/01
+  supported by retrieved context — LLM-judge with quoted evidence, [rules/01](01-evals.md)
   §2) and answer relevance. RAG-specific harnesses (e.g. RAGAS-style) or
   your general eval harness both work; the metrics matter, not the brand.
 - Re-run the retrieval eval on every change to chunking, embedding model,
@@ -162,7 +162,7 @@ tell you which stage failed (rules/01 §6).
   corpus" is a first-class outcome with its own eval cases — a RAG system
   that never refuses is hallucinating on the gaps.
 - **Score every answer at runtime, not only a sample offline.** Sampled
-  online judging (rules/01 §4) tells you the hallucination *rate*; it does
+  online judging ([rules/01](01-evals.md) §4) tells you the hallucination *rate*; it does
   nothing for the answer in front of the user now. Attach a confidence signal
   to each response before it ships — a groundedness score from a check you
   have calibrated against labelled cases, agreement across several sampled
@@ -170,7 +170,7 @@ tell you which stage failed (rules/01 §6).
   OpenAI Chat Completions SDK takes `logprobs`, and its Responses API returns
   them when `include` lists `message.output_text.logprobs`; the Anthropic
   Messages SDK has no such parameter — check yours). Below a threshold set on the eval,
-  withhold the answer and take the degradation path (rules/05 §6) or queue
+  withhold the answer and take the degradation path ([rules/05](05-production-engineering.md) §6) or queue
   it for a human; never ship it with a disclaimer bolted on. Answer classes
   your policy rates high-risk (medical, legal, financial, anything that
   drives an action) get an extra verification pass regardless of score.
@@ -179,7 +179,7 @@ tell you which stage failed (rules/01 §6).
   lookup) before rendering it — an invented identifier reads exactly like a
   real one. OWASP: AISVS 7.2.1–7.2.3, 12.3.2; OWASP DSOMM.
 - **Citations are structural:** assign stable IDs to context blocks, require
-  the model to attach source IDs per claim (structured output, rules/02 §6),
+  the model to attach source IDs per claim (structured output, [rules/02](02-prompt-context-engineering.md) §6),
   and **resolve them in code** — every cited ID must exist in the supplied
   context (reject/repair if not). Render as links to the actual source. Use
   provider-native citation features where available.
@@ -191,7 +191,7 @@ tell you which stage failed (rules/01 §6).
   surface document dates to the model so it can prefer current sources and
   caveat stale ones.
 - **Caches and derived copies follow the source's lifecycle.** A response
-  cache or semantic cache (rules/05 §3 item 7) holds answers built from
+  cache or semantic cache ([rules/05](05-production-engineering.md) §3 item 7) holds answers built from
   documents; when a document is edited, deleted or has its permissions
   changed, evict every cached answer and embedding derived from it — key
   cache entries by the source IDs they drew on so the eviction is a lookup,
@@ -208,7 +208,7 @@ tell you which stage failed (rules/01 §6).
   **don't return raw similarity/distance scores to end users or sub-agents** —
   they let an attacker probe and reconstruct corpus contents. Rate-limit
   retrieval per identity. Vector-DB auth/network hardening is in
-  sota-code-security rules/08 §4.
+  [sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md) §4.
 
 ### 7a. Index integrity beyond the chunk hash
 
@@ -237,12 +237,12 @@ tell you which stage failed (rules/01 §6).
 One-shot (query → retrieve → generate) is the right default for FAQ-style
 loads: cheapest, fastest, easiest to evaluate. Escalate to **agentic
 retrieval** — model issues searches as tool calls, inspects results,
-reformulates, iterates (rules/04) — when the eval shows one-shot failing on:
+reformulates, iterates ([rules/04](04-agents-tools.md)) — when the eval shows one-shot failing on:
 multi-hop questions, exploratory research, corpus-spanning aggregation, or
 queries needing tool choice (search vs SQL vs API).
 
 - Costs: multiple LLM round-trips of latency/spend, and an eval that must
-  judge trajectories, not just answers. Apply rules/04 budgets and stopping
+  judge trajectories, not just answers. Apply [rules/04](04-agents-tools.md) budgets and stopping
   conditions; an agent that loops reformulating a hopeless query burns money
   on a question it should refuse.
 - Middle ground worth trying first: one-shot hybrid + a single
@@ -291,7 +291,7 @@ queries needing tool choice (search vs SQL vs API).
       Probe — cache writes with no expiry:
       `grep -rnE '(semantic_cache|answer_cache|response_cache)\.(set|put|add)\(' . | grep -vE 'ttl|ex=|expire'`
 - [ ] Agentic retrieval only where one-shot demonstrably fails; bounded per
-      rules/04.
+      [rules/04](04-agents-tools.md).
 - [ ] Retrieval has a calibrated relevance floor beside top-k, diversity-aware
       selection, and anchor chunks (k of n, else a rules path) for restricted
       policy categories (§4). **Medium** (High where retrieved text drives an

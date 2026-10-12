@@ -3,12 +3,12 @@
 Scope: the commands nobody commits — a sweep, a probe, a one-liner pasted from a
 checklist, a quick container copy. They are unlinted, unreviewed, and run against the
 system under test, so when they go wrong they produce a false finding **about the
-product**, or damage the thing they were inspecting. Split out of `rules/01` at v1.38.0 —
+product**, or damage the thing they were inspecting. Split out of [`rules/01`](01-safety-baseline.md) at v1.38.0 —
 its zsh, sweep and blast-radius sections became §1, §2 and §3 here. The blast-radius and
-process-table sections moved on to `rules/08` at v1.42.2, keeping their numbers,
-and the listing and selection sections (§5, §5a) to `rules/09` (· v1.43.1) the same
+process-table sections moved on to [`rules/08`](08-ad-hoc-side-effects.md) at v1.42.2, keeping their numbers,
+and the listing and selection sections (§5, §5a) to [`rules/09`](09-listing-and-selection.md) (· v1.43.1) the same
 way. Quoting itself stays in
-`rules/01` §3, which this file assumes you have read.
+[`rules/01`](01-safety-baseline.md) §3, which this file assumes you have read.
 
 ## 1. zsh is not bash — the deviations that bite *pasted* commands
 
@@ -19,8 +19,8 @@ interactive shell is zsh**. Check the operator's shell rather than assuming; the
 
 | | bash | zsh | how it fails |
 |---|---|---|---|
-| unquoted `$var` with spaces **or newlines** — incl. any `$(…)` file list | splits into words | **joins** into one argument (`rules/01` §3) | **loudly** — a usage error, exit 2, from the callee — but a *file-list* command then searches **nothing**, and empty output reads as a clean tree |
-| `$?` after a pipeline | last stage (`${PIPESTATUS[0]}` for the first) | same, but `${pipestatus[1]}` (`rules/01` §3) | **quietly** — a wrong status, read as truth |
+| unquoted `$var` with spaces **or newlines** — incl. any `$(…)` file list | splits into words | **joins** into one argument ([`rules/01`](01-safety-baseline.md) §3) | **loudly** — a usage error, exit 2, from the callee — but a *file-list* command then searches **nothing**, and empty output reads as a clean tree |
+| `$?` after a pipeline | last stage (`${PIPESTATUS[0]}` for the first) | same, but `${pipestatus[1]}` ([`rules/01`](01-safety-baseline.md) §3) | **quietly** — a wrong status, read as truth |
 | unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
 | one unmatched glob among several, inside `$(ls a b* 2>/dev/null)` | the literal word errors, the matches still print | the **whole** inner command aborts — matched files lost too; `2>/dev/null` inside `$(…)` does not silence zsh's own error | **silently** — the list is empty, and the callee picks its own scope (§2b) |
 | `cmd \| python3 - <<'PY'` (pipe **and** heredoc on fd 0) | heredoc wins, piped data **discarded** | `MULTIOS` **concatenates** them: the data runs as the program's first lines | bash **quietly** (script reads empty stdin); zsh an error naming *your data* (below), or **silently** when the data parses as code (`echo 42` runs) |
@@ -47,21 +47,21 @@ out=$(grep -rn --include='*.md' ABSENT . 2>/dev/null)  # GENUINE: stdout empty, 
 
 Same stdout, same exit code. **An audit sweep written this way cannot distinguish "the
 codebase is clean" from "my search never executed"** — a false-clean produced by the tool
-these checklists are pasted into — `sota-code-security` rules/15's instrument
+these checklists are pasted into — [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md)'s instrument
 failure arriving through the shell.
 
 Rules:
 
 - **Quote every glob you intend the *callee* to interpret** — `--include`, `--exclude`,
   `find -name`, `rsync --filter`, and any flag taking a pattern as its value. This is the
-  opposite of `rules/01` §3's advice for filenames: there you quote so *your* shell does not split;
+  opposite of [`rules/01`](01-safety-baseline.md) §3's advice for filenames: there you quote so *your* shell does not split;
   here you quote so your shell does not *expand* at all.
 - **`setopt nonomatch` is the wrong fix.** It changes global shell behaviour to hide a
   quoting bug and would mask genuine typos in real filename globs.
-- **Positive-control any sweep whose output you will read as an absence** (rules/04): run
+- **Positive-control any sweep whose output you will read as an absence** ([rules/04](04-ci-and-operational.md)): run
   it once against a pattern you know is present, and see the hit. A sweep that has never
   been shown capable of producing a hit is not evidence of a clean tree — the same
-  known-good/known-bad discipline `sota-code-security` rules/11 §7 asks of any instrument.
+  known-good/known-bad discipline [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §7 asks of any instrument.
 - Do not rely on the exit status reaching you. Measured: whether the *rest* of the command
   list still runs depends on the failing command — `grep --include=*.md x . ; echo hi`
   prints `hi`, while the same glob passed to a **builtin** (`echo`, `true`) aborts the
@@ -75,13 +75,13 @@ Rules:
 ## 2. The sweep that never ran: `grep -r` over symlinks — and the positive control that catches ANY broken sweep
 
 §1 is about a *quoting* bug stopping the command. This is the command running fine and
-**traversing less than you think**. (`--include` beside a named file is the same failure: `rules/09` §5b.)
+**traversing less than you think**. (`--include` beside a named file is the same failure: [`rules/09`](09-listing-and-selection.md) §5b.)
 
 **`-r` vs `-R` is not one rule — it depends on which `grep` you have.** Re-measured
 2026-09-09 on macOS against a target reachable **only** through the link (the first
 measurement of this table put the target inside the searched root as well, so every row
 found it by walking the real directory and the distinction was invisible — a vacuous
-fixture, `sota-testing` rules/06 §6.3):
+fixture, [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3):
 
 | binary | symlinked dir **as the argument** | symlinked dir **met in traversal** |
 |---|---|---|
@@ -123,7 +123,7 @@ printf 'control=%s  hits=%s\n' \
 ```
 
 A control of **0** means the sweep is broken and the `hits=0` beside it means nothing. This
-is `sota-code-security` rules/15 §2.2's known-good, at one-liner scale.
+is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2's known-good, at one-liner scale.
 
 **A passing control proves the instrument, not the scope.** A control drawn from *inside* the
 scope you searched passes whether or not that scope excludes the answer. Field-reported:
@@ -156,7 +156,7 @@ printf 'ARCHIVE_BYTES:%s  MEMBERS:%s  CONFIG_LINES:%s\n' \
 `CONFIG_LINES:0` alone is a finding about the kernel. `CONFIG_LINES:0` beside
 `ARCHIVE_BYTES:39802880 MEMBERS:0` is a finding about your `tar` invocation. Same rule for a
 store rather than a file — an empty result carries the store's identity *and* its inventory:
-`sota-code-security` rules/13 §6.
+[`sota-code-security` rules/13](../../sota-code-security/rules/13-context-dependent-silence.md) §6.
 
 **And where a command *reports* what it did, read the result instead.** `cargo clean`
 printed `Removed 740751 files, 75.8GiB total` — specific and authoritative — while `df`
@@ -204,7 +204,7 @@ say which.
 Choose by the question, not by fashion: a regex tool answers *"does this string appear"*;
 answering *"is this construct used"* wants an AST matcher (`ast-grep`, a language's own
 query API), because a regex generalises from whichever spelling you thought of and cannot
-follow a value into a helper (`sota-code-security` rules/15 §2.1). Use whichever is
+follow a value into a helper ([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.1). Use whichever is
 installed — and **report the tool, its flags and its exclusions in the same sentence as the
 count.**
 
@@ -234,8 +234,8 @@ shape you then quote into a finding or a commit message.
 
 **Fix:** `-n` alone for line numbers; `--replace` spelled out when you actually mean it. And
 **`cat` one hit before building an argument on a surprising search result** — the tell here
-was never the exit code, it was that the content was implausible (`sota-code-security`
-rules/15 §2.1, sixth
+was never the exit code, it was that the content was implausible ([`sota-code-security`
+rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.1, sixth
 bullet). Writing this trap into a personal rules file did **not** prevent the second
 occurrence; noticing the implausible output did.
 
@@ -294,7 +294,7 @@ git log --author="${author}" --oneline
 ```
 
 The tell is §2a's: the **result was implausible** before it was wrong — treat one far
-*larger* than expected exactly as a clean zero (`sota-code-security` rules/15 §2.1).
+*larger* than expected exactly as a clean zero ([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.1).
 
 ## 2c. A search pattern that begins with `-` is parsed as a flag
 
@@ -332,7 +332,7 @@ exit codes across four implementations, and only one of them is success.
 
 **The combination never to write** is a `-`-leading pattern **+** `2>/dev/null` **+**
 `$?` read after a pipe: the first manufactures the wrong answer, the second hides the
-reason, and the third certifies it (`rules/01` §3 for why `$?` after a pipeline is the
+reason, and the third certifies it ([`rules/01`](01-safety-baseline.md) §3 for why `$?` after a pipeline is the
 last stage's status).
 
 ## 2d. `cmd 2>/dev/null || echo "missing X"` reports your broken sweep as their defect
@@ -371,7 +371,7 @@ esac
 This library shipped the broken form in **11 files** of its own audit checklists until
 v1.42.2 — found by a reporter, not by any gate. A checklist line is a control, and a
 control that cannot distinguish "clean" from "did not run" is the silent-control-failure
-shape (`sota-code-security` rules/10).
+shape ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).
 
 ## 2e. A label that states the verdict is not evidence of the verdict
 
@@ -399,7 +399,7 @@ n=$(ps -axo command= | grep -c "[m]y-job")
 [ "$n" -eq 0 ] && echo "none running" || echo "$n still running"
 ```
 
-That is `sota-code-security` rules/14 §1 applied to your own scrollback: a claim is sited in
+That is [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §1 applied to your own scrollback: a claim is sited in
 the **consumer**, derived from the value it actually received. **The tell on review** is a
 line beginning `^`, `(` or `<-` that asserts a *state* rather than naming a *quantity*. Read
 the output above it before believing it — including your own.

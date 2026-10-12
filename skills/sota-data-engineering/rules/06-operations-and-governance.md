@@ -20,7 +20,7 @@ Code environments are easy; **data** environments are where platforms cheat.
   - *Sampled subsets* refreshed on schedule: fast dev iteration; document
     the sampling so devs don't "discover" sampling artifacts.
   - *Masked copies* where PII rules require (PII handling itself:
-    `sota-privacy-compliance`). Production PII in dev environments = HIGH.
+    [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md)). Production PII in dev environments = HIGH.
 - Synthetic-only dev data is a trap: pipelines pass on clean synthetic rows
   and die on real-world nulls/dupes/encodings. Use sampled-real (masked)
   where at all possible.
@@ -31,7 +31,7 @@ Code environments are easy; **data** environments are where platforms cheat.
 
 ## Deploying pipeline changes
 
-Pipeline code is software: version control, review, CI (rules/02, 04). The
+Pipeline code is software: version control, review, CI ([rules/02](02-pipelines-and-orchestration.md), 04). The
 extra dimension is that deploys change *tables others read*.
 
 ### Write-Audit-Publish (WAP) — default for risky changes
@@ -41,7 +41,7 @@ Never let unvalidated data become visible to consumers.
 1. **Write** the new run's output to an unpublished location: a staging
    table, an Iceberg branch (engine support varies — verify yours), or an
    unswapped table version.
-2. **Audit:** run the block-tier quality battery (rules/04) against the
+2. **Audit:** run the block-tier quality battery ([rules/04](04-data-quality-and-contracts.md)) against the
    unpublished output — plus diff-vs-current checks for logic changes (row
    counts, key metric deltas within tolerance).
 3. **Publish** atomically only on pass: branch fast-forward, partition
@@ -80,8 +80,8 @@ consumer comparison.
 
 ## Access control
 
-(Mechanics of RBAC/row policies live with the engine — `sota-databases`;
-PII classification and lawful basis — `sota-privacy-compliance`. This is the
+(Mechanics of RBAC/row policies live with the engine — [`sota-databases`](../../sota-databases/SKILL.md);
+PII classification and lawful basis — [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md). This is the
 data-platform layer.)
 
 - **Grant to roles per layer, least privilege:** consumers get read on
@@ -103,7 +103,7 @@ data-platform layer.)
 up front; retrofitting is brutal.
 
 - **Know where every subject's data lives:** PII column tags + lineage
-  (rules/04) make "find all copies" answerable. Copies include: raw,
+  ([rules/04](04-data-quality-and-contracts.md)) make "find all copies" answerable. Copies include: raw,
   staging, marts, snapshots/time-travel, DLQs, dev clones, BI extracts.
 - **Lakehouse deletion that actually deletes:** `DELETE`/`MERGE` on
   Iceberg/Delta marks rows deleted in the *current* snapshot — the bytes
@@ -117,7 +117,7 @@ up front; retrofitting is brutal.
 - **Crypto-shredding** (per-subject encryption keys; erase the key to erase
   the data) is the pragmatic answer for deep-archive/backup layers where
   rewriting is infeasible — key management discipline required
-  (`sota-secrets-management`).
+  ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)).
 - Retention policies are **enforced by scheduled jobs, not by policy
   documents**: raw N months, snapshots N days, DLQs N days, dev clones
   auto-expire. Unbounded-retention PII stores = HIGH.
@@ -126,7 +126,7 @@ up front; retrofitting is brutal.
 
 ## Observability for pipelines
 
-(Generic telemetry stack: `sota-observability`. Data-specific layer here.)
+(Generic telemetry stack: [`sota-observability`](../../sota-observability/SKILL.md). Data-specific layer here.)
 
 - **The four golden signals of data:** freshness (did it land on time?),
   volume (the right amount?), quality (checks green?), lineage-aware status
@@ -138,7 +138,7 @@ up front; retrofitting is brutal.
 - Every alert has an **owner and a runbook link**. Unrouted alerts and
   alert channels with >daily noise = the platform is unmonitored in
   practice (MEDIUM, HIGH for critical marts).
-- Track **cost** as a first-class signal (rules/05): per-pipeline spend
+- Track **cost** as a first-class signal ([rules/05](05-storage-and-performance.md)): per-pipeline spend
   trend on the same dashboard — cost regressions are incidents too.
 - SLOs documented per critical mart (freshness target + measurement) and
   reviewed; an SLO nobody measures is decoration.
@@ -151,7 +151,7 @@ up front; retrofitting is brutal.
   contacts; escalation path.
 - Runbooks live next to the code (repo `runbooks/` or per-DAG docs), are
   linked from every alert, and are updated as part of incident postmortems
-  (rules/04). A runbook last touched two years before the last incident is
+  ([rules/04](04-data-quality-and-contracts.md)). A runbook last touched two years before the last incident is
   fiction.
 - Test the runbook: a new on-call engineer should be able to execute a
   rerun from it without tribal knowledge. If only one person can operate a

@@ -71,7 +71,7 @@ worse than a plain page arguing the right thing.
   "you/your", it's an about-us page in disguise. "We provide advanced
   analytics" → "You see which feature drove the churn".
 - Quantify benefits where substantiation exists ("cuts build times ~40%" with
-  the benchmark linked — `rules/04` §1); where it doesn't, stay qualitative
+  the benchmark linked — [`rules/04`](04-claims-legal-trust.md) §1); where it doesn't, stay qualitative
   rather than inventing precision.
 
 ## 4. Message hierarchy & message match
@@ -87,13 +87,13 @@ worse than a plain page arguing the right thing.
 - Objection handling is copy's job, placed at the objection's moment:
   pricing fears near the CTA ("free tier, no card"), migration fear near the
   integration section, security questions linked to real documentation
-  (`sota-docs-workflow`), not a vague "enterprise-grade security" badge.
+  ([`sota-docs-workflow`](../../sota-docs-workflow/SKILL.md)), not a vague "enterprise-grade security" badge.
 
 ## 5. Differentiation without fiction
 
 - **Specific beats superlative**: "answers in under 50 ms at p99" out-converts
   and outlives "blazingly fast". Superlatives ("best", "#1", "fastest") are
-  objective claims requiring evidence (`rules/04` §1) — default to cutting
+  objective claims requiring evidence ([`rules/04`](04-claims-legal-trust.md) §1) — default to cutting
   them.
 - "Only/first" claims are the highest-risk sentences on the site: verify
   against the market at publish time and re-verify on a schedule; a false
@@ -104,7 +104,7 @@ worse than a plain page arguing the right thing.
   under-used and highly credible.
 - Never differentiate by naming competitors' weaknesses you can't prove —
   comparative claims carry the same substantiation burden plus higher legal
-  risk (`rules/04` §1). Factual comparison tables: `rules/02` §6.
+  risk ([`rules/04`](04-claims-legal-trust.md) §1). Factual comparison tables: [`rules/02`](02-headlines-landing-pages.md) §6.
 
 ## 6. Evidence: the proof layer
 
@@ -115,7 +115,7 @@ Rank evidence by credibility to a skeptical reader, and prefer the top:
 2. **Named customer outcomes** — "Acme cut incident response 60%" with a
    linked case study and the customer's consent.
 3. **Named testimonials** — real person, name/role/company, consented
-   (`rules/04` §3).
+   ([`rules/04`](04-claims-legal-trust.md) §3).
 4. **Logos** — with permission; a logo wall implies endorsement.
 5. **Aggregate claims** — "10,000+ teams" only if the number is real and the
    unit honest (free signups ≠ "teams trust us").
@@ -142,7 +142,7 @@ without sources, "award-winning" without naming the award.
       links to real docs, not adjective badges
 - [ ] Zero unsubstantiated superlatives/only/first claims:
       `grep -rniwE 'best|#1|leading|fastest|only|first|world-class|revolutionary' site/`
-      — every hit has evidence on file or gets cut (`rules/04`)
+      — every hit has evidence on file or gets cut ([`rules/04`](04-claims-legal-trust.md))
 - [ ] Every proof element is top-3-tier where possible; no anonymous quotes,
       sourceless stats, or unnamed awards
 - [ ] Aggregate numbers ("10,000+ users") match an internal source of truth

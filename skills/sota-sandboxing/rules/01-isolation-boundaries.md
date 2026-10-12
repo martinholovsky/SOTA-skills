@@ -98,7 +98,7 @@ protocol decoders.
   `ObjectInputStream`, `unserialize`, `Marshal` of data that crossed a trust
   boundary) is this class with a worse failure mode: a gadget chain gives code
   execution, not just memory corruption. Until it is replaced with a data-only
-  format (`sota-code-security` rules/01 §8), decode in a throwaway,
+  format ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §8), decode in a throwaway,
   low-privilege worker whose inbound and outbound network is denied — or, where
   it must talk, restricted to named peers and logged — and hand back plain data
   only. OWASP: Proactive Controls 2024 C3.
@@ -106,7 +106,7 @@ protocol decoders.
   prompts) are a named workload here, not "just the app": the weights are
   untrusted input from wherever they came from, and every prompt is attacker
   data. A weights format that executes on load (`pickle`-based checkpoints,
-  `trust_remote_code`, custom ops; `sota-ml-engineering` rules/07 §2) makes it
+  `trust_remote_code`, custom ops; [`sota-ml-engineering` rules/07](../../sota-ml-engineering/rules/07-security-governance.md) §2) makes it
   **class A**. Give the runtime its own process and memory space — never
   in-process with the API tier holding sessions and credentials — a read-only
   model mount, a writable scratch area only, no credentials, and network only on
@@ -208,7 +208,7 @@ Add one arm that runs the **representative legitimate workload** to completion
 inside the same policy — the real parser on a real input, the real job on a real
 payload — and fail the build if *that* is refused, killed or truncated. Without it
 the probe cannot tell a working sandbox from a sandbox nobody can use, and the
-difference surfaces in production instead (`sota-code-security` rules/12 §1a).
+difference surfaces in production instead ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a).
 
 **R5.2 — Test the failure mode, not just the policy:** kill the seccomp loader,
 point at a kernel without Landlock, make the proxy unreachable — the workload must

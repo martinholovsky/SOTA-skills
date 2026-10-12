@@ -38,7 +38,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
   Causes: features computed by different code in the two paths; different data
   sources; time-of-day/freshness differences; a transform applied in training
   but missing in serving.
-- Fix structurally (`rules/01`): one feature definition (feature store / shared
+- Fix structurally ([`rules/01`](01-ml-systems-architecture.md)): one feature definition (feature store / shared
   transform) used by both. Then **detect** residual skew by logging served
   feature values and comparing their distribution to training (Rules of ML #29:
   *the best way to make sure you train like you serve is to log features at
@@ -58,7 +58,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
   features before learned ones (Rules of ML). Document each feature's source,
   semantics, and freshness.
 - **Drop unused/underperforming features** — they're data dependencies that cost
-  maintenance and add skew surface (Hidden Technical Debt, `rules/01`).
+  maintenance and add skew surface (Hidden Technical Debt, [`rules/01`](01-ml-systems-architecture.md)).
 - Handle missing values and categoricals deliberately and identically in both
   paths; don't let a serving-time unseen category crash or silently mis-encode.
 
@@ -66,12 +66,12 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 
 - Version training **data** (dataset snapshot/hash, DVC/lakeFS-style or a
   warehouse snapshot) and **feature definitions** so a model's inputs are
-  reproducible (`rules/01`). "Which data trained this model?" must have an exact
+  reproducible ([`rules/01`](01-ml-systems-architecture.md)). "Which data trained this model?" must have an exact
   answer.
 - Validate data **schema and distribution** at pipeline entry (types, ranges,
   nullability, expected categories) — catch a broken upstream feed before it
   trains a bad model. (TFX-DV / Great Expectations-style; cross-ref
-  `sota-data-engineering` for pipeline contracts.)
+  [`sota-data-engineering`](../../sota-data-engineering/SKILL.md) for pipeline contracts.)
 - **Lineage records the recipe, not just the result.** A dataset version names
   its components and every transformation, augmentation, filter and merge that
   produced it, so a bad source can be traced forward to every derived set.
@@ -79,7 +79,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 - **Sign what a hash only identifies.** A content hash tells you the bytes
   changed; a signed attestation tells you who vouched for them. Put dataset
   manifests, RAG chunk sets and annotation exports under a signed attestation
-  (e.g. an in-toto Statement in a DSSE envelope, `sota-devsecops` rules/02 §2.4).
+  (e.g. an in-toto Statement in a DSSE envelope, [`sota-devsecops` rules/02](../../sota-devsecops/rules/02-provenance-signing.md) §2.4).
   In a multi-stage pipeline (pre-processing, SFT, preference tuning,
   distillation) each stage verifies the attestation and digest of the previous
   stage's output before it reads it, and stops on a mismatch. OWASP: AISVS
@@ -88,7 +88,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 ## 6. Data governance & PII
 
 - Minimize personal data in features; collect/keep only what has a lawful basis
-  and document it (`rules/07`, cross-ref `sota-privacy-compliance`). Don't use
+  and document it ([`rules/07`](07-security-governance.md), cross-ref [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md)). Don't use
   protected attributes as features unless justified and lawful; beware proxies.
 - Track data provenance/consent so you can honor deletion and explain what a
   model was trained on.
@@ -124,7 +124,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
   reconcile them against the verdicts and drop the flagged rows. Online and
   reinforcement learners, which cannot wait, cap how far the policy may move per
   update or epoch (a clipped or trust-region step), so a burst of forged rewards
-  cannot drag the model far before the verdicts land (`rules/07` §1). OWASP:
+  cannot drag the model far before the verdicts land ([`rules/07`](07-security-governance.md) §1). OWASP:
   AI-Powered Advertising Systems Security cheat sheet.
 
 ## Audit checklist
@@ -141,7 +141,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       pipeline, is freshness monitored per feature, and is a feature's serving default
       (on a store miss) the same value training saw for a missing feature?
 - [ ] If one is **not** in use: what enforces the two answers above instead? "We are
-      careful" is not a mechanism (`rules/01` §3).
+      careful" is not a mechanism ([`rules/01`](01-ml-systems-architecture.md) §3).
 
 - [ ] **Preprocessing leakage — CRITICAL** —
       `grep -rnE '\.fit(_transform)?\(' --include='*.py' . | grep -vE 'Pipeline|fit\(X_train|fit\(train'`
@@ -159,7 +159,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no data versioning found" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Data validation at entry — HIGH** —
       `grep -rniE 'great_expectations|pandera|tfdv|schema.*valid|expect_' --include='*.py' . || echo "no data validation"`
-- [ ] **PII in features — HIGH (cross-ref sota-privacy-compliance)** —
+- [ ] **PII in features — HIGH (cross-ref [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md))** —
       `grep -rniE 'email|ssn|phone|dob|address|name|ip_addr' --include='*.py' . | grep -i feature | head`
 - [ ] **Signed dataset attestations and stage-to-stage verification (§5) — HIGH** —
       `grep -rniE 'in-toto|dsse|attest' . | grep -iE 'dataset|manifest|chunk|annotation|stage' || echo "no signed dataset attestation"`

@@ -42,14 +42,14 @@ shell completions, versioning the CLI surface.
   - performs **zero** writes, including logs-on-server side effects.
 - Operations on many items: report per-item outcome and end with a summary
   (`8 updated, 1 skipped, 1 failed`); overall exit nonzero if any failed
-  (rules/02 §3); support resume rather than redo (§4).
+  ([rules/02](02-output-interaction.md) §3); support resume rather than redo (§4).
 
 ## 2a. `--self-test` for tools whose output is a verdict
 
 A linter, a health checker, a scanner, a policy gate, a `doctor` command — anything
 whose output is a **verdict** rather than an artifact — is an instrument, and an
 instrument that cannot fail returns a plausible verdict on whatever it is handed
-(`sota-code-security` rules/15 §2). From the outside a user cannot tell: *"0
+([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2). From the outside a user cannot tell: *"0
 problems found"* and *"0 checks ran"* print the same, and the second is the ordinary
 result of a bad path, an empty glob, an over-narrow filter, or a missing toolchain.
 
@@ -57,7 +57,7 @@ result of a bad path, an empty glob, an over-narrow filter, or a missing toolcha
   declared known-bad and asserts *that named check* reports it. Exit nonzero when a
   check has no known-bad, when a mutation is not caught, **or when a probe fails for
   an unrelated reason** — a non-zero exit from the wrong cause is a false pass, not
-  a catch (`sota-code-security` rules/12 §1b).
+  a catch ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1b).
 - **Print the denominator on every ordinary run**, not only under `--self-test`:
   `checked 128 files, 3 problems`. A count of zero problems is only meaningful
   beside a count of what was examined, and users read the summary line, not the
@@ -131,7 +131,7 @@ result of a bad path, an empty glob, an over-narrow filter, or a missing toolcha
   only, suppressible (`TOOL_NO_UPDATE_CHECK=1`) and disabled when `CI` is set.
 - **Self-update (`tool self update`) is opt-in only — never automatic.**
   Auto-updating a CLI changes behavior under scripts between runs; teams pin
-  versions for a reason (rules/04 §4). Self-update must verify
+  versions for a reason ([rules/04](04-distribution-docs.md) §4). Self-update must verify
   signature/checksum before replacing the binary, use atomic rename, and
   respect non-writable install locations (brew/apt-managed binaries must
   refuse and point at the package manager).
@@ -179,7 +179,7 @@ result of a bad path, an empty glob, an over-narrow filter, or a missing toolcha
   behavior. Never. If semantics must change, new flag name.
 - Human-readable default output may evolve freely **only if** `--json`/
   `--plain` exist as the stable contract — ship them early precisely to buy
-  this freedom (rules/02 §2).
+  this freedom ([rules/02](02-output-interaction.md) §2).
 - `tool --version` prints `tool X.Y.Z` (+ commit/date as extra tokens or via
   `--version --json`); parseable, no network, instant.
 
@@ -205,7 +205,7 @@ irreversible, rate-limited, paid, or requiring physical presence you cannot repe
 
 Find the substitution that exercises the same code path at zero cost — a file-based key
 instead of a hardware one, a dry-run flag, a throwaway target, `--help` parsed against the
-**installed** binary rather than remembered (and see `sota-code-security` rules/16 §2.15:
+**installed** binary rather than remembered (and see [`sota-code-security` rules/16](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.15:
 a flag that parses is not a feature that works). Run it. *Then* hand over the real command.
 
 Field-reported: a YubiKey PIN allows **three** attempts before the applet blocks and needs a

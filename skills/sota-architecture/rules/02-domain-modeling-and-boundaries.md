@@ -46,7 +46,7 @@ one entity plus value objects. Big aggregates serialize writes (lock contention)
 and bloat loads.
 
 **Rule:** One transaction modifies one aggregate. Cross-aggregate consistency is
-eventual, coordinated by domain events or sagas (rules/03). If you "need" to
+eventual, coordinated by domain events or sagas ([rules/03](03-distributed-systems-and-events.md)). If you "need" to
 update two aggregates atomically, your boundary is wrong or the invariant is
 weaker than you think — interrogate the invariant first.
 
@@ -77,13 +77,13 @@ Kafka, system clock) outside it. Frameworks, ORMs, and SDK types never appear
 in core signatures.
 
 **Rationale:** This is what makes the core testable without infrastructure and
-makes Type 1 dependencies (rules/01 §6) swappable. It is also the cheapest
+makes Type 1 dependencies ([rules/01](01-architecture-styles-and-decisions.md) §6) swappable. It is also the cheapest
 insurance against vendor lock-in you can buy.
 
 **Rule:** Ports are defined by the consumer's need, not the provider's API.
 `PaymentGateway.charge(order_id, amount) -> ChargeResult`, not a passthrough of
 Stripe's 40-field request object. A port that mirrors the vendor SDK is a leaky
-abstraction (rules/07).
+abstraction ([rules/07](07-anti-patterns-catalog.md)).
 
 ```text
         inbound adapters              core                outbound adapters
@@ -97,7 +97,7 @@ abstraction (rules/07).
 
 **Rule:** Dependencies point inward only: `adapters → application (use cases) →
 domain`. Nothing in domain imports application; nothing in application imports
-adapters. Enforce with architecture tests (rules/01 §2), not convention.
+adapters. Enforce with architecture tests ([rules/01](01-architecture-styles-and-decisions.md) §2), not convention.
 
 **Rule:** Use cases (application services) orchestrate: load aggregate, call
 domain method, persist, publish events. They contain no business rules and no
@@ -125,12 +125,12 @@ state couples your model to their release schedule.
 
 **Rule:** Aggregates record domain events (`OrderPlaced`, `QuoteExpired`) as
 part of their state changes; the application layer publishes them after commit
-(via outbox — rules/03 §4). Events are named in past tense, in ubiquitous
+(via outbox — [rules/03](03-distributed-systems-and-events.md) §4). Events are named in past tense, in ubiquitous
 language, and carry the data consumers need without forcing a callback query
 for every field ("event-carried state transfer" for hot fields, IDs for the rest).
 
 **Rule:** Events published across context boundaries are a public contract:
-versioned, schema-checked, additive-only changes by default (see rules/03 §8).
+versioned, schema-checked, additive-only changes by default (see [rules/03](03-distributed-systems-and-events.md) §8).
 Internal events can change freely; published ones cannot.
 
 ## 8. Value objects and invariant-encoding types
@@ -204,7 +204,7 @@ otherwise sentinel-free) domain.** Measure the per-field distribution before
 linting; a field where the sentinel is 99% of rows and one where it is 0% are
 different problems, and a field whose producer emits it legitimately makes such a
 lint 100% false-positive. Language-specific stdlib traps and the idiomatic
-alternative: each `sota-<language>` skill. Persistence: `sota-databases` rules/01.
+alternative: each `sota-<language>` skill. Persistence: [`sota-databases` rules/01](../../sota-databases/rules/01-choosing-and-modeling.md).
 
 ## 9. Repositories and persistence
 
@@ -262,7 +262,7 @@ the name is the smell.
 **Rule:** Don't force reads through aggregates. Queries that cross aggregates
 (dashboards, lists, search) bypass the domain model via dedicated read models /
 query services that return DTOs — read side may join freely against tables or
-projections (lightweight CQRS, see rules/03 §6). Loading 500 aggregates to
+projections (lightweight CQRS, see [rules/03](03-distributed-systems-and-events.md) §6). Loading 500 aggregates to
 render a list is the standard self-inflicted performance bug of strict-DDD
 codebases.
 
@@ -275,7 +275,7 @@ projection that a list view rendered.
 **Rule:** Cut boundaries around *capabilities and change-reasons*
 ("Pricing", "Fulfillment", "Risk"), not around nouns ("UserService",
 "OrderService", "ProductService"). Noun-services force every real use case to
-choreograph three services and own no invariant (rules/07 §13).
+choreograph three services and own no invariant ([rules/07](07-anti-patterns-catalog.md) §13).
 
 **Rule:** A bounded context should be explainable in one sentence naming its
 responsibility and its key invariants. If the sentence needs "and", consider
@@ -300,7 +300,7 @@ escaped the core — move it in and leave a call behind.
 build understands, not a convention in someone's head. Coverage, mutation, and
 complexity tooling then measure the core only. Measuring the untestable shell
 distorts every number in both directions and buries the signal (see
-`sota-testing` rules/07 §7.2 and rules/06 §6.3).
+[`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.2 and [rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
 
 **Rationale:** this is the precondition for any test metric meaning anything.
 "62% coverage" over a codebase where a third is an untestable UI shell is not
@@ -319,7 +319,7 @@ GOOD: core:  invoice.limit_status(customer) -> OverLimit | Ok   # unit-tested
 ```
 
 **Rule:** The shell still needs *some* verification — a small number of
-end-to-end or smoke tests that prove it is wired up (`sota-testing` rules/05),
+end-to-end or smoke tests that prove it is wired up ([`sota-testing` rules/05](../../sota-testing/rules/05-e2e-and-ui.md)),
 not unit metrics. And treat shell growth as an **architecture** finding: if the
 untestable region keeps expanding, logic is leaking outward, and no amount of
 test discipline will reach it.

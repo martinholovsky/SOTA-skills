@@ -51,7 +51,7 @@ ROLES OWNER | EDITOR | VIEWER`) are the analogue of file 06's roles:
   `ON DATABASE`, lowest sufficient role (`VIEWER` for read-only consumers,
   `EDITOR` for data without IAM rights; `OWNER` only for the migration/
   bootstrap path — it can edit users and access methods). One user per
-  service, credentials from the secret manager (see **sota-secrets-management**),
+  service, credentials from the secret manager (see **[sota-secrets-management](../../sota-secrets-management/SKILL.md)**),
   rotated without redeploy.
 
 ## Parameterized SurrealQL
@@ -184,7 +184,7 @@ surreal start --deny-all \
   flags in the docs for your version) or front with a TLS proxy on a private
   network; never send root/system credentials or tokens over cleartext.
 - Root/system/user credentials, JWT signing keys: secret manager, per-service,
-  rotatable — full doctrine in **sota-secrets-management**. No `--pass` values
+  rotatable — full doctrine in **[sota-secrets-management](../../sota-secrets-management/SKILL.md)**. No `--pass` values
   in compose files, shell history, or CI logs.
 
 ## Indexes & query planner

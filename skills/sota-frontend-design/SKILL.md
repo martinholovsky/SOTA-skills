@@ -28,19 +28,19 @@ When creating or modifying UI (components, pages, styles, animations):
 1. **Lock the system before the screens.** Establish or locate the project's tokens first: type
    scale, color ramps (OKLCH, semantic layer), 4/8pt space scale, radius scale, depth language,
    duration/easing tokens. If a design system exists, conform to it — extend tokens rather than
-   inlining values. Read `rules/01` + `rules/03` before writing the first stylesheet.
+   inlining values. Read [`rules/01`](rules/01-typography-and-color.md) + [`rules/03`](rules/03-design-systems-components.md) before writing the first stylesheet.
 2. **Default stack:** semantic HTML → CSS grid/flex with `gap` → container queries for component
    responsiveness → logical properties → cascade layers. Headless library or native element
    (`<dialog>`, `popover`, `<details>`) for any interactive widget before hand-rolling.
 3. **Build all states, not the happy path.** Every interactive component ships the 9-state
    contract (hover, focus-visible, active, disabled, loading, error, empty, skeleton + default);
-   every data view ships loading/error/empty/partial/ideal (`rules/03 §4`, `rules/04`).
+   every data view ships loading/error/empty/partial/ideal (`rules/03 §4`, [`rules/04`](rules/04-ux-patterns.md)).
 4. **Accessibility is built in, not bolted on:** labels, keyboard model per APG, focus management,
    live regions, contrast verified in both themes, `prefers-reduced-motion` honored from the
-   first animation (`rules/05`, `rules/06 §6`).
+   first animation ([`rules/05`](rules/05-accessibility.md), `rules/06 §6`).
 5. **Motion is purposeful:** every animation justifies itself as orientation, feedback,
    continuity, or status; transform/opacity only; durations 200–300ms enter / faster exit
-   (`rules/06`).
+   ([`rules/06`](rules/06-motion-design.md)).
 6. **Be distinctive on purpose:** make ≥ 3 deliberate global design decisions (typeface with
    character, OKLCH accent, signature element) and apply the anti-generic kill list
    (`rules/07 §6`). Spend personality on marketing/empty surfaces; keep product surfaces calm.
@@ -58,7 +58,7 @@ When reviewing existing UI code, designs, or rendered pages:
    click-handler `<div>`s, `:focus` without `:focus-visible`, `will-change` in static CSS,
    physical properties (`margin-left`) in new code.
 2. **Per-domain pass:** walk each rules file's "Audit checklist" section against the code.
-   Prioritize `rules/05` (accessibility) — it carries legal weight — then `rules/04` (UX states),
+   Prioritize [`rules/05`](rules/05-accessibility.md) (accessibility) — it carries legal weight — then [`rules/04`](rules/04-ux-patterns.md) (UX states),
    then visual/system/motion.
 3. **Runtime verification where possible** (Playwright/browser): keyboard-only task completion,
    320px reflow, 200% zoom, both themes, reduced-motion emulation, axe scan. Static review alone
@@ -97,13 +97,13 @@ were NOT verified (e.g., no screen-reader pass performed) so coverage is honest.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-typography-and-color.md` | Choosing/reviewing type scales, fluid type with clamp(), line length/height, variable fonts and loading, OKLCH palettes and ramps, contrast math (4.5:1 / 3:1), semantic color tokens, dark mode architecture |
-| `rules/02-layout-spacing-responsive.md` | Spacing systems (4/8pt, gap-over-margin), CSS grid/subgrid layouts, container queries, breakpoints, logical properties/RTL, `:has()`, nesting, cascade layers, anchor positioning/popover, scrolling and overflow |
-| `rules/03-design-systems-components.md` | Design tokens (W3C DTCG format, three tiers), theming, component API design (composition, controlled/uncontrolled, asChild), the 9-state completeness contract, headless UI layering, Storybook isolation, versioning |
-| `rules/04-ux-patterns.md` | Forms (validation timing, autocomplete/inputmode, error recovery), loading strategy (skeletons vs spinners, optimistic UI), empty/error states, destructive actions (undo > confirm), navigation, touch targets/gestures, feedback timing |
-| `rules/05-accessibility.md` | Anything a11y: semantic HTML vs ARIA, keyboard/focus management, focus-visible styling, dialogs/focus traps, live regions, screen-reader test matrix, WCAG 2.2 specifics, top-10 audit failures ranked, severity mapping |
-| `rules/06-motion-design.md` | Any animation/transition: purpose test, duration/easing numbers, springs, stagger/choreography, CSS vs WAAPI vs FLIP vs Motion, View Transitions, scroll-driven animation, transform/opacity-only perf, will-change, prefers-reduced-motion |
-| `rules/07-visual-craft-distinctiveness.md` | Visual hierarchy and scan paths, Gestalt/alignment, depth languages (borders/shadows/surfaces), icon and detail craft, avoiding generic "AI slop" aesthetics, density calibration, microcopy, visual-drift auditing |
+| [`rules/01-typography-and-color.md`](rules/01-typography-and-color.md) | Choosing/reviewing type scales, fluid type with clamp(), line length/height, variable fonts and loading, OKLCH palettes and ramps, contrast math (4.5:1 / 3:1), semantic color tokens, dark mode architecture |
+| [`rules/02-layout-spacing-responsive.md`](rules/02-layout-spacing-responsive.md) | Spacing systems (4/8pt, gap-over-margin), CSS grid/subgrid layouts, container queries, breakpoints, logical properties/RTL, `:has()`, nesting, cascade layers, anchor positioning/popover, scrolling and overflow |
+| [`rules/03-design-systems-components.md`](rules/03-design-systems-components.md) | Design tokens (W3C DTCG format, three tiers), theming, component API design (composition, controlled/uncontrolled, asChild), the 9-state completeness contract, headless UI layering, Storybook isolation, versioning |
+| [`rules/04-ux-patterns.md`](rules/04-ux-patterns.md) | Forms (validation timing, autocomplete/inputmode, error recovery), loading strategy (skeletons vs spinners, optimistic UI), empty/error states, destructive actions (undo > confirm), navigation, touch targets/gestures, feedback timing |
+| [`rules/05-accessibility.md`](rules/05-accessibility.md) | Anything a11y: semantic HTML vs ARIA, keyboard/focus management, focus-visible styling, dialogs/focus traps, live regions, screen-reader test matrix, WCAG 2.2 specifics, top-10 audit failures ranked, severity mapping |
+| [`rules/06-motion-design.md`](rules/06-motion-design.md) | Any animation/transition: purpose test, duration/easing numbers, springs, stagger/choreography, CSS vs WAAPI vs FLIP vs Motion, View Transitions, scroll-driven animation, transform/opacity-only perf, will-change, prefers-reduced-motion |
+| [`rules/07-visual-craft-distinctiveness.md`](rules/07-visual-craft-distinctiveness.md) | Visual hierarchy and scan paths, Gestalt/alignment, depth languages (borders/shadows/surfaces), icon and detail craft, avoiding generic "AI slop" aesthetics, density calibration, microcopy, visual-drift auditing |
 
 Multiple domains usually apply — e.g., a new dialog touches 03 (API), 04 (confirm/undo),
 05 (focus trap), 06 (enter/exit motion). Read every file whose trigger matches.

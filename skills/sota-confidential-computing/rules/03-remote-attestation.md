@@ -3,10 +3,10 @@
 Scope: the attestation architecture (RATS roles, evidence flow, verification policy),
 the attest-then-release pattern, verifier selection, measurement/reference-value
 management, attested channels, and re-attestation. This file does NOT own: choosing
-the TEE technology that produces the evidence (rules/02), threat-model fit (rules/01),
-wiring attestation into Kubernetes pod lifecycles (rules/04), the secret store the
-released keys live in (sota-secrets-management rules/02), or build-time provenance
-(sota-devsecops rules/02). Remote attestation is the mechanism that makes a TEE
+the TEE technology that produces the evidence ([rules/02](02-tee-technologies.md)), threat-model fit ([rules/01](01-threat-model-and-selection.md)),
+wiring attestation into Kubernetes pod lifecycles ([rules/04](04-confidential-kubernetes.md)), the secret store the
+released keys live in ([sota-secrets-management rules/02](../../sota-secrets-management/rules/02-storage-backends.md)), or build-time provenance
+([sota-devsecops rules/02](../../sota-devsecops/rules/02-provenance-signing.md)). Remote attestation is the mechanism that makes a TEE
 trustworthy to anyone outside it; a TEE without verified attestation is encrypted
 memory plus a pinky promise.
 
@@ -67,7 +67,7 @@ policy are pinned by the *workload owner* (baked into the workload or its config
 which is itself measured).
 
 **R1.2 — Attestation Results are credentials: check signature, audience, expiry,
-and replay window** like any token (token-validation depth: sota-code-security).
+and replay window** like any token (token-validation depth: [sota-code-security](../../sota-code-security/SKILL.md)).
 
 ---
 
@@ -77,7 +77,7 @@ The purpose of attestation is to gate something. The canonical enforcement point
 **key release**: the workload's data keys, API credentials, or disk-encryption keys
 exist only in a broker (KBS, cloud KMS with attestation-conditioned release policy,
 HSM-backed service) and are released ONLY after Evidence verifies against policy.
-Storage/rotation of those secrets is sota-secrets-management rules/01–02; this rule
+Storage/rotation of those secrets is [sota-secrets-management rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md)–02; this rule
 owns the *condition* on release.
 
 ```
@@ -106,7 +106,7 @@ the release.
 
 **R2.3 — Everything downstream of release is inside the trust boundary.** If the
 released key is then written to a host-visible volume or env var, the TEE bought
-nothing. Key handling inside the workload: sota-secrets-management rules/03.
+nothing. Key handling inside the workload: [sota-secrets-management rules/03](../../sota-secrets-management/rules/03-application-patterns.md).
 
 **R2.4 — Fail closed.** Verifier unreachable / policy mismatch / TCB stale ⇒ no
 key, workload does not start degraded. Availability mitigations are §4 (verifier
@@ -175,7 +175,7 @@ Signature validity authenticates the *platform*; reference values authenticate t
 |---|---|---|
 | Endorsement plumbing (vendor cert caching, TCB info) | Managed for you | You operate collateral caching/refresh |
 | Trust | Verifier operator can vouch falsely — you trust the vendor/cloud with the verdict | Verdict stays in your trust domain; you must trust your own code + ops |
-| Cloud-operator independence | Attesting a cloud TEE via the *same* cloud's verifier weakens the "protect from the cloud operator" story — acceptable only if that's not your threat (rules/01) | Independent of the infrastructure operator |
+| Cloud-operator independence | Attesting a cloud TEE via the *same* cloud's verifier weakens the "protect from the cloud operator" story — acceptable only if that's not your threat ([rules/01](01-threat-model-and-selection.md)) | Independent of the infrastructure operator |
 | Policy expressiveness | Vendor's policy language, per-tenant policies | Arbitrary; you own correctness of appraisal logic |
 | Availability coupling | Attestation (and thus key release, boot, scale-up) depends on an external endpoint — model outage = cannot start workloads | You own HA; run the verifier redundantly, *outside* the fleet it attests |
 | Air-gapped / sovereignty | Usually excluded | The only option; plan offline endorsement/reference-value sync |
@@ -210,15 +210,15 @@ unverified".
 
 **R5.2 — Reference values must come from the build system, not from a "known-good"
 deployment.** Measuring a running instance and pinning that hash launders whatever
-was running into policy. Reproducible builds (sota-devsecops rules/02, rules/04)
+was running into policy. Reproducible builds ([sota-devsecops rules/02](../../sota-devsecops/rules/02-provenance-signing.md), [rules/04](../../sota-devsecops/rules/04-build-containers.md))
 let CI compute the expected measurement from source and publish it, signed, to the
 Reference Value Provider (Trustee's RVPS; CoRIM is the emerging IETF interchange
 format for reference values — still an Internet-Draft, verify status at the IETF
 datatracker before standardizing on it).
 
 **R5.3 — Build attestation and runtime attestation are complementary; you need
-BOTH.** SLSA provenance proves how an artifact was *built* (sota-devsecops
-rules/02); remote attestation proves what is *running now* on trustworthy
+BOTH.** SLSA provenance proves how an artifact was *built* ([sota-devsecops
+rules/02](../../sota-devsecops/rules/02-provenance-signing.md)); remote attestation proves what is *running now* on trustworthy
 hardware. Provenance without RA can't see what the host actually launched; RA
 without provenance verifies a measurement nobody can trace to reviewed source.
 The reference-value pipeline is the join point.
@@ -260,7 +260,7 @@ draft-fossati-tls-attestation line), but as of mid-2026 no standard is published
 treat every RA-TLS implementation as a project-specific profile (TEE SDKs and confidential-container/K8s stacks ship
 their own; verify each project's current mechanism at its docs). Interop between
 two vendors' "RA-TLS" is not implied. Plain-TLS trust anchors and PKI hygiene:
-sota-network-security.
+[sota-network-security](../../sota-network-security/SKILL.md).
 
 ---
 
@@ -269,15 +269,15 @@ sota-network-security.
 **R7.1 — Attestation is point-in-time.** It proves state at Evidence-generation;
 it does not detect later runtime compromise *inside* the TEE. Re-attest on:
 restart (always), key rotation / lease renewal (make releases leased, not
-perpetual — align with sota-secrets-management rules/01 dynamic-secret TTLs),
+perpetual — align with [sota-secrets-management rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md) dynamic-secret TTLs),
 policy or reference-value change, TCB recovery events, and a fixed schedule.
 "Attested once at deploy, trusted for the pod's lifetime (weeks)" is Medium-High
 depending on data sensitivity. Attached accelerators follow the same rule: a GPU
 reset, reassignment or CC-mode change voids the cached GPU verdict, and each
-workload or key release re-attests (rules/02 R4.3).
+workload or key release re-attests ([rules/02](02-tee-technologies.md) R4.3).
 
-**R7.2 — Wire attestation verdicts into detection** (sota-detection-engineering
-rules/01, rules/04). Alert on: any appraisal failure in prod (someone or something
+**R7.2 — Wire attestation verdicts into detection** ([sota-detection-engineering
+rules/01](../../sota-detection-engineering/rules/01-detection-engineering-discipline.md), [rules/04](../../sota-detection-engineering/rules/04-alerting-triage-soc-soar.md)). Alert on: any appraisal failure in prod (someone or something
 launched a non-conforming image — treat as a security signal, not an ops blip),
 debug-flagged Evidence, TCB-grade downgrades, Evidence from unknown platforms,
 verifier policy changes, and grace-window expiry. Log full appraisal transcripts

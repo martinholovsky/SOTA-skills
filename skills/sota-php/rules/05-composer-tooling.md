@@ -22,7 +22,7 @@ composer check-platform-reqs   # ext-* and PHP version actually present?
 ```
 
   `--no-dev` keeps test/dev tooling out of the artifact (attack surface +
-  size); `--optimize-autoloader` see `rules/06` §5.
+  size); `--optimize-autoloader` see [`rules/06`](06-performance-runtime.md) §5.
 - **Platform requirements:** declare the PHP floor and every extension in
   `require` (`"php": "^8.3", "ext-pdo": "*", "ext-sodium": "*"`); set
   `config.platform.php` to the floor so resolution on a dev machine with a
@@ -112,7 +112,7 @@ composer check-platform-reqs   # ext-* and PHP version actually present?
   - **erusev/parsedown** (1.8.0): safe mode is off unless `setSafeMode(true)` is called;
     without it raw HTML and `javascript:` links pass through.
   - **dompdf** (3.1.6): `isRemoteEnabled` and `isPhpEnabled` default to `false`. Keep them
-    off; turning on remote fetching for HTML a user influences is SSRF (`rules/03`).
+    off; turning on remote fetching for HTML a user influences is SSRF ([`rules/03`](03-files-deserialization-ssrf.md)).
 - **Documentation samples are demos, not production code.** A README or docblock snippet
   carries demo settings into your code: Guzzle's own `Client` constructor docblock shows
   `'timeout' => 0` against an `http://` base URI. Before pasting a sample, re-derive every
@@ -195,9 +195,9 @@ parameters:
   syntax on the same runner. Either way: data providers over copy-paste, one
   behavior per test, no order dependence, `assertSame` over `assertEquals`
   (strict comparison). Test *strategy* — suite shape, doubles, flake policy —
-  lives in `sota-testing`.
+  lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - Coverage needs a driver: pcov (fast, coverage-only) or Xdebug in coverage
-  mode — CI-only; never on prod (`rules/06` §6).
+  mode — CI-only; never on prod ([`rules/06`](06-performance-runtime.md) §6).
 - Mutation testing (e.g. Infection) as a periodic quality probe on core
   domains, not a per-PR gate.
 - **Property-test and fuzz the parsers.** Eris (maintained, PHPUnit 10–13) generates inputs
@@ -242,7 +242,7 @@ vendor/bin/phpunit                  # or: vendor/bin/pest
 - Nightly job re-runs `composer audit` (advisories land independent of
   commits).
 - Pipeline/runner/secrets hardening (pinned actions, OIDC, SLSA) →
-  sota-devsecops; this file owns only the PHP-specific gates.
+  [sota-devsecops](../../sota-devsecops/SKILL.md); this file owns only the PHP-specific gates.
 
 ## Audit checklist
 

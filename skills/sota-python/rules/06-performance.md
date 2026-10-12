@@ -134,7 +134,7 @@ Caveats that bite:
 | Blocking-library I/O, moderate fan-out | **ThreadPoolExecutor** | GIL released during I/O; simplest retrofit |
 | CPU-bound pure Python | **ProcessPoolExecutor** / multiprocessing | GIL serializes threads; processes get real parallelism |
 | CPU-bound numpy/polars | often **none needed** | native code releases the GIL / is internally parallel |
-| CPU-bound on a free-threaded build (officially supported since 3.14, PEP 779) | threads become viable | measure first; see rules/01 §8 |
+| CPU-bound on a free-threaded build (officially supported since 3.14, PEP 779) | threads become viable | measure first; see [rules/01](01-tooling-project-setup.md) §8 |
 
 - GIL reality (default build): threads never speed up pure-Python CPU work; they *do* help
   I/O and GIL-releasing extensions. Don't "add threads" to a CPU loop and call it done.
@@ -146,7 +146,7 @@ Caveats that bite:
 - Subinterpreters shipped in 3.14 (PEP 734): `concurrent.interpreters` +
   `concurrent.futures.InterpreterPoolExecutor` — share a process, isolated GILs. A real
   middle ground now, but ecosystem support is young; benchmark before betting on it.
-- Mixing: asyncio app with CPU spikes → `loop.run_in_executor(process_pool, ...)` (rules/04 §3).
+- Mixing: asyncio app with CPU spikes → `loop.run_in_executor(process_pool, ...)` ([rules/04](04-async.md) §3).
 
 ## 6. Startup latency: lazy imports
 
@@ -167,7 +167,7 @@ def report_cmd(path: str) -> None:
 
 - Measure with `python -X importtime -c "import mypkg" 2>&1 | sort -t'|' -k2 -rn | head` or
   `tuna` for visualization.
-- Combine with `TYPE_CHECKING` imports for annotation-only deps (rules/02 §10).
+- Combine with `TYPE_CHECKING` imports for annotation-only deps ([rules/02](02-typing-correctness.md) §10).
 - PEP 810 explicit lazy imports (`lazy import x`, `-X lazy_imports`) are added in 3.15;
   until your floor is 3.15, function-local imports are the idiom.
   Don't lazy-import inside hot loops (lookup cost per call is small but real —
@@ -175,7 +175,7 @@ def report_cmd(path: str) -> None:
 
 ## 7. Memory
 
-- `slots=True` dataclasses (rules/03 §7) for objects allocated in volume.
+- `slots=True` dataclasses ([rules/03](03-idioms-pitfalls.md) §7) for objects allocated in volume.
 - Generators/streaming over materializing: read files with iteration, not `.read()` of
   multi-GB files; `json` → `ijson`/msgspec streaming for huge payloads.
 - `sys.intern()` for millions of repeated strings (parser tokens, column values).
@@ -187,9 +187,9 @@ def report_cmd(path: str) -> None:
 
 CPU profiles often blame the interpreter when the real cost is chatty I/O or slow codecs:
 
-- **Batch the round trips.** One query returning 1,000 rows beats 1,000 queries (rules/07
+- **Batch the round trips.** One query returning 1,000 rows beats 1,000 queries ([rules/07](07-frameworks-testing.md)
   N+1); one `executemany`/`COPY`/`bulk_create` beats row-at-a-time inserts; pipeline redis
-  commands; batch S3/HTTP calls behind a concurrency-bounded TaskGroup (rules/04 §9).
+  commands; batch S3/HTTP calls behind a concurrency-bounded TaskGroup ([rules/04](04-async.md) §9).
 - **JSON:** stdlib `json` is the slow path. For hot serialization use `msgspec` (fastest,
   typed decode in one step) or `orjson`. Typed `msgspec.Struct` decode replaces
   json.loads + pydantic validation at a fraction of the cost when the schema is fixed —
@@ -207,7 +207,7 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
 ## 9. Don'ts
 
 - Don't micro-optimize cold code; don't trade clarity for unmeasured wins.
-- Don't catch the "optimization" of removing logging — fix lazy formatting instead (rules/03 §11).
+- Don't catch the "optimization" of removing logging — fix lazy formatting instead ([rules/03](03-idioms-pitfalls.md) §11).
 - Don't hand-roll C extensions before trying polars/numpy/numba/Rust-via-pyo3 — maintenance
   cost dwarfs the speedup.
 - Don't benchmark with `time.time()` — `time.perf_counter()` or pyperf.

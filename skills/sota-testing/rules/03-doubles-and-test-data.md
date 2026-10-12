@@ -32,7 +32,7 @@ Decision discipline:
 
 A double replaces a *port* — the seam where your system talks to another
 system (DB, HTTP API, broker, clock, filesystem, payment provider). Doubling
-anything inside the hexagon couples tests to internal structure (`rules/02`
+anything inside the hexagon couples tests to internal structure ([`rules/02`](02-test-design-quality.md)
 §2.1) and turns every refactor into test archaeology.
 
 ```java
@@ -51,7 +51,7 @@ assertThat(paymentGatewaySpy.charges()).containsExactly(chargeOf(100, "EUR"));
 If unit tests are drowning in mocks, the fix is architectural, not test-side:
 separate computation from I/O (functional core, imperative shell). Pure logic
 needs zero doubles; the thin shell gets a few integration tests with real
-dependencies (`rules/04`).
+dependencies ([`rules/04`](04-integration-contract-system.md)).
 
 ## 3.3 Don't mock what you don't own
 
@@ -67,7 +67,7 @@ Instead:
 2. **Double the port** in unit tests (trivially small surface).
 3. **Test the adapter for real**: a thin integration suite runs the real
    adapter against the real dependency (sandbox account, containerized
-   service, recorded-and-verified HTTP) — see `rules/04`.
+   service, recorded-and-verified HTTP) — see [`rules/04`](04-integration-contract-system.md).
 
 ## 3.4 Fakes must be verified against the real thing
 
@@ -102,7 +102,7 @@ Corollary: **in-memory lookalikes of infrastructure are fakes you didn't
 write and can't verify.** SQLite standing in for Postgres, a fake Redis, an
 "embedded-compatible" broker — different SQL dialects, transaction semantics,
 ordering guarantees. Use them only for pure-logic speed wins where semantics
-provably don't matter; otherwise containerize the real one (`rules/04` §4.1).
+provably don't matter; otherwise containerize the real one ([`rules/04`](04-integration-contract-system.md) §4.1).
 
 ## 3.5 Test data: builders/factories over fixture files
 
@@ -159,7 +159,7 @@ For integration suites against a real DB:
   (countries, currencies, plans) can load once per suite, treated as
   immutable. Anything a test mutates must be created by that test in its own
   scope (transaction/schema/unique keys — isolation mechanics in
-  `rules/04` §4.3).
+  [`rules/04`](04-integration-contract-system.md) §4.3).
 - **Satisfy referential integrity inside builders**, not by disabling it.
   Turning off FK checks in tests means tests pass against a database that
   production will refuse. `an_invoice()` should transparently create (or
@@ -180,7 +180,7 @@ distributions, scale). But:
   Re-identification via joins/rare-values is real; GDPR-style obligations
   follow personal data into your test environment. Treat "anonymized" prod
   dumps as restricted unless a documented, reviewed anonymization pipeline
-  exists (defer specifics to `sota-databases` / privacy policy; do not
+  exists (defer specifics to [`sota-databases`](../../sota-databases/SKILL.md) / privacy policy; do not
   hand-roll one inside a test PR).
 - **Never load prod dumps into the per-PR test path.** Size kills speed;
   drift kills determinism; a refreshed dump silently changes test outcomes.
@@ -189,7 +189,7 @@ distributions, scale). But:
   unit/integration suites.
 - **Synthesize from production's *shape*** instead where possible: use prod
   to learn the distributions and edge cases, encode them as builder cases or
-  property-based generators (`rules/06`).
+  property-based generators ([`rules/06`](06-property-fuzzing-mutation.md)).
 
 ## 3.7a Fixtures must cross the thresholds the code branches on
 
@@ -209,7 +209,7 @@ exists, the suite is green, and the branch only ever runs in production.
 
 The failure class this belongs to — correct on small inputs, broken or
 pathological on large, with nothing in the output saying so — is
-`sota-code-security` rules/13 §1.
+[`sota-code-security` rules/13](../../sota-code-security/rules/13-context-dependent-silence.md) §1.
 
 ## 3.8 Doubles hygiene
 

@@ -6,7 +6,7 @@ the IR lifecycle that turns an alert into a contained, learned-from incident,
 and the adversary-emulation discipline that proves your detections actually fire
 *before* a real adversary tests them for you. Read this when building IR
 capability, writing playbooks, handling an incident, or setting up continuous
-detection validation. Also the **AUDIT-mode entry point** alongside rules/04.
+detection validation. Also the **AUDIT-mode entry point** alongside [rules/04](04-alerting-triage-soc-soar.md).
 
 ## 1. The IR lifecycle
 
@@ -20,14 +20,14 @@ csrc.nist.gov). PICERL remains a fine operational mnemonic; map it onto the
 CSF-aligned model:
 
 - **Preparation / Govern+Identify+Protect** — the work done *before*: plan,
-  roles, authority-to-contain, contacts, tooling, logging (rules/02), playbooks,
+  roles, authority-to-contain, contacts, tooling, logging ([rules/02](02-telemetry-siem-data-layer.md)), playbooks,
   tabletops. Most incidents are won or lost here.
-- **Identification / Detect** — your detections, hunts, and deception (rules/03,
-  /05) surface it; triage (rules/04) confirms scope and severity.
+- **Identification / Detect** — your detections, hunts, and deception ([rules/03](03-rule-languages-engines.md),
+  /05) surface it; triage ([rules/04](04-alerting-triage-soc-soar.md)) confirms scope and severity.
 - **Containment / Respond** — stop the spread: isolate, disable, block, revoke.
   Short-term (stop bleeding) then long-term (sustainable lockdown).
 - **Eradication / Respond** — remove the foothold: kill persistence, rotate
-  compromised creds (sota-secrets-management), patch the entry vector.
+  compromised creds ([sota-secrets-management](../../sota-secrets-management/SKILL.md)), patch the entry vector.
 - **Recovery / Recover** — restore to known-good, monitor for re-entry, validate
   the threat is gone before declaring done.
 - **Lessons learned / Recover→Govern** — blameless PIR (§5) that feeds new
@@ -38,14 +38,14 @@ CSF-aligned model:
 - **Playbooks per incident type** (account compromise, ransomware, cloud-key
   abuse, data exfil, K8s/container compromise, LLM/agent abuse) — concrete,
   step-by-step, with decision points and named roles. Distinct from a *runbook*
-  (rules/04, per-alert triage); a playbook governs the whole incident.
+  ([rules/04](04-alerting-triage-soc-soar.md), per-alert triage); a playbook governs the whole incident.
   - **LLM/agent abuse** needs steps a generic playbook lacks. Preserve the action
-    and guardrail logs first (sota-sandboxing rules/05 R4.4; rules/02 §7), then:
+    and guardrail logs first ([sota-sandboxing rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md) R4.4; [rules/02](02-telemetry-siem-data-layer.md) §7), then:
     disable the abused tool or connector at the broker, halt every instance of
-    the agent (sota-sandboxing rules/05 R4.3, the fleet halt), rotate every
+    the agent ([sota-sandboxing rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md) R4.3, the fleet halt), rotate every
     credential the agent could reach, purge or quarantine persistent memory
     entries written during the suspect window (a poisoned memory re-injects in
-    every later session — sota-code-security rules/08 §1), and roll the system
+    every later session — [sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md) §1), and roll the system
     prompt, model and guardrail configuration back to the last known-good
     version. Restoring the agent is a reviewed step, not a timeout.
     OWASP: AISVS 12.1.2; LLMSVS 8.1; DSOMM.
@@ -53,7 +53,7 @@ CSF-aligned model:
     and delete their embeddings from every index and replica. Invalidate the
     response cache and any retrieval or semantic cache that may hold answers
     built from them. Join the retrieval logs (which chunk IDs were served to
-    whom — sota-llm-engineering rules/05) against the poisoned chunk IDs to list
+    whom — [sota-llm-engineering rules/05](../../sota-llm-engineering/rules/05-production-engineering.md)) against the poisoned chunk IDs to list
     the users and sessions that received tainted answers, and decide whether to
     notify them. Re-index from a verified clean source rather than deleting
     in place and hoping nothing was missed. OWASP: RAG Security cheat sheet.
@@ -61,7 +61,7 @@ CSF-aligned model:
   the playbooks by name and priority, with the business continuity plan's
   recovery target for each: they usually cannot be patched or rebuilt quickly,
   so containment (isolate the enclave) and recovery order must be decided in
-  advance. Their compensating monitoring is rules/02 §1. OWASP: Legacy
+  advance. Their compensating monitoring is [rules/02](02-telemetry-siem-data-layer.md) §1. OWASP: Legacy
   Application Management cheat sheet.
 - **Severity classification** drives the response tier (who's paged, how fast,
   whether leadership/legal/comms engage). Define levels by business impact +
@@ -75,7 +75,7 @@ CSF-aligned model:
 You cannot collect in the moment what you didn't prepare to collect.
 
 - **Forensic readiness** — sufficient, integrity-protected, long-retained
-  telemetry (rules/02) and the ability to snapshot volatile state (memory, disk,
+  telemetry ([rules/02](02-telemetry-siem-data-layer.md)) and the ability to snapshot volatile state (memory, disk,
   container/pod, cloud resource) before it's destroyed. Cloud/container
   ephemerality is the trap: a terminated pod or scaled-down instance takes its
   evidence with it — snapshot/preserve *before* containment kills it.
@@ -94,9 +94,9 @@ You cannot collect in the moment what you didn't prepare to collect.
   (network-quarantine) instead where you need the box live.
 - **Scope before you eradicate.** Eradicating one host while the adversary holds
   three others just tips them off. Use the incident's correlated entities
-  (rules/04) and a hunt (rules/05) to size blast radius first.
+  ([rules/04](04-alerting-triage-soc-soar.md)) and a hunt ([rules/05](05-hunting-intel-deception.md)) to size blast radius first.
 - **Rotate all potentially exposed credentials** during eradication (assume the
-  adversary took everything reachable) — coordinate with sota-secrets-management.
+  adversary took everything reachable) — coordinate with [sota-secrets-management](../../sota-secrets-management/SKILL.md).
 - **Recovery requires monitoring for re-entry** — heightened detection on the
   affected entities for a defined window; adversaries commonly return.
 
@@ -106,8 +106,8 @@ You cannot collect in the moment what you didn't prepare to collect.
   suppresses the honest disclosure that makes the review useful, and the next
   incident will be hidden longer.
 - **Outputs that feed the loop:** for each "we didn't detect this early enough,"
-  a new detection hypothesis (rules/01); for each "the runbook was wrong," a
-  runbook fix (rules/04); for each "we couldn't get the evidence," a forensic-
+  a new detection hypothesis ([rules/01](01-detection-engineering-discipline.md)); for each "the runbook was wrong," a
+  runbook fix ([rules/04](04-alerting-triage-soc-soar.md)); for each "we couldn't get the evidence," a forensic-
   readiness gap (§3). A PIR that produces no detection/process changes was
   theater.
 - **Track timeline metrics** (time to detect, contain, eradicate, recover) to
@@ -121,7 +121,7 @@ You cannot collect in the moment what you didn't prepare to collect.
 - Exercise the *decisions* (who can isolate prod? who calls legal? when do we
   notify?) and the *contacts* (are they current?). Run them regularly; rotate
   scenarios to match your top threats (threat modeling) and recent intel
-  (rules/05).
+  ([rules/05](05-hunting-intel-deception.md)).
 
 ## 7. Detection validation via adversary emulation (for defense)
 
@@ -135,12 +135,12 @@ Tools (verify current status at each project):
 - **Atomic Red Team** (Red Canary) — a large library of small, ATT&CK-mapped
   "atomic" tests (~1,000+ tests across 200+ techniques). Run one atomic, confirm
   the mapped detection fires. The unit-test of detections; ideal for CI
-  regression (rules/01 §2). github.com/redcanaryco/atomic-red-team.
+  regression ([rules/01](01-detection-engineering-discipline.md) §2). github.com/redcanaryco/atomic-red-team.
 - **MITRE Caldera** (now an Apache project, apache/caldera) — automated,
   campaign-style adversary emulation: chains techniques into an end-to-end
   operation to test detection *across the kill chain*, not just per-atomic.
 - **Stratus Red Team** (DataDog) — cloud-native emulation (AWS/Azure/GCP/K8s);
-  emulates cloud control-plane TTPs to validate cloud-audit detections (rules/02).
+  emulates cloud control-plane TTPs to validate cloud-audit detections ([rules/02](02-telemetry-siem-data-layer.md)).
   github.com/DataDog/stratus-red-team. Pairs with the cloud/K8s/identity attacks
   the sibling skills prevent.
 - **Breach-and-attack-simulation (BAS)** — continuous, automated emulation
@@ -152,11 +152,11 @@ Tools (verify current status at each project):
   real time: run a technique, watch whether it's detected, tune on the spot,
   re-run. The fastest way to turn coverage gaps into detections.
 - **Detection regression testing** — wire atomic tests into CI so a change that
-  silently breaks a detection (a renamed field, a pipeline change, rules/02)
+  silently breaks a detection (a renamed field, a pipeline change, [rules/02](02-telemetry-siem-data-layer.md))
   fails the build, not the next incident. This is the test half of detection-as-
-  code (rules/01 §2).
+  code ([rules/01](01-detection-engineering-discipline.md) §2).
 - **Continuous coverage assessment** — schedule emulation against the ATT&CK
-  techniques in your threat model and update the Navigator layer (rules/01 §5)
+  techniques in your threat model and update the Navigator layer ([rules/01](01-detection-engineering-discipline.md) §5)
   with *validated* (not merely *existing*) coverage. The honest coverage map is
   the one backed by a passing emulation.
 
@@ -164,7 +164,7 @@ Tools (verify current status at each project):
 
 For LLM/agent systems, validate detection of the threats in **MITRE ATLAS**
 (the AI-system counterpart to ATT&CK; its tactic and technique counts change
-between releases — take the matrix from atlas.mitre.org, not from a remembered count) and sota-code-security rules/08: emulate
+between releases — take the matrix from atlas.mitre.org, not from a remembered count) and [sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md): emulate
 prompt-injection, tool/agent abuse, and model-exfil attempts against your own
 agents and confirm runtime detections fire.
 

@@ -2,12 +2,12 @@
 
 Scope: hash-chained audit logs, compliance trails, agent/action ledgers, signed receipts —
 anything claiming "tamper-evident", "audit-grade" or "immutable" — and the signed
-request/response exchanges that produce such receipts (§2). Split out of rules/04
+request/response exchanges that produce such receipts (§2). Split out of [rules/04](04-cryptography.md)
 (formerly section 8) on 2026-09-25; the section is now §1. Maps to NIST AU-9/AU-10.
 
 Core principle: **integrity and completeness are separate claims, and an unkeyed chain
 proves neither against an attacker with write access.** Primitive choice (HMAC, signatures)
-stays in rules/04.
+stays in [rules/04](04-cryptography.md).
 
 ## 1. Tamper-evident logs & audit ledgers (NIST AU-9/AU-10)
 
@@ -35,7 +35,7 @@ trail), agent/action ledgers, signed receipts.
   first record looks like a legitimate start. Carry the previous segment's head
   hash into the first record of the next, and have the verifier carry its
   running hash **across** the boundary instead of resetting at it — the defect
-  is usually in the verifier, not the writer, which makes it a `rules/15` §3
+  is usually in the verifier, not the writer, which makes it a [`rules/15`](15-instruments-and-guards.md) §3
   guard-shaped bug rather than a crypto bug. Deletion has three geometries and a
   chain walk covers only two: interior record (caught by the `prev_hash`
   mismatch), interior segment (caught **only** with boundary continuity), tail
@@ -43,7 +43,7 @@ trail), agent/action ledgers, signed receipts.
 - Hash **every field you attest** — including server-assigned timestamps and
   anything used to order or attribute records. Unhashed "projection" columns
   can be rewritten without breaking the chain.
-- The preimage must be a canonical, unambiguous encoding (rules/04 §7) — and "canonical"
+- The preimage must be a canonical, unambiguous encoding ([rules/04](04-cryptography.md) §7) — and "canonical"
   has to name a **spec**, not an intention: RFC 8785 (JSON Canonicalization
   Scheme, June 2020, Informational) or a written encoder with its key sort,
   number format, string escaping and null/absent handling pinned. It fails in
@@ -59,7 +59,7 @@ trail), agent/action ledgers, signed receipts.
   data then hashes to different bytes, and the ledger reports tamper on records
   nobody touched. That is the more dangerous direction operationally: an
   integrity alarm that is wrong on ordinary traffic gets muted or ignored, and a
-  muted alarm is an inert control (rules/10). Pin the encoding with a
+  muted alarm is an inert control ([rules/10](10-silent-control-failure.md)). Pin the encoding with a
   **known-answer test vector** committed as a fixture and reproduced by every
   implementation — without one, the off-system verifier required below is just a
   second implementation free to disagree with the first, and `chain broken` will
@@ -74,7 +74,7 @@ trail), agent/action ledgers, signed receipts.
   no hardware can compel a component to emit one. "Never recorded" is a
   **liveness** failure, and liveness sits explicitly outside the CC guarantee:
   the host may refuse to schedule, pause, or destroy the enclave at will
-  (`sota-confidential-computing` rules/01 §2, availability row; rules/04 §7
+  ([`sota-confidential-computing` rules/01](../../sota-confidential-computing/rules/01-threat-model-and-selection.md) §2, availability row; [rules/04](../../sota-confidential-computing/rules/04-confidential-kubernetes.md) §7
   states that any design assuming a TEE guarantees liveness is wrong). The fix is
   the separate completeness attestation above, taken at a vantage the monitored
   component does not control — see the vantage bullet below.
@@ -83,10 +83,10 @@ trail), agent/action ledgers, signed receipts.
   A `verify` that only runs on the server being audited proves little.
 - Vantage matters: a record emitted voluntarily by the monitored component can
   be omitted at will — for security evidence prefer an independent chokepoint
-  (proxy, gateway, kernel, append-only sink). See sota-detection-engineering
-  rules/02 (telemetry integrity).
+  (proxy, gateway, kernel, append-only sink). See [sota-detection-engineering
+  rules/02](../../sota-detection-engineering/rules/02-telemetry-siem-data-layer.md) (telemetry integrity).
 - Immutable/append-only stores holding personal data need erasure designed up
-  front — per-subject crypto-shredding (sota-privacy-compliance rules/03 §4);
+  front — per-subject crypto-shredding ([sota-privacy-compliance rules/03](../../sota-privacy-compliance/rules/03-consent-and-user-rights.md) §4);
   retrofitting deletion breaks either the chain or the law.
 
 ## 2. Signed request/response exchanges and receipts
@@ -94,7 +94,7 @@ trail), agent/action ledgers, signed receipts.
 Applies where an application signs its own messages above TLS: payment and transaction
 APIs, agent-to-tool calls, inter-organisation instructions, anything whose receipt must
 later prove who asked for what. Primitive choice and the canonical-encoding rule stay in
-rules/04 §7; this section is about the protocol around them.
+[rules/04](04-cryptography.md) §7; this section is about the protocol around them.
 
 - **Sign both directions.** The client signs the request with its key and the server signs
   the response with its own; each signed body carries a fresh nonce and a timestamp, and
@@ -104,7 +104,7 @@ rules/04 §7; this section is about the protocol around them.
 - **Get the peer's verification key over an authenticated channel, never on first
   contact.** A key accepted from the first response it arrives with is trust-on-first-use:
   the attacker who answers first owns the session. Distribute it out of band or through a
-  versioned key set you already trust (rules/04 §5 and §7).
+  versioned key set you already trust ([rules/04](04-cryptography.md) §5 and §7).
 - **A signature is not a unique identifier.** Several valid signatures can exist for one
   message and key: for ECDSA, (r, n−s) verifies wherever (r, s) does (measured 2026-09-25
   with pyca/cryptography 49 on P-256), and RFC 8032 section 8.4 notes that Ed25519 is
@@ -120,7 +120,7 @@ rules/04 §7; this section is about the protocol around them.
   every receipt it signed. Anchor such receipts as §1 describes.
 - **Sign the transaction data the user confirmed**, not only the session: amount, payee and
   any field that changes the outcome, so the receipt gives integrity and non-repudiation
-  for that exact instruction (rules/04 §4: never escrow the signing key).
+  for that exact instruction ([rules/04](04-cryptography.md) §4: never escrow the signing key).
   OWASP: Transaction Authorization, Key Management, MCP Security and AML Sanctions AI Agent
   Payments cheat sheets; SCSVS S6.1.A2.
 

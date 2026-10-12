@@ -14,13 +14,13 @@ for those four operations.
 - **Every commit on the main branch builds and passes tests.** A bisect that
   lands on "WIP, doesn't compile" is a bisect wasted. With squash-merge this is
   automatic (each merged PR = one green commit); with merge/rebase flows, clean
-  the branch (autosquash fixups) before merge — rules/03 §4.
+  the branch (autosquash fixups) before merge — [rules/03](03-code-review-pr-workflow.md) §4.
 - Mechanical changes (rename, format, codemod) get their own commit, labeled as
   such, so reviewers and blame can skip them. Consider
   `.git-blame-ignore-revs` for repo-wide reformat commits.
 - **Don't commit what the build produces or the developer machine leaks**:
   artifacts, `.env`, editor droppings — enforce via `.gitignore` + pre-commit
-  secret scanning (deeper treatment: `sota-secrets-management`).
+  secret scanning (deeper treatment: [`sota-secrets-management`](../../sota-secrets-management/SKILL.md)).
 
 ## §2 Commit messages and Conventional Commits
 
@@ -43,7 +43,7 @@ for those four operations.
   - If adopted: enforce mechanically (commitlint/PR-title check on squash
     merges), keep the type honest (`feat` that's really a `fix` corrupts the
     generated changelog), and remember the generated changelog still gets a
-    human edit (rules/02 §6).
+    human edit ([rules/02](02-api-reference-changelogs.md) §6).
 
 **Bad**: `fixed stuff`, `WIP`, `address review comments`, `Update scheduler.py`.
 **Good**:
@@ -78,7 +78,7 @@ you're actually running.
   release tag), where it must land back (main, always — a fix that exists only
   on a release branch regresses in the next release).
 - Default branch is protected: required reviews + checks, no direct pushes, no
-  force push (rules/03 §6).
+  force push ([rules/03](03-code-review-pr-workflow.md) §6).
 
 ## §4 Versioning discipline
 
@@ -90,23 +90,23 @@ you're actually running.
 - **What counts as breaking is broader than compilation**: removed/renamed
   symbols and endpoints, tightened validation, changed defaults, changed error
   codes/types callers branch on, changed wire formats, raised minimum
-  runtime/OS versions. Behavioral contracts documented in rules/02 §2 are part
+  runtime/OS versions. Behavioral contracts documented in [rules/02](02-api-reference-changelogs.md) §2 are part
   of the API.
 - 0.x is an explicit "anything may change" signal — fine for pre-stable, but
   don't live there for years while telling users you're production-ready.
 - **Breaking-change communication is a pipeline, not a number**: deprecation
   warnings in code → changelog `Deprecated` section → migration guide
-  (rules/02 §7) → major release → removal. The version bump is the last step,
+  ([rules/02](02-api-reference-changelogs.md) §7) → major release → removal. The version bump is the last step,
   never the first notice.
 - API surface evolution rules (additive change, deprecation headers, sunset)
-  are covered in `sota-api-design`; this file covers the release mechanics.
+  are covered in [`sota-api-design`](../../sota-api-design/SKILL.md); this file covers the release mechanics.
 
 ## §5 Releases, tags, and release notes
 
 - **Releases are tagged, and tags are immutable**: never delete or re-point a
   published tag — downstream caches, lockfiles, and humans have already
   resolved it; a moved tag is a supply-chain incident (signed tags, provenance,
-  artifact immutability: `sota-devsecops`). A bad release gets a *new* patch
+  artifact immutability: [`sota-devsecops`](../../sota-devsecops/SKILL.md)). A bad release gets a *new* patch
   version, not a recycled tag.
 - **Releases are reproducible from the tag**: version is derived from the tag
   (not hand-edited in three files — or if files must contain it, the bump is
@@ -117,15 +117,15 @@ you're actually running.
   produces each release artifact, and how to compare the result with the
   published one. A build only the CI config can explain cannot be re-derived by
   a user or auditor checking your artifacts. Mechanics of hermetic and
-  reproducible builds: `sota-devsecops` rules/04 §4.1. (OWASP: SCVS 3.2)
+  reproducible builds: [`sota-devsecops` rules/04](../../sota-devsecops/rules/04-build-containers.md) §4.1. (OWASP: SCVS 3.2)
 - **Automate the release train**: tag (or merged release PR) triggers build,
   changelog finalization (move `Unreleased` → version section), artifact
-  publish, docs version publish (rules/02 §5). release-please / semantic-release
+  publish, docs version publish ([rules/02](02-api-reference-changelogs.md) §5). release-please / semantic-release
   style tooling does this off conventional commits (§2); the more humans in
   the loop, the rarer and scarier releases become.
 - **Release notes are the curated story** (highlights, upgrade notes, breaking
   changes up top, who should care); the changelog is the complete record
-  (rules/02 §6). Generate the skeleton, edit for humans; leading with
+  ([rules/02](02-api-reference-changelogs.md) §6). Generate the skeleton, edit for humans; leading with
   "Bump deps (#1042)" tells users you didn't.
 - Pre-releases use ordered, machine-readable identifiers
   (`2.0.0-rc.1`), published to pre-release channels (`next` dist-tag, pre-release

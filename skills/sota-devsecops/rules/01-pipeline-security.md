@@ -128,7 +128,7 @@ did not.
   every `uses:` to a commit) is a technical preview. Until locking is GA and adopted, SHA
   pinning remains the control; don't accept "immutable actions will fix it" in review.
 - **Vet before you allowlist, and prefer fewer actions.** Each third-party action gets the
-  upstream-health check of `rules/10` §5 (owner, contributor count, last push, archived)
+  upstream-health check of [`rules/10`](10-inert-dependencies.md) §5 (owner, contributor count, last push, archived)
   plus a read of the `permissions:` and secrets it asks for. An action that only wraps one
   API call is better replaced by a `gh`/`curl` step — `gh` ships on GitHub-hosted runner
   images. (OWASP: GitHub Actions Security cheat sheet)
@@ -253,8 +253,8 @@ configuration is usually valid YAML with no expression in it.
 - Severity: attacker-controlled text reaching an agent in a job that holds secrets or write
   permissions = **Critical**; in a read-only, no-secret job = **Medium** (it still buys
   runner execution and the default token). The instruction trust boundary itself is
-  `sota-skill-security` rules/02; prompt-injection mechanics are `sota-code-security`
-  rules/08.
+  [`sota-skill-security` rules/02](../../sota-skill-security/rules/02-trust-boundary-and-capability.md); prompt-injection mechanics are [`sota-code-security`
+  rules/08](../../sota-code-security/rules/08-llm-ai-security.md).
 
 ## 1.6 Runner trust
 
@@ -277,7 +277,7 @@ configuration is usually valid YAML with no expression in it.
   `none`; default `read` on low-trust events such as `pull_request_target`, `write` on `push`)
   enforces it: `cache-mode: none` on release/sign jobs, `read` where untrusted code runs.
 - No interactive access into production runners (§1.10). The host under the runner is
-  `rules/04` §4.6.1.
+  [`rules/04`](04-build-containers.md) §4.6.1.
 
 ## 1.7 Protected branches, environments, signed commits
 
@@ -296,7 +296,7 @@ configuration is usually valid YAML with no expression in it.
   the green "Verified" badge alone — web-UI commits are signed by GitHub's key; decide
   whether that satisfies your threat model and document it.
 - **Tag protection**: protect release tag patterns (`v*`) via rulesets — release pipelines
-  trust tags; anyone who can create `v1.2.4` can ship code (see rules/02 §release integrity).
+  trust tags; anyone who can create `v1.2.4` can ship code (see [rules/02](02-provenance-signing.md) §release integrity).
 
 ## 1.8 Workflow file ownership and change control
 
@@ -309,7 +309,7 @@ configuration is usually valid YAML with no expression in it.
   branch rule or ruleset turns on required code-owner review. An AI agent's edit to these
   paths gets the same human review. The May 2026 "Megalodon" campaign pushed
   secret-stealing workflow commits to 5,500+ repos in a six-hour window — direct-push
-  rights to workflow files plus no workflow-modification alerting (rules/07 §7.3.1) is
+  rights to workflow files plus no workflow-modification alerting ([rules/07](07-runtime-ops.md) §7.3.1) is
   exactly what it exploited. (OWASP: GitHub Actions Security cheat sheet; Secure Coding
   with AI cheat sheet)
 - Reusable workflows (`workflow_call`) centralize hardened patterns: callers can't weaken
@@ -371,7 +371,7 @@ or, if the gate degrades quietly, **passes while scanning less than it claims**.
 
 Both outcomes are bad, and the second is worse. A required check that is permanently red
 trains people to bypass it; a check that silently drops to a reduced ruleset reports the
-same green either way (`sota-code-security` rules/10).
+same green either way ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).
 
 Ordered by preference:
 
@@ -383,7 +383,7 @@ Ordered by preference:
    — an absent input must not look like a clean scan.
 3. **Do not special-case the bot.** `if: github.actor != 'dependabot[bot]'` turns a red
    check green while removing the control precisely on the PRs that change your dependency
-   graph. It is the shape rules/10 exists to catch, dressed as a CI fix.
+   graph. It is the shape [rules/10](10-inert-dependencies.md) exists to catch, dressed as a CI fix.
 
 **Value shape bites too.** A secret is one opaque string; the file it mirrors may not be.
 Copy the form the consumer *reads* (e.g. a pipe-joined regex), not the file's on-disk
@@ -405,7 +405,7 @@ exists in the author's tree.
   tree. The working tree hides dependence on untracked files, and that dependence is
   the most common reason a green local run turns red on a runner.
 - **Treat missing tooling as a hard failure, not a skip.** A local harness that skips
-  the step it cannot run reports success for work it never did — `sota-code-security` rules/14 §4 in
+  the step it cannot run reports success for work it never did — [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §4 in
   your own scaffolding. Print what was substituted (a marketplace action replaced by
   its CLI equivalent) rather than hiding it, so the run's coverage is legible.
 - **Do this even when CI works.** It is the only way to prove a workflow before its
@@ -413,7 +413,7 @@ exists in the author's tree.
 - Off-the-shelf local runners for GitHub Actions exist; evaluate one against your
   workflow before adopting it, and do not assume action-for-action fidelity.
 
-Then check the run history itself, per `sota-code-security` rules/14 §4: a job that
+Then check the run history itself, per [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §4: a job that
 was **skipped** reports Success, and a run the platform **refused** (billing, spending
 limits) reports failure within seconds with no step logs and its reason only in the
 annotations. Both look like "CI exists" from the badge.
@@ -454,7 +454,7 @@ declared outputs *in that file*.
 prove, not one — *"same pattern, therefore same result"* is precisely the assumption
 identifier drift defeats. For a scheduled pipeline the first real execution may be hours
 away and unattended, which is also why a gate step copied across services must carry its
-durable verdict everywhere (`rules/11` §4), not just where it was first fixed.
+durable verdict everywhere ([`rules/11`](11-after-the-gate-fails.md) §4), not just where it was first fixed.
 
 ## Audit checklist
 

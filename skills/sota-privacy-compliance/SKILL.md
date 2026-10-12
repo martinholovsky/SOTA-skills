@@ -20,33 +20,33 @@ lives in wiki pages does not.
 > the machinery those decisions require.
 
 **Related skills — reference, don't duplicate:**
-- `sota-databases` rules/06 — DB-level PII mechanics (column encryption, row-level security, GDPR-friendly schema design)
-- `sota-secrets-management` — credentials, KMS, key rotation (crypto-shredding depends on it)
-- `sota-observability` — log redaction and PII-safe telemetry pipelines
-- `sota-threat-modeling` — LINDDUN privacy threat modeling methodology
-- `sota-code-security` / `sota-devsecops` — vulnerability management, supply chain (SOC 2/ISO control overlap)
+- [`sota-databases` rules/06](../sota-databases/rules/06-security-and-compliance.md) — DB-level PII mechanics (column encryption, row-level security, GDPR-friendly schema design)
+- [`sota-secrets-management`](../sota-secrets-management/SKILL.md) — credentials, KMS, key rotation (crypto-shredding depends on it)
+- [`sota-observability`](../sota-observability/SKILL.md) — log redaction and PII-safe telemetry pipelines
+- [`sota-threat-modeling`](../sota-threat-modeling/SKILL.md) — LINDDUN privacy threat modeling methodology
+- [`sota-code-security`](../sota-code-security/SKILL.md) / [`sota-devsecops`](../sota-devsecops/SKILL.md) — vulnerability management, supply chain (SOC 2/ISO control overlap)
 
 ## BUILD mode
 
 When designing or implementing systems that touch personal data:
 
 1. **Inventory first.** Before writing a schema or integrating a vendor, classify
-   every field you intend to collect and record where it flows (rules/01). The
+   every field you intend to collect and record where it flows ([rules/01](rules/01-data-inventory-classification.md)). The
    cheapest control is the field you never store.
 2. **Annotate at the source.** Schemas, structs, and API contracts carry
    classification and purpose annotations; tooling derives the data map from code,
-   not the other way around (rules/01, rules/02).
+   not the other way around ([rules/01](rules/01-data-inventory-classification.md), [rules/02](rules/02-privacy-by-design.md)).
 3. **Build user rights as features, not afterthoughts.** Export, deletion, and
    consent are product capabilities with APIs, state machines, and tests — design
    them with the first table, because retrofitting deletion into a 200-table
-   schema with denormalized copies is a quarter-long project (rules/03).
+   schema with denormalized copies is a quarter-long project ([rules/03](rules/03-consent-and-user-rights.md)).
 4. **Automate retention.** Every datastore gets a TTL, lifecycle rule, or
    partition-drop schedule at creation time. "We'll clean it up later" is how
-   seven-year-old PII ends up in a breach disclosure (rules/03).
+   seven-year-old PII ends up in a breach disclosure ([rules/03](rules/03-consent-and-user-rights.md)).
 5. **Emit evidence as a byproduct.** Access reviews, change approvals, and config
    baselines should fall out of normal engineering workflow (PRs, IaC, IdP logs)
-   so audits are queries, not scrambles (rules/05).
-6. **Know your regimes.** Check rules/04 for which regulations the system triggers
+   so audits are queries, not scrambles ([rules/05](rules/05-audit-ready-engineering.md)).
+6. **Know your regimes.** Check [rules/04](rules/04-regulatory-landscape.md) for which regulations the system triggers
    (data types × subjects' locations × sector) before architecture freezes — data
    residency and breach-clock requirements shape topology.
 
@@ -55,11 +55,11 @@ When designing or implementing systems that touch personal data:
 When reviewing an existing codebase/infrastructure for privacy and compliance gaps:
 
 **Process:** (1) Build or obtain the data inventory — grep schemas, API payloads,
-log statements, analytics events, object storage for personal data (rules/01 has
+log statements, analytics events, object storage for personal data ([rules/01](rules/01-data-inventory-classification.md) has
 discovery patterns). (2) Trace lifecycle per data category: collection → purpose →
 storage → sharing → retention → deletion. (3) Test user rights paths end-to-end
 (does deletion actually propagate?). (4) Check evidence trails for auditable
-controls. (5) Map findings to applicable regimes (rules/04).
+controls. (5) Map findings to applicable regimes ([rules/04](rules/04-regulatory-landscape.md)).
 
 **Severity conventions:**
 
@@ -116,7 +116,7 @@ retention / deletion), not by file — that is how regulators and auditors think
    policy version, and scope; checked at point of use; revocation propagates to
    processors. Never inferred, never a boolean column named `gdpr_ok`.
 6. **No PII in logs, URLs, or analytics events** unless explicitly classified,
-   redaction-tested, and retention-bounded (see sota-observability for pipeline
+   redaction-tested, and retention-bounded (see [sota-observability](../sota-observability/SKILL.md) for pipeline
    mechanics). Logs are the most common shadow copy of personal data.
 7. **Pseudonymized ≠ anonymous.** Data that can be re-linked (hashed emails,
    "anonymized" user IDs, quasi-identifier combinations) is still personal data.
@@ -124,7 +124,7 @@ retention / deletion), not by file — that is how regulators and auditors think
    to trust.
 8. **Encrypt personal data at rest and in transit, with keys you can destroy.**
    Key-per-user or key-per-tenant where deletion/residency demands it
-   (crypto-shredding); keys managed per sota-secrets-management.
+   (crypto-shredding); keys managed per [sota-secrets-management](../sota-secrets-management/SKILL.md).
 9. **Cross-border flows are deliberate.** Know which regions data lives in and
    transits; region-pin where required; every processor/subprocessor has a DPA and
    appears in the data map before the first byte flows.

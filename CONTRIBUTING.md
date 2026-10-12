@@ -315,7 +315,14 @@ the "what it means for your PR" version; that table is the index.
     was renumbered or a rules file split. Practical effect: if you renumber a
     section, move one between files, or add a cross-skill pointer, name the skill
     (`` `sota-golang` rules/05 §3 ``) — a bare `rules/NN` resolves against **your
-    own** skill. Added 2026-08-20, immediately before splitting `rules/10` and
+    own** skill. **And write it as a relative link** (since 2026-10-12, ROADMAP 73 (n)):
+    keep the visible text, `` `sota-golang` rules/05 ``, link it to
+    `../../sota-golang/rules/05-security.md`, and leave `§3` after the link. No reader then
+    has to guess a filename, and invariant 8 checks the path resolves.
+    `python3 scripts/linkify-pointers.py .` links any pointer written as plain text and changes
+    nothing on a linked tree. Read its header first: it guesses which skill a bare `rules/NN`
+    belongs to, and a wrong guess is still a valid path.
+    Added 2026-08-20, immediately before splitting `rules/10` and
     `rules/11`, and it found **six** live defects on its first run over the
     unmodified tree. Two conventions it had to learn, both found by *reading* the
     findings rather than trusting the count: a heading may number itself `## 3.`

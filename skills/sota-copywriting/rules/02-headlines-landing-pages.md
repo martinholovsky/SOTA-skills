@@ -22,11 +22,11 @@ carry readers; the CTA carries the conversion. All three are copy problems.
 - The **subheadline does the explaining**: headline = promise, subheadline =
   mechanism + who it's for ("Automated data tests catch broken pipelines
   before your stakeholders do — built for dbt-based teams").
-- Headline vocabulary comes from the value proposition (`rules/01` §2) and
+- Headline vocabulary comes from the value proposition ([`rules/01`](01-positioning-value-proposition.md) §2) and
   the reader's own words — reusing the phrase users say in interviews
   measurably outperforms invented phrasing (message-mining).
 - Numbers and specifics earn attention honestly: "Cut CI time 40%" (with the
-  benchmark — `rules/04`) beats "Dramatically faster CI".
+  benchmark — [`rules/04`](04-claims-legal-trust.md)) beats "Dramatically faster CI".
 
 ## 2. The above-fold contract
 
@@ -42,7 +42,7 @@ A first-time visitor, without scrolling, can answer:
   material. An above-fold carousel of rotating value propositions is
   indecision rendered in HTML.
 - The visual/layout execution (hierarchy, contrast, responsive behavior) is
-  `sota-frontend-design`; the *content* of the contract is owned here.
+  [`sota-frontend-design`](../../sota-frontend-design/SKILL.md); the *content* of the contract is owned here.
 
 ## 3. Page flow & scannability
 
@@ -57,7 +57,7 @@ A first-time visitor, without scrolling, can answer:
   parallel items (3–5, parallel grammatical structure); bold for the one
   load-bearing phrase per screen, not per sentence.
 - Front-load every heading and bullet — the first three words are what a
-  scanner reads (same law as product copy: `sota-ux-writing` rules/01 §2).
+  scanner reads (same law as product copy: [`sota-ux-writing` rules/01](../../sota-ux-writing/rules/01-voice-tone-plain-language.md) §2).
 - Reading-ease scores (Flesch etc.) are directional diagnostics for
   general-audience pages, not gates — technical audiences read technical
   sentences fine; what they won't read is *long* sentences stacked deep.
@@ -72,8 +72,8 @@ A first-time visitor, without scrolling, can answer:
   Three equal buttons = the team couldn't decide = the visitor won't either.
 - **Friction reducers adjacent to the CTA** — the objection dies where it's
   born: "Free 14-day trial · No credit card · Cancel anytime". Every friction
-  reducer is a factual claim: verify or delete (`rules/04` §1).
-- Match commitment to awareness stage (`rules/01` §1): "Book a demo" atop a
+  reducer is a factual claim: verify or delete ([`rules/04`](04-claims-legal-trust.md) §1).
+- Match commitment to awareness stage ([`rules/01`](01-positioning-value-proposition.md) §1): "Book a demo" atop a
   cold-traffic page skips the relationship; "Read the benchmark" might be
   the right first ask.
 - First-person phrasing ("Start my trial") and micro-copy under the button
@@ -85,7 +85,7 @@ A first-time visitor, without scrolling, can answer:
 ## 5. Social proof on the page
 
 Placement and presentation (the legal layer — consent, material connections,
-typicality — is `rules/04` §2–3):
+typicality — is [`rules/04`](04-claims-legal-trust.md) §2–3):
 
 - **Specific outcomes beat adjectives**: "Cut our incident response from 45
   to 12 minutes" beats "Great tool, highly recommend!". Solicit and select
@@ -99,7 +99,7 @@ typicality — is `rules/04` §2–3):
 - Logo walls: recognizable > numerous; with permission; "as seen in" press
   logos only for actual coverage, not paid placements presented as earned.
 - Counts ("Trusted by 10,000+ teams") follow the honest-unit rule
-  (`rules/01` §6).
+  ([`rules/01`](01-positioning-value-proposition.md) §6).
 
 ## 6. Pricing & comparison surfaces
 
@@ -108,12 +108,12 @@ typicality — is `rules/04` §2–3):
   limit / after the trial / when I cancel" question answered on the page —
   each unanswered one is a support ticket or a lost conversion.
 - No hidden-cost surprises deferred to checkout (also a dark pattern —
-  `rules/04` §4): required add-ons, per-seat minimums, and billing frequency
+  [`rules/04`](04-claims-legal-trust.md) §4): required add-ons, per-seat minimums, and billing frequency
   are visible at the decision point.
 - **Comparison pages/tables are factual documents**: current competitor
   facts at publish time (dated, re-verified on a schedule), objectively
   phrased rows, no strawman tiers. Comparative claims carry full
-  substantiation burden (`rules/04` §1) — a stale "Competitor X lacks SSO"
+  substantiation burden ([`rules/04`](04-claims-legal-trust.md) §1) — a stale "Competitor X lacks SSO"
   is a liability, not an asset.
 - Anchor honestly: "Most popular" marks the actually-most-chosen tier, not
   the one you want to sell.

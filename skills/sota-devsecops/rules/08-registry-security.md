@@ -1,7 +1,7 @@
 # 08 — Registry Security (the registry as a supply-chain trust anchor)
 
-Scope: the container/artifact **registry itself** as infrastructure. rules/04 covers how the
-image is built and pushed; rules/02 covers signing and provenance; this file covers the box
+Scope: the container/artifact **registry itself** as infrastructure. [rules/04](04-build-containers.md) covers how the
+image is built and pushed; [rules/02](02-provenance-signing.md) covers signing and provenance; this file covers the box
 that holds them — who can write to it, who can read from it, what it guarantees about the
 bytes it serves, and what happens when it is internet-exposed with auth turned off.
 
@@ -9,8 +9,8 @@ The registry is **tier-0**: every image the cluster runs flows through it. An
 anonymously-writable registry is cluster-wide RCE — an attacker re-pushes a trusted tag, the
 next rollout pulls it, and you are running their code with your service account. Admission-time
 *enforcement* of what may be pulled (signature verify, registry allowlist, digest pinning) lives
-in the **sota-kubernetes** skill; network exposure controls reference **sota-network-security**;
-running the registry workload itself hardened references **sota-sandboxing**. This file is the
+in the **[sota-kubernetes](../../sota-kubernetes/SKILL.md)** skill; network exposure controls reference **[sota-network-security](../../sota-network-security/SKILL.md)**;
+running the registry workload itself hardened references **[sota-sandboxing](../../sota-sandboxing/SKILL.md)**. This file is the
 registry's own posture.
 
 ## 8.1 The trust-anchor model — why this is tier-0
@@ -21,7 +21,7 @@ registry's own posture.
 - Three things must hold for the registry to be a trust anchor, not a liability:
   1. **Only trusted writers can push** (no anonymous, no shared creds, CI-scoped identities).
   2. **What a consumer pulls is immutable and verifiable** (immutable tags, digest pinning,
-     signatures that get *verified* — rules/02 produces them, sota-kubernetes enforces them).
+     signatures that get *verified* — [rules/02](02-provenance-signing.md) produces them, [sota-kubernetes](../../sota-kubernetes/SKILL.md) enforces them).
   3. **The registry is available and recoverable** (tier-0 dependency; if it is down, you cannot
      deploy or scale, and if it is lost, you cannot reconstruct without source rebuilds).
 - Audit framing: a registry that fails (1) is **Critical** (anonymous/shared push = artifact
@@ -83,10 +83,10 @@ but is disabled at deploy.
 - **Robot/CI accounts are per-repo and expiring.** Harbor robot accounts carry scoped actions +
   expiration; Zot policies scope `actions` per repo pattern to a CI user. Never grant a CI
   identity `delete` or admin. Map this to OIDC-federated CI where the registry trusts the CI
-  provider's tokens (no stored registry password — cross-ref rules/01 / rules/02 for the OIDC
+  provider's tokens (no stored registry password — cross-ref [rules/01](01-pipeline-security.md) / [rules/02](02-provenance-signing.md) for the OIDC
   publish pattern).
 - **Humans do not push to release repos.** CI is the only writer to anything promoted; that is
-  what makes provenance meaningful (rules/02). Human push to a `dev/**` sandbox is fine.
+  what makes provenance meaningful ([rules/02](02-provenance-signing.md)). Human push to a `dev/**` sandbox is fine.
 
 ## 8.3 Image integrity & immutability — defeating tag mutation
 
@@ -110,10 +110,10 @@ mutable pointer instead of the digest.
   - **Zot**: enforce immutability at the consumer (digest pinning) + retention/policy; Zot does
     not ship a Harbor-style immutable-tag rule engine — do not assume one.
 - **Consumers pin by digest.** Deploy manifests reference `image@sha256:...`, not tags (this is
-  the build-once-promote-many invariant from rules/04 §4.5 and is *enforced* at admission by
-  sota-kubernetes). A digest is content-addressed: it cannot be mutated under you. Tags are for
+  the build-once-promote-many invariant from [rules/04](04-build-containers.md) §4.5 and is *enforced* at admission by
+  [sota-kubernetes](../../sota-kubernetes/SKILL.md)). A digest is content-addressed: it cannot be mutated under you. Tags are for
   humans; digests are the identity.
-- **Signature + attestation storage and verification.** rules/02 produces cosign signatures and
+- **Signature + attestation storage and verification.** [rules/02](02-provenance-signing.md) produces cosign signatures and
   in-toto attestations; the registry **stores** them. Modern registries use the **OCI 1.1
   Referrers API** (`subject` + `artifactType`) to associate signatures/SBOMs/scan results with an
   image by digest — verified GA-track: OCI image+distribution v1.1 released; ECR, Quay, JFrog,
@@ -121,17 +121,17 @@ mutable pointer instead of the digest.
   serves `/v2/<name>/referrers/<digest>` (older registries fall back to the tag-schema workaround
   — verify, because a registry that silently drops referrers loses your attestations). The
   *verify-and-enforce* step (admission requires a valid signature by your release identity) is in
-  sota-kubernetes; the registry's job is to durably keep the referrer artifacts next to the image.
+  [sota-kubernetes](../../sota-kubernetes/SKILL.md); the registry's job is to durably keep the referrer artifacts next to the image.
 - **Content-trust legacy**: Harbor's old Notary/DCT path is superseded by **cosign**-based
   signing, and the Docker CLI has removed Docker Content Trust support
   (`--disable-content-trust` survives only as a deprecated flag). Treat any Notary v1/DCT
-  setup as legacy and standardize on cosign (rules/02).
+  setup as legacy and standardize on cosign ([rules/02](02-provenance-signing.md)).
 
 ## 8.4 Vulnerability management at the registry
 
 The registry is the natural place to scan *what you actually store* and to re-scan against new
-advisories without rebuilding. This complements (does not replace) CI scan-on-build (rules/04
-§4.4) and the dependency posture in rules/03/05.
+advisories without rebuilding. This complements (does not replace) CI scan-on-build ([rules/04](04-build-containers.md)
+§4.4) and the dependency posture in [rules/03](03-dependencies.md)/05.
 
 - **Scan-on-push, block-on-critical.** Configure the registry (or an attached scanner) to scan
   every pushed manifest and quarantine/fail images over policy:
@@ -145,16 +145,16 @@ advisories without rebuilding. This complements (does not replace) CI scan-on-bu
     (verified, Google). **ACR**: Microsoft Defender for Cloud scans at the **manifest** level on
     push/import/recent-pull (verified) — note untagged manifests still alert.
   - **Zot**: integrates Trivy for scan results surfaced in the API/UI; for hard *block-on-pull*,
-    pair with admission enforcement (sota-kubernetes) since Zot is OCI-native and minimal.
+    pair with admission enforcement ([sota-kubernetes](../../sota-kubernetes/SKILL.md)) since Zot is OCI-native and minimal.
 - **Continuous re-scan is the point.** An image clean at push is not clean forever — a CVE
   disclosed next week applies to images already stored. Registry-side continuous scanning catches
   the "old image, new advisory" gap that build-time scanning structurally cannot. Reference the
-  scheduled deployed-digest scan in rules/04 §4.4 / rules/03 — the registry continuous scan and
+  scheduled deployed-digest scan in [rules/04](04-build-containers.md) §4.4 / [rules/03](03-dependencies.md) — the registry continuous scan and
   the cluster deployed-digest scan are complementary (registry = what you store, cluster = what
   you run).
 - **Store SBOM + scan attestations** next to the image (OCI referrers, §8.3) so the scan result
   and bill of materials travel with the artifact and feed admission policy ("scanned within N
-  days" — rules/02 §2.4).
+  days" — [rules/02](02-provenance-signing.md) §2.4).
 - **Quarantine, do not silently serve.** A failing image should be unpullable for prod (Harbor
   prevent-vulnerable policy, or a `quarantine/**` repo that admission rejects) — not merely
   flagged in a dashboard nobody reads. A scan with no enforcement is Medium decorative control.
@@ -173,16 +173,16 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
   public ones. If you pull `mycorp/base` and a proxy can resolve that from Docker Hub's
   `mycorp/base`, an attacker who registers the public name owns your base image. Pin internal
   images to **your** registry by full path + digest; never let a proxy silently fall through to
-  public for internal-looking names. (Same class as package dependency-confusion in rules/03 §3.2,
+  public for internal-looking names. (Same class as package dependency-confusion in [rules/03](03-dependencies.md) §3.2,
   applied to images.)
 - **Allowed-registries policy.** Workloads pull only from your registry / blessed mirrors. This
-  is **enforced at admission** by **sota-kubernetes** (registry allowlist) — reference it; do not
+  is **enforced at admission** by **[sota-kubernetes](../../sota-kubernetes/SKILL.md)** (registry allowlist) — reference it; do not
   duplicate the policy here. The registry-side half is: make your registry the only one that has
   what prod needs, so the allowlist is enforceable without breaking deploys.
 - **Verify what the proxy serves against the authoritative upstream.** A pull-through cache
   is a man-in-the-middle you operate: poisoned or compromised, it hands tampered bytes to
   every consumer. Keep verification end to end, against values that did **not** come from
-  the proxy: lockfile hashes (rules/03 §3.1), image signatures and digests (rules/02 §2.3),
+  the proxy: lockfile hashes ([rules/03](03-dependencies.md) §3.1), image signatures and digests ([rules/02](02-provenance-signing.md) §2.3),
   and for Go the checksum database, which the module reference describes as "a Transparent
   Log (or 'Merkle Tree') of go.sum line hashes" (so never `GOSUMDB=off` behind a proxy).
   A scheduled job re-fetches a sample of cached artifacts from upstream and compares
@@ -192,7 +192,7 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
   registry removes it. When a `MAL-` advisory (OSV, fed by the OpenSSF malicious-packages
   feed) names a version: delete it from the proxy cache, block it at the proxy so no
   resolve can fetch it again, and use the proxy's fetch log to find who already pulled it
-  (rules/07 §7.3.1). (OWASP: DSOMM)
+  ([rules/07](07-runtime-ops.md) §7.3.1). (OWASP: DSOMM)
 - **Mirroring / air-gap.** For air-gapped or sovereignty-constrained environments, mirror the
   full dependency closure (bases, sidecars, operators) into your registry and cut external pull
   paths entirely — the allowlist then has nowhere else to go.
@@ -204,7 +204,7 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
 - **Never GC a digest a running workload references.** Deploys pin digests (§8.3); a retention
   rule that deletes by tag-age can orphan a digest that prod still runs, and the next node that
   cold-pulls it gets `manifest unknown` → `ImagePullBackOff`. Retention must exclude:
-  digests referenced by live deployments (query deployed digests — rules/02 §2.8 / rules/04 §4.3),
+  digests referenced by live deployments (query deployed digests — [rules/02](02-provenance-signing.md) §2.8 / [rules/04](04-build-containers.md) §4.3),
   release artifacts within your audit horizon, and their attestations/SBOMs.
 - **Run GC against a consistent view.** GC + concurrent push race on some registries — run GC in
   the registry's supported maintenance mode (Harbor handles locking; Zot GC has documented
@@ -220,12 +220,12 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
 - **Never anonymous + internet-exposed.** This is a continuously-scanned exposure class:
   registries on `0.0.0.0:5000` with auth off are found and abused at internet scale. Bind to
   loopback/cluster-internal, put authn in front, and restrict reachability — network policy /
-  segmentation lives in **sota-network-security**; reference it. Internet-exposed + anonymous =
+  segmentation lives in **[sota-network-security](../../sota-network-security/SKILL.md)**; reference it. Internet-exposed + anonymous =
   Critical.
 - **No `hostNetwork` unless genuinely required.** The finding ran the registry on a `hostNetwork`
   port, which both exposed it broadly and bypassed namespace network policy. Run it as a normal
-  pod with a `ClusterIP`/internal Service; placement and pod hardening are **sota-kubernetes**;
-  workload isolation (drop caps, read-only rootfs, non-root) is **sota-sandboxing**.
+  pod with a `ClusterIP`/internal Service; placement and pod hardening are **[sota-kubernetes](../../sota-kubernetes/SKILL.md)**;
+  workload isolation (drop caps, read-only rootfs, non-root) is **[sota-sandboxing](../../sota-sandboxing/SKILL.md)**.
 - **TLS always.** Even internal: registry creds and bearer tokens cross the wire on every push;
   plaintext registry traffic is credential interception. Terminate TLS at the registry or a
   trusted mesh sidecar; do not rely on `--insecure-registry` in clients (it disables verification
@@ -242,7 +242,7 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
   `adminPolicy`; OIDC/LDAP/bearer/mTLS auth; workload-identity OIDC for secretless CI; **sync**
   for pull-through/mirror (incl. ECR upstream). It does **not** ship Harbor-style immutable-tag
   rules or block-on-pull scanning gates — get those from digest pinning + admission
-  (sota-kubernetes). Verified against zotregistry.dev.
+  ([sota-kubernetes](../../sota-kubernetes/SKILL.md)). Verified against zotregistry.dev.
 - **Harbor** (verify the latest release at github.com/goharbor/harbor/releases): projects + robot accounts + RBAC; **tag
   immutability rules**; built-in **Trivy** scan + prevent-vulnerable-from-running policy;
   **replication** to any OCI registry; cosign signing (Notary/DCT legacy). Heavier (Postgres,
@@ -254,7 +254,7 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
   - **GAR**: immutable-tags GA; Artifact Analysis scanning; IAM-scoped; remote/virtual repos.
   - **ACR**: image-lock for immutability (no registry-wide toggle — verify); Defender for Cloud
     scanning (manifest-level); artifact cache; RBAC/AAD.
-  - **GHCR / Docker Hub**: GHCR ties access to the source repo (`image.source` label, rules/04
+  - **GHCR / Docker Hub**: GHCR ties access to the source repo (`image.source` label, [rules/04](04-build-containers.md)
     §4.2.2) and supports OIDC-published provenance; Docker Hub's main risk is rate limits + the
     blast radius of being everyone's default upstream — front it with a pull-through cache (§8.5).
 
@@ -270,14 +270,14 @@ Hunt patterns in brackets.
 - [ ] Humans cannot push to release/promoted repos; CI is the sole writer there
 - [ ] **Immutable tags** enabled where supported (Harbor rules / ECR `IMMUTABLE` / GAR setting /
   ACR lock); release tags are not re-pushable [try re-pushing an existing release tag in staging]
-- [ ] Consumers **pin digests**, not tags (enforced at admission by sota-kubernetes)
+- [ ] Consumers **pin digests**, not tags (enforced at admission by [sota-kubernetes](../../sota-kubernetes/SKILL.md))
   [`:latest` or bare mutable tags in deploy manifests]
 - [ ] Signatures/SBOM/scan **attestations stored** with the image via OCI referrers, and a named
-  verifier exists (rules/02 + sota-kubernetes) [signing present, zero verification]
+  verifier exists ([rules/02](02-provenance-signing.md) + [sota-kubernetes](../../sota-kubernetes/SKILL.md)) [signing present, zero verification]
 - [ ] **Scan-on-push + continuous re-scan**; failing images quarantined/unpullable for prod, not
   just dashboarded [scanner enabled but no block/quarantine policy]
 - [ ] Upstream pulls go through a **pull-through cache**; internal image names cannot fall through
-  to public (image-layer dependency confusion); allowed-registries enforced (sota-kubernetes)
+  to public (image-layer dependency confusion); allowed-registries enforced ([sota-kubernetes](../../sota-kubernetes/SKILL.md))
   [direct `docker.io/...` pulls in manifests; proxy fall-through for internal namespaces]
 - [ ] **Proxy contents verified; malicious versions purged (§8.5), High:** clients verify hashes/signatures from sources other than the proxy (no `GOSUMDB=off`); for each cached package version, `curl -s -d '{"package":{"name":"<pkg>","ecosystem":"npm"},"version":"<ver>"}' https://api.osv.dev/v1/query | jq -r '.vulns[]?.id | select(startswith("MAL-"))'` prints nothing, and any hit is deleted and blocked at the proxy
 - [ ] Retention/GC **excludes digests referenced by running workloads** + release artifacts +
@@ -285,7 +285,7 @@ Hunt patterns in brackets.
 - [ ] Registry is **HA + backed up + restore-tested**; treated as tier-0 [single copy of release
   artifacts, no tested restore]
 - [ ] **Not internet-exposed while anonymous**; **TLS** on; no `--insecure-registry`; no
-  `hostNetwork` unless required; reachability restricted (sota-network-security) and workload
-  hardened (sota-sandboxing) [public IP + port 5000 + no auth; `hostNetwork: true`]
+  `hostNetwork` unless required; reachability restricted ([sota-network-security](../../sota-network-security/SKILL.md)) and workload
+  hardened ([sota-sandboxing](../../sota-sandboxing/SKILL.md)) [public IP + port 5000 + no auth; `hostNetwork: true`]
 - [ ] Registry config rendered from reviewed source; startup **fails closed** if auth/accessControl
   is absent on a non-public registry [config drift between repo and running instance]

@@ -92,7 +92,7 @@ Rules:
   naming the constraint, so the rest of the group keeps working.
 - **Only a gate that loads or runs the artifact can catch this** — `fmt`, `clippy`
   and lint passes all stop at the compiled object and were green on the broken one.
-  `sota-devsecops` rules/09 §2a.
+  [`sota-devsecops` rules/09](../../sota-devsecops/rules/09-gates-that-hold.md) §2a.
 
 ### 1b. Source shape is not a proxy for compiled behaviour
 
@@ -125,7 +125,7 @@ a commit message as fact. The verifier's own numbers before and after were **ide
   two lifetimes not to overlap, you need something the compiler cannot inline through — a
   separate program, an explicit `#[inline(never)]`, or a different data flow.
 - **The numbers to compare are before and after on the same toolchain**, not one reading and
-  an argument. `sota-code-security` rules/15 §2a: a *pass* is not a number.
+  an argument. [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2a: a *pass* is not a number.
 
 ## 2. rustfmt — zero-config by default
 
@@ -149,8 +149,8 @@ a commit message as fact. The verifier's own numbers before and after were **ide
   link time sane), doctests on every public API example (they're the only
   examples guaranteed to compile).
 - Property tests (`proptest`) for parsers/serializers/invariant-heavy code;
-  snapshot tests (`insta`) for rendered output; `loom` for atomics (rules/03);
-  fuzz for untrusted-input parsers (rules/05).
+  snapshot tests (`insta`) for rendered output; `loom` for atomics ([rules/03](03-unsafe-discipline.md));
+  fuzz for untrusted-input parsers ([rules/05](05-security-supply-chain.md)).
 - Coverage: `cargo llvm-cov nextest` — track trend, don't worship the number.
 
 ## 4. MSRV policy
@@ -185,17 +185,17 @@ The profile a reviewer reads in `Cargo.toml` is not the whole build. Measured on
   structure"). Nothing in the repository changed.
 - **`rustc-wrapper` runs a program on every compile.** A `[build] rustc-wrapper` in any of
   those files ran on `cargo check` (not on `cargo metadata`). That is build-time code
-  execution with `build.rs`'s trust (rules/05 §2), except it can come from outside the
+  execution with `build.rs`'s trust ([rules/05](05-security-supply-chain.md) §2), except it can come from outside the
   repository. A legitimate wrapper (e.g. a compiler cache) is named, pinned and documented.
 - **Dev and test profiles keep their checks.** `overflow-checks` and `debug-assertions` are
   on by default in `dev`/`test`. Turning them off there — in `Cargo.toml` or in a config
   file's `[profile.*]` — made an overflow test and a `debug_assert!` test pass that had
   failed. The suite then stops catching the wrapping arithmetic that release ships silently
-  (rules/05 §3). (ANSSI DENV-CARGO-OPTS, DENV-CARGO-ENVVARS)
+  ([rules/05](05-security-supply-chain.md) §3). (ANSSI DENV-CARGO-OPTS, DENV-CARGO-ENVVARS)
 - **Ship from stable.** `#![feature(..)]` fails on stable (E0554) until `RUSTC_BOOTSTRAP=1`
   is set; with it, the same crate built on the stable toolchain. Treat `RUSTC_BOOTSTRAP`
   anywhere in a release build as a nightly build. Nightly jobs for Miri, sanitizers and
-  fuzzing (rules/03 §4) are tooling; they do not build what ships. (DENV-STABLE)
+  fuzzing ([rules/03](03-unsafe-discipline.md) §4) are tooling; they do not build what ships. (DENV-STABLE)
 - **A deploy target is a tier decision.** Per the rustc platform-support page, tier 1 is
   "guaranteed to work" (built and tested on every change), tier 2 "guaranteed to build"
   (tests not always run), and tier 3 has no official builds. Tiers move:
@@ -241,7 +241,7 @@ full = ["serde", "metrics"]            # convenience aggregate, still additive
   First line = one-sentence summary (it's the item's listing line); then
   details, then `# Examples` (doctested), `# Errors` (when `Result`),
   `# Panics` (every documented panic path — clippy `missing_panics_doc`),
-  `# Safety` (every `unsafe fn` — rules/03).
+  `# Safety` (every `unsafe fn` — [rules/03](03-unsafe-discipline.md)).
 - Crate root (`lib.rs`) gets the long-form intro: what/why/quickstart —
   `#![doc = include_str!("../README.md")]` keeps README and docs in sync
   (and doctests the README's examples).
@@ -271,9 +271,9 @@ Migration: `cargo fix --edition` then review. Key changes that affect rules in
 this skill:
 
 - `unsafe_op_in_unsafe_fn`: unsafe fns need explicit inner `unsafe {}` blocks
-  (rules/03 §2 — good: per-obligation SAFETY comments).
+  ([rules/03](03-unsafe-discipline.md) §2 — good: per-obligation SAFETY comments).
 - `static_mut_refs` denied: references to `static mut` rejected — migrate to
-  atomics/`OnceLock`/`Mutex` (rules/03 §3).
+  atomics/`OnceLock`/`Mutex` ([rules/03](03-unsafe-discipline.md) §3).
 - **RPIT lifetime capture**: return-position `impl Trait` now captures *all*
   in-scope lifetimes by default (was: only named ones) — use
   `+ use<'a, T>` precise-capture syntax to opt out; check existing APIs whose
@@ -355,7 +355,7 @@ jobs:
 ```
 
 Plus scheduled: `cargo audit` (new advisories), fuzz jobs, bench regression
-gate (rules/06). Cache with `Swatinem/rust-cache`; pin action SHAs (rules/05).
+gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin action SHAs ([rules/05](05-security-supply-chain.md)).
 
 ## Audit checklist
 

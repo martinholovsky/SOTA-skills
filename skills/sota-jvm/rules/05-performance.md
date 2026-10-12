@@ -3,7 +3,7 @@
 JVM performance is mostly about **garbage collection, allocation rate, and
 letting the JIT warm up** — not micro-tweaks. Measure with a profiler and a
 proper benchmark harness; never tune GC flags by guess. Cross-reference
-`sota-performance` for methodology. [Java 25 perf docs](https://docs.oracle.com/en/java/javase/25/).
+[`sota-performance`](../../sota-performance/SKILL.md) for methodology. [Java 25 perf docs](https://docs.oracle.com/en/java/javase/25/).
 
 ## 1. Garbage collectors — pick by goal
 
@@ -45,7 +45,7 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
   `--illegal-native-access` (**any** value), `--add-opens`, `--add-reads`, `--limit-modules`,
   `--patch-module`, `--upgrade-module-path` and class-rewriting JVMTI agents. `--add-exports`
   is allowed from JDK 25 only if identical in every phase (JDK-8352437). **So the cache and
-  `rules/04` §7's `--illegal-native-access=deny` are a trade-off, not a pair.** Run the
+  [`rules/04`](04-security.md) §7's `--illegal-native-access=deny` are a trade-off, not a pair.** Run the
   `--illegal-native-access=deny` / `--sun-misc-unsafe-memory-access=deny` gate in a CI job
   that runs **without** the cache, so a new native dependency still fails the build. In
   production pick one: the cache, with native access left at the default `warn` and the same
@@ -68,7 +68,7 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
   collections and string concatenation in loops (`StringBuilder`).
 - Escape analysis can stack-allocate non-escaping objects — keep short-lived
   objects local. Avoid finalizers and excessive `ThreadLocal` (esp. with
-  virtual threads, `rules/03`).
+  virtual threads, [`rules/03`](03-concurrency.md)).
 - Right-size collections (initial capacity) to avoid resize churn.
 
 ## 4. Profiling — measure, don't guess
@@ -94,7 +94,7 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
   safepoint bias of older samplers.
 - Benchmark microbenchmarks with **JMH** (handles warmup, dead-code
   elimination, fork isolation) — never `System.nanoTime()` around a loop. Report
-  distributions (`sota-performance`).
+  distributions ([`sota-performance`](../../sota-performance/SKILL.md)).
 
 ## 5. GraalVM Native Image (trade-offs)
 

@@ -167,9 +167,9 @@ call site. Verified examples:
   `Oj.load(s, mode: :strict)`, `Oj.strict_load`/`Oj.safe_load`, or
   `Oj.default_options = { mode: :strict }` at boot.
 - **Erubi** — `Erubi::Engine.new(src)` does not escape `<%= %>` unless
-  `escape: true`; stdlib `ERB.new` never escapes (use `ERB::Util.h`). See rules/03 §1.
+  `escape: true`; stdlib `ERB.new` never escapes (use `ERB::Util.h`). See [rules/03](03-web-hardening.md) §1.
 - **`Net::HTTP`** — `open_timeout`, `read_timeout` and `write_timeout` all default
-  to 60 s; clients built on it inherit that unless configured (rules/03 §6).
+  to 60 s; clients built on it inherit that unless configured ([rules/03](03-web-hardening.md) §6).
 
 **README snippets are demos.** A copied quick-start carries its demo settings —
 `verify_mode: OpenSSL::SSL::VERIFY_NONE`, `origins "*"`, debug/dev mode,
@@ -201,7 +201,7 @@ Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)
   `brakeman.ignore` with a note per entry — an ignore file nobody can explain
   is a finding.
 - Non-Rails codebases: RuboCop's `Security/*` cops plus the greps in
-  `rules/02`/`rules/03`; Opengrep with a Ruby ruleset is a good neutral
+  [`rules/02`](02-security.md)/[`rules/03`](03-web-hardening.md); Opengrep with a Ruby ruleset is a good neutral
   supplement.
 - Secret scanning (gitleaks/trufflehog as neutral examples) runs on every
   push, on the full history at least once.
@@ -209,7 +209,7 @@ Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)
 ## 6. Tests: RSpec / Minitest mechanics
 
 Suite *strategy* — shape, TDD, doubles, test data, flake policy — lives in
-`sota-testing`; load it for any build that writes logic. Ruby runner
+[`sota-testing`](../../sota-testing/SKILL.md); load it for any build that writes logic. Ruby runner
 mechanics only:
 
 - Match the project's existing runner (RSpec or Minitest); don't mix.

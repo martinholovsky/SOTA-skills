@@ -14,7 +14,7 @@ that theme, and every one is also a cost lever.
   defaults are sane; pathological cases are tiny row groups from trickle
   writes).
 - **Columnar projection:** only referenced columns are read. `SELECT *` in
-  pipelines defeats the format's core advantage (and rules/01 bans it across
+  pipelines defeats the format's core advantage (and [rules/01](01-architecture-and-modeling.md) bans it across
   layers anyway).
 - **Dictionary encoding + page stats** make low-cardinality string filters
   cheap; sorted data compresses dramatically better (run-length/delta).
@@ -67,17 +67,17 @@ Open table formats add ACID commits, snapshots, and schema evolution on
 object storage. Status (verified mid-2026): **Iceberg format v3** is ratified
 (deletion vectors, row lineage), but engine support is uneven — e.g. Trino
 483 still calls v3 experimental, without row-level updates, deletes or
-OPTIMIZE (checked 2026-09-26; rules/01) — confirm every engine that touches
+OPTIMIZE (checked 2026-09-26; [rules/01](01-architecture-and-modeling.md)) — confirm every engine that touches
 the table before enabling v3. **Delta Lake 4.x** brings the variant type and collations (deletion
 vectors and liquid clustering matured in 3.x).
 
 - **Snapshots & time travel:** every commit is a snapshot; you can query
-  `AS OF` for debugging, incident forensics (rules/04), and WAP (rules/06).
+  `AS OF` for debugging, incident forensics ([rules/04](04-data-quality-and-contracts.md)), and WAP ([rules/06](06-operations-and-governance.md)).
   Time travel is bounded by snapshot retention — it is **not a backup
   strategy**.
 - **Schema evolution:** safe in-place: add columns, widen types, rename
   (Iceberg tracks by field ID; renames are metadata-only). Still forbidden
-  by *your* contracts without coordination (rules/04): downstream code keys
+  by *your* contracts without coordination ([rules/04](04-data-quality-and-contracts.md)): downstream code keys
   on names.
 - **Row-level changes:** merge-on-read (delete files/deletion vectors) makes
   MERGE/DELETE cheap at write time but accumulates read-time debt;
@@ -136,7 +136,7 @@ concurrency. Attack in this order:
 1. **Prune more:** verify top queries actually hit partition/cluster
    pruning (`EXPLAIN` / query profile: partitions scanned vs total). A
    dashboard filter that wraps the partition column in a function can
-   disable pruning — keep predicates sargable (see `sota-databases`).
+   disable pruning — keep predicates sargable (see [`sota-databases`](../../sota-databases/SKILL.md)).
 
    ```sql
    -- BAD: function over the partition column — full scan on many engines
@@ -145,7 +145,7 @@ concurrency. Attack in this order:
    WHERE event_ts >= '2026-06-01' AND event_ts < '2026-06-02'
    ```
 2. **Scan less per query:** incremental models instead of full rebuilds
-   (rules/02); pre-aggregate hot dashboard queries into small marts;
+   ([rules/02](02-pipelines-and-orchestration.md)); pre-aggregate hot dashboard queries into small marts;
    column pruning.
 3. **Run less often:** match schedule to consumer need. An hourly rebuild
    feeding a daily-reviewed dashboard burns 24x the spend for zero value =

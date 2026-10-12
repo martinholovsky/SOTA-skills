@@ -18,7 +18,7 @@ not the code you shipped, and yesterday's green build can be today's compromised
 | Go | go.mod (pins) + go.sum (authenticates); `GOSUMDB=off` / wildcard `GONOSUMDB` never set | `go mod verify`; CI fails on a dirty `go mod tidy` diff |
 | Rust | Cargo.lock (commit it for libs too) | `cargo build --locked` |
 | Ruby | Gemfile.lock | `BUNDLE_FROZEN=true bundle install` (the `--frozen` flag is removed in Bundler 4 and raises) |
-| Docker | digest pins (rules/04 §4.3) | `FROM image@sha256:...` |
+| Docker | digest pins ([rules/04](04-build-containers.md) §4.3) | `FROM image@sha256:...` |
 
 - **A frozen-install command can fail closed on a *stale* lock and open on a *missing* one.**
   Measured 2026-09-14 on Poetry 2.4.3: with `poetry.lock` desynced from `pyproject.toml`,
@@ -38,7 +38,7 @@ not the code you shipped, and yesterday's green build can be today's compromised
   explicitly only guards against an inherited `-mod=mod` or a stray `vendor/`. `go mod verify`
   is narrower still: it checks the **local download cache** was not modified after download,
   not that the graph matches the repo. The control that earns its place is failing CI on a
-  dirty `go mod tidy` diff (`sota-golang` rules/07 §4).
+  dirty `go mod tidy` diff ([`sota-golang` rules/07](../../sota-golang/rules/07-tooling-ci.md) §4).
 - BAD: `pip install -r requirements.txt` with bare `package>=1.2` lines in CI. BAD:
   `npm install` in CI (mutates the lockfile silently). BAD: a `Dockerfile` that
   `pip install`s unpinned packages even though the repo has a lockfile.
@@ -72,7 +72,7 @@ jobs:
           comment-summary-in-pr: on-failure
 ```
 
-- This must be a **required check** (`rules/09` §1) or it's advisory noise.
+- This must be a **required check** ([`rules/09`](09-gates-that-hold.md) §1) or it's advisory noise.
 - Complement with OSV/grype full scans on schedule (§3.6) — the PR gate only sees diffs.
 - For ecosystems GitHub doesn't cover well, run `osv-scanner --lockfile` diff against the
   base branch in the PR workflow.
@@ -185,9 +185,9 @@ a query, not an archaeology project.
   deps, the image scan knows OS packages and whatever the base image smuggled in):
   `syft <image-digest> -o cyclonedx-json` or `cdxgen` for richer app-level data.
 - Format: CycloneDX or SPDX — pick one org-wide; both are fine, conversion is lossy, so
-  standardize. Include component hashes and PURLs, enforced by the gate in rules/14 §14.2 —
+  standardize. Include component hashes and PURLs, enforced by the gate in [rules/14](14-sbom-component-inventory.md) §14.2 —
   PURLs are what make cross-referencing advisories automatic.
-- Bind it: attach as an in-toto attestation on the image digest (rules/02 §2.4) and/or
+- Bind it: attach as an in-toto attestation on the image digest ([rules/02](02-provenance-signing.md) §2.4) and/or
   upload to a central store (Dependency-Track, GUAC). An SBOM in a CI artifact zip that
   expires in 90 days fails the log4shell test.
 - Regenerate per build (SBOMs of `:latest` are meaningless); SBOM the *artifact*, not the
@@ -245,11 +245,11 @@ ignore:
 - **No upstream patch available** (reachable vuln, no fixed version): triage doesn't stop
   at "no fix" (OWASP Vulnerable Dependency Management). In order of preference — guard the
   vulnerable call path with input validation/feature-flag kill-switch; virtual-patch at
-  the edge (WAF/admission, sota-detection-engineering); fork-and-patch with a private
-  upstream report first (rules/13 §13.8) and a regression test reproducing the vuln
+  the edge (WAF/admission, [sota-detection-engineering](../../sota-detection-engineering/SKILL.md)); fork-and-patch with a private
+  upstream report first ([rules/13](13-vulnerability-remediation.md) §13.8) and a regression test reproducing the vuln
   (§3.8); or replace the dependency. Record the chosen mitigation as VEX and set a
   re-check date — never just ignore-with-expiry. A fix that exists but cannot be taken yet,
-  and backporting one, are rules/13 §13.6–§13.7.
+  and backporting one, are [rules/13](13-vulnerability-remediation.md) §13.6–§13.7.
 
 ### 3.6b A scanner built against an older toolchain fails as noise, not as a finding
 
@@ -273,10 +273,10 @@ paths pointing into the toolchain's own tree.
 - **Rebuild the tool against the current toolchain**, then **invoke it by absolute path**. A
   package-manager copy earlier in `PATH` will shadow the one you just built — `command -v`
   after a short-circuiting `PATH` prepend (`command -v x || export PATH=…`) still resolves the
-  old one. Which binary ran is `rules/09` §2b.
+  old one. Which binary ran is [`rules/09`](09-gates-that-hold.md) §2b.
 - **Do not record this as a scan result in either direction.** It is neither a clean run nor a
   finding; the scan did not happen. A CI step that treats non-zero as "vulnerabilities found"
-  will report a policy failure (`rules/11` §4 on classifying your own failures).
+  will report a policy failure ([`rules/11`](11-after-the-gate-fails.md) §4 on classifying your own failures).
 
 ### 3.6a A clean run from one scanner is not coverage for another's question
 
@@ -293,8 +293,8 @@ while Dependabot reported **19** open alerts on the same tree. Neither was wrong
 
 So **a clean reachability scan is not evidence that dependencies are current**, and a clean
 version scan is not evidence that anything exploitable is absent. Quoting either as "no
-vulnerabilities" silently substitutes one question for the other — `sota-code-security`
-rules/15 §2, where the instrument is fine and the claim is not.
+vulnerabilities" silently substitutes one question for the other — [`sota-code-security`
+rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2, where the instrument is fine and the claim is not.
 
 - **Name the question beside the verdict.** *"govulncheck: no reachable vulnerable symbols"*
   is a finding; *"the scan was clean"* is not.
@@ -364,10 +364,10 @@ Dockerfile. Unpinned it drifts to latest on every rebuild; pinned it is frozen f
   over arbitrary files plus an explicit `datasourceTemplate`) teaches it a non-manifest pin;
   **Dependabot has no equivalent** — its ecosystems are manifest-shaped, so it reads a
   Dockerfile's `FROM` and not its `RUN` args (options reference, verified 2026-09-07). With
-  no bot that can see it the pin needs a watcher, and a watcher is an instrument (`rules/11` §6).
+  no bot that can see it the pin needs a watcher, and a watcher is an instrument ([`rules/11`](11-after-the-gate-fails.md) §6).
 - Otherwise **accept the freeze in writing**: an owner and a review date beside the pin —
-  unwritten, it decays like an experiment with no scheduled read-back (`sota-architecture`
-  rules/01 §4).
+  unwritten, it decays like an experiment with no scheduled read-back ([`sota-architecture`
+  rules/01](../../sota-architecture/rules/01-architecture-styles-and-decisions.md) §4).
 - **Pin while the pinned version is already what resolves.** The pin is then provably inert
   — determinism at zero behaviour change — so no later regression can be blamed on it; an
   SBOM diff (§3.5) showing the artifact component-for-component identical is the receipt.
@@ -375,8 +375,8 @@ Dockerfile. Unpinned it drifts to latest on every rebuild; pinned it is frozen f
   build separates them.
 - Read the version you are pinning to from **the resolver that will actually run**, and cite
   it — for Go modules `proxy.golang.org/<module>/@latest`, where `require` is a floor rather
-  than a cap (`sota-golang` rules/07 §4). GitHub's `releases/latest` answers a different
-  question and 404s outright for a repo publishing tags and no releases (`rules/11` §6).
+  than a cap ([`sota-golang` rules/07](../../sota-golang/rules/07-tooling-ci.md) §4). GitHub's `releases/latest` answers a different
+  question and 404s outright for a repo publishing tags and no releases ([`rules/11`](11-after-the-gate-fails.md) §6).
 - Audit: a pin outside anything the repo's update automation parses, with no watcher and no
   written acceptance = **Medium**; **High** if the frozen component faces the internet.
 

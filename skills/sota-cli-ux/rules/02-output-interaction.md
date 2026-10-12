@@ -36,7 +36,7 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
     (one object per line) for streams/lists** so consumers can process
     incrementally and `head`/`grep` keep working.
   - Field names are versioned API surface: additive changes only; renames go
-    through deprecation (rules/03 §7).
+    through deprecation ([rules/03](03-behavior-lifecycle.md) §7).
   - Errors in JSON mode are JSON too (on stderr or as a final object — pick one
     and document it), with `code`/`message` fields, plus the nonzero exit.
 - Human table mode: no table borders/box-drawing — they're noise and break
@@ -61,7 +61,7 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   - further codes for failure classes scripts must distinguish
     (e.g. `3` = check found violations, like `grep`'s "no match" `1` vs error `2`)
 - `130` after SIGINT (128+signal, the shell convention) — most runtimes do this
-  if you re-raise the signal after cleanup rather than `exit(1)` (rules/03 §3).
+  if you re-raise the signal after cleanup rather than `exit(1)` ([rules/03](03-behavior-lifecycle.md) §3).
 - Document every code in `--help`/man. Undocumented codes are unusable;
   scripts will treat all nonzero alike and lose the distinction you built.
 - Never `exit(0)` from a generic top-level error handler. Audit: search for
@@ -104,7 +104,7 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   OSC 52, where the terminal allows it — write the clipboard (xterm ctlseqs).
   Escape C0 (except `\n`, `\t`), `DEL`, C1 and `ESC` in data you did not
   produce (e.g. as `\x1b` or `^[`); the tool's own styling is added after. The
-  log-file path of the same flaw is CWE-117 (`sota-code-security` rules/07).
+  log-file path of the same flaw is CWE-117 ([`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md)).
 
 ## 5. Streaming & progress
 
@@ -136,7 +136,7 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   you must prompt despite redirected stdin — and prefer not to.
 - Confirmation default is the safe answer: `Continue? [y/N]` — Enter aborts.
 - Password input: no echo, and verify the no-echo path actually engages when
-  stdin is a TTY; never read passwords from argv (rules/01 §3).
+  stdin is a TTY; never read passwords from argv ([rules/01](01-commands-flags-config.md) §3).
 - Interactive convenience must never be the only path: a fancy selector
   (fuzzy-pick a target) is sugar over `tool deploy <target>`, not a replacement.
 
@@ -199,7 +199,7 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   interface to an MCP server, not a lesser one.
 - Once agents drive the tool, the surface is **frozen, additive-only**: agents
   act on stale knowledge of your flags for months, so never remove or
-  repurpose — only add (rules/03 §7, with less slack).
+  repurpose — only add ([rules/03](03-behavior-lifecycle.md) §7, with less slack).
 - **Output costs context window.** Offer `--fields` (or equivalent) to select
   top-level JSON fields; keep default JSON lean; paginate large lists.
 - Put the remediation in-band: JSON-mode errors carry `code`/`message` plus a
@@ -215,7 +215,7 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   a precise client-side error beats a round-trip and a vague 404.
 - Consider suppressing did-you-mean suggestions in machine modes: for an
   agent, an unknown command should be a hard, unambiguous failure, not a
-  guess it may adopt (rules/01 §1's never-auto-execute rule still holds).
+  guess it may adopt ([rules/01](01-commands-flags-config.md) §1's never-auto-execute rule still holds).
 
 ## Audit checklist
 

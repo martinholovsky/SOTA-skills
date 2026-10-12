@@ -1,6 +1,6 @@
 # 03 — Concurrency: data-race safety, isolation, cancellation
 
-Moved from the former Swift-language file in `sota-mobile` on 2026-10-07 and extended. Applies to every target:
+Moved from the former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) on 2026-10-07 and extended. Applies to every target:
 a server under load turns a latent race into a statistical certainty.
 
 ## 1. Build in Swift 6 language mode; migrate module by module
@@ -29,7 +29,7 @@ having wide-ranging consequences"*:
 | `nonisolated(unsafe)` | static isolation checking for that declaration (SE-0412: *"will disable static checking of data isolation"*) |
 | `@unchecked Sendable` | the compiler's proof a type is safe to share |
 | `@preconcurrency` (import or conformance) | concurrency diagnostics for that module/conformance |
-| `unowned(unsafe)` | lifetime checking (rules/04) |
+| `unowned(unsafe)` | lifetime checking ([rules/04](04-memory-and-unsafe.md)) |
 
 None is banned; each needs an adjacent comment naming the synchronisation that makes it safe
 ("guarded by `lock`"). `@unchecked Sendable` on a class with public mutable `var`s is a finding.

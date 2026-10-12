@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Skill files now point at each other with relative links (ROADMAP 73, option (n)).** Every
+  pointer keeps its visible text and gains its path: `` `sota-x` rules/06 §3 `` reads the same and
+  is now a link to `../../sota-x/rules/06-topic.md`. 4,148 of 4,281 skill-name and
+  `rules/NN` pointers are links, in 333 of 346 skill files. Proven text-preserving: diffed against
+  main, every change in every file is an insertion of `[` or `](path)`. The unlinked rest are
+  pointers inside fenced or inline code, frontmatter descriptions and plain prose mentions of a
+  skill. Invariant 8 resolves every link. The rewrite is `scripts/linkify-pointers.py`, and a
+  rerun changes nothing. Its guesses were reviewed by hand, and 22 targets that resolved to the
+  wrong skill's file were corrected. The 8 pointers it could not resolve were misattributions too
+  (for example, the router's `rules/22` means `sota-code-security`'s), and were linked by hand.
+  v12 measured the same rewrite as NULL for reaching the right rules file, so this is a
+  correctness change, with no filename guessing left, and not an efficacy claim. It supersedes
+  two statements below: page 8's "never a path or a link", and v12's "No skill file changed".
+  Consumers updated: invariants 7 and 36 and `gen-skill-map.py` read a linked skill name, and
+  page 8 now counts linked pointers. The router §AUDIT pin (check 20) and §BUILD pin
+  (`evals/run-completeness.py`) were bumped: with each link reduced to its text, both sections
+  are identical to main's. 14 deferral rows whose trigger is an edit of a converted file are
+  annotated "trigger fired, still due" (invariant 39).
 - **ROADMAP 73: relative links instead of skill names measured NULL (v12).** Rewriting every pointer between skill files as a relative Markdown link moved a cited rules file reached 5/20 → 6/20 and rule tests 0.698 → 0.679. Links are followed and end guessed filenames (2 → 0 failed reads), but lead to the files the router links, not the ones a task needs. No skill file changed; unifying on links is recorded as option (n).
 - **`docs/skill-map.drawio` gains page 8: how skill files point at each other, by form.**
   Cross-skill pointers are written as a skill NAME, never a path or a link: 1,395 mentions of

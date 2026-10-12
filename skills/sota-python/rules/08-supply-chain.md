@@ -1,6 +1,6 @@
 # 08 — Dependency & Supply-Chain Hygiene, Static-Analysis Gates
 
-Split out of rules/05 (formerly sections 9 and 10) on 2026-09-25, when rules/05 neared the
+Split out of [rules/05](05-security.md) (formerly sections 9 and 10) on 2026-09-25, when [rules/05](05-security.md) neared the
 500-line cap; they are now §1 and §2.
 
 ## 1. Dependency & supply-chain hygiene
@@ -21,7 +21,7 @@ Split out of rules/05 (formerly sections 9 and 10) on 2026-09-25, when rules/05 
   `uv export --format requirements-txt --no-emit-project -o audit-req.txt && n=$(grep -cE '^[A-Za-z0-9]' audit-req.txt || true) && echo "pip-audit: $n pinned packages" && { [ "$n" -eq 0 ] && echo 'SKIP: no third-party dependencies'; [ "$n" -eq 0 ] || uvx pip-audit --disable-pip -r audit-req.txt; }`
   (measured in bash and zsh: exit 0 with a SKIP line on the empty project, 1 on the vulnerable
   one, 2 where the export fails). `uv audit` reported "0 packages" and exited 0 on the empty
-  project. A committed `pylock.toml` (rules/01 §1) is read by `pip-audit --locked .`, which
+  project. A committed `pylock.toml` ([rules/01](01-tooling-project-setup.md) §1) is read by `pip-audit --locked .`, which
   exited 1 on the vulnerable lock.
   **Bare `uvx pip-audit` is wrong:** with no `-r`, pip-audit audits the environment it runs in,
   and `uvx` gives it a throwaway venv holding only pip-audit and its own deps — it reports "No
@@ -56,7 +56,7 @@ Split out of rules/05 (formerly sections 9 and 10) on 2026-09-25, when rules/05 
   `flask_cors.CORS(app)` (6.0) with no `origins=` reflects **any** `Origin` back; Jinja2
   (3.1.6) `Environment()` has `autoescape=False` (§1). Set them explicitly, at one factory.
 - **README snippets are demos.** A quick-start copied verbatim brings `verify=False`,
-  `CORS(app)`, `debug=True` (rules/05 §8a) or a hardcoded key with it; strip each demo setting before
+  `CORS(app)`, `debug=True` ([rules/05](05-security.md) §8a) or a hardcoded key with it; strip each demo setting before
   it leaves the prototype. (OWASP: Vulnerable Dependency Management, Software Supply Chain
   Security and Secure Coding with AI cheat sheets; SCVS V1, V6.)
 - **No `pip install` from URLs/git in prod paths** without commit pinning
@@ -89,11 +89,11 @@ Split out of rules/05 (formerly sections 9 and 10) on 2026-09-25, when rules/05 
 
 ## 2. Static analysis gates
 
-- Ruff `S` ruleset (bandit port) in the standard select (rules/01) — covers most greps below
+- Ruff `S` ruleset (bandit port) in the standard select ([rules/01](01-tooling-project-setup.md)) — covers most greps below
   natively: S301 pickle, S602 shell=True, S608 SQL strings, S324 weak hashes...
 - `bandit -r src/ -ll` as a CI job if you want bandit's full set, plus
   `opengrep scan --error --config <your-python-rules>` for taint-style findings
-  (`sota-devsecops` rules/05 §5.1 — the CLI is `scan`, there is no `ci` subcommand,
+  ([`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1 — the CLI is `scan`, there is no `ci` subcommand,
   and prefer vendored or `git+`-cloned rulesets over a registry you do not control).
 - Suppressions (`# noqa: S...`, `# nosec`) require a justification comment; bare `# nosec`
   is itself a finding.

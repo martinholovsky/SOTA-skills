@@ -49,7 +49,7 @@ Vertical scaling is honest and cheap up to a surprisingly high ceiling.
 
 **Rule:** Read replicas are eventually consistent. Audit every read-after-write
 flow: route them to the primary, pin by session, or use version tokens
-(read-your-writes, rules/03 §1). Random replica reads after writes produce
+(read-your-writes, [rules/03](03-distributed-systems-and-events.md) §1). Random replica reads after writes produce
 "my save disappeared" bugs.
 
 **Rule:** Long-running queries, analytics, and reporting never run against the
@@ -99,7 +99,7 @@ mapped to few physical nodes (consistent hashing or a directory/lookup service),
 so adding nodes moves logical partitions instead of rehashing the world.
 
 **Rule:** Accept and design around the losses: no cross-shard transactions
-(use sagas, rules/03 §5), no cross-shard joins (denormalize or query a
+(use sagas, [rules/03](03-distributed-systems-and-events.md) §5), no cross-shard joins (denormalize or query a
 projection), hot-partition monitoring (one celebrity tenant can melt a shard —
 have an isolation/relocation plan).
 
@@ -144,7 +144,7 @@ params, and appears in: every query, every cache key (§4), every queue message,
 every log line, and every metric label (for noisy-neighbor attribution).
 
 **Rule:** Apply fairness controls in pooled tiers: per-tenant rate limits,
-per-tenant concurrency caps, per-tenant queue quotas (bulkheads, rules/04 §4).
+per-tenant concurrency caps, per-tenant queue quotas (bulkheads, [rules/04](04-resilience-and-failure-design.md) §4).
 Without them, your biggest tenant defines everyone's worst day.
 
 **Rule:** Plan tenant mobility: onboarding, offboarding (export + verified
@@ -171,7 +171,7 @@ OWASP: Multi Tenant Security cheat sheet.
 
 **Rule:** Separate latency-sensitive request serving from throughput-oriented
 batch/async work: different deployments, pools, and scaling policies (bulkheads,
-rules/04 §4). Background jobs run on workers consuming queues — never as fire-
+[rules/04](04-resilience-and-failure-design.md) §4). Background jobs run on workers consuming queues — never as fire-
 and-forget threads inside request-serving instances, where deploys and
 autoscaling silently kill them.
 
@@ -217,12 +217,12 @@ and analytics copies as *derived data*: rebuildable from the source of truth by
 a documented, tested backfill job. If you can't rebuild a projection, it's
 secretly a primary store with no backup discipline.
 
-**Rule:** Keep derivation pipelines idempotent and ordered-per-key (rules/03
+**Rule:** Keep derivation pipelines idempotent and ordered-per-key ([rules/03](03-distributed-systems-and-events.md)
 §2, §7); track and alert on projection lag the same way as replica lag.
 Consumers of a projection must know its staleness contract.
 
 **Rule:** Push denormalization to the read side, never the write side: the
-write model stays normalized around invariants (rules/02 §3); projections
+write model stays normalized around invariants ([rules/02](02-domain-modeling-and-boundaries.md) §3); projections
 denormalize per consumer. Denormalizing the write model "for performance"
 trades correctness machinery for a cache you can't invalidate.
 

@@ -13,18 +13,18 @@ the CSRC page for a successor
 (csrc.nist.gov/pubs/cswp/29). CSF is an **outcome map**, not a control list — it
 says *what* good looks like and defers *how* to "Informative References"
 (SP 800-53, etc.). That makes it the right top-level structure for a skill or a
-control program; the concrete requirements come from rules/02–05.
+control program; the concrete requirements come from [rules/02](02-nist-800-53-171-cmmc-fedramp.md)–05.
 
 **The six Functions** (2.0 added **Govern**, which wraps the other five):
 
 | Function | Engineering meaning | Where the mechanism lives |
 |---|---|---|
 | **GOVERN** (GV) | Risk strategy, roles, policy, supply-chain oversight | Mostly organizational — note & route out (see SKILL boundary); the engineering hook is policy-as-code + the crosswalk itself |
-| **IDENTIFY** (ID) | Asset & data inventory, risk assessment | `sota-privacy-compliance` rules/01 (data), `sota-cloud-infrastructure` (asset inventory), `sota-threat-modeling` |
-| **PROTECT** (PR) | Access control, data security, platform hardening | `sota-identity-access`, `sota-secrets-management`, `sota-network-security`, `sota-sandboxing`, `sota-kubernetes` |
-| **DETECT** (DE) | Continuous monitoring, anomaly detection | `sota-detection-engineering`, `sota-observability` |
-| **RESPOND** (RS) | Incident handling, reporting | `sota-detection-engineering` (NIST 800-61), rules/04 clocks |
-| **RECOVER** (RC) | Restoration, backups, continuity | `sota-cloud-infrastructure` (DR/backups), `sota-databases` |
+| **IDENTIFY** (ID) | Asset & data inventory, risk assessment | [`sota-privacy-compliance` rules/01](../../sota-privacy-compliance/rules/01-data-inventory-classification.md) (data), [`sota-cloud-infrastructure`](../../sota-cloud-infrastructure/SKILL.md) (asset inventory), [`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md) |
+| **PROTECT** (PR) | Access control, data security, platform hardening | [`sota-identity-access`](../../sota-identity-access/SKILL.md), [`sota-secrets-management`](../../sota-secrets-management/SKILL.md), [`sota-network-security`](../../sota-network-security/SKILL.md), [`sota-sandboxing`](../../sota-sandboxing/SKILL.md), [`sota-kubernetes`](../../sota-kubernetes/SKILL.md) |
+| **DETECT** (DE) | Continuous monitoring, anomaly detection | [`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md), [`sota-observability`](../../sota-observability/SKILL.md) |
+| **RESPOND** (RS) | Incident handling, reporting | [`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md) (NIST 800-61), [rules/04](04-eu-cyber-resilience-act.md) clocks |
+| **RECOVER** (RC) | Restoration, backups, continuity | [`sota-cloud-infrastructure`](../../sota-cloud-infrastructure/SKILL.md) (DR/backups), [`sota-databases`](../../sota-databases/SKILL.md) |
 
 The lesson: this skill's job is **binding and evidence**, not re-implementing
 PROTECT/DETECT. If you find yourself writing an encryption or RBAC section here,
@@ -66,7 +66,7 @@ inside the cluster and nobody can produce proof either way.
 **Build the crosswalk from the mechanism up, not the framework down.** Enumerate
 what your systems already enforce (from the sota-* skills you apply), then attach
 control IDs. You will find you already satisfy 70–90% of any framework — the work
-is *mapping and recording*, the same insight `sota-privacy-compliance` rules/05
+is *mapping and recording*, the same insight [`sota-privacy-compliance` rules/05](../../sota-privacy-compliance/rules/05-audit-ready-engineering.md)
 makes for SOC 2/ISO. Only the genuine gaps become new engineering.
 
 ## 3. Inheritance and shared responsibility
@@ -81,7 +81,7 @@ claim controls you don't own:
   and manage keys) → your mechanism is "enabled + enforced by policy-as-code."
 - **Customer** (e.g., your app's authz logic) → wholly yours.
 
-FedRAMP calls this the Customer Responsibility Matrix (rules/02); the concept is
+FedRAMP calls this the Customer Responsibility Matrix ([rules/02](02-nist-800-53-171-cmmc-fedramp.md)); the concept is
 universal. A control marked "inherited" with no named provider control is a
 finding.
 
@@ -117,12 +117,12 @@ deny contains msg if {
 Exceptions live in a register with `policy, resource, justification, compensating
 control, owner, approved-by, expires` — CI re-fails the build the day an exception
 expires. An exception that cannot expire is a policy change; argue it as one. (Same
-discipline as `sota-privacy-compliance` rules/05 §4 and `sota-devsecops`.)
+discipline as [`sota-privacy-compliance` rules/05](../../sota-privacy-compliance/rules/05-audit-ready-engineering.md) §4 and [`sota-devsecops`](../../sota-devsecops/SKILL.md).)
 
 ## 5. Baselines and tailoring
 
 Frameworks ship **baselines** — predefined control sets keyed to system impact
-(rules/02). Do not start from a blank catalog:
+([rules/02](02-nist-800-53-171-cmmc-fedramp.md)). Do not start from a blank catalog:
 
 1. **Categorize the system** (impact: low/moderate/high, per data sensitivity —
    FIPS 199 in the US context).
@@ -132,7 +132,7 @@ Frameworks ship **baselines** — predefined control sets keyed to system impact
    tailoring — an unjustified scope-out is the first thing an assessor pulls.
 
 The tailoring record is the US-framework analog of ISO 27001's Statement of
-Applicability (`sota-privacy-compliance` rules/05 §2): justify every inclusion and
+Applicability ([`sota-privacy-compliance` rules/05](../../sota-privacy-compliance/rules/05-audit-ready-engineering.md) §2): justify every inclusion and
 exclusion, as code, reviewed like code.
 
 ## 6. Continuous, not point-in-time
@@ -144,7 +144,7 @@ that makes automation non-optional: you cannot retro-create a year of operating
 evidence. So:
 
 - Gates run on **every** change, and their logs are retained as the evidence
-  population (`sota-devsecops`).
+  population ([`sota-devsecops`](../../sota-devsecops/SKILL.md)).
 - Drift detection re-checks live infra against policy continuously.
 - **Measure coverage, not only pass/fail.** For each control, report the share of
   its target population it reaches: hosts patched within SLA out of all hosts in
@@ -158,12 +158,12 @@ evidence. So:
   OWASP: DSOMM
 - The crosswalk is reviewed at defined cadence; control owners get diffs, not
   a 300-row spreadsheet to rubber-stamp (the anti-pattern from
-  `sota-privacy-compliance` rules/05 §2b).
+  [`sota-privacy-compliance` rules/05](../../sota-privacy-compliance/rules/05-audit-ready-engineering.md) §2b).
 
 Where a framework moves toward **machine-readable evidence** (FedRAMP 20x Key
 Security Indicators, OSCAL control catalogs/SSPs), emit that format directly from
 the enforcing system rather than transcribing into it — OSCAL SSP/SAP/SAR and
-component definitions are the interchange target (rules/02).
+component definitions are the interchange target ([rules/02](02-nist-800-53-171-cmmc-fedramp.md)).
 
 ## Audit checklist
 

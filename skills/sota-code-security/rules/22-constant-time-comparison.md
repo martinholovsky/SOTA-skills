@@ -1,6 +1,6 @@
 # 22 — Constant-Time Comparison (CWE-208)
 
-Split out of rules/04 (formerly section 6) on 2026-09-25, when rules/04 reached the 485-line
+Split out of [rules/04](04-cryptography.md) (formerly section 6) on 2026-09-25, when [rules/04](04-cryptography.md) reached the 485-line
 working limit; the section is now §1 and its subsection 6.1 is §1.1.
 
 ## 1. Constant-time comparison (CWE-208)
@@ -35,7 +35,7 @@ if hmac.compare_digest(hashlib.sha256(token.encode()).digest(),
 
 The compiler decides whether your fix survives. That is already the accepted rule for
 *wiping* — plain `memset` is dead-store-eliminated, which is why `explicit_bzero` /
-`sodium_memzero` / `SecureZeroMemory` exist (`sota-c-cpp` rules/04 §4) — and the same
+`sodium_memzero` / `SecureZeroMemory` exist ([`sota-c-cpp` rules/04](../../sota-c-cpp/rules/04-security.md) §4) — and the same
 reasoning governs every other constant-time construct, where it is far less widely applied:
 
 - **Secret-dependent `/` and `%` lower to a variable-latency instruction** (x86-64 `IDIV`,
@@ -52,12 +52,12 @@ reasoning governs every other constant-time construct, where it is far less wide
   configuration constant-time, never the code.**
 - If you hand-write the multiply-shift, **check it against the original expression over the
   whole input domain**, not over samples: an off-by-a-power-of-two reciprocal agrees for
-  millions of inputs before it diverges — the exhaustive-domain case in `sota-testing`
-  rules/06.
+  millions of inputs before it diverges — the exhaustive-domain case in [`sota-testing`
+  rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md).
 - Static inspection of emitted code and **statistical timing measurement of the running
   binary are two different instruments** answering two different questions, and neither sees
   cache or other microarchitectural channels. Say which one you ran, and do not let one
-  stand in for the other (`rules/15` §2).
+  stand in for the other ([`rules/15`](15-instruments-and-guards.md) §2).
 
 ## Audit checklist
 

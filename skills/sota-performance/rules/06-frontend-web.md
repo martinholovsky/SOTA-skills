@@ -189,7 +189,7 @@ traces (long tasks right after LCP); TBT ≫ 300 ms in lab.
 - Hybrid default: static shell from CDN + cached API + client/edge
   personalization; or streaming SSR from origin with early-flushed `<head>`.
 - TTFB budget ≤ 800 ms is mostly an architecture decision: cache HTML where
-  possible, stream when not, terminate TLS at edge always (rules/04 §8).
+  possible, stream when not, terminate TLS at edge always ([rules/04](04-io-network.md) §8).
 
 ## 8. Delivery hygiene (fast wins)
 
@@ -201,7 +201,7 @@ traces (long tasks right after LCP); TBT ≫ 300 ms in lab.
   `preload` only what's provably late-discovered (preload spam steals
   bandwidth from the LCP resource).
 - `103 Early Hints` for preconnect/preload while origin thinks.
-- Compression and caching per rules/04 §6/§8: brotli/zstd, immutable hashed
+- Compression and caching per [rules/04](04-io-network.md) §6/§8: brotli/zstd, immutable hashed
   assets, h2/h3 end-to-end.
 - Measure RUM (web-vitals JS library → your analytics) segmented by device
   class and country — averages across devices hide the phones where you fail.

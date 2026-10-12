@@ -2,7 +2,7 @@
 
 Scope: object storage design, block/file/object selection, backup architecture,
 encryption and KMS key strategy. Database engine selection, schema, replication
-internals: see sota-databases. This file covers where data lives, how it's protected
+internals: see [sota-databases](../../sota-databases/SKILL.md). This file covers where data lives, how it's protected
 at rest, and how it survives deletion — malicious or accidental.
 
 ## 1. Object storage design
@@ -17,7 +17,7 @@ at rest, and how it survives deletion — malicious or accidental.
   only new resources. Enforce at account/org level (S3 BPA account setting guarded
   by SCP; GCP org policy `storage.publicAccessPrevention`; Azure Policy), and audit
   legacy buckets explicitly. Genuinely public content goes behind a CDN with origin
-  access control (rules/03 §9), not a public bucket.
+  access control ([rules/03](03-networking.md) §9), not a public bucket.
 - **ACLs disabled everywhere** (S3 Object Ownership = bucket owner enforced).
   Policy-only access control; ACL grants found on legacy buckets are migration debt.
 - **Versioning on** for any bucket whose objects you'd miss (protects against
@@ -63,7 +63,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "b" {
 - Bucket policies: require TLS (`aws:SecureTransport`), pin org
   (`aws:PrincipalOrgID`) on shared buckets, restrict to VPC endpoints
   (`aws:SourceVpce`) for internal data planes. The TLS and org-perimeter
-  conditions are better enforced org-wide once via an RCP (rules/01 §3); keep
+  conditions are better enforced org-wide once via an RCP ([rules/01](01-org-accounts-governance.md) §3); keep
   bucket policies for the bucket-specific conditions. Access logging on sensitive
   buckets to the central log account.
 - Cross-account writes (log delivery, partner drops): bucket-owner-enforced
@@ -79,7 +79,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "b" {
   per-object authorization, with the shortest workable expiry, for one object and
   one method, and build the key from server-side values rather than concatenating
   request input into it. A bucket policy can cap signature age on top
-  (`s3:signatureAge`). CDN signed URLs: rules/03 §9. (OWASP: Secure Cloud
+  (`s3:signatureAge`). CDN signed URLs: [rules/03](03-networking.md) §9. (OWASP: Secure Cloud
   Architecture cheat sheet)
 - **Shared multi-tenant buckets: stamp the tenant on the object and check it on
   read.** The writer sets the tenant from the authenticated context — user metadata
@@ -105,7 +105,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "b" {
 - Choosing file storage to share state between app replicas is usually an
   architecture smell — externalize state to object storage or a database.
 - Block storage hygiene: delete-on-termination set deliberately, snapshots
-  lifecycle-managed, unattached volumes reaped (cost finding, rules/06), encryption
+  lifecycle-managed, unattached volumes reaped (cost finding, [rules/06](06-cost-finops.md)), encryption
   by default at the account/org setting.
 
 ## 3. Backup architecture: survive the account, not just the disk
@@ -115,7 +115,7 @@ accidental deletion, and **malicious actor with prod credentials** (ransomware).
 backup setups handle the first two only.
 
 - **3-2-1 translated to cloud: primary + same-region backup + cross-account (and
-  cross-region per DR tier, rules/07) copy.** Replication is not backup —
+  cross-region per DR tier, [rules/07](07-resilience-dr.md)) copy.** Replication is not backup —
   replication faithfully copies the corruption and the deletes. Versioning is not
   backup either (a principal with delete rights removes versions).
 - **Cross-account is the ransomware control:** backup vault in a dedicated backup
@@ -189,12 +189,12 @@ The real design decisions are about **key control and blast radius**:
   (envelope encryption) for high-request-rate paths instead of dropping to
   provider-managed keys for cost reasons.
 - Secrets (API keys, passwords) do not live in object storage at all — see
-  sota-secrets-management. Field-level/application-layer encryption for the most
-  sensitive fields: see sota-code-security.
+  [sota-secrets-management](../../sota-secrets-management/SKILL.md). Field-level/application-layer encryption for the most
+  sensitive fields: see [sota-code-security](../../sota-code-security/SKILL.md).
 
 ## 5. Data placement hygiene
 
-- Residency: data-class tags (rules/01) + region restrictions (org guardrails) keep
+- Residency: data-class tags ([rules/01](01-org-accounts-governance.md)) + region restrictions (org guardrails) keep
   regulated data in approved regions; cross-region replication of regulated data is
   a compliance decision, not a convenience default.
 - Minimize copies: every export/"temp" bucket/analytics dump is an unguarded replica.
@@ -203,7 +203,7 @@ The real design decisions are about **key control and blast radius**:
 - Snapshot/AMI sharing: shared-to-public snapshots are a recurring breach class —
   audit for any snapshot/image shared outside the org; block publicly shared
   snapshots via org guardrail where available (AWS: an EC2 declarative policy with
-  snapshot block public access `block_all_sharing`, rules/01 §3; AMI block public
+  snapshot block public access `block_all_sharing`, [rules/01](01-org-accounts-governance.md) §3; AMI block public
   access only blocks *new* sharing).
 - **Decommissioning is a data event, not a `destroy`.** Retiring a resource means
   (1) erasing its data everywhere it was copied — snapshots, final snapshots, AMIs,
@@ -212,7 +212,7 @@ The real design decisions are about **key control and blast radius**:
   on delete unless told to skip it); where physical deletion is impractical,
   crypto-shred by scheduling deletion of a key used *only* by that resource (AWS KMS
   waits 7–30 days); (2) removing its configuration, credentials, IAM roles, DNS
-  records (rules/03 §6) and secrets; (3) confirming it no longer runs; (4) deleting
+  records ([rules/03](03-networking.md) §6) and secrets; (3) confirming it no longer runs; (4) deleting
   it from the asset inventory, so tag-based policies and scanners stay accurate and
   a later hit on its name is recognisable as an orphan. (OWASP: Infrastructure as
   Code Security cheat sheet)

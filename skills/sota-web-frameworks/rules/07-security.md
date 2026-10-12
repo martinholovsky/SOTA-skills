@@ -2,8 +2,8 @@
 
 The security pass for both stacks. This consolidates the framework-specific angles;
 generic web-appsec theory (injection classes, session/JWT mechanics, crypto) lives in
-`sota-code-security`, secrets handling in `sota-secrets-management`, supply chain in
-`sota-devsecops`. **Re-verify every CVE at use time.**
+[`sota-code-security`](../../sota-code-security/SKILL.md), secrets handling in [`sota-secrets-management`](../../sota-secrets-management/SKILL.md), supply chain in
+[`sota-devsecops`](../../sota-devsecops/SKILL.md). **Re-verify every CVE at use time.**
 
 ## 1. The server/client secret boundary
 
@@ -37,7 +37,7 @@ checkpoint at the edge is not enough.**
   resource* (ownership/role), (3) validates input. A Data Access Layer (Next) or a
   shared `requireUserSession` + policy helper (Nuxt) is how you avoid forgetting.
 - **IDOR is the dominant framework authz bug:** an action/route that takes an `id` and
-  acts on it without checking the caller owns it. Test for it (`sota-testing` authz
+  acts on it without checking the caller owns it. Test for it ([`sota-testing`](../../sota-testing/SKILL.md) authz
   tests). Never trust a client-supplied role/flag (`?isAdmin=true`, a hidden field).
 - **Layouts don't re-authorize on client navigation** (Next) — don't put the only
   check there.
@@ -56,7 +56,7 @@ URLs become SSRF.
 - **User-URL fetchers:** og-image/link-preview/"import from URL" features fetch a
   user-supplied URL server-side. Validate the host against an allowlist, block private
   ranges and the metadata IP, disable/limit redirects, and set timeouts
-  (`sota-code-security` rules/09, `sota-network-security` for egress control).
+  ([`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md), [`sota-network-security`](../../sota-network-security/SKILL.md) for egress control).
 - **Header trust:** building absolute URLs or redirects from `Host`/`X-Forwarded-Host`
   (Next SSRF CVE-2024-34351, CVE-2025-57822; Nuxt navigate advisories) lets an attacker
   redirect server fetches. Pin a canonical base URL from config, don't reflect the Host
@@ -81,7 +81,7 @@ URLs become SSRF.
 ## 4. Consolidated framework CVE reference (verify ranges at use time)
 
 Fingerprint exact versions from the lockfile; unpatched criticals are findings on
-their own. Full detail in `rules/03` (Next/React) and `rules/05` (Nuxt/Nitro/h3).
+their own. Full detail in [`rules/03`](03-nextjs.md) (Next/React) and [`rules/05`](05-nuxt.md) (Nuxt/Nitro/h3).
 
 **React / Next.js**
 
@@ -102,7 +102,7 @@ their own. Full detail in `rules/03` (Next/React) and `rules/05` (Nuxt/Nitro/h3)
   (14.2.31/15.4.5). DoS: CVE-2024-56332.
 - **Unauthenticated RCE (critical, 2026-09-08)**: GHSA-2xp9-vwfh-vxw4 (Image Optimization
   API + AVIF) and CVE-2026-75604 (Windows-hosted servers), fixed 15.5.24 / 16.3.3 — the
-  Next floor as of 2026-09-26 is **≥ 15.5.24 / ≥ 16.3.3** (`rules/03` §5 has the batches).
+  Next floor as of 2026-09-26 is **≥ 15.5.24 / ≥ 16.3.3** ([`rules/03`](03-nextjs.md) §5 has the batches).
 
 **Vue / Nuxt / Nitro / h3 / IPX / devalue**
 
@@ -110,7 +110,7 @@ their own. Full detail in `rules/03` (Next/React) and `rules/05` (Nuxt/Nitro/h3)
   **CVE-2026-53721** (4.4.7/3.21.7), incompletely fixed — **CVE-2026-71315** needs 4.5.1;
   `<NuxtLink>` XSS CVE-2026-53722; island authz CVE-2026-47200 (4.4.6); 2026-08-05 batch
   (server-island props **RCE** CVE-2026-71320, payload-cache cross-user leak
-  CVE-2026-71316, island DoS) — Nuxt floor **≥ 4.5.1** (`rules/05` §6).
+  CVE-2026-71316, island DoS) — Nuxt floor **≥ 4.5.1** ([`rules/05`](05-nuxt.md) §6).
 - Nitro `routeRules` proxy scope bypass **CVE-2026-44373** + open redirect CVE-2026-44372
   (nitropack 2.13.4).
 - IPX path traversal **CVE-2025-54387** (1.3.2/2.1.1/3.1.1).
@@ -123,21 +123,21 @@ their own. Full detail in `rules/03` (Next/React) and `rules/05` (Nuxt/Nitro/h3)
   **7.0.5**.
 
 The pattern across all of these: **the fix is almost always "upgrade."** Automated
-dependency updates + a fast patch path is the actual control (`sota-devsecops`).
+dependency updates + a fast patch path is the actual control ([`sota-devsecops`](../../sota-devsecops/SKILL.md)).
 
 ## 5. Framework security hygiene
 
-- **CSP** nonce/hash-based, not `'unsafe-inline'` (`rules/06`); `nuxt-security` or a
+- **CSP** nonce/hash-based, not `'unsafe-inline'` ([`rules/06`](06-ssr-hydration.md)); `nuxt-security` or a
   Next `proxy.ts` header layer. Plus the standard headers (HSTS, `nosniff`,
-  `frame-ancestors`) — `sota-code-security` rules/05.
+  `frame-ancestors`) — [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md).
 - **Supply chain:** these apps have deep dependency trees (a framework pulls hundreds of
   transitive packages). Lockfile committed, `npm audit`/`osv-scanner` in CI, provenance
-  where available (`sota-devsecops`). Client-shipped dependencies are also an XSS
+  where available ([`sota-devsecops`](../../sota-devsecops/SKILL.md)). Client-shipped dependencies are also an XSS
   surface (a compromised npm package runs in your users' browsers).
 - **Error handling:** don't leak stack traces / internal paths to the client in
-  production; don't render user-controlled error text as HTML (`rules/02`).
+  production; don't render user-controlled error text as HTML ([`rules/02`](02-react.md)).
 - **Rate limiting** on Server Actions / Route Handlers / Nitro routes — they're public
-  endpoints (`sota-api-design` rules/07).
+  endpoints ([`sota-api-design` rules/07](../../sota-api-design/rules/07-security-operations.md)).
 
 ## Audit checklist
 

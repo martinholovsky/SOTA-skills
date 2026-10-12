@@ -50,7 +50,7 @@ i18n breakage is a layout *and* logic class of bug — design for it up front:
 
 - Reserve expansion room: German/Finnish run ~+35% over English, Russian +20%; buttons, tabs,
   and nav labels must wrap or the container must grow — never `overflow: hidden` on a label.
-  Worst-case strings belong in component stories (rules/03 §6).
+  Worst-case strings belong in component stories ([rules/03](03-design-systems-components.md) §6).
 - Never concatenate translated fragments ("You have " + n + " items") — use ICU message
   formatting with proper plural rules (Slavic languages have 3–4 plural forms).
 - Locale-format everything via `Intl.*` (NumberFormat, DateTimeFormat, RelativeTimeFormat,
@@ -59,7 +59,7 @@ i18n breakage is a layout *and* logic class of bug — design for it up front:
   alphabetical-only validation (rejects most of the world's names).
 - Phone/address: country-first, then format-specific fields; postal code is not numeric
   everywhere and not present everywhere.
-- RTL covered in rules/02 §5; remember content *direction* can differ from UI *locale* —
+- RTL covered in [rules/02](02-layout-spacing-responsive.md) §5; remember content *direction* can differ from UI *locale* —
   user-generated text gets `dir="auto"`.
 
 ## 2b. Choosing the right control
@@ -79,7 +79,7 @@ i18n breakage is a layout *and* logic class of bug — design for it up front:
 
 - Native controls first on mobile (`<select>`, `<input type="date">` where UX suffices): free
   platform UI, accessibility, and muscle memory. Custom replacements must clear the full APG bar
-  (rules/05) — a styled-div select that breaks iOS scroll-wheel selection is a downgrade.
+  ([rules/05](05-accessibility.md)) — a styled-div select that breaks iOS scroll-wheel selection is a downgrade.
 - Defaults are decisions: prefill the most common/safest choice; never default-on for marketing
   consent (legal + trust); remember prior user choices.
 
@@ -149,8 +149,8 @@ Error screens/pages: plain-language what-happened, what-now (retry button, statu
   trust failure.
 - Session expiry mid-form (WCAG 2.2.5/2.2.6 adjacent): warn before expiry, allow re-auth without
   losing entered data — re-auth-and-wipe is the worst version of this bug.
-- **Idle expiry is visible, not discovered.** The server owns the idle timeout (sota-code-security
-  rules/17); the client mirrors it with a timer so the user sees a countdown warning with an
+- **Idle expiry is visible, not discovered.** The server owns the idle timeout ([sota-code-security
+  rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md)); the client mirrors it with a timer so the user sees a countdown warning with an
   "Stay signed in" action before it lapses. When it does lapse, the client acts at once: it
   sends the same sign-out request the sign-out control sends (so the server invalidates the
   session and clears site data), removes sensitive rendered content from the DOM and in-memory
@@ -194,7 +194,7 @@ Error screens/pages: plain-language what-happened, what-now (retry button, statu
   "select all N matching" affordance, and a mobile strategy decided per table (priority columns /
   card collapse — never just horizontal scroll with no indicator).
 - Filters: applied filters visible as removable chips; result count live-announced
-  (`role="status"`); zero-result state per rules/04 §5; filter state in the URL.
+  (`role="status"`); zero-result state per [rules/04](04-ux-patterns.md) §5; filter state in the URL.
 - Search: debounce 200–300ms, show the query in the empty state, typo tolerance, recent searches;
   Esc clears; `/` or Cmd+K focuses (without hijacking when an input is already focused).
 
@@ -212,7 +212,7 @@ Escalation ladder — use the *least* interruptive surface that fits:
 - Modal abuse is the most common escalation failure: editing a record in a modal-in-a-modal means
   the flow needed a page. **Never stack modals**; if a modal spawns a modal, redesign.
 - All overlays: Esc closes, scrim click closes (except mid-form with dirty state — then confirm
-  discard), focus trapped + restored (rules/05 §3), body scroll locked without layout shift
+  discard), focus trapped + restored ([rules/05](05-accessibility.md) §3), body scroll locked without layout shift
   (`scrollbar-gutter`), state linkable where the content merits it (drawer with a record → URL).
 - Unsaved-changes guard on any dismissible surface containing user input: "Discard changes?"
   with Keep editing as the safe default.

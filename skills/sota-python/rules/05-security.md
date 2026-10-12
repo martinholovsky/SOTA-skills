@@ -10,7 +10,7 @@ each has a grep signature — hunt them all in audits.
 callables during load. Same family: `shelve`, `marshal`, `dill`, `joblib.load`, pandas
 `read_pickle`, torch `torch.load` without `weights_only=True` *and* torch ≥ 2.6 (CVE-2025-32434,
 GHSA-53q9-r3pm-6pq6: `weights_only=True` itself was bypassed to RCE on torch ≤ 2.5.1, fixed in
-2.6.0; model-artifact trust is `sota-ml-engineering` rules/07), and **`jsonpickle.decode`
+2.6.0; model-artifact trust is [`sota-ml-engineering` rules/07](../../sota-ml-engineering/rules/07-security-governance.md)), and **`jsonpickle.decode`
 / `jsonpickle.loads`** — the JSON wire format hides that it rebuilds objects: a `py/reduce`
 entry calls any importable function, and its `safe=True` default only stops `eval()`
 (measured, jsonpickle 4.1.2: `{"py/reduce": [{"py/function": "os.getcwd"}, ...]}` ran
@@ -40,7 +40,7 @@ obj = msgspec.json.decode(blob, type=Job)     # or json + pydantic validation
   input through a fixed dict — `HANDLERS = {"csv": export_csv}` then `HANDLERS[kind]` — so
   the set of reachable callables is the one you wrote. No in-interpreter "restricted" mode is
   a security boundary; code that must run untrusted expressions runs in a separate sandboxed
-  process (`sota-sandboxing`). OWASP: Code Review Guide; Proactive Controls; ASVS.
+  process ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)). OWASP: Code Review Guide; Proactive Controls; ASVS.
 - Templates: Jinja2 with autoescape on for HTML (`select_autoescape`); never render
   user-controlled **template strings** (SSTI → RCE), only user data into fixed templates.
   Same logic for `str.format` on user-supplied format strings (`"{0.__class__}"` walks objects).
@@ -196,7 +196,7 @@ code  = f"{secrets.randbelow(1_000_000):06d}"
 
 §6 covers *randomness*. Algorithm and protocol choice — AEAD selection, nonce discipline,
 key derivation, constant-time comparison, crypto agility, post-quantum migration — is
-**`sota-code-security` rules/04**, deliberately, because those decisions are identical across
+**[`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md)**, deliberately, because those decisions are identical across
 languages and drift badly when restated per runtime. Load it before designing anything
 cryptographic; this section is only the Python-specific part.
 
@@ -207,8 +207,8 @@ cryptographic; this section is only the Python-specific part.
 - **`hashlib` is not a password API.** `md5`/`sha1` for *security* purposes are flagged
   (bandit B303/B324); for a non-security digest pass `usedforsecurity=False` so the intent is
   in the code rather than in a reviewer's head. Password hashing wants argon2/bcrypt/scrypt,
-  not a bare hash — the choice itself is `sota-code-security` rules/04.
-- **`crypt` was removed in 3.13** (PEP 594, rules/01 §7a). Code still importing it is both
+  not a bare hash — the choice itself is [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md).
+- **`crypt` was removed in 3.13** (PEP 594, [rules/01](01-tooling-project-setup.md) §7a). Code still importing it is both
   broken on a modern floor and using weak, platform-dependent hashing.
 
 ## 6b. Remote host trust: verify, or you are trusting DNS
@@ -228,7 +228,7 @@ cryptographic; this section is only the Python-specific part.
 - Untrusted XML: use `defusedxml`; stdlib `etree` is OK against entity *expansion* on modern
   versions but external entity and DTD handling across libs (lxml!) still needs hardening:
   `lxml.etree.XMLParser(resolve_entities=False, no_network=True)`.
-- SSRF (policy: `sota-code-security` rules/01 §5; this is the Python idiom):
+- SSRF (policy: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §5; this is the Python idiom):
   - **Take a key, not a URL.** Accept a host name or record id, look it up in your own
     allowlist and build the URL yourself; a caller-supplied URL relayed to a client is the bug.
   - **Check the address you dial, at connect time.** Validating the hostname and then letting
@@ -268,7 +268,7 @@ both. So any validation, authorization, or bounds check written as an `assert`
   `PYTHONOPTIMIZE` (Dockerfile `CMD`, entrypoint, `uv run` flags).
 - Note the sibling trap: lenient numeric parsing. `int(" 12 \n")` is `12` and
   `float("1_0")` is `10.0` — a corrupt field yields a plausible number rather
-  than an error. Full class: `sota-code-security` rules/13 §3.
+  than an error. Full class: [`sota-code-security` rules/13](../../sota-code-security/rules/13-context-dependent-silence.md) §3.
 
 ## 8. Input-adjacent denial of service & injection oddities
 
@@ -304,7 +304,7 @@ both. So any validation, authorization, or bounds check written as an `assert`
 - **Log injection:** user strings logged verbatim can forge log lines (`\n` + fake record)
   or smuggle ANSI escapes into terminals. Strip/escape control characters at the logging
   formatter for user-supplied fields; one more reason for structured logging
-  (fields are quoted) — see rules/03 §11.
+  (fields are quoted) — see [rules/03](03-idioms-pitfalls.md) §11.
 - **`int()`/numeric parsing:** Python ints are unbounded — `int(user_str)` of a 10MB digit
   string allocates happily; 3.11+ caps str→int at 4300 digits by default
   (`sys.set_int_max_str_digits`) — don't raise that limit on request paths. Cap input length
@@ -319,7 +319,7 @@ both. So any validation, authorization, or bounds check written as an `assert`
 
 ## 8a. Debug consoles and error pages in production
 
-Django's `DEBUG=False` is already a settings rule (rules/07 §2). This is the mechanism, and
+Django's `DEBUG=False` is already a settings rule ([rules/07](07-frameworks-testing.md) §2). This is the mechanism, and
 it generalises past Django.
 
 - **Werkzeug's interactive debugger executes arbitrary Python** in any traceback frame when
@@ -363,7 +363,7 @@ in depth: `PYTHON_DISABLE_REMOTE_DEBUG=1`, `-X disable-remote-debug`, or a build
   hardened `python -I` entrypoint needs the `-X` form. Any value disables it, even empty.
 - Check it in the running image with the real flags; audit events `sys.remote_exec` (caller)
   and `cpython.remote_debugger_script` (target) record use. Not granting `SYS_PTRACE` to the
-  container is the primary control (`sota-sandboxing`).
+  container is the primary control ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)).
 
 Dependency and supply-chain hygiene and static-analysis gates (formerly sections 9 and 10)
 moved to [rules/08](08-supply-chain.md) §1–§2 on 2026-09-25.
@@ -375,7 +375,7 @@ library's own warning is that incorrect use "can corrupt data and objects, revea
 information, cause crashes, or otherwise compromise the running process". A wrong `argtypes`,
 a buffer sized from input, or a pointer kept after its owner is freed is a C bug with no C
 file to review. Confine these calls to one module, declare `argtypes`/`restype` on every
-foreign function, and validate lengths before they cross. The class is `sota-code-security` rules/06 §3.
+foreign function, and validate lengths before they cross. The class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
 
 ## Audit checklist
 
@@ -450,7 +450,7 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       (TOCTOU [HIGH]); `grep -rnE '"/tmp/|'"'"'/tmp/' --include="*.py" src/` (predictable path
       [MEDIUM]); `grep -rnE 'chmod\(.*0o(6|7)[0-7][0-7]|umask\(0\)' --include="*.py" src/`
       (widened perms [HIGH if secrets])
-- [ ] **--- Crypto (§6a) — choice itself is sota-code-security rules/04 ---** —
+- [ ] **--- Crypto (§6a) — choice itself is [sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md) ---** —
       `grep -rnE '\bmd5\(|\bsha1\(' --include="*.py" src/ | grep -v usedforsecurity` ([MEDIUM]);
       `grep -rn "from Crypto" --include="*.py" src/` (pycrypto vs pycryptodome [MEDIUM])
 - [ ] **--- Remote host trust (§6b) ---** —

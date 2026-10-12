@@ -5,17 +5,17 @@ secret-shared data with **no hardware trust anchor** — FHE, MPC/threshold sche
 ZKPs, and the PSI/OPRF primitives behind the deployments that actually shipped.
 Umbrella term: **COED** (computing on encrypted data). This file owns the
 choose/deploy/audit rules for these tools and the honest cost model. It does NOT
-own: TEE selection and the isolation ladder (rules/01–02), attestation (rules/03),
-confidential K8s (rules/04), differential privacy and data-minimization
-(sota-privacy-compliance rules/02), federated learning / DP-SGD
-(sota-ml-engineering rules/07), or classical crypto — AEAD, TLS, key management
-(sota-code-security rules/04 + sota-secrets-management rules/01).
+own: TEE selection and the isolation ladder ([rules/01](01-threat-model-and-selection.md)–02), attestation ([rules/03](03-remote-attestation.md)),
+confidential K8s ([rules/04](04-confidential-kubernetes.md)), differential privacy and data-minimization
+([sota-privacy-compliance rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md)), federated learning / DP-SGD
+([sota-ml-engineering rules/07](../../sota-ml-engineering/rules/07-security-governance.md)), or classical crypto — AEAD, TLS, key management
+([sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md) + [sota-secrets-management rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md)).
 
 ---
 
 ## 1. Positioning: trust math instead of silicon — and pay for it
 
-**R5.1 — Know what you are buying.** A TEE (rules/02) removes the host operator
+**R5.1 — Know what you are buying.** A TEE ([rules/02](02-tee-technologies.md)) removes the host operator
 from the TCB but keeps the silicon vendor, the microcode, and the attestation PKI
 in it. COED removes *all* of them: confidentiality rests only on a hardness
 assumption (typically lattice problems for FHE, standard assumptions for
@@ -29,9 +29,9 @@ Before any COED design, force the requirement through this ladder:
 
 | The actual requirement | Correct tool |
 |---|---|
-| "Cloud/host operator must not see the data" | TEE (rules/01 ladder) — same guarantee vs. that adversary, ~native speed |
-| "Analytics output must not identify individuals" | Differential privacy / aggregation → sota-privacy-compliance rules/02 |
-| "We must not hold this data at all" | Data minimization / pseudonymization → sota-privacy-compliance rules/02 |
+| "Cloud/host operator must not see the data" | TEE ([rules/01](01-threat-model-and-selection.md) ladder) — same guarantee vs. that adversary, ~native speed |
+| "Analytics output must not identify individuals" | Differential privacy / aggregation → [sota-privacy-compliance rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md) |
+| "We must not hold this data at all" | Data minimization / pseudonymization → [sota-privacy-compliance rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md) |
 | "Server must answer a query without learning the query" | PIR / PSI / OPRF (§5) — the one COED shape that ships at scale |
 | "Two orgs must compute jointly, neither may see the other's inputs, and neither will accept a TEE vendor in the TCB" | MPC (§3) |
 | "Prove a property of hidden data to a verifier" | ZKP (§4) |
@@ -123,7 +123,7 @@ by a cryptographer is a **Critical** finding. Grep for custom
 the client cannot tell. If result correctness matters (payments, model outputs
 acted on automatically), FHE alone is insufficient: add a verifiability layer —
 ZKP over the evaluation, redundant evaluation across independent parties, or
-run the evaluator inside an attested TEE (rules/02–03). An FHE design that
+run the evaluator inside an attested TEE ([rules/02](02-tee-technologies.md)–03). An FHE design that
 silently assumes an honest-but-curious server must state that assumption in the
 threat model; omitting it is a **High** finding.
 
@@ -242,15 +242,15 @@ queried adaptively enumerates the other side's set element by element
 
 | Goal | Reach for | Trust residue | Cost |
 |---|---|---|---|
-| Hide data from the compute host | **TEE** (rules/01–02) | Silicon vendor + attestation PKI | ~native |
+| Hide data from the compute host | **TEE** ([rules/01](01-threat-model-and-selection.md)–02) | Silicon vendor + attestation PKI | ~native |
 | Same, but hardware vendors excluded from TCB | **FHE** | Lattice hardness + library correctness | 10³–10⁶× |
 | Joint compute, no party sees others' inputs | **MPC** | Non-collusion of ≥ threshold parties | Network-bound, 10–1000× |
 | Prove a claim without revealing the witness | **ZKP** | Circuit soundness (+ setup ceremony if SNARK) | Prover-side heavy |
 | Membership lookup without revealing query/set | **PSI/OPRF** | Protocol assumptions + leakage budget | Near-production speed |
-| Publishable aggregate outputs | **DP** → sota-privacy-compliance rules/02 | Epsilon budget honesty | ~native |
+| Publishable aggregate outputs | **DP** → [sota-privacy-compliance rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md) | Epsilon budget honesty | ~native |
 
 Hybrids worth knowing (each layer keeps its own threat model, per the
-independent-layers principle in sota-sandboxing rules/01):
+independent-layers principle in [sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md)):
 - **TEE + MPC**: parties each run in attested enclaves; MPC covers "we distrust
   each other", TEE covers "we distrust each host" at near-native speed.
 - **FHE + ZKP**: FHE for input confidentiality, ZKP that the server evaluated
@@ -285,7 +285,7 @@ independent-layers principle in sota-sandboxing rules/01):
 ## Audit checklist
 
 - [ ] Requirement triaged through §1 R5.2: is there a written rationale for why
-      a TEE (rules/01) or DP (sota-privacy-compliance rules/02) does not satisfy
+      a TEE ([rules/01](01-threat-model-and-selection.md)) or DP ([sota-privacy-compliance rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md)) does not satisfy
       the threat model before any FHE/MPC build?
 - [ ] FHE scheme family matches workload shape (BGV/BFV exact, CKKS approximate,
       TFHE boolean/lookup) — no exact-arithmetic-on-CKKS or comparison-heavy BFV?
@@ -313,6 +313,6 @@ independent-layers principle in sota-sandboxing rules/01):
       rate-limited against adaptive enumeration?
 - [ ] Standards claims current: ISO/IEC 28033 stage, NIST PEC / IR 8214C
       threshold-call status re-verified, not copied from stale docs?
-- [ ] DP, consent, and minimization questions routed to sota-privacy-compliance;
-      DP-SGD/federated learning to sota-ml-engineering rules/07; classical
-      crypto to sota-code-security rules/04?
+- [ ] DP, consent, and minimization questions routed to [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md);
+      DP-SGD/federated learning to [sota-ml-engineering rules/07](../../sota-ml-engineering/rules/07-security-governance.md); classical
+      crypto to [sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md)?

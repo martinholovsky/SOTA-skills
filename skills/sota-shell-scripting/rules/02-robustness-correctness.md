@@ -78,7 +78,7 @@ Validate before acting, fail with a message naming the bad value:
   **Assert the condition you want, not its negation.** `!= "0"` is satisfied by `""`,
   `error`, `null`, and every usage message a broken invocation prints — verified. For a
   check that runs repeatedly until something completes, "cannot tell" must stay distinct
-  from "not yet": `sota-code-security` rules/15 §2.2a.
+  from "not yet": [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2a.
 - Required environment variables: check up front, all at once, not at first use:
 
 ```bash
@@ -173,7 +173,7 @@ out=$(produce | head -n 3) || (( $? == 141 ))  # accept SIGPIPE only
   command of an `&&` list, which `-e` does not exempt: `[ -f "$f" ] && url=$(grep -o PAT "$f"
   | head -n 1)` ended a setup checker silently when the file existed without the match. It
   sits on a path only an *empty* input reaches, so a run with data passes and the next run
-  without data dies (`sota-devsecops` rules/09 §2c). This library's own gates had 7 such
+  without data dies ([`sota-devsecops` rules/09](../../sota-devsecops/rules/09-gates-that-hold.md) §2c). This library's own gates had 7 such
   sites in 2 scripts; the worst killed its checker mid-run with 16 checks unreached. Close every
   such substitution with `|| true` (or test it in an `if`), never bare inside `$( )`.
 
@@ -191,7 +191,7 @@ while IFS= read -r line; do (( ++count )); done < <(cmd)
 `$?` reflects the redirection, not the producer; `pipefail` does not apply and
 `inherit_errexit` does not help. A producer that fails yields **zero lines**, so the loop
 completes over an empty set and the function reports success — the vacuous-pass shape
-(`sota-code-security` rules/11), now silent. Measured: a `git rev-list` usage error exits
+([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md)), now silent. Measured: a `git rev-list` usage error exits
 **129**, the loop sees nothing, and a coverage check announces "nothing to check" and
 exits 0.
 
@@ -207,7 +207,7 @@ while IFS= read -r line; do [[ -n $line ]] && arr+=("$line"); done <<<"$out"
 ```
 
 Two caveats on that remedy, because it is not free: `$( )` **strips trailing newlines**
-(rules/01 §2) — here `<<<` puts one back, but do not carry the pattern somewhere it
+([rules/01](01-safety-baseline.md) §2) — here `<<<` puts one back, but do not carry the pattern somewhere it
 matters — and it buffers the whole output in memory, which is wrong for an unbounded
 producer. Use bare `< <(cmd)` only where the producer cannot meaningfully fail, or where
 empty and failed are genuinely the same outcome. **Say which, in a comment.**
@@ -246,12 +246,12 @@ Decide per script and enforce with the shebang + `shellcheck -s sh`.
   further: `mkdir -p -- dir` succeeds on the same system (both verified on macOS
   2026-08-26). Where the path is a literal you control, drop the `--`; where it is
   untrusted, prefer `./"$path"` for a relative path — portable, and it defeats
-  leading-dash injection without depending on the flag. (`sota-golang` rules/05 already
+  leading-dash injection without depending on the flag. ([`sota-golang` rules/05](../../sota-golang/rules/05-security.md) already
   hedges this as "where the tool supports it"; it was unreachable from a shell task.)
 - bash-targeted: use bash properly (arrays, `[[ ]]`, `mapfile`) — half-POSIX bash is the
   worst of both. But remember macOS = bash 3.2: no associative arrays, no `mapfile`, no
   `${var,,}`, no `inherit_errexit`. If macOS devs run the script, either stay 3.2-clean
-  or version-check (rules/01 §1). CI containers: confirm bash exists
+  or version-check ([rules/01](01-safety-baseline.md) §1). CI containers: confirm bash exists
   (`docker run --rm --entrypoint sh image -c 'command -v bash'`; the bare form
   `docker run image which bash` hands `which bash` to the image's ENTRYPOINT as arguments,
   and many images have no `which`) before writing `#!/usr/bin/env bash` entrypoints —
@@ -269,7 +269,7 @@ for cmd in jq curl flock; do
 done
 ```
 
-- Don't hardcode tool paths except in privileged scripts with a sanitized PATH (rules/03).
+- Don't hardcode tool paths except in privileged scripts with a sanitized PATH ([rules/03](03-security.md)).
 
 ### A missing tool is a decision, not automatically a failure
 
@@ -306,7 +306,7 @@ Two rules that make this safe rather than sloppy:
 
 - **A skipped check is not a passed check.** Print the skip on the same line the check
   would have used, count skips separately, and never let the summary read clean when a
-  check did not execute (`sota-code-security` rules/14 §4 — a control that never runs).
+  check did not execute ([`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §4 — a control that never runs).
   This repo does exactly that: four invariants print `SKIPPED: python3 not found` and CI,
   where python3 always exists, enforces them for real.
 - **Never auto-install.** Installing software is a change to the user's machine; on a
@@ -455,7 +455,7 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
       `grep -rnB2 '=\$?' --include='*.sh' .` — a **locator, not a verdict**: it hits every
       capture including the correct ones, so read the two lines above each — if any
       command sits between, the captured status is *that* command's. The bash mirror of the
-      PowerShell probe in `rules/07`. Two shapes to flag specifically: a capture after a
+      PowerShell probe in [`rules/07`](07-powershell.md). Two shapes to flag specifically: a capture after a
       diagnostic `echo`, and **`local rc; rc=$?`**, where the declaration itself resets `$?`
       (measured 0 vs 7 on bash/zsh/dash/sh — and it is the SC2155 "declare separately" habit
       applied where it does not belong). Silent, and the variable is still named `rc`.

@@ -3,8 +3,8 @@
 Scope: the K8s authorization graph and workload identity — least-privilege Roles/
 ClusterRoles, the privilege-escalation traps, ServiceAccount hygiene and token model, and
 how to audit who-can-do-what. RBAC *role-design methodology and SSO* is
-`sota-identity-access`; this file owns the **K8s RBAC mechanics and the escalation traps**.
-Workload identity to cloud and secret backends is `sota-secrets-management` (rules/01).
+[`sota-identity-access`](../../sota-identity-access/SKILL.md); this file owns the **K8s RBAC mechanics and the escalation traps**.
+Workload identity to cloud and secret backends is [`sota-secrets-management`](../../sota-secrets-management/SKILL.md) ([rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md)).
 
 RBAC is the cluster's authorization fabric: `Role`/`ClusterRole` (a set of allowed
 verbs×resources) bound to subjects (users, groups, ServiceAccounts) by `RoleBinding`
@@ -109,14 +109,14 @@ namespace ≈ the union of every identity whose token/cred lives there.** Specif
 Treat broad `secrets` read, `pods` create, and `serviceaccounts/token` create as
 near-Secret-equivalent and near-impersonate-equivalent; scope them hard. Policy-engine
 CRDs belong in the same class: create/update on Kyverno (namespaced) policies runs
-attacker logic inside the admission-controller pod (`rules/03` §2, CVE-2026-4789).
+attacker logic inside the admission-controller pod ([`rules/03`](03-admission-policy.md) §2, CVE-2026-4789).
 
 ### 2.6 The Helm-chart-grants-cluster-admin trap
 Charts and operators bundle their own RBAC. A values toggle like
 `rbac.clusterAdministrator: true`, `rbac.create: true` with a `*/*` ClusterRole, or a
 default ServiceAccount bound to `cluster-admin` hands the workload the cluster. **Always
 `helm template | grep -A20 -iE 'ClusterRole|ClusterRoleBinding'` before install** and read
-the rules (`rules/07` covers chart review). A logging agent does not need cluster-admin.
+the rules ([`rules/07`](07-supply-chain-audit.md) covers chart review). A logging agent does not need cluster-admin.
 
 ### 2.7 Grants that look harmless: `nodes/proxy`, PersistentVolumes, CSR approval, namespace labels
 Kubernetes' own RBAC good-practices page lists these beside `bind`/`escalate`/`impersonate`
@@ -182,7 +182,7 @@ spec:
 - **Audience-scoped tokens**: a token minted for audience `vault` is rejected by the API
   server and by any verifier expecting a different audience — limits replay if leaked.
 - **ServiceAccount tokens are for workloads only** — never a person's login credential;
-  human access goes through the IdP with MFA (`rules/01` §2 Authentication).
+  human access goes through the IdP with MFA ([`rules/01`](01-control-plane-etcd.md) §2 Authentication).
 - **One ServiceAccount per workload**, never the namespace `default` SA for real
   workloads, never shared across apps. The `default` SA should have an empty token mount
   and no bindings.
@@ -228,7 +228,7 @@ closure of what subject X can do, and can it escalate?" Tools:
 - [ ] `escalate`/`bind`/`impersonate` granted only to a named, audited admin path — never automation? (reverse index via krane; `grep -rnwE 'escalate|impersonate|bind' rbac/`)
 - [ ] No `cluster-admin` (or any broad role) bound to a ServiceAccount, `system:authenticated`, or `system:unauthenticated`? (`kubectl get clusterrolebindings -o json | jq '...roleRef.name=="cluster-admin"'`)
 - [ ] Aggregated ClusterRoles reviewed — nothing unexpected aggregates into `admin`/`edit`/`view`?
-- [ ] Broad `secrets` read, `pods` create, `serviceaccounts/token` create, and policy-engine CRD writes (`rules/03`) scoped tightly (treated as escalation primitives)?
+- [ ] Broad `secrets` read, `pods` create, `serviceaccounts/token` create, and policy-engine CRD writes ([`rules/03`](03-admission-policy.md)) scoped tightly (treated as escalation primitives)?
 - [ ] §2.7 grants held by nothing outside the control plane and named operators: `nodes/proxy` (any verb — **Critical** on a workload or tenant subject), `persistentvolumes` create, CSR `approval` update, `namespaces` patch/update? (the §4 `jq` hunt; `kubectl auth can-i get nodes --subresource=proxy --as=<subject>`)
 - [ ] `automountServiceAccountToken: false` is the default; only API-calling pods opt in? (`grep -rL automountServiceAccountToken` deployments; check SA spec)
 - [ ] No manually-created long-lived `service-account-token` Secrets; external consumers use short-lived audience-scoped TokenRequest tokens?

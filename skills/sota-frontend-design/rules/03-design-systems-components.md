@@ -73,7 +73,7 @@ content, switch to compound components.
 
 API rules:
 
-- **Spread the rest**: forward `...rest` to the underlying DOM node, merge (don't clobber) `className`/`style`, and forward `ref`. A component that swallows `data-testid`, `aria-*`, or event handlers is broken. **Exception, and it is not optional: `...rest` is the caller's leftover *props*, never a bag of untrusted data.** The moment a call site spreads something attacker-influenced — `<Card {...JSON.parse(body)}>`, an API object, parsed query params — this same forwarding hands `dangerouslySetInnerHTML` and `on*` handlers straight to the DOM node. Forward a rest object that reached you from a trusted call site; where it did not, allowlist the keys at that boundary (`sota-web-frameworks` rules/02 §5, *"never spread attacker-influenced objects onto DOM elements"* — the narrower security rule wins in its domain, and this line used to state no exception at all).
+- **Spread the rest**: forward `...rest` to the underlying DOM node, merge (don't clobber) `className`/`style`, and forward `ref`. A component that swallows `data-testid`, `aria-*`, or event handlers is broken. **Exception, and it is not optional: `...rest` is the caller's leftover *props*, never a bag of untrusted data.** The moment a call site spreads something attacker-influenced — `<Card {...JSON.parse(body)}>`, an API object, parsed query params — this same forwarding hands `dangerouslySetInnerHTML` and `on*` handlers straight to the DOM node. Forward a rest object that reached you from a trusted call site; where it did not, allowlist the keys at that boundary ([`sota-web-frameworks` rules/02](../../sota-web-frameworks/rules/02-react.md) §5, *"never spread attacker-influenced objects onto DOM elements"* — the narrower security rule wins in its domain, and this line used to state no exception at all).
 - Variants as a closed set (`variant="primary" | "secondary" | "ghost"`, `size="sm" | "md" | "lg"`), styled via data attributes (`data-variant="primary"`) or a variant utility (CVA-style) — not className string math.
 - No boolean prop pairs that can contradict (`primary` + `secondary`); one enum.
 - An `asChild`/`render` escape hatch (Radix pattern) so a Button can render as `<a>` or a router Link without prop forwarding gymnastics.
@@ -112,7 +112,7 @@ A component is not done when the happy path renders. Every interactive component
 | Disabled | Visually muted AND `disabled`/`aria-disabled`; prefer aria-disabled + blocked handler when the control should stay focusable/explainable (tooltip "why") |
 | Loading | In-place spinner/progress, width-stable (don't collapse the button), `aria-busy`, repeat-click guarded |
 | Error/invalid | Border + icon + message (not color alone), `aria-invalid` + `aria-describedby` |
-| Empty | Real designed state (see rules/04), never blank or raw "No data" |
+| Empty | Real designed state (see [rules/04](04-ux-patterns.md)), never blank or raw "No data" |
 | Skeleton/placeholder | Matches final layout dimensions (no CLS on arrival) |
 
 Data-bearing views additionally: loading / error-with-retry / empty / partial / ideal — the five UI states. An audit that finds only "ideal" implemented files a finding per missing state.
@@ -155,7 +155,7 @@ Regardless of approach:
   for web components): `--button-bg`, documented, stable. Consumers never reach into internal
   class names — that's the encapsulation contract that makes refactors safe.
 - Specificity stays flat (single class / `:where()` wrappers); overrides happen via the
-  documented variables, layers handle the rest (rules/02 §6).
+  documented variables, layers handle the rest ([rules/02](02-layout-spacing-responsive.md) §6).
 - TypeScript: variant props derived from a single source (`VariantProps<typeof button>` with CVA
   or equivalent) so types, styles, and docs can't drift; discriminated unions for mutually
   exclusive prop sets (`{ href } | { onClick }`).
@@ -182,7 +182,7 @@ at scale — there is no neutral.
   behavior change there is semver-major even if no TS type changed.
 - System-level a11y testing: axe on every story (CI gate), keyboard tests in component
   integration tests (Tab/arrow/Esc flows), and one manual SR pass per new primitive before
-  stable (rules/05 §6).
+  stable ([rules/05](05-accessibility.md) §6).
 
 ## 6c. Component API smells (audit greps)
 
@@ -192,7 +192,7 @@ at scale — there is no neutral.
 - **Boolean modifiers that combine ambiguously** (`small` + `large` both settable): enum.
 - **`onClick` on a non-interactive component** (Card, Row): wrap content in a real `<button>`/
   `<a>` child instead — clickable-div at the API level reproduces the div-button a11y bug for
-  every consumer (rules/05 §1).
+  every consumer ([rules/05](05-accessibility.md) §1).
 - **`style`/`className` accepted but not merged**, or `ref` not forwarded: integration paper cut
   that forces forks.
 - **Copy-paste siblings** (`UserCard`, `ProjectCard`, `TeamCard` at 90% overlap): extract the
@@ -208,7 +208,7 @@ at scale — there is no neutral.
 - Density is its own theme axis, orthogonal to color: `[data-density="compact"]` remaps the
   *control-height and space tokens* (`--control-h: 32px→28px`, `--space-row: 12px→8px`,
   `--text-control: 14px→13px`); components are written against those tokens so density is free.
-  Touch devices force comfortable density regardless of setting (pointer: coarse, rules/02 §4).
+  Touch devices force comfortable density regardless of setting (pointer: coarse, [rules/02](02-layout-spacing-responsive.md) §4).
 - Multi-brand: brands swap the **primitive ramp assignments** feeding the same semantic tokens
   (brand A maps `accent` to its blue ramp, brand B to its green ramp) plus the few brand-shape
   tokens (radius stance, font family). If brands diverge structurally (different component
@@ -251,7 +251,7 @@ button/
 - [ ] One styling strategy; theming surface is documented custom properties (no consumer reaching into internal classes); no arbitrary-value utilities or `@apply` sprawl
 - [ ] A11y enforced by the system: required label props on unlabeled-prone primitives, APG behavior baked in, contrast guaranteed at token layer per theme
 - [ ] Component APIs: rest props spread + className/style merged + ref forwarded; closed variant enums; `asChild`/render escape hatch on interactive primitives
-- [ ] No component spreads a rest object that originated in untrusted data (`{...JSON.parse(…)}`, an API response, parsed query params) onto a DOM node — grep the call sites, not the component: the spread that injects `dangerouslySetInnerHTML` or an `on*` handler is written where the props are *built* (`sota-web-frameworks` rules/02 §5)
+- [ ] No component spreads a rest object that originated in untrusted data (`{...JSON.parse(…)}`, an API response, parsed query params) onto a DOM node — grep the call sites, not the component: the spread that injects `dangerouslySetInnerHTML` or an `on*` handler is written where the props are *built* ([`sota-web-frameworks` rules/02](../../sota-web-frameworks/rules/02-react.md) §5)
 - [ ] Stateful components implement value/defaultValue/onChange (and open/defaultOpen/onOpenChange); no mode-switching warnings in console
 - [ ] 9-state contract complete per interactive component; data views implement loading/error/empty/partial/ideal
 - [ ] Buttons in async flows: width-stable loading, double-submit guarded, `aria-busy`

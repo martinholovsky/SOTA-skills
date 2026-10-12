@@ -78,7 +78,7 @@ Natural backpressure carriers — don't defeat them:
 - **AMQP prefetch (`basic.qos`):** RabbitMQ *pushes*; the prefetch count (cap
   on unacked deliveries) is the demand signal. Unset/0 = unlimited prefetch =
   an unbounded buffer in the consumer. Always set it explicitly (broker-side
-  semantics: sota-architecture rules/03 §7b).
+  semantics: [sota-architecture rules/03](../../sota-architecture/rules/03-distributed-systems-and-events.md) §7b).
 - **HTTP server concurrency limits:** cap in-flight requests at the listener
   (semaphore/middleware); past the cap, 503 immediately.
 

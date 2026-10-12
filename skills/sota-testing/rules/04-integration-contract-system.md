@@ -25,7 +25,7 @@ Rules:
   amortize with one container per suite/session; get per-test isolation via
   transactions/schemas/keys (4.3), not per-test containers.
 - **Mock the third parties you can't containerize** at your adapter port
-  (`rules/03` §3.3) or run their official emulators/sandboxes in the same
+  ([`rules/03`](03-doubles-and-test-data.md) §3.3) or run their official emulators/sandboxes in the same
   container-per-suite pattern — and keep a small non-blocking live-sandbox
   suite to catch emulator drift.
 
@@ -43,7 +43,7 @@ Two distinct targets — don't conflate them:
 - Destructive/data migrations get a rehearsal: apply to a snapshot with
   representative (masked) data, assert row counts/invariants after. Verify
   the rollback path actually restores (or document it as forward-only —
-  expand-contract; see `sota-databases` for online-migration patterns).
+  expand-contract; see [`sota-databases`](../../sota-databases/SKILL.md) for online-migration patterns).
 - Test the failure mode that matters: migration applied to a DB that's mid
   old-version traffic (expand/contract compatibility), not just the clean lab
   case.
@@ -95,7 +95,7 @@ func TestOrders(t *testing.T) {
 
 ## 4.5 Contract testing between services
 
-The honeycomb's load-bearing wall (`rules/01` §1.1): each consumer–provider
+The honeycomb's load-bearing wall ([`rules/01`](01-strategy-and-shape.md) §1.1): each consumer–provider
 edge is verified **in isolation, asynchronously**, replacing combinatorial
 cross-service e2e.
 
@@ -138,7 +138,7 @@ Discipline that makes it work:
   (type/shape) over exact values wherever the value isn't the contract.
 - **Provider states are part of the provider's test code** ("a user 42
   exists") — keep them thin, built on the same builders as other tests
-  (`rules/03`).
+  ([`rules/03`](03-doubles-and-test-data.md)).
 - Contract tests verify *schema and semantics of the edge*, not provider
   business logic — that's the provider's own unit/integration suites.
 
@@ -184,7 +184,7 @@ queued-for is an anti-pattern. Modern default:
 - Keep ONE shared environment at most, as a production-mirror for
   release-candidate soak — not as everyone's integration playground.
 - Environment seeding uses the same builders/seed scripts as tests
-  (`rules/03`), version-controlled. Hand-curated environment data is
+  ([`rules/03`](03-doubles-and-test-data.md)), version-controlled. Hand-curated environment data is
   unreproducible by definition.
 - If full ephemeral envs are too heavy, the in-repo answer is 4.1: most
   "needs staging" tests are really "needs a real DB/broker", which
@@ -199,7 +199,7 @@ produce the same red or green, and **the first is a scientific conclusion about 
 while the second is a broken bench.
 
 Field-reported: after a `prune`/`fstrim` corrupted a container runtime
-(`sota-devsecops` rules/07 §7.7), an exploit-validation file went from 3 passed to 1 passed
+([`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) §7.7), an exploit-validation file went from 3 passed to 1 passed
 / 2 failed with a missing-envelope error. Nothing in the failure said *the container never
 ran*; it read as the target not being exploitable.
 
@@ -215,7 +215,7 @@ ran*; it read as the target not being exploitable.
   into skips while the suite reported **0 failed**. The only moving number was the skip
   count (30 → 60). So **assert the count, not just the colour**: pin an expected number of
   collected/executed tests for any lane with environment-gated skips, or fail the lane when
-  skips exceed a recorded baseline. (`rules/07` §7.6 treats a *drifting* skip count as slow
+  skips exceed a recorded baseline. ([`rules/07`](07-suite-health-and-ci.md) §7.6 treats a *drifting* skip count as slow
   rot; this is the acute version, and it is invisible in one run.)
 - **Read a skip condition from the environment, never from the subject's opinion of it.**
   Field-reported: four tests skipped when the code under test returned `Unsupported` with a
@@ -224,7 +224,7 @@ ran*; it read as the target not being exploitable.
   was rejected, so a broken feature reported `12 passed`. Ask the host itself (for example
   `/sys/kernel/security/lsm`), and on a host that *has* the capability make the
   `Unsupported` path **fail** and print its reason. Then a skip is a fact about the host and a
-  failure is a fact about the code. It is `sota-code-security` rules/15 §2.4 (evidence the
+  failure is a fact about the code. It is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.4 (evidence the
   subject supplies about itself), applied to *why it cannot run*.
 - **Assert the setup's effect, not its exit code.** `modprobe` exits 0 for a module that is
   **built into** the kernel: libkmod counts a built-in as already present
@@ -235,10 +235,10 @@ ran*; it read as the target not being exploitable.
 - **Empty is not a result.** An empty output file, an empty stdout, a zero-length report is
   a **failed measurement until proven otherwise** — assert the artefact is non-empty *and*
   contains the summary line you expect before reading anything into it. (The pipe version of
-  this — a filter destroying the evidence — is `sota-shell-scripting` rules/01 §3.)
+  this — a filter destroying the evidence — is [`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md) §3.)
 - **Name the subject in the message.** *"exploit not reproduced"* is a claim about the
   target; *"no envelope returned — harness did not start"* is a claim about the bench. The
-  general form is `sota/rules/03` §2: when a check reports, say what it is reporting about.
+  general form is [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2: when a check reports, say what it is reporting about.
 - Distinguish this from a *flaky* dependency. Flakiness is intermittent and the retry is the
   usual answer; this is a bench that is uniformly broken while still looking healthy from
   outside, and retrying it produces the same confident wrong answer every time.

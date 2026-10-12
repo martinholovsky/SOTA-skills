@@ -38,7 +38,7 @@ slow-but-obviously-correct reference.
    instance, then assert every nonce is distinct and every ciphertext decrypts
    to its own plaintext. A nonce counter or a cipher object shared without a
    lock fails only under contention, and a nonce reused under one key breaks
-   AES-GCM and ChaCha20-Poly1305 (`sota-code-security` rules/04 §2). The race
+   AES-GCM and ChaCha20-Poly1305 ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §2). The race
    window is narrow, so run many iterations, and add the race detector where
    the language has one (`go test -race`). OWASP: Code Review Guide v2.
 2. **Invariants**: outputs always satisfy a predicate — sorted output is
@@ -179,7 +179,7 @@ tests that exercise the line but don't constrain it. Tools: Stryker
 hours):
 
 - **Scoped, not global**: run on the diff (changed files per PR) or on the
-  highest-risk modules (`rules/01` §1.4) — money, auth, parsing. A weekly
+  highest-risk modules ([`rules/01`](01-strategy-and-shape.md) §1.4) — money, auth, parsing. A weekly
   diff-scoped job catches weak tests while they're fresh.
 - **As an audit probe**: one run on a "well-covered" module tells you in an
   afternoon whether 90% line coverage means anything.
@@ -189,7 +189,7 @@ hours):
   the truth*, and the suite cannot answer it: change what a function returns, run the
   real workload, and read the emitted line. A summary that is unchanged by the mutation
   is the finding. This is the only probe available where a job runs unattended and its
-  log is the sole witness (`sota-code-security` rules/14 §1).
+  log is the sole witness ([`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §1).
 - **As a control probe** (no tooling needed): hand-mutate one security control's
   body to the permissive no-op (`return True`, `return []`) and run the suite.
   Nothing fails ⇒ that control is untested however many tests name it. Two traps
@@ -200,7 +200,7 @@ hours):
   because the code was folded onto one line, which is the most common cause of all
   and the one that looks least like an environment problem). Force the path live and
   assert the mutation's runtime effect before trusting a green run.
-  `sota-code-security` rules/10.
+  [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md).
 - **Apply and revert with FILE EDITS, not a shell command pair — the revert is part
   of the technique, not cleanup.** This probe deliberately puts a real defect into
   production source, so an `inject && run && revert` one-liner has an unguarded
@@ -208,13 +208,13 @@ hours):
   leaves a permissive no-op on disk in a security control — precisely the defect the
   probe exists to detect. Field-reported 2026-09-10: the shell died mid-sequence with
   `fork failed: resource temporarily unavailable` (an exhausted process table,
-  `sota-shell-scripting` rules/08 §4), and the mutated file stayed mutated. **The
+  [`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §4), and the mutated file stayed mutated. **The
   repair path was blocked too** — `git checkout --` was denied by policy and `cp` from
   a backup also needed a fork — so the edit had to be undone with a file-edit tool,
   which needs no process. Assume the cheap repair may be unavailable.
 - **A wrapper reporting on that shell will call it a pass.** The failure surfaced as a
   bare `Exit code 1`, with the real cause only in the error text; piped, it reads as
-  "mutation applied, suite run, mutation reverted" (`sota-shell-scripting` rules/06
+  "mutation applied, suite run, mutation reverted" ([`sota-shell-scripting` rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md)
   §1 — `cmd; echo` makes the shell's status the `echo`'s). So **verify the revert
   against the source of truth**, never against the exit status: `git status --short
   <file>` empty, or grep the marker to 0. Give every mutation a greppable marker
@@ -244,7 +244,7 @@ hours):
   producer before weakening the test; the fix is to re-key onto the field that does
   discriminate (here, the exact function the record is attributed to).
 
-  Distinct from a tautological test (`rules/02` §2.7), where the expected value is
+  Distinct from a tautological test ([`rules/02`](02-test-design-quality.md) §2.7), where the expected value is
   *computed* by the same logic: here it is a literal, and the **key** is what fails.
   Run it for every assertion that claims to check *what* was found, not merely
   *that* something was found. One edit, one run, no production change.
@@ -261,14 +261,14 @@ calculate_interest.py:41  mutated `<` -> `<=`   SURVIVED
 
 - Don't chase 100% — some mutants are *equivalent* (behaviorally identical
   to the original; undetectable in principle) and some survivors sit in
-  consciously-untested code (`rules/01` §1.3). 100% enforced globally makes
+  consciously-untested code ([`rules/01`](01-strategy-and-shape.md) §1.3). 100% enforced globally makes
   people write interaction-asserting junk tests to kill noise mutants.
 - **Read survivors, don't average them.** A surviving mutant in
   `calculate_interest` is a finding; ten in a logging shim are noise. Triage
   like bug reports: kill (add the missing assertion), suppress-with-reason
   (equivalent/dont-care), or accept (documented untested zone).
 - **Baseline the survivors so runs are diffable.** An absolute score is a bad
-  gate for the same reason a global coverage target is (rules/07 §7.2). Persist
+  gate for the same reason a global coverage target is ([rules/07](07-suite-health-and-ci.md) §7.2). Persist
   the current survivor set as a checked-in baseline and fail CI only on *new*
   survivors — the mutation analogue of a coverage ratchet, and what makes a
   minutes-long scoped run gate-worthy. Two conditions keep the diff honest:
@@ -276,10 +276,10 @@ calculate_interest.py:41  mutated `<` -> `<=`   SURVIVED
   operator sets between releases; a baseline compared across versions attributes
   tool churn to your code, and re-baselining is then a deliberate step in the
   upgrade), **assert the baseline is non-empty and loaded** before reading a green
-  run as a pass (`sota-code-security` rules/11 §2.2a — an empty baseline makes the
+  run as a pass ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2a — an empty baseline makes the
   "new survivors" set empty for every input), and **let only the tool write it** — a hand-edited baseline is a live
   survivor marked dead, the same manufactured safety as an assertion-free test
-  (rules/02 §2.7).
+  ([rules/02](02-test-design-quality.md) §2.7).
 - Trend per-module mutation score on risk-critical code; a *drop* is the
   signal (new code arriving with weaker tests), the absolute number less so.
 
@@ -301,19 +301,19 @@ correct or not — then refactor against that pin (characterization tests).
    destination — an approval suite older than the refactor it enabled is
    debt (it freezes bugs as requirements).
 
-Difference from snapshot-smell (`rules/02` §2.8): intent. Approval tests are
+Difference from snapshot-smell ([`rules/02`](02-test-design-quality.md) §2.8): intent. Approval tests are
 *deliberately* whole-output and *deliberately* temporary, with a named owner
 and an end state.
 
 ## 6.5 Chaos / fault-injection (pointer)
 
 Unit/integration layers should already inject failures at boundaries (timeouts,
-5xx, partial writes, broker redelivery — `rules/03`, `rules/04`). Beyond
+5xx, partial writes, broker redelivery — [`rules/03`](03-doubles-and-test-data.md), [`rules/04`](04-integration-contract-system.md)). Beyond
 that: chaos engineering (latency/fault injection in real environments,
 dependency kill experiments, region failover drills) is an operational
 practice with its own blast-radius/abort-condition discipline — run it
-against SLOs with observability in place. See `sota-observability` and
-`sota-architecture` for resilience patterns; do not bolt chaos experiments
+against SLOs with observability in place. See [`sota-observability`](../../sota-observability/SKILL.md) and
+[`sota-architecture`](../../sota-architecture/SKILL.md) for resilience patterns; do not bolt chaos experiments
 into the CI test suite.
 
 ## Audit checklist
@@ -359,7 +359,7 @@ into the CI test suite.
       true-but-not-evidence → High; check the producer for **fan-out** (a value emitted
       for a whole category rather than the matched member) before weakening the test.
 - [ ] If a survivor baseline/manifest gates CI: is it asserted **non-empty and loaded**
-      (`sota-code-security` rules/11 §2.2a) → an empty baseline passes on every input.
+      ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2a) → an empty baseline passes on every input.
 - [ ] If a survivor baseline/manifest gates CI: is the mutation engine version
       pinned beside it, and is the file tool-generated? Unpinned engine → Low
       (diff attributes tool churn to code); hand-edited entries (check

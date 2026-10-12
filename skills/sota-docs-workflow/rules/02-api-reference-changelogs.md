@@ -13,7 +13,7 @@ baseline is generation from the artifact of record:
   try-it + snippets, Redoc is read-optimized; the renderer matters less than the
   pipeline). Spec-first or code-first is a per-team choice, but the spec must be
   CI-validated against the implementation either way (contract tests, or
-  generated-from-code with lint gates — see `sota-api-design` for spec design
+  generated-from-code with lint gates — see [`sota-api-design`](../../sota-api-design/SKILL.md) for spec design
   itself).
 - **Libraries**: rustdoc, godoc, javadoc, Sphinx/mkdocstrings from docstrings,
   TypeDoc from TSDoc. Doc generation runs in CI; warnings are errors
@@ -80,7 +80,7 @@ An example that doesn't run in CI is a claim, not an example.
 - For HTTP APIs: request/response examples in the OpenAPI doc, validated
   against the schemas in CI (example-schema mismatch is a classic silent lie).
 - Quickstarts and tutorials count as examples: run them in CI on a schedule if
-  full per-PR execution is too slow (rules/01 §2).
+  full per-PR execution is too slow ([rules/01](01-documentation-architecture.md) §2).
 
 ## §4 Error documentation
 
@@ -92,7 +92,7 @@ contract most docs omit.
   (retry with backoff / fix the request / escalate / impossible-by-construction).
 - HTTP: enumerate non-2xx responses in the OpenAPI doc with the error body
   schema and machine-readable codes; "default: Error" as the only error
-  response is an audit finding (error shape design: `sota-api-design`).
+  response is an audit finding (error shape design: [`sota-api-design`](../../sota-api-design/SKILL.md)).
 - Libraries: document error variants where they're defined *and* which
   operations raise them; distinguish programmer errors (panic/assert — don't
   catch) from operational errors (handle).
@@ -105,7 +105,7 @@ contract most docs omit.
   `Retry-After`, which RFC 6585 permits and RFC 9110 defines), the **CORS
   policy** (which origins are allowed, whether credentials are, which headers are
   exposed), and **redirects** (which operations answer `3xx`, and whether a client
-  must follow them). Design of those behaviours: `sota-api-design` rules/07
+  must follow them). Design of those behaviours: [`sota-api-design` rules/07](../../sota-api-design/rules/07-security-operations.md)
   §2 (rate limiting) and §5 (CORS).
   (OWASP: Django REST Framework cheat sheet)
 
@@ -116,7 +116,7 @@ contract most docs omit.
   Sphinx multiversion, docusaurus versions, docs.rs does it for free); the
   default view is the latest *stable* release, not the dev branch.
 - Docs-as-code makes this nearly free: docs are in the repo, so the tag that
-  cut the release pinned the docs (rules/04 §5).
+  cut the release pinned the docs ([rules/04](04-commits-branches-releases.md) §5).
 - Mark removed/changed behavior inline with the version it changed
   (“Since v2.3”, “Removed in v3.0 — use X”), because users land on pages from
   search without knowing which version they're reading.
@@ -142,7 +142,7 @@ contract most docs omit.
 - Every entry names the observable change, and links the issue/PR for the
   archaeology. Internal refactors with zero user-visible effect don't appear.
 - Automation (conventional commits → changelog via semantic-release /
-  release-please / git-cliff — rules/04 §2) generates the *draft*; a human edits
+  release-please / git-cliff — [rules/04](04-commits-branches-releases.md) §2) generates the *draft*; a human edits
   it into user language before release. Automation removes the blank page, not
   the editorial pass (Keep a Changelog 2.0.0 codifies the same stance for
   LLM-assisted drafting: machines draft, humans curate).
@@ -156,7 +156,7 @@ contract most docs omit.
   subscribe (an announcement mailing list or a feed), and link the advisory from
   the `Security` subsection of the version that fixes it. A fix buried as
   "Fixed: edge case in token parsing" tells no user they must upgrade. The
-  private *reporting* channel is `SECURITY.md` (rules/01 §8).
+  private *reporting* channel is `SECURITY.md` ([rules/01](01-documentation-architecture.md) §8).
   (OWASP: Vulnerability Disclosure cheat sheet)
 
 ## §7 Migration guides for breaking changes
@@ -172,7 +172,7 @@ shipped to every user individually.
 - **Deprecate before removing**: ship the new path + deprecation warnings
   pointing at the guide for ≥1 minor release before removal, so users migrate
   on warnings, not on compile errors (HTTP deprecation signaling:
-  `sota-api-design`).
+  [`sota-api-design`](../../sota-api-design/SKILL.md)).
 
 **Good fragment**:
 

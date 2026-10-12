@@ -24,7 +24,7 @@ boundary/control level, not line-by-line).
    resolves and serves but appears in no repo is a forgotten host: staging,
    an old admin panel, a decommissioned app still answering. It is a finding
    rated by what it serves. Declared names that no longer resolve go to the
-   dangling-DNS check (`sota-network-security` rules/06). OWASP: WSTG-INFO-04.
+   dangling-DNS check ([`sota-network-security` rules/06](../../sota-network-security/rules/06-dns-tls-pki.md)). OWASP: WSTG-INFO-04.
 3. **Reconstruct intent:** read existing docs/ADRs/old models, auth middleware
    comments, IaC structure. Write down the implied assumptions ("services
    trust the gateway's headers", "bucket is private"). Each assumption becomes
@@ -42,7 +42,7 @@ boundary/control level, not line-by-line).
    matrix (§2 below). Prioritize components on paths to top-3 assets when
    time-boxed; record de-scoping explicitly. **Then spend part of the budget on
    one component the model marks safe or low-risk, or that the time-box de-scoped**
-   — never one excluded by the rules of engagement (`sota/rules/01` §1). Pick it by
+   — never one excluded by the rules of engagement ([`sota/rules/01`](../../sota/rules/01-audit-methodology.md) §1). Pick it by
    rule, not by hunch: the lowest-rated component on a path to a top-3 asset. Read it
    fresh, ignoring the model's assumptions: a threat model's "safe" is its least-tested
    claim, and an audit steered only by its own model inherits its blind spots.
@@ -121,7 +121,7 @@ For each Absent/Partial cell:
    a link *obtains*, which the chain provides. It is "reproduced" only when run end to
    end, in a non-production environment within the rules of engagement; reproducing
    each link proves the links, so until then rate it *needs verification*
-   (`sota/rules/03` §1).
+   ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §1).
 
 ## 4. Severity calibration (audit-specific)
 
@@ -160,7 +160,7 @@ Tools feed the audit; they are never the audit:
 - **A call graph or semantic index is never the sole basis for dropping code from
   the audit.** It misses indirect calls — function pointers, virtual dispatch,
   macros, reflection, framework routing — so "no callers found" is an absence claim
-  and needs a second, independent method (`sota/rules/03` §2): a text search over
+  and needs a second, independent method ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2): a text search over
   the whole tree, *including* config, route tables and annotations, since
   string-built reflection and declared routes escape a call graph and plain grep
   alike. Use the index to order reading.

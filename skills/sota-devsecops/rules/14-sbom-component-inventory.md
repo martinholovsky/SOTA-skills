@@ -1,6 +1,6 @@
 # 14 — SBOM Content, Quality and Handling (what an SBOM must hold, and who may read it)
 
-Scope: `rules/03` §3.5 requires an SBOM for every release artifact, generated at build time
+Scope: [`rules/03`](03-dependencies.md) §3.5 requires an SBOM for every release artifact, generated at build time
 and bound to the digest. This file covers what that SBOM must contain (§14.1), the CI gate
 that enforces it (§14.2), who may read it (§14.3), SBOMs you receive from suppliers (§14.4),
 and components you have patched or forked (§14.5). Examples use CycloneDX JSON; SPDX has an
@@ -25,7 +25,7 @@ ship X?" and nothing more. Require these fields.
 
 **Graph.** Record dependency edges: CycloneDX `dependencies[]` (`ref` plus `dependsOn`),
 SPDX relationships such as `DEPENDS_ON`. Without edges nobody can tell a direct dependency
-from a transitive one, and `rules/13` §13.1 needs that answer.
+from a transitive one, and [`rules/13`](13-vulnerability-remediation.md) §13.1 needs that answer.
 
 **Document**
 
@@ -39,7 +39,7 @@ from a transitive one, and `rules/13` §13.1 needs that answer.
   them explicitly. Measured with syft 1.51.1 (2026-09-25): `syft scan dir:.` names the
   subject `.`; `--source-name`, `--source-version` and `--source-supplier` set it properly.
 
-**Reproducible generation.** Pin the generator (`rules/04` §4.1). Two generations from the
+**Reproducible generation.** Pin the generator ([`rules/04`](04-build-containers.md) §4.1). Two generations from the
 same commit should list the same components, so diff them in CI and treat a difference as a
 generator or build-hermeticity bug.
 
@@ -63,7 +63,7 @@ completeness in the pipeline that generates the SBOM, and fail the build on a mi
 - **Validate against the schema.** `cyclonedx validate --input-file sbom.cdx.json
   --fail-on-errors` (cyclonedx-cli) returns non-zero on schema errors. An AI/ML BOM is a
   CycloneDX document too (component type `machine-learning-model`, with a `modelCard`), so
-  it goes through the same validation (`sota-ml-engineering`).
+  it goes through the same validation ([`sota-ml-engineering`](../../sota-ml-engineering/SKILL.md)).
 - **Fail on a component missing required metadata**: name, version, PURL and licence for
   every library and framework; a hash where the ecosystem provides one; a copyright
   statement (CycloneDX `copyright`) where your licence obligations need one. A licence given
@@ -71,7 +71,7 @@ completeness in the pipeline that generates the SBOM, and fail the build on a mi
 - **Licence identifiers must be real SPDX IDs.** Compare each `license.id` against the SPDX
   licence list (`json/licenses.json` in the `spdx/license-list-data` repository), and parse
   `expression` values with an SPDX-expression parser. An unknown ID blocks the build like an
-  unknown licence (`rules/05` §5.5).
+  unknown licence ([`rules/05`](05-analysis-gates.md) §5.5).
 - **State the threshold as a number**: 100% of shipped library components carry the
   required fields. A score-based tool such as `sbomqs score` is useful for trending, but the
   gate is the field check.
@@ -96,12 +96,12 @@ internal registry URLs, hostnames and build paths.
 ## 14.4 Supplier SBOMs for procured software
 
 Software you buy or ingest runs with the same privileges as software you build, and your
-SCA pipeline cannot see inside it (`rules/13` §13.9).
+SCA pipeline cannot see inside it ([`rules/13`](13-vulnerability-remediation.md) §13.9).
 
 - **Make an SBOM a procurement requirement**: in the contract or purchase checklist, in an
   agreed format (CycloneDX or SPDX), per delivered version.
 - **Ingest it into the same inventory and scanning pipeline** as your own SBOMs (§14.2's
-  gate, continuous vulnerability matching, EOL detection in `rules/03` §3.9), keyed to the
+  gate, continuous vulnerability matching, EOL detection in [`rules/03`](03-dependencies.md) §3.9), keyed to the
   version actually deployed.
 - **Escalate a refusal** to procurement and the risk owner. A supplier with no SBOM is an
   accepted risk with a named owner, or a reason to choose another product. It is never a
@@ -110,7 +110,7 @@ SCA pipeline cannot see inside it (`rules/13` §13.9).
 
 ## 14.5 Patched and forked components: distinct identity, recorded pedigree
 
-A component you patched (`rules/13` §13.7) or forked is no longer the upstream component,
+A component you patched ([`rules/13`](13-vulnerability-remediation.md) §13.7) or forked is no longer the upstream component,
 even when its code differs by one line. Make that visible everywhere.
 
 - **Give it a distinct identifier**: a version suffix under your own convention (for
@@ -136,4 +136,4 @@ even when its code differs by one line. Make that visible everywhere.
 - [ ] **Licence IDs are real SPDX IDs (§14.2), Low:** `jq -r '.components[].licenses[]?.license.id // empty' <sbom>.cdx.json | sort -u | grep -v -x -F -f spdx-ids.txt` prints nothing, where `spdx-ids.txt` is `jq -r '.licenses[].licenseId'` over the SPDX `licenses.json`
 - [ ] **Shared SBOMs scrubbed; internal SBOMs access-controlled (§14.3), Medium:** `grep -n -E '"/(home|Users|builds|runner|github/workspace|private|tmp)/|://[^/"]*\.(internal|corp|lan|local)[/":]' <sbom-to-publish>.json` (plus your own internal domains) prints nothing; the internal SBOM store is not publicly readable
 - [ ] **Supplier SBOMs required and ingested (§14.4), Medium:** each procured product in the inventory has a current supplier SBOM in the scanning pipeline, or a recorded risk acceptance with an owner
-- [ ] **Patched components carry a distinct version and pedigree (§14.5), Medium:** with your suffix convention (here `acme`), `jq -e '[.components[] | select((.version // "") | test("[-+]acme\\.")) | select(.pedigree == null)] | length == 0' <sbom>.cdx.json` exits `0`; no local-path dependency stands in for a patched component (`rules/13` §13.7)
+- [ ] **Patched components carry a distinct version and pedigree (§14.5), Medium:** with your suffix convention (here `acme`), `jq -e '[.components[] | select((.version // "") | test("[-+]acme\\.")) | select(.pedigree == null)] | length == 0' <sbom>.cdx.json` exits `0`; no local-path dependency stands in for a patched component ([`rules/13`](13-vulnerability-remediation.md) §13.7)

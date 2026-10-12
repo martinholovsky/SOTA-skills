@@ -8,10 +8,10 @@ control**: default-deny egress, egress gateways/proxies, FQDN allowlisting, prev
 blocking the cloud metadata endpoint (the SSRF-meets-egress chain). A worked example used below: a reverse proxy
 (e.g. Caddy) with a CRS WAF, behind a CDN (e.g. Cloudflare).
 
-Where this sits: sota-cloud-infrastructure rules/03 owns LB/CDN *provisioning* and registrar/DNS
-*setup*; this skill owns the *security posture*. rules/03 here owns the K8s-internal egress
-mechanics (CNP/FQDN); this file owns the edge and the egress *discipline*. sota-api-design rules/07
-owns API rate-limiting design; sota-code-security rules/01 (SSRF) and rules/05 (CORS/CSP) own the
+Where this sits: [sota-cloud-infrastructure rules/03](../../sota-cloud-infrastructure/rules/03-networking.md) owns LB/CDN *provisioning* and registrar/DNS
+*setup*; this skill owns the *security posture*. [rules/03](03-k8s-network-policy.md) here owns the K8s-internal egress
+mechanics (CNP/FQDN); this file owns the edge and the egress *discipline*. [sota-api-design rules/07](../../sota-api-design/rules/07-security-operations.md)
+owns API rate-limiting design; [sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) (SSRF) and [rules/05](../../sota-code-security/rules/05-web-security.md) (CORS/CSP) own the
 app side.
 
 Verified (2026-09-26): **OWASP CRS 4** is the supported major line — **CRS 4.25 LTS** (announced
@@ -27,7 +27,7 @@ and account-enforceable; metadata IP `169.254.169.254` / `fd00:ec2::254`. Pin CR
 **R1 — One hardened, inspectable edge; backends not directly reachable.** All north-south HTTP
 enters through the edge proxy (e.g. Caddy, nginx, Envoy) / ingress controller, which terminates TLS, applies the WAF,
 sets security headers, and forwards. Backends accept traffic *only* from the edge/ingress (mesh authz
-to the gateway identity, or NetworkPolicy allowing only the ingress namespace — rules/03/04). A
+to the gateway identity, or NetworkPolicy allowing only the ingress namespace — [rules/03](03-k8s-network-policy.md)/04). A
 backend reachable directly bypasses the WAF, rate limits, and auth — verify by hitting a backend pod
 IP directly; it must be refused.
 
@@ -46,7 +46,7 @@ though plugins may still add theirs). Envoy's `x-envoy-internal` and `x-envoy-ex
 are *request* headers set for upstreams — they reach a client only if a service reflects request
 headers back, so test for the echo. Mechanisms: Envoy router `suppress_envoy_headers: true` (the
 router's own `x-envoy-*`; other filters may still set some) plus `response_headers_to_remove`.
-Keep exactly one opaque correlation ID on the response (sota-api-design rules/07 §6 returns one
+Keep exactly one opaque correlation ID on the response ([sota-api-design rules/07](../../sota-api-design/rules/07-security-operations.md) §6 returns one
 on every response): a random request ID support can look up server-side, never the trace ID
 itself. OWASP: Secure Headers Project.
 
@@ -65,7 +65,7 @@ owners can set; `from: All` lets any namespace attach routes to a shared Gateway
 A Route pointing at a backend in another namespace, or a Gateway at a Secret in another namespace,
 must be authorised by a `ReferenceGrant` in the *target* namespace — review every ReferenceGrant
 as an access grant. Keep the implementation patched: a namespaced HTTPRoute redirecting traffic
-into other namespaces was a Cilium advisory in 2026 (CVE-2026-56742, rules/03 §4 floor).
+into other namespaces was a Cilium advisory in 2026 (CVE-2026-56742, [rules/03](03-k8s-network-policy.md) §4 floor).
 (gateway-api.sigs.k8s.io security model; `from` defaults to `Same` in the v1 API.)
 
 **R2.2 — Every hop in the chain agrees on where a request ends (no desync / request smuggling).**
@@ -91,7 +91,7 @@ become the start of the backend's *next* request — which skipped the WAF, auth
   the value `websocket`.
 - **Same HTTP version handling on every tier** — one tier speaking 1.0 (no chunked) or reusing
   back-end connections differently from its peer is where the parses diverge. Keep the proxy and the
-  app server patched: smuggling fixes ship as parser CVEs (e.g. sota-dotnet rules/06 §3, Kestrel).
+  app server patched: smuggling fixes ship as parser CVEs (e.g. [sota-dotnet rules/06](../../sota-dotnet/rules/06-build-tooling-ci.md) §3, Kestrel).
 OWASP: Secure Coding Practices QRG, WSTG-INJT-16.
 
 ## 2. WAF (OWASP CRS on Coraza / ModSecurity)
@@ -107,15 +107,15 @@ detection-only WAF is a Medium finding (it's not enforcing).
 - **Engine:** **Coraza** (Go, embeddable — pairs well with Caddy/Envoy/modern proxies) or
   **ModSecurity v3**; both run the same CRS. Caddy + a Coraza module is the SOTA self-hosted combo.
 - CRS is **not** input validation or authz — it's a generic-attack net (SQLi/XSS/RCE patterns,
-  scanner signatures). Defense in depth: app-layer validation (sota-code-security) still required.
+  scanner signatures). Defense in depth: app-layer validation ([sota-code-security](../../sota-code-security/SKILL.md)) still required.
 
 **R4 — Don't let the WAF lull you on SSRF/business logic.** CRS catches generic payloads, not
-app-specific SSRF or IDOR. Pair the edge WAF with app-side SSRF defenses (sota-code-security
-rules/01) and the egress controls below (§6) — the WAF is the north-south net; egress is the
+app-specific SSRF or IDOR. Pair the edge WAF with app-side SSRF defenses ([sota-code-security
+rules/01](../../sota-code-security/rules/01-input-injection.md)) and the egress controls below (§6) — the WAF is the north-south net; egress is the
 south-bound net.
 
 **R4.1 — A virtual patch is an interim fix with an owner, a ticket and an end date.** When a
-known vulnerability cannot be fixed in code today (sota-devsecops rules/03 "no upstream patch
+known vulnerability cannot be fixed in code today ([sota-devsecops rules/03](../../sota-devsecops/rules/03-dependencies.md) "no upstream patch
 available"), an edge rule can block the exploit path while the fix is built. Run it as a
 repeatable flow, not an ad-hoc edit:
 - **Prepare before you need it:** a pre-approved fast change path for WAF rules (who may deploy,
@@ -137,7 +137,7 @@ repeatable flow, not an ad-hoc edit:
   each generated rule as above.
 - **Session handling at the edge is a stopgap too.** Rewriting `Set-Cookie` attributes
   (`Secure`, `HttpOnly`, `SameSite`) or session behaviour in the proxy is acceptable only while
-  the application cannot change; the durable fix is in the app (sota-code-security rules/17).
+  the application cannot change; the durable fix is in the app ([sota-code-security rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md)).
 OWASP: Virtual Patching cheat sheet, Session Management cheat sheet.
 
 **R4.2 — Report every firing; review every rule that never fires.** Each virtual patch and custom
@@ -146,10 +146,10 @@ vulnerability now, which is worth knowing even when the block succeeded. The inv
 as well: a rule with zero matches over a period in which the exploit path saw traffic may not be
 in force at all (wrong phase, wrong variable, detection-only, a route that bypasses the WAF) —
 prove it with a harmless test request that should match (a control not in force:
-sota-code-security rules/14). OWASP: Virtual Patching cheat sheet.
+[sota-code-security rules/14](../../sota-code-security/rules/14-control-not-in-force.md)). OWASP: Virtual Patching cheat sheet.
 
 **R4.3 — WAF events are security telemetry, shipped and alerted on.** Match and block events go
-to the central logging/SIEM pipeline (sota-detection-engineering), not only to a local file: in
+to the central logging/SIEM pipeline ([sota-detection-engineering](../../sota-detection-engineering/SKILL.md)), not only to a local file: in
 Coraza and ModSecurity that means an audit engine set to `RelevantOnly` (or `On`), never `Off`
 (Coraza documents `Off` as its default). Alert on spikes of blocked payloads per rule or client,
 and on anomalies against the baseline. Known scanner and attack-tool fingerprints (CRS
@@ -163,15 +163,15 @@ payments, admin, key APIs — add a positive model: only known routes and method
 the expected parameters with expected types and lengths (an OpenAPI schema is a good source);
 add custom rules for the specific stack in front of it. Many WAFs inspect only the WebSocket
 upgrade handshake, not the frames that follow — confirm what yours inspects; if frames are not
-inspected, message validation, authorisation and logging stay in the server (sota-api-design
-rules/05). OWASP: DSOMM, Secure Cloud Architecture cheat sheet, WebSocket Security cheat sheet.
+inspected, message validation, authorisation and logging stay in the server ([sota-api-design
+rules/05](../../sota-api-design/rules/05-realtime-websockets-sse.md)). OWASP: DSOMM, Secure Cloud Architecture cheat sheet, WebSocket Security cheat sheet.
 
 ## 3. TLS termination + re-encryption
 
 **R5 — Terminate TLS at the edge; re-encrypt to backends crossing a trust boundary.** Edge
-terminates the public cert (auto-managed — rules/06), inspects, then originates a *new* TLS/mTLS
+terminates the public cert (auto-managed — [rules/06](06-dns-tls-pki.md)), inspects, then originates a *new* TLS/mTLS
 connection to the backend. Plaintext from edge→backend across the cluster network is the
-plaintext-internal-traffic problem (rules/04) at the ingress hop. Inside a mesh, the edge gateway
+plaintext-internal-traffic problem ([rules/04](04-service-mesh-mtls.md)) at the ingress hop. Inside a mesh, the edge gateway
 hands off to mTLS automatically; otherwise configure backend TLS explicitly.
 
 ## 4. Reverse-proxy trusted-IP handling (behind a CDN)
@@ -198,7 +198,7 @@ spoof client identity.** Behind a CDN → edge proxy → app (e.g. Cloudflare �
 ```
 
 **R7 — Cloudflare Tunnel / identity-aware proxy for non-public or admin surfaces.** Internal/admin
-apps go behind Cloudflare Access (identity-aware proxy, rules/01 §6) or a tunnel — never a public
+apps go behind Cloudflare Access (identity-aware proxy, [rules/01](01-zero-trust-architecture.md) §6) or a tunnel — never a public
 origin guarded only by a path or a guessed-URL. The origin stays unreachable except through the
 authenticated proxy.
 
@@ -207,13 +207,13 @@ authenticated proxy.
 **R8 — Absorb at the edge, rate-limit per-identity, cap autoscaling.** A scrubbing edge (e.g.
 Cloudflare, a cloud provider's DDoS tier, or an Anycast scrubbing provider) absorbs L3/4 and much
 L7; add WAF rate-limiting rules and per-route/per-identity limits (design owned by
-sota-api-design rules/07). Cap autoscaling so a flood can't scale your bill or cluster infinitely
+[sota-api-design rules/07](../../sota-api-design/rules/07-security-operations.md)). Cap autoscaling so a flood can't scale your bill or cluster infinitely
 (economic/"yo-yo" DoS). "We never considered DDoS" is the finding; record the stance. Best DDoS
 surface is none — keep non-public surfaces non-public (tunnels, IAP). Cloud L3/4 mitigation posture
-(Shield/Cloud Armor/Azure DDoS tiers) is sota-cloud-infrastructure rules/03 §10; this rule owns the
+(Shield/Cloud Armor/Azure DDoS tiers) is [sota-cloud-infrastructure rules/03](../../sota-cloud-infrastructure/rules/03-networking.md) §10; this rule owns the
 edge you operate. HTTP/2 stream-reset floods (Rapid Reset, MadeYouReset) exhaust the edge proxy
-itself with little bandwidth; the limits and patch floors are owned by **sota-code-security**
-rules/06 §5 — apply them on every tier that terminates HTTP/2.
+itself with little bandwidth; the limits and patch floors are owned by **[sota-code-security**
+rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §5 — apply them on every tier that terminates HTTP/2.
 
 **R8.1 — Self-hosted / bare-metal edge: harden the kernel, you are the scrubber.** When there is no
 Anycast provider in front (e.g. a bare-metal edge exposed directly), L3/4 defense is yours.
@@ -244,8 +244,8 @@ nothing against a few clients pulling large responses or pushing large bodies. A
 - **Per-client data caps:** a request-body ceiling (nginx `client_max_body_size`; `0` disables the
   check), a response-rate limit (nginx `limit_rate`, bytes per second — per *request*, so pair it
   with `limit_conn` on the client address, or two connections double it), and a connection cap
-  per client. The inverse — a *minimum* rate that drops slow senders — is sota-code-security
-  rules/06 §5.
+  per client. The inverse — a *minimum* rate that drops slow senders — is [sota-code-security
+  rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §5.
 - **An overall bandwidth ceiling** per service or tenant, so one hot path cannot starve the rest
   of the uplink.
 - **Self-hosted / on-prem uplink: ask the provider before you need it.** What volume can the ISP or
@@ -260,12 +260,12 @@ OWASP: Denial of Service cheat sheet.
 egress. Treat broad outbound (`0.0.0.0/0` from app/data tiers) as a finding. Tiers:
 1. **Data/isolated tier:** no egress; reach internal deps via private paths only.
 2. **App tier:** egress only to an **allowlist** — FQDN-based where possible (Cilium FQDN policy,
-   rules/03 §5; or an egress proxy like a forward-Squid/Envoy with a domain allowlist).
+   [rules/03](03-k8s-network-policy.md) §5; or an egress proxy like a forward-Squid/Envoy with a domain allowlist).
 3. **Egress gateway/proxy:** funnel all egress through one inspectable, loggable choke point (Cilium
    egress gateway for stable source IPs; a forward proxy for L7 domain allowlisting + logging).
 
 **R10 — Block the cloud metadata endpoint — the SSRF-meets-egress chain.** An SSRF in an app
-(sota-code-security rules/01 owns finding/fixing it) becomes credential theft only if the workload
+([sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) owns finding/fixing it) becomes credential theft only if the workload
 can actually *reach* `169.254.169.254`. Close the egress side: deny `169.254.0.0/16` (and
 `fd00:ec2::254`) from workload egress at the CNI/firewall, and on cloud use **IMDSv2** (token
 required, hop-limit 1, account-level enforcement so v1 can't be used). Defense in depth: the app
@@ -282,7 +282,7 @@ cloud burst is safe by default.
 ```
 
 **R11 — Egress visibility feeds detection.** Export egress flow logs / proxy logs to
-sota-detection-engineering (C2 beaconing, DNS exfil, anomalous destinations). An allowlist plus
+[sota-detection-engineering](../../sota-detection-engineering/SKILL.md) (C2 beaconing, DNS exfil, anomalous destinations). An allowlist plus
 logging beats either alone: the allowlist blocks the easy path, the logs catch the clever one.
 
 ## Audit checklist
@@ -333,7 +333,7 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
       detection?
 - [ ] DDoS stance recorded; per-identity rate limits and autoscale caps set?
 - [ ] Every tier terminating HTTP/2 patched and configured against stream-reset floods (Rapid
-      Reset, MadeYouReset) per **sota-code-security** rules/06 §5?
+      Reset, MadeYouReset) per **[sota-code-security** rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §5?
 - [ ] **Medium — Gateway API attachment (R2.1a).** `grep -rnE 'from:[[:space:]]*All' .` over
       Gateway manifests — each hit lets any namespace attach routes; is every `ReferenceGrant`
       reviewed as an access grant, and is Gateway creation RBAC-restricted?

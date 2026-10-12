@@ -5,8 +5,8 @@ Ruby-specific rules for input crossing a trust boundary. Primary references:
 and the framework security guides (e.g.
 [Rails Securing guide](https://guides.rubyonrails.org/security.html)) — the
 patterns below apply to any Ruby codebase, framework or not. Web-surface
-issues (XSS, CSRF, mass assignment) live in `rules/03`; generic secure-coding
-depth in `sota-code-security`.
+issues (XSS, CSRF, mass assignment) live in [`rules/03`](03-web-hardening.md); generic secure-coding
+depth in [`sota-code-security`](../../sota-code-security/SKILL.md).
 
 ## 1. SQL injection — parameterize everywhere
 
@@ -106,7 +106,7 @@ IO.popen(["grep", "--", pattern, "log.txt"])
 - **JSON**: `JSON.parse` is safe; `JSON.load` / `create_additions: true`
   enables object revival via `json_class` — don't use it on external input.
 - **XML (XXE, entity expansion)** — the class and its fixes are
-  `sota-code-security` rules/01 §6; the Ruby spelling:
+  [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §6; the Ruby spelling:
   - **Nokogiri's defaults are safe**: `DEFAULT_XML` sets `NONET` and leaves
     `NOENT` and `DTDLOAD` off, so an external entity comes back unexpanded
     (measured, nokogiri 1.19.4: default parse returned `""`, with `noent` the
@@ -146,14 +146,14 @@ IO.popen(["grep", "--", pattern, "log.txt"])
   engine (e.g. Liquid as a neutral example), never ERB/Haml/Slim. Rails'
   `render inline: str` is the same sink: the renderer compiles `str` as a
   template with a handler (`Template::Inline`), so user input there is RCE.
-  `render file:` is the file-read twin, in `rules/03` §7.
+  `render file:` is the file-read twin, in [`rules/03`](03-web-hardening.md) §7.
 - **No in-process sandbox makes string eval safe.** `$SAFE` is now just an
   ordinary global: on Ruby 4.0.6, `$SAFE = 1` followed by `File.read` still
   worked. `BasicObject.new.instance_eval(str)` still reaches `::Kernel` and
   `::File`, and a `Ractor` block still runs backticks (both measured). When
   users need formulas or rules, use a dispatch hash of lambdas or a parser for
   a fixed grammar that you own. Code that really is untrusted runs behind a
-  process or VM boundary (`sota-sandboxing`). OWASP: Code Review Guide;
+  process or VM boundary ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)). OWASP: Code Review Guide;
   Proactive Controls 2024 C3; ASVS 5.0 V1.3.
 
 ## 5. ReDoS and regex correctness
@@ -213,7 +213,7 @@ IO.popen(["grep", "--", pattern, "log.txt"])
 - Passwords: bcrypt/argon2 via a maintained gem (`has_secure_password` uses
   bcrypt as a neutral example) — never `Digest::SHA256` of a password.
 - No secrets in code or `ENV`-committed files; load via the deployment
-  platform or an encrypted store (see `sota-secrets-management`). Grep
+  platform or an encrypted store (see [`sota-secrets-management`](../../sota-secrets-management/SKILL.md)). Grep
   targets: `_key = "`, `password = "`, `Aws.config`.
 - **The encrypted-credentials key never enters the repository** (Rails as a neutral example).
   `config/credentials.yml.enc` is committed on purpose; the key that decrypts it
@@ -242,7 +242,7 @@ raise SecurityError unless path.start_with?(base + File::SEPARATOR)
 ```
 
 - `File.basename(user_name)` before storing uploads; never trust
-  client-supplied filenames or content types (see `rules/03` §uploads).
+  client-supplied filenames or content types (see [`rules/03`](03-web-hardening.md) §uploads).
 - Archive extraction (zip/tar gems): validate each entry name against the
   same expand-and-prefix check — zip-slip.
 - Temp files: `Tempfile`/`Dir.mktmpdir`, not hand-built `/tmp/#{name}`.
@@ -261,7 +261,7 @@ Ruby is memory-safe until it calls C. Fiddle (a libffi wrapper), the `ffi` gem
 read past its length, or a struct layout declared wrong, crashes the process or leaks memory
 with no C file in the repository to review. Confine foreign calls to one module, declare
 every signature precisely, and validate lengths before they cross. Native gems count as well:
-a C extension a gem ships is C you are running. The class is `sota-code-security` rules/06 §3.
+a C extension a gem ships is C you are running. The class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
 
 ## Audit checklist
 

@@ -242,7 +242,7 @@ Content-Type: application/problem+json
   provider's pipeline.
 - OpenAPI hygiene: every operation has `operationId`, every response (incl. errors)
   schematized, `additionalProperties` intent explicit, enums marked extensible where
-  evolution is expected (see rules/02), auth schemes declared in `securitySchemes`.
+  evolution is expected (see [rules/02](02-versioning-evolution.md)), auth schemes declared in `securitySchemes`.
 - **Every operation states its own `security` requirement** (which scheme, which
   scopes), not only the top-level default. In OpenAPI 3.1 an operation's
   `security` overrides the global one, an empty array (`security: []`) removes
@@ -274,7 +274,7 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
   result link on success, problem+json-shaped `error` on failure, timestamps,
   and percentage/progress where meaningful.
 - Clients poll with backoff; offer `Retry-After` on the operation GET, and/or a
-  webhook (rules/06) for completion. Operations are listable per principal and
+  webhook ([rules/06](06-webhooks.md)) for completion. Operations are listable per principal and
   retained long enough for slow pollers (≥24h).
 - The initial POST still takes an Idempotency-Key (§6) — duplicate submissions
   must return the same operation, not start a second job.
@@ -308,7 +308,7 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
 - Nulls vs absent fields mean different things in PATCH — define it (Merge Patch:
   `null` deletes).
 - Request size limit, response compression (`gzip`/`br`), and a per-request timeout
-  budget exist on every endpoint (details: rules/07).
+  budget exist on every endpoint (details: [rules/07](07-security-operations.md)).
 - **The secure use has to be the easy one — your API's ergonomics are a control you own.**
   If a caller must read the docs, remember a rule, or pass an extra argument to be safe, the
   interface has moved your security into their discipline. Two shapes recur and both are
@@ -316,9 +316,9 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
   a parameter selecting a trust boundary whose default is the **unsafe** value — make the
   closed side the default and the open side explicit and keyword-only, which also makes
   every privileged call site a `grep -c`
-  (`sota-code-security` rules/14 §6a) — and letting a **caller or the payload choose the
+  ([`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §6a) — and letting a **caller or the payload choose the
   security-critical algorithm**, the `alg` pattern, where the fix is a server-side allowlist
-  rather than a documented warning (`sota-code-security` rules/02). "It is documented" is
+  rather than a documented warning ([`sota-code-security` rules/02](../../sota-code-security/rules/02-authentication.md)). "It is documented" is
   not a mitigation; neither is "no one would do that".
 
 ## Audit checklist

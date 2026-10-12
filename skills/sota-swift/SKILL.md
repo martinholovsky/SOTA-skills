@@ -8,8 +8,8 @@ description: State-of-the-art Swift engineering rules (Swift 6 language mode) th
 Expert-level rules for producing and auditing production Swift, on any target. Swift is a
 language first and an Apple-platform toolkit second: a Vapor service on Linux, a CLI and an
 iOS app share every rule here. **Platform concerns route elsewhere**: app lifecycle, store
-review, Keychain, push and offline sync → `sota-mobile`; containers → `sota-sandboxing`;
-telemetry → `sota-observability`.
+review, Keychain, push and offline sync → [`sota-mobile`](../sota-mobile/SKILL.md); containers → [`sota-sandboxing`](../sota-sandboxing/SKILL.md);
+telemetry → [`sota-observability`](../sota-observability/SKILL.md).
 
 **Version floor.** swift.org publishes **no end-of-life or support-window policy** for older
 Swift releases (searched the swift.org site source, 2026-10-07); the nearest written bar is the
@@ -23,12 +23,12 @@ Feature notes below name the release that introduced each feature.
 
 1. Declare the toolchain and language mode in `Package.swift` (`swift-tools-version: 6.x`,
    `swiftLanguageModes:` — `swiftLanguageVersions` is deprecated since 6.1, SE-0441) and pin the
-   toolchain for CI (rules/08).
-2. Read the rules files that match the work (index below). Concurrency (rules/03) applies to
-   any code with `async`, actors or shared state; security (rules/05) to anything touching
-   input, files, processes, SQL or the network; server code also reads rules/06.
-3. Write value types, exhaustive enums and non-optional straight-line code (rules/01); keep the
-   public surface small and evolvable (rules/02).
+   toolchain for CI ([rules/08](rules/08-tooling-ci-testing.md)).
+2. Read the rules files that match the work (index below). Concurrency ([rules/03](rules/03-concurrency.md)) applies to
+   any code with `async`, actors or shared state; security ([rules/05](rules/05-security.md)) to anything touching
+   input, files, processes, SQL or the network; server code also reads [rules/06](rules/06-server-side.md).
+3. Write value types, exhaustive enums and non-optional straight-line code ([rules/01](rules/01-idioms-and-errors.md)); keep the
+   public surface small and evolvable ([rules/02](rules/02-api-design.md)).
 4. **Self-audit last**: walk each loaded file's Audit checklist against the diff, then the
    router's principle 5 (abuse control, transport, tests, logs) before presenting.
 
@@ -38,11 +38,11 @@ Feature notes below name the release that introduced each feature.
    binary targets), `Package.resolved`, CI config, the server framework in use.
 2. Run what is installed (never install unasked): the compiler in Swift 6 mode with
    `-warnings-as-errors`, SwiftLint, `swift build --sbom-spec` (6.4+), a dependency scanner
-   (rules/09), CodeQL's Swift queries where CI has them.
+   ([rules/09](rules/09-supply-chain.md)), CodeQL's Swift queries where CI has them.
 3. Walk every applicable rules file's Audit checklist; each probe below is a grep you can run.
-4. Report in the canonical format; severity per the table, chain closure per the `sota` router.
+4. Report in the canonical format; severity per the table, chain closure per the [`sota`](../sota/SKILL.md) router.
 
-### Severity conventions (refines the router's `rules/03` §1 inside this skill)
+### Severity conventions (refines the router's [`rules/03`](rules/03-concurrency.md) §1 inside this skill)
 
 | Severity | Swift examples |
 |---|---|
@@ -54,7 +54,7 @@ Feature notes below name the release that introduced each feature.
 ### Finding format
 
 `file:line | rule | severity | effort | fix` — the router's canonical row; expand each
-surviving finding to the router's `rules/03` §2 evidence block.
+surviving finding to the router's [`rules/03`](rules/03-concurrency.md) §2 evidence block.
 
 ## Rules index
 

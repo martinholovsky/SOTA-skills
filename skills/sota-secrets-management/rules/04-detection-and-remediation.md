@@ -3,7 +3,7 @@
 Scope: secret scanning (gitleaks, trufflehog), pre-commit hooks, CI gates, git history hygiene,
 the post-leak runbook (rotate-first), and honeytokens. Read this when setting up scanning, when
 running an AUDIT sweep, or the moment a leak is discovered. Pipeline-gate *layering* and
-org-wide push protection are owned by sota-devsecops rules/05 §5.2; this file owns tool
+org-wide push protection are owned by [sota-devsecops rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.2; this file owns tool
 configuration and leak **response** (rotation, history cleanup).
 
 ## 1. Scanning layers
@@ -16,7 +16,7 @@ Defense in depth — each layer catches what the previous missed:
 | Push | server-side pre-receive hook / GitHub push protection | Yes — before history is shared |
 | CI | gitleaks/trufflehog job on every PR + full-history scan scheduled weekly | Yes — fail the build |
 | Platform | GitHub Advanced Security / GitLab secret detection, partner-program auto-revocation | Detect + sometimes auto-revoke |
-| Runtime | honeytokens (§5), backend access-log anomaly alerts (rules/03 §8) | Detect use |
+| Runtime | honeytokens (§5), backend access-log anomaly alerts ([rules/03](03-application-patterns.md) §8) | Detect use |
 
 Pre-commit alone is insufficient (devs skip hooks, `--no-verify`); CI alone is too late (the
 secret already left the laptop and entered shared history). Run both.
@@ -152,7 +152,7 @@ gate disabled within a week. Instead:
   hits to newly created public GitHub repos, self-propagated via stolen npm/GitHub tokens, and
   registered victims as self-hosted Actions runners. Defenses: `--ignore-scripts` (or isolated,
   token-free install steps) in CI, no long-lived registry/VCS/cloud tokens on laptops or runners
-  (rules/01 §4 OIDC instead), and treat sudden public-repo creation or self-hosted-runner
+  ([rules/01](01-lifecycle-and-workload-identity.md) §4 OIDC instead), and treat sudden public-repo creation or self-hosted-runner
   registration under an org identity as a §3 leak trigger.
 
 ## 3. Post-leak runbook: rotate first
@@ -162,7 +162,7 @@ Scrapers index public commits in well under a minute; "we force-pushed quickly" 
 mitigation; private repos only shrink, not eliminate, the audience. Execute in this order:
 
 1. **Rotate/revoke immediately — before any cleanup.** Issue the replacement, deploy consumers,
-   revoke the leaked value (rules/01 §3). If revocation breaks things, that's an availability
+   revoke the leaked value ([rules/01](01-lifecycle-and-workload-identity.md) §3). If revocation breaks things, that's an availability
    bug you fix *after* killing the credential — a live leaked key is worse than downtime.
    For cloud keys also check for attacker persistence: new keys/users/roles created by the
    leaked identity, modified trust policies.
@@ -189,7 +189,7 @@ Severity-of-response calibration:
 above assume one credential; a signing key or a CA key invalidates everything it vouched for.
 The plan names: who to contact (internal owners, the CA, relying parties, customers where
 contracts require it); **how to re-key** (new key pair, reissue every certificate or token
-under it — rules/05 §3–4, sota-network-security rules/06 for PKI); a **key/certificate
+under it — [rules/05](05-credential-types.md) §3–4, [sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) for PKI); a **key/certificate
 inventory linked to where each is deployed**, so reissue is a query, not an archaeology dig;
 **revocation that relying parties actually enforce** — CRL checking switched on, or lifetimes
 short enough to be the revocation; **monitoring that re-keying completed** (no endpoint still
@@ -305,7 +305,7 @@ the `.gitignore` line that excludes it; no `@`-import of it existed in the agent
 mode was `600`. **Every clause of that label was false**, and four live API keys were then
 sitting verbatim, one line each, in the transcript. A harness's account of *why* it read a
 file is a claim, not evidence — check it the way you would any other
-(`sota-skill-security` rules/02 §2).
+([`sota-skill-security` rules/02](../../sota-skill-security/rules/02-trust-boundary-and-capability.md) §2).
 
 - **Inventory the path.** It belongs on the same list as `.env`, shell history, IDE
   settings and CI variables. It is missing from most checklists because it is newer than
@@ -316,7 +316,7 @@ file is a claim, not evidence — check it the way you would any other
   third copy of the value.
 - **Any tool that reads it is a secret-processing tool.** Sweeping transcripts as an input
   corpus — a linter, an analytics script, a differential oracle — puts that tool under
-  `rules/03` §2.1: persist a digest and a skeleton, never the line.
+  [`rules/03`](03-application-patterns.md) §2.1: persist a digest and a skeleton, never the line.
 - **A tool whose input path lies outside the repo has an attack surface that changes with
   no commit to the repo.** Nothing in the diff tells you the corpus gained four live keys
   overnight. Re-establish what the location holds before each run; it is not a fixed
@@ -328,7 +328,7 @@ file is a claim, not evidence — check it the way you would any other
   they are real.
 
 This section is the after-the-fact inventory; the preventive half — keep secret files out of
-the tree the assistant reads, and out of its editor and terminal context — is rules/05 §8.
+the tree the assistant reads, and out of its editor and terminal context — is [rules/05](05-credential-types.md) §8.
 
 Audit: a repo tool that reads an agent-transcript directory and writes any part of a line
 verbatim = **High**; the same tool emitting digests and skeletons = no finding. A secret
@@ -349,7 +349,7 @@ inventory that does not name the transcript path = **Medium**.
       file the repo owns before treating it as a leak, and before treating it as noise.
 - [ ] **The agent-session transcript directory is on the secret inventory (§7)** — scanned
       with scope decided in advance and `--redact` on, and every repo tool that reads it
-      treated as a secret-processing tool (`rules/03` §2.1). Severity calibrated on the
+      treated as a secret-processing tool ([`rules/03`](03-application-patterns.md) §2.1). Severity calibrated on the
       values, not on a scanner's rule names: owner-only to owner-only on one machine is an
       expanded surface, not a disclosure.
 - [ ] GitHub push protection / server-side pre-receive scanning enabled org-wide.

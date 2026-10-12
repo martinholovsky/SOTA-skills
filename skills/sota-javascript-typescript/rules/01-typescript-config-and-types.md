@@ -149,7 +149,7 @@ Pattern: derive types from values (`as const` + `typeof` + indexed access), not 
 
 ## Validate at the boundary, trust the types inside
 
-TypeScript types are erased — they verify nothing at runtime. Every untrusted input (HTTP body, query params, env vars, JSON.parse, webhooks, LLM output, DB rows from untyped clients, and anything the browser persisted: `localStorage`/`sessionStorage`, IndexedDB, Cache Storage) must be parsed, not cast. Browser-stored values are input because the user can edit them and an earlier XSS can plant them: parse on read and output-encode like network data (rules/09 §"Client-side storage"). *OWASP: HTML5 Security cheat sheet.*
+TypeScript types are erased — they verify nothing at runtime. Every untrusted input (HTTP body, query params, env vars, JSON.parse, webhooks, LLM output, DB rows from untyped clients, and anything the browser persisted: `localStorage`/`sessionStorage`, IndexedDB, Cache Storage) must be parsed, not cast. Browser-stored values are input because the user can edit them and an earlier XSS can plant them: parse on read and output-encode like network data ([rules/09](09-browser-platform-security.md) §"Client-side storage"). *OWASP: HTML5 Security cheat sheet.*
 
 ```ts
 import { z } from 'zod';
@@ -171,7 +171,7 @@ const user = result.data;   // genuinely CreateUser from here on
 ```
 
 - zod v4 / valibot (smaller bundles, tree-shakeable — prefer for frontend) / ArkType are all fine; pick one per repo.
-- Parse env once at startup into a typed, frozen config object; crash fast on missing vars (see rules/04).
+- Parse env once at startup into a typed, frozen config object; crash fast on missing vars (see [rules/04](04-node-backend.md)).
 - Inside the boundary, do NOT re-validate everywhere — that's noise. Types carry the proof.
 - `JSON.parse` returns `any`. Wrap it: `const parseJson = (s: string): unknown => JSON.parse(s);`
 
@@ -233,7 +233,7 @@ Heuristics: max ~2 levels of nested conditional types in app code; name intermed
 - New code is ESM: `"type": "module"` in package.json, `import`/`export` only. No `require`, no `module.exports`. CJS interop via default-import of CJS packages works under `esModuleInterop`.
 - `module: "NodeNext"` requires explicit extensions on relative imports. When `tsc` emits the code Node runs, write `.js` (`import { x } from './util.js'`). Bundled apps using `moduleResolution: "Bundler"` may omit them.
 - **Node running `.ts` directly (native type stripping, Node ≥22.18/≥23.6) resolves the specifier literally.** Measured on Node 22.22.1: `node src/a.ts` importing `'./util.js'` failed with `ERR_MODULE_NOT_FOUND`; `'./util.ts'` ran. So for code Node executes as `.ts`, write `.ts` imports and pick one: `"rewriteRelativeImportExtensions": true` when `tsc` also emits (it rewrites `./util.ts` to `./util.js` in the output — measured on tsc 6.0.3 and 7.0.2, and the emitted `dist/` ran), or `"allowImportingTsExtensions": true` with `noEmit`. Without either, tsc rejects the `.ts` specifier (TS5097). Add `"erasableSyntaxOnly": true` in both cases, since stripping cannot run enums, namespaces or parameter properties. *Node docs: "Modules: TypeScript" (recommended tsconfig; extensions are mandatory).*
-- Library `package.json`: use `exports` map with `types` condition first; ship `.d.ts` next to `.js`. Verify with `publint` and `arethetypeswrong` (see rules/07).
+- Library `package.json`: use `exports` map with `types` condition first; ship `.d.ts` next to `.js`. Verify with `publint` and `arethetypeswrong` (see [rules/07](07-testing-and-tooling.md)).
 
 Monorepos: TypeScript project references give incremental, dependency-ordered builds:
 

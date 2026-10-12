@@ -2,8 +2,8 @@
 
 Written for Vue 3 (3.5 APIs noted where used); verify the latest at
 github.com/vuejs/core/releases. Nuxt-specific concerns (data fetching, `useState`, server routes)
-are in `rules/05`; hydration in `rules/06`. TypeScript setup depth is in
-`sota-javascript-typescript`.
+are in [`rules/05`](05-nuxt.md); hydration in [`rules/06`](06-ssr-hydration.md). TypeScript setup depth is in
+[`sota-javascript-typescript`](../../sota-javascript-typescript/SKILL.md).
 
 ## 1. Composition API + `<script setup>` is the default
 
@@ -41,7 +41,7 @@ are in `rules/05`; hydration in `rules/06`. TypeScript setup depth is in
   instances, non-reactive class objects): reactivity only at the root, so replace the
   root to trigger updates and treat nested data as immutable. `triggerRef` forces a
   refresh. This is the main Vue perf lever alongside `v-once`/`v-memo` and list
-  virtualization (`sota-performance`).
+  virtualization ([`sota-performance`](../../sota-performance/SKILL.md)).
 
 ## 3. Component API design
 
@@ -53,7 +53,7 @@ are in `rules/05`; hydration in `rules/06`. TypeScript setup depth is in
   runtime-object forms in one call. Emits use the tuple/type syntax (3.3+).
 - **Provide/inject** for cross-cutting dependencies; type the injection key
   (`InjectionKey<T>`). For SSR, remember provide/inject is per-app-instance — which is
-  exactly how you avoid cross-request leakage (`rules/06`).
+  exactly how you avoid cross-request leakage ([`rules/06`](06-ssr-hydration.md)).
 - **Composables** (`useX`) are Vue's unit of logic reuse — return refs/computed, accept
   getters or `MaybeRefOrGetter` + `toValue()` for flexible inputs, and clean up with
   `onScopeDispose`.
@@ -62,7 +62,7 @@ are in `rules/05`; hydration in `rules/06`. TypeScript setup depth is in
 
 Vue auto-escapes text interpolations and attribute bindings (including in SSR — the
 core `escapeHtml` escapes `" ' & < >`). The sinks are where you leave that protection.
-(General theory: `sota-code-security` rules/05.)
+(General theory: [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md).)
 
 - **`v-html` bypasses escaping** — it sets `innerHTML`. User HTML through `v-html` is
   never safe unless sanitized (allowlist sanitizer) or shown only to its own author in
@@ -81,7 +81,7 @@ core `escapeHtml` escapes `" ' & < >`). The sinks are where you leave that prote
   runtime-compiled component) from user input.
 - **Never mount Vue on DOM that contains server-rendered user content.** HTML that is
   safe *as HTML* can be unsafe *as a Vue template* (mustache/`v-` directives in the
-  markup get compiled). Mount only on markup you control (hydration-XSS in `rules/06`).
+  markup get compiled). Mount only on markup you control (hydration-XSS in [`rules/06`](06-ssr-hydration.md)).
 - **URL injection:** `:href="userUrl"` / `:src` allow `javascript:` and `data:` —
   validate the scheme before binding (sanitize on the backend before storage, per
   Vue's guidance). **Style injection:** binding user data to `:style` enables

@@ -25,8 +25,8 @@ the lifecycle that turns a model into a reliable, monitored, governed service.
 This is **classical/predictive ML** (tabular, ranking, vision, forecasting,
 recommendation): training pipelines, feature stores, model registries, serving,
 and drift monitoring. It is **not** LLM-application engineering — prompts, RAG,
-agents, and LLM evals live in `sota-llm-engineering`; data pipelines/warehouses
-live in `sota-data-engineering`. Grounded in Google's
+agents, and LLM evals live in [`sota-llm-engineering`](../sota-llm-engineering/SKILL.md); data pipelines/warehouses
+live in [`sota-data-engineering`](../sota-data-engineering/SKILL.md). Grounded in Google's
 [Rules of ML](https://developers.google.com/machine-learning/guides/rules-of-ml),
 the [ML Test Score](https://research.google/pubs/the-ml-test-score-a-rubric-for-ml-production-readiness-and-technical-debt-reduction/)
 rubric, and [Hidden Technical Debt in ML Systems](https://research.google/pubs/hidden-technical-debt-in-machine-learning-systems/).
@@ -100,46 +100,46 @@ highest-leverage fixes.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-ml-systems-architecture.md` | Designing/reviewing an ML system: the model-is-small-part principle, training vs serving paths, feature store, model registry, reproducibility, append-only model audit trail and registered checkpoints, trust domains across training/evaluation/serving (tracker auth, purpose-scoped feature namespaces), the Hidden-Technical-Debt anti-patterns (entanglement/CACE, glue code, pipeline jungles, undeclared consumers, feedback loops) |
-| `rules/02-data-and-features.md` | Anything touching training data or features: data leakage and label leakage, train/serve skew, feature/data versioning, splits (temporal/group), feature engineering discipline, dropping unused features, PII minimization, signed dataset attestations and stage-to-stage verification, purpose-bound fields and per-row consent codes, training-data admission (labeling roles, auto-label QA, adjudication-window quarantine) |
-| `rules/03-training-experimentation.md` | Training and iterating: experiment tracking & reproducibility (seeds, env, data hash), hyperparameter search, distributed training/checkpointing, config management, reproducible runs, starting simple |
-| `rules/04-evaluation-validation.md` | Deciding if a model is good enough: offline metrics vs the business objective, baselines, **sliced** evaluation and fairness, the ML Test Score tests, validation gates and regression thresholds before promotion, robustness slice, re-validating quantised/distilled artifacts |
-| `rules/05-deployment-serving.md` | Shipping a model: packaging (containers/ONNX), batch vs online vs streaming serving, model registry promotion, canary/shadow/A-B rollout, full-state rollback and isolated runtime caches, latency/throughput, reproducible inference environment, model decommissioning |
-| `rules/06-monitoring-drift.md` | Operating a model: data drift (PSI/KS) vs concept drift vs performance decay, label lag, embedding drift for text/images, abrupt vs gradual shift, prediction & feature monitoring, alerting, retraining triggers and cadence, ML-specific observability (cross-ref `sota-observability`) |
-| `rules/07-security-governance.md` | ML security & compliance: training-data poisoning, model extraction/inversion/membership inference, adversarial inputs, supply chain (untrusted `pickle`/model artifacts, dataset provenance, OMS model signing verified at admission and load, sandboxed third-party-model workers), backdoor screening and trigger-corpus gate, extraction detection and response, required adversarial robustness, OOD gating at inference, signed per-model ML-BOM, prompt/guardrail drift checks, on-device model signing, credential leaks as data-integrity incidents, DP training and membership-inference tests, inferred special-category attributes, MITRE ATLAS, NIST AI RMF, model cards, EU AI Act obligations |
+| [`rules/01-ml-systems-architecture.md`](rules/01-ml-systems-architecture.md) | Designing/reviewing an ML system: the model-is-small-part principle, training vs serving paths, feature store, model registry, reproducibility, append-only model audit trail and registered checkpoints, trust domains across training/evaluation/serving (tracker auth, purpose-scoped feature namespaces), the Hidden-Technical-Debt anti-patterns (entanglement/CACE, glue code, pipeline jungles, undeclared consumers, feedback loops) |
+| [`rules/02-data-and-features.md`](rules/02-data-and-features.md) | Anything touching training data or features: data leakage and label leakage, train/serve skew, feature/data versioning, splits (temporal/group), feature engineering discipline, dropping unused features, PII minimization, signed dataset attestations and stage-to-stage verification, purpose-bound fields and per-row consent codes, training-data admission (labeling roles, auto-label QA, adjudication-window quarantine) |
+| [`rules/03-training-experimentation.md`](rules/03-training-experimentation.md) | Training and iterating: experiment tracking & reproducibility (seeds, env, data hash), hyperparameter search, distributed training/checkpointing, config management, reproducible runs, starting simple |
+| [`rules/04-evaluation-validation.md`](rules/04-evaluation-validation.md) | Deciding if a model is good enough: offline metrics vs the business objective, baselines, **sliced** evaluation and fairness, the ML Test Score tests, validation gates and regression thresholds before promotion, robustness slice, re-validating quantised/distilled artifacts |
+| [`rules/05-deployment-serving.md`](rules/05-deployment-serving.md) | Shipping a model: packaging (containers/ONNX), batch vs online vs streaming serving, model registry promotion, canary/shadow/A-B rollout, full-state rollback and isolated runtime caches, latency/throughput, reproducible inference environment, model decommissioning |
+| [`rules/06-monitoring-drift.md`](rules/06-monitoring-drift.md) | Operating a model: data drift (PSI/KS) vs concept drift vs performance decay, label lag, embedding drift for text/images, abrupt vs gradual shift, prediction & feature monitoring, alerting, retraining triggers and cadence, ML-specific observability (cross-ref [`sota-observability`](../sota-observability/SKILL.md)) |
+| [`rules/07-security-governance.md`](rules/07-security-governance.md) | ML security & compliance: training-data poisoning, model extraction/inversion/membership inference, adversarial inputs, supply chain (untrusted `pickle`/model artifacts, dataset provenance, OMS model signing verified at admission and load, sandboxed third-party-model workers), backdoor screening and trigger-corpus gate, extraction detection and response, required adversarial robustness, OOD gating at inference, signed per-model ML-BOM, prompt/guardrail drift checks, on-device model signing, credential leaks as data-integrity incidents, DP training and membership-inference tests, inferred special-category attributes, MITRE ATLAS, NIST AI RMF, model cards, EU AI Act obligations |
 
 ## Top-10 non-negotiables
 
 1. **No data leakage.** No information from the target or the future or the test
    set enters training features (no fitting scalers/encoders on the full dataset
    before split, no post-outcome features). Leakage inflates offline metrics and
-   is CRITICAL — it makes a broken model look great. (`rules/02`, `rules/04`)
+   is CRITICAL — it makes a broken model look great. ([`rules/02`](rules/02-data-and-features.md), [`rules/04`](rules/04-evaluation-validation.md))
 2. **No train/serve skew.** The exact feature transformations used in training
    are used at inference — shared code or a feature store, not reimplemented
-   twice. Verify with skew checks. (`rules/01`, `rules/02`)
+   twice. Verify with skew checks. ([`rules/01`](rules/01-ml-systems-architecture.md), [`rules/02`](rules/02-data-and-features.md))
 3. **Everything is reproducible and versioned** — data, features, code, config,
    environment, and the model artifact — so any production model can be rebuilt
-   and explained. A model you can't reproduce is HIGH. (`rules/01`, `rules/03`)
+   and explained. A model you can't reproduce is HIGH. ([`rules/01`](rules/01-ml-systems-architecture.md), [`rules/03`](rules/03-training-experimentation.md))
 4. **Pipeline and monitoring before model sophistication.** A simple model on a
    solid, monitored pipeline beats a fancy model on a fragile one
-   (Rules of ML). (`rules/01`)
+   (Rules of ML). ([`rules/01`](rules/01-ml-systems-architecture.md))
 5. **Evaluate on slices and against a baseline, not one aggregate number.**
    Report per-segment metrics and fairness-relevant slices; a model that wins on
-   average can fail badly on a subgroup. (`rules/04`)
+   average can fail badly on a subgroup. ([`rules/04`](rules/04-evaluation-validation.md))
 6. **A validation gate guards promotion.** Automated checks (metric thresholds,
    no regression vs current prod, slice floors, data/schema validation) must
    pass before a model is promoted; deploys are reversible with fast rollback.
-   (`rules/04`, `rules/05`)
+   ([`rules/04`](rules/04-evaluation-validation.md), [`rules/05`](rules/05-deployment-serving.md))
 7. **Production models are monitored for drift and decay.** Data drift (PSI/KS),
    prediction distribution, and — as labels arrive — live performance, with
-   alerts and a retraining trigger. An unmonitored model silently rots. (`rules/06`)
+   alerts and a retraining trigger. An unmonitored model silently rots. ([`rules/06`](rules/06-monitoring-drift.md))
 8. **Never deserialize an untrusted model/`pickle`.** `pickle`/`joblib`/`torch.load`
    on an untrusted artifact is arbitrary code execution; verify provenance and
    integrity (hashes/signing), prefer safe formats (`safetensors`, ONNX).
-   (`rules/07`)
+   ([`rules/07`](rules/07-security-governance.md))
 9. **Govern data and the model.** Minimize PII in features and document a lawful
    basis; produce a model card; map risks with MITRE ATLAS / NIST AI RMF; check
-   EU AI Act obligations for high-risk use. (`rules/07`)
+   EU AI Act obligations for high-risk use. ([`rules/07`](rules/07-security-governance.md))
 10. **Kill ML debt deliberately.** Drop unused features, delete dead pipelines,
     untangle glue code, declare consumers of model outputs, and break feedback
-    loops — the Hidden-Technical-Debt anti-patterns. (`rules/01`)
+    loops — the Hidden-Technical-Debt anti-patterns. ([`rules/01`](rules/01-ml-systems-architecture.md))

@@ -45,7 +45,7 @@ session.save_path        = /var/lib/app-sessions  ; this pool's own dir, mode 07
 - `save_path` defaults to empty, so the files handler falls back to the system temp directory,
   shared with every other process on the host. Give each application its own directory, owned by
   its FPM user and closed to everyone else; a store shared between applications lets one read or
-  plant another's sessions (`sota-code-security` rules/17 §2).
+  plant another's sessions ([`sota-code-security` rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md) §2).
 - `session.referer_check` (empty by default) only rejects a request whose `Referer` lacks a
   substring. Clients omit or strip that header, so it was never a fixation defence, and on 8.4+
   setting it is deprecated: leave it empty.
@@ -131,9 +131,9 @@ Verified against php.net password_hash (2026-07):
   (`hash('sha256', $token)`), single-use, short TTL.
 - Compare any secret (tokens, HMACs, API keys) with **`hash_equals($known,
   $user)`** — `==`/`===` are timing-unsafe and `==` also has magic-hash
-  juggling traps (`rules/01` §4).
+  juggling traps ([`rules/01`](01-language-baseline.md) §4).
 - Rate-limit and lock out at the auth boundary; log failures. MFA/passkey and
-  IdP architecture → sota-identity-access; app-level flows → sota-code-security.
+  IdP architecture → [sota-identity-access](../../sota-identity-access/SKILL.md); app-level flows → [sota-code-security](../../sota-code-security/SKILL.md).
 
 ## 3. General crypto: sodium first, random_bytes always
 
@@ -157,7 +157,7 @@ Verified against php.net password_hash (2026-07):
 - Key derivation from passwords: `sodium_crypto_pwhash` or argon2id — never a
   bare hash of the password as key material.
 - JWTs and OAuth flows: use a maintained library (e.g. lcobucci/jwt,
-  web-token) — alg allowlist, `none` rejected; details in sota-code-security.
+  web-token) — alg allowlist, `none` rejected; details in [sota-code-security](../../sota-code-security/SKILL.md).
 - **The framework application key is a production secret.** One value keys most of the
   framework's integrity checks, so whoever holds it can forge or decrypt most of them. Read in
   source: Laravel 12's `APP_KEY` builds the encrypter behind encrypted cookies, keys signed URLs,
@@ -169,10 +169,10 @@ Verified against php.net password_hash (2026-07):
   it: the skeletons ship it empty (`.env.example` `APP_KEY=`; the Symfony recipe's `.env`
   `APP_SECRET=`), and the error (`MissingAppKeyException`, or Symfony's non-empty-parameter
   check) fires only when something first uses it. Assert it at boot beside the debug check in §5b.
-  See sota-secrets-management `rules/03` §2 and §6. OWASP: Laravel cheat sheet.
+  See [sota-secrets-management `rules/03`](../../sota-secrets-management/rules/03-application-patterns.md) §2 and §6. OWASP: Laravel cheat sheet.
 - **A leaked Laravel key can be code execution, not only forgery.** `Encrypter::decrypt($payload,
   $unserialize = true)` and the `decrypt()` helper **unserialize** the plaintext by default (read
-  in the 12.x source), so whoever holds the key can encrypt a gadget chain (`rules/03` §3) for any
+  in the 12.x source), so whoever holds the key can encrypt a gadget chain ([`rules/03`](03-files-deserialization-ssrf.md) §3) for any
   code path that decrypts attacker-supplied data. That was CVE-2018-15133 (Laravel ≤ 5.5.40 and
   5.6.x ≤ 5.6.29 decrypted and unserialized the `X-XSRF-TOKEN` header; in CISA KEV). Current
   `EncryptCookies` and the CSRF middleware pass `$serialize = false`, unless an app sets
@@ -226,7 +226,7 @@ disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec,p
   by default outside the CLI (read on 8.5.9 under `php-cgi -n`). With `error_log` unset,
   messages go to the SAPI error logger (php.net: e.g. Apache's error log, or stderr in
   the CLI), which is often nobody's dashboard. Name a destination, then
-  ship it to the log pipeline and alert on it (sota-observability). A log that is written and
+  ship it to the log pipeline and alert on it ([sota-observability](../../sota-observability/SKILL.md)). A log that is written and
   never read is not a control. `ignore_repeated_errors` defaults to Off; leave it Off, because
   deduplicating hides the rate of an attack that repeats one error.
 - **The rest of the surface.** `enable_dl` defaults to On (read on 8.5.9); `dl()` only works in
@@ -236,7 +236,7 @@ disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec,p
   `include_path`, `extension_dir` and `doc_root` belong beside `open_basedir`: set them to
   explicit, root-owned paths so an include or extension load cannot resolve somewhere the app
   user can write. `file_uploads = Off` removes multipart parsing from an app that takes no
-  files; one that does gets its own `upload_tmp_dir` (`rules/03` §1).
+  files; one that does gets its own `upload_tmp_dir` ([`rules/03`](03-files-deserialization-ssrf.md) §1).
 - `allow_webdav_methods` is not a PHP directive now: `ini_get()` returns `false` for it on
   8.5.9. Older checklists still list it. Do not set it, and do not count its absence as a gap.
 - **PHP 8.5: `disable_classes` is removed, `max_memory_limit` is new** (php-src PHP-8.5
@@ -256,7 +256,7 @@ disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec,p
   secret manager, not in webroot files (`.env` must be denied by the webserver
   — better, outside the docroot entirely).
 - Uncaught exceptions must map to a generic 500 page; the chain goes to logs
-  only (`rules/01` §5).
+  only ([`rules/01`](01-language-baseline.md) §5).
 - **Per-request resource caps** are the outer DoS guard: `memory_limit`,
   `max_execution_time`, `max_input_vars`, `post_max_size`, `upload_max_filesize`. **The CPU
   limit is not a wall-clock limit.** php.net `set_time_limit`: time spent outside the script,
@@ -289,7 +289,7 @@ function connect(string $dsn, string $user, #[\SensitiveParameter] string $passw
 - `phpinfo()` prints the whole environment. Measured: a value set only in an environment
   variable appeared in its output, and the environment is where §5 tells you to keep secrets. It
   belongs on no reachable route: add it to `disable_functions` in production. A framework debug
-  page is the same class (`sota-code-security` rules/07 §6).
+  page is the same class ([`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) §6).
 
 ## 5b. Debug mode and the development server
 

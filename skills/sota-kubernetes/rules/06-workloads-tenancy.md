@@ -4,9 +4,9 @@ Scope: the platform-level properties of workloads that affect **availability and
 isolation** — resource requests/limits as QoS (not isolation), PodDisruptionBudgets,
 topology spread / anti-affinity, priority/preemption, the namespace-as-soft-boundary
 reality and when you need hard multi-tenancy, and where Secrets live. **Pod isolation
-mechanics (securityContext, seccomp, runtime classes) are `sota-sandboxing` (rules/03);**
+mechanics (securityContext, seccomp, runtime classes) are [`sota-sandboxing`](../../sota-sandboxing/SKILL.md) ([rules/03](../../sota-sandboxing/rules/03-containers-microvms.md));**
 this file references the *isolation decision* but does not re-spec the pod fields. Secret
-*backends* are `sota-secrets-management`; this file states the etcd-encryption requirement
+*backends* are [`sota-secrets-management`](../../sota-secrets-management/SKILL.md); this file states the etcd-encryption requirement
 and points there.
 
 ---
@@ -15,7 +15,7 @@ and points there.
 
 Requests/limits govern scheduling and the cgroup budget; they are an **availability and
 fairness** control, not a security boundary (a shared kernel means a noisy/hostile neighbor
-can still affect others — real isolation is `sota-sandboxing`'s node/runtime story).
+can still affect others — real isolation is [`sota-sandboxing`](../../sota-sandboxing/SKILL.md)'s node/runtime story).
 
 - **Set both `requests` and `limits`** for CPU and memory on every container.
   - `requests` drive scheduling (the scheduler packs to requested capacity).
@@ -29,7 +29,7 @@ can still affect others — real isolation is `sota-sandboxing`'s node/runtime s
   containers) is evicted last; **Burstable** (requests < limits) next; **BestEffort** (none
   set) is evicted first under node pressure. Critical workloads should be Guaranteed.
 - **A pod with no requests is a scheduling and eviction hazard** — it can be packed onto a
-  full node and is first to be evicted. Enforce limits/requests at admission (`rules/03`)
+  full node and is first to be evicted. Enforce limits/requests at admission ([`rules/03`](03-admission-policy.md))
   and set namespace **`LimitRange`** (defaults) + **`ResourceQuota`** (caps) so a tenant
   can't starve the cluster or schedule unbounded pods.
 
@@ -77,9 +77,9 @@ or a cluster-scoped resource crosses namespaces. So:
 
 - **Soft multi-tenancy (namespace-per-tenant)** is appropriate only for **mutually trusted
   or low-sensitivity** tenants (teams in one org). Even then, enforce per-namespace: RBAC
-  isolation (`rules/02`), `ResourceQuota`/`LimitRange`, PSA `restricted` (`rules/03`), and
+  isolation ([`rules/02`](02-rbac-serviceaccounts.md)), `ResourceQuota`/`LimitRange`, PSA `restricted` ([`rules/03`](03-admission-policy.md)), and
   **default-deny NetworkPolicy** — note the requirement here, but NetworkPolicy/CNI depth
-  is `sota-network-security`.
+  is [`sota-network-security`](../../sota-network-security/SKILL.md).
 
 - **When you need HARD multi-tenancy** (untrusted tenants, strong compliance/regulatory
   separation, hostile-neighbor model), namespaces are insufficient. Escalate the boundary:
@@ -91,8 +91,8 @@ or a cluster-scoped resource crosses namespaces. So:
     nodes unless combined with node isolation.
   - **Node isolation** — dedicate node pools per tenant (taints/tolerations + node
     affinity) so workloads don't co-reside; combine with a **stronger runtime boundary
-    (gVisor/Kata)** for untrusted code — this is `sota-sandboxing` (rules/01 boundary
-    choice, rules/03 runtime classes). Co-residency of untrusted tenants on a shared kernel
+    (gVisor/Kata)** for untrusted code — this is [`sota-sandboxing`](../../sota-sandboxing/SKILL.md) ([rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md) boundary
+    choice, [rules/03](../../sota-sandboxing/rules/03-containers-microvms.md) runtime classes). Co-residency of untrusted tenants on a shared kernel
     is the thing node isolation + microVM/gVisor exists to fix.
 
   State the tenancy model and its boundary explicitly in design; "we use namespaces for
@@ -101,18 +101,18 @@ or a cluster-scoped resource crosses namespaces. So:
 ## 4. Secrets in Kubernetes (platform view)
 
 - **etcd encryption-at-rest with KMS v2 is mandatory** — K8s Secrets are base64, not
-  encrypted, by default (full treatment in `rules/01` §4).
+  encrypted, by default (full treatment in [`rules/01`](01-control-plane-etcd.md) §4).
 - **Don't inject secrets as plain env vars** where avoidable — env is readable via
   `/proc`, crash dumps, `kubectl describe`, and child processes; prefer **mounted files**
   (projected/volume) and tools that support file-based secrets. (App-level secret handling
-  is `sota-secrets-management`.)
+  is [`sota-secrets-management`](../../sota-secrets-management/SKILL.md).)
 - **Use a real secrets workflow**: **ExternalSecrets Operator** (sync from Vault/cloud
-  secret managers — `sota-secrets-management` rules/02, and scope it per `rules/05`),
+  secret managers — [`sota-secrets-management` rules/02](../../sota-secrets-management/rules/02-storage-backends.md), and scope it per [`rules/05`](05-operators-crds-webhooks.md)),
   **sealed-secrets** (encrypt secrets safe to commit to git for GitOps), or the **Secrets
   Store CSI driver** (mount from an external store, optionally never landing in etcd). Pick
   per your GitOps model; the goal is that the source of truth is an encrypted store, not a
   plaintext manifest in git.
-- **Restrict who can read Secrets** (`rules/02` §2.5) — `get`/`list secrets` is
+- **Restrict who can read Secrets** ([`rules/02`](02-rbac-serviceaccounts.md) §2.5) — `get`/`list secrets` is
   near-credential-equivalent. Audit it.
 
 ## Audit checklist
@@ -122,7 +122,7 @@ or a cluster-scoped resource crosses namespaces. So:
 - [ ] Multi-replica critical workloads have a PDB; PDB values won't block legitimate drains or allow full takedown? (`kubectl get pdb -A`)
 - [ ] Topology spread / anti-affinity spreads replicas across zones/nodes (no single-node single-zone critical service)?
 - [ ] PriorityClasses reserve top priorities for the platform; tenants can't preempt platform pods?
-- [ ] Tenancy model stated explicitly: is "namespace" being relied on as a security boundary against untrusted tenants? (that's a High finding — escalate to vCluster / separate clusters / node isolation + gVisor/Kata per sota-sandboxing)
-- [ ] Soft-tenant namespaces enforce RBAC isolation, quota, PSA restricted, and default-deny NetworkPolicy (depth → sota-network-security)?
-- [ ] etcd Secrets encrypted with KMS v2 (rules/01); secrets mounted as files not env where possible; ESO/sealed-secrets/CSI used over plaintext-in-git (sota-secrets-management)?
-- [ ] Secret read RBAC scoped and audited (rules/02)?
+- [ ] Tenancy model stated explicitly: is "namespace" being relied on as a security boundary against untrusted tenants? (that's a High finding — escalate to vCluster / separate clusters / node isolation + gVisor/Kata per [sota-sandboxing](../../sota-sandboxing/SKILL.md))
+- [ ] Soft-tenant namespaces enforce RBAC isolation, quota, PSA restricted, and default-deny NetworkPolicy (depth → [sota-network-security](../../sota-network-security/SKILL.md))?
+- [ ] etcd Secrets encrypted with KMS v2 ([rules/01](01-control-plane-etcd.md)); secrets mounted as files not env where possible; ESO/sealed-secrets/CSI used over plaintext-in-git ([sota-secrets-management](../../sota-secrets-management/SKILL.md))?
+- [ ] Secret read RBAC scoped and audited ([rules/02](02-rbac-serviceaccounts.md))?

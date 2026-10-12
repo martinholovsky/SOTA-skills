@@ -2,10 +2,10 @@
 
 The framework that turns "we develop securely" from a claim into an assessable set
 of practices. The SSDF is deliberately high-level and tool-agnostic; its value here
-is as a **checklist to crosswalk your existing pipeline against** (rules/01), and
+is as a **checklist to crosswalk your existing pipeline against** ([rules/01](01-control-frameworks-as-code.md)), and
 as the thing US federal buyers make you **attest to**. Almost none of it is new
-engineering if you already apply `sota-devsecops`, `sota-testing`, and
-`sota-secrets-management` — the work is mapping and closing gaps.
+engineering if you already apply [`sota-devsecops`](../../sota-devsecops/SKILL.md), [`sota-testing`](../../sota-testing/SKILL.md), and
+[`sota-secrets-management`](../../sota-secrets-management/SKILL.md) — the work is mapping and closing gaps.
 
 > **Status (verified July 2026; CSRC re-read 2026-09-26):** the final is **SSDF
 > v1.1, SP 800-218, published 3 Feb 2022** (csrc.nist.gov/pubs/sp/800/218/final). A **Rev 1
@@ -20,10 +20,10 @@ stage that already implements it:
 
 | Group | Intent | Where it lives in your stack |
 |---|---|---|
-| **PO — Prepare the Organization** | Define security requirements, roles, toolchains, and criteria *before* coding | Governance + `sota-devsecops` (pipeline setup), `sota-docs-workflow` (requirements) |
-| **PS — Protect the Software** | Protect code and releases from tampering | Source integrity, branch protection, artifact **signing & provenance (SLSA/Sigstore)**, protected registries → `sota-devsecops`, `sota-secrets-management` |
-| **PW — Produce Well-Secured Software** | The design/code core: build security in | **Threat modeling** (`sota-threat-modeling`), secure defaults & secure coding (`sota-code-security` + language skills), **SAST/DAST/secret-scanning**, code review, vetting reused components → `sota-devsecops`, `sota-testing` |
-| **RV — Respond to Vulnerabilities** | Find, triage, remediate, and root-cause post-release | VDP/CVD intake, scanning, SLA-tracked remediation → rules/04 (CRA overlaps), `sota-devsecops` |
+| **PO — Prepare the Organization** | Define security requirements, roles, toolchains, and criteria *before* coding | Governance + [`sota-devsecops`](../../sota-devsecops/SKILL.md) (pipeline setup), [`sota-docs-workflow`](../../sota-docs-workflow/SKILL.md) (requirements) |
+| **PS — Protect the Software** | Protect code and releases from tampering | Source integrity, branch protection, artifact **signing & provenance (SLSA/Sigstore)**, protected registries → [`sota-devsecops`](../../sota-devsecops/SKILL.md), [`sota-secrets-management`](../../sota-secrets-management/SKILL.md) |
+| **PW — Produce Well-Secured Software** | The design/code core: build security in | **Threat modeling** ([`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md)), secure defaults & secure coding ([`sota-code-security`](../../sota-code-security/SKILL.md) + language skills), **SAST/DAST/secret-scanning**, code review, vetting reused components → [`sota-devsecops`](../../sota-devsecops/SKILL.md), [`sota-testing`](../../sota-testing/SKILL.md) |
+| **RV — Respond to Vulnerabilities** | Find, triage, remediate, and root-cause post-release | VDP/CVD intake, scanning, SLA-tracked remediation → [rules/04](04-eu-cyber-resilience-act.md) (CRA overlaps), [`sota-devsecops`](../../sota-devsecops/SKILL.md) |
 
 **PW drives architecture and code most directly**; PS drives the pipeline; RV
 drives operations. PO is largely governance with a few engineering hooks (the
@@ -33,19 +33,19 @@ toolchain and the security-requirements definition).
 
 The failure mode assessors hunt is a **signed attestation whose practices aren't
 enforced**. Encode the machine-checkable practices as CI gates so the attestation
-is backed by a mechanism (rules/01 §4):
+is backed by a mechanism ([rules/01](01-control-frameworks-as-code.md) §4):
 
 - **PW.7 / PW.8 (review & testing)** → SAST, DAST, and secret-scanning gates that
-  fail the build; test-coverage and security-test suites (`sota-testing`,
+  fail the build; test-coverage and security-test suites ([`sota-testing`](../../sota-testing/SKILL.md),
   including its security-testing/WSTG rules).
 - **PW.4 (reuse secure components)** → dependency scanning + an allowlist/denylist;
-  SBOM generation (rules/04); no unvetted transitive pull-through.
+  SBOM generation ([rules/04](04-eu-cyber-resilience-act.md)); no unvetted transitive pull-through.
 - **PS.1 / PS.2 (protect & provide provenance)** → signed commits, SHA-pinned
-  actions, **build provenance (SLSA)** and artifact signing (`sota-devsecops`).
+  actions, **build provenance (SLSA)** and artifact signing ([`sota-devsecops`](../../sota-devsecops/SKILL.md)).
 - **PS.3 (archive & protect each release)** → immutable, signed release artifacts
   with retained provenance.
 - **PW.1 (threat modeling / secure design)** → a design-review gate that references
-  the threat model (`sota-threat-modeling` rules/06) for features crossing trust
+  the threat model ([`sota-threat-modeling` rules/06](../../sota-threat-modeling/rules/06-audit-reconstruction.md)) for features crossing trust
   boundaries.
 - **PO.1.3 (communicate requirements to third parties)** → SSDF writes this task for
   suppliers of software components. Apply it equally when another company writes
@@ -63,7 +63,7 @@ is backed by a mechanism (rules/01 §4):
   scanning with SLA-tracked tickets; **RV.2** remediation; **RV.3** root-cause.
 
 The crosswalk row for each practice cites the gate and its evidence — the CI log
-*is* the operating evidence (rules/01 §6).
+*is* the operating evidence ([rules/01](01-control-frameworks-as-code.md) §6).
 
 ## 3. Federal secure-software self-attestation
 
@@ -91,13 +91,13 @@ If you develop or fine-tune AI models, **SP 800-218A** (final, Jul 2024) augment
 the SSDF with model-specific tasks. The additions that drive engineering:
 
 - **Training-data provenance & integrity** — data lineage, poisoning defenses,
-  and the same inventory discipline as `sota-privacy-compliance` rules/01 extended
-  to datasets (see `sota-ml-engineering` for leakage/lineage mechanics).
+  and the same inventory discipline as [`sota-privacy-compliance` rules/01](../../sota-privacy-compliance/rules/01-data-inventory-classification.md) extended
+  to datasets (see [`sota-ml-engineering`](../../sota-ml-engineering/SKILL.md) for leakage/lineage mechanics).
 - **Model weights as high-value assets** — protect and sign them like release
   artifacts (PS practices applied to weights); access-control and provenance for
   checkpoints.
 - **Dual-use foundation-model considerations** and eval/misuse testing before
-  release (`sota-llm-engineering` evals, `sota-code-security` rules/08 for
+  release ([`sota-llm-engineering`](../../sota-llm-engineering/SKILL.md) evals, [`sota-code-security` rules/08](../../sota-code-security/rules/08-llm-ai-security.md) for
   prompt-injection/agent surface).
 
 This is the crosswalk target when an SSDF attestation or a customer questionnaire
@@ -110,16 +110,16 @@ every task it names already lives in this library. This rule's job is to give yo
 the **mapping** and the **attestation discipline**, not a second copy of the
 pipeline guidance. When a PW/PS/RV practice needs implementing, jump to:
 
-- `sota-devsecops` — the pipeline, SLSA/Sigstore provenance, SBOM, dependency & IaC
+- [`sota-devsecops`](../../sota-devsecops/SKILL.md) — the pipeline, SLSA/Sigstore provenance, SBOM, dependency & IaC
   scanning, admission control
-- `sota-testing` — SAST/DAST placement, security testing (WSTG), fuzzing, mutation
-- `sota-code-security` + the language skills — secure coding, the vuln classes
-- `sota-secrets-management` — signing keys, protected credentials
-- `sota-threat-modeling` — the PW.1 design analysis
+- [`sota-testing`](../../sota-testing/SKILL.md) — SAST/DAST placement, security testing (WSTG), fuzzing, mutation
+- [`sota-code-security`](../../sota-code-security/SKILL.md) + the language skills — secure coding, the vuln classes
+- [`sota-secrets-management`](../../sota-secrets-management/SKILL.md) — signing keys, protected credentials
+- [`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md) — the PW.1 design analysis
 
 ## Audit checklist
 
-- [ ] SSDF practices (PO/PS/PW/RV) crosswalked to concrete pipeline stages and sota-* mechanisms (rules/01); gaps tracked, not hand-waved
+- [ ] SSDF practices (PO/PS/PW/RV) crosswalked to concrete pipeline stages and sota-* mechanisms ([rules/01](01-control-frameworks-as-code.md)); gaps tracked, not hand-waved
 - [ ] PW machine-checkable practices are CI gates that fail the build: SAST, DAST, secret-scanning, dependency scanning, test suites
 - [ ] PS: signed commits, SHA-pinned actions, build provenance (SLSA) and artifact signing; releases immutable, signed, provenance retained
 - [ ] PW.1 secure-design/threat-modeling gate for features crossing trust boundaries, referencing the threat model
@@ -129,4 +129,4 @@ pipeline guidance. When a PW/PS/RV practice needs implementing, jump to:
 - [ ] If developing/fine-tuning AI: SP 800-218A additions applied — training-data provenance/integrity, model weights protected & signed as high-value assets, eval/misuse testing before release
 - [ ] Attestation, if any, backed by mechanisms not prose — no signed claim without an enforcing gate (False Claims exposure)
 - [ ] SSDF version referenced is a final revision with no finalized successor (SP 800-218 is v1.1; check csrc.nist.gov); drafts not cited as baseline
-- [ ] No pipeline guidance duplicated here — implementation deferred to `sota-devsecops` / `sota-testing` / `sota-code-security`
+- [ ] No pipeline guidance duplicated here — implementation deferred to [`sota-devsecops`](../../sota-devsecops/SKILL.md) / [`sota-testing`](../../sota-testing/SKILL.md) / [`sota-code-security`](../../sota-code-security/SKILL.md)

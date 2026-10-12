@@ -99,7 +99,7 @@ $cmd = 'ping -c1 ' . escapeshellarg($host);
 - Ban list for user-reachable paths: `eval()`, `assert()` with dynamic input,
   `preg_replace_callback` with attacker-chosen callables, `call_user_func`/
   variable functions `$fn()` where `$fn` derives from input, `unserialize`
-  (see `rules/03`).
+  (see [`rules/03`](03-files-deserialization-ssrf.md)).
 
 ## 2a. Dynamic code evaluation: `eval`, generated templates, expression engines
 
@@ -129,7 +129,7 @@ sanitize user data). Register no function that reaches the filesystem, the netwo
 **An in-process sandbox is not a security boundary.** The GitHub Advisory Database lists 14
 twig/twig advisories whose title names the sandbox, 11 published in 2026 (queried
 2026-09-25, 34 twig/twig entries in all). Untrusted template or expression authors get a
-separate process with no credentials (`sota-sandboxing`), or no template authoring at all.
+separate process with no credentials ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)), or no template authoring at all.
 OWASP: Code Review Guide, Proactive Controls 2024 C3; ASVS 5.0 V1.3.
 
 ## 3. XSS: escape at output, for the exact context
@@ -168,7 +168,7 @@ const cfg = <?= json_encode($cfg, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT
 **URL context:** `rawurlencode()` for components; validate whole user-supplied
 URLs — scheme allowlist (`https?`) — before emitting in `href` (blocks
 `javascript:`). Redirect targets: allowlist or same-origin check (open
-redirect, and see SSRF in `rules/03`).
+redirect, and see SSRF in [`rules/03`](03-files-deserialization-ssrf.md)).
 
 **Templates:** use an auto-escaping engine — e.g. Twig (`autoescape` on by
 default) or Blade `{{ }}` — and treat the raw syntaxes (`|raw`, `{!! !!}`,
@@ -180,7 +180,7 @@ helper; naked `<?=` of a variable is a finding until traced.
 `Symfony\Component\HtmlSanitizer` or HTML Purifier as neutral examples — never
 regex/`strip_tags`.
 
-**Defense in depth:** a strict `Content-Security-Policy` (see `rules/04` §6)
+**Defense in depth:** a strict `Content-Security-Policy` (see [`rules/04`](04-sessions-auth-web-hardening.md) §6)
 and `X-Content-Type-Options: nosniff` cap the blast radius; they don't replace
 escaping.
 
@@ -243,12 +243,12 @@ Measured on PHP 8.5.9:
 - Mass assignment is the same class through properties. Loops of `$obj->$k = $v` or
   `$obj->{$k} = $v` over request data, and framework guards switched off (e.g. Eloquent's
   `protected $guarded = [];`, which its docs describe as making every attribute mass
-  assignable), are findings. The language-neutral rule is `sota-code-security` rules/07 §3.
-- For local variables the same flaw is `extract()` and `$$name` (`rules/01` §7).
+  assignable), are findings. The language-neutral rule is [`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) §3.
+- For local variables the same flaw is `extract()` and `$$name` ([`rules/01`](01-language-baseline.md) §7).
 
 ## 6. LDAP and XPath: PHP's escapers, and the empty password
 
-The injection class is `sota-code-security` rules/01 (LDAP and XPath). This is PHP's spelling of it.
+The injection class is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) (LDAP and XPath). This is PHP's spelling of it.
 
 ```php
 // BAD — spliced filter/DN; an empty password turns the bind into an unauthenticated bind
@@ -278,7 +278,7 @@ $filter = '(uid=' . ldap_escape($user, '', LDAP_ESCAPE_FILTER) . ')';
 
 A `preg_*` pattern that validates, allowlists, routes or redacts is a security control. A pattern
 assembled from request data is an injection sink. The language-neutral rule is in
-`sota-code-security` rules/01 §10 (ReDoS); this is the PHP spelling.
+[`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §10 (ReDoS); this is the PHP spelling.
 
 ```php
 // BAD — term spliced raw; `$` accepts "alice\n"; unbounded; false (error) read as "no match"
@@ -344,7 +344,7 @@ Security; Code Reference). The rules are the same; these are the names to look f
   that writes, deletes or returns private data it is missing authorization.
 - **No `unserialize()` or `maybe_unserialize()` of request, cookie or remote data.**
   `maybe_unserialize()` is `@unserialize(trim($data))` with no `allowed_classes` (Code Reference
-  source), so it is `rules/03` §3 under another name. Use JSON across any trust boundary.
+  source), so it is [`rules/03`](03-files-deserialization-ssrf.md) §3 under another name. Use JSON across any trust boundary.
 
 ## Audit checklist
 

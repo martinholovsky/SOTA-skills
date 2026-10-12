@@ -31,13 +31,13 @@ admission webhooks, Helm/Kustomize at admission, multi-tenancy boundaries, clust
 lifecycle, and K8s audit logging.
 
 It does **not** re-teach pod isolation mechanics. Boundaries it defers:
-- **Pod `securityContext`, seccomp, AppArmor, capabilities, PSA pod-level fields** → `sota-sandboxing` (rules/03 containers & microVMs; rules/01 boundaries). This skill owns the *admission-time enforcement* of those fields, not their internals.
-- **NetworkPolicy semantics, CNI choice, service mesh, mTLS** → `sota-network-security`. This skill states only the *requirement* (default-deny per namespace, enforced at admission).
-- **OIDC/SSO and RBAC-role *design* methodology** → `sota-identity-access`. This skill owns the K8s RBAC *mechanics and escalation traps*.
-- **Runtime/audit-log detection content (Falco/Tetragon rules, detections)** → `sota-detection-engineering`. This skill owns *producing and shipping* the audit stream.
-- **Workload identity, Secret storage backends (ESO, sealed-secrets, CSI)** → `sota-secrets-management` (rules/01, rules/02). This skill owns etcd encryption-at-rest.
-- **Cloud IAM, managed-K8s selection, DR** → `sota-cloud-infrastructure` (rules/02, rules/04, rules/07).
-- **CI/CD provenance, image signing, IaC/GitOps pipeline, runtime ops** → `sota-devsecops` (rules/02, rules/04, rules/06, rules/07).
+- **Pod `securityContext`, seccomp, AppArmor, capabilities, PSA pod-level fields** → [`sota-sandboxing`](../sota-sandboxing/SKILL.md) ([rules/03](../sota-sandboxing/rules/03-containers-microvms.md) containers & microVMs; [rules/01](../sota-sandboxing/rules/01-isolation-boundaries.md) boundaries). This skill owns the *admission-time enforcement* of those fields, not their internals.
+- **NetworkPolicy semantics, CNI choice, service mesh, mTLS** → [`sota-network-security`](../sota-network-security/SKILL.md). This skill states only the *requirement* (default-deny per namespace, enforced at admission).
+- **OIDC/SSO and RBAC-role *design* methodology** → [`sota-identity-access`](../sota-identity-access/SKILL.md). This skill owns the K8s RBAC *mechanics and escalation traps*.
+- **Runtime/audit-log detection content (Falco/Tetragon rules, detections)** → [`sota-detection-engineering`](../sota-detection-engineering/SKILL.md). This skill owns *producing and shipping* the audit stream.
+- **Workload identity, Secret storage backends (ESO, sealed-secrets, CSI)** → [`sota-secrets-management`](../sota-secrets-management/SKILL.md) ([rules/01](../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md), [rules/02](../sota-secrets-management/rules/02-storage-backends.md)). This skill owns etcd encryption-at-rest.
+- **Cloud IAM, managed-K8s selection, DR** → [`sota-cloud-infrastructure`](../sota-cloud-infrastructure/SKILL.md) ([rules/02](../sota-cloud-infrastructure/rules/02-iam-design.md), [rules/04](../sota-cloud-infrastructure/rules/04-compute-selection.md), [rules/07](../sota-cloud-infrastructure/rules/07-resilience-dr.md)).
+- **CI/CD provenance, image signing, IaC/GitOps pipeline, runtime ops** → [`sota-devsecops`](../sota-devsecops/SKILL.md) ([rules/02](../sota-devsecops/rules/02-provenance-signing.md), [rules/04](../sota-devsecops/rules/04-build-containers.md), [rules/06](../sota-devsecops/rules/06-iac-deployment.md), [rules/07](../sota-devsecops/rules/07-runtime-ops.md)).
 
 Two modes. Pick one explicitly at the start of the task.
 
@@ -54,16 +54,16 @@ controller, or installing an operator/chart.
 2. **Least privilege by default**: no wildcard RBAC verbs/resources, `automountService
    AccountToken: false` unless the pod calls the API, scoped AppProjects, operators get
    the narrowest RBAC that works. Loosen only with a comment stating why.
-3. **Encrypt etcd at rest with a KMS provider** (`rules/01`) — Secrets are base64, not
+3. **Encrypt etcd at rest with a KMS provider** ([`rules/01`](rules/01-control-plane-etcd.md)) — Secrets are base64, not
    encrypted, by default. This is the single most common "we thought we were covered" gap.
 4. **Admission is fail-closed and ENFORCING, not auditing.** A policy left in `audit`/
-   `warn` forever is documentation, not a control (`rules/03`). Ship the AUDIT→ENFORCE
+   `warn` forever is documentation, not a control ([`rules/03`](rules/03-admission-policy.md)). Ship the AUDIT→ENFORCE
    rollout plan with the policy.
 5. **GitOps is the only write path to the cluster.** Humans propose via PR; the
    controller reconciles. Scope the controller's own privileges and AppProjects tightly
-   (`rules/04`).
+   ([`rules/04`](rules/04-gitops-controllers.md)).
 6. **Plan the upgrade before you build**: version skew, EOL date, CVE-response runbook,
-   tested etcd restore (`rules/01`, `rules/07`).
+   tested etcd restore ([`rules/01`](rules/01-control-plane-etcd.md), [`rules/07`](rules/07-supply-chain-audit.md)).
 
 Deliverables: topology + threat statement, the concrete manifests/configs, the
 AUDIT→ENFORCE rollout, and the residual-risk/assumptions list (cloud-managed control
@@ -145,7 +145,7 @@ Violations are at minimum **High** in AUDIT mode and must never be introduced in
    call the API. No long-lived Secret-based SA tokens — use bound/projected tokens (`02`).
 6. **Pod Security Admission `restricted` ENFORCED** on workload namespaces (label
    `pod-security.kubernetes.io/enforce: restricted`), not merely `warn`/`audit`. PSA is
-   stable; PSP is gone (`03`). Pod-level field internals → sota-sandboxing.
+   stable; PSP is gone (`03`). Pod-level field internals → [sota-sandboxing](../sota-sandboxing/SKILL.md).
 7. **Admission policies enforce, with a documented AUDIT→ENFORCE rollout.** A policy
    parked in `Audit`/`warn` indefinitely is a real, recurring finding (`03`).
 8. **GitOps is the only cluster write path; the controller and its AppProjects are
@@ -157,7 +157,7 @@ Violations are at minimum **High** in AUDIT mode and must never be introduced in
 10. **API server audit logging enabled** (RequestResponse for RBAC/admission changes;
     Secrets/ConfigMaps at Metadata only, since a body-level rule logs their values),
     shipped to tamper-resistant storage; etcd backups taken AND restore-tested (`07`,`01`).
-    Detection content on the stream → sota-detection-engineering.
+    Detection content on the stream → [sota-detection-engineering](../sota-detection-engineering/SKILL.md).
 
 If the user asks for something that violates a non-negotiable, implement the secure
 alternative and explain the delta; comply only after they acknowledge the risk explicitly.

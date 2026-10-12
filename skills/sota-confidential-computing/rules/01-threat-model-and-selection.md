@@ -3,11 +3,11 @@
 Scope: the decision layer of confidential computing (CC) — what a hardware TEE
 actually defends against, what it never will, and how to decide whether a workload
 needs one at all. Read this before any implementation file. This file does NOT own
-TEE hardware specifics (rules/02), attestation protocol and verification (rules/03),
-confidential Kubernetes (rules/04), or cryptographic PETs like FHE/MPC (rules/05).
-Protecting the *host from the workload* is sota-sandboxing rules/01; key custody and
-HSM/KMS design is sota-secrets-management rules/02; application-layer vulnerabilities
-remain sota-code-security regardless of what hardware the app runs on.
+TEE hardware specifics ([rules/02](02-tee-technologies.md)), attestation protocol and verification ([rules/03](03-remote-attestation.md)),
+confidential Kubernetes ([rules/04](04-confidential-kubernetes.md)), or cryptographic PETs like FHE/MPC ([rules/05](05-pets-coed.md)).
+Protecting the *host from the workload* is [sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md); key custody and
+HSM/KMS design is [sota-secrets-management rules/02](../../sota-secrets-management/rules/02-storage-backends.md); application-layer vulnerabilities
+remain [sota-code-security](../../sota-code-security/SKILL.md) regardless of what hardware the app runs on.
 
 ---
 
@@ -46,7 +46,7 @@ in a fake or downgraded environment. The trust chain is: hardware root of trust 
 signed evidence about platform + workload measurement → verifier appraisal →
 relying party decision (roles per the RATS architecture, RFC 9334). Every guarantee
 in this file is conditional on that chain being *verified before secrets flow* —
-mechanics in rules/03.
+mechanics in [rules/03](03-remote-attestation.md).
 
 **R1.4 — Platform reality check (verify at use time).** AMD SEV-SNP and Intel TDX
 confidential VMs are generally available on major clouds (per the Azure and Google
@@ -54,7 +54,7 @@ Cloud confidential-VM documentation; region, machine-series, and GPU support var
 verify current availability in the provider docs). Arm CCA (Realms/RME) silicon and
 software stacks are maturing, but broad public-cloud instance availability still
 lags the x86 offerings (needs verification at time of use). Process-level enclaves
-and GPU TEEs are rules/02 territory.
+and GPU TEEs are [rules/02](02-tee-technologies.md) territory.
 
 ---
 
@@ -78,12 +78,12 @@ vendor pitch as marketing.
 
 | Non-covered threat | Why | Who owns it |
 |---|---|---|
-| **Bugs in the workload itself** | Attestation proves *which* code runs, not that it is *good* code; an SQLi or RCE inside the TEE executes with the TEE's trust | sota-code-security |
-| **Malicious/backdoored code you attest** | Measurement of a trojan is a perfectly valid measurement; garbage in, attested garbage out | supply-chain controls, sota-devsecops |
-| **Side channels** | Out of CCC scope: mitigations are split across CPU vendor, firmware, OS, and *your code* (constant-time crypto, no secret-dependent memory access). TEEs have a real history of demonstrated microarchitectural and ciphertext side-channel attacks — budget for "bounded honesty", not perfection | vendor patches + rules/02 + workload discipline |
+| **Bugs in the workload itself** | Attestation proves *which* code runs, not that it is *good* code; an SQLi or RCE inside the TEE executes with the TEE's trust | [sota-code-security](../../sota-code-security/SKILL.md) |
+| **Malicious/backdoored code you attest** | Measurement of a trojan is a perfectly valid measurement; garbage in, attested garbage out | supply-chain controls, [sota-devsecops](../../sota-devsecops/SKILL.md) |
+| **Side channels** | Out of CCC scope: mitigations are split across CPU vendor, firmware, OS, and *your code* (constant-time crypto, no secret-dependent memory access). TEEs have a real history of demonstrated microarchitectural and ciphertext side-channel attacks — budget for "bounded honesty", not perfection | vendor patches + [rules/02](02-tee-technologies.md) + workload discipline |
 | **Physical attacks, including cheap bus interposers** | Invasive access (decapping, microprobing) is out of scope — and so is a DRAM-bus interposer, which is cheap: WireTap (CCS '25) took the SGX Quoting Enclave key, TEE.Fail (disclosed 2025-10-28, DDR5) extracted Intel PCE keys and forged TDX quotes, Battering RAM (IEEE S&P '26, DDR4, under $50) read and replayed SGX and SEV-SNP memory. Deterministic memory encryption is the root cause, and Intel and AMD rate interposition out of scope — brief physical access to the host breaks confidentiality **and attestation** | facility security, provider physical-security assurances, threat acceptance |
-| **The TEE vendor** | The CPU vendor's silicon, microcode, and signing keys are *in* your TCB — CC moves trust from the cloud operator to the chip maker, it does not eliminate trust | vendor selection, rules/02 |
-| **Availability** | The host can refuse to schedule, pause, or destroy the TEE at will; CC guarantees confidentiality/integrity, never uptime | sota-architecture resilience patterns |
+| **The TEE vendor** | The CPU vendor's silicon, microcode, and signing keys are *in* your TCB — CC moves trust from the cloud operator to the chip maker, it does not eliminate trust | vendor selection, [rules/02](02-tee-technologies.md) |
+| **Availability** | The host can refuse to schedule, pause, or destroy the TEE at will; CC guarantees confidentiality/integrity, never uptime | [sota-architecture](../../sota-architecture/SKILL.md) resilience patterns |
 
 **R2.1 — Name the residual TCB in the design doc.** Every CC design must state what
 remains trusted: CPU vendor hardware + firmware, the attestation verification
@@ -102,7 +102,7 @@ an incorrect program correct. Findings that an app-layer control was skipped
 
 **R3.1 — State the direction of protection explicitly.**
 
-| | Sandboxing (sota-sandboxing) | Confidential computing (this skill) |
+| | Sandboxing ([sota-sandboxing](../../sota-sandboxing/SKILL.md)) | Confidential computing (this skill) |
 |---|---|---|
 | Protects | the **host/platform** | the **workload and its data** |
 | From | the **workload** (untrusted code/input) | the **host** (operator, hypervisor, co-tenants, physical access) |
@@ -111,7 +111,7 @@ an incorrect program correct. Findings that an app-layer control was skipped
 
 **R3.2 — The two compose; neither substitutes for the other.** A confidential VM
 running an AI agent still needs a sandbox *inside* the TEE for the code the agent
-executes (boundary choice per sota-sandboxing rules/01); a perfectly sandboxed
+executes (boundary choice per [sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md)); a perfectly sandboxed
 workload on hostile infrastructure still leaks everything to the operator. When a
 system both executes untrusted code and processes data the infrastructure must not
 see, apply both skills to the same system and document each boundary's direction.
@@ -129,10 +129,10 @@ architecture-by-vibes.
 | Rung | Mechanism | Added guarantee | Cost / operational burden |
 |---|---|---|---|
 | 0 | **TLS in transit + encryption at rest** | data protected outside running systems | baseline; effectively free — always required, never sufficient against a live host adversary |
-| 1 | **HSM/KMS key custody** (sota-secrets-management rules/02) | *keys* never exposed to app hosts; crypto operations isolated and audited | per-op latency/cost; key ceremony and quorum ops; protects keys, NOT the plaintext data your app decrypts into RAM |
-| 2 | **Confidential VM** (SEV-SNP/TDX class) | whole-VM memory confidentiality+integrity vs host, remote attestation; lift-and-shift, no code change | small perf overhead; attestation pipeline to build and operate (rules/03); guest image is in the TCB; feature gaps vs normal VMs (e.g. live-migration/backup limits per provider docs) |
-| 3 | **Process-level enclave** (SGX-class, or library-OS on CVM tech) | TCB shrinks from "guest OS + app" to "app (+ runtime)"; host *OS* also untrusted | code partitioning or library-OS constraints; smaller ecosystem; higher dev effort; side-channel discipline falls more heavily on your code (rules/02) |
-| 4 | **Cryptographic PETs** (FHE, MPC, ZKP — rules/05) | no hardware trust at all; math replaces the chip vendor in the TCB | orders-of-magnitude compute overhead, narrow operation sets, specialist skills; today viable for targeted sub-computations, not general workloads |
+| 1 | **HSM/KMS key custody** ([sota-secrets-management rules/02](../../sota-secrets-management/rules/02-storage-backends.md)) | *keys* never exposed to app hosts; crypto operations isolated and audited | per-op latency/cost; key ceremony and quorum ops; protects keys, NOT the plaintext data your app decrypts into RAM |
+| 2 | **Confidential VM** (SEV-SNP/TDX class) | whole-VM memory confidentiality+integrity vs host, remote attestation; lift-and-shift, no code change | small perf overhead; attestation pipeline to build and operate ([rules/03](03-remote-attestation.md)); guest image is in the TCB; feature gaps vs normal VMs (e.g. live-migration/backup limits per provider docs) |
+| 3 | **Process-level enclave** (SGX-class, or library-OS on CVM tech) | TCB shrinks from "guest OS + app" to "app (+ runtime)"; host *OS* also untrusted | code partitioning or library-OS constraints; smaller ecosystem; higher dev effort; side-channel discipline falls more heavily on your code ([rules/02](02-tee-technologies.md)) |
+| 4 | **Cryptographic PETs** (FHE, MPC, ZKP — [rules/05](05-pets-coed.md)) | no hardware trust at all; math replaces the chip vendor in the TCB | orders-of-magnitude compute overhead, narrow operation sets, specialist skills; today viable for targeted sub-computations, not general workloads |
 
 **R4.1 — Justify the rung by adversary, in writing.** The design doc must contain a
 sentence of the form: "Rung N−1 fails against ⟨adversary⟩ because ⟨mechanism gap⟩;
@@ -142,7 +142,7 @@ compensating controls — High.)
 
 **R4.2 — Rungs stack, they don't replace.** A confidential VM still terminates TLS,
 still fetches keys from a KMS — ideally gated on attestation ("secure key release"),
-which is the canonical rung-1+rung-2 composition (rules/03).
+which is the canonical rung-1+rung-2 composition ([rules/03](03-remote-attestation.md)).
 
 ---
 
@@ -170,7 +170,7 @@ which is the canonical rung-1+rung-2 composition (rules/03).
 
 Counter-driver: if the honest answer to "who is the adversary?" is only "external
 attackers and our own bugs," CC adds cost without adding a defense — rungs 0–1 plus
-sota-code-security already cover that adversary.
+[sota-code-security](../../sota-code-security/SKILL.md) already cover that adversary.
 
 ---
 
@@ -185,7 +185,7 @@ sota-code-security already cover that adversary.
 - **Secrets delivered before/independent of attestation.** Keys baked into the
   image, injected by the (untrusted!) host at boot, or released on network identity
   alone — the TEE protects data from the host while the key arrived *through* the
-  host. Key release must be attestation-gated (rules/03). (Critical)
+  host. Key release must be attestation-gated ([rules/03](03-remote-attestation.md)). (Critical)
 - **CC as an app-security substitute.** Skipping input validation, authz, or patching
   "because it runs in a TEE" (see R2.2). (High)
 - **Double-paying for isolation nobody threat-modeled.** Enclave-in-CVM-in-dedicated-
@@ -203,16 +203,16 @@ sota-code-security already cover that adversary.
 
 | Adversary you must defeat | Minimum mechanism (lowest sufficient rung) |
 |---|---|
-| Network eavesdropper | TLS (rung 0) — sota-network-security |
+| Network eavesdropper | TLS (rung 0) — [sota-network-security](../../sota-network-security/SKILL.md) |
 | Stolen disk / decommissioned hardware | Encryption at rest (rung 0) |
 | App-host compromise stealing *keys* | HSM/KMS custody, keys non-exportable (rung 1) |
 | Cloud operator / insider reading data **in use** | Confidential VM, attested, SNP/TDX class (rung 2) |
 | Malicious **hypervisor** (read *and* tamper) | Rung 2 with memory integrity — SNP/TDX class, not plain SEV |
 | Compromised **guest OS** also untrusted | Process-level enclave / minimized-TCB design (rung 3) |
 | Physical DRAM attack on edge hardware (cold boot/DMA) | Rung 2 hardware, plus measured boot — but a DRAM-bus interposer (WireTap, Battering RAM, TEE.Fail) defeats rung 2 and can forge attestation; only physical access control addresses it (§2.2) |
-| Co-tenant on shared infrastructure | Rung 2 for host-mediated attacks; side channels additionally need scheduling/SMT posture (sota-sandboxing rules/01, rules/02 here) |
-| **TEE vendor itself** / no hardware trust acceptable | Cryptographic PETs (rung 4, rules/05) — or split trust across vendors/parties |
-| Your own buggy or malicious workload | No rung helps — sota-code-security, sota-sandboxing, supply-chain controls |
+| Co-tenant on shared infrastructure | Rung 2 for host-mediated attacks; side channels additionally need scheduling/SMT posture ([sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md), [rules/02](02-tee-technologies.md) here) |
+| **TEE vendor itself** / no hardware trust acceptable | Cryptographic PETs (rung 4, [rules/05](05-pets-coed.md)) — or split trust across vendors/parties |
+| Your own buggy or malicious workload | No rung helps — [sota-code-security](../../sota-code-security/SKILL.md), [sota-sandboxing](../../sota-sandboxing/SKILL.md), supply-chain controls |
 
 ---
 
@@ -224,19 +224,19 @@ sota-code-security already cover that adversary.
       used as a synonym for confidential.
 - [ ] Is attestation evidence actually **verified by a relying party before secrets
       or data flow** (RFC 9334 roles assigned), rather than merely available?
-      (Depth: rules/03.)
+      (Depth: [rules/03](03-remote-attestation.md).)
 - [ ] Does the design doc name the adversary per R4.1 and justify the chosen rung as
       the lowest sufficient one — with each layer of any stacked isolation mapped to
       a threat?
 - [ ] Is the residual TCB written down (CPU vendor, firmware, guest image, verifier,
       workload code) and is someone accountable for patching each element?
 - [ ] Are out-of-scope threats explicitly handled elsewhere: workload vulnerabilities
-      (sota-code-security), side channels (vendor patches + workload discipline),
+      ([sota-code-security](../../sota-code-security/SKILL.md)), side channels (vendor patches + workload discipline),
       availability/DoS (resilience design), sophisticated physical attacks (accepted
       or mitigated)?
 - [ ] Where the system also runs untrusted code or parses untrusted input, is there a
       sandbox boundary *inside or alongside* the TEE with its direction of protection
-      documented (sota-sandboxing rules/01)?
+      documented ([sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md))?
 - [ ] Are keys released only against successful attestation (no keys in images, no
       host-injected secrets)? Grep deployment code for cloud-init/user-data secret
       injection into "confidential" VMs.

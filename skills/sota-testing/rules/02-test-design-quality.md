@@ -66,7 +66,7 @@ fn coupon_halves_the_cart_total() {
     assert_eq!(total, 8); // (10 + 6) / 2
 }
 ```
-- Arrange noise belongs in builders/helpers (`rules/03`), not inline — but
+- Arrange noise belongs in builders/helpers ([`rules/03`](03-doubles-and-test-data.md)), not inline — but
   the *relevant* arrangement must stay visible in the test (see 2.7 mystery
   guest).
 - Assert phase contains no logic. If you're computing the expected value with
@@ -131,11 +131,11 @@ a *decision* without reading any code.
 
 Every test must pass: alone, in any order, repeated twice in a row, and in
 parallel with its siblings. Violations are High-severity — they manifest as
-"passes locally, fails in CI" and block parallelization (`rules/07`).
+"passes locally, fails in CI" and block parallelization ([`rules/07`](07-suite-health-and-ci.md)).
 
 - **No shared mutable state**: no test mutating module-level/static/global
   variables, no shared fixture object reused across tests by mutation, no
-  shared rows in a shared DB without per-test scoping (`rules/04` §4.3).
+  shared rows in a shared DB without per-test scoping ([`rules/04`](04-integration-contract-system.md) §4.3).
 - **No ordering dependence**: never rely on a previous test having created
   data. Each test arranges its own world; cleanup is the *arranging* test's
   job (better: unique-per-test namespaces/transactions so cleanup is moot).
@@ -157,10 +157,10 @@ A test may consume only inputs it controls. The big three leaks:
   pin it. Bugs that only appear at month/DST/leap boundaries become testable;
   "fails every Feb 29 / midnight UTC" flakes become impossible.
 - **Randomness.** Inject the RNG or seed it per test. For property-based
-  tests, the framework owns the seed and prints it on failure (`rules/06`).
+  tests, the framework owns the seed and prints it on failure ([`rules/06`](06-property-fuzzing-mutation.md)).
   UUIDs in assertions: inject the generator or assert on shape, not value.
 - **Network.** Unit tests touch no sockets. Integration tests touch only
-  dependencies the test started itself (`rules/04`). Tests against
+  dependencies the test started itself ([`rules/04`](04-integration-contract-system.md)). Tests against
   third-party live endpoints belong in a separate, non-blocking suite.
   **Prove this rather than asserting it: block egress and run the suite.**
   Anything that fails was not the unit test it claimed to be. What this catches
@@ -168,7 +168,7 @@ A test may consume only inputs it controls. The big three leaks:
   a real call succeeded where the assertion was supposed to do the work. The
   usual mechanism is a config object the code under test never reads: the test
   constructs `Config(providers=[])` while the SUT resolves providers from the
-  environment (`sota-code-security` rules/11 §6.7 — a setting counts as applied
+  environment ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §6.7 — a setting counts as applied
   only when you have traced it end-to-end). While you are there, check each
   surviving assertion against the test's own **name**: a test called
   `test_no_providers` asserting `healthy is True` is telling you that one of the
@@ -207,7 +207,7 @@ Name the smell in audit findings; each has a standard fix.
   asserting a mock returns what you stubbed it to return. Verifies nothing.
 - **Universally-named test over one item** (High): the name quantifies —
   `test_every_tracked_phase_is_also_reported` — and the loop iterates a
-  single-element literal. `sota-code-security` rules/14 §7 falsifies this shape in
+  single-element literal. [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §7 falsifies this shape in
   *prose*; here it is worse, because the test **executes and passes**, so it reads
   as the enforcement of the claim its name makes. Third sighting of the shape in one
   codebase (2026-09-05). Read the **loop**, not the name; then either derive the
@@ -215,14 +215,14 @@ Name the smell in audit findings; each has a standard fix.
   A green test is not exempt from the quantifier check.
 - **Mockery / excessive mocking** (High): more lines configuring doubles than
   asserting outcomes; asserting interactions with internals. Fix via 2.1 and
-  `rules/03` boundary discipline.
+  [`rules/03`](03-doubles-and-test-data.md) boundary discipline.
 - **Mystery guest** (Medium): the assertion depends on something outside the
   test the reader can't see — a 400-line shared fixture, a magic row in
   `seed.sql`, file #47 in `testdata/`, or (the original sense of the name in the
   standard catalog) an *external resource* the test reaches for: a file on disk,
   a database, a host. Fix: builders with only the relevant fields explicit
-  (`rules/03` §3.5); keep shared fixtures immutable and tiny; replace the
-  external resource with a double or move the test to `rules/04`.
+  ([`rules/03`](03-doubles-and-test-data.md) §3.5); keep shared fixtures immutable and tiny; replace the
+  external resource with a double or move the test to [`rules/04`](04-integration-contract-system.md).
 - **Resource optimism** (High): the test assumes an external resource is
   *present* — a path, a mount, a reachable endpoint — so its outcome is a
   property of the machine, not of the code. It passes where the resource exists
@@ -241,12 +241,12 @@ Name the smell in audit findings; each has a standard fix.
   assertions over every field including ones irrelevant to the behavior.
   Brittleness without information. Assert the deltas that define the behavior.
 - **Slow-poke at the wrong layer** (Medium): a 5s "unit" test booting a
-  framework. Reclassify or rewrite (`rules/01` §1.2).
+  framework. Reclassify or rewrite ([`rules/01`](01-strategy-and-shape.md) §1.2).
 - **Sleeping test** (High): `sleep`/`waitFor(fixed_ms)` as synchronization.
   Fix: event-based waits, polling-with-timeout helpers, fake time. Grep:
   `sleep\(|Thread\.sleep|time\.Sleep|setTimeout.*done|waitForTimeout`.
 - **Hidden retry** (High): `@retry`/`flaky`/rerun annotations on a test
-  instead of a root-cause label and quarantine (`rules/07` §7.1).
+  instead of a root-cause label and quarantine ([`rules/07`](07-suite-health-and-ci.md) §7.1).
 - **Print-debug residue** (Low): `console.log`/`print` in committed tests.
 
 ## 2.8 Snapshot testing discipline
@@ -268,7 +268,7 @@ rendered emails. They are a trap as a default assertion.
   with exactly that gravity. Bulk `update-snapshots` commits mixing dozens of
   files are a High audit finding.
 - For deliberate large goldens (legacy characterization), see approval
-  testing in `rules/06` §6.4 — same mechanics, explicit intent.
+  testing in [`rules/06`](06-property-fuzzing-mutation.md) §6.4 — same mechanics, explicit intent.
 
 ## 2.9 Comments and structure in tests
 
@@ -284,8 +284,8 @@ rendered emails. They are a trap as a default assertion.
 
 Auditing and authoring are different activities with different lifetimes, and the
 library states a default for the first but not the second. An **audit search** is
-discarded the day it runs — grep is often the right tool, and `sota-code-security`
-rules/10's absence rule already governs it (widen the search, use a second independent
+discarded the day it runs — grep is often the right tool, and [`sota-code-security`
+rules/10](../../sota-code-security/rules/10-silent-control-failure.md)'s absence rule already governs it (widen the search, use a second independent
 method, state what you ran). A **guard** is a permanent claim that a property holds,
 re-evaluated on every commit by people who will not re-derive it. It deserves a stronger
 default:
@@ -307,7 +307,7 @@ default:
   is structure; *"the configured value arrives"* is behaviour, and needs interception or
   execution. Reported case: AST proved a `depth` argument was forwarded and could not
   show whether the forwarded value was the configured `16` or a stale `4`.
-- **Mutation-test the guard, then verify the mutation took** (rules/06 §6.3).
+- **Mutation-test the guard, then verify the mutation took** ([rules/06](06-property-fuzzing-mutation.md) §6.3).
 - **Regex only where no parser exists** — a DSL, a log format, a config dialect, prose.
   Name which, in a comment, so the exception does not spread by imitation.
 - **Name the parser, or the rule gets ignored exactly where it is least convenient.**
@@ -406,4 +406,4 @@ More precise *and* more sensitive, not a trade.
 - [ ] Snapshots: any snapshot file >100 lines, auto-numbered, or updated in
       bulk commits (`git log --oneline -- '**/__snapshots__/**' | head`)?
       Unreviewable snapshots → Medium; routine bulk updates → High.
-- [ ] Hidden retries: grep `@pytest.mark.flaky|retries:|jest.retryTimes|@Retry|FlakyTest` → High unless tied to a tracked quarantine (`rules/07`).
+- [ ] Hidden retries: grep `@pytest.mark.flaky|retries:|jest.retryTimes|@Retry|FlakyTest` → High unless tied to a tracked quarantine ([`rules/07`](07-suite-health-and-ci.md)).

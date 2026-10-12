@@ -1,6 +1,6 @@
 # 09 — Browser Platform Security (service workers, DOM clobbering, extensions, storage)
 
-rules/05 covers the XSS sinks and CSP that every page needs. This file covers three browser
+[rules/05](05-security.md) covers the XSS sinks and CSP that every page needs. This file covers three browser
 features that give script more reach than a page normally has, or that let markup act like
 script: a service worker (it keeps running between visits), named elements (markup that
 overwrites globals) and browser extensions (script with privileges inside someone else's page),
@@ -124,7 +124,7 @@ edge between the two as a trust boundary.
 
 ## Client-side storage: Web Storage, IndexedDB and keys
 
-The token rule in rules/05 §"Tokens" is one case of a wider one: every script in the origin
+The token rule in [rules/05](05-security.md) §"Tokens" is one case of a wider one: every script in the origin
 reads `localStorage`, `sessionStorage`, IndexedDB and Cache Storage, so one XSS reads them all,
 and they sit on disk for anyone with the device.
 
@@ -137,7 +137,7 @@ and they sit on disk for anyone with the device.
   such a key was rejected ("key is not extractable") in Node 22.22's WebCrypto (measured). This protects the
   data at rest, not against XSS, which can still call `decrypt` with the key.
 - **Read-back is untrusted input.** Anything read from storage may have been planted by an
-  earlier XSS or edited by the user: schema-parse it (rules/01) and output-encode it.
+  earlier XSS or edited by the user: schema-parse it ([rules/01](01-typescript-config-and-types.md)) and output-encode it.
 - **Web SQL is gone.** Chrome's deprecation post says it is unavailable in all contexts from
   Chromium 119 and recommends SQLite compiled to WebAssembly on the Origin Private File System.
   An `openDatabase(` call is dead code (LOW), and its data needs migrating to IndexedDB or

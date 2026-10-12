@@ -7,7 +7,7 @@ versioned upstream — plus tracing rich enough to debug nondeterminism.
 
 ## 1. Model selection & routing
 
-**Select per task on your eval (rules/01), not per vibe or leaderboard.**
+**Select per task on your eval ([rules/01](01-evals.md)), not per vibe or leaderboard.**
 Providers ship capability tiers with roughly an order-of-magnitude price
 spread between frontier and small models (Anthropic's largest and smallest
 current tiers differ 10× on both input and output, as of 2026-09-26; OpenAI
@@ -81,7 +81,7 @@ the SDKs named there retry no `402` on their own.
   prefer SDK retry config over hand-rolled loops; hand-rolled string-matching
   on error messages instead of typed exception classes is a Medium finding.
 - **Idempotency:** any retried call that triggers side effects (via tools or
-  downstream writes) needs idempotency keys (rules/04 §2).
+  downstream writes) needs idempotency keys ([rules/04](04-agents-tools.md) §2).
 - **Client-side throttling:** track your TPM/RPM budget and queue/shed
   *before* the provider 429s you; spread batch-ish traffic; per-tenant
   fairness limits so one tenant can't starve the org's quota.
@@ -97,7 +97,7 @@ Order of leverage:
 1. **Stream by default** for user-facing text — perceived latency is
    time-to-first-token; stream tool-use/agent progress too (status events),
    not just final text.
-2. **Prompt caching** (rules/02 §5) — cached prefixes cut both cost and
+2. **Prompt caching** ([rules/02](02-prompt-context-engineering.md) §5) — cached prefixes cut both cost and
    TTFT substantially on repeated-prefix traffic; verify hit rates in
    telemetry. Pre-warm caches before traffic bursts where the provider
    supports it.
@@ -115,14 +115,14 @@ Order of leverage:
 7. Semantic/response caching (serve cached answers to near-duplicate
    queries) helps FAQ-shaped traffic; mind staleness + per-user data leaks
    in the cache key, and evict entries when their sources change
-   (rules/03 §7).
+   ([rules/03](03-rag-retrieval.md) §7).
 
 ## 4. Cost engineering
 
 Cost is a feature requirement with a number, not a postmortem surprise.
 
 - **Budget per feature:** target cost/request and cost/day per route, wired
-  into the eval gate (rules/01 §5) and alerting (§5). Estimate as
+  into the eval gate ([rules/01](01-evals.md) §5) and alerting (§5). Estimate as
   `(input_tokens × in_price + output_tokens × out_price)` from the registry's
   price table — and re-verify prices on provider pages when they matter.
 - **The big four levers**, in typical order of payoff:
@@ -133,13 +133,13 @@ Cost is a feature requirement with a number, not a postmortem surprise.
      offline/nightly/bulk job paying real-time prices is a finding (Low–
      Medium by volume);
   3. **Model right-sizing** (§1);
-  4. **Context diet** — token budgets per category (rules/02 §2), bounded
-     tool outputs (rules/04 §2), compaction (rules/04 §5), few-shot pruning.
+  4. **Context diet** — token budgets per category ([rules/02](02-prompt-context-engineering.md) §2), bounded
+     tool outputs ([rules/04](04-agents-tools.md) §2), compaction ([rules/04](04-agents-tools.md) §5), few-shot pruning.
 - **Per-unit attribution:** tag every call's cost to feature/tenant/user.
   "The AI bill doubled" must decompose in one query to *which route, which
   tenant, which prompt version*.
 - Watch the multipliers: thinking/reasoning tokens bill as output; agent
-  loops multiply everything (rules/04 §3 budgets are the cap); retries and
+  loops multiply everything ([rules/04](04-agents-tools.md) §3 budgets are the cap); retries and
   repair loops compound — trace them.
 - **Prepaid credit is held per request, not only spent.** Where a provider reserves
   input + `max_tokens` per running request (§2), **concurrency × `max_tokens`** decides
@@ -177,23 +177,23 @@ names can still change, so pin the semconv version your instrumentation emits.
 **Dashboards + alerts** per route: p50/p95 TTFT & total latency, error and
 429 rates, cost/day vs budget, cache hit rate, token percentiles,
 refusal/truncation rates, online eval scores & user-feedback rates
-(rules/01 §4). Alert on: cost anomaly (>2× daily baseline), 429/5xx spikes,
+([rules/01](01-evals.md) §4). Alert on: cost anomaly (>2× daily baseline), 429/5xx spikes,
 cache hit-rate collapse, eval-score drops, spike in `stop_reason=max_tokens`
 (silent truncation in prod).
 
 **Hallucination and harmful-content rates are time series, not only a CI
 result.** An automated evaluator scores a sample of live traffic per route for
-ungrounded claims (the rules/03 §7 groundedness check) and for disallowed
+ungrounded claims (the [rules/03](03-rag-retrieval.md) §7 groundedness check) and for disallowed
 content; each rate is a metric with a written threshold. Alert on a single
 breach **and** on sustained drift — a rate creeping up for a week never trips
 a per-sample alert — and treat either as blocking the next release, like the
-safety-tagged CI cases (rules/01 §5). OWASP: AISVS 11.1.5, 12.3.3.
+safety-tagged CI cases ([rules/01](01-evals.md) §5). OWASP: AISVS 11.1.5, 12.3.3.
 
 **Retrieval is an access to data — log it as one.** Each retrieval span in
 the same trace records the requester identity, the (redacted) query, the
 knowledge source queried, and the returned chunk IDs with the ACL metadata
 that admitted them, so an incident can replay exactly what a user was shown.
-Feed these to the security event stream (sota-detection-engineering rules/02)
+Feed these to the security event stream ([sota-detection-engineering rules/02](../../sota-detection-engineering/rules/02-telemetry-siem-data-layer.md))
 and alert on: query sequences that sweep the corpus (many near-orthogonal
 queries, high distinct-chunk coverage per identity), repeated injection-
 shaped inputs from one principal, ACL denials at retrieval, and a shift in
@@ -203,7 +203,7 @@ empty context and lets the model answer from nothing. OWASP: AISVS 12.1.4;
 OWASP RAG Security cheat sheet.
 
 Logging prompts/completions is logging user data: redaction, retention, and
-access control per rules/06 §5 and sota-privacy-compliance.
+access control per [rules/06](06-data-lifecycle.md) §5 and [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md).
 
 ## 6. Graceful degradation
 
@@ -228,8 +228,8 @@ overloaded, refusing, or over budget:
 - **A kill switch that stops inference, separate from revoking tokens.**
   A control-plane flag the gateway (§1) checks before every model call and
   before delivering any output halts generation for a route or a whole
-  feature at once — token revocation stops an agent acting (sota-sandboxing
-  rules/05 R4.3), not a model still answering users. Its partner is a
+  feature at once — token revocation stops an agent acting ([sota-sandboxing
+  rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md) R4.3), not a model still answering users. Its partner is a
   **warm** non-LLM path (rules, templates, search) deployed and exercised in
   advance, so flipping the switch moves traffic rather than dropping it; a
   fallback first built during the incident is not a fallback. Test the flip
@@ -242,10 +242,10 @@ Everything that changes behavior is a versioned artifact: model ID, prompt,
 params, retrieval config, tool schemas, judge prompts. A change to any of
 them follows the same pipeline:
 
-1. **Offline evals pass** (rules/01 §5) against the candidate.
+1. **Offline evals pass** ([rules/01](01-evals.md) §5) against the candidate.
 2. **Shadow** (where feasible): run candidate alongside production on
    sampled live traffic, compare offline — zero user exposure; pairwise
-   judge old-vs-new (rules/01 §2).
+   judge old-vs-new ([rules/01](01-evals.md) §2).
 3. **Canary/A-B:** small % of traffic, watch online metrics + sampled
    judges; expand on green.
 4. **Rollback is config:** previous model+prompt version stays deployable
@@ -262,7 +262,7 @@ them follows the same pipeline:
 - Model migrations are also **prompt** migrations: newer frontier models
   follow instructions more literally — over-aggressive legacy scaffolding
   ("CRITICAL: ALWAYS…") over-triggers; re-tune per provider migration guides
-  and your evals (rules/02 §7). Caches are per-model: expect a cold-cache
+  and your evals ([rules/02](02-prompt-context-engineering.md) §7). Caches are per-model: expect a cold-cache
   cost/latency blip at cutover.
 - They are also **reasoning-config** migrations — the request that worked on
   the old model can be a `400` on the new one. Verified on Anthropic's errors
@@ -289,7 +289,7 @@ them follows the same pipeline:
 - **No real person without their documented consent.** Before generating
   content that depicts or imitates the voice of an identifiable real person,
   require a recorded likeness or voice-use authorisation (who, scope, expiry)
-  that the request path checks — a prompt filter is not that check (rules/02
+  that the request path checks — a prompt filter is not that check ([rules/02](02-prompt-context-engineering.md)
   §1). OWASP: OWASP AI-Powered Advertising Systems Security cheat sheet.
 
 ## Audit checklist

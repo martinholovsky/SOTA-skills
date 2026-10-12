@@ -1,16 +1,16 @@
 # 07 — Swift in apps
 
-**The Swift language now has its own skill, `sota-swift`** (2026-10-07): concurrency and
+**The Swift language now has its own skill, [`sota-swift`](../../sota-swift/SKILL.md)** (2026-10-07): concurrency and
 data-race safety, optionals and errors, ARC and retain cycles, unsafe code, security, SwiftPM
 supply chain, tooling and testing all live there, for every target. Read it for any Swift code.
 This file keeps only what is specific to Swift inside an iOS or macOS **app**. (Until 2026-10-07
-this file held the language rules; they moved to `sota-swift` rules/01–09.)
+this file held the language rules; they moved to [`sota-swift` rules/01](../../sota-swift/rules/01-idioms-and-errors.md)–09.)
 
 ## 1. Isolation for UI code
 
 - App and UI modules use **default main-actor isolation** (SE-0466, Swift 6.2:
   `.defaultIsolation(MainActor.self)`) instead of `@MainActor` on every type; keep domain and
-  networking modules `nonisolated` so they run off the main actor (`sota-swift` rules/03 §1).
+  networking modules `nonisolated` so they run off the main actor ([`sota-swift` rules/03](../../sota-swift/rules/03-concurrency.md) §1).
 - Work that would block a frame (decoding, image processing, crypto) leaves the main actor
   explicitly — a `@concurrent` function or a separate actor — and returns its result to it.
 
@@ -19,26 +19,26 @@ this file held the language rules; they moved to `sota-swift` rules/01–09.)
 - SwiftUI's `.task { }` modifier ties a task to the view's lifetime and cancels it on
   disappearance; prefer it to a `Task { }` started in `onAppear`, which nothing cancels.
 - View models that start unstructured tasks store the handle and cancel it in teardown
-  (`sota-swift` rules/03 §4).
+  ([`sota-swift` rules/03](../../sota-swift/rules/03-concurrency.md) §4).
 
 ## 3. Leaks in UI code
 
 - The usual app cycles: a view model capturing `self` in a stored closure, delegates declared
   without `weak`, `Timer` targets, notification observers and Combine `AnyCancellable`s stored on
-  the object they capture. Rules and fixes: `sota-swift` rules/04 §1.
-- Verify on device: the memory-graph debugger and Instruments Leaks (rules/05), plus a
+  the object they capture. Rules and fixes: [`sota-swift` rules/04](../../sota-swift/rules/04-memory-and-unsafe.md) §1.
+- Verify on device: the memory-graph debugger and Instruments Leaks ([rules/05](05-performance.md)), plus a
   `deinit`-fires assertion in tests for view models and controllers.
 
 ## 4. Tests that stay on XCTest
 
-- Swift Testing is the default for new unit tests (`sota-swift` rules/08 §4). UI automation
+- Swift Testing is the default for new unit tests ([`sota-swift` rules/08](../../sota-swift/rules/08-tooling-ci-testing.md) §4). UI automation
   (XCUITest) and `measure`-based performance tests remain XCTest; keep them there knowingly.
 
 ## 5. Binary SDKs in an app
 
 - Every remote `binaryTarget` and vendored framework is in the binary inventory, carries a
-  checksum (`sota-swift` rules/09 §1), and its privacy manifest and required-reason APIs are
-  accounted for in the app's own manifest (rules/04).
+  checksum ([`sota-swift` rules/09](../../sota-swift/rules/09-supply-chain.md) §1), and its privacy manifest and required-reason APIs are
+  accounted for in the app's own manifest ([rules/04](04-security.md)).
 
 ## Audit checklist
 
@@ -47,4 +47,4 @@ this file held the language rules; they moved to `sota-swift` rules/01–09.)
 - [ ] View models and controllers have `deinit`-fires tests; cycles in closures, delegates, timers, observers and stored cancellables reviewed; leaks checked with the memory graph on device.
 - [ ] XCUITest and `measure` suites remain on XCTest deliberately; new unit tests use Swift Testing.
 - [ ] Binary SDKs carry checksums and their privacy manifests are reflected in the app's own.
-- [ ] Every language-level Swift finding in the app is reported against `sota-swift`, not this file.
+- [ ] Every language-level Swift finding in the app is reported against [`sota-swift`](../../sota-swift/SKILL.md), not this file.

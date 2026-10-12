@@ -3,7 +3,7 @@
 Scope: human access, workload identity, OIDC federation, permission boundaries,
 least-privilege iteration, cross-account patterns, break-glass, and the IAM findings
 that dominate real audits. Secret storage/rotation mechanics: see
-sota-secrets-management. CI pipeline identity specifics: see sota-devsecops.
+[sota-secrets-management](../../sota-secrets-management/SKILL.md). CI pipeline identity specifics: see [sota-devsecops](../../sota-devsecops/SKILL.md).
 
 ## 1. Humans: federated SSO, short-lived sessions, zero static keys
 
@@ -78,7 +78,7 @@ short-lived and auto-rotated by the provider:
   `SourceAccount` / `SourceOrgID` / `SourceOrgPaths` wherever a resource policy
   grants an AWS *service principal* (cross-service; AWS IAM: The confused deputy
   problem). On AWS, enforce the org-perimeter and `SourceOrgID` conditions once,
-  centrally, with an RCP (rules/01 §3) instead of hand-copying them into every
+  centrally, with an RCP ([rules/01](01-org-accounts-governance.md) §3) instead of hand-copying them into every
   resource policy.
 - Resource policies (bucket/key/queue policies) are a second IAM system — audit them
   with the same rigor. A perfect identity policy is irrelevant if the bucket policy
@@ -124,7 +124,7 @@ short-lived and auto-rotated by the provider:
   `PrincipalType`) instead of Owner / User Access Administrator.
 - Separate **control-plane admin** from **data access** in role design: the person
   who can change KMS key policy should not be the role that decrypts production data
-  (see rules/05 §encryption).
+  (see [rules/05](05-data-storage.md) §encryption).
 
 ## 5. Least privilege is iterative — wire the loop
 

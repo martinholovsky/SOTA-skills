@@ -16,7 +16,7 @@ Rules:
 - Standard SLI shapes:
   - **Availability**: non-5xx (and non-timeout) responses / valid requests.
   - **Latency**: requests faster than threshold / valid requests — computed
-    from a histogram bucket boundary at the threshold (rules/02 §4), not
+    from a histogram bucket boundary at the threshold ([rules/02](02-metrics.md) §4), not
     from a p99 estimate.
   - **Freshness/lag** (pipelines): events processed within X / all events;
     or age of oldest unprocessed message under threshold.
@@ -154,7 +154,7 @@ Every alert must pass ALL of these or be deleted/demoted:
   permanent silence is a deletion in denial.
 - Never alert on every ERROR log line; alert on the SLI. Error logs are for
   diagnosis after the symptom alert fires. (Crash/error-tracker spike
-  notifications are tickets, not pages — rules/05 §5.)
+  notifications are tickets, not pages — [rules/05](05-operational-readiness.md) §5.)
 - Protect the alerting path itself: dead-man's-switch (an always-firing
   alert whose absence pages via an independent channel) so a broken
   Prometheus/Alertmanager doesn't equal silence-as-success.
@@ -163,7 +163,7 @@ Every alert must pass ALL of these or be deleted/demoted:
   alerts on its age, not its errors:
   `time() - job_last_success_timestamp_seconds > <interval × k>`, plus
   `absent(job_last_success_timestamp_seconds{job="…"})` for a job that never
-  reported. Data-pipeline freshness SLAs: `sota-data-engineering` rules/02
+  reported. Data-pipeline freshness SLAs: [`sota-data-engineering` rules/02](../../sota-data-engineering/rules/02-pipelines-and-orchestration.md)
   (Orchestration discipline).
 
 ## 6. SLO spec template and recording rules

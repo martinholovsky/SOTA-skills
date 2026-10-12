@@ -39,19 +39,19 @@ full STRIDE-per-interaction model for a new service or auth flow.
 
 1. **Scope the delta.** Model what is new or changed, not the whole system.
    List new entry points, new data classes, new dependencies, new actors.
-2. **Draw the DFD as text/mermaid** (see `rules/02`). Mark trust boundaries
+2. **Draw the DFD as text/mermaid** (see [`rules/02`](rules/02-decomposition.md)). Mark trust boundaries
    explicitly. If you cannot draw a boundary, you do not understand the design
    yet — stop and ask.
-3. **Pick the methodology** (see `rules/01`): STRIDE-per-interaction by
+3. **Pick the methodology** (see [`rules/01`](rules/01-methodologies.md)): STRIDE-per-interaction by
    default; add LINDDUN if personal data flows; attack trees for a single
    high-value asset; four-questions-only for low-risk deltas.
 4. **Enumerate threats** crossing each boundary using the per-component
-   catalogs in `rules/03`. Write each threat as: *actor → action → asset →
+   catalogs in [`rules/03`](rules/03-threat-catalogs.md). Write each threat as: *actor → action → asset →
    impact*. No vague entries ("hacking", "data breach").
-5. **Rate and treat** each threat (see `rules/04`): likelihood × impact matrix,
+5. **Rate and treat** each threat (see [`rules/04`](rules/04-risk-rating-treatment.md)): likelihood × impact matrix,
    then accept / mitigate / transfer / avoid. Every mitigation becomes a
    security requirement with an ID.
-6. **Emit artifacts** (see `rules/05`): threat model doc, security requirements
+6. **Emit artifacts** (see [`rules/05`](rules/05-outputs-operationalization.md)): threat model doc, security requirements
    backlog entries, abuse cases as test stubs, and re-modeling triggers.
 7. **Wire into delivery.** Reference requirement IDs in the design doc, tickets,
    and PR descriptions. A threat without a tracked artifact does not exist.
@@ -63,7 +63,7 @@ full STRIDE-per-interaction model for a new service or auth flow.
   new dependency, new endpoint/route/queue/cron/webhook, new trust boundary,
   new data class, auth/authz change, file/deserialization handling.
 - In PR review, run a micro-STRIDE on the diff and its dependents (callers and importers
-  of each changed file, two hops out by default — `sota/rules/01` §1): what new input
+  of each changed file, two hops out by default — [`sota/rules/01`](../sota/rules/01-audit-methodology.md) §1): what new input
   enters? whose privilege executes it? what does it write or call? Minutes for a small
   diff, and it catches design-level regressions a line-by-line review misses.
 
@@ -71,18 +71,18 @@ full STRIDE-per-interaction model for a new service or auth flow.
 
 Use when handed an existing system with no (trustworthy) threat model. Goal:
 rebuild the implicit model from artifacts, then diff intended vs. actual
-controls. Full procedure in `rules/06`.
+controls. Full procedure in [`rules/06`](rules/06-audit-reconstruction.md).
 
 ### Workflow
 
-1. **Inventory entry points from code** (see `rules/02` §extraction): routes,
+1. **Inventory entry points from code** (see [`rules/02`](rules/02-decomposition.md) §extraction): routes,
    queue consumers, cron jobs, webhooks, third-party callbacks, CLI/admin
    tools, file uploads, IaC-exposed ports.
 2. **Reconstruct the DFD** from the inventory: processes, stores, external
    entities, flows; infer trust boundaries from network topology, authn
    checkpoints, and IAM policies.
 3. **Identify assets and actors** from schemas, secrets handling, and config.
-4. **Run the catalogs** (`rules/03`) against each component; for every catalog
+4. **Run the catalogs** ([`rules/03`](rules/03-threat-catalogs.md)) against each component; for every catalog
    item record: control present / absent / partial, with file:line evidence.
 5. **Gap analysis**: rank absent/partial controls by exploitability ×
    blast radius; distinguish "missing control" from "missing defense-in-depth".
@@ -98,7 +98,7 @@ controls. Full procedure in `rules/06`.
 | Low | Hardening, hygiene, info disclosure of low-value data, theoretical with strong existing controls. Backlog. |
 
 Severity = exploitability × impact in **this** deployment context — never copy
-a CVE/CVSS base score without environmental adjustment (see `rules/04`).
+a CVE/CVSS base score without environmental adjustment (see [`rules/04`](rules/04-risk-rating-treatment.md)).
 
 ### Finding format (every finding, no exceptions)
 
@@ -116,14 +116,14 @@ Residual risk if accepted: one sentence.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-methodologies.md` | Choosing between STRIDE, LINDDUN, PASTA, attack trees, kill chains; deciding lightweight vs. heavyweight; setting up continuous/PR-level threat modeling. |
-| `rules/02-decomposition.md` | Drawing DFDs in mermaid, defining trust boundaries, listing entry points/assets/actors/privilege levels; extracting all of these from an existing codebase. |
-| `rules/03-threat-catalogs.md` | Enumerating threats for a specific component: web frontend, API, database, message queue, file storage, CI/CD, mobile, LLM agent/tool-use, cloud/IAM. |
-| `rules/04-risk-rating-treatment.md` | Rating threats (DREAD pitfalls, CVSS usage, L×I matrices), choosing accept/mitigate/transfer/avoid, mapping mitigations to requirements and tests, documenting residual risk, tiering applications and modules to set modeling and review depth. |
-| `rules/05-outputs-operationalization.md` | Writing the threat model document, building the security requirements backlog, turning abuse cases into tests, keeping the model alive (re-model triggers). |
-| `rules/06-audit-reconstruction.md` | Auditing an existing system: reconstructing the model from code, control-presence matrix, gap analysis, severity calibration, reporting. |
+| [`rules/01-methodologies.md`](rules/01-methodologies.md) | Choosing between STRIDE, LINDDUN, PASTA, attack trees, kill chains; deciding lightweight vs. heavyweight; setting up continuous/PR-level threat modeling. |
+| [`rules/02-decomposition.md`](rules/02-decomposition.md) | Drawing DFDs in mermaid, defining trust boundaries, listing entry points/assets/actors/privilege levels; extracting all of these from an existing codebase. |
+| [`rules/03-threat-catalogs.md`](rules/03-threat-catalogs.md) | Enumerating threats for a specific component: web frontend, API, database, message queue, file storage, CI/CD, mobile, LLM agent/tool-use, cloud/IAM. |
+| [`rules/04-risk-rating-treatment.md`](rules/04-risk-rating-treatment.md) | Rating threats (DREAD pitfalls, CVSS usage, L×I matrices), choosing accept/mitigate/transfer/avoid, mapping mitigations to requirements and tests, documenting residual risk, tiering applications and modules to set modeling and review depth. |
+| [`rules/05-outputs-operationalization.md`](rules/05-outputs-operationalization.md) | Writing the threat model document, building the security requirements backlog, turning abuse cases into tests, keeping the model alive (re-model triggers). |
+| [`rules/06-audit-reconstruction.md`](rules/06-audit-reconstruction.md) | Auditing an existing system: reconstructing the model from code, control-presence matrix, gap analysis, severity calibration, reporting. |
 
-Load only the files you need; `rules/02` + `rules/03` cover 80% of day-to-day work.
+Load only the files you need; [`rules/02`](rules/02-decomposition.md) + [`rules/03`](rules/03-threat-catalogs.md) cover 80% of day-to-day work.
 
 ## Top-10 Non-Negotiables
 

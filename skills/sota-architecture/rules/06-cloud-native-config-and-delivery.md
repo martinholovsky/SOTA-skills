@@ -12,7 +12,7 @@ differences live entirely in config (§2). Rebuilding per environment means you
 test one binary and ship another.
 
 **Rule:** Releases are versioned and rollback-able: previous release = previous
-(artifact, config) pair, redeployable in minutes (rules/04 §9). Tag images with
+(artifact, config) pair, redeployable in minutes ([rules/04](04-resilience-and-failure-design.md) §9). Tag images with
 commit SHA; `latest` in any deployment manifest is a High finding.
 
 **Rule:** Declare all dependencies explicitly with lockfiles; build in clean
@@ -41,15 +41,15 @@ console") is configuration drift; drift detection should alarm.
 
 ## 3. Processes, disposability, and concurrency
 
-**Rule:** Processes are stateless and share-nothing (rules/05 §1); scale via
+**Rule:** Processes are stateless and share-nothing ([rules/05](05-scalability-state-and-data.md) §1); scale via
 process/replica count, not threads-per-giant-instance alone. Start fast
-(seconds), shut down gracefully on SIGTERM (drain, then exit; rules/04 §9),
+(seconds), shut down gracefully on SIGTERM (drain, then exit; [rules/04](04-resilience-and-failure-design.md) §9),
 and tolerate sudden death (orchestrators kill freely).
 
 **Rule:** Run one concern per process: web serving, queue workers, and schedulers
-are separate deployments with separate scaling (rules/05 §8). Cron-in-a-web-pod
+are separate deployments with separate scaling ([rules/05](05-scalability-state-and-data.md) §8). Cron-in-a-web-pod
 runs N times on N replicas — use the platform scheduler or a leader-elected/
-distributed-locked runner, designed idempotent (rules/03 §2).
+distributed-locked runner, designed idempotent ([rules/03](03-distributed-systems-and-events.md) §2).
 
 **Rule:** Logs go to stdout/stderr as structured JSON events; the platform
 ships them. Apps never manage log files, rotation, or destinations.
@@ -59,7 +59,7 @@ ships them. Apps never manage log files, rotation, or destinations.
 **Rule:** Every service ships with, before first prod deploy:
 - **Structured logs** with correlation/trace IDs and tenant/user context (no PII/secrets — enforce with log scrubbing).
 - **Metrics**: RED (rate, errors, duration) per endpoint/consumer + key business metrics + saturation (pools, queues).
-- **Distributed traces** (OpenTelemetry), context propagated across HTTP *and* queues (rules/03 §9).
+- **Distributed traces** (OpenTelemetry), context propagated across HTTP *and* queues ([rules/03](03-distributed-systems-and-events.md) §9).
 - **SLOs with alerts on burn rate** — alert on user-impacting symptoms (SLO burn), page on those; cause-based alerts are tickets, not pages.
 
 **Rule:** If you can't answer "what did request X do across services, and why was
@@ -70,7 +70,7 @@ finding regardless of how the dashboards look.
 
 **Rule:** Treat every backing service (DB, cache, broker, email, third-party
 API) as an attached resource addressed by config and accessed through a port/
-adapter (rules/02 §4). Swapping prod Postgres for a different instance — or a
+adapter ([rules/02](02-domain-modeling-and-boundaries.md) §4). Swapping prod Postgres for a different instance — or a
 local container in dev — must require only a config change.
 
 **Rule:** Dev/prod parity: develop and CI-test against the same *kind* of
@@ -92,15 +92,15 @@ not deploy rollback — is your primary mitigation lever.
 - Flag checks live at the smallest number of choke points (one branch at the use-case boundary), not sprinkled through every layer.
 - Flag changes are audited (who flipped what when) — they are production changes.
 
-**Rule:** Use flags for operational levers too: load-shedding tiers (rules/04
-§6), degradation switches (rules/04 §5), and migration cutovers (rules/01 §8).
+**Rule:** Use flags for operational levers too: load-shedding tiers ([rules/04](04-resilience-and-failure-design.md)
+§6), degradation switches ([rules/04](04-resilience-and-failure-design.md) §5), and migration cutovers ([rules/01](01-architecture-styles-and-decisions.md) §8).
 Test both states of every active flag in CI for critical paths.
 
 **Rule:** A progressive rollout means **two versions of the application are running at
 once**, so both flag states must be compatible with the schema *as it is right now* —
 not with the schema either version was written against. The flag rule and the migration
 rule interact and neither is sufficient alone: expand/contract makes the *schema* safe
-for two readers (`sota-databases` rules/02), and the flag makes the *behaviour*
+for two readers ([`sota-databases` rules/02](../../sota-databases/rules/02-schema-migrations.md)), and the flag makes the *behaviour*
 switchable, but nothing checks that the off-state still works after the contract step
 has run. Order it: expand → deploy both-compatible code → roll the flag → **remove the
 flag** → contract. Contracting while a flag can still route traffic to the old path is
@@ -126,8 +126,8 @@ OWASP: WSTG-CONF-15.
 ## 7. Delivery pipeline and environments
 
 **Rule:** Trunk-based development with small PRs; every merge produces a
-deployable artifact passing: unit + contract tests (rules/03 §8), architecture
-fitness functions (rules/01 §5), security and secret scans, and migration lint.
+deployable artifact passing: unit + contract tests ([rules/03](03-distributed-systems-and-events.md) §8), architecture
+fitness functions ([rules/01](01-architecture-styles-and-decisions.md) §5), security and secret scans, and migration lint.
 Long-lived feature branches are inventory and merge risk; flags (§6) replace them.
 
 **Rule:** Deploys are progressive (canary or rolling with automated rollback on
@@ -148,7 +148,7 @@ app — never as ad-hoc SQL in a prod console. Make the dangerous path inconveni
 and the safe path easy.
 
 **Rule:** Every service exposes a minimal operational surface: health endpoints
-(rules/04 §7), build/version info endpoint, and runtime-adjustable log level.
+([rules/04](04-resilience-and-failure-design.md) §7), build/version info endpoint, and runtime-adjustable log level.
 Every service has a runbook covering: dashboards, common failure modes, DLQ
 redrive, scaling levers, and rollback.
 
@@ -157,7 +157,7 @@ redrive, scaling levers, and rollback.
 **Rule:** Tag every resource with service + team + (where applicable) tenant;
 review cost per service monthly. Cost anomalies are architecture smells: an
 unexpectedly expensive service usually has a chatty integration, a missing
-cache, unbounded retention (rules/05 §6), or over-provisioned idle capacity.
+cache, unbounded retention ([rules/05](05-scalability-state-and-data.md) §6), or over-provisioned idle capacity.
 
 **Rule:** Set cost fitness functions for the big levers (egress, storage growth,
 per-request compute) with alerts — treat a 2x cost regression like a 2x latency

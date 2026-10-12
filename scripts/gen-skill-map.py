@@ -21,8 +21,8 @@ Eight pages:
      gates (invariant count, CI jobs) -- read from commands/, hooks/hooks.json,
      scripts/install.sh, check-invariants.sh and the CI workflow.
   8. How skill files point at each other, by FORM (skill name, name + rules/NN, own
-     rules/NN, Markdown link, @path import, generic class), what an agent must do to follow
-     each, and the full skill x skill reference matrix.
+     rules/NN, Markdown link, @path import, generic class), how many of each are relative
+     links, what an agent must do to follow each, and the full skill x skill matrix.
 
 LAYOUT IS A CORRECTNESS CONCERN HERE, not decoration. Three of these pages were first
 drawn in forms that RENDER but cannot be READ: 63 bipartite edges collapsed into one
@@ -230,6 +230,17 @@ def unwrap(text):
     return re.sub(r'-\n\s*', '-', text)
 
 
+LINK = re.compile(r'\[([^\]]*)\]\(([^)\s]+)\)')
+
+
+def visible(text):
+    """Every pointer is a relative link since ROADMAP 73 (n): `[`sota-x` rules/06](../../sota-x/
+    rules/06-y.md)`. The skill name is also inside the TARGET, so counting names over the raw
+    text counts each pointer twice (the first run after the conversion read 1,619 bare names
+    against 239). Count names over the link text only."""
+    return LINK.sub(r'\1', text)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--min-weight", type=int, default=3,
@@ -254,7 +265,7 @@ def main():
                  "  in tree, unplaced: %s\n  placed, not in tree: %s" % (missing, extra))
 
     # ---- router routing table + cross-cutting rules -------------------------
-    router = unwrap((ROOT / "skills/sota/SKILL.md").read_text(encoding="utf-8"))
+    router = visible(unwrap((ROOT / "skills/sota/SKILL.md").read_text(encoding="utf-8")))
     table = re.findall(r'^\|\s*`(sota-[a-z0-9-]+)`\s*\|\s*(.+?)\s*\|\s*$', router, re.M)
     table = [(s, d) for s, d in table if s in domain]
 
@@ -281,7 +292,7 @@ def main():
         a = p.split("/")[1]
         if a == "sota":
             continue
-        for m in tgt.finditer(unwrap((ROOT / p).read_text(encoding="utf-8"))):
+        for m in tgt.finditer(visible(unwrap((ROOT / p).read_text(encoding="utf-8")))):
             b = m.group(1)
             if b not in domain or b == a:
                 continue
@@ -310,7 +321,7 @@ def main():
         sys.exit("gen-skill-map: topics not in TOPIC_ORDER: %s" % sorted(unknown))
 
     assert_matrix_matches_tree()
-    forms, form_ex, at_files = link_forms(files, domain)
+    forms, linked, form_ex, at_files = link_forms(files, domain)
     idx_style = collections.Counter()
     for sk in domain:
         body = (ROOT / ("skills/%s/SKILL.md" % sk)).read_text(encoding="utf-8")
@@ -331,7 +342,7 @@ def main():
              page_graph(edges, indeg, args.min_weight), page_slice(),
              page_matrix(lang_files), page_concepts(load_concept_matrix()),
              page_surfaces(surf),
-             page_links(forms, form_ex, at_files, edges, len(files), idx_style)]
+             page_links(forms, linked, form_ex, at_files, edges, len(files), idx_style)]
     xml = ('<mxfile host="gen-skill-map.py" type="device">\n'
            + "\n".join(pages) + "\n</mxfile>\n")
     (ROOT / args.out).write_text(xml, encoding="utf-8")
@@ -344,6 +355,7 @@ def main():
         "edges": [{"from": a, "to": b, "weight": w, "targets": sorted(detail[(a, b)])}
                   for (a, b), w in sorted(edges.items(), key=lambda kv: -kv[1])],
         "link_forms": dict(sorted(forms.items())),
+        "link_forms_linked": dict(sorted(linked.items())),
         "rules_index_style": dict(sorted(idx_style.items())),
         "surfaces": {"commands": [n for n, _ in surf["commands"]],
                      "command_references": [list(e) for e in surf["cmd_edges"]],
@@ -363,6 +375,7 @@ def main():
           % (len(LANGS), sum(v[1] for v in lang_files.values()),
              sum(v[0] for v in lang_files.values())))
     print("link forms (page 8) : %s" % ", ".join("%s=%d" % kv for kv in sorted(forms.items())))
+    print("  of them linked    : %s" % ", ".join("%s=%d" % kv for kv in sorted(linked.items()) if kv[1]))
     print("rules index style   : %s" % dict(sorted(idx_style.items())))
     print("wrote %s and %s" % (args.out, args.json))
 
@@ -1131,8 +1144,9 @@ def page_concepts(cm):
 # --- page 8: how one skill file points at another ------------------------------------
 # The question this page answers is not WHICH skill cites which (page 3, and the matrix
 # below) but in WHAT FORM, because the form decides what an agent has to do to follow it.
-# A pointer like `sota-code-security` rules/06 §3 carries no path: the agent must turn the
-# name into a directory, the number into a file, the § into a heading. Every count here is
+# Until ROADMAP 73 (n) a pointer like `sota-code-security` rules/06 §3 carried no path: the
+# agent had to turn the name into a directory, the number into a file. Now each is a relative
+# link with that same visible text, so forms are counted over the link TEXT (visible()). Every count here is
 # read from the tree; the generic-pointer words are the one declared list, and they only
 # label what they match.
 GENERIC_POINTER_WORDS = ["language", "relevant", "matching", "right", "domain", "sibling",
@@ -1140,42 +1154,56 @@ GENERIC_POINTER_WORDS = ["language", "relevant", "matching", "right", "domain", 
 
 
 def link_forms(files, domain):
-    """Classify every skill-to-file pointer in the skill tree by its written form.
-    Returns (Counter form -> count, dict form -> first example, set of files with @-paths)."""
+    """Classify every skill-to-file pointer in the skill tree by its written (visible) form,
+    and count how many of each form are relative links.
+    Returns (Counter form -> count, Counter form -> linked count, dict form -> first example,
+    set of files with @-paths)."""
     names = set(domain) | {"sota"}
-    forms = collections.Counter()
+    forms, linked = collections.Counter(), collections.Counter()
     example = {}
     at_files = set()
 
-    def hit(k, f, snippet):
+    def hit(k, f, snippet, is_link=False):
         forms[k] += 1
+        linked[k] += is_link
         example.setdefault(k, "%s: %s" % (f.replace("skills/", ""), " ".join(snippet.split())))
 
     name_re = re.compile(r'(`?)(sota-[a-z0-9-]+)(`?)')
     for f in files:
         me = f.split("/")[1]
         t = unwrap((ROOT / f).read_text(encoding="utf-8"))
+        fm_end = t.find("\n---", 3)
+        text_spans, target_spans = [], []
+        for m in LINK.finditer(t):
+            text_spans.append((m.start(1), m.end(1)))
+            target_spans.append((m.start(2), m.end(2)))
+            tgt = m.group(2)
+            if tgt.startswith(("http:", "https:", "mailto:", "#")) or not re.search(r'\.md(#|$)', tgt):
+                continue
+            res = os.path.normpath(os.path.join(os.path.dirname(f), tgt.split("#")[0]))
+            parts = res.split("/")
+            k = ("md link, outside skills/" if parts[0] != "skills" or len(parts) < 3
+                 else "md link, same skill" if parts[1] == me else "md link, other skill")
+            hit(k, f, m.group(0))
+
+        def inside(pos, spans):
+            return any(a <= pos < b for a, b in spans)
+
         for m in name_re.finditer(t):
             n = m.group(2)
-            if n not in names or n == me or m.start() < t.find("\n---", 3):
+            if n not in names or n == me or m.start() < fm_end or inside(m.start(), target_spans):
                 continue                                  # frontmatter `name:` is no pointer
             quoted = bool(m.group(1) and m.group(3))
             tail = t[m.end():m.end() + 30]
             deep = re.match(r'[`*\s]*rules/\d+', tail) is not None
             key = ("name+file" if deep else "name") + (" (backticked)" if quoted else " (bare)")
-            hit(key, f, t[m.start():m.end() + (24 if deep else 0)])
+            hit(key, f, t[m.start():m.end() + (24 if deep else 0)], inside(m.start(), text_spans))
         for m in re.finditer(r'(?<![\w/.-])rules/\d\d', t):
+            if inside(m.start(), target_spans):
+                continue
             if re.search(r'sota-[a-z0-9-]+[`*\s]*$', t[max(0, m.start() - 50):m.start()]):
                 continue                                  # already counted as name+file
-            hit("own rules/NN", f, t[m.start():m.end() + 12])
-        for m in re.finditer(r'\]\(([^)\s]+?\.md)(?:#[^)]*)?\)', t):
-            tgt = m.group(1)
-            if tgt.startswith("http"):
-                continue
-            k = ("md link, other skill" if re.search(r'(^|/)sota-[a-z0-9-]+/', tgt)
-                 else "md link, outside skills/" if tgt.startswith("../")
-                 else "md link, same skill")
-            hit(k, f, m.group(0))
+            hit("own rules/NN", f, t[m.start():m.end() + 12], inside(m.start(), text_spans))
         for m in re.finditer(r'(?<![\w])@\.?/?[\w./-]+\.md', t):
             hit("@path import", f, m.group(0))
             at_files.add(f)
@@ -1185,52 +1213,54 @@ def link_forms(files, domain):
     if not forms["name+file (backticked)"] or not forms["own rules/NN"]:
         sys.exit("gen-skill-map: page 8 read 0 of a form the tree is known to use -- "
                  "the classifier is broken, refusing to draw")
-    return forms, example, at_files
+    return forms, linked, example, at_files
 
 
-def page_links(forms, example, at_files, edges, n_files, idx_style):
-    xs = sum(v for k, v in forms.items() if k.startswith("name"))
+def page_links(forms, linked, example, at_files, edges, n_files, idx_style):
+    ptr = [k for k in forms if k.startswith("name") or k == "own rules/NN"]
+    n_ptr, n_linked = sum(forms[k] for k in ptr), sum(linked[k] for k in ptr)
+    deep = [k for k in ptr if k != "name (bare)" and k != "name (backticked)"]
     rows = [
-        ("name+file (backticked)", "`sota-code-security` rules/06 §3",
-         "name -> skills/{name}/ ; NN -> glob rules/NN-*.md ; § -> heading '## 3.'"),
-        ("name+file (bare)", "sota-code-security rules/01 §5",
-         "same as above; not visually marked as a name"),
-        ("name (backticked)", "`sota-skill-security`",
-         "load the skill (Skill tool or its SKILL.md), then pick a file from its index"),
-        ("name (bare)", "use sota-web-frameworks", "as above"),
-        ("own rules/NN", "`rules/04` §1", "relative to the skill the agent is already in"),
+        ("name+file (backticked)", "[`sota-code-security` rules/06](../../sota-code-security/rules/06-...md) §3",
+         "Read the link target; § -> heading '## 3.' in it"),
+        ("name+file (bare)", "[sota-code-security rules/01](...) §5", "as above"),
+        ("name (backticked)", "[`sota-skill-security`](../../sota-skill-security/SKILL.md)",
+         "open that SKILL.md (or load the skill by name), then pick from its index"),
+        ("name (bare)", "use sota-web-frameworks",
+         "unlinked prose mention: load the skill by NAME, then pick from its index"),
+        ("own rules/NN", "[`rules/04`](04-library-map.md) §1", "a path inside the current skill"),
         ("md link, same skill", "[rules/04-library-map.md](rules/04-library-map.md)",
-         "a real relative path: clickable, and the only form a link checker can verify"),
+         "every link: a real relative path, checked to resolve by invariant 8"),
+        ("md link, other skill", "[...](../../sota-x/rules/NN-....md)", "as above"),
         ("md link, outside skills/", "[...](../../docs/...)", "repo docs, not skills"),
-        ("md link, other skill", "[...](../sota-x/rules/...md)", "none: the library never does this"),
         ("@path import", "@AGENTS.md", "none used as a pointer"),
         ("generic ('the language skill')", "the language skill",
          "agent infers WHICH from the code in front of it"),
     ]
     c = [cell("note",
               "Page 8 — how skill files point at each other, by FORM.\n\n"
-              "Cross-skill pointers are written as a skill NAME, never a path or a link: %d "
-              "mentions of another skill's name across %d skill files, %d of them followed by "
-              "rules/NN. Markdown links appear only inside a skill (rules indexes) and to repo "
-              "docs; a link into another skill's directory occurs %d times. There are no "
-              "@path imports — @ is a CLAUDE.md / AGENTS.md mechanism expanded at launch, not "
-              "one that skill bodies use (%d @path tokens, all in %s, which DESCRIBES it). "
-              "And no pointer says only a topic ('the security skill'): the generic ones name "
-              "a class the agent resolves from the code ('the language skill').\n\n"
-              "So following a pointer is an inference the agent must make: name -> directory, "
-              "number -> file by prefix, § -> heading. The router's rules/04 library map is the "
-              "lookup table for it. Measured in sota-agent-evals (ROADMAP 73): with only these "
-              "name pointers, agents opened the cited rules file in 5/20 runs; a hook that "
-              "printed the full path reached 18/20."
-              % (xs, n_files, forms["name+file (backticked)"] + forms["name+file (bare)"],
-                 forms["md link, other skill"], forms["@path import"],
+              "Since ROADMAP 73 (n), 2026-10-12, a pointer is a relative Markdown link whose "
+              "visible text is the old name form: %d of %d skill-name and rules/NN pointers are "
+              "links (%d of the %d that name a rules file). The unlinked rest are mostly bare "
+              "prose mentions of a skill. %d mentions of another skill's name across %d skill "
+              "files; %d @path tokens, all in %s, which DESCRIBES the CLAUDE.md feature.\n\n"
+              "Why links: with names only, an agent had to turn the name into a directory and "
+              "the number into a file, and every failed rules-file read in sota-agent-evals "
+              "v6-v11 was a guessed filename. Measured in v12: links ended the guessing "
+              "(failed reads 2 -> 0) but did NOT raise how often the cited rules file was "
+              "reached (5/20 names, 6/20 links): agents follow the links where they sit, not to "
+              "the file the task needs. A hook naming the file for the code being written "
+              "reached 18/20 (v9)."
+              % (n_linked, n_ptr, sum(linked[k] for k in deep), sum(forms[k] for k in deep),
+                 sum(v for k, v in forms.items() if k.startswith("name")), n_files,
+                 forms["@path import"],
                  ", ".join(sorted(f.replace("skills/", "") for f in at_files)) or "no file"),
-              NOTE, 40, 20, 1100, 160)]
+              NOTE, 40, 20, 1100, 170)]
     y = 210
     head = BOX + "fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;align=left;spacingLeft=8;"
-    for i, (t, w) in enumerate([("form", 230), ("count", 70), ("example", 360),
-                                ("what the agent must do to follow it", 520)]):
-        x = 40 + sum(v for _, v in [("", 230), ("", 70), ("", 360)][:i])
+    for i, (t, w) in enumerate([("form", 230), ("count (linked)", 110), ("example", 360),
+                                ("what the agent must do to follow it", 480)]):
+        x = 40 + sum(v for _, v in [("", 230), ("", 110), ("", 360)][:i])
         c.append(cell("lh%d" % i, t, head, x, y, w - 6, 28))
     for r, (k, ex, how) in enumerate(rows):
         y += 32
@@ -1238,14 +1268,14 @@ def page_links(forms, example, at_files, edges, n_files, idx_style):
         tint = "#ffffff" if n else "#f5f5f5"
         st = BOX + "fillColor=%s;strokeColor=#bbbbbb;align=left;spacingLeft=8;" % tint
         c.append(cell("lk%d" % r, k, st + "fontStyle=1;", 40, y, 224, 28))
-        c.append(cell("ln%d" % r, str(n), st + "align=right;spacingRight=8;", 270, y, 64, 28))
-        c.append(cell("le%d" % r, ex, st + "fontFamily=Courier New;fontSize=10;", 340, y, 354, 28))
-        c.append(cell("lw%d" % r, how, st + "fontSize=10;", 700, y, 514, 28))
+        cnt = "%d (%d)" % (n, linked[k]) if not k.startswith(("md link", "@", "generic")) else str(n)
+        c.append(cell("ln%d" % r, cnt, st + "align=right;spacingRight=8;", 270, y, 104, 28))
+        c.append(cell("le%d" % r, ex, st + "fontFamily=Courier New;fontSize=9;", 380, y, 354, 28))
+        c.append(cell("lw%d" % r, how, st + "fontSize=10;", 740, y, 474, 28))
     y += 44
     c.append(cell("idx", "Each SKILL.md's rules index: %d write the file as a backticked path "
-                  "(`rules/01-x.md`), %d as a Markdown link, %d as a plain path. Same target, "
-                  "three spellings; only the link form can be checked by a link checker, and "
-                  "invariant 10 checks all three by name instead."
+                  "(`rules/01-x.md`), %d as a Markdown link, %d as a plain path. Invariant 8 "
+                  "checks every link resolves; invariant 10 checks each rules file is indexed."
                   % (idx_style["backtick"], idx_style["link"], idx_style["plain"]),
                   BOX + "fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;",
                   40, y, 1174, 40))
@@ -1263,10 +1293,10 @@ def page_links(forms, example, at_files, edges, n_files, idx_style):
         if i:
             c.append(edge("ce%d" % i, chain[i - 1][0], cid, "",
                           "endArrow=blockThin;strokeColor=#6c8ebf;"))
-    c.append(cell("cx", "a cross-skill pointer\n`sota-x` rules/NN §M\njoins the chain here",
+    c.append(cell("cx", "a cross-skill pointer\n[`sota-x` rules/NN](path) §M\njoins the chain here",
                   BOX + "fillColor=#f8cecc;strokeColor=#b85450;", 220, y + 110, 220, 56))
     # straight, from either side: two orthogonal edges into c3 overprinted the boxes
-    c.append(edge("cxe", "cx", "c3", "name -> dir, NN -> file",
+    c.append(edge("cxe", "cx", "c3", "follow the relative path",
                   "edgeStyle=none;endArrow=blockThin;strokeColor=#b85450;dashed=1;"
                   "fontSize=10;labelBackgroundColor=#ffffff;"))
     c.append(cell("cr", "router rules/04 library map:\nevery skill's rules/NN in one table",

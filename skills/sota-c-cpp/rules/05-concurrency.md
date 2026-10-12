@@ -2,7 +2,7 @@
 
 A **data race** — two threads accessing the same non-atomic object, at least
 one writing, with no happens-before ordering — is undefined behavior in both C
-and C++ (`rules/03`), not merely a stale read. The optimizer assumes
+and C++ ([`rules/03`](03-undefined-behavior.md)), not merely a stale read. The optimizer assumes
 race-freedom, so a race can corrupt unrelated state. Synchronize all shared
 mutable state, or make it `atomic`. Build threaded code under ThreadSanitizer.
 Reference: [cppreference memory model](https://en.cppreference.com/w/cpp/language/memory_model).
@@ -62,13 +62,13 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
   destruction calls `std::terminate`.
 - Pass data to threads by value or via owned handles; capturing references/
   `[&]` into a thread that outlives the scope is a dangling-reference race
-  (`rules/02`).
+  ([`rules/02`](02-memory-safety.md)).
 - `std::async` with `std::launch::async` for simple fan-out + `future.get()`;
   beware the returned future's destructor blocks. For pools, use a vetted
   library (oneTBB, a thread-pool lib) rather than hand-rolling.
 - Watch for false sharing: hot per-thread counters on the same cache line
   serialize; pad/align to `std::hardware_destructive_interference_size`
-  (`rules/07`).
+  ([`rules/07`](07-performance.md)).
 - **Deadlines and intervals use `std::chrono::steady_clock`, never `system_clock`.** The
   standard says a steady clock's time points *"never decrease as physical time advances"*,
   while `system_clock` is *"wall clock time from the system-wide realtime clock"*. A

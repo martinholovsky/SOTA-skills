@@ -8,10 +8,10 @@ catches them with near-zero false positives.
 
 The **preventive** side — why these attacks work and how to design them out
 (tiering, delegation hygiene, gMSA/dMSA, ADCS template hardening, KB5014754,
-LAPS, `krbtgt` rotation) — lives in **sota-identity-access rules/07 (AD
+LAPS, `krbtgt` rotation) — lives in **[sota-identity-access rules/07](../../sota-identity-access/rules/07-active-directory.md) (AD
 hardening)**. Detect here; harden there. This file assumes the generic detection
-discipline of rules/01 (ADS docs, detection-as-code, tuning with expiry) and the
-telemetry principle of rules/02: **you cannot detect what you do not collect** —
+discipline of [rules/01](01-detection-engineering-discipline.md) (ADS docs, detection-as-code, tuning with expiry) and the
+telemetry principle of [rules/02](02-telemetry-siem-data-layer.md): **you cannot detect what you do not collect** —
 so telemetry comes first.
 
 ## 1. Telemetry prerequisites
@@ -44,7 +44,7 @@ credential-theft detections that the Security log alone can't confirm.
 ## 2. Detections (vendor-neutral logic sketches)
 
 Sketches are Sigma-style pseudo-logic — compile to your SIEM (KQL/SPL/EQL) via
-rules/03. Each carries an ATT&CK mapping (verify IDs at `attack.mitre.org`), the
+[rules/03](03-rule-languages-engines.md). Each carries an ATT&CK mapping (verify IDs at `attack.mitre.org`), the
 dominant false positives, and triage/enrichment notes.
 
 ### Kerberoasting — T1558.003
@@ -61,7 +61,7 @@ detect: one principal requesting TGS for many distinct SPNs in a short window,
 - **Signal:** RC4 (0x17) service-ticket requests — an attacker downgrades to the
   crackable etype — especially a **fan-out** of distinct SPNs from one account.
 - **FPs:** legacy apps/appliances that genuinely negotiate RC4; scanners. Reduce
-  by AES-hardening service accounts (identity rules/07) so RC4 becomes anomalous,
+  by AES-hardening service accounts (identity [rules/07](07-ad-attack-detection.md)) so RC4 becomes anomalous,
   then alert on RC4 at all.
 - **RC4 default change (CVE-2026-20833, KB5073381):** DC updates from
   2026-01-13 add KDCSVC events **201–209** — 201/202 warn that an RC4-only
@@ -86,7 +86,7 @@ detect: AS-REQ for a preauth-disabled account, esp. many accounts from one sourc
 ```
 
 - **Signal:** a TGT issued without pre-auth is the roastable AS-REP. In a hardened
-  domain **no account should have pre-auth disabled** (identity rules/07), so any
+  domain **no account should have pre-auth disabled** (identity [rules/07](07-ad-attack-detection.md)), so any
   such 4768 is inherently suspicious. **FPs:** rare legacy accounts — enumerate
   and allowlist them (and fix them).
 
@@ -150,7 +150,7 @@ detect (ESC1-style): certificate request on an auth-EKU template where the
   as an admin, then a **cert-based TGT (4768, PKINIT)** shortly after. **FPs:**
   enrollment agents legitimately enrolling on behalf of others (allowlist them),
   auto-enrollment. **Enrich** with the template name and EKU. See
-  `sota-identity-access` rules/07 §3 for which templates are dangerous (ESC1/ESC4/ESC6/ESC8).
+  [`sota-identity-access` rules/07](../../sota-identity-access/rules/07-active-directory.md) §3 for which templates are dangerous (ESC1/ESC4/ESC6/ESC8).
 
 ### Forged SAML tokens ("Golden SAML") — T1606.002
 
@@ -179,7 +179,7 @@ isolation. **The finding exists only in the join between two logs.**
   an attacker-controlled trust is the other half of T1606.002 and needs no key theft.
 - **After a suspected compromise**, rotating the token-signing certificate **once is not
   enough**: the previous certificate stays valid and the forged tokens keep working. Rotate
-  twice in succession (build-side: `sota-identity-access` rules/01 §7).
+  twice in succession (build-side: [`sota-identity-access` rules/01](../../sota-identity-access/rules/01-federation-protocols.md) §7).
 
 ### NTLM relay & forced authentication — T1187
 
@@ -195,7 +195,7 @@ detect: NTLM authentication where the *source* workstation and the account's
   authenticating outbound to an operator-controlled host (relay to LDAP/ADCS).
   **FPs:** legacy apps that only speak NTLM — inventory and allowlist, then treat
   new NTLM as anomalous. Pairs with the SMB/LDAP-signing hardening (identity
-  rules/07 §2) that makes relay fail.
+  [rules/07](07-ad-attack-detection.md) §2) that makes relay fail.
 
 ### Password spraying — T1110.003
 
@@ -262,15 +262,15 @@ Deception in AD yields near-zero-FP signals (identity attackers walk into it):
 - **Deceptive delegation / ACL bait.** An object that *looks* like a soft
   escalation path but is monitored; interaction is malicious by definition.
 - **Wiring.** Every deception asset alerts at **max severity with full context**
-  (source host/account) and routes straight to IR (rules/04 routes, rules/06
+  (source host/account) and routes straight to IR ([rules/04](04-alerting-triage-soc-soar.md) routes, [rules/06](06-incident-response-validation.md)
   responds). Place decoys **in the path attackers must traverse** — the SPN they
   will enumerate, the group they will target — not in an unused corner (see
-  rules/05 §4 and **sota-secrets-management rules/04** for credential-honeytoken
+  [rules/05](05-hunting-intel-deception.md) §4 and **[sota-secrets-management rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md)** for credential-honeytoken
   mechanics).
 
 **Cross-reference:** enable/verify the underlying audit policy and log shipping
-with rules/02; test every detection here against the real technique (Atomic Red
-Team AD atomics, or purpose-built AD emulation) per rules/06 before trusting it —
+with [rules/02](02-telemetry-siem-data-layer.md); test every detection here against the real technique (Atomic Red
+Team AD atomics, or purpose-built AD emulation) per [rules/06](06-incident-response-validation.md) before trusting it —
 an untested Kerberoasting rule is a hope, not a detection.
 
 ## Audit checklist
@@ -289,5 +289,5 @@ an untested Kerberoasting rule is a hope, not a detection.
 - [ ] Is there a **5136 detection on writes to `msDS-AllowedToActOnBehalfOfOtherIdentity`** (RBCD) and SPN-added-to-user, alerting on non-tier-0 writers?
 - [ ] Where **Windows Server 2025 DCs** exist, is **dMSA abuse (BadSuccessor, CVE-2025-53779)** covered — dMSA creation (5137) by non-tier-0 principals or in unusual OUs, **5136 writes to `msDS-ManagedAccountPrecededByLink` / `msDS-DelegatedMSAState`**, and repeated dMSA TGTs (2946)?
 - [ ] Are **honeytoken SPN accounts / canary objects** deployed (any 4769/4662 against them = high-fidelity alert) and **wired to IR at max severity**?
-- [ ] Is each detection **ATT&CK-mapped, FP-documented, and validated against the real technique** (rules/06) before it is trusted?
-- [ ] Does each detection carry known **false positives and an owner** (rules/01/04), with suppressions expiring rather than permanent?
+- [ ] Is each detection **ATT&CK-mapped, FP-documented, and validated against the real technique** ([rules/06](06-incident-response-validation.md)) before it is trusted?
+- [ ] Does each detection carry known **false positives and an owner** ([rules/01](01-detection-engineering-discipline.md)/04), with suppressions expiring rather than permanent?

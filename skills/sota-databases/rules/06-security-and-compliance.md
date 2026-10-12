@@ -75,7 +75,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE migrator IN SCHEMA app
 
 ### Rule: No vendor default survives install — accounts, passwords, sample and test databases.
 The general rule (every deployed product, not only databases) is in
-`sota-code-security` rules/02 §8; the database-specific steps are:
+[`sota-code-security` rules/02](../../sota-code-security/rules/02-authentication.md) §8; the database-specific steps are:
 - **Make hardening a scripted install step**, not a memory. Some engines ship
   one: `mysql_secure_installation` sets the root password, removes anonymous
   accounts, removes remote-capable root accounts and drops the `test` database
@@ -107,7 +107,7 @@ OWASP: Database Security cheat sheet; Go-SCP (database security); NoSQL
 Security cheat sheet; Secure Coding Practices QRG.
 
 ### Rule: Minimal feature surface — in-server code execution and extras are off unless documented.
-The per-engine examples elsewhere (SurrealDB `--allow-scripting`, rules/08;
+The per-engine examples elsewhere (SurrealDB `--allow-scripting`, [rules/08](08-surrealdb-multimodel.md);
 Redis `EVAL`, below; dangerous Postgres functions, above) are one rule:
 deny by default, enable with a written reason.
 - **Extensions and languages:** install only what the schema uses; keep an
@@ -140,7 +140,7 @@ that user decides the blast radius.
   cannot rewrite them. MySQL's docs likewise say not to run `mysqld` as root.
 - Containers: the image's own non-root user, not `user: root`/`0`.
 - systemd units: `User=` set to that account plus the sandboxing directives in
-  `sota-sandboxing` rules/02 R7.4 (check with `systemd-analyze security`).
+  [`sota-sandboxing` rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md) R7.4 (check with `systemd-analyze security`).
 - Harden the host from a published baseline (the CIS Benchmark for the OS,
   and for the engine where one exists) or the vendor's hardening guide, and
   keep the deviations in the repo. Managed services cover this layer for you.
@@ -343,7 +343,7 @@ for app-side review. Database-layer obligations:
   **Qdrant:** assemble filters from a typed allowlist of fields/operators, never
   by templating user JSON into the filter — a client-controlled `must`/`should`
   is a cross-tenant read if it can overwrite the server's tenant filter
-  (server-enforced tenant filter is non-negotiable, rules/07).
+  (server-enforced tenant filter is non-negotiable, [rules/07](07-vector-and-ai.md)).
 
 ## PII handling
 

@@ -1,14 +1,14 @@
 # 08 — NATS JetStream
 
 Scope: building on or auditing NATS JetStream as a primary message bus (Go
-services). The general distributed-messaging doctrine of **rules/03** —
+services). The general distributed-messaging doctrine of **[rules/03](03-distributed-systems-and-events.md)** —
 exactly-once is a myth, ack after durable commit, outbox/never-dual-write, DLQs,
 ordering, schema evolution, claim-check, idempotent consumers — applies in full
 and is **not repeated here**. This file maps that doctrine onto JetStream's
 concrete mechanisms and flags JetStream-specific failure modes. Consumer-loop
-and backpressure mechanics live in **sota-async-concurrency**; TLS/mesh/leafnode
-transport security in **sota-network-security**; NKEY/JWT/account auth in
-**sota-identity-access** and **sota-secrets-management**.
+and backpressure mechanics live in **[sota-async-concurrency](../../sota-async-concurrency/SKILL.md)**; TLS/mesh/leafnode
+transport security in **[sota-network-security](../../sota-network-security/SKILL.md)**; NKEY/JWT/account auth in
+**[sota-identity-access](../../sota-identity-access/SKILL.md)** and **[sota-secrets-management](../../sota-secrets-management/SKILL.md)**.
 
 Provenance: first written against NATS Server 2.11/2.12; upgrade notes
 re-checked against the 2.14/2.15 release notes on 2026-09-26. Run the latest
@@ -44,7 +44,7 @@ explicitly before upgrading.
   through a stream is a common over-reach: it pays the storage/ack cost for
   no benefit.
 - "Exactly-once" on JetStream is **dedup-on-publish + idempotent consumption**,
-  not a delivery guarantee (rules/03 §3). Do not design as if it were one.
+  not a delivery guarantee ([rules/03](03-distributed-systems-and-events.md) §3). Do not design as if it were one.
 
 ## Subject design: the schema of your whole bus
 
@@ -71,7 +71,7 @@ explicitly before upgrading.
 - Set `MaxBytes` and `MaxAge` on every stream, sized to retention need and disk.
   `MaxMsgs`, `MaxMsgsPerSubject`, and `MaxMsgSize` as the workload requires.
   A stream with all limits unset grows until the file store fills and the node —
-  and its RAFT peers — degrade. This is the JetStream form of rules/03's
+  and its RAFT peers — degrade. This is the JetStream form of [rules/03](03-distributed-systems-and-events.md)'s
   "bounded queues everywhere"; treat unbounded as **High**.
 - **Storage**: `FileStorage` (default, durable, survives restart) for anything
   that matters; `MemoryStorage` only for fast, loss-tolerant, regenerable data.
@@ -129,16 +129,16 @@ BAD: nats stream add ORDERS --subjects 'orders.>' --storage file
 - **Always check the publish ack.** Use `js.Publish` (sync — blocks for the ack)
   or `js.PublishAsync` with a **bounded** in-flight window (`PublishAsyncMaxPending`)
   and drain/await before considering messages durable. Ignoring the ack is silent
-  message loss — the rules/03 "no dual-write / confirm the write" rule applied to
+  message loss — the [rules/03](03-distributed-systems-and-events.md) "no dual-write / confirm the write" rule applied to
   the publish path; treat fire-and-forget JetStream publishing as **High**.
 - This is only half of effectively-once. The other half is **idempotent /
-  de-duplicated consumption** (rules/03 §2) — the duplicate window does nothing
+  de-duplicated consumption** ([rules/03](03-distributed-systems-and-events.md) §2) — the duplicate window does nothing
   for duplicates a consumer sees from redelivery.
 - **Atomic batch publish** (2.12+) writes a multi-message batch to one stream
   all-or-nothing — use it where multi-message atomicity previously forced an
   outbox-style workaround; 2.14 adds a fast flow-controlled variant
   (`AllowBatchPublish`). It does **not** replace the outbox for DB-write +
-  publish dual-writes (rules/03) — that atomicity spans two systems.
+  publish dual-writes ([rules/03](03-distributed-systems-and-events.md)) — that atomicity spans two systems.
 
 ```go
 js, _ := jetstream.New(nc)
@@ -158,9 +158,9 @@ _ = ack.Sequence
 - **Durable** (named, `Durable`/explicit name) for work that must resume where it
   left off after restart; **ephemeral** for throwaway tail-follows. An ephemeral
   consumer for durable work loses its position on disconnect — **High** for any
-  at-least-once job (rules/03 anti-pattern).
+  at-least-once job ([rules/03](03-distributed-systems-and-events.md) anti-pattern).
 - **`AckExplicit`** (default and correct): ack **after** the state change is
-  durably committed (rules/03 §3). `AckNone` and `AckAll` discard the
+  durably committed ([rules/03](03-distributed-systems-and-events.md) §3). `AckNone` and `AckAll` discard the
   per-message safety net; ack-on-receipt before processing loses messages on
   crash — never do it.
 - For stronger guarantees use **double-ack** (`msg.DoubleAck(ctx)`/`AckSync`):
@@ -169,15 +169,15 @@ _ = ack.Sequence
 
 ### Rule: `MaxAckPending` is your primary backpressure knob; `MaxDeliver` bounds poison redelivery.
 - **`MaxAckPending`**: the cap on un-acked in-flight messages per consumer — the
-  JetStream analogue of AMQP prefetch (rules/03 §7b). Unbounded (`-1`) lets a
+  JetStream analogue of AMQP prefetch ([rules/03](03-distributed-systems-and-events.md) §7b). Unbounded (`-1`) lets a
   slow consumer pull more than it can process; set it explicitly, sized to
-  handler throughput (sota-async-concurrency rules/06). Unbounded `MaxAckPending`
+  handler throughput ([sota-async-concurrency rules/06](../../sota-async-concurrency/rules/06-backpressure-flow-control.md)). Unbounded `MaxAckPending`
   on a real consumer is **High**.
 - **`AckWait`**: how long the server waits for an ack before redelivering. Size
   it above your worst-case processing time, or in-flight work gets redelivered
   while still running. Send `msg.InProgress()` to extend it for long handlers.
 - **`MaxDeliver`**: cap redelivery attempts. **Unset (infinite) means a poison
-  message redelivers forever**, burning a consumer slot and CPU — rules/03's
+  message redelivers forever**, burning a consumer slot and CPU — [rules/03](03-distributed-systems-and-events.md)'s
   poison-vs-transient rule, and **High** here. Set `MaxDeliver` and a `BackOff`
   array (per-attempt delays) so transient failures retry with growing spacing.
 - **`FilterSubjects`** (multi-filter supported) narrows a consumer to the
@@ -223,15 +223,15 @@ defer cc.Stop()
     immediately, do **not** wait out `MaxDeliver`. Use it the moment you know a
     message will never succeed (schema-invalid, references a deleted entity).
   - **InProgress** — still working; reset the `AckWait` timer.
-- Distinguish transient from poison (rules/03 §7): `Nak` transient, `Term`
+- Distinguish transient from poison ([rules/03](03-distributed-systems-and-events.md) §7): `Nak` transient, `Term`
   poison. Don't `Nak` a poison message `MaxDeliver` times — that's the redelivery
   storm rule.
 - Because there's no native dead-letter, build one: subscribe to the advisory
   **`$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>`** and republish the exhausted
   message to a dedicated **DLQ stream**, or have the handler republish on its
-  final attempt. Then apply rules/03 §7 in full: alert on DLQ depth > 0, and have
+  final attempt. Then apply [rules/03](03-distributed-systems-and-events.md) §7 in full: alert on DLQ depth > 0, and have
   a tested redrive runbook. A DLQ nobody drains is a data-loss buffer.
-- Consumers must be **idempotent** regardless (rules/03 §2): redelivery after a
+- Consumers must be **idempotent** regardless ([rules/03](03-distributed-systems-and-events.md) §2): redelivery after a
   lost ack, double-ack timeout, or `AckWait` expiry will hand you the same
   message again.
 
@@ -241,7 +241,7 @@ defer cc.Stop()
 - **KV** is a JetStream-backed bucket (GA). Each key is versioned with a
   monotonic **revision**; do optimistic concurrency with **compare-and-set**
   (`Update` against an expected revision — rejects if the key moved under you),
-  the rules/03 §12 "let the store arbitrate" pattern without a separate lock
+  the [rules/03](03-distributed-systems-and-events.md) §12 "let the store arbitrate" pattern without a separate lock
   service. **Watchers** stream changes (config hot-reload, coordination);
   **history** keeps N prior revisions (bucket `History`, default 1).
 - NATS KV is a good fit for **token revocation** lists and similar hot lookups:
@@ -251,7 +251,7 @@ defer cc.Stop()
   supports it before relying on it, and note the stream's `MaxAge` still removes
   a message whose TTL is longer than `MaxAge` — only `Nats-TTL: never` is exempt
   from `MaxAge` (ADR-43). Don't assume per-key expiry on an older server.
-- **Object store** holds large payloads. Apply rules/03's **claim-check**: keep
+- **Object store** holds large payloads. Apply [rules/03](03-distributed-systems-and-events.md)'s **claim-check**: keep
   big blobs and secrets out of messages; publish a reference (object id/bucket),
   let the consumer fetch from the object store. The bus is a shared failure
   domain, not a file server — fat messages saturate streams and replication.
@@ -264,18 +264,18 @@ defer cc.Stop()
 - **Accounts** are the hard multi-tenant boundary: separate subject space, separate
   JetStream assets, no cross-account visibility except via explicit subject
   exports/imports. Multi-tenant systems isolate tenants by **account**, not by
-  subject-prefix convention within one account (rules/05 tenancy discipline) —
+  subject-prefix convention within one account ([rules/05](05-scalability-state-and-data.md) tenancy discipline) —
   subject-prefix-only "isolation" is a cross-tenant leak risk: **High**.
 - Set **per-account JetStream limits/quotas** (max memory, max file store, max
-  streams/consumers) so one tenant can't exhaust the cluster — the rules/04
+  streams/consumers) so one tenant can't exhaust the cluster — the [rules/04](04-resilience-and-failure-design.md)
   bulkhead applied to storage.
 - **Leafnodes** extend a cluster to the edge; **gateways/superclusters** connect
   clusters across regions; **JetStream domains** name an isolated JetStream
   instance (e.g. an edge leafnode hub) so edge and hub streams don't collide and
   can be addressed/mirrored explicitly. Use domains for edge↔hub topologies.
 - Auth and transport are out of scope here: NKEY/JWT and account design live in
-  **sota-identity-access**/**sota-secrets-management**; TLS, leafnode/gateway
-  transport security, and mesh in **sota-network-security**. JetStream over a
+  **[sota-identity-access](../../sota-identity-access/SKILL.md)**/**[sota-secrets-management](../../sota-secrets-management/SKILL.md)**; TLS, leafnode/gateway
+  transport security, and mesh in **[sota-network-security](../../sota-network-security/SKILL.md)**. JetStream over a
   cluster with no TLS and a shared account is not production-ready.
 
 ## Operations: monitor lag, snapshot, drain
@@ -284,29 +284,29 @@ defer cc.Stop()
 - Monitor per consumer: **`num_pending`** (unprocessed backlog),
   **`num_ack_pending`** (in-flight un-acked), **`redelivered`** count, and stream
   bytes vs `MaxBytes`. `num_pending` climbing monotonically = under-provisioned
-  consumer or a poison loop (rules/03 §7). Alert on it.
+  consumer or a poison loop ([rules/03](03-distributed-systems-and-events.md) §7). Alert on it.
 - `nats stream report` and `nats consumer report` are the first-line operability
   tools; advisories on `$JS.EVENT.ADVISORY.>` surface max-deliveries, terminated
   messages, and leader elections. Export metrics vendor-neutrally (the server's
   monitoring endpoints / `nats-surveyor`) into whatever scrapes them — keep the
   collection stack out of the design.
 - **Snapshot/restore**: streams support snapshot/backup and restore — schedule
-  them, store off-cluster, and rehearse restore (rules/03 / sota-databases
+  them, store off-cluster, and rehearse restore ([rules/03](03-distributed-systems-and-events.md) / [sota-databases](../../sota-databases/SKILL.md)
   backup discipline). Replicas are HA, not backup.
 - **Graceful drain**: on shutdown call `Stop`/`Drain` on consume contexts and
   `nc.Drain()` so in-flight messages finish and acks flush rather than being cut
-  mid-process and redelivered (sota-async-concurrency graceful-shutdown).
+  mid-process and redelivered ([sota-async-concurrency](../../sota-async-concurrency/SKILL.md) graceful-shutdown).
 - Don't block the consume callback: offload slow work and let `MaxAckPending`
-  bound concurrency (sota-async-concurrency rules/06). A blocking callback stalls
+  bound concurrency ([sota-async-concurrency rules/06](../../sota-async-concurrency/rules/06-backpressure-flow-control.md)). A blocking callback stalls
   delivery and inflates ack-pending.
 
 ## Anti-patterns (JetStream-specific)
 
 - **Unbounded stream** — no `MaxBytes`/`MaxAge`: disk fills, RAFT peers degrade.
-- **No `MaxDeliver`** — a poison message redelivers forever (rules/03 §7).
+- **No `MaxDeliver`** — a poison message redelivers forever ([rules/03](03-distributed-systems-and-events.md) §7).
 - **Ack before processing** / `AckNone` on durable work — silent loss on crash.
 - **One giant catch-all stream** (`>` over everything) — couples unrelated
-  workloads, breaks per-subject limits and per-consumer reasoning; the rules/07
+  workloads, breaks per-subject limits and per-consumer reasoning; the [rules/07](07-anti-patterns-catalog.md)
   "god service" smell in stream form.
 - **At-least-once publisher with no dedup** — no `Nats-Msg-Id`/duplicate window,
   so publish retries duplicate silently.
@@ -314,7 +314,7 @@ defer cc.Stop()
 - **Unbounded `MaxAckPending`** — no consumer backpressure; slow consumer OOMs.
 - **Ignored publish acks** — fire-and-forget JetStream publish = silent loss.
 - **Subject-prefix "tenancy"** in one account instead of per-account isolation.
-- **Blocking the consume callback** — stalls delivery (sota-async-concurrency).
+- **Blocking the consume callback** — stalls delivery ([sota-async-concurrency](../../sota-async-concurrency/SKILL.md)).
 
 ## Audit checklist
 
@@ -347,7 +347,7 @@ defer cc.Stop()
 - [ ] Is there a **DLQ stream** fed by `MAX_DELIVERIES` advisories or a final-attempt
       republish, with depth alerting and a redrive runbook? (`nats stream ls` for a
       DLQ/dead-letter stream; subscriber on `$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>`.)
-- [ ] Are consumers idempotent under redelivery (rules/03 §2)?
+- [ ] Are consumers idempotent under redelivery ([rules/03](03-distributed-systems-and-events.md) §2)?
 - [ ] KV: optimistic concurrency via revision CAS (`Update`), not blind `Put`,
       for contended keys (token revocation, locks)? Per-key TTL only relied on if
       the server supports it? (`nats kv ls`; grep `kv.Update` vs `kv.Put`.)

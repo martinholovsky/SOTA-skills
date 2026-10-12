@@ -1,10 +1,10 @@
 # 07 — PowerShell (`pwsh`) — CI steps, deploy scripts, entrypoints
 
 Scope: this skill's premise is that shell hides in CI blocks, entrypoints and Makefile
-recipes (`rules/04`). On a Windows runner — and increasingly on Linux ones — that shell is
+recipes ([`rules/04`](04-ci-and-operational.md)). On a Windows runner — and increasingly on Linux ones — that shell is
 PowerShell, and **none of `set -euo pipefail`, `${PIPESTATUS[0]}` or ShellCheck exists
 there**. The failure classes are the same; the mechanisms are not. Read this together with
-`rules/01` §3 (the safety baseline it replaces) and `rules/06` (ad-hoc commands, where the
+[`rules/01`](01-safety-baseline.md) §3 (the safety baseline it replaces) and [`rules/06`](06-ad-hoc-commands.md) (ad-hoc commands, where the
 exit-status traps below bite hardest).
 
 Two dialects, and they are different products: **PowerShell 7.x** (`pwsh`, cross-platform,
@@ -20,7 +20,7 @@ defaults continue past errors.**
 `$ErrorActionPreference` defaults to **`Continue`** — Microsoft's own table — and it
 "[d]etermines how PowerShell responds to a non-terminating error, an error that doesn't stop
 the cmdlet processing." So a failing cmdlet prints red text and the script carries on, which
-is the `set -e`-less behaviour in `rules/01` §3 with a more convincing error message.
+is the `set -e`-less behaviour in [`rules/01`](01-safety-baseline.md) §3 with a more convincing error message.
 
 ```powershell
 #!/usr/bin/env pwsh
@@ -51,12 +51,12 @@ $PSNativeCommandUseErrorActionPreference = $true   # native non-zero exits too (
 - Audit: a `.ps1` under `ci/`, `deploy/` or a container entrypoint with no
   `$ErrorActionPreference` line = **High**; one that sets it but not
   `$PSNativeCommandUseErrorActionPreference` while calling native tools = **High** (the
-  control is present and inert — `sota-code-security` rules/10).
+  control is present and inert — [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).
 
 ## 2. Three ways to read "did that work", and they disagree
 
 **Rule: name which status you are reading, and never read a status through a wrapper that
-does not propagate it.** This is `rules/06`'s table for bash, re-derived: the mechanism
+does not propagate it.** This is [`rules/06`](06-ad-hoc-commands.md)'s table for bash, re-derived: the mechanism
 differs, the false green is identical.
 
 | you read | it means | the trap |
@@ -76,10 +76,10 @@ differs, the false green is identical.
   native tools, read `$LASTEXITCODE` — it carries the number, and `$?` throws it away.
 - **`$LASTEXITCODE` is not reset by a cmdlet.** Only a native command or a script's `exit`
   moves it, so a check after a cmdlet-only stretch reads whatever the last executable left
-  there — the stale-status shape of `rules/06` §1.
+  there — the stale-status shape of [`rules/06`](06-ad-hoc-commands.md) §1.
 - **A pipeline has no `PIPESTATUS`.** PowerShell pipelines pass objects, not exit codes; there
   is nothing to index. If you need the producer's status, do not pipe it — capture output and
-  check `$LASTEXITCODE` on its own line, the same conclusion `rules/01` §3 reaches for zsh.
+  check `$LASTEXITCODE` on its own line, the same conclusion [`rules/01`](01-safety-baseline.md) §3 reaches for zsh.
 - Audit: `if ($?)` after anything other than the immediately preceding native command =
   **Medium**; a wrapper function whose only failure signal is `Write-Error` = **High**.
 
@@ -96,7 +96,7 @@ different rules.** From `about_Automatic_Variables`:
 
 So under `-Command` the **last statement decides the verdict**. A step that ends with a
 `Write-Host` summary, a cleanup call, or a log tail reports success no matter what failed
-three lines earlier — the masked-exit-code defect of `rules/06`, promoted to an entire CI
+three lines earlier — the masked-exit-code defect of [`rules/06`](06-ad-hoc-commands.md), promoted to an entire CI
 step. End such a script with an explicit `exit` you computed, never with a convenience call.
 
 ## 4. GitHub Actions: the built-in shell is safe, and opting out silently removes the safety
@@ -128,11 +128,11 @@ That is a good default and it is **not inherited** by a custom shell:
   engine; and on a self-hosted Windows runner without PowerShell Core installed, `pwsh` falls
   back to it. Pin the dialect you tested (§7).
 - Audit: a custom `shell:` string wrapping PowerShell with no explicit `exit` = **High** —
-  this is `sota-devsecops` rules/09's "the gate's own exit code" question, one layer down.
+  this is [`sota-devsecops` rules/09](../../sota-devsecops/rules/09-gates-that-hold.md)'s "the gate's own exit code" question, one layer down.
 
 ## 5. Injection: `Invoke-Expression` is `eval`, and string-built commands are the same defect
 
-**Rule: never interpolate untrusted input into a command string.** `rules/03` §1 in
+**Rule: never interpolate untrusted input into a command string.** [`rules/03`](03-security.md) §1 in
 PowerShell's vocabulary — the sinks differ, the class does not.
 
 ```powershell
@@ -149,8 +149,8 @@ $params = @{ Path = $userPath; Recurse = $true }; Get-ChildItem @params   # spla
 
 - **`-LiteralPath` over `-Path`** wherever the value is not yours: `-Path` interprets `*`,
   `?` and `[ ]` as wildcards, so a filename containing them silently selects other files, or
-  nothing. The quiet-wrong-set shape of `rules/06`.
-- **Splatting (`@params`) is the array-for-command-building rule** of `rules/05`: it keeps
+  nothing. The quiet-wrong-set shape of [`rules/06`](06-ad-hoc-commands.md).
+- **Splatting (`@params`) is the array-for-command-building rule** of [`rules/05`](05-constructs-and-cleanup.md): it keeps
   arguments as data instead of re-parsing a string.
 - **Argument passing to native commands differs by platform**:
   `$PSNativeCommandArgumentPassing` defaults to `Windows` on Windows and `Standard`
@@ -158,7 +158,7 @@ $params = @{ Path = $userPath; Recurse = $true }; Get-ChildItem @params   # spla
   Linux one. Test on the platform you deploy to.
 - **Double quotes interpolate, single quotes do not** — `"$x"` and `"$($x.Prop)"` expand,
   `'$x'` is literal. A password or token in a double-quoted string headed for a command line
-  is `rules/03` §2's argv-exposure defect.
+  is [`rules/03`](03-security.md) §2's argv-exposure defect.
 - Audit: any `Invoke-Expression`/`iex` reachable from input = **Critical** if the input
   crosses a trust boundary; `-Path` with an externally supplied value = **Medium**.
 
@@ -174,8 +174,8 @@ policy by typing the script contents at the command line when they can't run a s
   "the behavior really matches **Bypass**". A cross-platform script that reasons about policy
   is reasoning about nothing on two of its three platforms.
 - The real controls are the ones this library already names: signing and provenance
-  (`sota-devsecops` rules/03), least privilege for the account the script runs as
-  (`sota-sandboxing`), and not fetching code at runtime (`rules/03` §5 on `curl|bash`, whose
+  ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md)), least privilege for the account the script runs as
+  ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)), and not fetching code at runtime ([`rules/03`](03-security.md) §5 on `curl|bash`, whose
   PowerShell form is `iwr ... | iex` and is the same defect).
 - `Unblock-File` clears the mark-of-the-web; note that `curl.exe`, `Invoke-RestMethod` and
   `Invoke-WebRequest` "may not mark the files as coming from the Internet Zone"
@@ -206,17 +206,17 @@ because two of these fall inside two months):
 ## 8. Lint and format, because ShellCheck does not run here
 
 **Rule: PowerShell gets its own analyser in CI, gating at the same severity as ShellCheck
-does for bash (`rules/03` §7).** The analyser is
+does for bash ([`rules/03`](03-security.md) §7).** The analyser is
 [PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer) (`Invoke-ScriptAnalyzer`),
 with `Invoke-Formatter` as the `shfmt` analogue.
 
 - Run it over the whole tree, fail the build on `Error` **and** `Warning` — the argument in
-  `rules/03` §7 for not dismissing `style` applies unchanged: the low-severity rules are where
+  [`rules/03`](03-security.md) §7 for not dismissing `style` applies unchanged: the low-severity rules are where
   the quoting and scoping defects are.
 - Suppressions carry a reason and an owner, like every other ignore in this library
-  (`sota-devsecops` rules/03 §3.6).
-- **Watch the analyser fail once before trusting a green run** — `sota-code-security`
-  rules/11 §7. A misconfigured `-Path` that matches no `.ps1` reports zero findings and
+  ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.6).
+- **Watch the analyser fail once before trusting a green run** — [`sota-code-security`
+  rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §7. A misconfigured `-Path` that matches no `.ps1` reports zero findings and
   exits 0, which is the empty-denominator signature this repo gates on.
 
 ## Audit checklist

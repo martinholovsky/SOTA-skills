@@ -14,7 +14,7 @@ rubric (data / model / infra / monitoring tests) is the backbone.
   regression: MAE/RMSE/MAPE chosen for the loss that matters.
 - Distinguish the **model metric** (offline) from the **business metric**
   (online) and state how they relate. Rules of ML: the offline metric is a proxy
-  — validate it predicts the online outcome (`rules/06`).
+  — validate it predicts the online outcome ([`rules/06`](06-monitoring-drift.md)).
 
 ## 2. Baselines and ablations
 
@@ -36,9 +36,9 @@ rubric (data / model / infra / monitoring tests) is the backbone.
   known failure modes.
 - Where inputs are attacker-influenced, the suite includes a **robustness
   slice**: adversarially perturbed versions of held-out inputs, with its own
-  floor, so the hardening required by `rules/07` §1 is measured. Where the
+  floor, so the hardening required by [`rules/07`](07-security-governance.md) §1 is measured. Where the
   model sees personal data, a **proxy audit** checks on every refresh that the
-  model cannot be used to infer special-category attributes (`rules/07` §3).
+  model cannot be used to infer special-category attributes ([`rules/07`](07-security-governance.md) §3).
   OWASP: AISVS 11.1.4, 11.2.1.
 
 ## 4. Validation gates before promotion
@@ -48,9 +48,9 @@ rubric (data / model / infra / monitoring tests) is the backbone.
   - metric ≥ threshold **and** no regression vs current production (within
     tolerance), on a fixed eval set;
   - per-slice floors met;
-  - data/schema validation passed (`rules/02`);
-  - the model is reproducible and registered with lineage (`rules/01`,`rules/03`);
-  - a successful **shadow/canary** test where applicable (`rules/05`).
+  - data/schema validation passed ([`rules/02`](02-data-and-features.md));
+  - the model is reproducible and registered with lineage ([`rules/01`](01-ml-systems-architecture.md),[`rules/03`](03-training-experimentation.md));
+  - a successful **shadow/canary** test where applicable ([`rules/05`](05-deployment-serving.md)).
 - A **quantised, pruned or distilled** artifact is a new model. It passes the
   same quality, safety and slice suite, run against the compressed binary
   itself, before it deploys; results measured on the full-precision parent do
@@ -63,7 +63,7 @@ rubric (data / model / infra / monitoring tests) is the backbone.
 - The ML Test Score covers **infrastructure tests**: the training pipeline is
   reproducible, the full pipeline is integration-tested, model specs are
   unit-tested, the model can be rolled back, and serving matches training. Skew
-  and serving correctness are tested, not assumed (`rules/02`, `rules/05`).
+  and serving correctness are tested, not assumed ([`rules/02`](02-data-and-features.md), [`rules/05`](05-deployment-serving.md)).
 - Test for NaNs/inf, schema conformance, and that the model gives stable outputs
   on a canonical input (a "golden" prediction regression test).
 
@@ -71,8 +71,8 @@ rubric (data / model / infra / monitoring tests) is the backbone.
 
 - Offline wins don't guarantee online wins. Validate with an **online
   experiment** (A/B test / interleaving) measuring the business metric, with
-  proper sample size and guardrail metrics, before full rollout (`rules/05`,
-  `rules/06`). Beware feedback loops contaminating the comparison (`rules/01`).
+  proper sample size and guardrail metrics, before full rollout ([`rules/05`](05-deployment-serving.md),
+  [`rules/06`](06-monitoring-drift.md)). Beware feedback loops contaminating the comparison ([`rules/01`](01-ml-systems-architecture.md)).
 
 ## Audit checklist
 
@@ -93,4 +93,4 @@ rubric (data / model / infra / monitoring tests) is the backbone.
       distil: `grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .`
       ; manual: does the gate run the eval suite on the compressed output, not the parent?
 - [ ] **Robustness slice where inputs are attacker-influenced (§3) — HIGH** — see the
-      robustness item in `rules/07`; manual: is there a per-slice floor for it?
+      robustness item in [`rules/07`](07-security-governance.md); manual: is there a per-slice floor for it?

@@ -67,7 +67,7 @@ large loops (span the batch, count the items), logging itself.
 **Attributes vs events vs status:**
 - **Attributes** = dimensions you'd filter/group by: route, db.system.name,
   tenant_id, cache.hit, retry.count. Set on the span, bounded-ish values,
-  no payloads, no PII (same redaction policy as logs — rules/01 §4).
+  no payloads, no PII (same redaction policy as logs — [rules/01](01-structured-logging.md) §4).
 - **Events** = point-in-time happenings inside the span: `retry_scheduled`,
   `lock_acquired`, and especially **exception events**
   (`span.record_exception(e)`). Note OTel plans to deprecate the Span Event
@@ -78,7 +78,7 @@ large loops (span the batch, count the items), logging itself.
   migrate instrumentation via `OTEL_SEMCONV_EXCEPTION_SIGNAL_OPT_IN=logs`
   (or `logs/dup` to emit both), and SDK-level routing can surface log-based
   events as span events for backends that need them. Exceptions-as-logs
-  matches rules/01 §1 (`exception.stacktrace` as a structured field).
+  matches [rules/01](01-structured-logging.md) §1 (`exception.stacktrace` as a structured field).
 - **Status**: set `ERROR` only for genuine failures of that unit of work.
   A 404 on a lookup endpoint is not span-error; an unhandled exception is.
   Marking expected outcomes as errors poisons tail sampling and spanmetrics.
@@ -194,7 +194,7 @@ Rules:
   zero traces of the incident.
 - Log the effective sampling config; during incidents, support a runtime
   knob to raise sampling on a specific route/tenant.
-- Remember sampled-out requests still need their wide event (rules/01 §5) —
+- Remember sampled-out requests still need their wide event ([rules/01](01-structured-logging.md) §5) —
   logs are the unsampled record; traces are the deep-dive.
 
 ## 5. Limits, overhead, and pipeline hardening
@@ -229,11 +229,11 @@ Tracing must never take down the service it observes.
   backpressures receivers instead of OOM-killing the gateway; receivers
   bind a specific interface — the default host is `localhost` since
   v0.104.0 (gate stable in v0.110.0), so a `0.0.0.0` in Kubernetes is an explicit choice that needs
-  receiver auth/TLS (rules/01 §8) and a NetworkPolicy; `zpages`, `pprof` and
+  receiver auth/TLS ([rules/01](01-structured-logging.md) §8) and a NetworkPolicy; `zpages`, `pprof` and
   `health_check` extensions stay on localhost or an internal-only port.
 - Redaction in the pipeline: a Collector `attributes`/`redaction` processor
   deny-listing token/PII-shaped attributes is the backstop for instrument-
-  ation mistakes — same philosophy as logger-level redaction (rules/01 §4).
+  ation mistakes — same philosophy as logger-level redaction ([rules/01](01-structured-logging.md) §4).
 - Shutdown: flush the provider on SIGTERM (`provider.shutdown()` /
   `ForceFlush`) or you lose the last batch of every deploy — which is
   exactly the window where regressions live.

@@ -18,13 +18,13 @@ Facts in this skill (OS versions, store policies, framework status) were verifie
 
 When creating or extending a mobile app:
 
-1. **Settle the platform decision first.** Stack choice (native vs cross-platform), minimum OS floor, and target SDK are one-way doors. Use `rules/01` decision factors; record the decision and its rationale in the repo.
-2. **Establish architecture before features.** Unidirectional data flow, DI seams, module boundaries, and navigation pattern from day one (`rules/02`). Retrofitting UDF onto a ball of mutable state is a rewrite.
-3. **Decide the offline posture explicitly.** "Online-only with graceful errors" is a valid choice; "accidentally breaks offline" is not. If offline-first: local DB is the source of truth, mutations queue, sync is a background concern (`rules/03`).
-4. **Wire operational survival kit before v1.0 ships:** crash reporting with symbol upload, forced-update mechanism, remote kill switches for risky features, API version header on every request (`rules/06`). These cannot be added retroactively for already-shipped binaries.
-5. **Security defaults from the start:** secrets in Keychain/Keystore only, TLS everywhere, deep links validated, WebView locked down (`rules/04`).
-6. **Budget performance up front:** cold start, frame time, and app size budgets in CI, not as a post-launch rescue (`rules/05`).
-7. **Comply with current store requirements** before first submission: privacy manifest + required-reason APIs (iOS), Data safety form + target API level + 16 KB page support + developer verification (Android) (`rules/01`, `rules/06`).
+1. **Settle the platform decision first.** Stack choice (native vs cross-platform), minimum OS floor, and target SDK are one-way doors. Use [`rules/01`](rules/01-platform-and-stack.md) decision factors; record the decision and its rationale in the repo.
+2. **Establish architecture before features.** Unidirectional data flow, DI seams, module boundaries, and navigation pattern from day one ([`rules/02`](rules/02-architecture-and-state.md)). Retrofitting UDF onto a ball of mutable state is a rewrite.
+3. **Decide the offline posture explicitly.** "Online-only with graceful errors" is a valid choice; "accidentally breaks offline" is not. If offline-first: local DB is the source of truth, mutations queue, sync is a background concern ([`rules/03`](rules/03-offline-background-push.md)).
+4. **Wire operational survival kit before v1.0 ships:** crash reporting with symbol upload, forced-update mechanism, remote kill switches for risky features, API version header on every request ([`rules/06`](rules/06-release-and-operations.md)). These cannot be added retroactively for already-shipped binaries.
+5. **Security defaults from the start:** secrets in Keychain/Keystore only, TLS everywhere, deep links validated, WebView locked down ([`rules/04`](rules/04-security.md)).
+6. **Budget performance up front:** cold start, frame time, and app size budgets in CI, not as a post-launch rescue ([`rules/05`](rules/05-performance.md)).
+7. **Comply with current store requirements** before first submission: privacy manifest + required-reason APIs (iOS), Data safety form + target API level + 16 KB page support + developer verification (Android) ([`rules/01`](rules/01-platform-and-stack.md), [`rules/06`](rules/06-release-and-operations.md)).
 
 ## AUDIT mode
 
@@ -59,7 +59,7 @@ Order the report by severity, then by blast radius. An audit that returns only s
 | [rules/04-security.md](rules/04-security.md) | Keychain/Keystore, certificate pinning tradeoffs and trust anchors, biometrics gating keys, App Attest/Play Integrity (device and app verdicts), token handling, deep link validation, root/jailbreak detection honesty, WebView hardening, obfuscation reality and non-debuggable releases, app-private vs shared storage and file protection classes, integrity of locally stored data, clipboard leakage and UI masking, overlays/task hijacking, intents/broadcasts, ContentProvider/FileProvider exposure, biometric fallback and lock-screen checks, pinning mechanics and audit stance, anti-dynamic-analysis checks, native-library hardening, keyboards/extensions/App Intents/widgets, device identifiers, OWASP MASVS |
 | [rules/05-performance.md](rules/05-performance.md) | Startup budgets, main-thread discipline, jank/frame budgets, list virtualization, image loading, memory pressure, battery, app size, ANR avoidance, MetricKit/Android vitals |
 | [rules/06-release-and-operations.md](rules/06-release-and-operations.md) | Store submission requirements, phased rollouts, feature flags/kill switches, forced updates, crash reporting, OTA updates policy, API versioning for old clients, testing strategy |
-| [rules/07-swift-in-apps.md](rules/07-swift-in-apps.md) | Swift in an iOS/macOS app: main-actor isolation for UI modules, SwiftUI task lifetimes, UI leaks, suites that stay on XCTest. **The language itself — concurrency, errors, ARC, unsafe code, SwiftPM — is `sota-swift`** |
+| [rules/07-swift-in-apps.md](rules/07-swift-in-apps.md) | Swift in an iOS/macOS app: main-actor isolation for UI modules, SwiftUI task lifetimes, UI leaks, suites that stay on XCTest. **The language itself — concurrency, errors, ARC, unsafe code, SwiftPM — is [`sota-swift`](../sota-swift/SKILL.md)** |
 
 ## Top 10 non-negotiables
 

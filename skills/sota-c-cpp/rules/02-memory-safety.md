@@ -5,7 +5,7 @@ the end of a buffer, or aliasing storage you no longer own. ~70% of CVEs in
 large C/C++ codebases are memory-safety bugs (per Microsoft and Chromium
 telemetry; see [Chromium memory-safety](https://www.chromium.org/Home/chromium-security/memory-safety/)).
 These are the highest-severity findings in any C/C++ audit: presume
-exploitable. The defense is ownership discipline (`rules/01`) plus the tools
+exploitable. The defense is ownership discipline ([`rules/01`](01-idioms.md)) plus the tools
 below.
 
 ## 1. The bug classes
@@ -20,7 +20,7 @@ below.
 - **Dangling reference/view** — `T&`, `string_view`, `span`, iterator, or
   pointer outliving its storage.
 - **Uninitialized read** — using memory before it holds a value (also UB,
-  `rules/03`).
+  [`rules/03`](03-undefined-behavior.md)).
 - **Memory leak** — lost ownership; rarely exploitable but a reliability/DoS
   issue.
 
@@ -34,7 +34,7 @@ below.
   attacker-controlled `n` without validating `n` against the real length.
 - In C, always pass length alongside the pointer and check it; prefer
   `snprintf`/`memcpy_s`-style bounded ops. `-D_FORTIFY_SOURCE=3` adds runtime
-  bounds checks to many libc calls (`rules/04`).
+  bounds checks to many libc calls ([`rules/04`](04-security.md)).
 - **`strncpy` is not a safe `strcpy`.** When the source is at least as long as the size it is
   given, it writes no terminating NUL, and the next string read runs off the buffer. Measured
   with glibc 2.43: after `strncpy(d, "ABCDEFGHIJ", sizeof d)` into an 8-byte `d`, `strlen(d)`
@@ -47,7 +47,7 @@ below.
   instead of corrupting: libstdc++ `-D_GLIBCXX_ASSERTIONS`, libc++
   `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST` (LLVM 18+ — verify for your
   toolchain). libc++ documents FAST, or EXTENSIVE for a broader set, as the production
-  modes and DEBUG for test and CI only (`rules/04` §5).
+  modes and DEBUG for test and CI only ([`rules/04`](04-security.md) §5).
 - **Clang Safe Buffers for new or migrating C++.** `-Wunsafe-buffer-usage` warns on raw-pointer
   indexing, pointer arithmetic and bounds-unsafe calls such as `std::memcpy`; Clang's Safe
   Buffers docs pair it with libc++ hardening and `std::span`/containers as the adoption path.
@@ -70,7 +70,7 @@ void parse(std::span<const uint8_t> buf) {
 
 ## 3. Lifetimes: own clearly, observe carefully
 
-- Single owner via `unique_ptr`/container (`rules/01`). The owner's destructor
+- Single owner via `unique_ptr`/container ([`rules/01`](01-idioms.md)). The owner's destructor
   is the one free; observers never free.
 - **Never return a pointer/reference/view to a local or temporary** (CG F.43):
 
@@ -106,7 +106,7 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
 | **ASan** | `-fsanitize=address` | heap/stack/global overflow, UAF, double-free, leaks | ~2x slowdown; not with Valgrind; the workhorse |
 | **UBSan** | `-fsanitize=undefined` | overflow, misalignment, null deref, bad casts, OOB (some) | pair with `-fno-sanitize-recover=all` to abort |
 | **MSan** | `-fsanitize=memory` | uninitialized reads | Clang only; needs instrumented libs |
-| **TSan** | `-fsanitize=thread` | data races, lock-order issues | `rules/05`; mutually exclusive with ASan |
+| **TSan** | `-fsanitize=thread` | data races, lock-order issues | [`rules/05`](05-concurrency.md); mutually exclusive with ASan |
 
 - ASan and TSan can't run together — use two jobs. MSan needs an instrumented
   libc++ to avoid false positives.
@@ -131,7 +131,7 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
 
 ## Audit checklist
 
-- [ ] **Banned/dangerous buffer ops — HIGH/CRITICAL (also rules/04)** —
+- [ ] **Banned/dangerous buffer ops — HIGH/CRITICAL (also [rules/04](04-security.md))** —
       `grep -rnE '\b(strcpy|strcat|sprintf|gets|stpcpy|vsprintf)\b' --include='*.c' --include='*.cpp' .`
       ; `grep -rnE '\b(memcpy|memmove|memset|strncpy)\b' --include='*.c' --include='*.cpp' .`
       (verify size provenance)

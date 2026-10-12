@@ -3,7 +3,7 @@
 Scope: type-specific rules for database credentials, API keys, signing keys, TLS private keys,
 SSH keys, JWT signing secrets (with `kid` rotation), encryption keys vs KMS envelope
 encryption, and `.env` file discipline. Read the matching section before implementing or
-auditing a specific credential class. General lifecycle rules (rules/01) still apply.
+auditing a specific credential class. General lifecycle rules ([rules/01](01-lifecycle-and-workload-identity.md)) still apply.
 
 ## 1. Database credentials
 
@@ -25,7 +25,7 @@ Rules:
 - **App users are least-privilege** (schema/table grants, no `SUPERUSER`/`GRANT OPTION`/DDL for
   runtime users; migrations run as a separate, more-privileged, more-protected user).
 - **Connection strings:** assemble from parts at runtime; never log the assembled DSN
-  (rules/03 §2); never commit one with userinfo (`postgres://app:pw@…` in code/compose is
+  ([rules/03](03-application-patterns.md) §2); never commit one with userinfo (`postgres://app:pw@…` in code/compose is
   Critical with real values).
 - Require TLS to the DB (`sslmode=verify-full`) — a rotated password helps little if creds
   cross the wire in clear inside a "trusted" network.
@@ -42,11 +42,11 @@ ALTER ROLE app_a WITH PASSWORD :'new_pw' VALID UNTIL 'infinity';
 
 Usually irreplaceable by federation — manage the static secret well:
 
-- **Store in the secret manager**, runtime-injected, cached with TTL (rules/03 §4).
+- **Store in the secret manager**, runtime-injected, cached with TTL ([rules/03](03-application-patterns.md) §4).
 - **Scope at the vendor:** Stripe restricted keys per function, Google API key
   IP/referrer/API restrictions, GitHub fine-grained PATs, read-only variants wherever offered.
   One key per consuming service per environment — never share the org-wide key across services
-  (rules/03 §7).
+  ([rules/03](03-application-patterns.md) §7).
 - **Test/live separation:** `sk_test_` in non-prod, `sk_live_` only in prod paths; CI uses test
   keys exclusively. A live-mode key in CI variables for "integration tests" is a High finding.
 - **Rotation ≤90 days** using the vendor's dual-key/overlap mechanism if present; if the vendor
@@ -129,7 +129,7 @@ Usually irreplaceable by federation — manage the static secret well:
   than the issuer verifies tokens: with HS256 every verifier holds the *signing* secret and can
   mint tokens; with asymmetric, verifiers hold only public keys. HS256 is acceptable only
   issuer-verifies-own-tokens (e.g., session tokens in a monolith) — and then the secret is
-  ≥256-bit CSPRNG (rules/01 §1), not a passphrase.
+  ≥256-bit CSPRNG ([rules/01](01-lifecycle-and-workload-identity.md) §1), not a passphrase.
 - **Pin the algorithm at verification.** Accept exactly the expected `alg`; never `alg: none`;
   never let an attacker downgrade RS256→HS256 (verifier treating the public key as an HMAC
   secret — the classic confusion attack). Library config: explicit `algorithms=["ES256"]`. RFC 9864
@@ -168,7 +168,7 @@ High finding — it combines the worst of secrets and crypto). Use envelope encr
 - **Pattern:** KMS holds the root key (non-exportable). Per object/record/tenant, generate a
   **data encryption key (DEK)** via `GenerateDataKey`; encrypt the payload locally with the
   plaintext DEK (AES-256-GCM); store the *encrypted* DEK alongside the ciphertext; zeroize the
-  plaintext DEK (rules/02 §7). Decrypt = ask KMS to unwrap the stored DEK, then decrypt locally.
+  plaintext DEK ([rules/02](02-storage-backends.md) §7). Decrypt = ask KMS to unwrap the stored DEK, then decrypt locally.
 - **Why:** the root key never exists outside the HSM; access is IAM-controlled and audit-logged
   per operation; "rotation" of the root key is a KMS toggle (old versions still unwrap old
   DEKs); revoking an app's decrypt permission instantly bricks its access without touching data.
@@ -195,7 +195,7 @@ High finding — it combines the worst of secrets and crypto). Use envelope encr
   domain (offline/cold, or a second KMS/HSM account or region, protected to the same bar as
   the original), split custody so no single person can restore it alone, and a **restore
   drill** on a schedule — a backup that has never been restored is a hope. Never back up
-  signing or authentication keys (sota-code-security rules/04 on key loss vs escrow).
+  signing or authentication keys ([sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md) on key loss vs escrow).
   OWASP: Secrets Management cheat sheet.
 - AUDIT: literal 32/64-hex-char "ENCRYPTION_KEY" values (High; Critical if committed),
   AES-ECB or static-IV usage near such keys, `Fernet(key)` with a key from code, DEKs stored
@@ -219,7 +219,7 @@ del dek  # drop plaintext DEK immediately; zeroize where the runtime allows
 
 - **Never committed:** `.env`, `.env.local`, `.env.production` etc. in `.gitignore` from repo
   creation; a tracked `.env` with real values is High (Critical if prod). Check history, not
-  just HEAD (rules/04 §4).
+  just HEAD ([rules/04](04-detection-and-remediation.md) §4).
 - **`.env.example` is committed** and lists every variable with empty or obviously-fake values
   (`STRIPE_KEY=sk_test_REPLACE_ME`) — it is documentation. Realistic-looking values in the
   example file mask scanner findings (Low) and get copy-pasted into real use.
@@ -230,7 +230,7 @@ del dek  # drop plaintext DEK immediately; zeroize where the runtime allows
 - **Git-ignored is not assistant-invisible.** An AI coding assistant with workspace access
   reads the working tree, not the index: a `.env` or key file that `.gitignore` keeps out of
   commits is still in its reach, and whatever it reads can be sent to the model provider and
-  kept in a session transcript (rules/04 §7). Hold even dev credentials outside the tree — a
+  kept in a session transcript ([rules/04](04-detection-and-remediation.md) §7). Hold even dev credentials outside the tree — a
   vault/keychain, or injected at launch (`op run`, `aws-vault exec`) — and treat the tool's
   exclusion list as a filter, not a boundary: Claude Code's documented `Read(./.env)` deny
   covers its file tools and the shell reads it recognises (`cat`, `head`), but not a script
@@ -239,7 +239,7 @@ del dek  # drop plaintext DEK immediately; zeroize where the runtime allows
   shell — the open file and terminal output are context too. Audit: an ignored secret file in
   the tree of a repo where assistants are used = **Medium** if it holds shared or prod
   credentials, **Low** for dev-only test values. OWASP: Secure Coding with AI cheat sheet.
-- **Production:** the platform injects env/files from the secret manager (rules/02 §6);
+- **Production:** the platform injects env/files from the secret manager ([rules/02](02-storage-backends.md) §6);
   a `.env` file on a prod host or COPY'd into an image (grep Dockerfiles for `COPY .env`,
   and check `.dockerignore` excludes `.env*`) is a High finding.
 - **Permissions `0600`**; don't `source .env` in shells with `set -x` or in CI steps with
@@ -275,7 +275,7 @@ commit and the token rides the secret layer; a literal token in any rc file in V
 Registry publish tokens are no longer ordinary long-lived secrets: after the Shai-Hulud worm,
 npm permanently revoked all classic tokens (Dec 2025, creation disabled) and caps granular
 write tokens at 90 days — publish from CI via trusted publishing (per-job OIDC, no stored
-token; rules/01 §4) and treat any residual registry token as a ≤90d rotating secret.
+token; [rules/01](01-lifecycle-and-workload-identity.md) §4) and treat any residual registry token as a ≤90d rotating secret.
 
 ## Audit checklist
 

@@ -3,7 +3,7 @@
 .NET project safety lives in the build: nullable + analyzers as errors, NuGet
 locking and CVE scanning, and consistent CI gates. This file owns build/test
 *mechanics*; test **strategy** (suite shape, doubles, coverage philosophy)
-lives in `sota-testing`.
+lives in [`sota-testing`](../../sota-testing/SKILL.md).
 
 ## 1. Targeting & project hygiene
 
@@ -44,7 +44,7 @@ lives in `sota-testing`.
   violations raised nothing: `CA2100` fired on a `DbCommand` that is executed but not on a bare
   `IDbCommand.CommandText` assignment, and `CA3075` fired on none of three DTD-enabled XML
   readers in a `net10.0` project (not investigated further). Keep the grep checklists
-  (`rules/04`) as the second instrument.
+  ([`rules/04`](04-security.md)) as the second instrument.
 - **`dotnet format --verify-no-changes`** in CI so style/whitespace never enters
   review. EditorConfig holds the rules.
 - Consider a SAST (the security CA rules, or a dedicated scanner) for deeper
@@ -88,7 +88,7 @@ lives in `sota-testing`.
   for anything from outside. **Npgsql** `SslMode` defaults to `Prefer`, which falls back
   to plaintext when the server declines TLS, and `Prefer`/`Require` accept any server
   certificate — use `SSL Mode=VerifyFull` (or `VerifyCA`). BCL defaults of the same kind
-  (Regex with no match timeout, `HttpClient` following redirects) are in `rules/04` §3.
+  (Regex with no match timeout, `HttpClient` following redirects) are in [`rules/04`](04-security.md) §3.
 - **A README or quickstart snippet is a demo, not a configuration.** Copying it copies
   its dev-only settings: `TrustServerCertificate=True` on a `Microsoft.Data.SqlClient`
   string switches off the certificate check its defaults perform (`Encrypt` is
@@ -118,8 +118,8 @@ lives in `sota-testing`.
   NuGet on Linux read the file and enforced the setting under each of `nuget.config`,
   `NuGet.Config`, `NuGet.config`, `Nuget.Config` and `NUGET.CONFIG` (measured), so match the name
   case-insensitively when you search for it. Generate an **SBOM** for releases. See
-  `sota-devsecops`.
-- **Runtime and framework patch level is an audit surface** (`rules/04` §4 points here). The memory-safe runtime's residual risk includes
+  [`sota-devsecops`](../../sota-devsecops/SKILL.md).
+- **Runtime and framework patch level is an audit surface** ([`rules/04`](04-security.md) §4 points here). The memory-safe runtime's residual risk includes
   framework CVEs, e.g. CVE-2025-55315 (Kestrel HTTP request smuggling, fixed in 8.0.21/9.0.10/10.0 RC2)
   and CVE-2026-45591 (SignalR/Blazor Server MessagePack nested-array DoS, fixed in 8.0.28/9.0.17/10.0.9,
   June 2026). CVE-2025-55315 also covers the `Microsoft.AspNetCore.Server.Kestrel.Core` **package**
@@ -172,7 +172,7 @@ lives in `sota-testing`.
   `dotnet format --verify-no-changes`, `--locked-mode` restore, and the
   NuGetAudit gate (NU190x as errors). Fail on any.
 - **Testcontainers for .NET** for real-dependency integration tests (DB/broker) —
-  wire them here; *strategy* is `sota-testing`. Run with fixed culture/timezone
+  wire them here; *strategy* is [`sota-testing`](../../sota-testing/SKILL.md). Run with fixed culture/timezone
   for determinism (`InvariantGlobalization` where applicable).
 - **Fuzz and property-test the parsers.** SharpFuzz instruments .NET assemblies for AFL and
   libFuzzer; FsCheck and CsCheck are maintained property-testing libraries. Microsoft OneFuzz

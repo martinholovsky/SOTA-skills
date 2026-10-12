@@ -5,7 +5,7 @@ name the file to open without loading a `SKILL.md` first.
 
 **This lived in the router until it was offloaded.** It is pure lookup — every entry is a
 condensed second copy of the index inside that skill's own `SKILL.md`, which the BUILD
-workflow (`rules/02` step 2) tells you to read anyway. Keeping it in the router charged
+workflow ([`rules/02`](02-build-workflow.md) step 2) tells you to read anyway. Keeping it in the router charged
 its tokens to *every* session that loaded the router, including the ones that never
 consult it. The router's length was measured as **not** costing routing accuracy (flat at
 2.6x the length, `evals/results/2026-08-26/ROUTER-LENGTH.md`), so this is a
@@ -17,7 +17,7 @@ map deliberately drops.
 
 **Both directions are gated.** Invariant 7 requires every skill to appear here; invariant
 15 requires every `rules/NN` file that exists to be listed, and every listed file to
-exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 existed.
+exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-path-diagnostics.md) sat unlisted for two releases before 15 existed.
 
 ## Library map (rules files per skill)
 
@@ -109,7 +109,7 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   (OT/ICS)
 - **sota-mobile/rules**: 01 platform & stack, 02 architecture & state, 03 offline/background/push,
   04 security, 05 performance, 06 release & operations, 07 Swift in apps (UI isolation, SwiftUI
-  task lifetimes, XCTest-only suites; the language itself is `sota-swift`)
+  task lifetimes, XCTest-only suites; the language itself is [`sota-swift`](../../sota-swift/SKILL.md))
 - **sota-cli-ux/rules**: 01 commands/flags/config, 02 output & interaction, 03 behavior &
   lifecycle, 04 distribution & docs
 - **sota-shell-scripting/rules**: 01 safety baseline (shebang, `set -e`, quoting, zsh deviations),

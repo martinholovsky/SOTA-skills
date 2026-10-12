@@ -28,7 +28,7 @@ credentials vault:
 - State backups inherit the classification: bucket replication targets and DynamoDB/lock
   tables are in scope for the audit.
 - Never `terraform.tfstate*`, `*.tfvars` with secrets, or crash logs in git —
-  `.gitignore` them and secret-scan for them (rules/05 §5.2).
+  `.gitignore` them and secret-scan for them ([rules/05](05-analysis-gates.md) §5.2).
 
 ```hcl
 # GOOD — backend with encryption, locking, versioning assumed on the bucket
@@ -62,14 +62,14 @@ The change-control core: **what was reviewed is exactly what gets applied.**
 - **PR opens → `terraform plan` runs with read-only credentials** (a plan needs read; a
   planner role with write defeats the separation — and plan output lands in PR comments,
   so the plan job itself must be treated as untrusted-adjacent: no fork PR planning with
-  real creds, rules/01 §1.4).
+  real creds, [rules/01](01-pipeline-security.md) §1.4).
 - **Plan artifact is saved (`-out=plan.bin`) and the apply consumes that exact file.**
   Re-planning at apply time ("plan for review, fresh plan on merge") is TOCTOU: what
   applies may differ from what was approved. Store `plan.bin` as a build artifact keyed to
   the commit; apply job downloads and `terraform apply plan.bin`.
 - **Apply runs only**: after merge to the protected branch, in a protected environment
-  with required reviewers (rules/01 §1.7), under a separate OIDC role that has write
-  (rules/01 §1.2). Two roles minimum per workspace: `tf-plan-ro`, `tf-apply`.
+  with required reviewers ([rules/01](01-pipeline-security.md) §1.7), under a separate OIDC role that has write
+  ([rules/01](01-pipeline-security.md) §1.2). Two roles minimum per workspace: `tf-plan-ro`, `tf-apply`.
 - Plan output in the PR (atlantis/tf-comment style) is the review surface — reviewers
   approve the *plan*, not the HCL diff alone. Train for the dangerous lines: `forces
   replacement`, `destroy`, IAM/security-group changes.
@@ -113,7 +113,7 @@ changes that your next apply will either revert (outage) or silently absorb.
 - Drift response is binary: import/codify the change (it was a legitimate emergency fix)
   or revert it (it wasn't). Both end with main == reality.
 - Reduce drift at the source: read-only consoles for humans in prod accounts (break-glass
-  excepted, rules/07 §7.5); SCPs/IAM denying out-of-band mutation of TF-managed resource
+  excepted, [rules/07](07-runtime-ops.md) §7.5); SCPs/IAM denying out-of-band mutation of TF-managed resource
   classes where practical.
 - GitOps equivalents: Argo CD `selfHeal: true` auto-reverts live drift; Flux reconciles
   continuously. Self-heal is drift *prevention*; still alert on the correction events —
@@ -125,7 +125,7 @@ Pull-based GitOps inverts the trust: CI never holds cluster credentials (huge wi
 compromised pipeline can't `kubectl` into prod), but **the config repo and the controller
 become the deployment authority**:
 
-- **The config repo is prod**: full rules/01 §1.7 protection (reviews, required checks,
+- **The config repo is prod**: full [rules/01](01-pipeline-security.md) §1.7 protection (reviews, required checks,
   no direct push, CODEOWNERS per environment path), because merging to `envs/prod/` IS
   deploying. Most orgs protect the app repo and leave the manifests repo wide open —
   standing High finding.
@@ -154,13 +154,13 @@ become the deployment authority**:
   Operator / CSI secrets-store referencing a real secret manager (rotation, audit, nothing
   secret in git) > SOPS+KMS (encrypted-in-git, key via cloud KMS) > Sealed Secrets
   (cluster-key dependency complicates DR). Plaintext k8s `Secret` manifests in a repo =
-  Critical-adjacent High, rotation required (rules/05 §5.2).
+  Critical-adjacent High, rotation required ([rules/05](05-analysis-gates.md) §5.2).
 - **Image automation** (Flux image-update / Argo Image Updater) re-introduces the supply
   chain into git: constrain it to digest updates matching signed images (admission still
-  verifies, rules/07 §7.1), and its write token is scoped to the one file path it bumps.
+  verifies, [rules/07](07-runtime-ops.md) §7.1), and its write token is scoped to the one file path it bumps.
 - Manifest provenance: pin remote Helm charts by version + verify chart signatures/
   digests (OCI charts by digest); a `targetRevision: HEAD` on a third-party repo is
-  rules/03 unpinned-dependency, cluster edition.
+  [rules/03](03-dependencies.md) unpinned-dependency, cluster edition.
 
 ```yaml
 # GOOD — Argo CD AppProject as a hard boundary per team
@@ -185,7 +185,7 @@ potential cluster-admin (High).
 ### 6.4.1 IaC dependencies: providers, modules and charts
 
 Terraform providers, modules and Helm charts run with your cloud or cluster credentials, so
-they get the lockfile, pinning, scanning and update discipline of rules/03.
+they get the lockfile, pinning, scanning and update discipline of [rules/03](03-dependencies.md).
 
 - **Commit `.terraform.lock.hcl`.** HashiCorp's docs say to keep it in version control. It
   records **providers only**: "Terraform does not remember version selections for remote
@@ -199,12 +199,12 @@ they get the lockfile, pinning, scanning and update discipline of rules/03.
   dependency update` writes.
 - **Scan what the modules contain, not only your HCL.** IaC scanners can follow module
   sources: in a local test, `trivy config` (0.72.0) downloaded a registry module and
-  reported findings inside it. Review module and chart diffs on upgrade (rules/15 §15.3).
+  reported findings inside it. Review module and chart diffs on upgrade ([rules/15](15-dependency-adoption.md) §15.3).
 - **Automate updates.** Renovate's `terraform` manager bumps module and provider versions
   and supports `lockFileMaintenance` for `.terraform.lock.hcl`; its `helmv3`, `helm-values`,
   `helmfile`, `argocd` and `flux` managers cover charts and GitOps manifests. Dependabot has
   `terraform`, `opentofu` and `helm` ecosystems. Apply the cooldown and review rules of
-  rules/03 §3.7. (OWASP: DSOMM; Infrastructure as Code Security cheat sheet)
+  [rules/03](03-dependencies.md) §3.7. (OWASP: DSOMM; Infrastructure as Code Security cheat sheet)
 
 ## 6.5 Progressive delivery & rollback readiness
 
@@ -230,7 +230,7 @@ blast-radius limitation for compromised code.
   expiry; stale flags are dead branches in prod with untested OFF paths. Flag service
   access is a prod control plane — RBAC + audit its changes.
 - **Rollback readiness, tested**:
-  - Previous artifact digest is retained and deployable (rules/04 §4.5 retention) and the
+  - Previous artifact digest is retained and deployable ([rules/04](04-build-containers.md) §4.5 retention) and the
     rollback is a pipeline action (re-point to previous digest / `git revert` the GitOps
     commit), not an SSH session. Roll back to a *known artifact*, don't rebuild old source.
   - **DB migrations are expand/contract**: every migration is backward-compatible one
@@ -280,7 +280,7 @@ schema?" If no, rollback is fiction for that release window.
 
 - **The artifact that ran in staging is byte-identical (same digest) to what reaches
   prod.** Rebuilding "the same tag" for prod invalidates every test and every attestation
-  (rules/02). Promotion = copying/approving a digest, never recompiling.
+  ([rules/02](02-provenance-signing.md)). Promotion = copying/approving a digest, never recompiling.
 - Configuration differences between environments are **declared and diffable**: kustomize
   overlays / Helm env values / TF workspace tfvars in git — not hand-set env vars or
   console toggles. The prod-vs-staging delta should be reviewable in one screen; an
@@ -289,7 +289,7 @@ schema?" If no, rollback is fiction for that release window.
   approvals/gates differ. A bespoke prod-only deploy script is untested by definition.
 - Ephemeral preview environments (per-PR) are great — but they multiply credentials and
   DNS: previews get isolated, low-privilege, auto-expiring infra, never shared prod
-  data or prod-scoped roles (and watch rules/01 §1.2 OIDC sub-claims: PR-triggered envs
+  data or prod-scoped roles (and watch [rules/01](01-pipeline-security.md) §1.2 OIDC sub-claims: PR-triggered envs
   must not be able to assume prod roles).
 - Data parity without data leakage: staging uses masked/synthetic data. A prod-data dump
   in staging makes staging a prod-tier system with non-prod controls (High).
@@ -303,7 +303,7 @@ target the resource are gone**. Look them up in the zones you own (the IaC state
 provider's record list), delete them in the same change, then query public DNS to confirm.
 A CNAME whose target returns NXDOMAIN is one tell, but a target that still resolves can be
 claimable too, so the gate checks that the record is absent rather than that its target
-looks dead. Zone-wide scanning for danglers is `sota-cloud-infrastructure` rules/03.
+looks dead. Zone-wide scanning for danglers is [`sota-cloud-infrastructure` rules/03](../../sota-cloud-infrastructure/rules/03-networking.md).
 (OWASP: Subdomain Takeover Prevention cheat sheet)
 
 ## Audit checklist

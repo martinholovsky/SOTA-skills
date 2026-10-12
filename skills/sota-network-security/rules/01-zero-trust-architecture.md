@@ -3,7 +3,7 @@
 Scope: the model that frames every other rule — never trust, always verify; policy decision/
 enforcement points; identity-aware access over network-location trust; microsegmentation as
 strategy; ZTNA vs traditional VPN; de-perimeterization; the identity-aware (BeyondCorp-style) proxy.
-This file is the *why*; rules/02–06 are the *how*.
+This file is the *why*; [rules/02](02-segmentation-blast-radius.md)–06 are the *how*.
 
 Anchors (verified 2026-07-09): **NIST SP 800-207** "Zero Trust Architecture" (Aug 2020) is the
 definitive reference; **NIST SP 1800-35** "Implementing a Zero Trust Architecture" (final, Jun 2025)
@@ -26,7 +26,7 @@ Practical consequences that recur as findings:
   location. Any workload that lands in that range inherits the trust — this is how one popped pod
   reaches a DB.
 - "It's internal" is not a reason to skip TLS or authz. East-west traffic gets the same scrutiny as
-  north-south (see rules/04 for the plaintext-internal-traffic failure).
+  north-south (see [rules/04](04-service-mesh-mtls.md) for the plaintext-internal-traffic failure).
 
 ## 2. PDP / PEP: the decision and enforcement split
 
@@ -43,7 +43,7 @@ this so gaps are visible:
 | User → app | IdP + access proxy policy engine (identity-access owns the IdP) | Identity-aware proxy / ZTNA gateway / mesh ingress gateway |
 | Workload → workload | Mesh control plane authz policy (SPIFFE identity) | Mesh sidecar / ztunnel; CNI (Cilium) policy enforcement |
 | Pod → pod (L3/4) | NetworkPolicy/CNP objects | CNI datapath (eBPF in Cilium) |
-| Host → host | Firewall/SG policy | nftables / cloud SG (sota-cloud-infrastructure setup) |
+| Host → host | Firewall/SG policy | nftables / cloud SG ([sota-cloud-infrastructure](../../sota-cloud-infrastructure/SKILL.md) setup) |
 
 A resource with no PEP in front of it is implicitly "trust everyone who can route to it" — find it.
 
@@ -56,7 +56,7 @@ a weaker control than the model promises.
 
 **R4 — Authenticate the *who*, not the *where*.** For users: per-request identity from an IdP
 (OIDC/SAML), ideally + device trust. For workloads: cryptographic workload identity (SPIFFE SVID,
-mesh cert, cloud workload identity) — see sota-identity-access for issuance, rules/04 for mesh
+mesh cert, cloud workload identity) — see [sota-identity-access](../../sota-identity-access/SKILL.md) for issuance, [rules/04](04-service-mesh-mtls.md) for mesh
 consumption. The network policy then references *identity* (label/SA/SPIFFE ID), not a CIDR that any
 new workload could land inside.
 
@@ -75,8 +75,8 @@ new workload could land inside.
 **R5 — There is no single hard shell; there are many small ones.** Stop investing in a thicker
 perimeter and a soft interior. Push enforcement *to the workload*: every service is its own
 perimeter (its PEP), every namespace its own segment. The firewall at the edge still matters (DDoS,
-coarse filtering — rules/05), but it is one layer, not *the* control. This is why microsegmentation
-(rules/02) and mesh mTLS (rules/04) are zero-trust load-bearing, not nice-to-haves.
+coarse filtering — [rules/05](05-edge-ingress-egress.md)), but it is one layer, not *the* control. This is why microsegmentation
+([rules/02](02-segmentation-blast-radius.md)) and mesh mTLS ([rules/04](04-service-mesh-mtls.md)) are zero-trust load-bearing, not nice-to-haves.
 
 ## 5. ZTNA vs traditional VPN
 
@@ -94,14 +94,14 @@ overcoat: one stolen credential = lateral movement. ZTNA (BeyondCorp-style) brok
 application individually, checks identity + device posture per request, and never exposes the
 network itself. **WireGuard still has a place** — for site-to-site links, machine-to-machine, or as
 the transport *under* an app-level access decision — but per-user "VPN onto the LAN" is the
-anti-pattern (see rules/02 §5 for the access-method decision).
+anti-pattern (see [rules/02](02-segmentation-blast-radius.md) §5 for the access-method decision).
 
 ## 6. Identity-aware proxy (BeyondCorp pattern)
 
 **R7 — Front internal web apps with an identity-aware proxy, not a network ACL.** The proxy
 (Cloudflare Access, Pomerium, oauth2-proxy + ingress, Teleport, cloud IAP) authenticates the user
 via the IdP, evaluates device/context policy, and only then forwards to the backend — which is *not*
-otherwise reachable. `sota-identity-access` owns the IdP and auth plane; this skill owns
+otherwise reachable. [`sota-identity-access`](../../sota-identity-access/SKILL.md) owns the IdP and auth plane; this skill owns
 making the backend unreachable except through the PEP.
 
 The recurring failure: app reachable both via the IAP *and* directly on its cluster IP / a `world`
@@ -120,7 +120,7 @@ per-pillar maturity placement with the next concrete step, not a binary.
 
 **R8.1 — Close the loop: telemetry refines policy.** Every pillar's policy is a guess until checked
 against what actually happens. On a schedule, compare what policy *allows* with what is
-*observed* — flows (rules/03 R9.1 for Cilium/Hubble), app access logs from the identity-aware
+*observed* — flows ([rules/03](03-k8s-network-policy.md) R9.1 for Cilium/Hubble), app access logs from the identity-aware
 proxy, role and entitlement use — and remove allows nobody used over a full business cycle;
 investigate observed traffic that only succeeded through a broad rule. A policy that only ever
 grows drifts back to a flat network. OWASP: Zero Trust Architecture cheat sheet.
@@ -133,7 +133,7 @@ the second half of "who is asking".
 - **Inventory first:** users, devices, applications and the flows between them, including shadow
   IT found from proxy, DNS and SaaS logs — a device not in the inventory cannot be granted
   anything but the unmanaged path below.
-- **One certificate identity per managed device**, issued from the internal PKI (rules/06 §4)
+- **One certificate identity per managed device**, issued from the internal PKI ([rules/06](06-dns-tls-pki.md) §4)
   with the key kept in hardware where the platform offers it (TPM, secure enclave), and presented
   to the access proxy (mTLS or the ZTNA agent). A shared or exportable device credential proves
   nothing about the device.
@@ -145,7 +145,7 @@ the second half of "who is asking".
   route with a weaker check.
 - **Endpoint baseline:** anti-malware/EDR with behaviour monitoring, full-disk encryption, and
   remote wipe for lost or stolen devices. Device management policy itself belongs to
-  sota-identity-access; this rule is what the network PEP consumes.
+  [sota-identity-access](../../sota-identity-access/SKILL.md); this rule is what the network PEP consumes.
 OWASP: Zero Trust Architecture cheat sheet.
 
 ## Audit checklist

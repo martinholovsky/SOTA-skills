@@ -23,7 +23,7 @@ network/file/DB/config as untrusted. Reference:
   `LosFormatter`, `ObjectStateFormatter`) — CRITICAL on sight.
 - **Web Forms ViewState is `ObjectStateFormatter` output, so its key is the only thing between
   a client and that deserializer** (.NET Framework `System.Web`; ASP.NET Core has no ViewState).
-  The class is `sota-code-security` rules/01 §8. Three findings. `EnableViewStateMac="false"` is
+  The class is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §8. Three findings. `EnableViewStateMac="false"` is
   intent to ship unsigned state: Microsoft's "Farewell, EnableViewStateMac!" post says 4.5.2+
   refuses it and that without the MAC an attacker may run code on the server. Remove it.
   A fixed `<machineKey validationKey=… decryptionKey=…>` in `web.config` is CRITICAL when the
@@ -60,7 +60,7 @@ network/file/DB/config as untrusted. Reference:
   .NET 10+ use the `JsonSerializerOptions.Strict` preset (`UnmappedMemberHandling.Disallow`,
   `AllowDuplicateProperties = false`, `RespectNullableAnnotations`, `RespectRequiredConstructorParameters`,
   case-sensitive; ".NET 10 libraries" what's-new), or set those properties on the options you own
-  (`ConfigureHttpJsonOptions`/`AddJsonOptions`). Duplicate keys: `sota-code-security` rules/01 §11.
+  (`ConfigureHttpJsonOptions`/`AddJsonOptions`). Duplicate keys: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11.
 - **When Json.NET type names cannot be removed, the binder is the control.** Set
   `JsonSerializerSettings.SerializationBinder` to your own `ISerializationBinder`. Its
   `BindToType(assemblyName, typeName)` returns the type only on an exact match against a fixed
@@ -150,7 +150,7 @@ network/file/DB/config as untrusted. Reference:
   and created a file on disk. The runtime has no in-process boundary to fall back on: .NET 6+
   has no CAS or extra AppDomains, and Microsoft says CAS *"is no longer treated as a security
   boundary"*. It points you to OS boundaries (process, container, user account) instead
-  (`sota-sandboxing`). The safe shape is a `Dictionary<string, Func<…>>` dispatch table, or an
+  ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)). The safe shape is a `Dictionary<string, Func<…>>` dispatch table, or an
   allowlist that maps names to `typeof(...)`, so input picks from a fixed set and is never
   compiled. For user formulas, use an expression library with a fixed grammar and no member
   access. Dynamic LINQ before 1.6.0 exposed reflection and static members (CVE-2024-51417). On
@@ -162,7 +162,7 @@ network/file/DB/config as untrusted. Reference:
   Framework (Microsoft API docs). Keep secrets out of `ISerializable.GetObjectData`: what it
   adds leaves with the payload. *(OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.)*
 - **SSRF: an outbound request to a destination the caller picks.** The policy is
-  `sota-code-security` rules/01 §5. This bullet covers how to apply it in .NET. Best: take a key
+  [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §5. This bullet covers how to apply it in .NET. Best: take a key
   or ID from the caller, look up the base `Uri` in your own allowlist, and build the request
   yourself. Passing a caller's URL to `HttpClient.GetAsync`, `new HttpRequestMessage` or
   `WebRequest.Create` is the finding. When the destination really must be open:
@@ -212,24 +212,24 @@ network/file/DB/config as untrusted. Reference:
   (`[ValidateAntiForgeryToken]` / the antiforgery middleware). **CORS** locked
   to specific origins — never `AllowAnyOrigin()` with credentials.
 - **Passkeys**: ASP.NET Core Identity has built-in passkey (WebAuthn) support in .NET 10+ — prefer
-  them for new interactive logins (depth: `sota-code-security`, `sota-identity-access`).
+  them for new interactive logins (depth: [`sota-code-security`](../../sota-code-security/SKILL.md), [`sota-identity-access`](../../sota-identity-access/SKILL.md)).
 - Validate/bind model input (data annotations / explicit validation); don't
   over-post (use DTOs/`[Bind]` allowlists, not the EF entity directly). Set
   security headers/HSTS; don't leak stack traces in production responses.
 - **Secrets**: never in source/`appsettings.json` committed to git — use user secrets (dev), env, or
-  a vault (`sota-secrets-management`); don't log them. Two .NET-specific ways they reach a log
+  a vault ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)); don't log them. Two .NET-specific ways they reach a log
   anyway. A `record`'s compiler-generated `ToString` *"displays the names and values of public
   properties and fields"*: measured on the .NET 10 SDK image, `record Creds(string User, string
   Password)` printed `Creds { User = bob, Password = hunter2 }`. Override `PrintMembers` on any
   record that carries a credential. And EF Core's `EnableSensitiveDataLogging()` puts *"parameter
   values for commands being sent to the database"* and entity property values into logs and
   exception messages. Keep it out of every non-development configuration. Logger-level redaction is
-  `sota-observability` rules/01 §4. A desktop or Windows client keeps local secrets in
+  [`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §4. A desktop or Windows client keeps local secrets in
   `ProtectedData.Protect(..., DataProtectionScope.CurrentUser)` (DPAPI) or the OS credential store,
   never a plain file or registry value. Windows-only: Linux threw `PlatformNotSupportedException`
   (measured). *(OWASP: .NET Security cheat sheet.)*
 - **Runtime patch level is an audit surface** — framework CVEs such as CVE-2025-55315 (Kestrel
-  request smuggling) and how to check them: `rules/06` §3.
+  request smuggling) and how to check them: [`rules/06`](06-build-tooling-ci.md) §3.
 
 ## 5. Cryptography & transport
 
@@ -278,12 +278,12 @@ P/Invoke (`[LibraryImport]`, .NET 7+). `[DllImport]` and `Marshal.*` on raw poin
 the same boundary. **That one property in a `.csproj` is the signal**: without it a project
 has no unsafe code to audit, and with it every `unsafe` block and native signature is audited
 with the C rules (buffer lengths, lifetimes, `SetLastError`, string marshalling). The class
-is `sota-code-security` rules/06 §3.
+is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
 
 ## 7. ASP.NET Core defaults that fail open
 
 Each of these compiles, runs and passes a happy-path test. The class is owned elsewhere
-(`sota-code-security` rules/05 for cookies, redirects, XSS and CSRF; rules/02 for JWT); this
+([`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md) for cookies, redirects, XSS and CSRF; [rules/02](../../sota-code-security/rules/02-authentication.md) for JWT); this
 section is the .NET spelling an auditor has to grep for.
 
 - **Cookies carry no attributes unless you set them.** `Response.Cookies.Append(key, value)`
@@ -301,7 +301,7 @@ section is the .NET spelling an auditor has to grep for.
   subdomain set or overwrite it. ASP.NET Core does not check the prefix. On .NET 10 it emitted
   `__Host-b=v; domain=example.com; path=/; secure` and `__Host-c=v; path=/` with no error
   (measured). The browser then silently drops both cookies, so a broken prefix shows up as a missing
-  cookie, not as an exception. The session/auth cookie is `sota-code-security` rules/17. *(OWASP:
+  cookie, not as an exception. The session/auth cookie is [`sota-code-security` rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md). *(OWASP:
   Session Management and Cookie Theft Mitigation cheat sheets; ASVS 5.0 V3.3.)*
 - **Forwarded headers set `RemoteIpAddress`.** The middleware trusts `X-Forwarded-*` only from a
   peer in `KnownProxies`/`KnownIPNetworks` (default loopback; `KnownNetworks` is obsolete in .NET 10,
@@ -310,7 +310,7 @@ section is the .NET spelling an auditor has to grep for.
   `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true`, which Microsoft warns does not restrict which IPs
   forwarders are accepted from. Any client then picks its own IP, defeating IP rate limits,
   allowlists and the audit log. Forwarding `X-Forwarded-Host`? Set `AllowedHosts` (empty = all).
-  Policy: `sota-network-security` rules/05 R6. *(ASP.NET Core proxy and load balancer docs.)*
+  Policy: [`sota-network-security` rules/05](../../sota-network-security/rules/05-edge-ingress-egress.md) R6. *(ASP.NET Core proxy and load balancer docs.)*
 - **Open redirect.** `Redirect(url)` / `Results.Redirect(url)` follow any absolute URL. For a
   `returnUrl` use `LocalRedirect` (throws on a non-local URL) or check `Url.IsLocalUrl` first
   (ASP.NET Core "Prevent open redirect attacks"). CA3007 is the analyzer's taint version.
@@ -325,7 +325,7 @@ section is the .NET spelling an auditor has to grep for.
   globally: a `[Route]`-only delete action returned **200 to a token-less GET** and 400 to a
   token-less POST, so the CSRF defence was bypassed by changing the verb. Put an explicit
   `[HttpPost]`/`[HttpDelete]` (or `MapPost`/`MapDelete`) on every mutation. CA5395 flags the
-  missing attribute (with security rules enabled, `rules/06` §2) **only in a project where some
+  missing attribute (with security rules enabled, [`rules/06`](06-build-tooling-ci.md) §2) **only in a project where some
   controller carries `[ValidateAntiForgeryToken]`**: measured, the same code with the filter
   registered globally raised neither CA5395 nor CA5391 under `AnalysisModeSecurity=All`, and
   adding one attributed controller made both fire. Do not read the analyzer's silence as a pass.
@@ -397,8 +397,8 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
 - [ ] **Data Protection package patch level — HIGH** (§5) —
       `grep -rn 'Microsoft\.AspNetCore\.DataProtection' --include='*.csproj' --include='packages.lock.json' --include='Directory.Packages.props' .`
       (10.0.0–10.0.6 = CVE-2026-40372, need 10.0.7+; if exposed while vulnerable: key ring revoked
-      and tokens rotated?). Runtime and Kestrel patch levels are in the `rules/06` checklist
-- [ ] **Static security analysis: enable security CA rules + a SAST (rules/06)**
+      and tokens rotated?). Runtime and Kestrel patch levels are in the [`rules/06`](06-build-tooling-ci.md) checklist
+- [ ] **Static security analysis: enable security CA rules + a SAST ([rules/06](06-build-tooling-ci.md))**
 - [ ] **BinaryFormatter re-armed on .NET 9+ — CRITICAL until justified** (§2) — either half of
       the opt-back-in:
       `grep -rnE 'EnableUnsafeBinaryFormatterSerialization|System\.Runtime\.Serialization\.Formatters"' --include='*.csproj' --include='*.props' --include='*.json' --include='*.cs' .`

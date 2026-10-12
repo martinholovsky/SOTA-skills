@@ -202,7 +202,7 @@ between processes (LeftoverLocals, CVE-2023-4969 — AMD, Apple and Imagination 
 affected, Qualcomm unknown, NVIDIA and Intel not, per CERT/CC VU#446598), so reset
 or scrub the device, or
 destroy the VM, before the next tenant's job. Confidential GPU modes are
-`sota-confidential-computing` rules/02. OWASP: AISVS 4.2.4; Secure AI Model Ops
+[`sota-confidential-computing` rules/02](../../sota-confidential-computing/rules/02-tee-technologies.md). OWASP: AISVS 4.2.4; Secure AI Model Ops
 cheat sheet. For agent workloads on K8s, the Kubernetes
 **Agent Sandbox** project (SIG Apps, launched KubeCon NA 2025) wraps this choice
 in a declarative per-sandbox API with gVisor as default and Kata as the
@@ -311,8 +311,8 @@ service. DNS egress should also be policy-constrained (DNS exfil channel); CNIs 
 Cilium can enforce FQDN-level egress (`toFQDNs`) — prefer that for external allowlists.
 
 **Why the in-cluster peer is a selector and not `ipBlock: { cidr: 10.0.5.0/24 }`, which
-this example used until 2026-09-11.** `sota-network-security` requires every allow to
-reference identity and **never a bare CIDR** (its non-negotiable 3, rules/02). Inside the
+this example used until 2026-09-11.** [`sota-network-security`](../../sota-network-security/SKILL.md) requires every allow to
+reference identity and **never a bare CIDR** (its non-negotiable 3, [rules/02](../../sota-network-security/rules/02-segmentation-blast-radius.md)). Inside the
 cluster that rule is satisfiable and a CIDR is strictly worse: pod IPs are ephemeral and
 reused, so the policy grants whatever occupies the range later — the allowlist widens
 without the manifest changing. **Outside the cluster it is not satisfiable**: vanilla
@@ -320,7 +320,7 @@ NetworkPolicy has no identity selector for an external destination, so `ipBlock`
 only expressible form and is a **documented exception, not a default** — name the
 destination and the reason in a comment, keep the prefix as tight as the peer actually
 requires, and prefer a CNI that can express identity there (Cilium `toFQDNs`/`toEntities`)
-over widening the CIDR. The exception is scoped in `sota-network-security` rules/03 §3.
+over widening the CIDR. The exception is scoped in [`sota-network-security` rules/03](../../sota-network-security/rules/03-k8s-network-policy.md) §3.
 
 **R3.5 — Node & scheduling isolation:** untrusted workloads on dedicated node pools
 (taints/tolerations + nodeSelector); no hostPath volumes (writable hostPath ≈ node

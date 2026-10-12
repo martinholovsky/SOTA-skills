@@ -1,7 +1,7 @@
 # 02 — API design: protocols, generics, access control, evolution
 
 How a Swift module or package presents itself to callers. Partly moved from the former
-Swift-language file in `sota-mobile` (2026-10-07). The naming baseline is swift.org's API Design Guidelines:
+Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) (2026-10-07). The naming baseline is swift.org's API Design Guidelines:
 *"Clarity at the point of use"*.
 
 ## 1. Protocols and generics
@@ -10,7 +10,7 @@ Swift-language file in `sota-mobile` (2026-10-07). The naming baseline is swift.
   dependency-injection seam. Do not invent a protocol per type "for testability" when a struct of
   closures or a generic parameter is simpler.
 - **`some` over `any`**: `some P` keeps static dispatch and no boxing; `any P` is an existential
-  box with dynamic dispatch. Use `any` only where heterogeneity is required. (Cost: rules/07.)
+  box with dynamic dispatch. Use `any` only where heterogeneity is required. (Cost: [rules/07](07-performance.md).)
 - Generics constrain with the smallest protocol that works; a public generic signature is API
   and changing its constraints is a breaking change.
 
@@ -32,7 +32,7 @@ Swift-language file in `sota-mobile` (2026-10-07). The naming baseline is swift.
   compiling with a fix-it, then remove in the next major.
 - **Typed throws on public API freezes the error surface**: `public func load() throws(FileError)`
   cannot later throw a network error without a source break. Public APIs use plain `throws`
-  (rules/01 §3).
+  ([rules/01](01-idioms-and-errors.md) §3).
 - **Library evolution** (`-enable-library-evolution`) is only for binary frameworks built and
   shipped separately from their clients — swift.org: *"Library evolution support should only be
   used when a framework is going to be built and updated separately from its clients"*. With it,

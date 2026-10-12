@@ -272,7 +272,7 @@ crypto, payment, tenant-isolation and audit-logging paths are the usual high
 tier. The tier sets review intensity: a second reviewer or a named security
 reviewer, and a fresh look at the relevant threat rows on every change. The
 routing mechanism is CODEOWNERS with required code-owner review
-(`sota-docs-workflow` rules/03 §3). This section decides *which* paths deserve
+([`sota-docs-workflow` rules/03](../../sota-docs-workflow/rules/03-code-review-pr-workflow.md) §3). This section decides *which* paths deserve
 it. OWASP: SAMM, DSOMM, Threat Modeling Playbook, Legacy Application
 Management cheat sheet, Code Review Guide v2.
 
