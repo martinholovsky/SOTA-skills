@@ -97,6 +97,37 @@ Write the mechanism, not the episode. "X silently returns empty when Y, so contr
 survives; "we hit something odd on Tuesday" does not. Deleting is half the update — stale
 instructions do not decay quietly, they get followed.
 
+### 3a. Re-read every doc that describes what you changed, and nothing else
+
+The docs you remember editing are not the docs your change made stale: a README sentence, an
+index row, a runbook step or a comment two directories away can describe the thing you just
+changed, and nothing makes you open it. So find them mechanically, and keep the bound — **the
+files this session changed, times the docs that mention them**, not the whole repository:
+
+```sh
+base=$(git merge-base HEAD origin/HEAD 2>/dev/null || git merge-base HEAD main)
+git diff --name-only "$base" | while IFS= read -r f; do   # committed + uncommitted, tracked
+  printf '%4s docs mention  %s\n' \
+    "$(git grep -l -F -e "$(basename "$f")" -- '*.md' '*.txt' '*.rst' ":!$f" | wc -l | tr -d ' ')" "$f"
+done
+```
+
+Then `git grep -n -F -e <name>` for the lines themselves, over all tracked files so that code
+comments count. Three rules keep it bounded:
+
+- **Skip records.** A changelog, a dated report, an eval result or an ADR describes the past;
+  step 1 supersedes a record and never edits it. Re-read what states *current* behaviour:
+  README, guides, indexes, runbooks, agent files, comments.
+- **A generic basename is not a search.** `README.md` or `install.sh` matches half the tree.
+  Search the **names** the change touched instead — a renamed flag or function, a default you
+  changed, a count or a measured number you moved — which no filename search can find anyway.
+- **Report the denominator** — *N files changed, M docs checked, K lines fixed* — because "no
+  stale docs" over zero docs checked is the empty sweep this command exists to prevent.
+
+Fix every claim your change made false, in this pass. Staleness the session did not cause, in
+docs that do not mention its changes, is out of scope: list it in step 2's hand-off if you saw
+it, and leave it.
+
 ## 4. Validate by execution, not recall
 
 Every number you write in this pass is re-derived **now**, with the command shown next to it.
