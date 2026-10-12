@@ -178,11 +178,7 @@ def select(text: str, already: set[str]) -> list[tuple[str, Path, str]]:
     return [("; ".join(w), p, "; ".join(s)) for p, (w, s) in picked.items()]
 
 
-APPLY = ("These rules apply to this change: they are part of what was asked, not extras beyond the spec. "
-         "Build what each one requires now, with a conservative default (a cap, a limit, an allow-list, a "
-         "guard). Do not hand it back as a question or a note instead of building it, unless the user's "
-         "request explicitly rules it out. In your final message, name each default you chose in one line, "
-         "so the user can change it.")
+APPLY = "MANDATORY: apply the rules in each file named above to this change."   # v11 label-only arm (not for merge)
 
 
 def message(path: str, picks: list[tuple[str, Path, str]]) -> str:
@@ -284,8 +280,8 @@ def self_test() -> int:
         check("csv: names code-security/01 by absolute path", (cs01 + "/01-") in c and "CSV/formula" in c)
         check("csv: one concrete action, a full read", "Read each file named above in full" in c
               and "Audit checklist" in c)
-        check("csv: the rule is part of the task, with no hand-back exit", "they are part of what was asked" in c
-              and "Do not hand it back" in c and "conservative default" in c)
+        check("csv: the MANDATORY label, and nothing about the task or hand-backs", "MANDATORY: apply the rules" in c
+              and "part of what was asked" not in c and "hand it back" not in c)
         rc, c, _ = run(ev("s1", "/w/shop/export.py", "w.writerow(row)  # csv again\nimport csv\n", "Edit"))
         check("same file is not named twice in a session", c == "")
         rc, c, _ = run(ev("s2", "/w/shop/export.py", "import csv\n", "Edit"))
