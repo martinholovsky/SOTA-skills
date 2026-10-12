@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **ROADMAP 73: relative links instead of skill names measured NULL (v12).** Rewriting every pointer between skill files as a relative Markdown link moved a cited rules file reached 5/20 → 6/20 and rule tests 0.698 → 0.679. Links are followed and end guessed filenames (2 → 0 failed reads), but lead to the files the router links, not the ones a task needs. No skill file changed; unifying on links is recorded as option (n).
 - **`docs/skill-map.drawio` gains page 8: how skill files point at each other, by form.**
   Cross-skill pointers are written as a skill NAME, never a path or a link: 1,395 mentions of
   another skill's name across 346 skill files, 727 of them followed by `rules/NN`. There are 0
