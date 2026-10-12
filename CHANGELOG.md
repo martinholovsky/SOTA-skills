@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`verify-setup.sh` reports the code-rules hook (check 2c).**
+  - **PASS** when `~/.claude/settings.json` or the plugin registers it and `python3` is on PATH.
+  - **PARTIAL** when the registered script path is gone (the hook then fails on every edit) or
+    `python3` is missing.
+  - **INFO** when it is turned off or not installed, with the command to add it. It is a cost
+    choice, so it is never a FAIL.
+
+  Part B's fixture registers the hook as `install.sh` writes it, and two probes break it. Before
+  this, the default that #535 shipped was invisible to the setup check. `update.sh` needed no
+  change: it is `install.sh --update`, which runs the same routing setup.
+
 - **Invariant 31 could refuse the commit that satisfies it.** It looked for the ADOPTION-LOG
   entry only in committed history (`base...HEAD`). As the pre-commit hook it runs before that
   commit exists, so once a new rule section had been committed without its entry, every later

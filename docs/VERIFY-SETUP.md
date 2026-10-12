@@ -116,6 +116,11 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    `SOTA_ROUTING_HOOK=off`**? PASS = both. If only the CLAUDE.md
    directive exists, say so — routing then depends on the model reading it
    rather than on a per-prompt injection.
+   2c. Code-rules hook (Claude Code only): does `~/.claude/settings.json` register
+   `code-rules-hook.py` as a `PostToolUse` hook, or does the plugin? Does the script path it
+   names still exist, and is `python3` on PATH? A missing hook is INFO, not a failure: it costs
+   about +68% per agent run, so leaving it out is a choice. A registration whose script is gone
+   is PARTIAL: it runs nothing on every edit.
 3. Stack profile: does `~/.claude/profiles/*.md` exist and resolve (not a
    dangling symlink)? Report the filename only, not its contents.
 
