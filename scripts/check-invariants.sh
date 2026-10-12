@@ -754,7 +754,15 @@ else
   # to wave it through, which is how it becomes decorative (rules/15 §2).
   stamp_now=$(grep -v '^[[:space:]]*#' LAST-VERIFIED 2>/dev/null | tr -d '[:space:]' || true)
   stamp_was=$(git show "$base":LAST-VERIFIED 2>/dev/null | grep -v '^[[:space:]]*#' | tr -d '[:space:]' || true)
-  if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED' && [ "$stamp_now" != "$stamp_was" ]; then
+  # Membership by `case`, not `printf | grep -qx`: the builtin's write dies of SIGPIPE once
+  # the list outgrows the pipe buffer (100/100 reported absent at 3,000 paths, 2026-10-12).
+  lv_touched=0
+  case "
+$changed
+" in (*"
+LAST-VERIFIED
+"*) lv_touched=1 ;; esac
+  if [ "$lv_touched" -eq 1 ] && [ "$stamp_now" != "$stamp_was" ]; then
     n_skill=$(printf '%s\n' "$changed" | grep -c '^skills/.*\.md$' || true)
     declared=0
     # Decide with `case`, not a trailing `grep -q`: under `set -o pipefail` a -q
@@ -778,7 +786,7 @@ else
       note "otherwise revert the stamp — an ordinary edit must not move it."
       v11=1
     fi
-  elif printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED'; then
+  elif [ "$lv_touched" -eq 1 ]; then
     echo "    ok (LAST-VERIFIED touched but the stamp is unchanged: $stamp_now)"
   else
     echo "    ok (LAST-VERIFIED unchanged)"
@@ -969,7 +977,11 @@ done
 if [ -z "$base14" ] || [ "$base14" = "$(git rev-parse HEAD)" ]; then
   note "SKIPPED (no merge base to diff against, or nothing ahead of it)"
   echo "    ok (skipped)"
-elif ! git diff --name-only "$base14"...HEAD | grep -qx 'VERSION'; then
+# Ask git with a pathspec, never `git diff | grep -qx VERSION`: grep -q exits at the match,
+# git dies of SIGPIPE mid-listing, pipefail makes that the verdict, and a release reads as
+# "not a release". Measured 2026-10-12 on a 345-path diff: VERSION reported absent in 99
+# of 200 runs -- the gate skipped, fail-OPEN, and the negative-control probes went flaky.
+elif [ -z "$(git diff --name-only "$base14"...HEAD -- VERSION)" ]; then
   echo "    ok (not a release commit — VERSION unchanged)"
 else
   # The release section is the one matching VERSION -- NOT the topmost '## ['
@@ -2168,7 +2180,11 @@ done
 if [ -z "$base29" ] || [ "$base29" = "$(git rev-parse HEAD)" ]; then
   note "SKIPPED (no merge base to diff against, or nothing ahead of it)"
   echo "    ok (skipped)"
-elif ! git diff --name-only "$base29"...HEAD | grep -qx 'VERSION'; then
+# Ask git with a pathspec, never `git diff | grep -qx VERSION`: grep -q exits at the match,
+# git dies of SIGPIPE mid-listing, pipefail makes that the verdict, and a release reads as
+# "not a release". Measured 2026-10-12 on a 345-path diff: VERSION reported absent in 99
+# of 200 runs -- the gate skipped, fail-OPEN, and the negative-control probes went flaky.
+elif [ -z "$(git diff --name-only "$base29"...HEAD -- VERSION)" ]; then
   echo "    ok (not a release commit — VERSION unchanged)"
 elif ! command -v python3 >/dev/null 2>&1; then
   note "SKIPPED (python3 not found; CI always has it)"

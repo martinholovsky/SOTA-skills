@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Invariants 14 and 29 could skip a release on a large diff; 11 could on a very large one.**
+  They tested "did VERSION change?" as `git diff --name-only … | grep -qx VERSION` under
+  `pipefail`. `grep -q` exits at the match, git dies of SIGPIPE mid-listing, and the pipeline's
+  failure read as "not a release commit": fail-open, with an `ok` line. Measured on this
+  branch's 345-path diff: VERSION was reported absent in 99 of 200 runs. It surfaced as three
+  negative-control probes (14b, 29b, 29c) going flaky on this branch only; main passes 88/88.
+  Check 11's `printf | grep -qx LAST-VERIFIED` has the same flaw above the pipe buffer
+  (100/100 wrong at 3,000 paths). All three now test membership without a pipe: a `-- VERSION`
+  pathspec and a `case` match. Each was measured at 0 of 200 wrong, and correct in all three
+  list positions.
 - **Skill files now point at each other with relative links (ROADMAP 73, option (n)).** Every
   pointer keeps its visible text and gains its path: `` `sota-x` rules/06 §3 `` reads the same and
   is now a link to `../../sota-x/rules/06-topic.md`. 4,148 of 4,281 skill-name and
