@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Antigravity, from a field report, each claim checked** (docs/MULTI-AGENT.md;
+  ADOPTION-LOG has the verdicts).
+  - **It has lifecycle hooks** (`hooks.json`). `PreInvocation` can inject an `ephemeralMessage`,
+    but it fires before every model call, not once per prompt.
+  - **The code-rules hook can't be ported as written.** Its documented `PostToolUse` gets no tool
+    arguments and returns `{}`. The port is deferred with a trigger.
+  - **Antigravity CLI follows symlinked skill folders.** `agy -p` listed exactly the checkout's 43
+    skills, with a control. The 2.0 app and IDE are still unverified.
+
 - **`/sota-close` step 3a: re-read every doc that describes what the session changed, and
   nothing else.** Step 3 updated the docs a session *knew* it had made false. Nothing found a
   README line, index row, runbook step or comment elsewhere describing a changed file.

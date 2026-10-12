@@ -75,8 +75,14 @@ default (gemini-cli `docs/cli/gemini-md.md`, fetched 2026-10-06).
     Rules.
   - It warns if a directive names the `sota` skill while `~/.agents/skills` — or a detected
     Antigravity skills directory — is empty, because such an instruction cannot be followed.
-- **No hook.** The `UserPromptSubmit` re-injection is Claude Code's. For other agents the
-  directive is the only always-on layer.
+- **Hooks.** The `UserPromptSubmit` re-injection is Claude Code's, and it is the only hook the
+  installer writes. **Antigravity has lifecycle hooks too** (`hooks.json`; its bundled
+  `agy-customizations/docs/hooks.md`, read 2026-10-12): `PreInvocation` can inject an
+  `ephemeralMessage`, but before **every model call**, not once per prompt; `PreToolUse` can
+  allow, deny or rewrite a tool call; `PostToolUse`, `PostInvocation` and `Stop` also exist. Its
+  documented `PostToolUse` receives no tool name or arguments and returns `{}`, so the
+  code-rules hook cannot be ported to it as written. None is installed yet, so for every agent
+  but Claude Code the directive is the only always-on layer the installer sets up.
 - **Check it:** `scripts/verify-setup.sh` reports three rows:
   - **1e** — skills are live links, not copies.
   - **1f** — each detected agent reaches `~/.agents/skills`, compared against the checkout's
@@ -166,8 +172,12 @@ deepcopy does. It has **not** been run on a real Windows machine.
 ## Not verified — do not rely on these
 
 - **Symlinked skill folders.** Only Codex documents following them (*"Codex supports
-  symlinked skill folders and follows the symlink target"*). The Copilot, VS Code, Cursor
-  and Gemini pages never mention symlinks, which is an absence, not a guarantee.
+  symlinked skill folders and follows the symlink target"*). **Antigravity CLI follows them
+  in practice**, though its docs are silent: run 2026-10-12 with all 43 skills symlinked into
+  `~/.gemini/antigravity-cli/skills`, `agy -p` listed exactly the checkout's 43 names, with a
+  built-in skill as the control. The 2.0 app and IDE (`~/.gemini/config/skills`) were not run.
+  The Copilot, VS Code, Cursor and Gemini pages never mention symlinks, which is an absence,
+  not a guarantee.
 - **Duplicate skill names.** An agent that reads both `~/.claude/skills` and
   `~/.agents/skills` (VS Code, Cursor) sees each skill twice under `--target all`. Only
   Gemini documents a precedence rule (*"the `.agents/skills/` alias takes precedence"*); for
@@ -179,6 +189,7 @@ deepcopy does. It has **not** been run on a real Windows machine.
   the CLI; the 2.0 app's tab describes only its Settings UI.
 - **Antigravity detection.** A `~/.gemini/config` directory is taken to mean the Antigravity
   2.0 app or IDE is installed. Its docs name that path; whether anything else creates it is not
-  known. Whether Antigravity follows **symlinked** skill folders is not documented.
+  known. Following **symlinked** skill folders is undocumented; the CLI was observed to follow
+  them (above), the 2.0 app and IDE were not checked.
 - **Windows home.** No vendor page gives a `%USERPROFILE%` form of these paths; `~` is
   assumed to mean the user's home folder there.
