@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """code-rules-hook.py — after the agent writes code, name the rules file for what that code DOES.
-A Claude Code PostToolUse hook on Edit|Write|MultiEdit (opt-in: it is NOT in hooks/hooks.json).
+A Claude Code PostToolUse hook on Edit|Write|MultiEdit, ON by default since ROADMAP 73 (m): the plugin
+registers it (hooks/hooks.json) and install.sh's routing setup offers it.
 
 WHY. ROADMAP 73. Reading the right rules file changes what an agent builds: with the cited files
 named in the prompt, rule tests rose 0.698 -> 0.868 (sota-agent-evals v7, 2026-10-11, SUPPORTED).
@@ -17,7 +18,9 @@ the user ("beyond your spec"). v10 (2026-10-12) added APPLY below, saying the na
 of the task: rule tests 0.717 -> 0.906 (SUPPORTED, 6 cases up, 0 down), above the arm that named the
 files in the prompt (0.868), with spec tests still 20/20. v11 replaced APPLY with a bare
 "MANDATORY:" label: 0.698 (NULL), and every failing run handed the rule back. The content is the
-lever, not the emphasis. The hook stays opt-in (ROADMAP 73).
+lever, not the emphasis. Shipped by default 2026-10-12 (ROADMAP 73 (m)) at +68% cost per run over the
+plain install; the trigger table was written in-sample (v9-v11 used the cases it was tuned on), so
+its reach on fresh tasks is unmeasured.
 
 WHAT IT SAYS (as `additionalContext`, read next to the tool result): for each trigger the written
 text matches, in table order, the absolute path of the rules file and the section to check, with
@@ -26,6 +29,9 @@ ROADMAP 73 (j), measured in v10) that those rules are part of the task: build ea
 conservative default rather than handing it back, unless the request rules it out, and name each
 default in one line of the final message. A file is named at
 most once per session, and at most PER_EVENT new files per edit, so a long session is not flooded.
+"Once" holds when two copies run on one edit (the plugin's and the installer's, which Claude Code
+runs in parallel): each file is claimed with an exclusive create, and only the copy that wins
+names it.
 Test files are skipped: what matters is what the shipped code does.
 
 The triggers are a table of regular expressions over the written text, and they are crude on
@@ -34,7 +40,8 @@ purpose: a false trigger costs one file read, a missed one costs the rule.
 IT NEVER BLOCKS: any error prints one line to stderr and exits 0 with no output.
 SOTA_CODE_RULES_HOOK=off (or 0 / false / no) disables it.
 
-Install (user or project settings.json):
+Registered by the plugin; install.sh --routing adds it to ~/.claude/settings.json. By hand
+(user or project settings.json):
   "hooks": {
     "PostToolUse": [{"matcher": "Edit|Write|MultiEdit", "hooks": [{"type": "command",
                      "command": "python3 /ABS/PATH/scripts/code-rules-hook.py"}]}]
@@ -42,6 +49,7 @@ Install (user or project settings.json):
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -156,9 +164,30 @@ def written_text(tool_input: dict) -> str:
     return "\n".join(p for p in parts if isinstance(p, str))
 
 
-def state_path(session_id: str) -> Path:
+def state_dir(session_id: str) -> Path:
+    """One marker file per rules file named in this session; its content is the path."""
     safe = re.sub(r"[^A-Za-z0-9_-]", "_", session_id or "nosession")[:80]
-    return Path(tempfile.gettempdir()) / "sota-code-rules-hook" / (safe + ".json")
+    return Path(tempfile.gettempdir()) / "sota-code-rules-hook" / safe
+
+
+def named_before(d: Path) -> set[str]:
+    try:
+        return {m.read_text(encoding="utf-8") for m in d.iterdir()}
+    except OSError:
+        return set()
+
+
+def claim(d: Path, p: Path) -> bool:
+    """True for exactly one caller per (session, file), even when two copies race."""
+    d.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(d / hashlib.sha256(str(p).encode()).hexdigest()[:32],
+                     os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        return False
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(str(p))
+    return True
 
 
 def select(text: str, already: set[str]) -> list[tuple[str, Path, str]]:
@@ -208,16 +237,10 @@ def respond(event: dict) -> str:
     ext = path.rsplit(".", 1)[-1].lower() if "." in path.rsplit("/", 1)[-1] else ""
     if ext not in CODE_EXT or TEST_PATH.search(path):
         return ""
-    sp = state_path(str(event.get("session_id") or ""))
-    try:
-        already = set(json.loads(sp.read_text(encoding="utf-8")))
-    except (OSError, ValueError):
-        already = set()
-    picks = select(written_text(ti), already)
+    sd = state_dir(str(event.get("session_id") or ""))
+    picks = [x for x in select(written_text(ti), named_before(sd)) if claim(sd, x[1])]
     if not picks:
         return ""
-    sp.parent.mkdir(parents=True, exist_ok=True)
-    sp.write_text(json.dumps(sorted(already | {str(p) for _, p, _ in picks})), encoding="utf-8")
     return json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse",
                                               "additionalContext": message(path, picks)[:LIMIT]}})
 
@@ -313,6 +336,13 @@ def self_test() -> int:
             check(label, rc == 0 and c == "")
         rc, c, _ = run(ev("s7", "/w/a.py", "import csv"), {"SOTA_CODE_RULES_HOOK": "off"})
         check("opt-out is silent", rc == 0 and c == "")
+        # Two copies on one edit (plugin + installer, run in parallel) must not both name a file.
+        # Checked on claim() itself: two parallel processes barely overlap, so a run-twice test
+        # passed even with the exclusive create removed (watched 2026-10-12).
+        d, f = Path(t) / "claim", ROOT / "x.md"
+        check("claim: the first caller wins", claim(d, f) is True)
+        check("claim: a second caller for the same file loses", claim(d, f) is False)
+        check("claim: the marker records the path", named_before(d) == {str(f)})
         rc, c, err = run(None, raw="{not json")
         check("malformed input: exit 0, no output, says why", rc == 0 and c == "" and "code-rules-hook" in err)
 

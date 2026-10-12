@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The code-rules hook is on by default (ROADMAP 73 (m)).** `scripts/code-rules-hook.py`, a
+  PostToolUse hook on `Edit|Write|MultiEdit` that names the rules file for what the code just
+  written does (an outbound fetch → SSRF, a CSV writer → formula injection, …), is now
+  registered by the plugin (`hooks/hooks.json`) and offered by `install.sh --routing`
+  (`setup_code_rules_hook`, default yes, skipped without `jq` or `python3`). It is the one
+  routing change measured to move outcomes: sota-agent-evals v10, rule tests 0.717 → 0.906
+  (SUPPORTED), where v5–v9 and v11–v12 moved behaviour but not outcomes. **Costs and limits,
+  stated rather than hidden:** about +68% per agent run over the plain install; the trigger
+  table was written in-sample, so its reach on fresh tasks is unmeasured; Claude Code only.
+  Opt out with `SOTA_CODE_RULES_HOOK=off`. A session with both the plugin's and the installer's
+  copy names each file once: a file is now claimed with an exclusive create
+  (`O_CREAT|O_EXCL`) instead of a read-then-write JSON list, which two copies running in
+  parallel could both pass. The self-test checks `claim()` directly and fails with the
+  exclusive flag removed; a first draft ran the hook twice in parallel and passed against that
+  mutant too, because two Python start-ups barely overlap. Skill-map page 7 moves the hook from
+  "opt-in" to the plugin and installer groups.
+
 - **Invariants 14 and 29 could skip a release on a large diff; 11 could on a very large one.**
   They tested "did VERSION change?" as `git diff --name-only … | grep -qx VERSION` under
   `pipefail`. `grep -q` exits at the match, git dies of SIGPIPE mid-listing, and the pipeline's

@@ -440,6 +440,42 @@ setup_update_reminder() {
   rm -f "$tmp"
 }
 
+# A PostToolUse hook that, after the agent edits code, names the rules file for what that code
+# DOES (an outbound fetch -> SSRF, a CSV writer -> formula injection, ...). ROADMAP 73 (m): the
+# one routing change measured to move outcomes (sota-agent-evals v10, rule tests 0.717 -> 0.906).
+# It costs about +68% per agent run, so it is offered, not forced; the plugin ships the same
+# script, and a session with both copies names each file once (the script claims it atomically).
+setup_code_rules_hook() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="python3 \"$REPO/scripts/code-rules-hook.py\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping the code-rules hook"; return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found — skipping the code-rules hook"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "code-rules-hook.py" \
+      '[.hooks.PostToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota code-rules hook already present — up to date"; return
+  fi
+  ask_yn "Add a hook that names the rules file for what the code you just edited does (about +68% cost per agent task)?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.PostToolUse = ((.hooks.PostToolUse // []) + [{matcher:"Edit|Write|MultiEdit",hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added PostToolUse code-rules hook (silence it with SOTA_CODE_RULES_HOOK=off)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{PostToolUse:[{matcher:"Edit|Write|MultiEdit",hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the code-rules hook"
+  fi
+  rm -f "$tmp"
+}
+
 # Claude Code reserves a per-turn CHARACTER budget for the skill listing and sizes it
 # as `(contextTokens x 4) x skillListingBudgetFraction`, fraction defaulting to 0.01 —
 # so 8,000 characters on a 200k-context model, for every skill from every source. Read
@@ -775,6 +811,7 @@ maybe_setup_routing() {
   mirror_directives || true
   setup_hook || true
   setup_update_reminder || true
+  setup_code_rules_hook || true
   return 0
 }
 
