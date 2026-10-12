@@ -209,6 +209,26 @@ rules files that match the code in front of you. Never load all skills at once.
 | [`sota-ruby`](../sota-ruby/SKILL.md) | Any Ruby code — idioms (frozen strings, pattern matching, RBS/Sorbet), security (AR/SQLi, ERB escaping, strong params, Marshal/YAML.load, command injection, ReDoS), Bundler supply chain (bundler-audit, lockfile checksums), RuboCop/Brakeman, GVL/Ractors/YJIT performance |
 | [`sota-swift`](../sota-swift/SKILL.md) | Any Swift code — on any target (server-side Vapor/Hummingbird/SwiftNIO, CLIs, packages, apps): optionals/errors, Swift 6 data-race safety (Sendable, actors, cancellation), ARC/retain cycles, unsafe pointers & strict memory safety, security (CryptoKit, Codable/NSKeyedUnarchiver, SQLKit raw SQL, Process, TLS), server defaults (auth middleware, cookies, release builds), SwiftPM supply chain (Package.resolved, plugins/macros, SBOM) |
 
+## What your code does: the rules file to read
+
+When the code you are about to write does one of these things, read the file in full, then
+check your change against it and its Audit checklist before you finish. These rules apply to this change: they are part of what was asked, not extras beyond the spec. Build what each one requires now, with a conservative default (a cap, a limit, an allow-list, a guard). Do not hand it back as a question or a note instead of building it, unless the user's request explicitly rules it out. In your final message, name each default you chose in one line, so the user can change it.
+
+| When your code... | Read in full, then check |
+|---|---|
+| fetches a URL (§5 SSRF); writes CSV or spreadsheet output (§11, CSV/formula injection); builds an email or a message header (§11, CRLF / header injection); runs a process (§3 command injection); builds a database query (§2 SQL injection); parses or builds XML (§6 XXE and XML); deserialises data (§8 unsafe deserialization) | [`sota-code-security` rules/01](../sota-code-security/rules/01-input-injection.md) |
+| reads or extracts an archive | [`sota-code-security` rules/01](../sota-code-security/rules/01-input-injection.md) §4 path traversal and Zip Slip; [`sota-code-security` rules/09](../sota-code-security/rules/09-untrusted-data-ingestion.md) untrusted data ingestion |
+| accepts a file or image from outside | [`sota-code-security` rules/21](../sota-code-security/rules/21-file-uploads.md) §1 file upload handling; [`sota-code-security` rules/09](../sota-code-security/rules/09-untrusted-data-ingestion.md) untrusted data ingestion |
+| renders HTML or a template (XSS and web security) | [`sota-code-security` rules/05](../sota-code-security/rules/05-web-security.md) |
+| checks a password or handles a login (§1, credential stuffing, lockout and enumeration) | [`sota-code-security` rules/02](../sota-code-security/rules/02-authentication.md) |
+| issues or checks a session or token | [`sota-code-security` rules/17](../sota-code-security/rules/17-sessions-and-tokens.md) §2 session management; [`sota-code-security` rules/02](../sota-code-security/rules/02-authentication.md) authentication |
+| decides who may do what (§1-§3 deny by default, IDOR, function-level authorization) | [`sota-code-security` rules/03](../sota-code-security/rules/03-authorization.md) |
+| sends or receives a webhook or callback (webhooks) | [`sota-api-design` rules/06](../sota-api-design/rules/06-webhooks.md) |
+| returns a list that can grow (§4 pagination); moves money or must not run twice (§6 idempotency keys) | [`sota-api-design` rules/01](../sota-api-design/rules/01-rest-http-design.md) |
+| calls something that can fail or hang (§1-§3 timeouts, retries, circuit breakers) | [`sota-architecture` rules/04](../sota-architecture/rules/04-resilience-and-failure-design.md) |
+| logs, returns errors, or returns records about people (§1, §2 and §4: errors, logs, response over-exposure) | [`sota-code-security` rules/07](../sota-code-security/rules/07-data-exposure.md) |
+| adds a request handler or endpoint | [`sota-api-design` rules/07](../sota-api-design/rules/07-security-operations.md) §2 rate limiting; [`sota-code-security` rules/06](../sota-code-security/rules/06-memory-resource-safety.md) §5 resource exhaustion |
+
 ## Cross-cutting routing rules
 
 1. **Language skills stack on domain skills.** Auditing a Go API server → [`sota-golang`](../sota-golang/SKILL.md) + `sota-
@@ -304,23 +324,20 @@ rules files that match the code in front of you. Never load all skills at once.
     about a model's **tokens, context window, pricing or limits** is [`sota-llm-engineering`](../sota-llm-engineering/SKILL.md)
     ([rules/02](../sota-llm-engineering/rules/02-prompt-context-engineering.md) §2 for counting, [rules/05](../sota-llm-engineering/rules/05-production-engineering.md) for cost), *including* measuring your own files,
     prompts or docs, and even when the surrounding task is repo maintenance and nothing
-    looks like an LLM feature. The tell is reaching for a chars/4 estimate or another
-    vendor's tokenizer instead of the provider's `count_tokens`: measured 2026-08-26, that
-    shortcut under-counts Claude by **54%** on markdown-dense text — in the direction that
-    makes you think you have room.
+    looks like an LLM feature. The tell is a chars/4 estimate or another vendor's tokenizer
+    instead of the provider's `count_tokens` (measured 2026-08-26: 54% under).
 
 ## Day zero — a repo this library has not been applied to yet
 
-Installing is *ambient*: the rules apply in every directory, including a repo
-with no gates, no agent file and no LICENSE. They then govern the code you write
-and nothing else — the repo keeps accepting unscanned commits. Check this
-**once per repo**, on the first BUILD task in an unfamiliar one, by looking (not
-inferring): is there a `.pre-commit-config.yaml` **or any other hook manager or
-CI job** running a secret scan; a license file (`LICENSE*`, `COPYING*` or
-`COPYRIGHT` — never match the bare name, projects name it after the licence);
-an `AGENTS.md`/`CLAUDE.md`; and how long is the git history? Two or more missing
-**and** a history of a few commits = day zero. A long history means a mature
-repo that likely decided against them; say nothing.
+Installing is *ambient*: the rules apply in every directory, including a repo with no gates, no
+agent file and no LICENSE. They then govern the code you write and nothing else — the repo keeps
+accepting unscanned commits. Check this **once per repo**, on the first BUILD task in an
+unfamiliar one, by looking (not inferring): is there a `.pre-commit-config.yaml` **or any other
+hook manager or CI job** running a secret scan; a license file (`LICENSE*`, `COPYING*` or
+`COPYRIGHT` — never match the bare name, projects name it after the licence); an
+`AGENTS.md`/`CLAUDE.md`; and how long is the git history? Two or more missing **and** a history
+of a few commits = day zero. A long history means a mature repo that likely decided against
+them; say nothing.
 
 When it fires, say it **once, in a line, with the command**, then get on with the
 task: `scripts/init-gates.sh` for gates — it installs both the pre-commit and
@@ -443,14 +460,10 @@ read with [`rules/03`](rules/03-audit-findings.md).
 
 ## Context budget discipline
 
-Rules files run **52–500 lines, median 262.5** (re-measured over all 294 on
-2026-09-26; the 2026-09-13 figures — 77–500, median 237 over 271 — and the 2026-09-11
-ones before them were correct when written and went stale, and before them this
-said "200–310", a range half of them fall
-outside, which is why the count and the date are stated). So budget by
-the file you are actually opening, not by an average: 2–5 files is a typical
-focused task and can be 400 lines or 2,000. A full audit pass should load one
-skill at a time, finish its findings, then move on. If context is tight, prefer
+Rules files run **52–500 lines, median 262.5** (over all 294 on 2026-09-26; dated because the
+figure has gone stale before). So budget by the file you are actually opening, not by an
+average: 2–5 files is a typical focused task and can be 400 lines or 2,000. A full audit pass
+should load one skill at a time, finish its findings, then move on. If context is tight, prefer
 the skill's top-10 non-negotiables plus the single most relevant rules file.
 
 ## When this library is wrong or missing something
@@ -476,19 +489,7 @@ needless idiom vs an outage), never silently: name the rule you followed and why
 in a comment beside the code, or the next reader reverts it. Then report it —
 the fix is an explicit exception in whichever rule was too broad.
 
-**A routing gap should end as a test, not just a report.** If the right skill existed
-and the task never reached it, the fix is the *trigger* — the skill's `description` is the
-only auto-loading text and is the whole classifier, provided it survives the listing budget
-(1% of context; the least-invoked skills drop to name-only — `scripts/verify-setup.sh` flags it,
-`/doctor` estimates the listing's cost; check that before calling it a trigger defect) — and the proof is a regression case in
-`evals/cases/desc-routing-regressions.jsonl`, which pins the mis-route so it cannot return.
-**Run that case against the PRE-change tree and watch it fail first.** A case that passes in
-both arms pins nothing, and an absent *string* is not an absent *capability* — a model routes
-on meaning, so grep cannot tell you whether a task is reachable. Measured 2026-09-14: a
-PowerShell task claimed to be a routing gap already routed correctly with **0 of 42
-descriptions naming PowerShell**, and the case written to pin the "fix" scored 1.00 before
-*and* after. Same doctrine as every gate here — watch it fail first, or you have added a
-control that cannot fail.
+**A routing gap should end as a test, not just a report**: how, in [`rules/04`](rules/04-library-map.md), its last section.
 
 Report: `https://github.com/martinholovsky/SOTA-skills/issues/new/choose`
 (bad-guidance / skill-request templates). Anything dangerous or
