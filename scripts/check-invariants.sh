@@ -2586,7 +2586,11 @@ def git(*a):
     return subprocess.run(["git", *a], capture_output=True, text=True, check=True).stdout
 
 changed = [p for p in git("diff", "--name-only", f"{base}...HEAD").split("\n") if p]
-touched_ledger = "docs/ADOPTION-LOG.md" in changed
+# The ledger may also be STAGED: as a pre-commit hook this check runs before the commit that
+# carries the entry exists, so reading only base...HEAD refused every commit after a section had
+# landed without one -- including the commit adding it (hit 2026-10-12, ROADMAP 73 (o)).
+staged = [p for p in git("diff", "--cached", "--name-only").split("\n") if p]
+touched_ledger = "docs/ADOPTION-LOG.md" in changed + staged
 rules = [p for p in changed
          if re.fullmatch(r"skills/[^/]+/rules/[^/]+\.md", p or "")]
 
