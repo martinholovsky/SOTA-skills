@@ -130,6 +130,15 @@ reject any non-default `temperature`/`top_p`/`top_k` with a `400` (Anthropic,
 from Opus 4.7 on — verified 2026-09-26 in its migration guide) — repeat runs
 instead (§8).
 
+**Offline must send the model what production sends.** Build each eval input by calling the
+application's own rendering code — template, role prefixes, provider text extraction,
+normalisation, truncation — never a re-implementation or the bare payload. An eval of the bare
+payload measures a different function and can pass on exactly the case production fails: this
+is train/serve skew ([`sota-ml-engineering` rules/02](../../sota-ml-engineering/rules/02-data-and-features.md) §2) for prompts. Field-reported 2026-10-12: a
+judge blocked a prompt injection offline and released it in production; only the gateway's
+exact framing (`user: ` prefix, normalisation) reproduced the release, 3/3. One specimen, so
+the size of the effect is unmeasured; the principle is not.
+
 **Online (production):** sampled judging of live traffic, user signals
 (thumbs, edits, regenerations, abandonment, task completion), canary
 comparisons. Online tells you about real distribution; offline tells you
@@ -409,6 +418,8 @@ published claim rested on that 0.00 for several hours.
       measures the harness, not the model.
 - [ ] Online signal exists (sampled judging and/or user feedback) and is
       distinct from — not a substitute for — offline gates.
+- [ ] Offline eval inputs are built by the application's own rendering code (template, role
+      prefixes, normalisation), not a re-implementation or the bare payload (§4).
 - [ ] Error-analysis loop visible in history: failure taxonomy, incident
       cases promoted into the set.
 - [ ] Dev set ≠ gating set; no prompt tuning against the held-out set; no

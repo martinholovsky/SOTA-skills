@@ -64,6 +64,9 @@ subprocess.run(
   (argument injection — applies to git, curl, tar, find especially).
 - Validate or allowlist executables; never let the user pick the binary. Set `timeout=`,
   handle `CalledProcessError`. `os.system` is banned outright.
+- A memory budget on a child is `preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_DATA, …)`,
+  **never `RLIMIT_AS`**: an AS cap kills a native binary in its loader with exit 127 ("command not
+  found"), so a probe reads as EMPTY, not FAILED ([`sota-sandboxing` rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md) R7.2a).
 
 ## 3. SQL: parameters, never interpolation
 
@@ -399,6 +402,8 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       code the author did not list; replace with a fixed dict of handlers)
 - [ ] **Subprocess [HIGH]** — `grep -rn "shell=True" --include="*.py" src/` ;
       `grep -rn "os.system\|os.popen" --include="*.py" src/`
+- [ ] **Memory cap via `RLIMIT_AS` (§2) [HIGH when it gates an inspection]** —
+      `grep -rn "RLIMIT_AS" --include="*.py" src/` (use `RLIMIT_DATA` or a cgroup)
 - [ ] **Child exit status ignored (§2) [MEDIUM, HIGH when the next step trusts the output]** —
       `grep -rnE 'subprocess\.(run|call)\(' --include="*.py" src/ | grep -v 'check=True'`
       (`run` returns a non-zero `returncode` without raising unless `check=True`; each hit

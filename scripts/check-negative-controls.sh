@@ -1166,6 +1166,51 @@ p.write_text(t.replace(old, '    return None\\n', 1))
 probe 39c "the trigger detector regresses against its own corpus" \
   "the trigger detector failed its own labelled corpus"
 
+# 40 — a command cites a skill's rules file and never says to load it. Remove /sota-resume's
+# step-0 instruction: its six rules/06 citations are then pointers that load nothing.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('commands/sota-resume.md')
+t = p.read_text()
+old = 'Invoke the \`sota-shell-scripting\` skill and read its'
+assert t.count(old) == 1, 'probe stale: sota-resume step 0 not found'
+p.write_text(t.replace(old, 'Keep in mind what the shell guidance says in', 1))
+" )
+probe 40 "a command cites a skill's rules file and never says to load it" \
+  "commands/sota-resume.md cites \`sota-shell-scripting\` rules/NN but never says"
+
+# 40b — the escape is per (command, skill), not per command: a NEW citation in a file that has
+# a pinned escape must still fail.
+# shellcheck disable=SC2016  # the backticks are literal Markdown, not a command substitution
+( cd "$WT" && printf '\nSee also (`sota-devsecops` rules/09 §2a).\n' >> commands/sota-report.md )
+probe 40b "a pinned escape does not waive another skill's citation" \
+  "commands/sota-report.md cites \`sota-devsecops\` rules/NN but never says"
+
+# 40c — the other side of the route-and-walk escape: /sota-audit passes BECAUSE of its routing
+# step. Remove the router-routing-table sentence and its citations must fail.
+( cd "$WT" && python3 -c "
+import pathlib, re
+p = pathlib.Path('commands/sota-audit.md')
+t = p.read_text()
+n = len(re.findall(r'router.{0,3}s\s+routing\s+table', t))
+assert n >= 1, 'probe stale: no routing-table sentence in sota-audit'
+p.write_text(re.sub(r'router(.{0,3})s(\s+)routing(\s+)table', r'router\1s\2skill\3list', t))
+" )
+probe 40c "a command whose routing step is removed must load what it cites" \
+  "commands/sota-audit.md cites"
+
+# 40d — a pinned escape the command no longer needs fails, so EXEMPT cannot become a waiver.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('commands/sota-report.md')
+t = p.read_text()
+old = '(\`sota-secrets-management\` rules/04, verified on gitleaks 8.30.1)'
+assert t.count(old) == 1, 'probe stale: the secrets-management citation not found'
+p.write_text(t.replace(old, '(verified on gitleaks 8.30.1)', 1))
+" )
+probe 40d "a pinned escape the command no longer needs" \
+  "stale escape: commands/sota-report.md"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1256,7 +1301,10 @@ build_fixture() {  # a machine+repo where every check passes
   # skillListingBudgetFraction 0.0002 = a 160-char budget at the 200K the fixture's
   # unknown window assumes: the three fixture skills (~130 with the built-in allowance)
   # fit, and ANY plugin skill counted on top of them does not. That margin is the probe.
-  printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
+  # …plus the code-rules hook as install.sh writes it (check 2c), pointing at a script that exists
+  : > "$VS/repo/scripts/code-rules-hook.py"
+  printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}],"PostToolUse":[{"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"python3 \\"%s\\""}]}]}}\n' \
+    "$VS/repo/scripts/code-rules-hook.py" > "$VS/home/settings.json"
   printf 'stack\n' > "$VS/home/profiles/example.md"
   # repo context
   cd "$VS/repo"
@@ -1454,6 +1502,12 @@ vs_probe_info "an enabled plugin's skills overrun the budget" "1b. listing budge
 # the SAME library as a plugin beside the personal links: the double install
 vs_fixture_plugin sota-skills sota "fixture router"
 vs_probe_partial "the library installed twice (plugin + links)" "1g. library installed once"
+# 2c: the code-rules hook. Optional (a cost choice), so its absence is INFO with the command;
+# a registration whose script is gone runs nothing on every edit, so that one is PARTIAL.
+printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
+vs_probe_info "the code-rules hook not installed" "2c. code-rules hook" "not installed"
+rm -f "$VS/repo/scripts/code-rules-hook.py"
+vs_probe_partial "a code-rules hook registration whose script is gone" "2c. code-rules hook"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
@@ -1538,9 +1592,9 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39 (36 of 39)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 (37 of 40)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 2c, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

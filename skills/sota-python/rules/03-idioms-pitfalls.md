@@ -334,9 +334,13 @@ def get(url: str) -> Response: ...
 ```
 
 **`DeprecationWarning` is hidden by default** outside `__main__`, so the warning your users
-need is the one they will not see. Make your own test suite fail on it
-(`filterwarnings = ["error::DeprecationWarning"]` in pytest config) or you will ship past your
-own deprecations without noticing.
+need is the one they will not see. Make your test suite fail on **every** warning —
+`filterwarnings = ["error", "ignore:<message>:<Category>"]` in pytest config, each `ignore`
+scoped to one third-party message with a comment saying why. Scoping the error to a category
+(`error::DeprecationWarning`) misses library warnings that subclass `UserWarning`. Measured
+2026-10-12: pydantic-settings 2.15's `IncompleteFieldDefinitionWarning` (a settings field "may
+fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` turned it into
+33 failing tests where it had sat unread in a container log (field-reported).
 
 ## Audit checklist
 
@@ -383,8 +387,9 @@ own deprecations without noticing.
       `grep -rnE 'def [a-z_]+\([^*)]*(flag|force|strict|verbose|dry_run)[^)]*\)' --include="*.py" src/`
 - [ ] **Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]** —
       `grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning'`
-- [ ] **Does the suite fail on its own DeprecationWarnings? [MEDIUM if absent]** —
-      `grep -rn 'error::DeprecationWarning' pyproject.toml setup.cfg pytest.ini tox.ini 2>/dev/null`
+- [ ] **Does the suite fail on warnings? [MEDIUM if absent]** —
+      `grep -rnE 'filterwarnings|-W ?error' pyproject.toml setup.cfg pytest.ini tox.ini 2>/dev/null`;
+      a category-scoped `error::DeprecationWarning` with no blanket `"error"` misses `UserWarning`s
 - [ ] **__slots__ added to a class that subclasses something unslotted — no saving [INFO]** —
       `grep -rn -B3 '__slots__' --include="*.py" src/ | grep 'class .*('`
 - [ ] **Money in binary floats (§12) — MEDIUM, HIGH in billing** —

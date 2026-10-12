@@ -1345,10 +1345,10 @@ installed the installer's hook, the plugin's stays silent, so the reminder is ne
 writes code, it names the rules file for what that code does: an outbound fetch → SSRF, a CSV
 writer → formula injection, an archive → Zip Slip, a handler → rate limiting. It tells the agent
 those rules are part of the task, so it builds them instead of handing them back as a question.
-It is the one routing change measured to move outcomes: rule tests 0.717 → 0.906
+It moved outcomes when measured: rule tests 0.717 → 0.906
 ([sota-agent-evals v10](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v10/REPORT.md)).
-It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigger table was tuned on the same cases that
-measured it, and it needs `python3`. Turn it off with `SOTA_CODE_RULES_HOOK=off`.
+It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigger table was written by an author who had read the
+cases that measured it (in-sample), and it needs `python3`. Turn it off with `SOTA_CODE_RULES_HOOK=off`.
 `install.sh --routing` offers the same hook to clone installs; with both, each file is named once.
 **The router carries the same table as text** ("What your code does: the rules file to read"), for
 hosts that cannot run a hook. Measured without the hook, it got agents to the right rules file in
@@ -1524,7 +1524,7 @@ verify fast-moving claims against primary sources, keep **skill** files
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
 each rules file with an audit checklist — **exactly one**, since appending a
 section's bullets under a fresh heading strands them where a reader has already
-stopped. **39 invariants** enforce this in `scripts/check-invariants.sh`
+stopped. **40 invariants** enforce this in `scripts/check-invariants.sh`
 (pre-commit + CI — the one-line-each table with the incident behind each one is
 [docs/INVARIANTS.md](docs/INVARIANTS.md)), covering line caps, checklist placement *and uniqueness*,
 description limits, version and count drift, router completeness,
