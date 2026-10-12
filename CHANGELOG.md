@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **verify-setup 2c: a missing code-rules hook is PARTIAL, and the row says what it costs.**
+  It was INFO, on the reasoning that the hook's +68% cost made leaving it out a choice. But it
+  is the shipped default and the largest measured lever, and check 2 FAILs on a weaker one.
+  - **The row now states the cost:** without the hook, measured agents applied the security rules
+    a task needed in 0.698 of rule tests, against 0.906 with it. The misses cluster in SSRF, CSV
+    formula guards, login throttling, rate limits and session lifetimes.
+  - **INFO only for a deliberate opt-out** (`SOTA_CODE_RULES_HOOK=off`).
+  - **It names a sota-skills plugin copy too old to carry the hook,** with the update command,
+    since a plugin updates only on a release.
+  - **Probes:** missing → PARTIAL, and turned off → INFO.
+  - **A correction where the figure appears as current state:** the README and `install.sh` gave
+    the hook's effect as 0.717 → 0.906, which is v10's paragraph-on-hook comparison. Hook against
+    no hook is 0.698 → 0.906 (v7 `installed` against v10, the same 20 cases). The hook header,
+    ROADMAP and INDEX use 0.717 correctly, in that context.
+
 - **Two field reports taken in** (an LLM-guardrail red-team harness, 2026-10-11, and a guardrail
   proxy, 2026-10-12). Every library-text claim was re-checked and every mechanism reproduced; the
   ADOPTION-LOG section has each verdict.

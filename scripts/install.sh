@@ -442,7 +442,7 @@ setup_update_reminder() {
 
 # A PostToolUse hook that, after the agent edits code, names the rules file for what that code
 # DOES (an outbound fetch -> SSRF, a CSV writer -> formula injection, ...). ROADMAP 73 (m),
-# measured to move outcomes (sota-agent-evals v10, rule tests 0.717 -> 0.906; in-sample).
+# measured to move outcomes (sota-agent-evals v7/v10: rule tests 0.698 with no hook -> 0.906; in-sample).
 # It costs about +68% per agent run, so it is offered, not forced; the plugin ships the same
 # script, and a session with both copies names each file once (the script claims it atomically).
 setup_code_rules_hook() {

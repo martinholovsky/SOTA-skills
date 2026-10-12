@@ -1502,10 +1502,15 @@ vs_probe_info "an enabled plugin's skills overrun the budget" "1b. listing budge
 # the SAME library as a plugin beside the personal links: the double install
 vs_fixture_plugin sota-skills sota "fixture router"
 vs_probe_partial "the library installed twice (plugin + links)" "1g. library installed once"
-# 2c: the code-rules hook. Optional (a cost choice), so its absence is INFO with the command;
-# a registration whose script is gone runs nothing on every edit, so that one is PARTIAL.
+# 2c: the code-rules hook. It is the shipped default, so its absence is PARTIAL with what it
+# costs; INFO only when turned off on purpose. A registration whose script is gone runs nothing
+# on every edit, so that one is PARTIAL too.
 printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
-vs_probe_info "the code-rules hook not installed" "2c. code-rules hook" "not installed"
+vs_probe_partial "the code-rules hook not installed" "2c. code-rules hook"
+printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
+export SOTA_CODE_RULES_HOOK=off
+vs_probe_info "the code-rules hook absent and turned off on purpose" "2c. code-rules hook" "deliberate opt-out"
+unset SOTA_CODE_RULES_HOOK
 rm -f "$VS/repo/scripts/code-rules-hook.py"
 vs_probe_partial "a code-rules hook registration whose script is gone" "2c. code-rules hook"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
