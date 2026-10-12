@@ -297,7 +297,7 @@
     {
       "from": "sota-shell-scripting",
       "to": "sota-code-security",
-      "weight": 20,
+      "weight": 21,
       "targets": [
         "rules/10",
         "rules/10 \u00a71",
@@ -305,6 +305,7 @@
         "rules/11 \u00a72.2",
         "rules/11 \u00a77",
         "rules/12 \u00a71a",
+        "rules/12 \u00a71a.1",
         "rules/13 \u00a76",
         "rules/14 \u00a71",
         "rules/14 \u00a74",
@@ -739,6 +740,20 @@
       "targets": []
     },
     {
+      "from": "sota-observability",
+      "to": "sota-code-security",
+      "weight": 7,
+      "targets": [
+        "rules/07 \u00a72",
+        "rules/10",
+        "rules/11 \u00a72.7",
+        "rules/14 \u00a71",
+        "rules/14 \u00a74b",
+        "rules/16 \u00a72.15",
+        "rules/18"
+      ]
+    },
+    {
       "from": "sota-performance",
       "to": "sota-code-security",
       "weight": 7,
@@ -914,19 +929,6 @@
       "to": "sota-secrets-management",
       "weight": 6,
       "targets": []
-    },
-    {
-      "from": "sota-observability",
-      "to": "sota-code-security",
-      "weight": 6,
-      "targets": [
-        "rules/07 \u00a72",
-        "rules/10",
-        "rules/11 \u00a72.7",
-        "rules/14 \u00a71",
-        "rules/14 \u00a74b",
-        "rules/18"
-      ]
     },
     {
       "from": "sota-security-compliance",
@@ -1566,6 +1568,14 @@
       "targets": []
     },
     {
+      "from": "sota-python",
+      "to": "sota-sandboxing",
+      "weight": 3,
+      "targets": [
+        "rules/02"
+      ]
+    },
+    {
       "from": "sota-rust",
       "to": "sota-devsecops",
       "weight": 3,
@@ -2010,12 +2020,6 @@
       "targets": [
         "rules/02 \u00a78a"
       ]
-    },
-    {
-      "from": "sota-python",
-      "to": "sota-sandboxing",
-      "weight": 2,
-      "targets": []
     },
     {
       "from": "sota-ruby",
@@ -2780,6 +2784,14 @@
     },
     {
       "from": "sota-llm-engineering",
+      "to": "sota-ml-engineering",
+      "weight": 1,
+      "targets": [
+        "rules/02 \u00a72"
+      ]
+    },
+    {
+      "from": "sota-llm-engineering",
       "to": "sota-identity-access",
       "weight": 1,
       "targets": [
@@ -3388,12 +3400,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1508,
+    "md link, other skill": 1512,
     "md link, outside skills/": 3,
     "md link, same skill": 2745,
     "name (backticked)": 431,
     "name (bare)": 240,
-    "name+file (backticked)": 580,
+    "name+file (backticked)": 584,
     "name+file (bare)": 160,
     "own rules/NN": 2887
   },
@@ -3405,7 +3417,7 @@
     "md link, same skill": 0,
     "name (backticked)": 416,
     "name (bare)": 197,
-    "name+file (backticked)": 580,
+    "name+file (backticked)": 584,
     "name+file (bare)": 155,
     "own rules/NN": 2817
   },
@@ -3462,7 +3474,7 @@
       "~/.codex/AGENTS.md (Codex)",
       "~/.gemini/GEMINI.md (Gemini CLI, Antigravity)"
     ],
-    "invariants": 39,
+    "invariants": 40,
     "ci_jobs": [
       "Repository invariants",
       "Negative controls (the gate can fail)",

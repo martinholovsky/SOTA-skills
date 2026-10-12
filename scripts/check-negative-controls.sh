@@ -1166,6 +1166,51 @@ p.write_text(t.replace(old, '    return None\\n', 1))
 probe 39c "the trigger detector regresses against its own corpus" \
   "the trigger detector failed its own labelled corpus"
 
+# 40 — a command cites a skill's rules file and never says to load it. Remove /sota-resume's
+# step-0 instruction: its six rules/06 citations are then pointers that load nothing.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('commands/sota-resume.md')
+t = p.read_text()
+old = 'Invoke the \`sota-shell-scripting\` skill and read its'
+assert t.count(old) == 1, 'probe stale: sota-resume step 0 not found'
+p.write_text(t.replace(old, 'Keep in mind what the shell guidance says in', 1))
+" )
+probe 40 "a command cites a skill's rules file and never says to load it" \
+  "commands/sota-resume.md cites \`sota-shell-scripting\` rules/NN but never says"
+
+# 40b — the escape is per (command, skill), not per command: a NEW citation in a file that has
+# a pinned escape must still fail.
+# shellcheck disable=SC2016  # the backticks are literal Markdown, not a command substitution
+( cd "$WT" && printf '\nSee also (`sota-devsecops` rules/09 §2a).\n' >> commands/sota-report.md )
+probe 40b "a pinned escape does not waive another skill's citation" \
+  "commands/sota-report.md cites \`sota-devsecops\` rules/NN but never says"
+
+# 40c — the other side of the route-and-walk escape: /sota-audit passes BECAUSE of its routing
+# step. Remove the router-routing-table sentence and its citations must fail.
+( cd "$WT" && python3 -c "
+import pathlib, re
+p = pathlib.Path('commands/sota-audit.md')
+t = p.read_text()
+n = len(re.findall(r'router.{0,3}s\s+routing\s+table', t))
+assert n >= 1, 'probe stale: no routing-table sentence in sota-audit'
+p.write_text(re.sub(r'router(.{0,3})s(\s+)routing(\s+)table', r'router\1s\2skill\3list', t))
+" )
+probe 40c "a command whose routing step is removed must load what it cites" \
+  "commands/sota-audit.md cites"
+
+# 40d — a pinned escape the command no longer needs fails, so EXEMPT cannot become a waiver.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('commands/sota-report.md')
+t = p.read_text()
+old = '(\`sota-secrets-management\` rules/04, verified on gitleaks 8.30.1)'
+assert t.count(old) == 1, 'probe stale: the secrets-management citation not found'
+p.write_text(t.replace(old, '(verified on gitleaks 8.30.1)', 1))
+" )
+probe 40d "a pinned escape the command no longer needs" \
+  "stale escape: commands/sota-report.md"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1547,7 +1592,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39 (36 of 39)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 (37 of 40)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."

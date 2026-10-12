@@ -202,7 +202,8 @@ evidence is ambiguous. Bound what the refuter receives and make its verdict a nu
 sweep is routinely where the strongest finding comes from.
 
 Absence claims get a refuter too, and carry the heavier burden: a negative needs a positive
-control in the same invocation, or a denominator where no control is available
+control in the same invocation and through the same input path, or a denominator where no
+control is available
 (`sota-shell-scripting` rules/06 §2, `sota-code-security` rules/11 §2.2).
 
 Scale depth to what you find — loop on the lenses turning up real issues until new findings dry

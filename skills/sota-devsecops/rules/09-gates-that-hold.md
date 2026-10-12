@@ -238,11 +238,13 @@ Field-measured: `cargo fmt --check --manifest-path kernel/Cargo.toml` exited 0 o
 `cargo fmt --check` from the repo root reported two diffs on, because the narrower manifest
 excluded the workspace member holding most of the code. CI rejected what local had passed.
 
-- **Print the binary and the version in the same invocation as the verdict** — `command -v
-  cargo`, `cargo --version` — rather than trusting the version manager's idea of what is
-  active. For a pinned toolchain the ground truth is `rustup run <channel> cargo --version`,
-  which execs the real binary and is immune to shadowing; `rustup show active-toolchain`
-  reports the *pin*, which is never the thing that breaks.
+- **Print the binary and the version in the same invocation as the verdict** — `type cargo`,
+  `cargo --version` — rather than trusting the version manager's idea of what is active.
+  `type`, not `command -v`: when a shell function or alias shadows the name, `command -v`
+  prints only the name (zsh and bash; reproduced 2026-10-12). For a pinned toolchain the
+  ground truth is `rustup run <channel> cargo --version`, which execs the real binary and is
+  immune to shadowing; `rustup show active-toolchain` reports the *pin*, which is never the
+  thing that breaks.
 - **Prefer the project's own check script to an ad-hoc invocation** — it encodes the intended
   scope. Where you must go ad-hoc, establish coverage: count the files, or change one
   deliberately and confirm the check goes red.
@@ -329,7 +331,7 @@ release tag directly is the finding.
       `PATH` order decides which toolchain ran — a shadowing binary made `cargo fmt --check`
       exit 0 while ignoring every nightly-only config key — and a scoping flag
       (`--manifest-path`, a path arg, an ignore file) narrows coverage without changing how
-      the green looks. `command -v` + `--version` beside the result; for a pin, compare
+      the green looks. `type` + `--version` beside the result; for a pin, compare
       against `rustup run <channel> …`, not `rustup show active-toolchain`.
 - [ ] **Where do the gates stop, and what runs after?** (§2a) Name each gate's terminal
       artifact. If a loader, verifier, dynamic linker, capability check, admission

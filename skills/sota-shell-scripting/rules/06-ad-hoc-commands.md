@@ -112,8 +112,9 @@ Use `-R` when you mean "follow", and say which you used when you report a count.
 the general remedy for every false absence in this file, and it sits here only because the
 symlink case is where it was first measured. §1 says to positive-control a sweep; the
 sharpening is *where*. A control run separately is a different command against a possibly
-different tree, and it is the one people skip when the result looks plausible. Put a term
-you know is present into the same run and read both numbers:
+different tree, and it is the one people skip when the result looks plausible. **Same run means
+same path:** the control shares the query's file list and every pipeline stage (`xargs`,
+redirections) and differs only in the needle, as `$files` does here. Read both numbers:
 
 ```bash
 files=("${(@f)$(git ls-files '*.md')}")            # zsh; see `rules/01` §3
@@ -123,15 +124,16 @@ printf 'control=%s  hits=%s\n' \
 ```
 
 A control of **0** means the sweep is broken and the `hits=0` beside it means nothing. This
-is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2's known-good, at one-liner scale.
+is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2's known-good, at one-liner scale. A control on the same
+command line through a different path proves only that the shell ran (field-reported 2026-10-11;
+refutation form: [`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a.1).
 
 **A passing control proves the instrument, not the scope.** A control drawn from *inside* the
-scope you searched passes whether or not that scope excludes the answer. Field-reported:
-`rg -l 'positive control' skills/ --glob '**/rules/*.md'` returned 4 files, the real query
-returned 0 and was reported as a gap, and the answer sat in `skills/sota/SKILL.md`, which that
-glob never matches. **Draw the control from where your scope is least likely to reach**, and
-print the file count beside the zero: a denominator that is implausibly small for the corpus
-is the tell.
+scope you searched passes whether or not that scope excludes the answer. Field-reported: `rg -l
+'positive control' skills/ --glob '**/rules/*.md'` returned 4 files, the real query returned 0
+and was reported as a gap, and the answer sat in `skills/sota/SKILL.md`, which that glob never
+matches. **Draw the control from where your scope is least likely to reach**, and print the file
+count beside the zero: a denominator that is implausibly small for the corpus is the tell.
 
 **Where you have nothing to control *with*, print a denominator instead.** A positive control
 needs a term you already know is present — unavailable exactly where this fails most: an
@@ -158,10 +160,9 @@ printf 'ARCHIVE_BYTES:%s  MEMBERS:%s  CONFIG_LINES:%s\n' \
 store rather than a file — an empty result carries the store's identity *and* its inventory:
 [`sota-code-security` rules/13](../../sota-code-security/rules/13-context-dependent-silence.md) §6.
 
-**And where a command *reports* what it did, read the result instead.** `cargo clean`
-printed `Removed 740751 files, 75.8GiB total` — specific and authoritative — while `df`
-showed nothing freed, a snapshot still holding the blocks. Two instruments caught it by
-luck, not by design.
+**And where a command *reports* what it did, read the result instead.** `cargo clean` printed
+`Removed 740751 files, 75.8GiB total` — specific and authoritative — while `df` showed nothing
+freed, a snapshot still holding the blocks. Two instruments caught it by luck, not by design.
 
 **Every searcher has silent-exclusion defaults, and they differ — so the fix is naming them,
 not switching tool.** Measured on one tree holding four matches (plain, hidden, gitignored,
@@ -194,12 +195,11 @@ archives*. So `grep --version` and `command grep --version` named different prog
 flag decided which one ran. Call the binary you mean (`ugrep …`, `rg …`) when the semantics
 matter, and check `type grep` before trusting a sweep's flags.
 
-Worth knowing rather than mandating, since availability varies: **ugrep** carries the
-features an audit sweep actually wants — `--bool` for `A AND B NOT C` queries (verified
-working), `-z` to search inside archives and compressed files, `-Z` fuzzy, `-Q` interactive;
-**ripgrep** is fastest and gitignore-aware by default (which is an exclusion, see the table
-above); **ast-grep** answers construct questions regex cannot. Use what is installed, and
-say which.
+Worth knowing rather than mandating, since availability varies: **ugrep** carries the features
+an audit sweep actually wants — `--bool` for `A AND B NOT C` queries (verified working), `-z` to
+search inside archives and compressed files, `-Z` fuzzy, `-Q` interactive; **ripgrep** is
+fastest and gitignore-aware by default (which is an exclusion, see the table above);
+**ast-grep** answers construct questions regex cannot. Use what is installed, and say which.
 
 Choose by the question, not by fashion: a regex tool answers *"does this string appear"*;
 answering *"is this construct used"* wants an AST matcher (`ast-grep`, a language's own
@@ -482,7 +482,7 @@ filed under the wrong thing** — index it by what it is *for*.
       `-r` skips symlinked dirs met in traversal and `-R` follows **only on ugrep/GNU** —
       on BSD grep (macOS `/usr/bin/grep`) neither does; `rg` skips gitignored and hidden by
       default; `type grep` may reveal a wrapper. Control the sweep with a known-present term
-      **in the same invocation**, drawn from where the scope is least likely to reach: a
+      **in the same invocation, through the same input path**, drawn from where the scope is least likely to reach: a
       control from inside a too-narrow glob passes while the answer sits outside it.
 - [ ] **Every extraction or fetch printed a denominator** (§2) — bytes retrieved, members
       listed, total files — in the **same invocation** as the result read from it. `LINES:0`

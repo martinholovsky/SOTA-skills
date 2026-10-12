@@ -8,6 +8,14 @@ This is the other end of `/sota-close`: that command records open items where a 
 will trip over them, this one picks them up. Neither assumes the other ran — most projects
 scatter their open work across files written by people who are not here.
 
+## 0. Load the shell rules before the first search
+
+Invoke the `sota-shell-scripting` skill and read its `rules/06` (ad-hoc commands) in full **now**,
+before step 1. Every step-1 sweep is an ad-hoc command whose *absence* you are about to report,
+and that file owns how such a sweep fails silently. The parentheses below are pointers into it,
+not substitutes: a citation loads nothing. Field-reported 2026-10-11: a resume pass ran ten
+sweeps with this command's paraphrase alone, and two of its defects were ones rules/06 prevents.
+
 ## 1. Inventory — and prove the search works before trusting it
 
 Search widely before concluding anything:
@@ -25,8 +33,10 @@ it.** Five failure modes produce a confident zero, and none of them prints an er
 - **The searcher skipped the tree.** `grep -r` does not follow symlinked directories, and
   package dirs, dotfile checkouts and installed-plugin trees are symlink farms. Which flag
   rescues you depends on the *binary*: on BSD grep neither `-r` nor `-R` traverses one. Say
-  which tool and which binary you used — `command -v grep` — and reach for `find -L`,
-  `rg --follow` or `ugrep -R` (`sota-shell-scripting` rules/06 §2).
+  which tool and which binary you used — `type grep`, which names a shell function or alias
+  (`command -v` prints only the bare name for a function, so it cannot answer this); then call
+  the real binary by path (`whence -p grep` in zsh, `type -P grep` in bash) — and reach for
+  `find -L`, `rg --follow` or `ugrep -R` (`sota-shell-scripting` rules/06 §2).
 - **The flag meant something else.** `rg -r` is `--replace`, not "recursive"; it silently
   rewrites every match to the next token and the output looks like content
   (`sota-shell-scripting` rules/06 §2a).
@@ -39,8 +49,10 @@ it.** Five failure modes produce a confident zero, and none of them prints an er
 - **The query asked your question, not the project's.** `grep` answers "does this string
   appear", never "is this idea covered". A project that writes "parked" will not match "TODO".
 
-**Run one query whose answer you already know, in the same invocation as the real one** —
-drawn from where your search is least likely to reach, because a control from inside a
+**Run one query whose answer you already know, in the same invocation as the real one and
+through the same input path** — the same file list, the same `xargs`, the same redirections,
+differing only in the needle; a control on the same line that reads a different input proves
+only that the shell ran — and drawn from where your search is least likely to reach, because a control from inside a
 too-narrow scope passes anyway (`sota-shell-scripting` rules/06 §2). If the
 control returns nothing, the instrument is broken and the absence is worth nothing. Then
 report the **denominator** — how many files you actually scanned — beside the finding count.
@@ -101,7 +113,7 @@ For each agreed item:
 3. **Watch it fail before trusting it to pass.** If you did not see the check reject something,
    you do not know it ran — a suite that silently matched zero files exits 0 and prints `ok`.
    A green check whose environment cannot reach the defect is green and proves nothing; say
-   what depth it reached (`sota-devsecops` rules/09 §2a).
+   what depth it reached — read `sota-devsecops` rules/09 §2a for how before you claim it.
 4. **Update the tracker in the same change.** Status lives in one place; everything above it is
    derived. Grep the summary for the item's own identifier in the same commit that closes it,
    or the summary is stale before you finish reading this.

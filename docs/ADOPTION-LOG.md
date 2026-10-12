@@ -7902,3 +7902,29 @@ file), and the Claude Code hooks docs. Each quote was re-fetched before use.
 | Making room: the router's "a routing gap should end as a test" paragraph | **relocated, text unchanged** — maintainer guidance, not a BUILD step; a pointer stays in the router | `skills/sota/rules/04` "A routing gap ends as a test, not just a report" |
 | The reach metric counts only a tool input that names the file; v12's w07 and w09 found cited text by grep | **recorded as a limit, not changed** — counted beside the primary in v13 (1 run); changing a pre-registered metric mid-series would break comparability | sota-agent-evals v13 report |
 | Hooks docs: injected text should read as facts, since text "framed as out-of-band system commands can trigger Claude's prompt-injection defenses"; the code-rules hook's text is imperative | **deferred** — revisit trigger: the next paid run of the hook, as an extra arm (about $8). v10 measured the imperative wording at 0.906, so no defect has been shown | — |
+
+
+## 2026-10-11 and 2026-10-12 — two field reports from sessions applying the library (LLM-guardrail red-team harness; LLM-guardrail proxy), taken in 2026-10-12
+
+**Source:** two field reports kept local (`FIELD-REPORT-LLM-GUARDRAIL-REDTEAM-2026-10-11.local.md`,
+255 lines; `FIELD-REPORT-LLM-GUARDRAIL-PROXY-2026-10-12.local.md`, 236 lines), both read in full.
+Every claim about the library's text was re-checked here, and every mechanism was reproduced:
+`command -v` vs `type` in zsh and bash with a control; `RLIMIT_AS` vs `RLIMIT_DATA` with ffprobe
+7.1 on public `debian:stable-slim`; the pydantic-settings 2.15.0 warning class; FastAPI's PyPI
+metadata. A third data point for the red-team report's Finding 1: this repo's own `/sota-close`
+on 2026-10-12 also cited rules/06 throughout and never loaded it.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| R1 — `/sota-resume` and `/sota-close` cite `sota-shell-scripting` rules/06 six times each but never say to load it (0 routing lines, vs 34 in `/sota-audit`, 18 in `/sota-deep-audit`) | **adopted** — a step 0, "invoke the skill and read rules/06 now; a citation loads nothing" | `commands/sota-resume.md`, `commands/sota-close.md` §0 |
+| R1b — a gate: a command citing `<skill> rules/NN` must say to load `<skill>` | **adopted with a correction** — a per-skill rule alone would fail `/sota-audit` and `/sota-deep-audit`, which route on purpose; designed against the measured commands: a route-and-walk step OR an explicit invoke/load/read per cited skill, escapes pinned with reasons, a stale escape fails. It found two more (`/sota-report` → shell-scripting, `/sota-resume` → devsecops), both fixed | invariant 40; probes 40–40d |
+| R1c — widen the router description's trigger list to "inventory, resume, close" | **rejected: the cause is fixed where it lives** — the description is the routing classifier, so a change needs a routing eval, and the commands now load the skill themselves | — |
+| R2 — `/sota-resume` prescribes `command -v grep`, which prints only the name for a function or alias; rules/06 already says `type grep` | **adopted** (reproduced in zsh and bash, with an unshadowed control). `sota-devsecops` rules/09's "print the binary" had the same paraphrase | `commands/sota-resume.md` §1 · `sota-devsecops` rules/09 |
+| R3 — "a control in the same invocation" is satisfied by a control that reads a different input path | **adopted** — "same run means same path: the same file list and every pipeline stage, differing only in the needle"; cross-referenced to the existing refutation form | `sota-shell-scripting` rules/06 §2 + checklist · all four commands |
+| P0a — one router load in 22 hook-carrying turns, no domain skill ever opened | **recorded as data** — the in-the-wild form of what ROADMAP 73 measures | ROADMAP 73 |
+| P0b — "1.48.0" stamps ten content commits on a symlink install | **adopted** — the report stamp adds the checkout's commit | `commands/sota-report.md` |
+| P1 — R7.2a covers Go and the JVM; a native binary dies in its loader with exit 127, read as "missing", so an inspection reports EMPTY | **adopted** (reproduced 2026-10-12: AS 200M rc 127, DATA 200M rc 0, DATA still kills a 400 MiB allocation) — a table row, the exit-127 sentence, a sandboxing non-negotiable line, and the Python spelling with a checklist item | `sota-sandboxing` rules/02 R7.2a + SKILL.md · `sota-python` rules/05 §2 |
+| P2 — `filterwarnings = ["error::DeprecationWarning"]` misses `UserWarning` subclasses | **adopted** (pydantic-settings 2.15.0: `IncompleteFieldDefinitionWarning` → `UserWarning`) — blanket `error` plus message-scoped ignores; checklist item updated | `sota-python` rules/03 |
+| P3 — gate "tracing available" on the SDK import, not the API | **adopted with a correction** — the report's "FastAPI ≥ 0.143" is the wrong boundary: 0.142.0 already requires `opentelemetry-api` (PyPI metadata); written without a version | `sota-observability` rules/03 §1 |
+| P4 — an offline LLM eval must send the bytes the app sends | **adopted, with the report's own caveat** (one specimen) — the principle is train/serve skew, cross-linked; checklist item added | `sota-llm-engineering` rules/01 §4 |
+| P5 — `/sota-close`'s "count, do not compute" caught a stale count in an agent file | **recorded: worked** | — |

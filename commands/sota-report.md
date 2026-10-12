@@ -14,11 +14,16 @@ was wrong, or was right and did not fire.
 The evidence is bound to the version that produced it, so the report opens with:
 
     SOTA-skills version : <from the VERSION file next to the installed library>
+    Library commit      : <for a symlink install: the checkout's HEAD, short sha>
     Install type        : symlink / --copy snapshot / plugin / unknown
     Date                : <today>
 
 Resolve it without guessing: `readlink ~/.claude/skills/sota` gives the repo path for a
-symlink install — `cat <that>/../../VERSION`. For a plugin install look under
+symlink install — `cat <that>/../../VERSION`, and `git -C <that>/../.. rev-parse --short HEAD`
+for the commit. **A symlink install moves with every `git pull` while VERSION stays put** until
+a release (field-reported 2026-10-12: one "1.48.0" stamp covered ten content commits), so the
+version alone cannot say which text you ran. If the session spanned a pull, give the commit
+range. For a plugin install look under
 `~/.claude/plugins`. **If you cannot resolve it, write `unknown` and say why.** A wrong
 version stamp is worse than none: it is the field a maintainer trusts to decide whether your
 finding still applies.
@@ -74,8 +79,9 @@ after this instruction's literal form cost it a red gate.
 
 ## Four checks that decide whether I can act on it
 
-A. Check coverage in the LIBRARY'S vocabulary, not yours. Before writing "nothing covers
-this", search for the words the library would use, not the words you would. A real example: a
+A. Check coverage in the LIBRARY'S vocabulary, not yours. These checks are sweeps whose
+*absence* you will report, so first invoke the `sota-shell-scripting` skill and read its
+`rules/06` (ad-hoc commands). Before writing "nothing covers this", search for the words the library would use, not the words you would. A real example: a
 gap was declared after searching "one instance | a single observation" while the corpus said
 "one sample" in six files, including a named failure mode. Run a positive control in the same
 command (search a term you know is there); if the control returns nothing your instrument is

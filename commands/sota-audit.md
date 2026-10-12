@@ -242,7 +242,8 @@ two counts, because presence and reach are different claims:
   reach (`sota-devsecops` rules/09 §2a, §2b).
 
 **Your own sweeps are controls too, and they fail the same way.** Every absence you report
-needs a positive control in the same invocation — search for something you have already seen,
+needs a positive control in the same invocation, through the same input path (same file list,
+same pipeline, only the needle differs) — search for something you have already seen,
 drawn from where your scope is least likely to reach (a control from inside a too-narrow scope
 passes anyway); if the control returns nothing, the instrument is broken and the absence is
 worth nothing (`sota-shell-scripting` rules/06 §2). A positive control proves the instrument;

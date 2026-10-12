@@ -564,7 +564,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39 — 36 of 39; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 — 37 of 40; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -698,6 +698,13 @@ CI scans the full git history, the pre-commit hook scans each commit.
     `scripts/lib/check-deferral-triggers.py`, runs its labelled `--self-test` first; a
     trigger it cannot resolve to one file is printed `UNRESOLVED` and not enforced, so
     naming the skill and `rules/NN` in a new deferral is what puts it under the gate.
+40. **A command cites a skill's rules file and never says to load it.** A citation in
+    `commands/*.md` is a pointer, not a load: an agent following the command works from the
+    inline paraphrase and never opens the file. Either route and walk (map surfaces through
+    the router's routing table, then each rules file, as `/sota-audit` does) or name each
+    cited skill in an explicit instruction — "invoke the `sota-shell-scripting` skill and
+    read its `rules/06`". A citation that is only provenance for one fact goes in the
+    check's pinned `EXEMPT` list, with its reason.
 
 ## Local setup
 

@@ -113,6 +113,8 @@ every workload audited.
 6. **Resource budgets on every sandbox**: `memory.max` (+swap off), `pids.max`,
    CPU quota, *and* a wall-clock kill — quotas throttle, they don't terminate; GPUs
    granted by count or ID, never all, and bandwidth shaped where tenants share (`02`,`03`,`05`).
+   Where no cgroup is available, cap memory with `RLIMIT_DATA`, **never `RLIMIT_AS`**: an AS cap
+   kills Go, the JVM and native binaries at startup on legitimate input (`02` R7.2a).
 7. **Never mount the Docker/CRI socket; never `--privileged`; never host
    pid/net/ipc namespaces** for anything touching untrusted data (`03`).
 8. **Default-deny network egress** with explicit FQDN allowlists; metadata

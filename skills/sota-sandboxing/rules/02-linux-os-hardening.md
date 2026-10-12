@@ -227,6 +227,15 @@ input. Measured 2026-08-18 in a container, linux/amd64:
 |---|---|---|---|
 | Go 1.26, hello world | 1,227,204 kB (~1.17 GiB) | 2,376 kB | `fatal error: failed to reserve page summary memory` |
 | Temurin 25, `-Xmx128m` | 3,937,756 kB (~3.75 GiB) | 112,908 kB | `Could not reserve enough space for 131072 KB object heap` |
+| native C, many shared libs (`ffprobe` 7.1) | — | — | under `ulimit -v 200M`: exit **127**, `error while loading shared libraries: … failed to map segment` |
+
+**Native binaries fail differently, and the code says "missing", not "failed".** The last row
+dies in the dynamic loader before `main`, and **127** is the shell's *command not found* code.
+A caller that maps a non-zero probe to "no output" or "tool unavailable" turns the AS cap into a
+silent skip: the inspection reports **EMPTY**, not FAILED. Reproduced 2026-10-12 on
+`debian:stable-slim` with ffmpeg: `ulimit -d 200M` runs the same probe (rc 0) and still kills a
+400 MiB allocation (rc 12). Field-reported first in a file-inspection worker, where an AS cap
+had already been patched twice at the symptom.
 
 Reported against Go 1.14, whose allocator change introduced the jump
 (golang/go#38010); it has not come back down — the row above is Go 1.26. **`RLIMIT_DATA` is the working knob**: since Linux 4.7 it covers private

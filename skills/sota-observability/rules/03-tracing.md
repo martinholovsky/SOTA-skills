@@ -13,6 +13,14 @@ tracing SDKs in application code are technical debt as of 2026.
 - **Applications configure the SDK once at the entry point**: tracer
   provider, resource attributes, sampler, exporter (OTLP). Nothing else in
   the codebase imports SDK packages.
+- **Gate "tracing is available" on importing the SDK, never the API.** The API is designed
+  to be present and inert, and frameworks now pull it in themselves (FastAPI declares
+  `opentelemetry-api` as a required dependency and the SDK only as an extra; PyPI metadata,
+  checked 2026-10-12). So `import opentelemetry` succeeding says nothing: an app that gated
+  on it and then imported the SDK crashed at startup with `otel.enabled: true`, and a test
+  guarded by `importorskip("opentelemetry")` ran and failed instead of skipping
+  (field-reported). Import the SDK modules you configure, and warn when one is missing. Same
+  family as [`sota-code-security` rules/16](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.15: present is not working.
 - **Export OTLP to a Collector**, not directly to a vendor: the Collector
   owns batching, retries, tail sampling, redaction, fan-out, and vendor
   routing. Swapping backends becomes a Collector config change, not a code

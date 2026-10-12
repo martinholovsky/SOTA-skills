@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Two field reports taken in** (an LLM-guardrail red-team harness, 2026-10-11, and a guardrail
+  proxy, 2026-10-12). Every library-text claim was re-checked and every mechanism reproduced; the
+  ADOPTION-LOG section has each verdict.
+  - **Commands now load what they cite.** `/sota-resume` and `/sota-close` gain a step 0 that
+    loads `sota-shell-scripting` rules/06 before the first sweep. Before, they cited it six times
+    each and loaded nothing.
+  - **Invariant 40 gates this.** A command that cites `<skill> rules/NN` must route and walk, or
+    name each cited skill in an invoke/load/read instruction. Escapes are pinned with a reason, and
+    a stale escape fails. Four probes; it also found `/sota-report` and `/sota-resume` citing
+    without loading.
+  - **`type`, not `command -v`,** to identify a binary: `command -v` prints only the name for a
+    shell function. Changed in `/sota-resume` and `sota-devsecops` rules/09.
+  - **A control must go through the query's input path** (rules/06 §2 and all four commands).
+  - **`/sota-report` stamps the library commit** as well as VERSION.
+  - **Content changes:**
+    - `RLIMIT_AS` kills a native binary in its loader with exit 127 (`sota-sandboxing` R7.2a, a
+      non-negotiable, and `sota-python` rules/05);
+    - blanket `filterwarnings = ["error"]` (`sota-python` rules/03);
+    - gate tracing on the SDK, not the API (`sota-observability` rules/03);
+    - offline LLM evals send what production sends (`sota-llm-engineering` rules/01 §4).
+
 - **`verify-setup.sh` reports the code-rules hook (check 2c).**
   - **PASS** when `~/.claude/settings.json` or the plugin registers it and `python3` is on PATH.
   - **PARTIAL** when the registered script path is gone (the hook then fails on every edit) or

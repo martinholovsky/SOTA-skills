@@ -16,6 +16,15 @@ predate an edit made since. Re-read the path.
 propagated by them into a doc, a commit message, a memory file, or a hand-off — where the
 next session will read it as established.
 
+## 0. Load the shell rules before the first sweep
+
+Steps 1, 2 and 4 are mostly ad-hoc commands whose result you will report: `git log -S`, a grep
+for a wrong claim's copies, a count, a PR listing. Invoke the `sota-shell-scripting` skill and
+read its `rules/06` (ad-hoc commands) and `rules/09` (listers) **now**. The parenthesised
+citations below are pointers into those files, not substitutes for them: a citation loads
+nothing. Field-reported 2026-10-11 and seen again 2026-10-12: a closure pass that cited rules/06
+throughout never loaded it.
+
 ## 1. Retract first
 
 List every claim you made this session that later proved wrong, unverified, or was overtaken
@@ -100,7 +109,8 @@ pass exists to compensate for.
   before reporting either number — and note that the fix for one can silently change the
   population the other counted. (Measured here: 330 vs 339 merged PRs reconciled to a wrong
   predicate, `state=closed` including closed-unmerged — `sota-shell-scripting` rules/09 §5.)
-- **Every absence needs a positive control in the same invocation** — search for something you
+- **Every absence needs a positive control in the same invocation and through the same input
+  path** (same file list, same pipeline, only the needle differs) — search for something you
   have already seen, drawn from where your scope is least likely to reach: a control from
   inside a too-narrow scope passes anyway (`sota-shell-scripting` rules/06 §2). If the control
   comes back empty, the instrument is broken and the absence is worth nothing. "Independent" means a different failure mode, not a
