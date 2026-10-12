@@ -1350,6 +1350,10 @@ It is the one routing change measured to move outcomes: rule tests 0.717 → 0.9
 It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigger table was tuned on the same cases that
 measured it, and it needs `python3`. Turn it off with `SOTA_CODE_RULES_HOOK=off`.
 `install.sh --routing` offers the same hook to clone installs; with both, each file is named once.
+**The router carries the same table as text** ("What your code does: the rules file to read"), for
+hosts that cannot run a hook. Measured without the hook, it got agents to the right rules file in
+14 of 20 runs, against 6, and rule tests rose 0.679 → 0.792
+([sota-agent-evals v13](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v13/REPORT.md); in-sample, like the hook's own numbers).
 
 The plugin does **not** touch your global config or status line. To match the clone experience,
 opt in to any of these; the scripts ship *with* the plugin, under its cache dir:

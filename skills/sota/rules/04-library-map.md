@@ -158,6 +158,24 @@ exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-pa
   unsafe, 05 security, 06 server-side (Vapor/Hummingbird/NIO), 07 performance, 08 tooling, CI &
   testing, 09 supply chain
 
+## A routing gap ends as a test, not just a report
+
+*Moved from the router 2026-10-12 to make room for its "what your code does" table (ROADMAP 73 (o)).*
+
+If the right skill existed
+and the task never reached it, the fix is the *trigger* — the skill's `description` is the
+only auto-loading text and is the whole classifier, provided it survives the listing budget
+(1% of context; the least-invoked skills drop to name-only — `scripts/verify-setup.sh` flags it,
+`/doctor` estimates the listing's cost; check that before calling it a trigger defect) — and the proof is a regression case in
+`evals/cases/desc-routing-regressions.jsonl`, which pins the mis-route so it cannot return.
+**Run that case against the PRE-change tree and watch it fail first.** A case that passes in
+both arms pins nothing, and an absent *string* is not an absent *capability* — a model routes
+on meaning, so grep cannot tell you whether a task is reachable. Measured 2026-09-14: a
+PowerShell task claimed to be a routing gap already routed correctly with **0 of 42
+descriptions naming PowerShell**, and the case written to pin the "fix" scored 1.00 before
+*and* after. Same doctrine as every gate here — watch it fail first, or you have added a
+control that cannot fail.
+
 ## Audit checklist
 
 - [ ] Does every `skills/sota-*/rules/NN-*.md` in the tree appear in the map above, and

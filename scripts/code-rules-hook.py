@@ -264,6 +264,47 @@ def table() -> str:
     return "\n".join(out) + "\n"
 
 
+ROUTER = ROOT / "skills" / "sota" / "SKILL.md"
+ROUTER_HEADING = "## What your code does: the rules file to read"
+
+
+def router_table() -> str:
+    """The same triggers as a section of the router (ROADMAP 73 (o)), one row per set of files, so
+    an agent that never runs this hook (any host but Claude Code) still finds the file from the
+    words of its task. v12: a cited file was reached in 5 of 7 tasks where the router linked it next
+    to matching words, 1 of 13 where it did not. Generated; the self-test fails if the router's copy
+    differs."""
+    groups: dict[tuple, list[str]] = {}            # one row per set of files, in table order
+    for what, _, refs in TRIGGERS:
+        what = what.split(", which")[0]
+        if len(refs) == 1:                         # one file: its section goes beside the words
+            skill, num, section = refs[0]
+            groups.setdefault(((skill, num, ""),), []).append("%s (%s)" % (what, section))
+        else:
+            groups.setdefault(tuple(refs), []).append(what)
+    out = [ROUTER_HEADING, "",
+           "When the code you are about to write does one of these things, read the file in full, then",
+           "check your change against it and its Audit checklist before you finish. " + APPLY, "",
+           "| When your code... | Read in full, then check |", "|---|---|"]
+    for refs, whats in groups.items():
+        cells = []
+        for skill, num, section in refs:
+            hits = sorted((ROOT / "skills" / skill / "rules").glob(num + "-*.md"))
+            if hits:
+                cells.append(("[`%s` rules/%s](../%s/rules/%s) %s" % (skill, num, skill, hits[0].name, section)).rstrip())
+        out.append("| %s | %s |" % ("; ".join(whats), "; ".join(cells)))
+    return "\n".join(out) + "\n"
+
+
+def router_section(text: str) -> str:
+    """The router's copy: from ROUTER_HEADING to the next level-2 heading."""
+    i = text.find(ROUTER_HEADING)
+    if i < 0:
+        return ""
+    j = text.find("\n## ", i + len(ROUTER_HEADING))
+    return text[i:j + 1 if j >= 0 else len(text)].rstrip("\n") + "\n"
+
+
 def main() -> int:
     if os.environ.get("SOTA_CODE_RULES_HOOK", "on").lower() in {"off", "0", "false", "no"}:
         return 0
@@ -354,6 +395,8 @@ def self_test() -> int:
     rows = [l for l in table().splitlines() if l.startswith("| ") and "](../" in l]
     check("--table: one row per (trigger, file) pair (%d)" % len(rows),
           len(rows) == sum(len(refs) for _, _, refs in TRIGGERS))
+    check("the router's table is the generated one (python3 scripts/code-rules-hook.py --router-table)",
+          router_section(ROUTER.read_text(encoding="utf-8")) == router_table())
     for f in fails:
         print("FAIL:", f)
     print("%s: %d/%d" % ("FAIL" if fails else "PASS", n - len(fails), n))
@@ -361,6 +404,9 @@ def self_test() -> int:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--router-table"]:
+        sys.stdout.write(router_table())
+        sys.exit(0)
     if sys.argv[1:] == ["--table"]:
         sys.stdout.write(table())
         sys.exit(0)
