@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The code-rules hook now says the rules it names are part of the task (ROADMAP 73, option
+  (j)).** After naming the files, `scripts/code-rules-hook.py` adds one paragraph: the rules are part
+  of what was asked, so build each one now with a conservative default, do not hand it back as a
+  question unless the request rules it out, and name each default in the final message. In
+  `sota-agent-evals`:
+  - v10: rule tests went 0.717 → 0.906 against the hook without the paragraph (SUPPORTED, 6 cases
+    up, 0 down, p = 0.0156). That is above the arm that named the cited files in the prompt (0.868).
+    Spec tests stayed 20/20.
+  - v11: a bare `MANDATORY:` label in place of the paragraph scored 0.698 (NULL), and all 8 of its
+    failing runs named the rule and handed it back. The paragraph beat the label by +0.208.
+
+  The hook stays opt-in. `--self-test` gains a check for the paragraph (21 checks).
 - **An opt-in hook names the rules file for what the code just written does (ROADMAP 73, option
   (h)).** `scripts/code-rules-hook.py` is a PostToolUse hook on `Edit|Write|MultiEdit`. It matches
   the written text against 19 triggers taken from the skills' rules indexes, such as an outbound
