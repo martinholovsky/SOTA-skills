@@ -18,7 +18,10 @@ counts as part of the task (ROADMAP 73).
 
 WHAT IT SAYS (as `additionalContext`, read next to the tool result): for each trigger the written
 text matches, in table order, the absolute path of the rules file and the section to check, with
-one action — read each named file in full, then check the change against it. A file is named at
+one action — read each named file in full, then check the change against it — and then (APPLY,
+ROADMAP 73 (j), under measurement in v10) that those rules are part of the task: build each with a
+conservative default rather than handing it back, unless the request rules it out, and name each
+default in one line of the final message. A file is named at
 most once per session, and at most PER_EVENT new files per edit, so a long session is not flooded.
 Test files are skipped: what matters is what the shipped code does.
 
@@ -175,6 +178,13 @@ def select(text: str, already: set[str]) -> list[tuple[str, Path, str]]:
     return [("; ".join(w), p, "; ".join(s)) for p, (w, s) in picked.items()]
 
 
+APPLY = ("These rules apply to this change: they are part of what was asked, not extras beyond the spec. "
+         "Build what each one requires now, with a conservative default (a cap, a limit, an allow-list, a "
+         "guard). Do not hand it back as a question or a note instead of building it, unless the user's "
+         "request explicitly rules it out. In your final message, name each default you chose in one line, "
+         "so the user can change it.")
+
+
 def message(path: str, picks: list[tuple[str, Path, str]]) -> str:
     lines = ["SOTA: the code you just wrote in %s:" % path]
     for what, p, section in picks:
@@ -182,6 +192,7 @@ def message(path: str, picks: list[tuple[str, Path, str]]) -> str:
     lines.append("Read each file named above in full now — every line, with no offset, limit, head, "
                  "line range or grep, because a rule you did not read cannot be applied. Then check "
                  "this change against it, including the Audit checklist at its end, before you finish.")
+    lines.append(APPLY)
     return "\n".join(lines)
 
 
@@ -273,6 +284,8 @@ def self_test() -> int:
         check("csv: names code-security/01 by absolute path", (cs01 + "/01-") in c and "CSV/formula" in c)
         check("csv: one concrete action, a full read", "Read each file named above in full" in c
               and "Audit checklist" in c)
+        check("csv: the rule is part of the task, with no hand-back exit", "they are part of what was asked" in c
+              and "Do not hand it back" in c and "conservative default" in c)
         rc, c, _ = run(ev("s1", "/w/shop/export.py", "w.writerow(row)  # csv again\nimport csv\n", "Edit"))
         check("same file is not named twice in a session", c == "")
         rc, c, _ = run(ev("s2", "/w/shop/export.py", "import csv\n", "Edit"))
