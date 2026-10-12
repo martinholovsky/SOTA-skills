@@ -91,7 +91,7 @@ Concrete numbers — apply, don't debate:
 ```
 
 - `system-ui` alone is a legitimate, fast, zero-CLS choice for product UI — but then identity must
-  come from color/spacing/motion (rules/07 §6), and you still tokenize sizes/weights.
+  come from color/spacing/motion ([rules/07](07-visual-craft-distinctiveness.md) §6), and you still tokenize sizes/weights.
 - Hyphenation: `hyphens: auto` (with correct `lang` attribute — it's lang-dependent) only on
   narrow justified-adjacent columns; never on headings or UI labels.
 - Microtypography that signals craft: real quotes and apostrophes (‘ ’ “ ”), en dash for ranges
@@ -151,7 +151,7 @@ for every accent and keeps ramps consistent:
   unverifiable; text tokens are opaque, computed per theme.
 - Selection and focus are brand surfaces too: `::selection { background: var(--accent-bg);
   color: var(--accent-fg); }` (check 4.5:1!) and `--focus-ring` as its own token (usually accent
-  at full chroma, 2px, offset 2px) — one token so rules/05's ring is consistent everywhere.
+  at full chroma, 2px, offset 2px) — one token so [rules/05](05-accessibility.md)'s ring is consistent everywhere.
 - Wide gamut: define P3-capable OKLCH values; browsers gamut-map for sRGB screens. For maximum
   control wrap vivid brand moments in `@media (color-gamut: p3)`. Never let a P3-only chroma be
   the sole carrier of a state difference — verify on sRGB.
@@ -168,7 +168,7 @@ WCAG 2.2 AA minimums (hard floor):
 | Focus indicators | 3:1 against both component and background |
 
 - Non-text contrast (1.4.11) is the most-missed rule: input borders, icon-only buttons, toggle states, chart series, slider tracks — all need 3:1.
-- Placeholder text is text: 4.5:1 — which is why placeholder-as-label is banned (see rules/04).
+- Placeholder text is text: 4.5:1 — which is why placeholder-as-label is banned (see [rules/04](04-ux-patterns.md)).
 - Don't rely on contrast alone for state: pair color with icon/weight/underline (links in body text get underlines; color-only links fail 1.4.1).
 - APCA (the WCAG 3 draft model) is better math — use it to *choose* colors, but **ship against WCAG 2.x ratios** because that's what's legally testable in 2026.
 - Disabled controls are exempt from contrast, but if users must *read* the value of a disabled field, render it as read-only text instead.

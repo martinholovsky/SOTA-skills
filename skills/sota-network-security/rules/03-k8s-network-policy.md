@@ -5,9 +5,9 @@ pattern (ingress AND egress), the "default-deny that isn't" trap, the cluster-sc
 AdminNetworkPolicy / BaselineAdminNetworkPolicy (ANP/BANP) API, L7 + identity-based policy,
 DNS-aware egress, egress gateways, and Hubble flow visibility. Examples here use a **Cilium**-based cluster as the worked case.
 
-Where this sits: **sota-kubernetes** owns admission/RBAC and *that NetworkPolicy is admitted and the
-CNI is wired*; this skill owns the policy *content and depth*. sota-cloud-infrastructure rules/03
-owns the cluster's VPC/subnet/IPAM. sota-detection-engineering consumes Hubble flows.
+Where this sits: **[sota-kubernetes](../../sota-kubernetes/SKILL.md)** owns admission/RBAC and *that NetworkPolicy is admitted and the
+CNI is wired*; this skill owns the policy *content and depth*. [sota-cloud-infrastructure rules/03](../../sota-cloud-infrastructure/rules/03-networking.md)
+owns the cluster's VPC/subnet/IPAM. [sota-detection-engineering](../../sota-detection-engineering/SKILL.md) consumes Hubble flows.
 
 Verified (2026-07): Cilium fully implements the upstream `networking.k8s.io/v1` NetworkPolicy and
 adds L7 via Envoy — run the latest stable patch and verify the current release with a quick search
@@ -44,7 +44,7 @@ kubectl -n payments exec deploy/api -- sh -c 'curl -sm3 https://example.com && e
 ## 2. The namespaced default-deny pattern (ingress AND egress)
 
 **R2 — Every namespace gets a default-deny for BOTH directions, then explicit allows.** An
-ingress-only default-deny leaves egress wide open (free C2/exfil — see §5 and rules/05).
+ingress-only default-deny leaves egress wide open (free C2/exfil — see §5 and [rules/05](05-edge-ingress-egress.md)).
 
 ```yaml
 # GOOD: per-namespace default-deny, both directions
@@ -111,7 +111,7 @@ expressible form. Scope it explicitly, in both directions:
   classes (§4, §5). Auditing it is a two-step: an `ipBlock` whose CIDR overlaps the pod or service
   range is the in-cluster case wearing the exception's clothes, and is a finding.
 
-Recorded 2026-09-11 from a measured cross-skill conflict: `sota-sandboxing` rules/03 R3.4 shipped a
+Recorded 2026-09-11 from a measured cross-skill conflict: [`sota-sandboxing` rules/03](../../sota-sandboxing/rules/03-containers-microvms.md) R3.4 shipped a
 reference egress policy using `ipBlock` for an in-cluster backend, which this file's absolute
 forbade and which was the weaker pattern anyway. Both sides were fixed — the example now selects by
 identity, and the absolute now says where it binds.
@@ -140,7 +140,7 @@ spec:
 ```
 
 Beware the **`world` / `reserved:world` entity** and `toCIDR: 0.0.0.0/0` — allowing them on a
-sensitive endpoint is the Critical over-broad finding from rules/02 (the real OpenBao/Grafana/
+sensitive endpoint is the Critical over-broad finding from [rules/02](02-segmentation-blast-radius.md) (the real OpenBao/Grafana/
 registry-from-`world` case). Audit every CNP for `world`, `all`, `0.0.0.0/0`.
 
 **Patch floor (2026 advisories, as of 2026-09-26):** Cilium below **1.19.6 / 1.18.12 / 1.17.18**
@@ -156,7 +156,7 @@ guarantees. Each is a "fixed in" floor, not a statement of the latest release:
 - CVE-2026-56742 — namespaced HTTPRoutes could redirect traffic to other namespaces (fixed 1.19.5/1.18.11/1.17.17).
 - CVE-2026-77531 — secret-sync name collision, cross-namespace L7 policy bypass (fixed 1.19.6/1.18.12/1.17.18).
 - CVE-2026-83620 — identity spoofing in the beta mutual-authentication feature by appending the
-  target's certificate to the chain (fixed 1.19.6/1.18.12/1.17.18; see the verified-status note at the top of rules/04).
+  target's certificate to the chain (fixed 1.19.6/1.18.12/1.17.18; see the verified-status note at the top of [rules/04](04-service-mesh-mtls.md)).
 
 The 1.20 line (first release 2026-07-29) is listed as affected by none of these; the last 1.17
 patch published was 1.17.18 (2026-07-16) — confirm that line's support status before relying on
@@ -188,10 +188,10 @@ spec:
 **R6 — Block the cloud metadata endpoint from pods.** `169.254.169.254` (and `fd00:ec2::254`) is
 the SSRF pivot to cloud credentials. Default egress should not include `169.254.0.0/16`; if a
 broad egress exists, explicitly deny the link-local range. This is the egress side of the SSRF chain
-(sota-code-security rules/01 owns the app-side SSRF; rules/05 here covers the edge/egress side).
+([sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) owns the app-side SSRF; [rules/05](05-edge-ingress-egress.md) here covers the edge/egress side).
 An on-prem cluster has no IMDS, but the habit prevents the finding if it
 ever bursts to cloud — and IMDSv2 (token-required, account-enforceable, default on new EC2 types)
-is the cloud-side mitigation (sota-cloud-infrastructure).
+is the cloud-side mitigation ([sota-cloud-infrastructure](../../sota-cloud-infrastructure/SKILL.md)).
 
 **R7 — Egress gateways for stable, inspectable egress.** When external partners allowlist your
 source IP, or you want all egress through one inspected choke point, use a **Cilium egress gateway**
@@ -240,7 +240,7 @@ every namespace resolving once egress is in default-deny (R3).
 
 **R9 — Turn on Hubble; you cannot secure flows you can't see.** Hubble gives L3/4 and L7 flow
 visibility and is how you (a) verify a policy actually denies, (b) author tight policies from
-observed traffic, (c) feed network telemetry to detection (sota-detection-engineering owns the
+observed traffic, (c) feed network telemetry to detection ([sota-detection-engineering](../../sota-detection-engineering/SKILL.md) owns the
 detection content — DNS-exfil, anomalous flows). Export flows; don't leave Hubble UI-only.
 
 ```bash
@@ -258,7 +258,7 @@ destination identity, port) tuples, and compare with the tuples each CNP/Network
 An allow with no matching flow is a removal candidate (confirm with the owner, remove it, watch
 for drops); a flow that passed only through a broad rule gets a narrow rule of its own. The
 Hubble CLI reads the fixed-size in-memory flow buffer, so it holds only a recent window —
-run the diff over exported flow logs, not the live buffer. The general loop is rules/01 R8.1.
+run the diff over exported flow logs, not the live buffer. The general loop is [rules/01](01-zero-trust-architecture.md) R8.1.
 OWASP: Kubernetes Security cheat sheet, Zero Trust Architecture cheat sheet.
 
 ## 8. Cluster mesh (multi-cluster)

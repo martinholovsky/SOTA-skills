@@ -24,7 +24,7 @@ Next < 15, and Next 15 after 2026-10-21) means no security patches — HIGH at m
 
 - **React Compiler 1.0 is stable** (2025-10-07): a build-time plugin that
   auto-memoizes, removing most manual `useMemo`/`useCallback`/`memo`. It requires
-  Rules-of-Hooks-clean code (see `rules/02`). Opt-in for Next/Vite today; verify
+  Rules-of-Hooks-clean code (see [`rules/02`](02-react.md)). Opt-in for Next/Vite today; verify
   current adoption status for your toolchain. Prefer it over hand-memoization for
   new code, but it is not a substitute for fixing render-model mistakes.
 
@@ -45,7 +45,7 @@ capability. Neutral guidance, not prescription:
   SSR/hydration/RSC attack surface. Reach for Next/Nuxt when you need SSR/SSG for SEO,
   fast first paint, or server-side data access. Don't adopt SSR for its own sake.
 
-Record the decision as an ADR (`sota-docs-workflow`); it drives everything downstream.
+Record the decision as an ADR ([`sota-docs-workflow`](../../sota-docs-workflow/SKILL.md)); it drives everything downstream.
 
 ## 3. Render modes — pick per route, not per app
 
@@ -55,43 +55,43 @@ per route, so match each route to its data:
 | Mode | What it is | Use for | Watch out for |
 |---|---|---|---|
 | **CSR** (client only) | JS renders in the browser; empty initial HTML | Highly interactive, auth-gated, no-SEO views (`ssr: false` route in Nuxt) | Blank first paint; not indexable |
-| **SSR** (per request) | HTML rendered on each request | Personalized/authenticated pages, fresh data | Server cost; **must not be cached at a shared CDN if personalized** (`rules/06`) |
+| **SSR** (per request) | HTML rendered on each request | Personalized/authenticated pages, fresh data | Server cost; **must not be cached at a shared CDN if personalized** ([`rules/06`](06-ssr-hydration.md)) |
 | **SSG / prerender** | HTML rendered at build | Marketing, docs, anything static | Rebuild to update; no per-user content |
 | **ISR / SWR** | Static + periodic/on-demand revalidation | Semi-static content (catalogs, blogs) | Stale windows; cache-invalidation correctness |
 | **PPR** (Next, Cache Components) | Static shell + streamed dynamic holes via Suspense | Pages mixing static chrome + dynamic data | Uncached data outside `<Suspense>` is a build error; incompatible with CSP nonces |
 
 - **Next.js**: route-segment config + `"use cache"`; PPR is the default when
   `cacheComponents: true`. Fetch is **not cached by default since v15** — opt in
-  explicitly (`rules/03`).
+  explicitly ([`rules/03`](03-nextjs.md)).
 - **Nuxt**: `routeRules` in `nuxt.config` sets per-route mode (`ssr: false`,
-  `prerender: true`, `swr: <ttl>`, `isr: <ttl>`) — hybrid rendering (`rules/05`).
+  `prerender: true`, `swr: <ttl>`, `isr: <ttl>`) — hybrid rendering ([`rules/05`](05-nuxt.md)).
 - **Security corollary:** the more a route is cached and shared, the more a caching
   bug leaks one user's data to another. Personalized ⇒ SSR + `private` cache. Static
   ⇒ safe to cache widely. Decide this consciously per route.
 
 ## 4. Project setup baseline
 
-- **TypeScript strict** — non-negotiable; details in `sota-javascript-typescript`
-  rules/01. Frameworks generate a `tsconfig`; extend, don't loosen it.
+- **TypeScript strict** — non-negotiable; details in [`sota-javascript-typescript`
+  rules/01](../../sota-javascript-typescript/rules/01-typescript-config-and-types.md). Frameworks generate a `tsconfig`; extend, don't loosen it.
 - **Lockfile committed**, exact framework versions pinned, Dependabot/Renovate on —
-  framework CVEs are frequent and the fix is almost always "upgrade" (`rules/07`,
-  `sota-devsecops`).
+  framework CVEs are frequent and the fix is almost always "upgrade" ([`rules/07`](07-security.md),
+  [`sota-devsecops`](../../sota-devsecops/SKILL.md)).
 - **Lint the framework rules**: `eslint-plugin-react-hooks` (Rules of Hooks — also
   what the React Compiler needs) / `eslint-plugin-vue`; Next's and Nuxt's own ESLint
   configs. A hooks-rule violation is a real bug, not style.
 - **Env discipline from day one**: server secrets in unprefixed env vars; only
   deliberately-public config in `NEXT_PUBLIC_*` / `runtimeConfig.public` / `VITE_*`
-  (`rules/07`). Never commit `.env`.
+  ([`rules/07`](07-security.md)). Never commit `.env`.
 - **Production runs the built server, never the dev server.** `next dev` (and a bare
   `next`, which is an alias for it), `nuxt dev`/`nuxi dev` and `vite` are development
   servers (hot reloading and error reporting; `nuxt dev` sets `NODE_ENV=development`). Ship
   `next build` + `next start`, or `nuxt build` + `node .output/server/index.mjs` with
   `NODE_ENV=production` ([Next.js CLI](https://nextjs.org/docs/app/api-reference/cli/next),
   [Nuxt deployment](https://nuxt.com/docs/4.x/getting-started/deployment), read
-  2026-09-25). The Node-level rule and the inspector are in `sota-javascript-typescript`
-  rules/04. OWASP: Nextjs Security cheat sheet.
+  2026-09-25). The Node-level rule and the inspector are in [`sota-javascript-typescript`
+  rules/04](../../sota-javascript-typescript/rules/04-node-backend.md). OWASP: Nextjs Security cheat sheet.
 - **CI gates**: typecheck, lint, tests, `npm audit`/`osv-scanner`, and a build. Add a
-  bundle-size check if shipping to the browser (`sota-performance` rules/06).
+  bundle-size check if shipping to the browser ([`sota-performance` rules/06](../../sota-performance/rules/06-frontend-web.md)).
 
 ## Audit checklist
 

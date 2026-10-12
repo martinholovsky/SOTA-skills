@@ -13,7 +13,7 @@ vars vs file mounts, and in-memory handling. Read this when deciding *where* a s
 | Kubernetes consuming secrets from any of the above | External Secrets Operator or Secrets Store CSI driver pulling from the backend |
 | GitOps repo must carry secret material (no reachable store at deploy time) | SOPS+age (preferred) or sealed-secrets |
 | Local development | Per-dev `.env` (untracked) with fake/dev-scoped values, or `vault`/cloud CLI with dev profile; never shared prod values |
-| Raw encryption keys for app data | Never stored directly — KMS envelope encryption (rules/05 §7) |
+| Raw encryption keys for app data | Never stored directly — KMS envelope encryption ([rules/05](05-credential-types.md) §7) |
 
 Rules that override the table:
 
@@ -42,11 +42,11 @@ Non-negotiables:
 - **Policies are deny-by-default, path-scoped, one per consumer.** A policy granting
   `path "secret/*" { capabilities = ["read"] }` is a Medium finding.
 - **Prefer dynamic engines over KV.** A KV entry holding a static DB password is the fallback;
-  the `database/` engine issuing 1h creds per pod is the target (rules/05 §1).
+  the `database/` engine issuing 1h creds per pod is the target ([rules/05](05-credential-types.md) §1).
 - **Short token/lease TTLs** (≤1h default, renewable) so a stolen token expires; audit devices
   enabled and shipped off-box; auto-unseal via cloud KMS, recovery keys Shamir-split among ≥3
   officers and never stored together.
-- **Treat the vault itself as a tier-0 asset** (same bar as the IdP, identity-access rules/02):
+- **Treat the vault itself as a tier-0 asset** (same bar as the IdP, identity-access [rules/02](02-storage-backends.md)):
   run it **HA** (Raft ≥3 nodes / clustered) so one node loss isn't an outage; take **encrypted
   Raft/storage snapshots on a schedule, ship them off-box, and DR-restore-drill** them — an
   unrecoverable secrets store is a total outage *and* the place every dynamic credential dies;
@@ -82,7 +82,7 @@ Rules:
   assumable only by that function (not shared with other functions or humans), its policy
   names the exact secret ARNs it rotates (AWS's examples also pin KMS use with a
   `kms:EncryptionContext:SecretARN` condition), and only the secret manager may invoke it.
-  The staged create → set → **test** → promote sequence it must run is rules/01 §3.
+  The staged create → set → **test** → promote sequence it must run is [rules/01](01-lifecycle-and-workload-identity.md) §3.
 - **Enable and route audit logs** (CloudTrail data events, GCP Data Access logs, Key Vault
   diagnostics) — reads must be attributable. Alert on `GetSecretValue` from unexpected
   principals or regions.
@@ -174,7 +174,7 @@ secrets you intend to rotate without restarts.
 
 **Default to file or in-memory delivery; an env var is the exception you justify.** Some
 guidance forbids env vars for secrets outright; the position here is narrower but the default
-is the same — a file mount (tmpfs) or a fetch into process memory from the store (rules/03 §4).
+is the same — a file mount (tmpfs) or a fetch into process memory from the store ([rules/03](03-application-patterns.md) §4).
 Know why, and apply the table:
 
 | Property | Env var | File mount (tmpfs) |
@@ -197,7 +197,7 @@ Rules:
 - **Never** put secrets in: Dockerfile `ENV`/`ARG` (baked into image layers/metadata — Critical
   in pushed images; use BuildKit `--mount=type=secret` for build-time needs),
   docker-compose literals committed to git, systemd unit `Environment=` lines (world-readable
-  via `systemctl show`; use `LoadCredential=`), or process command lines (rules/03 §3).
+  via `systemctl show`; use `LoadCredential=`), or process command lines ([rules/03](03-application-patterns.md) §3).
 - File-mounted secrets: tmpfs-backed (k8s Secret volumes already are), mode `0400`, owned by the
   app user, path conventional (`/run/secrets/<name>` — Docker/compose secrets land there too).
 - **Mount a secret only into the workload that consumes it.** Never put secrets on a volume
@@ -229,7 +229,7 @@ LoadCredential=db_password:/etc/credstore/myapp.db_password
 
 **Docker Compose / Swarm:** use top-level `secrets:` (file- or external-backed) mounted at
 `/run/secrets/`, never `environment:` literals; for local dev, `env_file: .env` with an
-untracked `.env` is acceptable (rules/05 §8).
+untracked `.env` is acceptable ([rules/05](05-credential-types.md) §8).
 
 ```yaml
 # BAD — secret in pod spec env, visible in `kubectl describe`, frozen until restart
@@ -254,7 +254,7 @@ trackers serializing objects, language-runtime introspection. Proportionate meas
   serializes.
 - **Wrap in a redacting type** whose `__repr__`/`toString`/`Debug`/JSON-serialization yields
   `[REDACTED]` (Pydantic `SecretStr`, Rust `secrecy::SecretBox`, your own 20-line wrapper).
-  This converts whole classes of log/trace leaks into non-events. (Examples: rules/03 §2.)
+  This converts whole classes of log/trace leaks into non-events. (Examples: [rules/03](03-application-patterns.md) §2.)
 - **Zeroization** (overwriting buffers after use) is best-effort in GC languages — strings are
   immutable and copied; use `byte[]`/`bytearray` and wipe where the runtime allows (JVM
   `Arrays.fill`, .NET `CryptographicOperations.ZeroMemory`). In Rust/C use `zeroize`/
@@ -268,7 +268,7 @@ trackers serializing objects, language-runtime introspection. Proportionate meas
 
 ## 8. Consumer-key (end-to-end) encryption of secrets
 
-At-rest and envelope encryption (rules/05 §7) protect a secret from someone who steals the
+At-rest and envelope encryption ([rules/05](05-credential-types.md) §7) protect a secret from someone who steals the
 store's *disk*; they do not protect it from the store itself, its operators, or anything that
 can call it with a valid identity. One step further: **encrypt the secret to the consuming
 workload's own public key** (age recipients, HPKE — RFC 9180 — or a KMS key only that

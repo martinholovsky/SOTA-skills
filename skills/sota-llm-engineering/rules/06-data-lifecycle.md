@@ -19,12 +19,12 @@ that prompts and retrieval don't.
 style, tone, output structure, domain dialect, classification on fuzzy
 boundaries, tool-use conventions — and unreliably injects *knowledge*, which
 goes stale the day training ends and can't be access-controlled or cited.
-Volatile knowledge → retrieval (rules/03 §1); stable behavior → first
+Volatile knowledge → retrieval ([rules/03](03-rag-retrieval.md) §1); stable behavior → first
 prompting, then weights.
 
 Fine-tune only when ALL hold:
 
-1. A strong eval suite exists (rules/01) — otherwise you cannot even measure
+1. A strong eval suite exists ([rules/01](01-evals.md)) — otherwise you cannot even measure
    whether tuning helped; this is the hard prerequisite.
 2. Frontier-model + tuned-prompt + few-shot has been tried against that eval
    and demonstrably plateaus below the requirement.
@@ -63,13 +63,13 @@ quantity at every scale that matters:
   sets overweight one pattern and leak between train/eval splits.
 - **Split discipline:** train/dev/held-out split by *source entity* (user,
   document, ticket), not by row, or near-duplicates straddle the split and
-  inflate scores. Eval contamination rules apply (rules/01 §8).
+  inflate scores. Eval contamination rules apply ([rules/01](01-evals.md) §8).
 - **Label quality:** double-annotate a sample, measure inter-annotator
   agreement; where humans disagree, the rubric is broken — fix the rubric
   before "fixing" the labels. Adjudicate disagreements, don't average them.
 - **Negative and refusal examples:** include "no answer", "refuse", and
   "escalate" cases — sets containing only happy-path completions teach
-  overconfidence (same rule as eval sets, rules/01 §1).
+  overconfidence (same rule as eval sets, [rules/01](01-evals.md) §1).
 - **PII scrubbing before storage** (§5): datasets outlive their context and
   get copied to laptops, CI, and vendors. Scrub at ingestion, not at use.
 - **Version datasets like code:** content-hashed releases (DVC/LakeFS/object
@@ -83,7 +83,7 @@ base model had.
 
 - **Start aligned, and re-check after.** Prefer a base model whose model or
   system card documents safety alignment covering your disallowed categories;
-  re-run the safety-tagged eval cases (rules/01 §5) on every tuned checkpoint.
+  re-run the safety-tagged eval cases ([rules/01](01-evals.md) §5) on every tuned checkpoint.
 - **Filter content, not only PII.** Run every example through a
   disallowed-content classifier before it enters a training set and log what
   was removed; keep examples to the task's scope, so irrelevant records
@@ -110,15 +110,15 @@ Production feedback is the cheapest continuous source of truth — if wired.
   often more honest: user edited the draft (the diff is a correction label),
   regenerated, abandoned mid-stream, copied the output (success), escalated
   to a human, accepted/rejected a suggestion. Log all of these as
-  structured events tied to the trace ID (rules/05 §5).
+  structured events tied to the trace ID ([rules/05](05-production-engineering.md) §5).
 - **Route signals to destinations:**
   - 👎 + escalations + edit-diffs → review queue → labeled eval cases
-    (rules/01 §7), tagged with failure taxonomy.
+    ([rules/01](01-evals.md) §7), tagged with failure taxonomy.
   - 👍/copied/accepted at volume → candidate pool for few-shot examples and
     fine-tuning data (§2 hygiene applies; positive signal ≠ correct — still
     sample-review).
   - Aggregates → online quality dashboards per route/prompt-version
-    (rules/05 §5).
+    ([rules/05](05-production-engineering.md) §5).
 - **Close the loop measurably:** every incident/complaint becomes a
   permanent eval case; track "time from bad production output → case in the
   gating suite". If feedback lands in a dashboard nobody mines, you have
@@ -129,7 +129,7 @@ Production feedback is the cheapest continuous source of truth — if wired.
 ## 4. Embedding & index migration
 
 Embedding models deprecate, improve, and change dimensions; you WILL migrate.
-Design for it on day one (rules/03 §3 owns selection; this is the lifecycle):
+Design for it on day one ([rules/03](03-rag-retrieval.md) §3 owns selection; this is the lifecycle):
 
 - **Stamp every vector** with `embedding_model`, `embedding_version`,
   `chunker_version`, `indexed_at`. Without stamps, migration means "re-embed
@@ -137,7 +137,7 @@ Design for it on day one (rules/03 §3 owns selection; this is the lifecycle):
 - **Blue/green reindex:** build the new index (or a named parallel vector
   set on the same collection — native support exists in mainstream vector
   DBs) → backfill-embed the corpus → dual-write new content to both during
-  the window → run the golden retrieval eval (rules/03 §6) against both →
+  the window → run the golden retrieval eval ([rules/03](03-rag-retrieval.md) §6) against both →
   flip reads via config → keep the old index until the error budget clears,
   then delete.
 - **Never query mixed vector spaces.** Two models' vectors in one searched
@@ -148,47 +148,47 @@ Design for it on day one (rules/03 §3 owns selection; this is the lifecycle):
 - Chunker changes are migrations too — re-chunking shifts IDs and
   boundaries; plan citation/ID stability (stable source-doc IDs + offsets,
   not chunk-row IDs, in anything user-facing).
-- Budget for re-embedding cost/time at corpus scale (batch APIs, rules/05
+- Budget for re-embedding cost/time at corpus scale (batch APIs, [rules/05](05-production-engineering.md)
   §4) and rate limits — a 100M-chunk reindex is a project, not a script.
 
 ## 5. PII in prompts, logs, and provider settings
 
 Prompts and completions are user data flowing to a third party and into your
-logs. Deep regulatory treatment: **sota-privacy-compliance**; security of the
-stores: sota-code-security rules/07. The LLM-engineering obligations:
+logs. Deep regulatory treatment: **[sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md)**; security of the
+stores: [sota-code-security rules/07](../../sota-code-security/rules/07-data-exposure.md). The LLM-engineering obligations:
 
 - **Minimize at the boundary:** send the model only the fields the task
   needs — schema-projected records, not whole user objects; pseudonymize
   stable identifiers (user_123 → token) where the task allows, re-hydrate
   after.
 - **Outbound AI traffic crosses a DLP boundary.** Calls to external model
-  services go through one egress gateway (the rules/05 §1 gateway, or a
+  services go through one egress gateway (the [rules/05](05-production-engineering.md) §1 gateway, or a
   network-level one) that inspects prompts and attachments for secrets and
   personal data, blocks or redacts what it finds, and keeps an audit trail
   of who sent what to which provider. Developer coding assistants are the
   same data flow with a wider aperture — they upload whatever files they
   read: record what they send (the tool's request logging, or an outbound
-  proxy you control) and scope what they can read (sota-sandboxing rules/05
+  proxy you control) and scope what they can read ([sota-sandboxing rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md)
   §4). Code or data under a regulatory or classification regime goes only to
   self-hosted or air-gapped models, behind an explicit approval to use AI on
   it at all. OWASP: OWASP DSOMM; OWASP Secure Coding with AI cheat sheet.
-- **Redact before persistence:** prompt/completion logging (rules/05 §5),
-  eval-set promotion (rules/01 §7), and dataset curation (§2) all pass
+- **Redact before persistence:** prompt/completion logging ([rules/05](05-production-engineering.md) §5),
+  eval-set promotion ([rules/01](01-evals.md) §7), and dataset curation (§2) all pass
   through a redaction layer (NER/pattern-based PII detection + allowlists).
   Raw-prompt logging with PII into a general log platform with broad access
   is a High finding; wholesale, unredacted, unbounded-retention → Critical.
   **The embedding path is persistence too:** detect sensitive fields before
   text is chunked and embedded, and mask, tokenise or drop them — a vector
   store is a durable copy that approximately preserves its input
-  (sota-code-security rules/08 §4), and a chunk's payload text is stored
+  ([sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md) §4), and a chunk's payload text is stored
   verbatim. An embedding model fine-tuned on one tenant's data is that
   tenant's data: serve it to that tenant only. OWASP: AISVS 8.2.1; OWASP RAG
   Security cheat sheet.
 - **Retention & access:** LLM traces get their own retention clock (shortest
   that supports debugging/evals) and access control distinct from app logs;
-  deletion requests must reach traces, eval sets, memory stores (rules/04
+  deletion requests must reach traces, eval sets, memory stores ([rules/04](04-agents-tools.md)
   §5), and vector indexes — RAG chunks of a deleted user document are still
-  that user's data (rules/03 §7 deletes propagate).
+  that user's data ([rules/03](03-rag-retrieval.md) §7 deletes propagate).
 - **Provider data-retention settings are configuration you must set, not
   defaults you inherit.** Verify per provider and per platform: API data
   used (or not) for training, retention window options (standard vs
@@ -201,7 +201,7 @@ stores: sota-code-security rules/07. The LLM-engineering obligations:
   stateful feature (batch, files, code execution) from a ZDR organisation and
   applies that feature's own retention, whereas a HIPAA-enabled organisation
   gets a `400` — so enforce the eligible-feature allowlist yourself, in the
-  gateway (rules/05 §1), rather than assuming the provider refuses.
+  gateway ([rules/05](05-production-engineering.md) §1), rather than assuming the provider refuses.
   Record the chosen settings in the repo (compliance docs) so they're
   auditable; re-verify on provider/platform change.
 - Memory stores and semantic caches hold user data too: scope per user/

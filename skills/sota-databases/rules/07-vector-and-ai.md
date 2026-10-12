@@ -133,7 +133,7 @@ unauthenticated reachable vector DB as an active breach, not a hardening gap.
   namespace where a metadata filter is the only thing keeping restricted
   chunks out of a query fails open on one missing or client-editable filter;
   the caller's clearance then decides which collections are queried at all.
-  Per-document ACL filters (`sota-code-security` rules/08 §4) still apply
+  Per-document ACL filters ([`sota-code-security` rules/08](../../sota-code-security/rules/08-llm-ai-security.md) §4) still apply
   inside a collection. OWASP: RAG Security cheat sheet.
 - **Bound client-supplied search params.** `limit`, `hnsw_ef`/exploration
   factors, `with_payload`/`with_vectors` passed through from user input are a

@@ -195,7 +195,7 @@ curl_setopt_array($ch, [
   `CURLOPT_MAXREDIRS` cap is **not** re-validation; set timeouts; **never**
   `CURLOPT_SSL_VERIFYPEER => false` (HIGH).
 - **Every PHP spelling of disabled TLS verification is HIGH, not only that one.** The rule is
-  `sota-code-security` rules/04. Measured on PHP 8.5.9 against a local server:
+  [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md). Measured on PHP 8.5.9 against a local server:
   - cURL: `CURLOPT_SSL_VERIFYPEER` `false`/`0` accepted an untrusted chain, and
     `CURLOPT_SSL_VERIFYHOST` `0`/`false` accepted a certificate issued for another name. The
     value `1` is coerced to `2` with a notice.
@@ -207,7 +207,7 @@ curl_setopt_array($ch, [
   the wrong-name certificate, so a half-disabled client can pass a smoke test. For an internal
   endpoint, point `cafile`/`CURLOPT_CAINFO` at the private CA.
 - **SSH host keys: neither common PHP client checks one unless you do.** The class is
-  `sota-code-security` rules/04 §5. Read from source:
+  [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5. Read from source:
   - phpseclib (4.0.1): `SSH2::login()` never compares the server's key with anything. The
     key-exchange signature is verified only inside `getServerPublicHostKey()`, and nothing in
     the library calls that method.
@@ -218,7 +218,7 @@ curl_setopt_array($ch, [
   `getServerPublicHostKey()` or `ssh2_fingerprint()` with a pinned value **before**
   authenticating, failing closed. One with no such comparison in reach is the finding.
 - The strongest control is architectural: route egress through a proxy that
-  enforces the allowlist (network-level, see sota-network-security), so a
+  enforces the allowlist (network-level, see [sota-network-security](../../sota-network-security/SKILL.md)), so a
   missed validation isn't fatal.
 - `file_get_contents($url)`/`fopen` honor redirects with no protocol pinning (measured:
   the default stream context followed a 302 to a loopback URL; `'http' => ['follow_location'
@@ -234,7 +234,7 @@ none of PHP's memory safety. Its gate is `ffi.enable`: the default `"preload"` r
 FFI API to the CLI and preloaded files, and **`"true"` opens it to every request**. So
 `ffi.enable=true` in a web SAPI's `php.ini` is the finding, and FFI code, where it is needed,
 is loaded from a preload script where its surface is fixed at start-up. Audit the C
-signatures and every length crossing them with the C rules. The class is `sota-code-security` rules/06 §3.
+signatures and every length crossing them with the C rules. The class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
 
 ## Audit checklist
 

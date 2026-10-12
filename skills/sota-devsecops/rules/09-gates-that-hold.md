@@ -1,12 +1,12 @@
 # Gates That Hold — a gate that can fail, still covers you, and says why
 
-`rules/05` covers the scanners: what to run, where, and how to read what they emit.
+[`rules/05`](05-analysis-gates.md) covers the scanners: what to run, where, and how to read what they emit.
 This file covers the harder question — **whether any of it actually gates**, which is
 a property of the pipeline around the scanner rather than of the scanner.
 
-Split out of `rules/05` on 2026-09-06, from the subsection *"Gates that don't get
+Split out of [`rules/05`](05-analysis-gates.md) on 2026-09-06, from the subsection *"Gates that don't get
 bypassed"*, which had reached 284 lines — more than half that file. Its five subsections
-were unnumbered and gained numbers in the move (§1–§3 here, §4–§6 in `rules/11`), so an older citation of that
+were unnumbered and gained numbers in the move (§1–§3 here, §4–§6 in [`rules/11`](11-after-the-gate-fails.md)), so an older citation of that
 subsection means this file as a whole.
 
 Five distinct ways a gate stops gating, in the order they are usually discovered:
@@ -19,20 +19,20 @@ Five distinct ways a gate stops gating, in the order they are usually discovered
 | **4** | failed for a reason nobody can **recover** | `Error (exit code 1)`, and the pod is gone |
 | **5** | is clean when *you* run it, red when **CI** does | "all gates pass" said before the push |
 
-§1 and §2 are about the gate's *authority and scope*. §3 and `rules/11` §4 come from one incident
+§1 and §2 are about the gate's *authority and scope*. §3 and [`rules/11`](11-after-the-gate-fails.md) §4 come from one incident
 and are two halves of the same failure — the artifact escaped, and then the error message
-sent the operator to the wrong subsystem. `rules/11` §5 is the inverse of §2: the code is in scope,
+sent the operator to the wrong subsystem. [`rules/11`](11-after-the-gate-fails.md) §5 is the inverse of §2: the code is in scope,
 the gate sees it, and the human's local re-run asks a different question.
 
-**The thread through all five** is `sota-code-security` rules/15's: a gate is an
+**The thread through all five** is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md)'s: a gate is an
 instrument, and an instrument that cannot produce a wrong answer on demand has not been
 verified. What this file adds is that a gate can be perfectly capable of failing and still
 gate nothing — because of *when* it runs, *what* it can still see, or *whether anyone can
 read its verdict afterwards*.
 
-Related: probing a control → `sota-code-security` rules/12; instruments and guards →
-`sota-code-security` rules/15; the scanners themselves → `rules/05`; pipeline identity,
-permissions and provenance → `rules/01` and `rules/02`.
+Related: probing a control → [`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md); instruments and guards →
+[`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md); the scanners themselves → [`rules/05`](05-analysis-gates.md); pipeline identity,
+permissions and provenance → [`rules/01`](01-pipeline-security.md) and [`rules/02`](02-provenance-signing.md).
 
 ---
 
@@ -76,7 +76,7 @@ finding. So treat a passing compliance check as evidence of process, not of
 protection. The missing evidence is a **negative control** — a committed
 known-bad the gate must reject on every run — and it is not asked for by any
 mainstream framework, which is exactly why it has to be a house rule
-(`sota-code-security` rules/12 §1 and `rules/15` §3).
+([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1 and [`rules/15`](../../sota-code-security/rules/15-instruments-and-guards.md) §3).
 
 *(SSDF and Scorecard wording verified against the primary documents 2026-08-05;
 the CRA sentence verified against published copies of the regulation text rather
@@ -100,13 +100,13 @@ The mechanics that make everything above real:
   Same for tools invoked with their own "don't fail" flags (`--exit-code 0`, `--soft-fail`,
   `npm audit || true`).
 - **Rulesets apply to admins**; bypass lists are empty or break-glass-only with audit
-  (rules/07 §7.5). `[skip ci]` must not be honored on protected branches' required gates
+  ([rules/07](07-runtime-ops.md) §7.5). `[skip ci]` must not be honored on protected branches' required gates
   (merge queue or push-triggered verification covers post-merge).
 - **Merge queue** for busy repos: re-runs required checks on the actual merge result —
   closes the "green on stale base, broken on main" hole and the approve-then-push race
-  (pairs with dismiss-stale-approvals, rules/01 §1.7).
+  (pairs with dismiss-stale-approvals, [rules/01](01-pipeline-security.md) §1.7).
 - Gate jobs must not be modifiable by the change they gate, where the threat model demands
-  it: reusable workflows from a protected repo (rules/01 §1.8) — otherwise a PR can edit
+  it: reusable workflows from a protected repo ([rules/01](01-pipeline-security.md) §1.8) — otherwise a PR can edit
   the workflow to neuter the gate that judges the PR. (CODEOWNERS on workflows + required
   review mitigates; required *workflows* / org rulesets solve it properly.)
 
@@ -143,7 +143,7 @@ declared known-bad, and asserts *that check, by name*, is the one that complains
 check with no declared known-bad then **fails the self-test** instead of being silently
 exempt, and the probe ships to the operator rather than living only in your CI. Full
 procedure, including why a non-zero exit for an unrelated reason is a false pass:
-`sota-code-security` rules/12 §1b. A gate's scope is a path or module expression, and ordinary,
+[`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1b. A gate's scope is a path or module expression, and ordinary,
 well-motivated containment moves code out from under it with **no diff to the
 workflow file and no change in risk**:
 
@@ -158,7 +158,7 @@ workflow file and no change in risk**:
 
 Through all of it the known-bad sits in the main module, the gate keeps rejecting
 it, and the gate keeps proving it *can* fail. This is the temporal form of
-`sota-code-security` rules/11 §2.2: **the same gate's green today does not cover
+[`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2: **the same gate's green today does not cover
 the scope it had yesterday.** The check is mechanical — have every gate print the
 number of units it enumerated (modules, packages, files) and fail the build when
 that number **drops**, exactly as you would treat a coverage drop; a refactor that
@@ -199,7 +199,7 @@ loader, a verifier, a dynamic linker, a runtime capability check, a policy engin
 kernel all run *after* it. Field-reported: four gates — `fmt`, `clippy` and two
 domain-specific lint passes — were green on an eBPF object that the kernel verifier then
 refused to load, because the defect was a stack-budget overrun measured at load time
-(`sota-rust` rules/07 §1a). Nothing was misconfigured; the artifact was simply the end of
+([`sota-rust` rules/07](../../sota-rust/rules/07-tooling-ci.md) §1a). Nothing was misconfigured; the artifact was simply the end of
 their reach. The same boundary sits under a container that builds and crashes on start, a
 WASM module that compiles and fails instantiation, a plugin that links and fails its
 capability check, a Terraform plan that renders and is refused by admission.
@@ -211,7 +211,7 @@ capability check, a Terraform plan that renders and is refused by admission.
   Where the target is expensive or exotic (a specific kernel, a device), it is still the
   only gate with reach, so its cost is the price of the class, not a reason to drop it.
 - **Green from the artifact-level gates is not evidence about load**, and should not be
-  quoted as if it were. This is `sota-code-security` rules/15's *"state the traversed
+  quoted as if it were. This is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md)'s *"state the traversed
   path beside the probe"* applied to a whole pipeline: say where the gates stop.
 - The mirror-image trap is a gate whose reach is bounded by what the **subject** checks
   first — a runner that exits at a credential check in CI never reaches the code under
@@ -261,7 +261,7 @@ Field-measured in this library's own harness: a counter ran `$(… | grep -c .)`
 of probes skipped for being sweep-shaped. The PR that introduced it changed more than 20
 skill files, so its CI took the non-empty arm and went green. Every ordinary branch,
 **including the default branch**, takes the empty arm, where `grep -c` exits 1 and
-`set -euo pipefail` ended the run with no FAIL line (`sota-shell-scripting` rules/02). The
+`set -euo pipefail` ended the run with no FAIL line ([`sota-shell-scripting` rules/02](../../sota-shell-scripting/rules/02-robustness-correctness.md)). The
 default branch went red on the merge commit.
 
 - **Before merging a change to a shape-dependent path, run it on a tree of the other shape.**
@@ -314,7 +314,7 @@ unverified artifact. Whatever records build state must depend on the **last** ga
 Depend on too early a step instead and a later failure is never retried; both
 directions are bugs, and the dependency belongs on the final promotion.
 
-Distinct from *build once, promote many* (`rules/06` §6.6), which is about **environment**
+Distinct from *build once, promote many* ([`rules/06`](06-iac-deployment.md) §6.6), which is about **environment**
 promotion — the staging digest is the prod digest. This is ordering **within a single
 build**, and the failure it produces is an error message pointing at the wrong subsystem.
 
@@ -342,13 +342,13 @@ release tag directly is the finding.
       pipeline, confirm the *consumable* identifier is published only after every gate: the
       pre-gate identifier **provably fails the deploy watcher's allow-pattern**, promotion is a
       same-digest retag with the digest read back, and build-state advance depends on the final
-      promotion — not an intermediate step (§3, `rules/11` §4). A verification error at the consumer for a
+      promotion — not an intermediate step (§3, [`rules/11`](11-after-the-gate-fails.md) §4). A verification error at the consumer for a
       scan/test cause is the symptom.
-- [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run, and it is reachable as a **mode of the runner** (`--self-test`) rather than only as a fixture beside it, so a newly added check with no known-bad fails rather than passing unprobed (`sota-code-security` rules/12 §1b). No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (`sota-code-security` rules/12)
+- [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run, and it is reachable as a **mode of the runner** (`--self-test`) rather than only as a fixture beside it, so a newly added check with no known-bad fails rather than passing unprobed ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1b). No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md))
 - [ ] **Is each gate's denominator the unit its predicate reads?** (§2) Blocks, spans or
       manifests, not the files that contain them. After any change that converts the *format*
       of gated content, the gate's known-bad is re-run in the new format.
 - [ ] **Does any check branch on the shape of the diff?** (§2c) Sweep versus small edit,
       release versus not. If so, was the other arm run before merge, and was the default
       branch's run on the merge commit read, not just the PR's?
-- [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§2, `rules/11` §5)
+- [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§2, [`rules/11`](11-after-the-gate-fails.md) §5)

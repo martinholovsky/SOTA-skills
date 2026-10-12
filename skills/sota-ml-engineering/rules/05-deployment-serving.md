@@ -13,7 +13,7 @@ progressive rollout validated on live traffic.
 - **Streaming** — predictions on an event stream.
 - Choose by freshness/latency requirement; don't build a real-time service when
   nightly batch suffices. The choice dictates the feature architecture
-  (`rules/01`).
+  ([`rules/01`](01-ml-systems-architecture.md)).
 
 ## 2. Packaging & the serving environment
 
@@ -21,21 +21,21 @@ progressive rollout validated on live traffic.
   environment** (container; pinned libs). The serving-time framework/version
   must match what the model expects — a silent library mismatch changes outputs.
 - Prefer portable, **safe** model formats: ONNX for cross-framework serving,
-  `safetensors` over `pickle` (`rules/07`). Use a serving runtime (Triton,
+  `safetensors` over `pickle` ([`rules/07`](07-security-governance.md)). Use a serving runtime (Triton,
   KServe, BentoML, Ray Serve, or a framework server) rather than ad-hoc Flask
   where scale/standardization matters. Do **not** adopt TorchServe — the repo
   was archived Aug 2025 (no updates or security patches); flag it in existing
   systems and migrate.
 - The serving path must apply the **same feature transforms** as training
-  (`rules/02`) — share code or a feature store, never reimplement.
+  ([`rules/02`](02-data-and-features.md)) — share code or a feature store, never reimplement.
 
 ## 3. Registry-gated promotion
 
-- Deploy from the **model registry** (`rules/01`): a model is promoted
-  staging→production only after the validation gate passes (`rules/04`). The
+- Deploy from the **model registry** ([`rules/01`](01-ml-systems-architecture.md)): a model is promoted
+  staging→production only after the validation gate passes ([`rules/04`](04-evaluation-validation.md)). The
   deployed artifact is immutable and traceable to its lineage.
 - Admission and the serving process's load path both verify the model
-  signature against the authorised signer, and fail closed (`rules/07` §2).
+  signature against the authorised signer, and fail closed ([`rules/07`](07-security-governance.md) §2).
 - Keep the **previous production model** available for instant rollback.
 
 ## 4. Progressive rollout & rollback
@@ -56,38 +56,38 @@ progressive rollout validated on live traffic.
   canary or A/B, each version gets its own KV/prefix caches, adapter pool and
   any cached embeddings or results, keyed by model version, so one version
   never serves from state the other produced (tenant-scoped caches:
-  `sota-code-security` rules/08 §4). OWASP: AISVS 3.3.3.
+  [`sota-code-security` rules/08](../../sota-code-security/rules/08-llm-ai-security.md) §4). OWASP: AISVS 3.3.3.
 
 ## 5. Operational concerns
 
 - Latency/throughput: meet the budget (batching, hardware/accelerator choice,
   quantization/distillation if needed); load-test before launch (cross-ref
-  `sota-performance`).
+  [`sota-performance`](../../sota-performance/SKILL.md)).
 - Versioned, backward-compatible serving API; handle unseen categories/missing
   features gracefully (don't crash or silently mis-encode). Validate inputs at
   the serving boundary.
 - Health checks, autoscaling, and resource limits like any service (cross-ref
-  `sota-observability`, `sota-cloud-infrastructure`, `sota-kubernetes`).
+  [`sota-observability`](../../sota-observability/SKILL.md), [`sota-cloud-infrastructure`](../../sota-cloud-infrastructure/SKILL.md), [`sota-kubernetes`](../../sota-kubernetes/SKILL.md)).
 
 ## 6. Decommissioning a model
 
 - Retiring a model is a planned step, not neglect: revoke its serving endpoints
   and credentials first, then delete the weights, checkpoints, caches and
   derived embeddings, and the training data held only for it (subject to the
-  retention schedule, `sota-privacy-compliance`). Record what was erased,
+  retention schedule, [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md)). Record what was erased,
   where, when and by whom; the registry entry stays as a tombstone with that
   record (e.g. MLflow `MlflowClient.delete_model_version` removes the version, so
   write the record first). Storage-level erasure of the underlying buckets and
-  volumes: `sota-cloud-infrastructure` rules/05. OWASP: LLMSVS 2.18.
+  volumes: [`sota-cloud-infrastructure` rules/05](../../sota-cloud-infrastructure/rules/05-data-storage.md). OWASP: LLMSVS 2.18.
 
 ## Audit checklist
 
 - [ ] **Serving/training parity — CRITICAL if features reimplemented in the server** —
       `grep -rniE 'predict|inference|serve' --include='*.py' . | head` (confirm the server calls
-      the SAME feature transform code/store as training, rules/02)
+      the SAME feature transform code/store as training, [rules/02](02-data-and-features.md))
 - [ ] **Safe model format & reproducible env — HIGH** —
       `grep -rniE 'pickle|joblib|torch.load|cloudpickle' --include='*.py' . | head` (unsafe
-      load? (rules/07)); `grep -rniE 'safetensors|onnx|torchscript' --include='*.py' . | head` ;
+      load? ([rules/07](07-security-governance.md))); `grep -rniE 'safetensors|onnx|torchscript' --include='*.py' . | head` ;
       `grep -rniE 'torchserve|torch-model-archiver' . | head` (EOL runtime (archived Aug 2025,
       no security patches) — HIGH);
       `find . -maxdepth 3 -not -path '*/node_modules/*' \( -name 'Dockerfile*' -o -name 'requirements*.txt' -o -name poetry.lock -o -name uv.lock -o -name 'conda*.yml' \)` (serving env

@@ -9,10 +9,10 @@ where AD meets **Entra ID** in a hybrid estate.
 This file owns the **preventive** posture (build it so the attack can't land).
 The **detective** posture — which events to collect, and the Sigma-style logic
 that catches Kerberoasting, DCSync, golden tickets, ADCS abuse, and RBCD writes
-— lives in **sota-detection-engineering rules/07 (AD attack detection)**. Harden
+— lives in **[sota-detection-engineering rules/07](../../sota-detection-engineering/rules/07-ad-attack-detection.md) (AD attack detection)**. Harden
 here; detect there. For app-level login/session mechanics see
-**sota-code-security**; for the identity *model* (JML, least privilege, MFA) see
-rules/03–06 of this skill.
+**[sota-code-security](../../sota-code-security/SKILL.md)**; for the identity *model* (JML, least privilege, MFA) see
+[rules/03](03-authorization-models.md)–06 of this skill.
 
 AD is the classic **tier-0 asset**: a single Domain Admin or `krbtgt` compromise
 is total, durable, and hard to evict. Design assuming an attacker already holds a
@@ -38,7 +38,7 @@ low-privileged domain account — that is the realistic starting position.
   harvested from LSASS). Administer tier-0 from **Privileged Access Workstations
   (PAWs)** and enforce logon isolation with **authentication policies and silos**
   (§4) plus `Deny log on` User-Rights restrictions per tier.
-- **Separate admin identities per plane** (rules/05): a human has a normal
+- **Separate admin identities per plane** ([rules/05](05-privileged-workload.md)): a human has a normal
   account and distinct privileged account(s); privileged accounts never read
   email or browse. Enforce **just-in-time** elevation, not standing membership in
   Domain Admins.
@@ -66,7 +66,7 @@ low-privileged domain account — that is the realistic starting position.
   *and* a favourite escalation primitive: an attacker who can **write that
   attribute** on a computer object (often combined with a controlled machine
   account) impersonates any user to it. Restrict who can write it; the write
-  itself is a key detection signal (detection rules/07, event 5136).
+  itself is a key detection signal (detection [rules/07](07-active-directory.md), event 5136).
 - Mark truly sensitive accounts **`Account is sensitive and cannot be
   delegated`** (or add them to **Protected Users**, §4) so no delegation can
   impersonate them.
@@ -88,7 +88,7 @@ low-privileged domain account — that is the realistic starting position.
     Aug 2025 — the KDC now requires a bidirectional dMSA↔superseded-account
     link) and **Golden dMSA** (key derivation). Post-patch variants still abuse
     over-permissive dMSA rights, so restrict dMSA creation/migration to tier-0
-    and monitor it (detection rules/07).
+    and monitor it (detection [rules/07](07-active-directory.md)).
   - **AES-only service accounts.** Set `msDS-SupportedEncryptionTypes` to
     AES128/256 (etype 17/18) and disable RC4 so the roast target is far more
     expensive; do this estate-wide only after confirming no RC4 dependency.
@@ -113,7 +113,7 @@ low-privileged domain account — that is the realistic starting position.
 ### NTLM, relay & machine-account quota
 
 - **Prefer Kerberos; retire NTLM.** Audit NTLM use (NTLM Operational log,
-  event 8004 — detection rules/07) then restrict it with the **Network Security:
+  event 8004 — detection [rules/07](07-active-directory.md)) then restrict it with the **Network Security:
   Restrict NTLM** policies; NTLMv1 must be disabled outright.
 - **Relay mitigations.** Enforce **SMB signing** and **LDAP signing + channel
   binding (EPA)** so coerced authentications can't be relayed. Windows Server 2025
@@ -172,7 +172,7 @@ number).
   Ensure CAs embed the SID extension and that no weak `altSecurityIdentities`
   mappings remain.
 - **Protect the CA private key** (HSM), restrict CA administration to tier-0, and
-  monitor issuance (detection rules/07, events 4886/4887).
+  monitor issuance (detection [rules/07](07-active-directory.md), events 4886/4887).
 
 ## 4. Credential protection
 
@@ -186,7 +186,7 @@ number).
   no unconstrained/constrained delegation, no long-lived TGT caching). Put
   **high-value human admins** in it — but not service accounts or accounts that
   legitimately need NTLM, and never the break-glass accounts you might need when
-  Kerberos is broken (rules/05).
+  Kerberos is broken ([rules/05](05-privileged-workload.md)).
 - **Credential Guard** (VBS-isolated LSA) stops LSASS secret theft
   (pass-the-hash/ticket harvesting) on supported hosts; enable on admin
   workstations and, where compatible, member servers.
@@ -233,7 +233,7 @@ a cloud compromise (and vice-versa):
 - **Cloud Kerberos / hybrid join**: where AD and Entra co-issue, the tier-0
   boundary now spans both control planes — apply the higher bar of the two, and
   keep privileged cloud roles (Global Admin) on separate phishing-resistant
-  accounts (rules/06).
+  accounts ([rules/06](06-mfa-federation-assurance.md)).
 
 ## Audit checklist
 

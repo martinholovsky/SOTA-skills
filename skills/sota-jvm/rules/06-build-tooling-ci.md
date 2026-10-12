@@ -3,7 +3,7 @@
 JVM project safety lives in the build: dependency locking and CVE scanning,
 static analysis, and consistent CI gates. This file owns build/test
 *mechanics*; test **strategy** (suite shape, doubles, coverage philosophy)
-lives in `sota-testing`.
+lives in [`sota-testing`](../../sota-testing/SKILL.md).
 
 ## 1. Build tool: Maven or Gradle
 
@@ -31,7 +31,7 @@ lives in `sota-testing`.
 - Resolve only from trusted repositories (Maven Central / your mirror) over
   HTTPS; verify signatures/checksums; beware dependency confusion (don't let an
   internal coordinate resolve from a public repo). Generate an **SBOM**
-  (CycloneDX) for releases. See `sota-devsecops`.
+  (CycloneDX) for releases. See [`sota-devsecops`](../../sota-devsecops/SKILL.md).
   The concrete mechanisms: Gradle records the expected hash of every artifact in
   `gradle/verification-metadata.xml` and fails the build on a mismatch (Gradle's
   dependency-verification guide). Maven repositories take a `<checksumPolicy>` of
@@ -83,14 +83,14 @@ lives in `sota-testing`.
   Its defaults are now your code.** Construct every security-relevant library object with
   its options explicit, and review each option you pass. Verified examples:
   `DocumentBuilderFactory.newInstance()` expands an external `file:` entity out of the box
-  (Temurin 25.0.4, harden per `rules/07`); SnakeYAML **1.x** `new Yaml()` builds a
+  (Temurin 25.0.4, harden per [`rules/07`](07-xml.md)); SnakeYAML **1.x** `new Yaml()` builds a
   `Constructor` that resolves global tags to arbitrary classes (2.0 added
   `LoaderOptions`' `UnTrustedTagInspector`, which rejects them — still prefer
   `new Yaml(new SafeConstructor(new LoaderOptions()))` for untrusted input); and a JDK
   `HttpRequest` built without `.timeout(Duration)` waits forever, per its javadoc.
   **(d) A README snippet is a demo, not a config.** Getting-started code routinely carries a
   trust-all `TrustManager`/`HostnameVerifier`, `@CrossOrigin("*")`, a widened actuator
-  exposure or a debug flag; strip those before the snippet reaches a branch (`rules/04` §4–§5, `rules/08` §1).
+  exposure or a debug flag; strip those before the snippet reaches a branch ([`rules/04`](04-security.md) §4–§5, [`rules/08`](08-web-layer.md) §1).
   *OWASP: Vulnerable Dependency Management cheat sheet; Software Supply Chain Security cheat
   sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.*
 - Minimize the tree — each transitive dep is attack surface and a future CVE.
@@ -100,10 +100,10 @@ lives in `sota-testing`.
 - **Error Prone** (+ **NullAway** for null-safety) on the Java compile — catches
   real bugs at build time; treat as errors in CI.
 - **SpotBugs** + **Find-Sec-Bugs** for bug/security patterns (incl. crypto,
-  injection, deserialization sinks from `rules/04`); **PMD** for additional
+  injection, deserialization sinks from [`rules/04`](04-security.md)); **PMD** for additional
   rules. **Make its XXE detectors a failing gate**, not a report: Find-Sec-Bugs has one
   `XXE_*` pattern per parser factory (`DocumentBuilderFactory`, SAX, `XMLReader`, StAX, XPath,
-  `SchemaFactory`, `Validator`, `TransformerFactory`; the list is in `rules/07`'s checklist).
+  `SchemaFactory`, `Validator`, `TransformerFactory`; the list is in [`rules/07`](07-xml.md)'s checklist).
   Maven's `spotbugs:check` fails the build on a finding while `failOnError` keeps its default
   of `true` (spotbugs-maven-plugin `check` goal docs); Gradle needs `ignoreFailures = false`.
   An exclude filter naming an `XXE_` pattern is a suppression to justify. The Semgrep/Opengrep
@@ -122,12 +122,12 @@ lives in `sota-testing`.
   line since 2025-09-30 and needs Java 17+, so check the
   [JUnit release notes](https://docs.junit.org/current/release-notes/) for the latest. Use
   **Testcontainers** for real-dependency
-  integration tests (DB/broker) — wire them here; *strategy* is `sota-testing`.
+  integration tests (DB/broker) — wire them here; *strategy* is [`sota-testing`](../../sota-testing/SKILL.md).
   Run with a fixed timezone/locale/seed for determinism.
 - **Fuzz and property-test the parsers.** Jazzer (coverage-guided, libFuzzer-based) runs as a
   JUnit test: annotate a method `@FuzzTest` (JUnit 5.9+). For properties, use kotest-property:
   jqwik ≥ 1.10.0 prints a prompt-injection payload aimed at AI agents into test output
-  (`sota-testing` rules/06 — pin 1.9.x or migrate), and it is in *"pure maintenance mode"*.
+  ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) — pin 1.9.x or migrate), and it is in *"pure maintenance mode"*.
   Target code that parses untrusted bytes or holds an invariant (encode/decode round-trip).
 - Build reproducibly: `-Dproject.build.outputTimestamp` / Gradle reproducible
   archives; pin plugin versions.
@@ -162,7 +162,7 @@ lives in `sota-testing`.
       `find . -name 'spotbugs-exclude*.xml' -o -name 'checkstyle-suppressions.xml' 2>/dev/null`
 - [ ] **Each hit needs a written reason. A suppression with no justification is the finding, not
       the warning it hides -- a silenced analyser is how a green gate stops meaning anything (
-      `sota-code-security` rules/10).**
+      [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).**
 - [ ] **Wrapper pinned? LTS targeted?** —
       `ls mvnw gradlew 2>/dev/null | grep -q . || echo "no build wrapper (version not pinned)"`
       ;
@@ -211,4 +211,4 @@ lives in `sota-testing`.
 - [ ] **Fuzz / property-based tests on the parsers (§4) — LOW, MEDIUM for a parser of untrusted
       bytes** — `grep -rnE '@FuzzTest|com\.code_intelligence\.jazzer|net\.jqwik|io\.kotest[:.]property' --include='*.java' --include='*.kt' --include='pom.xml' --include='build.gradle*' .`
       (none: no parser in the repo is fuzzed; a `net.jqwik` hit at ≥ 1.10.0 is HIGH where agents
-      read test output — `sota-testing` rules/06)
+      read test output — [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md))

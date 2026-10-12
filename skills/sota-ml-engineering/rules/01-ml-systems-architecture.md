@@ -17,14 +17,14 @@ the model.
   that frame.
 - Decide the prediction architecture up front: **batch** (precompute, store),
   **online/real-time** (serve on request), or **streaming**. This drives the
-  feature and serving design (`rules/05`).
+  feature and serving design ([`rules/05`](05-deployment-serving.md)).
 
 ## 2. Training vs serving paths
 
 - The training path (offline, large batch, historical data) and the serving
   path (online, low-latency, current data) are different code paths over the
   same logical features. If they compute features differently, you get
-  **train/serve skew** (`rules/02`) — the most common silent production failure.
+  **train/serve skew** ([`rules/02`](02-data-and-features.md)) — the most common silent production failure.
 - Eliminate skew structurally: a **feature store** (e.g. Feast-style) or shared
   transformation code/library used by both paths, so a feature is defined once.
 
@@ -45,7 +45,7 @@ the model.
   versioned artifacts with their metrics, data/code/config lineage, deployment
   label (version **aliases** like `@champion`/`@challenger` — MLflow deprecated
   fixed staging/production/archived stages in favor of aliases and tags), and
-  approver. Promotion is an explicit, gated transition (`rules/04`, `rules/05`),
+  approver. Promotion is an explicit, gated transition ([`rules/04`](04-evaluation-validation.md), [`rules/05`](05-deployment-serving.md)),
   not a file copy.
 - Store the model with everything needed to reproduce and explain it: training
   data reference + hash, feature versions, hyperparameters, code commit,
@@ -55,13 +55,13 @@ the model.
   reference. A registry whose history can be edited in place cannot answer
   "what served on the 3rd". Fine-tuning checkpoints that may ever be evaluated
   or served are registered as their own artifacts, with their own lineage, not
-  kept as loose files beside the final model (dataset lineage: `rules/02` §5).
+  kept as loose files beside the final model (dataset lineage: [`rules/02`](02-data-and-features.md) §5).
   OWASP: AISVS 3.5.4, 12.5.3.
 
 ## 5. Reproducibility is architectural
 
 - Any model in production must be **rebuildable**: pin data (versioned/hashed),
-  code (commit), config, environment (container/lockfile), and seeds (`rules/03`).
+  code (commit), config, environment (container/lockfile), and seeds ([`rules/03`](03-training-experimentation.md)).
   "We can't reproduce the prod model" is a HIGH finding — you can't debug,
   audit, or safely retrain it.
 
@@ -70,7 +70,7 @@ the model.
 - Training, evaluation and production inference are **separate trust domains**:
   separate credentials, separate network reach, and no path by which a training
   job can write to what serving reads except through the gated registry
-  promotion (`rules/04`, `rules/05`).
+  promotion ([`rules/04`](04-evaluation-validation.md), [`rules/05`](05-deployment-serving.md)).
 - Training logs, checkpoints, intermediate outputs and the experiment tracker
   hold data and near-final weights; restrict them like production data. An
   experiment tracker started with no authentication (for example `mlflow
@@ -86,7 +86,7 @@ the model.
 - Scope feature-store namespaces by purpose, so one model's pipeline cannot read
   or overwrite another's features, and rotate the credentials that write
   materialised features on the same cadence as other production credentials
-  (`sota-secrets-management`). OWASP: AI-Powered Advertising Systems Security
+  ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)). OWASP: AI-Powered Advertising Systems Security
   cheat sheet; Secure AI Model Ops cheat sheet.
 
 ## 7. The Hidden-Technical-Debt anti-patterns
@@ -103,7 +103,7 @@ Audit for these (Sculley et al.) — each is real ML debt:
   or another model's (hidden). Detect and break them; they make offline metrics
   lie.
 - **Data dependencies cost more than code dependencies**: unstable/underutilized
-  input signals. Version data sources; drop unused features (`rules/02`).
+  input signals. Version data sources; drop unused features ([`rules/02`](02-data-and-features.md)).
 - **Glue code & pipeline jungles**: most of the system becomes plumbing around a
   general-purpose package; scrappy ETL accreting into an unmaintainable jungle.
   Refactor toward clean, tested components.

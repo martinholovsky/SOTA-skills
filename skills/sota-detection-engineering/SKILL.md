@@ -36,12 +36,12 @@ peer-reviewed, CI-tested, ATT&CK-mapped, FP-budgeted, and retired when stale.
 The dominant failure mode is not missing rules — it is **alert fatigue**: noise
 that buries the one true positive. Optimize signal-to-noise relentlessly.
 
-**Ownership boundary.** `sota-observability` owns the telemetry pipeline (logs,
+**Ownership boundary.** [`sota-observability`](../sota-observability/SKILL.md) owns the telemetry pipeline (logs,
 metrics, traces, SLOs, log shipping, retention plumbing). This skill owns
 turning that telemetry into *security* detections, the SOC workflow, hunting,
-and IR. `sota-threat-modeling` owns design-time threat enumeration (STRIDE/
+and IR. [`sota-threat-modeling`](../sota-threat-modeling/SKILL.md) owns design-time threat enumeration (STRIDE/
 ATT&CK/ATLAS catalogs); this skill owns catching those threats at runtime. If
-you find yourself designing the logging schema, that's observability rules/01;
+you find yourself designing the logging schema, that's observability [rules/01](rules/01-detection-engineering-discipline.md);
 if you find yourself enumerating threats on a DFD, that's threat-modeling.
 
 ## BUILD mode
@@ -57,33 +57,33 @@ test → deploy → tune → retire. Workflow:
 2. **Confirm the log source exists first.** You cannot detect what you do not
    collect. Map the hypothesis to a concrete data source (EDR, cloud audit, K8s
    audit, network/flow, identity, app). If it's missing, the deliverable is a
-   *logging gap*, not a rule. See rules/02.
+   *logging gap*, not a rule. See [rules/02](rules/02-telemetry-siem-data-layer.md).
 3. **Detect behavior over artifacts.** Climb the **Pyramid of Pain**: prefer
    TTP/behavioral logic over brittle hashes/IPs/domains. IOC matches are cheap
    and disposable; TTP detections cost the adversary real money to evade.
-4. **Pick the right engine** (rules/03): Sigma for log detections (vendor-
+4. **Pick the right engine** ([rules/03](rules/03-rule-languages-engines.md)): Sigma for log detections (vendor-
    agnostic, compiled to your SIEM), YARA-X for file/memory/malware, Suricata
    for network, Falco/Tetragon for eBPF runtime/container/K8s, SIEM-native
    (KQL/SPL/EQL) for correlation the portable formats can't express.
-5. **Engineer for low FP from the start** (rules/04): scope tightly, add
+5. **Engineer for low FP from the start** ([rules/04](rules/04-alerting-triage-soc-soar.md)): scope tightly, add
    allowlist context, require corroboration for noisy signals, set a severity
    honestly. Every detection ships with a runbook (link to observability
-   rules/04 alerting plumbing) and an owner.
+   [rules/04](rules/04-alerting-triage-soc-soar.md) alerting plumbing) and an owner.
 6. **Test before deploy.** Validate with adversary emulation — Atomic Red Team
    (endpoint), Stratus Red Team (cloud), Caldera (campaigns). Confirm the
    detection fires on the real technique and stays quiet on benign baselines.
-   No detection merges without a passing test. See rules/06.
+   No detection merges without a passing test. See [rules/06](rules/06-incident-response-validation.md).
 7. **Map coverage and find gaps.** Track every detection against ATT&CK with the
    Navigator. Coverage heatmaps reveal blind spots — feed them back to step 1.
 8. **Tune and retire.** Review FP rates, suppress with *expiry* (never forever),
    delete detections nobody trusts. A muted alert is worse than none.
 
-For hunting and deception, see rules/05; for IR, see rules/06.
+For hunting and deception, see [rules/05](rules/05-hunting-intel-deception.md); for IR, see [rules/06](rules/06-incident-response-validation.md).
 
 ## AUDIT mode
 
-Assess an existing detection/SOC/IR posture adversarially. Read rules/06 (IR &
-validation) and rules/04 (SOC/triage) first. Sample real detections, real
+Assess an existing detection/SOC/IR posture adversarially. Read [rules/06](rules/06-incident-response-validation.md) (IR &
+validation) and [rules/04](rules/04-alerting-triage-soc-soar.md) (SOC/triage) first. Sample real detections, real
 alerts, and real incidents — do not trust a coverage dashboard or a wiki
 runbook that has never fired. The cardinal test: pick three ATT&CK techniques
 relevant to the environment and prove, end to end, that each would be caught.
@@ -121,13 +121,13 @@ and the shortest path to closing the worst gap.
 
 | File | Read this when... |
 |------|-------------------|
-| `rules/01-detection-engineering-discipline.md` | Running the detection lifecycle, writing ADS docs, doing detection-as-code (CI/peer review/regression), mapping coverage to ATT&CK + Navigator, applying the Pyramid of Pain, picking maturity targets and metrics (coverage/precision/MTTD) |
-| `rules/02-telemetry-siem-data-layer.md` | Deciding what to collect (the #1 gap), choosing SIEM/data-lake, normalizing with OCSF/ECS, sizing retention for IR/hunting, controlling volume/cost, assessing data quality; application & behavioural detections (app-login spraying/stuffing/impossible travel, LLM/agent runtime and model-API-as-C2, data-access exfiltration and DB anomalies) |
-| `rules/03-rule-languages-engines.md` | Choosing and writing detections in Sigma, YARA/YARA-X, Suricata, Falco, Tetragon, or SIEM-native (KQL/SPL/EQL); rule quality, specificity, FP-resistance, performance; good/bad examples |
-| `rules/04-alerting-triage-soc-soar.md` | Fighting alert fatigue, tuning/suppression with expiry, severity assignment, enrichment, dedup/correlation, runbooks, SOAR + auto-containment guardrails, case management, FP lifecycle, SOC metrics |
-| `rules/05-hunting-intel-deception.md` | Hypothesis-driven hunting + the hunt loop, IOC vs IOA/TTP hunting, threat-intel lifecycle + TIP, STIX 2.1/TAXII 2.1, diamond model/kill chain, deception (honeypots/honeytokens/canaries) |
-| `rules/06-incident-response-validation.md` | Running IR (NIST SP 800-61r3 / CSF 2.0, PICERL), playbooks, severity classification, containment/eradication/recovery, forensic readiness + chain of custody, blameless PIR, tabletops; validating detections via Atomic Red Team/Caldera/Stratus, purple teaming, regression testing |
-| `rules/07-ad-attack-detection.md` | Detecting on-prem Active Directory attacks: DC audit-policy telemetry and the events that matter (4768/4769/4770, 4662, 4624/4625, 5136, 8004, 4886/4887), Kerberoasting (RC4 TGS spikes), AS-REP roasting, DCSync (replication GUIDs on 4662), golden/silver tickets, DCShadow, ADCS abuse (ESC1), NTLM relay, password spraying, RBCD writes (5136); ATT&CK mapping (T1558.x, T1003.006, T1207, T1649) + AD deception (honeytoken SPNs, canary objects). Hardening lives in sota-identity-access rules/07 |
+| [`rules/01-detection-engineering-discipline.md`](rules/01-detection-engineering-discipline.md) | Running the detection lifecycle, writing ADS docs, doing detection-as-code (CI/peer review/regression), mapping coverage to ATT&CK + Navigator, applying the Pyramid of Pain, picking maturity targets and metrics (coverage/precision/MTTD) |
+| [`rules/02-telemetry-siem-data-layer.md`](rules/02-telemetry-siem-data-layer.md) | Deciding what to collect (the #1 gap), choosing SIEM/data-lake, normalizing with OCSF/ECS, sizing retention for IR/hunting, controlling volume/cost, assessing data quality; application & behavioural detections (app-login spraying/stuffing/impossible travel, LLM/agent runtime and model-API-as-C2, data-access exfiltration and DB anomalies) |
+| [`rules/03-rule-languages-engines.md`](rules/03-rule-languages-engines.md) | Choosing and writing detections in Sigma, YARA/YARA-X, Suricata, Falco, Tetragon, or SIEM-native (KQL/SPL/EQL); rule quality, specificity, FP-resistance, performance; good/bad examples |
+| [`rules/04-alerting-triage-soc-soar.md`](rules/04-alerting-triage-soc-soar.md) | Fighting alert fatigue, tuning/suppression with expiry, severity assignment, enrichment, dedup/correlation, runbooks, SOAR + auto-containment guardrails, case management, FP lifecycle, SOC metrics |
+| [`rules/05-hunting-intel-deception.md`](rules/05-hunting-intel-deception.md) | Hypothesis-driven hunting + the hunt loop, IOC vs IOA/TTP hunting, threat-intel lifecycle + TIP, STIX 2.1/TAXII 2.1, diamond model/kill chain, deception (honeypots/honeytokens/canaries) |
+| [`rules/06-incident-response-validation.md`](rules/06-incident-response-validation.md) | Running IR (NIST SP 800-61r3 / CSF 2.0, PICERL), playbooks, severity classification, containment/eradication/recovery, forensic readiness + chain of custody, blameless PIR, tabletops; validating detections via Atomic Red Team/Caldera/Stratus, purple teaming, regression testing |
+| [`rules/07-ad-attack-detection.md`](rules/07-ad-attack-detection.md) | Detecting on-prem Active Directory attacks: DC audit-policy telemetry and the events that matter (4768/4769/4770, 4662, 4624/4625, 5136, 8004, 4886/4887), Kerberoasting (RC4 TGS spikes), AS-REP roasting, DCSync (replication GUIDs on 4662), golden/silver tickets, DCShadow, ADCS abuse (ESC1), NTLM relay, password spraying, RBCD writes (5136); ATT&CK mapping (T1558.x, T1003.006, T1207, T1649) + AD deception (honeytoken SPNs, canary objects). Hardening lives in [sota-identity-access rules/07](../sota-identity-access/rules/07-active-directory.md) |
 
 ## Top 10 non-negotiables
 
@@ -146,8 +146,8 @@ and the shortest path to closing the worst gap.
    failure. Tune aggressively, suppress with *expiry*, and treat a chronically
    ignored alert as a Critical defect.
 6. **Every alert has a runbook and an owner.** No actionable signal reaches a
-   human without next steps. Wire alerting plumbing via sota-observability
-   rules/04; you own the *security* content.
+   human without next steps. Wire alerting plumbing via [sota-observability
+   rules/04](../sota-observability/rules/04-slos-alerting.md); you own the *security* content.
 7. **Map coverage to ATT&CK and stare at the gaps.** A Navigator heatmap that
    nobody updates is theater. Coverage drives the next hypothesis.
 8. **Behavior-detect, then enrich.** Correlate, deduplicate, and decorate alerts
@@ -157,4 +157,4 @@ and the shortest path to closing the worst gap.
    that feed new detections.
 10. **Deception is the highest-fidelity signal you own.** A touched honeytoken
     or honeypot has ~zero false positives. Deploy canaries in the paths
-    attackers must traverse (see sota-secrets-management rules/04 honeytokens).
+    attackers must traverse (see [sota-secrets-management rules/04](../sota-secrets-management/rules/04-detection-and-remediation.md) honeytokens).

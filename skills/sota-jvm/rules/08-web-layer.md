@@ -1,12 +1,12 @@
 # 08 — The Web Layer: Actuator, Request Binding, Authorization Rules, Filters
 
-Split out of rules/04 (formerly section 6) on 2026-09-25, when rules/04 neared the 500-line cap;
-the section is now §1. rules/04 keeps its other section numbers.
+Split out of [rules/04](04-security.md) (formerly section 6) on 2026-09-25, when [rules/04](04-security.md) neared the 500-line cap;
+the section is now §1. [rules/04](04-security.md) keeps its other section numbers.
 
 ## 1. The web layer — actuator, request binding, authorization rules, filters
 
-HTTP semantics (status codes, idempotency, rate limits, CORS) belong to `sota-api-design`, and
-web-security classes (CSRF, XSS, headers) to `sota-code-security` rules/05. This section covers
+HTTP semantics (status codes, idempotency, rate limits, CORS) belong to [`sota-api-design`](../../sota-api-design/SKILL.md), and
+web-security classes (CSRF, XSS, headers) to [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md). This section covers
 the JVM mechanisms those attacks come in through. Spring is the example because it is the most
 widely deployed JVM web stack. Ask the same questions of Jakarta EE, Micronaut, Quarkus or Ktor.
 All Spring facts below were checked against Spring's own docs, advisories and source on
@@ -28,7 +28,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   **Jackson 3**, which Spring Boot 4 uses by default, removes `enableDefaultTyping` and moves
   the call onto `JsonMapper.builder()`. `builder().polymorphicTypeValidator(...)` replaces the
   default validator for annotation typing. The annotations keep their `com.fasterxml` package
-  (`rules/04` §1). Do not read the upgrade as a change to Spring's defaults.
+  ([`rules/04`](04-security.md) §1). Do not read the upgrade as a change to Spring's defaults.
   `FAIL_ON_UNKNOWN_PROPERTIES` and `DEFAULT_VIEW_INCLUSION` are off by default in Jackson 3,
   and Spring's own builder already turned both off on Jackson 2 (`Jackson2ObjectMapperBuilder`
   javadoc).
@@ -84,14 +84,14 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   source), and a method-level `@RequestMapping` with no `method` maps every verb
   (`RequestMethod[] method() default {}`). So such a handler is reachable by a cross-site
   GET with no token check. Use `@PostMapping` and friends for anything that writes. It is
-  the same class as the HEAD-to-GET confusion in `sota-ruby` rules/03.
+  the same class as the HEAD-to-GET confusion in [`sota-ruby` rules/03](../../sota-ruby/rules/03-web-hardening.md).
 - **View names are routing.** A controller return value of `"redirect:" + param` or
   `"forward:" + param`, or `new ModelAndView(param)`, lets the caller choose the target.
   Those prefixes are `UrlBasedViewResolver.REDIRECT_URL_PREFIX`/`FORWARD_URL_PREFIX`.
   `response.sendRedirect(param)` and `request.getRequestDispatcher(param)` are the servlet
   spellings. A **forward reaches what a browser cannot**: the Servlet spec says the
   contents of `WEB-INF` "may be exposed using the `RequestDispatcher` calls". Allowlist
-  targets; the open-redirect rule is `sota-code-security` rules/01 §11. **A redirect does not end
+  targets; the open-redirect rule is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11. **A redirect does not end
   the handler.** `sendRedirect`, `forward` and a `Location` header are plain calls: the servlet
   Javadoc only says the response "should be considered to be committed". The code after them
   runs, so `return` or throw on the next line, above all after a failed auth check. OWASP: Code
@@ -101,7 +101,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   `IllegalArgumentException` from `validateAllowCredentials`. But `checkOrigin` returns the
   request's own `Origin` for a pattern of `*` without calling that validation. So
   `allowedOriginPatterns("*")` plus credentials is reflect-any-origin-with-cookies (both
-  read from `CorsConfiguration` source). The class is `sota-code-security` rules/05.
+  read from `CorsConfiguration` source). The class is [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md).
 - **Session IDs in URLs.** Tomcat's `ApplicationContext` source says "URL re-writing is
   always enabled by default" and adds `COOKIE` beside it, so `encodeURL`/
   `encodeRedirectURL` can put `;jsessionid=` into links, logs and `Referer` headers. Set
@@ -112,7 +112,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   6.1.0, spring-web 7.0.9 source). Set each: `.secure(true).httpOnly(true).sameSite("Lax")`, or
   `setAttribute("SameSite", "Lax")` (Servlet 6.0+); Tomcat 11 adds none unless its `CookieProcessor`
   sets `sameSiteCookies`. Prefer a `__Host-` name (`Secure`, `Path=/`, no `Domain`). Its session
-  cookie is `HttpOnly` (`StandardContext.useHttpOnly = true`). Policy: `sota-code-security` rules/05.
+  cookie is `HttpOnly` (`StandardContext.useHttpOnly = true`). Policy: [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md).
 - **The servlet container's own configuration** (Tomcat `server.xml` as the example; Jetty and
   Undertow have equivalents). Defaults below are from the Tomcat 11.0 configuration reference,
   read 2026-09-25; check the reference for your major version. The `<Server>` shutdown port
@@ -128,7 +128,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   where the docs warn it exposes JSP source. On `<Connector>`, `maxPostSize` (default 2 MiB,
   form and multipart parameters only, so it is not a body-size limit) and
   `maxParameterCount` (default 1000) are the parsing limits, and a negative value means no
-  limit. TLS and protocol choice are `sota-network-security`. **Version disclosure**: Tomcat
+  limit. TLS and protocol choice are [`sota-network-security`](../../sota-network-security/SKILL.md). **Version disclosure**: Tomcat
   sends no `Server` header unless the app or the connector's `server` attribute sets one, but
   `ErrorReportValve` `showServerInfo` defaults to `true` and prints the version on error
   pages. OWASP: Code Review Guide v2.

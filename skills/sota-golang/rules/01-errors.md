@@ -114,7 +114,7 @@ Go's stdlib deliberately returns in-band sentinels and **documents them**:
 `strings.Index`/`LastIndex` return `-1` when not found (verified, go1.26.5 and go1.27.1). That is
 idiomatic and fine *because the contract is published and every caller is expected
 to test it*. The defect is the undocumented one you write yourself — the class is
-`sota-architecture` rules/02 §8a.
+[`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a.
 
 - `strconv.Atoi("x")` returns `(0, err)` (verified, go1.26.5 and go1.27.1). The `0` is a perfectly
   ordinary value; the error is the only thing distinguishing it from `Atoi("0")`.
@@ -223,7 +223,7 @@ Legitimate panic patterns:
   or collect (`errors.Join`) and continue. Comment which and why.
 - **errors as part of concurrency**: never send on an error channel without a
   receiver guarantee; prefer `errgroup` which does this correctly
-  (see `rules/03`).
+  (see [`rules/03`](03-concurrency.md)).
 - **Don't log below the top.** Libraries return errors; binaries log them
   once, at the handler/main level, with `slog` and the full chain
   (`slog.Any("err", err)` or `"err", err` — `%+v` style stacks need
@@ -269,7 +269,7 @@ func httpError(w http.ResponseWriter, err error) {
 ```
 
 Never echo internal error chains to external clients (information disclosure —
-see `rules/05`).
+see [`rules/05`](05-security.md)).
 
 ## Audit checklist
 

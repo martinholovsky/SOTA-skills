@@ -39,7 +39,7 @@ defaults, dangerous operations, config precedence, env var naming, help text.
   default-safe; clap: `suggestions` on by default; argparse: add a custom hook.)
   Agent-facing/machine modes may disable suggestions entirely (e.g. cobra's
   `DisableSuggestions`) — for an AI agent an unknown command should fail hard,
-  not offer a guess it might adopt (rules/02 §9).
+  not offer a guess it might adopt ([rules/02](02-output-interaction.md) §9).
 
 ## 2. Flag syntax — POSIX/GNU, no improvisation
 
@@ -133,7 +133,7 @@ defaults, dangerous operations, config precedence, env var naming, help text.
 - Big blast radius needs friction proportional to damage: deleting one item =
   `y/N`; deleting a namespace = type its name; `--all` + `--force` together for
   "everything".
-- Pair every dangerous op with `--dry-run` (rules/03 §2) and, where feasible, a
+- Pair every dangerous op with `--dry-run` ([rules/03](03-behavior-lifecycle.md) §2) and, where feasible, a
   grace mechanism (trash/soft-delete/`undo`, or print what to back up first).
 
 ## 6. Configuration precedence
@@ -144,7 +144,7 @@ defaults, dangerous operations, config precedence, env var naming, help text.
   2. environment variables
   3. project-level config (e.g. `./.toolrc`, `./tool.toml` — found by walking
      up from cwd, stopping at repo root or `$HOME`)
-  4. user-level config (`$XDG_CONFIG_HOME/tool/config.toml`, see rules/03 §6)
+  4. user-level config (`$XDG_CONFIG_HOME/tool/config.toml`, see [rules/03](03-behavior-lifecycle.md) §6)
   5. system-level config (`/etc/tool/…`) — only if genuinely needed
   6. built-in defaults
 
@@ -199,7 +199,7 @@ defaults, dangerous operations, config precedence, env var naming, help text.
   ```
 
 - Keep `--help` accurate by construction: generate docs/man/completions from
-  the same parser definitions (rules/04 §3).
+  the same parser definitions ([rules/04](04-distribution-docs.md) §3).
 
 ## Audit checklist
 

@@ -1,18 +1,18 @@
 # The Things That Do The Checking — instruments, guards, and the tools you audit with
 
-`rules/12` proves that a **specific control** works. This file turns the same
+[`rules/12`](12-verifying-the-verifier.md) proves that a **specific control** works. This file turns the same
 suspicion on **everything that did the proving**: the scorers, gates, benchmarks,
 thresholds, watchers and guards — and the instrument you are auditing with right
 now, including the command you just typed.
 
-Split out of `rules/12` on 2026-09-06, at the seam that file's own subtitle named
+Split out of [`rules/12`](12-verifying-the-verifier.md) on 2026-09-06, at the seam that file's own subtitle named
 (*"the mutation probe, **and** the things that do the checking"*). Section numbers
 are **unchanged** across the move — §2, §2.1, §2.2, §2.2a, §2.3, §2.4 and §3 mean
 here exactly what they meant there — so a citation that named a section still names
 the same content, and only the file part of the reference changes. Invariant 18
 resolves every `§` reference in `skills/`, which is what makes that safe to assert.
 
-The asymmetry that earns these their own file is the one `rules/12` opens with, one
+The asymmetry that earns these their own file is the one [`rules/12`](12-verifying-the-verifier.md) opens with, one
 level up. A broken feature produces a complaint; **a broken verifier produces a green
 tick or a number**, and both are believed, quoted, and put in a README. An instrument
 is worse still, because its output is *used to decide something else* — so a defect in
@@ -29,14 +29,14 @@ Two distinct shapes live here, and §3 is not a variant of §2:
   guard renders a verdict, and a guard that cannot fail blocks nothing while appearing
   to block everything.
 
-Use it in AUDIT as the pass that runs **after** `rules/10` and `rules/11` have produced
+Use it in AUDIT as the pass that runs **after** [`rules/10`](10-silent-control-failure.md) and [`rules/11`](11-dead-path-diagnostics.md) have produced
 findings — a finding produced by an unvalidated instrument is not yet a finding — and in
 BUILD whenever you write something whose output decides whether something else is OK.
 
-Related: the mutation probe and where it lives → `rules/12`; the inert-control catalog →
-`rules/10`; the codebase-scale sweep → `rules/11`; vacuous tests, mutation testing and
-watching a security test fail → `sota-testing` rules/02, rules/06 and rules/09; the
-audit-level evidence and refutation standard → `sota/rules/03` §2 and §4.
+Related: the mutation probe and where it lives → [`rules/12`](12-verifying-the-verifier.md); the inert-control catalog →
+[`rules/10`](10-silent-control-failure.md); the codebase-scale sweep → [`rules/11`](11-dead-path-diagnostics.md); vacuous tests, mutation testing and
+watching a security test fail → [`sota-testing` rules/02](../../sota-testing/rules/02-test-design-quality.md), [rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) and [rules/09](../../sota-testing/rules/09-security-testing.md); the
+audit-level evidence and refutation standard → [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2 and §4.
 
 ---
 
@@ -44,7 +44,7 @@ audit-level evidence and refutation standard → `sota/rules/03` §2 and §4.
 
 A scorer, a quality gate, a benchmark, a coverage threshold, a lint config, a
 dashboard — anything whose output decides whether something is **OK** — is a
-control, and every rule in rules/10 and rules/11 applies to it. This is the most
+control, and every rule in [rules/10](10-silent-control-failure.md) and [rules/11](11-dead-path-diagnostics.md) applies to it. This is the most
 commonly skipped application, because measurement code reads as scaffolding
 rather than as production, and nobody threat-models scaffolding.
 
@@ -56,24 +56,24 @@ pipe, one command — and compare. Three tells that the harness is the bug, not 
 subject: a **usage error (exit 2) from the callee**, a result that contradicts a
 passing unit test, and a status read through a pipe (`cmd | tail -1; echo $?` reports
 `tail`). Shell-specific mechanics — zsh joining, `${pipestatus[1]}` vs
-`${PIPESTATUS[0]}` — are in `sota-shell-scripting` rules/01 §3, which nothing will
+`${PIPESTATUS[0]}` — are in [`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md) §3, which nothing will
 route you to when the task does not look shell-shaped. That is exactly when it bites.
 **A fourth tell has no usage error at all: a quoting bug can be the reason a probe never
 fires.** In zsh an unquoted glob in a flag value (`grep --include=*.md`) aborts the
 command under the default `NOMATCH`, and with the customary `2>/dev/null` that is
 byte-identical to a genuine no-match — empty output, exit 1. The sweep you read as *"the
-tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
+tree is clean"* may never have run: [`sota-shell-scripting` rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md) §1.
 
 ### 2.1 Six failure modes specific to instruments
 
-- **Unbounded or unread scope.** rules/11 §2.2 turned inward: an instrument must
+- **Unbounded or unread scope.** [rules/11](11-dead-path-diagnostics.md) §2.2 turned inward: an instrument must
   report what it examined, *and someone must read it*. A scorer that printed
   "851 files" for a ten-module service was reading a vendored virtualenv,
   third-party packages, and the project's own test assertions — `assert
   user.has(permission)` in a test file counted as an authorization control. The
-  denominator was on screen and went unread, which is the failure rules/11 §2.2
+  denominator was on screen and went unread, which is the failure [rules/11](11-dead-path-diagnostics.md) §2.2
   exists to prevent.
-- **Generalised from one sample** (rules/13 §3, applied to yourself). Patterns
+- **Generalised from one sample** ([rules/13](13-context-dependent-silence.md) §3, applied to yourself). Patterns
   written against a single reference implementation flag every *other* correct
   spelling: a check keyed on the method name that reference happened to use; a
   rule that flagged the *correct* fix because the safe spelling shared a shape
@@ -139,7 +139,7 @@ tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
 
   So: **before reporting a verification result as a finding, re-derive it a second way with
   a different failure mode**, and where the harness mutates text, assert the mutation took
-  (`rules/12` §1). Budget for *noticing an implausible result*, not for remembering the
+  ([`rules/12`](12-verifying-the-verifier.md) §1). Budget for *noticing an implausible result*, not for remembering the
   individual traps — the same reporter had written one of these traps into their own rules
   file after hitting it, and hit it again three hours later, because the reflex comes from
   muscle memory that a note does not reach.
@@ -185,15 +185,15 @@ answer on purpose.** Before its output is quoted anywhere:
   feed one input of each class and assert each verdict appears at least once; a class
   you cannot produce is a branch that is decoration. This matters most once the
   classifier has been wired into an operator-facing message, which is where a broken
-  classifier is given a confident voice (`sota-devsecops` rules/11 §4).
+  classifier is given a confident voice ([`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §4).
 - **Abort, never warn, on a missing result.** If a run produced no parsable
   summary, exit non-zero. "No output" must never be readable as "nothing found".
-- **Assert the mutation took** (rules/11 §2.5). Editable installs, copied trees,
+- **Assert the mutation took** ([rules/11](11-dead-path-diagnostics.md) §2.5). Editable installs, copied trees,
   stale caches and vendored environments all mean the code you changed may not be
   the code that ran.
 - **Sample and read before you count.** Report a count only after reading a
   sample of what it matched. A regex over prose over-counts hard — one such
-  sweep reported 50 unearned claims (rules/14 §1) where reading found 8.
+  sweep reported 50 unearned claims ([rules/14](14-control-not-in-force.md) §1) where reading found 8.
 - **Validate on inputs where failure is possible.** "No false positives on three
   clean libraries" establishes nothing if none of them contains the construct the
   control keys on: it could not have failed. Pick inputs that *can* fail.
@@ -204,7 +204,7 @@ answer on purpose.** Before its output is quoted anywhere:
   secret-indexed table lookups, variable-time encoding — switched off, so a default run says
   least about early-exit MAC comparison, which is the most common real timing bug there is
   (Lucky Thirteen). This is **not** the threshold *you* chose being too coarse
-  (`sota-devsecops` rules/11 §6): you chose nothing, and the silence is the vendor's. Print
+  ([`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §6): you chose nothing, and the silence is the vendor's. Print
   the tool's effective configuration alongside its verdict and name the detector families
   that did not run.
 - **When a wrapper reports an empty reason, go one layer down.** A CLI that
@@ -261,7 +261,7 @@ running, because a transient API read returned empty and the check was `!= "0"`.
 exposed it was a contradiction **inside its own output** — success printed beside a
 last-success timestamp a week stale. That is the design rule: **make a watcher print the
 independent signal next to its verdict**, so a false verdict has something to disagree
-with. Shell mechanics: `sota-shell-scripting` rules/02 §2. The scope-and-predicate
+with. Shell mechanics: [`sota-shell-scripting` rules/02](../../sota-shell-scripting/rules/02-robustness-correctness.md) §2. The scope-and-predicate
 version of this question is §3.
 
 ### 2.3 Changing an instrument after you have seen results
@@ -293,7 +293,7 @@ evaluation.** Re-execute the check somewhere you control, or verify the artifact
 against something the subject cannot author — a hash you computed, a count you
 took, a log the harness emitted. This binds CI jobs that report their own status,
 vendors self-attesting to a control, and any model asked to grade its own output
-(`sota-llm-engineering` rules/01 on judges; `rules/08` §1 on same-class checkers).
+([`sota-llm-engineering` rules/01](../../sota-llm-engineering/rules/01-evals.md) on judges; [`rules/08`](08-llm-ai-security.md) §1 on same-class checkers).
 
 ## 2a. The instrument that speaks only on failure
 
@@ -320,7 +320,7 @@ hardest exactly where the limit is the design constraint.
   or read the number from an environment where the thing already fails. That is the only
   remaining way to turn one bit into a measurement.
 - **Say which you did.** "Passed" is not a margin; "passed, and the verifier reported 344 of
-  512 with stats on" is. A claim about headroom with no number behind it is `sota/rules/03`
+  512 with stats on" is. A claim about headroom with no number behind it is [`sota/rules/03`](../../sota/rules/03-audit-findings.md)
   §2's missing evidence, in the one place it reads as diligence.
 - **A pass/fail control cannot detect drift toward its own limit.** Budget consumption needs
   its own reported value or its own gate — otherwise the first signal is the day it breaks.
@@ -345,7 +345,7 @@ Four forms, all observed:
   evidence — the ones needing protection most — received neither check.
 - **The denominator that counts only survivors.** A coverage audit computed over
   the items that made it past earlier filtering reports high coverage of a
-  population it has already narrowed. rules/11 §2.2 catches an *empty* scope;
+  population it has already narrowed. [rules/11](11-dead-path-diagnostics.md) §2.2 catches an *empty* scope;
   this is a scope that is merely **wrong**, which prints a healthy number.
 - **The guard whose scope is continuous but whose state is not.** A verifier
   that walks a sequence in chunks — a hash chain by epoch, a log by rotated
@@ -355,16 +355,16 @@ Four forms, all observed:
   the record gone. Predicate right, traversal right, scope nominally complete:
   the checking stops at the seam between iterations, and nothing in the output
   distinguishes "all chunks verified" from "verified each chunk in isolation".
-  Worked instance: `rules/18` §1, chained partitions.
+  Worked instance: [`rules/18`](18-tamper-evident-logs.md) §1, chained partitions.
 
 The question to ask of every guard, gate, coverage assertion and tripwire:
 
 > If the defect this exists for were present right now, would this fail?
 
-Then **introduce the defect and check** — the same discipline `rules/12` §1 applies to a
+Then **introduce the defect and check** — the same discipline [`rules/12`](12-verifying-the-verifier.md) §1 applies to a
 control, applied to the thing that checks the control. A guard you have not
 watched reject something is a guard with an unverified predicate, and its scope
-is unverified until you have seen what it enumerated (rules/11 §2.2).
+is unverified until you have seen what it enumerated ([rules/11](11-dead-path-diagnostics.md) §2.2).
 
 **Verify per target, not once.** A guard protects a *population*: 20 call sites,
 40 modules, every route. Watching it reject one member proves the predicate can
@@ -374,7 +374,7 @@ tripwire that fired for 2 of 20 targets and stayed green for the remaining 18 �
 indistinguishable from full coverage on any single-instance test. For a security
 gate the acceptable kill rate is **100%**: unlike a code mutation score, where
 surviving mutants are triaged and a number below 1.0 is normal
-(`sota-testing` rules/06), a gate that misses its own target defect on a member
+([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md)), a gate that misses its own target defect on a member
 of its population is simply void for that member.
 
 For a guard that walks a sequence, that population includes the **seams**. An
@@ -418,9 +418,9 @@ nothing**. In a ledger whose entire purpose is distinguishing a gated commit fro
 `--no-verify` push, "no record" is the failure state — reached silently, by a control that
 was right to refuse, because the gates genuinely had not run against the committed tree.
 
-**This is not the inert control of `rules/10`, and the fixes are opposites.** An inert
+**This is not the inert control of [`rules/10`](10-silent-control-failure.md), and the fixes are opposites.** An inert
 control must start *enforcing*; this one must keep refusing and start *explaining*. Nor is
-it `rules/11`'s dead path: the branch is reached, it simply says nothing on the way through.
+it [`rules/11`](11-dead-path-diagnostics.md)'s dead path: the branch is reached, it simply says nothing on the way through.
 
 **The rule.** When a guard has more than one legitimate reason to decline, **compute the
 reason and emit it** — never imply it from a conjunction. The review tell is a multi-clause

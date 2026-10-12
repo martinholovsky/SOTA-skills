@@ -94,7 +94,7 @@ Out of scope: unfreezing flow cleanup → #901.
   compliance- and business-critical paths (auth, crypto, payments, tenant
   isolation, audit logging) a CODEOWNERS entry naming a security or domain
   reviewer. CODEOWNERS only *requests* that reviewer; merge blocks only when
-  code-owner review is required on the branch (`sota-devsecops` rules/01 §1.8).
+  code-owner review is required on the branch ([`sota-devsecops` rules/01](../../sota-devsecops/rules/01-pipeline-security.md) §1.8).
   (OWASP: Code Review Guide v2)
 - **Know when to take it offline.** Three back-and-forth rounds on one thread
   means the medium failed: call/pair, then record the conclusion in the thread
@@ -229,7 +229,7 @@ that uses it.
 PR that adds a column and starts writing to it is safe; one that also drops the old
 column is not, because a rollback of the code without a rollback of the data leaves
 production reading a field that no longer exists. Same rule for API deprecations
-(`rules/02` §7) and for anything with a consumer you do not control.
+([`rules/02`](02-api-reference-changelogs.md) §7) and for anything with a consumer you do not control.
 
 **Revert or fix forward — decide by blast radius, not by pride.** If the change is
 live and wrong, revert first and diagnose after: a revert is a known-good state and a
@@ -255,7 +255,7 @@ that lands on a 4,000-line reformat has cost more than the reformat saved.
   must collapse/update in place. A PR where human comments drown in bot spam
   gets worse review.
 - CI status gates merge: required checks, no `--no-verify` culture, branch
-  protection on the default branch (supply-chain side: `sota-devsecops`).
+  protection on the default branch (supply-chain side: [`sota-devsecops`](../../sota-devsecops/SKILL.md)).
 
 ## §7 Reviewing AI-generated code
 
@@ -280,7 +280,7 @@ AI assistance raises PR volume; the review bar does not move.
   look.** That includes auth, authz, input validation and crypto tests. Deleting
   or skipping a test is the easy way for an agent to turn CI green. Ask the author
   why each test changed before approving, and route those files to a code owner.
-  `sota-testing` rules/07 §7.10 has a diff check that flags these PRs.
+  [`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.10 has a diff check that flags these PRs.
 - **Keep a provenance trail.** For each AI-assisted change, record which tool and
   which model version produced it, and which human approved it. Use a PR-template
   field or a commit trailer. This record is what lets you find every change a model
@@ -313,7 +313,7 @@ Before anything leaves for a third party:
 - **Check whether it is already known** — read the whole thread, the linked
   issues, and the commit that introduced the line. A duplicate report costs the
   maintainer more than silence would have.
-- **Attack your own claim first** (`sota` principle 7): restate it from the tool
+- **Attack your own claim first** ([`sota`](../../sota/SKILL.md) principle 7): restate it from the tool
   output rather than from your own earlier summary. A false report in a
   maintainer's own subsystem is the most expensive kind.
 - **Never publish on someone's behalf without their approval of the final text.**

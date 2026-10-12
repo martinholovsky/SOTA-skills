@@ -136,7 +136,7 @@ end
 
 Ruby's search methods return `nil`, not `-1`: `"abc".index("z")` and
 `[1,2].index(3)` are both `nil` (verified, Ruby 4.0.6). So the class in
-`sota-architecture` rules/02 §8a rarely arrives from the stdlib's search API — it
+[`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a rarely arrives from the stdlib's search API — it
 arrives from **conversion** and from hand-rolled returns.
 
 - `"x".to_i` is `0` and `"12abc".to_i` is `12` (verified) — garbage and a partial
@@ -238,8 +238,8 @@ Rules:
 
 ## 8. Designing a public surface — everything is public until you say otherwise
 
-Shared design rules: `sota-architecture` rules/02 and `sota-api-design`; semver honesty is
-already in `rules/04`. **This is the Ruby mechanism**, and Ruby's default is the opposite of
+Shared design rules: [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) and [`sota-api-design`](../../sota-api-design/SKILL.md); semver honesty is
+already in [`rules/04`](04-supply-chain-tooling.md). **This is the Ruby mechanism**, and Ruby's default is the opposite of
 every other language in this tier: a gem's surface is everything it defines, and narrowing it
 later is the breaking change.
 

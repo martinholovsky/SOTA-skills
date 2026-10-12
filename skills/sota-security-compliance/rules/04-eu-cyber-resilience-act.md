@@ -58,18 +58,18 @@ vulnerability-handling process**. Both are engineering.
 **Part I — secure by design & default:**
 - Ship **without known exploitable vulnerabilities** → a **release gate** that
   blocks known-exploitable findings; a mechanism to know your components' CVE
-  status (ties to the SBOM below and to `sota-devsecops` scanning).
+  status (ties to the SBOM below and to [`sota-devsecops`](../../sota-devsecops/SKILL.md) scanning).
 - **Secure default configuration** — hardened out of the box, no default
   credentials, minimal attack surface, secure-by-default TLS/auth
-  (`sota-code-security`, `sota-network-security`).
+  ([`sota-code-security`](../../sota-code-security/SKILL.md), [`sota-network-security`](../../sota-network-security/SKILL.md)).
 - Protect **confidentiality/integrity** of data and commands (encryption,
   authenticated updates), **minimize attack surface**, and provide
-  **security-relevant logging** (`sota-observability`).
+  **security-relevant logging** ([`sota-observability`](../../sota-observability/SKILL.md)).
 
 **Part II — vulnerability handling (for the whole support period):**
 - **SBOM** covering at least the top-level dependencies → **generate in CI/CD**
   (SPDX or CycloneDX), keep it current per release, and be able to produce it
-  (`sota-devsecops`). Pair with **VEX** to communicate which listed components are
+  ([`sota-devsecops`](../../sota-devsecops/SKILL.md)). Pair with **VEX** to communicate which listed components are
   actually exploitable.
 - **Coordinated Vulnerability Disclosure (CVD) policy** → a published intake
   (`security.txt`, a disclosure address/portal) and a documented handling process.
@@ -133,9 +133,9 @@ ones placed before 11 Dec 2027** (Art. 69(3)):
 Engineering consequence: this is a **detection + telemetry + workflow** problem,
 not a legal one. You need to *know* within hours that a vuln in your product is
 being exploited (threat intel, telemetry, disclosure intake — `sota-detection-
-engineering`, `sota-observability`) and a rehearsed reporting runbook. A clock that
+engineering`, [`sota-observability`](../../sota-observability/SKILL.md)) and a rehearsed reporting runbook. A clock that
 depends on someone happening to notice is already blown. These clocks sit alongside
-NIS2 (24h/72h) and DORA (4h/24h/72h) covered in `sota-privacy-compliance` rules/04
+NIS2 (24h/72h) and DORA (4h/24h/72h) covered in [`sota-privacy-compliance` rules/04](../../sota-privacy-compliance/rules/04-regulatory-landscape.md)
 §6 — build one incident pipeline that satisfies the strictest applicable clock.
 
 ## 3a. Triaging a report someone else sent you — what actually starts the clock
@@ -170,7 +170,7 @@ the current edition before citing one in an assessment.*
    your build does not reach is a **VEX** statement (§2) and an upstream conversation, not a
    product vulnerability and not an Article 14 report. Intended behaviour that surprises the
    reporter is a documentation fix.
-5. **Rate it on `sota/rules/03` §1** — impact × exploitability in context — not on the
+5. **Rate it on [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §1** — impact × exploitability in context — not on the
    reporter's claimed severity and not on CVSS alone (§1 there: CVSS may inform a rating; it
    is never the rating).
 6. **Decide the clock explicitly and record the decision either way**, with its timestamp:
@@ -244,7 +244,7 @@ OWASP: Vulnerability Disclosure cheat sheet
   ([Regulation (EU) 2024/2847, Art. 32](https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng))
 - **ISA/IEC 62443 and NIST frameworks** are widely expected to *inform* the
   harmonized standards and are common industry mappings — CEN/CENELEC is adapting
-  **EN IEC 62443-4-1 / 4-2** as the OT/industrial route (rules/05). **But being a
+  **EN IEC 62443-4-1 / 4-2** as the OT/industrial route ([rules/05](05-iec-62443-ot-ics.md)). **But being a
   formally-recognized presumption-of-conformity route depends on the harmonized
   standards actually cited in the Official Journal**, which are still being
   finalized (target dates around late 2026). *Flag: evolving — confirm the
@@ -259,10 +259,10 @@ expensive-to-retrofit parts. Track the hEN list; don't wait for it to start.
 
 The CRA is mostly a **repackaging of good product-security engineering** with legal
 teeth and deadlines. Reuse, don't rebuild:
-- SBOM/provenance/signing → `sota-devsecops`; secure-by-default & vuln classes →
-  `sota-code-security` + language skills; update-channel signing keys →
-  `sota-secrets-management`; the incident/reporting pipeline → `sota-detection-
-  engineering` + `sota-observability`; OT products → rules/05 (62443).
+- SBOM/provenance/signing → [`sota-devsecops`](../../sota-devsecops/SKILL.md); secure-by-default & vuln classes →
+  [`sota-code-security`](../../sota-code-security/SKILL.md) + language skills; update-channel signing keys →
+  [`sota-secrets-management`](../../sota-secrets-management/SKILL.md); the incident/reporting pipeline → `sota-detection-
+  engineering` + [`sota-observability`](../../sota-observability/SKILL.md); OT products → [rules/05](05-iec-62443-ot-ics.md) (62443).
 
 ## Audit checklist
 
@@ -271,7 +271,7 @@ teeth and deadlines. Reuse, don't rebuild:
 - [ ] **SBOM generated in CI/CD** (SPDX/CycloneDX), current per release, producible on request; VEX used to scope exploitability
 - [ ] Secure-by-default config verified: no default credentials, hardened defaults, minimal attack surface, authenticated/encrypted comms and updates
 - [ ] **Coordinated Vulnerability Disclosure** intake published (security.txt / portal) with a documented handling process
-- [ ] The handling process is **written and ordered**, not just claimed: acknowledge SLA → reproduce → confirm the cited code exists → scope (ours / dependency-VEX / documented behaviour) → rate on `sota/rules/03` §1 → clock decision → reporter closed out (ISO/IEC 30111:2019 is the standard for this half; 29147:2018 for the interface)
+- [ ] The handling process is **written and ordered**, not just claimed: acknowledge SLA → reproduce → confirm the cited code exists → scope (ours / dependency-VEX / documented behaviour) → rate on [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §1 → clock decision → reporter closed out (ISO/IEC 30111:2019 is the standard for this half; 29147:2018 for the interface)
 - [ ] **When awareness begins is defined in writing** and a clock decision is recorded for every report **including the rejects**, with a timestamp — an unrecorded "not reportable" is indistinguishable from never having looked, and Article 14's 24h runs from awareness
 - [ ] Triage capacity is budgeted and the queue's age is visible: an unread backlog is indistinguishable from having no reports, and pausing intake does not pause the clock
 - [ ] The intake page states what a usable report must contain (human-written summary, self-contained reproducer, affected + earliest versions, ideally a patch) — the only lever on inbound quality, and the rubric triage then applies

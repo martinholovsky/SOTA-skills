@@ -234,8 +234,10 @@ probe 3 "internal-name leak in a tracked file" "Internal reference(s) found"
 ( cd "$WT" && perl -0pi -e 's/(\nname: sota-golang\ndescription: )/$1PADDING. /' skills/sota-golang/SKILL.md   && perl -0pi -e 's/(\ndescription: PADDING\. )/$1 . ("filler text to breach the description cap. " x 25)/e' skills/sota-golang/SKILL.md )
 probe 4 "SKILL.md description over the 1024-char cap" "OVER 1024"
 
-# 7 — a skill missing from the router's routing table.
-( cd "$WT" && perl -ni -e 'print unless /^\| `sota-golang` \|/' skills/sota/SKILL.md )
+# 7 — a skill missing from the router's routing table. The row's name is a relative link
+# since ROADMAP 73 (n); the old literal `| `sota-golang` |` then matched nothing and the
+# harness reported PROBE BROKEN, so match the name with or without its link.
+( cd "$WT" && perl -ni -e 'print unless /^\| \[?`sota-golang`(\]\([^)]*\))? \|/' skills/sota/SKILL.md )
 probe 7 "skill missing from the router routing table" "routing table missing:"
 
 # 8 — a relative link to a *.md target that does not resolve.

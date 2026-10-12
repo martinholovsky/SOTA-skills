@@ -14,13 +14,13 @@ control work starts:
 |---|---|---|
 | Data subjects | Where are the people whose data you process? | EU/UK → GDPR/UK GDPR; US states → state patchwork; minors → COPPA/state minor laws (stricter everywhere) |
 | Data types | What categories? | Payment cards → PCI DSS; US health data as covered entity/BA → HIPAA; health-adjacent outside HIPAA → state health-data laws (e.g., Washington My Health My Data); special-category → GDPR Art. 9 |
-| Sector/role | What are you? | EU financial entity → DORA; EU essential/important entity → NIS2; AI system provider/deployer in EU → AI Act; processor for enterprises → SOC 2/ISO 27001 expectations (rules/05) |
+| Sector/role | What are you? | EU financial entity → DORA; EU essential/important entity → NIS2; AI system provider/deployer in EU → AI Act; processor for enterprises → SOC 2/ISO 27001 expectations ([rules/05](05-audit-ready-engineering.md)) |
 
 ## 1. GDPR / UK GDPR — the mechanics that hit engineering
 
-**Lawful basis (Art. 6).** Every processing purpose in the catalog (rules/01)
+**Lawful basis (Art. 6).** Every processing purpose in the catalog ([rules/01](01-data-inventory-classification.md))
 carries exactly one lawful basis. Engineering consequences:
-- **Consent** → build the consent machinery of rules/03 §1; withdrawal stops
+- **Consent** → build the consent machinery of [rules/03](03-consent-and-user-rights.md) §1; withdrawal stops
   processing, so every consumer must check state.
 - **Contract** → scope limited to what the service actually requires; doesn't
   cover marketing or analytics bolted onto a contract basis.
@@ -37,7 +37,7 @@ adequacy decision is pending (C-703/25 P), and the June 2026 US Supreme Court
 ruling ending FTC commissioners' removal protections has raised fresh
 independent-oversight questions), Standard Contractual Clauses
 (SCCs) + transfer impact assessment, or BCRs. Engineering consequences:
-- Know region per processor (rules/01 §4) — including support access and admin
+- Know region per processor ([rules/01](01-data-inventory-classification.md) §4) — including support access and admin
   consoles, not just storage ("data at rest in EU, support in US" is a transfer).
 - Be ready to region-pin (§7) if a mechanism collapses (it has happened twice —
   Safe Harbor, Privacy Shield).
@@ -47,7 +47,7 @@ likely-high-risk processing: systematic large-scale monitoring, large-scale
 special-category processing, automated decisions with legal/significant effects,
 new tracking tech, matching/combining datasets. Engineering hook: make "needs
 DPIA?" a checkbox on design docs for features touching PII; the DPIA references
-the data map and threat model (LINDDUN via sota-threat-modeling) — don't write it
+the data map and threat model (LINDDUN via [sota-threat-modeling](../../sota-threat-modeling/SKILL.md)) — don't write it
 from scratch.
 
 **Breach notification (Art. 33/34).** Current law: notify the supervisory
@@ -57,12 +57,12 @@ result in risk; notify affected individuals without undue delay when high risk.
 proposal (published 19 Nov 2025, still in Parliament/Council) would extend the
 deadline to 96 hours and raise the threshold to high-risk breaches, with a single
 EU entry point across GDPR/NIS2/DORA. **Build to 72h until the amendment is
-adopted and applicable.** Mechanics: rules/06.
+adopted and applicable.** Mechanics: [rules/06](06-incident-breach-readiness.md).
 
 **Other engineering-facing articles:** Art. 25 (privacy by design/default —
-rules/02), Art. 30 (RoPA — rules/01), Art. 32 (security of processing — encryption,
-resilience, testing), Arts. 15–22 (user rights — rules/03), Art. 28 (processor
-DPAs — rules/05 §5).
+[rules/02](02-privacy-by-design.md)), Art. 30 (RoPA — [rules/01](01-data-inventory-classification.md)), Art. 32 (security of processing — encryption,
+resilience, testing), Arts. 15–22 (user rights — [rules/03](03-consent-and-user-rights.md)), Art. 28 (processor
+DPAs — [rules/05](05-audit-ready-engineering.md) §5).
 
 ## 2. US state privacy laws — the patchwork
 
@@ -76,7 +76,7 @@ from data sales; Rhode Island as low as 35k).
 
 **Engineer to the strictest common denominator instead of per-state logic:**
 - Rights: access, deletion, correction, portability, opt-out of sale/share/
-  targeted advertising — one rights pipeline (rules/03) serving all states.
+  targeted advertising — one rights pipeline ([rules/03](03-consent-and-user-rights.md)) serving all states.
 - **Honor Global Privacy Control** as a binding opt-out signal (required under
   CCPA/CPRA regulations and several other states).
 - Sensitive data: opt-in consent before processing (most states) — same consent
@@ -94,7 +94,7 @@ from data sales; Rhode Island as low as 35k).
   (DPIA analog) for high-risk processing — pre-2026 processing assessed by
   31 Dec 2027, first submissions to the CPPA by 1 Apr 2028; **ADMT**
   significant-decision obligations (pre-use notice, opt-out, access right) from
-  **1 Jan 2027** — same profiling opt-out machinery as rules/03 §7; annual
+  **1 Jan 2027** — same profiling opt-out machinery as [rules/03](03-consent-and-user-rights.md) §7; annual
   **cybersecurity audits** phase in with certifications due 1 Apr 2028–2030 by
   revenue tier.
 - Universal quirk to encode: deletion/access SLAs cluster at 45 days; cure
@@ -114,7 +114,7 @@ consent, hard minimization, no targeted advertising to minors (several state
 laws ban it outright for under-18s), default-private settings mandated, age
 assurance proportional to risk. Engineering consequences: an age signal in the
 data model that gates features/processing (not a birthday collected for fun —
-rules/02 §1), separate consent flows, and treating "we don't know users' ages"
+[rules/02](02-privacy-by-design.md) §1), separate consent flows, and treating "we don't know users' ages"
 as a risk position to document, not an exemption. The amended COPPA Rule
 (90 FR 16918, effective 23 Jun 2025; compliance required since 22 Apr 2026 except
 16 CFR 312.11(d)(1), (d)(4) and (g)) adds **separate** verifiable parental consent for
@@ -140,12 +140,12 @@ Most regimes demand the same engineering machinery; build once, map many:
 
 | Capability (built per this skill) | GDPR | US states | HIPAA | PCI | AI Act | DORA/NIS2 |
 |---|---|---|---|---|---|---|
-| Data inventory / RoPA (rules/01) | Art. 30 | scoping | risk analysis | scope def. | data governance | asset mgmt |
-| Rights pipeline (rules/03) | Arts. 15–22 | all rights | access/amend | — | — | — |
-| Retention automation (rules/03 §6) | Art. 5(1)(e) | required | required | log windows | log retention | — |
-| Breach clocks (rules/06) | 72h | state matrix | 60d | brand rules | serious-incident | 24h/4h |
+| Data inventory / RoPA ([rules/01](01-data-inventory-classification.md)) | Art. 30 | scoping | risk analysis | scope def. | data governance | asset mgmt |
+| Rights pipeline ([rules/03](03-consent-and-user-rights.md)) | Arts. 15–22 | all rights | access/amend | — | — | — |
+| Retention automation ([rules/03](03-consent-and-user-rights.md) §6) | Art. 5(1)(e) | required | required | log windows | log retention | — |
+| Breach clocks ([rules/06](06-incident-breach-readiness.md)) | 72h | state matrix | 60d | brand rules | serious-incident | 24h/4h |
 | Access control + audit logs | Art. 32 | safeguards | §164.312 | req. 7/8/10 | logging | ICT risk |
-| Vendor/DPA management (rules/05 §5) | Art. 28 | service-provider K | BAAs | TPSP | value chain | third-party register |
+| Vendor/DPA management ([rules/05](05-audit-ready-engineering.md) §5) | Art. 28 | service-provider K | BAAs | TPSP | value chain | third-party register |
 
 ## 3. HIPAA — technical safeguards (when you're a covered entity or business associate)
 
@@ -178,7 +178,7 @@ MFA, automated log review, payment-page script integrity and tamper-detection
 **The engineering strategy is descoping, not compliance-spreading:**
 1. **Never touch PANs if possible:** hosted payment fields/redirect (PSP-hosted
    iframe) keep card data out of your servers entirely → SAQ-A-class scope.
-2. **If you must touch, tokenize at the edge** (rules/02 §3) and segment: the CDE
+2. **If you must touch, tokenize at the edge** ([rules/02](02-privacy-by-design.md) §3) and segment: the CDE
    (cardholder data environment) is an isolated network/account with its own
    access control; everything that can reach it is in scope — flat networks make
    the whole company in scope.
@@ -229,7 +229,7 @@ rendition is a new byte stream, so it needs its own signed manifest that names
 the previous one as an ingredient. A soft binding (watermark or fingerprint
 lookup) only helps find a lost manifest; C2PA says it must not stand in for a
 hard binding, so it is not the marking on its own. Build detail:
-sota-llm-engineering rules/05 §8. OWASP: AI-Powered Advertising Systems
+[sota-llm-engineering rules/05](../../sota-llm-engineering/rules/05-production-engineering.md) §8. OWASP: AI-Powered Advertising Systems
 Security cheat sheet.
 
 ## 6. DORA & NIS2 — sector awareness
@@ -257,7 +257,7 @@ contractual residency):
 
 - **Region pinning:** per-tenant home region decided at onboarding; all primary
   storage, backups, and replicas constrained by IaC policy (deny-by-default on
-  cross-region replication; policy-as-code checks — rules/05 §4). Tenant→region
+  cross-region replication; policy-as-code checks — [rules/05](05-audit-ready-engineering.md) §4). Tenant→region
   routing at the edge.
 - **In-region processing, not just storage:** compute, queues, caches, telemetry,
   and supportability paths stay in-region; centralized logging that ships EU user
@@ -265,7 +265,7 @@ contractual residency):
   access to aggregates/metadata only.
 - **Key residency / hold-your-own-key:** keys in in-region KMS (or
   customer-controlled external KMS) so out-of-region copies are useless without
-  in-region keys; combine with crypto-shredding (rules/03 §4). This is the
+  in-region keys; combine with crypto-shredding ([rules/03](03-consent-and-user-rights.md) §4). This is the
   strongest mitigation against extraterritorial-access concerns, though residual
   legal exposure of a foreign-controlled provider remains a counsel question.
 - **The hard parts to design for explicitly:** global uniqueness (email→tenant
@@ -297,14 +297,14 @@ deny contains msg if {
 - [ ] Every cataloged purpose has a recorded lawful basis; legitimate-interest purposes have an LIA and a working objection path
 - [ ] Cross-border flows enumerated with transfer mechanism per processor (incl. support/admin access paths); DPF certifications verified where relied on
 - [ ] DPIA trigger checklist embedded in design-review process; existing high-risk processing has DPIAs on file
-- [ ] Breach capability meets 72h GDPR clock today (rules/06); pending Digital Omnibus changes tracked, not assumed
+- [ ] Breach capability meets 72h GDPR clock today ([rules/06](06-incident-breach-readiness.md)); pending Digital Omnibus changes tracked, not assumed
 - [ ] US: single rights pipeline covers strictest state requirements; GPC honored; sensitive-data opt-in implemented; state-tracker re-checked this quarter; California risk-assessment/ADMT/cyber-audit deadlines (2026–2030 phase-in) tracked
 - [ ] Minors: age signal modeled and gating where service could reach under-18s; no targeted ads to known minors; parental-consent flow where required
 - [ ] Child-directed decision comes from a platform-controlled classification and fails closed when absent; a sender flag such as `regs.coppa` only raises the bar (§2b). HIGH where an omitted flag lets profiling run. Probe for the sender flag used as the boundary: `grep -rnE "coppa[\"']?\]?\)?[[:space:]]*(==|===|!=|!==)[[:space:]]*[01]|[\"']coppa[\"'][[:space:]]*,[[:space:]]*0\)" .`
 - [ ] HIPAA (if applicable): §164.312 safeguards mapped to controls; encryption + MFA universal (NPRM-proof); BAAs precede every PHI vendor flow
 - [ ] PCI: scope minimized (hosted fields/tokenization); no CVV at rest anywhere (grep + scanner); CDE segmented; payment-page script integrity controls live
 - [ ] AI Act: systems classified (prohibited/high-risk/transparency/GPAI); for high-risk candidates, logging + data-governance + documentation designed now against the post-omnibus dates
-- [ ] AI Act Art. 50 marking: generated media leaves the generator with a hard-bound, signed C2PA manifest; each rendition or transcode is re-signed with the prior manifest as ingredient; soft binding is used only for recovery (§5) — MEDIUM; judgment, no generic probe (see sota-llm-engineering rules/05 for the generation-call probe)
+- [ ] AI Act Art. 50 marking: generated media leaves the generator with a hard-bound, signed C2PA manifest; each rendition or transcode is re-signed with the prior manifest as ingredient; soft binding is used only for recovery (§5) — MEDIUM; judgment, no generic probe (see [sota-llm-engineering rules/05](../../sota-llm-engineering/rules/05-production-engineering.md) for the generation-call probe)
 - [ ] DORA/NIS2 (if in sector/supply chain): incident-reporting clocks wired into IR runbooks; third-party register current
 - [ ] Residency requirements per tenant/market recorded; region pinning enforced by policy-as-code; key residency where required
 - [ ] All dates/statuses in this file re-verified within the last 6 months against primary sources

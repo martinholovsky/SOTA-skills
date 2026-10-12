@@ -4,7 +4,7 @@ Privacy by design means the default behavior of the system — schemas, API
 contracts, access paths, settings — protects the data subject without anyone
 remembering to. For systematic privacy threat elicitation (linkability,
 identifiability, non-repudiation, detectability, disclosure, unawareness,
-non-compliance), use LINDDUN via `sota-threat-modeling`; this file gives the
+non-compliance), use LINDDUN via [`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md); this file gives the
 build patterns that those threats demand.
 
 ## 1. Data minimization — the field you don't store can't leak
@@ -29,7 +29,7 @@ profile" — where the product uses only email. Six liabilities, zero features.
 **Minimize in dimensions, not just fields:**
 - **Precision:** store city, not GPS coordinates; year of birth, not full DOB;
   truncate IPs (/24, /48) when only geo/abuse-tier matters.
-- **Duration:** event-level data → aggregate after N days, drop raw (rules/03 §6).
+- **Duration:** event-level data → aggregate after N days, drop raw ([rules/03](03-consent-and-user-rights.md) §6).
 - **Population:** sample analytics (1-in-N users) instead of recording everyone.
 - **Payloads in transit:** internal services pass user IDs, not embedded user
   objects; each consumer fetches only the fields it is purpose-scoped to read.
@@ -37,8 +37,8 @@ profile" — where the product uses only email. Six liabilities, zero features.
 **Fingerprinting is a tracker, and anti-bot is not an exemption.** Browser and
 device fingerprints (canvas or WebGL renderer hashes, installed-font lists,
 audio-context probes, mouse and scroll telemetry) identify a person as well as
-a cookie does, so they go in the tracker inventory (rules/03 §2) and the privacy
-notice like any other identifier (rules/01 §2). Prefer passive network-level
+a cookie does, so they go in the tracker inventory ([rules/03](03-consent-and-user-rights.md) §2) and the privacy
+notice like any other identifier ([rules/01](01-data-inventory-classification.md) §2). Prefer passive network-level
 signals (TLS and HTTP/2 fingerprints) and reach for invasive browser signals
 only on sensitive flows such as signup, login and checkout, behind consent
 where ePrivacy-style law requires it. Store a keyed hash or truncated form,
@@ -65,7 +65,7 @@ const BillingView    = pick(User, ['id', 'email', 'countryCode']);
 
 ## 2. Purpose limitation in code
 
-**Rule:** Purpose is machine-readable metadata bound to data (rules/01 §1) AND an
+**Rule:** Purpose is machine-readable metadata bound to data ([rules/01](01-data-inventory-classification.md) §1) AND an
 access-control dimension. A service or job declares the purposes it serves; access
 to purpose-tagged data outside a declared purpose is denied or at minimum audited.
 
@@ -83,7 +83,7 @@ def get_payment_history(user_id, ctx):         # checked against field purpose t
 Pragmatic ladder (adopt the highest rung you can sustain):
 1. Purpose tags in catalog + code review enforcement (minimum).
 2. Separate credentials/roles per purpose-bound consumer; DB grants per
-   view/column group (see sota-databases for column/row-level mechanics).
+   view/column group (see [sota-databases](../../sota-databases/SKILL.md) for column/row-level mechanics).
 3. Purpose claim in service-to-service auth tokens, enforced at the data API,
    producing per-purpose access logs (gold standard; also makes DSAR "who accessed
    my data and why" answerable).
@@ -126,7 +126,7 @@ requires a documented review with attack assumptions, not a checkbox.
 
 **Tokenization:** replace the sensitive value with a random token; the vault
 holding the mapping becomes the high-security zone, and downstream systems fall
-out of sensitive scope. This is THE PCI DSS descoping move (rules/04 §4) and works
+out of sensitive scope. This is THE PCI DSS descoping move ([rules/04](04-regulatory-landscape.md) §4) and works
 for SSNs/bank details too:
 
 ```text
@@ -140,7 +140,7 @@ client are now in PCI scope.
 ```
 
 Format-preserving encryption is a variant when downstream systems require the
-original format; treat keys per sota-secrets-management.
+original format; treat keys per [sota-secrets-management](../../sota-secrets-management/SKILL.md).
 
 **If you need a linkable pseudonym, build it honestly** — keyed, salted,
 rotatable, scoped — not a bare hash:
@@ -160,7 +160,7 @@ def pseudonym(user_id: str, context: str) -> str:
 Per-context keys give you compartmentalization (analytics pseudonyms can't join
 against support pseudonyms) and a kill switch (destroy the context key →
 pseudonyms in that context become unlinkable noise — crypto-shredding's cousin,
-rules/03 §4).
+[rules/03](03-consent-and-user-rights.md) §4).
 
 ## 4. Differential privacy & privacy-preserving analytics — when aggregates are exposed
 
@@ -191,7 +191,7 @@ HAVING count(*) >= 10;            -- cells under k are suppressed, structurally
 3. Event-level, first-party, pseudonymous, short raw retention (e.g., 90 days →
    aggregate), no third-party sharing.
 4. Third-party analytics: processor with DPA, EU-hostable if needed, IP truncation
-   on, identify-calls minimal (rules/01 §4).
+   on, identify-calls minimal ([rules/01](01-data-inventory-classification.md) §4).
 Session replay and heatmap tools deserve special suspicion: they exfiltrate form
 contents and screens wholesale — require explicit masking allowlists, not blocklists.
 
@@ -251,12 +251,12 @@ it apart from a normal session:
 - nothing observable differs: no distinct login timing, error text, session
   flag in client-visible state, or entry in a user-visible activity log.
 Treat the duress path as a security feature with its own threat model
-(sota-threat-modeling); a discoverable panic mode can put the user at greater
+([sota-threat-modeling](../../sota-threat-modeling/SKILL.md)); a discoverable panic mode can put the user at greater
 risk than none. OWASP: User Privacy Protection cheat sheet.
 
 ## 6. LINDDUN threats → build patterns (quick map)
 
-When a LINDDUN session (sota-threat-modeling) raises a threat, these are the
+When a LINDDUN session ([sota-threat-modeling](../../sota-threat-modeling/SKILL.md)) raises a threat, these are the
 default mitigations in this skill:
 
 | LINDDUN threat | Primary mitigation here |
@@ -265,9 +265,9 @@ default mitigations in this skill:
 | Identifiability | Minimization/precision reduction (§1), k-threshold & DP on releases (§4) |
 | Non-repudiation (user can't deny) | Minimize identity binding in records; aggregate where intent allows |
 | Detectability (existence leaks) | Uniform responses/timing on lookup APIs; don't confirm account existence |
-| Disclosure of information | Projections (§1), tier-bound encryption & access (rules/01 §2) |
-| Unawareness | Notices + consent records at collection (rules/03 §1), default-private (§5) |
-| Non-compliance | Catalog + CI gates (rules/01), retention automation (rules/03 §6) |
+| Disclosure of information | Projections (§1), tier-bound encryption & access ([rules/01](01-data-inventory-classification.md) §2) |
+| Unawareness | Notices + consent records at collection ([rules/03](03-consent-and-user-rights.md) §1), default-private (§5) |
+| Non-compliance | Catalog + CI gates ([rules/01](01-data-inventory-classification.md)), retention automation ([rules/03](03-consent-and-user-rights.md) §6) |
 
 ## 7. Retrofit order for existing systems (AUDIT → remediation)
 
@@ -275,8 +275,8 @@ When auditing a system that was not built this way, recommend remediation in thi
 order (highest risk-reduction per effort first):
 1. Stop the bleeding: kill unpurposed collection, PII logging, `SELECT *` exports.
 2. Tokenize/segregate the highest-tier data (cards, special-category) to shrink scope.
-3. Add retention enforcement (rules/03 §6) — drains the historical pool.
-4. Bind purpose/classification annotations + CI gate (rules/01) — stops regression.
+3. Add retention enforcement ([rules/03](03-consent-and-user-rights.md) §6) — drains the historical pool.
+4. Bind purpose/classification annotations + CI gate ([rules/01](01-data-inventory-classification.md)) — stops regression.
 5. Tighten access to purpose-scoped roles.
 6. Re-evaluate claimed anonymization with §3's failure table.
 

@@ -5,15 +5,15 @@ model are attackable), plus regulatory obligations. Map threats with
 [MITRE ATLAS](https://atlas.mitre.org/) (adversarial tactics/techniques against
 AI systems) and govern with the
 [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework). For
-prompt-injection/agent threats specific to LLMs, see `sota-code-security`
-rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
+prompt-injection/agent threats specific to LLMs, see [`sota-code-security`
+rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-engineering`](../../sota-llm-engineering/SKILL.md); this file covers classical-ML security.
 
 ## 1. Attacks on ML systems (MITRE ATLAS)
 
 - **Training-data poisoning** — adversary corrupts training data (or labels) to
   degrade the model or implant a backdoor/trigger. Control data provenance and
   integrity; validate and monitor training data; restrict who/what can write to
-  training sources (`rules/02`).
+  training sources ([`rules/02`](02-data-and-features.md)).
   A backdoor leaves accuracy on ordinary data untouched, so an aggregate eval
   passes it. Screen training sets before each run: outlier detection on features
   and learned representations, **spectral-signature** screening (the poisoned
@@ -22,19 +22,19 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   tracing of suspicious predictions back to the training points that drove
   them. **Clean-label** (label-consistent) poisons carry correct labels, so
   label audits and human review miss them — only the representation-level
-  screens apply. Gate promotion (`rules/04`) on a held-out **trigger corpus**
+  screens apply. Gate promotion ([`rules/04`](04-evaluation-validation.md)) on a held-out **trigger corpus**
   built from your own policy taxonomy (the inputs whose flip would matter),
   kept out of every training source. Signing and provenance (§2) prove *who*
   produced a model, never that it is backdoor-free. OWASP: AISVS 1.3.1, 1.3.5;
   AI-Powered Advertising Systems Security cheat sheet.
   Outcome and reward events that a later verdict can overturn (fraud, chargeback)
-  wait out their adjudication window before training uses them (`rules/02` §7).
+  wait out their adjudication window before training uses them ([`rules/02`](02-data-and-features.md) §7).
 - **Evasion / adversarial examples** — crafted inputs at inference cause
   misclassification. Validate/bound inputs. Wherever an attacker can shape the
   input (fraud, abuse, content moderation, anything scoring user-submitted
   data), adversarial hardening is **required**, not optional: adversarial
   training or input purification, *and* a robustness slice in the evaluation
-  suite (`rules/04` §3) so the hardening is measured rather than assumed.
+  suite ([`rules/04`](04-evaluation-validation.md) §3) so the hardening is measured rather than assumed.
   Libraries such as the Adversarial Robustness Toolbox (`art.attacks.evasion`)
   generate the attack inputs. OWASP: AISVS 11.1.4; Secure AI Model Ops cheat
   sheet.
@@ -43,9 +43,9 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   on the training distribution, plus a confidence floor on the model's own
   output. Decide in advance what a flagged input gets: blocked, sent to human
   review, or served a reduced-capability answer (a default, no automated
-  action); log the flag for drift monitoring (`rules/06` §4). This is judged on
+  action); log the flag for drift monitoring ([`rules/06`](06-monitoring-drift.md) §4). This is judged on
   *what the input looks like*, which differs from source-based taint gating
-  (`sota-code-security` rules/08), which is judged on *where the input came
+  ([`sota-code-security` rules/08](../../sota-code-security/rules/08-llm-ai-security.md)), which is judged on *where the input came
   from*; an in-distribution input from a hostile source passes this gate and
   an odd input from a trusted source fails it, so neither replaces the other.
   OWASP: AISVS 11.4.1, 11.4.2; Secure AI Model Ops cheat sheet.
@@ -59,7 +59,7 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   benign traffic; also input-space coverage and boundary probing). An alert
   carries the principal, key, time window, query count and sample inputs, and
   the playbook escalates: throttle, block, revoke the credential, open an IR
-  case (`sota-detection-engineering`). OWASP: AISVS 11.2.2, 11.3.1, 11.3.4,
+  case ([`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md)). OWASP: AISVS 11.2.2, 11.3.1, 11.3.4,
   12.2.4.
 - **Membership inference / model inversion** — inferring whether a record was in
   training, or reconstructing training data, from outputs/confidences. Minimize
@@ -79,7 +79,7 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   `weights_only=True` was bypassed to RCE on ≤2.5.1 (CVE-2025-32434, fixed in
   2.6.0) — treat it as hardening, not a trust boundary. Load models only from
   trusted, integrity-verified sources; prefer **`safetensors`**/ONNX (data, not
-  code). `weights_only=False` on untrusted input is CRITICAL on sight (`rules/05`).
+  code). `weights_only=False` on untrusted input is CRITICAL on sight ([`rules/05`](05-deployment-serving.md)).
   Same class: `np.load(..., allow_pickle=True)` (NumPy's docs: loading pickled
   data "can execute arbitrary code"; default `False`), and Keras
   `load_model`, whose `safe_mode` is no boundary on old releases — it was
@@ -87,10 +87,10 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   `Lambda` layer deserialized with `safe_mode` unset ran code (CVE-2026-12481,
   fixed in 3.12.3 / 3.15.0) — so `safe_mode=False` is CRITICAL and an
   untrusted `.h5` is refused outright. `dill`, pandas `read_pickle` and the
-  rest of the pickle family: `sota-python` rules/05 §1.
+  rest of the pickle family: [`sota-python` rules/05](../../sota-python/rules/05-security.md) §1.
 - Verify integrity/provenance of models and datasets (hashes, signing); pin and
   scan ML dependencies (the PyData/CUDA stack is large attack surface) — cross-ref
-  `sota-devsecops`. Beware pre-trained weights/datasets from unvetted hubs — and
+  [`sota-devsecops`](../../sota-devsecops/SKILL.md). Beware pre-trained weights/datasets from unvetted hubs — and
   don't treat a passing pickle scan as a trust boundary: blacklist-based scanners
   (picklescan-style, used by major model hubs) were repeatedly bypassed in 2025
   (multiple CVSS 9.3 CVEs: renamed extensions, corrupted ZIP flags, subclassed
@@ -108,9 +108,9 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   parameters. Tag each dataset entry with its provenance (the contributor or
   source), so a poisoned or withdrawn contribution maps to exactly the models to
   roll back rather than all of them. It complements the software SBOM
-  (`sota-devsecops` rules/03), it does not replace it. **Sign the BOM** with the
+  ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md)), it does not replace it. **Sign the BOM** with the
   same attestation flow as other artifacts, bound to the model digest (e.g.
-  `cosign attest --type cyclonedx`, `sota-devsecops` rules/02 §2.4), and
+  `cosign attest --type cyclonedx`, [`sota-devsecops` rules/02](../../sota-devsecops/rules/02-provenance-signing.md) §2.4), and
   verify it at deploy and at model load. An adapter with no signature, or whose
   signature does not match its BOM entry, is refused. OWASP: AISVS 6.2.1,
   6.2.2; LLMSVS 2.13; AI-Powered Advertising Systems Security cheat sheet;
@@ -120,12 +120,12 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   deployed copy (normalised: line endings, trailing whitespace, key order) and
   compares it with the approved version in the repository; a mismatch is an
   incident, not a redeploy (versioning and review of these files:
-  `sota-code-security` rules/23 §1). OWASP: AI-Powered Advertising Systems
+  [`sota-code-security` rules/23](../../sota-code-security/rules/23-llm-platform-supply-chain.md) §1). OWASP: AI-Powered Advertising Systems
   Security cheat sheet; DSOMM.
 - **Models shipped on device** (mobile, edge, embedded): sign the model at
   packaging and have the on-device runtime verify the signature before it
-  loads the model, on every load, not only after download (`sota-mobile`
-  rules/04 §4.9 and its downloaded-content rule). Encrypt sensitive weights at
+  loads the model, on every load, not only after download ([`sota-mobile`
+  rules/04](../../sota-mobile/rules/04-security.md) §4.9 and its downloaded-content rule). Encrypt sensitive weights at
   rest under a data key wrapped by a hardware-backed, non-exportable key
   (Android Keystore, iOS Keychain/Secure Enclave, a device TEE) and decrypt only
   inside the trusted runtime. State the residual risk plainly in the threat
@@ -140,13 +140,13 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   Sigstore verification requires the expected `--identity` and identity
   provider). Verify at deployment admission and again on load, and fail the
   deploy on any mismatch — the same contract as container-image admission
-  (`sota-devsecops`). By default a file absent from the signed manifest fails
+  ([`sota-devsecops`](../../sota-devsecops/SKILL.md)). By default a file absent from the signed manifest fails
   verification; the ignore-unsigned-files option turns that off, letting an
   added file ride along unverified — treat it as a finding. OWASP: AISVS
   3.1.2, 3.1.3; AI-Powered Advertising Systems Security cheat sheet.
 - **Handle third-party models in disposable workers.** Evaluation,
   fine-tuning and format conversion of an external or untrusted model run in an
-  isolated worker (`sota-sandboxing` rules/01) with egress denied or
+  isolated worker ([`sota-sandboxing` rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md)) with egress denied or
   allowlisted, no production credentials and no registry write access.
   `trust_remote_code=True` (Hugging Face `transformers`) executes Python shipped
   in the model repo: only inside such a worker, with `revision` pinned to a
@@ -157,21 +157,21 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
 - Protect the model registry and feature store with authn/z; a tampered registry
   ships a tampered model.
 - **A leaked credential on an ML data path is a data-integrity incident.**
-  Rotating it (`sota-secrets-management` rules/04) closes the door but not the
+  Rotating it ([`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md)) closes the door but not the
   damage: mark every row the credential could write during the exposure window
   as suspect (this needs a writer identity and an ingest timestamp on each row),
-  follow lineage (`rules/02` §5) to the datasets, features and models built from
+  follow lineage ([`rules/02`](02-data-and-features.md) §5) to the datasets, features and models built from
   those rows, and quarantine or retrain them. OWASP: AI-Powered Advertising
   Systems Security cheat sheet.
 
 ## 3. Privacy in ML
 
 - Training data often contains personal data — minimize it, document a lawful
-  basis, and honor deletion/retention (cross-ref `sota-privacy-compliance`). A
+  basis, and honor deletion/retention (cross-ref [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md)). A
   model can **memorize** and leak training data; treat models trained on
   sensitive data as sensitive artifacts.
 - Consider anonymization/aggregation. Don't log raw PII features in
-  monitoring (`rules/06`).
+  monitoring ([`rules/06`](06-monitoring-drift.md)).
 - **Sensitive training data gets DP training or a written reason why not.**
   Use differentially private optimisation (DP-SGD, e.g. Opacus `PrivacyEngine`
   or TensorFlow Privacy) and record the spent (ε, δ) budget in the model card;
@@ -184,15 +184,15 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
 - **Inferred special-category attributes.** On every model refresh, test whether
   ordinary inputs let the model (or a probe trained on its outputs or embeddings)
   predict special-category attributes such as health, ethnicity or religion —
-  a proxy/disparate-impact audit alongside the fairness slices (`rules/04` §3).
+  a proxy/disparate-impact audit alongside the fairness slices ([`rules/04`](04-evaluation-validation.md) §3).
   Never return an inferred sensitive attribute in an output or API response;
-  inference creates special-category data (`sota-privacy-compliance` rules/01).
+  inference creates special-category data ([`sota-privacy-compliance` rules/01](../../sota-privacy-compliance/rules/01-data-inventory-classification.md)).
   OWASP: AISVS 11.2.1; AI-Powered Advertising Systems Security cheat sheet.
 
 ## 4. Governance & documentation
 
 - **Model card** for each production model: intended use, training data summary,
-  metrics **including per-slice** (`rules/04`), limitations, ethical
+  metrics **including per-slice** ([`rules/04`](04-evaluation-validation.md)), limitations, ethical
   considerations, owner. It's the artifact auditors and downstream consumers
   read.
 - **NIST AI RMF** (Govern / Map / Measure / Manage) for the organizational
@@ -200,7 +200,7 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   robustness), and manage with controls and monitoring. Treat as governance
   scaffolding, not a checkbox.
 - **Fairness/bias**: assess disparate performance across protected groups
-  (`rules/04`); document findings and mitigations. Bias is both an ethical and,
+  ([`rules/04`](04-evaluation-validation.md)); document findings and mitigations. Bias is both an ethical and,
   increasingly, a legal requirement.
 
 ## 5. Regulatory (EU AI Act and beyond)
@@ -212,7 +212,7 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   your system's tier early — it shapes the whole lifecycle. Verify current
   obligations and timelines against the official text (they phase in over time).
 - Sector rules may also apply (credit, health, insurance). Cross-ref
-  `sota-privacy-compliance`.
+  [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md).
 
 ## Audit checklist
 
@@ -227,7 +227,7 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
       `out=$(grep -rniE 'hash|sha256|sign|verify|provenance|checksum' . | grep -iE 'model|dataset|weight'); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; *) echo "no model/dataset integrity verification (rc=$rc; if the first grep failed, rerun it alone)" ;; esac`
 - [ ] **Training-data write access / poisoning surface — HIGH (manual) Who can write to training
-      data sources? Is training data validated (rules/02)?**
+      data sources? Is training data validated ([rules/02](02-data-and-features.md))?**
 - [ ] **Extraction/inference exposure — MEDIUM** —
       `grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head`
       (raw scores exposed? rate-limited?)

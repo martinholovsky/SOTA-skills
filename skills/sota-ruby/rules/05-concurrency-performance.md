@@ -155,7 +155,7 @@ deliver **at least once**: crashes and retries re-run jobs. Design contract:
 - Sizing threaded/forking servers and workers: threads per process stay
   small for CPU-heavy apps (GVL, §1); total memory = workers × (base +
   JIT + heap growth) — leave allocator headroom before the container limit.
-- Avoid allocation churn on hot paths: frozen literals (`rules/01` §2),
+- Avoid allocation churn on hot paths: frozen literals ([`rules/01`](01-language-idioms.md) §2),
   `String#<<` over `+=`, precomputed constants over per-call construction.
 
 ## 7. N+1 queries and data-access performance
@@ -171,7 +171,7 @@ deliver **at least once**: crashes and retries re-run jobs. Design contract:
 - Select what you use on wide tables (`select(:id, :email)`/`pluck`);
   `find_each`/`in_batches` for large scans, never `Model.all.each`.
 - Cache derived values with explicit invalidation rules; "cache it" without
-  an invalidation story is a future correctness bug (see `sota-databases`
+  an invalidation story is a future correctness bug (see [`sota-databases`](../../sota-databases/SKILL.md)
   for the deeper rules).
 
 ## 8. Profiling workflow

@@ -28,27 +28,27 @@ word either moves them forward or costs them a support ticket.**
 
 Boundaries: this skill owns the *language*. The UX *patterns* the language
 lives in (when to show an empty state, validation timing, dialog escalation)
-are `sota-frontend-design` rules/04; technical documentation is
-`sota-docs-workflow`; outward-facing marketing content is `sota-copywriting`;
-CLI-specific output contracts are `sota-cli-ux`.
+are [`sota-frontend-design` rules/04](../sota-frontend-design/rules/04-ux-patterns.md); technical documentation is
+[`sota-docs-workflow`](../sota-docs-workflow/SKILL.md); outward-facing marketing content is [`sota-copywriting`](../sota-copywriting/SKILL.md);
+CLI-specific output contracts are [`sota-cli-ux`](../sota-cli-ux/SKILL.md).
 
 ## BUILD mode
 
 When writing or changing interface text:
 
 1. **Write the unhappy paths first** — errors, empty states, and confirmations
-   carry more consequence than the happy path (`rules/03`).
+   carry more consequence than the happy path ([`rules/03`](rules/03-errors-feedback.md)).
 2. **Apply the plain-language spine** to every string: relevant, findable,
    understandable, usable (ISO 24495-1) — front-load the point, one idea
-   per sentence, common words (`rules/01`).
+   per sentence, common words ([`rules/01`](rules/01-voice-tone-plain-language.md)).
 3. **Name things once.** Check the product glossary before introducing a term;
    never let the UI, docs, and API call the same concept different names
-   (`rules/01` §4).
+   ([`rules/01`](rules/01-voice-tone-plain-language.md) §4).
 4. **Buttons are verbs with objects** ("Delete project", never "OK"/"Yes"),
-   and every dialog states the specific consequence (`rules/02`).
+   and every dialog states the specific consequence ([`rules/02`](rules/02-microcopy-components.md)).
 5. **Write for the translator and the screen reader as you go**: externalized
    strings, ICU plurals, named placeholders, descriptive link text, accessible
-   names matching visible labels (`rules/04`).
+   names matching visible labels ([`rules/04`](rules/04-accessibility-localization.md)).
 6. Before finishing, run each loaded rules file's **Audit checklist** against
    the diff — including the greps for banned strings.
 
@@ -64,8 +64,8 @@ When reviewing existing product copy:
    concatenated plurals).
 3. Walk the critical flows as a user: signup, first-run empty state, a failed
    payment/submit, a destructive action. Judge every string against
-   `rules/01`–`03`.
-4. Check localization readiness (`rules/04`) even for single-language
+   [`rules/01`](rules/01-voice-tone-plain-language.md)–`03`.
+4. Check localization readiness ([`rules/04`](rules/04-accessibility-localization.md)) even for single-language
    products — retrofitting string externalization is expensive.
 
 ### Severity conventions
@@ -94,33 +94,33 @@ proposed rewrite are half-findings.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-voice-tone-plain-language.md` | Establishing or auditing the overall language system: voice vs tone, stress-aware tone shifts, plain-language rules (ISO 24495-1), readability, terminology/glossary discipline, capitalization and punctuation conventions. |
-| `rules/02-microcopy-components.md` | Writing the words in components: buttons/CTAs, labels vs placeholders vs hints, empty states, onboarding and tooltips, confirmation dialogs, notifications/toasts/badges, counts and plurals, relative time, link text, loading/progress text. |
-| `rules/03-errors-feedback.md` | Anything that reports a problem or outcome: error-message anatomy, no-blame framing, validation wording, security-sensitive errors, warnings vs errors, success confirmations, permission prompts, and dark-pattern-free upsell moments. |
-| `rules/04-accessibility-localization.md` | Making the language reach everyone: WCAG 2.2 language criteria, alt text craft, accessible names, screen-reader-facing strings, string externalization, ICU plurals, translator context, text expansion, RTL, inclusive language. |
+| [`rules/01-voice-tone-plain-language.md`](rules/01-voice-tone-plain-language.md) | Establishing or auditing the overall language system: voice vs tone, stress-aware tone shifts, plain-language rules (ISO 24495-1), readability, terminology/glossary discipline, capitalization and punctuation conventions. |
+| [`rules/02-microcopy-components.md`](rules/02-microcopy-components.md) | Writing the words in components: buttons/CTAs, labels vs placeholders vs hints, empty states, onboarding and tooltips, confirmation dialogs, notifications/toasts/badges, counts and plurals, relative time, link text, loading/progress text. |
+| [`rules/03-errors-feedback.md`](rules/03-errors-feedback.md) | Anything that reports a problem or outcome: error-message anatomy, no-blame framing, validation wording, security-sensitive errors, warnings vs errors, success confirmations, permission prompts, and dark-pattern-free upsell moments. |
+| [`rules/04-accessibility-localization.md`](rules/04-accessibility-localization.md) | Making the language reach everyone: WCAG 2.2 language criteria, alt text craft, accessible names, screen-reader-facing strings, string externalization, ICU plurals, translator context, text expansion, RTL, inclusive language. |
 
 ## Top-10 non-negotiables
 
 1. **Every error says what happened and what to do next** — a dead-end error
-   is a support ticket with extra steps. (rules/03 §1)
+   is a support ticket with extra steps. ([rules/03](rules/03-errors-feedback.md) §1)
 2. **Buttons and dialog actions are verb+object** ("Delete project",
    "Keep editing") — never bare "OK/Yes/No" pairs on anything consequential.
-   (rules/02 §1, §5)
+   ([rules/02](rules/02-microcopy-components.md) §1, §5)
 3. **The system takes the blame**: "We couldn't save your changes", never
-   "You entered invalid data". (rules/03 §2)
+   "You entered invalid data". ([rules/03](rules/03-errors-feedback.md) §2)
 4. **One concept, one name**, everywhere — UI, docs, API, support. Maintain a
-   glossary; renames are migrations, not edits. (rules/01 §4)
+   glossary; renames are migrations, not edits. ([rules/01](rules/01-voice-tone-plain-language.md) §4)
 5. **Placeholders are never labels**; hint text never disappears while the
-   user still needs it. (rules/02 §2)
+   user still needs it. ([rules/02](rules/02-microcopy-components.md) §2)
 6. **No copy relies on color, position, or an icon alone** to carry meaning;
    every control has an accessible name matching its visible label.
-   (rules/04 §2)
+   ([rules/04](rules/04-accessibility-localization.md) §2)
 7. **Link and button text stands alone**: "View invoice #1042", never
-   "click here" or a bare "Learn more". (rules/02 §8)
+   "click here" or a bare "Learn more". ([rules/02](rules/02-microcopy-components.md) §8)
 8. **No string concatenation, ever** — ICU MessageFormat with named
-   placeholders and real plural rules; "1 items" ships nowhere. (rules/04 §4)
+   placeholders and real plural rules; "1 items" ships nowhere. ([rules/04](rules/04-accessibility-localization.md) §4)
 9. **Front-load every string**: the first three words carry the point;
-   scanning users read little else. (rules/01 §2)
+   scanning users read little else. ([rules/01](rules/01-voice-tone-plain-language.md) §2)
 10. **Security-sensitive copy never leaks**: auth errors don't confirm account
     existence, error surfaces never show stack traces, internals, or secrets
-    — cross-check `sota-code-security` rules/02 and /07. (rules/03 §4)
+    — cross-check [`sota-code-security` rules/02](../sota-code-security/rules/02-authentication.md) and /07. ([rules/03](rules/03-errors-feedback.md) §4)

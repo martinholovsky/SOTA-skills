@@ -1,8 +1,8 @@
 # 06 — SSR & hydration: mismatches, serialization, caching, CSP
 
 Cross-cutting concerns of server rendering, shared by Next and Nuxt. Framework
-specifics are in `rules/03`/`rules/05`; the consolidated security boundary in
-`rules/07`.
+specifics are in [`rules/03`](03-nextjs.md)/[`rules/05`](05-nuxt.md); the consolidated security boundary in
+[`rules/07`](07-security.md).
 
 ## 1. Hydration mismatches — cause and correct fix
 
@@ -42,7 +42,7 @@ two render trees are identical. When they diverge:
 - **Security:** never "resolve" a mismatch by injecting server-side user-controlled
   HTML into the tree. Browser parser normalization of malformed markup is the same
   parser-differential class that drives mutation-XSS — escape/sanitize instead of
-  hand-patching the DOM to match. (Sanitizer guidance: `rules/02`/`rules/04`.)
+  hand-patching the DOM to match. (Sanitizer guidance: [`rules/02`](02-react.md)/[`rules/04`](04-vue.md).)
 
 ## 2. SSR state serialization — an XSS sink
 
@@ -68,7 +68,7 @@ const safe = JSON.stringify(state).replace(/</g,'\\u003c').replace(/>/g,'\\u003e
   - **Nuxt** serializes the payload with **devalue** (handles `Date`/`Map`/`Set`/refs
     and escapes `</script>` + line separators). But devalue's *parse* side has had
     prototype-pollution CVEs (CVE-2025-57820, CVE-2026-30226) and DoS advisories — keep
-    it patched (≥ 5.9.2 as of 2026-09-26, `rules/05`).
+    it patched (≥ 5.9.2 as of 2026-09-26, [`rules/05`](05-nuxt.md)).
   - **Next** embeds the RSC/flight payload via `self.__next_f.push([...])`.
   - **`serialize-javascript`** (used to embed functions/regex): CVE-2020-7660 (RCE,
     fixed 3.1.0), CVE-2024-11831 (XSS via unescaped URL objects, fixed 6.0.2),
@@ -76,7 +76,7 @@ const safe = JSON.stringify(state).replace(/</g,'\\u003c').replace(/>/g,'\\u003e
     (CPU-exhaustion DoS, fixed **7.0.5**) — if it's in the tree, require ≥ 7.0.5.
 - **Only serializable data belongs in the payload**, and *everything* in it is public
   — never let a secret, token, or full DB row reach `useState`/a client prop
-  (`rules/07`).
+  ([`rules/07`](07-security.md)).
 
 ## 3. Cross-request state pollution
 
@@ -89,7 +89,7 @@ request. Module-level mutable state is therefore shared across all users.
 - **React/Next:** don't hold request data in module globals; use request-scoped APIs
   (`cookies()`/`headers()`, React `cache()` for per-request memoization, the DAL).
 - **Vue/Nuxt:** create fresh app/router/store instances per request (Nuxt does this
-  for you); use `useState`/Pinia, never a module-level `ref` (`rules/05`). Share
+  for you); use `useState`/Pinia, never a module-level `ref` ([`rules/05`](05-nuxt.md)). Share
   request-scoped values via app-level `provide`/`inject`, not module scope.
 - Audit any module-level `let`/mutable singleton in server-reachable code.
 
@@ -115,7 +115,7 @@ Caching is where SSR bugs become cross-user data leaks.
   vector; a request missing the buster but carrying the header can poison HTML with an
   RSC payload.
 - **ISR/SWR** trade freshness for speed — only for non-personalized content, and think
-  through the stale window (`rules/01`, `rules/05`).
+  through the stale window ([`rules/01`](01-baseline.md), [`rules/05`](05-nuxt.md)).
 
 ## 5. CSP with streaming SSR
 
@@ -135,9 +135,9 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
 - Without nonces/hashes, framework output typically requires `'unsafe-inline'`, which
   neuters CSP against injected inline scripts. If you're going to have a CSP, wire the
   nonce/hash — a CSP with `'unsafe-inline'` on `script-src` is close to no CSP.
-- CSP is defense-in-depth over escaping/sanitization (`rules/02`/`rules/04`), never a
-  replacement. General CSP/headers depth: `sota-code-security` rules/05,
-  `sota-network-security`.
+- CSP is defense-in-depth over escaping/sanitization ([`rules/02`](02-react.md)/[`rules/04`](04-vue.md)), never a
+  replacement. General CSP/headers depth: [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md),
+  [`sota-network-security`](../../sota-network-security/SKILL.md).
 
 ## Audit checklist
 
@@ -160,7 +160,7 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
 - [ ] Render deterministic — no `Date`/random/`window`/locale branching outside effects/`onMounted`; stable `useId`?
 - [ ] Mismatch suppression scoped to individual unavoidable nodes, never blanket, never patched with injected user HTML?
 - [ ] SSR state serialized via the framework serializer or `<`-escaped JSON (no naked `JSON.stringify` into `<script>`); `serialize-javascript` ≥ 7.0.5; devalue ≥ 5.9.2?
-- [ ] No secret/token/full row in the serialized payload (`useState`/client props)? Confirm it on the running app too — capture HTML, flight and `_payload.json` responses and search them (`rules/07` Audit checklist, "Runtime: what the browser actually receives").
+- [ ] No secret/token/full row in the serialized payload (`useState`/client props)? Confirm it on the running app too — capture HTML, flight and `_payload.json` responses and search them ([`rules/07`](07-security.md) Audit checklist, "Runtime: what the browser actually receives").
 - [ ] No module-level mutable state in server-reachable code (cross-request leak)?
 - [ ] Personalized responses `Cache-Control: private`/uncached; not relying on `Vary` at the CDN; framework patched against cache-poisoning CVEs?
 - [ ] CSP present and nonce/hash-based (not `'unsafe-inline'` on `script-src`), with the dynamic-rendering trade-off understood?

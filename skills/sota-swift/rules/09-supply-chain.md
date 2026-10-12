@@ -1,7 +1,7 @@
 # 09 — Supply chain: SwiftPM dependencies, build-time code, SBOM
 
-Moved from the former Swift-language file in `sota-mobile` on 2026-10-07 and extended. Pipeline-wide controls
-(signing, provenance, CI hardening) are `sota-devsecops`.
+Moved from the former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) on 2026-10-07 and extended. Pipeline-wide controls
+(signing, provenance, CI hardening) are [`sota-devsecops`](../../sota-devsecops/SKILL.md).
 
 ## 1. Pin and enforce the resolution
 
@@ -69,7 +69,7 @@ Moved from the former Swift-language file in `sota-mobile` on 2026-10-07 and ext
 - Check its insecure or permissive defaults before use — the ones verified 2026-10-07: Vapor
   session cookies (`isSecure: false`, `isHTTPOnly: false`), Hummingbird session cookies
   (`secure: false`, `sameSite: nil`), NIOSSL client minimum TLS 1.0, AsyncHTTPClient following
-  5 redirects, Vapor's compile-time `isRelease` (rules/05, rules/06).
+  5 redirects, Vapor's compile-time `isRelease` ([rules/05](05-security.md), [rules/06](06-server-side.md)).
 
 ## Audit checklist
 

@@ -1,6 +1,6 @@
 # 08 — Running External Programs (`std::process::Command`)
 
-Split out of rules/05 (formerly section 9) on 2026-09-25, when rules/05 reached the 500-line
+Split out of [rules/05](05-security-supply-chain.md) (formerly section 9) on 2026-09-25, when [rules/05](05-security-supply-chain.md) reached the 500-line
 cap; the section is now §1.
 
 ## 1. Running external programs — `std::process::Command`
@@ -30,7 +30,7 @@ Command::new("/usr/bin/convert").arg("--").arg(&path).arg("out.png")
 **R9.2 — Argument injection survives argv.** A value beginning with `-` becomes a
 flag. Pin your own flags first, then `--`, then validated operands; prefer a
 library binding to a CLI wrapper for attacker-influenced parameters.
-`sota-sandboxing` rules/04 §5 lists the exec-capable argument gadgets
+[`sota-sandboxing` rules/04](../../sota-sandboxing/rules/04-process-app-sandboxing.md) §5 lists the exec-capable argument gadgets
 (`find -exec`, `tar --checkpoint-action`, `ssh -o ProxyCommand`, …) to check for.
 
 **R9.3 — Windows `.bat`/`.cmd` is a documented exception (CVE-2024-24576, CVE-2024-43402).**
@@ -70,7 +70,7 @@ Pair the deadline with `.kill_on_drop(true)` (measured: the child is gone 600 ms
 after the handle drops) or kill and `wait()` explicitly. In sync code the
 long-standing option is the `wait-timeout` crate — mature rather than active (last
 release 2025-02, still 0.2.x, ~50M recent downloads), so check its upstream health
-before adopting it (`sota-devsecops` rules/10 §5); otherwise use a supervisor
+before adopting it ([`sota-devsecops` rules/10](../../sota-devsecops/rules/10-inert-dependencies.md) §5); otherwise use a supervisor
 thread you actually join. Never abandon a thread parked in `wait()`. Killing the
 direct child does not signal its *group*: for that, spawn it into its own group
 with `process_group(0)` (Unix, stable since **1.64**) and signal the group.
@@ -117,11 +117,11 @@ libloading 0.9.0 and measured on rustc 1.97.1:
   allowlist of names, or a parser you own for a fixed grammar (no loops, no host calls).
 - **An in-process interpreter is not a security boundary**: an engine bug, or a host
   function you registered, reaches the whole process. Hostile code goes to a separate
-  process or Wasm sandbox (`sota-sandboxing` rules/01, rank 7 is treated as no boundary).
+  process or Wasm sandbox ([`sota-sandboxing` rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md), rank 7 is treated as no boundary).
 OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.
 
 For the isolation the child itself needs — seccomp/Landlock, fd-only interfaces,
-memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
+memory budgets — see [`sota-sandboxing` rules/04](../../sota-sandboxing/rules/04-process-app-sandboxing.md) §5 and [rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md) R7.2a.
 
 **R9.9 — `Ok` is not success.** `status()` and `output()` return `Ok` when the child ran and
 then failed: the docs say they do "not return an error if the child runs and then exits

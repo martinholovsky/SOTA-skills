@@ -52,7 +52,7 @@ Pick the method that states intent; reviewers read methods faster than loop bodi
 
 `indexOf`, `lastIndexOf` and `findIndex` all return `-1` when not found (verified,
 Node 24). The idiom is fine where you test it immediately — `.includes()` /
-`.some()` say what you mean — and becomes the class in `sota-architecture` rules/02 §8a
+`.some()` say what you mean — and becomes the class in [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a
 the moment the `-1` is stored, passed, or compared later.
 
 Two sentinels with **opposite** failure behaviour, both verified:
@@ -92,7 +92,7 @@ const updated = items.with(i, newItem);
 - Mutators to flag on shared/parameter arrays: `sort`, `reverse`, `splice`, `push/pop/shift/unshift`, `fill`, `copyWithin`. Local arrays you just created may be mutated freely — purity at the boundary, pragmatism inside.
 - Deep copy: `structuredClone(obj)` — handles Dates, Maps, Sets, cycles, typed arrays. Never `JSON.parse(JSON.stringify(x))` (drops `undefined`, functions, Dates become strings, throws on cycles). Note structuredClone drops functions and prototypes — data only.
 - Shallow update idiom: `{ ...obj, field: v }` / `[...arr, item]` — shallow is fine when nested values are themselves replaced, not mutated.
-- Declare `readonly` arrays/properties in signatures; `as const` for fixed tables. For ordinary data `Object.freeze` is shallow and adds little that types don't already enforce. Security-critical objects (escapers, sanitizer wrappers, security config) are the exception: freeze them deeply at runtime (rules/05 §"Prototype pollution").
+- Declare `readonly` arrays/properties in signatures; `as const` for fixed tables. For ordinary data `Object.freeze` is shallow and adds little that types don't already enforce. Security-critical objects (escapers, sanitizer wrappers, security config) are the exception: freeze them deeply at runtime ([rules/05](05-security.md) §"Prototype pollution").
 - `let` is a smell outside loops/accumulators; `const` everywhere (`prefer-const` lint).
 
 ## Map/Set over object-as-map
@@ -248,7 +248,7 @@ Module hygiene: no side effects at import time (registrations, connections, read
 
 ## Designing a public surface — what consumers can reach, and what you can change
 
-The shared design rules live in `sota-architecture` rules/02 and `sota-api-design`. **This is
+The shared design rules live in [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) and [`sota-api-design`](../../sota-api-design/SKILL.md). **This is
 the JS/TS mechanism**, where the surface has two halves that break independently: what is
 *reachable at runtime*, and what is *expressible in the types*. A change can be invisible in
 one and breaking in the other.
@@ -299,7 +299,7 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
 
 - Normalize before comparing user-entered text: `a.normalize('NFC') === b.normalize('NFC')` ('é' has two encodings).
 - Locale-aware comparison/sorting: `Intl.Collator`/`localeCompare`, never `<` on strings for human-facing sort. All formatting (numbers, dates, lists, plurals) via `Intl.*` — never hand-rolled `${day}/${month}` strings.
-- `replaceAll` over `replace(/g/)` for literal replacement (no regex-escaping bugs). When building a RegExp from user input is unavoidable, escape it (`RegExp.escape` (ES2025) or the well-known escape helper) — see rules/05 ReDoS.
+- `replaceAll` over `replace(/g/)` for literal replacement (no regex-escaping bugs). When building a RegExp from user input is unavoidable, escape it (`RegExp.escape` (ES2025) or the well-known escape helper) — see [rules/05](05-security.md) ReDoS.
 - Multi-line template literals respect indentation — use `dedent` or keep them flush-left; don't ship accidental leading whitespace in SQL/emails.
 
 ## Audit checklist

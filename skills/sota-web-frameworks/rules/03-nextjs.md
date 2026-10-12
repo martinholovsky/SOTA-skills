@@ -1,8 +1,8 @@
 # 03 — Next.js: App Router, Server Actions, caching, CVEs
 
 Written for Next.js 16 (App Router); verify the latest at nextjs.org/blog. Pages Router still ships but is not the
-recommended model for new code. Hydration is in `rules/06`; the consolidated
-security boundary and CVE reference in `rules/07`. **Re-verify every CVE range at
+recommended model for new code. Hydration is in [`rules/06`](06-ssr-hydration.md); the consolidated
+security boundary and CVE reference in [`rules/07`](07-security.md). **Re-verify every CVE range at
 use time** — the version numbers below were primary-sourced 2026-07.
 
 ## 1. Server vs Client Components — the boundary is everything
@@ -70,7 +70,7 @@ export async function deletePost(id: string) {
   for multi-replica deploys so restarts don't invalidate in-flight forms);
   `.bind()` arguments are **not** encrypted. Don't rely on encryption for authz.
 - **Route Handlers** (`route.ts`) are the same story — treat every one as a public
-  API endpoint (`sota-api-design`, `sota-code-security`).
+  API endpoint ([`sota-api-design`](../../sota-api-design/SKILL.md), [`sota-code-security`](../../sota-code-security/SKILL.md)).
 
 ## 3. Authorization placement — the Data Access Layer
 
@@ -147,13 +147,13 @@ The caching model changed materially; stale mental models cause both bugs and le
   load at your origin and CMS. The docs' Route Handler sample revalidates whatever
   `?tag=` a caller sends, with no check. Authenticate and authorize the caller; map a
   known name to a fixed tag/path from an allowlist instead of passing a request value
-  through; verify a CMS webhook's signature (`sota-api-design` rules/06) and rate-limit
+  through; verify a CMS webhook's signature ([`sota-api-design` rules/06](../../sota-api-design/rules/06-webhooks.md)) and rate-limit
   the endpoint ([Next.js: revalidateTag](https://nextjs.org/docs/app/api-reference/functions/revalidateTag),
   read 2026-09-25). OWASP: Nextjs Security cheat sheet.
 - **Security rule:** never cache a personalized page at a shared cache. If a route
   reads the session/cookies, it must be dynamic or explicitly `private`. Cache
   poisoning has been a repeated Next CVE class (below) — CDNs also drop `Vary`, so
-  don't rely on it (`rules/06`).
+  don't rely on it ([`rules/06`](06-ssr-hydration.md)).
 
 ## 5. Next.js CVE reference (verify ranges at use time)
 
@@ -181,7 +181,7 @@ from the lockfile and compare.
 `/_next/image` optimizer into a blind-SSRF proxy (reachable internal URLs / metadata
 endpoint), and it follows redirects from an allowed host without re-validating — an
 open redirect on an allowlisted domain becomes SSRF. Allowlist explicit hosts,
-protocols, and paths (`rules/07`).
+protocols, and paths ([`rules/07`](07-security.md)).
 
 ## Audit checklist
 

@@ -81,7 +81,7 @@ Rules:
   filtered by operators and stop being read, which returns the system to silent
   failure. This matters most for **security controls**: a scanner or policy
   engine running inert must be a distinct health state, not a quiet default
-  (`sota-code-security` rules/10).
+  ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).
 
 ## 3. Debug endpoints: powerful and dangerous
 
@@ -163,7 +163,7 @@ Rules:
   - Resolved-then-reoccurred ("regression") notifications ON — that's the
     highest-signal notification type the tool has.
 - Notification policy: new issue / regression / spike → TICKET (or chat),
-  not page. Pages come from SLOs (rules/04); the tracker tells you WHICH
+  not page. Pages come from SLOs ([rules/04](04-slos-alerting.md)); the tracker tells you WHICH
   exception is burning the budget.
 
 ## 6. Shutdown, crashes, and the last 10 seconds
@@ -216,7 +216,7 @@ Rules:
 - Delete dashboards nobody opened in 90 days (usage stats exist). Curation
   is a feature: the on-call landing page lists THE five dashboards that
   matter.
-- No averaged percentiles, no per-instance p99 walls (rules/02 §4); prefer
+- No averaged percentiles, no per-instance p99 walls ([rules/02](02-metrics.md) §4); prefer
   route/tenant breakdowns over instance breakdowns for symptom dashboards.
 
 ## 7a. The question with no instrument, and the substitute that answers a different one
@@ -228,7 +228,7 @@ and the proxy returns a number.
 The canonical case is a removal decision. *"Is this feature still used?"* is a
 question about **requests**, and it is answerable only from request-level telemetry
 at the edge: gateway/ingress/load-balancer access logs, or per-route and per-field
-usage metrics (`sota-api-design` rules/02 §5 step 4, rules/03 §11 — *without
+usage metrics ([`sota-api-design` rules/02](../../sota-api-design/rules/02-versioning-evolution.md) §5 step 4, [rules/03](../../sota-api-design/rules/03-graphql.md) §11 — *without
 per-field usage data you can never delete anything*). With those absent, the
 reachable substitute is the **stored data**: query the corpus, count what carries
 the feature's shape, conclude.
@@ -237,21 +237,21 @@ That answers *"does data shaped like this exist"* — a different question, with
 different answer and a **known direction of error**. Stored data outlives its last
 reader, so the corpus systematically over-reports use and the substitute is biased
 toward keep-it. The shape recurs: commit count standing in for maintenance, a
-dependency's presence in a manifest standing in for it being reached (`sota-devsecops`
-rules/10), a dashboard existing standing in for someone opening it.
+dependency's presence in a manifest standing in for it being reached ([`sota-devsecops`
+rules/10](../../sota-devsecops/rules/10-inert-dependencies.md)), a dashboard existing standing in for someone opening it.
 
 Rules:
 - **Edge access logs are a required telemetry stream**, not an optional one, wherever
   a gateway/ingress/LB fronts a versioned or deprecable surface. Sample if volume
-  demands, but **retain across one deprecation runway** — `sota-api-design`
-  rules/02 §5 publishes a ≥ 6-month runway, so 30-day retention cannot support
+  demands, but **retain across one deprecation runway** — [`sota-api-design`
+  rules/02](../../sota-api-design/rules/02-versioning-evolution.md) §5 publishes a ≥ 6-month runway, so 30-day retention cannot support
   the decision it exists for.
   Log the route *template* and the principal *id*, not the raw path and identity
-  (cardinality and PII: rules/01).
+  (cardinality and PII: [rules/01](01-structured-logging.md)).
 - **Instrument the question you will be asked, not only the ones you are asked
   today.** "Which surfaces can we retire?" is asked of every system that lives long
   enough; it needs a per-route/per-field usage counter from the day the surface
-  ships (`sota-api-design` rules/02 §7's "usage metric … the day its successor
+  ships ([`sota-api-design` rules/02](../../sota-api-design/rules/02-versioning-evolution.md) §7's "usage metric … the day its successor
   ships").
 - **When you substitute, say so in the same sentence as the number.** Name the
   question you could answer, the question you were asked, and the direction the
@@ -275,7 +275,7 @@ Rules:
   from the regions users are in.
 - Tag synthetic traffic (`synthetic: true` header → wide-event field) so it
   is excludable from SLIs/business metrics while feeding its own
-  availability SLI for low-traffic journeys (rules/04 §1).
+  availability SLI for low-traffic journeys ([rules/04](04-slos-alerting.md) §1).
 - Probe failures page only on consecutive failures from multiple locations
   (single-location flaps are network noise).
 - Certificates, DNS, and domain expiry are synthetic checks too — classic
@@ -307,7 +307,7 @@ distinguishable from telemetry production writes, at the point of collection.**
   repo, not the test rows out of the aggregate.
 - The reader-side obligation — every aggregate over a shared sink states its exclusion
   filter, and an unexplained jump in n is contamination rather than power — is
-  `sota-code-security` rules/11 §2.7.
+  [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.7.
 
 ## Audit checklist
 

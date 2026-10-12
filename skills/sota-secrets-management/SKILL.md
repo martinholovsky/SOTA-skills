@@ -44,22 +44,22 @@ and document why if you stop below level 2.
 Use when implementing anything that consumes or manages a credential.
 
 1. **Classify the credential.** Type (DB cred, API key, signing key, TLS key, …) determines the
-   rules — read `rules/05-credential-types.md` for the matching section before writing code.
+   rules — read [`rules/05-credential-types.md`](rules/05-credential-types.md) for the matching section before writing code.
 2. **Try to eliminate it.** Cloud-to-cloud or CI-to-cloud calls should use workload identity
-   (OIDC, IAM roles, SPIFFE) — see `rules/01-lifecycle-and-workload-identity.md`. Only fall back
+   (OIDC, IAM roles, SPIFFE) — see [`rules/01-lifecycle-and-workload-identity.md`](rules/01-lifecycle-and-workload-identity.md). Only fall back
    to a stored secret when no federation path exists (e.g., third-party SaaS API key).
 3. **Pick the storage backend** per environment using the decision table in
-   `rules/02-storage-backends.md`. Never invent a custom encrypted store.
+   [`rules/02-storage-backends.md`](rules/02-storage-backends.md). Never invent a custom encrypted store.
 4. **Wire injection at runtime** — file mount or env var populated by the platform, fetched via
    SDK with caching/TTL, never baked into images or code. Patterns and good/bad pairs in
-   `rules/03-application-patterns.md`.
+   [`rules/03-application-patterns.md`](rules/03-application-patterns.md).
 5. **Design rotation before shipping.** Every secret needs: an owner, a rotation procedure that
    works with zero downtime (dual-secret / kid overlap), an expiry or rotation interval, and a
    revocation path. If you cannot answer "how do we rotate this at 3am during an incident,"
    the design is not done.
 6. **Add guardrails:** pre-commit scanning config, CI secret-scan gate, `.gitignore` entries for
    `.env*` and key files, log-scrubbing for the new secret's shape
-   (`rules/04-detection-and-remediation.md`).
+   ([`rules/04-detection-and-remediation.md`](rules/04-detection-and-remediation.md)).
 7. **Self-review against the Audit checklist** at the end of every rules file you used.
 
 ## AUDIT mode
@@ -74,7 +74,7 @@ Use when asked to find secret leaks/misuse in an existing repo.
 2. **Manual grep pass** for what tools miss. Sweep at minimum:
    - High-entropy strings and known prefixes: `AKIA`, `ASIA`, `ghp_`, `gho_`, `ghs_`, `ghu_`,
      `ghr_`, `github_pat_`, `xoxb-`, `xoxp-`, `sk-`, `sk_live_`, `rk_live_`, `AIza`, `ya29.`,
-     `glpat-`, `npm_`, `dop_v1_`, `shpat_`, `eyJhbGciOi` (inline JWTs), `-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----` (ERE; rules/04 §6 has the tested command).
+     `glpat-`, `npm_`, `dop_v1_`, `shpat_`, `eyJhbGciOi` (inline JWTs), `-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----` (ERE; [rules/04](rules/04-detection-and-remediation.md) §6 has the tested command).
    - Assignment patterns: `(password|passwd|pwd|secret|token|api[_-]?key|auth)\s*[:=]\s*['"][^'"]{6,}`.
    - Connection strings with embedded creds: `://[^/:@\s]+:[^@\s]+@` (postgres, mysql, mongodb,
      amqp, redis URLs).
@@ -120,18 +120,18 @@ Report every finding as:
 
 Order findings Critical → Low. End the audit with: counts per severity, whether git history is
 affected (if so, remediation must include rotation + history purge per
-`rules/04-detection-and-remediation.md`), and the top 3 systemic fixes. **Never reproduce a
+[`rules/04-detection-and-remediation.md`](rules/04-detection-and-remediation.md)), and the top 3 systemic fixes. **Never reproduce a
 discovered secret in full in your report** — redact to first 4 chars + length.
 
 ## Rules index
 
 | File | Read this when... |
 |---|---|
-| `rules/01-lifecycle-and-workload-identity.md` | Generating secrets (entropy/length), setting rotation/expiry/revocation policy, replacing static secrets with OIDC federation, SPIFFE/SPIRE, cloud IAM roles, GitHub Actions OIDC |
-| `rules/02-storage-backends.md` | Choosing where a secret lives: Vault/OpenBao, AWS/GCP/Azure secret managers, SOPS+age, sealed-secrets/external-secrets in Kubernetes, env vars vs file mounts (no cross-deployment shared mounts), in-memory handling and zeroization, consumer-key end-to-end encryption (§8) |
-| `rules/03-application-patterns.md` | Writing app code that consumes secrets: config layering, runtime injection, caching/TTL, keeping secrets out of code/VCS/logs/errors/URLs/argv/crash dumps, per-env separation, least-privilege scoping, access audit logging; **never-persist-raw (§2.1)** — text whose producer you do not control is stored as a digest plus a structural skeleton, because shape redaction is an enumeration |
-| `rules/04-detection-and-remediation.md` | Setting up gitleaks/trufflehog, pre-commit hooks, CI gates; responding to a leak (rotate-first, purge history, assume compromised); honeytokens; running an AUDIT sweep; **agent session transcripts as a credential store (§7)** — inventorying and scoping the scan of `~/.claude/projects/**`, and why a tool that sweeps it is a secret-processing tool |
-| `rules/05-credential-types.md` | Handling a specific credential class: DB creds, API keys, signing keys, TLS private keys, SSH keys, JWT secrets and kid rotation, data keys vs KMS envelope encryption, .env discipline |
+| [`rules/01-lifecycle-and-workload-identity.md`](rules/01-lifecycle-and-workload-identity.md) | Generating secrets (entropy/length), setting rotation/expiry/revocation policy, replacing static secrets with OIDC federation, SPIFFE/SPIRE, cloud IAM roles, GitHub Actions OIDC |
+| [`rules/02-storage-backends.md`](rules/02-storage-backends.md) | Choosing where a secret lives: Vault/OpenBao, AWS/GCP/Azure secret managers, SOPS+age, sealed-secrets/external-secrets in Kubernetes, env vars vs file mounts (no cross-deployment shared mounts), in-memory handling and zeroization, consumer-key end-to-end encryption (§8) |
+| [`rules/03-application-patterns.md`](rules/03-application-patterns.md) | Writing app code that consumes secrets: config layering, runtime injection, caching/TTL, keeping secrets out of code/VCS/logs/errors/URLs/argv/crash dumps, per-env separation, least-privilege scoping, access audit logging; **never-persist-raw (§2.1)** — text whose producer you do not control is stored as a digest plus a structural skeleton, because shape redaction is an enumeration |
+| [`rules/04-detection-and-remediation.md`](rules/04-detection-and-remediation.md) | Setting up gitleaks/trufflehog, pre-commit hooks, CI gates; responding to a leak (rotate-first, purge history, assume compromised); honeytokens; running an AUDIT sweep; **agent session transcripts as a credential store (§7)** — inventorying and scoping the scan of `~/.claude/projects/**`, and why a tool that sweeps it is a secret-processing tool |
+| [`rules/05-credential-types.md`](rules/05-credential-types.md) | Handling a specific credential class: DB creds, API keys, signing keys, TLS private keys, SSH keys, JWT secrets and kid rotation, data keys vs KMS envelope encryption, .env discipline |
 
 ## Top-10 non-negotiables
 

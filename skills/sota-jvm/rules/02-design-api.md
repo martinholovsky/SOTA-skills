@@ -7,7 +7,7 @@ file covers type/API design; idioms are in `01`, concurrency in `03`.
 
 - **Kotlin**: the type system carries it — design APIs in non-null types,
   accept/return `T?` only where absence is meaningful. Guard Java platform
-  types (`rules/01`) at the boundary with `requireNotNull`.
+  types ([`rules/01`](01-idioms.md)) at the boundary with `requireNotNull`.
 - **Java**: there is no built-in nullable type, so make it *checked*:
   - `Optional<T>` as a **return** type for "maybe absent" (Bloch: not for
     fields, parameters, or collections — an empty collection is the absence).
@@ -27,7 +27,7 @@ file covers type/API design; idioms are in `01`, concurrency in `03`.
 The JDK returns `-1` for "not found" throughout `String` — `indexOf`, `lastIndexOf`,
 and their `int`/`String`/`fromIndex` overloads all document *"or -1 if there is no
 such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the class
-(`sota-architecture` rules/02 §8a) is what happens when *your* API does it undocumented.
+([`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a) is what happens when *your* API does it undocumented.
 
 - §1's rule is the answer for references: absence is `null` with an annotation, or
   `Optional<T>` on a return. For primitives use `OptionalInt`/`OptionalLong`/

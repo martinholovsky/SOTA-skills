@@ -30,19 +30,19 @@ over-broad rule that exposes a secrets store to the world, a renewal nobody auto
 that reaches the cloud metadata endpoint.
 
 **Ownership — reference siblings, do not duplicate:**
-- **sota-cloud-infrastructure** (rules/03 networking) owns cloud-provider network *setup*: VPC/subnet
+- **[sota-cloud-infrastructure](../sota-cloud-infrastructure/SKILL.md)** ([rules/03](../sota-cloud-infrastructure/rules/03-networking.md) networking) owns cloud-provider network *setup*: VPC/subnet
   layout, CIDR/IPAM, route tables, LB/CDN provisioning, registrar hygiene, DNS zone setup. **This
   skill owns the security posture layered on top** and the on-prem / Kubernetes / mesh side.
-- **sota-kubernetes** owns admission control and RBAC — *where NetworkPolicy is admitted and CNI
+- **[sota-kubernetes](../sota-kubernetes/SKILL.md)** owns admission control and RBAC — *where NetworkPolicy is admitted and CNI
   enforcement is wired*; this skill owns the policy *content and depth*.
-- **sota-identity-access** owns SPIFFE/SPIRE workload identity issuance, ZTNA user identity, and the
+- **[sota-identity-access](../sota-identity-access/SKILL.md)** owns SPIFFE/SPIRE workload identity issuance, ZTNA user identity, and the
   identity-aware proxy's auth plane; this skill consumes those identities for network authorization.
-- **sota-detection-engineering** owns network IDS (Suricata), DNS-exfil detection, and flow-log
+- **[sota-detection-engineering](../sota-detection-engineering/SKILL.md)** owns network IDS (Suricata), DNS-exfil detection, and flow-log
   detection content; this skill produces the telemetry (Hubble flows, flow logs) it consumes.
-- **sota-sandboxing** (rules/02–03) owns single-host nftables/seccomp and container hardening; this
+- **[sota-sandboxing](../sota-sandboxing/SKILL.md)** ([rules/02](../sota-sandboxing/rules/02-linux-os-hardening.md)–03) owns single-host nftables/seccomp and container hardening; this
   skill owns the inter-host / cluster-wide fabric.
-- **sota-code-security** (rules/01 SSRF, rules/05 CORS/CSP), **sota-api-design** (rules/07 rate
-  limiting), **sota-secrets-management** (TLS private keys) — referenced where they intersect.
+- **[sota-code-security](../sota-code-security/SKILL.md)** ([rules/01](../sota-code-security/rules/01-input-injection.md) SSRF, [rules/05](../sota-code-security/rules/05-web-security.md) CORS/CSP), **[sota-api-design](../sota-api-design/SKILL.md)** ([rules/07](../sota-api-design/rules/07-security-operations.md) rate
+  limiting), **[sota-secrets-management](../sota-secrets-management/SKILL.md)** (TLS private keys) — referenced where they intersect.
 
 ## BUILD mode
 
@@ -54,15 +54,15 @@ ingress/egress controls, PKI/DNS posture, remote access).
    step-ca), edge (e.g. a reverse proxy with a CRS WAF behind a CDN);
    data sensitivity; who needs remote access. A 3-node homelab and a regulated fleet get different
    answers from the same rules.
-2. **Read the matching rules file before writing config.** Segmentation (rules/02) precedes policy
-   detail; identity-aware access (rules/01) frames everything.
+2. **Read the matching rules file before writing config.** Segmentation ([rules/02](rules/02-segmentation-blast-radius.md)) precedes policy
+   detail; identity-aware access ([rules/01](rules/01-zero-trust-architecture.md)) frames everything.
 3. **Default-deny in both directions, always.** Ingress *and* egress deny by default, per namespace
    and per zone. Every allow is explicit, justified in a comment, and references identity (workload
    identity, label selector, SG/service account) — never a bare CIDR or `world` entity **wherever the
    policy language can express identity**. Where it genuinely cannot — vanilla NetworkPolicy has no
    identity selector for a destination *outside* the cluster — a tight `ipBlock` is a **documented
    exception, not a default**: name the destination and the reason, and prefer a CNI that can
-   (rules/03 §3). Inside the cluster there is no exception: pod IPs are recycled, so a CIDR there
+   ([rules/03](rules/03-k8s-network-policy.md) §3). Inside the cluster there is no exception: pod IPs are recycled, so a CIDR there
    silently re-points the allow.
 4. **Encrypt every hop that crosses a trust boundary.** No plaintext credentials, JWTs, or DB
    traffic on the pod/internal network — mTLS via mesh or TLS terminated close to the workload.
@@ -113,15 +113,15 @@ Group repeated instances (e.g. 12 namespaces with no egress policy) into one fin
 
 | File | Read this when... |
 |---|---|
-| rules/01-zero-trust-architecture.md | Establishing/auditing the model: never-trust-always-verify, PDP/PEP, identity-aware access over network location, ZTNA vs VPN, de-perimeterization, identity-aware proxy (BeyondCorp), telemetry-to-policy pruning loop, devices pillar (inventory, device certificates, posture-gated access, unmanaged-device isolation) |
-| rules/02-segmentation-blast-radius.md | Designing/auditing zones and tiers, north-south vs east-west, the flat-network and over-broad-rule (`any`/`0.0.0.0/0`/`world`) traps, microsegmentation, lateral-movement containment, firewall/SG default-deny, remote access (WireGuard, bastion vs IAP), zone refinements (outbound-only DMZ, directory/log segments, shared-L7-balancer caveat, human-readable policy), legacy/plaintext quarantine zone, external exposure discovery |
-| rules/03-k8s-network-policy.md | Writing/auditing Kubernetes NetworkPolicy, CiliumNetworkPolicy, the namespaced default-deny (ingress AND egress) pattern, the "default-deny that isn't" trap, ANP/BANP, L7/identity policy, DNS-aware egress, egress gateways, Hubble visibility, permitted-vs-observed policy pruning |
-| rules/04-service-mesh-mtls.md | The plaintext-internal-traffic problem, choosing/auditing a mesh (Istio sidecar vs ambient, Linkerd, Cilium mesh), mTLS everywhere, mesh authorization policy, SPIFFE identity, peer-identity pinning for cross-org mTLS (SAN/SPKI, never CN), mTLS-mode drift alerting, and deciding mesh vs plain TLS |
-| rules/05-edge-ingress-egress.md | WAF (CRS/Coraza) incl. virtual-patching lifecycle, rule-firing reports, WAF events to SIEM, positive model and WebSocket limits, ingress/API-gateway hardening, trace/diagnostic header scrubbing, request smuggling / proxy-chain desync (strict parsers, h2 downgrade, h2c), TLS termination + re-encryption, trusted-IP handling behind Cloudflare, DDoS posture (edge scrubbing + self-hosted kernel hardening: SYN cookies/synproxy, conntrack, rp_filter, no open UDP reflectors; byte caps and uplink capacity), egress as a first-class control, FQDN allowlisting, blocking the metadata endpoint, the SSRF-meets-egress chain |
-| rules/06-dns-tls-pki.md | DNS security (DNSSEC, RPZ/DNS firewall, DoH/DoT, split-horizon, CAA, tunneling, subdomain takeover: dangling CNAME/NS/MX/SPF, wildcard records, takeover indicators + response), TLS posture (1.3, ciphers, HSTS, OCSP, full chain, explicit hybrid-PQ group list, ECH, legacy-client isolation), certificate issuance hygiene (SANs, no internal names, SHA-256, shared-cert inventory), shrinking cert lifetimes + ACME automation, internal PKI (step-ca), short-lived certs, pinning tradeoffs, email authentication & anti-spoofing (SPF/DKIM/DMARC, MTA-STS/DANE, bulk-sender rules) |
+| [rules/01-zero-trust-architecture.md](rules/01-zero-trust-architecture.md) | Establishing/auditing the model: never-trust-always-verify, PDP/PEP, identity-aware access over network location, ZTNA vs VPN, de-perimeterization, identity-aware proxy (BeyondCorp), telemetry-to-policy pruning loop, devices pillar (inventory, device certificates, posture-gated access, unmanaged-device isolation) |
+| [rules/02-segmentation-blast-radius.md](rules/02-segmentation-blast-radius.md) | Designing/auditing zones and tiers, north-south vs east-west, the flat-network and over-broad-rule (`any`/`0.0.0.0/0`/`world`) traps, microsegmentation, lateral-movement containment, firewall/SG default-deny, remote access (WireGuard, bastion vs IAP), zone refinements (outbound-only DMZ, directory/log segments, shared-L7-balancer caveat, human-readable policy), legacy/plaintext quarantine zone, external exposure discovery |
+| [rules/03-k8s-network-policy.md](rules/03-k8s-network-policy.md) | Writing/auditing Kubernetes NetworkPolicy, CiliumNetworkPolicy, the namespaced default-deny (ingress AND egress) pattern, the "default-deny that isn't" trap, ANP/BANP, L7/identity policy, DNS-aware egress, egress gateways, Hubble visibility, permitted-vs-observed policy pruning |
+| [rules/04-service-mesh-mtls.md](rules/04-service-mesh-mtls.md) | The plaintext-internal-traffic problem, choosing/auditing a mesh (Istio sidecar vs ambient, Linkerd, Cilium mesh), mTLS everywhere, mesh authorization policy, SPIFFE identity, peer-identity pinning for cross-org mTLS (SAN/SPKI, never CN), mTLS-mode drift alerting, and deciding mesh vs plain TLS |
+| [rules/05-edge-ingress-egress.md](rules/05-edge-ingress-egress.md) | WAF (CRS/Coraza) incl. virtual-patching lifecycle, rule-firing reports, WAF events to SIEM, positive model and WebSocket limits, ingress/API-gateway hardening, trace/diagnostic header scrubbing, request smuggling / proxy-chain desync (strict parsers, h2 downgrade, h2c), TLS termination + re-encryption, trusted-IP handling behind Cloudflare, DDoS posture (edge scrubbing + self-hosted kernel hardening: SYN cookies/synproxy, conntrack, rp_filter, no open UDP reflectors; byte caps and uplink capacity), egress as a first-class control, FQDN allowlisting, blocking the metadata endpoint, the SSRF-meets-egress chain |
+| [rules/06-dns-tls-pki.md](rules/06-dns-tls-pki.md) | DNS security (DNSSEC, RPZ/DNS firewall, DoH/DoT, split-horizon, CAA, tunneling, subdomain takeover: dangling CNAME/NS/MX/SPF, wildcard records, takeover indicators + response), TLS posture (1.3, ciphers, HSTS, OCSP, full chain, explicit hybrid-PQ group list, ECH, legacy-client isolation), certificate issuance hygiene (SANs, no internal names, SHA-256, shared-cert inventory), shrinking cert lifetimes + ACME automation, internal PKI (step-ca), short-lived certs, pinning tradeoffs, email authentication & anti-spoofing (SPF/DKIM/DMARC, MTA-STS/DANE, bulk-sender rules) |
 
 Cross-cutting tasks read multiple files: a full network audit touches all six; "lock down our
-cluster" is rules/02 + rules/03 (+ rules/04 if a mesh exists).
+cluster" is [rules/02](rules/02-segmentation-blast-radius.md) + [rules/03](rules/03-k8s-network-policy.md) (+ [rules/04](rules/04-service-mesh-mtls.md) if a mesh exists).
 
 ## Top 10 non-negotiables
 
@@ -149,7 +149,7 @@ cluster" is rules/02 + rules/03 (+ rules/04 if a mesh exists).
    issued and auto-renewed. CA/Browser Forum caps public certs at 200 days (2026-03-15) → 47 days
    (2029-03-15); manual renewal is now an outage generator.
 10. **Flows are visible.** You can answer "who talked to whom" — Hubble / flow logs / mesh telemetry
-    on, exported to detection (sota-detection-engineering). You cannot secure traffic you can't see.
+    on, exported to detection ([sota-detection-engineering](../sota-detection-engineering/SKILL.md)). You cannot secure traffic you can't see.
 
 ## Operating notes
 

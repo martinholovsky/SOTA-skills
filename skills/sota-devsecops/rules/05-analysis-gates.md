@@ -18,7 +18,7 @@ Two complementary layers; mature setups run both:
   it adds cross-function taint *within one file*, opt-in via `--taint-intrafile` (CE is
   intraprocedural only; cross-file taint stays Semgrep Pro-only); the **rule format
   is compatible**, so existing rules and community rulesets port unchanged
-  (`sota/rules/01` §2). Prefer it for anything you need to keep running. Semgrep CE
+  ([`sota/rules/01`](../../sota/rules/01-audit-methodology.md) §2). Prefer it for anything you need to keep running. Semgrep CE
   remains a drop-in alternative.
 - **CodeQL** — deep interprocedural taint tracking with **names and types resolved**;
   catches what pattern-matching cannot (source→sink across files). Heavier:
@@ -104,7 +104,7 @@ Layered — each layer catches what the previous missed:
 the fact cleans the repo, not the forks/clones/caches. Process: revoke/rotate first, then
 clean history, then verify the old credential is dead. Any finding response that ends at
 "removed the file" is incomplete (keep it High until rotation is confirmed). The full
-leak-response runbook and scanner configuration live in sota-secrets-management rules/04;
+leak-response runbook and scanner configuration live in [sota-secrets-management rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md);
 this section owns the pipeline gate layering.
 
 Tuning: enable entropy + provider-pattern rules; maintain an allowlist for test fixtures
@@ -121,7 +121,7 @@ useDefault = true   # REQUIRED: a config with only an allowlist loads ZERO rules
 # BAD: paths = ['''tests/.*'''] — tests are where real creds get pasted "temporarily"
 ```
 
-(Same shape as `sota-secrets-management` rules/04 §1. Measured 2026-09-26 on gitleaks 8.30.1:
+(Same shape as [`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §1. Measured 2026-09-26 on gitleaks 8.30.1:
 the allowlist-only file reported no leaks over a planted AWS key; adding `[extend]` found it.)
 
 Rotation runbook per credential type (who rotates, blast radius, dependent systems)
@@ -143,7 +143,7 @@ use of the old credential.
   admin ports, unencrypted state/storage/DB, IAM `*:*`, disabled logging.
 - Custom policies for org invariants (allowed regions, mandatory tags, blessed module
   registry only) — Rego (OPA/conftest) or checkov Python/YAML custom checks; keep them in
-  a versioned policy repo with tests (rules/07 §7.2).
+  a versioned policy repo with tests ([rules/07](07-runtime-ops.md) §7.2).
 
 ```yaml
 # IaC gate: plan-aware checkov on Terraform changes (with no-op fallback — rules/09 §1)
@@ -158,7 +158,7 @@ jobs:
 ```
 
 (When the plan needs real credentials, this runs under the read-only plan role of
-rules/06 §6.2 and never on fork PRs — rules/01 §1.4.)
+[rules/06](06-iac-deployment.md) §6.2 and never on fork PRs — [rules/01](01-pipeline-security.md) §1.4.)
 
 ## 5.4 DAST basics
 
@@ -197,8 +197,8 @@ confidence scores.
 
 ## 5.5 License compliance
 
-- Enforce at the dependency-review gate (rules/03 §3.2 `deny-licenses`) and verify against
-  the SBOM (rules/03 §3.5) for the full transitive picture — manifest-level checks miss
+- Enforce at the dependency-review gate ([rules/03](03-dependencies.md) §3.2 `deny-licenses`) and verify against
+  the SBOM ([rules/03](03-dependencies.md) §3.5) for the full transitive picture — manifest-level checks miss
   transitive copyleft.
 - Policy is a legal decision encoded as config: typical denylist for proprietary shipping:
   AGPL/SSPL always-review, GPL for statically-linked/distributed code, unknown/missing
@@ -215,12 +215,12 @@ An agent's PR declares a scope (the issue, the task prompt). Two checks hold it 
 - **Out-of-scope paths need explicit human review.** Flag an agent PR that touches
   lockfiles, CI/CD config, tests, or anything outside the declared scope — a "fix" that
   edits the test it was meant to pass, or a lockfile nobody asked for, is the shape to
-  catch. Route those paths to a required reviewer (rules/01 §1.8) rather than warning.
+  catch. Route those paths to a required reviewer ([rules/01](01-pipeline-security.md) §1.8) rather than warning.
 - **Reject invisible and bidirectional characters in changed files**, whatever the
   language: bidi controls (U+202A–202E, U+2066–2069), zero-width characters
   (U+200B–200D) and U+FEFF. They make the reviewed text differ from what the compiler
   reads. Homoglyphs (a Cyrillic letter that renders as a Latin one) need a confusables check, not a
-  character-range grep. Language-level detail: `sota-javascript-typescript` rules/05.
+  character-range grep. Language-level detail: [`sota-javascript-typescript` rules/05](../../sota-javascript-typescript/rules/05-security.md).
   (OWASP: Secure Coding with AI cheat sheet)
 
 ## 5.7 Test discipline — no flaky-mute culture
@@ -241,7 +241,7 @@ through a real regression, and "tests are red anyway" normalizes overriding gate
   fixes-forward immediately — flake debt compounds.
 - Keep the blocking suite fast (<10–15 min PR path) by tiering: fast suite gates the PR;
   slow/integration suites gate the merge queue or deploy, and **their** failures block
-  promotion (rules/06 §6.6), not get waved through.
+  promotion ([rules/06](06-iac-deployment.md) §6.6), not get waved through.
 
 ## 5.8 Putting it together — the PR gate stack
 

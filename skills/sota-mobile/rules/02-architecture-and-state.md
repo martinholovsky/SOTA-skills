@@ -91,15 +91,15 @@ sealed interface OrdersState {
 }
 ```
 
-Include offline/stale variants (`isStale`) — offline-first behavior (rules/03) is unrepresentable without them, and "stale data shown while refreshing" is the single most common mobile screen state. Each sealed case doubles as a snapshot-test fixture (2.9).
+Include offline/stale variants (`isStale`) — offline-first behavior ([rules/03](03-offline-background-push.md)) is unrepresentable without them, and "stale data shown while refreshing" is the single most common mobile screen state. Each sealed case doubles as a snapshot-test fixture (2.9).
 
 ### 2.3 State must survive process death and configuration change
 
 The OS kills backgrounded apps routinely; Android additionally recreates activities on rotation, resize, and locale change. Triage every piece of state into one of three buckets:
 
 1. **Ephemeral UI state** (scroll position, half-typed text, selected tab): `SavedStateHandle` / `rememberSaveable` (Android), `@SceneStorage` / state restoration (iOS). Losing a user's half-typed review to a phone call is a bug users *feel*.
-2. **Durable data:** the local DB (rules/03). Never "it's still in the singleton" — after process death it isn't, and the crash on unwrapping it lands in your top-5 crash signatures.
-3. **In-flight work:** must be resumable or idempotent. A checkout that corrupts if the process dies mid-request is a HIGH finding; the outbox pattern (rules/03 §3.2) is the fix.
+2. **Durable data:** the local DB ([rules/03](03-offline-background-push.md)). Never "it's still in the singleton" — after process death it isn't, and the crash on unwrapping it lands in your top-5 crash signatures.
+3. **In-flight work:** must be resumable or idempotent. A checkout that corrupts if the process dies mid-request is a HIGH finding; the outbox pattern ([rules/03](03-offline-background-push.md) §3.2) is the fix.
 
 Make it testable in QA: Android — enable "Don't keep activities" and use `adb shell am kill` on the backgrounded app; iOS — Xcode's simulated termination, plus launch-into-deep-link and launch-from-notification paths (which are also cold starts with no warm state).
 
@@ -191,14 +191,14 @@ enum Route: Hashable, Codable {
 // NavigationStack(path: $router.path) — the whole stack is a [Route], save/restore trivially
 ```
 
-- Every route reachable from a notification or deep link must handle being the **first** screen: cold start, no back stack, possibly no valid session. Build the pipeline once, centrally: parse → validate (security: rules/04 §4.6) → auth-gate → synthesize a sensible back stack (order detail gets an Orders parent, not an empty stack).
+- Every route reachable from a notification or deep link must handle being the **first** screen: cold start, no back stack, possibly no valid session. Build the pipeline once, centrally: parse → validate (security: [rules/04](04-security.md) §4.6) → auth-gate → synthesize a sensible back stack (order detail gets an Orders parent, not an empty stack).
 - Navigation logic (which route follows which event) lives in the state owner / coordinator, not in view code — it's business logic and needs tests.
 
 ### 2.8 Repository layer mediates all data access
 
-Views and view models never touch the network client or the DB directly. One repository per domain aggregate decides: cache vs network, offline queueing (rules/03), retry policy, and DTO → domain mapping.
+Views and view models never touch the network client or the DB directly. One repository per domain aggregate decides: cache vs network, offline queueing ([rules/03](03-offline-background-push.md)), retry policy, and DTO → domain mapping.
 
-- **DTOs do not leak above the repository.** Wire types change with the API; domain types change with the product. Coupling screens to wire types turns every backend rename into a 40-file diff — and old shipped binaries pin old wire assumptions (rules/06 §6.8), so the mapping layer is also where tolerance for unknown/missing fields lives.
+- **DTOs do not leak above the repository.** Wire types change with the API; domain types change with the product. Coupling screens to wire types turns every backend rename into a 40-file diff — and old shipped binaries pin old wire assumptions ([rules/06](06-release-and-operations.md) §6.8), so the mapping layer is also where tolerance for unknown/missing fields lives.
 - Repositories expose reactive reads (`Flow` / `AsyncSequence` / Query observables) backed by the DB, plus imperative commands. They are interfaces in `:core:*:api`, faked in view-model tests.
 
 ```kotlin
@@ -219,7 +219,7 @@ If 2.1–2.8 hold, testing is cheap. If testing is hard, the architecture is wro
 
 - **Unit (the bulk):** reducers/view models with fake repositories; sealed-state assertions; injected `TestDispatcher`/test clock. Milliseconds each, thousands run per commit.
 - **Snapshot:** every design-system component, and key screens rendered once per sealed state case (2.2 fixtures), across dark mode, large font scale, and RTL.
-- **UI/E2E:** a handful of critical flows only — login, the core loop, purchase. Expensive and flaky by nature; keep the pyramid shaped like a pyramid. Full strategy in rules/06 §6.9.
+- **UI/E2E:** a handful of critical flows only — login, the core loop, purchase. Expensive and flaky by nature; keep the pyramid shaped like a pyramid. Full strategy in [rules/06](06-release-and-operations.md) §6.9.
 
 ## Audit checklist
 

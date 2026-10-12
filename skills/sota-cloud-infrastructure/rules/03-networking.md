@@ -24,7 +24,7 @@ CDN, DDoS posture, IPv6.
   bastion subnet at all.
 - Keep NACLs/subnet-level rules coarse (subnet-tier intent) and do fine-grained
   control in SGs; duplicating every rule in both layers guarantees drift.
-- Flow logs on (sampled where cost-sensitive), delivered to central logging (rules/01).
+- Flow logs on (sampled where cost-sensitive), delivered to central logging ([rules/01](01-org-accounts-governance.md)).
 
 ```hcl
 # BAD: CIDR-based, internet-wide "temporary" access
@@ -73,7 +73,7 @@ resource "aws_security_group_rule" "db_in" {
   3. Public tier: only LBs/NAT; they originate nothing themselves.
 - NAT gateways: one per AZ for prod (cross-AZ NAT = paid cross-AZ hop + AZ
   coupling); they bill per-hour AND per-GB processed — high-volume flows to cloud
-  services should bypass NAT via private/gateway endpoints (see rules/06).
+  services should bypass NAT via private/gateway endpoints (see [rules/06](06-cost-finops.md)).
 
 ## 4. Private connectivity to managed services
 
@@ -138,8 +138,8 @@ resource "aws_security_group_rule" "db_in" {
   app or zone; (5) confirm the name no longer resolves to it, re-run the takeover
   scan, update the DNS inventory. Ownership proofs and name-holding resources are
   *not* part of step 4 (next bullet). A dangling record found later is fixed twice: the
-  record, and the teardown procedure that left it. Pipeline gate: sota-devsecops
-  rules/06 §6.7. (OWASP: Subdomain Takeover Prevention cheat sheet)
+  record, and the teardown procedure that left it. Pipeline gate: [sota-devsecops
+  rules/06](../../sota-devsecops/rules/06-iac-deployment.md) §6.7. (OWASP: Subdomain Takeover Prevention cheat sheet)
 - **Hold the name at the provider, not only in your zone.** Provider ownership
   proofs stop another tenant attaching your hostname to *their* resource: Azure App
   Service's `asuid.<name>` TXT (Microsoft: while it exists, no other subscription
@@ -172,7 +172,7 @@ resource "aws_security_group_rule" "db_in" {
   hold certs (self-managed ingress, on-prem), use **ACME** (Let's Encrypt or your
   CA's ACME endpoint) with DNS-01 for wildcards/internal, cert-manager on Kubernetes.
 - Expiry monitoring as a backstop (alert at 30/14/7 days) even with automation —
-  automation fails silently; see sota-observability for alert wiring.
+  automation fails silently; see [sota-observability](../../sota-observability/SKILL.md) for alert wiring.
 - Internal/mTLS: use a private CA service (AWS Private CA, GCP CA Service, or
   service-mesh-issued identities) with short lifetimes; never a long-lived wildcard
   cert copied between services.

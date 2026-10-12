@@ -7,7 +7,7 @@ identity proofing / assurance levels (NIST SP 800-63-4 IAL/AAL/FAL).
 
 This file owns the **IdP-side authentication strength and federation-risk posture**. The
 *WebAuthn ceremony implementation* at one RP (challenge generation, attestation handling,
-credential storage) is **sota-code-security** rules/02 — reference it for the wire-level
+credential storage) is **[sota-code-security** rules/02](../../sota-code-security/rules/02-authentication.md) — reference it for the wire-level
 ceremony; here we own the policy and the assurance model.
 
 ## 1. Phishing-resistant MFA at the IdP
@@ -41,7 +41,7 @@ ceremony; here we own the policy and the assurance model.
   Generate and check codes in a separate verifier service that stores the secrets and
   answers only accept or reject. The web tier then never holds a code it could log or
   leak. OWASP: Multifactor Authentication cheat sheet; Code Review Guide v2.
-- **Require phishing-resistant MFA for all privileged accounts** (rules/05) and drive all
+- **Require phishing-resistant MFA for all privileged accounts** ([rules/05](05-privileged-workload.md)) and drive all
   users toward passkeys. Enroll passkeys at the IdP and let them satisfy MFA across all
   federated RPs via SSO.
 - **MFA is the baseline for everyone, not a privileged-account perk.** Require AAL2 (two
@@ -57,7 +57,7 @@ ceremony; here we own the policy and the assurance model.
   be able to choose SMS, email OTP or a password-only path at sign-in ("try another
   way") or in recovery; the weakest reachable method is the real assurance level.
   Recovery re-binds a strong authenticator through a process at least as strong
-  (sota-code-security rules/02 §5). OWASP: Multifactor Authentication cheat sheet;
+  ([sota-code-security rules/02](../../sota-code-security/rules/02-authentication.md) §5). OWASP: Multifactor Authentication cheat sheet;
   Proactive Controls 2024 C7; Zero Trust Architecture cheat sheet.
 
 ## 2. Step-up, adaptive & conditional access
@@ -68,11 +68,11 @@ ceremony; here we own the policy and the assurance model.
   RP requests and the IdP enforces (`acr_values` / `max_age` in the OIDC request).
 - **Adaptive / conditional access**: gate authentication on context — device posture,
   network/location, impossible-travel, risk score. High risk → step-up or block; low risk
-  → allow. Feed the risk signals from and to **sota-detection-engineering** (auth anomaly,
+  → allow. Feed the risk signals from and to **[sota-detection-engineering](../../sota-detection-engineering/SKILL.md)** (auth anomaly,
   impossible-travel detections).
 - **A risk signal the client can set is not a signal.** Take the source IP from the
   connection or from a proxy header only when the peer is a known proxy
-  (sota-network-security rules/05 R6) — a raw `X-Forwarded-For` lets an attacker claim a
+  ([sota-network-security rules/05](../../sota-network-security/rules/05-edge-ingress-egress.md) R6) — a raw `X-Forwarded-For` lets an attacker claim a
   trusted network and skip step-up. Device posture must come from attested or managed-device
   evidence, not a user-agent string or a client-sent flag. OWASP: Multifactor
   Authentication cheat sheet.
@@ -80,7 +80,7 @@ ceremony; here we own the policy and the assurance model.
   unevaluated condition denies or steps up, never silently allows).
 - **Name the risk triggers.** At minimum, raise risk for: a source on an anonymiser, Tor
   exit or threat-intel denylist; one IP or ASN trying many accounts, with few attempts
-  each (credential stuffing, **sota-detection-engineering**); traffic with an automation
+  each (credential stuffing, **[sota-detection-engineering](../../sota-detection-engineering/SKILL.md)**); traffic with an automation
   fingerprint (headless client, no JS execution, request timing no person produces); a
   new device or country for this user; impossible travel. OWASP: Credential Stuffing
   Prevention, Authentication cheat sheets.
@@ -97,7 +97,7 @@ ceremony; here we own the policy and the assurance model.
   capping the damage: a constrained session (short lifetime, read-only, no export),
   more detailed logging for that session, re-verification before bulk or destructive
   actions, and for an unusual but plausible access pattern a JIT grant gated on the
-  resource owner's approval, time-boxed (rules/05 §2) with a summary to the security
+  resource owner's approval, time-boxed ([rules/05](05-privileged-workload.md) §2) with a summary to the security
   team. OWASP: Zero Trust Architecture, Multifactor Authentication cheat sheets.
 
 ## 3. Push-bombing / MFA-fatigue defenses
@@ -113,14 +113,14 @@ The attacker has the password and spams push prompts until the user taps "approv
 ## 4. B2B / B2C / social-login & account-linking risk
 
 - **Social / external login** delegates authentication to an upstream IdP. Validate its
-  tokens fully (rules/01 §3), pin the issuer, and **only trust verified claims** (e.g.
+  tokens fully ([rules/01](01-federation-protocols.md) §3), pin the issuer, and **only trust verified claims** (e.g.
   `email_verified=true`) — never link on an unverified email.
 - **Account-linking attacks**: linking a federated identity to a local account on a
   *mutable* or *unverified* attribute lets an attacker pre-register or collide and take
   over. Link deterministically on a **verified, immutable** identifier (provider `sub` +
   verified email); require re-verification to link a second IdP to an existing account.
-- **B2B federation**: each partner/tenant trust is a boundary (rules/02 §8). Re-map their
-  group/role claims through your own authorization model (rules/03) — a partner IdP must
+- **B2B federation**: each partner/tenant trust is a boundary ([rules/02](02-idp-operations.md) §8). Re-map their
+  group/role claims through your own authorization model ([rules/03](03-authorization-models.md)) — a partner IdP must
   not be able to assert your privileged roles.
 
 ## 5. Continuous Access Evaluation (CAEP / Shared Signals Framework)
@@ -138,8 +138,8 @@ token lifetime. CAEP/SSF closes it:
   risk-level-change).
 - Use it so that disabling an account, a credential change, or a risk-level rise **pushes
   a revocation event** to relying parties in near-real-time instead of waiting for token
-  expiry. This is the propagation mechanism behind the leaver SLA (rules/04) and Single
-  Logout (rules/02 §6). **RISC** is the parallel SSF profile for account-takeover/fraud
+  expiry. This is the propagation mechanism behind the leaver SLA ([rules/04](04-lifecycle-provisioning.md)) and Single
+  Logout ([rules/02](02-idp-operations.md) §6). **RISC** is the parallel SSF profile for account-takeover/fraud
   signals.
 
 ## 6. Identity proofing & assurance levels (NIST SP 800-63-4)
@@ -166,7 +166,7 @@ Key Binding is required *before* looking at the presentation** — never infer i
 whether the holder sent a KB-JWT (Sec. 9.5). When it is required, check the KB-JWT's `typ`
 `kb+jwt`, holder-key signature, a short `iat` window, `nonce` and `aud` for this
 transaction and this verifier, and `sd_hash`. Without Key Binding, a leaked credential can
-be replayed by anyone. Revocation of such credentials is the Token Status List (rules/02 §4).
+be replayed by anyone. Revocation of such credentials is the Token Status List ([rules/02](02-idp-operations.md) §4).
 
 Match the assurance level to the risk of the resource (don't demand IAL3 in-person
 proofing to read a blog; do demand AAL3 for production infra). What 800-63-4 changed vs
@@ -175,7 +175,7 @@ Rev 3, reflect these:
   type.
 - **No periodic password rotation** and no arbitrary composition rules — rotate passwords
   only on evidence of compromise (the app-side storage of those passwords is
-  **sota-code-security** rules/02).
+  **[sota-code-security** rules/02](../../sota-code-security/rules/02-authentication.md)).
 - Stronger emphasis on **phishing-resistant authenticators** for higher AAL / high-risk.
 
 **Authenticator lifecycle** — binding is one event of several, and the others are where
@@ -185,12 +185,12 @@ assurance leaks (800-63B-4's lifecycle section: loss, theft, expiration, invalid
   authenticating with another bound factor to do so. An admin or help desk must be able
   to do the same on the user's behalf. NIST requires the CSP to invalidate promptly on
   notice of loss, theft or compromise, and it treats a lost authenticator as a stolen
-  one. Revoking the factor also ends the sessions and tokens it established (rules/02 §6).
+  one. Revoking the factor also ends the sessions and tokens it established ([rules/02](02-idp-operations.md) §6).
 - **Replacing a lost factor re-proves identity at the level of enrolment.** If the
   account was proofed at IAL2, the replacement goes through the IAL2 checks again (or a
   retained-evidence re-verification), not an email link. Otherwise the recovery desk is
-  the cheapest path to the account. The recovery mechanics are **sota-code-security**
-  rules/02 §5.
+  the cheapest path to the account. The recovery mechanics are **[sota-code-security**
+  rules/02](../../sota-code-security/rules/02-authentication.md) §5.
 - **Authenticators that expire get renewed before they do.** For certificates, smart
   cards, hardware tokens with a validity date, and time-limited enrolments, send renewal
   instructions early enough that the user can finish renewing before the old one
@@ -218,21 +218,21 @@ assurance leaks (800-63B-4's lifecycle section: loss, theft, expiration, invalid
   authenticated channel, with the key generated on the device, never emailed as a
   `.p12`. Keep lifetimes short with automated renewal (§6 lifecycle). The verifier checks
   revocation (OCSP or a fresh CRL) and maps the certificate to the account with a strong
-  identifier, not a spoofable name field (rules/07 §3 for the AD equivalent, KB5014754).
-  Leavers and lost devices revoke immediately (rules/04).
+  identifier, not a spoofable name field ([rules/07](07-active-directory.md) §3 for the AD equivalent, KB5014754).
+  Leavers and lost devices revoke immediately ([rules/04](04-lifecycle-provisioning.md)).
 - **TLS-inspecting proxies break it.** A proxy that terminates TLS cannot present the
   client's certificate to the server, because it does not hold the private key that
   signs the handshake (TLS 1.3 CertificateVerify, RFC 8446 Sec. 4.4.3). So client-cert sign-in fails behind a decrypting corporate proxy
   unless the site is exempted from inspection. Plan that exemption. Never "fix" it by
   having the proxy forward the certificate in a header the backend trusts from anyone
-  (rules/01 §5.1: take the certificate from the connection).
+  ([rules/01](01-federation-protocols.md) §5.1: take the certificate from the connection).
 - **Edge and IoT devices authenticate as devices.** Each device carries its own
   identity, ideally a key in a secure element or TPM with a per-device certificate
   issued at manufacture or first enrolment. It authenticates to central infrastructure
   with mTLS or a signed-assertion grant, never a fleet-wide shared API key or password.
   Revoke a device individually when it is lost or decommissioned, and scope what one
   device identity may reach so a cloned device cannot speak for the fleet. The workload
-  side is rules/05 §5; transport is **sota-network-security**. OWASP: Authentication,
+  side is [rules/05](05-privileged-workload.md) §5; transport is **[sota-network-security](../../sota-network-security/SKILL.md)**. OWASP: Authentication,
   Multifactor Authentication cheat sheets; Code Review Guide v2; AISVS 4.3.1.
 
 ## Audit checklist

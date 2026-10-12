@@ -122,7 +122,7 @@ must not be hidden under sticky headers/footers (2.4.11) — `scroll-padding` fi
 
 ## 4. Forms, errors, and live regions
 
-(Forms UX in rules/04; here, the AT wiring.)
+(Forms UX in [rules/04](04-ux-patterns.md); here, the AT wiring.)
 
 - Label every control (1.3.1/3.3.2); group with fieldset/legend; required state via `required`/`aria-required`, communicated in the label too.
 - Errors: `aria-invalid="true"` + message linked by `aria-describedby`; identified in text (3.3.1), with suggestion (3.3.3). On submit, focus the first error.
@@ -140,14 +140,14 @@ must not be hidden under sticky headers/footers (2.4.11) — `scroll-padding` fi
 
 ## 5. Visual & motion criteria (cross-references)
 
-- Contrast: text 4.5:1, large 3:1, UI/graphics 3:1 — full math in rules/01 §5. Both themes.
+- Contrast: text 4.5:1, large 3:1, UI/graphics 3:1 — full math in [rules/01](01-typography-and-color.md) §5. Both themes.
 - `contrast-color(<bg>)` returns `white` or `black`, whichever contrasts more (Baseline newly
   available, Apr 2026). It is **not** a contrast guarantee: on mid-tone backgrounds neither
   is readable for small text (MDN's own example: `#2277d3` yields black). Use it only on
   light or dark backgrounds, and still verify the ratio.
-- Reflow at 320px / 400% zoom without 2-D scrolling (1.4.10); text spacing survives override (1.4.12) — rules/01–02.
-- `prefers-reduced-motion` honored everywhere; no flashing > 3/sec (2.3.1) — rules/06.
-- Target size 24px minimum + spacing (2.5.8 AA), 44px build standard — rules/04 §8.
+- Reflow at 320px / 400% zoom without 2-D scrolling (1.4.10); text spacing survives override (1.4.12) — [rules/01](01-typography-and-color.md)–02.
+- `prefers-reduced-motion` honored everywhere; no flashing > 3/sec (2.3.1) — [rules/06](06-motion-design.md).
+- Target size 24px minimum + spacing (2.5.8 AA), 44px build standard — [rules/04](04-ux-patterns.md) §8.
 - Never `user-scalable=no`; orientation not locked (1.3.4); content works in portrait and landscape.
 - Autoplaying moving content > 5s gets pause/stop/hide (2.2.2); audio > 3s gets volume/stop (1.4.2). Carousels: pause control, no focus theft on rotate.
 - Media: captions for video (1.2.2), transcripts for audio; `alt` on every `<img>` — descriptive for informative, `alt=""` for decorative, never filename. Alt text conveys *purpose in context*, not pixel description.
@@ -187,7 +187,7 @@ These are the ones audits now fail on because checklists predate them:
 - Text in images banned for UI (1.4.5) — real text styles, scales, translates, and theme-switches.
 - Don't communicate by sensory characteristics alone ("click the green button on the right",
   1.3.3); reference labels.
-- Autocomplete/identity inputs carry `autocomplete` tokens (1.3.5 — also a UX win, rules/04 §2).
+- Autocomplete/identity inputs carry `autocomplete` tokens (1.3.5 — also a UX win, [rules/04](04-ux-patterns.md) §2).
 
 ## 6. Screen reader testing approach
 
@@ -219,7 +219,7 @@ and voice control (Label-in-Name check) on critical flows.
    violations as build failures; baseline existing debt explicitly.
 2. **Assisted manual**: browser a11y tree inspector (verify computed name/role/state — the
    single fastest ARIA debugging tool), WAVE/Accessibility Insights guided walkthroughs, contrast
-   pickers over the token matrix (rules/01 §6b).
+   pickers over the token matrix ([rules/01](01-typography-and-color.md) §6b).
 3. **Human**: the SR matrix above, keyboard passes, and — for products with a11y as a real
    requirement — paid testing with disabled users; nothing substitutes.
 

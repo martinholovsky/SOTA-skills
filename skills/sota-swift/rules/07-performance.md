@@ -1,6 +1,6 @@
 # 07 — Performance: measure, then fix allocations and dispatch
 
-The general method (latency budgets, regression gates) is `sota-performance`; this file is
+The general method (latency budgets, regression gates) is [`sota-performance`](../../sota-performance/SKILL.md); this file is
 Swift's cost model.
 
 ## 1. Profile before optimising

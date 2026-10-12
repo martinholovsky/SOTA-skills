@@ -46,10 +46,10 @@ Two consumers, one source of truth:
    floor (no `it` block param on a 3.3 project).
 4. New projects: pin the Ruby version (`.ruby-version`), commit
    `Gemfile.lock`, add RuboCop **or** StandardRB, `bundler-audit`, and the
-   test suite to CI from day one (see `rules/04`). Rails apps add Brakeman.
+   test suite to CI from day one (see [`rules/04`](rules/04-supply-chain-tooling.md)). Rails apps add Brakeman.
 5. Security posture is non-optional even when unrequested: parameterized SQL,
    argv-form process spawning, `YAML.safe_load` semantics, `SecureRandom`,
-   escaped output (see `rules/02`, `rules/03`).
+   escaped output (see [`rules/02`](rules/02-security.md), [`rules/03`](rules/03-web-hardening.md)).
 6. Write tests alongside the code (RSpec or Minitest — match the project).
    Anything with threads or jobs gets an idempotency/concurrency test.
 7. When code must violate a rule for a legitimate reason, leave a
@@ -89,38 +89,38 @@ highest-leverage fixes, and which checklists were run.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-language-idioms.md` | Choosing/verifying the Ruby version baseline; frozen string literals; pattern matching; `Data` vs `Struct`; exception design; **`nil` over a sentinel, and `to_i` silently returning `0` for garbage**; typing with RBS/Sorbet/Steep; general idioms and pitfalls |
-| `rules/02-security.md` | Any input crossing a trust boundary: SQL injection (ActiveRecord/Sequel), command injection (`system`/backticks/`Open3`), deserialization (`Marshal`, YAML/Psych), XML parser options (XXE/entity expansion in Nokogiri, REXML), ReDoS and regex anchors, `eval`/`send`/`constantize`, secrets and randomness, **the encrypted-credentials key** (`config/master.key`, `RAILS_MASTER_KEY`) kept out of git, path traversal; **escape hatches into raw memory**: Fiddle, the `ffi` gem and C extensions |
-| `rules/03-web-hardening.md` | Building or auditing anything web-facing: XSS/ERB escaping, mass assignment and strong params, CSRF (incl. HEAD→GET verb confusion and routes that widen verbs or actions), sessions and app-set cookie flags, security headers, debug mode left on in production, outbound TLS verification, open redirects, SSRF, file uploads and `render file:`, **mounted admin apps** (`Sidekiq::Web`) without authentication — framework-neutral |
-| `rules/04-supply-chain-tooling.md` | Bundler and Gemfile.lock discipline, lockfile checksums, **choosing an alternative index or mirror** (gem.coop, `mirror.<url>`, `disable_checksum_validation`), bundler-audit, RuboCop/StandardRB, Brakeman, RSpec/Minitest mechanics, CI gates, gem authoring/publishing |
-| `rules/05-concurrency-performance.md` | Threads, fibers, Ractors, and the GVL; resetting request-scoped thread-local state; background-job idempotency; YJIT/ZJIT; GC and memory (allocator, RSS); N+1 detection; profiling workflow |
+| [`rules/01-language-idioms.md`](rules/01-language-idioms.md) | Choosing/verifying the Ruby version baseline; frozen string literals; pattern matching; `Data` vs `Struct`; exception design; **`nil` over a sentinel, and `to_i` silently returning `0` for garbage**; typing with RBS/Sorbet/Steep; general idioms and pitfalls |
+| [`rules/02-security.md`](rules/02-security.md) | Any input crossing a trust boundary: SQL injection (ActiveRecord/Sequel), command injection (`system`/backticks/`Open3`), deserialization (`Marshal`, YAML/Psych), XML parser options (XXE/entity expansion in Nokogiri, REXML), ReDoS and regex anchors, `eval`/`send`/`constantize`, secrets and randomness, **the encrypted-credentials key** (`config/master.key`, `RAILS_MASTER_KEY`) kept out of git, path traversal; **escape hatches into raw memory**: Fiddle, the `ffi` gem and C extensions |
+| [`rules/03-web-hardening.md`](rules/03-web-hardening.md) | Building or auditing anything web-facing: XSS/ERB escaping, mass assignment and strong params, CSRF (incl. HEAD→GET verb confusion and routes that widen verbs or actions), sessions and app-set cookie flags, security headers, debug mode left on in production, outbound TLS verification, open redirects, SSRF, file uploads and `render file:`, **mounted admin apps** (`Sidekiq::Web`) without authentication — framework-neutral |
+| [`rules/04-supply-chain-tooling.md`](rules/04-supply-chain-tooling.md) | Bundler and Gemfile.lock discipline, lockfile checksums, **choosing an alternative index or mirror** (gem.coop, `mirror.<url>`, `disable_checksum_validation`), bundler-audit, RuboCop/StandardRB, Brakeman, RSpec/Minitest mechanics, CI gates, gem authoring/publishing |
+| [`rules/05-concurrency-performance.md`](rules/05-concurrency-performance.md) | Threads, fibers, Ractors, and the GVL; resetting request-scoped thread-local state; background-job idempotency; YJIT/ZJIT; GC and memory (allocator, RSS); N+1 detection; profiling workflow |
 
 ## Top-10 non-negotiables
 
 1. **Supported Ruby only** — 3.4+ in production (3.3 accepted short-term with
    an upgrade plan; ≤3.2 is a finding). Pin it in `.ruby-version` and CI.
-   (`rules/01`)
+   ([`rules/01`](rules/01-language-idioms.md))
 2. **SQL only via parameterized queries** — hash conditions or `?`/named
    placeholders in ActiveRecord/Sequel; string-interpolated SQL is CRITICAL,
-   no exceptions for "internal" values. (`rules/02`)
+   no exceptions for "internal" values. ([`rules/02`](rules/02-security.md))
 3. **Never `Marshal.load`, `YAML.unsafe_load`, or `eval`-family on data you
    don't fully control**; `YAML.load` is safe-by-default only on Psych 4+
-   (Ruby 3.1+) — verify the runtime. (`rules/02`)
+   (Ruby 3.1+) — verify the runtime. ([`rules/02`](rules/02-security.md))
 4. **Processes spawn with argv lists** (`system("cmd", arg)`,
    `Open3.capture2`), never a shell string containing external input; no
    `Kernel#open`/`URI.open` on user-supplied names (a `|cmd` name is RCE on
-   ≤ 3.4; on 4.0 it is still an arbitrary file read). (`rules/02`)
+   ≤ 3.4; on 4.0 it is still an arbitrary file read). ([`rules/02`](rules/02-security.md))
 5. **All HTML output escaped by default**; every `raw`/`html_safe` is
-   reviewed; non-Rails ERB configured to auto-escape. (`rules/03`)
+   reviewed; non-Rails ERB configured to auto-escape. ([`rules/03`](rules/03-web-hardening.md))
 6. **Mass assignment goes through an attribute allowlist** (strong params /
    `params.expect`; explicit attribute lists elsewhere); `permit!` is HIGH.
-   (`rules/03`)
+   ([`rules/03`](rules/03-web-hardening.md))
 7. **CSRF protection on every cookie-authenticated state-changing endpoint**;
-   `\A`/`\z` (never `^`/`$`) to anchor validation regexes. (`rules/02`, `rules/03`)
+   `\A`/`\z` (never `^`/`$`) to anchor validation regexes. ([`rules/02`](rules/02-security.md), [`rules/03`](rules/03-web-hardening.md))
 8. **`Gemfile.lock` committed and CI installs frozen** (`BUNDLE_FROZEN=true`);
-   `bundler-audit` gates CI; git-sourced gems pinned to a SHA. (`rules/04`)
+   `bundler-audit` gates CI; git-sourced gems pinned to a SHA. ([`rules/04`](rules/04-supply-chain-tooling.md))
 9. **`SecureRandom` (never `rand`/`Random`) for anything security-relevant**;
-   constant-time comparison for secrets. (`rules/02`)
+   constant-time comparison for secrets. ([`rules/02`](rules/02-security.md))
 10. **Background jobs are idempotent and enqueue after commit** — at-least-once
     delivery and retries are the contract; jobs take IDs, not objects.
-    (`rules/05`)
+    ([`rules/05`](rules/05-concurrency-performance.md))

@@ -16,7 +16,7 @@ targets → optimize. Optimizing an unattributed bill produces one heroic month 
 relapse.
 
 - **Allocation foundation = account structure + tags.** Account/project-per-team
-  (rules/01) gives you coarse attribution for free; mandatory `owner`, `service`,
+  ([rules/01](01-org-accounts-governance.md)) gives you coarse attribution for free; mandatory `owner`, `service`,
   `env`, `cost-center` tags (activated as cost-allocation tags / labels) give
   per-workload resolution. Shared costs (network hubs, clusters, support plans,
   data transfer) need an explicit, documented split rule — even a crude one beats
@@ -46,7 +46,7 @@ relapse.
 2. **Rightsize.** Use provider recommenders (Compute Optimizer / GCP recommender /
    Azure Advisor) and utilization data; act on the recs (the finding is usually not
    "no data" but "recommendations ignored for a year"). In K8s, requests are the
-   cost driver — requests >> usage bills you for air (rules/04). Also rightsize
+   cost driver — requests >> usage bills you for air ([rules/04](04-compute-selection.md)). Also rightsize
    storage: gp2→gp3-class migrations, overprovisioned IOPS, premium tiers on dev
    disks.
 3. **Commitment discounts for the stable floor.** Measure a baseline over ≥ 1
@@ -58,7 +58,7 @@ relapse.
    horizontally-scaled services with headroom): steep discounts in exchange for
    reclaim. Requirements: graceful SIGTERM handling, checkpointing for long jobs,
    diversified instance types, and never for singleton stateful workloads.
-5. **Storage lifecycle** (rules/05): tiering + expiry + multipart abort. Logs and
+5. **Storage lifecycle** ([rules/05](05-data-storage.md)): tiering + expiry + multipart abort. Logs and
    backups are the classic unbounded growers.
 6. **Architecture-level moves** (the biggest but slowest lever): serverless for
    spiky loads, managed containers instead of an underutilized K8s cluster,
@@ -94,12 +94,12 @@ resource "aws_vpc_endpoint" "s3" {
   (use topology-aware routing for high-volume internal traffic), DB replicas
   crossing AZs by design (fine — that one's purchased availability).
 - **CDN as cost control:** CDN egress rates undercut origin egress and absorb
-  origin compute; cache-hit ratio is a cost metric (rules/03 §9).
+  origin compute; cache-hit ratio is a cost metric ([rules/03](03-networking.md) §9).
 - Cross-cloud / to-on-prem flows: per-GB both directions adds up — co-locate
   chatty components; move compute to data, not data to compute.
 - Watch per-request pricing at volume: KMS calls (use bucket keys/data-key
   caching), object-storage PUT/GET on tiny-object workloads (aggregate), LB LCU
-  dimensions, log ingestion per-GB (see sota-observability for telemetry cost
+  dimensions, log ingestion per-GB (see [sota-observability](../../sota-observability/SKILL.md) for telemetry cost
   discipline).
 
 ## 4. Unit economics
@@ -130,12 +130,12 @@ resource "aws_vpc_endpoint" "s3" {
 ## 6. Cost in PR review for infra changes
 
 - Infra PRs state expected cost delta. Automate the estimate (Infracost or
-  equivalent in CI — wiring belongs to sota-devsecops) so the number appears in
+  equivalent in CI — wiring belongs to [sota-devsecops](../../sota-devsecops/SKILL.md)) so the number appears in
   review; reviewer checks the number like they check a migration.
 - Cost review prompts for any infra change: What's the monthly steady-state? What
   scales with traffic, and what's the cap? What data crosses AZ/region/internet
   boundaries? What's the lifecycle/teardown story? Spot/commitment applicable?
-- New-resource definition of done includes: tags (rules/01), lifecycle/expiry,
+- New-resource definition of done includes: tags ([rules/01](01-org-accounts-governance.md)), lifecycle/expiry,
   autoscale caps, and an owner who will see its cost line.
 
 ## 7. Operating cadence
@@ -165,7 +165,7 @@ resource "aws_vpc_endpoint" "s3" {
 - [ ] No NAT-processing-dominated bills (gateway/private endpoints for high-volume
       service traffic); cross-AZ/region flows known and intentional; CDN hit
       ratio tracked.
-- [ ] Storage lifecycle rules on logs/backups/buckets (rules/05); log ingestion
+- [ ] Storage lifecycle rules on logs/backups/buckets ([rules/05](05-data-storage.md)); log ingestion
       quotas/retention tiers set.
 - [ ] Unit-cost metrics defined and trended for the top services.
 - [ ] Autoscale maxes, concurrency caps, and quota ceilings set on elastic

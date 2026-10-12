@@ -1,8 +1,8 @@
 # 21 — File Upload Handling (CWE-434)
 
-Split out of rules/05 (formerly section 10) on 2026-09-25, when rules/05 reached the 500-line cap;
+Split out of [rules/05](05-web-security.md) (formerly section 10) on 2026-09-25, when [rules/05](05-web-security.md) reached the 500-line cap;
 the section is now §1. Serving what was uploaded — `nosniff`, a separate origin, CSP on the
-user-content origin — stays in rules/05 §6 and rules/20.
+user-content origin — stays in [rules/05](05-web-security.md) §6 and [rules/20](20-browser-response-hardening.md).
 
 ## 1. File upload handling (CWE-434)
 
@@ -13,7 +13,7 @@ user-content origin — stays in rules/05 §6 and rules/20.
   AND served content types. Reject double extensions (`shell.php.jpg`), leading,
   repeated or trailing dots, leading hyphens, leading/trailing spaces, NUL
   tricks; **generate the stored filename yourself** (UUID), keep the original
-  only as metadata (also kills path traversal, rules/01 §4).
+  only as metadata (also kills path traversal, [rules/01](01-input-injection.md) §4).
 - Store outside the web root, or in object storage with no execute semantics.
   Never in a directory where the app server executes code (the classic
   webshell: upload `x.php` into `/uploads` served by PHP). Harden the store:
@@ -39,11 +39,11 @@ user-content origin — stays in rules/05 §6 and rules/20.
   (pixel-count limit before decode). Upload endpoints are authenticated,
   authorized, rate-limited and under a per-user total quota; each feature documents
   types, packed/unpacked max size and the fate of a flagged file; log each
-  completion (uploader, stored name, detected type; rules/07 §2.1).
+  completion (uploader, stored name, detected type; [rules/07](07-data-exposure.md) §2.1).
 - Scan where threat model warrants (AV/CDR for shared-file features, definitions
   current; never public multi-scanners — submitting discloses the file); refuse
   archives the feature doesn't need; strip metadata (EXIF GPS) from re-served
-  images (privacy, rules/07). OWASP: File Upload cheat sheet; ASVS 5.0 V5.1.1.
+  images (privacy, [rules/07](07-data-exposure.md)). OWASP: File Upload cheat sheet; ASVS 5.0 V5.1.1.
 
 ## Audit checklist
 

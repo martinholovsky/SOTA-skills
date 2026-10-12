@@ -22,15 +22,15 @@ other jurisdictions.)
   reasonable reader takes as measurable fact is a claim. When in doubt, it's
   a claim.
 - Comparative claims carry the burden twice: substantiate your number *and*
-  the competitor's, dated (their product changes too — `rules/02` §6).
+  the competitor's, dated (their product changes too — [`rules/02`](02-headlines-landing-pages.md) §6).
 - Health, financial, security, and earnings claims are heightened-scrutiny
   categories — legal review, not just this checklist.
 - **Security claims are technical claims**: "bank-level encryption" is
   unfalsifiable filler — either state the real control ("TLS 1.3 in transit,
-  AES-256 at rest" — verified against the actual config, `sota-code-security`
-  rules/04) or say nothing. Fictional security copy is discoverable in
+  AES-256 at rest" — verified against the actual config, [`sota-code-security`
+  rules/04](../../sota-code-security/rules/04-cryptography.md)) or say nothing. Fictional security copy is discoverable in
   breach litigation.
-- Uptime/SLA marketing numbers come from measured data (`sota-observability`
+- Uptime/SLA marketing numbers come from measured data ([`sota-observability`](../../sota-observability/SKILL.md)
   SLOs), match the contractual SLA, and carry the measurement window.
 - **EU green claims (Directive (EU) 2024/825, applied from 27 September
   2026)** add, among others, these per-se bans to the UCPD Annex I
@@ -108,16 +108,16 @@ patterns enforcement; EU DSA Article 25 for platforms; GDPR consent validity):
 
 - **Confirmshaming** — decline options that mock the user ("No thanks, I
   like losing data") — banned; the neutral decline is "Not now"
-  (`sota-ux-writing` rules/03 §7 owns the in-product wording).
+  ([`sota-ux-writing` rules/03](../../sota-ux-writing/rules/03-errors-feedback.md) §7 owns the in-product wording).
 - **False urgency/scarcity** — countdown timers that reset, "only 2 left"
   without inventory truth, "17 people are viewing this" from a random-number
   generator: fabricated urgency is deception, full stop. Real deadlines and
   real scarcity, stated plainly, are fine.
 - **Hidden costs / drip pricing** — mandatory fees revealed at the last
-  checkout step (`rules/02` §6).
+  checkout step ([`rules/02`](02-headlines-landing-pages.md) §6).
 - **Pre-ticked consent** — invalid under GDPR (consent must be an affirmative
   act) and a dark pattern everywhere; marketing-consent checkboxes default
-  unchecked (consent engineering: `sota-privacy-compliance` rules/03).
+  unchecked (consent engineering: [`sota-privacy-compliance` rules/03](../../sota-privacy-compliance/rules/03-consent-and-user-rights.md)).
 - **Roach-motel subscriptions** — signup in one click, cancellation behind a
   phone call. The durable principle: **cancellation effort ≈ signup
   effort**, and renewal terms disclosed before the charge. EU, fixed text:
@@ -186,10 +186,10 @@ Two regimes cover most senders; apply the stricter when audiences mix:
   deception finding, not an inconsistency.
 - Badges and certifications: display only what's current and verifiable
   (SOC 2 report exists, the ISO cert is in-date); expired/aspirational
-  compliance badges are misrepresentation (`sota-privacy-compliance` owns
+  compliance badges are misrepresentation ([`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md) owns
   the underlying programs).
 - Press/award mentions link the source; "as featured in" requires actual
-  coverage (`rules/02` §5).
+  coverage ([`rules/02`](02-headlines-landing-pages.md) §5).
 - **App-store listings are policy-gated copy**: Apple App Review Guideline
   2.3.7 — app name ≤ 30 characters; no prices in metadata; no trademarked
   terms or popular app names packed in to game search; subtitles neither

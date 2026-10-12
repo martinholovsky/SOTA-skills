@@ -7,7 +7,7 @@ idempotent consumption, SSRF defense.
 ## 1. Payload & contract design
 
 - Webhook = event notification, same schema discipline as the API: versioned event
-  types (`invoice.paid`), documented JSON schema, additive evolution (rules/02).
+  types (`invoice.paid`), documented JSON schema, additive evolution ([rules/02](02-versioning-evolution.md)).
 - Envelope every event:
 
 ```json

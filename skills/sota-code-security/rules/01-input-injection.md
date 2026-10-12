@@ -160,7 +160,7 @@ execFile("convert", ["--", file, "out.png"]);
 
 - Symlinks inside user-controllable trees escape containment even after
   `resolve()`-at-check-time — re-resolve at open time or use `O_NOFOLLOW`,
-  `openat2(RESOLVE_BENEATH)` on Linux; see TOCTOU in rules/06 §6.
+  `openat2(RESOLVE_BENEATH)` on Linux; see TOCTOU in [rules/06](06-memory-resource-safety.md) §6.
 - User-controlled *target* of file writes (log path, export path, config path
   from input) is arbitrary-file-write → RCE via cron/webroot/`.ssh` drops; same
   containment rules apply to writes, harder.
@@ -456,7 +456,7 @@ was impossible. OWASP: Injection Prevention, GraphQL cheat sheets.
   parameter: for `id=1&id=2`, `URLSearchParams.get` gave `1` and PHP `parse_str` gave `2`
   (measured 2026-09-25). OWASP: Virtual Patching cheat sheet.
 - **GraphQL**: injection rules apply inside resolvers (resolver args → SQL);
-  plus GraphQL-specific limits live in rules/06 §5 and field authz in rules/03.
+  plus GraphQL-specific limits live in [rules/06](06-memory-resource-safety.md) §5 and field authz in [rules/03](03-authorization.md).
 
 ## Audit checklist
 

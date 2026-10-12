@@ -10,7 +10,7 @@ Users scan, then read. Decide the 1-2-3 order of every screen and enforce it wit
 color, and position — in that order of power.
 
 - **One primary element per screen/section.** If you can't name what a screen is *for*, neither can the user. Two equally-shouting CTAs = zero CTAs.
-- Hierarchy levers, cheapest first: position (top/left in LTR) → size → weight → color → motion. Spend the cheap ones before reaching for color; reserve accent color for interactive/primary (rules/01 §7).
+- Hierarchy levers, cheapest first: position (top/left in LTR) → size → weight → color → motion. Spend the cheap ones before reaching for color; reserve accent color for interactive/primary ([rules/01](01-typography-and-color.md) §7).
 - De-emphasize the secondary instead of inflating the primary: metadata drops to `--text-secondary`, secondary buttons go ghost/outline, labels shrink before headings grow. Most "make it pop" problems are "make everything else quieter" problems.
 - Squint test (or blur the screenshot 5px): the primary action and page title should survive; if the screen becomes uniform gray mush, hierarchy is flat.
 - Text hierarchy needs ≥ 2 distinct cues between levels (e.g. size + weight); a 1px font-size difference is noise, not hierarchy. Adjacent scale steps should differ ≥ ~20%.
@@ -18,7 +18,7 @@ color, and position — in that order of power.
 
 ## 2. Gestalt mechanics (the rules that actually do the work)
 
-- **Proximity beats borders**: things that belong together sit together (rules/02 §1). Audit any UI with > 3 nested boxes — most borders/cards can be replaced by spacing + alignment.
+- **Proximity beats borders**: things that belong together sit together ([rules/02](02-layout-spacing-responsive.md) §1). Audit any UI with > 3 nested boxes — most borders/cards can be replaced by spacing + alignment.
 - **Alignment**: every element aligns to *something*. Mixed center/left alignment in one section reads as sloppy instantly. Pick one text alignment per region; align numbers right in tables, with tabular figures.
 - **Repetition/consistency**: same radius, same shadow scale, same icon stroke width, same gap rhythm everywhere. One 6px radius among 8px radii is a defect, not a detail.
 - **Closure/containment budget**: each level of visual containment (card-in-card-in-panel) costs clarity. Max two levels of bordered containment; beyond that, use whitespace and headings.
@@ -47,7 +47,7 @@ Choose a depth language and apply it systematically — don't mix all three per 
 
 1. **Borders-first** (dense, technical, "Linear-like"): 1px `--border-subtle` lines, minimal shadows, surfaces differ by ±1 ramp step.
 2. **Shadows-first** (friendly, layered): tokenized shadow scale (`--shadow-sm/md/lg`), shadows imply z-order only — menus above cards above page. Realistic shadows: y-offset > blur softness, low opacity, **two-layer** (tight ambient + soft key): `0 1px 2px rgb(0 0 0 / .06), 0 8px 24px rgb(0 0 0 / .10)`. Never `0 0 Npx` halos.
-3. **Surface-shift** (flat, calm): no borders/shadows; hierarchy via background lightness steps — requires a well-tuned gray ramp and is the dark-mode default anyway (rules/01 §6).
+3. **Surface-shift** (flat, calm): no borders/shadows; hierarchy via background lightness steps — requires a well-tuned gray ramp and is the dark-mode default anyway ([rules/01](01-typography-and-color.md) §6).
 
 - Elevation = proximity to user = interactivity/ephemerality: tooltips/menus highest, modals high, cards low, page base. An element's shadow must match its layer; random per-card shadow sizes break the physics.
 - Hairline borders on dark mode: borders lighten (`oklch` +0.08–0.12 L over surface), shadows mostly disappear — re-tokenize, don't reuse light-mode shadow tokens.
@@ -70,7 +70,7 @@ placeholder because it encodes zero decisions. Antidotes:
 - **Make 3 deliberate global decisions minimum**: a typeface with character (not the framework default — try a grotesque with personality, a serif for editorial confidence, or a mono accent for technical brands); a non-default accent hue defined in OKLCH (not tailwind-violet); one signature element (distinctive radius stance — sharp 2px OR very round; a border-first depth language; an unusual but disciplined layout grid).
 - Typography does branding cheaper than decoration: one display face used at real scale (clamp to 3–5rem+) with tight letter-spacing creates more identity than any gradient.
 - Asymmetry is a feature: not every hero is center-stacked; editorial layouts (offset grids, 5/7 splits, overlapping media) read as designed. Keep asymmetry on the grid — asymmetric ≠ unaligned.
-- Color courage with discipline: near-black-on-warm-paper, deep green, oxblood, cobalt — anything chosen beats default-blue. Keep the 60-30-10 budget and contrast math (rules/01).
+- Color courage with discipline: near-black-on-warm-paper, deep green, oxblood, cobalt — anything chosen beats default-blue. Keep the 60-30-10 budget and contrast math ([rules/01](01-typography-and-color.md)).
 - Kill list for credibility: gradient text on body copy, glow shadows, glassmorphism on content surfaces (contrast hazard), stock 3D blob illustrations, emoji as feature icons, fake testimonials/logos, drop-shadowed everything.
 - Details that signal craft: real `::selection` color, custom focus ring matching brand, designed scrollbars where appropriate, correct typographic quotes (“” not ""), non-breaking spaces before units, hover states that were *decided* (not `opacity: .8`).
 - BUT: distinctiveness never outranks usability. A boring accessible form beats a memorable broken one. Spend personality on marketing/landing/empty states; keep product surfaces calm — identity there comes from type, spacing rhythm, and motion feel, not decoration.
@@ -98,8 +98,8 @@ the skin over the same non-negotiable skeleton.
 ## 8. Content design (microcopy is UI)
 
 - Buttons say what they do: "Save changes", "Create project" — never "Submit", "OK", "Yes". Verb + object.
-- Sentence case for UI text (Title Case Is Harder To Read And Looks Shouty); no ALL CAPS except short eyebrow labels with letter-spacing (rules/01 §2).
-- Error/empty/confirmation copy: plain language, no blame ("Couldn't save — check your connection", not "Error 500: request failed"), and the next step always stated (rules/04 §5–6).
+- Sentence case for UI text (Title Case Is Harder To Read And Looks Shouty); no ALL CAPS except short eyebrow labels with letter-spacing ([rules/01](01-typography-and-color.md) §2).
+- Error/empty/confirmation copy: plain language, no blame ("Couldn't save — check your connection", not "Error 500: request failed"), and the next step always stated ([rules/04](04-ux-patterns.md) §5–6).
 - Numbers: localize formats, tabular figures in columns, units stated, relative time ("2h ago") with absolute on hover/title.
 - Truncation is a decision: `line-clamp` with full text reachable (title/tooltip/detail view); never truncate the disambiguating part (end of similar filenames — middle-truncate those).
 
@@ -124,14 +124,14 @@ key-value block (labels `--text-secondary`, values primary); related content in 
 > 2 sections, otherwise stacked with headings.
 
 **Pricing:** ≤ 4 tiers, recommended tier visually elevated (one level — border + badge, not a
-circus), feature list aligned across tiers (subgrid, rules/02 §2), prices in display type with
+circus), feature list aligned across tiers (subgrid, [rules/02](02-layout-spacing-responsive.md) §2), prices in display type with
 tabular figures, billing-period toggle adjacent to prices.
 
 ## 10. Imagery, illustration & data-viz craft
 
 - Photography: one treatment (duotone, consistent grade, or none) — mixed stock styles read as
   template. Faces look toward content, not off-page. Always `aspect-ratio` + `object-fit: cover`
-  + meaningful `alt` (rules/05 §5).
+  + meaningful `alt` ([rules/05](05-accessibility.md) §5).
 - Illustration: one style family, colors drawn from the system ramps (re-color vendor
   illustrations to brand tokens — default-purple unDraw is a kill-list item).
 - Gradients, when used: 2 stops of *adjacent* hues (or one hue, two lightness steps) in OKLCH —
@@ -141,7 +141,7 @@ tabular figures, billing-period toggle adjacent to prices.
 - Charts: max 6 series before grouping; color-blind-safe ordered ramp (verify deuteranopia +
   grayscale print); direct line labels over legends; y-axis from zero for bar charts (always),
   truncation allowed for lines with explicit axis labels; gridlines `--border-subtle`; tooltips
-  keyboard-reachable and the data available as table/text alternative (rules/05).
+  keyboard-reachable and the data available as table/text alternative ([rules/05](05-accessibility.md)).
 - Empty/placeholder art is restrained: small, monochrome-ish, never larger than the message + CTA.
 
 ## 10b. Deceptive patterns: auto-fail list

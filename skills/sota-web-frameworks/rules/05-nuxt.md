@@ -1,8 +1,8 @@
 # 05 — Nuxt 4: data fetching, state, server routes, CVEs
 
-Written for Nuxt 4 on Nitro 2 / h3 1; verify the latest at nuxt.com/blog. Vue fundamentals are in `rules/04`;
-hydration and SSR state in `rules/06`; the cross-framework security boundary in
-`rules/07`. **Re-verify CVE ranges at use time.**
+Written for Nuxt 4 on Nitro 2 / h3 1; verify the latest at nuxt.com/blog. Vue fundamentals are in [`rules/04`](04-vue.md);
+hydration and SSR state in [`rules/06`](06-ssr-hydration.md); the cross-framework security boundary in
+[`rules/07`](07-security.md). **Re-verify CVE ranges at use time.**
 
 ## 1. Data fetching — pick the right primitive
 
@@ -18,7 +18,7 @@ Getting this wrong causes double-fetches, hydration mismatches, and waterfalls.
   transform) with the same once-and-transfer semantics; give it an explicit key.
 - `lazy: true` (or `useLazyFetch`) doesn't block navigation; `server: false` makes it
   client-only. Use `pick`/`transform` to **shrink the payload** — whatever these
-  return is serialized into the HTML (`rules/06`, `rules/07`).
+  return is serialized into the HTML ([`rules/06`](06-ssr-hydration.md), [`rules/07`](07-security.md)).
 
 ## 2. SSR-safe shared state — never a module-level ref
 
@@ -27,7 +27,7 @@ Getting this wrong causes double-fetches, hydration mismatches, and waterfalls.
 - **A module-level `const state = ref()` (outside `setup`) is a cross-request leak**
   on the server — the Nitro process reuses it across all users' requests (one user's
   data served to another) and it grows unbounded (memory leak). Nuxt's docs call this
-  out explicitly. This is the single most important Nuxt SSR footgun (`rules/06`).
+  out explicitly. This is the single most important Nuxt SSR footgun ([`rules/06`](06-ssr-hydration.md)).
 - `useState` values must be **serializable** (no classes/functions/symbols). For
   richer state management, **Pinia** (v3+; v4 is ESM-only) is the recommended store and is
   SSR-safe by design (a fresh store per request).
@@ -45,7 +45,7 @@ export default defineNuxtConfig({
 
 - **Only `runtimeConfig.public.*` reaches the client** (it's in the payload).
   Everything at the root is server-only. **A secret under `public` is a client-side
-  secret leak (CRITICAL)** — same failure class as `NEXT_PUBLIC_`/`VITE_` (`rules/07`).
+  secret leak (CRITICAL)** — same failure class as `NEXT_PUBLIC_`/`VITE_` ([`rules/07`](07-security.md)).
 - **Runtime override via env:** a `NUXT_`-prefixed env var overrides the matching key
   (`NUXT_API_SECRET`, `NUXT_PUBLIC_API_BASE`) — but the key must already exist in
   `nuxt.config` to be overridable. `.env` is read at dev/build time but **not** by the
@@ -54,7 +54,7 @@ export default defineNuxtConfig({
 ## 4. Nitro server routes — public API endpoints
 
 Files under `server/api/` and `server/routes/` are Nitro handlers — **public HTTP
-endpoints**, same trust model as any API (`sota-api-design`, `sota-code-security`).
+endpoints**, same trust model as any API ([`sota-api-design`](../../sota-api-design/SKILL.md), [`sota-code-security`](../../sota-code-security/SKILL.md)).
 
 ```ts
 // server/api/posts/[id].delete.ts
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
   cache + stale-while-revalidate), `isr: <ttl>` (like swr but pushed to CDN on
   supporting platforms; `isr: true` persists until next deploy). Also `redirect`,
   `headers`, `cors`, `noScripts`. **Security:** an `swr`/`isr`/cached route must not
-  serve personalized content — the cache is shared (`rules/06`). A `routeRules`
+  serve personalized content — the cache is shared ([`rules/06`](06-ssr-hydration.md)). A `routeRules`
   matcher that doesn't match the actual (case-sensitive) route can bypass an intended
   rule — the class behind CVE-2026-53721 and its incomplete-fix follow-up CVE-2026-71315 below.
 - **Server components / islands are experimental** in Nuxt 4 (enable component

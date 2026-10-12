@@ -25,7 +25,7 @@ because logs and error trackers routinely are.
   only from an allowlist of safe messages.
 - Don't leak via **differences** either: distinct messages, status codes, or
   response times for "user not found" vs "wrong password", "object missing" vs
-  "forbidden" (use 404 for both, rules/03), padding vs MAC failure (rules/04) —
+  "forbidden" (use 404 for both, [rules/03](03-authorization.md)), padding vs MAC failure ([rules/04](04-cryptography.md)) —
   all observable oracles (CWE-203/204).
 - Fail closed: error paths must not skip authz/validation (`except Exception:
   return data_anyway`), must release resources, and must not leave partial
@@ -79,7 +79,7 @@ def handle(e):
   - secrets wrapped in types whose `toString`/`repr` is masked and whose value is reachable
     only through one explicitly named accessor (Pydantic `SecretStr.get_secret_value()`,
     Rust `secrecy`'s `expose_secret()`), so every read of the secret is greppable
-    (in-memory handling: `sota-secrets-management` rules/02 §7). OWASP: Code Review Guide v2.
+    (in-memory handling: [`sota-secrets-management` rules/02](../../sota-secrets-management/rules/02-storage-backends.md) §7). OWASP: Code Review Guide v2.
 - **Log injection (CWE-117)**: strip/escape CR/LF and control chars from
   user-controlled values before logging (forged entries, log-parser exploits —
   and never let user input reach a log4j-style lookup/format string: log
@@ -164,15 +164,15 @@ give each event a fixed severity so alerting keys on the name, not on a regex.
   validation error.** A value outside a closed option set (select, radio, enum), a
   changed hidden or state field, a field the handler does not expect, transaction data
   altered after the user confirmed it, a deserialized type outside the allowlist
-  (rules/01 §8), an output-validation failure. Emit a distinct event naming the
+  ([rules/01](01-input-injection.md) §8), an output-validation failure. Emit a distinct event naming the
   field (`input_validation_discrete_fail`, `malicious_extraneous`) at a higher severity
   than routine rejections, which stay `input_validation_fail`. Mixing the two buries
   the probe among typos.
 - **Crypto, transport and protocol failures are security events, not connectivity
   noise.** Every encrypt, decrypt or signature-verification failure
   (`crypt_decrypt_fail`, `crypt_encrypt_fail`; the user still gets the uniform error of
-  rules/04 §2); an outbound TLS handshake or certificate-verification failure, which can be
-  an interception attempt (rules/04 §5); a KMS, HSM or crypto-library error; and a request
+  [rules/04](04-cryptography.md) §2); an outbound TLS handshake or certificate-verification failure, which can be
+  an interception attempt ([rules/04](04-cryptography.md) §5); a KMS, HSM or crypto-library error; and a request
   using an HTTP method the route does not serve (`TRACE`, `PUT` on a read-only resource)
   once it is past the framework's `405`. Keep each separate from generic
   `network_error`, so a burst from one peer or principal can alert.
@@ -183,7 +183,7 @@ give each event a fixed severity so alerting keys on the name, not on a regex.
   denials from one principal; repeated deserialization failures from one principal.
   Each is a counter with a threshold and an owner, tagged with a distinct security
   severity once confirmed malicious so it reaches the SOC queue rather than the ops
-  one (`sota-detection-engineering` owns the rules and triage).
+  one ([`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md) owns the rules and triage).
 - OWASP: Logging Vocabulary, Logging, Session Management and JSON Web Token cheat
   sheets; Input Validation, Transaction Authorization, Business Logic Security, Multi
   Tenant Security and Third Party Payment Gateway Integration cheat sheets; Proactive
@@ -273,7 +273,7 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
   "admin" fields toggled by serializer flags that default open.
 - GraphQL: every **field** is an endpoint — apply field-level authz; disable
   introspection in prod (or gate it); suggestion/typo hints off; cost-limit
-  queries (rules/06 §5).
+  queries ([rules/06](06-memory-resource-safety.md) §5).
 - Enumeration surfaces: incrementing IDs + list endpoints, uniqueness errors
   ("email taken"), timing differences, sitemap/export endpoints — rate-limit
   and design responses to avoid existence oracles where it matters.
@@ -307,7 +307,7 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
 
 - Classify data at the schema level (public / internal / confidential /
   regulated) and let classification drive handling: regulated fields get
-  field-level encryption (rules/04 §4.1), masked logging, restricted
+  field-level encryption ([rules/04](04-cryptography.md) §4.1), masked logging, restricted
   serializers, and named retention periods enforced by deletion jobs — not
   policy documents.
 - Don't collect what you can't protect: every stored sensitive field is
@@ -316,17 +316,17 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
 - When a full sensitive value must reach the client (an account number, a tax ID, a
   recovery code), the UI masks it by default and shows it only on an explicit user action,
   with the reveal logged for high-sensitivity fields. Mobile specifics:
-  `sota-mobile` rules/04 §4.13. OWASP: ASVS 5.0 V14.2.6.
+  [`sota-mobile` rules/04](../../sota-mobile/rules/04-security.md) §4.13. OWASP: ASVS 5.0 V14.2.6.
 - Process-and-discard applies in memory too: once processing ends, wipe or re-encrypt the
   plaintext buffers of sensitive data, not only key material (best-effort in GC runtimes;
-  `sota-secrets-management` rules/02 §7). OWASP: ASVS 5.0 V11.7.2.
+  [`sota-secrets-management` rules/02](../../sota-secrets-management/rules/02-storage-backends.md) §7). OWASP: ASVS 5.0 V11.7.2.
 - **SMS is a public channel.** It is unencrypted end to end and a SIM swap redirects it, so
-  it may carry low-value notifications and one-time codes (with the limits of rules/02 §5 and §7), never
+  it may carry low-value notifications and one-time codes (with the limits of [rules/02](02-authentication.md) §5 and §7), never
   account data, balances, health or personal details, or a link that works without login.
   OWASP: Mobile Application Security cheat sheet.
 - **Encryption in the wrong place does not reduce exposure.** Encrypting in browser code
   protects nothing from the user holding the key and the code; encrypting an ID in a URL
-  parameter is not access control (authorize the object, rules/03). A payload that crosses
+  parameter is not access control (authorize the object, [rules/03](03-authorization.md)). A payload that crosses
   an intermediary which terminates TLS (a CDN, an API gateway, a message broker) needs
   message-level encryption if that intermediary is not trusted with it. Data published to a
   public content-addressed store (IPFS, Arweave) cannot be access-controlled or deleted, so
@@ -343,8 +343,8 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
   query missing the filter and to every secondary store; account-deletion
   flows must fan out to logs, backups schedule, search, analytics, and vendors.
 - Exports/reports are mass-exposure events: same authz as the underlying data
-  (rules/03), watermark/audit who exported what, rate-limit, and expire
-  download links (signed, short-TTL — rules/04 §7).
+  ([rules/03](03-authorization.md)), watermark/audit who exported what, rate-limit, and expire
+  download links (signed, short-TTL — [rules/04](04-cryptography.md) §7).
 
 ## 6. Debug & non-prod surfaces (CWE-489)
 
@@ -373,7 +373,7 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
   README, CHANGELOG and other documentation, examples, tests and unused modules; they
   reveal versions and paths and sometimes work as endpoints. Enforce it with a content check
   on the built artifact in CI (list the image or package files and fail on a denylist), not
-  only a `.dockerignore` (`sota-devsecops` rules/04 §4.2). OWASP: WSTG-CONF-02, Go-SCP (data
+  only a `.dockerignore` ([`sota-devsecops` rules/04](../../sota-devsecops/rules/04-build-containers.md) §4.2). OWASP: WSTG-CONF-02, Go-SCP (data
   protection), Secure Coding Practices QRG.
 - Non-prod environments holding prod data inherit prod's threat model: either
   mask/synthesize data or secure staging like prod (staging breaches are real

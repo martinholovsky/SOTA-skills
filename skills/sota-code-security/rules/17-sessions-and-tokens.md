@@ -1,12 +1,12 @@
 # 17 — Sessions & Tokens
 
 Scope: server-side session management, remember-me tokens, JWT verification and token
-lifetimes. Split out of rules/02 on 2026-09-25 with its section numbers kept (2 and 3), so
-an older citation of rules/02 section 2 or 3 names the same text here. Maps to OWASP A07:2025, CWE-384/613/345/347.
+lifetimes. Split out of [rules/02](02-authentication.md) on 2026-09-25 with its section numbers kept (2 and 3), so
+an older citation of [rules/02](02-authentication.md) section 2 or 3 names the same text here. Maps to OWASP A07:2025, CWE-384/613/345/347.
 
 Core principle: **use the framework's session machinery and a maintained JWT library, and
 configure them; never invent a token format.** Authentication itself (passwords, MFA,
-OAuth/OIDC, passkeys, recovery) stays in rules/02.
+OAuth/OIDC, passkeys, recovery) stays in [rules/02](02-authentication.md).
 
 ## 2. Session management (CWE-384, CWE-613)
 
@@ -19,11 +19,11 @@ OAuth/OIDC, passkeys, recovery) stays in rules/02.
   never minted is discarded, a fresh one is issued, and the event is logged as suspicious.
   A *permissive* store, which opens a session for any value presented, is fixation by
   design (PHP's: `session.use_strict_mode` is `0` with no ini, measured on 8.5.9;
-  `sota-php` rules/04). Accept the ID from
+  [`sota-php` rules/04](../../sota-php/rules/04-sessions-auth-web-hardening.md)). Accept the ID from
   the session cookie and nowhere else, and establish **by test** which other carriers the
   stack still honours (a `;jsessionid=` path parameter, a query or form field, a custom
   header); frameworks that fall back to URL rewriting do it silently (servlet tracking
-  modes, `sota-jvm` rules/04). Never carry one session across an HTTP-to-HTTPS switch:
+  modes, [`sota-jvm` rules/04](../../sota-jvm/rules/04-security.md)). Never carry one session across an HTTP-to-HTTPS switch:
   set or regenerate the cookie only after the redirect to HTTPS has happened.
   OWASP: Session Management cheat sheet; Secure Coding Practices QRG; Code Review Guide v2.
 - **An incoming session ID is untrusted input.** Check its length, character set and format
@@ -53,7 +53,7 @@ OAuth/OIDC, passkeys, recovery) stays in rules/02.
   key only on a completed login (after regenerating the ID), and drop a flow's keys when
   it ends. The identity key should have exactly one writer: the login success path.
 - Cookie flags: `Secure; HttpOnly; SameSite=Lax` (or `Strict`), `__Host-` prefix
-  (enforces Secure + no Domain attribute + Path=/). Details in rules/05.
+  (enforces Secure + no Domain attribute + Path=/). Details in [rules/05](05-web-security.md).
 - Expiry: idle timeout AND absolute timeout (e.g. 4–8h for a full-day office app) regardless of activity
   (CWE-613), both computed from **server-side timestamps**, never from a time the client
   sends or a counter the client holds. Pick the idle value by risk: the Session Management
@@ -63,7 +63,7 @@ OAuth/OIDC, passkeys, recovery) stays in rules/02.
   end so they can save work or extend; on a high-confidentiality system, extending asks
   for verification again, and a long-lived remember-me token needs a reason to exist
   there at all. Logout must invalidate **server-side**, not just clear the cookie.
-- **Log the session lifecycle** (event names in rules/07 §2.1): renewal or extension,
+- **Log the session lifecycle** (event names in [rules/07](07-data-exposure.md) §2.1): renewal or extension,
   expiry with its reason (logout, idle, absolute, revoked), and any request presenting an
   expired or revoked ID, the last at high severity (the Logging Vocabulary rates it
   CRITICAL) because a replayed stolen cookie looks exactly like that. The event needs the
@@ -83,7 +83,7 @@ OAuth/OIDC, passkeys, recovery) stays in rules/02.
   is compared against its **hash** constant-time), single-use rotation on each
   login, revoked with the session family on password change. A long-lived
   token granting full session powers without re-auth for sensitive ops is a
-  finding; pair with step-up auth (rules/02 §5).
+  finding; pair with step-up auth ([rules/02](02-authentication.md) §5).
 - **Concurrent sessions: decide the limit, write it down, enforce it.** Document the
   maximum number of parallel sessions per account and what happens at the limit: end the
   oldest, refuse the new login, or ask the user which one to end (ASVS 5.0 V7.1.2). Log
@@ -169,7 +169,7 @@ OWASP: JSON Web Token, REST Security cheat sheets. If you use JWTs:
   issuer. Use `kid`/`x5t` only to *select* among keys you already hold, and validate `kid`
   first (SQLi/path traversal via `kid` is a known pattern). Every URL derived from token
   content (`jku`, `x5u`, a status-list `uri`, `iss`-driven discovery) is an outbound fetch
-  of attacker-chosen input: allowlist it and apply rules/01 §5 (SSRF).
+  of attacker-chosen input: allowlist it and apply [rules/01](01-input-injection.md) §5 (SSRF).
   OWASP: JSON Web Token cheat sheet; ASVS 5.0 V9.1.3.
 - Never put secrets/PII in the payload — it's base64, not encrypted.
 - Browser storage: keep tokens **and any other sensitive data** out of `localStorage` and

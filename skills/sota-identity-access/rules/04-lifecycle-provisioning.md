@@ -16,15 +16,15 @@ employee still has a token). Design deprovisioning *first*.
   it. Access lifecycle events are *driven by* changes there, not entered ad hoc in each
   app.
 - **Joiner**: on hire, the source creates the identity; birthright access (baseline
-  accounts/groups, minimal — rules/03) is provisioned automatically; everything beyond is
+  accounts/groups, minimal — [rules/03](03-authorization-models.md)) is provisioned automatically; everything beyond is
   requested + approved with an owner and expiry.
 - **Mover**: on role/department change, access is **recomputed**, not accumulated —
   old-role access is *removed* as new-role access is granted. Movers are where access
   creep hides: a long-tenured employee who changed teams five times and kept every grant.
 - **Leaver**: on termination, **all** access is revoked within a tight SLA — accounts
-  disabled, sessions and tokens killed (rules/02 §6, rules/06 CAEP), API keys and
+  disabled, sessions and tokens killed ([rules/02](02-idp-operations.md) §6, [rules/06](06-mfa-federation-assurance.md) CAEP), API keys and
   workload credentials they own reassigned/rotated. Disable before delete (preserve audit
-  trail), then delete/anonymize per retention policy (**sota-privacy-compliance**).
+  trail), then delete/anonymize per retention policy (**[sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md)**).
 - **No self-issued identities on internal tools.** CI/CD systems, code hosts, wikis and
   admin consoles sign users in through the central IdP only. Disable self-registration,
   local accounts and shared accounts there, and restrict sign-in to email domains the
@@ -33,7 +33,7 @@ employee still has a token). Design deprovisioning *first*.
 - **Service accounts cannot log in interactively.** An account used by a backend,
   middleware, database or pipeline is refused at every front-end and interactive
   surface: the web UI, SSO, SSH, console logon (in AD, `Deny log on locally` / `Deny log
-  on through Remote Desktop Services`, rules/07 §1). A stolen service credential then
+  on through Remote Desktop Services`, [rules/07](07-active-directory.md) §1). A stolen service credential then
   cannot become a human session. OWASP: Authentication cheat sheet.
 - **Log every account creation and change with the access it grants.** Record who
   created or changed the account, which account, and the roles, groups and permissions
@@ -44,7 +44,7 @@ employee still has a token). Design deprovisioning *first*.
 
 ## 2. SCIM-driven provisioning AND deprovisioning
 
-- Use **SCIM 2.0** (RFC 7643/7644, protocol in rules/01 §8) so the source of truth pushes
+- Use **SCIM 2.0** (RFC 7643/7644, protocol in [rules/01](01-federation-protocols.md) §8) so the source of truth pushes
   create/update/deactivate to every connected app, rather than each app managing its own
   user list.
 - **Deprovisioning is the half everyone forgets.** A SCIM `active=false` / DELETE on a
@@ -69,7 +69,7 @@ prime target for takeover because no one watches it.
   → investigate → delete.
 - High-risk orphans: **privileged** accounts of departed admins, **service accounts**
   whose owning team dissolved, **external/B2B** accounts past contract end, **break-glass**
-  accounts (rules/05) that linger between uses.
+  accounts ([rules/05](05-privileged-workload.md)) that linger between uses.
 - Every account has a named **owner** (a person, not a team alias that no one reads). An
   ownerless account is itself a finding.
 - **AI agents and assistants are identities, so inventory them.** For each one, record
@@ -100,7 +100,7 @@ prime target for takeover because no one watches it.
 - Periodically, the owner/manager **recertifies** that each grant is still needed.
   Cadence by risk: privileged and SoD-sensitive access quarterly (or tighter); standard
   access semi-annually/annually. This is a SOC 2 / ISO 27001 control —
-  **sota-privacy-compliance** for evidence. **Every account is in scope**, not just the
+  **[sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md)** for evidence. **Every account is in scope**, not just the
   privileged ones: standard users, service accounts, external/B2B identities and agents
   (§3) are reviewed at least yearly (the cadence OWASP DSOMM asks for all user
   privileges). A programme that reviews only admins misses the access creep of
@@ -116,11 +116,11 @@ prime target for takeover because no one watches it.
 - **JIT account provisioning** (federation): on first SSO login from a trusted upstream,
   create the local account from verified token claims rather than pre-provisioning
   everyone. Useful for large B2B/social populations. Risks: deterministic linking on a
-  verified immutable id (rules/02 §8) and a **deprovisioning** story — a JIT-created
+  verified immutable id ([rules/02](02-idp-operations.md) §8) and a **deprovisioning** story — a JIT-created
   account still needs a leaver path (it won't get a SCIM DELETE if the upstream doesn't
   send one). Pair JIT-in with reconciliation/dormancy cleanup.
 - **JIT privilege elevation** (different thing): request elevated rights for a bounded
-  window instead of holding them — covered in rules/05.
+  window instead of holding them — covered in [rules/05](05-privileged-workload.md).
 
 ## 6. Dormant-account detection
 
@@ -128,11 +128,11 @@ prime target for takeover because no one watches it.
   for privileged, 90 for standard). Dormant accounts are disabled after a grace/notice
   window; dormant *privileged* accounts are escalated immediately.
 - Dormancy detection requires reliable **last-login** telemetry — ensure the IdP emits
-  auth events and they are retained (feeds **sota-detection-engineering** for anomaly and
+  auth events and they are retained (feeds **[sota-detection-engineering](../../sota-detection-engineering/SKILL.md)** for anomaly and
   impossible-travel detection too).
 - Distinguish dormant *humans* (likely a missed leaver) from dormant *service accounts*
   (likely a decommissioned workload whose credential is now a standing liability —
-  rules/05).
+  [rules/05](05-privileged-workload.md)).
 
 ```sql
 -- Dormant human accounts (no login in 90d) that still authenticate

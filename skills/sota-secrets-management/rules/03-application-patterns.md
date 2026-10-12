@@ -53,7 +53,7 @@ creds from the same secret layer as the app.
 
 **Logs:** the most common real-world leak. Enforce in layers:
 
-1. **Redacting types** (rules/02 §7): `SecretStr`, `secrecy`, custom wrappers — accidental
+1. **Redacting types** ([rules/02](02-storage-backends.md) §7): `SecretStr`, `secrecy`, custom wrappers — accidental
    `log.info(f"cfg={config}")` prints `[REDACTED]`.
 2. **Logger-level scrubbing:** a processor/filter that masks known keys (`password`, `token`,
    `secret`, `authorization`, `cookie`, `set-cookie`, `x-api-key`) and known value shapes
@@ -94,7 +94,7 @@ come first; the processor catches the third-party library that logs a request ob
 Tiers 1–3 assume you own the producer. You cannot wrap someone else's bytes in a
 `SecretStr`, so when the thing being stored is **arbitrary text from a source you do not
 control** — a swept corpus, shell history, a crash dump, a scraped page, an agent
-transcript (`rules/04` §7), a diff from an untrusted branch — the guidance silently
+transcript ([`rules/04`](04-detection-and-remediation.md) §7), a diff from an untrusted branch — the guidance silently
 degrades to tier 2 alone. **Tier 2 is an enumeration, and enumerations lose.**
 
 Field-reported, with the run that killed it: a shape-redaction fix reusing an existing
@@ -180,7 +180,7 @@ constructed, not inherited wholesale) or files — never interpolated into the c
 ## 4. Runtime injection, caching, and TTLs
 
 **Inject at runtime, not build time.** Images/artifacts are environment-agnostic and
-secret-free; the platform supplies values at start (rules/02 §5–6). Grep CI for
+secret-free; the platform supplies values at start ([rules/02](02-storage-backends.md) §5–6). Grep CI for
 `docker build --build-arg.*SECRET` — build args persist in image history (Critical in pushed
 images).
 
@@ -297,14 +297,14 @@ Every credential answers: who uses it, for which actions, on which resources, un
 - **Backend side:** enable the store's access logs (CloudTrail data events for Secrets Manager,
   GCP Data Access logs, Key Vault diagnostics, Vault audit devices) and ship them off-system.
   Alert on: reads by unexpected principals, first-time principal/secret pairs, reads from new
-  geographies, spikes, and reads of honeytokens (rules/04 §5).
+  geographies, spikes, and reads of honeytokens ([rules/04](04-detection-and-remediation.md) §5).
 - **App side:** log secret *usage events* — "rotated DB cred picked up," "token refresh failed,"
   "auth failure forced refresh" — with secret *names*, never values. These logs are how you
-  verify a rotation completed (rules/01 §3 step 4).
+  verify a rotation completed ([rules/01](01-lifecycle-and-workload-identity.md) §3 step 4).
 - **Attribution requires per-consumer creds** (§7) — a shared key makes every audit log entry
   ambiguous.
 - **Minimum record per event**, from the store or around it: who asked (principal, and the
-  human behind a CI run — rules/01 §5), for which target system and role, whether it was
+  human behind a CI run — [rules/01](01-lifecycle-and-workload-identity.md) §5), for which target system and role, whether it was
   approved or rejected, each use, expiry, value updates, authentication and authorization
   errors, and every administrative action on the store itself (policy, auth-method, audit-
   device, key changes). A store whose admin actions are not logged can switch its own audit
@@ -324,7 +324,7 @@ Every credential answers: who uses it, for which actions, on which resources, un
       not values in committed config; startup fails fast (redacted) on missing secrets; no
       default/fallback secret values in code.
 - [ ] No literal secrets in source, tests, fixtures, comments, examples, or git history
-      (history scan done — rules/04).
+      (history scan done — [rules/04](04-detection-and-remediation.md)).
 - [ ] Redacting wrapper types in use; logger-level scrubbing for secret key names and token
       shapes; connection strings/URLs logged without userinfo; no full-header, full-env, or
       full-config logging.

@@ -238,7 +238,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
   reads as a ceiling to almost every reviewer, and for a transitive dependency it
   is not one. Verify what was actually built with `go list -m <module>` (or
   `go version -m ./bin/app`, §5) — never the `require` line you wrote. Same trap
-  from the supply-chain side: `sota-devsecops` rules/03 §3.7.1.
+  from the supply-chain side: [`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.7.1.
 - **Adopting a new dependency — vet it before `go get`, whoever proposed it (you or an AI
   assistant).** A module path *is* a repository URL, so the typosquat is a look-alike owner or
   repo name, and an assistant may name a path that does not exist or was created last week.

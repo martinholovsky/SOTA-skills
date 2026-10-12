@@ -139,7 +139,7 @@ built from input, direct memory manipulation, and every feature where the user
 supplies a URL, host or callback (webhooks, import-from-URL, link previews,
 OAuth/OIDC discovery, PDF/image renderers). The second group is the SSRF surface,
 recorded in the model instead of found in code review. Each row gets a catalog
-pass (`03` §2: injection, SSRF, deserialization) and is where extra isolation earns its cost (`sota-sandboxing`).
+pass (`03` §2: injection, SSRF, deserialization) and is where extra isolation earns its cost ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)).
 OWASP: ASVS 5.0 V13.1.1, V15.1.5.
 
 ### 4. Worked mini-example — 10-line DFD with threats
@@ -298,8 +298,8 @@ check, limits and audit event against the strongest path:
 reachability** — the careful admin endpoint protects nothing if a looser public
 one performs the same write. Adding a path is a re-model trigger (`05` §4). Fix
 by routing every path through one guarded service function, not by copying the
-checks; the per-path controls for jobs and webhooks are `sota-code-security`
-rules/03 §8. OWASP: Business Logic Security cheat sheet.
+checks; the per-path controls for jobs and webhooks are [`sota-code-security`
+rules/03](../../sota-code-security/rules/03-authorization.md) §8. OWASP: Business Logic Security cheat sheet.
 
 ### 9. Decomposition outputs
 

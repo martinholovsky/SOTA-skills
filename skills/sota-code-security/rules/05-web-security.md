@@ -1,6 +1,6 @@
 # 05 — Web Platform Security
 
-Scope: XSS, CSP, CSRF, CORS, clickjacking, security headers, cookies (file uploads: rules/21).
+Scope: XSS, CSP, CSRF, CORS, clickjacking, security headers, cookies (file uploads: [rules/21](21-file-uploads.md)).
 Maps to OWASP A05/A02/A07:2025, CWE-79/352/942/1021/434/1004.
 
 Core principle: the browser enforces your security policy — but only the policy you
@@ -125,7 +125,7 @@ Content-Security-Policy:
 - User files and API responses a browser may open directly get the header
   `Content-Security-Policy: sandbox` (opaque origin, no scripts; ignored in
   `<meta>` and report-only). The iframe `sandbox` attribute is a second layer
-  only: untrusted content still gets its own origin (rules/21 §1) and is not rendered
+  only: untrusted content still gets its own origin ([rules/21](21-file-uploads.md) §1) and is not rendered
   where sandboxing is unavailable. OWASP: ASVS 5.0 V3.2.1; HTML5 Security cheat sheet.
 - Deployment pitfalls: a `<meta http-equiv>` policy ignores `frame-ancestors`,
   `sandbox` and `report-uri`, cannot be report-only, and covers only markup
@@ -165,7 +165,7 @@ Content-Security-Policy:
 - Login CSRF is real (attacker logs victim into attacker's account to harvest
   data). No session exists yet, so issue a pre-session carrying its own token
   on the login form (or require a custom header on a same-origin `fetch`), then
-  regenerate the session ID on login (rules/17 §2).
+  regenerate the session ID on login ([rules/17](17-sessions-and-tokens.md) §2).
 - **Not defenses** on their own: a secret cookie, POST-only, multi-step flows,
   URL rewriting, HTTPS, CAPTCHA. For `fetch`/XHR send the token in a custom
   header; a script-readable token never contains the raw session ID.
@@ -214,17 +214,17 @@ verify: take the token from the header/form field, split it, recompute the HMAC
 
 - Token lifecycle: a CSRF token lives as long as its session (rotate it with
   the session id at login and privilege change) and carries no timestamp
-  expiry of its own — the scoped exception to rules/04 §7 "verify expiry".
+  expiry of its own — the scoped exception to [rules/04](04-cryptography.md) §7 "verify expiry".
   Per-request tokens are stricter but break Back and multi-tab use; keep
   them for high-value forms. On failure return `403`, log a suspected-CSRF
   security event (user, route, `Origin`), optionally rotate the token. A
   Fetch Metadata/Origin reject and a disallowed CORS origin log the same way,
-  with the reason (`malicious_csrf`, `malicious_cors`; rules/07 §2.1).
+  with the reason (`malicious_csrf`, `malicious_cors`; [rules/07](07-data-exposure.md) §2.1).
   OWASP: CSRF Prevention, Logging Vocabulary cheat sheets; Code Review Guide v2.
 - **Behind reverse proxies**: the *expected* origin (scheme+host+port) comes
   from server config, never from `Host`/`X-Forwarded-Host`. Trust
   `X-Forwarded-Proto`/`-Host` only when your own proxy sets them and strips
-  client copies (sota-network-security rules/05 R6) — e.g. Django
+  client copies ([sota-network-security rules/05](../../sota-network-security/rules/05-edge-ingress-egress.md) R6) — e.g. Django
   `SECURE_PROXY_SSL_HEADER`/`USE_X_FORWARDED_HOST`, Express `trust proxy`.
   Proxies, gateways and load balancers must pass `Origin` and `Sec-Fetch-*`
   through unchanged; one that strips them sends every request down the
@@ -253,7 +253,7 @@ verify: take the token from the header/form field, split it, recompute the HMAC
   internal IP is same-origin with your service — and the request still
   carries the attacker's name in `Host`. Every web app, above all one bound
   to localhost or an internal network (dev servers, admin UIs, local agents,
-  MCP servers — sota-llm-engineering rules/04), rejects a `Host` that is
+  MCP servers — [sota-llm-engineering rules/04](../../sota-llm-engineering/rules/04-agents-tools.md)), rejects a `Host` that is
   not an expected name: e.g. Django `ALLOWED_HOSTS` (never `'*'`), Vite
   `server.allowedHosts` (never `true`), webpack-dev-server `allowedHosts`
   (never `'all'`). Authenticate the local listener as well. OWASP:
@@ -315,10 +315,10 @@ Cache-Control: no-store                      (on authenticated/personal response
   callback) send `Referrer-Policy: no-referrer`: the baseline still sends the
   full URL on same-origin requests, and a `referrerpolicy` attribute on an
   element can widen it. Load no third-party resources there, and redirect to
-  a token-free URL once the token is consumed (rules/02 §5). Forms on such a
+  a token-free URL once the token is consumed ([rules/02](02-authentication.md) §5). Forms on such a
   page POST with `Origin: null` (§3). OWASP: Forgot Password cheat sheet,
   Secure Headers Project.
-- `nosniff` is what makes your upload Content-Type discipline (rules/21 §1) stick.
+- `nosniff` is what makes your upload Content-Type discipline ([rules/21](21-file-uploads.md) §1) stick.
 - Remove fingerprint headers (`Server`, `X-Powered-By`) — low value but free.
 - Cross-origin isolation (Spectre-class leaks; needed for SharedArrayBuffer):
   COOP plus COEP `require-corp` (or `credentialless`); each allowed cross-origin
@@ -358,7 +358,7 @@ Cache-Control: no-store                      (on authenticated/personal response
 - Size/count discipline: cookies ride every request — keep tokens, not data;
   name + value over 4096 bytes is dropped silently (RFC 6265bis). **Every**
   cookie is `Secure` (`__Secure-` where `__Host-` can't apply; `__Host-` forces
-  `Path=/`). Session cookies carry no `Expires`/`Max-Age` (remember-me: rules/17
+  `Path=/`). Session cookies carry no `Expires`/`Max-Age` (remember-me: [rules/17](17-sessions-and-tokens.md)
   §2), reach the client only via `Set-Cookie` (never a response body), one header
   per cookie, under a non-default name (not `JSESSIONID`/`PHPSESSID`), one name
   per cookie across paths/domains; inventory them. OWASP: ASVS 5.0 V3.3.1/4/5.
@@ -424,13 +424,13 @@ Cache-Control: no-store                      (on authenticated/personal response
   percent-encoding (double encoding too), `;` parameters and dot-segments
   identically — or the edge normalises once and rejects non-canonical paths.
   Test it: send variants of a protected path through the whole chain and
-  assert every component reaches the same decision (rules/01 §4, §11 parser
+  assert every component reaches the same decision ([rules/01](01-input-injection.md) §4, §11 parser
   differentials). OWASP: WSTG-CONF-13.
 - **Cache poisoning**: any request input that affects the response but isn't
   in the cache key (headers like `X-Forwarded-Host`, `X-Original-URL`,
   unkeyed query params) lets an attacker poison the shared cache. Don't
   reflect unkeyed inputs; `Vary` on what you use; strip override headers at
-  the edge (rules/01 §11 Host-header rules apply).
+  the edge ([rules/01](01-input-injection.md) §11 Host-header rules apply).
 - Browser-side: `Cache-Control: no-store` for sensitive pages also defends
   shared-computer history attacks (`no-cache` still permits storing, RFC 9111
   section 5.2.2.4); pair with `Clear-Site-Data: "*"` on logout for high-sensitivity
@@ -468,7 +468,7 @@ File upload handling (formerly section 10) moved to [rules/21](21-file-uploads.m
 - [ ] **Unpinned or unvetted vendor script — MEDIUM**: `grep -rnEi -- "<script[^>]*src=['\"]?https?://" . | grep -vi 'integrity='` — each remaining hit has a vetted owner/domain and content-change monitoring.
 - [ ] **Tag manager runs arbitrary code — HIGH**: `grep -rlEi -- "googletagmanager\.com/gtm\.js" . | xargs -r grep -LEi -- "gtm\.blocklist[^]]*(customScripts|['\"]html['\"])"` — each file loads a container with no custom-code block; also confirm console MFA and a data-layer-only tag design.
 - [ ] **Vendor script "sandboxed" in a worker — MEDIUM**: `grep -rnEi -- "type=['\"]?text/partytown|<Partytown" .` — a vendor that must be contained runs in a separate-domain iframe instead; the worker keeps your origin.
-- [ ] **Retired subdomain still trusted — HIGH** (sota-network-security rules/06 R4, sota-identity-access rules/01): `grep -rnEi -- "(redirect_?uris?|allowed_?origins|cors_?origins|-src[[:space:]])[^#]*[a-z0-9-]\.[a-z]{2,}" .` — every host listed resolves to a live, owned service; a name gone from DNS is purged from redirect-URI, CSP and CORS lists in the same change.
+- [ ] **Retired subdomain still trusted — HIGH** ([sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) R4, [sota-identity-access rules/01](../../sota-identity-access/rules/01-federation-protocols.md)): `grep -rnEi -- "(redirect_?uris?|allowed_?origins|cors_?origins|-src[[:space:]])[^#]*[a-z0-9-]\.[a-z]{2,}" .` — every host listed resolves to a live, owned service; a name gone from DNS is purged from redirect-URI, CSP and CORS lists in the same change.
 - [ ] **Web cache deception, origin half — HIGH**: `curl -s -o /dev/null -w '%{http_code}\n' -b "$SESSION" https://HOST/account/x.css` (and `/account;x.css`) returns `404`/redirect, not `200` with the account page.
 - [ ] **Path-normalisation disagreement — HIGH**: a test sends variants of a protected path (`/admin/`, `/ADMIN`, `/%61dmin`, `/x/../admin`, `/admin;x`) through CDN, proxy, WAF and app and asserts the same allow/deny at each — sent raw (`curl --path-as-is`), or the client itself collapses `/x/../admin` to `/admin` and the variant is never tested.
 - [ ] **CSRF token leaves the origin or sits in storage — HIGH**: `grep -rnEi -- "withXSRFToken[[:space:]]*:[[:space:]]*true|(localStorage|sessionStorage)\.setItem\([^)]*(csrf|xsrf)" .` — the token rides only same-origin requests, from a meta tag or memory.

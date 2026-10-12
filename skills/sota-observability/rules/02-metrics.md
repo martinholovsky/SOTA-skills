@@ -192,7 +192,7 @@ Rules:
   shift, a retry storm, or a batch job ending moves it without anything
   improving, because the denominator moved.
 - This is not the "many samples, report variance" of a benchmark
-  (`sota-performance` rules/01 §3). A production series **cannot be re-run**, so
+  ([`sota-performance` rules/01](../../sota-performance/rules/01-methodology.md) §3). A production series **cannot be re-run**, so
   sampling more *offsets* of the same series is the only equivalent available —
   and a deploy marker on the chart is worth more than either number.
 
@@ -286,7 +286,7 @@ Rules:
 - **Accept a new scrape target on the series arriving, never on discovery.** A target
   list showing `1 target` means a selector matched; read the per-target `health` and
   `lastError` beside it, then confirm the series exists
-  (`sota-code-security` rules/14 §4b). **A port declaration does not state the protocol
+  ([`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §4b). **A port declaration does not state the protocol
   spoken on it**: a container advertising `metrics:9090` says nothing about TLS, and
   scraping HTTP where HTTPS is served returns `400 Client sent an HTTP request to an
   HTTPS server` — an error easily read as a broken exporter. `curl` the endpoint both

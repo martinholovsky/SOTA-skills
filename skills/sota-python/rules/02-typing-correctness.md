@@ -44,7 +44,7 @@ def handler(user: User | None) -> str:
 ## 2a. In-band sentinels: `-1` is not `None`
 
 The failure §2 exists to prevent has a second spelling that the type checker cannot
-see. The class is language-neutral and stated once in `sota-architecture` rules/02
+see. The class is language-neutral and stated once in [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md)
 §8a; this section is the Python instance and the worked example.
 
 Python's own stdlib offers both spellings, which is the cleanest illustration there
@@ -103,7 +103,7 @@ itself.
 raise for the malformed case and return `None` only for absent, so the two causes stay
 distinct. Reach for a sentinel only when a wire format or a fixed-width store forbids
 absence — and then it is **per field**, documented with that field's domain, never one
-constant applied across a heterogeneous set (see `sota-databases` rules/01, *Modeling
+constant applied across a heterogeneous set (see [`sota-databases` rules/01](../../sota-databases/rules/01-choosing-and-modeling.md), *Modeling
 hygiene*, for the persistence half).
 
 ### Detecting it — three probes, decreasing precision
@@ -185,7 +185,7 @@ Rules of thumb:
   validation semantics (coercion!) surprise you. `model_construct()` everywhere is a smell that
   you wanted a dataclass.
 - Default to `frozen=True, slots=True` dataclasses; mutability and dynamic attributes are
-  opt-in exceptions, not defaults (details in rules/03).
+  opt-in exceptions, not defaults (details in [rules/03](03-idioms-pitfalls.md)).
 
 ## 6. Runtime validation at boundaries — pydantic v2
 
@@ -208,7 +208,7 @@ users = TypeAdapter(list[CreateUser]).validate_python(payload)
 - Know coercion: lax mode turns `"3"` into `3`. For protocol-strict boundaries use
   `strict=True` per-field or model-wide.
 - Don't catch `ValidationError` and return a vague 500 — surface field paths (FastAPI does
-  this for you; see rules/07).
+  this for you; see [rules/07](07-frameworks-testing.md)).
 
 ## 7. Exhaustiveness with `assert_never`
 

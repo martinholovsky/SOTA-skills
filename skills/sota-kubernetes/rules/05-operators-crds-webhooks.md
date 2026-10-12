@@ -4,7 +4,7 @@ Scope: extension components that run with cluster privilege — operators (contr
 reconciling CRDs), the CRDs themselves, and admission webhooks (validating/mutating). These
 are the third-party code you grant standing power inside the cluster; each is both a
 control and an attack surface. Trusted-controller examples: ExternalSecrets Operator (ESO),
-cert-manager. Secret *backends/ESO usage* is `sota-secrets-management` (rules/02); this
+cert-manager. Secret *backends/ESO usage* is [`sota-secrets-management`](../../sota-secrets-management/SKILL.md) ([rules/02](../../sota-secrets-management/rules/02-storage-backends.md)); this
 file owns *vetting the operator's cluster privilege and webhook surface*.
 
 ---
@@ -27,13 +27,13 @@ privileged principal — and **CRD-mediated escalation** the recurring risk:
 
 **Mitigations:**
 - **Vet the operator's RBAC before install.** `helm template` / read the bundled
-  ClusterRole (`rules/07`, `rules/02`). Reject or scope wildcard verbs, cluster-wide
+  ClusterRole ([`rules/07`](07-supply-chain-audit.md), [`rules/02`](02-rbac-serviceaccounts.md)). Reject or scope wildcard verbs, cluster-wide
   `secrets:*`, and RBAC-write unless the operator genuinely needs them. Prefer
   **namespaced-scoped operators** (watch one/few namespaces via OLM `OperatorGroup` or the
   operator's `--namespace` flag) over cluster-wide where the operator supports it.
 - **Limit who can create the operator's CRs.** RBAC on the CRD's API group is an
   escalation primitive — treat `create`/`update` on a CRD whose fields drive pods/RBAC/
-  secrets like `pods` create (`rules/02` §2.5). Don't hand tenants CR-create on a CRD the
+  secrets like `pods` create ([`rules/02`](02-rbac-serviceaccounts.md) §2.5). Don't hand tenants CR-create on a CRD the
   operator turns into privileged actions.
 - **Pin and patch the operator** like any privileged software (image digest, CVE feed).
 - **Watch what the operator mutates**: an operator that injects sidecars or modifies pod
@@ -92,7 +92,7 @@ The hard tradeoffs and traps:
   namespace or kube-system can **deadlock the cluster** (you can't restart the webhook
   because admission needs the webhook). Always set a `namespaceSelector`/`objectSelector`
   that **excludes the webhook's own namespace and kube-system**. Run the webhook HA
-  (multiple replicas, PDB — `rules/06`) so `Fail` doesn't take you down on a single pod
+  (multiple replicas, PDB — [`rules/06`](06-workloads-tenancy.md)) so `Fail` doesn't take you down on a single pod
   restart. Non-security convenience mutators may use `Ignore`, but know that means
   fail-open.
 - **`timeoutSeconds`**: keep it small (≤5–10s). Every matching API write blocks on the
@@ -106,9 +106,9 @@ The hard tradeoffs and traps:
   compromised* webhook scoped to `pods`/`*` can read every spec (data exfil) and a mutating
   one can inject sidecars, hostPath mounts, or credentials into every pod — so **who can
   create/edit WebhookConfigurations is an escalation primitive** (it's cluster-wide RBAC;
-  guard `admissionregistration.k8s.io` writes like RBAC writes, `rules/02`).
+  guard `admissionregistration.k8s.io` writes like RBAC writes, [`rules/02`](02-rbac-serviceaccounts.md)).
 - Prefer **in-tree CEL policies (ValidatingAdmissionPolicy)** over a webhook where the
-  logic fits (`rules/03` §2) — no external endpoint means no webhook outage/attack surface.
+  logic fits ([`rules/03`](03-admission-policy.md) §2) — no external endpoint means no webhook outage/attack surface.
 
 ## Audit checklist
 
@@ -121,5 +121,5 @@ The hard tradeoffs and traps:
 - [ ] Security webhooks `failurePolicy: Fail` BUT with `namespaceSelector` excluding kube-system and the webhook's own ns; webhook runs HA + PDB?
 - [ ] Webhook `timeoutSeconds` small; webhook scope (`rules`/selectors) minimal, not `*`?
 - [ ] Webhook TLS `caBundle` valid, managed by cert-manager, rotated before expiry, expiry-alerted?
-- [ ] Writes to `admissionregistration.k8s.io` (WebhookConfigurations) guarded like RBAC writes? (`kubectl auth can-i create validatingwebhookconfigurations --as=<subject>` per subject; reverse index via krane — `rules/02` §4)
+- [ ] Writes to `admissionregistration.k8s.io` (WebhookConfigurations) guarded like RBAC writes? (`kubectl auth can-i create validatingwebhookconfigurations --as=<subject>` per subject; reverse index via krane — [`rules/02`](02-rbac-serviceaccounts.md) §4)
 - [ ] Logic that fits CEL moved to ValidatingAdmissionPolicy instead of a webhook where practical?

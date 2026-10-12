@@ -3,7 +3,7 @@
 Rust is fast by default; most "slow Rust" is accidental allocation, debug
 builds, or architecture — not missing micro-tricks. The discipline: measure,
 fix the proven bottleneck, re-measure. Never trade soundness or clarity for an
-unmeasured win (see rules/03 §1 on unsafe "optimizations").
+unmeasured win (see [rules/03](03-unsafe-discipline.md) §1 on unsafe "optimizations").
 
 ## 1. Measure first — profiling toolbox
 
@@ -25,7 +25,7 @@ debug = true            # or: [profile.profiling] inherits = "release", debug = 
   O(n²) hides at n=10.
 - **Allocation profiling**: `dhat-rs` (heap profiling as a test harness),
   `heaptrack` (Linux); divan's `AllocProfiler` for per-bench alloc counts.
-- **Async**: tokio-console for task-level stalls (rules/04); `tracing` spans +
+- **Async**: tokio-console for task-level stalls ([rules/04](04-async-tokio.md)); `tracing` spans +
   `tracing-timing`/OTel histograms for production latency attribution.
 - Lock contention: `perf lock` / mutex wrappers with metrics; high sys-time +
   low throughput on many cores is the contention signature.
@@ -35,7 +35,7 @@ debug = true            # or: [profile.profiling] inherits = "release", debug = 
 Allocations (and the copies feeding them) dominate most non-numeric Rust
 hotspots.
 
-- **Borrow in signatures** (`&str`, `&[T]` — rules/01 §1) so callers don't
+- **Borrow in signatures** (`&str`, `&[T]` — [rules/01](01-ownership-and-api-design.md) §1) so callers don't
   allocate to call you.
 - **Reuse buffers in loops**:
 
@@ -54,7 +54,7 @@ for record in records {
 
 - **`with_capacity`** when the size is known (`Vec`, `String`, `HashMap`);
   growth is amortized but reallocation+memcpy of large buffers still hurts.
-  (Untrusted sizes: cap it — rules/05 §6.)
+  (Untrusted sizes: cap it — [rules/05](05-security-supply-chain.md) §6.)
 - **`Cow<'_, str>`** for transform-sometimes functions: borrow the common
   case, allocate only when modified. Don't `Cow` everything — it infects
   signatures; use where the borrow-rate is meaningfully high.
@@ -73,7 +73,7 @@ for record in records {
 ## 3. Accidental clones & copies
 
 - Hot-path `.clone()` of `String`/`Vec`/maps found in a profile: restructure
-  ownership (rules/01 §1) — pass borrows down, return owned up, `Arc<str>`/
+  ownership ([rules/01](01-ownership-and-api-design.md) §1) — pass borrows down, return owned up, `Arc<str>`/
   `Arc<[T]>` for shared immutable data cloned often (refcount bump vs deep
   copy; also half the size of `Arc<String>`'s double indirection).
 - Large types moved by value are memcpys: 1KB struct passed through 5 call
@@ -130,9 +130,9 @@ strip = "symbols"       # smaller binaries (keep debug=true in a separate profil
 ```
 
 - `panic = "abort"`: ~smaller binary, removes landing pads; cost = no panic
-  containment (rules/02/05). Choose deliberately for servers; fine for CLIs.
+  containment ([rules/02](02-errors-and-panics.md)/05). Choose deliberately for servers; fine for CLIs.
 - `overflow-checks = true` in release for security-sensitive services
-  (rules/05 §3) — measure, it's typically <2%.
+  ([rules/05](05-security-supply-chain.md) §3) — measure, it's typically <2%.
 - Target-specific codegen for owned deployments:
   `RUSTFLAGS="-C target-cpu=native"` (or a fixed `target-cpu=x86-64-v3`) —
   unlocks AVX2+ vectorization; never for distributed portable binaries.
@@ -157,7 +157,7 @@ strip = "symbols"       # smaller binaries (keep debug=true in a separate profil
 - **Zero-copy parsing**: borrow from the input (`&'a str` fields,
   `#[serde(borrow)]` with `serde_json::from_slice`) instead of owning
   `String` fields — turns deserialization allocations into pointer
-  arithmetic; `zerocopy`/`bytemuck` for fixed-layout binary views (rules/03
+  arithmetic; `zerocopy`/`bytemuck` for fixed-layout binary views ([rules/03](03-unsafe-discipline.md)
   for the safety side).
 - **Writes**: unbuffered `write!` to a raw `File`/`TcpStream` syscalls per
   call — wrap in `BufWriter` (and remember to flush; dropped `BufWriter`
@@ -181,8 +181,8 @@ Slow builds are a perf problem too — they tax every iteration.
   cut monomorphization bloat (binary size AND compile time).
 - `cargo build --timings` to find the long pole; feature-trim heavy deps
   (`tokio` full vs needed features, `syn` full); move optional integrations
-  behind features (rules/07 §5).
-- Workspace split so hot-edit crates are leaves, not roots (rules/01 §9);
+  behind features ([rules/07](07-tooling-ci.md) §5).
+- Workspace split so hot-edit crates are leaves, not roots ([rules/01](01-ownership-and-api-design.md) §9);
   proc-macro and build.rs crates dominate cold builds — audit their cost.
 
 ## 8. Don'ts
@@ -196,7 +196,7 @@ Slow builds are a perf problem too — they tax every iteration.
   publish 3% wins; criterion's noise floor on shared CI is ~5%+ — gate
   regressions with thresholds, not single runs.
 - Don't unsafe-away bounds checks without a flamegraph showing them (§1,
-  rules/03).
+  [rules/03](03-unsafe-discipline.md)).
 
 ## Audit checklist
 

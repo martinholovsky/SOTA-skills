@@ -1,8 +1,8 @@
 # 05 — Constructs & Cleanup: arrays, IFS, traps, tests, globbing
 
 Scope: the constructs a script is assembled from, and the way each of them fails. Split out
-of `rules/01` at v1.37.0, which keeps the safety baseline — shebang, `set -e` semantics,
-quoting, and the zsh deviations that bite pasted commands. Quoting is `rules/01` §3; this
+of [`rules/01`](01-safety-baseline.md) at v1.37.0, which keeps the safety baseline — shebang, `set -e` semantics,
+quoting, and the zsh deviations that bite pasted commands. Quoting is [`rules/01`](01-safety-baseline.md) §3; this
 file is what you reach for once the expansion itself is correct.
 
 ## 1. Arrays for command building (SC2089/SC2090/SC2086)
@@ -118,7 +118,7 @@ sed '$d' scripts/ci-local.sh > /tmp/lib.sh && source /tmp/lib.sh
 Attempt 2 is the dangerous one: it succeeds. Every `git` call in every function under test
 then fails, and the harness emits a **correct, well-written diagnostic about healthy code** —
 field-measured as `the compiled-in scan found 0 path(s); it has stopped working`, from a scan
-that was fine. That is `sota-code-security` rules/15 §2.1's sixth failure mode: the harness is
+that was fine. That is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.1's sixth failure mode: the harness is
 newer than the subject, so it owns the prior.
 
 **The better fix is in the script, not the test.** Guard the entry point so the file can be
@@ -241,7 +241,7 @@ rename it over the old one, or wait for the run to end. Other shells are not mea
   backslashes is implementation-defined (dash interprets escapes by default; a variable
   that *is* `-n` vanishes). `printf '%s\n' "$var"` is exact (SC2028 hints at this).
 - `local` for every function variable (SC2034 finds unused leaks); remember the SC2155
-  split-declaration rule from `rules/01` §2.
+  split-declaration rule from [`rules/01`](01-safety-baseline.md) §2.
 - `readonly` (or `declare -r`) for constants and config resolved at startup — catches
   accidental reassignment at the point of the bug:
 
@@ -280,7 +280,7 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 - [ ] Any command **pasted into an interactive shell** that passes a glob as a flag value
       (`--include`, `--exclude`, `-name`) has it **quoted** — unquoted, zsh's `NOMATCH`
       aborts the command and, under `2>/dev/null`, the result is indistinguishable from a
-      genuine no-match (`rules/06` §1). Every sweep read as an *absence* has been positive-controlled
+      genuine no-match ([`rules/06`](06-ad-hoc-commands.md) §1). Every sweep read as an *absence* has been positive-controlled
       against a pattern known to be present.
 
 ## Audit checklist

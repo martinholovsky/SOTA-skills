@@ -5,9 +5,9 @@ auditing a mesh (Istio sidecar vs ambient/ztunnel, Linkerd, Cilium service mesh)
 (STRICT, not permissive-forever); mesh authorization policy; SPIFFE/SPIRE workload identity; and when
 a mesh is overkill vs just using TLS.
 
-Where this sits: **sota-identity-access** owns SPIFFE/SPIRE *issuance* and the workload-identity
-trust domain; this skill consumes those identities for network authorization. rules/03 owns L3/4 CNI
-policy; this file owns the L7/identity/encryption layer that complements it. sota-secrets-management
+Where this sits: **[sota-identity-access](../../sota-identity-access/SKILL.md)** owns SPIFFE/SPIRE *issuance* and the workload-identity
+trust domain; this skill consumes those identities for network authorization. [rules/03](03-k8s-network-policy.md) owns L3/4 CNI
+policy; this file owns the L7/identity/encryption layer that complements it. [sota-secrets-management](../../sota-secrets-management/SKILL.md)
 owns TLS private-key handling.
 
 Verified (2026-07): **Istio ambient mode (ztunnel + waypoints)** reached **GA in Istio 1.24 (Nov
@@ -30,7 +30,7 @@ the projects' docs before committing.
 **R1 — Credentials and tokens on an unencrypted internal hop are a Critical finding.** The real
 case: DB root credentials and JWTs flowing over `ws://` (and unencrypted DB protocol) across the pod
 network. Anyone with a foothold on the network — a sniffing sidecar, a compromised node, a misrouted
-pod — reads them. "It's internal" does not make plaintext safe (rules/01: location is not trust).
+pod — reads them. "It's internal" does not make plaintext safe ([rules/01](01-zero-trust-architecture.md): location is not trust).
 
 Symptoms to hunt: `http://`/`ws://` between services, DB connections without TLS, gRPC without TLS,
 `mode: PERMISSIVE` in a mesh that's been "temporary" for months, app config trusting that the
@@ -66,7 +66,7 @@ rejected (`kubectl exec ... curl http://svc` from an unmeshed pod must fail).
 **R4 — Authorization binds to cryptographic workload identity, not IP.** Mesh mTLS issues each
 workload a short-lived identity — a **SPIFFE SVID** (`spiffe://trust-domain/ns/<ns>/sa/<sa>`) or
 mesh-native cert. Authz policy then references *that identity*, so "only the api service may call
-billing" survives pod churn and can't be spoofed by landing on the right IP. sota-identity-access
+billing" survives pod churn and can't be spoofed by landing on the right IP. [sota-identity-access](../../sota-identity-access/SKILL.md)
 owns SPIFFE/SPIRE setup and the trust domain; here, ensure policies reference identities, not CIDRs.
 
 **R4.1 — "Signed by a CA we trust" is authentication of the issuer, not of the peer.** A shared or
@@ -77,8 +77,8 @@ one of them. For partner, cross-org or cross-trust-domain mTLS, pin the expected
 Istio `principals`. Never authorise on the subject **CN** or other DN fields (`$ssl_client_s_dn`,
 `Subject.CommonName`, `getSubjectX500Principal()`): RFC 9525 dropped CN-ID for server identity —
 identity lives in subjectAltName only — and the same reasoning applies to client certs. Chain
-validation itself is sota-code-security rules/04 §5. **Issue mTLS client certificates from a
-private CA** (rules/06 §4): public CAs are dropping the TLS Client Authentication EKU under the
+validation itself is [sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md) §5. **Issue mTLS client certificates from a
+private CA** ([rules/06](06-dns-tls-pki.md) §4): public CAs are dropping the TLS Client Authentication EKU under the
 Chrome root program's split of client and server PKIs (Let's Encrypt removed it from its default
 profile on 2026-02-11 and stopped issuing it on 2026-07-08), so a publicly issued cert can
 fail client validation at its next renewal. OWASP: AI-Powered Advertising Systems Security
@@ -105,7 +105,7 @@ spec:
 ```
 
 Linkerd uses `Server` + `AuthorizationPolicy`/`MeshTLSAuthentication`; Cilium uses CNP L7 rules
-(rules/03 §4) keyed on identity. Same principle: default-deny, identity-scoped, L7 where it tightens.
+([rules/03](03-k8s-network-policy.md) §4) keyed on identity. Same principle: default-deny, identity-scoped, L7 where it tightens.
 
 ## 5. Choosing a mesh (or not)
 
@@ -126,7 +126,7 @@ sidecar tax; the security properties (STRICT mTLS, identity-based authz) are the
 the same way.
 
 **R8 — A mesh is not a substitute for L3/4 CNI policy.** Mesh mTLS+authz covers meshed,
-TCP/HTTP traffic. CNI NetworkPolicy (rules/03) still default-denies for non-meshed pods, non-TCP
+TCP/HTTP traffic. CNI NetworkPolicy ([rules/03](03-k8s-network-policy.md)) still default-denies for non-meshed pods, non-TCP
 traffic, egress, and anything that bypasses the mesh (e.g. a pod talking straight to a DB outside
 the mesh). Run both: CNI for the L3/4 floor, mesh for L7/identity. A mesh-only posture with
 allow-all NetworkPolicy still has a flat L3 underneath.
@@ -138,16 +138,16 @@ allow-all NetworkPolicy still has a flat L3 underneath.
 - **Alert on the change, not the audit.** A mode that silently flips back from STRICT (a new
   namespace default, a Helm value, a debugging `PeerAuthentication`) re-opens plaintext with no
   error anywhere. Keep mTLS mode in GitOps, deny `PERMISSIVE`/`DISABLE` outside a named exception
-  list at admission (sota-kubernetes rules/03), and alert on any `PeerAuthentication` (or mesh
+  list at admission ([sota-kubernetes rules/03](../../sota-kubernetes/rules/03-admission-policy.md)), and alert on any `PeerAuthentication` (or mesh
   equivalent) create/update that lowers the mode. OWASP: Kubernetes Security cheat sheet.
 - **Authz default-allow** — mTLS on but no AuthorizationPolicy means any workload calls any other.
   Default-deny then allow.
 - **mTLS bypass paths** — traffic that skips the mesh (hostNetwork pods, direct IP, ports the mesh
   doesn't capture, the DB outside the mesh). Hunt for unmeshed sensitive endpoints; cover them with
-  CNI policy (rules/03).
+  CNI policy ([rules/03](03-k8s-network-policy.md)).
 - **Cert rotation = the mesh's job** — short-lived SVIDs auto-rotate; if you're manually managing
   mesh certs, something is wrong. The internal root/intermediate (e.g. a step-ca private CA) feeds the mesh CA;
-  rotate per rules/06.
+  rotate per [rules/06](06-dns-tls-pki.md).
 - **Don't double-encrypt blindly** — if Cilium already encrypts transparently at L4 (WireGuard or
   ztunnel) and you add a full mesh on top, justify it; usually pick one transport-security layer.
 
@@ -168,7 +168,7 @@ allow-all NetworkPolicy still has a flat L3 underneath.
 - [ ] **Medium — client certs from a public CA (R4.1).** Are mTLS client certificates issued by a
       private CA? Publicly issued ones lose the client-auth EKU at renewal (2026 PKI split).
 - [ ] Are there mesh-bypass paths (hostNetwork, direct-IP, out-of-mesh DB) reaching sensitive
-      services? Are those covered by CNI NetworkPolicy (rules/03)?
+      services? Are those covered by CNI NetworkPolicy ([rules/03](03-k8s-network-policy.md))?
 - [ ] Is CNI L3/4 default-deny still in place *underneath* the mesh (mesh is not a CNI replacement)?
 - [ ] Are mesh/workload certs short-lived and auto-rotated (not hand-managed)?
 - [ ] Is the mesh choice justified for the service count (not a mesh for 2 services; not hand-rolled

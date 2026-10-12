@@ -1,6 +1,6 @@
 # 08 — Supply Chain & Vulnerability Management
 
-Split out of rules/05 (formerly section 8) on 2026-09-25, when rules/05 reached the 500-line
+Split out of [rules/05](05-security.md) (formerly section 8) on 2026-09-25, when [rules/05](05-security.md) reached the 500-line
 cap; the section is now §1. Scope: modules, the checksum database, vulnerability scanning,
 code that runs at build time, adopting a dependency, and GODEBUG overrides (§2).
 
@@ -15,7 +15,7 @@ code that runs at build time, adopting a dependency, and GODEBUG overrides (§2)
   CVEs in `crypto/tls` (CVE-2026-32283, TLS 1.3 key-update flood),
   `crypto/x509` (CVE-2026-32280, CVE-2026-27145) and `net/mail`
   (CVE-2026-42499); 1.26.5/1.25.12 (2026-07) fixed CVE-2026-39822 (os.Root
-  symlink escape, rules/05 §4) and CVE-2026-42505 (`crypto/tls` ECH leaked pre-shared
+  symlink escape, [rules/05](05-security.md) §4) and CVE-2026-42505 (`crypto/tls` ECH leaked pre-shared
   key identities, de-anonymizing server hostnames). govulncheck only helps
   if the *toolchain* is current: track the monthly patch releases (verify
   the current level at go.dev/doc/devel/release) and rebuild/redeploy on
@@ -36,9 +36,9 @@ code that runs at build time, adopting a dependency, and GODEBUG overrides (§2)
   — but its graph includes tests of reachable packages (`-vendor` excludes tests
   *of dependencies*; your own test-only deps still read as reached). A tool's
   silence is not proof — the sweep, the deletion proof, and the leverage-ratio
-  and upstream-health checks are `sota-devsecops` rules/10.
+  and upstream-health checks are [`sota-devsecops` rules/10](../../sota-devsecops/rules/10-inert-dependencies.md).
 - `go mod tidy` enforced in CI (`git diff --exit-code go.mod go.sum` after).
-- Pin tool versions via 1.24 `tool` directives in go.mod (`rules/07`) so the
+- Pin tool versions via 1.24 `tool` directives in go.mod ([`rules/07`](07-tooling-ci.md)) so the
   linter/codegen supply chain is hash-verified too.
 - **Build-time code execution.** The toolchain is designed so fetching or building a module
   never runs it — Go has no install hooks. What *does* run code: every `//go:generate` line

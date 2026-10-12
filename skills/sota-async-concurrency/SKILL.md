@@ -32,7 +32,7 @@ When writing new concurrent code:
 
 1. **Classify the workload first.** I/O-bound → async/event loop. CPU-bound →
    threads (if runtime has real parallelism) or processes. Mixed → async
-   front-end + bounded worker pool. Read `rules/01` before choosing.
+   front-end + bounded worker pool. Read [`rules/01`](rules/01-models-and-structure.md) before choosing.
 2. **Structured concurrency is the default.** Every task lives inside a scope
    (TaskGroup / nursery / errgroup / JoinSet) that joins or cancels it.
    Spawning a task with no owner is a design smell requiring written
@@ -75,7 +75,7 @@ grep is your debugger. Workflow:
 3. **For each suspect, prove the interleaving.** State the two (or more)
    execution orders and which one breaks. A finding without an interleaving is
    a style note, not a concurrency bug.
-4. Read `rules/07` for the full bug catalog with signatures.
+4. Read [`rules/07`](rules/07-audit-bug-catalog.md) for the full bug catalog with signatures.
 
 ### Severity conventions
 
@@ -102,13 +102,13 @@ Fix: concrete minimal change (primitive, bound, timeout value, scope).
 
 | File | Read this when... |
 |---|---|
-| `rules/01-models-and-structure.md` | Choosing event loop vs threads vs processes vs actors; CPU/I-O decision tree; structured concurrency, task groups, no orphaned tasks |
-| `rules/02-correctness.md` | Reasoning about data races vs race conditions, atomicity, memory ordering/visibility, TOCTOU, deadlock prevention, livelock, starvation, idempotency under retries |
-| `rules/03-primitives.md` | Picking or reviewing mutexes, RwLocks, semaphores, condition variables, channels (bounded vs unbounded), select/race, once/lazy init |
-| `rules/04-event-loop-hygiene.md` | Anything runs on an event loop: blocking calls, CPU work, offloading to pools, long-task chunking, microtask vs macrotask |
-| `rules/05-cancellation-timeouts-shutdown.md` | Timeout policy, propagating cancellation (context/AbortSignal/CancelledError), cleanup on cancel, graceful shutdown sequencing |
-| `rules/06-backpressure-flow-control.md` | Queues between components, producer/consumer rate mismatch, load shedding, token buckets, pull-based streaming |
-| `rules/07-audit-bug-catalog.md` | AUDIT mode: the signature, severity, and fix for every common async bug — fire-and-forget, missing await, lock-across-await, retry storms, thundering herd, unbounded spawns |
+| [`rules/01-models-and-structure.md`](rules/01-models-and-structure.md) | Choosing event loop vs threads vs processes vs actors; CPU/I-O decision tree; structured concurrency, task groups, no orphaned tasks |
+| [`rules/02-correctness.md`](rules/02-correctness.md) | Reasoning about data races vs race conditions, atomicity, memory ordering/visibility, TOCTOU, deadlock prevention, livelock, starvation, idempotency under retries |
+| [`rules/03-primitives.md`](rules/03-primitives.md) | Picking or reviewing mutexes, RwLocks, semaphores, condition variables, channels (bounded vs unbounded), select/race, once/lazy init |
+| [`rules/04-event-loop-hygiene.md`](rules/04-event-loop-hygiene.md) | Anything runs on an event loop: blocking calls, CPU work, offloading to pools, long-task chunking, microtask vs macrotask |
+| [`rules/05-cancellation-timeouts-shutdown.md`](rules/05-cancellation-timeouts-shutdown.md) | Timeout policy, propagating cancellation (context/AbortSignal/CancelledError), cleanup on cancel, graceful shutdown sequencing |
+| [`rules/06-backpressure-flow-control.md`](rules/06-backpressure-flow-control.md) | Queues between components, producer/consumer rate mismatch, load shedding, token buckets, pull-based streaming |
+| [`rules/07-audit-bug-catalog.md`](rules/07-audit-bug-catalog.md) | AUDIT mode: the signature, severity, and fix for every common async bug — fire-and-forget, missing await, lock-across-await, retry storms, thundering herd, unbounded spawns |
 
 ## Top 10 non-negotiables
 
@@ -123,7 +123,7 @@ Fix: concrete minimal change (primitive, bound, timeout value, scope).
    best and deadlocks it at worst. The **stated exception**: when exclusive access genuinely
    must span an await — a protocol exchange on one connection, say — use the runtime's
    *async-aware* mutex (`tokio::sync::Mutex`, `asyncio.Lock`) and accept the serialization
-   you are buying. `sota-rust` rules/04 prescribes exactly that case; without this exception
+   you are buying. [`sota-rust` rules/04](../sota-rust/rules/04-async-tokio.md) prescribes exactly that case; without this exception
    the two skills contradict each other on the same code.
 5. **Every await has a timeout policy.** External calls get explicit deadlines;
    internal ones inherit a scope deadline. "Forever" is a decision, not a

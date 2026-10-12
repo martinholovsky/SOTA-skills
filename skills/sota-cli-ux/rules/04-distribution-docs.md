@@ -42,7 +42,7 @@ from a single source of truth, man pages, README quickstart, CI pinning.
   attestations) over bare GPG keys nobody verifies. Document the one-line
   verification command next to the download link, or nobody will run it.
 - Package-manager installs own the binary: in-tool `self update` must detect
-  and defer to them (rules/03 §5).
+  and defer to them ([rules/03](03-behavior-lifecycle.md) §5).
 - Don't squat ambiguous names; check registries before naming. The binary name
   is forever-API too.
 
@@ -76,7 +76,7 @@ from a single source of truth, man pages, README quickstart, CI pinning.
   ```
 
   If the quickstart needs prose paragraphs of prerequisites, the tool's
-  defaults are wrong (rules/01 §4), not the README.
+  defaults are wrong ([rules/01](01-commands-flags-config.md) §4), not the README.
 - **Version pinning for CI is a feature, not an afterthought**:
   - stable per-version download URLs that never change or disappear — old
     releases stay up;
@@ -87,7 +87,7 @@ from a single source of truth, man pages, README quickstart, CI pinning.
     day, and the bug reports land on you.
 - Changelog per release, human-written headline per breaking change, with the
   migration command/flag mapping. `tool` major upgrades deserve a short
-  upgrade guide; deprecation warnings in-product should link to it (rules/03 §7).
+  upgrade guide; deprecation warnings in-product should link to it ([rules/03](03-behavior-lifecycle.md) §7).
 
 ## Audit checklist
 

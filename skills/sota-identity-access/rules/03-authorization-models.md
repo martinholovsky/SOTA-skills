@@ -6,7 +6,7 @@ segregation of duties (SoD), policy-as-code engines (OPA/Rego, AWS Cedar, OpenFG
 SpiceDB), policy testing, and birthright vs requested access.
 
 This file owns the **model and the engine**. It does NOT own app-level object-level
-enforcement bugs (IDOR/BOLA in one handler) — that is **sota-code-security** rules/03.
+enforcement bugs (IDOR/BOLA in one handler) — that is **[sota-code-security** rules/03](../../sota-code-security/rules/03-authorization.md).
 The division: code-security asks "did this handler check ownership of this row?"; this
 file asks "is the permission model correct, least-privilege, tested, and free of role
 explosion and SoD violations?".
@@ -32,10 +32,10 @@ graph adds operational complexity (traversal depth, consistency, negative permis
 - **Role explosion** is the classic RBAC failure: combinatorial roles
   (`finance-eu-readonly-q3`) multiply until no one understands them. Defenses: keep roles
   aligned to *job functions*, factor cross-cutting context into ABAC attributes instead
-  of new roles, and prune unused roles in access reviews (rules/04).
+  of new roles, and prune unused roles in access reviews ([rules/04](04-lifecycle-provisioning.md)).
 - **No permission accumulation across role changes.** When a user moves roles, *recompute*
   their effective permissions — do not append the new role and leave the old (the "access
-  creep" of movers, rules/04).
+  creep" of movers, [rules/04](04-lifecycle-provisioning.md)).
 - **Birthright vs requested.** Birthright access (everyone gets baseline accounts/groups
   on joining) is automatic and minimal; everything beyond is *requested* and *approved*,
   with an owner and an expiry. A privileged role granted as birthright is a finding.
@@ -55,7 +55,7 @@ The most common silent over/under-grant lives in the IdP-group → app-role mapp
   <scopes>` and claims via `update-claim-map`. A user in no mapped group ends up with no
   granted scopes — which is correct, *provided the RP treats "no scopes" as no access*
   rather than defaulting them in. Verify both sides.
-- Re-map upstream/external group claims through your own model (rules/02 §8); never let an
+- Re-map upstream/external group claims through your own model ([rules/02](02-idp-operations.md) §8); never let an
   upstream IdP's arbitrary group assertion directly grant a privileged local role.
 
 ```rego
@@ -81,13 +81,13 @@ role := "viewer"  # <-- default low role for ANY authenticated user regardless o
   approve-access; deploy-to-prod + approve-prod-deploy). Enforce SoD at grant time (block
   the assignment) and detect violations in access reviews. SoD violations are a Medium-to-
   High finding depending on the blast radius.
-- **Just-in-time elevation** rather than standing privilege (rules/05): a user requests a
+- **Just-in-time elevation** rather than standing privilege ([rules/05](05-privileged-workload.md)): a user requests a
   permission for a bounded window instead of holding it permanently.
 - **Log authorization decisions** (OWASP Authorization): the decision point emits a
   structured event — `who`, `action`, `resource`, `decision`, `policy/rule id` — for at
   least every *deny* and every privileged *allow*. Denies are a primary detection signal
   (enumeration, broken-object-level-auth probing); without them an authz bypass is
-  invisible. Feed them to sota-detection-engineering; never log the token/credential.
+  invisible. Feed them to [sota-detection-engineering](../../sota-detection-engineering/SKILL.md); never log the token/credential.
 
 ## 5. Policy-as-code engines
 
@@ -105,7 +105,7 @@ Author authorization as versioned, tested code — not as clicks in an admin UI:
   2019 Google Zanzibar paper. **Ory Keto** is another Zanzibar-style option.
 - Whatever the engine: a single decision API the app calls, policy in version control,
   reviewed and deployed like code, with the policy store itself protected (editing the
-  policy is a privileged action — rules/05).
+  policy is a privileged action — [rules/05](05-privileged-workload.md)).
 
 ```cedar
 // Cedar: deny-by-default; forbid is a hard ceiling that overrides any permit
@@ -153,8 +153,8 @@ type document
 - **Keep the matrix as data, and show reviewers the same data.** The role × resource ×
   action matrix lives in one machine-readable file (YAML/JSON), with the expected decision
   and, for denials, the expected refusal (403 vs 404, the error code). The tests are
-  generated from it (the HTTP-layer version is **sota-testing** rules/09 §3a). Render the
-  same file into a readable table for access reviewers and auditors (rules/04 §4), so the
+  generated from it (the HTTP-layer version is **[sota-testing** rules/09](../../sota-testing/rules/09-security-testing.md) §3a). Render the
+  same file into a readable table for access reviewers and auditors ([rules/04](04-lifecycle-provisioning.md) §4), so the
   matrix a person approves is the one CI enforces. A matrix kept in a spreadsheet beside
   the code drifts from it. OWASP: Authorization Testing Automation, Authorization
   Regression Testing cheat sheets.

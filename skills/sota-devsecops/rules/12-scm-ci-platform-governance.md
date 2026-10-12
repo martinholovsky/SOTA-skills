@@ -3,7 +3,7 @@
 Scope: the settings that live on the **organisation**, not in any repository file: who may
 fork or publish a repo, who must use MFA, which outside contributors may run workflows,
 which workflows may reach privileged runners, who must approve what, who administers the
-platform, and whether any of it is kept as code. No workflow lint sees them, because no file contains them. `rules/01` hardens what the
+platform, and whether any of it is kept as code. No workflow lint sees them, because no file contains them. [`rules/01`](01-pipeline-security.md) hardens what the
 pipeline does; this file covers the platform the pipeline runs on. Examples use GitHub's
 REST API; other forges have equivalent settings under different names, so look up your own.
 
@@ -22,15 +22,15 @@ controls, and a visibility flip. Close both at org level.
   per repository, with a written reason.
 - Only org owners may change repository visibility
   (`members_can_change_repo_visibility: false`). A flip to public exposes the entire
-  history, including every secret ever committed and later "removed" (`sota-secrets-management`).
+  history, including every secret ever committed and later "removed" ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)).
 - Review visibility changes in the org audit log (event `repo.access`, "the visibility of
-  a repository changed") and alert on any flip to public (rules/07 §7.3.1).
+  a repository changed") and alert on any flip to public ([rules/07](07-runtime-ops.md) §7.3.1).
   (OWASP: CI/CD Security cheat sheet)
 
 ## 12.2 Org-wide MFA on SCM and CI platforms
 
 MFA on privileged accounts only is not enough: any member with write access can push
-a workflow, and a workflow can reach your secrets (rules/01 §1.8).
+a workflow, and a workflow can reach your secrets ([rules/01](01-pipeline-security.md) §1.8).
 
 - Require two-factor authentication for **every** member, outside collaborator and billing
   manager of the SCM org, and of the CI/CD platform if it has its own accounts. Enforce it
@@ -39,7 +39,7 @@ a workflow, and a workflow can reach your secrets (rules/01 §1.8).
 - Also require **secure methods only**. In GitHub's definition these are passkeys,
   security keys, authenticator apps and GitHub Mobile, and SMS is excluded. An
   authenticator-app code can still be phished, so for phishing resistance require
-  passkeys/security keys at the IdP behind SSO (`sota-identity-access`).
+  passkeys/security keys at the IdP behind SSO ([`sota-identity-access`](../../sota-identity-access/SKILL.md)).
 - Alert on the audit events `org.disable_two_factor_requirement` and
   `org.clear_disallowed_two_factor_methods`.
   (OWASP: CI/CD Security cheat sheet; Software Supply Chain Security cheat sheet)
@@ -56,7 +56,7 @@ their workflows run without approval.
   (`/orgs/{org}/actions/permissions/fork-pr-contributor-approval`) and per repository.
   Approval costs a maintainer one click per external PR, and only fork PRs from
   non-members need it.
-- **A self-hosted runner attached to a public repository is banned** (rules/01 §1.6). If
+- **A self-hosted runner attached to a public repository is banned** ([rules/01](01-pipeline-security.md) §1.6). If
   one exists anyway, the fallback is manual: a maintainer reads and approves **every**
   external run before it executes. That still leaves code execution on your
   infrastructure one careless approval away, so rate the pairing **High** whatever the
@@ -79,7 +79,7 @@ restrict them**. The boundary is the runner group.
   read 2026-09-25; plan availability of the workflow restriction: needs verification.)
 - **Low-trust work goes to a separate pool**: PR validation, fork PRs and repositories
   without branch protection run on GitHub-hosted or ephemeral runners with no network reach
-  and no attached cloud role (`rules/01` §1.6).
+  and no attached cloud role ([`rules/01`](01-pipeline-security.md) §1.6).
 - **Watch the default group.** A runner registered without a group choice is assigned to
   it (GitHub's runner-group docs), so check that group's visibility: a privileged runner
   that lands there by accident is reachable from every repository the group admits.
@@ -97,10 +97,10 @@ satisfy for crypto code, is a formality.
   authors cannot approve their own pull requests", but a collaborator can push a commit onto someone else's approved
   PR. The ruleset `pull_request` parameter `require_last_push_approval: true` requires
   "the most recent reviewable push" to be approved by someone other than the person who
-  pushed it. Combine it with dismissing stale approvals (`rules/01` §1.7).
+  pushed it. Combine it with dismissing stale approvals ([`rules/01`](01-pipeline-security.md) §1.7).
 - **Scale reviewers with module risk.** Mark the high-risk paths (cryptography,
   authentication and session handling, authorization, payment, smart contracts, the CI and
-  release files of `rules/01` §1.8) and route them to a security owner or architect through
+  release files of [`rules/01`](01-pipeline-security.md) §1.8) and route them to a security owner or architect through
   CODEOWNERS with required code-owner review, or the ruleset `required_reviewers` parameter
   (reviewers with file patterns). Require two approvals there if one is the default.
 - **Qualified reviewers**: the teams named for those paths have had secure-coding training
@@ -109,7 +109,7 @@ satisfy for crypto code, is a formality.
   whether it is **deliberately** malicious: obfuscated or encoded strings, new network
   destinations, weakened tests or assertions, dependency or lockfile changes the PR does
   not explain, and changes to who may approve. A trusted maintainer's change is where the
-  xz-utils backdoor came from (`rules/03` §3.4).
+  xz-utils backdoor came from ([`rules/03`](03-dependencies.md) §3.4).
 - **Record the outcome.** Platform approvals are recorded; a review held outside the
   platform (a call, a design review) gets a written note on the PR.
 - **Restricted repositories keep their reviewers inside.** Do not grant repository access
@@ -128,20 +128,20 @@ satisfy for crypto code, is a formality.
   returned the same 23 logins for one public org, so the filter proves nothing. Keep an
   inventory of everyone who can **view or change CI secrets and system settings**: owners,
   repository admins, and everyone with write access to a repository whose workflows can read
-  a secret (`rules/01` §1.8).
+  a secret ([`rules/01`](01-pipeline-security.md) §1.8).
 - **Limit who installs plugins, apps and integrations.** On GitHub, org owners install
   GitHub Apps, and so can a repository admin when the app requests no organization
   permissions and not the "repository administration" permission (GitHub's installation
   docs, read 2026-09-25). Repository-admin grants are therefore also app-install grants.
   On a self-hosted CI server, plugin installation stays an admin-only action, and every
-  plugin gets the vetting in `rules/15` §15.1.
+  plugin gets the vetting in [`rules/15`](15-dependency-adoption.md) §15.1.
 - **Cap and time-box outside access.** External contributors, contractors and temporary
   maintainers get the lowest role that works and a recorded end date, with removal done by
   a scheduled review rather than by memory.
 - **Restrict administrative access by network where the platform supports it.** GitHub's
   org IP allow list is available only to GitHub Enterprise Cloud organizations (per its
   docs); a self-hosted CI UI sits behind a VPN or identity-aware proxy
-  (`sota-network-security`).
+  ([`sota-network-security`](../../sota-network-security/SKILL.md)).
   (OWASP: CI/CD Security cheat sheet; Secrets Management cheat sheet; SCVS 3.12)
 
 ## 12.7 Settings as governed configuration: distrust defaults, keep them as code, scan for drift
@@ -154,12 +154,12 @@ satisfy for crypto code, is a formality.
   come from a `Jenkinsfile` or job DSL and the server itself from Configuration as Code.
 - **Treat vendor defaults as untrusted until reviewed.** A default was chosen for a first
   run, not for your threat model (default token permissions are the standing example,
-  `rules/01` §1.1). Write the reviewed baseline down and make the code match it.
+  [`rules/01`](01-pipeline-security.md) §1.1). Write the reviewed baseline down and make the code match it.
 - **Scan for misconfiguration and drift on a schedule.** Legitify scans GitHub and GitLab
   organizations and repositories for risky settings; OpenSSF Scorecard scores individual
   repositories; Allstar enforces a policy set continuously but must now be **self-run** (its
   README: the OpenSSF-hosted GitHub App has been retired). If settings are managed as code,
-  a scheduled plan that shows changes is drift (`rules/06` §6.3). Route findings to an
+  a scheduled plan that shows changes is drift ([`rules/06`](06-iac-deployment.md) §6.3). Route findings to an
   owner.
   (OWASP: CI/CD Security cheat sheet)
 
@@ -167,13 +167,13 @@ satisfy for crypto code, is a formality.
 
 - **Keep an automated inventory** of CI-server plugins, build tools and their versions:
   plugin manifests (`plugins.txt`/`plugins.yaml`, which Renovate's `jenkins` manager
-  updates), pinned builder images and tool-version files (`rules/04` §4.1). Point the update
+  updates), pinned builder images and tool-version files ([`rules/04`](04-build-containers.md) §4.1). Point the update
   bot and advisory monitoring at those manifests, as you do for application dependencies.
 - **Keep workflow SAST current, or its new detections never run.** zizmor adds audits in
   minor releases: its audit reference dates `secrets-outside-env` to v1.23.0 and
   `adhoc-packages` to v1.26.0, so a pin older than those never checks them. Pin the scanner
-  (`rules/04` §4.1) and let the update bot move the pin; the same goes for the CodeQL
-  action that runs the `actions` queries (`rules/01` §1.9).
+  ([`rules/04`](04-build-containers.md) §4.1) and let the update bot move the pin; the same goes for the CodeQL
+  action that runs the `actions` queries ([`rules/01`](01-pipeline-security.md) §1.9).
   (OWASP: GitHub Actions Security cheat sheet; Software Supply Chain Security cheat sheet)
 
 ## Audit checklist

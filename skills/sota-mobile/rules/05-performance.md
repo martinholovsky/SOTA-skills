@@ -13,7 +13,7 @@ Set these in the repo (`docs/perf-budgets.md` or CI config). Adjust the numbers 
 | Frame budget | 16.6 ms @ 60 Hz; 8.3 ms @ 120 Hz — budget for the worst supported device, not your ProMotion dev phone | JankStats / MetricKit hang rate |
 | Slow / frozen frames | < 5% / < 0.1% (vitals: > 16 ms / > 700 ms) | Android vitals, APM |
 | ANR rate | < 0.47% of daily active users (Play user-perceived bad-behavior threshold, 8% per device model; main thread blocked > 5 s) | Play vitals, release gate |
-| Crash-free sessions | ≥ 99.9% (vitals user-perceived crash threshold: 1.09%) | Crash SDK, rollout gate (rules/06) |
+| Crash-free sessions | ≥ 99.9% (vitals user-perceived crash threshold: 1.09%) | Crash SDK, rollout gate ([rules/06](06-release-and-operations.md)) |
 | Download size | Tracked per release with a delta gate (e.g., +2 MB needs sign-off). Play: compressed download limits of 500 MB for the base module and for each feature module, 4 GB cumulative for all modules and install-time asset packs; above 200 MB, cellular users see a non-blocking size dialog; iOS: large apps prompt on cellular | CI size report |
 | Memory | Flat across a 10-min core-loop soak; survives `onTrimMemory`/`didReceiveMemoryWarning` without data loss | soak test, LeakCanary |
 
@@ -43,7 +43,7 @@ prefs.edit().putString("draft", text).commit()   // commit() blocks; apply() doe
 suspend fun saveDraft(text: String) = withContext(io) { dao.saveDraft(text) }
 ```
 
-- Tooling, debug builds: Android `StrictMode` (`detectDiskReads/detectNetwork().penaltyDeath()` in CI-instrumented runs; never active in release, rules/04 §4.9), iOS Main Thread Checker + `os_signpost` spans. New StrictMode violations fail CI — that's the cheapest perf regression gate that exists.
+- Tooling, debug builds: Android `StrictMode` (`detectDiskReads/detectNetwork().penaltyDeath()` in CI-instrumented runs; never active in release, [rules/04](04-security.md) §4.9), iOS Main Thread Checker + `os_signpost` spans. New StrictMode violations fail CI — that's the cheapest perf regression gate that exists.
 - Hidden main-thread work to hunt in audits: synchronous `SharedPreferences.commit()`, eager DI graph construction at startup, `DateFormatter`/`NumberFormatter` *creation* in list rows (creation is expensive; cache them), oversized `Codable` decodes in `@MainActor` contexts, synchronous `UIImage(named:)` of huge assets, blocking `.get()`/`runBlocking` on futures.
 - ANR specifics (Android): also caused by slow `BroadcastReceiver.onReceive` (delegate to WorkManager immediately) and input-dispatch timeouts. ANR rate above the vitals threshold suppresses your store ranking — treat the budget as a release gate, not a dashboard.
 
@@ -51,8 +51,8 @@ suspend fun saveDraft(text: String) = withContext(io) { dao.saveDraft(text) }
 
 Instrument the segments — process start → `Application.onCreate` / `didFinishLaunching` → first frame → first *meaningful* content — and attack the largest one. Typical findings, in order of frequency:
 
-1. **Third-party SDK pile-up in `onCreate`.** Eight SDKs initializing synchronously is the classic startup killer. Lazy-initialize via DI; use Jetpack `App Startup` / deferred initializers; analytics, attribution, and ads SDKs initialize *after* first frame (also required for consent gating, rules/04 §4.10).
-2. **Synchronous I/O before first frame** — migrations, feature-flag fetches, "quick" prefs reads. First frame renders from local DB/cache (rules/03); flags use last-known values.
+1. **Third-party SDK pile-up in `onCreate`.** Eight SDKs initializing synchronously is the classic startup killer. Lazy-initialize via DI; use Jetpack `App Startup` / deferred initializers; analytics, attribution, and ads SDKs initialize *after* first frame (also required for consent gating, [rules/04](04-security.md) §4.10).
+2. **Synchronous I/O before first frame** — migrations, feature-flag fetches, "quick" prefs reads. First frame renders from local DB/cache ([rules/03](03-offline-background-push.md)); flags use last-known values.
 3. **Eager DI graphs** — constructing the entire object graph at launch. Scope construction to the first screen's needs.
 
 Platform tooling:
@@ -93,7 +93,7 @@ LazyColumn {
 
 ### 5.6 Battery and radio: batch, coalesce, respect the schedulers
 
-- **Radio wake-ups dominate network battery cost** — one request every 30 s keeps the radio in high-power state continuously. Batch small requests, coalesce via WorkManager/BGTaskScheduler (rules/03), prefer push-triggered sync over polling, and enable gzip/Brotli + HTTP/2 connection reuse.
+- **Radio wake-ups dominate network battery cost** — one request every 30 s keeps the radio in high-power state continuously. Batch small requests, coalesce via WorkManager/BGTaskScheduler ([rules/03](03-offline-background-push.md)), prefer push-triggered sync over polling, and enable gzip/Brotli + HTTP/2 connection reuse.
 - **Location is the top battery-complaint generator:** request the coarsest accuracy and longest interval the feature tolerates; stop updates the instant the feature ends (audit for dangling `startUpdatingLocation`/`requestLocationUpdates`); use geofencing and significant-change APIs instead of continuous GPS; background location triggers extra store review scrutiny on both platforms and must be product-essential.
 - No wakelocks for convenience — Android vitals tracks excessive wakeups and partial wakelocks as bad behavior (≥ 2 h of partial wake locks in 24 h is excessive; above 5% of sessions over 28 days it can affect Play visibility). No iOS background audio/location modes kept alive to fake background execution (App Review and the battery screen both catch it).
 - Defer non-urgent work to charging+unmetered constraints; users notice the app that drained 8% overnight, and the OS battery screen names you.
@@ -104,7 +104,7 @@ Install conversion drops measurably with download size, and storage-pressure uni
 
 - Android: AAB (mandatory for new Play apps) + R8 with resource shrinking; per-device compressed download tracked in Play Console (the limits in the budget table apply to compressed downloads, not the bundle; 200 MB is only the cellular-warning threshold); Play Asset Delivery / Feature Delivery for large content and rarely-used features; strip unused locales/ABIs (`resConfigs`, ABI splits come free with AAB).
 - iOS: App Thinning handles per-device slicing; audit the App Store Connect app-size report per release; asset catalogs with on-demand resources for big media.
-- Cross-platform runtimes add a real floor (Flutter/RN baseline MBs) — accepted at stack choice time (rules/01), but the *delta per release* is yours: CI prints the size diff per PR and the release gate requires sign-off on regressions. Lazy-download ML models, fonts, and media; never ship debug symbols or test fixtures in release artifacts.
+- Cross-platform runtimes add a real floor (Flutter/RN baseline MBs) — accepted at stack choice time ([rules/01](01-platform-and-stack.md)), but the *delta per release* is yours: CI prints the size diff per PR and the release gate requires sign-off on regressions. Lazy-download ML models, fonts, and media; never ship debug symbols or test fixtures in release artifacts.
 
 ### 5.8 Jank: measure on weak hardware, keep work off the render path
 
@@ -122,7 +122,7 @@ Lab benchmarks regress quietly; production distributions are the truth.
 
 - **iOS: MetricKit** — launch times, hang rate, memory peaks, disk writes, plus `MXSignpostMetric` custom spans — reviewed per release alongside Xcode Organizer's hangs/launch/termination reports.
 - **Android: Android vitals** (ANR, crash, startup, slow/frozen frames, wakeups — with store-ranking consequences) + **Macrobenchmark** in CI + `JankStats` for in-field frame data tagged by screen.
-- One APM (Sentry, Firebase Performance, Datadog, Embrace) for screen-load traces and network latency distributions, tagged with app version, OS, device class, and **active feature flags** — flag-tagged regressions are how you catch a bad rollout at 5% instead of 100% (rules/06 §6.5).
+- One APM (Sentry, Firebase Performance, Datadog, Embrace) for screen-load traces and network latency distributions, tagged with app version, OS, device class, and **active feature flags** — flag-tagged regressions are how you catch a bad rollout at 5% instead of 100% ([rules/06](06-release-and-operations.md) §6.5).
 - Track **p90/p95, not means** — mobile distributions are long-tailed and the tail is where churn lives. Alert on per-release regression of p95 cold start, p95 screen load, ANR rate, and crash-free rate; these alerts are the staged-rollout gates.
 
 ## Audit checklist

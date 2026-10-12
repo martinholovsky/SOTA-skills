@@ -32,19 +32,19 @@ files preemptively — pick by task.
 Use when designing or implementing: new schemas, migrations, queries, ORM
 layers, caching, job queues, or database infrastructure.
 
-1. **Engine and model first.** Read `rules/01-choosing-and-modeling.md` before
+1. **Engine and model first.** Read [`rules/01-choosing-and-modeling.md`](rules/01-choosing-and-modeling.md) before
    writing any DDL. Default to Postgres unless a rule there says otherwise.
 2. **Every schema change is a migration.** Never hand the user raw DDL to run
-   ad hoc; produce migration files following `rules/02-schema-migrations.md`
+   ad hoc; produce migration files following [`rules/02-schema-migrations.md`](rules/02-schema-migrations.md)
    (expand/contract, lock-aware, reversible-or-documented).
 3. **Design indexes with the queries, not after.** When writing a query that
    will run in production, state which index serves it. Follow
-   `rules/03-queries-and-indexes.md`.
+   [`rules/03-queries-and-indexes.md`](rules/03-queries-and-indexes.md).
 4. **State the concurrency story.** For any write path: idempotency, isolation
-   level, locking strategy, retry behavior (`rules/04-transactions-concurrency.md`).
+   level, locking strategy, retry behavior ([`rules/04-transactions-concurrency.md`](rules/04-transactions-concurrency.md)).
 5. **Operational defaults are part of the design.** Pooling, backups,
    monitoring hooks, and retention are not "later" items
-   (`rules/05-reliability-and-scale.md`, `rules/06-security-and-compliance.md`).
+   ([`rules/05-reliability-and-scale.md`](rules/05-reliability-and-scale.md), [`rules/06-security-and-compliance.md`](rules/06-security-and-compliance.md)).
 6. Prefer boring, well-trodden patterns. Novelty in the data layer is a cost,
    not a feature.
 
@@ -91,14 +91,14 @@ the top 3 fixes by risk-reduction-per-effort.
 
 | File | Read this when... |
 |------|-------------------|
-| `rules/01-choosing-and-modeling.md` | Picking an engine (SQL vs NoSQL/KV/columnar/time-series/vector); designing tables; deciding normalization, JSONB usage, primary keys, soft deletes, audit/history tables, ledgers and account balances, multi-tenancy, or **how absence is encoded (`NULL`/omitted property vs an in-band sentinel)**. |
-| `rules/02-schema-migrations.md` | Writing or reviewing any migration; altering hot tables; planning zero-downtime schema changes; backfills; setting up migration tooling or testing. |
-| `rules/03-queries-and-indexes.md` | Writing/reviewing queries or ORM code; reading EXPLAIN ANALYZE; choosing index types or composite column order; pagination; N+1 suspicion; CTEs and window functions. |
-| `rules/04-transactions-concurrency.md` | Anything with concurrent writes: isolation levels, locking (FOR UPDATE, SKIP LOCKED, advisory), job queues, idempotency, deadlocks, long transactions, connection pooling. |
-| `rules/05-reliability-and-scale.md` | Backups/PITR, replication and read replicas, partitioning, vacuum/bloat, monitoring, capacity planning, sharding decisions, Redis caching patterns and distributed locks. |
-| `rules/06-security-and-compliance.md` | DB roles and grants, RLS, encryption at rest/in transit, SQL injection surface, PII columns, data retention and GDPR-style deletion. |
-| `rules/07-vector-and-ai.md` | Embeddings, semantic/hybrid search, pgvector vs dedicated vector DBs (incl. Qdrant exposure hardening), embedding model versioning and re-indexing. |
-| `rules/08-surrealdb-multimodel.md` | Building on or auditing SurrealDB: DEFINE ACCESS auth, system users and least privilege, parameterized SurrealQL, SCHEMAFULL + PERMISSIONS, capability flags, indexes, multi-model (embed/reference/graph edges), backups. |
+| [`rules/01-choosing-and-modeling.md`](rules/01-choosing-and-modeling.md) | Picking an engine (SQL vs NoSQL/KV/columnar/time-series/vector); designing tables; deciding normalization, JSONB usage, primary keys, soft deletes, audit/history tables, ledgers and account balances, multi-tenancy, or **how absence is encoded (`NULL`/omitted property vs an in-band sentinel)**. |
+| [`rules/02-schema-migrations.md`](rules/02-schema-migrations.md) | Writing or reviewing any migration; altering hot tables; planning zero-downtime schema changes; backfills; setting up migration tooling or testing. |
+| [`rules/03-queries-and-indexes.md`](rules/03-queries-and-indexes.md) | Writing/reviewing queries or ORM code; reading EXPLAIN ANALYZE; choosing index types or composite column order; pagination; N+1 suspicion; CTEs and window functions. |
+| [`rules/04-transactions-concurrency.md`](rules/04-transactions-concurrency.md) | Anything with concurrent writes: isolation levels, locking (FOR UPDATE, SKIP LOCKED, advisory), job queues, idempotency, deadlocks, long transactions, connection pooling. |
+| [`rules/05-reliability-and-scale.md`](rules/05-reliability-and-scale.md) | Backups/PITR, replication and read replicas, partitioning, vacuum/bloat, monitoring, capacity planning, sharding decisions, Redis caching patterns and distributed locks. |
+| [`rules/06-security-and-compliance.md`](rules/06-security-and-compliance.md) | DB roles and grants, RLS, encryption at rest/in transit, SQL injection surface, PII columns, data retention and GDPR-style deletion. |
+| [`rules/07-vector-and-ai.md`](rules/07-vector-and-ai.md) | Embeddings, semantic/hybrid search, pgvector vs dedicated vector DBs (incl. Qdrant exposure hardening), embedding model versioning and re-indexing. |
+| [`rules/08-surrealdb-multimodel.md`](rules/08-surrealdb-multimodel.md) | Building on or auditing SurrealDB: DEFINE ACCESS auth, system users and least privilege, parameterized SurrealQL, SCHEMAFULL + PERMISSIONS, capability flags, indexes, multi-model (embed/reference/graph edges), backups. |
 
 ## Top 10 non-negotiables
 

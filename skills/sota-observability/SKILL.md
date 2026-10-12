@@ -59,7 +59,7 @@ not afterthoughts. Workflow:
 
 ## AUDIT mode
 
-Assess an existing codebase/deployment. Read `rules/06` first for the full
+Assess an existing codebase/deployment. Read [`rules/06`](rules/06-audit-playbook.md) first for the full
 playbook; sample real code paths, do not trust README claims.
 
 **Severity conventions:**
@@ -90,12 +90,12 @@ with the shortest path to YES.
 
 | File | Read this when... |
 |------|-------------------|
-| `rules/01-structured-logging.md` | Writing or reviewing log statements, choosing levels, designing wide events/canonical log lines, configuring redaction, sampling, controlling log spend, clock sync and event-vs-receive time, log-level governance, protecting the log store (read auditing, file placement, authenticated transport), or hardening the logging path against flooding and sink failure |
-| `rules/02-metrics.md` | Adding Prometheus/OTel metrics, choosing counter vs gauge vs histogram, designing labels, computing percentiles, applying RED/USE, linking metrics to traces via exemplars |
-| `rules/03-tracing.md` | Instrumenting with OpenTelemetry, deciding what gets a span, propagating context across HTTP/queues/jobs, choosing head vs tail sampling, using (or avoiding) baggage |
-| `rules/04-slos-alerting.md` | Defining SLIs/SLOs, error budgets, writing burn-rate alerts, reviewing alert quality, fighting alert fatigue, deciding page vs ticket |
-| `rules/05-operational-readiness.md` | Implementing health endpoints, exposing graceful degradation, securing debug endpoints, continuous profiling, Sentry-style error tracking, building dashboards, **edge access logs as a decision-grade signal**, keeping test-written telemetry out of the sink production writes — and the question with no instrument, where a proxy measurement silently answers a different one |
-| `rules/06-audit-playbook.md` | Auditing a codebase's observability posture end-to-end; common gaps catalog; scoring and reporting |
+| [`rules/01-structured-logging.md`](rules/01-structured-logging.md) | Writing or reviewing log statements, choosing levels, designing wide events/canonical log lines, configuring redaction, sampling, controlling log spend, clock sync and event-vs-receive time, log-level governance, protecting the log store (read auditing, file placement, authenticated transport), or hardening the logging path against flooding and sink failure |
+| [`rules/02-metrics.md`](rules/02-metrics.md) | Adding Prometheus/OTel metrics, choosing counter vs gauge vs histogram, designing labels, computing percentiles, applying RED/USE, linking metrics to traces via exemplars |
+| [`rules/03-tracing.md`](rules/03-tracing.md) | Instrumenting with OpenTelemetry, deciding what gets a span, propagating context across HTTP/queues/jobs, choosing head vs tail sampling, using (or avoiding) baggage |
+| [`rules/04-slos-alerting.md`](rules/04-slos-alerting.md) | Defining SLIs/SLOs, error budgets, writing burn-rate alerts, reviewing alert quality, fighting alert fatigue, deciding page vs ticket |
+| [`rules/05-operational-readiness.md`](rules/05-operational-readiness.md) | Implementing health endpoints, exposing graceful degradation, securing debug endpoints, continuous profiling, Sentry-style error tracking, building dashboards, **edge access logs as a decision-grade signal**, keeping test-written telemetry out of the sink production writes — and the question with no instrument, where a proxy measurement silently answers a different one |
+| [`rules/06-audit-playbook.md`](rules/06-audit-playbook.md) | Auditing a codebase's observability posture end-to-end; common gaps catalog; scoring and reporting |
 
 ## Top 10 non-negotiables
 

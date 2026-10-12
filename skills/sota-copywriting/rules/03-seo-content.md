@@ -94,12 +94,12 @@ name these; violating them risks the page *and* the domain:
   heuristic).
 - **Heading hierarchy is the document outline**: one H1 stating the topic,
   H2s that answer the sub-questions searchers actually ask (they're your
-  skim-test — `rules/02` §3 — and your featured-snippet candidates).
+  skim-test — [`rules/02`](02-headlines-landing-pages.md) §3 — and your featured-snippet candidates).
 - **Internal links with descriptive anchors** ("zero-downtime migration
   guide", not "read more") from and to related content — orphan pages
   neither rank nor pass value. External links to your primary sources are a
   trust signal, not a leak.
-- URL slugs: short, readable, stable — a slug is an API (`sota-api-design`
+- URL slugs: short, readable, stable — a slug is an API ([`sota-api-design`](../../sota-api-design/SKILL.md)
   versioning instincts apply: redirects on change, never break inbound
   links).
 
@@ -111,17 +111,17 @@ name these; violating them risks the page *and* the domain:
   (experience, data, opinion), and owns the byline.
 - LLMs fabricate specifics — statistics, citations, quotes, product
   capabilities. **Every number and citation in AI-drafted content gets
-  primary-source verification** before publish (`rules/04` §1 machinery).
+  primary-source verification** before publish ([`rules/04`](04-claims-legal-trust.md) §1 machinery).
 - Don't fabricate the experience signals: fake "we tested this for 3 weeks"
   framing around untested content is deception, indistinguishable from the
-  fake-review problem (`rules/04` §3).
+  fake-review problem ([`rules/04`](04-claims-legal-trust.md) §3).
 - Disclose AI usage where your editorial policy, platform, or jurisdiction
   requires it; a published AI-usage policy is becoming a standard trust
   surface for content sites. In the EU, AI Act Art. 50(4) makes it a duty for
   AI-generated text published to inform the public on matters of public
   interest — waived only where the text underwent human review or editorial
   control **and** a person holds editorial responsibility — the human gate in
-  this section's first bullet. Dates and the rest of Art. 50: `sota-privacy-compliance` rules/04 §5.
+  this section's first bullet. Dates and the rest of Art. 50: [`sota-privacy-compliance` rules/04](../../sota-privacy-compliance/rules/04-regulatory-landscape.md) §5.
 
 ## 6. Generative AI search surfaces (AI Overviews / AI Mode)
 

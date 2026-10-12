@@ -218,9 +218,9 @@ Tune in this order — most GC problems are application problems:
    modern ZGC is generational). Go: one GC, tune `GOGC` (collection frequency
    vs heap growth) and `GOMEMLIMIT` (hard cap). The Green Tea collector is the
    default since Go 1.26, so re-baseline GC metrics after that upgrade before
-   re-tuning (`sota-golang` rules/06 §5); container-aware GOMAXPROCS needs a
+   re-tuning ([`sota-golang` rules/06](../../sota-golang/rules/06-performance.md) §5); container-aware GOMAXPROCS needs a
    `go` line ≥ 1.25 and is disabled by any `runtime.GOMAXPROCS(n)` call, which
-   is what `automaxprocs` makes (`sota-golang` rules/03 §6).
+   is what `automaxprocs` makes ([`sota-golang` rules/03](../../sota-golang/rules/03-concurrency.md) §6).
 4. **Watch promotion, not just pauses**: short-lived objects surviving into
    old gen (because of pools, caches, or batch lifetimes) make major GCs
    expensive. Generational hypothesis: die young or live forever — avoid the

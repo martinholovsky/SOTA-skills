@@ -7,7 +7,7 @@ Read this when designing alert flow, fighting alert fatigue, tuning, assigning
 severity, enriching/correlating, writing runbooks, building SOAR automation, or
 auditing SOC effectiveness.
 
-Boundary: **sota-observability rules/04 owns the alerting *plumbing*** (routing,
+Boundary: **[sota-observability rules/04](../../sota-observability/rules/04-slos-alerting.md) owns the alerting *plumbing*** (routing,
 paging, dedup transport, on-call rotation, SLO burn-rate alerts for ops). This
 rule owns the *security* content riding that plumbing: which security signals
 page, how they're triaged, and how the SOC stays sane.
@@ -23,7 +23,7 @@ program's primary health metric.
   (consuming attention, creating false confidence). Fix or retire it.
 - **Precision over recall at the alert tier.** A detection at 5% true-positive
   rate trains analysts to ignore it — including the one time it's real. Move
-  low-precision logic to *hunting* (rules/05) or add corroboration; don't page
+  low-precision logic to *hunting* ([rules/05](05-hunting-intel-deception.md)) or add corroboration; don't page
   on it.
 - **Measure it.** Alerts/analyst/shift, % auto-closed, % actioned, time-to-
   triage. Rising volume with flat true positives means the SOC is getting worse,
@@ -74,10 +74,10 @@ research project. Auto-attach:
 - **Asset context** — what is this host/account/resource, who owns it, how
   critical, is it internet-facing.
 - **Identity context** — user role, privilege level, recent auth behavior,
-  whether the account is service vs. human (feeds sota-identity-access
+  whether the account is service vs. human (feeds [sota-identity-access](../../sota-identity-access/SKILL.md)
   anomaly detections).
 - **Threat-intel context** — is this IP/domain/hash known-bad, and from which
-  actor (rules/05 TI). TI is enrichment, not the detection.
+  actor ([rules/05](05-hunting-intel-deception.md) TI). TI is enrichment, not the detection.
 - **Related signals** — other alerts on the same entity in the window.
 
 Enrichment is what lets an analyst (or SOAR) decide in one screen. Unenriched
@@ -90,7 +90,7 @@ Raw detections produce many events per real incident. Collapse them:
 - **Deduplicate** identical/near-identical alerts into one case with a count.
 - **Correlate** related signals on the same entity/time window into a single
   incident (the "alert storm = one breach" pattern). EQL sequences or SIEM
-  correlation rules (rules/03 §6) build these.
+  correlation rules ([rules/03](03-rule-languages-engines.md) §6) build these.
 - **Aggregate to risk** where supported: many low-confidence signals on one
   entity crossing a risk threshold becomes one high-confidence alert (risk-based
   alerting) — turns noise into signal instead of suppressing it.
@@ -113,10 +113,10 @@ what does this detection mean, what's the blast radius, how do I confirm TP vs.
 FP, what are the first containment steps, who/when to escalate. Link it from the
 alert payload.
 
-- Wire the *delivery/linking* via sota-observability rules/04 (alerting +
+- Wire the *delivery/linking* via [sota-observability rules/04](../../sota-observability/rules/04-slos-alerting.md) (alerting +
   runbook plumbing); you own the *security content* of the runbook.
 - A runbook that's never been executed is a draft. Validate runbooks during
-  tabletops and after real incidents (rules/06).
+  tabletops and after real incidents ([rules/06](06-incident-response-validation.md)).
 - Audit: pick 5 firing detections; how many have a linked runbook with concrete
   triage and containment steps vs. an empty wiki stub?
 
@@ -128,7 +128,7 @@ Automate the repetitive, gate the dangerous.
   correlation, ticket creation, evidence collection, notifying the user "was
   this you?".
 - **Auto-containment needs guardrails.** Isolating a host, disabling an account,
-  revoking a token, or killing a process (Tetragon `Sigkill`, rules/03) can
+  revoking a token, or killing a process (Tetragon `Sigkill`, [rules/03](03-rule-languages-engines.md)) can
   cause an outage if the trigger was a false positive. Guardrails:
   - High confidence only (corroborated/risk-threshold detections, not single
     noisy signals).
@@ -145,13 +145,13 @@ Automate the repetitive, gate the dangerous.
   above (confirmed, reversible, logged). OWASP: Zero Trust Architecture cheat
   sheet.
 - Automation that can take down production is itself an attack surface and an
-  availability risk — threat-model it (sota-threat-modeling) and least-privilege
-  its credentials (sota-secrets-management).
+  availability risk — threat-model it ([sota-threat-modeling](../../sota-threat-modeling/SKILL.md)) and least-privilege
+  its credentials ([sota-secrets-management](../../sota-secrets-management/SKILL.md)).
 
 ## 8. Case management & the FP lifecycle
 
 - **One case per incident**, accumulating all correlated alerts, enrichment,
-  analyst notes, and actions — the evidentiary spine for IR (rules/06) and the
+  analyst notes, and actions — the evidentiary spine for IR ([rules/06](06-incident-response-validation.md)) and the
   post-incident review.
 - **Disposition every alert** (TP / FP / benign-true / duplicate). Undispositioned
   alerts mean you can't measure precision or know what to tune.
@@ -169,7 +169,7 @@ Automate the repetitive, gate the dangerous.
   auto-containment).
 - **Security-signal rates** — auth success/failure ratio and policy-violation
   counts (authz denials, guardrail blocks) per app, trended beside MTTD/MTTR; a
-  step change is an attack or a broken control (detections: rules/02 §7).
+  step change is an attack or a broken control (detections: [rules/02](02-telemetry-siem-data-layer.md) §7).
 
 Avoid the vanity trap: "alerts handled" rewards noise. Reward incidents resolved
 correctly and fast.

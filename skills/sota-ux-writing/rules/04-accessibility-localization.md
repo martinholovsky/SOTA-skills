@@ -7,7 +7,7 @@ is a rewrite.
 
 ## 1. WCAG 2.2 language criteria (the copy-owned subset)
 
-The full accessibility pass is `sota-frontend-design` rules/05; these criteria
+The full accessibility pass is [`sota-frontend-design` rules/05](../../sota-frontend-design/rules/05-accessibility.md); these criteria
 are satisfied or violated *by the words themselves*:
 
 - **3.1.1 / 3.1.2 (A/AA)** — page language declared (`<html lang>`), and
@@ -15,11 +15,11 @@ are satisfied or violated *by the words themselves*:
   readers pronounce French with English phonemes.
 - **2.4.6 (AA)** — headings and labels describe topic or purpose: "Payment
   method", not "More details".
-- **2.4.4 (A)** — link purpose clear from the link text (rules/02 §8).
+- **2.4.4 (A)** — link purpose clear from the link text ([rules/02](02-microcopy-components.md) §8).
 - **3.3.2 (A)** — labels or instructions exist wherever input is required —
   the *presence* of the words is the criterion.
 - **3.1.5 (AAA)** — reading level: not required at AA, but treat
-  plain-language discipline (`rules/01` §2) as how general-audience products
+  plain-language discipline ([`rules/01`](01-voice-tone-plain-language.md) §2) as how general-audience products
   approach it.
 
 ## 2. Accessible names: what the screen reader actually says
@@ -37,7 +37,7 @@ are satisfied or violated *by the words themselves*:
   visually-hidden text — a link list of ten identical "Delete"s is unusable.
 - Status updates that appear visually get announced textually (`role=status`
   regions) with self-sufficient wording: "Saving… Saved" — mechanics in
-  frontend rules/04, the *string* is owned here.
+  frontend [rules/04](04-accessibility-localization.md), the *string* is owned here.
 
 ## 3. Writing for the ear and the eye
 
@@ -83,7 +83,7 @@ The engineering contract that makes translation possible:
 ## 5. Layout-facing and locale-facing consequences
 
 - **Budget for expansion**: German/Finnish run roughly +35% over English
-  (worst-case strings and container behavior: `sota-frontend-design` rules/04 §2a); write
+  (worst-case strings and container behavior: [`sota-frontend-design` rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §2a); write
   short English *and* let containers grow — both, not either.
 - Dates, numbers, currency, lists, relative time: **always through locale
   APIs** (`Intl.*` on the web, platform equivalents elsewhere) — never
@@ -93,7 +93,7 @@ The engineering contract that makes translation possible:
   left/right ("see the panel on the right" → name the panel).
 - Idioms, sports/culture metaphors, humor, and wordplay don't travel —
   "home run", "back to square one", puns in empty states all become
-  translator tickets. Plain language (`rules/01`) is the pre-translation.
+  translator tickets. Plain language ([`rules/01`](01-voice-tone-plain-language.md)) is the pre-translation.
 - Images with embedded text are banned (untranslatable, unindexable,
   inaccessible); text renders as text.
 
@@ -109,7 +109,7 @@ The engineering contract that makes translation possible:
   the terms your APIs already migrated to.
 - Name people's attributes only when relevant to the task, using the
   product-glossary term; forms asking for personal attributes follow
-  `sota-privacy-compliance` minimization first (don't write copy for a field
+  [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md) minimization first (don't write copy for a field
   that shouldn't exist).
 - No culture-bound assumptions in examples: names, holidays, address and
   family structures vary — example data is diverse or neutral.

@@ -25,7 +25,7 @@ policy documents. A control that lives in a schema, an IAM policy, a CI gate, or
 signed SBOM survives staff turnover and an assessor's sampling; a control that
 lives in a wiki page does not.
 
-This skill is the **security/regulation counterpart** to `sota-privacy-compliance`
+This skill is the **security/regulation counterpart** to [`sota-privacy-compliance`](../sota-privacy-compliance/SKILL.md)
 (which owns personal-data lifecycle, GDPR, SOC 2, ISO 27001). It owns the
 cybersecurity *control frameworks* and *product-security regulations* — NIST CSF
 2.0, SP 800-53, SP 800-171 / CMMC, SSDF (SP 800-218), FedRAMP, the EU Cyber
@@ -61,14 +61,14 @@ that makes it auditable,"* not silence and not a code change that pretends to
 cover it.
 
 **Related skills — reference, do not duplicate:**
-- `sota-privacy-compliance` — personal-data lifecycle, GDPR/CCPA/HIPAA/PCI, SOC 2 & ISO 27001 audit-ready engineering, breach clocks, data residency
-- `sota-devsecops` — the actual pipeline: SLSA/provenance, SBOM tooling, signing, dependency scanning (SSDF's PS/PW practices live here)
-- `sota-secrets-management` — key management, FIPS-validated KMS, rotation
-- `sota-identity-access` — NIST 800-63 assurance levels, MFA, RBAC/ABAC (the IA/AC control families)
-- `sota-detection-engineering` — detective controls, NIST 800-61 incident response (the DE/RS/RC functions)
-- `sota-network-security` — segmentation depth, zero-trust, egress control (SC family, 62443 conduits)
-- `sota-sandboxing` / `sota-kubernetes` / `sota-cloud-infrastructure` — the CM/SC hardening controls in practice
-- `sota-threat-modeling` — the risk analysis that sets 62443 target Security Levels and DPIA/PIA scope
+- [`sota-privacy-compliance`](../sota-privacy-compliance/SKILL.md) — personal-data lifecycle, GDPR/CCPA/HIPAA/PCI, SOC 2 & ISO 27001 audit-ready engineering, breach clocks, data residency
+- [`sota-devsecops`](../sota-devsecops/SKILL.md) — the actual pipeline: SLSA/provenance, SBOM tooling, signing, dependency scanning (SSDF's PS/PW practices live here)
+- [`sota-secrets-management`](../sota-secrets-management/SKILL.md) — key management, FIPS-validated KMS, rotation
+- [`sota-identity-access`](../sota-identity-access/SKILL.md) — NIST 800-63 assurance levels, MFA, RBAC/ABAC (the IA/AC control families)
+- [`sota-detection-engineering`](../sota-detection-engineering/SKILL.md) — detective controls, NIST 800-61 incident response (the DE/RS/RC functions)
+- [`sota-network-security`](../sota-network-security/SKILL.md) — segmentation depth, zero-trust, egress control (SC family, 62443 conduits)
+- [`sota-sandboxing`](../sota-sandboxing/SKILL.md) / [`sota-kubernetes`](../sota-kubernetes/SKILL.md) / [`sota-cloud-infrastructure`](../sota-cloud-infrastructure/SKILL.md) — the CM/SC hardening controls in practice
+- [`sota-threat-modeling`](../sota-threat-modeling/SKILL.md) — the risk analysis that sets 62443 target Security Levels and DPIA/PIA scope
 
 ## BUILD mode
 
@@ -77,23 +77,23 @@ When designing or implementing a system that must satisfy a framework:
 1. **Scope the boundary first.** Before controls, decide what is *in* the assessed
    system — the authorization boundary (FedRAMP), CUI enclave (800-171/CMMC), or
    zone (62443). A tight, honest boundary is the cheapest control decision you will
-   make; a flat network drags the whole estate into scope (rules/02, rules/05).
+   make; a flat network drags the whole estate into scope ([rules/02](rules/02-nist-800-53-171-cmmc-fedramp.md), [rules/05](rules/05-iec-62443-ot-ics.md)).
 2. **Pick the framework spine, then crosswalk down.** Use NIST CSF 2.0 as the
    organizing map, then bind each outcome to a concrete mechanism from an existing
-   sota-* skill and record it as code (rules/01). Do not re-implement encryption,
+   sota-* skill and record it as code ([rules/01](../sota/rules/01-audit-methodology.md)). Do not re-implement encryption,
    RBAC, or logging here — reference where they already live.
 3. **Encode controls as gates, not prose.** Encryption-required, FIPS-crypto-only,
    boundary-egress-deny, SBOM-present, no-known-exploitable-vulns-at-release become
-   policy-as-code and CI checks that fail the build (rules/01 §evidence, rules/03).
+   policy-as-code and CI checks that fail the build ([rules/01](rules/01-control-frameworks-as-code.md) §evidence, [rules/03](rules/03-ssdf-secure-sdlc.md)).
 4. **Build product-security obligations in from day one** where the CRA/62443
    apply: SBOM in CI, a coordinated-vulnerability-disclosure intake, a signed
    update channel, and a defined support period are architecture, not paperwork —
-   brutal to retrofit (rules/04, rules/05).
+   brutal to retrofit ([rules/04](rules/04-eu-cyber-resilience-act.md), [rules/05](rules/05-iec-62443-ot-ics.md)).
 5. **Emit evidence as a byproduct.** Every control's enforcing system should
    produce its own proof (a CI log, a signed attestation, an IaC diff, a KSI feed).
    If proving a control needs a screenshot, the control runs only at screenshot
-   time (rules/01).
-6. **Know your regime before architecture freezes** (rules/02–05): CUI → 800-171/
+   time ([rules/01](rules/01-control-frameworks-as-code.md)).
+6. **Know your regime before architecture freezes** ([rules/02](rules/02-nist-800-53-171-cmmc-fedramp.md)–05): CUI → 800-171/
    CMMC + FIPS crypto + boundary; US-gov cloud → FedRAMP + 800-53 baseline;
    EU-market product → CRA; OT/industrial/embedded → 62443.
 
@@ -102,8 +102,8 @@ When designing or implementing a system that must satisfy a framework:
 When reviewing a codebase/infrastructure against a framework:
 
 **Process:** (1) Establish the applicable framework(s) and the assessed boundary
-(rules/02 §scope). (2) Obtain or build the control crosswalk — control → claimed
-mechanism → evidence source (rules/01). (3) For each control, verify the mechanism
+([rules/02](rules/02-nist-800-53-171-cmmc-fedramp.md) §scope). (2) Obtain or build the control crosswalk — control → claimed
+mechanism → evidence source ([rules/01](rules/01-control-frameworks-as-code.md)). (3) For each control, verify the mechanism
 *actually enforces* it and the evidence is machine-generated, not asserted — test
 the gate, read the policy-as-code, sample the log. (4) Separate engineering
 findings from organizational ones (the boundary table above) so each lands with
@@ -173,7 +173,7 @@ and sponsors read them.
    disclosure intake, and sign updates over a maintained channel — designed in, not
    bolted on at audit time. **An intake is only half of it**: the reporting clock runs
    from *awareness*, so the triage that decides whether a report is real, ours and
-   exploitable is on the critical path and needs a written order (rules/04 §3a).
+   exploitable is on the critical path and needs a written order ([rules/04](rules/04-eu-cyber-resilience-act.md) §3a).
 8. **Secure-SDLC practices are gates, not intentions.** SSDF PW/PS practices —
    threat modeling, SAST/DAST, provenance, protected repos, signing — are CI checks
    that fail the build. A signed attestation whose practices aren't enforced is

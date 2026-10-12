@@ -25,7 +25,7 @@ the cloud operator, the hypervisor, the node admin, a co-tenant, or anyone
 with physical access to memory. Two tool families, one skill: hardware TEEs
 with remote attestation (trust silicon + verify it), and cryptographic PETs
 that compute on encrypted data (trust only math, pay orders of magnitude for
-it). The boundary with `sota-sandboxing` is direction: sandboxing protects the
+it). The boundary with [`sota-sandboxing`](../sota-sandboxing/SKILL.md) is direction: sandboxing protects the
 host from the workload; this skill protects the workload from the host. Both
 can apply to the same system.
 
@@ -38,30 +38,30 @@ Two modes. Pick one explicitly at the start of the task.
 Use when designing or implementing confidentiality-in-use for new or changed
 systems.
 
-1. **Name the adversary first** (`rules/01` §2, §7): operator, hypervisor,
+1. **Name the adversary first** ([`rules/01`](rules/01-threat-model-and-selection.md) §2, §7): operator, hypervisor,
    co-tenant, physical, or "the other party in a joint computation". If no
    adversary survives scrutiny, stop — TLS + at-rest encryption + KMS custody
-   (`sota-secrets-management`) already covers you.
-2. **Pick the lowest sufficient rung** of the escalation ladder (`rules/01`
+   ([`sota-secrets-management`](../sota-secrets-management/SKILL.md)) already covers you.
+2. **Pick the lowest sufficient rung** of the escalation ladder ([`rules/01`](rules/01-threat-model-and-selection.md)
    §4): transport/at-rest → HSM/KMS → confidential VM → process enclave →
    PET. Write the rung and its rationale into the design doc.
-3. **Choose the TEE technology** from the selection table (`rules/02` §7) by
+3. **Choose the TEE technology** from the selection table ([`rules/02`](rules/02-tee-technologies.md) §7) by
    workload shape (lift-and-shift VM, container, process, GPU inference) —
    using the latest stable platform generation; verify current provider
    support at design time.
-4. **Design attestation before deployment** (`rules/03`): what evidence, who
+4. **Design attestation before deployment** ([`rules/03`](rules/03-remote-attestation.md)): what evidence, who
    verifies (hosted vs self-hosted), what policy, and — decisive — what the
    attestation result *gates* (key release, secret injection, channel
    establishment). Attestation that gates nothing is decoration.
-5. **On Kubernetes**, pick the layer deliberately (`rules/04` §1, §6):
+5. **On Kubernetes**, pick the layer deliberately ([`rules/04`](rules/04-confidential-kubernetes.md) §1, §6):
    confidential nodes (operator excluded, cluster admin not) vs confidential
    pods/CoCo (both excluded); route secrets through attest-then-release (KBS),
    not K8s Secrets; plan the degraded debugging story up front.
-6. **If hardware trust is unacceptable**, triage PETs (`rules/05`): most "we
+6. **If hardware trust is unacceptable**, triage PETs ([`rules/05`](rules/05-pets-coed.md)): most "we
    need FHE" asks are a TEE or differential-privacy problem in disguise;
    when a PET is right, use standard parameter sets and vetted libraries
    (latest stable) only.
-7. **Document the honest limits** (`rules/01` §2, `rules/02` §6, `rules/04`
+7. **Document the honest limits** ([`rules/01`](rules/01-threat-model-and-selection.md) §2, [`rules/02`](rules/02-tee-technologies.md) §6, [`rules/04`](rules/04-confidential-kubernetes.md)
    §7): side channels, availability (never protected — the host can always
    kill you), and the TEE vendor in the TCB.
 
@@ -75,11 +75,11 @@ residual-risk list.
 Use when reviewing systems that claim confidential computing, or that should.
 
 Procedure: inventory data-in-use exposure (what runs where, who operates it)
-→ check claims against the definition (`rules/01` §1: attested, hardware-based
-TEE — or it isn't CC) → walk the attestation chain end to end (`rules/03`:
+→ check claims against the definition ([`rules/01`](rules/01-threat-model-and-selection.md) §1: attested, hardware-based
+TEE — or it isn't CC) → walk the attestation chain end to end ([`rules/03`](rules/03-remote-attestation.md):
 does anything consume the result? debug mode rejected? TCB current? nonce
-fresh?) → on K8s, verify the layer matches the threat claim (`rules/04`) →
-for PETs, verify parameters/libraries/threat models (`rules/05`) → run every
+fresh?) → on K8s, verify the layer matches the threat claim ([`rules/04`](rules/04-confidential-kubernetes.md)) →
+for PETs, verify parameters/libraries/threat models ([`rules/05`](rules/05-pets-coed.md)) → run every
 loaded rules file's audit checklist.
 
 **Severity conventions**
@@ -106,11 +106,11 @@ cross-domain format from the router).
 
 | File | Read this when... |
 |---|---|
-| `rules/01-threat-model-and-selection.md` | deciding whether confidential computing is warranted at all: the CCC definition test (memory encryption alone ≠ CC), what CC does/never protects against, inverse-of-sandboxing framing, the five-rung escalation ladder, legitimate drivers, anti-patterns, adversary→mechanism decision table. Read first in every engagement. |
-| `rules/02-tee-technologies.md` | choosing or judging TEE hardware: SEV→SEV-ES→SEV-SNP insufficiency ladder, TDX on TME/TME-MK (encryption vs integrity vs attestation test), ARM CCA status, SGX enclaves + LibOS reality, Nitro Enclaves' different trust model, NVIDIA confidential GPUs for AI, Wasm-in-TEE, side-channel/physical-attack posture, workload-shape selection table. |
-| `rules/03-remote-attestation.md` | designing or auditing the trust mechanism: RATS (RFC 9334) roles mapped to real products, attest-then-release as the enforcement pattern, evidence hard rules (debug mode, cert chain, TCB status, nonce freshness), hosted vs self-hosted verifiers, reference-value management and TCB recovery, RA-TLS, re-attestation and monitoring. |
-| `rules/04-confidential-kubernetes.md` | running confidential workloads on K8s: confidential nodes vs confidential pods (two threat models), the CoCo stack (Kata, guest pull, Trustee KBS, peer-pods, agent policy), operational changes (secrets via KBS, degraded debugging, in-guest storage encryption), image supply-chain interplay, deployment-shape choice, honest limitations. |
-| `rules/05-pets-coed.md` | computing on encrypted data without hardware trust: decision-first triage, FHE scheme families (BGV/BFV, CKKS, TFHE) + standardization anchors (ISO/IEC 28033, NIST PEC) + honest performance reality, MPC/threshold and collusion assumptions, ZKP engineering risks (circuits as security-critical code), PSI/OPRF workhorses, TEE-vs-PET-vs-DP selection table and hybrids. |
+| [`rules/01-threat-model-and-selection.md`](rules/01-threat-model-and-selection.md) | deciding whether confidential computing is warranted at all: the CCC definition test (memory encryption alone ≠ CC), what CC does/never protects against, inverse-of-sandboxing framing, the five-rung escalation ladder, legitimate drivers, anti-patterns, adversary→mechanism decision table. Read first in every engagement. |
+| [`rules/02-tee-technologies.md`](rules/02-tee-technologies.md) | choosing or judging TEE hardware: SEV→SEV-ES→SEV-SNP insufficiency ladder, TDX on TME/TME-MK (encryption vs integrity vs attestation test), ARM CCA status, SGX enclaves + LibOS reality, Nitro Enclaves' different trust model, NVIDIA confidential GPUs for AI, Wasm-in-TEE, side-channel/physical-attack posture, workload-shape selection table. |
+| [`rules/03-remote-attestation.md`](rules/03-remote-attestation.md) | designing or auditing the trust mechanism: RATS (RFC 9334) roles mapped to real products, attest-then-release as the enforcement pattern, evidence hard rules (debug mode, cert chain, TCB status, nonce freshness), hosted vs self-hosted verifiers, reference-value management and TCB recovery, RA-TLS, re-attestation and monitoring. |
+| [`rules/04-confidential-kubernetes.md`](rules/04-confidential-kubernetes.md) | running confidential workloads on K8s: confidential nodes vs confidential pods (two threat models), the CoCo stack (Kata, guest pull, Trustee KBS, peer-pods, agent policy), operational changes (secrets via KBS, degraded debugging, in-guest storage encryption), image supply-chain interplay, deployment-shape choice, honest limitations. |
+| [`rules/05-pets-coed.md`](rules/05-pets-coed.md) | computing on encrypted data without hardware trust: decision-first triage, FHE scheme families (BGV/BFV, CKKS, TFHE) + standardization anchors (ISO/IEC 28033, NIST PEC) + honest performance reality, MPC/threshold and collusion assumptions, ZKP engineering risks (circuits as security-critical code), PSI/OPRF workhorses, TEE-vs-PET-vs-DP selection table and hybrids. |
 
 ---
 

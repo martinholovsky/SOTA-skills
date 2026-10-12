@@ -2,7 +2,7 @@
 
 Scope: RTO/RPO-driven design, DR strategy tiers, multi-AZ vs multi-region decisions,
 dependency mapping, quota management, graceful degradation, DR testing. Backup
-mechanics: rules/05. Alerting/SLO machinery: sota-observability.
+mechanics: [rules/05](05-data-storage.md). Alerting/SLO machinery: [sota-observability](../../sota-observability/SKILL.md).
 
 ## 1. Start from RTO/RPO, not from architecture
 
@@ -22,7 +22,7 @@ mechanics: rules/05. Alerting/SLO machinery: sota-observability.
 
 | Strategy | Typical RTO | Typical RPO | Cost shape | Mechanics |
 |---|---|---|---|---|
-| **Backup & restore** | hours–day+ | hours (last backup) | Storage only | Cross-region/account backups (rules/05) + IaC to rebuild; restore runbook |
+| **Backup & restore** | hours–day+ | hours (last backup) | Storage only | Cross-region/account backups ([rules/05](05-data-storage.md)) + IaC to rebuild; restore runbook |
 | **Pilot light** | tens of min–hours | minutes | Data replication + dormant minimal core | Data continuously replicated; core infra (DB replica, AMIs/images, network) exists but scaled to ~0; scale up on declare |
 | **Warm standby** | minutes | seconds–minutes | Scaled-down full copy running | Full stack live at reduced capacity in second region; scale + cut traffic over |
 | **Active-active** | ~seconds–minutes | ~0 | ≥ 2x + engineering complexity | Both regions serve; data layer is the hard part (conflict resolution or partitioned writes); failover = weight shift |
@@ -65,7 +65,7 @@ resource "aws_route53_record" "api_primary" {
 ## 3. Multi-AZ is the default; multi-region is a justified exception
 
 - **Multi-AZ, always, for prod:** LBs spanning zones, ASGs/MIGs across ≥ 2 (prefer
-  3) AZs, multi-AZ managed databases, K8s topology spread (rules/04). AZ failure
+  3) AZs, multi-AZ managed databases, K8s topology spread ([rules/04](04-compute-selection.md)). AZ failure
   is common enough to design for by default and cheap enough to absorb (the main
   cost is cross-AZ traffic — accept it for prod).
 - **Multi-region active-active is justified by:** regulatory mandate, genuinely
@@ -98,7 +98,7 @@ resource "aws_route53_record" "api_primary" {
   candidates).
 - Hidden circulars to hunt in audits: deploy pipeline hosted on the infrastructure
   it deploys; secrets manager needed to boot the secrets manager's dependencies;
-  SSO required to reach the console during an SSO outage (break-glass, rules/02
+  SSO required to reach the console during an SSO outage (break-glass, [rules/02](02-iam-design.md)
   §7); runbooks stored on the wiki that's down.
 
 ## 5. Quotas, limits, and capacity
@@ -111,10 +111,10 @@ resource "aws_route53_record" "api_primary" {
 - Quota increases take hours–days and need a support tier that can answer —
   factor both into RTO. Anything that "requests quota on failover" has already
   failed.
-- Also bound the other direction: autoscale maxes and concurrency caps (rules/06)
+- Also bound the other direction: autoscale maxes and concurrency caps ([rules/06](06-cost-finops.md))
   so one system's incident can't exhaust shared account limits and become
   everyone's incident — or isolate noisy systems into their own accounts
-  (rules/01).
+  ([rules/01](01-org-accounts-governance.md)).
 
 ## 6. Graceful degradation architecture
 
@@ -132,8 +132,8 @@ states:
   cache/read-only mode when the write path is down.
 - Degraded modes are product decisions — "checkout works, recommendations blank"
   needs a product sign-off before the incident, not during.
-- Implementation detail of these patterns in code: see sota-async-concurrency and
-  sota-api-design; this file owns the requirement that the modes exist.
+- Implementation detail of these patterns in code: see [sota-async-concurrency](../../sota-async-concurrency/SKILL.md) and
+  [sota-api-design](../../sota-api-design/SKILL.md); this file owns the requirement that the modes exist.
 
 ## 7. Test it: game days and DR exercises
 
@@ -142,7 +142,7 @@ An untested DR plan is a document, not a capability. Cadence by tier:
 - **Tier-1:** full DR exercise (actual regional failover or full restore-and-serve)
   at least annually; component-level chaos (AZ evacuation, instance/pod kill, DB
   failover, dependency blackhole) quarterly; backup restore test quarterly
-  (rules/05).
+  ([rules/05](05-data-storage.md)).
 - **Game day discipline:** written scenario + hypothesis; defined blast radius and
   abort criteria; run in prod-like (or prod, with leadership sign-off and
   controlled scope — start in staging, graduate); measure actual RTO/RPO vs
@@ -169,7 +169,7 @@ An untested DR plan is a document, not a capability. Cadence by tier:
 - [ ] Failover mode decided (auto vs manual) and exercised; declare-authority
       named; runbook accessible during an outage of the primary (not on the
       affected wiki).
-- [ ] Backups cross-account/cross-region per tier with tested restores (rules/05);
+- [ ] Backups cross-account/cross-region per tier with tested restores ([rules/05](05-data-storage.md));
       restore time measured against RTO.
 - [ ] Dependency map for tier-1 systems incl. third parties; each hard dependency
       has accept/degrade/dual-source decision; no hidden circulars (deploy, auth,

@@ -4,10 +4,10 @@ Scope: running confidential workloads on Kubernetes — the confidential-node vs
 confidential-pod layers, the Confidential Containers (CoCo) stack (Kata TEE pods,
 Trustee/KBS, agent policy, peer pods), and what changes operationally (secrets,
 debugging, storage, image supply chain). This file owns only the *confidential*
-layer. Control-plane/etcd/RBAC/admission/GitOps hardening is sota-kubernetes;
-pod `securityContext`, seccomp and sandbox-boundary selection is sota-sandboxing
-rules/01–03; TEE hardware depth is rules/02; attestation protocol depth is
-rules/03; workload/threat selection is rules/01.
+layer. Control-plane/etcd/RBAC/admission/GitOps hardening is [sota-kubernetes](../../sota-kubernetes/SKILL.md);
+pod `securityContext`, seccomp and sandbox-boundary selection is [sota-sandboxing
+rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md)–03; TEE hardware depth is [rules/02](02-tee-technologies.md); attestation protocol depth is
+[rules/03](03-remote-attestation.md); workload/threat selection is [rules/01](01-threat-model-and-selection.md).
 
 ---
 
@@ -25,7 +25,7 @@ first audit question, because they protect against *different* adversaries.
 | Attestation subject | The node VM (boot chain, firmware) | The pod's guest image, kata-agent config, agent policy, workload identity |
 | Deployment friction | Near zero — a node-pool flag; workloads unchanged | Significant — RuntimeClass, guest image pull, KBS infrastructure, policy authoring, degraded debugging |
 
-**R4.1 — Match the layer to the adversary from rules/01.** If the threat model
+**R4.1 — Match the layer to the adversary from [rules/01](01-threat-model-and-selection.md).** If the threat model
 excludes only the *cloud provider* (data-in-use compliance, untrusted
 infrastructure), confidential nodes suffice and cost almost nothing to adopt. If
 it excludes the *cluster operator or platform team* (multi-party computation,
@@ -37,7 +37,7 @@ finding (false security claim).
 
 **R4.2 — Confidential nodes do not attest your workload.** Node attestation
 proves the *node VM* booted expected firmware/images; it says nothing about
-which pods run there or what they do. Workload-bound attestation (rules/03)
+which pods run there or what they do. Workload-bound attestation ([rules/03](03-remote-attestation.md))
 requires pod-level TEEs where the evidence covers the guest image and policy.
 
 **R4.3 — Layers compose.** CoCo pods on confidential-VM *hosts* is not
@@ -99,7 +99,7 @@ Components (all under github.com/confidential-containers and the Kata
 Containers project, which lives under the OpenInfra Foundation):
 
 - **Kata Containers TEE runtime** — the pod runs in a microVM whose memory the
-  host cannot read (SEV-SNP/TDX guest; see rules/02). A `RuntimeClass` (e.g.
+  host cannot read (SEV-SNP/TDX guest; see [rules/02](02-tee-technologies.md)). A `RuntimeClass` (e.g.
   `kata-qemu-snp`, `kata-qemu-tdx`, platform-specific names) selects it per pod.
 - **Guest image pull** — images are pulled and unpacked *inside the guest* by
   `image-rs`; a host-side snapshotter diverts the pull so the node never holds
@@ -112,7 +112,7 @@ Containers project, which lives under the OpenInfra Foundation):
   Broker Service (KBS)** is the relying party that releases secrets —
   image-decryption keys, sealed-secret unwrap keys, workload credentials —
   *only after* appraisal passes (the RCAR "background check" flow). This is
-  the attest-then-release pattern of rules/03 applied to Kubernetes.
+  the attest-then-release pattern of [rules/03](03-remote-attestation.md) applied to Kubernetes.
 - **Confidential Data Hub (CDH)** — in-guest broker exposing sealed-secret
   unsealing and key-release APIs to the workload.
 - **Peer pods / cloud-api-adaptor** — where you cannot run a TEE VM *on* the
@@ -192,10 +192,10 @@ no ephemeral debug containers — by design. Required up front:
   distinguishes: debug-policy pods must receive *non-production* keys or none.
 - A **break-glass procedure**: who may deploy the debug policy, where (never
   against production data), and how it is logged. Break-glass process depth is
-  sota-identity-access.
+  [sota-identity-access](../../sota-identity-access/SKILL.md).
 - **In-guest telemetry egress**: the workload ships its own logs/metrics/traces
   to a collector over TLS, with the pipeline treating them as sensitive
-  (rules/01 data-egress decisions; pipeline design is sota-observability).
+  ([rules/01](01-threat-model-and-selection.md) data-egress decisions; pipeline design is [sota-observability](../../sota-observability/SKILL.md)).
   Anything the host can read (termination logs, stdio) is not available or not
   trustworthy.
 
@@ -227,12 +227,12 @@ untrusted node. Rules:
 **encrypted container images** (decryption key released by the KBS only after
 attestation — the registry and the node see only ciphertext) and **signature
 verification inside the guest** (image-rs validates signatures against policy
-before unpacking). Signing, provenance and registry hygiene are sota-devsecops;
+before unpacking). Signing, provenance and registry hygiene are [sota-devsecops](../../sota-devsecops/SKILL.md);
 this file adds: for a confidential workload, verification must happen *in the
 TEE*, because a host-side check is a claim by the party you distrust.
 
 **R4.12 — Admission control still applies; it just cannot see inside the TEE.**
-Kyverno/Gatekeeper/ValidatingAdmissionPolicy (sota-kubernetes) still validate
+Kyverno/Gatekeeper/ValidatingAdmissionPolicy ([sota-kubernetes](../../sota-kubernetes/SKILL.md)) still validate
 the pod *spec* — RuntimeClass, annotations, image references, namespace policy
 — and should enforce "pods in this namespace must use the confidential
 RuntimeClass and carry a policy annotation". What admission cannot verify is
@@ -270,13 +270,13 @@ feature without recorded risk acceptance: **High**.
 - **Side channels are out of scope of the hardware guarantee.** Architectural
   side channels, controlled-channel/single-stepping attacks, and
   ciphertext-side-channel classes against SEV-SNP have published research;
-  mitigations are firmware/kernel-version-dependent (rules/02). Cross-tenant
+  mitigations are firmware/kernel-version-dependent ([rules/02](02-tee-technologies.md)). Cross-tenant
   co-residency of a TEE with attacker-controlled workloads remains a risk to
   document, not to dismiss.
 - **The TCB moved, it didn't vanish.** You now trust the CPU vendor, its
   firmware/microcode supply chain, the guest kernel + kata-agent + image
   stack, your policy tooling, and Trustee. Track guest-image and CoCo-stack
-  CVEs like any other base image (sota-devsecops).
+  CVEs like any other base image ([sota-devsecops](../../sota-devsecops/SKILL.md)).
 - **Maturity.** CoCo is CNCF Incubating (since 2026-07-08), not Graduated; managed
   pod-level Kubernetes offerings have been preview-labeled or retired (AKS's
   preview sunset in March 2026 without reaching GA); APIs (init-data, policy formats)
@@ -318,7 +318,7 @@ feature without recorded risk acceptance: **High**.
 - [ ] Is in-guest telemetry egress in place (the team is not depending on
       `kubectl logs`/termination logs for a locked-down pod)?
 - [ ] Are Trustee (KBS/AS) availability, reference-value updates, and policy
-      change control owned and documented (rules/03 for appraisal depth)?
+      change control owned and documented ([rules/03](03-remote-attestation.md) for appraisal depth)?
 - [ ] Does the design doc contain the limitations block — no availability
       guarantee, side-channel posture, moved-not-removed TCB, maturity
       caveats?

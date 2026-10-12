@@ -1,7 +1,7 @@
 # 08 — Child Processes & Outbound Requests (server-side)
 
-Split out of rules/05 on 2026-09-25, when rules/05 neared the 500-line cap. Section names are
-unchanged, so an older citation of rules/05 §"Command injection via child_process" or
+Split out of [rules/05](05-security.md) on 2026-09-25, when [rules/05](05-security.md) neared the 500-line cap. Section names are
+unchanged, so an older citation of [rules/05](05-security.md) §"Command injection via child_process" or
 §"SSRF and server-side validation" names the same text here.
 
 ## Command injection via child_process
@@ -57,8 +57,8 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 
 ## SSRF and server-side validation
 
-- Every inbound payload schema-parsed at the boundary (rules/01) — including webhooks (verify signatures: Stripe/GitHub HMAC) and headers you act on.
-- User-supplied URLs the server fetches (webhooks, importers, avatars): allowlist protocols (`new URL(u).protocol === 'https:'`, checked again on every redirect hop), block private ranges (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16 — cloud metadata `169.254.169.254`), handle redirects (below), pin timeouts and response-size caps. Library: `ssrf-req-filter` or equivalent egress proxy. The generic policy is `sota-code-security` rules/01 §5; the Node idiom:
+- Every inbound payload schema-parsed at the boundary ([rules/01](01-typescript-config-and-types.md)) — including webhooks (verify signatures: Stripe/GitHub HMAC) and headers you act on.
+- User-supplied URLs the server fetches (webhooks, importers, avatars): allowlist protocols (`new URL(u).protocol === 'https:'`, checked again on every redirect hop), block private ranges (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16 — cloud metadata `169.254.169.254`), handle redirects (below), pin timeouts and response-size caps. Library: `ssrf-req-filter` or equivalent egress proxy. The generic policy is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §5; the Node idiom:
   - **Best: never relay a caller URL.** Accept a service key or record ID, look the origin up in a server-side map, and build the URL with `new URL(path, base)` plus `encodeURIComponent` on each segment. The rest of this list is for when you genuinely must fetch an arbitrary URL.
   - **Check the address at connect time, not before.** A `dns.lookup()` done before `fetch()` is a separate resolution from the one the socket uses, so a rebinding DNS server answers public to the check and `127.0.0.1` to the connection. Put the check in the resolver the socket calls: `new Agent({ connect: { lookup } })` from the `undici` package (its connector spreads `connect` into `net.connect`/`tls.connect`), or the `lookup` option of `http.request`/`https.request` and of axios. Measured on Node 22.22.1: the hook is called with `{ all: true }` (family autoselection), so it must resolve all addresses, reject if **any** is blocked, and answer in the array form. Test each address with a `net.BlockList` covering 127/8, 10/8, 172.16/12, 192.168/16, 169.254/16, 100.64/10, 0/8, 224/4, `::1`, `fc00::/7`, `fe80::/10`, `ff00::/8`; a v4 subnet also matched `::ffff:127.0.0.1` checked as `ipv6`. Also refuse the metadata host names (`metadata.google.internal` on GCP, whose IPv6 metadata address `fd20:ce::254` falls in `fc00::/7`; check your cloud's docs for its own) by name.
   - **The hook never sees an IP literal.** `fetch('http://127.0.0.1/')` through that Agent returned 200 with zero `lookup` calls (undici 8.11.2; `http.get` skips it too). So check a literal host yourself before dispatch: `new URL(u).hostname`, strip the `[]` around IPv6 (`net.isIP('[::1]')` is 0), then `net.isIP` + the same BlockList.
@@ -76,7 +76,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
     run *after* the strip, and a hook that set `Authorization` again sent it to the other origin
     (measured, axios). For a credentialed call, **turn redirects off** (`redirect: 'error'`,
     `maxRedirects: 0`, got `followRedirect: false`) and handle a 3xx yourself. This is the Node
-    form of Go's `CheckRedirect` rule (`sota-golang` rules/04 §4b). *OWASP: NPM Security cheat sheet.*
+    form of Go's `CheckRedirect` rule ([`sota-golang` rules/04](../../sota-golang/rules/04-http-services.md) §4b). *OWASP: NPM Security cheat sheet.*
   - OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 - **The browser counterpart: client-side request URLs.** In page code, a URL from the query
   string, fragment, `postMessage` or stored data that reaches `fetch`, `XMLHttpRequest.open`
@@ -86,7 +86,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
   `https://evil.example/x` for `https://evil.example/x`, `//evil.example/x` and
   `\\evil.example/x` (measured, Node 22.22). Take an ID or path segment, not a URL. When a
   URL is unavoidable, parse it and compare `.origin` to an exact allowlist before the call.
-  The `EventSource` case is `sota-api-design` rules/05 §3. *OWASP: HTML5 Security cheat sheet.*
+  The `EventSource` case is [`sota-api-design` rules/05](../../sota-api-design/rules/05-realtime-websockets-sse.md) §3. *OWASP: HTML5 Security cheat sheet.*
 - Mass assignment: never `Model.update(req.body)` — schema-pick the allowed fields (`z.strictObject({...})`, which rejects unknown keys).
 - **NoSQL operator injection is the same bug arriving as a type.** In
   `User.findOne({ name: req.body.name, pass: req.body.pass })`, a body of
@@ -98,7 +98,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
   `'extended'`. The fix is the boundary rule: parse every field to a scalar (`z.string()`)
   before it reaches a filter. Mongoose's `sanitizeFilter` option is the backstop. Measured:
   its helper rewrote `{user:{$ne:null}}` to `{user:{$eq:{$ne:null}}}`. It also throws on
-  `$where`, `$expr`, `$jsonSchema` and `$text`. The class is `sota-code-security` rules/01 §2.
+  `$where`, `$expr`, `$jsonSchema` and `$text`. The class is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §2.
 - **Ajv:** its security page says **"Do NOT use allErrors in production"**. With
   `allErrors: true`, validation keeps running after the first failure, so the
   slow-keyword mitigations (`maxLength` before `pattern`, `maxItems` before

@@ -25,10 +25,10 @@ common structural defect in documentation.
 - **How-to guides assume competence.** Don't re-explain what an environment
   variable is. Link to the tutorial for beginners instead of inlining basics.
 - **Reference is generated or mechanically maintained wherever possible** (see
-  rules/02). Hand-written reference drifts.
+  [rules/02](02-api-reference-changelogs.md)). Hand-written reference drifts.
 - **Explanation is where opinions live** — design rationale, trade-offs,
   "why not X". For architecture decisions specifically, use ADRs — see
-  `sota-architecture` (do not duplicate ADR guidance here).
+  [`sota-architecture`](../../sota-architecture/SKILL.md) (do not duplicate ADR guidance here).
 - You don't need all four for every project. A small library needs README +
   reference. Apply the taxonomy when a doc set grows past one page, not before.
 
@@ -52,7 +52,7 @@ Supported values: replicas (int, default 3), image.tag (string)...       ← ref
   merged is a bug shipped.
 - **CI gates on docs**: markdown lint, broken-link checking (lychee is the
   current standard — fast, Rust, checks `#anchors` only with `--include-fragments`, runs as `lycheeverse/lychee-action`
-  in GitHub Actions), spell check on prose, and doc tests (rules/02 §3). Internal
+  in GitHub Actions), spell check on prose, and doc tests ([rules/02](02-api-reference-changelogs.md) §3). Internal
   links checked on every PR; external links on a schedule (they break without
   your involvement — don't fail PRs on the internet's health).
 - **Code examples in docs are executed in CI** or extracted from tested code.
@@ -134,7 +134,7 @@ context. Optimize for that reader.
 
 - **Alert-linked**: every page-able alert links directly to its runbook; every
   runbook states which alert(s) fire it. An alert without a runbook link is an
-  audit finding (also see `sota-observability` if present in this library).
+  audit finding (also see [`sota-observability`](../../sota-observability/SKILL.md) if present in this library).
 - **Command-exact**: real commands with real flags, environment names, and
   expected output — not "check the logs" but the exact query. Placeholders
   clearly marked (`<pod-name>` with the command to find it).
@@ -172,7 +172,7 @@ Impact: payouts delayed; no data loss (queue is durable).
   weren't told to fix it.
 - **Day-one doc** answers: how to get the code running locally, how to run
   tests, where the architecture overview is, who to ask what, what the team's
-  workflow is (PR/review norms — rules/03). Target: first PR merged in week one.
+  workflow is (PR/review norms — [rules/03](03-code-review-pr-workflow.md)). Target: first PR merged in week one.
 - **Discoverability beats organization.** People find docs via search and via
   links from where they already are (code, alerts, error messages, PR
   templates). Invest in: one search surface over all internal docs, links from
@@ -194,7 +194,7 @@ target, **works here / doesn't, and what each gap blocks**.
   reports "no container runtime" on a machine running podman; a check for
   `LICENSE` misses `LICENSE-MPL`. A single-name probe returns a false absence
   that then gets acted on — the audit-side statement of the same rule is
-  `sota/rules/03-audit-findings.md` ("a narrow search and a true absence
+  [`sota/rules/03-audit-findings.md`](../../sota/rules/03-audit-findings.md) ("a narrow search and a true absence
   produce identical output").
 - **Every "unavailable" line names what it blocks**, so the reader learns the
   consequence without discovering it through a ten-minute failed build.
@@ -291,7 +291,7 @@ finding, not a checkbox win.
   reuse the code** (choosealicense.com). Choose deliberately; it **cannot** be
   inherited from an org default — GitHub requires it in each repo.
 - **CHANGELOG** — user-facing change history, updated in the PR that makes the
-  change (rules/02 §6); absent it, users reverse-engineer releases from commits.
+  change ([rules/02](02-api-reference-changelogs.md) §6); absent it, users reverse-engineer releases from commits.
 
 **When the trigger fires (conditionally required):**
 
@@ -302,7 +302,7 @@ finding, not a checkbox win.
 | Users need a place to ask / triage routing | `SUPPORT.md` — where questions go, so issues stay for bugs |
 | On-call / production service | runbooks (§5) + an incident/postmortem template |
 | AI-assisted repo | `AGENTS.md`/`CLAUDE.md` (§7) |
-| Architectural decisions accrue | an ADR log (`sota-architecture`) |
+| Architectural decisions accrue | an ADR log ([`sota-architecture`](../../sota-architecture/SKILL.md)) |
 | Multi-maintainer / org project | `CODEOWNERS`, plus `GOVERNANCE.md`/`MAINTAINERS` when decision rights aren't obvious |
 
 **Private-repo carve-out.** While a repository is still private the default advice has
@@ -371,7 +371,7 @@ are expensive to add later:
 
 - **`.gitignore` + secret scanning.** A credential committed in commit 1 is not
   fixed by deleting it in commit 2 — it is in the history, and removing it costs
-  a rewrite *plus* rotating the credential (`sota-secrets-management` rules/04).
+  a rewrite *plus* rotating the credential ([`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md)).
   The pre-commit hook is cheapest while the history is one commit long.
 - **`LICENSE`.** Its absence is not neutral (§8): all rights reserved, and not
   inheritable from an org default. Adding one later needs sign-off from everyone
@@ -448,7 +448,7 @@ the choice belongs in the repo's contributing docs either way:
   state the install step in `CONTRIBUTING.md` so a contributor can reproduce it.
   Whichever you choose, the **gates** must be repo-resident regardless — a
   secret scan that exists only in your shell is not a control on anyone else's
-  commit (`sota-code-security` rules/10: a control nobody else runs is a no-op
+  commit ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md): a control nobody else runs is a no-op
   everywhere but your machine).
 
 A pointer file that references tooling the reader doesn't have is worse than no

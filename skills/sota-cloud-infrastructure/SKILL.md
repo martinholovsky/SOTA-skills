@@ -15,11 +15,11 @@ spread, credential theft, public data exposure, egress bill shock, unmeetable RT
 or a Kubernetes cluster nobody needed.
 
 Boundaries with sibling skills — reference, do not duplicate:
-- **sota-devsecops** owns CI/CD pipelines, IaC scanning, Terraform state security, GitOps.
-- **sota-sandboxing** owns container/runtime hardening (seccomp, rootless, distroless).
-- **sota-observability** owns monitoring, alerting, SLOs, tracing.
-- **sota-databases** owns database engine selection, schema, and query design.
-- **sota-secrets-management** owns secret storage and rotation mechanics.
+- **[sota-devsecops](../sota-devsecops/SKILL.md)** owns CI/CD pipelines, IaC scanning, Terraform state security, GitOps.
+- **[sota-sandboxing](../sota-sandboxing/SKILL.md)** owns container/runtime hardening (seccomp, rootless, distroless).
+- **[sota-observability](../sota-observability/SKILL.md)** owns monitoring, alerting, SLOs, tracing.
+- **[sota-databases](../sota-databases/SKILL.md)** owns database engine selection, schema, and query design.
+- **[sota-secrets-management](../sota-secrets-management/SKILL.md)** owns secret storage and rotation mechanics.
 
 This skill owns: what accounts/networks/identities/compute/storage exist, how they
 connect, what they cost, and how they survive failure.
@@ -34,7 +34,7 @@ modules, landing zones, network plans, DR plans).
    monthly spend ballpark, team size. A 3-person startup and a regulated enterprise
    get different answers from the same rules.
 2. Read the matching rules files from the index below BEFORE writing config. Compute
-   selection (rules/04) comes before networking details; account structure (rules/01)
+   selection ([rules/04](rules/04-compute-selection.md)) comes before networking details; account structure ([rules/01](rules/01-org-accounts-governance.md))
    comes before everything.
 3. Default to the boring, managed, restrictive option: managed services over
    self-hosted, private over public, multi-AZ over single-AZ, deny-by-default IAM and
@@ -88,16 +88,16 @@ rules) into one finding with a count and a listing.
 
 | File | Read this when... |
 |---|---|
-| rules/01-org-accounts-governance.md | Setting up or auditing org structure, landing zones, account/project strategy, SCPs/org policies, centralized logging/billing, tagging standards |
-| rules/02-iam-design.md | Designing or auditing human access (SSO), workload identity, OIDC federation, permission boundaries, cross-account access, break-glass |
-| rules/03-networking.md | Designing or auditing VPCs/VNets, subnets, egress control, private endpoints, hub-spoke, DNS, TLS certs, load balancers, CDN, DDoS, IPv6 |
-| rules/04-compute-selection.md | Choosing serverless vs containers vs Kubernetes vs VMs; serverless patterns; Kubernetes architecture (autoscaling, requests/limits, PDBs) |
-| rules/05-data-storage.md | Designing or auditing object storage, lifecycle policies, block/file/object choice, backup architecture, encryption and KMS key strategy |
-| rules/06-cost-finops.md | Cost visibility, rightsizing, commitment discounts, spot, egress/NAT traps, unit economics, anomaly detection, cost review in PRs |
-| rules/07-resilience-dr.md | RTO/RPO tiers, multi-AZ vs multi-region decisions, DR strategies, game days, dependency mapping, quotas, graceful degradation |
+| [rules/01-org-accounts-governance.md](rules/01-org-accounts-governance.md) | Setting up or auditing org structure, landing zones, account/project strategy, SCPs/org policies, centralized logging/billing, tagging standards |
+| [rules/02-iam-design.md](rules/02-iam-design.md) | Designing or auditing human access (SSO), workload identity, OIDC federation, permission boundaries, cross-account access, break-glass |
+| [rules/03-networking.md](rules/03-networking.md) | Designing or auditing VPCs/VNets, subnets, egress control, private endpoints, hub-spoke, DNS, TLS certs, load balancers, CDN, DDoS, IPv6 |
+| [rules/04-compute-selection.md](rules/04-compute-selection.md) | Choosing serverless vs containers vs Kubernetes vs VMs; serverless patterns; Kubernetes architecture (autoscaling, requests/limits, PDBs) |
+| [rules/05-data-storage.md](rules/05-data-storage.md) | Designing or auditing object storage, lifecycle policies, block/file/object choice, backup architecture, encryption and KMS key strategy |
+| [rules/06-cost-finops.md](rules/06-cost-finops.md) | Cost visibility, rightsizing, commitment discounts, spot, egress/NAT traps, unit economics, anomaly detection, cost review in PRs |
+| [rules/07-resilience-dr.md](rules/07-resilience-dr.md) | RTO/RPO tiers, multi-AZ vs multi-region decisions, DR strategies, game days, dependency mapping, quotas, graceful degradation |
 
 Cross-cutting tasks read multiple files: a "review our AWS account" audit touches all
-seven; "should we use Kubernetes" is rules/04 + rules/06.
+seven; "should we use Kubernetes" is [rules/04](rules/04-compute-selection.md) + [rules/06](rules/06-cost-finops.md).
 
 ## Top 10 non-negotiables
 

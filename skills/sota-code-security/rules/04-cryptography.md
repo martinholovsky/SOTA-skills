@@ -1,7 +1,7 @@
 # 04 — Cryptography & Secrets
 
 Scope: algorithm selection, AEAD/nonce discipline, key management, randomness,
-TLS configuration, secrets handling (constant-time comparison: rules/22).
+TLS configuration, secrets handling (constant-time comparison: [rules/22](22-constant-time-comparison.md)).
 Maps to OWASP A04:2025 (Cryptographic Failures), CWE-327/326/330/321/323/208.
 
 Core principle: **don't design, don't implement, barely even compose.** Use a
@@ -20,8 +20,8 @@ by default (CWE-1240).
 | Encrypting to a public key (no shared symmetric key) | HPKE (RFC 9180: KEM + KDF + AEAD, `info` bound to the context), libsodium sealed box or Tink hybrid; all hide the sender, so authenticate it separately | RSA over the payload itself, a hand-built "ECDH then AES" |
 | Signatures | Ed25519; ECDSA P-256 (deterministic nonce, RFC 6979) where required | RSA-PKCS1v1.5 for new code, DSA |
 | Hashing (integrity) | SHA-256/SHA-512, BLAKE2/3 | MD5, SHA-1 (CWE-328) |
-| Password hashing | argon2id (see rules/02) | any fast hash |
-| Key from a password/passphrase | argon2id, scrypt, or PBKDF2-HMAC-SHA256 at ≥ 600,000 iterations (parameters: rules/02 §1) | HKDF, a bare or iterated fast hash, OpenSSL `EVP_BytesToKey` |
+| Password hashing | argon2id (see [rules/02](02-authentication.md)) | any fast hash |
+| Key from a password/passphrase | argon2id, scrypt, or PBKDF2-HMAC-SHA256 at ≥ 600,000 iterations (parameters: [rules/02](02-authentication.md) §1) | HKDF, a bare or iterated fast hash, OpenSSL `EVP_BytesToKey` |
 | KDF from keys | HKDF (per-purpose `info` labels) | raw hash of key material, hash chains |
 | MAC | HMAC-SHA-256, Poly1305 (within AEAD), KMAC | H(key‖msg) — length extension (CWE-328) |
 
@@ -55,8 +55,8 @@ by default (CWE-1240).
   defaults to 10,000 iterations — set `-iter`). Store the salt and parameters beside the
   ciphertext. OWASP:
   Cryptographic Storage cheat sheet, Go-SCP (data protection), ASVS 5.0 V11.4.4.
-- **Algorithm, parameters and key choice come from server-side configuration, never from the message** (JWT `alg`, rules/17 §3; XML `EncryptionMethod`, above). On a device the attacker owns, crypto and RNG calls can be hooked:
-  where that threat is in scope, rely on attestation and server-side checks (`sota-mobile` rules/04 §4.5, §4.8). OWASP: Cornucopia CRK, CRMK.
+- **Algorithm, parameters and key choice come from server-side configuration, never from the message** (JWT `alg`, [rules/17](17-sessions-and-tokens.md) §3; XML `EncryptionMethod`, above). On a device the attacker owns, crypto and RNG calls can be hooked:
+  where that threat is in scope, rely on attestation and server-side checks ([`sota-mobile` rules/04](../../sota-mobile/rules/04-security.md) §4.5, §4.8). OWASP: Cornucopia CRK, CRMK.
 
 ### 1.1 Key agreement — validate the peer key, authenticate the peer, confirm the key
 
@@ -114,7 +114,7 @@ by default (CWE-1240).
 - Decryption failures: uniform error, no padding/MAC distinction surfacing to the
   caller (padding-oracle family, CWE-209/CWE-203); never act on plaintext before
   the tag verifies (no streaming-decrypt-then-check). Internally, every encrypt, decrypt or verify
-  failure emits a security event (`crypt_decrypt_fail`, rules/07 §2.1): a spike is tampering or a probe.
+  failure emits a security event (`crypt_decrypt_fail`, [rules/07](07-data-exposure.md) §2.1): a spike is tampering or a probe.
 - **Full 128-bit tag, length-checked input.** Java `new GCMParameterSpec(128, iv)` (SunJCE also accepts 96–120, measured JDK 25), Go `NewGCM` rather than
   `NewGCMWithTagSize` below 16, Python's default `min_tag_length=16`, Node `authTagLength: 16`. Check `len(ct) >= nonce + tag` before slicing:
   Go's `data[:ns]` on a short input panics (measured Go 1.27). OWASP: Java Security, Cryptographic Storage, DotNet Security cheat sheets.
@@ -135,7 +135,7 @@ pt = box.decrypt(ct, aad=record_id)
 - Findings on sight: `Math.random()`, `random.random()`, `rand()`, Java
   `java.util.Random`, time-seeded PRNGs, or UUIDv1/v4-from-non-crypto-PRNG used
   for any credential-like value.
-- Token entropy ≥ 128 bits; compare tokens constant-time (rules/22 §1); store long-lived
+- Token entropy ≥ 128 bits; compare tokens constant-time ([rules/22](22-constant-time-comparison.md) §1); store long-lived
   tokens hashed (SHA-256) so a DB leak isn't a credential leak.
 - Entropy is destroyed by post-processing: `random_string[:6]`, modulo into a
   small alphabet with bias, or "human-friendly" filtering can collapse 128
@@ -245,13 +245,13 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
   in plaintext, never retry under a weaker algorithm or a hard-coded fallback key,
   and never accept an unverifiable ciphertext or signature "for now". A `catch`
   whose body writes the plaintext, or a `crypto_enabled=false` default taken when
-  the KMS is unreachable, is the silent-no-op shape of rules/10 §1 — make it loud
-  (rules/10 §3) and failing.
+  the KMS is unreachable, is the silent-no-op shape of [rules/10](10-silent-control-failure.md) §1 — make it loud
+  ([rules/10](10-silent-control-failure.md) §3) and failing.
 - **Defence in depth**: encrypted data still gets access control, and the design
   should stay safe if one layer breaks — field encryption does not replace authz
-  on the rows (rules/03), and a leaked DEK should expose one object, not all.
+  on the rows ([rules/03](03-authorization.md)), and a leaked DEK should expose one object, not all.
   OWASP: Cryptographic Storage cheat sheet, Secure Coding Practices QRG, Cornucopia.
-- Don't encrypt what you can avoid storing; hashing (rules/02) or truncation (last-4 of PAN) beats
+- Don't encrypt what you can avoid storing; hashing ([rules/02](02-authentication.md)) or truncation (last-4 of PAN) beats
   encryption when you never need the value back, and a value you must recover is encrypted, never hashed.
 
 ## 5. TLS configuration (CWE-295/319)
@@ -283,7 +283,7 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
     it.** Envoy's `x-forwarded-client-cert` (XFCC) is sanitised by default;
     `ALWAYS_FORWARD_ONLY` forwards whatever the client sent, even without mTLS. Accept
     such a header only from an authenticated proxy link, and strip it at the edge
-    (the `X-User-Id` rule in `sota-api-design` rules/07 §8).
+    (the `X-User-Id` rule in [`sota-api-design` rules/07](../../sota-api-design/rules/07-security-operations.md) §8).
   OWASP: ASVS 5.0 V12.1.3, MASTG-TEST-0234, Go-SCP (http tls), User Privacy Protection
   cheat sheet.
 - **SSH host-key verification is the same control, and it is disabled the same
@@ -324,9 +324,9 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
   library's spelling of the detector (decided 2026-09-23; see
   `docs/LANGUAGE-TIER.md` in the library repo).
 - Verify hostname AND chain. Pin only when you control both ends and the client's update cadence (native mobile, first-party
-  clients), never in browsers (HPKP is obsolete) or toward a third party: SPKI pins with a backup key and a rotation plan (`sota-mobile` rules/04 §4.3).
+  clients), never in browsers (HPKP is obsolete) or toward a third party: SPKI pins with a backup key and a rotation plan ([`sota-mobile` rules/04](../../sota-mobile/rules/04-security.md) §4.3).
 - Plaintext fallbacks: no HTTP listeners that serve content (redirect-only),
-  HSTS (rules/05); internal traffic encrypted too — mTLS for service-to-service
+  HSTS ([rules/05](05-web-security.md)); internal traffic encrypted too — mTLS for service-to-service
   (identity, not just confidentiality).
 - Outbound TLS from your code deserves the same scrutiny as inbound config —
   audit every HTTP client construction for verification overrides.
@@ -345,7 +345,7 @@ ssl_session_tickets off;              # or rotate ticket keys — static keys br
 
 - Verification-key distribution: publish via versioned key sets (JWKS-style,
   `kid` on every artifact), cache with TTL, overlap old+new during rotation,
-  and pin the JWKS *endpoint* to your own allowlist (rules/17 §3 `jku` rules).
+  and pin the JWKS *endpoint* to your own allowlist ([rules/17](17-sessions-and-tokens.md) §3 `jku` rules).
 
 Constant-time comparison (formerly section 6) moved to [rules/22](22-constant-time-comparison.md) §1 on 2026-09-25.
 
@@ -368,13 +368,13 @@ Constant-time comparison (formerly section 6) moved to [rules/22](22-constant-ti
   OWASP category, A03:2025).
 
 Tamper-evident logs and audit ledgers (formerly section 8) moved to [rules/18](18-tamper-evident-logs.md) §1 on
-2026-09-25; signed request/response exchanges and self-describing receipts are rules/18 §2.
+2026-09-25; signed request/response exchanges and self-describing receipts are [rules/18](18-tamper-evident-logs.md) §2.
 
 ## 9. Secrets hygiene in code & pipelines
 
 - Secret detection in CI (gitleaks/trufflehog) blocking merges; pre-commit hooks
   as the early net. On any hit: **rotate first**, then scrub history.
-- Secrets never in: URLs/query strings (CWE-598), log statements (rules/07),
+- Secrets never in: URLs/query strings (CWE-598), log statements ([rules/07](07-data-exposure.md)),
   error messages, client-visible config (`NEXT_PUBLIC_*`, mobile binaries —
   anything shipped to the client is public), CI logs (mask + use OIDC-federated
   short-lived cloud creds instead of static keys).

@@ -7,7 +7,7 @@ SAML 2.0 and its attack classes, and SCIM 2.0 as a provisioning protocol.
 
 This file owns **protocol design and the IdP/RP token contract**. It does NOT own the
 app-side JWT *signature-verification code path* or session cookie handling — that is
-**sota-code-security** rules/17. When the finding is "this Express middleware does not
+**[sota-code-security** rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md). When the finding is "this Express middleware does not
 pin the alg," route it there; when it is "the IdP allows the implicit flow" or "the RP
 never checks `aud`," it is here.
 
@@ -185,7 +185,7 @@ Adopt these for high-value and high-assurance clients; required by FAPI 2.0.
   application-layer alternative to mTLS-bound tokens.
 - **mTLS client auth & certificate-bound tokens — RFC 8705**: client authenticates with
   a TLS client cert; tokens are bound to the cert thumbprint. Strongest client auth /
-  token binding where a PKI exists — coordinate with **sota-network-security** (mTLS).
+  token binding where a PKI exists — coordinate with **[sota-network-security](../../sota-network-security/SKILL.md)** (mTLS).
 - **PKCE downgrade**: if the IdP *supports* but does not *require* PKCE, a MITM can strip
   the `code_challenge`. Mitigation: the IdP rejects a token request with a
   `code_verifier` when no challenge was registered, and rejects an auth-code request
@@ -214,12 +214,12 @@ that accepts a DPoP-bound token as a plain bearer token has turned it back into 
   passing a client's token through to upstream APIs; it does not itself require
   sender-constraining. For MCP clients it makes Client ID Metadata Documents the
   **SHOULD** registration path and **deprecates Dynamic Client Registration** (kept for
-  backward compatibility; the AS side is rules/02 §2), and requires clients to validate a
+  backward compatibility; the AS side is [rules/02](02-idp-operations.md) §2), and requires clients to validate a
   present `iss` authorization-response parameter against the recorded issuer — the RFC 9207
   mix-up defense in §3 above. Treat MCP client→server tokens as FAPI-grade anyway when they grant
   tool access to sensitive systems: DPoP- or mTLS-bind them and verify as above.
 - **Authorize each request from what the token grants, not from the token being valid.**
-  After validation (rules/03 for the model), decide on the token's `scope`, its RFC 9396
+  After validation ([rules/03](03-authorization-models.md) for the model), decide on the token's `scope`, its RFC 9396
   `authorization_details` (type, actions, locations, amounts), and its subject — every
   request, not once per session. A structurally valid token for another operation is a
   deny.
@@ -275,8 +275,8 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
   it only from privileged access workstations; minimise which SPs trust the IdP; and on
   suspected compromise **rotate the token-signing certificate twice in succession** — a
   single rotation leaves the previous certificate valid and every forged token still working.
-  Detecting it is a *join between two logs* and lives in `sota-detection-engineering`
-  rules/07; the hybrid/Entra blast radius is rules/07 §5 here.
+  Detecting it is a *join between two logs* and lives in [`sota-detection-engineering`
+  rules/07](../../sota-detection-engineering/rules/07-ad-attack-detection.md); the hybrid/Entra blast radius is [rules/07](07-active-directory.md) §5 here.
 - Always enforce: `Destination`/`Recipient` checks, `AudienceRestriction`, assertion
   replay cache, signed metadata, and a rotation plan for IdP signing certs.
 - **Verify with the IdP's pinned key, never the document's own.** SAML Core Sec. 5.4.5 puts no
@@ -336,7 +336,7 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
 
 - **SCIM 2.0** = RFC 7642 (requirements), RFC 7643 (core schema: User, Group), RFC 7644
   (protocol — REST CRUD + PATCH + bulk + filtering). It is the standard for
-  cross-domain user provisioning/deprovisioning; lifecycle *usage* is rules/04.
+  cross-domain user provisioning/deprovisioning; lifecycle *usage* is [rules/04](04-lifecycle-provisioning.md).
 - Protocol-level hardening: authenticate the SCIM endpoint (bearer/OAuth, not a static
   shared secret in a header), authorize per-tenant, validate filters to avoid injection,
   rate-limit, and treat `active=false` / DELETE as the deprovisioning trigger (don't
@@ -361,7 +361,7 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
   conditional access never see them. Disable them at the IdP, directory and mail tier.
   Where one must stay, keep it as a written, owned exception with a compensating control
   (network restriction, per-app credential, monitoring). The app-side inventory of
-  authentication routes is **sota-code-security** rules/02 §5.
+  authentication routes is **[sota-code-security** rules/02](../../sota-code-security/rules/02-authentication.md) §5.
 - **A protocol-translation gateway holds the legacy app's keys.** When a gateway or
   identity-aware proxy turns a SAML or OIDC login into Kerberos, HTTP Basic or a trusted
   header for a backend that cannot speak federation:
@@ -370,7 +370,7 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
   - the gateway strips any client-supplied copy of the identity headers it injects;
   - the gateway's backend credential is vaulted and scoped to that one backend. Kerberos
     constrained delegation with protocol transition is limited to that backend's SPNs
-    (rules/07 §2);
+    ([rules/07](07-active-directory.md) §2);
   - the gateway enforces MFA and session policy, and it is administered and patched as
     part of the backend's own tier;
   - both sides log with a shared correlation id, so a backend action traces to the
@@ -388,7 +388,7 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
 - [ ] Does the RP fetch keys from `jwks_uri` and rotate by `kid` (re-fetch on unknown kid), with a sane JWKS cache TTL?
 - [ ] Are high-value/regulated clients on PAR + DPoP/mTLS (FAPI 2.0) rather than bare bearer tokens?
 - [ ] For SAML RPs: is a signature required and validated over the consumed assertion, with XSW and comment-injection defenses, audience restriction, replay cache, and extra-assertion rejection?
-- [ ] Does the RP send a `state` parameter, bind it to the session, and verify it on the callback **before** exchanging the code? CSRF on the authorization response is not covered by PKCE; the rule lives in `sota-code-security` rules/02 §4, and this checklist is where an SSO audit looks for it.
+- [ ] Does the RP send a `state` parameter, bind it to the session, and verify it on the callback **before** exchanging the code? CSRF on the authorization response is not covered by PKCE; the rule lives in [`sota-code-security` rules/02](../../sota-code-security/rules/02-authentication.md) §4, and this checklist is where an SSO audit looks for it.
 - [ ] Is the IdP's token-signing key non-exportable (HSM/TPM), the federation server Tier 0, and is there a **rotate-twice** runbook for suspected key compromise (Golden SAML, T1606.002)?
 - [ ] Is IdP-initiated SAML avoided or hardened (single-use IDs, tight NotOnOrAfter, RelayState validation)?
 - [ ] Is the SCIM endpoint authenticated/authorized per-tenant, with DELETE/`active=false` actually terminating authentication?

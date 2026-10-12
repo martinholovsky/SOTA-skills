@@ -22,9 +22,9 @@ stop (budgets), and you don't deploy what you can't trace (observability).
 
 **Scope boundary:** this skill owns build quality. Prompt injection, the
 lethal trifecta, tool-call authorization, and model-output-as-untrusted-data
-live in `sota-code-security` rules/08; agent sandboxing/isolation lives in
-`sota-sandboxing` rules/05; PII/regulatory handling lives in
-`sota-privacy-compliance`. Reference them; don't re-derive them.
+live in [`sota-code-security` rules/08](../sota-code-security/rules/08-llm-ai-security.md); agent sandboxing/isolation lives in
+[`sota-sandboxing` rules/05](../sota-sandboxing/rules/05-ai-agent-sandboxing.md); PII/regulatory handling lives in
+[`sota-privacy-compliance`](../sota-privacy-compliance/SKILL.md). Reference them; don't re-derive them.
 
 **Freshness rule:** model names, prices, context limits, and spec revisions in
 these files were verified June 2026 and rot fast. When a decision hinges on a
@@ -35,17 +35,17 @@ version-agnostically: model IDs and parameters in config, never inline.
 ## BUILD mode — eval-first by default
 
 1. **Write the eval before the feature.** Before any prompt or pipeline work,
-   produce a 20+ case golden set with graded criteria (rules/01). A feature
+   produce a 20+ case golden set with graded criteria ([rules/01](rules/01-evals.md)). A feature
    without an eval is a prototype; treat requests to "just add an LLM call"
    as a request for an eval + a call.
 2. **Start at the simplest tier.** Single call → structured output → workflow
    (code-orchestrated, deterministic) → agent. Escalate only when the eval
-   shows the simpler tier failing (rules/04 has the decision gates).
+   shows the simpler tier failing ([rules/04](rules/04-agents-tools.md) has the decision gates).
 3. **Defaults, not options.** Schema-constrained output with validation +
-   bounded repair (rules/02); hybrid retrieval with a golden retrieval set
-   when RAG is needed (rules/03); stop conditions + token/cost budgets on
-   every loop (rules/04); retries with jittered backoff, model IDs in config,
-   per-call tracing (rules/05).
+   bounded repair ([rules/02](rules/02-prompt-context-engineering.md)); hybrid retrieval with a golden retrieval set
+   when RAG is needed ([rules/03](rules/03-rag-retrieval.md)); stop conditions + token/cost budgets on
+   every loop ([rules/04](rules/04-agents-tools.md)); retries with jittered backoff, model IDs in config,
+   per-call tracing ([rules/05](rules/05-production-engineering.md)).
 4. **Structural over disciplinary.** Prefer designs where the bad variant
    can't be written: typed prompt templates instead of f-string soup,
    versioned prompts in repo, a single gateway module for all model calls
@@ -124,28 +124,28 @@ Violations are findings regardless of context; in BUILD mode they are never
 acceptable shortcuts:
 
 1. **No LLM feature ships without an eval.** Minimum: a versioned golden set
-   with graded criteria, runnable by one command, gating CI. (rules/01)
+   with graded criteria, runnable by one command, gating CI. ([rules/01](rules/01-evals.md))
 2. **Every prompt/model/parameter change runs the evals before merge.**
-   "It looked better on three examples" is not evidence. (rules/01)
+   "It looked better on three examples" is not evidence. ([rules/01](rules/01-evals.md))
 3. **LLM-as-judge is itself validated** against human labels (agreement
-   measured, bias checked) before its scores are trusted. (rules/01)
+   measured, bias checked) before its scores are trusted. ([rules/01](rules/01-evals.md))
 4. **Machine-consumed output is schema-constrained** (structured output API /
    tool call), validated, with a bounded repair-or-reject path — never
-   regex/parse-and-pray on free text. (rules/02)
+   regex/parse-and-pray on free text. ([rules/02](rules/02-prompt-context-engineering.md))
 5. **User/retrieved content is data, not instructions**: typed template slots,
    delimited and labeled as untrusted; never f-string-concatenated into the
-   instruction stream. (rules/02 + sota-code-security rules/08)
+   instruction stream. ([rules/02](rules/02-prompt-context-engineering.md) + [sota-code-security rules/08](../sota-code-security/rules/08-llm-ai-security.md))
 6. **Every agent loop has explicit stopping conditions**: max iterations, max
    tokens/cost, wall-clock timeout — and human gates on consequential
-   actions. (rules/04)
+   actions. ([rules/04](rules/04-agents-tools.md))
 7. **RAG answers are grounded or refused**: retrieval quality measured
    (golden retrieval set, recall@k), answers cite sources, and "not in the
-   corpus" is an honored outcome. (rules/03)
+   corpus" is an honored outcome. ([rules/03](rules/03-rag-retrieval.md))
 8. **Every model call is traced**: prompt/completion (with redaction), token
    counts, latency, model ID, cache hits, cost — linked to eval/run IDs.
-   (rules/05)
+   ([rules/05](rules/05-production-engineering.md))
 9. **Production model versions are pinned and rolled out deliberately**
-   (shadow or A/B with eval gates) — never silent auto-upgrade. (rules/05)
+   (shadow or A/B with eval gates) — never silent auto-upgrade. ([rules/05](rules/05-production-engineering.md))
 10. **429/529/timeout handling is explicit**: jittered exponential backoff
     honoring `retry-after`, idempotency on retried writes, a degradation
-    path when the provider is down. (rules/05)
+    path when the provider is down. ([rules/05](rules/05-production-engineering.md))

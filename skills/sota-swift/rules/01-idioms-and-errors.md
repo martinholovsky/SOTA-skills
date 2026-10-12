@@ -1,13 +1,13 @@
 # 01 — Idioms, optionals, errors, numbers and time
 
-The baseline every Swift file is held to. Moved from the former Swift-language file in `sota-mobile`
+The baseline every Swift file is held to. Moved from the former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md)
 (its value-type, optionals and errors sections) on 2026-10-07, when Swift became its own skill, and extended with numeric and time rules.
 
 ## 1. Value types by default; classes only for identity
 
 - Default to `struct` + `let`. Value semantics make code trivially `Sendable`, testable and free
   of mutation at a distance. Reach for `class` only when identity or shared mutable state is the
-  point — and if that state crosses concurrency domains it is an `actor` (rules/03), not a class.
+  point — and if that state crosses concurrency domains it is an `actor` ([rules/03](03-concurrency.md)), not a class.
 - Standard collections are **copy-on-write**: assignment is O(1) until mutation, so passing large
   collections is cheap; mutating a shared instance copies it. Custom large value types wrapping
   a reference buffer implement COW with `isKnownUniquelyReferenced(&storage)`.
@@ -35,8 +35,8 @@ register(email)
   legitimate use (a bundled resource) carries a comment stating the invariant, or becomes
   `preconditionFailure("why")`.
 - Implicitly unwrapped optionals (`var x: T!`) only for two-phase initialisation.
-- No in-band sentinels: absence is `Optional`, never `-1`, `0` or `""` (`sota-architecture`
-  rules/02 §8a). "Not loaded / failed / empty" is an enum, not one flat `nil`.
+- No in-band sentinels: absence is `Optional`, never `-1`, `0` or `""` ([`sota-architecture`
+  rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a). "Not loaded / failed / empty" is an enum, not one flat `nil`.
 
 ## 3. Errors: untyped `throws` by default
 
@@ -45,7 +45,7 @@ register(email)
 - **Typed throws** (`throws(ParseError)`, Swift 6.0, SE-0413): the proposal itself says
   *"untyped `throws` is better for most scenarios"*. Use it for closed, same-module boundaries,
   generic pass-through and embedded code; never type a public API's throws to today's one error
-  enum (rules/02).
+  enum ([rules/02](02-api-design.md)).
 - `try?` discards the error: fine for optional lookups, a finding on writes, sync and payments.
 - Every `catch` handles, adds context and rethrows, or reports. `catch { }` is swallow-all.
 - `fatalError`/`precondition` are for programmer errors. Note the Swift book: *"If you compile

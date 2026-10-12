@@ -20,7 +20,7 @@ let leaky     = app.grouped(UserToken.authenticator())                          
   `AuthorizationPolicyMiddleware` (*"Place this middleware *after* an authenticator and
   `IsAuthenticatedMiddleware`"*).
 - Authorization is per object: after authenticating, every handler that loads by ID checks the
-  object belongs to the caller (`sota-code-security` rules/03).
+  object belongs to the caller ([`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md)).
 
 ## 2. Cookies and sessions: the defaults are not production defaults
 
@@ -29,7 +29,7 @@ let leaky     = app.grouped(UserToken.authenticator())                          
   explicitly (a custom `cookieFactory`).
 - **Hummingbird `SessionCookieParameters`** defaults to `secure: false` and `sameSite: nil` (its
   `Cookie` type defaults `httpOnly: true`). Set `secure: true` and a `sameSite` value.
-- Session lifetime, rotation on login and invalidation on logout → `sota-code-security` rules/17.
+- Session lifetime, rotation on login and invalidation on logout → [`sota-code-security` rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md).
 
 ## 3. Debug versus production: build configuration decides
 
@@ -47,18 +47,18 @@ let leaky     = app.grouped(UserToken.authenticator())                          
 - Body size: Vapor's `defaultMaxBodySize` is `"16kb"`; routes that raise it (`body: .collect(maxSize:)`)
   raise it to a stated number, never unlimited; streaming uploads cap total bytes.
 - Error responses carry no stack, SQL or file paths; log the detail server-side with a request ID
-  (`sota-observability`).
-- Every outbound call from a handler has a timeout (rules/03 §4); rate limiting per caller is the
+  ([`sota-observability`](../../sota-observability/SKILL.md)).
+- Every outbound call from a handler has a timeout ([rules/03](03-concurrency.md) §4); rate limiting per caller is the
   router's principle 5.
 
 ## 5. SwiftNIO and Linux
 
 - New logic is async/await; bridge `EventLoopFuture` APIs at the edges only. Never block an
   event loop thread (no synchronous file I/O, `sleep`, or semaphore waits on it).
-- Shut down clients and event-loop groups on exit (rules/04 §2).
+- Shut down clients and event-loop groups on exit ([rules/04](04-memory-and-unsafe.md) §2).
 - Foundation on Linux is swift-corelibs-foundation / FoundationEssentials: do not assume Darwin
   behaviour; run CI on the deployment OS.
-- Containers: a static Linux SDK binary in a minimal image, non-root → `sota-sandboxing`.
+- Containers: a static Linux SDK binary in a minimal image, non-root → [`sota-sandboxing`](../../sota-sandboxing/SKILL.md).
 
 ## Audit checklist
 

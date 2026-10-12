@@ -30,7 +30,7 @@ finds an intrusion or produces a new detection (and a tuned baseline). A hunt
 program that never spawns detections is just expensive log-staring.
 
 Where hypotheses come from: threat intel (a new actor TTP, §3), ATT&CK coverage
-gaps (rules/01 — hunt the cells you can't yet detect), crown-jewel attack paths
+gaps ([rules/01](01-detection-engineering-discipline.md) — hunt the cells you can't yet detect), crown-jewel attack paths
 (threat modeling), and anomalies analysts notice.
 
 ## 2. Structured analytic techniques & IOC vs IOA/TTP hunting
@@ -40,10 +40,10 @@ gaps (rules/01 — hunt the cells you can't yet detect), crown-jewel attack path
   activity?), seek disconfirming evidence. The brittle failure of hunting is
   confirmation bias — finding the "attack" you went looking for.
 - **IOC hunting** (find this hash/IP/domain) is fast, retrospective, and brittle
-  — best for *retro-hunting* a fresh intel indicator across history (rules/02
+  — best for *retro-hunting* a fresh intel indicator across history ([rules/02](02-telemetry-siem-data-layer.md)
   retention). **IOA/TTP hunting** (find this *behavior*) is durable and is what
   catches novel and evasive actors. Weight your hunt program toward behavior, per
-  the Pyramid of Pain (rules/01 §4).
+  the Pyramid of Pain ([rules/01](01-detection-engineering-discipline.md) §4).
 - Useful behavioral techniques: **stack counting** (frequency-of-occurrence —
   rare parent/child pairs, rare process paths), baselining (deviation from an
   entity's own history), and **least-frequency analysis** (the one host doing
@@ -65,7 +65,7 @@ a TIP becomes an expensive IOC landfill.
   detections and enrichment. Aging-out matters: a 2-year-old IP IOC is mostly
   noise. Score by confidence and source, and expire indicators.
 - **Intel-driven detection:** the highest-value output is converting an actor's
-  *TTP* (not their IOCs) into a durable detection (rules/03). When intel says
+  *TTP* (not their IOCs) into a durable detection ([rules/03](03-rule-languages-engines.md)). When intel says
   "actor uses technique T1234," the deliverable is a tested detection, not an
   IOC import.
 
@@ -99,7 +99,7 @@ the decoy from the real thing).
   connection strings, service-account creds planted where an adversary who's
   inside will find them (config files, CI variables, a "secrets" doc, a
   honeypot's environment). *Any* use = compromise, full stop. Coordinate planting
-  and alerting with **sota-secrets-management rules/04 (honeytokens)** — that
+  and alerting with **[sota-secrets-management rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) (honeytokens)** — that
   skill owns the credential mechanics; you own detecting and responding to use.
 - **Canary tokens** — tripwires beyond credentials: a watched URL, a tracked
   document, a DNS canary, a unique S3 object. Fired = someone is somewhere they
@@ -116,7 +116,7 @@ the decoy from the real thing).
   - **Honey user rows** in the app's own user store, with credentials nobody
     was ever given. The login path checks for them: an attempt against one means
     the user table leaked, so page IR and move the app into a secure state
-    (forced re-verification, tightened throttling — rules/02 §7
+    (forced re-verification, tightened throttling — [rules/02](02-telemetry-siem-data-layer.md) §7
     population-wide spikes).
   - **A bait path listed as `Disallow` in robots.txt** and linked nowhere else.
     Well-behaved crawlers skip it and robots.txt is not access control
@@ -129,12 +129,12 @@ the decoy from the real thing).
     paths (a fake key in a dotfile, a canary URL in a memory entry). The agent's
     task never needs them, so use means it was steered by injected instructions.
     The response is agent-specific: contain the agent and revoke its credentials
-    (sota-sandboxing rules/05 R4.5), then run the rules/06 §2 LLM playbook.
+    ([sota-sandboxing rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md) R4.5), then run the [rules/06](06-incident-response-validation.md) §2 LLM playbook.
   OWASP: Bot Management and Anti-Automation cheat sheet; Code Review Guide v2;
   DSOMM.
 - **Detection wiring.** Every deception asset must alert with maximum severity
   and rich context (who/where/how) and route straight to IR — these are
-  presumed-true-positive (rules/04 routes; rules/06 responds). Guard against the
+  presumed-true-positive ([rules/04](04-alerting-triage-soc-soar.md) routes; [rules/06](06-incident-response-validation.md) responds). Guard against the
   adversary detecting the decoy (timing, fingerprintable artifacts) where you
   can, but even crude deception yields high-value signal.
 
@@ -143,7 +143,7 @@ the decoy from the real thing).
 - [ ] Is hunting hypothesis-driven (stated, falsifiable hypotheses) or
       unstructured log-staring?
 - [ ] Does every successful/repeatable hunt get operationalized into a detection
-      (rules/01)? Or do findings evaporate after the hunt?
+      ([rules/01](01-detection-engineering-discipline.md))? Or do findings evaporate after the hunt?
 - [ ] Is the hunt program behavior/TTP-weighted, or mostly IOC sweeps?
 - [ ] Are structured analytic techniques used to counter confirmation bias
       (alternative hypotheses, disconfirming evidence)?
@@ -159,7 +159,7 @@ the decoy from the real thing).
 - [ ] Does every deception asset alert at max severity with context and route
       straight to IR? Hunt: enumerate planted canaries vs. those wired to an
       alert — any unwired decoy is a wasted tripwire.
-- [ ] Are honeytoken mechanics coordinated with sota-secrets-management rules/04?
+- [ ] Are honeytoken mechanics coordinated with [sota-secrets-management rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md)?
 - [ ] **Application placements (§4) — Medium:** are there honey user rows
       checked at login, a robots.txt bait path, canary records in public
       listings, and honeytokens in agent workspaces, each wired to a response?

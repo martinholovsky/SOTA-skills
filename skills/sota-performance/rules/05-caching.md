@@ -10,7 +10,7 @@ missing any of these answers is an incident on a timer.
 
 | Layer | Latency | Scope | Coherence | Use for |
 |---|---|---|---|---|
-| CPU/data layout | ~1–40 ns | core | hardware | rules/03 §4 |
+| CPU/data layout | ~1–40 ns | core | hardware | [rules/03](03-memory.md) §4 |
 | In-process (map/LRU) | ~100 ns–1 µs | one instance | none across instances | hot config, compiled artifacts, per-entity hot reads |
 | Distributed (Redis/Memcached) | ~0.3–1 ms in-DC | fleet-wide | single source | sessions, computed views, API responses |
 | CDN/edge | ~5–30 ms to user | global | purge/TTL | static assets, cacheable HTML/API |
@@ -30,7 +30,7 @@ Rules:
   finding, not just perf.
 - The browser/CDN layers are governed by HTTP caching headers — get
   `Cache-Control`, `ETag`, and `Vary` right before adding server caches
-  (rules/04 §8, rules/06).
+  ([rules/04](04-io-network.md) §8, [rules/06](06-frontend-web.md)).
 
 ## 2. Cache key design
 
@@ -89,8 +89,8 @@ computed under the old permissions, or bump a per-user or per-tenant
 applied to authz). Otherwise an entry filled before a revocation keeps serving
 the revoked user until its TTL runs out — a TTL backstop bounds that window, it
 does not close it. SSR frameworks expose the same move as tag/path
-revalidation (`sota-web-frameworks` rules/03 §4); the session side of a stale
-privilege is `sota-code-security` rules/03 §3; §9 covers the key itself.
+revalidation ([`sota-web-frameworks` rules/03](../../sota-web-frameworks/rules/03-nextjs.md) §4); the session side of a stale
+privilege is [`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md) §3; §9 covers the key itself.
 OWASP: Nextjs Security cheat sheet.
 
 **TTL discipline**: every entry gets a TTL even with active invalidation
@@ -243,7 +243,7 @@ still "works", just for the wrong user:
   in-process map) must carry the user/tenant — and role/scope where the value
   varies by it — in the cache key. A key missing the identity dimension serves
   user A's response to user B: a cache-key authorization bypass. Same family
-  as web cache deception (sota-code-security rules/05): cacheability must
+  as web cache deception ([sota-code-security rules/05](../../sota-code-security/rules/05-web-security.md)): cacheability must
   never be decided by URL shape alone. Default for personalized responses:
   `Cache-Control: private` at the HTTP layer, identity-scoped keys elsewhere.
   **Declare a sharing scope for every entry** in the key contract (§2):
@@ -252,7 +252,7 @@ still "works", just for the wrong user:
   same for everyone goes under the explicit `global:` prefix, with a one-line
   comment beside the key builder saying why sharing it cannot leak anything —
   so an unprefixed key is visibly undecided, not silently shared. Same
-  classification as for stored objects in `sota-architecture` rules/05 §12.
+  classification as for stored objects in [`sota-architecture` rules/05](../../sota-architecture/rules/05-scalability-state-and-data.md) §12.
   OWASP: Multi Tenant Security cheat sheet.
 - **Key separation is not authorization.** An identity-scoped key keeps one
   principal's entry apart from another's; it says nothing about whether *this*
@@ -261,7 +261,7 @@ still "works", just for the wrong user:
   handler that returns the cached copy first and authorizes only on a miss
   serves it to a user whose access was revoked, and a key built from a request
   parameter (`user:{id_from_url}:…`) serves the owner's copy to whoever asks —
-  an IDOR through the cache (`sota-code-security` rules/03 §2). OWASP: Multi
+  an IDOR through the cache ([`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md) §2). OWASP: Multi
   Tenant Security cheat sheet.
 - **Constant-time comparisons stay constant-time.** Secret/token/MAC checks
   (`hmac.compare_digest`, `crypto.timingSafeEqual`,
@@ -280,7 +280,7 @@ still "works", just for the wrong user:
       headers). For each: key schema, TTL, bound/eviction, invalidation path,
       stampede defense, metrics. Any blank cell is a finding.
 - [ ] Unbounded in-process caches (plain `Map`/dict with no LRU/TTL) → memory
-      leak (rules/03), High.
+      leak ([rules/03](03-memory.md)), High.
 - [ ] TTLs constant (no jitter)? Mass-populated keys expiring in sync
       (deploy/cron)?
 - [ ] Hot keys: singleflight or soft-TTL in place? What happens on expiry
@@ -304,7 +304,7 @@ still "works", just for the wrong user:
 - [ ] Shared-cache keys for per-user/per-tenant responses include the
       identity/tenant (and role where it varies)? Any personalized response
       cacheable by URL alone (cache deception / key bypass —
-      sota-code-security rules/05)?
+      [sota-code-security rules/05](../../sota-code-security/rules/05-web-security.md))?
 - [ ] Every shared-layer key declares its scope (`global:`/`tenant:`/`user:`
       leading segment, §9), and each `global:` key has a written reason it
       cannot leak? High for an undeclared key holding tenant or user data.

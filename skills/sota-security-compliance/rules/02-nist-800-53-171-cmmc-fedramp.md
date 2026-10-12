@@ -23,23 +23,23 @@ chain risk). The families engineers implement directly:
 
 | Family | What it drives in code/infra |
 |---|---|
-| **AC** Access Control | RBAC/ABAC, least privilege, session control → `sota-identity-access` |
-| **AU** Audit & Accountability | auditable events, log content, retention, tamper-evidence → `sota-observability`, `sota-detection-engineering` |
-| **SC** System & Comms Protection | TLS, boundary/segmentation, FIPS crypto, key mgmt → `sota-network-security`, `sota-secrets-management` |
-| **SI** System & Info Integrity | flaw remediation, malware, input validation, monitoring → `sota-code-security` |
-| **CM** Configuration Management | baselines, least functionality, change control → `sota-devsecops`, `sota-kubernetes` |
-| **IA** Identification & Authentication | MFA, authenticator mgmt (800-63) → `sota-identity-access` |
-| **SA** System & Services Acquisition | secure SDLC, developer testing (SA-11/SA-15/SA-22) → rules/03 SSDF |
-| **SR** Supply Chain Risk Management | software provenance and SBOM → `sota-devsecops`; hardware component provenance and anti-counterfeit (SR-4/SR-5/SR-11), disposal (SR-12) → rules/05 §6 |
+| **AC** Access Control | RBAC/ABAC, least privilege, session control → [`sota-identity-access`](../../sota-identity-access/SKILL.md) |
+| **AU** Audit & Accountability | auditable events, log content, retention, tamper-evidence → [`sota-observability`](../../sota-observability/SKILL.md), [`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md) |
+| **SC** System & Comms Protection | TLS, boundary/segmentation, FIPS crypto, key mgmt → [`sota-network-security`](../../sota-network-security/SKILL.md), [`sota-secrets-management`](../../sota-secrets-management/SKILL.md) |
+| **SI** System & Info Integrity | flaw remediation, malware, input validation, monitoring → [`sota-code-security`](../../sota-code-security/SKILL.md) |
+| **CM** Configuration Management | baselines, least functionality, change control → [`sota-devsecops`](../../sota-devsecops/SKILL.md), [`sota-kubernetes`](../../sota-kubernetes/SKILL.md) |
+| **IA** Identification & Authentication | MFA, authenticator mgmt (800-63) → [`sota-identity-access`](../../sota-identity-access/SKILL.md) |
+| **SA** System & Services Acquisition | secure SDLC, developer testing (SA-11/SA-15/SA-22) → [rules/03](03-ssdf-secure-sdlc.md) SSDF |
+| **SR** Supply Chain Risk Management | software provenance and SBOM → [`sota-devsecops`](../../sota-devsecops/SKILL.md); hardware component provenance and anti-counterfeit (SR-4/SR-5/SR-11), disposal (SR-12) → [rules/05](05-iec-62443-ot-ics.md) §6 |
 
 **Baselines (800-53B):** **low / moderate / high**, keyed to the system's impact
 level (FIPS 199 categorization across confidentiality/integrity/availability),
 plus a **privacy baseline** applied regardless of impact. Start from the baseline
-and tailor (rules/01 §5) — never a blank catalog.
+and tailor ([rules/01](01-control-frameworks-as-code.md) §5) — never a blank catalog.
 
 **Interchange format:** NIST publishes the catalog and baselines in **OSCAL**
 (machine-readable JSON/XML/YAML). Consume OSCAL for the control catalog and emit
-OSCAL SSP/SAP/SAR from your crosswalk (rules/01 §2) rather than hand-maintaining
+OSCAL SSP/SAP/SAR from your crosswalk ([rules/01](01-control-frameworks-as-code.md) §2) rather than hand-maintaining
 Word documents.
 
 ## 2. SP 800-171 — protecting CUI on your systems
@@ -76,7 +76,7 @@ carefully):
   network/privileged access.
 - **SPRS score:** DoD contractors self-assess against 800-171 and post a score to
   the Supplier Performance Risk System; the SSP + POA&M are the assessable
-  artifacts. Generate them from the crosswalk (rules/01), don't hand-write.
+  artifacts. Generate them from the crosswalk ([rules/01](01-control-frameworks-as-code.md)), don't hand-write.
 
 ## 3. CMMC — assessing 800-171 for DoD
 
@@ -116,7 +116,7 @@ cryptographic modules** — not just "strong encryption." Engineering consequenc
   no longer *active* — a finding for new systems; for existing ones, record the
   agency's transition decision.
 - In cloud: use the provider's **FIPS-validated endpoints/KMS** and record the
-  module in the crosswalk (`sota-secrets-management`). A non-validated library
+  module in the crosswalk ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)). A non-validated library
   (or a validated one running outside FIPS mode) protecting CUI is a **critical**
   finding.
 - Don't roll your own or use a non-validated cipher for in-scope data. This is the
@@ -147,9 +147,9 @@ read 2026-09-26). *Future-phase dates are FedRAMP plans — re-verify there.*
 - **Continuous monitoring (ConMon):** scanning, POA&M management, and change
   control run monthly, not at audit time.
 - **20x-shaped work:** emit control evidence as **machine-readable KSIs** straight
-  from the enforcing system (rules/01 §6) rather than transcribing into an SSP.
+  from the enforcing system ([rules/01](01-control-frameworks-as-code.md) §6) rather than transcribing into an SSP.
 - **Customer Responsibility Matrix:** document which controls the consuming agency
-  inherits from you vs. must implement themselves (rules/01 §3).
+  inherits from you vs. must implement themselves ([rules/01](01-control-frameworks-as-code.md) §3).
 
 ## Audit checklist
 
@@ -159,7 +159,7 @@ read 2026-09-26). *Future-phase dates are FedRAMP plans — re-verify there.*
 - [ ] 800-171 revision in use matches the **contract** requirement (CMMC L2 may pin Rev 2); exact requirement IDs confirmed against the primary PDF, not memory
 - [ ] CMMC level matches the contract; SSP + POA&M generated from the control crosswalk and kept current; SPRS score posted where required; annual affirmation wired
 - [ ] AU/audit-logging controls implemented with retention + tamper-evidence; logs reviewed (mechanism, not manual promise)
-- [ ] AC/IA controls: least privilege, separation of duties, MFA for privileged/network access — enforced by the IdP, not policy prose (`sota-identity-access`)
+- [ ] AC/IA controls: least privilege, separation of duties, MFA for privileged/network access — enforced by the IdP, not policy prose ([`sota-identity-access`](../../sota-identity-access/SKILL.md))
 - [ ] FedRAMP (if applicable): authorization boundary drawn and enforced; asset inventory reconciled continuously; ConMon (scans/POA&M/change control) operating monthly; CRM published
 - [ ] Where FedRAMP 20x applies, control evidence emitted as machine-readable KSIs from the enforcing system; OSCAL used for SSP/SAP/SAR interchange
 - [ ] All statuses/dates in this file re-verified against primary sources (CSRC, fedramp.gov, Federal Register) within the last 6 months

@@ -31,9 +31,9 @@ misconfiguration are entirely yours.
   remember `encoding/json` ignores case in field matching, silently drops unknown fields,
   and accepts **duplicate keys (last wins)** — `{"role":"user","role":"admin"}` decodes as
   admin, while a proxy or validator that keeps the first sees user: a parser differential
-  (generic rule: sota-code-security rules/01 §11). On 1.27+ decode trust-boundary input with
+  (generic rule: [sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) §11). On 1.27+ decode trust-boundary input with
   `encoding/json/v2`, which rejects duplicates and matches names case-sensitively (measured
-  go1.27.1). Pair with `http.MaxBytesReader`; probe in `rules/04` checklist.
+  go1.27.1). Pair with `http.MaxBytesReader`; probe in [`rules/04`](04-http-services.md) checklist.
 - Numbers from JSON into `any` become `float64` — large int64 IDs silently
   lose precision; decode into concrete struct types or `json.Number`.
 - Never echo raw input into errors/logs without bounding
@@ -45,7 +45,7 @@ misconfiguration are entirely yours.
   `text/template` or `fmt.Fprintf` into a page — that's stored/reflected XSS.
   The `template.HTML`/`JS`/`URL`/`CSS`/`HTMLAttr` cast types switch escaping
   off; each is a sink that must be independently sanitized. Full
-  XSS/CSP/output-encoding rules live in sota-code-security `05`.
+  XSS/CSP/output-encoding rules live in [sota-code-security](../../sota-code-security/SKILL.md) `05`.
 
 ## 2. SQL — parameterized always
 
@@ -89,7 +89,7 @@ q := "SELECT ... ORDER BY " + orderCol // safe: values are program constants
   `*sql.Stmt` from `db.Prepare` re-prepares itself on each pooled connection that runs it: one
   server-side statement per connection. Prefer parameterized `QueryContext`/`ExecContext` or
   `tx.PrepareContext` (closed with the transaction), above all behind a transaction-mode pooler
-  (sota-databases rules/03). OWASP: Go-SCP (database security: connections, parameterized queries).
+  ([sota-databases rules/03](../../sota-databases/rules/03-queries-and-indexes.md)). OWASP: Go-SCP (database security: connections, parameterized queries).
 - ORMs: if GORM/ent are in use, audit every `Raw`, `Exec`, `Where(fmt.Sprintf`
   call site — string interpolation there is the same CRITICAL.
 
@@ -150,7 +150,7 @@ f, err := root.Open(userPath) // cannot escape baseDir, even via symlinks
 Caveat: containment is only as good as the toolchain — CVE-2026-39822
 (fixed in 1.26.5/1.25.12, 2026-07) let `root.Open("symlink/")` follow a
 trailing-slash symlink out of the Root on Unix (go.dev issue #79005).
-Reinforces the keep-the-toolchain-current rule in rules/08 §1.
+Reinforces the keep-the-toolchain-current rule in [rules/08](08-supply-chain.md) §1.
 
 Pre-1.24 fallback (and for path *strings* not yet opened):
 
@@ -177,7 +177,7 @@ func securePath(baseDir, userPath string) (string, error) {
   `http.FileServer`/`FileServerFS` (1.22+) render an index of any directory lacking
   `index.html` (measured: `/sub/` listed `secret.txt`). Wrap the `FileSystem` so `Open` of such
   a directory returns `fs.ErrNotExist` (measured: 404, files still served) or serve an explicit
-  allowlist. Cross-language rule: sota-code-security rules/07. OWASP: Go-SCP (system configuration).
+  allowlist. Cross-language rule: [sota-code-security rules/07](../../sota-code-security/rules/07-data-exposure.md). OWASP: Go-SCP (system configuration).
 
 ## 5. Integer conversion overflow (gosec G115)
 
@@ -255,7 +255,7 @@ defer os.Remove(f.Name())
 
 ## 4c. SSRF — outbound requests to a caller-influenced destination
 
-The deny policy and its rationale live in sota-code-security `rules/01 §5`; this is how Go
+The deny policy and its rationale live in [sota-code-security](../../sota-code-security/SKILL.md) `rules/01 §5`; this is how Go
 enforces it. Any `http.Client`, `net.Dial` or SDK call whose host, port or URL a caller can
 steer (webhooks, fetch-by-URL imports, link previews, resolvers that fetch) is HIGH until all
 of the below hold, CRITICAL where the instance metadata service hands out credentials.
@@ -326,7 +326,7 @@ a stdlib feature fed caller text. Each is code execution scoped by what you expo
   env's exported methods are callable too, so pass a data-only struct.
 - **None of these is a security boundary.** An in-process interpreter shares the address space,
   file descriptors and credentials; truly untrusted code runs in a separate sandboxed process or
-  VM (sota-sandboxing).
+  VM ([sota-sandboxing](../../sota-sandboxing/SKILL.md)).
 OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.
 
 ## 6. Cryptographic practices: CSPRNG & TLS
@@ -363,19 +363,19 @@ rand.Read(b)                          // crypto/rand.Read
   is "does predictability help an attacker", not "which package is newer".
 - Keys, signing, AEAD: use `crypto/*` (`ed25519`, `crypto/ecdsa`, `crypto/aes` + `cipher.NewGCM`)
   drawing from `crypto/rand.Reader`; never hand-roll. Password hashing is `golang.org/x/crypto/bcrypt`/
-  `argon2` — algorithm choice and parameters are owned by sota-code-security `04`.
+  `argon2` — algorithm choice and parameters are owned by [sota-code-security](../../sota-code-security/SKILL.md) `04`.
 - FIPS 140-3 (1.24+, Go Cryptographic Module): pick the module at build with `GOFIPS140=` — `off`
   (default), `latest` (like `off`, but FIPS 140-3 mode on by default), one of the module versions
   the page lists (verify there), or `inprocess`/`certified` (the newest on the CMVP in-process list /
   with a certificate). `GODEBUG=fips140=on` enables the mode at run; `fips140=only` is a best-effort
-  test mode, not for production (go.dev/doc/security/fips140). Which module a boundary needs: sota-security-compliance 02 §4.
+  test mode, not for production (go.dev/doc/security/fips140). Which module a boundary needs: [sota-security-compliance](../../sota-security-compliance/SKILL.md) 02 §4.
 
 ### TLS configuration
 
 Go's `crypto/tls` defaults are good (1.22+ defaults to strong suites; 1.24+
 enables post-quantum X25519MLKEM768 key exchange, and 1.26 also enables
 SecP256r1MLKEM768/SecP384r1MLKEM1024 by default; the legacy GODEBUG opt-outs
-`tlsrsakex`/`tls10server`/`tls3des` were removed in 1.27 — see rules/08 §2 for the
+`tlsrsakex`/`tls10server`/`tls3des` were removed in 1.27 — see [rules/08](08-supply-chain.md) §2 for the
 GODEBUG settings that still weaken TLS/x509). The main
 sins are *downgrades*:
 

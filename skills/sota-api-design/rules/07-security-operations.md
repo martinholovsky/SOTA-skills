@@ -40,7 +40,7 @@ Rules regardless of scheme:
 - **Sign the message, not only the channel, when one request moves money or
   authority or crosses several hops** (B2B writes, payment and settlement calls,
   agent/MCP JSON-RPC traffic): TLS ends at each proxy, a signature does not. This
-  is the rules/06 §2 webhook model applied to requests. With HTTP Message
+  is the [rules/06](06-webhooks.md) §2 webhook model applied to requests. With HTTP Message
   Signatures (RFC 9421), the receiver requires a minimum covered set: `@method`,
   `@target-uri` (or `@authority` + `@path`), the tenant and audience fields,
   `created`/`expires`, and `content-digest`. RFC 9421 does not cover the body by
@@ -48,7 +48,7 @@ Rules regardless of scheme:
   receiver recomputes it over the bytes it actually received. A digest header
   that verifies but is never recomputed still allows the body to be swapped.
   Prefer asymmetric keys whose `keyid` maps to one registered sender, reject
-  replays by nonce or `created` window (rules/06 §3), and fail closed when a
+  replays by nonce or `created` window ([rules/06](06-webhooks.md) §3), and fail closed when a
   signature is missing. Any field outside the covered set that can change an
   amount or an authorisation decision is a defect. OWASP: ASVS 5.0 V4.1.5; MCP
   Security, AI-Powered Advertising Systems Security, Bot Management and
@@ -120,8 +120,8 @@ Content-Type: application/problem+json
   reputation and delayed publishing. The aim is to raise attacker cost, not to
   block every bot: search crawlers, uptime monitors and accessibility tools
   must keep working, and responses are graduated (log, step up, tarpit, block)
-  rather than all-or-nothing. Depth: `sota-code-security` rules/02 (signup) and
-  rules/07 §2.1 (detection points). OWASP: ASVS 5.0 V2.4.2; Bot Management and
+  rather than all-or-nothing. Depth: [`sota-code-security` rules/02](../../sota-code-security/rules/02-authentication.md) (signup) and
+  [rules/07](../../sota-code-security/rules/07-data-exposure.md) §2.1 (detection points). OWASP: ASVS 5.0 V2.4.2; Bot Management and
   Anti-Automation cheat sheet.
 
 ## 3. Request size limits & input hygiene
@@ -135,8 +135,8 @@ Content-Type: application/problem+json
 - Uploads: don't proxy large files through the API — issue pre-signed URLs to
   object storage; validate type by magic bytes not extension/Content-Type alone.
 - Schema-validate all input at the boundary (the OpenAPI/proto schema from
-  rules/01–04 is the enforcement artifact); reject unknown fields on writes
-  (rules/02 §3).
+  [rules/01](01-rest-http-design.md)–04 is the enforcement artifact); reject unknown fields on writes
+  ([rules/02](02-versioning-evolution.md) §3).
 
 ### 3a. HTTP message framing & request smuggling
 
@@ -158,7 +158,7 @@ runs two. Treat ambiguous framing as an attack, not as something to be lenient a
   9114 Sections 4.1.2 and 4.2). An intermediary must not forward either. This matters most where
   an HTTP/2 edge **downgrades** to HTTP/1.1 towards the origin: a field that the
   binary framing carried harmlessly becomes framing again on the old wire (the
-  CR/LF/NUL variant: `sota-code-security` rules/01 §11).
+  CR/LF/NUL variant: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11).
 - **Generating**: never emit a `Content-Length` that disagrees with what the
   framing actually sends, and never both headers on one message (RFC 9112 Section 6.2).
   Hand-set length headers on a streamed or compressed body are the usual source.
@@ -184,10 +184,10 @@ Every request has an end-to-end budget; every hop fits inside it.
   call timeouts (sum or max along the path) > DB statement timeout. An inner
   timeout exceeding an outer one means work continues after the caller is gone.
 - Per-route, not global: `GET /users/{id}` 2s; `POST /reports` should be async
-  (202 + status resource, rules/01 §3) rather than a 10-minute synchronous wait.
+  (202 + status resource, [rules/01](01-rest-http-design.md) §3) rather than a 10-minute synchronous wait.
 - Server-side: read/write/idle timeouts on the listener (slowloris), statement
   timeouts in the DB, **cancellation propagation** — client disconnect aborts
-  downstream work (rules/04 §3).
+  downstream work ([rules/04](04-grpc-protocols.md) §3).
 - Retries (client or mesh) live *inside* the budget, idempotent routes only,
   backoff + jitter, with circuit breaking — otherwise retries amplify outages 3x.
 - Return `504` (upstream) / `503 + Retry-After` (load shedding) honestly; do not
@@ -244,13 +244,13 @@ Access-Control-Max-Age: 7200
   deletion; data imports; creation and deletion of system-level objects
   (tenants, projects, API clients); receipt and processing of user-generated
   content and uploads; out-of-sequence steps in a multi-step flow and fraud
-  signals. Event names: `sota-code-security` rules/07 §2.1.
+  signals. Event names: [`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) §2.1.
 - **High-risk operations write two entries**: an intent record before the action
   (who, what, which object, request ID) and an outcome record after it. An
   action that crashes, times out or is killed midway then still leaves a trace,
   and an intent with no outcome is itself an alertable signal. OWASP: Logging
   Vocabulary, Logging and REST Security cheat sheets.
-- **WebSocket and other long-lived channels** (rules/05): the HTTP access log
+- **WebSocket and other long-lived channels** ([rules/05](05-realtime-websockets-sse.md)): the HTTP access log
   sees only the upgrade. Log connection open and close (user, IP, `Origin`),
   auth and authz decisions at the handshake and per message, rate-limit and
   message-validation violations, abnormal disconnects and protocol errors, never
@@ -262,7 +262,7 @@ Access-Control-Max-Age: 7200
   (behind NAT or CGNAT the source IP alone does not identify a client; RFC 6302
   recommends logging the source port with a traceable timestamp). Clocks on
   every node are time-synced and drift is alerted on, or events from two hosts
-  cannot be ordered (`sota-observability` rules/01 §1). On sensitive and
+  cannot be ordered ([`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §1). On sensitive and
   anti-automation endpoints, add ASN, country, TLS/HTTP2 fingerprint, a hashed
   session ID, and the bot or risk decision **with the signals behind it**
   (`bot_score`, rule name). An unlogged anti-bot decision cannot be tuned.
@@ -275,7 +275,7 @@ Access-Control-Max-Age: 7200
 - Logs are an injection target: encode/escape user-controlled strings (CRLF/log
   forging); treat log viewers as XSS sinks.
 - Request IDs: accept inbound `traceparent` (W3C Trace Context), generate if
-  absent, return an ID header on every response (incl. errors — rules/01 §9), and
+  absent, return an ID header on every response (incl. errors — [rules/01](01-rest-http-design.md) §9), and
   propagate downstream.
 
 ## 7. Multi-tenant isolation at the API layer
@@ -291,7 +291,7 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   layer/ORM global scope or Postgres RLS (`SET LOCAL app.tenant_id` or
   `set_config('app.tenant_id', …, true)` inside the request's transaction — a
   plain `SET` leaks to the next borrower under transaction pooling, see
-  `sota-databases` rules/04; policies on every table) — not by remembering
+  [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md); policies on every table) — not by remembering
   `WHERE tenant_id = ?` in each handler. RLS as a second enforcement layer
   catches the handler someone forgot.
 - Resource IDs: lookups are always `(tenant_id, id)`; return `404` (not `403`)
@@ -299,7 +299,7 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   consistent (a timing or message difference is still an oracle).
 - Isolation applies to *everything*, not just primary GETs: list filters, search,
   exports, aggregations/counts, **webhooks** (events only to the owning tenant's
-  endpoints), realtime channels (rules/05 — channel authz), idempotency-key
+  endpoints), realtime channels ([rules/05](05-realtime-websockets-sse.md) — channel authz), idempotency-key
   scopes, ETag values, and cache keys (a shared cache without tenant in the key
   is a leak machine).
 - Noisy-neighbor: rate limits and quotas per tenant (§2), per-tenant concurrency
@@ -340,7 +340,7 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   RFC 8705 Section 6.5 explicitly leaves how that metadata travels safely out of scope.
   So the header gets the `X-User-Id` treatment above: honoured only on the link
   from the terminating proxy (itself authenticated), with any client-sent copy
-  removed at the edge (the proxy-side settings: `sota-code-security` rules/04 §5).
+  removed at the edge (the proxy-side settings: [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5).
   Where the caller's identity *is* the authorisation (payments, agent-initiated
   actions, B2B writes), do not let the header carry it alone: bind identity into
   the message, e.g. a sender-constrained token whose `cnf` thumbprint
@@ -364,7 +364,7 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   (the browser default per the W3C Referrer Policy spec) plus a real CSP. An API
   response should trigger no further requests, so it can refuse everything.
   Non-browser clients ignore these headers; they cost nothing. Page baseline:
-  `sota-code-security` rules/05. OWASP: REST Security cheat sheet.
+  [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md). OWASP: REST Security cheat sheet.
 
 ## 9. OWASP API Security Top 10 mapping (2023 list, still canonical)
 
@@ -372,14 +372,14 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
 |---|---|
 | API1 Broken Object Level Auth | §1, §7 — credential-derived tenant, per-object checks, cross-tenant test suite |
 | API2 Broken Authentication | §1 — scheme selection, JWT validation, key handling |
-| API3 Object Property Level Auth | rules/01 §1 (explicit DTOs — no mass assignment/ORM dumps), §1 authz |
-| API4 Unrestricted Resource Consumption | §2–4 — rate limits, quotas, size limits, timeout budgets; rules/03 §4 |
+| API3 Object Property Level Auth | [rules/01](01-rest-http-design.md) §1 (explicit DTOs — no mass assignment/ORM dumps), §1 authz |
+| API4 Unrestricted Resource Consumption | §2–4 — rate limits, quotas, size limits, timeout budgets; [rules/03](03-graphql.md) §4 |
 | API5 Broken Function Level Auth | §1 — deny-by-default policy, admin surface separation |
-| API6 Unrestricted Access to Sensitive Business Flows | §2 cost-weighted limits + flow-specific throttles; **enforce multi-step flow order server-side** — model the flow as a state machine, validate the current state on every step, reject out-of-order/replayed steps (don't trust client sequencing). Business-logic depth: sota-code-security |
-| API7 SSRF | rules/06 §8 — webhook/user-URL egress controls |
-| API8 Security Misconfiguration | §5 CORS, §8 gateway/TLS; rules/03 §4 introspection |
-| API9 Improper Inventory Management | rules/02 §5 — versioned, measured, sunset surfaces; spec-as-truth (rules/01 §10) |
-| API10 Unsafe Consumption of APIs | rules/06 consumer role; rules/04 §3 deadlines on upstream calls |
+| API6 Unrestricted Access to Sensitive Business Flows | §2 cost-weighted limits + flow-specific throttles; **enforce multi-step flow order server-side** — model the flow as a state machine, validate the current state on every step, reject out-of-order/replayed steps (don't trust client sequencing). Business-logic depth: [sota-code-security](../../sota-code-security/SKILL.md) |
+| API7 SSRF | [rules/06](06-webhooks.md) §8 — webhook/user-URL egress controls |
+| API8 Security Misconfiguration | §5 CORS, §8 gateway/TLS; [rules/03](03-graphql.md) §4 introspection |
+| API9 Improper Inventory Management | [rules/02](02-versioning-evolution.md) §5 — versioned, measured, sunset surfaces; spec-as-truth ([rules/01](01-rest-http-design.md) §10) |
+| API10 Unsafe Consumption of APIs | [rules/06](06-webhooks.md) consumer role; [rules/04](04-grpc-protocols.md) §3 deadlines on upstream calls |
 
 Use this table to structure a security-focused audit report when the requester
 wants OWASP-mapped findings.

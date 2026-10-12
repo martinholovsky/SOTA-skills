@@ -6,7 +6,7 @@ attributable, and recovery is proven, not presumed.
 
 ## 7.1 Admission control: only verified images run
 
-The pipeline's signatures and attestations (rules/02) mean nothing if the cluster runs
+The pipeline's signatures and attestations ([rules/02](02-provenance-signing.md)) mean nothing if the cluster runs
 whatever it's handed. Admission is where supply chain security becomes mandatory.
 
 ```yaml
@@ -69,13 +69,13 @@ there, among them GHSA-5cjf-wwfg-pj4c: an ImageValidatingPolicy `PolicyException
 Rules:
 - **Registry allowlist first**: a policy verifying `ghcr.io/myorg/*` but admitting
   `docker.io/anything` unverified is a bypass with extra YAML. Pair signature
-  verification with "images only from these registries" (and rules/04 §4.5 prod-registry
+  verification with "images only from these registries" (and [rules/04](04-build-containers.md) §4.5 prod-registry
   promotion).
-- Verify **identity, not existence**: exact issuer + subject (workflow), as in rules/02
+- Verify **identity, not existence**: exact issuer + subject (workflow), as in [rules/02](02-provenance-signing.md)
   §2.3 — `subjectRegExp: '.*'` verifies that *someone* used Sigstore. (In the CEL types a
   `*` inside `subject` is literal: it matches nothing, and with `failurePolicy: Fail` denies
   every image.)
-- Require the **provenance/SBOM attestations**, not just a signature, once rules/02 is in
+- Require the **provenance/SBOM attestations**, not just a signature, once [rules/02](02-provenance-signing.md) is in
   place; optionally add freshness conditions (scan attestation < N days).
 - `failurePolicy: Fail` on the webhook for prod admission — `Ignore` means "enforce
   unless the enforcer is down", which is the first thing an attacker or an outage takes
@@ -95,7 +95,7 @@ Rules:
 
 ## 7.2 Policy as code (OPA / Kyverno) — beyond image verification
 
-The baseline policy set every cluster should enforce (mirrors rules/04 hardening):
+The baseline policy set every cluster should enforce (mirrors [rules/04](04-build-containers.md) hardening):
 
 - Pod Security Admission `restricted` (or equivalent policies): no privileged, no
   hostPath/hostNetwork/hostPID, `runAsNonRoot`, no privilege escalation, seccomp
@@ -104,7 +104,7 @@ The baseline policy set every cluster should enforce (mirrors rules/04 hardening
   labels (owner, app) for attribution, no `default` ServiceAccount with API access,
   ingress/Service restrictions per tier.
 - Beyond the cluster: same policy-as-code approach for IaC (conftest/OPA in the plan
-  gate, rules/05 §5.3) and for CI config — one policy language strategy, many enforcement
+  gate, [rules/05](05-analysis-gates.md) §5.3) and for CI config — one policy language strategy, many enforcement
   points.
 
 ```yaml
@@ -125,7 +125,7 @@ express (image rules, label requirements, org invariants). Use both — replacin
 hand-rolled policies usually re-implements it worse.
 
 Engineering discipline (policies are production code):
-- **Policies live in git**, deployed via GitOps (rules/06 §6.4) — never `kubectl apply`'d
+- **Policies live in git**, deployed via GitOps ([rules/06](06-iac-deployment.md) §6.4) — never `kubectl apply`'d
   by hand; the policy repo is protected like prod because it *is* the prod rulebook.
 - **Policies have tests**: `kyverno test` fixtures / OPA `opa test` + conftest unit tests
   with good/bad manifests, run as a required CI check on the policy repo. An untested
@@ -134,7 +134,7 @@ Engineering discipline (policies are production code):
 - **Exceptions are first-class, scoped, and time-bound**: Kyverno `PolicyException` (or
   documented exclusion lists) naming the workload, the policy, a reason, an owner, and an
   expiry — reviewed via PR like any code. A namespace-wide permanent exemption is policy
-  deletion in disguise (High). Inventory exceptions on a schedule (rules/05 §5.1
+  deletion in disguise (High). Inventory exceptions on a schedule ([rules/05](05-analysis-gates.md) §5.1
   suppression discipline applies).
 - Version and stage policy rollouts (audit→enforce per policy, per environment) and
   monitor webhook latency/error budgets — a flapping webhook gets `failurePolicy: Ignore`d
@@ -180,7 +180,7 @@ trails is a common floor; match your compliance regime):
   approvals, workflow-file changes, runner registrations, org Actions-policy changes
   (GitHub audit log streaming to your SIEM — the in-product retention is short).
 - **Deploy events**: digest, source SHA, pipeline run URL, approver, environment — the
-  rules/02 §2.8 traceability triple, emitted to your observability stack as deploy
+  [rules/02](02-provenance-signing.md) §2.8 traceability triple, emitted to your observability stack as deploy
   markers (also makes "what changed?" the first incident query it should be).
 - **Admission decisions**: policy denials *and* exception uses; an attempted unsigned
   image in prod is a page, not a log line.
@@ -195,7 +195,7 @@ Properties: logs ship to storage the producing system cannot alter or delete
 (write-once/object-lock or a separate logging account) — an attacker with CI compromise
 must not be able to erase the CI audit trail (same logic as Rekor's transparency log).
 Alert on the high-signal few: workflow modifications on release workflows, new runner
-registration, admission-policy changes, break-glass use (§7.5), bypass events (rules/05
+registration, admission-policy changes, break-glass use (§7.5), bypass events ([rules/05](05-analysis-gates.md)
 §5.2). Don't ship 400 unactioned detections; ship ten that page.
 
 ### 7.3.1 High-signal detections for the delivery chain
@@ -206,7 +206,7 @@ registration, admission-policy changes, break-glass use (§7.5), bypass events (
 | New self-hosted runner registered / runner label change | Attacker-controlled build capacity |
 | `id-token`-bearing job in an unexpected workflow/ref | OIDC role-assumption staging |
 | TF apply role or GitOps controller identity used outside its pipeline source | Stolen pipeline identity in interactive use |
-| Registry push to a release repo by a non-CI identity | Bypasses the only-CI-writes invariant (rules/04 §4.5) |
+| Registry push to a release repo by a non-CI identity | Bypasses the only-CI-writes invariant ([rules/04](04-build-containers.md) §4.5) |
 | Admission policy changed / PolicyException created | Enforcement-layer tampering |
 | Unsigned-image admission attempt in prod | Either an attack or a broken pipeline — both urgent |
 | Secret-scanning push-protection bypass approved | Human judged a secret OK — verify |
@@ -215,32 +215,32 @@ registration, admission-policy changes, break-glass use (§7.5), bypass events (
 | Registry token used from an unexpected IP, or a new token created | Credential theft staging a publish |
 | Unexpected dependency added in your own released package | Tampered release, even when the publish path looked normal |
 | A CI secret value revealed or exported through the platform UI or API, where the platform allows it (GitLab can reveal a variable not created as "Masked and hidden") | A person reading a production secret outside any pipeline |
-| Job output containing `U2FsdGVkX1` (base64 of openssl's `Salted__` header) or long base64 blobs, or a workflow change adding `base64 \| base64` or `openssl enc` | Encoding defeats value-match masking (rules/01 §1.10); double base64 and openssl-encrypted output are how a secret is printed past it |
+| Job output containing `U2FsdGVkX1` (base64 of openssl's `Salted__` header) or long base64 blobs, or a workflow change adding `base64 \| base64` or `openssl enc` | Encoding defeats value-match masking ([rules/01](01-pipeline-security.md) §1.10); double base64 and openssl-encrypted output are how a secret is printed past it |
 
 Each detection needs an owner and a tested response path; a detection nobody drills is a
 dashboard widget.
 
 Keep a **pipeline and publisher-compromise playbook** with named roles and an escalation
 path. It covers revoking every CI, registry and cloud token the pipeline held
-(`npm token revoke`, `rules/01` §1.10); marking bad versions with `npm deprecate` (or the
+(`npm token revoke`, [`rules/01`](01-pipeline-security.md) §1.10); marking bad versions with `npm deprecate` (or the
 registry's equivalent), and unpublishing where the registry's policy allows; and notifying
 consumers through an advisory. (OWASP: GitHub Actions Security cheat sheet; NPM Security
 cheat sheet)
 
 ### 7.3.2 Containment for a trusted dependency that turns malicious
 
-Every control before runtime (rules/03, rules/15) can pass a dependency that was clean
+Every control before runtime ([rules/03](03-dependencies.md), [rules/15](15-dependency-adoption.md)) can pass a dependency that was clean
 yesterday and ships a payload today. Assume that will happen, and decide in advance what the
 payload can reach. Four layers bound it, and each limits something different:
 
 | Layer | What it limits |
 |---|---|
-| **Workload identity**: a per-service identity with short-lived, narrowly scoped credentials (`sota-identity-access`, `sota-secrets-management`) | What there is to steal: the workload's own expiring credentials, not a shared long-lived key |
-| **Egress restriction**: default-deny egress with destination allowlists (`sota-network-security`) | Exfiltration and second-stage downloads: the payload cannot reach its command server or upload data |
+| **Workload identity**: a per-service identity with short-lived, narrowly scoped credentials ([`sota-identity-access`](../../sota-identity-access/SKILL.md), [`sota-secrets-management`](../../sota-secrets-management/SKILL.md)) | What there is to steal: the workload's own expiring credentials, not a shared long-lived key |
+| **Egress restriction**: default-deny egress with destination allowlists ([`sota-network-security`](../../sota-network-security/SKILL.md)) | Exfiltration and second-stage downloads: the payload cannot reach its command server or upload data |
 | **Segmentation**: namespace or network default-deny between services | Lateral movement: the compromised service reaches only what it already calls |
-| **Runtime detection**: process, file and network rules (`sota-detection-engineering`) | Time to notice: a shell spawned by an application process, a new outbound destination, reads of credential files |
+| **Runtime detection**: process, file and network rules ([`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md)) | Time to notice: a shell spawned by an application process, a new outbound destination, reads of credential files |
 
-Build jobs get the same treatment (rules/01 §1.6: ephemeral runners, egress control). The
+Build jobs get the same treatment ([rules/01](01-pipeline-security.md) §1.6: ephemeral runners, egress control). The
 audit question: pick one dependency of a production service and ask what it could reach if
 it ran attacker code at startup. The answer should come from these four layers, not from
 trust in the maintainer. (OWASP: Zero Trust Architecture cheat sheet)
@@ -250,8 +250,8 @@ trust in the maintainer. (OWASP: Zero Trust Architecture cheat sheet)
 A backup that has never been restored is a hypothesis. Scope is wider than the database:
 
 - **Inventory what reconstruction needs**: databases AND object stores, Terraform state
-  (rules/06 §6.1 — losing state orphans the infra), container registry (released digests
-  + attestations, rules/04 §4.5), git (the GitOps repo is prod), secret manager contents,
+  ([rules/06](06-iac-deployment.md) §6.1 — losing state orphans the infra), container registry (released digests
+  + attestations, [rules/04](04-build-containers.md) §4.5), git (the GitOps repo is prod), secret manager contents,
   CA/KMS key material (without the KMS key, encrypted backups are noise — key DR is its
   own plan), CI configuration.
 - **Define RPO/RTO per system, then test against them**: scheduled automated
@@ -293,19 +293,19 @@ create an unaudited one permanently:
   slot, ruleset bypass role, registry direct-push identity) that is: normally unused,
   **alerted on use** (page, not log), time-bound, and followed by a mandatory post-use
   review that re-rotates the credential and reconciles whatever was changed back into git
-  (drift handling, rules/06 §6.3).
+  (drift handling, [rules/06](06-iac-deployment.md) §6.3).
 - Break-glass use is an *input to process fixes*: frequent use means a gate is
   mis-designed — fix the gate, don't normalize the bypass.
 - Audit both failure modes: no break-glass defined (gates will be dismantled under
   pressure) and break-glass that is just "the admins bypass protection routinely"
-  (`rules/09` §1 — that's not break-glass, that's no glass).
+  ([`rules/09`](09-gates-that-hold.md) §1 — that's not break-glass, that's no glass).
 
 ## 7.6 Closing the loop
 
 Runtime signals feed back into the pipeline: admission denials reveal unsigned/legacy
 images to migrate; drift corrections reveal process gaps; scanner findings on *deployed*
-digests (rules/03 §3.6) drive rebuild-and-promote of patched bases (rules/04 §4.3);
-incident retros add Opengrep rules (rules/05 §5.1) and admission policies. A DevSecOps
+digests ([rules/03](03-dependencies.md) §3.6) drive rebuild-and-promote of patched bases ([rules/04](04-build-containers.md) §4.3);
+incident retros add Opengrep rules ([rules/05](05-analysis-gates.md) §5.1) and admission policies. A DevSecOps
 setup that only adds controls and never tunes them ends as the bypassed, resented variety.
 Track: gate latency, exception/suppression counts and ages, time-to-remediate by severity,
 rollback drill recency, restore test results. Those five trends are the honest health
@@ -315,9 +315,9 @@ dashboard of everything in this skill.
 
 - open vulnerabilities by severity, split by layer (application or infrastructure) and by
   component;
-- fix rate against SLA, per team or repository (rules/13 §13.3 sets the SLA);
+- fix rate against SLA, per team or repository ([rules/13](13-vulnerability-remediation.md) §13.3 sets the SLA);
 - time from a patch being available to it running in production, measured from the
-  advisory's fix date to the deploy event of rules/02 §2.8, not to the merge;
+  advisory's fix date to the deploy event of [rules/02](02-provenance-signing.md) §2.8, not to the merge;
 - recurrence by defect class: the same class coming back in the same codebase means a
   missing rule, test or guardrail rather than a missing fix.
   (OWASP: DSOMM; SAMM)
@@ -335,7 +335,7 @@ images still pulled and `podman ps` still reported running containers fine. Only
 needing a *new* container failed. Downstream, a test file went from 3 passed to 1 passed /
 2 failed, and **a harness that cannot start is indistinguishable from a harness that ran and
 found nothing** — the second reading being a conclusion about the target
-(`sota-testing` rules/04 §4.8).
+([`sota-testing` rules/04](../../sota-testing/rules/04-integration-contract-system.md) §4.8).
 
 - **Treat prune/trim as a change requiring a restart and a post-change smoke test**, not as
   maintenance. Restart the runtime, then start one throwaway container and assert it
@@ -350,7 +350,7 @@ found nothing** — the second reading being a conclusion about the target
 - **"Reclaimable" is the tool's definition of unused, not yours.** `podman system df` counts
   an image as reclaimable when no *container* references it (Docker's docs do not define
   the column at all), so every build-only
-  image and pinned toolchain reads as garbage (`sota-shell-scripting` rules/09 §5a).
+  image and pinned toolchain reads as garbage ([`sota-shell-scripting` rules/09](../../sota-shell-scripting/rules/09-listing-and-selection.md) §5a).
   Field-reported: 22 GB "reclaimable (93%)", where `image prune -a` would have deleted the
   toolchain images three CI gates build from, and the narrow `image prune` correctly freed
   0 bytes. **Prefer the narrow command, whose failure mode is freeing nothing.**
@@ -362,7 +362,7 @@ found nothing** — the second reading being a conclusion about the target
   reporting anything. Before removing a base image, check whether any Containerfile names it
   by a moving tag.
 - The capacity side of the same coin — *check headroom before a command that writes at
-  scale* — is `sota-shell-scripting` rules/08 §3.
+  scale* — is [`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §3.
 
 ## Audit checklist
 

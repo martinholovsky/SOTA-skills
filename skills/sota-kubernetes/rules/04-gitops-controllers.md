@@ -4,8 +4,8 @@ Scope: the controller that reconciles git into the cluster — Argo CD and Flux.
 privileges and self-management risk, project/tenant scoping (the `clusterResourceWhitelist`
 escalation trap), SSO/RBAC, repo/credential scoping, ApplicationSet/templating injection,
 sync strategy, drift, recent CVEs, and promotion/rollback as git operations. CI/CD
-*pipeline* and deployment *strategy* are `sota-devsecops` (rules/06); this file owns the
-in-cluster controller's security model. SSO/OIDC *design* is `sota-identity-access`.
+*pipeline* and deployment *strategy* are [`sota-devsecops`](../../sota-devsecops/SKILL.md) ([rules/06](../../sota-devsecops/rules/06-iac-deployment.md)); this file owns the
+in-cluster controller's security model. SSO/OIDC *design* is [`sota-identity-access`](../../sota-identity-access/SKILL.md).
 
 **Core principle:** GitOps is the *only* write path to the cluster. Humans don't `kubectl
 apply` to prod — they open a PR; the controller reconciles the merged state. This makes
@@ -22,7 +22,7 @@ hold broad (often cluster-admin-equivalent) RBAC by design. Therefore:
   surface.** Anyone who can merge to the watched branch, or who can edit the controller's
   config, can deploy anything the controller can apply.
 - **Branch protection + required review + signed commits** on GitOps repos are not
-  optional (`sota-devsecops` rules/01). A self-approved merge to `main` is a deploy.
+  optional ([`sota-devsecops` rules/01](../../sota-devsecops/rules/01-pipeline-security.md)). A self-approved merge to `main` is a deploy.
 - **Self-management risk**: if the controller manages *its own* manifests (RBAC, config,
   the App that defines other Apps — "app-of-apps"), a malicious PR can widen its own
   privileges or repoint it at a hostile repo. Put the controller's own bootstrap under
@@ -76,12 +76,12 @@ spec:
 
 - **SSO over local accounts.** Disable the built-in `admin` account in prod (`admin.
   enabled: false`) after bootstrap, or scope it to break-glass; rotate its secret. Wire
-  OIDC/SSO (design → `sota-identity-access`).
+  OIDC/SSO (design → [`sota-identity-access`](../../sota-identity-access/SKILL.md)).
 - **Argo CD RBAC** (`policy.csv`): map SSO groups to roles; default policy `role:''`
   (no access). Scope roles to specific projects/Applications — not `role:admin` for
   everyone. The `g, <group>, role:admin` line is the equivalent of a cluster-admin binding.
 - **Repository credentials are secrets**: scope read-only deploy keys / fine-grained PATs
-  per-repo, store them as Argo CD repo Secrets (or via ESO — `sota-secrets-management`),
+  per-repo, store them as Argo CD repo Secrets (or via ESO — [`sota-secrets-management`](../../sota-secrets-management/SKILL.md)),
   never embed write creds. A controller with org-write git creds can poison source.
 - **Cluster credentials**: when one Argo CD manages multiple clusters, each cluster
   credential is a foothold; scope and rotate them.
@@ -93,7 +93,7 @@ clusters). Generated fields are **templated** — untrusted input in a generator
 into the Application spec:
 - **PR/SCM generators reading fork PRs** can let an external contributor influence
   generated Applications (repo URL, path, namespace) — treat like the `pull_request_target`
-  problem (`sota-devsecops` rules/01). Restrict generators to trusted repos/branches; don't
+  problem ([`sota-devsecops` rules/01](../../sota-devsecops/rules/01-pipeline-security.md)). Restrict generators to trusted repos/branches; don't
   template attacker-controlled fields into `project`, `destination`, or `source`.
 - Keep ApplicationSet `templatePatch`/Go-template values constrained; an injected
   `project:` field can move an App into a more-privileged AppProject.
@@ -110,13 +110,13 @@ into the Application spec:
   means someone wrote to the cluster directly (or a controller is fighting). Alert on
   unexpected drift; investigate it as a possible intrusion, not just noise.
 - **Promotion and rollback are git operations**: promote by moving a verified digest
-  through environment overlays/branches (build-once-promote-many, `sota-devsecops`
-  rules/06); roll back by reverting the git commit, not by hand-editing the cluster.
+  through environment overlays/branches (build-once-promote-many, [`sota-devsecops`
+  rules/06](../../sota-devsecops/rules/06-iac-deployment.md)); roll back by reverting the git commit, not by hand-editing the cluster.
 
 ## 6. Patch the controller — recent Argo CD CVEs
 
 The GitOps controller is high-value and has a live CVE stream; track and patch it like the
-control plane (`rules/01` §7). Recent examples (verify against the Argo CD security
+control plane ([`rules/01`](01-control-plane-etcd.md) §7). Recent examples (verify against the Argo CD security
 advisories before citing exact IDs/versions):
 - **GHSA-3v3m-wc6v-x4x3 (CVE-2026-42880), 2026-05-01, Critical (CVSS 9.6)** — Kubernetes
   Secret extraction via the ServerSideDiff feature: a low-privilege/read-only user could
@@ -139,7 +139,7 @@ publishes advisories — track its controllers' CVEs.
 §1–§6 cover what the controller may do *inward*: git → cluster. A controller that
 also writes **outward** — an image-update controller, a PR bot, config sync
 committing rendered manifests back — is an instrument reporting on itself, so
-`sota-code-security` rules/15 §2 applies to it in full. Its log describes the
+[`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2 applies to it in full. Its log describes the
 update it *decided* to make, not the write landing.
 
 **R7.1 — Verify at the remote, never from the controller's own counters.**
@@ -173,8 +173,8 @@ which goes stale by itself when writes stop; a counter of successes never will.
 **R7.3 — This is a liveness gap, not an integrity one.** Nothing was corrupted and
 no alarm was wrong: a write that should have happened did not, and every signal
 reporting on it was a signal about intent. Freshness is the only observable that
-degrades when an outbound write stops — the same distinction `sota-code-security`
-rules/18 §1 draws between integrity and completeness for audit ledgers.
+degrades when an outbound write stops — the same distinction [`sota-code-security`
+rules/18](../../sota-code-security/rules/18-tamper-evident-logs.md) §1 draws between integrity and completeness for audit ledgers.
 
 ## 7a. What you wrote is not what lands — verify a rendered object by rendering
 
@@ -189,10 +189,10 @@ the wrong place"**, and the next hour goes into re-applying something that alrea
 - **Render, then grep the render** — `kustomize build .`, `helm template`, the controller's
   own diff/preview — and confirm the field's *final* value before you use it to look
   something up. Same discipline as reproducing a gate's exact invocation
-  (`sota-devsecops` rules/11 §5): what you believe you ran and what ran are two questions.
+  ([`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §5): what you believe you ran and what ran are two questions.
 - **Ask the cluster where the object actually is** (`kubectl get <kind> -A`) before
   concluding it is absent. An empty namespaced query is an absence claim, and it carries the
-  burden of one (`sota/rules/03` §2).
+  burden of one ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2).
 - **Deleting a GitOps-managed object means removing it from the rendered set**, not deleting
   its file. The controller prunes what it no longer renders, so dropping the reference
   converges the cluster immediately and the file tidy-up can follow under normal review.

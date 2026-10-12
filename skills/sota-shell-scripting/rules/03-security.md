@@ -75,7 +75,7 @@ set -x
   secrets in env. Never echo secrets even "masked" — write "loaded credentials from X".
 - CI: rely on the CI's secret masking but don't trust it — masking fails on transformed
   values (base64, URL-encoded). Don't `base64` a secret into logs.
-- Storage/rotation strategy → `sota-secrets-management`.
+- Storage/rotation strategy → [`sota-secrets-management`](../../sota-secrets-management/SKILL.md).
 
 ### 2a. An assignment prefix does not reach a process substitution
 
@@ -142,7 +142,7 @@ whether you find out safely (all measured 2026-09-10 on macOS):
 
 | namespace | recursion bound | what you see |
 |---|---|---|
-| **`PATH` shims** — a dir of fake/wrapping executables placed first on `PATH` (test harnesses, compiler caches, CI interceptors) | **none of any kind** | each level is a new **process**: the per-user process table fills, and every tool fails at once, *including the ones you need to diagnose it* (`rules/08` §4) |
+| **`PATH` shims** — a dir of fake/wrapping executables placed first on `PATH` (test harnesses, compiler caches, CI interceptors) | **none of any kind** | each level is a new **process**: the per-user process table fills, and every tool fails at once, *including the ones you need to diagnose it* ([`rules/08`](08-ad-hoc-side-effects.md) §4) |
 | **shell function overrides** — `curl() { … curl "$@"; }` in a profile; the inner `curl` resolves to the function again | bash: `FUNCNEST`, **unset by default** → `f(){ f; }; f` exits **139 (SIGSEGV)**. zsh: `FUNCNEST` defaults to **700** → clean `maximum nested function level reached`, exit 1 | one process, dying as a crash or an error |
 | **aliases and `LD_PRELOAD`** | none | same shape as the shim: a new process per level |
 
@@ -236,7 +236,7 @@ mv -f -- "$tmp" /etc/myapp/myapp.conf
 - Beware `sudo cmd > file`: the redirect happens in the *unprivileged* shell. Use
   `... | sudo tee file >/dev/null` or `sudo sh -c '... > file'` with a constant string.
 - Drop privileges as early as possible; in containers prefer entrypoint-level drop
-  (rules/04 §2) over sudo at all.
+  ([rules/04](04-ci-and-operational.md) §2) over sudo at all.
 
 ## 5. curl | bash — both directions
 
@@ -276,12 +276,12 @@ main "$@"   # nothing executes until fully downloaded and parsed
 - Predictable temp paths (`/tmp/myapp.$$`, `/tmp/build.tmp`) → symlink attack: attacker
   pre-creates a symlink at that path, your root script writes through it onto
   `/etc/passwd`. **Only `mktemp`** (unpredictable name, `O_EXCL`, mode 0600) — already
-  required by rules/01 §6; here it is a security control, not hygiene.
+  required by [rules/01](01-safety-baseline.md) §6; here it is a security control, not hygiene.
 - Don't `chmod` a file *after* writing sensitive content — create restrictive, then write:
   `umask 077` before creating key material, or `install -m 0600 /dev/null "$f"` then write.
 - Set `umask` explicitly in scripts that create files whose permissions matter; inherited
   umask is whatever the caller had. `umask 022` for world-readable artifacts, `077` for
-  private state. Remember rules/02 §9: mktemp files are 0600 — explicitly `chmod` before
+  private state. Remember [rules/02](02-robustness-correctness.md) §9: mktemp files are 0600 — explicitly `chmod` before
   publishing world-readable artifacts via `mv`.
 - Shared directories: never trust pre-existing files/dirs in `/tmp`; `mktemp -d` and work
   inside it.
@@ -304,13 +304,13 @@ shell linting.
 space into two missing files. With an **empty** list GNU xargs still runs `shellcheck` with
 no files (exit 3, fails closed) while BSD/macOS xargs runs nothing and exits 0 — measured
 2026-09-26. The two `--enable` names are **optional** checks (`shellcheck --list-optional`)
-that give rules/01 §2 a static detector: `check-set-e-suppressed` (SC2310 — function called
+that give [rules/01](01-safety-baseline.md) §2 a static detector: `check-set-e-suppressed` (SC2310 — function called
 in an `if`/`&&` condition; SC2311 — in `$(…)`, where `set -e` is off) and
 `check-extra-masked-returns` (SC2312 — a command's status masked, e.g. `rm -r "$(f)/home"`).
 SC2312 is noisy; adopt it with a baseline rather than drop it.
 
 **Verifying a gate locally is a different question, and another skill owns it:**
-`sota-devsecops` rules/11 §5 — *reproduce the gate's exact invocation, not an equivalent*.
+[`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §5 — *reproduce the gate's exact invocation, not an equivalent*.
 Worth the jump from here, because the shell-shaped version of that mistake is expensive:
 `-i 2` above is an example, and in a repo that indents shell with **4** spaces a contributor
 who copies it verbatim does not just get a false failure — `shfmt` is usually run with `-w`
@@ -342,7 +342,7 @@ substitution in help text** rather than literal characters. `--severity=error` s
       pipe; never `env VAR=… cmd`, which returns the value to argv.
 
 - [ ] **Linters invoked the way the gate invokes them** — flags and file selection read out
-      of the hook/CI config (`sota-devsecops` rules/11 §5, which owns this); a mismatched
+      of the hook/CI config ([`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §5, which owns this); a mismatched
       `shfmt -i` is a false failure at best and, with `-w` nearby, a whole-tree reformat
 - [ ] **ShellCheck run at `--severity=style`**, not `error` (§7): SC2006 is *style* and catches
       backticks inside an unquoted heredoc, which are live command substitution

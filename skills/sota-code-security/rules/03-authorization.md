@@ -102,15 +102,15 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
   who can read an invoice must not be able to call `POST /invoices/{id}/refund`.
 - Don't trust client-supplied role/privilege fields — role comes from the
   server-side session/token claims validated against the DB, never from a request
-  body (`{"role": "admin"}` mass assignment, see rules/07) or a client-set header
+  body (`{"role": "admin"}` mass assignment, see [rules/07](07-data-exposure.md)) or a client-set header
   (`X-Admin: true`).
 - **Privilege copied into a session goes stale.** A role, permission set or tenant list stored
   in the session (or a token claim) at login is a snapshot. Re-read it from the authoritative
   store for sensitive decisions, or re-validate on an interval short enough for your revocation
   needs; keep a per-user permission version so a role change forces re-authentication or a
   session refresh. When privilege drops, remove every higher-privilege flag and cached datum
-  the session carries, not just the role field. Session-ID rotation on elevation is rules/17
-  §2; IdP-pushed revocation is `sota-identity-access` rules/06 §5. OWASP: Code Review Guide v2,
+  the session carries, not just the role field. Session-ID rotation on elevation is [rules/17](17-sessions-and-tokens.md)
+  §2; IdP-pushed revocation is [`sota-identity-access` rules/06](../../sota-identity-access/rules/06-mfa-federation-assurance.md) §5. OWASP: Code Review Guide v2,
   Go-SCP (access control).
 - State-machine authorization: actions valid only in certain states (approve own
   expense report, re-trigger completed payment) need state checks server-side —
@@ -122,7 +122,7 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
   writable field** — keep it server-side keyed to the session/resource. A rejected out-of-order
   step is also a **security event**: log it at high severity with the user and the step (the
   OWASP Logging Vocabulary names it `sequence_fail` at CRITICAL), because a legitimate UI rarely
-  produces one and detection can key on it (rules/07 §2). OWASP: Logging Vocabulary cheat sheet.
+  produces one and detection can key on it ([rules/07](07-data-exposure.md) §2). OWASP: Logging Vocabulary cheat sheet.
 - **Transaction authorization binds to the data it approved.** A step-up, OTP, signature or
   approval covers the exact values the user confirmed (amount, payee, account), stored
   server-side with it. Any change to those values after entry voids it and restarts the flow;
@@ -133,7 +133,7 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
   Authorization cheat sheet, ASVS 5.0 V2.3.5.
 - **Payment results come from the gateway, never the browser.** The user's return from a
   hosted payment page carries parameters the user can edit. Fulfil only on a verified
-  server-to-server notification (rules/02 §8) or a server-side status query, and only when the
+  server-to-server notification ([rules/02](02-authentication.md) §8) or a server-side status query, and only when the
   gateway's amount, currency and order id equal what you created; fulfil each payment once, so
   a replayed callback does nothing. OWASP: Third Party Payment Gateway Integration cheat sheet.
 
@@ -191,7 +191,7 @@ def test_policy_matrix(role, action, owns, expected): ...
   - Postgres Row-Level Security with `SET LOCAL app.tenant_id` (or
     `set_config('app.tenant_id', …, true)`) inside each request's transaction —
     never a plain `SET`, which leaks to the next client under transaction pooling
-    (`sota-databases` rules/04) — policies
+    ([`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md)) — policies
     `USING (tenant_id = current_setting('app.tenant_id')::uuid)`; or
   - ORM global scopes/default filters applied from the authenticated context.
 ```sql
@@ -239,7 +239,7 @@ SET LOCAL app.tenant_id = '...';
   Security cheat sheet.
 - CSRF and SSRF are confused-deputy instances: the browser and your server,
   respectively, wield ambient authority on an attacker's behalf — same mental
-  model, fixes in rules/05 and rules/01.
+  model, fixes in [rules/05](05-web-security.md) and [rules/01](01-input-injection.md).
 - Capability URLs / signed URLs: scope them narrowly (object, verb, expiry),
   treat as bearer credentials (no logging, short TTL), and ensure the signer
   checks authorization *before* signing.
@@ -262,7 +262,7 @@ SET LOCAL app.tenant_id = '...';
   tool means staff know a credential they could later use as that user. OWASP: ASVS 5.0 V6.4.6.
 - Every admin mutation needs an immutable audit trail (actor, target, before/
   after, reason) — both a compliance requirement and your insider-threat and
-  incident-forensics control (pairs with rules/07 §2 security logging).
+  incident-forensics control (pairs with [rules/07](07-data-exposure.md) §2 security logging).
 - Break-glass paths (emergency access) must alert loudly and expire; a
   permanent quiet backdoor "for ops" is indistinguishable from a compromise.
 
@@ -275,7 +275,7 @@ SET LOCAL app.tenant_id = '...';
 - Scheduled/cron jobs that touch tenant data iterate with per-tenant scoping
   (RLS context set per tenant inside the loop) — a cross-tenant batch bug is a
   Critical with no request log to find it by.
-- Inbound webhooks authenticate the **sender** (HMAC, rules/02 §8) and then
+- Inbound webhooks authenticate the **sender** (HMAC, [rules/02](02-authentication.md) §8) and then
   still authorize the *claimed subject*: a valid Stripe signature on an event
   naming `customer_X` doesn't mean your handler should mutate `customer_Y`
   from a spoofable field — map external IDs to internal rows through owned

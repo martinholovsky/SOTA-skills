@@ -236,7 +236,7 @@ without touching the reservation. Same run, both arms: `ulimit -d 512M` complete
 `RLIMIT_DATA` bounds only `brk` and will not cap an mmap-backed heap at all — check
 the kernel before relying on it. Testing only the deny arm here is how the AS cap
 survives review: it refuses the runaway allocation exactly as intended, and also
-every legitimate one (`sota-code-security` rules/12 §1a).
+every legitimate one ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a).
 
 **R7.2b — when you cannot get a cgroup (a child inside an existing container).**
 `memory.max` is the right primitive and is routinely *unavailable* to the process
@@ -246,7 +246,7 @@ memory pids`. Verified 2026-08-18 (podman, `cgroupns=private`, unprivileged):
 `mkdir /sys/fs/cgroup/probe` → `Read-only file system`; remounting it `rw` →
 `Permission denied`. **Probe with `mkdir`, never by reading `cgroup.controllers`** —
 the controller list describes the hierarchy, not your write access to it (the
-"it's enabled" claim of `sota-code-security` rules/10, applied to cgroups).
+"it's enabled" claim of [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md), applied to cgroups).
 Fallbacks, best first:
 
 1. **A delegated sub-cgroup** — needs the runtime to hand you a writable subtree

@@ -34,7 +34,7 @@ These are kube-apiserver flags (or managed-cluster equivalents). Each is a CIS c
 | `--authorization-mode` | `Node,RBAC` (never includes `AlwaysAllow`) | `AlwaysAllow` disables authz entirely. `Node` authorizer + `RBAC` is the baseline. |
 | `--authorization-config` (alternative, stable since 1.32) | authorizer chain lists `Node` and `RBAC`, never `AlwaysAllow` | Structured `AuthorizationConfiguration`; setting it together with `--authorization-mode`/`--authorization-webhook-*` makes the API server exit at startup, so a cluster uses one or the other. |
 | `--enable-admission-plugins` | includes `NodeRestriction` | Stops a compromised kubelet from editing other nodes/pods or escalating via node labels. |
-| `--audit-policy-file` / `--audit-log-path` | set (see `rules/07`) | No audit log = no forensics, no detection. |
+| `--audit-policy-file` / `--audit-log-path` | set (see [`rules/07`](07-supply-chain-audit.md)) | No audit log = no forensics, no detection. |
 | `--encryption-provider-config` | set with KMS v2 (see §4) | Secrets at rest. |
 | `--service-account-lookup` | `true` | Revoked SA tokens stop working. |
 | `--tls-min-version` | `VersionTLS12`+ ; strong cipher suites | Defense in depth on the API. |
@@ -53,9 +53,9 @@ catch-all FlowSchema that lumps everything into one level re-creates the global-
 DoS APF exists to prevent.
 
 **Authentication**: prefer **OIDC** for human users (RBAC-design and SSO are
-`sota-identity-access` territory — wire it there). Never distribute the cluster-admin
+[`sota-identity-access`](../../sota-identity-access/SKILL.md) territory — wire it there). Never distribute the cluster-admin
 kubeconfig / client cert as the day-to-day human credential; client certs cannot be
-revoked short of CA rotation. Service-to-API auth uses ServiceAccount tokens (`rules/02`).
+revoked short of CA rotation. Service-to-API auth uses ServiceAccount tokens ([`rules/02`](02-rbac-serviceaccounts.md)).
 **Every human session against the API is privileged access**, whatever role it maps to, so it goes through the IdP (OIDC, the
 managed provider's IAM integration, or an authenticating proxy using impersonation) with
 **phishing-resistant MFA enforced at the IdP**, and the kubeconfig carries an `exec`
@@ -79,7 +79,7 @@ you keep, three rules make it safe to reach:
   phishing-resistant MFA, as for any other human API session above.
 - **Only the proxy can reach it.** A NetworkPolicy admits ingress to the UI pods from the
   proxy's pods alone, so a compromised pod elsewhere in the cluster cannot call the UI
-  directly and skip authentication (policy depth: `sota-network-security`).
+  directly and skip authentication (policy depth: [`sota-network-security`](../../sota-network-security/SKILL.md)).
 OWASP: Kubernetes Security cheat sheet.
 
 ```yaml
@@ -172,8 +172,8 @@ providers:
   exceeded` and a hard API-server outage. Alert on etcd DB size approaching `--quota-
   backend-bytes`.
 - **Restore drills**: an untested backup is a hope. Drill restore-into-a-throwaway-cluster
-  on a schedule; record RTO. Cross-link DR posture with `sota-cloud-infrastructure`
-  rules/07.
+  on a schedule; record RTO. Cross-link DR posture with [`sota-cloud-infrastructure`
+  rules/07](../../sota-cloud-infrastructure/rules/07-resilience-dr.md).
 
 ## 5. Node hardening
 
@@ -189,16 +189,16 @@ providers:
   Kubernetes minors — at the 2026-09-26 check it stopped at 1.35 — so on a newer minor pass
   `--benchmark <profile>` explicitly rather than trusting the detected one. Standalone Docker hosts outside Kubernetes (build agents, legacy
   single-host services) get the CIS Docker Benchmark instead, e.g. Docker Bench for
-  Security (container hardening depth: `sota-sandboxing` rules/03). OWASP: DSOMM; Docker
+  Security (container hardening depth: [`sota-sandboxing` rules/03](../../sota-sandboxing/rules/03-containers-microvms.md)). OWASP: DSOMM; Docker
   Security cheat sheet.
 - **No SSH to nodes as a routine workflow** — node access is break-glass, audited.
 - Container runtime hardened (containerd with sane defaults); no Docker socket on nodes.
 - Pod-level isolation (seccomp/AppArmor/securityContext, runtime class gVisor/Kata) is
-  **`sota-sandboxing`** (rules/03) — enforce it via admission (`rules/03`), don't re-spec
+  **[`sota-sandboxing`](../../sota-sandboxing/SKILL.md)** ([rules/03](../../sota-sandboxing/rules/03-containers-microvms.md)) — enforce it via admission ([`rules/03`](03-admission-policy.md)), don't re-spec
   it here.
 - Protect node metadata endpoints: block pod access to the cloud metadata service
-  (169.254.169.254) unless via workload identity — see `sota-cloud-infrastructure`
-  rules/02 and `sota-network-security`.
+  (169.254.169.254) unless via workload identity — see [`sota-cloud-infrastructure`
+  rules/02](../../sota-cloud-infrastructure/rules/02-iam-design.md) and [`sota-network-security`](../../sota-network-security/SKILL.md).
 
 ## 6. Immutable distros (e.g. Talos, including on ARM)
 
@@ -221,7 +221,7 @@ providers:
 - **KubePrism / API access**: restrict the Talos API and Kubernetes API endpoints to
   management networks; the Talos API at :50000 is as sensitive as the kube-apiserver.
 - Apply config changes via versioned, reviewed `talosctl apply-config` from git — Talos
-  config is GitOps-able; treat it like the rest of `rules/04`.
+  config is GitOps-able; treat it like the rest of [`rules/04`](04-gitops-controllers.md).
 
 ```yaml
 # Talos (v1.11+) machine config documents — TPM-bound disk encryption
@@ -264,8 +264,8 @@ encryption:
   the provider's forced-upgrade date.
 - **CVE response runbook**: subscribe to the `kubernetes-announce` list / CVE feed; for a
   control-plane RCE or auth-bypass, patch on the emergency track, not the quarterly one.
-  Track CVEs for *every* control too: Argo CD (`rules/04`), Kyverno/Gatekeeper (`rules/03`),
-  operators (`rules/05`), **ingress controllers and CSI drivers** (the official feed's 2026
+  Track CVEs for *every* control too: Argo CD ([`rules/04`](04-gitops-controllers.md)), Kyverno/Gatekeeper ([`rules/03`](03-admission-policy.md)),
+  operators ([`rules/05`](05-operators-crds-webhooks.md)), **ingress controllers and CSI drivers** (the official feed's 2026
   wave hit both — ingress-nginx config-injection/auth-bypass/DoS CVE-2026-24512/-24513/
   -24514/-1580/-3288/-4342; CSI SMB/NFS subDir path traversal CVE-2026-3864/-3865), and
   the distro (Talos/k3s/k0s).
@@ -273,7 +273,7 @@ encryption:
   read-only). The 2026 CVE wave *was* patched in the final releases (>=1.13.9/1.14.5/1.15.1);
   the standing risk is that any CVE found after EOL gets **no** fix. A deployed ingress-nginx is a
   standing High finding: migrate to Gateway API or an actively maintained ingress
-  controller (ingress/edge config depth is `sota-network-security`).
+  controller (ingress/edge config depth is [`sota-network-security`](../../sota-network-security/SKILL.md)).
 
 ## Audit checklist
 

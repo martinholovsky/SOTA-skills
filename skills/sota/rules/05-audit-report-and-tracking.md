@@ -3,16 +3,16 @@
 Scope: the fields that let a finding be **re-run by someone else** and **followed to closure**
 after the report is delivered, the provenance a report needs so a reader can judge who
 looked and against what, and the two rules that keep a verdict honest once the code moves —
-a verdict expires with its commit (§4) and "fixed" needs three runs (§5). It extends two sections of `rules/03` without restating them: the
-eight-field evidence block (`rules/03` §2) and the report order (`rules/03` §5). `rules/01`
-owns how the audit is run; `rules/03` owns rating and evidence; this file owns what keeps a
+a verdict expires with its commit (§4) and "fixed" needs three runs (§5). It extends two sections of [`rules/03`](03-audit-findings.md) without restating them: the
+eight-field evidence block ([`rules/03`](03-audit-findings.md) §2) and the report order ([`rules/03`](03-audit-findings.md) §5). [`rules/01`](01-audit-methodology.md)
+owns how the audit is run; [`rules/03`](03-audit-findings.md) owns rating and evidence; this file owns what keeps a
 delivered report usable once remediation starts.
 
 ---
 
 ## 1. Reproduction steps — a field of its own on every finding
 
-Evidence (`rules/03` §2, field 4) shows *that* the defect exists; it does not tell the person
+Evidence ([`rules/03`](03-audit-findings.md) §2, field 4) shows *that* the defect exists; it does not tell the person
 fixing it how to see it happen. Add a **Reproduction** field to every finding, after Evidence:
 
 - **The shortest sequence that makes the defect observable**, written as numbered steps a
@@ -23,9 +23,9 @@ fixing it how to see it happen. Add a **Reproduction** field to every finding, a
   read path: the entry point, each call that carries the tainted value, and the sink, as
   `file:line` hops. "See evidence" is not a reproduction.
 - **Keep it safe to run.** Steps target a test environment, use placeholder credentials, and
-  never contain a live secret or a payload aimed at production (`rules/01` §4).
+  never contain a live secret or a payload aimed at production ([`rules/01`](01-audit-methodology.md) §4).
 - **It is what the re-audit re-runs.** The fix is confirmed when these steps stop producing
-  the result *and* a fresh search cannot get around the fix (`rules/01` §4; the full bar for
+  the result *and* a fresh search cannot get around the fix ([`rules/01`](01-audit-methodology.md) §4; the full bar for
   an executable reproduction is §5) — so write them to be re-executed, not narrated.
 
 OWASP: Secure Code Review cheat sheet; Code Review Guide v2.
@@ -48,7 +48,7 @@ does, because a finding with no owner is the one that is silently dropped.
   executable — and a merged PR with no re-run stays *in progress*.
 - **"Risk accepted" names who accepted it and until when.** An acceptance with no owner and
   no expiry is an unowned open finding with a nicer label; it belongs in the decision ledger
-  (`rules/03` §3) where its expiry gets re-checked.
+  ([`rules/03`](03-audit-findings.md) §3) where its expiry gets re-checked.
 - **"Withdrawn" keeps the row** with the reason (false positive, out of scope, duplicate of
   another ID). Deleting it loses the record that it was examined and lets it be re-reported.
 - **The ticket is the source of truth for status after delivery.** The report is a snapshot
@@ -58,7 +58,7 @@ OWASP: Secure Code Review cheat sheet; Code Review Guide v2.
 
 ## 3. Report provenance — who reviewed, against which checklist
 
-Add these to the **Scope & methodology** section (`rules/03` §5, item 2):
+Add these to the **Scope & methodology** section ([`rules/03`](03-audit-findings.md) §5, item 2):
 
 - **Author and reviewer names.** Who performed the review, and who checked the findings — for
   an agent-run audit, the model and the human who reviewed its output. A report with no named
@@ -66,7 +66,7 @@ Add these to the **Scope & methodology** section (`rules/03` §5, item 2):
 - **The checklist actually used**, identified precisely enough to fetch again: the skill
   names and the commit or version of this library, or the organisation's own checklist and
   its revision. "Standard checklist" is not an identifier.
-- **The review type and trigger** — baseline or diff, and why (`rules/01` §1) — and, where
+- **The review type and trigger** — baseline or diff, and why ([`rules/01`](01-audit-methodology.md) §1) — and, where
   one exists, the ticket or change request that prompted the review.
 
 OWASP: Code Review Guide v2.
@@ -83,14 +83,14 @@ a duplicate or out of scope* is a claim about the audit, not the code, and does 
   `<sha>`; if `auth.go` or a file it depends on has changed, re-examine it. A *reachability*
   verdict — dead code, test-only, "sanitised upstream" — is a claim about the code's
   **callers**, so it also lapses when any caller or importer changes (the dependents set of
-  `rules/01` §1): a new call into `util.go` revives a dead-code verdict on `util.go` without
+  [`rules/01`](01-audit-methodology.md) §1): a new call into `util.go` revives a dead-code verdict on `util.go` without
   touching `util.go`. Judge the cited region, not the file's timestamp — a whitespace-only or
   formatter commit that leaves the cited code identical (`git diff -w`) does not expire it.
 - **A "fixed" finding that reappears is a possible regression, never a duplicate.** When a new
   finding matches one already marked fixed, but on code that changed since the fix was
   verified, keep it **open** and note the history. Filtering it as "already reported" hides a
   reverted or bypassed fix — the one outcome a re-audit exists to catch.
-- **A finding inherited from another commit is re-located, not dropped.** `rules/01` §4b fails a
+- **A finding inherited from another commit is re-located, not dropped.** [`rules/01`](01-audit-methodology.md) §4b fails a
   citation that does not resolve; that rule assumes the finding and the reader are at the same
   commit. For a finding from an earlier report, ticket or wave, a moved or renamed file is
   drift, not hallucination: find the code again at the current commit, then apply the citation
@@ -104,7 +104,7 @@ was made against and re-discovers it when the file changed; adopted 2026-10-02 (
 
 ## 5. A fix is verified by three runs, not one
 
-`rules/01` §4 sets the bar: *"a fresh search cannot get around it"*. **For a finding with an
+[`rules/01`](01-audit-methodology.md) §4 sets the bar: *"a fresh search cannot get around it"*. **For a finding with an
 executable reproduction**, three checks make that bar mechanical, and each closes a known way
 to record a false "fixed":
 
@@ -115,13 +115,13 @@ to record a false "fixed":
    it, the verdict is **inconclusive**, never "fixed".
 2. **Identical instrumentation per comparison.** The baseline, patched and re-attack runs of a
    given check use the same build flags, sanitizers and configuration — per pair, since some
-   sanitizers cannot share a build (ASan and TSan; `sota-c-cpp` rules/02). A crash that only a
+   sanitizers cannot share a build (ASan and TSan; [`sota-c-cpp` rules/02](../../sota-c-cpp/rules/02-memory-safety.md)). A crash that only a
    sanitizer reports vanishes when that sanitizer is dropped, and reads exactly like a fix.
 3. **Same-class bypass attempts, all of which fail — at least three, a chosen default.** Vary
    the input along the axis the fix guards — off-by-one lengths, zero and maximum sizes,
    another entry point, an alternate encoding. A variant that triggers a *different* defect is
    a new finding, not a bypass. An empty or short attempt set is **verification incomplete**:
-   "all attempts failed" is vacuously true of zero attempts (`sota-code-security` rules/11 §2.2).
+   "all attempts failed" is vacuously true of zero attempts ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2).
 
 Check 3 targets a failure Mantis's authors call the dominant one for automated repair: a patch
 that blocks only the exact bytes of the reported PoC.

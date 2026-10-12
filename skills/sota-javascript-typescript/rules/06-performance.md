@@ -119,7 +119,7 @@ const debouncedSearch = useMemo(() => debounce((q: string) => run(q), 250), []);
 useEffect(() => () => debouncedSearch.cancel(), [debouncedSearch]);
 ```
 
-Recreating the debounced fn every render (inline `debounce(...)` in the component body without memo) resets the timer each keystroke — the #1 debounce bug. For data fetching, debounce + abort previous request (rules/03) together.
+Recreating the debounced fn every render (inline `debounce(...)` in the component body without memo) resets the timer each keystroke — the #1 debounce bug. For data fetching, debounce + abort previous request ([rules/03](03-async-patterns.md)) together.
 
 ## Caching and memoization (non-React)
 
@@ -137,7 +137,7 @@ async function getReport(id: string): Promise<Report> {
 }
 ```
 
-- Cache the promise, not just the value, to collapse concurrent misses (stampede pattern, rules/03).
+- Cache the promise, not just the value, to collapse concurrent misses (stampede pattern, [rules/03](03-async-patterns.md)).
 - Invalidate explicitly on write paths or accept TTL staleness deliberately — "cache + forgot invalidation" bugs masquerade as data corruption.
 - HTTP layer first: `Cache-Control`/`ETag` on API responses and CDN caching beat in-process caches for read-heavy public data.
 
@@ -146,7 +146,7 @@ async function getReport(id: string): Promise<Report> {
 Long-lived references are the leak; SPAs and Node servers never get the page-refresh absolution.
 
 Usual suspects:
-- **Listeners/observers on long-lived targets** (`window`, `document`, sockets, emitters) added per component/request and never removed → remove in cleanup, or `addEventListener(..., { signal })` + one `abort()` (rules/03). Disconnect `IntersectionObserver`/`MutationObserver`/`ResizeObserver`.
+- **Listeners/observers on long-lived targets** (`window`, `document`, sockets, emitters) added per component/request and never removed → remove in cleanup, or `addEventListener(..., { signal })` + one `abort()` ([rules/03](03-async-patterns.md)). Disconnect `IntersectionObserver`/`MutationObserver`/`ResizeObserver`.
 - **Timers**: `setInterval` without `clearInterval` keeps its closure (and everything it captures) alive forever.
 - **Closures over large scopes**: a small callback capturing a huge parsed payload pins it; extract what you need into locals before creating the long-lived closure.
 - **Module-level caches without bounds**: `const cache = new Map()` growing per-key forever in a server = slow OOM. Bound it (LRU — `lru-cache`), or key by object with `WeakMap` so entries die with their keys.
@@ -171,7 +171,7 @@ Detection workflow (browser and Node `--inspect` alike):
 
 ## Node event-loop blocking
 
-One blocked loop = every request stalled (full treatment in rules/04). Performance-audit angle:
+One blocked loop = every request stalled (full treatment in [rules/04](04-node-backend.md)). Performance-audit angle:
 - Instrument: `perf_hooks.monitorEventLoopDelay()` histogram exported to metrics; alert p99 > 100ms.
 - Identify: `node --cpu-prof` (open the `.cpuprofile` in DevTools) or `0x` flamegraphs under load, `--heap-prof` for allocation; continuous profiling via your OpenTelemetry/pprof-compatible backend in production. clinic.js's README says it is not actively maintained and may give inaccurate results, and `blocked-at` has had no commit since 2022: treat both as legacy.
 - Fix order: cap input sizes → move CPU work to `piscina` workers → chunk unavoidable loops with `setImmediate` yields → cache the computation.
@@ -190,14 +190,14 @@ setInterval(() => {
 
 ## Offloading and scheduling on the main thread
 
-- CPU work >50ms in the browser (parsing, diffing, search indexing, image manipulation): Web Worker (rules/03) — the main thread is for UI. Comlink removes the postMessage ceremony.
+- CPU work >50ms in the browser (parsing, diffing, search indexing, image manipulation): Web Worker ([rules/03](03-async-patterns.md)) — the main thread is for UI. Comlink removes the postMessage ceremony.
 - Truly-idle work (analytics aggregation, prefetch warmup): `requestIdleCallback` (with a timeout fallback) — never for anything user-visible.
 - Animation reads/writes: `requestAnimationFrame`; CSS transforms/opacity (compositor-only) over layout-triggering properties; `will-change` sparingly.
 - Chunked processing keeps input responsive: process N items → `await (globalThis.scheduler?.yield?.() ?? new Promise(r => setTimeout(r)))` → continue; combine with `AbortSignal` so navigation cancels the rest.
 
 ## Micro-level idioms that matter at scale only
 
-In hot paths (per-row in 100k iterations, per-frame): avoid spread-accumulator `reduce` (O(n²), rules/02), reuse compiled regexes, prefer `for...of` over chained array methods, avoid `try/catch`-free claims (modern engines made try cheap — don't contort code for it), and don't `delete obj.prop` in hot objects (deopts shapes; set to `undefined` or use Maps). Outside hot paths, write the readable version.
+In hot paths (per-row in 100k iterations, per-frame): avoid spread-accumulator `reduce` (O(n²), [rules/02](02-language-idioms.md)), reuse compiled regexes, prefer `for...of` over chained array methods, avoid `try/catch`-free claims (modern engines made try cheap — don't contort code for it), and don't `delete obj.prop` in hot objects (deopts shapes; set to `undefined` or use Maps). Outside hot paths, write the readable version.
 
 ## Audit checklist
 

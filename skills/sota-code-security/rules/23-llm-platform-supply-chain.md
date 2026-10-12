@@ -1,13 +1,13 @@
 # 23 — LLM Platform & Supply Chain: Models, Prompts, MCP Servers, Logging
 
-Split out of rules/08 (formerly section 5) on 2026-09-25, when rules/08 neared the 500-line cap;
-the section is now §1. rules/08 keeps its other section numbers, so §6 there is unchanged.
+Split out of [rules/08](08-llm-ai-security.md) (formerly section 5) on 2026-09-25, when [rules/08](08-llm-ai-security.md) neared the 500-line cap;
+the section is now §1. [rules/08](08-llm-ai-security.md) keeps its other section numbers, so §6 there is unchanged.
 
 ## 1. Platform & supply-chain notes
 
 - Treat downloaded models/weights/adapters like executable dependencies:
   pinned versions, checksums, trusted registries; `pickle`-loaded checkpoints
-  are arbitrary code execution (rules/01 §8) — use safetensors.
+  are arbitrary code execution ([rules/01](01-input-injection.md) §8) — use safetensors.
 - System prompts, tool definitions, and guardrail configs are security-relevant
   code: version them, review changes, test with an adversarial suite
   (injection corpus + your own red-team cases) in CI; regression-test on every
@@ -15,7 +15,7 @@ the section is now §1. rules/08 keeps its other section numbers, so §6 there i
   - *Obfuscated variants* of every payload — Base64 and other encodings, scrambled-letter
     (typoglycemia) spellings, Best-of-N style case, spacing and phrasing mutations, forged
     reasoning lines (`Thought: ...`) — scored as a block rate over the whole corpus beside a
-    false-refusal rate on benign inputs (rules/10 §5: a rate needs its denominator).
+    false-refusal rate on benign inputs ([rules/10](10-silent-control-failure.md) §5: a rate needs its denominator).
   - *Retrieval and memory boundaries*: cross-tenant queries return zero foreign chunks; a
     deleted or de-permissioned document is gone from retrieval, the vector store and the
     response cache; no cached answer crosses users or permission levels; altered source
@@ -44,7 +44,7 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
 ```
 - MCP and third-party tool servers: a tool's *description* is prompt-injectable
   too (tool poisoning); pin/review tool manifests, prefer allowlisted servers,
-  and apply rules/08 §2 executor-side authorization regardless of what the server claims.
+  and apply [rules/08](08-llm-ai-security.md) §2 executor-side authorization regardless of what the server claims.
   Remote MCP servers must require auth (the MCP spec's OAuth-based authorization,
   rev 2026-07-28: Client ID Metadata Documents over the now-deprecated Dynamic Client
   Registration, and clients MUST validate a present RFC 9207 `iss` response parameter against the recorded issuer) — unauthenticated internet-exposed MCP servers and
@@ -55,7 +55,7 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
   code-execution surface: review them like CI config, never let the agent
   write them unapproved.
 - **MCP server supply chain, past the pin** (the skill and plugin analogue is
-  `sota-skill-security` rules/01):
+  [`sota-skill-security` rules/01](../../sota-skill-security/rules/01-provenance-and-installation.md)):
   - *Install:* verify the server package's signature or checksum against the
     publisher's own source. Adding a local server takes an explicit consent
     prompt the user can cancel; a file in a cloned repo never adds one silently.
@@ -105,13 +105,13 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
     AML.T0034.001 Resource-Intensive Queries). Mitigate: never feed untrusted content as reasoning
     scaffold/thinking context, cap reasoning-token budgets per request,
     alert on token-consumption anomalies.
-- Log prompts/completions for forensics, but apply rules/07 hygiene — context
+- Log prompts/completions for forensics, but apply [rules/07](07-data-exposure.md) hygiene — context
   windows routinely contain PII and secrets; redact before storage, scope
   retention. **This rule is about your application logging its own calls. The
   developer's coding-agent transcript is a separate surface with a separate
   owner** — `~/.claude/projects/**/*.jsonl` and its equivalents hold whatever the
   harness loaded, including files it read on its own initiative:
-  `sota-secrets-management` rules/04 §7.
+  [`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §7.
 
 ## Audit checklist
 

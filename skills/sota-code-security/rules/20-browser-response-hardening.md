@@ -3,8 +3,8 @@
 Scope: how response headers reach the browser (every status code, exactly once), HSTS
 rollout and preloading, a Fetch Metadata resource isolation policy against XS-Leaks, and
 stripping the diagnostic headers infrastructure adds. The header *baseline* (which headers,
-which values), CSP, CSRF, CORS and cookies stay in rules/05; directory listing and the
-static-root extension allowlist stay in rules/07 §4. Maps to OWASP A02:2025
+which values), CSP, CSRF, CORS and cookies stay in [rules/05](05-web-security.md); directory listing and the
+static-root extension allowlist stay in [rules/07](07-data-exposure.md) §4. Maps to OWASP A02:2025
 (Security Misconfiguration), CWE-319/200/1021.
 
 Core principle: **a browser security feature is a second line that the client may not
@@ -22,8 +22,8 @@ the headers narrow what an attacker can do when one of those checks is missing.
   web views, kiosk and TV clients, and API clients that are not browsers at all.
 - For each feature, decide and **document** what happens when it is missing — warn the
   user, fall back to a server-side equivalent (a missing `Sec-Fetch-Site` falls back to
-  the `Origin` check, rules/05 §3), degrade the feature, or refuse access. Then test that
-  path: a fallback nobody exercises is the one that fails open (rules/10).
+  the `Origin` check, [rules/05](05-web-security.md) §3), degrade the feature, or refuse access. Then test that
+  path: a fallback nobody exercises is the one that fails open ([rules/10](10-silent-control-failure.md)).
 - Use the same review to drop **obsolete headers**. `X-XSS-Protection` should be absent
   or `0` (the legacy filter it enables can itself open XSS in an otherwise safe page;
   CSP without inline script is the control); `Expect-CT` and `Public-Key-Pins` /
@@ -96,7 +96,7 @@ the headers narrow what an attacker can do when one of those checks is missing.
   and whether a resource was already in the cache (cache probing, which reveals what the
   user has viewed). Each observation leaks one bit of per-user state — logged in or not,
   a search matched, a record exists.
-- **Resource isolation policy.** rules/05 §3 uses `Sec-Fetch-*` against CSRF on
+- **Resource isolation policy.** [rules/05](05-web-security.md) §3 uses `Sec-Fetch-*` against CSRF on
   state-changing requests. Extend it to a policy applied **application-wide, including
   read-only endpoints and APIs**:
   - allow when `Sec-Fetch-Site` is `same-origin`, `same-site` (only if sibling subdomains
@@ -112,7 +112,7 @@ the headers narrow what an attacker can do when one of those checks is missing.
   potentially trustworthy URLs (HTTPS or localhost), so plain HTTP, old or embedded
   browsers and non-browser clients arrive without them. Decide per endpoint class and
   write it down (§1): the common choice is to allow absence on reads for compatibility
-  while mutating requests fall back to the `Origin` check (rules/05 §3); for the most
+  while mutating requests fall back to the `Origin` check ([rules/05](05-web-security.md) §3); for the most
   sensitive reads, treat absence as unknown and block.
 - **Complements, not substitutes:** `Cross-Origin-Resource-Policy: same-origin` makes the
   browser refuse to hand the response to a cross-site loader even when the request got
@@ -136,16 +136,16 @@ the headers narrow what an attacker can do when one of those checks is missing.
   cross-origin: CORS APIs, webhook receivers, SSO endpoints that receive a cross-site
   `POST` (such as a SAML POST-binding assertion consumer), public assets
   meant to be embedded. Each exemption is protected by other means — its CORS allowlist
-  (rules/05 §4), authentication or signature verification, and logging — and is
+  ([rules/05](05-web-security.md) §4), authentication or signature verification, and logging — and is
   re-reviewed when the endpoint changes. Exemptions scattered across handlers as
   one-off decorators are how the policy erodes unnoticed.
-- Proxies and CDNs must forward `Sec-Fetch-*` and `Origin` unchanged (rules/05 §3); one
+- Proxies and CDNs must forward `Sec-Fetch-*` and `Origin` unchanged ([rules/05](05-web-security.md) §3); one
   that strips them sends all traffic down the fallback.
 - OWASP: Cross-Site Request Forgery Prevention cheat sheet.
 
 ## 5. Infrastructure diagnostic headers: strip at the edge
 
-- Fingerprinting is wider than `Server` and `X-Powered-By` (rules/05 §6). Every layer
+- Fingerprinting is wider than `Server` and `X-Powered-By` ([rules/05](05-web-security.md) §6). Every layer
   between the client and the code tends to add its own response headers, and each
   discloses topology, timing or internal names. Strip these **families** at the outermost
   edge you control:

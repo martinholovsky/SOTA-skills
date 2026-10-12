@@ -23,13 +23,13 @@ defend.
   report metric variance across seeds rather than a single lucky number.
 - A training run should be a parameterized, version-controlled **pipeline**, not
   a hand-run notebook. Notebooks are fine for exploration; production training is
-  code (`rules/01`).
+  code ([`rules/01`](01-ml-systems-architecture.md)).
 
 ## 3. Configuration management
 
 - Treat experiment config as code: versioned, reviewed, validated (typed config
   — Hydra/pydantic-style). Avoid magic numbers scattered across scripts
-  (configuration debt, `rules/01`).
+  (configuration debt, [`rules/01`](01-ml-systems-architecture.md)).
 - Separate config from code so a run is fully described by (code commit +
   config + data version).
 
@@ -37,7 +37,7 @@ defend.
 
 - Use a principled search (grid for small spaces, random/Bayesian/Optuna-style
   for larger) with a fixed validation protocol; never tune on the test set
-  (`rules/02`). Budget it — log all trials to the tracker.
+  ([`rules/02`](02-data-and-features.md)). Budget it — log all trials to the tracker.
 - Guard against overfitting the validation set through many trials: keep a final
   held-out test untouched until the end; consider nested CV for small data.
 
@@ -48,12 +48,12 @@ defend.
   size / LR scaling. Checkpoints are part of the reproducible artifact set.
 - Cost-awareness: training is expensive — track GPU-hours; use spot/preemptible
   with checkpointing; don't retrain from scratch when a warm start or incremental
-  update suffices (cross-ref `sota-performance`, `sota-cloud-infrastructure`).
+  update suffices (cross-ref [`sota-performance`](../../sota-performance/SKILL.md), [`sota-cloud-infrastructure`](../../sota-cloud-infrastructure/SKILL.md)).
 
 ## 6. Start simple, iterate inside the pipeline
 
 - First model: simplest thing that beats the baseline, wired through the full
-  pipeline with metrics and monitoring (`rules/01`, `rules/04`). Add complexity
+  pipeline with metrics and monitoring ([`rules/01`](01-ml-systems-architecture.md), [`rules/04`](04-evaluation-validation.md)). Add complexity
   only when the eval (on slices, vs baseline) justifies it. Most gains come from
   better features and data, not fancier models (Rules of ML).
 

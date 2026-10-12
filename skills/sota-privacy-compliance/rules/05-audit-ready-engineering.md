@@ -28,15 +28,15 @@ only at screenshot time.
 | Access provisioning | IdP + groups-as-code (Terraform/SCIM), joiner-mover-leaver via HR-system trigger | IdP audit log + IaC history: who got access, who approved (the PR), when revoked |
 | Access reviews | Automated quarterly job: dump entitlements per system → diff vs role matrix → route exceptions to owners → record disposition | Review job output + tickets; deprovision latency report from offboarding events |
 | Config/hardening baseline | IaC + policy-as-code (§4) + drift detection | Policy CI results, drift alerts, exception register |
-| Vulnerability mgmt | Scanners in CI + runtime, SLA-tracked tickets (see sota-devsecops) | SLA report by severity from the tracker |
+| Vulnerability mgmt | Scanners in CI + runtime, SLA-tracked tickets (see [sota-devsecops](../../sota-devsecops/SKILL.md)) | SLA report by severity from the tracker |
 | Backups/DR | Scheduled backups + automated restore tests | Job logs + restore-test results with RTO/RPO measurements |
-| Encryption | KMS + TLS termination config in IaC (sota-secrets-management) | IaC + cloud-config export; CI check that flags unencrypted resources |
-| Logging/monitoring | Centralized pipeline + alert rules as code (sota-observability) | Alert-rule repo + incident records |
+| Encryption | KMS + TLS termination config in IaC ([sota-secrets-management](../../sota-secrets-management/SKILL.md)) | IaC + cloud-config export; CI check that flags unencrypted resources |
+| Logging/monitoring | Centralized pipeline + alert rules as code ([sota-observability](../../sota-observability/SKILL.md)) | Alert-rule repo + incident records |
 | Security awareness/endpoint | MDM + training platform | MDM compliance export, completion reports |
 
 **The 90% insight:** if you practice the rest of this skill library
-(sota-devsecops, sota-secrets-management, sota-observability, sota-databases,
-sota-cloud-infrastructure, sota-testing), you already operate most SOC 2 Common
+([sota-devsecops](../../sota-devsecops/SKILL.md), [sota-secrets-management](../../sota-secrets-management/SKILL.md), [sota-observability](../../sota-observability/SKILL.md), [sota-databases](../../sota-databases/SKILL.md),
+[sota-cloud-infrastructure](../../sota-cloud-infrastructure/SKILL.md), [sota-testing](../../sota-testing/SKILL.md)), you already operate most SOC 2 Common
 Criteria and ISO Annex A controls. Audit readiness is mostly **mapping and
 recording**, not new engineering. Build the control matrix as code: a YAML/CSV
 in-repo mapping `control ID → implementing mechanism → evidence source → owner`,
@@ -67,7 +67,7 @@ before fieldwork, half of them showing settings changed the same week.
   year — you cannot retro-create operating evidence, which is the entire argument
   for automation. Security (Common Criteria) is mandatory; add Availability /
   Confidentiality / Processing Integrity / Privacy categories only when customers
-  demand them (the Privacy category overlaps heavily with rules/01–03 machinery).
+  demand them (the Privacy category overlaps heavily with [rules/01](01-data-inventory-classification.md)–03 machinery).
 - **ISO 27001** certifies the ISMS (management system): risk assessment →
   Statement of Applicability (justify inclusion/exclusion of all 93 Annex A
   controls) → internal audit → management review → surveillance audits annually,
@@ -75,7 +75,7 @@ before fieldwork, half of them showing settings changed the same week.
   control ownership, and the internal-audit findings loop.
 - **Scope deliberately:** a narrow, honest scope (the production platform and
   the teams operating it) beats a vague company-wide scope full of exceptions.
-  Scope follows the data flows from rules/01 — auditors trace data, so should you.
+  Scope follows the data flows from [rules/01](01-data-inventory-classification.md) — auditors trace data, so should you.
 
 ## 2b. Access reviews that are real (and cheap)
 
@@ -103,7 +103,7 @@ and worse: they certify the orphaned admin account you'll meet again in rules/06
 1. Offboarded users with live access (orphaned accounts, lingering API keys, VPN
    certs) — automate deprovisioning from the HR event; measure latency.
 2. Shared/service accounts with no owner, no rotation, interactive use — see
-   sota-secrets-management.
+   [sota-secrets-management](../../sota-secrets-management/SKILL.md).
 3. Direct-to-prod changes bypassing review (admin pushes, console hotfixes, infra
    clickops) — branch protection + drift detection close the gap; emergency-change
    path documented and logged, not an excuse.
@@ -112,7 +112,7 @@ and worse: they certify the orphaned admin account you'll meet again in rules/06
    spendable.
 5. Missing or stale risk assessment / vendor reviews (§5).
 6. Untested backups and unexercised incident response (a tabletop with notes
-   counts; "we have a runbook" alone does not — rules/06).
+   counts; "we have a runbook" alone does not — [rules/06](06-incident-breach-readiness.md)).
 7. No evidence of log review/alert triage — alert-to-ticket linkage solves this.
 8. Policy/practice divergence: the policy says 90-day access reviews, reality is
    ad hoc. **Never let policy promise more than automation delivers** — write
@@ -126,7 +126,7 @@ and worse: they certify the orphaned admin account you'll meet again in rules/06
 **Rule:** Encode compliance-relevant infrastructure rules as machine-enforced
 policy in CI and at the platform boundary (admission controllers, org policies,
 SCPs): encryption-at-rest required, public-bucket prohibition, region allowlists
-(residency — rules/04 §7), mandatory tags incl. data classification, no `0.0.0.0/0`
+(residency — [rules/04](04-regulatory-landscape.md) §7), mandatory tags incl. data classification, no `0.0.0.0/0`
 ingress to data stores, logging enabled on data services. Tools: OPA/Rego,
 Sentinel, cloud-native policy engines. Two products fall out: prevention (the
 control) and the CI/audit log of evaluations (the evidence). Exceptions live in a
@@ -171,7 +171,7 @@ as such.
 ## 5. Vendor & subprocessor management
 
 **Rule:** Vendor onboarding is a gated workflow, tiered by data classification
-(rules/01) the vendor will touch:
+([rules/01](01-data-inventory-classification.md)) the vendor will touch:
 
 | Tier | Vendor touches | Gate |
 |---|---|---|
@@ -180,7 +180,7 @@ as such.
 | 3 | No personal data, no prod access | Procurement basics |
 
 Engineering enforcement: a new SDK/integration PR must reference a vendor-registry
-entry (CI check on dependency/egress allowlists) — this is how the rules/01 §4
+entry (CI check on dependency/egress allowlists) — this is how the [rules/01](01-data-inventory-classification.md) §4
 processor map stays true. Your own subprocessor list (the one your customers see)
 is generated from the same registry; customer-facing change notifications
 (required by most DPAs) trigger from registry diffs.
@@ -192,14 +192,14 @@ set: a vulnerability-disclosure channel and a remediation timeline per severity
 (an SLA you can measure), evidence of a secure development process (build,
 defect and incident management), and an SBOM for what they deliver so your own
 scanning covers it (control mapping and SBOM/CVD obligations:
-sota-security-compliance). Keep a standard supplier template so these terms are
+[sota-security-compliance](../../sota-security-compliance/SKILL.md)). Keep a standard supplier template so these terms are
 the starting point of negotiation, not an afterthought.
 Served-script vendors (analytics, tag managers, chat widgets, ad and
 fraud SDKs that your pages load from their servers) run as your origin in
 every visitor's browser. Their contract should additionally require evidence
 that they monitor and control changes to the code they serve, and it should
 put liability or a penalty on them for serving malicious code. Technical
-controls (SRI, change monitoring) live in sota-code-security rules/05 §8; the
+controls (SRI, change monitoring) live in [sota-code-security rules/05](../../sota-code-security/rules/05-web-security.md) §8; the
 contract is what makes their failure their cost. OWASP: OWASP SAMM (Supplier
 Security stream); Third Party Javascript Management cheat sheet.
 
@@ -233,11 +233,11 @@ security posture data).
 ## 7. Privacy-specific audit artifacts
 
 Beyond SOC 2/ISO, keep these generated and current (they're what a regulator or
-enterprise customer asks for): RoPA (from the catalog, rules/01), DPIAs
-(rules/04 §1), consent records (rules/03 §1), DSAR/deletion logs with timing
-stats (rules/03 §3–5), retention-enforcement monitoring output (rules/03 §6),
+enterprise customer asks for): RoPA (from the catalog, [rules/01](01-data-inventory-classification.md)), DPIAs
+([rules/04](04-regulatory-landscape.md) §1), consent records ([rules/03](03-consent-and-user-rights.md) §1), DSAR/deletion logs with timing
+stats ([rules/03](03-consent-and-user-rights.md) §3–5), retention-enforcement monitoring output ([rules/03](03-consent-and-user-rights.md) §6),
 processor list + DPAs (§5), breach register incl. non-reportable incidents
-(rules/06), training-data lineage where AI Act applies (rules/04 §5).
+([rules/06](06-incident-breach-readiness.md)), training-data lineage where AI Act applies ([rules/04](04-regulatory-landscape.md) §5).
 
 ## Audit checklist
 
@@ -246,7 +246,7 @@ processor list + DPAs (§5), breach register incl. non-reportable incidents
 - [ ] Every prod change traces to a reviewed PR; emergency path logged; drift detection on infra
 - [ ] Access provisioning is IaC/IdP-driven; offboarding automated with measured latency; quarterly diff-based access reviews with recorded dispositions
 - [ ] Policy-as-code gates: encryption, public exposure, regions, classification tags; exception register with expiries
-- [ ] Backup restores tested on schedule with recorded results; IR exercised (rules/06)
+- [ ] Backup restores tested on schedule with recorded results; IR exercised ([rules/06](06-incident-breach-readiness.md))
 - [ ] Policies promise no more than mechanisms enforce (read policy, then find the mechanism — divergence is a finding)
 - [ ] Vendor registry tiered by data touched; Tier 1/2 vendors have DPAs + reviews; CI ties new integrations to registry entries; customer-facing subprocessor list generated from it
 - [ ] Tier-1 and served-script supplier agreements carry security terms: disclosure channel, per-severity remediation SLA, secure-development evidence, SBOM; served-script vendors also code-integrity monitoring and liability for malicious code (§5) — MEDIUM. Inventory probe for served scripts that need a registry entry and those terms: `grep -rnE "<script[^>]+src=[\"']?(https?:)?//" .`

@@ -537,7 +537,8 @@ bt='`'
 for d in skills/sota-*/; do
   name=$(basename "$d")
   seen7=$((seen7 + 1))
-  grep -qE "^\| ${bt}${name}${bt} " "$router" || { note "routing table missing: $name"; v7=1; }
+  # the name may be a relative link since ROADMAP 73 (n): | [`sota-x`](../sota-x/SKILL.md) |
+  grep -qE "^\| \[?${bt}${name}${bt}(\]\([^)]*\))? " "$router" || { note "routing table missing: $name"; v7=1; }
   grep -qF "**${name}/rules**" "$libmap" || { note "library map missing: $name"; v7=1; }
 done
 while IFS= read -r name; do
@@ -753,7 +754,15 @@ else
   # to wave it through, which is how it becomes decorative (rules/15 §2).
   stamp_now=$(grep -v '^[[:space:]]*#' LAST-VERIFIED 2>/dev/null | tr -d '[:space:]' || true)
   stamp_was=$(git show "$base":LAST-VERIFIED 2>/dev/null | grep -v '^[[:space:]]*#' | tr -d '[:space:]' || true)
-  if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED' && [ "$stamp_now" != "$stamp_was" ]; then
+  # Membership by `case`, not `printf | grep -qx`: the builtin's write dies of SIGPIPE once
+  # the list outgrows the pipe buffer (100/100 reported absent at 3,000 paths, 2026-10-12).
+  lv_touched=0
+  case "
+$changed
+" in (*"
+LAST-VERIFIED
+"*) lv_touched=1 ;; esac
+  if [ "$lv_touched" -eq 1 ] && [ "$stamp_now" != "$stamp_was" ]; then
     n_skill=$(printf '%s\n' "$changed" | grep -c '^skills/.*\.md$' || true)
     declared=0
     # Decide with `case`, not a trailing `grep -q`: under `set -o pipefail` a -q
@@ -777,7 +786,7 @@ else
       note "otherwise revert the stamp — an ordinary edit must not move it."
       v11=1
     fi
-  elif printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED'; then
+  elif [ "$lv_touched" -eq 1 ]; then
     echo "    ok (LAST-VERIFIED touched but the stamp is unchanged: $stamp_now)"
   else
     echo "    ok (LAST-VERIFIED unchanged)"
@@ -968,7 +977,11 @@ done
 if [ -z "$base14" ] || [ "$base14" = "$(git rev-parse HEAD)" ]; then
   note "SKIPPED (no merge base to diff against, or nothing ahead of it)"
   echo "    ok (skipped)"
-elif ! git diff --name-only "$base14"...HEAD | grep -qx 'VERSION'; then
+# Ask git with a pathspec, never `git diff | grep -qx VERSION`: grep -q exits at the match,
+# git dies of SIGPIPE mid-listing, pipefail makes that the verdict, and a release reads as
+# "not a release". Measured 2026-10-12 on a 345-path diff: VERSION reported absent in 99
+# of 200 runs -- the gate skipped, fail-OPEN, and the negative-control probes went flaky.
+elif [ -z "$(git diff --name-only "$base14"...HEAD -- VERSION)" ]; then
   echo "    ok (not a release commit — VERSION unchanged)"
 else
   # The release section is the one matching VERSION -- NOT the topmost '## ['
@@ -1520,7 +1533,11 @@ if [ "$v19" -ne 0 ]; then fail=1; fi
 # `sota/rules/01` and `rules/03`, and a pass that contradicts the file it points at
 # is worse than no pass, because the reader follows whichever they loaded.
 # Bumping this hash is the forcing function to re-read both.
-ROUTER_AUDIT_SHA="a0bcc43c182e67ea"
+# BUMPED 2026-10-12 (a0bcc43c182e67ea -> 41d23c8620eaa4c2), ROADMAP 73 (n): 18 pointers in §AUDIT
+# became relative links. Re-read as required, and checked mechanically: §AUDIT with every link
+# reduced to its text is identical to main's, so it still says exactly what rules/01 and rules/03
+# say; the only new bytes are the link targets, each resolved by check 8.
+ROUTER_AUDIT_SHA="41d23c8620eaa4c2"
 echo "[20/39] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
 v20=0
 audit_sec=$(awk '/^## AUDIT mode — workflow/{f=1} f&&/^## Library map/{exit} f' skills/sota/SKILL.md)
@@ -2163,7 +2180,11 @@ done
 if [ -z "$base29" ] || [ "$base29" = "$(git rev-parse HEAD)" ]; then
   note "SKIPPED (no merge base to diff against, or nothing ahead of it)"
   echo "    ok (skipped)"
-elif ! git diff --name-only "$base29"...HEAD | grep -qx 'VERSION'; then
+# Ask git with a pathspec, never `git diff | grep -qx VERSION`: grep -q exits at the match,
+# git dies of SIGPIPE mid-listing, pipefail makes that the verdict, and a release reads as
+# "not a release". Measured 2026-10-12 on a 345-path diff: VERSION reported absent in 99
+# of 200 runs -- the gate skipped, fail-OPEN, and the negative-control probes went flaky.
+elif [ -z "$(git diff --name-only "$base29"...HEAD -- VERSION)" ]; then
   echo "    ok (not a release commit — VERSION unchanged)"
 elif ! command -v python3 >/dev/null 2>&1; then
   note "SKIPPED (python3 not found; CI always has it)"
@@ -3002,7 +3023,7 @@ if not m:
     print("LANGS NOT FOUND in scripts/gen-skill-map.py"); raise SystemExit(1)
 langs = {"sota-" + x for x in ast.literal_eval(m.group(1))}
 router = pathlib.Path("skills/sota/SKILL.md").read_text(encoding="utf-8")
-rows = set(re.findall(r'^\| `(sota-[a-z-]+)` \| Any [^|]*? code —', router, re.M))
+rows = set(re.findall(r'^\| \[?`(sota-[a-z-]+)`(?:\]\([^)]*\))? \| Any [^|]*? code —', router, re.M))
 print("SCOPE %d %d" % (len(langs), len(rows)))
 bad = 0
 for s in sorted(rows - langs):

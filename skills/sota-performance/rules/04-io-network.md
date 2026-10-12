@@ -46,7 +46,7 @@ the user-space bounce:
   user-space but chunked), nginx `sendfile on`.
 - Don't read a file into memory just to write it elsewhere; pipe/stream it.
 - In-process: pass slices/views (`ByteBuffer.slice`, Go subslices, Rust
-  `Bytes`) instead of copying; beware retention (rules/03 §5 Go subslice trap).
+  `Bytes`) instead of copying; beware retention ([rules/03](03-memory.md) §5 Go subslice trap).
 - Serialization is the hidden copy machine: JSON encode→string→buffer→socket
   can copy a payload 3–4×. Encoders that write directly to the output stream
   (`json.NewEncoder(w)`, streaming serializers) remove the intermediate
@@ -112,7 +112,7 @@ is a self-DDoS.
 **Request coalescing / singleflight**: when many concurrent callers need the
 same expensive fetch, let one do the work and share the result (Go
 `singleflight`, promise memoization in JS, distributed locks). Essential in
-front of caches (rules/05 §4) and for config/metadata fetches.
+front of caches ([rules/05](05-caching.md) §4) and for config/metadata fetches.
 
 **Pagination over the wire**: offset pagination re-scans O(offset) rows and
 skews under concurrent writes; cursor/keyset pagination (`WHERE (created, id)
@@ -191,7 +191,7 @@ Rules:
   saves a full RTT. Replay-unsafe: enable only for idempotent GETs and ensure
   the app/CDN rejects 0-RTT for mutations (`Early-Data` header / 425 status).
 - OCSP stapling only where the CA still operates OCSP (Let's Encrypt turned
-  its responders off in Aug 2025; see `sota-network-security` rules/06);
+  its responders off in Aug 2025; see [`sota-network-security` rules/06](../../sota-network-security/rules/06-dns-tls-pki.md));
   certificate chain minimal (every extra cert is bytes in the handshake, can
   overflow initcwnd).
 - Internal mTLS meshes: handshake cost × per-request connections is a classic
@@ -209,13 +209,13 @@ The fastest request is one that terminates ~10 ms from the user instead of
   edge, long-lived warm connections edge→origin, better congestion control on
   the long haul.
 - **Cacheable APIs/HTML**: `s-maxage` +`stale-while-revalidate`; purge by
-  surrogate key/tags on writes (rules/05 §3). Short TTL (30–60 s) +
+  surrogate key/tags on writes ([rules/05](05-caching.md) §3). Short TTL (30–60 s) +
   request collapsing at the CDN shields origins from thundering herds.
 - Normalize cache keys (strip marketing query params, normalize
   `Accept-Encoding`) or hit ratio dies of key fragmentation.
 - Origin shield / tiered caching: one designated mid-tier reduces origin
   fan-in from hundreds of edge POPs to one.
-- Edge compute for personalization-at-edge (rules/06 §7).
+- Edge compute for personalization-at-edge ([rules/06](06-frontend-web.md) §7).
 
 ## 9. Async runtimes: never block the loop
 

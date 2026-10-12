@@ -70,11 +70,11 @@ if (__builtin_add_overflow(a, b, &r)) reject();   /* best: checked intrinsics */
   wrapping impossible, because the compiler no longer checks; and check
   intermediates of multi-term expressions and the MIN/MAX extremes — `-INT_MIN`,
   `abs(INT_MIN)` and `INT_MIN / -1` have no representable result. The
-  per-language behaviour is measured in each language skill: `sota-c-cpp`
-  rules/03 §2, `sota-dotnet` rules/01 §1, `sota-golang` rules/02 §4,
-  `sota-javascript-typescript` rules/02, `sota-jvm` rules/01 §1, `sota-php`
-  rules/01 §4, `sota-python` rules/03 §12, `sota-ruby` rules/01 §7, `sota-rust`
-  rules/01 §3. OWASP: Go-SCP (general coding practices), SCSVS S7.1.A3,
+  per-language behaviour is measured in each language skill: [`sota-c-cpp`
+  rules/03](../../sota-c-cpp/rules/03-undefined-behavior.md) §2, [`sota-dotnet` rules/01](../../sota-dotnet/rules/01-idioms.md) §1, [`sota-golang` rules/02](../../sota-golang/rules/02-design.md) §4,
+  [`sota-javascript-typescript` rules/02](../../sota-javascript-typescript/rules/02-language-idioms.md), [`sota-jvm` rules/01](../../sota-jvm/rules/01-idioms.md) §1, [`sota-php`
+  rules/01](../../sota-php/rules/01-language-baseline.md) §4, [`sota-python` rules/03](../../sota-python/rules/03-idioms-pitfalls.md) §12, [`sota-ruby` rules/01](../../sota-ruby/rules/01-language-idioms.md) §7, [`sota-rust`
+  rules/01](../../sota-rust/rules/01-ownership-and-api-design.md) §3. OWASP: Go-SCP (general coding practices), SCSVS S7.1.A3,
   SCSVS S7.1.A4, SCSVS S7.1.A6, SCSVS S7.2.B5.
 
 ```rust
@@ -140,7 +140,7 @@ memcpy(buf, pkt->data, n); buf[n] = '\0';
   in both directions (lengths, encodings, null-termination). Copy mutable input
   (arrays, buffers) first, then validate and pass the copy: a caller or another
   thread holding the original can change it between check and use (the WASM
-  copy-then-validate rule, `sota-sandboxing` rules/04, at every native boundary).
+  copy-then-validate rule, [`sota-sandboxing` rules/04](../../sota-sandboxing/rules/04-process-app-sandboxing.md), at every native boundary).
   In JNI, keep `native` methods private behind a public wrapper that does both.
   OWASP: Code Review Guide v2.
 - `unsafe` justified by "performance" without a benchmark is a finding.
@@ -149,7 +149,7 @@ memcpy(buf, pkt->data, n); buf[n] = '\0';
   "in a GC language" is memory-safe only until it uses one. Each language skill carries
   its own spelling; the rule is the one above (confine it, justify it, validate at the
   boundary). The hatches, each checked against its vendor's documentation (2026-09-23):
-  - **Go:** `unsafe.Pointer`, `cgo`, `//go:linkname` (`sota-golang` rules/05 §7).
+  - **Go:** `unsafe.Pointer`, `cgo`, `//go:linkname` ([`sota-golang` rules/05](../../sota-golang/rules/05-security.md) §7).
   - **JVM:** JNI (`native` / Kotlin `external`, `System.loadLibrary`); the FFM API
     (final in JDK 22, JEP 454), whose restricted methods only *warn* unless
     `--enable-native-access` names the module; `sun.misc.Unsafe` memory access
@@ -228,7 +228,7 @@ measurements dated 2026-09-24:
   from `__dirname` or `import.meta.url`, as Node's own examples do, never from the CWD or input.
 - **The environment is a search path too.** `LD_PRELOAD`, `LD_LIBRARY_PATH` and `DYLD_*` taken
   from an untrusted parent or request pick the code. Spawn children with a clean environment
-  (`sota-sandboxing` rules/04 R5.3).
+  ([`sota-sandboxing` rules/04](../../sota-sandboxing/rules/04-process-app-sandboxing.md) R5.3).
 
 Detectors, each run against a known-bad and a known-good fixture under ugrep and BSD grep.
 Every hit needs reading, not counting. A hit is a finding when the name has no absolute path
@@ -262,7 +262,7 @@ Binary protocol & file-format parsing is where size fields kill:
   (overflow-safe, §1) before dereference/seek.
 - Decompression: enforce output-size caps and **ratio caps** (zip/gzip/zstd
   bombs, CWE-409); decode images with pixel-count limits before full decode;
-  same for XML entity expansion (rules/01 §6).
+  same for XML entity expansion ([rules/01](01-input-injection.md) §6).
 - Parse with length-aware cursors that return errors on underrun, not raw
   pointer math; fuzz every such parser.
 
@@ -392,14 +392,14 @@ the files also outlive the invocation, §6):
   creation time. The process umask can only narrow a requested mode, never widen it.
 
 This is a **class stated once, with per-language detectors**, the same design as host-key
-verification in rules/04 §5 (operator decision, 2026-09-24). The per-language spellings live in the table below, not in the language skills:
+verification in [rules/04](04-cryptography.md) §5 (operator decision, 2026-09-24). The per-language spellings live in the table below, not in the language skills:
 
 | language | the unsafe form | the safe API |
 |---|---|---|
 | C / C++ | `mktemp`, `tmpnam`, `tempnam` | `mkstemp`, `mkdtemp`, `tmpfile` |
-| Python | `tempfile.mktemp`, `"/tmp/..."` literals | `tempfile.mkstemp`, `NamedTemporaryFile`, `TemporaryDirectory` (`sota-python` rules/05 §4a) |
-| Go | `filepath.Join(os.TempDir(), fixedName)` | `os.CreateTemp`, `os.MkdirTemp` (`sota-golang` rules/05 §4a) |
-| Ruby | `"/tmp/#{name}"` | `Tempfile`, `Dir.mktmpdir` (`sota-ruby` rules/02 §7) |
+| Python | `tempfile.mktemp`, `"/tmp/..."` literals | `tempfile.mkstemp`, `NamedTemporaryFile`, `TemporaryDirectory` ([`sota-python` rules/05](../../sota-python/rules/05-security.md) §4a) |
+| Go | `filepath.Join(os.TempDir(), fixedName)` | `os.CreateTemp`, `os.MkdirTemp` ([`sota-golang` rules/05](../../sota-golang/rules/05-security.md) §4a) |
+| Ruby | `"/tmp/#{name}"` | `Tempfile`, `Dir.mktmpdir` ([`sota-ruby` rules/02](../../sota-ruby/rules/02-security.md) §7) |
 | Rust | `std::env::temp_dir().join(name)` + `File::create` | the `tempfile` crate (`NamedTempFile`), or `OpenOptions::create_new(true)` + `.mode(0o600)` |
 | Java / Kotlin | `File.createTempFile`, `java.io.tmpdir` + a name | `Files.createTempFile`, `Files.createTempDirectory` |
 | Node | `path.join(os.tmpdir(), name)` + a default `writeFile` | `fs.mkdtemp`, then write inside it with `{ flag: 'wx', mode: 0o600 }` |

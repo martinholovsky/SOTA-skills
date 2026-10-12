@@ -33,17 +33,17 @@ severity-rated findings. The rules files are the single source of truth for both
 Boundary discipline — this skill does **not** re-teach what siblings own:
 - **App-level authn ceremony** (password storage/argon2id, session cookie flags,
   WebAuthn ceremony, JWT *signature* validation mechanics at one RP): that is
-  **sota-code-security** rules/02 (sessions and JWT: rules/17). This skill owns the protocol and the IdP side.
+  **[sota-code-security** rules/02](../sota-code-security/rules/02-authentication.md) (sessions and JWT: [rules/17](../sota-code-security/rules/17-sessions-and-tokens.md)). This skill owns the protocol and the IdP side.
 - **App-level object/function authz** (IDOR/BOLA in one service's handlers): that is
-  **sota-code-security** rules/03. This skill owns the authorization *model* and the
+  **[sota-code-security** rules/03](../sota-code-security/rules/03-authorization.md). This skill owns the authorization *model* and the
   *policy engine* that the app calls.
 - **Secret storage, OIDC-federation mechanics for workloads, JWT `kid` rotation as a
-  credential operation**: **sota-secrets-management** rules/01 and rules/05.
+  credential operation**: **[sota-secrets-management** rules/01](../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md) and [rules/05](../sota-secrets-management/rules/05-credential-types.md).
 
-Concurrent siblings to invoke alongside: **sota-network-security** (mTLS, ZTNA,
-identity-aware proxy), **sota-kubernetes** (K8s RBAC, OIDC to the API server, SA
-tokens), **sota-detection-engineering** (identity-based detections, impossible-travel,
-auth anomaly), **sota-privacy-compliance** (consent, DSAR, audit evidence).
+Concurrent siblings to invoke alongside: **[sota-network-security](../sota-network-security/SKILL.md)** (mTLS, ZTNA,
+identity-aware proxy), **[sota-kubernetes](../sota-kubernetes/SKILL.md)** (K8s RBAC, OIDC to the API server, SA
+tokens), **[sota-detection-engineering](../sota-detection-engineering/SKILL.md)** (identity-based detections, impossible-travel,
+auth anomaly), **[sota-privacy-compliance](../sota-privacy-compliance/SKILL.md)** (consent, DSAR, audit evidence).
 
 The hierarchy of preference, always: **(1)** no standing credential — short-lived,
 federated, sender-constrained tokens; **(2)** standing identity with strong
@@ -59,19 +59,19 @@ Use when standing up or configuring any identity component.
    Code + PKCE (the only sanctioned interactive flow). Service-to-service → client
    credentials with `private_key_jwt`/mTLS, or workload identity federation. High
    assurance → FAPI 2.0. Legacy SAML only where a relying party requires it. Read
-   `rules/01-federation-protocols.md` before configuring any client.
+   [`rules/01-federation-protocols.md`](rules/01-federation-protocols.md) before configuring any client.
 2. **Treat the IdP as a tier-0 asset.** HA, backups of the identity store, restricted
-   admin plane, signing-key rotation, break-glass design. `rules/02-idp-operations.md`.
+   admin plane, signing-key rotation, break-glass design. [`rules/02-idp-operations.md`](rules/02-idp-operations.md).
 3. **Design the authorization model deliberately.** RBAC vs ABAC vs ReBAC is an
    architecture decision; model roles/relationships and write policy as code with a
-   test matrix. `rules/03-authorization-models.md`.
+   test matrix. [`rules/03-authorization-models.md`](rules/03-authorization-models.md).
 4. **Wire the lifecycle before launch.** Joiner-mover-leaver, SCIM provisioning AND
    deprovisioning, access reviews. Deprovisioning is the #1 IAM failure — design it
-   first. `rules/04-lifecycle-provisioning.md`.
+   first. [`rules/04-lifecycle-provisioning.md`](rules/04-lifecycle-provisioning.md).
 5. **Separate and time-box privilege.** Admin-account separation, JIT elevation,
-   logged-and-alerted break-glass, machine identity. `rules/05-privileged-workload.md`.
+   logged-and-alerted break-glass, machine identity. [`rules/05-privileged-workload.md`](rules/05-privileged-workload.md).
 6. **Make authentication phishing-resistant and adaptive.** Passkeys/FIDO2 at the IdP,
-   step-up, CAEP/SSF for continuous evaluation. `rules/06-mfa-federation-assurance.md`.
+   step-up, CAEP/SSF for continuous evaluation. [`rules/06-mfa-federation-assurance.md`](rules/06-mfa-federation-assurance.md).
 7. **Self-review against each file's Audit checklist** before declaring done.
 
 ## AUDIT mode
@@ -130,34 +130,34 @@ fixes (almost always: deprovisioning automation, MFA hardening, least-privilege 
 | [rules/04-lifecycle-provisioning.md](rules/04-lifecycle-provisioning.md) | Designing or auditing joiner-mover-leaver, SCIM-driven provisioning/deprovisioning, the orphaned-account problem, access reviews/recertification, just-in-time provisioning, dormant-account detection, self-registration and service-account login, AI-agent inventory and non-human decommissioning |
 | [rules/05-privileged-workload.md](rules/05-privileged-workload.md) | Admin-account separation, break-glass design (logged/time-bound/alerted, the Kanidm `recover-account` pattern), JIT/just-enough elevation, session recording, vaulting; machine/workload identity (SPIFFE/SPIRE, workload identity federation, mTLS identity, short-lived over static) |
 | [rules/06-mfa-federation-assurance.md](rules/06-mfa-federation-assurance.md) | Phishing-resistant MFA (FIDO2/passkeys/WebAuthn at the IdP), step-up/adaptive/conditional access, CAEP/SSF continuous evaluation, push-bombing/MFA-fatigue defenses, B2B/B2C/social-login and account-linking risks, identity proofing and NIST 800-63-4 IAL/AAL/FAL, authenticator lifecycle (revocation, re-proofing, expiry, biometrics), SMS OTP as a restricted authenticator, client-certificate and edge/IoT device authentication |
-| [rules/07-active-directory.md](rules/07-active-directory.md) | Hardening on-prem Active Directory / Kerberos / ADCS: Enterprise Access Model & tiering (ESAE/red-forest retired), delegation risks (unconstrained/constrained/RBCD), Kerberoasting/AS-REP + gMSA/dMSA & AES-only service accounts, SPN hygiene, machine-account quota, NTLM relay (SMB/LDAP signing + channel binding), ADCS ESC classes + template/enrollment-agent hardening + strong cert mapping (KB5014754), LAPS/Protected Users/Credential Guard/auth silos, krbtgt rotation, hybrid Entra sync boundary (PHS/PTA). Detection lives in sota-detection-engineering rules/07 |
+| [rules/07-active-directory.md](rules/07-active-directory.md) | Hardening on-prem Active Directory / Kerberos / ADCS: Enterprise Access Model & tiering (ESAE/red-forest retired), delegation risks (unconstrained/constrained/RBCD), Kerberoasting/AS-REP + gMSA/dMSA & AES-only service accounts, SPN hygiene, machine-account quota, NTLM relay (SMB/LDAP signing + channel binding), ADCS ESC classes + template/enrollment-agent hardening + strong cert mapping (KB5014754), LAPS/Protected Users/Credential Guard/auth silos, krbtgt rotation, hybrid Entra sync boundary (PHS/PTA). Detection lives in [sota-detection-engineering rules/07](../sota-detection-engineering/rules/07-ad-attack-detection.md) |
 
 ## Top-10 non-negotiables
 
 Violations are findings regardless of context; in BUILD mode they are never shortcuts.
 
 1. **Authorization Code + PKCE is the only sanctioned interactive flow.** Implicit and
-   ROPC/password grant are dead and disabled at the IdP. (rules/01)
+   ROPC/password grant are dead and disabled at the IdP. ([rules/01](rules/01-federation-protocols.md))
 2. **Exact redirect-URI matching, no wildcards, no scheme/host/path looseness.** A loose
-   `redirect_uri` is a token-exfiltration primitive. (rules/01)
+   `redirect_uri` is a token-exfiltration primitive. ([rules/01](rules/01-federation-protocols.md))
 3. **At the RP, pin algorithms and validate `iss`, `aud`, `exp`, and `nonce`; reject
    unsigned tokens and `alg:none`.** SAML RPs reject unsigned assertions and validate
-   the signature over the whole response with anti-XSW canonicalization. (rules/01)
+   the signature over the whole response with anti-XSW canonicalization. ([rules/01](rules/01-federation-protocols.md))
 4. **The IdP is a tier-0 asset**: HA, backed-up identity store, restricted admin plane,
    rotating signing keys with `kid` overlap, no standing super-admin without
-   phishing-resistant MFA. (rules/02)
+   phishing-resistant MFA. ([rules/02](rules/02-idp-operations.md))
 5. **Refresh tokens rotate with reuse detection, or are sender-constrained (DPoP/mTLS);
-   access tokens are short-lived.** No non-expiring tokens. (rules/01, rules/02)
+   access tokens are short-lived.** No non-expiring tokens. ([rules/01](rules/01-federation-protocols.md), [rules/02](rules/02-idp-operations.md))
 6. **Authorization is least-privilege by an explicit model with policy-as-code and a
    tested allow/deny matrix.** No role grants estate-wide `*`; segregation of duties
-   enforced on sensitive pairs. (rules/03)
+   enforced on sensitive pairs. ([rules/03](rules/03-authorization-models.md))
 7. **Group→role mapping is explicit and default-deny**: a user with no matching mapping
-   gets *no* access, never a silent default role. (rules/03)
+   gets *no* access, never a silent default role. ([rules/03](rules/03-authorization-models.md))
 8. **Deprovisioning is automated and prompt** — a leaver loses all access within the
    agreed SLA, source-of-truth driven via SCIM; access is recertified on a schedule.
-   Deprovisioning is the #1 IAM failure. (rules/04)
+   Deprovisioning is the #1 IAM failure. ([rules/04](rules/04-lifecycle-provisioning.md))
 9. **Privileged access is separated, just-in-time, and time-boxed; break-glass is
-   logged, alerted, and expires.** No permanent quiet admin backdoor. (rules/05)
+   logged, alerted, and expires.** No permanent quiet admin backdoor. ([rules/05](rules/05-privileged-workload.md))
 10. **Phishing-resistant MFA (FIDO2/passkeys) at the IdP for all privileged and,
     ideally, all users**; step-up for sensitive operations; SMS/voice OTP is not
-    phishing-resistant. (rules/06)
+    phishing-resistant. ([rules/06](rules/06-mfa-federation-assurance.md))

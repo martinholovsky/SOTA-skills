@@ -3,14 +3,14 @@
 Scope: what happens to what an audit finds — how a finding is **rated**,
 **evidenced**, **verified against itself**, and **reported**, plus the
 decision-ledger pass that produces findings the code passes cannot.
-`rules/01` owns how the audit is *run* (scoping, recon, tooling, triage,
+[`rules/01`](01-audit-methodology.md) owns how the audit is *run* (scoping, recon, tooling, triage,
 hygiene); this file owns the deliverable. Read both for any full audit.
 
 Split out of `01-audit-methodology.md` on 2026-08-29, when that file reached
 455 of its 500 lines. **The section numbers changed**: severity, evidence, the
-decision ledger, refutation and reporting were sections 4 to 8 of `rules/01` and
+decision ledger, refutation and reporting were sections 4 to 8 of [`rules/01`](01-audit-methodology.md) and
 are §1–§5 here, in the same order. Prose written before the split that points at
-`rules/01` for any of those five means this file, shifted down by three.
+[`rules/01`](01-audit-methodology.md) for any of those five means this file, shifted down by three.
 
 ---
 
@@ -74,15 +74,15 @@ Five hard rules (this list said *"two"* while carrying four until 2026-09-11):
 
 5. **This model outranks a per-skill severity table unless that table says it is
    narrower.** At least four skills ship their own Critical/High/Medium/Low rubric
-   (`sota-sandboxing`, `sota-threat-modeling`, `sota-kubernetes`,
-   `sota-network-security`). They exist to be domain-specific and are useful; what
+   ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md), [`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md), [`sota-kubernetes`](../../sota-kubernetes/SKILL.md),
+   [`sota-network-security`](../../sota-network-security/SKILL.md)). They exist to be domain-specific and are useful; what
    was missing until 2026-09-11 is which one wins. The router resolved the finding
    **format** ("supersedes any per-skill variant") from the start and said nothing
    equivalent for **severity** — an asymmetry visible in the text with no judgement
    needed, and confirmed as one of three real conflicts by the 2026-09-09 conflict-rate
    measurement (ROADMAP 46). The resolution: §1 is the floor for every finding and for
    any cross-domain roll-up; a skill's table may **refine** it inside that skill's
-   domain and must **say so**, the way `sota-kubernetes` marks a row
+   domain and must **say so**, the way [`sota-kubernetes`](../../sota-kubernetes/SKILL.md) marks a row
    *"(requirement-level; depth → network-security)"*. An unscoped table that simply
    rates the same class differently is the conflict, not a refinement — and where two
    scoped tables still disagree, rate on §1 and name both in the finding.
@@ -96,7 +96,7 @@ not ready to ship:
 2. **Severity** + one-line justification (impact × likelihood, per §1).
 3. **Location** — `file:line` at the pinned commit (or manifest key, route,
    workflow step). Exact, clickable, reproducible — and *verified* to resolve
-   there before shipping, which is a mechanical pass of its own (`rules/01` §4b).
+   there before shipping, which is a mechanical pass of its own ([`rules/01`](01-audit-methodology.md) §4b).
 4. **Evidence** — the minimal code/config snippet or triaged tool output
    that proves the issue. Minimal: enough to verify, no page-long dumps.
 5. **Standard mapping** — CWE id; OWASP Top 10 / API Top 10 / ASVS item;
@@ -134,7 +134,7 @@ Two asymmetries the evidence standard has to carry:
 - **"The control is present" is not "the control works."** Evidence for a
   positive observation must show *effect*, not existence — the log line it
   emitted, the request it rejected, the test that fails when it's disabled.
-  See `sota-code-security` rules/10; this applies to §5's positive-observations
+  See [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md); this applies to §5's positive-observations
   section too, where an inert control praised as a strength is the worst
   possible reporting error.
 - **An evidence grade propagates to what is built on it.** Marking an input *inferred* or
@@ -160,7 +160,7 @@ files. **Name the component that would have to implement the mechanism and ask i
 — the selector, the config, the target list, the resolver. That check is usually one command,
 and the correlation is precisely what stops you looking for it. Reported as a near-miss,
 caught before acting: judge it accordingly, and note that the sibling failure —
-generalising from a *single* sample — is `sota-code-security` rules/15 §2.1.
+generalising from a *single* sample — is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.1.
 
 **A reproduction you ran once is a coincidence you have not ruled out.** Where the
 evidence is a *behaviour* rather than a line of code — a crash, a race, a
@@ -171,7 +171,7 @@ the instrumented binary *"until a given input produces a crash 3 out of 3
 times"*, and until then it is not a crash. The threshold matters less than having
 one, because `1/1` and `3/3` are typeset identically in a report and mean
 entirely different things. This binds your own instruments too: a criterion that
-flips run to run at temperature 0-ish (`sota-llm-engineering` rules/01) cannot be
+flips run to run at temperature 0-ish ([`sota-llm-engineering` rules/01](../../sota-llm-engineering/rules/01-evals.md)) cannot be
 settled by a single run, so a one-shot measurement quoted as a result is an
 unstated `1/1`.
 
@@ -184,7 +184,7 @@ sequenced by risk-reduction-per-effort and can't be built without it.
 **Keep the output that produced the finding.** A command whose result you will cite is
 evidence: redirect it to a file rather than piping it through `tail`/`head`, because a
 consumed pipe cannot be re-read and the truncation keeps the summary while discarding the
-context that would qualify it (`sota-shell-scripting` rules/01 §3). An audit that cannot
+context that would qualify it ([`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md) §3). An audit that cannot
 reproduce its own quoted output without re-running the job has a weaker evidence chain
 than it appears to.
 
@@ -206,7 +206,7 @@ whose benchmark no longer reproduces, a constraint that expired two years ago an
 is still shaping the design. That class is invisible to every pass above and is
 often the most expensive thing in the repo.
 
-`sota-architecture` rules/01 §4 owns **writing** ADRs. This is the audit side:
+[`sota-architecture` rules/01](../../sota-architecture/rules/01-architecture-styles-and-decisions.md) §4 owns **writing** ADRs. This is the audit side:
 reading them back and asking whether they still hold.
 
 **Reconstruct the ledger.** Sources, in order of reliability: ADRs
@@ -245,7 +245,7 @@ Restate the evidence every time, even when the verdict is unchanged from last pa
 
 The same bar applies to any verdict this library asks you to record — a refuted
 finding (§4), an intake decision in `docs/ADOPTION-LOG.md`, a triage dismissal
-(`rules/01` §3). "Already covered" without a `file:line` is the same empty verdict
+([`rules/01`](01-audit-methodology.md) §3). "Already covered" without a `file:line` is the same empty verdict
 wearing different clothes.
 
 
@@ -357,14 +357,14 @@ judgement you then re-judge, which is the anchoring the pass exists to escape.
 Require a number — `/security-review` scores confidence 1–10 and **drops
 everything below 8** — and fix the bar *before* you see the findings. The
 threshold is a policy about what the report is for, so state it in the
-methodology (`rules/01` §1): a pre-merge gate that must not cry wolf sits high; a
+methodology ([`rules/01`](01-audit-methodology.md) §1): a pre-merge gate that must not cry wolf sits high; a
 one-off deep audit, where a missed Critical is the expensive error, sits lower
 and ships the near-misses marked "needs verification" rather than dropping them
 silently. Either way the cut is reviewable, which a paragraph of hedging is not.
 
 A number is not a fact. It is a forcing function that makes disagreement visible,
 and like every other number in this file it is a claim about a process you must
-have watched work (`sota-code-security` rules/15 §2.2).
+have watched work ([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2).
 
 Scale it to stakes: every Critical/High gets refuted, always. Mediums get a pass
 when the audit is high-stakes or the finding drives an expensive fix. Skip it for
@@ -396,7 +396,7 @@ Deliver in exactly this order:
    twenty clean domains; the executive summary is the one place where averaging
    is a lie, because it is the only section most readers will finish.
 2. **Scope & methodology** — repos and commit hash, what was and was not
-   covered (with the recorded exclusions from `rules/01` §1), standards asserted
+   covered (with the recorded exclusions from [`rules/01`](01-audit-methodology.md) §1), standards asserted
    against, tools run with exact versions and commands, audit date. This
    makes the audit reproducible and bounds its claims. Close it with **evidence
    not obtained** — the specific artifact that was unavailable and *what it would
@@ -422,7 +422,7 @@ Deliver in exactly this order:
 6. **Positive observations** — what is already done well (good patterns,
    solid boundaries, tooling in place), so it is preserved through
    remediation rather than accidentally regressed.
-7. **Appendix** — full triaged tool output, the inventory from `rules/01` §2, DFDs and
+7. **Appendix** — full triaged tool output, the inventory from [`rules/01`](01-audit-methodology.md) §2, DFDs and
    trust-boundary sketches, suppression-comment review.
 
 ---

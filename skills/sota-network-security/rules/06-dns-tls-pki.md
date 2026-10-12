@@ -6,16 +6,16 @@ lifecycle automation (ACME) and the shrinking max cert lifetimes that force it, 
 (e.g. step-ca — short-lived certs, private CA trust distribution, cert-pinning
 tradeoffs), and email authentication / anti-spoofing (SPF, DKIM, DMARC, MTA-STS/DANE).
 
-Where this sits: sota-cloud-infrastructure rules/03 owns DNS zone/registrar *setup* and
+Where this sits: [sota-cloud-infrastructure rules/03](../../sota-cloud-infrastructure/rules/03-networking.md) owns DNS zone/registrar *setup* and
 provider-managed cert provisioning; this skill owns the *security posture* (DNS firewalling,
-tunneling defense, TLS policy, internal PKI). sota-secrets-management owns TLS private-key storage/
-rotation mechanics. sota-detection-engineering owns DNS-exfil *detection* content; this file owns the
+tunneling defense, TLS policy, internal PKI). [sota-secrets-management](../../sota-secrets-management/SKILL.md) owns TLS private-key storage/
+rotation mechanics. [sota-detection-engineering](../../sota-detection-engineering/SKILL.md) owns DNS-exfil *detection* content; this file owns the
 *controls* that reduce its surface.
 
 Verified (2026-06-14): **CA/Browser Forum SC-081v3** (approved Apr 2025) phases public TLS cert max
 lifetime down: **200 days from 2026-03-15 → ~100 days from 2027-03-15 → 47 days from 2029-03-15**
 (DCV reuse → 10 days by 2029). **NIST SP 800-207** frames identity over location. **IMDSv2** for the
-metadata cross-reference (rules/05). Pin the CA/B schedule against cabforum.org.
+metadata cross-reference ([rules/05](05-edge-ingress-egress.md)). Pin the CA/B schedule against cabforum.org.
 
 ---
 
@@ -29,7 +29,7 @@ human cannot reliably re-issue every ~6 weeks across a fleet. Therefore:
 - **Provider-managed certs** on managed LB/CDN/Cloudflare where applicable (no private key you can
   leak).
 - **Expiry monitoring as a backstop** (alert at 30/14/7 days) *even with* automation — automation
-  fails silently. (Alert wiring: sota-observability.)
+  fails silently. (Alert wiring: [sota-observability](../../sota-observability/SKILL.md).)
 - Any cert renewed by hand, or living past the current CA/B cap, is a finding (High on a public
   endpoint — guaranteed future outage).
 
@@ -90,7 +90,7 @@ RSA-2048+ acceptable.
 configurable in current OpenSSL/BoringSSL and major CDNs). It defends *confidentiality* against
 harvest-now-decrypt-later — relevant for EU/long-lived-sensitive traffic — at negligible cost,
 and being hybrid it's no weaker than X25519 if the PQ part is ever broken. (Signatures/PKI stay
-classical for now.) See sota-code-security rules/04 §1.
+classical for now.) See [sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md) §1.
 
 **R3.2 — Set the server's TLS details explicitly; isolate legacy clients rather than weaken.**
 - **Name the key-exchange group list** instead of inheriting a library default that differs by
@@ -114,7 +114,7 @@ OWASP: Transport Layer Security cheat sheet, Zero Trust Architecture cheat sheet
 
 ## 3. DNS security
 
-**R4 — Registrar & issuance hygiene.** (Setup is cloud-infra rules/03; the *security* controls:)
+**R4 — Registrar & issuance hygiene.** (Setup is cloud-infra [rules/03](03-k8s-network-policy.md); the *security* controls:)
 - **CAA records on every public zone** restricting issuance to your CA(s) — limits who can mint a
   cert for your domains.
   - **Bind the record to your account and method** with the RFC 8657 parameters:
@@ -163,7 +163,7 @@ every certificate issued for the name during the exposure window and revoke them
 impact — cookies scoped to the parent domain, OAuth/SSO redirect URIs or CSP/CORS entries naming
 the host, mail received via its MX, and how long phishing content was served; (4) notify affected
 users where exposure is shown; (5) sweep every zone for the same gap. Detection content and IR
-workflow are sota-detection-engineering rules/06. OWASP: Subdomain Takeover Prevention cheat sheet.
+workflow are [sota-detection-engineering rules/06](../../sota-detection-engineering/rules/06-incident-response-validation.md). OWASP: Subdomain Takeover Prevention cheat sheet.
 
 **R5 — Split-horizon: internal names stay in private zones.** Internal hostnames in public DNS leak
 topology and aid recon. Public zones hold only public entry points; internal records live in private
@@ -176,7 +176,7 @@ rollover). DNSSEC protects integrity (anti-spoofing), not confidentiality.
 **R7 — DNS firewall / RPZ + DoH/DoT for confidentiality and policy.**
 - **Resolver-level DNS firewall (RPZ)** blocks resolution of known-malicious / newly-registered /
   C2 / DGA domains — a cheap, high-value control that kills many malware and exfil paths at the
-  *name* layer before any packet leaves. Pair with FQDN egress allowlisting (rules/05 §6) and a
+  *name* layer before any packet leaves. Pair with FQDN egress allowlisting ([rules/05](05-edge-ingress-egress.md) §6) and a
   blocklist feed.
 - **DoH/DoT** encrypts client↔resolver DNS so on-path observers can't see/modify queries. Decide a
   stance: force internal clients to your resolver (which does logging + RPZ), and consider blocking
@@ -188,7 +188,7 @@ classic covert channel (data encoded in subdomains/TXT to an attacker NS). Contr
 funnel all resolution through your resolver (R7), RPZ-block/limit lookups to attacker-controlled
 zones, rate-limit/length-limit queries, and FQDN-allowlist egress so workloads can't reach arbitrary
 authoritative servers. **Detection** of the exfil pattern (entropy, query volume, long labels) is
-sota-detection-engineering — feed it your resolver logs.
+[sota-detection-engineering](../../sota-detection-engineering/SKILL.md) — feed it your resolver logs.
 
 ## 4. Internal PKI (e.g. step-ca)
 
@@ -207,7 +207,7 @@ sota-detection-engineering — feed it your resolver logs.
   workload's trust bundle is a privileged, audited change — a rogue/extra CA is silent MITM for
   everything that workload talks to. Ship trust bundles as immutable, version-controlled artifacts
   (baked into the image / GitOps-managed), not mutated at runtime; alert on drift in the bundle.
-- **Protect the CA key** (sota-secrets-management): the private CA's signing key is a crown jewel —
+- **Protect the CA key** ([sota-secrets-management](../../sota-secrets-management/SKILL.md)): the private CA's signing key is a crown jewel —
   HSM/KMS-backed or tightly access-controlled; its compromise mints trusted certs for everything.
 - **Separate intermediates** per purpose/environment so one can be rotated/revoked without
   re-trusting the root.
@@ -215,9 +215,9 @@ sota-detection-engineering — feed it your resolver logs.
   Client Authentication EKU to meet the Chrome root program's requirement for separate client and
   server PKIs (Let's Encrypt: default profile without it from 2026-02-11, no more client-auth
   issuance from 2026-07-08). A service or partner link authenticating clients with publicly
-  issued certs breaks at renewal; issue them from a private CA scoped to client auth (rules/04 R4.1).
+  issued certs breaks at renewal; issue them from a private CA scoped to client auth ([rules/04](04-service-mesh-mtls.md) R4.1).
 
-**R10 — Feed the mesh from the internal CA.** The service mesh / Cilium mTLS CA (rules/04) chains to
+**R10 — Feed the mesh from the internal CA.** The service mesh / Cilium mTLS CA ([rules/04](04-service-mesh-mtls.md)) chains to
 step-ca (or its own intermediate). Short-lived SVIDs auto-rotate; don't copy a long-lived wildcard
 between services.
 
@@ -239,7 +239,7 @@ grep -rEn 'InsecureSkipVerify|verify=false|--insecure|NODE_TLS_REJECT_UNAUTHORIZ
 Your domain is an identity anyone can forge until you publish these DNS records. An unprotected
 domain gets spoofed for phishing/BEC (your brand, your users); it also lands legitimate mail in
 spam. All three are DNS records this skill owns; the *content* law of marketing mail (CAN-SPAM,
-consent) is sota-copywriting rules/04.
+consent) is [sota-copywriting rules/04](../../sota-copywriting/rules/04-claims-legal-trust.md).
 
 **R12 — Publish SPF, DKIM, and DMARC; DMARC is the one that actually stops spoofing.**
 - **SPF** (RFC 7208): a TXT record listing IPs/includes allowed to send for the domain, ending in
@@ -248,7 +248,7 @@ consent) is sota-copywriting rules/04.
   it is necessary but not sufficient.
 - **DKIM** (RFC 6376): sign outbound mail with a private key; publish the public key at
   `<selector>._domainkey`. Use a **>=2048-bit key**, rotate it (per-selector rotation lets you roll
-  without downtime), and keep the private key in a secret store (sota-secrets-management), never in
+  without downtime), and keep the private key in a secret store ([sota-secrets-management](../../sota-secrets-management/SKILL.md)), never in
   the repo.
 - **DMARC** (RFC 9989, which obsoletes the original RFC 7489; aggregate/failure reporting are
   RFC 9990/9991): a `_dmarc` TXT policy that ties SPF/DKIM to the visible `From:` domain via
@@ -289,7 +289,7 @@ consent) is sota-copywriting rules/04.
 RFC 8058) on bulk mail, and hold the spam-complaint rate **below 0.3%** (aim <0.1%); Microsoft added
 equivalent requirements (enforcement from 2025). Treat these as the minimum for any transactional or
 marketing sender. Monitor DMARC RUA reports as a *spoofing-detection* feed as well — hand them to
-sota-detection-engineering. (Logo display via **BIMI** is an IETF draft, not yet an RFC, and rewards
+[sota-detection-engineering](../../sota-detection-engineering/SKILL.md). (Logo display via **BIMI** is an IETF draft, not yet an RFC, and rewards
 reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, not required.)
 
 ## Audit checklist

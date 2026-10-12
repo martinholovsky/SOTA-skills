@@ -10,7 +10,7 @@ need (minimal runtime), and the registry preserves integrity (digests, immutabil
 identical output from same inputs) is the verification property. Pursue hermetic always,
 reproducible where the payoff justifies it (SLSA verification, multi-party trust).
 
-- All network fetches during build go through lockfile/hash-verified channels (rules/03
+- All network fetches during build go through lockfile/hash-verified channels ([rules/03](03-dependencies.md)
   §3.1) or a proxy with an allowlist. A build step that `curl`s an unpinned URL is an
   unreviewable input — every such fetch is a finding (High if it pipes to sh).
 
@@ -37,7 +37,7 @@ RUN curl -fsSLo /tmp/tool.tgz https://releases.example.com/tool-1.4.2-linux-amd6
   reproducibility claim that is never re-derived is marketing; one independent rebuild
   per release window turns provenance from "trust the builder" into "check the builder".
 - **Third-party binaries and tools arrive through a package manager or artifact repository**,
-  where they are locked, scanned and logged (rules/03 §3.3). The hash-pinned download in the
+  where they are locked, scanned and logged ([rules/03](03-dependencies.md) §3.3). The hash-pinned download in the
   GOOD example is a documented exception with an owner, not the default path. **A binary
   committed to the repository is never acceptable**: it cannot be reviewed or rebuilt, and
   OpenSSF Scorecard's `Binary-Artifacts` check flags it.
@@ -46,7 +46,7 @@ RUN curl -fsSLo /tmp/tool.tgz https://releases.example.com/tool-1.4.2-linux-amd6
   unless a recorded hash is checked. `pip install --require-hashes` refused a local wheel
   listed without a hash (measured, pip 26.1.2). A CI cache restore is matched on its key,
   which is a name you chose, not a hash of the content, so never restore dependencies from a
-  cache without re-verifying them against the lockfile (rules/01 §1.6).
+  cache without re-verifying them against the lockfile ([rules/01](01-pipeline-security.md) §1.6).
 - **CI executes only the reviewed build definition.** No step runs code fetched or generated
   outside it: no `curl | sh`, no `eval "$(curl …)"`, no script whose URL comes from a
   variable. zizmor's `adhoc-packages` audit (v1.26.0+) flags `run:` steps that install
@@ -65,7 +65,7 @@ RUN curl -fsSLo /tmp/tool.tgz https://releases.example.com/tool-1.4.2-linux-amd6
 - Build tooling is a dependency too: pin BuildKit/buildx, syft/grype/cosign versions in
   CI (via pinned action SHAs or pinned tool downloads with checksums) — an unpinned
   `latest` scanner can silently change gate behavior, and a compromised tool download is
-  arbitrary code in the build (this is rules/03 applied to the pipeline itself).
+  arbitrary code in the build (this is [rules/03](03-dependencies.md) applied to the pipeline itself).
 
 ## 4.2 Multi-stage Dockerfiles
 
@@ -108,7 +108,7 @@ Hard rules:
 - **`.dockerignore`** excluding `.git`, `.env*`, secrets, local configs, `node_modules` —
   `COPY . .` without it ships your git history and whatever junk is on the build machine.
 - Order for cache correctness: manifests + frozen install first, then source. Never let a
-  cache mount cross trust boundaries (rules/01 §1.6).
+  cache mount cross trust boundaries ([rules/01](01-pipeline-security.md) §1.6).
 - No `apt-get upgrade` at build (unreproducible drift) — get fixes by bumping the base
   digest instead. `apt-get install` with `--no-install-recommends` and version pins where
   the base supports it.
@@ -119,8 +119,8 @@ Hard rules:
   dropped silently by package manifests and stage copies. "Works in a dev
   checkout, dead in the image" is a silent no-op, not a crash — the feature just
   returns empty. Smoke-test each control **against the built image**, and have
-  the component assert its required artifacts at startup (`sota-code-security`
-  rules/14 §2).
+  the component assert its required artifacts at startup ([`sota-code-security`
+  rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §2).
 
 ### 4.2.1 Interpreted-runtime variant (Node example; Python is isomorphic)
 
@@ -162,7 +162,7 @@ headers, or the resolver into the runtime image.
 
 ### 4.2.2 Image metadata for traceability
 
-Stamp OCI annotations at build so every image self-identifies (consumed by rules/02 §2.8
+Stamp OCI annotations at build so every image self-identifies (consumed by [rules/02](02-provenance-signing.md) §2.8
 and incident response):
 
 ```dockerfile
@@ -206,15 +206,15 @@ secrets are not (§4.2).
 
 ### 4.3.1 Base image upgrade flow (make it boring)
 
-The base image is your largest, most-shared dependency; treat it with rules/03 rigor:
+The base image is your largest, most-shared dependency; treat it with [rules/03](03-dependencies.md) rigor:
 
 1. Weekly scheduled job rebuilds/mirrors blessed bases, scans them, signs them
-   (rules/02), publishes new digests to the internal registry.
+   ([rules/02](02-provenance-signing.md)), publishes new digests to the internal registry.
 2. Renovate opens digest-bump PRs across consuming repos (grouped, automerge-eligible
    when tests pass — a base digest bump with green tests is the safest PR class there is).
 3. Emergency path (critical base CVE): the same flow, manually triggered, with an org
    dashboard of which services still run the old digest (query deployed digests against
-   SBOM store, rules/03 §3.5).
+   SBOM store, [rules/03](03-dependencies.md) §3.5).
 
 Audit: ask "when a glibc CVE lands, what happens?" If the answer involves forty teams
 editing Dockerfiles by hand, the strategy is missing (Medium).
@@ -222,24 +222,24 @@ editing Dockerfiles by hand, the strategy is missing (Medium).
 ## 4.4 Image scanning
 
 - Scan in CI per build (`grype`/`trivy image` against the **built digest**, before push or
-  between push and promotion) and on schedule against **deployed** digests (rules/03
+  between push and promotion) and on schedule against **deployed** digests ([rules/03](03-dependencies.md)
   §3.6 — new CVEs hit old images).
 - Gate on triaged policy, not raw severity walls; same VEX/ignore-with-expiry discipline
-  as rules/03 §3.6. A scan step with `continue-on-error: true` or `exit-code: 0` is
+  as [rules/03](03-dependencies.md) §3.6. A scan step with `continue-on-error: true` or `exit-code: 0` is
   decorative (Medium, High if it's the only control).
 - Scan the base image separately on its weekly rebuild — base CVEs are fixed by bumping
   the blessed base once, not by forty app teams triaging the same finding.
 - Also run config scanning on the Dockerfile (hadolint; trivy misconfig/checkov catch
   root-user, ADD-vs-COPY, latest-tags) as a PR check.
 - **Malware and binary composition analysis reach beyond libraries.** The malicious-package
-  checks of rules/03 §3.4 see packages; extend them to container images, VM and golden
+  checks of [rules/03](03-dependencies.md) §3.4 see packages; extend them to container images, VM and golden
   images, and release binaries. **As supplier**, before release: inventory the built
   binaries (syft catalogs binaries, e.g. `go-module-binary-cataloger`), compare the result
   with the expected SBOM (an unexpected component is the finding), and secret-scan the
   unpacked artifact (`trivy rootfs --scanners secret <dir>`). **As consumer**, run the same
   on binaries you receive (vendor installers, agents, appliance images) before they enter
   the internal repository, plus a malware scan (ClamAV, or YARA rules from
-  `sota-detection-engineering`). `trivy vm` is marked EXPERIMENTAL (trivy 0.72.0 help).
+  [`sota-detection-engineering`](../../sota-detection-engineering/SKILL.md)). `trivy vm` is marked EXPERIMENTAL (trivy 0.72.0 help).
   (OWASP: DSOMM; Software Supply Chain Security cheat sheet)
 - Don't conflate: secret scanning of image layers (trivy/ggshield can) is worth one
   scheduled pass over the registry — finds the `ENV TOKEN` mistakes of §4.2 historically.
@@ -249,20 +249,20 @@ editing Dockerfiles by hand, the strategy is missing (Medium).
 - **Immutable tags**: enable tag immutability where the registry supports it (ECR
   immutable tags, Artifactory, GAR via policy). A re-pushed `v1.2.3` is either an accident
   that breaks provenance or an attack that survives review. Mutable release tags = High.
-- **Deploy by digest** (rules/06 §6.6, rules/07 §7.1): manifests reference
+- **Deploy by digest** ([rules/06](06-iac-deployment.md) §6.6, [rules/07](07-runtime-ops.md) §7.1): manifests reference
   `image@sha256:...`; tags are for humans. `:latest` in any deploy manifest = High; a
   mutable tag in prod manifests = Medium-High.
 - AuthN/AuthZ: CI pushes via OIDC-federated, repo-scoped identity (no static registry
-  passwords — rules/01 §1.2); runtime pulls via read-only pull identities per
+  passwords — [rules/01](01-pipeline-security.md) §1.2); runtime pulls via read-only pull identities per
   cluster/namespace; humans get no push rights to release repos (CI is the only writer —
   that's what makes provenance meaningful).
 - Separate repos (or registries) for `dev` / `staging-verified` / `prod-promoted`;
-  promotion copies a verified digest (rules/02 §2.5), never rebuilds. Prod pulls only
-  from the prod registry — enforce via admission policy registry allowlist (rules/07).
+  promotion copies a verified digest ([rules/02](02-provenance-signing.md) §2.5), never rebuilds. Prod pulls only
+  from the prod registry — enforce via admission policy registry allowlist ([rules/07](07-runtime-ops.md)).
 - Retention: garbage-collect untagged/dev images on schedule, but **never** delete
   digests referenced by running workloads or release history; keep release artifacts +
   attestations for your audit horizon.
-- Pull-through cache for upstream bases (mirrors §4.3 and rules/03 §3.3): availability,
+- Pull-through cache for upstream bases (mirrors §4.3 and [rules/03](03-dependencies.md) §3.3): availability,
   audit log, single patch point.
 
 ### 4.5.1 Reference CI build-push-attest sequence
@@ -294,11 +294,11 @@ re-resolve a tag mid-pipeline (a re-resolved tag is a TOCTOU window).
   prod secrets, and prod has no reason to reach builders. The build system signs (id-token)
   and pushes — that's its entire prod-facing surface.
 - Shared BuildKit/buildd daemons across trust levels are a cross-tenant risk (cache
-  poisoning, socket = root): per-job ephemeral builders (rules/01 §1.6) or rootless
+  poisoning, socket = root): per-job ephemeral builders ([rules/01](01-pipeline-security.md) §1.6) or rootless
   BuildKit with isolated caches. Mounting `/var/run/docker.sock` into CI job containers
   is host-root-for-every-job (High).
 - Cache keys must include the trust context: a release build restoring a cache produced
-  by an untrusted PR build inherits whatever the PR poisoned (rules/01 §1.6).
+  by an untrusted PR build inherits whatever the PR poisoned ([rules/01](01-pipeline-security.md) §1.6).
 
 ### 4.6.1 The host under the pipeline
 
@@ -328,7 +328,7 @@ Self-hosted runners and CI servers are production-tier assets, hardened like one
   not only when something breaks. (OWASP: Software Supply Chain Security cheat sheet;
   SCVS 3.9, 3.15, 3.16)
 - Nothing sensitive survives a job: no credentials, tokens or checkouts left on disk.
-  Ephemeral runners (rules/01 §1.6) give you this by construction; a persistent host needs a
+  Ephemeral runners ([rules/01](01-pipeline-security.md) §1.6) give you this by construction; a persistent host needs a
   workspace and credential wipe that is itself verified.
   (OWASP: CI/CD Security cheat sheet; GitHub Actions Security cheat sheet; Secrets Management cheat sheet)
 
@@ -344,7 +344,7 @@ of the supply chain, and its IDE extensions run with the developer's full access
   (`code --list-extensions --show-versions`), so a malicious extension can be traced to
   the machines that have it.
 - Machines holding signing or publish credentials run endpoint protection and are enrolled
-  in device management; better still, those credentials live in CI (rules/02 §2.6).
+  in device management; better still, those credentials live in CI ([rules/02](02-provenance-signing.md) §2.6).
   (OWASP: Software Supply Chain Security cheat sheet)
 
 ## Audit checklist

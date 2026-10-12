@@ -144,7 +144,7 @@ don't count or materialize everything.
 **Precompute and reuse across iterations**: anything loop-invariant (compiled
 regex, parsed config, dictionary built from a constant list, formatted
 prefix) hoists out. Memoize pure expensive functions with *bounded* caches
-(see rules/05 for eviction discipline).
+(see [rules/05](05-caching.md) for eviction discipline).
 
 ## 5. Batching
 
@@ -212,7 +212,7 @@ When an operation is both necessary and expensive, relocate it in time:
 
 ## 8. Database quick pointers
 
-Detailed rules live in the **sota-databases** skill; in a perf audit, flag
+Detailed rules live in the **[sota-databases](../../sota-databases/SKILL.md)** skill; in a perf audit, flag
 these on sight:
 
 - **N+1 queries** — §1 above. The #1 real-world perf bug.

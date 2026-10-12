@@ -10,9 +10,9 @@ child CWE-837 (improper enforcement of a single, unique action).
 Core principle: **you are not trying to stop every bot, you are trying to make abuse cost
 more than it earns — and every value-granting action needs its own ceiling, because the
 login rate limit does not protect the coupon endpoint.** Login throttling and lockout stay
-in rules/02 §1; one-time-operation replay and workflow state stay in rules/03; atomic
-check-then-act (double redemption) stays in rules/06; the detection counters that feed
-these decisions stay in rules/07 §2.1.
+in [rules/02](02-authentication.md) §1; one-time-operation replay and workflow state stay in [rules/03](03-authorization.md); atomic
+check-then-act (double redemption) stays in [rules/06](06-memory-resource-safety.md); the detection counters that feed
+these decisions stay in [rules/07](07-data-exposure.md) §2.1.
 
 ## 1. Graduated responses to automation
 
@@ -33,7 +33,7 @@ tripped it, so they change one thing and try again. Scale the response to how su
 - **Tarpit instead of 403.** A delay that grows with confidence and carries random jitter
   collapses a bot's throughput without telling it that it was detected. Bound the delay
   server-side (async sleep, not a held worker thread) so the tarpit does not become your
-  own resource exhaustion (rules/06).
+  own resource exhaustion ([rules/06](06-memory-resource-safety.md)).
 - **Degrade the login path under attack.** The Credential Stuffing Prevention guidance
   lists slowing measures that need no user tracking: rising JavaScript work, a
   proof-of-work puzzle, long waits, oversized responses, randomised error text. Each raises
@@ -48,7 +48,7 @@ tripped it, so they change one thing and try again. Scale the response to how su
   whose browser is privacy-hardened, blocks some disabled users and privacy-conscious
   users; prefer challenge over block for those signals. Fingerprinting signals are personal
   data: minimise, hash or truncate, and keep them for days, not indefinitely
-  (`sota-privacy-compliance`).
+  ([`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md)).
 - **Unblock automatically.** IP-level mitigations expire and are lifted as abuse stops;
   addresses are reassigned and shared (carrier NAT, corporate egress).
 
@@ -81,7 +81,7 @@ cheat sheet.
 - **Phone verification.** Look up the line type: virtual (VoIP) numbers are cheap in
   bulk, so a VoIP number earns more friction or no value-granting eligibility rather than
   automatic rejection (some real users only have one). SMS sending limits and SMS pumping
-  are in rules/02 §7 and rules/06.
+  are in [rules/02](02-authentication.md) §7 and [rules/06](06-memory-resource-safety.md).
 - **Identity beyond the email address.** Trials, referral rewards and one-per-customer
   offers keyed on email alone reset with a new mailbox. Tie eligibility to stronger signals:
   a verified phone, a payment-method fingerprint, a device signal, KYC where the value
@@ -98,7 +98,7 @@ cheat sheet; Input Validation cheat sheet; Business Logic Security cheat sheet.
 
 A visible CAPTCHA is a last-resort step-up, not a primary control: solving services and
 models defeat it cheaply, and it is an accessibility barrier (WCAG 2.2 SC 3.3.8 —
-`sota-frontend-design` rules/05). Offer a non-visual alternative wherever one is shown.
+[`sota-frontend-design` rules/05](../../sota-frontend-design/rules/05-accessibility.md)). Offer a non-visual alternative wherever one is shown.
 
 - **Hosted challenge: the token means nothing until your server verifies it.** The widget
   posts a token (`g-recaptcha-response`, `h-captcha-response`, `cf-turnstile-response`);
@@ -107,7 +107,7 @@ models defeat it cheaply, and it is an accessibility barrier (WCAG 2.2 SC 3.3.8 
   response. Tokens are short-lived and single-use per the providers' documentation
   (reCAPTCHA: two minutes; hCaptcha: 120 seconds by default; Turnstile: 300 seconds), so a
   verification call that is skipped, cached or made fail-open on a provider error is a
-  no-op control (rules/10). Decide the outage behaviour explicitly.
+  no-op control ([rules/10](10-silent-control-failure.md)). Decide the outage behaviour explicitly.
 - **Self-hosted challenge: the answer never leaves the server.** Keep the expected answer
   in server-side state, or send only a token that carries an HMAC (keyed with a server
   secret) over the challenge ID, the answer and an expiry — never the answer, or an
@@ -142,16 +142,16 @@ OWASP: Code Review Guide v2 (CAPTCHA); Bot Management and Anti-Automation cheat 
   order on the server, and clamp the result to a price floor (cost, a minimum margin, or
   at least zero plus any non-discountable fees) so no combination can make an order
   free or negative. Compute discounts from codes server-side; never accept a discount
-  amount or total from the client (rules/03).
+  amount or total from the client ([rules/03](03-authorization.md)).
 - **Caps at every layer.** A per-action cap (one use per order), a per-account lifetime
   cap (total promotional value), and a per-source cap (per payment method, per device, per
   shipping address) — each layer catches what multi-accounting slips past the one above.
-  Enforce each atomically (rules/06, conditional update or unique constraint).
+  Enforce each atomically ([rules/06](06-memory-resource-safety.md), conditional update or unique constraint).
 - **Scarce inventory.** A reservation made by adding to a cart expires if unpaid within
   a set time and the stock is released, or bots camp the whole allocation (denial of
   inventory). Pair it with server-side per-account purchase limits that also count
   identity proxies (the same card, address or device), and for limited drops a waiting
-  room with random admission (`sota-architecture` rules/04 §6).
+  room with random admission ([`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §6).
 - **De-duplicate orders by normalised identity.** Hash a normalised shipping address
   (case, whitespace, abbreviations, postcode) and a payment fingerprint (card BIN plus last
   four plus a holder hash, or the gateway's fingerprint) and count orders per value; one
@@ -160,7 +160,7 @@ OWASP: Code Review Guide v2 (CAPTCHA); Bot Management and Anti-Automation cheat 
   session or device, and high decline ratios are the signature. Score payment attempts for
   risk before calling the gateway, rate-limit authorisation attempts per session, device
   and account, use the gateway's step-up cardholder authentication (for example 3-D
-  Secure) where risk is elevated, and alert on the decline ratio (rules/07 §2.1).
+  Secure) where risk is elevated, and alert on the decline ratio ([rules/07](07-data-exposure.md) §2.1).
 - **Referrals: two people, not two accounts.** Before paying a referral reward, check the
   referrer and referee differ on the signals of §2 (payment method, device, verified
   phone, address), and pay only after the referee does something that costs them (a paid,

@@ -3,9 +3,9 @@
 Scope: the map of trusted-execution technologies — what each one actually guarantees,
 what it does not, and how to choose between them for a given workload shape and threat
 model. Threat-model taxonomy and the decision to use confidential computing at all is
-rules/01; remote-attestation verification and TCB recovery depth is rules/03; running
-TEEs on Kubernetes is rules/04; cryptographic alternatives (FHE/MPC/PETs) are rules/05.
-General isolation-boundary ranking and Wasm-as-a-sandbox are sota-sandboxing rules/01;
+[rules/01](01-threat-model-and-selection.md); remote-attestation verification and TCB recovery depth is [rules/03](03-remote-attestation.md); running
+TEEs on Kubernetes is [rules/04](04-confidential-kubernetes.md); cryptographic alternatives (FHE/MPC/PETs) are [rules/05](05-pets-coed.md).
+General isolation-boundary ranking and Wasm-as-a-sandbox are [sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md);
 this file owns only the *confidentiality-against-the-operator* layer that sandboxes do
 not provide.
 
@@ -32,7 +32,7 @@ and the name alone in a design doc is a red flag:
 Per AMD's SEV-SNP whitepaper and SNP-attestation guide: SEV/SEV-ES attestation was
 *launch-time only* (guest-owner-only); SEV-SNP replaced it with runtime remote
 attestation carrying measurement, guest policy, chip ID, and TCB version — the input
-rules/03 depends on.
+[rules/03](03-remote-attestation.md) depends on.
 
 **R1.1 — "SEV" without "-SNP" is a finding (High).** Plain SEV and SEV-ES provide
 encryption without integrity or runtime attestation; published attacks (unencrypted
@@ -81,7 +81,7 @@ Fixed Virtual Platforms (simulators), and the first announced CCA-capable cloud
 silicon (e.g. Azure's Cobalt 200, announced November 2025) is in provider-internal
 production with customer availability "planned" — verify current status at the
 provider before committing. Designs targeting Arm today should plan the attestation
-abstraction (rules/03) so CCA can slot in, not assume it exists.
+abstraction ([rules/03](03-remote-attestation.md)) so CCA can slot in, not assume it exists.
 
 ---
 
@@ -143,7 +143,7 @@ claim is design/operational ("no mechanism for operator access"), independently
 assessed in NCC Group's public 2023 Nitro System review — a strong claim, but a
 different *kind* of claim than "the CPU vendor's silicon excludes the cloud operator."
 If the threat model is "protect data from the cloud provider itself," Nitro Enclaves
-do not address it; SEV-SNP/TDX instances do (with verified attestation, rules/03).
+do not address it; SEV-SNP/TDX instances do (with verified attestation, [rules/03](03-remote-attestation.md)).
 
 **R3.2 — Where Nitro Enclaves excel:** removing *your own* operators, the parent
 instance's root user, and co-resident software from the TCB of a small critical
@@ -168,7 +168,7 @@ NVIDIA's Hopper confidential-computing whitepaper and product documentation:
   (AES-GCM-256 in the DMA engine); on-package HBM is inside the boundary; the GPU
   produces its own **attestation** (verified via NVIDIA's attestation services/tools —
   verify current verifier tooling at NVIDIA's docs), which must be checked *in
-  addition to* the CPU TEE's report (rules/03).
+  addition to* the CPU TEE's report ([rules/03](03-remote-attestation.md)).
 - Blackwell: first TEE-I/O-capable GPU; adds inline protection over NVLink and
   near-parity performance in CC mode per NVIDIA's published materials.
 
@@ -198,7 +198,7 @@ signature proves the evidence is genuine. It does not prove the firmware is firm
 you approved. The relying-party policy therefore needs three things:
 - an allowlist of GPU driver and VBIOS/firmware versions, with a named owner and an
   update path tied to vendor security bulletins, just like the CPU TCB baseline
-  (rules/03 §5);
+  ([rules/03](03-remote-attestation.md) §5);
 - a rule that rejects evidence whose firmware measurements do not match a signed
   reference manifest. In NVIDIA's verifier the reference manifest is the Reference
   Integrity Manifest (RIM), and the checks show up as per-claim results for the
@@ -222,7 +222,7 @@ state that is gone. OWASP: AISVS 4.2.1, AISVS 4.2.3
 ## 5. Wasm and TEEs
 
 Wasm runtimes as portable sandboxes — protecting the *host from the workload* — are
-sota-sandboxing rules/01 territory, and Wasm alone provides zero confidentiality
+[sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md) territory, and Wasm alone provides zero confidentiality
 against the operator. The inverted combination (Wasm module *inside* a TEE for
 portability across enclave technologies) was pioneered by **Enarx**.
 
@@ -241,24 +241,24 @@ liveness check before adopting.
 TEEs raise attacker cost; they do not make co-resident adversaries disappear. Vendors
 respond to microarchitectural breaks with microcode/firmware fixes surfaced as TCB
 version bumps — which is why attestation policy must track TCB levels and why TCB
-recovery is a first-class operational flow (rules/03).
+recovery is a first-class operational flow ([rules/03](03-remote-attestation.md)).
 
 Attack classes to carry in every TEE threat model:
 
 | Class | Example (verified literature) | Affects | Posture |
 |---|---|---|---|
-| Transient execution / speculative | Spectre-class lineage; vendor advisories per microcode cycle | All | Patched via TCB recovery; attestation must reject stale TCBs (rules/03) |
+| Transient execution / speculative | Spectre-class lineage; vendor advisories per microcode cycle | All | Patched via TCB recovery; attestation must reject stale TCBs ([rules/03](03-remote-attestation.md)) |
 | Ciphertext side channels | CipherLeaks (USENIX Security '21) and generalized follow-up (IEEE S&P '22): deterministic XEX/XTS encryption means repeated plaintext at a fixed address yields identical ciphertext a malicious hypervisor can monitor (e.g. VMSA register state) — broke constant-time OpenSSL RSA/ECDSA; AMD bulletin AMD-SB-3021 | SEV-SNP | Software mitigations (register masking, ciphertext-hiding guidance per AMD); constant-time code alone is NOT sufficient — document residual risk |
 | Interrupt / single-stepping | SGX-Step framework: attacker-controlled timer interrupts step an enclave one instruction at a time; Intel's AEX-Notify ISA mitigation (USENIX Security '23); interrupt-*counting* variants against AEX-Notify published since (2025) — the arms race is live | SGX primarily; analogues studied on VM TEEs | Assume a privileged host can observe execution granularity; avoid secret-dependent control flow, verify AEX-Notify enabled |
-| SMT co-residency | Sibling-thread contention leaks | All shared-CPU | Cloud CVMs: provider-controlled (document what the provider states); own hardware: disable SMT or core-schedule per tenant, same rule as sota-sandboxing rules/01 R2.2 |
+| SMT co-residency | Sibling-thread contention leaks | All shared-CPU | Cloud CVMs: provider-controlled (document what the provider states); own hardware: disable SMT or core-schedule per tenant, same rule as [sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md) R2.2 |
 | Physical (bus interposition, chip attacks) | DRAM-bus interposers against deterministic memory encryption: WireTap (CCS '25; SGX Quoting Enclave key extracted), TEE.Fail (disclosed 2025-10-28; DDR5; Intel PCE keys extracted, forged TDX quotes; SEV-SNP with ciphertext hiding also affected), Battering RAM (IEEE S&P '26; DDR4 interposer under $50; SGX and SEV-SNP memory read and replayed); voltage-glitching literature | SGX, TDX, SEV-SNP | Memory encryption does NOT stop a bus interposer, and Intel and AMD rate physical interposition out of scope — an attacker with brief physical access can break confidentiality and forge attestation. State it explicitly; the control is physical access to the host, not the TEE |
-| Security-processor firmware / root of trust | RMPocalypse (ACM CCS '25, CVE-2025-0033, AMD-SB-3020): a race while the AMD Secure Processor initialises the RMP lets a malicious hypervisor corrupt it, voiding SEV-SNP integrity and, per the researchers, confidentiality and attestation; arXiv 2605.12990 (preprint, not peer-reviewed, 2026-05-13) claims a software-only extraction of the root VCEK seed on EPYC Milan, which would allow forged attestation reports — AMD's response needs verification | SEV-SNP (RMPocalypse: Zen 3/4/5 per the researchers; the preprint: Milan) | Firmware fixes surface as TCB/firmware version bumps (AMD-SB-3020 lists SEV firmware, microcode or PI updates and a mitigation vector bit) — TCB recovery (rules/03); a root-seed compromise would defeat per-chip attestation for every TCB on that part, so track the vendor bulletin, not just the paper |
+| Security-processor firmware / root of trust | RMPocalypse (ACM CCS '25, CVE-2025-0033, AMD-SB-3020): a race while the AMD Secure Processor initialises the RMP lets a malicious hypervisor corrupt it, voiding SEV-SNP integrity and, per the researchers, confidentiality and attestation; arXiv 2605.12990 (preprint, not peer-reviewed, 2026-05-13) claims a software-only extraction of the root VCEK seed on EPYC Milan, which would allow forged attestation reports — AMD's response needs verification | SEV-SNP (RMPocalypse: Zen 3/4/5 per the researchers; the preprint: Milan) | Firmware fixes surface as TCB/firmware version bumps (AMD-SB-3020 lists SEV firmware, microcode or PI updates and a mitigation vector bit) — TCB recovery ([rules/03](03-remote-attestation.md)); a root-seed compromise would defeat per-chip attestation for every TCB on that part, so track the vendor bulletin, not just the paper |
 
 **R6.1 — Side-channel posture is documented, never assumed away (finding: Medium for
 absence, High for a false "TEEs stop side channels" claim).** Every CC design doc
 carries a short section: which classes apply, which are mitigated by current TCB,
 which are accepted residual risk, and the trigger for re-evaluation (vendor advisory
-→ TCB bump → attestation policy update, rules/03).
+→ TCB bump → attestation policy update, [rules/03](03-remote-attestation.md)).
 
 **R6.2 — Secrets-handling code inside a TEE still follows constant-time discipline
 *plus* TEE-specific guidance.** On SEV-SNP, constant-time is provably insufficient
@@ -275,17 +275,17 @@ verify current platform support)" — SKUs, regions, and TCB baselines move.
 
 | Workload shape | Threat: exclude cloud/infra operator | Threat: exclude co-tenant + own ops only |
 |---|---|---|
-| Lift-and-shift VM / whole container stack | SEV-SNP or TDX confidential VM (verify SNP not plain SEV, R1.1; verify TD not just TME-MK, R1.3) | Ordinary hardened VM + sota-sandboxing controls may suffice — do not pay the CC tax without the threat (rules/01) |
-| Containers on Kubernetes | Confidential VMs as nodes, or CoCo-style pod-level CVMs — rules/04 | Standard K8s isolation (sota-kubernetes, sota-sandboxing) |
+| Lift-and-shift VM / whole container stack | SEV-SNP or TDX confidential VM (verify SNP not plain SEV, R1.1; verify TD not just TME-MK, R1.3) | Ordinary hardened VM + [sota-sandboxing](../../sota-sandboxing/SKILL.md) controls may suffice — do not pay the CC tax without the threat ([rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md)) |
+| Containers on Kubernetes | Confidential VMs as nodes, or CoCo-style pod-level CVMs — [rules/04](04-confidential-kubernetes.md) | Standard K8s isolation ([sota-kubernetes](../../sota-kubernetes/SKILL.md), [sota-sandboxing](../../sota-sandboxing/SKILL.md)) |
 | Small critical function (key custody, signing, tokenization) | SGX enclave (Gramine for unmodified code) on Xeon, or per-function confidential VM | AWS-only: Nitro Enclaves (R3.1 trust model accepted and written down) |
 | GPU inference / training on sensitive models or data | SEV-SNP/TDX CVM **plus** GPU CC mode on Hopper/Blackwell-class parts, both attestations verified (R4.2) | GPU CC mode still valuable against co-resident software; document what is and isn't in the boundary |
 | Arm-based deployment | ARM CCA when actually available on your target platform (R1.5) — until then, no operator-exclusion story on Arm cloud silicon; re-scope or change ISA | Standard Arm virtualization + sandboxing |
-| Portable across TEE vendors | Design to the attestation abstraction (rules/03) and a VM-shaped workload; avoid enclave-ABI lock-in | n/a |
+| Portable across TEE vendors | Design to the attestation abstraction ([rules/03](03-remote-attestation.md)) and a VM-shaped workload; avoid enclave-ABI lock-in | n/a |
 
-**R7.1 — The technology choice is an output of rules/01, not of vendor preference.**
+**R7.1 — The technology choice is an output of [rules/01](01-threat-model-and-selection.md), not of vendor preference.**
 An audit asks, in order: (1) what operator/tenant is being excluded? (2) does the
 chosen technology's trust model actually exclude them (R1.2, R3.1)? (3) is the
-attestation of that technology verified by a relying party (rules/03)? A "yes" on
+attestation of that technology verified by a relying party ([rules/03](03-remote-attestation.md))? A "yes" on
 (1) with a mismatch on (2) is the defining Critical finding of this domain — e.g.
 "protect from the cloud provider" implemented on Nitro Enclaves, plain SEV, or
 TME-MK-only silicon.
@@ -329,6 +329,6 @@ TME-MK-only silicon.
 - [ ] Secrets code inside TEEs reviewed for TEE-specific leakage (ciphertext side
       channels on SEV-SNP; secret-dependent control flow on SGX), not just generic
       constant-time rules.
-- [ ] The technology matches the rules/01 threat model: the excluded party is
+- [ ] The technology matches the [rules/01](01-threat-model-and-selection.md) threat model: the excluded party is
       actually outside the chosen technology's TCB, and its attestation is verified
-      per rules/03.
+      per [rules/03](03-remote-attestation.md).

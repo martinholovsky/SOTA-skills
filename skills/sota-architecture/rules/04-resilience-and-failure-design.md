@@ -29,7 +29,7 @@ BAD: A and B each configured 5000ms while the edge gives up at 1000ms.
 
 ## 2. Retries: bounded, jittered, idempotent-only
 
-**Rule:** Retry only idempotent operations (rules/03 §2), only on retryable
+**Rule:** Retry only idempotent operations ([rules/03](03-distributed-systems-and-events.md) §2), only on retryable
 errors (timeouts, 503, connection reset — never 400/401/422), with **bounded
 attempts** (2–3), **exponential backoff + full jitter**, and a **retry budget**
 (e.g., retries ≤ 10% of requests) so retries can't melt a struggling dependency.
@@ -82,7 +82,7 @@ GOOD: checkout pool: 60, reports pool: 10, admin: 5 — reports saturate alone.
 
 **Rule:** Apply bulkheads at infra level too: critical and batch workloads on
 separate node pools / autoscaling groups; noisy-neighbor isolation for
-multi-tenant systems (rules/05 §7).
+multi-tenant systems ([rules/05](05-scalability-state-and-data.md) §7).
 
 **Rule:** Write down each backing service's connection ceiling and what happens at it.
 For every database, cache, broker and upstream API, the service's docs state the most
@@ -192,7 +192,7 @@ and rollback are in place. Verify SLOs hold and fallbacks fire. Untested
 fallbacks fail when needed; this is the most reliable finding in chaos history.
 
 **Rule:** Start with game days (hypothesis → inject → observe → fix), automate
-the validated experiments into a recurring suite (fitness functions, rules/01
+the validated experiments into a recurring suite (fitness functions, [rules/01](01-architecture-styles-and-decisions.md)
 §5). Every incident's failure mode becomes a permanent chaos experiment.
 
 **Rule:** Define SLOs (availability, latency) per critical user journey with
@@ -219,7 +219,7 @@ single-flight).
 
 **Rule:** Rate-limit at every trust boundary: per-client at the public edge
 (token bucket, keyed by API key/user, with `429 + Retry-After` and documented
-limits), per-tenant inside pooled systems (rules/05 §7), and *outbound* toward
+limits), per-tenant inside pooled systems ([rules/05](05-scalability-state-and-data.md) §7), and *outbound* toward
 third parties whose limits you must respect — a client-side limiter beats
 discovering their limit via a ban.
 

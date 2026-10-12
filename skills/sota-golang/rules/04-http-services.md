@@ -201,7 +201,7 @@ func (w *statusWriter) WriteHeader(c int) { w.status = c; w.ResponseWriter.Write
   handler (HIGH). Attach the check to the route or route group, or have the outer layer refuse
   a path that `path.Clean` would change (a trailing `/` aside). Never decide on `r.URL.RawPath`
   or `EscapedPath()`: `/%61dmin/x` has `Path` `/admin/x` but keeps the escape in `RawPath`.
-  Cross-language rule: sota-code-security rules/05 ("one path, one meaning"). OWASP: Go-SCP
+  Cross-language rule: [sota-code-security rules/05](../../sota-code-security/rules/05-web-security.md) ("one path, one meaning"). OWASP: Go-SCP
   (sanitization).
 - Wrapper `ResponseWriter`s hide optional interfaces (`http.Flusher`,
   `http.Hijacker`); implement passthroughs or use
@@ -315,7 +315,7 @@ that sets `nosniff` and writes `  <script>…` is served as `text/html`.
 - `http.ServeFile`/`ServeContent` pick the type from the file **extension** first and sniff
   only if that is unknown — a user upload stored under its original `.html`/`.svg` name is
   served as markup. Store uploads under server-chosen names and set the type (and
-  `Content-Disposition: attachment`) yourself; sota-code-security `rules/21` §1.
+  `Content-Disposition: attachment`) yourself; [sota-code-security `rules/21`](../../sota-code-security/rules/21-file-uploads.md) §1.
 OWASP: Go-SCP (cross site scripting).
 
 ## 5. Structured logging with slog
@@ -372,7 +372,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
 
 ## Audit checklist
 
-- [ ] **Invalid UTF-8 stored or forwarded (rules/05 §1) — MEDIUM, HIGH when the text feeds
+- [ ] **Invalid UTF-8 stored or forwarded ([rules/05](05-security.md) §1) — MEDIUM, HIGH when the text feeds
       another parser** — files that turn a body into a string and never validate it:
       `grep -rlE 'string\((body|b|buf|data|raw)\)|io\.ReadAll' --include='*.go' . | while IFS= read -r f; do grep -qE 'utf8\.(Valid|ValidString)' "$f" || echo "$f"; done`
       (`utf8.ValidString(string([]byte{0x63, 0xff}))` is `false`, measured on go1.27.1)
@@ -412,7 +412,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       mutating route is behind its `Handler`) ;
       `grep -rnE 'AddInsecureBypassPattern|AddTrustedOrigin' --include='*.go' .` (every hit is
       a widened exception — MEDIUM unless justified) ; `gosec -include=G121 ./...`
-- [ ] **JSON duplicate keys on privilege-bearing input (`rules/05` §1) — HIGH when a proxy,
+- [ ] **JSON duplicate keys on privilege-bearing input ([`rules/05`](05-security.md) §1) — HIGH when a proxy,
       validator or signer parses the same body first** —
       `grep -rlE '"encoding/json"' --include='*.go' . | xargs -r grep -lE 'json\.(Unmarshal|NewDecoder)\(' | xargs -r grep -nHE '^[[:space:]]*(Role|Roles|Admin|IsAdmin|Scopes?|Permissions?|Tenant(ID)?|Owner(ID)?|UserID|Price|Amount)[[:space:]].*json:"'`
       (v1 decoder in a file declaring a privilege field; v1 keeps the last duplicate and

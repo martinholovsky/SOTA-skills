@@ -111,11 +111,11 @@ Panic only for **bugs** — violated invariants, impossible states — never for
 bad input, missing files, network failure, or anything an attacker controls.
 
 - Servers: a panic in a handler must not kill the process, and a reachable
-  panic is a DoS primitive (rules/05 §4). Catch at the task boundary —
+  panic is a DoS primitive ([rules/05](05-security-supply-chain.md) §4). Catch at the task boundary —
   `tokio::spawn` already isolates panics into `JoinError`; check
   `JoinError::is_panic()` and log. Axum/tower: `CatchPanicLayer`. But treat
   every caught panic as a bug to fix, not a handled case.
-- `panic = "abort"` in release profiles (rules/06) means no unwinding: no
+- `panic = "abort"` in release profiles ([rules/06](06-performance.md)) means no unwinding: no
   `catch_unwind`, panics kill the process. Decide deliberately for servers —
   abort+supervisor-restart is a valid stance, but then panic-freedom of
   handlers is load-bearing.
@@ -137,7 +137,7 @@ bad input, missing files, network failure, or anything an attacker controls.
 - **`assert!` is a panic; `debug_assert!` is not a check.** `assert!`/`assert_eq!`
   on an input-derived condition is the same DoS as `panic!`. `debug_assert!`
   compiles out wherever `debug-assertions` is off: the release profile's default,
-  and any profile or `RUSTFLAGS` override that turns it off (rules/07 §4a).
+  and any profile or `RUSTFLAGS` override that turns it off ([rules/07](07-tooling-ci.md) §4a).
   Measured: a `debug_assert!` that fired under `cargo test` was silent under
   `cargo test --release`. Never make it the only guard of a condition an attacker
   can reach — return an error. (ANSSI `LANG-LIMIT-PANIC-SRC`)
@@ -145,7 +145,7 @@ bad input, missing files, network failure, or anything an attacker controls.
   it. Decide policy once: propagate (`lock().expect("not poisoned: …")`) or
   recover (`unwrap_or_else(PoisonError::into_inner)`) — document which.
 - Allocation failure aborts; for memory-bound parsing of untrusted sizes use
-  `try_reserve` (rules/05 §6).
+  `try_reserve` ([rules/05](05-security-supply-chain.md) §6).
 
 ## 6. Option/Result flow patterns
 
@@ -165,7 +165,7 @@ bad input, missing files, network failure, or anything an attacker controls.
 
 ### 6a. Don't unwrap an Option back into a sentinel
 
-Rust makes the in-band sentinel (`sota-architecture` rules/02 §8a) hard to write by
+Rust makes the in-band sentinel ([`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a) hard to write by
 accident: `str::find` and `Iterator::position` return `Option<usize>`, not `-1`
 (verified, rustc 1.97.1). The way it gets reintroduced is at the *seam*:
 
@@ -249,7 +249,7 @@ fn main() -> ExitCode {
 - Services: render error chain into structured logs
   (`tracing::error!(error = ?err)` or the `err` field shorthand), map to a
   client-safe status — never leak internal error text to HTTP responses
-  (info disclosure, rules/05).
+  (info disclosure, [rules/05](05-security-supply-chain.md)).
 - Install a panic hook that logs through your structured logger
   (`std::panic::set_hook`) so panics in production aren't lost to stderr.
 

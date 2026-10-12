@@ -50,7 +50,7 @@ are mechanical — follow them. Reference:
   spin unbounded concurrent work — bound it (`SemaphoreSlim`, channel,
   `Parallel` options).
 - `ValueTask` for very hot, often-synchronous paths — but don't await a
-  `ValueTask` twice or store it (`rules/05`).
+  `ValueTask` twice or store it ([`rules/05`](05-performance.md)).
 - **Request-scoped ambient state (tenant, user, culture, log scope).** Pool threads carry
   thread-local state into whichever request runs on them next. Measured on .NET 10 Kestrel: after
   a request set a `[ThreadStatic]` field and did not clear it, 9 of 20 later requests read

@@ -3,7 +3,7 @@
 C++ gives you control over memory layout and dispatch that few languages do —
 which means the wins come from *data layout and allocation*, not micro-tweaks.
 Measure first: optimize against a profiler and a benchmark, never a hunch.
-Cross-reference `sota-performance` for the discipline (latency budgets,
+Cross-reference [`sota-performance`](../../sota-performance/SKILL.md) for the discipline (latency budgets,
 regression gates); this file is the C/C++ specifics.
 
 ## 1. Measure before optimizing
@@ -15,7 +15,7 @@ regression gates); this file is the C/C++ specifics.
 - Benchmark with a real harness — **Google Benchmark** — not `chrono` around a
   loop. Beware the optimizer deleting your benchmark: use
   `benchmark::DoNotOptimize`/`ClobberMemory`. Pin frequency/affinity; report
-  distribution, not a single number (see `sota-performance`).
+  distribution, not a single number (see [`sota-performance`](../../sota-performance/SKILL.md)).
 
 ## 2. Allocation is the usual bottleneck
 
@@ -35,7 +35,7 @@ regression gates); this file is the C/C++ specifics.
 ## 3. Copy elision and move
 
 - Return by value and rely on (N)RVO — do **not** `return std::move(local)`,
-  which disables NRVO (`rules/01`). Guaranteed copy elision (C++17) makes
+  which disables NRVO ([`rules/01`](01-idioms.md)). Guaranteed copy elision (C++17) makes
   returning prvalues free.
 - Make types cheaply movable (`noexcept` moves) so containers move instead of
   copy on growth.
@@ -48,7 +48,7 @@ regression gates); this file is the C/C++ specifics.
 - Structure-of-arrays (SoA) over array-of-structures (AoS) when you iterate one
   field across many elements — packs the hot field into cache lines.
 - Avoid false sharing: align/pad per-thread hot data to
-  `std::hardware_destructive_interference_size` (`rules/05`). Keep
+  `std::hardware_destructive_interference_size` ([`rules/05`](05-concurrency.md)). Keep
   frequently-accessed fields together; cold fields elsewhere.
 - Branch-predictable, vectorizable loops beat clever branchy code; `[[likely]]`/
   `[[unlikely]]` only with profile evidence.

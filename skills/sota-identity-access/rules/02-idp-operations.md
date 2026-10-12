@@ -9,7 +9,7 @@ as a **tier-0 asset** (HA, backup, restricted admin plane).
 Applies to self-hosted IdPs — **Kanidm** (Rust, OIDC/OAuth2, WebAuthn), **Keycloak**
 (CNCF Incubating, OIDC/SAML), **Authentik** (goauthentik.io, OIDC/SAML/SCIM),
 **Zitadel** (Go, OIDC/SAML, multi-tenant) — and the same principles map to **Entra ID**
-and **Okta**. Protocol-level token rules are rules/01; this file is operations.
+and **Okta**. Protocol-level token rules are [rules/01](01-federation-protocols.md); this file is operations.
 
 ## 1. The IdP is tier-0
 
@@ -21,12 +21,12 @@ of your access:
   lifetimes during incident) and a tested failover.
 - **Backup of the identity store**: the user/group/credential database and the signing
   keys are crown jewels. Back them up encrypted, test restore, and store key material
-  per **sota-secrets-management**. For Kanidm, back up the database and the
+  per **[sota-secrets-management](../../sota-secrets-management/SKILL.md)**. For Kanidm, back up the database and the
   server's key material; for Keycloak/Zitadel/Authentik, back up the backing Postgres
   *and* the realm/instance config and signing keys.
 - **Admin-plane isolation**: the IdP admin console is not a normal app. Restrict it by
-  network (admin VPN / identity-aware proxy — **sota-network-security**), require
-  phishing-resistant MFA, separate admin accounts (rules/05), and audit-log every admin
+  network (admin VPN / identity-aware proxy — **[sota-network-security](../../sota-network-security/SKILL.md)**), require
+  phishing-resistant MFA, separate admin accounts ([rules/05](05-privileged-workload.md)), and audit-log every admin
   mutation immutably.
 - **Patch cadence**: an IdP CVE is critical-by-default. Track the vendor's advisories;
   the federation libraries (SAML, JWT) are exactly where signature-bypass bugs land.
@@ -39,8 +39,8 @@ of your access:
 - **A hosted IdP or MFA service is a tier-0 supplier.** One provider sits in the login
   path of all its customers, so a breach there can bypass MFA for every tenant at once.
   Assess it like your own tier-0: its attestations (SOC 2 / ISO 27001 evidence, see
-  **sota-privacy-compliance**), its support staff's access to your tenant, its breach
-  notification terms, and your fallback. The break-glass path (rules/05 §3) must not
+  **[sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md)**), its support staff's access to your tenant, its breach
+  notification terms, and your fallback. The break-glass path ([rules/05](05-privileged-workload.md) §3) must not
   depend on it, and you must be able to re-key or cut its federation trust quickly.
   OWASP: Multifactor Authentication, Authentication cheat sheets.
 
@@ -48,7 +48,7 @@ of your access:
 
 Each application is a distinct client with the narrowest config that works:
 
-- **One client per app**, never shared. Exact redirect URIs only (rules/01 §4).
+- **One client per app**, never shared. Exact redirect URIs only ([rules/01](01-federation-protocols.md) §4).
 - **Scopes/claims minimal**: grant only the scopes the app needs; do not enable the
   `groups`/`profile`/`email` claims for a client that does not consume them.
 - **Public vs confidential**: SPAs and native apps are public clients (no secret) and
@@ -57,14 +57,14 @@ Each application is a distinct client with the narrowest config that works:
 - **Dynamic Client Registration** (RFC 7591), if enabled, must be authenticated and
   policy-gated — open DCR lets anyone mint a client. RFC 7591 Sec. 5 says the AS MUST
   treat every metadata value as self-asserted unless a software statement vouches for
-  it. So validate on registration: redirect URIs under rules/01 §4, and `logo_uri`,
+  it. So validate on registration: redirect URIs under [rules/01](01-federation-protocols.md) §4, and `logo_uri`,
   `client_uri`, `policy_uri` and `tos_uri` on the same host as the redirect URIs (the
   RFC's SHOULD). Every URL the AS fetches (`jwks_uri`, `logo_uri`, `sector_identifier_uri`)
-  is attacker input and goes through the SSRF rules (**sota-code-security** rules/01 §5).
+  is attacker input and goes through the SSRF rules (**[sota-code-security** rules/01](../../sota-code-security/rules/01-input-injection.md) §5).
   Mark such clients untrusted: always show consent (§7) with a warning that the app is
   unverified.
 - **Client ID Metadata Documents** (`draft-ietf-oauth-client-id-metadata-document`, an
-  Internet-Draft as of 2026-09-26; the MCP authorization spec's SHOULD path, rules/01 §5.1)
+  Internet-Draft as of 2026-09-26; the MCP authorization spec's SHOULD path, [rules/01](01-federation-protocols.md) §5.1)
   replace registration with a URL: the `client_id` is an HTTPS URL the AS fetches. That
   fetch is the AS making an outbound request to an attacker-chosen URL, so the draft's
   rules apply: MUST NOT fetch the document, or any URL inside it, when it resolves to a
@@ -76,7 +76,7 @@ Each application is a distinct client with the narrowest config that works:
   share a namespace (a client-credentials token's `sub` is the client id, RFC 9068), the
   AS SHOULD NOT let a client choose its `client_id` or any claim that could equal a real
   user's `sub` (RFC 9700 Sec. 4.15.1). Generate client ids, or give the RS another way to
-  tell the two token kinds apart (rules/01 §5.1).
+  tell the two token kinds apart ([rules/01](01-federation-protocols.md) §5.1).
 - **Allow only the `response_mode` each client needs.** Pin it per client (for example
   `query` or `form_post` for a code flow), or carry it inside PAR/JAR so it cannot be
   rewritten. An open choice lets an attacker pick a delivery mode the client never
@@ -122,7 +122,7 @@ public client can keep.
   re-auth. This is the RFC 9700 baseline for public clients (rotate **or**
   sender-constrain).
 - **Sender-constrain** refresh/access tokens with DPoP (RFC 9449) or mTLS (RFC 8705) for
-  high value (rules/01 §5) so a stolen token is unusable.
+  high value ([rules/01](01-federation-protocols.md) §5) so a stolen token is unusable.
 - **No non-expiring tokens.** "Offline" refresh tokens still get an absolute max lifetime
   and idle expiry; long-lived non-rotating refresh tokens are a High finding.
 - **Revocation** (RFC 7009) endpoint available and used on logout/credential-change;
@@ -134,8 +134,8 @@ public client can keep.
   gives the issuer a standard design. The
   token carries `status.status_list` with an `idx` and a `uri`; the verifier fetches the
   signed Status List Token from that URI, caches it for the list's `ttl`, and reads the bit
-  at `idx`. The URI is attacker-influenced input, so allowlist it (**sota-code-security**
-  rules/17 covers the verifier side).
+  at `idx`. The URI is attacker-influenced input, so allowlist it (**[sota-code-security**
+  rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md) covers the verifier side).
 - **Check online for the critical calls.** A cached status list or a local signature check
   cannot see a revocation newer than the cache. Validate online (introspection, or a fresh
   status fetch) for payments, admin actions, privilege and credential changes. Keep
@@ -176,7 +176,7 @@ refresh_token_lifetime  = "never"
   private key never leaves the IdP. Avoid symmetric (`HS256`) signing across trust
   boundaries.
 - This is the IdP-operations side; the credential-rotation mechanics
-  (overlap windows, JWKS publication) are also in **sota-secrets-management** rules/05.
+  (overlap windows, JWKS publication) are also in **[sota-secrets-management** rules/05](../../sota-secrets-management/rules/05-credential-types.md).
 - Audit: a signing key that has never rotated, or a JWKS that publishes only one key with
   no rotation history, is a finding (no clean path to recover from key compromise).
 
@@ -187,21 +187,21 @@ refresh_token_lifetime  = "never"
   shorter caps.
 - **Session fixation**: the IdP must issue a fresh session identifier on successful
   authentication and not accept a pre-login session id. (The app-side cookie handling for
-  this is **sota-code-security** rules/17.)
+  this is **[sota-code-security** rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md).)
 - **Single Logout (SLO) / back-channel logout**: SSO means one credential opens many RPs;
   logout or credential-change must propagate. Configure **back-channel logout** (OIDC
   Back-Channel Logout: the IdP POSTs a logout token to each RP) so a sign-out or
   forced revocation actually ends sessions everywhere. Front-channel-only logout is
   unreliable (depends on browser). SAML SLO has the same goal and the same fragility.
 - On credential change / account disable, *kill live sessions* — pair with CAEP/SSF
-  (rules/06) for near-real-time propagation rather than waiting for token expiry.
+  ([rules/06](06-mfa-federation-assurance.md)) for near-real-time propagation rather than waiting for token expiry.
 - **The RP validates every logout token before it acts on one.** A back-channel endpoint
   that ends sessions on any well-formed POST lets anyone log users out, and one that
   accepts an ID token here has confused two JWT kinds. OIDC Back-Channel Logout 1.0
   requires validating the signature, `iss`, `aud`, `iat` and `exp` (both REQUIRED claims),
   a `sub` or `sid`, an `events` object holding the member
   `http://schemas.openid.net/event/backchannel-logout`, and the absence of `nonce`.
-  Also pin `typ` = `logout+jwt` (rules/01 §2), refuse a long `exp` (the spec encourages at
+  Also pin `typ` = `logout+jwt` ([rules/01](01-federation-protocols.md) §2), refuse a long `exp` (the spec encourages at
   most two minutes ahead), and optionally drop a repeated `jti`.
 - **The OP must not log a user out just because a link says so.** OIDC RP-Initiated
   Logout 1.0: when the request has no `id_token_hint`, or the hint does not match the
@@ -221,7 +221,7 @@ refresh_token_lifetime  = "never"
   show an informative consent screen: which client, which scopes, what data, revocable.
 - Consent is auditable and revocable by the user and by an admin; revoking consent
   revokes the associated tokens. For privacy/regulatory consent (purpose, retention) see
-  **sota-privacy-compliance**.
+  **[sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md)**.
 - Beware "consent phishing": a malicious OAuth app requesting broad scopes. Gate which
   clients may request sensitive scopes; admin-approve high-scope third-party apps.
 - **No silent consent for a client you cannot authenticate.** Skipping the prompt is only
@@ -232,9 +232,9 @@ refresh_token_lifetime  = "never"
   authenticating the client or otherwise making sure it is the original. OWASP: ASVS 5.0
   V10.7.1.
 - **SaaS you adopt is an identity estate too.** For every SaaS tenant: name its admins
-  (few, each on a separate admin identity, rules/05 §1). Inventory the connected apps
+  (few, each on a separate admin identity, [rules/05](05-privileged-workload.md) §1). Inventory the connected apps
   and integrations allowed to read or share its data, with the scope and owner of each.
-  Review that list on the access-review cadence (rules/04 §4). Treat tenant
+  Review that list on the access-review cadence ([rules/04](04-lifecycle-provisioning.md) §4). Treat tenant
   customisations (scripts, webhooks, custom apps, workflow rules that call out) as code:
   they get a security review and an owner before they run. OWASP: Secure Cloud
   Architecture cheat sheet.
@@ -243,12 +243,12 @@ refresh_token_lifetime  = "never"
 
 - An **identity broker** (Keycloak/Authentik/Zitadel brokering an upstream IdP, or
   Kanidm fronting OIDC) federates multiple sources. Each upstream trust is a security
-  boundary: validate upstream tokens fully (rules/01 §3), pin the upstream issuer, and
+  boundary: validate upstream tokens fully ([rules/01](01-federation-protocols.md) §3), pin the upstream issuer, and
   **map external identities to internal accounts deterministically** — link on a verified
   immutable identifier (verified email + `sub`), never on a mutable display field, to
-  avoid account-takeover via attribute collision (account-linking attacks, rules/06).
+  avoid account-takeover via attribute collision (account-linking attacks, [rules/06](06-mfa-federation-assurance.md)).
 - Do not blindly trust upstream group/role claims — re-map them through your own
-  authorization model (rules/03); an upstream that can assert arbitrary groups must not be
+  authorization model ([rules/03](03-authorization-models.md)); an upstream that can assert arbitrary groups must not be
   able to grant your privileged roles.
 - **Disabled must mean disabled — test it.** After disabling an upstream IdP, broker
   link, or client, verify its authentication path actually fails closed. Keycloak

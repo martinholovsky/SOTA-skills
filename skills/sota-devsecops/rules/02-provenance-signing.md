@@ -21,18 +21,18 @@ SLSA v1.2 (approved Nov 2025; Build-track levels unchanged since v1.0), practica
   actively maintained** (its README: existing provenance stays valid and the reusable
   workflows continue to work) — prefer attestations + a reusable workflow for new setups.
 - L4-style aspirations (two-person review, hermetic builds) live in branch protection
-  (rules/01 §1.7) and hermeticity (rules/04 §4.1) — don't wait for a badge to do them.
+  ([rules/01](01-pipeline-security.md) §1.7) and hermeticity ([rules/04](04-build-containers.md) §4.1) — don't wait for a badge to do them.
   v1.2 also promotes the **Source track** to approved status (SOURCE_LEVEL_1–3: history
   retention, continuous branch-protection enforcement, source VSAs) — it formalizes what
-  rules/01 §1.7 already requires; cite it when an org wants a named target.
+  [rules/01](01-pipeline-security.md) §1.7 already requires; cite it when an org wants a named target.
 - **Valid provenance attests build origin, not code safety.** The Mini Shai-Hulud worm
   wave (2026, CVE-2026-45321) published 84 malicious versions across 42 npm packages in
   under six minutes — all carrying *valid* SLSA Build L3 attestations, because a
   `pull_request_target` + cache-poisoning chain ran attacker code in the trusted release
   workflow and lifted its OIDC token from runner process memory. Provenance verification
-  only holds when layered on the controls it assumes (rules/01 §1.4 no
+  only holds when layered on the controls it assumes ([rules/01](01-pipeline-security.md) §1.4 no
   `pull_request_target` with secrets, §1.6 cache isolation in release workflows) and the
-  rules/03 §3.7 cooldown — never treat it as a malware gate.
+  [rules/03](03-dependencies.md) §3.7 cooldown — never treat it as a malware gate.
 - Audit framing: "no provenance" on deployed artifacts is Medium alone, High when combined
   with mutable tags or shared registry push creds (because then nothing distinguishes a
   legit artifact from an injected one).
@@ -112,7 +112,7 @@ cosign verify --certificate-identity-regexp '.*' ...
   tamper-evidence.
 - **Cosign v3** (Oct 2025) made the standardized Sigstore bundle format, `--trusted-root`
   verification, and signing-config defaults; legacy flags are deprecated and slated for
-  removal in v4. Pin the cosign version in CI (rules/04 §4.1) and re-test the *verify*
+  removal in v4. Pin the cosign version in CI ([rules/04](04-build-containers.md) §4.1) and re-test the *verify*
   side when bumping it — a cosign major upgrade can change what your verifiers accept.
 
 ### 2.3.1 What an attestation actually is (for debugging and policy-writing)
@@ -152,13 +152,13 @@ identity-pinning rules.
 Provenance is one predicate. Attach the others your policy will consume:
 
 - **SBOM attestation** (`cosign attest --type cyclonedx --predicate sbom.cdx.json
-  ghcr.io/...@digest`) — binds the SBOM to the exact artifact (rules/03 §3.5).
+  ghcr.io/...@digest`) — binds the SBOM to the exact artifact ([rules/03](03-dependencies.md) §3.5).
 - **Vulnerability scan attestation** — scan result at build time, with scanner + DB
   version, so admission can require "scanned within N days".
 - **Test/verification attestations** for regulated pipelines.
 
 Rules: one predicate per attestation; subject = artifact digest; verify predicates in
-policy (Kyverno `ImageValidatingPolicy` `attestations`, OPA against decoded DSSE envelopes — rules/07
+policy (Kyverno `ImageValidatingPolicy` `attestations`, OPA against decoded DSSE envelopes — [rules/07](07-runtime-ops.md)
 §7.1). An attestation nobody checks is Medium audit noise; say so honestly.
 
 ## 2.5 Verification at deploy time — closing the loop
@@ -168,7 +168,7 @@ that consumer fails closed.** Wire at least one of:
 
 1. **Admission control** (best): Kyverno `ImageValidatingPolicy` / Sigstore policy-controller
    `ClusterImagePolicy` requiring signature by your release workflow identity + SLSA
-   provenance predicate, on all prod namespaces (details in rules/07).
+   provenance predicate, on all prod namespaces (details in [rules/07](07-runtime-ops.md)).
 2. **CD-time verify**: `cosign verify` / `gh attestation verify` as a blocking step before
    `kubectl apply` / Argo sync — weaker (bypassable by direct cluster access) but cheap.
 3. **Promotion-time verify**: verifying digest + provenance when copying from staging
@@ -184,7 +184,7 @@ wildcard identity = High (verifies "signed by anyone via GitHub").
 | slsa-github-generator (unmaintained; existing uses) | `slsa-verifier verify-image --source-uri github.com/myorg/app --source-tag v1.2.3` | source repo + tag/branch; builder ID checked for you |
 | GitHub artifact attestations | `gh attestation verify --owner myorg --signer-workflow myorg/app/.github/workflows/release.yml` | owner AND signer workflow (owner alone admits every repo in the org) |
 | cosign keyless | `cosign verify --certificate-identity <exact> --certificate-oidc-issuer <exact>` | full identity URL incl. ref |
-| Kyverno admission | `ImageValidatingPolicy` `attestors[].cosign.keyless.identities` + `attestations[].intoto` | subject + issuer + predicateType (rules/07 §7.1) |
+| Kyverno admission | `ImageValidatingPolicy` `attestors[].cosign.keyless.identities` + `attestations[].intoto` | subject + issuer + predicateType ([rules/07](07-runtime-ops.md) §7.1) |
 | npm provenance | `npm audit signatures` | registry-attested build provenance for installed packages |
 
 Whichever pair you choose, write the verification command into the repo (Make target,
@@ -211,7 +211,7 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   exchanges an OIDC token for a short-lived crates.io token through
   `rust-lang/crates-io-auth-action`, which needs `id-token: write`, so no `CARGO_REGISTRY_TOKEN`
   secret is stored (blog.rust-lang.org, 2025-07-11). A scoped API token is the fallback
-  for CI systems it does not support. Detail: `sota-rust` rules/07.
+  for CI systems it does not support. Detail: [`sota-rust` rules/07](../../sota-rust/rules/07-tooling-ci.md).
 - **Registry credentials on developer machines**: stay logged out of the registry CLI day
   to day (`npm logout` invalidates the token server-side), so an install-time worm finds
   nothing in `~/.npmrc` to steal. When a token is needed, make it an npm granular token
@@ -221,7 +221,7 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   publishing yet gets a **"Read and write (stage only)"** token (since 2026-09-18), which
   stages a version for a maintainer to approve with 2FA. (OWASP: NPM Security cheat sheet)
 - **Every maintainer who can publish uses 2FA that covers writes, and keeps recovery codes
-  offline.** The SCM org's 2FA requirement (`rules/12` §12.2) does not reach registry
+  offline.** The SCM org's 2FA requirement ([`rules/12`](12-scm-ci-platform-governance.md) §12.2) does not reach registry
   accounts. On npm, `npm profile enable-2fa auth-and-writes` asks for the second factor on
   publishes and settings changes, where `auth-only` protects login alone. After trusted
   publishing is set up, npm's docs recommend the package setting "Require two-factor
@@ -289,7 +289,7 @@ read it — unnecessary in jobs that never push.
 - Record `digest → source SHA → workflow run URL` in your deploy metadata (annotations on
   k8s objects, deploy events to your observability stack). During an incident, "what
   exactly is running and which commit built it" must be a 30-second lookup, not forensics
-  (rules/07 §7.3).
+  ([rules/07](07-runtime-ops.md) §7.3).
 - Build IDs in artifacts (ldflags/version endpoints) should expose the source SHA — a
   binary that can't say where it came from extends every incident.
 

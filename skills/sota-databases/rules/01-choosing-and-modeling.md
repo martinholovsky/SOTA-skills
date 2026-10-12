@@ -342,7 +342,7 @@ multi-tenant system: HIGH.
   constant applied uniformly across a set of fields with *different* domains is the
   common shape and the unrecoverable one: on a field where the producer also emits
   that value legitimately, a stored sentinel is ambiguous forever. Producer-side
-  detail: `sota-python` rules/02 §2a.
+  detail: [`sota-python` rules/02](../../sota-python/rules/02-typing-correctness.md) §2a.
 
 ## Audit checklist
 

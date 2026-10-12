@@ -1,8 +1,8 @@
 # 04 — Security: CERT/MISRA, banned APIs, injection, hardened builds
 
 Every byte from network, file, env, argv, IPC, or another process is untrusted
-until validated. In C/C++ the memory-safety classes (`rules/02`) and UB
-(`rules/03`) are themselves the dominant vulnerability surface; this file adds
+until validated. In C/C++ the memory-safety classes ([`rules/02`](02-memory-safety.md)) and UB
+([`rules/03`](03-undefined-behavior.md)) are themselves the dominant vulnerability surface; this file adds
 the input-handling, API, and build-hardening controls. Standards:
 [SEI CERT C](https://wiki.sei.cmu.edu/confluence/display/c) /
 [CERT C++](https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/),
@@ -32,10 +32,10 @@ Replace on sight (CERT STR/FIO; MISRA):
 - Validate once, at the trust boundary, into a typed/bounded value; interior
   code trusts its types. Allowlist (enums, ranges, lengths), not denylist.
 - Bounds- and overflow-check every length/count/offset from input *before*
-  using it to allocate, index, or copy (`rules/03` §2). This is the single
+  using it to allocate, index, or copy ([`rules/03`](03-undefined-behavior.md) §2). This is the single
   most important control against C/C++ RCE.
 - For binary parsers: never trust an embedded length field; cap it against the
-  remaining buffer. Fuzz the parser (`rules/06`).
+  remaining buffer. Fuzz the parser ([`rules/06`](06-build-tooling-ci.md)).
 - **`assert()` is compiled out by `-DNDEBUG`** — verified: a program whose
   `assert(x > 0)` aborted in a normal build printed `passed` when rebuilt with
   `-DNDEBUG`, which release presets set by default — CMake's
@@ -44,8 +44,8 @@ Replace on sight (CERT STR/FIO; MISRA):
   strips them. A bounds or validation check written as `assert`
   therefore does not exist in the shipped binary. Use an explicit `if` that
   returns/aborts, or a hardened contract macro that survives release flags (a C++26 `pre` is
-  not one: the build can set it to `ignore`, `rules/03` §7); keep
-  `assert` for impossible internal states. Class: `sota-code-security` rules/11 §4.
+  not one: the build can set it to `ignore`, [`rules/03`](03-undefined-behavior.md) §7); keep
+  `assert` for impossible internal states. Class: [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §4.
 - **Unsafe parsing of untrusted structured input (deserialization).** Never cast or
   `memcpy` a wire buffer straight into a struct: padding, alignment, endianness and every
   length field arrive attacker-controlled, and the cast is also a strict-aliasing violation.
@@ -61,7 +61,7 @@ Replace on sight (CERT STR/FIO; MISRA):
   answer: libxml2's own README (section "Security") states it is **not recommended for
   processing untrusted data**. It is maintained, so this is not an abandonment finding; it is a
   scope statement from upstream. Where the XML is attacker-controlled, parse it in a sandboxed
-  process (`sota-sandboxing`) or with a memory-safe parser, and record which in the review.
+  process ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)) or with a memory-safe parser, and record which in the review.
 - **Resource limits / DoS guards on every parser and decoder.** Cap recursion depth (a
   max depth on recursive-descent parsers, or stack exhaustion is one nested input away),
   element and attribute counts, total bytes allocated per message, and the decompressed size
@@ -83,7 +83,7 @@ Replace on sight (CERT STR/FIO; MISRA):
 - **Command injection**: don't build shell strings. Use `posix_spawn`/`execve`
   with an explicit argument vector and no shell; never `system("cmd " + input)`.
 - **SQL/other injection**: parameterized queries / prepared statements only
-  (the DB client API), never string-concatenated SQL — see `sota-databases`.
+  (the DB client API), never string-concatenated SQL — see [`sota-databases`](../../sota-databases/SKILL.md).
   In the C client APIs the unsafe call is the one that takes a whole statement
   string: `sqlite3_exec` (a convenience wrapper that runs a string), libpq
   `PQexec`, MySQL `mysql_query`/`mysql_real_query`. The safe forms bind values
@@ -101,7 +101,7 @@ Replace on sight (CERT STR/FIO; MISRA):
   with a small expression grammar you own that evaluates only the operators you list. If a
   third-party script really must run, an embedded interpreter is **not a security boundary**: it
   shares your address space, so one interpreter bug is memory corruption in your process. Run it
-  in a separate sandboxed process (`sota-sandboxing`). Lua specifics, read in the Lua sources:
+  in a separate sandboxed process ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)). Lua specifics, read in the Lua sources:
   `luaL_openlibs` opens `io`, `os` (`os.execute`) and `package` (native-library loading), so open
   only the libraries a script needs. A NULL load mode means `"bt"`, which accepts precompiled
   binary chunks, and the manual warns that Lua "does not check the consistency of binary chunks"
@@ -135,7 +135,7 @@ Replace on sight (CERT STR/FIO; MISRA):
     guarantee. Rewrite the check in code instead. OWASP: Input Validation cheat sheet;
     OWASP Proactive Controls 2024 C3; ASVS 5.0 V1.2.9; OWASP Go-SCP (validation).
 - **SSRF: outbound requests to a caller-influenced destination** (policy:
-  `sota-code-security` rules/01 §5; this is the libcurl idiom). Best: accept a host key or ID
+  [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §5; this is the libcurl idiom). Best: accept a host key or ID
   and look the URL up in your own allowlist, never forward a caller URL. If a URL must be
   taken, parse it once with the URL API curl itself uses (`curl_url_set` →
   `curl_url_get(..., CURLUPART_HOST, ...)`, hand the same `CURLU*` over via `CURLOPT_CURLU`)
@@ -165,8 +165,8 @@ Replace on sight (CERT STR/FIO; MISRA):
   `std::filesystem::weakly_canonical`/`realpath` and verify the result stays
   under an allowed root; prefer `openat`/`O_NOFOLLOW` and operate on fds to
   avoid check-then-use races on the path.
-- **Cookies the application sets itself.** The session cookie is covered in `sota-code-security`
-  rules/17. This bullet is for every other cookie. Defaults, read in each framework's source:
+- **Cookies the application sets itself.** The session cookie is covered in [`sota-code-security`
+  rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md). This bullet is for every other cookie. Defaults, read in each framework's source:
   Drogon's `drogon::Cookie` (sent with `resp->addCookie(key, value)` or `addCookie(cookie)`)
   starts with `HttpOnly` on and `Secure` off, and writes no `SameSite`, `Path` or `Domain` until
   you set them. Its `SameSite::kNone` adds `Secure` by itself. Crow's `CookieParser`
@@ -190,7 +190,7 @@ Replace on sight (CERT STR/FIO; MISRA):
   cryptographic and may be deterministic on some libs.
 - Don't roll your own crypto or protocols; use libsodium/OpenSSL/BoringSSL.
   Constant-time compare for secrets (`sodium_memcmp`, `CRYPTO_memcmp`), never
-  `memcmp` on a MAC/token (timing leak). See `sota-code-security` rules/04.
+  `memcmp` on a MAC/token (timing leak). See [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md).
 - **TLS / transport verification (client side).** OpenSSL: `SSL_CTX_set_verify` with
   `SSL_VERIFY_PEER`, the expected host set with `SSL_set1_host` (the chain alone does not
   check the name), and after the handshake require **both** `SSL_get_verify_result() ==
@@ -236,7 +236,7 @@ Then add every row whose situation applies:
 | executable / shared library | `-fPIE -pie` / `-fPIC -shared` (ASLR) |
 | x86_64 | `-fcf-protection=full -fzero-call-used-regs=used-gpr` (CET; register zeroing on return) |
 | AArch64 | `-mbranch-protection=standard -fzero-call-used-regs=used-gpr` (PAC/BTI) |
-| production code | `-fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero`: keep checks the optimiser would delete (`rules/03` §2) and zero uninitialised locals. Leave `-ftrivial-auto-var-init` out of MSan/Valgrind test builds, where it hides the uninitialised reads they exist to find |
+| production code | `-fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero`: keep checks the optimiser would delete ([`rules/03`](03-undefined-behavior.md) §2) and zero uninitialised locals. Leave `-ftrivial-auto-var-init` out of MSan/Valgrind test builds, where it hides the uninitialised reads they exist to find |
 | C code | `-Werror=implicit -Werror=incompatible-pointer-types -Werror=int-conversion` (obsolete C constructs become errors) |
 | multi-threaded C on glibc pthreads | `-fexceptions` (thread cancellation unwinds instead of `setjmp`/`longjmp`, so no unprotected function pointer lands on the stack) |
 
@@ -250,7 +250,7 @@ ld/lld flags that the macOS linker does not take, so their link step was not run
   Solaris `dldump`. glibc exports no `dldump`, so nothing on Linux reads it: do not count it as
   hardening. `-z nodlopen` set `NOOPEN` on a shared object but not on a PIE executable, where
   `FLAGS_1` showed only `PIE`. `-Wstrict-overflow` is documented by GCC as doing nothing, and
-  `=5` gave no warning on a textbook `x + 1 < x`, so it is not a detector (use the `rules/03` §2
+  `=5` gave no warning on a textbook `x + 1 < x`, so it is not a detector (use the [`rules/03`](03-undefined-behavior.md) §2
   helpers). `-Wtrampolines` did fire on a nested function whose address was taken.
 - **Stack canaries: `-strong` is the baseline, `-all` the exception.** GCC's manual:
   `-fstack-protector-strong` guards every function with a local array or a local whose address
@@ -272,7 +272,7 @@ ld/lld flags that the macOS linker does not take, so their link step was not run
   heuristic and internal checks, is for test and CI only. libc++ Hardening docs. A failed check
   traps by default; an override to the `observe` or `ignore` assertion semantic
   (`_LIBCPP_ASSERTION_SEMANTIC`) continues into UB, so it has no place in a shipped build
-  (`rules/02` checklist).
+  ([`rules/02`](02-memory-safety.md) checklist).
 - Add `-fsanitize=address,undefined` to the *debug/test* build (not prod).
   Consider `-fhardened` (GCC 14+) as a shorthand umbrella — verify your
   compiler version supports it; `gcc --help=hardened` lists what it turns on.
@@ -291,7 +291,7 @@ ld/lld flags that the macOS linker does not take, so their link step was not run
   C-Based Toolchain Hardening cheat sheet.
 - **Debug mode in production: C/C++ has no dev server, so the "debug mode" is the build.**
   An empty `CMAKE_BUILD_TYPE`, a `Debug` build, `-fsanitize=*` (bar a trap-mode UBSan subset,
-  `rules/06` §3) or `-D_GLIBCXX_DEBUG` must never
+  [`rules/06`](06-build-tooling-ci.md) §3) or `-D_GLIBCXX_DEBUG` must never
   produce the artifact you ship. Measured with CMake 4.4.3: with no `CMAKE_BUILD_TYPE` the
   compile line carried neither `-O` nor `-DNDEBUG`, so the shipped binary is unoptimised
   and every `assert` stays live. Check it at compile time, not by habit. The release pipeline
@@ -303,7 +303,7 @@ ld/lld flags that the macOS linker does not take, so their link step was not run
   `defined(__has_feature)` guard. Test both: for ASan and TSan Apple clang 21 set only the second,
   GCC 16.2 the first; a trap-mode UBSan build passed (measured). OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
 - Treat warnings as errors (`-Werror`) in CI; a clean `-Wall -Wextra` is the
-  floor, not the ceiling — also run a static analyzer (`rules/06`).
+  floor, not the ceiling — also run a static analyzer ([`rules/06`](06-build-tooling-ci.md)).
 
 ## 5a. Windows / MSVC binary hardening
 
@@ -336,10 +336,10 @@ OWASP: C-Based Toolchain Hardening cheat sheet.
 
 - Where feasible, move new untrusted-input-parsing code to a memory-safe
   language (Rust), or isolate the C/C++ parser (sandbox/seccomp, separate
-  process) — see `sota-sandboxing`. CISA/NSA and the OpenSSF now treat "C/C++
+  process) — see [`sota-sandboxing`](../../sota-sandboxing/SKILL.md). CISA/NSA and the OpenSSF now treat "C/C++
   for new attack-surface code" as a risk decision, not a default.
 - Use `std::span`/`std::string_view`/containers instead of pointer+length
-  everywhere they fit; enable libc++/libstdc++ hardened mode (`rules/02`).
+  everywhere they fit; enable libc++/libstdc++ hardened mode ([`rules/02`](02-memory-safety.md)).
 
 ## 7. Relinquishing privileges (POSIX daemons and setuid programs)
 
@@ -372,7 +372,7 @@ if (setuid(0) != -1)
 ```
 
 Where the process only needs one capability, prefer dropping to capabilities or
-a sandbox over running as root at all (`sota-sandboxing`).
+a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)).
 
 ## Audit checklist
 
@@ -489,7 +489,7 @@ a sandbox over running as root at all (`sota-sandboxing`).
       `grep -rnE '(^|[[:space:]])cmake[[:space:]]+[^|;&]*(-S|-B|\.\.)|-fsanitize=|_GLIBCXX_DEBUG' --include='Dockerfile*' --include='Containerfile*' --include='*.spec' --include='PKGBUILD' --include='rules' --include='*.yml' --include='*.yaml' . | grep -vE 'CMAKE_BUILD_TYPE=(Release|RelWithDebInfo|MinSizeRel)'`
       (a configure step with no release build type, or a debug-only flag, in packaging or CI; in
       CI only the shipped artifact's job counts, as test jobs rightly sanitize. A trap-mode UBSan
-      subset is exempt (`rules/06` §3). Then look for the `APP_RELEASE` `#error` guard in the source)
+      subset is exempt ([`rules/06`](06-build-tooling-ci.md) §3). Then look for the `APP_RELEASE` `#error` guard in the source)
 - [ ] **Secret wiped with plain `memset` (§4) — MEDIUM** —
       `grep -rniE 'memset[[:space:]]*\([[:space:]]*&?[A-Za-z_.>-]*(key|secret|passw|pwd|token|priv)' --include='*.c' --include='*.cc' --include='*.cpp' .`
       (the store may be elided: use `memset_explicit` or a platform wipe)

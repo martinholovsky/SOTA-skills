@@ -8,7 +8,7 @@ confidence with a minimum number of them.
 
 E2E exists to answer one question: **"is the system, wired together for real,
 able to do the things the business cannot survive losing?"** Not to re-verify
-logic (`rules/01` §1.3 — push cases down).
+logic ([`rules/01`](01-strategy-and-shape.md) §1.3 — push cases down).
 
 - **Enumerate the money paths and write them down**: sign-up → first value,
   log in, search → view, add to cart → pay, the one admin action that
@@ -23,7 +23,7 @@ logic (`rules/01` §1.3 — push cases down).
 - **Budget the suite, not just the test**: a wall-clock cap for the whole e2e
   stage (e.g. ≤10 min parallelized, pre-merge; anything beyond runs
   post-merge/nightly). A cap forces the prioritization conversation that
-  "just add another test" avoids. See `rules/07` §7.3.
+  "just add another test" avoids. See [`rules/07`](07-suite-health-and-ci.md) §7.3.
 
 ## 5.2 Selector strategy: roles and test ids, never structure
 
@@ -126,7 +126,7 @@ Use it surgically:
   — smaller diff surface, fewer moving pixels.
 - Stabilize or mask everything dynamic: freeze time/animations, fixed
   viewport and fonts, mask user data regions. Re-baseline only through
-  review, never auto-accept (`rules/02` §2.8 applies — a baseline update IS
+  review, never auto-accept ([`rules/02`](02-test-design-quality.md) §2.8 applies — a baseline update IS
   a contract change).
 - Cap the count. A thousand screenshot tests with a 2% false-positive rate
   is 20 human reviews per run; teams go blind and click approve. A handful
@@ -136,7 +136,7 @@ Use it surgically:
 ## 5.6 Flake economics and the deletion discipline
 
 E2E flakes are not a nuisance; they're a tax on every merge and a rot that
-destroys signal. The economics (full policy in `rules/07` §7.1):
+destroys signal. The economics (full policy in [`rules/07`](07-suite-health-and-ci.md) §7.1):
 
 - Do the math on false-failure rates: per-run suite flake probability is
   `1 - (1 - p)^n`. Twenty tests at p=1% each → ~18% of runs fail falsely;
@@ -156,10 +156,10 @@ destroys signal. The economics (full policy in `rules/07` §7.1):
 
 ## 5.7 E2E suite mechanics
 
-- **Independent and parallel-first** (`rules/02` §2.5): every test creates
+- **Independent and parallel-first** ([`rules/02`](02-test-design-quality.md) §2.5): every test creates
   its own user/tenant/data with unique identifiers; no test reads another's
   state; suite passes shuffled. Serial e2e suites become the CI long pole.
-- **Run against ephemeral or production-like environments** (`rules/04`
+- **Run against ephemeral or production-like environments** ([`rules/04`](04-integration-contract-system.md)
   §4.7) with seeded, version-controlled data — not against shared staging
   where someone else's demo data changes your test's world.
 - **Artifacts on failure are mandatory**: trace/video/screenshot + console +

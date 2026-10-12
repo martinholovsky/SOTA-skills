@@ -51,7 +51,7 @@ track the ratio — an eval set that is still >50% synthetic after months in
 production is a Medium finding.
 
 **A classifier that guards the model gets a language column.** An injection or
-content classifier (sota-code-security rules/08) scored only on English cases
+content classifier ([sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md)) scored only on English cases
 says nothing about the inputs used to slip past it. Its eval set carries the
 same attacks in languages the classifier does not claim to support, in
 low-resource languages, in mixed-script or transliterated text, and
@@ -85,7 +85,7 @@ Rate this answer's quality from 1 to 10.
 ```
 
 Force the judge to **quote evidence** — it grounds the verdict and makes
-judge errors auditable. Use structured output for the verdict (rules/02).
+judge errors auditable. Use structured output for the verdict ([rules/02](02-prompt-context-engineering.md)).
 
 ## 3. LLM-as-judge: validate the judge or don't trust it
 
@@ -165,7 +165,7 @@ Gate rules that work in practice:
 - **Gate cost and latency too** — a prompt change that doubles tokens "passes"
   quality and fails the budget.
 - **Run the suite against model-deprecation candidates** ahead of forced
-  migrations, and against any model you intend to switch to (rules/05).
+  migrations, and against any model you intend to switch to ([rules/05](05-production-engineering.md)).
 - Keep a `fast` suite (assertions only, minutes) for every PR and a `full`
   suite (judges, larger set) for merge-to-main/nightly if judge cost bites.
 
@@ -183,8 +183,8 @@ retrieval change, because none of those are on the replayed path — and the
 greenness is indistinguishable from the real thing. Declare per suite what is
 **live** and what is **replayed**, and apply the falsification question
 (`sota/SKILL.md` BUILD step 4): if your quality gate would still pass with the
-model endpoint unreachable, it is measuring the harness (`sota-code-security`
-rules/10).
+model endpoint unreachable, it is measuring the harness ([`sota-code-security`
+rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).
 
 ## 6. Error analysis discipline
 
@@ -200,8 +200,8 @@ commonly skipped.
   cluster first; one targeted fix to the top cluster beats five speculative
   prompt tweaks.
 - **Attribute the failure to a pipeline stage** before touching the prompt:
-  for RAG, was the right chunk even retrieved (rules/03)? For agents, which
-  tool call diverged (rules/04)? Most "prompt problems" are upstream
+  for RAG, was the right chunk even retrieved ([rules/03](03-rag-retrieval.md))? For agents, which
+  tool call diverged ([rules/04](04-agents-tools.md))? Most "prompt problems" are upstream
   data/retrieval problems.
 - **Each fixed failure becomes a permanent eval case** tagged with its
   taxonomy label and `source: incident`. The eval set is the institutional
@@ -219,7 +219,7 @@ Production is the only honest distribution. Build the loop:
 - **De-duplicate and decay**: cap near-duplicate cases, retire cases that no
   longer reflect the product. Date-stamp every case.
 - Respect privacy: redact PII before a trace enters the eval repo
-  (rules/06, sota-privacy-compliance).
+  ([rules/06](06-data-lifecycle.md), [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md)).
 
 ## 8. Metric pitfalls
 
@@ -232,7 +232,7 @@ Production is the only honest distribution. Build the loop:
   beside `recall: 0.0` — so the failure was visible in one metric and scored as
   perfect in two. Initialise to `None`, count `no_verdict` and `errors` beside the
   metrics, and treat precision as undefined when nothing was predicted positive
-  (`sota-code-security` rules/13 §4a).
+  ([`sota-code-security` rules/13](../../sota-code-security/rules/13-context-dependent-silence.md) §4a).
 - **Prove the instrument can *see* the change before you run it.** An eval whose
   treated arm never reads the thing you modified returns `+0.00` — and that null is
   **structural, not a result**, while looking exactly like a real one. Before spending,

@@ -28,25 +28,25 @@ task — do not read all files for a narrow question.
 
 When designing or implementing an API:
 
-1. **Pick the protocol deliberately.** Read `rules/04` §1 first if the choice
+1. **Pick the protocol deliberately.** Read [`rules/04`](rules/04-grpc-protocols.md) §1 first if the choice
    (REST vs GraphQL vs gRPC vs realtime transport) is open. Default: gRPC
    service-to-service, REST at the edge, GraphQL only for multi-client shape
    diversity, SSE for server-push, WS only for true bidirectional.
 2. **Contract first.** Write the OpenAPI/SDL/proto before handlers. Get the
    resource model, error shape (RFC 9457), pagination, and naming right in the
-   spec — they are nearly impossible to fix later (`rules/01`, `rules/02`).
+   spec — they are nearly impossible to fix later ([`rules/01`](rules/01-rest-http-design.md), [`rules/02`](rules/02-versioning-evolution.md)).
 3. **Design for a decade of additive change.** String enums not booleans, RFC
    3339 timestamps, opaque IDs, open enums, tolerant-reader contract, CI
-   breaking-change diff from day one (`rules/02`).
+   breaking-change diff from day one ([`rules/02`](rules/02-versioning-evolution.md)).
 4. **Build the unhappy paths with the happy path**: idempotency keys, 429 +
    Retry-After, timeout budgets, problem+json errors, size limits — these are
-   features, not hardening passes (`rules/01` §6, `rules/07`).
+   features, not hardening passes ([`rules/01`](rules/01-rest-http-design.md) §6, [`rules/07`](rules/07-security-operations.md)).
 5. **Realtime and webhooks are protocols, not endpoints.** Specify auth,
-   heartbeat, resume, ordering, backpressure, and close semantics (`rules/05`);
-   signing, retries, SSRF egress controls (`rules/06`) before writing code.
+   heartbeat, resume, ordering, backpressure, and close semantics ([`rules/05`](rules/05-realtime-websockets-sse.md));
+   signing, retries, SSRF egress controls ([`rules/06`](rules/06-webhooks.md)) before writing code.
 6. **Security envelope is part of the design**: authn scheme per consumer type,
    per-principal rate limits, tenant isolation derived from credentials, audit
-   logging (`rules/07`).
+   logging ([`rules/07`](rules/07-security-operations.md)).
 7. Before declaring done, run the relevant files' **Audit checklists** against
    your own design as a self-review.
 
@@ -105,44 +105,44 @@ without evidence in code or spec.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-rest-http-design.md` | Designing/auditing REST endpoints: resource modeling, methods/status codes, cursor pagination, filtering, partial responses, idempotency keys, ETags/conditional requests, HATEOAS pragmatism, RFC 9457 errors, OpenAPI-first, contract testing. |
-| `rules/02-versioning-evolution.md` | Changing an existing API, adding/removing fields, choosing URL vs header versioning, planning deprecation (Sunset/Deprecation headers), enum/schema evolution, tolerant readers, CI breaking-change gates. |
-| `rules/03-graphql.md` | Any GraphQL work: schema/nullability/connections design, N+1 and dataloaders, depth/cost/alias limits, persisted-query allowlists, error channels (userErrors vs errors), resolver authz, when GraphQL is the wrong choice. |
-| `rules/04-grpc-protocols.md` | gRPC/protobuf work or protocol selection: field-number/reserved evolution rules, deadlines and cancellation propagation, streaming patterns, rich error details, gRPC-Web/Connect, L7 load balancing, REST vs GraphQL vs gRPC decision table. |
-| `rules/05-realtime-websockets-sse.md` | WebSocket/SSE/realtime features: transport choice (WS vs SSE vs WebTransport), upgrade auth & CSWSH, heartbeats, reconnect backoff + resume tokens, ordering/delivery guarantees, backpressure, close codes, SSE replay, pub/sub fanout scaling, presence; WebRTC server hardening (TURN relay abuse, DTLS-SRTP, signaling) when self-hosted. |
-| `rules/06-webhooks.md` | Sending or receiving webhooks: HMAC signing + timestamp + rotation, replay protection, retry/backoff design, ordering caveats, idempotent consumers, outbox dispatch, reconciliation APIs, SSRF defenses for user-supplied URLs. |
-| `rules/07-security-operations.md` | Cross-cutting security/ops on any API: authn scheme selection (keys/OAuth2/mTLS), per-message request signing (RFC 9421 + Content-Digest), rate limiting + 429/Retry-After, layered bot management, quotas, request size limits, HTTP message framing / request smuggling, timeout budgets, CORS, audit logging, multi-tenant isolation, cross-tenant testing. |
+| [`rules/01-rest-http-design.md`](rules/01-rest-http-design.md) | Designing/auditing REST endpoints: resource modeling, methods/status codes, cursor pagination, filtering, partial responses, idempotency keys, ETags/conditional requests, HATEOAS pragmatism, RFC 9457 errors, OpenAPI-first, contract testing. |
+| [`rules/02-versioning-evolution.md`](rules/02-versioning-evolution.md) | Changing an existing API, adding/removing fields, choosing URL vs header versioning, planning deprecation (Sunset/Deprecation headers), enum/schema evolution, tolerant readers, CI breaking-change gates. |
+| [`rules/03-graphql.md`](rules/03-graphql.md) | Any GraphQL work: schema/nullability/connections design, N+1 and dataloaders, depth/cost/alias limits, persisted-query allowlists, error channels (userErrors vs errors), resolver authz, when GraphQL is the wrong choice. |
+| [`rules/04-grpc-protocols.md`](rules/04-grpc-protocols.md) | gRPC/protobuf work or protocol selection: field-number/reserved evolution rules, deadlines and cancellation propagation, streaming patterns, rich error details, gRPC-Web/Connect, L7 load balancing, REST vs GraphQL vs gRPC decision table. |
+| [`rules/05-realtime-websockets-sse.md`](rules/05-realtime-websockets-sse.md) | WebSocket/SSE/realtime features: transport choice (WS vs SSE vs WebTransport), upgrade auth & CSWSH, heartbeats, reconnect backoff + resume tokens, ordering/delivery guarantees, backpressure, close codes, SSE replay, pub/sub fanout scaling, presence; WebRTC server hardening (TURN relay abuse, DTLS-SRTP, signaling) when self-hosted. |
+| [`rules/06-webhooks.md`](rules/06-webhooks.md) | Sending or receiving webhooks: HMAC signing + timestamp + rotation, replay protection, retry/backoff design, ordering caveats, idempotent consumers, outbox dispatch, reconciliation APIs, SSRF defenses for user-supplied URLs. |
+| [`rules/07-security-operations.md`](rules/07-security-operations.md) | Cross-cutting security/ops on any API: authn scheme selection (keys/OAuth2/mTLS), per-message request signing (RFC 9421 + Content-Digest), rate limiting + 429/Retry-After, layered bot management, quotas, request size limits, HTTP message framing / request smuggling, timeout budgets, CORS, audit logging, multi-tenant isolation, cross-tenant testing. |
 
 ## Top-10 non-negotiables
 
 1. **Object-level authorization on every handler** — derive tenant/ownership from
    the credential, never from the request; cross-tenant access returns a
-   consistent 404. (rules/07 §1, §7)
+   consistent 404. ([rules/07](rules/07-security-operations.md) §1, §7)
 2. **Never `200 {"error":…}`** — correct status codes, single RFC 9457
    problem+json error shape API-wide, machine-readable codes, trace ID, no
-   internals leaked. (rules/01 §3, §9)
+   internals leaked. ([rules/01](rules/01-rest-http-design.md) §3, §9)
 3. **Cursor pagination with enforced max limit** on every collection that can
    grow; stable sort with unique tiebreaker; no unbounded lists in REST or
-   GraphQL. (rules/01 §4, rules/03 §2)
+   GraphQL. ([rules/01](rules/01-rest-http-design.md) §4, [rules/03](rules/03-graphql.md) §2)
 4. **Idempotency for unsafe operations**: Idempotency-Key with stored-response
    replay on anything that moves money or sends things; webhook consumers dedupe
-   on event ID. (rules/01 §6, rules/06 §4)
+   on event ID. ([rules/01](rules/01-rest-http-design.md) §6, [rules/06](rules/06-webhooks.md) §4)
 5. **Additive-only evolution, enforced by CI** (oasdiff/buf breaking/schema
    check); clients ignore unknown fields; breaking changes go through the
-   announce→Deprecation/Sunset→measure→410 pipeline. (rules/02)
+   announce→Deprecation/Sunset→measure→410 pipeline. ([rules/02](rules/02-versioning-evolution.md))
 6. **Deadlines/timeouts everywhere, outer > inner**, propagated and cancellable;
    long work is async (202 + status resource), never a long-held connection.
-   (rules/04 §3, rules/07 §4)
+   ([rules/04](rules/04-grpc-protocols.md) §3, [rules/07](rules/07-security-operations.md) §4)
 7. **Per-principal rate limits + quotas** with 429, Retry-After, and RateLimit
    headers, enforced in a shared store; expensive operations cost-weighted.
-   (rules/07 §2)
+   ([rules/07](rules/07-security-operations.md) §2)
 8. **Realtime must resume**: heartbeats, jittered reconnect backoff, sequence
    IDs + bounded replay buffer, explicit resume-failure → snapshot; bounded send
-   queues with a defined slow-consumer policy. (rules/05 §2)
+   queues with a defined slow-consumer policy. ([rules/05](rules/05-realtime-websockets-sse.md) §2)
 9. **Webhooks signed and SSRF-proof**: HMAC(id.timestamp.raw body) verified in
    constant time with replay window; senders block private/metadata IPs with
-   resolve-pin-connect and follow no redirects. (rules/06 §2, §8)
+   resolve-pin-connect and follow no redirects. ([rules/06](rules/06-webhooks.md) §2, §8)
 10. **Proto/GraphQL schema discipline**: never reuse a proto field number
     (reserve removed ones), enum zero = UNSPECIFIED, GraphQL non-null only when
-    guaranteed, every data-touching resolver behind a dataloader. (rules/04 §2,
-    rules/03 §2–3)
+    guaranteed, every data-touching resolver behind a dataloader. ([rules/04](rules/04-grpc-protocols.md) §2,
+    [rules/03](rules/03-graphql.md) §2–3)

@@ -133,7 +133,7 @@ observation; recomputing your database from your own event log proves internal
 consistency and says nothing about the seam. Where they publish no extract, the
 paginated read API over the period is the substitute — the same call the webhook
 was meant to save you (webhook senders owe consumers exactly this, see
-`sota-api-design` rules/06).
+[`sota-api-design` rules/06](../../sota-api-design/rules/06-webhooks.md)).
 
 **Rule:** Classify breaks; a count alone is not a result. Three buckets with
 three different actions: **(a)** known shape, safe to adjust by a written rule —
@@ -141,7 +141,7 @@ automate it, and log every adjustment; **(b)** known shape, needs a human —
 queue it; **(c)** unclassified — page someone, because an unclassified break is
 indistinguishable from a bug still producing them. An automated (a) adjustment
 on a money path posts as a reversing ledger entry, never an in-place correction
-(`sota-databases` rules/01). Breaks also **age**: alert on the oldest unresolved
+([`sota-databases` rules/01](../../sota-databases/rules/01-choosing-and-modeling.md)). Breaks also **age**: alert on the oldest unresolved
 break, not only on the count, or one permanently stuck break becomes background
 noise that hides the next twenty.
 
@@ -149,7 +149,7 @@ noise that hides the next twenty.
 correctness — it is the inert-control signature. Print the denominator (rows
 compared on *each* side, and the period covered), fail closed when either side
 reads zero, and prove it can fire by seeding a known break. Diagnostics:
-`sota-code-security` rules/11 §2.2 and rules/15.
+[`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2 and [rules/15](../../sota-code-security/rules/15-instruments-and-guards.md).
 
 ## 6. Event-driven architecture: events are facts
 
@@ -208,7 +208,7 @@ doesn't scale; don't design flows that require it.
 **Rule:** Backpressure is designed, not discovered:
 - Bounded queues everywhere (unbounded queues turn overload into OOM + huge latency).
 - Consumers pull at their own rate; producers get pushback (block, shed, or buffer-with-bound).
-- Define the overload policy per queue: shed lowest-priority work first (see rules/04 §6).
+- Define the overload policy per queue: shed lowest-priority work first (see [rules/04](04-resilience-and-failure-design.md) §6).
 - Monitor consumer lag with alerts; lag growing monotonically = under-provisioned consumer or poison loop.
 
 **Rule:** In a multi-tenant system a shared queue or topic is **not** an isolation
@@ -217,7 +217,7 @@ type as *global*, *tenant-scoped* or *explicitly cross-tenant*, and write the cl
 down beside the handler. For tenant-scoped work:
 - Bind the tenant to the message from the authenticated producer (trusted routing or
   signed metadata), and at the consumer re-establish that context and re-authorize —
-  a `tenant_id` field in the body is a claim, not proof (`sota-code-security` rules/03 §8).
+  a `tenant_id` field in the body is a claim, not proof ([`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md) §8).
 - Put the tenant into every per-message key: the dedup/idempotency key (§2), retry
   state, the partition key where order matters per tenant, and who may read or redrive
   the DLQ. Unscoped, tenant B's message is dropped as a duplicate of tenant A's, and a
@@ -225,7 +225,7 @@ down beside the handler. For tenant-scoped work:
 - Global and cross-tenant jobs run under an explicit **system identity** with its own
   grants, never under a made-up tenant (`tenant_id = "system"`), which every
   tenant-scoped check then either rejects or, worse, accepts.
-Per-tenant quotas on the shared fleet: rules/05 §7. OWASP: Multi Tenant Security
+Per-tenant quotas on the shared fleet: [rules/05](05-scalability-state-and-data.md) §7. OWASP: Multi Tenant Security
 cheat sheet.
 
 ## 7b. Broker queues (AMQP/RabbitMQ): semantics the log model misses
@@ -248,7 +248,7 @@ dead-letter exchange after validation fails (§7), with redelivery count bounded
 so the cap on unacked deliveries is your only bound; unset/0 = unlimited
 prefetch = an unbounded buffer in the consumer (and memory growth on the node).
 Set it explicitly: ~100–300 for fast handlers, low single digits for heavy
-ones (sota-async-concurrency rules/06).
+ones ([sota-async-concurrency rules/06](../../sota-async-concurrency/rules/06-backpressure-flow-control.md)).
 
 **Rule:** Claim-check pattern: messages carry references (entity IDs,
 object-store URLs), never large blobs and never secrets — the broker is a
@@ -264,8 +264,8 @@ default dead-lettering is at-most-once — where DLQ loss is unacceptable, set
 
 **Rule:** Broker hardening in one line: per-service users, vhost isolation,
 least-privilege configure/write/read permissions, TLS, and no default `guest`
-account beyond localhost dev — details in sota-cloud-infrastructure and
-sota-secrets-management.
+account beyond localhost dev — details in [sota-cloud-infrastructure](../../sota-cloud-infrastructure/SKILL.md) and
+[sota-secrets-management](../../sota-secrets-management/SKILL.md).
 
 ## 8. Contracts and schema evolution
 
@@ -277,7 +277,7 @@ published alongside the old, with a deprecation window.
 
 **Rule:** Use consumer-driven contract tests (Pact or equivalent) or a schema
 registry with compatibility mode — one of the two, enforced in CI. "We'll
-coordinate releases in Slack" is the distributed monolith (rules/07).
+coordinate releases in Slack" is the distributed monolith ([rules/07](07-anti-patterns-catalog.md)).
 
 **Rule:** Tolerant reader: consumers ignore unknown fields and validate only
 what they use. Strict full-payload validation on consume turns every producer
@@ -313,13 +313,13 @@ offers should converge on one such job pattern, not five bespoke ones.
 broker's unit of parallelism (Kafka: partitions; SQS: messages; AMQP: prefetch).
 Max useful consumers = partition count for a classic Kafka consumer group
 (Kafka 4.2+ share groups, KIP-932, lift that ceiling for true queue workloads
-at the cost of per-key ordering — sota-data-engineering rules/03); provision
+at the cost of per-key ordering — [sota-data-engineering rules/03](../../sota-data-engineering/rules/03-streaming-and-cdc.md)); provision
 partitions for target parallelism *at topic creation* — repartitioning later
 breaks key→partition ordering during the transition.
 
 **Rule:** Keep per-message work small and uniform. One 10-minute message behind
 500 fast ones on the same partition is head-of-line blocking; split heavy work
-into a separate queue/topic with its own consumers (bulkheads, rules/04 §4).
+into a separate queue/topic with its own consumers (bulkheads, [rules/04](04-resilience-and-failure-design.md) §4).
 
 **Rule:** Handle rebalances: consumers must expect partition reassignment
 mid-stream (commit offsets only after processing; idempotency §2 covers the
@@ -352,7 +352,7 @@ anyway because elections overlap.
 Design reviews must not contain these assumptions; each appears in real designs
 weekly:
 - "The call will succeed" — every remote call needs a failure branch with a decision (retry? degrade? surface?), not just a log line.
-- "Latency is negligible" — N sequential cross-service calls = N × RTT floor; budget it (rules/04 §1).
+- "Latency is negligible" — N sequential cross-service calls = N × RTT floor; budget it ([rules/04](04-resilience-and-failure-design.md) §1).
 - "Bandwidth is infinite" — fat events/payloads (full entity snapshots on every change) saturate brokers; send deltas + version, or IDs + hot fields.
 - "Topology doesn't change" — pin nothing to instance identity; discovery via the platform (DNS/service registry), connections re-resolve on failure.
 - "The clock is right" — clock skew between machines is unbounded for ordering purposes (§9); never compare timestamps from two machines to decide order or expiry of anything critical.

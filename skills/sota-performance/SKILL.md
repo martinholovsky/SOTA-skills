@@ -37,25 +37,25 @@ When writing new code or features:
 1. **Set a budget before writing.** Define the latency budget (p99, not average)
    and decompose it across hops. An endpoint with a 200 ms p99 budget that calls
    auth (10 ms) + 2 DB queries (2×15 ms) + serialization (5 ms) has 155 ms of
-   headroom — spend it consciously. See `rules/01-methodology.md`.
+   headroom — spend it consciously. See [`rules/01-methodology.md`](rules/01-methodology.md).
 2. **Choose data structures by access pattern, not habit.** Know the n. n < 100:
    anything works. n unbounded: complexity class is the design.
-   See `rules/02-algorithms-data-structures.md`.
+   See [`rules/02-algorithms-data-structures.md`](rules/02-algorithms-data-structures.md).
 3. **Batch and stream at every boundary.** One round trip per collection, not
    per item. Stream large results; never materialize unbounded data.
 4. **Control allocation in hot paths.** Pre-size collections, reuse buffers,
    avoid per-iteration allocation in loops that run > 10⁴ times per second.
-   See `rules/03-memory.md`.
+   See [`rules/03-memory.md`](rules/03-memory.md).
 5. **Make I/O cheap by construction.** Pooled connections, keep-alive, buffered
-   writes, compression chosen per payload type. See `rules/04-io-network.md`.
+   writes, compression chosen per payload type. See [`rules/04-io-network.md`](rules/04-io-network.md).
 6. **Cache deliberately or not at all.** Every cache ships with: key schema,
    TTL + jitter, eviction policy, invalidation path, stampede protection, and a
    hit-ratio metric. A cache missing any of these is a future incident.
-   See `rules/05-caching.md`.
+   See [`rules/05-caching.md`](rules/05-caching.md).
 7. **Protect the win.** Add a benchmark or perf test in CI for any code with a
    budget. A perf improvement without a regression gate is a loan, not an asset.
 8. **Frontend ships against Core Web Vitals budgets** (LCP ≤ 2.5 s, INP ≤ 200 ms,
-   CLS ≤ 0.1 at p75). See `rules/06-frontend-web.md`.
+   CLS ≤ 0.1 at p75). See [`rules/06-frontend-web.md`](rules/06-frontend-web.md).
 
 ## AUDIT mode
 
@@ -67,16 +67,16 @@ Work outside-in, hottest path first:
    SLO: request handlers, queue consumers, render loops, cron jobs over large
    datasets. Audit those first; ignore cold admin paths until the end.
 2. **Grep for pathology signatures** (high hit rate, low effort):
-   - Loops containing `await`/network/DB calls → N+1 (`rules/02`)
-   - String/array concatenation inside loops → accidental quadratic (`rules/02`)
-   - `.includes`/`in list`/linear `find` inside a loop → O(n·m) (`rules/02`)
-   - `SELECT *`, queries without LIMIT, missing pagination (`rules/02`, `rules/04`)
-   - Caches/maps with insert but no eviction or TTL → leak (`rules/03`, `rules/05`)
-   - `addEventListener`/subscribe without matching removal (`rules/03`)
-   - Sequential awaits on independent operations → serialized latency (`rules/04`)
-   - New client/connection per request instead of pooled (`rules/04`)
-   - Sync file/crypto/compression calls on async event loops (`rules/04`)
-   - `JSON.parse`/serialize of large payloads in hot loops (`rules/03`)
+   - Loops containing `await`/network/DB calls → N+1 ([`rules/02`](rules/02-algorithms-data-structures.md))
+   - String/array concatenation inside loops → accidental quadratic ([`rules/02`](rules/02-algorithms-data-structures.md))
+   - `.includes`/`in list`/linear `find` inside a loop → O(n·m) ([`rules/02`](rules/02-algorithms-data-structures.md))
+   - `SELECT *`, queries without LIMIT, missing pagination ([`rules/02`](rules/02-algorithms-data-structures.md), [`rules/04`](rules/04-io-network.md))
+   - Caches/maps with insert but no eviction or TTL → leak ([`rules/03`](rules/03-memory.md), [`rules/05`](rules/05-caching.md))
+   - `addEventListener`/subscribe without matching removal ([`rules/03`](rules/03-memory.md))
+   - Sequential awaits on independent operations → serialized latency ([`rules/04`](rules/04-io-network.md))
+   - New client/connection per request instead of pooled ([`rules/04`](rules/04-io-network.md))
+   - Sync file/crypto/compression calls on async event loops ([`rules/04`](rules/04-io-network.md))
+   - `JSON.parse`/serialize of large payloads in hot loops ([`rules/03`](rules/03-memory.md))
 3. **Check the boundaries.** Most production latency lives at boundaries:
    process↔kernel (syscalls), service↔DB, service↔service, server↔browser.
    Count round trips per user action; > 3 sequential round trips is a finding.
@@ -89,7 +89,7 @@ Work outside-in, hottest path first:
 ### What to measure (when you can run the system)
 
 - **Latency distribution**: p50/p95/p99 per endpoint — never averages
-  (`rules/01`). Compare p99 to p50; ratio > 10× means contention, GC, or
+  ([`rules/01`](rules/01-methodology.md)). Compare p99 to p50; ratio > 10× means contention, GC, or
   stampedes, not slow code.
 - **USE per resource** (Utilization, Saturation, Errors): CPU, memory, disk,
   network, pools, queues. **RED per service** (Rate, Errors, Duration).
@@ -130,12 +130,12 @@ RTT = ~200 ms added per page view" beats "this is slow".
 
 | File | Read this when... |
 |---|---|
-| `rules/01-methodology.md` | You need to profile, benchmark, set latency budgets, interpret percentiles, apply USE/RED, decide what's worth optimizing (Amdahl), or set up CI perf regression gates. |
-| `rules/02-algorithms-data-structures.md` | Auditing loops and data access: N+1, accidental quadratics, repeated scans, hash-vs-tree choices, batching, streaming vs materializing, and high-level DB pointers (indexes, SELECT *, chatty transactions). |
-| `rules/03-memory.md` | Dealing with allocation pressure, GC pauses, object pooling, arenas, cache locality, SoA vs AoS, or hunting memory leaks (closures, listeners, unbounded caches) per runtime. |
-| `rules/04-io-network.md` | Anything crossing a syscall or the wire: buffering, zero-copy, connection pooling, HTTP/2/3, compression choice (zstd/brotli), TLS resumption, CDN, request coalescing, pagination over the wire. |
-| `rules/05-caching.md` | Designing or auditing any cache: hierarchy placement, key design, invalidation, stampede protection (singleflight, jitter, soft TTL), negative caching, when caching is the wrong fix, and the security floor (declared global/tenant/user key scope, authorize before a cache hit, invalidate on role/tenancy change). |
-| `rules/06-frontend-web.md` | Web performance: Core Web Vitals thresholds, bundle budgets, code splitting, image formats (AVIF/WebP), font loading, hydration cost, edge rendering. |
+| [`rules/01-methodology.md`](rules/01-methodology.md) | You need to profile, benchmark, set latency budgets, interpret percentiles, apply USE/RED, decide what's worth optimizing (Amdahl), or set up CI perf regression gates. |
+| [`rules/02-algorithms-data-structures.md`](rules/02-algorithms-data-structures.md) | Auditing loops and data access: N+1, accidental quadratics, repeated scans, hash-vs-tree choices, batching, streaming vs materializing, and high-level DB pointers (indexes, SELECT *, chatty transactions). |
+| [`rules/03-memory.md`](rules/03-memory.md) | Dealing with allocation pressure, GC pauses, object pooling, arenas, cache locality, SoA vs AoS, or hunting memory leaks (closures, listeners, unbounded caches) per runtime. |
+| [`rules/04-io-network.md`](rules/04-io-network.md) | Anything crossing a syscall or the wire: buffering, zero-copy, connection pooling, HTTP/2/3, compression choice (zstd/brotli), TLS resumption, CDN, request coalescing, pagination over the wire. |
+| [`rules/05-caching.md`](rules/05-caching.md) | Designing or auditing any cache: hierarchy placement, key design, invalidation, stampede protection (singleflight, jitter, soft TTL), negative caching, when caching is the wrong fix, and the security floor (declared global/tenant/user key scope, authorize before a cache hit, invalidate on role/tenancy change). |
+| [`rules/06-frontend-web.md`](rules/06-frontend-web.md) | Web performance: Core Web Vitals thresholds, bundle budgets, code splitting, image formats (AVIF/WebP), font loading, hydration cost, edge rendering. |
 
 ## Top-10 non-negotiables
 

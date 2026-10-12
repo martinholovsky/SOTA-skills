@@ -3,9 +3,9 @@
 User rights (access, export, rectification, deletion, objection, consent
 withdrawal) are product features with APIs, SLAs, state machines, and tests. Most
 regimes give you ~30–45 days to fulfill them (GDPR: one month, extensible;
-CCPA/CPRA: 45 days) — verify the active SLA for your regimes (rules/04). The
+CCPA/CPRA: 45 days) — verify the active SLA for your regimes ([rules/04](04-regulatory-landscape.md)). The
 hard part is never the endpoint; it is propagation through every copy of the data
-(which is why rules/01 §5's derivative graph must exist first).
+(which is why [rules/01](01-data-inventory-classification.md) §5's derivative graph must exist first).
 
 ## 1. Consent is a state machine, not a boolean
 
@@ -70,7 +70,7 @@ def send_campaign(campaign, recipients):
 
 **Don't use consent as the lawful basis for everything.** Necessary-for-service
 processing (auth, billing, fraud) typically rests on contract/legitimate-interest
-bases (rules/04 §1); flooding users with consent prompts for essential processing
+bases ([rules/04](04-regulatory-landscape.md) §1); flooding users with consent prompts for essential processing
 trains them to click yes and makes real consent meaningless. Map basis per purpose
 in the catalog; reserve consent for genuinely optional processing.
 
@@ -88,9 +88,9 @@ enforcement, not banner theater:
   pre/post consent. Trackers firing pre-consent = HIGH finding.
 - Server-side tagging doesn't exempt you — consent state must gate server-side
   forwarding too.
-- Maintain a tracker inventory (it's part of rules/01 §4's processor map): each
+- Maintain a tracker inventory (it's part of [rules/01](01-data-inventory-classification.md) §4's processor map): each
   tag → category, vendor, consent purpose, data sent. Anti-bot and anti-fraud
-  fingerprinting scripts belong in it too (rules/02 §1).
+  fingerprinting scripts belong in it too ([rules/02](02-privacy-by-design.md) §1).
 - **Honor Global Privacy Control:** CCPA/CPRA regulations require treating GPC as
   a valid opt-out of sale/share; wire the header/JS signal into the same consent
   state machine as the banner. GPC (`Sec-GPC: 1`) is one of several opt-out
@@ -107,7 +107,7 @@ enforcement, not banner theater:
 
 ## 3. DSAR — access & export engineering
 
-**Rule:** Build one export pipeline that walks the data inventory (rules/01), not
+**Rule:** Build one export pipeline that walks the data inventory ([rules/01](01-data-inventory-classification.md)), not
 N hand-written queries that drift from the schema.
 
 **Identity verification first.** A DSAR is an attack vector: an attacker who can
@@ -144,8 +144,8 @@ attachment); record fulfillment proof.
 |---|---|---|---|
 | **Hard delete** | Row/object physically removed | Primary stores, object storage | FK cascades; ensure replicas/indexes follow; DB may retain in WAL/vacuum lag (acceptable, bounded) |
 | **Soft delete → purge** | Flag now, hard-delete via scheduled purge after grace period | Need short undo/fraud window | Soft delete WITHOUT a running purge job is retention-forever wearing a costume — always pair flag with purge automation and monitoring |
-| **Crypto-shredding** | Per-subject (or per-tenant) encryption key; destroy the key, all ciphertext becomes noise | Immutable/append-only stores (event logs, Kafka with long retention), backups, archives where physical deletion is impractical | Key management is the whole game (sota-secrets-management); every copy must actually be encrypted under that key — one plaintext side-channel defeats it; key destruction must be provable and itself logged |
-| **Anonymization in place** | Strip/overwrite identifying fields, keep skeleton row | Referential integrity or aggregate stats require the row (orders for accounting) | Must pass rules/02 §3's bar — overwriting name with 'DELETED' while keeping address and device ID is not anonymization |
+| **Crypto-shredding** | Per-subject (or per-tenant) encryption key; destroy the key, all ciphertext becomes noise | Immutable/append-only stores (event logs, Kafka with long retention), backups, archives where physical deletion is impractical | Key management is the whole game ([sota-secrets-management](../../sota-secrets-management/SKILL.md)); every copy must actually be encrypted under that key — one plaintext side-channel defeats it; key destruction must be provable and itself logged |
+| **Anonymization in place** | Strip/overwrite identifying fields, keep skeleton row | Referential integrity or aggregate stats require the row (orders for accounting) | Must pass [rules/02](02-privacy-by-design.md) §3's bar — overwriting name with 'DELETED' while keeping address and device ID is not anonymization |
 
 **Legal holds and retention duties override deletion** (tax records, fraud
 evidence, litigation hold): model as explicit, reviewable exemptions per data
@@ -154,7 +154,7 @@ category in the deletion engine — not as "we keep everything just in case."
 ## 5. Deletion propagation — the graph is the architecture
 
 **Rule:** Deletion executes against the system of record and propagates along the
-recorded derivative graph (rules/01 §5) to ALL of:
+recorded derivative graph ([rules/01](01-data-inventory-classification.md) §5) to ALL of:
 
 1. **Primary DB + replicas** (replication handles it; verify lag-bounded).
 2. **Caches** — Redis/memcached keys, CDN-cached responses keyed to the user:
@@ -167,7 +167,7 @@ recorded derivative graph (rules/01 §5) to ALL of:
 5. **Logs** — bounded retention (e.g., 30–90 d) usually suffices instead of
    per-user log scrubbing — acceptable and defensible IF retention is short,
    enforced, and documented; long-retention logs containing PII make per-user
-   deletion intractable (that's the finding: fix the logs, per sota-observability).
+   deletion intractable (that's the finding: fix the logs, per [sota-observability](../../sota-observability/SKILL.md)).
 6. **Backups** — industry-standard approach: backups expire on schedule; deleted
    data dies with the backup cycle; document the max window (e.g., "fully purged
    within retention period + cycle = 35 days") AND ensure restore procedure
@@ -250,7 +250,7 @@ Mechanisms by store (set at creation time — IaC templates should require them)
   prefer crypto-shred keys.
 - **Search/cache:** index ILM policies / TTLs.
 - **Warehouse:** retention-partitioned raw layer; aggregate-then-drop pattern
-  (rules/02 §4 ladder).
+  ([rules/02](02-privacy-by-design.md) §4 ladder).
 - **Backups/logs:** retention policies per rules above.
 
 **Monitor enforcement:** a scheduled check that samples each store for
@@ -293,7 +293,7 @@ module "bucket" {
 - **Automated-decision review (Art. 22; state profiling rules):** where fully
   automated decisions have significant effects (credit, hiring, pricing), build
   the human-review path and decision-input logging now — it is also an EU AI Act
-  high-risk overlap (rules/04 §5).
+  high-risk overlap ([rules/04](04-regulatory-landscape.md) §5).
 
 ## Audit checklist
 

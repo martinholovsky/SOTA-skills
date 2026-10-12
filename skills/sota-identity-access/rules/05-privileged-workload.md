@@ -11,9 +11,9 @@ elevate just-in-time, authenticate workloads with short-lived federated credenti
 make every privileged action loud and auditable.
 
 For the *secret-storage* mechanics (Vault dynamic creds, OIDC-federation token exchange,
-`kid` rotation) see **sota-secrets-management** rules/01 and rules/05. For mTLS/ZTNA
-transport see **sota-network-security**. For K8s SA tokens / OIDC to the API server see
-**sota-kubernetes**. This file owns the *access-management design*.
+`kid` rotation) see **[sota-secrets-management** rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md) and [rules/05](../../sota-secrets-management/rules/05-credential-types.md). For mTLS/ZTNA
+transport see **[sota-network-security](../../sota-network-security/SKILL.md)**. For K8s SA tokens / OIDC to the API server see
+**[sota-kubernetes](../../sota-kubernetes/SKILL.md)**. This file owns the *access-management design*.
 
 ## 1. Admin-account separation
 
@@ -21,9 +21,9 @@ transport see **sota-network-security**. For K8s SA tokens / OIDC to the API ser
   account (email, chat, browsing) and a distinct privileged account; the privileged
   account never reads email or browses the web (the phishing/drive-by surface that
   compromises admin rights).
-- Privileged accounts require **phishing-resistant MFA** (FIDO2/passkey — rules/06),
-  shorter session caps (rules/02 §6), and ideally a dedicated admin workstation / PAW or
-  identity-aware-proxy-gated access (**sota-network-security**).
+- Privileged accounts require **phishing-resistant MFA** (FIDO2/passkey — [rules/06](06-mfa-federation-assurance.md)),
+  shorter session caps ([rules/02](02-idp-operations.md) §6), and ideally a dedicated admin workstation / PAW or
+  identity-aware-proxy-gated access (**[sota-network-security](../../sota-network-security/SKILL.md)**).
 - No shared admin accounts. Every privileged action attributes to a named human (or a
   named workload). A shared `root`/`admin` login is a finding — break-glass excepted (§3).
 
@@ -35,9 +35,9 @@ transport see **sota-network-security**. For K8s SA tokens / OIDC to the API ser
 - **Just-enough**: elevate to the *narrowest* role for the task (read-only break-fix vs
   full admin), not blanket superuser.
 - Elevation is logged with who/what/when/why/approved-by, and ideally requires a second
-  approver for the highest tiers (pairs with SoD, rules/03 §4).
+  approver for the highest tiers (pairs with SoD, [rules/03](03-authorization-models.md) §4).
 - This is the standing-privilege fix for the access-creep and orphaned-admin problems in
-  rules/04: there is simply far less standing privilege to leak or forget.
+  [rules/04](04-lifecycle-provisioning.md): there is simply far less standing privilege to leak or forget.
 
 ## 3. Break-glass (emergency access)
 
@@ -74,9 +74,9 @@ kanidmd recover-account idm_admin     # generates a one-time recovery credential
   credential.
 - **Vault credentials, issue dynamically.** Privileged credentials (DB superuser, cloud
   admin) are not handed out long-lived; they are checked out for a session and revoked
-  after — Vault/OpenBao dynamic secrets (**sota-secrets-management** rules/01/02).
+  after — Vault/OpenBao dynamic secrets (**[sota-secrets-management** rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md)/02).
 - Recordings and access logs are themselves sensitive and tamper-evident; protect and
-  retain them per **sota-privacy-compliance**.
+  retain them per **[sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md)**.
 
 ## 5. Machine / workload identity
 
@@ -86,21 +86,21 @@ API key or service-account key file baked into config). Replace it:
 - **SPIFFE / SPIRE**: every workload gets a cryptographic identity (a SPIFFE ID like
   `spiffe://trust-domain/ns/app`) materialized as a short-lived SVID (X.509 cert or JWT),
   auto-rotated by the SPIRE agent based on platform attestation. Service-to-service auth
-  is then mTLS with SVIDs — no shared secret. Coordinate with **sota-network-security**
+  is then mTLS with SVIDs — no shared secret. Coordinate with **[sota-network-security](../../sota-network-security/SKILL.md)**
   for the mTLS plane.
 - **Workload identity federation**: a workload (CI job, cloud function, pod) presents a
   platform-issued OIDC token and exchanges it (RFC 8693 token exchange) for a short-lived
   access token at the IdP/cloud — no stored credential at all. This is the preferred way
   for CI→cloud and service→cloud. The OIDC-federation *mechanics* are
-  **sota-secrets-management** rules/01; the *identity design* (one workload identity per
+  **[sota-secrets-management** rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md); the *identity design* (one workload identity per
   service, narrowly scoped, attested) is here.
 - **Short-lived over static, always.** A workload credential should live minutes, be
   scoped to one service's needs, and rotate automatically. A static service-account key
   in a repo/config/env is a defect — push it up the hierarchy to federation or SVIDs.
 - **One identity per workload**, scoped least-privilege through the authorization model
-  (rules/03). Shared service accounts used by many services destroy attribution and blast-
+  ([rules/03](03-authorization-models.md)). Shared service accounts used by many services destroy attribution and blast-
   radius control.
-- Workload identities are in the JML/dormancy scope too (rules/04): a decommissioned
+- Workload identities are in the JML/dormancy scope too ([rules/04](04-lifecycle-provisioning.md)): a decommissioned
   service's identity must be retired, and dormant service credentials detected.
 
 ```
@@ -125,4 +125,4 @@ SVC_API_KEY="sk_live_8f3...permanent"        # in env/config, never rotates, sha
 - [ ] Are highest-tier sessions brokered/recorded via a PAM/bastion, with dynamically-issued (not standing) privileged credentials?
 - [ ] Do workloads use short-lived federated/attested identity (SPIFFE/SPIRE SVIDs or workload identity federation) instead of static keys? Hunt config/env for long-lived `*_API_KEY`, `*-key.json`, service-account key files.
 - [ ] Is there one least-privilege identity per workload (no shared service accounts)?
-- [ ] Are decommissioned workload identities retired and dormant service credentials detected (rules/04)?
+- [ ] Are decommissioned workload identities retired and dormant service credentials detected ([rules/04](04-lifecycle-provisioning.md))?

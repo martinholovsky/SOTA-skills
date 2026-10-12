@@ -23,7 +23,7 @@ Sinks to treat as hostile-by-default:
   Do not HTML-encode values set this way. `setAttribute('title', '&lt;b&gt;')` stored the
   literal `&lt;b&gt;` (measured), so the user sees the entities. *OWASP: Cross Site Scripting
   Prevention cheat sheet; DOM based XSS Prevention cheat sheet.* DOM clobbering, where injected
-  markup with no script overwrites globals, is rules/09.
+  markup with no script overwrites globals, is [rules/09](09-browser-platform-security.md).
 
 ```tsx
 // BAD — stored XSS
@@ -60,7 +60,7 @@ const safeUrl = (u: string) => { try { const p = new URL(u); return ['https:', '
     never `obj[input]()`. User-authored formulas or rules need a parser for a fixed grammar
     you own or have vetted, evaluated over an explicit variable map, and never compiled to JS.
     Truly untrusted code runs in a separate process or isolate with its own resource limits
-    (`sota-sandboxing`). *OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.*
+    ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)). *OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.*
 
 ## CSP integration
 
@@ -98,7 +98,7 @@ different way. Measured on ejs 6, pug 3, handlebars 4.7 and mustache 4.2 with th
   user-controlled template string is **code execution** (CRITICAL). Handlebars and
   Mustache are logic-less: the same probe for `constructor` returned nothing useful from
   Handlebars (prototype access is blocked). They still render raw HTML via the table
-  above. The class is `sota-code-security` rules/01 §7.
+  above. The class is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §7.
 - **The view name is a path.** `res.render(req.query.view)` is an injection sink. Measured
   on Express 5.2.1: `app.render('../upload')` and `app.render('/abs/path/upload.ejs')` both
   rendered a template **outside** `views/`, executing its `<%= %>` code. That is code
@@ -171,9 +171,9 @@ The dependency tree is your attack surface; install scripts run arbitrary code o
 - **Cooldown**: don't install or auto-merge dependency updates the day they publish; most hijacked versions are caught within days. Package managers now enforce this natively: npm CLI ≥11.10 has `min-release-age` (days) in config; Yarn ≥4.10 has `npmMinimalAgeGate` in `.yarnrc.yml` (default `1d` since 4.15.0; `npmPreapprovedPackages` exempts names); plus Renovate `minimumReleaseAge` (e.g. `7 days`) / Dependabot cooldown for update PRs.
   **pnpm 11's built-in default fails open.** `minimumReleaseAge` defaults to 1440 minutes, but `minimumReleaseAgeStrict` is `false` unless you set `minimumReleaseAge` yourself, and non-strict means pnpm "falls back to a version that doesn't meet the `minimumReleaseAge` constraint" when nothing in range is old enough (pnpm settings docs). Measured on pnpm 12.6.0 with an exact pin to a version published that morning: with no config it installed (exit 0); with `minimumReleaseAge: 1440` written in `pnpm-workspace.yaml`, or `minimumReleaseAgeStrict: true`, it exited 1 (`ERR_PNPM_NO_MATURE_MATCHING_VERSION`). And `minimumReleaseAgeIgnoreMissingTime` defaults to `true`, which skips the check for a registry or mirror whose metadata has no `time` field. So write both into `pnpm-workspace.yaml`: `minimumReleaseAge: 1440` (or longer) and, behind a private registry or mirror, `minimumReleaseAgeIgnoreMissingTime: false`.
 - **Provenance & audit**: prefer packages publishing npm provenance (Sigstore attestation) — but provenance proves the publish path, not code safety: Miasma shipped malware with valid SLSA attestations from a compromised trusted-publishing workflow. pnpm's `trustPolicy: no-downgrade` (v10.21.0, default `off`) turns provenance into an install gate: it fails when a version carries weaker trust evidence than an earlier-published one — the axios case above, where a stolen token published without the project's trusted publisher. It cannot catch a release that has valid provenance (Miasma), and `trustPolicyExclude`/`trustPolicyIgnoreAfter` loosen it; `npm audit --omit=dev` in CI with a triage policy (fail on high/critical with no fix-path exception file); `osv-scanner` or Socket for behavioral flags (new maintainer, install script added, network in install).
-- **Minimal deps**: every dep is trust granted to its maintainers and their deps transitively. Before adding: is it <100 lines you could own? Does the platform do it (rules/04 table)? Check maintenance, weekly downloads, dependency count.
+- **Minimal deps**: every dep is trust granted to its maintainers and their deps transitively. Before adding: is it <100 lines you could own? Does the platform do it ([rules/04](04-node-backend.md) table)? Check maintenance, weekly downloads, dependency count.
 - **Before adding a dependency, vet it — including every name an AI assistant proposed**: a suggested name may not exist, or may have been registered recently by someone betting that it will be suggested (slopsquatting), and a one-letter slip is a typosquat. `npm view <name> time.created maintainers repository.url dist-tags.latest` fails with E404 on an unknown name; read the creation date, maintainer count and the repository it links, and confirm that repository is the project you meant. Then `https://deps.dev/npm/<name>` (or `api.deps.dev/v3/systems/npm/packages/<name>`) for versions, advisories, deprecations and licence, and OpenSSF Scorecard (`scorecard --npm=<name>`, or `api.securityscorecards.dev/projects/github.com/<owner>/<repo>`) for maintenance signals. Scoped packages (`@org/x`) reduce the squatting risk. Pin GitHub Actions to commit SHAs, not tags.
-- **A library's defaults are part of your code**, and README samples are demos: audit every security-relevant option you pass or omit. Verified examples: `cors()` with no options sends `Access-Control-Allow-Origin: *` (cors 2.8.6 `origin: '*'`); axios `timeout` defaults to `0`, meaning no timeout (axios 1.20.0 `lib/defaults`); `marked` does not sanitize its HTML output (its README says so; wrap it in `DOMPurify.sanitize`); express-session leaves the cookie's `Secure` attribute unset unless `cookie.secure` is set, and its README examples use the secret `'keyboard cat'`. A copied sample brings its demo settings with it, such as `rejectUnauthorized: false` (rules/04), `origin: true` or a debug flag. (OWASP: Vulnerable Dependency Management cheat sheet; Software Supply Chain Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)
+- **A library's defaults are part of your code**, and README samples are demos: audit every security-relevant option you pass or omit. Verified examples: `cors()` with no options sends `Access-Control-Allow-Origin: *` (cors 2.8.6 `origin: '*'`); axios `timeout` defaults to `0`, meaning no timeout (axios 1.20.0 `lib/defaults`); `marked` does not sanitize its HTML output (its README says so; wrap it in `DOMPurify.sanitize`); express-session leaves the cookie's `Secure` attribute unset unless `cookie.secure` is set, and its README examples use the secret `'keyboard cat'`. A copied sample brings its demo settings with it, such as `rejectUnauthorized: false` ([rules/04](04-node-backend.md)), `origin: true` or a debug flag. (OWASP: Vulnerable Dependency Management cheat sheet; Software Supply Chain Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)
 - **Publishing**: trusted publishing (OIDC from CI — `npm trust` since CLI 11.10 configures it across packages in bulk) over long-lived tokens; npm's staged publishing adds a human 2FA approval gate before a version goes live — enable it for high-blast-radius packages (a stolen token alone then can't ship a release). `files` allowlist in package.json so secrets/configs never ship in the tarball.
 
 ## Invisible and bidirectional characters in source
@@ -198,7 +198,7 @@ Gate on it rather than trusting review: `eslint-plugin-security` ships
 U+FFA0) is on the project's main branch but was **not in a published release** when checked on
 2026-09-24 (latest was 4.0.1). Until your installed version exports it, use the byte probe
 in the checklist. The ingest-side version of the same class, for
-text bound for an LLM or a UI, is `sota-code-security` rules/09 §4.
+text bound for an LLM or a UI, is [`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md) §4.
 
 ## ReDoS
 
@@ -256,7 +256,7 @@ if (input.length > 256) reject();
 
 ## Tokens and client-side auth
 
-- **Session/refresh tokens never in `localStorage`/`sessionStorage`** — any XSS exfiltrates them (other sensitive data in browser storage: rules/09). Use cookies: `HttpOnly; Secure; SameSite=Lax` (or `Strict`), `Path` scoped, `__Host-` prefix.
+- **Session/refresh tokens never in `localStorage`/`sessionStorage`** — any XSS exfiltrates them (other sensitive data in browser storage: [rules/09](09-browser-platform-security.md)). Use cookies: `HttpOnly; Secure; SameSite=Lax` (or `Strict`), `Path` scoped, `__Host-` prefix.
 - SameSite is CSRF defense-in-depth, not complete: keep CSRF tokens (or strictly enforce custom-header + CORS preflight) for state-changing routes if any non-SameSite path exists.
 - If an SPA must hold an access token in JS (third-party API): keep it in memory only, short-lived (≤15min), refresh via httpOnly-cookie refresh token; accept that XSS can use (not just steal) it — XSS prevention remains the real control.
 - **Verify JWTs server-side properly**: pin the algorithm (`{ algorithms: ['RS256'] }` — never accept `alg` from the token; `none` and HS/RS confusion attacks), validate `iss`, `aud`, `exp`, clock skew. Use `jose`. Don't put secrets in JWT payloads — they're only base64.
@@ -348,7 +348,7 @@ File uploads:
 
 - Compare secrets (HMAC signatures, API keys, tokens) with `crypto.timingSafeEqual` (equal-length buffers — hash both sides first if lengths vary), never `===` (timing oracle).
 - Randomness for anything security-relevant (tokens, IDs in URLs, reset codes): `crypto.randomUUID()` / `crypto.getRandomValues()` / `crypto.randomBytes` — never `Math.random()` (predictable, seedable state recovery is practical).
-- Password hashing: argon2id (or scrypt/bcrypt with sane cost), async variants only (rules/04); never SHA-256-of-password, never homegrown.
+- Password hashing: argon2id (or scrypt/bcrypt with sane cost), async variants only ([rules/04](04-node-backend.md)); never SHA-256-of-password, never homegrown.
 - Web Crypto (`crypto.subtle`) for in-app encryption/signing; AES-GCM with unique IVs per encryption (IV reuse with GCM is catastrophic); keys from KMS/secret manager, not constants.
 
 ## Native addons and uninitialized buffers
@@ -368,7 +368,7 @@ threw `ERR_ACCESS_DENIED`) or with `--no-experimental-ffi`, unless a reviewed fe
 The docs say that flag exists "only in builds with FFI support": on v22 (v22.22.1, v22.23.3) the
 command line prints `bad option: --no-experimental-ffi` and `NODE_OPTIONS` prints
 `--no-experimental-ffi is not allowed in NODE_OPTIONS`, both exit 9, so the process never starts
-on a runtime without FFI. The class is `sota-code-security` rules/06 §3.
+on a runtime without FFI. The class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
 
 ## Audit checklist
 

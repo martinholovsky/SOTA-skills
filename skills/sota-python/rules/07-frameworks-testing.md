@@ -1,7 +1,7 @@
 # 07 — FastAPI, Django, and pytest Mastery
 
 Framework-specific traps plus the testing discipline that applies everywhere. Deep general
-rules live elsewhere (async → rules/04, validation → rules/02, SQL safety → rules/05).
+rules live elsewhere (async → [rules/04](04-async.md), validation → [rules/02](02-typing-correctness.md), SQL safety → [rules/05](05-security.md)).
 
 ## 1. FastAPI
 
@@ -48,7 +48,7 @@ async def create_user(payload: UserIn, svc: UserService = Depends(get_user_servi
 ### The sync-in-async trap (most common FastAPI perf bug)
 
 - `async def` endpoint + blocking call (requests, sync SQLAlchemy session, `time.sleep`)
-  → blocks the **single** event loop; whole service serializes. See rules/04 §3.
+  → blocks the **single** event loop; whole service serializes. See [rules/04](04-async.md) §3.
 - `def` (sync) endpoint → FastAPI runs it in the anyio threadpool (default ~40 threads) —
   blocking is *safe* there but throughput caps at pool size.
 - Rule: endpoint is `async def` **only if everything it awaits is truly async** (asyncpg /
@@ -56,10 +56,10 @@ async def create_user(payload: UserIn, svc: UserService = Depends(get_user_servi
   stay sync, or fix the stack. An `async def` endpoint with zero `await` inside is a bug
   marker — it gains nothing and risks someone adding blocking calls later.
 - **Exception: the liveness probe.** A liveness endpoint is *supposed* to await nothing —
-  its job is "is the event loop responsive", so `sota-observability` rules/05 §1 specifies
+  its job is "is the event loop responsive", so [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §1 specifies
   process-internal-only, "usually just return 200". Written as `def` it runs in the anyio
   threadpool, where saturation by slow sync handlers delays the probe and the orchestrator
-  restarts a process whose event loop was fine — the restart storm rules/05 exists to
+  restarts a process whose event loop was fine — the restart storm [rules/05](05-security.md) exists to
   prevent. So a no-`await` `async def` is **correct** here and the marker does not apply.
   Say so in the docstring, or the next reader "fixes" it. Readiness (`/readyz`), which does
   check dependencies, follows the normal rule.
@@ -119,16 +119,16 @@ orders = (
   Django 5.2 remains the LTS — don't flag staying on it as a finding.
 - `async def` views must not call the sync ORM directly — use `aget/afirst/acount` async
   ORM methods or `sync_to_async` wrappers; a blocking ORM call in an async view under ASGI
-  stalls the loop (rules/04 §7).
+  stalls the loop ([rules/04](04-async.md) §7).
 - Settings via `django-environ`/env vars; `DEBUG=False`, `ALLOWED_HOSTS`, `SECRET_KEY` from
   secrets store — run `manage.py check --deploy` in CI.
 - Keep `.raw()`, `.extra()`, `RawSQL` out of the codebase or parameterized + reviewed
-  (rules/05 §3).
+  ([rules/05](05-security.md) §3).
 
 ### Cookies the application sets (Flask, Starlette/FastAPI, Django)
 
-The framework's session cookie is configured by settings and owned by `sota-code-security`
-rules/17. Every *other* cookie — a preference, a device id, a "remember this" token — goes
+The framework's session cookie is configured by settings and owned by [`sota-code-security`
+rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md). Every *other* cookie — a preference, a device id, a "remember this" token — goes
 through `response.set_cookie(...)`, and the defaults there are the insecure ones. Measured
 this session (Werkzeug 3.1 / Starlette 1.7 / Django 6.1), a bare `set_cookie("pref", "v")`
 emitted:
@@ -200,7 +200,7 @@ def test_parse_duration(raw: str, expected: int | None) -> None:
 - Every test runs alone and in any order: `pytest -p no:randomly` shouldn't be needed —
   install `pytest-randomly` and keep it green.
 - Banned: module-level mutable state shared across tests, tests that rely on execution
-  order, `lru_cache`d functions tested without `cache_clear` between tests (rules/06 §4),
+  order, `lru_cache`d functions tested without `cache_clear` between tests ([rules/06](06-performance.md) §4),
   writes to shared tmp paths — use the `tmp_path` fixture, env mutation without
   `monkeypatch.setenv` (which auto-reverts).
 - Verify independence in CI occasionally: `pytest -x --randomly-seed=last`, and
@@ -257,7 +257,7 @@ testpaths = ["tests"]
 - Mock at the boundary you own (`mocker.patch.object(svc, "client")`), not deep internals;
   patch where the name is *looked up*, not where it's defined. Over-mocked tests that
   assert call sequences test the mock, not the code — prefer fakes (in-memory repo).
-- Async tests: `asyncio_mode = "auto"` (rules/04 §10). Time: `freezegun`/`time-machine`,
+- Async tests: `asyncio_mode = "auto"` ([rules/04](04-async.md) §10). Time: `freezegun`/`time-machine`,
   never `sleep`.
 - Coverage gate (`--cov --cov-fail-under=N`) measures *executed*, not *asserted* — treat as
   floor, not target; mutation testing (`mutmut`) where correctness is critical.

@@ -12,10 +12,10 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
   Replace hand-written DTO/value classes. Use `init`-only setters for
   immutable-after-construction.
 - Prefer immutable by default: `readonly` fields, `init` properties, immutable
-  collections where it matters. Immutable types are thread-safe (`rules/03`).
+  collections where it matters. Immutable types are thread-safe ([`rules/03`](03-async-concurrency.md)).
 - `record class` for entities with identity-by-value semantics; plain `class` for
   mutable services/stateful objects; `struct`/`record struct` for small values
-  (`rules/05`).
+  ([`rules/05`](05-performance.md)).
 - **A timestamp field is `DateTimeOffset` or a UTC `DateTime`, never `DateTime.Now`.** `Now`
   is *"expressed as the local time"* and returns `Kind` `Local` (measured on the .NET 10 SDK
   image: `Now.Kind=Local`, `UtcNow.Kind=Utc`), so a stored value depends on the host's zone
@@ -97,8 +97,8 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
 
 - LINQ for clarity over hand loops, but beware: multiple enumeration of an
   `IEnumerable` (materialize with `ToList()` once if iterated repeatedly), hidden
-  N+1 with `IQueryable` and EF Core lazy loading (`rules/05` §4), and allocation/closure cost on hot
-  paths (`rules/05`). Know when a query executes (deferred vs eager).
+  N+1 with `IQueryable` and EF Core lazy loading ([`rules/05`](05-performance.md) §4), and allocation/closure cost on hot
+  paths ([`rules/05`](05-performance.md)). Know when a query executes (deferred vs eager).
 
 ## 6. Error handling
 
@@ -176,4 +176,4 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       (non-file-scoped namespaces)
 - [ ] **Multiple enumeration / LINQ on hot path — LOW (verify)** —
       `grep -rnE '\.Where\(|\.Select\(|\.Count\(\)' --include='*.cs' . | head`
-- [ ] **Broad analyzer pass (idioms): enable .NET analyzers + IDE rules in CI (rules/06)**
+- [ ] **Broad analyzer pass (idioms): enable .NET analyzers + IDE rules in CI ([rules/06](06-build-tooling-ci.md))**

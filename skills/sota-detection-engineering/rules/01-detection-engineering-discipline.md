@@ -20,10 +20,10 @@ hypothesis → build → test → deploy → tune → retire
   environment: "An adversary with a stolen OAuth token will register a new MFA
   device (T1556.006) to persist." Name the technique, the actor capability, and
   the telemetry that witnesses it. No hypothesis → no detection.
-- **Build.** Express the logic in the right engine (rules/03), scoped tightly,
+- **Build.** Express the logic in the right engine ([rules/03](03-rule-languages-engines.md)), scoped tightly,
   with allowlist context for known-benign.
 - **Test.** Validate it fires on the real technique (adversary emulation,
-  rules/06) and stays quiet on a benign baseline. Capture both as regression
+  [rules/06](06-incident-response-validation.md)) and stays quiet on a benign baseline. Capture both as regression
   fixtures.
 - **Deploy.** Ship through CI to the SIEM/engine, with a runbook and an owner.
 - **Tune.** Watch FP/TP rates for a burn-in window; adjust scope, add
@@ -131,7 +131,7 @@ would catch the *behavior* this IOC is a symptom of?" Build that instead.
   existence; a rule that's never fired is not coverage.
 - **Threat-informed prioritization.** Don't chase 100% of the matrix. Prioritize
   techniques used by adversaries who actually target your sector (threat intel,
-  rules/05) and the techniques that the *other SOTA skills* tell you matter for
+  [rules/05](05-hunting-intel-deception.md)) and the techniques that the *other SOTA skills* tell you matter for
   your stack: cloud/K8s/identity attack paths. MITRE CTID's **INFORM** maturity
   model (updated Jan 2026) and the Center for Threat-Informed Defense's
   resources (ctid.mitre.org) give a structured way to measure and grow.
@@ -164,19 +164,19 @@ validation (purple teaming, BAS) feeding the hypothesis backlog.
 
 ## 7. Concurrent siblings & owned boundaries
 
-- **sota-observability** owns the telemetry pipeline. Detection logic consumes
-  its output. Reference rules/01 (structured logging) for the schema you query
-  and rules/04 (alerting/SLO) for the *plumbing* that routes your security
+- **[sota-observability](../../sota-observability/SKILL.md)** owns the telemetry pipeline. Detection logic consumes
+  its output. Reference [rules/01](01-detection-engineering-discipline.md) (structured logging) for the schema you query
+  and [rules/04](04-alerting-triage-soc-soar.md) (alerting/SLO) for the *plumbing* that routes your security
   alerts — you own the security *content*, not the pipe.
-- **sota-threat-modeling** rules/03 (threat catalogs, STRIDE/ATT&CK/ATLAS)
+- **[sota-threat-modeling** rules/03](../../sota-threat-modeling/rules/03-threat-catalogs.md) (threat catalogs, STRIDE/ATT&CK/ATLAS)
   enumerates threats at design time; turn each high-priority threat into a
   detection hypothesis here.
-- **sota-kubernetes** (K8s audit-log detections, admission events),
-  **sota-network-security** (network IDS, DNS-exfil, flow logs), and
-  **sota-identity-access** (auth anomaly, impossible-travel, MFA-fatigue) own
+- **[sota-kubernetes](../../sota-kubernetes/SKILL.md)** (K8s audit-log detections, admission events),
+  **[sota-network-security](../../sota-network-security/SKILL.md)** (network IDS, DNS-exfil, flow logs), and
+  **[sota-identity-access](../../sota-identity-access/SKILL.md)** (auth anomaly, impossible-travel, MFA-fatigue) own
   the domain-specific detections; this skill owns the *discipline* that produces
   and validates them.
-- **sota-code-security** rules/08 (LLM/AI security) defines the prompt-injection
+- **[sota-code-security** rules/08](../../sota-code-security/rules/08-llm-ai-security.md) (LLM/AI security) defines the prompt-injection
   / excessive-agency threats; detecting them at runtime (and ATLAS coverage) is
   yours.
 
@@ -201,7 +201,7 @@ have passed every test, because the test corpus is the demo.
   privilege transition are usually the mechanism.
 - **A rule that cannot fail on the demo corpus has not been tested.** Pair it with a variant
   that keeps the mechanism and changes every one of the author's choices; if the rule stops
-  firing, it was keyed on scaffolding (`sota-code-security` rules/15 §2.1 — a probe that
+  firing, it was keyed on scaffolding ([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.1 — a probe that
   exercises a neighbouring property).
 - **Enforce the citation the way a runbook link is enforced** — a rule with no source field
   does not load. Provenance that is optional is provenance that is absent by the time anyone
@@ -210,7 +210,7 @@ have passed every test, because the test corpus is the demo.
   you: the same paper that supplied the technique described a wrapper variant producing a
   structurally ordinary binary that evades all three of its own signals. Writing that down is
   what stops the rule being credited with coverage it does not have — the counting discipline
-  in `sota-code-security` rules/14 §6, applied before anyone asks.
+  in [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §6, applied before anyone asks.
 - **Re-read the source when the rule misbehaves.** "It worked in the paper" and "it works
   here" are claims about different corpora; §2's benign baseline is what turns the second
   into a number.

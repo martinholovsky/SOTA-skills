@@ -106,7 +106,7 @@ Unit/integration tests for logic breadth; a thin Playwright layer for critical u
 
 Flat config (`eslint.config.js`) is the only supported format since ESLint 9; ESLint 10 (Feb 2026) removes the eslintrc system entirely, resolves config from each linted file's directory (multiple configs per run — monorepo-friendly), and requires Node ≥20.19. typescript-eslint v8 supports ESLint 9 and 10. Type-aware strict preset catches real bugs (floating promises, unsafe any-flow) that syntax-only linting can't.
 
-**Typed lint does not run on TypeScript 7.0.** typescript-eslint v8's peer range is `typescript <6.1.0` and 7.0 has no compiler API: with `typescript@^7` the install fails `ERESOLVE`, and forced, `eslint` exits 2 (measured, typescript-eslint 8.70.1). Keep the `typescript` dependency on the 6.0 API with the `npm:@typescript/typescript6` alias and run `tsc` from 7.0 beside it — the `package.json` snippet is in rules/01 §"tsconfig". Exit 2 in CI is a broken gate, not a lint failure.
+**Typed lint does not run on TypeScript 7.0.** typescript-eslint v8's peer range is `typescript <6.1.0` and 7.0 has no compiler API: with `typescript@^7` the install fails `ERESOLVE`, and forced, `eslint` exits 2 (measured, typescript-eslint 8.70.1). Keep the `typescript` dependency on the 6.0 API with the `npm:@typescript/typescript6` alias and run `tsc` from 7.0 beside it — the `package.json` snippet is in [rules/01](01-typescript-config-and-types.md) §"tsconfig". Exit 2 in CI is a broken gate, not a lint failure.
 
 ```js
 // eslint.config.js
@@ -144,8 +144,8 @@ export default defineConfig(
   form of `object[expression]` no matter where it occurs". Neither plugin has a rule for
   these (checked against both rule lists): raw-output syntax inside `.ejs`/`.pug`/`.hbs`
   files (ESLint does not parse them), a missing GCM `authTagLength`, TLS verification
-  opt-outs, or a missing `ssh2` `hostVerifier`. Those need the grep probes in rules/04 and
-  rules/05.
+  opt-outs, or a missing `ssh2` `hostVerifier`. Those need the grep probes in [rules/04](04-node-backend.md) and
+  [rules/05](05-security.md).
 - Useful plugins: `eslint-plugin-regexp` (ReDoS), `eslint-plugin-react-hooks` (v7: the React-Compiler-powered rules ship in `configs.flat.recommended`; `recommended-latest` is the plugin's experimental channel), `eslint-plugin-jsx-a11y`, `eslint-plugin-import-x` (cycles: `import-x/no-cycle`).
 - Downgrading errors to warnings "to get CI green" creates a permanent warning swamp — fix or explicitly disable per-line with a reason comment.
 
@@ -174,9 +174,9 @@ Knip finds unused files, exports, types, and dependencies — the stuff `tsc` ca
 { "entry": ["src/index.ts", "src/cli.ts"], "project": ["src/**/*.ts"] }
 ```
 
-- Run in CI (`knip --reporter compact`); triage with `--include dependencies` first (unused deps = supply-chain surface, rules/05), then files, then exports.
+- Run in CI (`knip --reporter compact`); triage with `--include dependencies` first (unused deps = supply-chain surface, [rules/05](05-security.md)), then files, then exports.
 - Pairs with `tsc --noUnusedLocals --noUnusedParameters` (intra-file) — knip covers inter-file.
-- Knip's output is a **candidate list, not a finding**: a package loaded dynamically (string `require`, plugin manifest, DI by convention) reads as unused, and a package whose symbol is referenced only on an unreachable branch reads as used. Prove each candidate by deleting it in a scratch copy and running the real build + suite — `sota-devsecops` rules/10.
+- Knip's output is a **candidate list, not a finding**: a package loaded dynamically (string `require`, plugin manifest, DI by convention) reads as unused, and a package whose symbol is referenced only on an unreachable branch reads as used. Prove each candidate by deleting it in a scratch copy and running the real build + suite — [`sota-devsecops` rules/10](../../sota-devsecops/rules/10-inert-dependencies.md).
 - Unused exports kill tree-shaking analysis precision and mislead readers; deleting code is a feature.
 
 ## Library publishing: publint + arethetypeswrong
@@ -205,7 +205,7 @@ Broken `exports`/types maps are the top npm-library bug class (works in dev, bre
   packed. So use the `files` allowlist, not `.npmignore`. `files: ["dist"]` still shipped
   `dist/index.js.map`, and `"!dist/**/*.map"` removed it. In CI, diff the packed path list
   against a committed expected list and fail on any new path. *OWASP: NPM Security cheat sheet.*
-- Dual ESM/CJS only if consumers demand it (tsdown/unbuild make it tolerable; tsup's README says it is no longer actively maintained and points to tsdown); otherwise ESM-only and say so in the README. On Node ≥ v20.19 / v22.12, `require(esm)` lets CJS consumers load an ESM-only package whose graph has no top-level `await` (rules/04 §"Native ESM in Node").
+- Dual ESM/CJS only if consumers demand it (tsdown/unbuild make it tolerable; tsup's README says it is no longer actively maintained and points to tsdown); otherwise ESM-only and say so in the README. On Node ≥ v20.19 / v22.12, `require(esm)` lets CJS consumers load an ESM-only package whose graph has no top-level `await` ([rules/04](04-node-backend.md) §"Native ESM in Node").
 
 ## Type-level testing
 
@@ -224,7 +224,7 @@ test('parse narrows to branded id', () => {
 
 ## CI gates (the minimum bar)
 
-Order fast→slow, all blocking: `tsc --noEmit` → eslint → unit/integration (vitest, coverage thresholds) → knip → build → playwright smoke. Plus `npm audit`/osv-scan and lockfile-frozen install (rules/05). A repo where `tsc --noEmit` isn't in CI will accumulate `as any` until types are decorative.
+Order fast→slow, all blocking: `tsc --noEmit` → eslint → unit/integration (vitest, coverage thresholds) → knip → build → playwright smoke. Plus `npm audit`/osv-scan and lockfile-frozen install ([rules/05](05-security.md)). A repo where `tsc --noEmit` isn't in CI will accumulate `as any` until types are decorative.
 
 ```yaml
 # .github/workflows/ci.yml — minimal blocking pipeline
@@ -240,7 +240,7 @@ steps:
   - run: pnpm build
 ```
 
-`--max-warnings 0` keeps warnings from becoming wallpaper. Cache pnpm store, not node_modules. Pin action SHAs (rules/05).
+`--max-warnings 0` keeps warnings from becoming wallpaper. Cache pnpm store, not node_modules. Pin action SHAs ([rules/05](05-security.md)).
 
 ## Audit checklist
 

@@ -24,7 +24,7 @@ not distributed-systems cost.
 
 **Never extract because:** "microservices are best practice", résumé pressure,
 "we might need to scale later", or to fix a tangled codebase (you'll get a
-tangled distributed system — see rules/07, distributed monolith).
+tangled distributed system — see [rules/07](07-anti-patterns-catalog.md), distributed monolith).
 
 ```text
 GOOD: one repo, one deploy
@@ -82,7 +82,7 @@ on one.
   so a change there selects nothing until a team declares it. Turborepo's `--affected` treats a
   too-shallow checkout as "all changed", and its global hash covers the root lockfile,
   `globalDependencies` and `globalEnv`. A selection that misses a global input reads as a green
-  build that tested nothing (`sota-code-security` rules/11 §2.2).
+  build that tested nothing ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2).
 
 
 | Style | Wins when | Loses when |
@@ -90,7 +90,7 @@ on one.
 | Modular monolith | Small/medium team, evolving domain, unknown load profile | Genuinely independent scaling/deploy needs across teams |
 | Microservices | Many teams, independent deploy cadence, per-service scaling, mature platform (CI/CD, observability, on-call) | Team < ~3 squads, no platform engineering, chatty domain |
 | Serverless (FaaS) | Spiky/bursty load, event glue, low ops budget, embarrassingly stateless handlers | Long-lived connections, latency-critical p99 (cold starts), heavy local state, cost at sustained high throughput |
-| Event-driven backbone | Many consumers per fact, audit/replay needs, temporal decoupling | Request/response semantics forced through events (see rules/03) |
+| Event-driven backbone | Many consumers per fact, audit/replay needs, temporal decoupling | Request/response semantics forced through events (see [rules/03](03-distributed-systems-and-events.md)) |
 
 **Rule:** Serverless is an operational model, not an architecture. You still owe
 module boundaries, idempotency, and observability. A pile of 200 lambdas sharing
@@ -208,7 +208,7 @@ can't claim it.
 - Dependency direction: "no module imports `billing/internal`" — architecture test.
 - Coupling budget: cyclic dependencies between modules = build failure.
 - Latency: p99 of checkout API < 300 ms under k6 load profile — perf gate on main.
-- Resilience: weekly chaos run kills one replica of each service; SLOs must hold (see rules/04).
+- Resilience: weekly chaos run kills one replica of each service; SLOs must hold (see [rules/04](04-resilience-and-failure-design.md)).
 - Cost: per-tenant infra cost stays under $X — scheduled report with alert.
 - Schema safety: migration linter forbids destructive DDL without expand/contract.
 
@@ -227,7 +227,7 @@ comment; Type 1 decisions get an ADR, a spike, and an exit strategy.
 **Rule:** For every Type 1 dependency, write down the exit strategy in the ADR
 ("we wrap the broker behind `EventBus` port; migration = reimplement adapter +
 dual-publish for N days"). Don't build a full abstraction layer preemptively —
-a thin port is enough (see rules/02 on ports).
+a thin port is enough (see [rules/02](02-domain-modeling-and-boundaries.md) on ports).
 
 ## 7. Conway's law: design team and system boundaries together
 
@@ -273,7 +273,7 @@ responses.
 
 **Rule:** Keep business logic out of the gateway. A gateway that transforms
 payloads, enforces domain rules, or orchestrates workflows is an unowned god
-service (rules/07 §3) written in YAML. Gateways route and protect; BFFs compose;
+service ([rules/07](07-anti-patterns-catalog.md) §3) written in YAML. Gateways route and protect; BFFs compose;
 services decide.
 
 **Rule:** Each BFF is owned by the client team it serves. A shared BFF for all
@@ -317,14 +317,14 @@ retire, keep with a named owner, or merge into something else.
 
 **Rule:** Move consumers off per customer, not by broadcast. List every caller and tenant
 still on the service or on an old version of it, give each one a migration plan and a
-date, and switch the service off only when that list is empty (the API side: `sota-api-design`
-rules/02 §5). Stop supporting a version once no customer runs it.
+date, and switch the service off only when that list is empty (the API side: [`sota-api-design`
+rules/02](../../sota-api-design/rules/02-versioning-evolution.md) §5). Stop supporting a version once no customer runs it.
 
 **Rule:** Tear everything down in one tracked change, in this order: stop traffic, revoke
 its identities and secrets (service accounts, API keys, certificates:
-`sota-identity-access` rules/04, `sota-secrets-management` rules/01 §3), then export or delete
-its data under the retention policy (rules/05 §6). Only after that remove DNS records
-(`sota-devsecops` rules/06 §6.7), firewall and routing rules, queues and topics, and compute,
+[`sota-identity-access` rules/04](../../sota-identity-access/rules/04-lifecycle-provisioning.md), [`sota-secrets-management` rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md) §3), then export or delete
+its data under the retention policy ([rules/05](05-scalability-state-and-data.md) §6). Only after that remove DNS records
+([`sota-devsecops` rules/06](../../sota-devsecops/rules/06-iac-deployment.md) §6.7), firewall and routing rules, queues and topics, and compute,
 and delete the code path. Anything left behind is an orphan nobody will patch.
 
 **Rule:** The last step is taking it out of the inventory of production components, and of

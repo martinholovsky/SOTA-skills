@@ -80,7 +80,7 @@ slowlog = /var/log/php-fpm/slow.log
 - `listen.backlog` and the status page's `listen queue` reveal saturation
   before users do; alert on queue > 0 sustained.
 - One pool per app, distinct user per pool (also a security boundary,
-  `rules/04` §5).
+  [`rules/04`](04-sessions-auth-web-hardening.md) §5).
 - **Session locking:** file-backed sessions serialize concurrent requests per
   user; call `session_write_close()` as soon as writes are done, or use a
   store with proper locking semantics.
@@ -129,7 +129,7 @@ OWASP: Multi-Tenant Security, Session Management cheat sheets.
   finding. Fix with eager loading / joins (e.g. Eloquent `with()`, Doctrine
   `JOIN` fetch or `EXTRA_LAZY` deliberately). Detect: query logging in dev,
   a query-count assertion in tests for hot endpoints, APM span counts in prod.
-  Index/schema depth → sota-databases.
+  Index/schema depth → [sota-databases](../../sota-databases/SKILL.md).
 - **Cache layers, by scope:** OPcache (bytecode) → APCu (per-host, in-memory,
   no network — great for config/feature flags) → Redis/Memcached (shared,
   neutral examples). Every cache entry gets a TTL and a stampede story

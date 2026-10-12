@@ -83,7 +83,7 @@ Then read the hits in full context — a grep match is a lead, not a finding.
 Pattern-match against these; each maps to the rules file that specifies the
 fix. Severity per SKILL.md conventions.
 
-**Logging (rules/01):**
+**Logging ([rules/01](01-structured-logging.md)):**
 - G1. printf/console logging on prod paths; unparseable. [MEDIUM]
 - G2. No correlation/trace ID in logs; async/queue work logs orphaned. [HIGH]
 - G3. Secrets/PII reachable in logs (headers, bodies, user objects dumped);
@@ -101,7 +101,7 @@ fix. Severity per SKILL.md conventions.
   severities. [MEDIUM, HIGH where an audit trail is a compliance claim]
   OWASP: ASVS 5.0 V16.1.1, Logging cheat sheet.
 
-**Metrics (rules/02):**
+**Metrics ([rules/02](02-metrics.md)):**
 - G7. No RED per route; or "error" undefined (4xx counted, timeouts not). [HIGH]
 - G8. No saturation metrics on pools/queues — the "slow but CPU idle"
   blindspot. [HIGH]
@@ -111,7 +111,7 @@ fix. Severity per SKILL.md conventions.
   never tuned to SLO thresholds. [MEDIUM–HIGH]
 - G11. No exemplars / no metric→trace path. [MEDIUM]
 
-**Tracing (rules/03):**
+**Tracing ([rules/03](03-tracing.md)):**
 - G12. No tracing at all on a multi-service system. [HIGH]
 - G13. Broken propagation: traces shatter at queue/job boundaries; one user
   action = N disconnected traces. [HIGH]
@@ -120,7 +120,7 @@ fix. Severity per SKILL.md conventions.
 - G15. Naive 1% head sampling: zero traces of any error. [MEDIUM–HIGH]
 - G16. PII in span attributes or baggage; baggage leaking to third parties. [CRITICAL]
 
-**SLOs & alerting (rules/04):**
+**SLOs & alerting ([rules/04](04-slos-alerting.md)):**
 - G17. No SLOs; alerting is ad-hoc thresholds someone set in 2022. [HIGH]
 - G18. Cause-based paging (CPU, restarts, disk%) with no symptom coverage;
   or every ERROR log pages. [HIGH]
@@ -141,7 +141,7 @@ fix. Severity per SKILL.md conventions.
   log query is the real observability system. Runbooks/dashboards absent
   or stale. [MEDIUM]
 
-**Operational readiness (rules/05):**
+**Operational readiness ([rules/05](05-operational-readiness.md)):**
 - G22. Liveness probe checks dependencies (restart-storm primitive); or
   readiness == liveness == "return 200". [CRITICAL/HIGH]
 - G23. Debug/profiling/metrics endpoints reachable without auth from
@@ -165,7 +165,7 @@ for trace_id in a sample log line; deliver verdicts + top-5 findings.
 
 **1 day (standard):** full §1 journey trace for two paths incl. failure
 path; label-cardinality review of every custom metric; alert inventory
-against the rules/04 quality bar; debug-surface enumeration; scored rubric
+against the [rules/04](04-slos-alerting.md) quality bar; debug-surface enumeration; scored rubric
 + full findings report.
 
 **1 week (deep):** everything above, plus: live verification (break a

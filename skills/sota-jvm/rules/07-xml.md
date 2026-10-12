@@ -1,7 +1,7 @@
 # 07 — XML: XXE, XSLT and Parser Hardening
 
 Scope: every JDK and library XML parser, transformer and validator that can read
-caller-influenced input. Split out of rules/04 (formerly section 3) on 2026-09-25; the section is
+caller-influenced input. Split out of [rules/04](04-security.md) (formerly section 3) on 2026-09-25; the section is
 now §1. Maps to CWE-611 (XXE), CWE-91, CWE-776.
 
 Core principle: **no JDK XML factory is safe by default; harden each one you create, in
@@ -224,7 +224,7 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
       `XXE_DTD_TRANSFORM_FACTORY` and `XXE_XSLT_TRANSFORM_FACTORY`. The Semgrep/Opengrep rule
       repositories carry `documentbuilderfactory-disallow-doctype-decl-missing`,
       `saxparserfactory-disallow-doctype-decl-missing`, `transformerfactory-dtds-not-disabled`
-      (under `java/lang/security/audit/xxe/`) and `xmlinputfactory-possible-xxe` (`rules/06` §3) —
+      (under `java/lang/security/audit/xxe/`) and `xmlinputfactory-possible-xxe` ([`rules/06`](06-build-tooling-ci.md) §3) —
       `grep -rlE 'findsecbugs|java[./]lang[./]security[./]audit[./]xxe|xmlinputfactory-possible-xxe' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.yml' --include='*.yaml' . || echo "FINDING: no XXE-capable SAST rule set configured"`
       ; a gate that cannot fail, or XXE patterns excluded:
       `grep -rnE 'pattern="[^"]*XXE_|failOnError>false|spotbugs\.failOnError=false|ignoreFailures[[:space:]]*=[[:space:]]*true' --include='*exclude*.xml' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.properties' .`

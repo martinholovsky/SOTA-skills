@@ -164,8 +164,8 @@ signature, so they come from these questions, asked per feature:
   negative), what enforces it, and is that enforcement atomic?
 
 Each answer that names a gap becomes a threat row and an abuse case above; the
-controls are `sota-code-security` rules/03 §3 (state-machine authorization) and
-the tests `sota-testing` rules/09 §4. OWASP: Abuse Case cheat sheet, Business
+controls are [`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md) §3 (state-machine authorization) and
+the tests [`sota-testing` rules/09](../../sota-testing/rules/09-security-testing.md) §4. OWASP: Abuse Case cheat sheet, Business
 Logic Security cheat sheet, DSOMM.
 
 ## 4. Keeping the model living

@@ -14,12 +14,12 @@
   OpenSSL STORE loaders (`--allow-openssl-store`, v26.7/v24.21); VFS (`--allow-fs-vfs`, v26.9).
   So on Node 22 and 24 **`--permission` does not restrict the network at all**: measured on
   22.22.1, a `fetch` under `--permission` succeeded and `--allow-net` was rejected as a bad
-  option. Keep egress control outside the process there (`sota-network-security`). The docs
+  option. Keep egress control outside the process there ([`sota-network-security`](../../sota-network-security/SKILL.md)). The docs
   list the model as Stable since v22.13.0/v23.5.0 (added in v20 as experimental). Scope
   `--allow-fs-read`/`--allow-fs-write` to specific directories, never `*`, and add any other
   `--allow-*` only for a feature that needs it. Check a grant at run time with
   `process.permission.has('fs.read', path)`. Its own docs say it "does not protect against
-  malicious code", so keep the container or OS sandbox (`sota-sandboxing` rules/04). Two
+  malicious code", so keep the container or OS sandbox ([`sota-sandboxing` rules/04](../../sota-sandboxing/rules/04-process-app-sandboxing.md)). Two
   documented gaps: file descriptors already open bypass it, and **symlinks are followed out of
   an allowed path**. Measured on Node 22.22.1 with only the app directory readable: reading a
   file outside it failed with `ERR_ACCESS_DENIED`, while a symlink inside the app directory
@@ -111,7 +111,7 @@ server.maxRequestsPerSocket = 1000;
 - **Behind a proxy**: set `trust proxy` correctly (exact hop count, not `true`) or rate limiting keys on spoofable `X-Forwarded-For`.
 - **Headers**: `helmet` (or hand-set: `HSTS`, `X-Content-Type-Options: nosniff`, frame-ancestors via CSP). Disable `X-Powered-By`.
 - **Rate limit** auth and expensive endpoints (`rate-limiter-flexible` backed by Redis when multi-instance — in-memory limits don't survive horizontal scaling).
-- **Validation**: every route parses body/query/params with a schema before touching them (rules/01, rules/05). Fastify + zod type-provider, or tRPC, makes this structural.
+- **Validation**: every route parses body/query/params with a schema before touching them ([rules/01](01-typescript-config-and-types.md), [rules/05](05-security.md)). Fastify + zod type-provider, or tRPC, makes this structural.
 - **Compression**: gate on response size; never compress encrypted/random content; beware BREACH when reflecting secrets in compressed responses.
 - Prefer Fastify over Express for new services: schema-first validation, structured logging built in (pino), 2-3× throughput, maintained.
 
@@ -252,7 +252,7 @@ logger.error({ err }, 'payment failed');   // `err` key serializes stack + cause
 
 One Node process = one JS thread. A 200ms synchronous task means every concurrent request waits 200ms.
 
-- Known CPU work (hashing, image resize, PDF gen, big JSON.parse, compression): `piscina` worker pool (rules/03). Size pool ≈ cores − 1.
+- Known CPU work (hashing, image resize, PDF gen, big JSON.parse, compression): `piscina` worker pool ([rules/03](03-async-patterns.md)). Size pool ≈ cores − 1.
 - `crypto.scrypt`/`bcrypt` async variants use the libuv threadpool — never the `*Sync` variants in request paths. Bump `UV_THREADPOOL_SIZE` (default 4!) if crypto/DNS/fs-heavy.
 - Banned in request paths: `fs.*Sync`, `child_process.execSync`, `zlib.*Sync`, `JSON.parse` of multi-MB payloads (cap body size instead), synchronous template rendering of huge documents.
 - Detect blocking in production: monitor event-loop delay with `perf_hooks.monitorEventLoopDelay()` (alert at p99 > ~100ms), or `blocked-at` in staging to get stacks.
@@ -307,7 +307,7 @@ Web Crypto's `decrypt` returns nothing until the tag verifies. `node:crypto`'s s
   data". Code that uses `update()`'s output and calls `final()` late, or never, acts on
   forged data. Buffer the output, call `final()`, and only then use the result. For a
   stream, nothing downstream may commit until `end`. This is the Node spelling of
-  `sota-code-security` rules/04 §2, "never act on plaintext before the tag verifies".
+  [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §2, "never act on plaintext before the tag verifies".
 - **Pass `authTagLength` when you create a GCM decipher.** Without it, `setAuthTag()`
   accepted a **4-byte** truncated tag, and decryption succeeded with no warning. With
   `{ authTagLength: 16 }`, the same call threw `ERR_CRYPTO_INVALID_AUTH_TAG`. Node's
@@ -329,7 +329,7 @@ Source for all three deprecations: <https://github.com/nodejs/node/blob/main/doc
 ## Transport verification: the Node spellings
 
 Disabled certificate or host-key verification is **one class, stated once** in
-`sota-code-security` rules/04 §5. This skill carries only Node's detectors, each measured on
+[`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5. This skill carries only Node's detectors, each measured on
 Node 22 against a self-signed server whose certificate names a different host:
 
 - `rejectUnauthorized: false`, an option of `https`/`tls` and of any agent that forwards
@@ -360,10 +360,10 @@ rendered an internal-only response. A PDF or screenshot of that page is the exfi
 channel.
 
 - **Treat the URL passed to `page.goto()` as an SSRF sink**, under the same rule as any
-  user-supplied URL the server fetches (rules/05, "SSRF and server-side validation").
+  user-supplied URL the server fetches ([rules/05](05-security.md), "SSRF and server-side validation").
   Allowlist the scheme (`https:`) and the host, and re-check after redirects. Run the
   browser where the metadata endpoint and internal ranges are unreachable
-  (`sota-sandboxing`).
+  ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)).
 - **Every "run this in the page" API accepts a string as well as a function.** That covers
   `page.evaluate()`, Puppeteer's `evaluateOnNewDocument()` and Playwright's
   `addInitScript()`. puppeteer-core's types say `pageFunction: Func | string`, and
@@ -388,7 +388,7 @@ channel.
 - [ ] **Permission Model granted wholesale (§"Runtime choice") — MEDIUM** —
       ``grep -rnE -e '--allow-fs-(read|write)=(\*|/)([" ,]|$)|--allow-(net|ffi)([^[:alnum:]-]|$)' --include='package.json' --include='Dockerfile*' --include='*.yml' --include='*.yaml' --include='*.service' --include='Procfile' .``
       — a `*` or `/` file-system grant makes `--permission` decorative; `--allow-net` (all hosts,
-      no scoping) and `--allow-ffi` (arbitrary native calls, rules/05) each reopen a whole scope.
+      no scoping) and `--allow-ffi` (arbitrary native calls, [rules/05](05-security.md)) each reopen a whole scope.
       Where it is scoped, check the allowed directories for attacker-creatable or relative symlinks,
       and that an OS sandbox still exists. On Node 22/24 (`engines`, `.nvmrc`, base image) there
       is no network scope at all: confirm egress is limited outside the process.

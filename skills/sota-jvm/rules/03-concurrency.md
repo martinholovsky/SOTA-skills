@@ -18,7 +18,7 @@ coroutines. References:
   the guarantees).
 - `volatile` gives visibility but **not** atomic compound actions
   (`count++` on a volatile is still a race) — use `AtomicInteger`/`LongAdder`.
-- Prefer immutability (`rules/01`) and confinement; the cheapest safe sharing is
+- Prefer immutability ([`rules/01`](01-idioms.md)) and confinement; the cheapest safe sharing is
   no shared mutable state.
 
 ## 2. Prefer high-level concurrency utilities
@@ -41,7 +41,7 @@ coroutines. References:
   bounded `ArrayBlockingQueue` (or a sized `LinkedBlockingQueue`) and an explicit
   `RejectedExecutionHandler`. A virtual-thread-per-task executor has no pool to bound, so
   cap concurrency with a `Semaphore` around the scarce resource. The general rule is
-  `sota-async-concurrency` (backpressure).
+  [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md) (backpressure).
 
 ## 3. Virtual threads (Java 21+, finalized JEP 444)
 

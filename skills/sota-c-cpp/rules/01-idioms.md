@@ -71,7 +71,7 @@ public:
 - `constexpr`/`consteval` for compile-time constants and functions; prefer over
   macros and over runtime computation of fixed values.
 - Avoid `const_cast` away constness on an object actually declared `const` —
-  that's UB if you then write (`rules/03`).
+  that's UB if you then write ([`rules/03`](03-undefined-behavior.md)).
 
 ## 5. References vs pointers, and casts
 
@@ -80,7 +80,7 @@ public:
 - **No C-style casts** (`(T)x`) in C++ — they silently become whichever of
   `static/const/reinterpret_cast` compiles, hiding intent and danger (CG
   ES.49). Use the named casts; `reinterpret_cast` is a red flag requiring a
-  comment and a strict-aliasing review (`rules/03`).
+  comment and a strict-aliasing review ([`rules/03`](03-undefined-behavior.md)).
 - `static_cast` for related types; never use it to "fix" a warning about
   signed/unsigned or narrowing without checking the value first.
 
@@ -120,13 +120,13 @@ public:
 
 ## 7a. In-band sentinels, and the platform that changes the answer
 
-C has no option type, so the in-band sentinel (`sota-architecture` rules/02 §8a) is
+C has no option type, so the in-band sentinel ([`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a) is
 the *native* idiom — and its two classic bugs are both about the sentinel's type
 rather than its value.
 
 - `atoi("x")` and `atoi("0")` both return `0` (verified, clang 21, macOS): failure
   and a legitimate parse are indistinguishable. Use `strtol` + `errno`/`endptr`
-  (already in rules/04's banned-API table).
+  (already in [rules/04](04-security.md)'s banned-API table).
 - **`EOF` is `-1` as an `int`, and storing it in a `char` breaks the comparison —
   on some platforms only.** Measured, clang 21 on x86-64 Darwin: with the default
   **signed** `char`, `(char)EOF == EOF` is **true** and the code works; compiled
@@ -135,7 +135,7 @@ rather than its value.
   (`-Wtautological-constant-out-of-range-compare`) only in the **broken**
   configuration, so a developer on a signed-`char` machine sees neither the bug nor
   the warning. Always `int c; while ((c = getchar()) != EOF)`. This is the
-  location-dependent silence class — `sota-code-security` rules/13 §5.
+  location-dependent silence class — [`sota-code-security` rules/13](../../sota-code-security/rules/13-context-dependent-silence.md) §5.
 - POSIX's `-1`-plus-`errno` is a genuine out-of-band pair; it only degrades into an
   in-band sentinel when the caller keeps the `-1` and drops `errno`.
 - **C++ has the alternatives — use them:** `std::optional<T>` for absent,
@@ -151,7 +151,7 @@ rather than its value.
   acceptable and idiomatic in C). Check every allocation return.
 - Prefer `sizeof(*ptr)` over `sizeof(Type)` in allocations so the size tracks
   the pointer's type. Use bounded string functions (`snprintf`, `strlcpy` where
-  available); see `rules/04` for the banned list.
+  available); see [`rules/04`](04-security.md) for the banned list.
 
 ## 8a. Construction and destruction — what actually runs is not what you wrote
 
@@ -187,7 +187,7 @@ list to match declaration order and let `-Wreorder` (in `-Wall`) keep it that wa
 Measured: `assert(++n == 1)` left `n == 1` in a normal build and **`n == 0`** compiled with
 `-DNDEBUG` — the increment simply did not happen, in the build you ship. Any expression with
 an effect belongs on its own line, with the assert testing the result. And an `assert` is
-never a security control for the same reason — `sota-code-security` rules/11.
+never a security control for the same reason — [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md).
 
 **Self-assignment must be safe**, because a copy assignment that frees before it copies
 destroys the object when `x = x` happens through two references. The copy-and-swap idiom gets
@@ -216,7 +216,7 @@ does not say the bodies are correct.
 ## 9. Designing a public surface — what a released header promises
 
 The shared design rules (what belongs in a public API at all, deprecation policy, semver)
-are `sota-architecture` rules/02 and `sota-api-design`. **This section is the C/C++
+are [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) and [`sota-api-design`](../../sota-api-design/SKILL.md). **This section is the C/C++
 mechanism**: here the compiled *layout* is part of the contract, so a change that is source-
 compatible can still break every caller — and unlike a signature change, which fails loudly
 at link time, a layout change frequently links fine and corrupts memory at run time.
@@ -342,7 +342,7 @@ existing parameter means.
 - [ ] **In-band sentinels (§7/§8) — absence encoded as a value** —
       `grep -rnE 'return -1;' --include='*.c' --include='*.cpp' .` (producer: same constant from
       2 branches?); `grep -rn 'atoi(\|atol(' --include='*.c' --include='*.cpp' .` (0 on garbage
-      == 0 on "0" (rules/04))
+      == 0 on "0" ([rules/04](04-security.md)))
 - [ ] **Construction/destruction traps (§8a) — legal code, silent compiler, wrong behaviour All
       four are cppcheck ids, so the cheapest probe is to RUN it with these enabled** —
       `cppcheck --enable=warning,style --inline-suppr <src>` (virtualCallInConstructor,)
@@ -352,7 +352,7 @@ existing parameter means.
       defines NDEBUG. written this way on purpose. The one-line form -- a grep with stderr
       discarded, then an or-echo announcing absence -- reports YOUR broken sweep as THEIR
       defect, because the or-branch fires on every non-zero exit and the discarded stderr took
-      the reason with it. rules/06 2d. Invariant 32 rejected the short form here while this
+      the reason with it. [rules/06](06-build-tooling-ci.md) 2d. Invariant 32 rejected the short form here while this
       section was written, and then rejected this very comment for spelling the pattern out
       literally: refer to it by name, never by its characters, in prose that shares a file with
       the check.** —
@@ -379,7 +379,7 @@ existing parameter means.
       at a boundary you do not build both sides of. unique_ptr/shared_ptr are deliberately NOT
       in the pattern: a unique_ptr<Impl> member is what pimpl above prescribes, so including
       them would flag this file's own recommendation (tested, it did). the `||` prints on a
-      FAILED SEARCH too (`sota-shell-scripting` rules/06 §2d): confirm the grep ran before reading the message as a
+      FAILED SEARCH too ([`sota-shell-scripting` rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md) §2d): confirm the grep ran before reading the message as a
       finding.** — `git diff <last-release-tag>..HEAD -- '*.h' '*.hpp' | grep -nE '^\+[^+]'` ;
       `grep -rnE '=[[:space:]]*[A-Za-z0-9_"'"'"'{(-]+[[:space:]]*\)' --include='*.h' --include='*.hpp' . | head`
       ;

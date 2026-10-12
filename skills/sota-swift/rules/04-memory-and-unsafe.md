@@ -1,7 +1,7 @@
 # 04 — Memory, resources and unsafe code
 
 ARC, ownership of resources, and the places the compiler stops checking. Moved from the
-former Swift-language file in `sota-mobile` (noncopyable types, ARC, unsafe interop) on
+former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) (noncopyable types, ARC, unsafe interop) on
 2026-10-07, plus strict memory safety.
 
 ## 1. Retain cycles: closures capturing `self`
@@ -25,11 +25,11 @@ task = Task { [weak self] in
 - `weak` becomes `nil` when the target goes; `unowned` crashes if touched after deallocation —
   the Swift book: *"ARC never sets an unowned reference's value to `nil`."* Use `unowned` only
   when the closure structurally cannot outlive its target; `unowned(unsafe)` turns the crash into
-  undefined behaviour and is an escape hatch (rules/03 §2).
+  undefined behaviour and is an escape hatch ([rules/03](03-concurrency.md) §2).
 - Cycle suspects: delegates not declared `weak`, notification/KVO tokens never removed,
   `Timer` retaining its target, stored cancellables capturing `self`.
 - Verify empirically: a `deinit`-fires assertion in tests for controller-like objects; on a
-  server, RSS per request under load (rules/07).
+  server, RSS per request under load ([rules/07](07-performance.md)).
 
 ## 2. Resource lifecycle and ownership
 

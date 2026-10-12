@@ -1,18 +1,18 @@
 # 14 — The Control That Is Not In Force
 
-`rules/16` §2.1–2.9 catalogue a control that **runs** and achieves nothing — a
+[`rules/16`](16-where-no-ops-hide.md) §2.1–2.9 catalogue a control that **runs** and achieves nothing — a
 weak existence check, a swallowed exception, a truncated input, an ignored config
 key. This file is the other half: the control is not inert, it is **not there** —
 not in the shipped artifact, not in code at all, never triggered, or running in a
 mode that cannot refuse. Plus the failure that hides all of them: a report that
 claims more than ran.
 
-The distinction matters for where you look. `rules/16` §2.1–2.9 are found by reading the
+The distinction matters for where you look. [`rules/16`](16-where-no-ops-hide.md) §2.1–2.9 are found by reading the
 control's body. Nothing here is: the body may be perfect. You find these by asking
 what reaches production, what fires, and what the output is entitled to say.
 
-**Read with `rules/10`** (the falsification question in its §1 governs this file
-too), `rules/11` for the codebase-scale sweep, and `rules/15` before quoting any
+**Read with [`rules/10`](10-silent-control-failure.md)** (the falsification question in its §1 governs this file
+too), [`rules/11`](11-dead-path-diagnostics.md) for the codebase-scale sweep, and [`rules/15`](15-instruments-and-guards.md) before quoting any
 number a control or an instrument produced.
 
 §6 and §7 are a third case again, and the one the other two cannot reach: the
@@ -44,11 +44,11 @@ after it — a filter, an early return, an exception path, a later reassignment 
 drop or reshape the result long after the line has been written. So **site the claim in
 the consumer, derived from the value it actually received**. A producer may log its
 *intent*; only the consumer can report the *effect*. This is the reporting-output twin
-of `sota-kubernetes` rules/04 §7: a success log is a claim about what was decided, not
+of [`sota-kubernetes` rules/04](../../sota-kubernetes/rules/04-gitops-controllers.md) §7: a success log is a claim about what was decided, not
 about what landed.
 
 **Probe it by mutating the application and reading the output — not the test suite.**
-The usual probe changes the control's body and watches the suite fail (`rules/12` §1);
+The usual probe changes the control's body and watches the suite fail ([`rules/12`](12-verifying-the-verifier.md) §1);
 that answers *is this tested*, a different question from *does the log tell the truth*.
 Change what the function returns, run the real workload, and read the emitted line.
 Where the process runs **unattended — a cron job, a pipeline stage, an agent loop — the
@@ -65,7 +65,7 @@ Two traps: hedging every message containing "tainted" leaves the identical claim
 phrased "reachable from input", so match the claim's *shape*, not a keyword; and
 "TLS certificate not verified" describes the *analysed code's* defect and is
 correct English, so read the sentence before counting it — a regex classifier
-over-counts badly here (rules/15 §2.2). A third instance, reported by someone writing a
+over-counts badly here ([rules/15](15-instruments-and-guards.md) §2.2). A third instance, reported by someone writing a
 test for this very paragraph: the test **failed on its own explanatory comment**, which
 quoted the log line it was hunting for. Matching the *words* rather than the *emission*
 is precisely the error above, committed while building the detector for it — which is
@@ -86,7 +86,7 @@ Rules:
   source tree. A CI job that only tests the checkout will never see this class.
 - Startup asserts its own completeness: the component verifies its required
   artifacts are present and non-empty and refuses to start otherwise
-  (`rules/16` §2.1).
+  ([`rules/16`](16-where-no-ops-hide.md) §2.1).
   This converts a silent production no-op into a loud deploy failure.
 
 ## 3. A natural-language instruction standing in for an enforced control
@@ -102,11 +102,11 @@ the sentence and nothing observable changes — the model was never a boundary.
 Two distinct failure modes, both silent:
 
 - **The instruction is simply disregarded.** The model is an untrusted
-  interpreter of natural language (`rules/08` core principle); an instruction is
+  interpreter of natural language ([`rules/08`](08-llm-ai-security.md) core principle); an instruction is
   a *suggestion to a probabilistic system*, not an access control. Direct or
   indirect prompt injection overrides it, and nothing logs that it was
   overridden. Authorization, secret non-disclosure, and tool gating enforced in
-  the prompt are inert controls — `rules/08` §1–2 is the full threat model.
+  the prompt are inert controls — [`rules/08`](08-llm-ai-security.md) §1–2 is the full threat model.
 - **Attention leakage even without disclosure.** Sensitive material placed in
   context "but marked do-not-use" still shapes the output — register, framing,
   word choice, which facts feel salient — without ever being quoted. "Do not
@@ -115,9 +115,9 @@ Two distinct failure modes, both silent:
 
 Rule: a control over in-context data must be **structural, not instructional**.
 Don't put the secret / other tenant's data / private content in the context at
-all (`rules/07` §2, `rules/08` §3) — exclude it at assembly time. Enforce
+all ([`rules/07`](07-data-exposure.md) §2, [`rules/08`](08-llm-ai-security.md) §3) — exclude it at assembly time. Enforce
 authorization and tool permission in code against the human principal
-(`rules/08` §2), never in the prompt. Filter output in code where non-disclosure
+([`rules/08`](08-llm-ai-security.md) §2), never in the prompt. Filter output in code where non-disclosure
 is required. If an instruction is the *only* thing standing between protected
 in-context data and the output, that is the finding — regardless of how
 carefully the instruction is worded. (Class added 2026-07-24 from the
@@ -130,8 +130,8 @@ answering", "always retrieve before you summarize". Deleting that sentence chang
 nothing either, but you cannot repair it by removing material from the context —
 there is nothing to remove; a step is missing. The control has to be moved into the
 harness so the answer is unreachable without the result, and the skip has to be
-counted. Same falsification question, opposite remedy: `sota-llm-engineering`
-rules/04 §2. Watch for the second silent failure it brings, which §1 above does not
+counted. Same falsification question, opposite remedy: [`sota-llm-engineering`
+rules/04](../../sota-llm-engineering/rules/04-agents-tools.md) §2. Watch for the second silent failure it brings, which §1 above does not
 cover — the model *narrating* a tool call it never made and reasoning from the
 invented result.
 
@@ -157,7 +157,7 @@ not one:
   the finding is the trigger, not the gate's logic.
 - **Has it ever rejected anything?** A gate with executions but no failures has
   still never been observed doing its job (§1's falsification question, and
-  `sota-testing` rules/09 — watch a security test fail before trusting it).
+  [`sota-testing` rules/09](../../sota-testing/rules/09-security-testing.md) — watch a security test fail before trusting it).
 
 One platform mechanic makes this actively worse than uninformative. On GitHub, a
 **skipped job reports its status as *Success*** and "will not prevent a pull
@@ -168,13 +168,13 @@ goes *green*, not pending. Read job conclusions, never the merge button.
 
 State the sample when reporting either: "no non-skipped run in the last N" is a
 bounded observation, not "never". A single-name search compounds this — see
-`sota/rules/03-audit-findings.md` on absence claims.
+[`sota/rules/03-audit-findings.md`](../../sota/rules/03-audit-findings.md) on absence claims.
 
 The same shape one layer down, in the dependency graph rather than the control
 plane: a declared dependency, registered module, or plugin that is wired in and
 never reached — including the case where its symbol *is* referenced, but only on
 a branch the live code path cannot produce. That sweep, with deletion-as-proof,
-is `sota-devsecops` rules/10.
+is [`sota-devsecops` rules/10](../../sota-devsecops/rules/10-inert-dependencies.md).
 
 **Three states, not two.** Skipped and failed are the ones people check; the third is
 **created but never started** — the platform refused the run (billing, a spending
@@ -247,14 +247,14 @@ artefact** — the row, the series, the file, the record — never the pipeline'
   scrape target, per-partition lag rather than consumer-group membership, per-file results
   rather than files-enumerated.
 - **Repairing an inert control needs an output delta, not a green light.** This is the natural
-  pair to *make a green check able to go red* (§1, `sota-testing` rules/09): when you fix one,
+  pair to *make a green check able to go red* (§1, [`sota-testing` rules/09](../../sota-testing/rules/09-security-testing.md)): when you fix one,
   prove it by what it now **produces**. In the same field case three affirmative signals lined
   up while nothing was collected — the object synced, the GitOps controller reported `Healthy`,
   the target was discovered — and the only check that distinguished repaired from
   still-broken was **0 → 54 series, `up=1`**. Quote the before and after numbers; a
   post-fix green that was also green while broken is not evidence.
 
-Distinguish this from `sota-observability` rules/05 §7a, which is the case where the right
+Distinguish this from [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §7a, which is the case where the right
 instrument does not exist and a proxy answers a neighbouring question. Here every instrument
 existed and was correct — the reader stopped at the first affirmative one.
 
@@ -265,11 +265,11 @@ and it renders on every dashboard exactly like one that enforces: Kyverno
 `failureAction: Audit` (or the deprecated spec-level `validationFailureAction`), Pod Security Admission `warn`, a WAF in
 detection-only, seccomp `SCMP_ACT_LOG`, CSP `report-only`, DMARC `p=none` (or `t=y`, which applies one level below the published policy), a
 scanner wired `--soft-fail`. Each is correct **as a rollout stage** and inert as
-a destination — the staged ladders are `sota-devsecops` rules/07 (audit → triage
-to zero → enforce) and `sota-network-security` rules/06 (DMARC).
+a destination — the staged ladders are [`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) (audit → triage
+to zero → enforce) and [`sota-network-security` rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) (DMARC).
 
 Rule: observe-only ships with an **owner and an expiry date**, enforced
-somewhere that fails — the discipline `sota-testing` rules/07 §7.1 puts on a
+somewhere that fails — the discipline [`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.1 puts on a
 quarantined test, for the same reason: the worst steady state is a permanent
 one. AUDIT: read the *mode field* first for every policy engine, admission
 controller and edge control, then ask how long it has held that value and what
@@ -281,7 +281,7 @@ dashboard can tell the difference.
 Everything above is a control that achieves nothing. This one **works** — it
 runs, it rejects, it has a passing test — and it covers a *subset* of the sites
 it is believed to cover. Every signal is the signal of a working control,
-because on the guarded subset it is one. The falsification question (`rules/10`
+because on the guarded subset it is one. The falsification question ([`rules/10`](10-silent-control-failure.md)
 §1) answers "yes, something would differ", and the control is still wrong.
 
 Three field instances, one repository, one afternoon:
@@ -305,7 +305,7 @@ large, sort by *how the unguarded ones differ* — in all three cases above the
 unguarded sites were the ones handling the richer, more attacker-influenced data,
 because those were added later.
 
-This is `rules/15` §3's "verify per target, not once" pointed the other way:
+This is [`rules/15`](15-instruments-and-guards.md) §3's "verify per target, not once" pointed the other way:
 there the population belongs to a **guard** and you inject a defect per member;
 here it belongs to a **mitigation**, and the tests pass for the honest reason
 that they exercise the guarded member. Neither pass finds the other's version.
@@ -385,9 +385,9 @@ next reader trusting a sentence that is true today by coincidence; fixing only t
 document trades a wrong claim for an admitted gap and is still an improvement, so
 do it even when the code fix is out of scope. Where the claim carries real weight,
 make it **executable** — a test named for the sentence, asserting the census — and
-the prose can no longer drift alone (`rules/12` §1).
+the prose can no longer drift alone ([`rules/12`](12-verifying-the-verifier.md) §1).
 
-These land in the audit's decision ledger (`sota/rules/03` §3), and the
+These land in the audit's decision ledger ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §3), and the
 classification is worth getting right: a sentence that **was never true** of the
 code as shipped is UNJUSTIFIED; one that was true and was overtaken is STALE.
 Either way it carries a severity and appears in the findings, not in prose.
@@ -423,7 +423,7 @@ was false, and the signature was gone. Only asking a question the benign state c
   unless gated, logged and scoped to a test.
 - **A setting that widens the attack surface is never silent.** Debug on, authentication or
   TLS verification off, an admin interface exposed: turning one on emits a security event
-  (`rules/07` §2.1) and stays visible on the operator's status surface while it holds. If an
+  ([`rules/07`](07-data-exposure.md) §2.1) and stays visible on the operator's status surface while it holds. If an
   expected security feature is missing at startup, the product warns loudly or refuses to run
   (§2), and the operator documentation lists every such switch and what it exposes.
   OWASP: Code Review Guide v2, Cornucopia.
@@ -478,4 +478,4 @@ was false, and the signature was gone. Only asking a question the benign state c
       production without a log: `grep -rnE 'NODE_TLS_REJECT_UNAUTHORIZED[^=]{0,3}= *.?0|_create_default_https_context *= *(ssl\.)?_create_unverified|WTF_CSRF_ENABLED.{0,4}= *False' .`.
       Does every attack-surface-widening switch emit an event and show on a status surface?
 - [ ] For each of the above: **if this were a no-op, would anything observable
-      differ** — a log, a metric, a failing test (`rules/10` §1)?
+      differ** — a log, a metric, a failing test ([`rules/10`](10-silent-control-failure.md) §1)?

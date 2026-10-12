@@ -1,7 +1,7 @@
 # 08 — Tooling, CI gates and testing
 
 What makes a Swift build reproducible and its checks enforceable. Testing guidance moved from the
-former Swift-language file in `sota-mobile` on 2026-10-07. Test strategy itself is `sota-testing`.
+former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) on 2026-10-07. Test strategy itself is [`sota-testing`](../../sota-testing/SKILL.md).
 
 ## 1. Pinned toolchain, reproducible build
 
@@ -9,7 +9,7 @@ former Swift-language file in `sota-mobile` on 2026-10-07. Test strategy itself 
   preference with the rest of your team"*), or a versioned container image (`swift:6.x`, never
   `swift:latest`/`swift:nightly` in CI).
 - CI builds what ships: `swift build -c release`, resolving from the committed lockfile with
-  `--force-resolved-versions` (rules/09).
+  `--force-resolved-versions` ([rules/09](09-supply-chain.md)).
 - Swift 6.4 made **Swift Build** the default build system in SwiftPM (swift.org 6.4 post) — a
   toolchain bump can change build behaviour; bump deliberately, in its own change.
 

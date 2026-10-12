@@ -4,7 +4,7 @@ Scope: network zones/tiers, north-south vs east-west, the flat-network anti-patt
 `any`/`0.0.0.0/0`/`world` rule trap, microsegmentation, lateral-movement containment, choke points,
 stateful firewall/SG default-deny, and remote-access methods (WireGuard vs ZTNA, bastion vs
 identity-aware proxy, the SSH-open-everywhere anti-pattern). Kubernetes-specific policy depth is
-rules/03; this file is the topology/strategy and the host/edge firewall layer.
+[rules/03](03-k8s-network-policy.md); this file is the topology/strategy and the host/edge firewall layer.
 
 ---
 
@@ -18,7 +18,7 @@ rules/03; this file is the topology/strategy and the host/edge firewall layer.
 **R1 — Containment is an east-west property.** A hardened edge with a flat interior means one popped
 front-end pod can reach the database, the secrets store, and the registry. The whole point of
 segmentation is to make east-west reachability *declared*, so a foothold reaches only its
-dependencies. North-south hardening (rules/05) without east-west segmentation (rules/03) is half a
+dependencies. North-south hardening ([rules/05](05-edge-ingress-egress.md)) without east-west segmentation ([rules/03](03-k8s-network-policy.md)) is half a
 control.
 
 ## 2. The flat-network anti-pattern
@@ -29,7 +29,7 @@ allow the whole VPC CIDR to itself. Impact: lateral movement is free; one CVE, o
 credential, one SSRF, and the incident is cluster-wide.
 
 Fix direction: carve **zones/tiers** with deny-by-default between them, then microsegment *within*
-zones (rules/03 for K8s, mesh authz for service-level).
+zones ([rules/03](03-k8s-network-policy.md) for K8s, mesh authz for service-level).
 
 **R3 — Standard zone model (map your real topology onto it):**
 
@@ -74,10 +74,10 @@ A reachable secrets store / DB / registry / admin UI from a broad entity → Cri
 
 **R6 — Segment to the workload, then funnel cross-zone traffic through choke points.**
 - *Microsegmentation*: the unit of isolation is the workload/identity, not the subnet. Within the
-  app tier, service A reaches service B only if declared. Enforced by CNI policy (rules/03) and/or
-  mesh authz (rules/04).
+  app tier, service A reaches service B only if declared. Enforced by CNI policy ([rules/03](03-k8s-network-policy.md)) and/or
+  mesh authz ([rules/04](04-service-mesh-mtls.md)).
 - *Choke points*: cross-zone traffic (app→data, internal→internet) passes through a small number of
-  inspectable, enforceable points — an egress gateway/proxy (rules/05), a mesh waypoint, a firewall.
+  inspectable, enforceable points — an egress gateway/proxy ([rules/05](05-edge-ingress-egress.md)), a mesh waypoint, a firewall.
   Choke points are where you log, allowlist, and rate-limit. A topology with no choke points cannot
   be inspected or contained.
 
@@ -96,7 +96,7 @@ microsegmentation everywhere" block shipping the deny-between-tiers baseline.
   separately; for logging, split the paths — sources may only *write* to an ingest endpoint over
   an append-only protocol (e.g. syslog forwarding), while reading and searching is a separate,
   admin-only path — so a compromised host can add lines but not rewrite history (tamper evidence:
-  sota-code-security rules/18). Another system's app tier never reaches your data tier directly;
+  [sota-code-security rules/18](../../sota-code-security/rules/18-tamper-evident-logs.md)). Another system's app tier never reaches your data tier directly;
   it goes through your service.
 - **A shared network behind one L7 balancer is not segmentation.** When several applications sit
   on one network and a single load balancer fans traffic out, network rules no longer separate
@@ -111,7 +111,7 @@ OWASP: Network Segmentation cheat sheet, Logging cheat sheet.
 ## 5. Stateful firewall / security-group policy
 
 **R8 — Default-deny, identity/tag-referenced, audited for breadth.** (Host nftables for a single box
-is sota-sandboxing rules/02; cloud SG/VPC *setup* is sota-cloud-infrastructure rules/03 — this skill
+is [sota-sandboxing rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md); cloud SG/VPC *setup* is [sota-cloud-infrastructure rules/03](../../sota-cloud-infrastructure/rules/03-networking.md) — this skill
 owns the *posture*.)
 - Deny inbound and outbound by default; allow specific flows.
 - Reference **security groups / tags / service accounts, not CIDRs**, for internal flows so rules
@@ -131,14 +131,14 @@ brute-force and 0-day target. There is always a better option.
 
 | Need | SOTA choice | Avoid |
 |---|---|---|
-| Human → internal *web* app | Identity-aware proxy / ZTNA (rules/01 §6) | Exposing the app; flat VPN |
+| Human → internal *web* app | Identity-aware proxy / ZTNA ([rules/01](01-zero-trust-architecture.md) §6) | Exposing the app; flat VPN |
 | Human → *shell* on a host | Identity-aware bastion (Teleport/IAP/SSM-style: per-session identity, recording, short-lived certs) | Static SSH keys; `0.0.0.0/0:22` |
 | Site-to-site / machine-to-machine | **WireGuard** (per-peer keys, modern crypto, in-kernel since Linux 5.6) | Legacy IPsec sprawl; bespoke tunnels |
-| Per-user "get on the network" | ZTNA (scoped to apps) | Flat VPN onto the LAN (rules/01 §5) |
+| Per-user "get on the network" | ZTNA (scoped to apps) | Flat VPN onto the LAN ([rules/01](01-zero-trust-architecture.md) §5) |
 
 - **WireGuard discipline:** one keypair per peer (never shared), `AllowedIPs` scoped to exactly the
   destinations that peer needs (it is also the routing/ACL — a wide `AllowedIPs = 0.0.0.0/0` makes
-  it a flat VPN again), rotate keys on offboarding, keys handled as secrets (sota-secrets-management).
+  it a flat VPN again), rotate keys on offboarding, keys handled as secrets ([sota-secrets-management](../../sota-secrets-management/SKILL.md)).
 - **Bastion vs IAP:** a plain jump-host with shared SSH keys is barely better than direct SSH.
   Prefer an identity-aware bastion that issues short-lived per-session certs (an internal CA such as
   step-ca can back this), records sessions, and is itself fronted by the IdP. The bastion must be the *only* SSH

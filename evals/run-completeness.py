@@ -130,7 +130,12 @@ def load_cases():
 #                                        its condition can never fire here
 #   step 4, the rest                  -> mirror clause (3), unchanged
 # The treatment arm is unchanged: hash bumped alone, no re-sync, the published lift unaffected.
-ROUTER_BUILD_SHA = "832fec9ba3c70138"
+# BUMPED 2026-10-12 (832fec9ba3c70138 -> 53a135faac1818f5), ROADMAP 73 (n): 7 pointers in §BUILD
+# became relative links. §BUILD with every link reduced to its text is identical to the previous
+# section, so BUILD_WORKFLOW still mirrors it clause for clause: hash bumped alone, no re-sync.
+# The pasted skills now carry link targets (more bytes, same words); the published lift was
+# measured on the unlinked text and has not been re-run on this one.
+ROUTER_BUILD_SHA = "53a135faac1818f5"
 
 
 def _assert_mirror_fresh():
