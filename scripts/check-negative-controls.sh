@@ -1256,7 +1256,10 @@ build_fixture() {  # a machine+repo where every check passes
   # skillListingBudgetFraction 0.0002 = a 160-char budget at the 200K the fixture's
   # unknown window assumes: the three fixture skills (~130 with the built-in allowance)
   # fit, and ANY plugin skill counted on top of them does not. That margin is the probe.
-  printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
+  # …plus the code-rules hook as install.sh writes it (check 2c), pointing at a script that exists
+  : > "$VS/repo/scripts/code-rules-hook.py"
+  printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}],"PostToolUse":[{"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"python3 \\"%s\\""}]}]}}\n' \
+    "$VS/repo/scripts/code-rules-hook.py" > "$VS/home/settings.json"
   printf 'stack\n' > "$VS/home/profiles/example.md"
   # repo context
   cd "$VS/repo"
@@ -1454,6 +1457,12 @@ vs_probe_info "an enabled plugin's skills overrun the budget" "1b. listing budge
 # the SAME library as a plugin beside the personal links: the double install
 vs_fixture_plugin sota-skills sota "fixture router"
 vs_probe_partial "the library installed twice (plugin + links)" "1g. library installed once"
+# 2c: the code-rules hook. Optional (a cost choice), so its absence is INFO with the command;
+# a registration whose script is gone runs nothing on every edit, so that one is PARTIAL.
+printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
+vs_probe_info "the code-rules hook not installed" "2c. code-rules hook" "not installed"
+rm -f "$VS/repo/scripts/code-rules-hook.py"
+vs_probe_partial "a code-rules hook registration whose script is gone" "2c. code-rules hook"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
@@ -1542,5 +1551,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 2c, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

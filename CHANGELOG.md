@@ -44,7 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   registered by the plugin (`hooks/hooks.json`) and offered by `install.sh --routing`
   (`setup_code_rules_hook`, default yes, skipped without `jq` or `python3`). It is the one
   routing change measured to move outcomes: sota-agent-evals v10, rule tests 0.717 → 0.906
-  (SUPPORTED), where v5–v9 and v11–v12 moved behaviour but not outcomes. **Costs and limits,
+  (SUPPORTED), where v5–v9 and v11–v12 moved behaviour but not outcomes. *Superseded 2026-10-12:
+  v7's named-files arm also moved outcomes (0.698 → 0.868), though it names files in the prompt and
+  is not a shippable route, and v13's router table moved them with no hook (0.679 → 0.792), so
+  "the one routing change" no longer holds; see the v13 entry above.* **Costs and limits,
   stated rather than hidden:** about +68% per agent run over the plain install; the trigger
   table was written in-sample, so its reach on fresh tasks is unmeasured; Claude Code only.
   Opt out with `SOTA_CODE_RULES_HOOK=off`. A session with both the plugin's and the installer's

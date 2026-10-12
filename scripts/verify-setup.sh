@@ -518,6 +518,45 @@ else
   row "FAIL" "2. always-on routing" "neither a sota directive in CLAUDE.md nor a UserPromptSubmit hook — routing depends on how each prompt is phrased"
 fi
 
+# --- 2c. the code-rules hook (ROADMAP 73 (m), on by default since 2026-10-12) ---
+# A PostToolUse hook on Edit|Write|MultiEdit that names the rules file for what the code just
+# written does. The plugin registers it; install.sh --routing offers it. Measured: rule tests
+# 0.717 -> 0.906 (sota-agent-evals v10) at about +68% cost per run, so a machine without it is
+# a choice, reported as INFO, never a FAIL. A registration whose script path is gone runs
+# nothing and says nothing (the hook command fails on every edit), so that one is PARTIAL.
+cr_have=""; cr_stale=""
+for s in "$CLAUDE_HOME/settings.json" "$CLAUDE_HOME/settings.local.json"; do
+  [ -f "$s" ] || continue
+  grep -q 'code-rules-hook\.py' "$s" 2>/dev/null || continue
+  cr_have="${cr_have:+$cr_have, }$(basename "$s")"
+  while IFS= read -r cr_p; do
+    [ -n "$cr_p" ] && [ ! -f "$cr_p" ] && cr_stale="${cr_stale:+$cr_stale, }$cr_p"
+  done <<EOF_CR
+$(grep -o '/[^"]*code-rules-hook\.py' "$s" 2>/dev/null || true)
+EOF_CR
+done
+if [ -d "$CLAUDE_HOME/plugins" ] && find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*hooks/hooks.json' \
+     -exec grep -l 'code-rules-hook\.py' {} + 2>/dev/null | grep -q .; then
+  cr_have="${cr_have:+$cr_have, }the plugin"
+fi
+case "${SOTA_CODE_RULES_HOOK:-on}" in
+  off | OFF | 0 | false | FALSE | no) cr_off=1 ;;
+  *) cr_off=0 ;;
+esac
+if [ -n "$cr_stale" ]; then
+  row "PARTIAL" "2c. code-rules hook" \
+    "registered but the script is gone: $cr_stale — re-run scripts/install.sh --routing from your current checkout"
+elif [ -n "$cr_have" ] && [ "$cr_off" -eq 1 ]; then
+  row "INFO" "2c. code-rules hook" "registered ($cr_have) but turned off by SOTA_CODE_RULES_HOOK=${SOTA_CODE_RULES_HOOK}"
+elif [ -n "$cr_have" ] && ! command -v python3 >/dev/null 2>&1; then
+  row "PARTIAL" "2c. code-rules hook" "registered ($cr_have) but python3 is not on PATH — it cannot run"
+elif [ -n "$cr_have" ]; then
+  row "PASS" "2c. code-rules hook" "registered by: $cr_have"
+else
+  row "INFO" "2c. code-rules hook" \
+    "not installed. After an edit it names the rules file for what the code does (rule tests 0.717 -> 0.906 measured, about +68% cost per agent run). Add it: scripts/install.sh --routing"
+fi
+
 # --- 2b. the same directive in the other agents' global instruction files ---
 # Claude Code's hook has no equivalent written here, so for another agent the
 # directive IS the always-on layer. Per vendor docs (docs/MULTI-AGENT.md):
