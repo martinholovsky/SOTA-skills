@@ -52,6 +52,19 @@ fork PR runs workflows. It offers three levels: `first_time_contributors_new_to_
 documented hole: once any commit or PR from the user has been merged, even a typo fix,
 their workflows run without approval.
 
+**Auditing the level without admin (you rarely have the setting).** The effective level is
+visible in a public repo's run history: fork-PR runs held for approval sit in
+`action_required`; correlate them against each PR's `author_association`. If returning
+`CONTRIBUTOR`/`MEMBER` fork PRs run unheld while `NONE`/`FIRST_TIME_CONTRIBUTOR` PRs are held,
+the level is a first-time tier and one prior merged PR makes an attacker exempt — rate that
+**High→Critical** if the exempt path reaches signing/publish ([rules/02](02-provenance-signing.md) §2.5.2).
+⚠ **Reproduction trap: fork `pull_request` workflows do not run on *private* repos at all**
+(the run count stays 0; the fork-PR approval API returns "not allowed for private
+repositories"). A private copy of a public target therefore gives a **false negative** — the
+lab must be public to exercise the fork-PR path. This is the general rule "a failed
+reproduction is an absence claim; match the harness to the target's security model" in a
+GitHub form.
+
 - Set **`all_external_contributors`** at the organisation
   (`/orgs/{org}/actions/permissions/fork-pr-contributor-approval`) and per repository.
   Approval costs a maintainer one click per external PR, and only fork PRs from
