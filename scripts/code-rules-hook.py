@@ -20,7 +20,11 @@ files in the prompt (0.868), with spec tests still 20/20. v11 replaced APPLY wit
 "MANDATORY:" label: 0.698 (NULL), and every failing run handed the rule back. The content is the
 lever, not the emphasis. Shipped by default 2026-10-12 (ROADMAP 73 (m)) at +68% cost per run over the
 plain install; the trigger table is in-sample: its author had read the 20 cases v9-v13 ran on, though it was
-not changed after v9's replay (PRE-REGISTRATION-v9.md), so its reach on fresh tasks is unmeasured.
+not changed after v9's replay (PRE-REGISTRATION-v9.md). OUT OF SAMPLE: v14 (2026-10-13, cases-v5,
+20 tasks sampled from OWASP ASVS and authored blind to this library) ran this hook plus the router's
+table against neither: reach 8/20 -> 13/20, as an offline replay of this table predicted, but cited
+rule tests 0.667 -> 0.667 (NULL). Four of the five runs that reached the file and failed named the
+risk and handed it back, citing the precise spec as the request ruling it out.
 
 WHAT IT SAYS (as `additionalContext`, read next to the tool result): for each trigger the written
 text matches, in table order, the absolute path of the rules file and the section to check, with
