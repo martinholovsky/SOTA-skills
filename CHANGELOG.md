@@ -45,6 +45,10 @@ to run. Two PRs since v1.49.0 (#540, #541).
   an agent that never sees the router's trigger table.
 - **README** gains front-door lines for the two constant-time instruments and the by-name
   signing trap.
+- **Negative-control probe 30 no longer pins the README's number.** It rewrote the literal
+  "Twenty-nine classes of defect", so when this release's new bullet made the count thirty, the
+  probe changed nothing and the harness reported it as broken (CI: 1 of 95 not caught). The
+  probe now matches any spelled-out number.
 
 ## [1.49.0] - 2026-10-12
 

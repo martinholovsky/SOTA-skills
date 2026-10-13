@@ -790,8 +790,9 @@ probe_committed_green 14b "a valid front-door declaration must PASS in a large e
 # README.md said "Eleven classes of defect" above a list of 26, correct when written
 # and fifteen behind seventeen days later. The mutation edits the NUMBER, leaving the
 # list alone, which is exactly how the defect arises in practice (someone adds a
-# bullet and never touches the sentence above it).
-( cd "$WT" && perl -pi -e 's/^Twenty-nine classes of defect/Eleven classes of defect/' README.md )
+# bullet and never touches the sentence above it). The pattern matches any spelled-out
+# number: pinned to "Twenty-nine", it went INERT the day the list reached thirty (v1.49.1).
+( cd "$WT" && perl -pi -e 's/^[A-Z][a-z]+(?:-[a-z]+)? classes of defect/Eleven classes of defect/' README.md )
 probe 30 "a declared count disagrees with the list it counts" \
   "match(es) of"
 
