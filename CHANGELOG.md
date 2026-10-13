@@ -5,6 +5,47 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.1] - 2026-10-13
+
+A PATCH: rule text, an intake and tracker corrections inside existing surfaces, with nothing new
+to run. Two PRs since v1.49.0 (#540, #541).
+
+**Front door checked:** dudect · fork's bytes · constant-time
+
+- **`sota-devsecops`: a signing step that picks its input by name (#540).** rules/02 §2.5.2: on a
+  public repo, a fork `pull_request` run uploads into the base repo's artifact store, so a job
+  that signs "the newest artifact named X" signs a fork's bytes. The REST artifacts list reads
+  `workflow_run.head_repository` as `null`, so a provenance filter over the list passes
+  everything. Bind the artifact to a trusted producer instead. rules/12 §12.3: a public repo's
+  fork-PR approval level can be read from run history without admin, and fork `pull_request`
+  workflows do not run on private repos at all, so a private copy of a public target reproduces
+  nothing. Both were reproduced in a throwaway public repo on 2026-10-13.
+- **Five fired ADOPTION-LOG deferrals resolved, each against a primary source (#541).** Each new
+  probe was scored on labelled known-bad and known-good lines with BSD grep and ugrep:
+  - `sota-shell-scripting` rules/03 §5: install-script fetches gain `--proto '=https' --tlsv1.2`.
+    The deferred recipe also had `--proto-redir`. On curl 8.7.1, `--proto '=https'` alone
+    refused an https→http redirect, and the man page says `--proto-redir` cannot re-allow what
+    `--proto` denies, so it was dropped. Probe: 5/5 bad, 0/6 good.
+  - `sota-ux-writing` rules/04 §1: WCAG 2.2 SC 3.3.1 Error Identification (A) and 3.3.3 Error
+    Suggestion (AA), with 3.3.3's security exception.
+  - `sota-testing` rules/09: a gRPC size cap disabled through C++
+    `SetMaxReceiveMessageSize(-1)` or a value on a continuation line. Probe: 6/6 bad, 0/7 good.
+  - `sota-api-design` rules/01: the `consumes` probe covers
+    `@RequestMapping(method = POST/PUT/PATCH)`. Known misses: multi-line annotations and static
+    imports. Probe: 5/5 bad, 0/6 good.
+  - `sota-code-security` rules/22 §1.1: name the constant-time instrument. Valgrind memcheck
+    taint (`VALGRIND_MAKE_MEM_UNDEFINED`, BoringSSL's `CONSTTIME_SECRET`) replaces ctgrind,
+    whose last push was in 2017. dudect covers the running binary. A lead probe for `==` on a
+    secret scored 10/10 bad and 0/11 good; its precision on real code is unmeasured.
+- **Nine other fired deferrals re-armed.** They had been fired by a link-only edit. A new
+  ADOPTION-LOG convention says a mechanical edit (links, formatting) does not fire a "next edit"
+  trigger. Row 1b is superseded by ROADMAP 73 (o) and (m).
+- **ROADMAP 73.** The summary row covers results through v13, and the next step is a fresh case
+  set. Case selection is decided (option (b)): tasks sampled from an external source, written by
+  an agent that never sees the router's trigger table.
+- **README** gains front-door lines for the two constant-time instruments and the by-name
+  signing trap.
+
 ## [1.49.0] - 2026-10-12
 
 A MINOR: new surfaces you can use. The code-rules hook ships on by default (plugin, and offered
@@ -11332,6 +11373,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.49.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.1
 [1.49.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.0
 [1.48.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.48.0
 [1.47.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.47.2
