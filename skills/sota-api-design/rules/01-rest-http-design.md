@@ -327,7 +327,11 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
 - [ ] No GET/HEAD endpoint mutates state.
 - [ ] Status codes semantically correct; no `200 {"error":...}` anti-pattern anywhere.
 - [ ] **Media types allowlisted per operation (§3) — MEDIUM, HIGH if an XML parser is reachable**: undeclared `Content-Type` → `415`; the spec lists every operation's request/response types. Spring write mappings with no `consumes` (each hit accepts whatever converters are registered; confirm by sending `Content-Type: application/xml`):
-      `grep -rnE '@(Post|Put|Patch)Mapping' --include='*.java' --include='*.kt' . | grep -v 'consumes'`
+      `grep -rnE '@(Post|Put|Patch)Mapping|@RequestMapping\(.*method[[:space:]]*=.*RequestMethod\.(POST|PUT|PATCH)' --include='*.java' --include='*.kt' . | grep -v 'consumes'`
+      Before reporting a hit, read its class's `@RequestMapping`: a type-level `consumes` applies to every
+      method that sets none (Spring's javadoc: a method-level value *overrides* it). Misses: an annotation
+      split across lines, and a static import (`method = POST`). (Labelled set: 5/5 bad, 0/6 good, BSD grep
+      and ugrep, 2026-10-13.)
 - [ ] 201 responses include `Location`; async operations return 202 + status resource.
 - [ ] Collection endpoints use cursor pagination with opaque cursors, enforced max limit, stable sort with unique tiebreaker.
 - [ ] No unbounded `COUNT(*)`/total on large collections by default.

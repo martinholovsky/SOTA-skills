@@ -58,6 +58,16 @@ reasoning governs every other constant-time construct, where it is far less wide
   binary are two different instruments** answering two different questions, and neither sees
   cache or other microarchitectural channels. Say which one you ran, and do not let one
   stand in for the other ([`rules/15`](15-instruments-and-guards.md) §2).
+- **Name the instrument when you claim one.** *Dynamic taint:* mark the secret as
+  undefined to Valgrind memcheck (`VALGRIND_MAKE_MEM_UNDEFINED`, stock `memcheck.h`), and
+  memcheck reports every branch or memory index that depends on it. BoringSSL builds this in
+  as `CONSTTIME_SECRET` under `BORINGSSL_CONSTANT_TIME_VALIDATION`. **ctgrind**, which
+  introduced the technique, is a patch against Valgrind SVN r11097 and has not been pushed to
+  since 2017. Use the stock client request, not ctgrind. *Statistical timing:*
+  **dudect** (Reparaz et al., DATE 2017) times two input classes and applies a Welch t-test.
+  By its README, |t| above 5 likely means a leak and above 10 is a clear one. A
+  low t is evidence for one machine and input distribution, never proof. Both instruments
+  see only the configuration they ran on (above).
 
 ## Audit checklist
 
@@ -65,4 +75,9 @@ reasoning governs every other constant-time construct, where it is far less wide
       architectures and optimisation levels actually shipped — including `-Os`/`-Oz` — rather
       than read off the source? Any secret-dependent `/` or `%` located, and a hand-written
       multiply-shift replacement verified over the whole input domain rather than samples?
-- [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time?
+- [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time? Lead list, not verdicts
+      (operand names only; each hit needs reading):
+      `grep -rniE -e '(^|[^A-Za-z])(mac|signature|sig|digest|token|otp|api_?key|secret|tag)[^=!]{0,40}(===?|!==?)[[:space:]]*[A-Za-z_]|(===?|!==?)[[:space:]]*[A-Za-z_.]*(mac|signature|sig|digest|token|otp|key|secret)|(^|[^_A-Za-z])(memcmp|bytes\.Equal|Arrays\.equals)\(|(key|secret|token|mac|sig|digest)[A-Za-z]*\.equals\(' . | grep -viE -e 'compare_digest|timingSafeEqual|ConstantTimeCompare|MessageDigest\.isEqual|(===?|!==?)[[:space:]]*(null|None|nil|undefined|"")|len\(|\.length|_type|_count'`
+      Built on a labelled set (10/10 bad caught across Python, JS, Go, Java and C; 0/11 good
+      flagged, including null checks and `CRYPTO_memcmp`; BSD grep and ugrep, 2026-10-13).
+      Its precision on real code is unmeasured. Missed: a secret held under a neutral name.

@@ -139,7 +139,9 @@ real auth, real DB, real routing. Patterns:
   refused (HTTP 413; gRPC `RESOURCE_EXHAUSTED`) without the server reading the whole
   thing into memory. Send one request just under the cap too, as the allow case. The
   cap can be switched off entirely: nginx `client_max_body_size 0`, gRPC core
-  `grpc.max_receive_message_length` of `-1` (grpc-go's server default is 4 MiB).
+  `grpc.max_receive_message_length` of `-1` (grpc-go's server default is 4 MiB), which C++
+  sets as `ServerBuilder::SetMaxReceiveMessageSize(-1)` (or the deprecated
+  `SetMaxMessageSize(-1)`).
   OWASP: gRPC Security cheat sheet.
 - **WebSocket** — the handshake and the open connection are tested separately. A
   handshake with a foreign `Origin` is refused; send one explicitly, because some
@@ -434,8 +436,11 @@ Management cheat sheets.
       a surface that echoes input or queries a directory → Medium.
 - [ ] **Message-size limits tested one byte over and one byte under the cap** (§3),
       and never switched off? Probe:
-      `grep -rnE "client_max_body_size[[:space:]]+0;|max_receive_message_length['\"][[:space:]]*,[[:space:]]*-1[^0-9]|MaxRecvMsgSize\(math\.MaxInt" .`
-      Any hit on an untrusted-facing listener → High.
+      `grep -rnE "client_max_body_size[[:space:]]+0;|max_receive_message_length['\"][[:space:]]*,[[:space:]]*-1[^0-9]|MaxRecvMsgSize\(math\.MaxInt|SetMax(Receive)?MessageSize\([[:space:]]*-1[[:space:]]*\)" .`
+      plus the key and its value on separate lines:
+      `grep -rn -A1 -E "max_receive_message_length['\"][[:space:]]*,[[:space:]]*$" . | grep -E -e '-[[:space:]]*-1[^0-9]'`
+      Any hit on an untrusted-facing listener → High. (Both built on a labelled set:
+      6/6 bad caught, 0 of 7 good lines flagged, BSD grep and ugrep, 2026-10-13.)
 - [ ] **WebSocket set** (§2, §3): foreign-Origin handshake refused, missing or expired
       token refused, socket closed on logout or expiry, message limits enforced?
       Origin allow-all in code:

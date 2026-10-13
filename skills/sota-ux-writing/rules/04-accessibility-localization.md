@@ -18,6 +18,12 @@ are satisfied or violated *by the words themselves*:
 - **2.4.4 (A)** — link purpose clear from the link text ([rules/02](02-microcopy-components.md) §8).
 - **3.3.2 (A)** — labels or instructions exist wherever input is required —
   the *presence* of the words is the criterion.
+- **3.3.1 (A)** — when an input error is detected automatically, the field in error
+  is identified and the error is *described in text*. A red border or an icon alone
+  fails. **3.3.3 (AA)** — when a correction is known, it is offered ("Use the format
+  DD/MM/YYYY", not "Invalid date"), unless that "would jeopardize the security or
+  purpose of the content": a login form still says *"email or password is incorrect"*
+  rather than naming which one. How to write the message: [rules/03](03-errors-feedback.md).
 - **3.1.5 (AAA)** — reading level: not required at AA, but treat
   plain-language discipline ([`rules/01`](01-voice-tone-plain-language.md) §2) as how general-audience products
   approach it.
@@ -123,6 +129,9 @@ The engineering contract that makes translation possible:
       `grep -rn 'aria-label' src/ | grep -iE 'click|here'` is empty
 - [ ] Headings/labels descriptive (2.4.6); required-input instructions
       present (3.3.2)
+- [ ] Every automatically detected input error names its field and says in text what is
+      wrong (3.3.1), and gives the fix when one is known (3.3.3), except where the fix
+      would leak security state (login, account enumeration)
 - [ ] No meaning carried by symbol/emoji alone; alt text is functional, empty
       for decorative, and never starts with "image of":
       `grep -riE 'alt="(image|picture|photo) of' src/`
