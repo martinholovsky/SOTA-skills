@@ -120,7 +120,9 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    `code-rules-hook.py` as a `PostToolUse` hook, or does the plugin? Does the script path it
    names still exist, and is `python3` on PATH? A missing hook is PARTIAL: it is the shipped
    default, and without it measured agents applied the security rules a task needed in 0.698 of
-   rule tests against 0.906 with it (it costs about +68% per agent run). Say what that costs.
+   rule tests against 0.906 with it (it costs about +68% per agent run). That lift is in-sample; on
+   fresh tasks (sota-agent-evals v14, cases-v5) the hook plus the router table moved nothing (0.667
+   in both arms). Say what that costs.
    INFO only when it is turned off on purpose (`SOTA_CODE_RULES_HOOK=off`). A registration whose
    script is gone is PARTIAL too: it runs nothing on every edit. A sota-skills plugin copy that
    predates the hook needs a plugin update, because a plugin updates only on a release.

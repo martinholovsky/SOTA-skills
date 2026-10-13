@@ -523,7 +523,8 @@ fi
 # written does. The plugin registers it; install.sh --routing offers it with "yes" preselected.
 # Missing is PARTIAL, not INFO (changed 2026-10-12): it is the shipped default and the largest
 # measured lever -- sota-agent-evals v10, rule tests 0.698 with no hook (v7 `installed`) -> 0.906
-# with it, at about +68% cost per run. INFO only when it is
+# with it, at about +68% cost per run (in-sample; on fresh tasks, v14 on cases-v5, the hook plus
+# the router table moved nothing: 0.667 in both arms). INFO only when it is
 # turned off on purpose (SOTA_CODE_RULES_HOOK=off). A registration whose script path is gone runs
 # nothing on every edit, so that is PARTIAL too. A plugin copy too old to carry the hook is named,
 # because a plugin updates only on a release.
@@ -566,7 +567,7 @@ else
   cr_fix="scripts/install.sh --routing"
   [ "$cr_oldplugin" -eq 1 ] && cr_fix="$cr_fix, or update the plugin (your copy predates the hook): /plugin update sota-skills@sota-skills"
   row "PARTIAL" "2c. code-rules hook" \
-    "not installed — below the default setup. What it costs: in measured agent runs without it, agents applied the security rules a task needed in 0.698 of rule tests, against 0.906 with it; the misses cluster in SSRF checks, CSV formula guards, login throttling, rate limits and session lifetimes (sota-agent-evals v7/v10; clusters from its cases-v4 calibration; in-sample). Having it costs about +68% per agent run. Add it: $cr_fix"
+    "not installed — below the default setup. What it costs: in measured agent runs without it, agents applied the security rules a task needed in 0.698 of rule tests, against 0.906 with it; the misses cluster in SSRF checks, CSV formula guards, login throttling, rate limits and session lifetimes (sota-agent-evals v7/v10; clusters from its cases-v4 calibration; in-sample; on fresh tasks, v14, it plus the router table moved nothing). Having it costs about +68% per agent run. Add it: $cr_fix"
 fi
 
 # --- 2b. the same directive in the other agents' global instruction files ---
