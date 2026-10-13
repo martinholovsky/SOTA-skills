@@ -3402,12 +3402,12 @@
     "generic ('the language skill')": 21,
     "md link, other skill": 1512,
     "md link, outside skills/": 3,
-    "md link, same skill": 2745,
+    "md link, same skill": 2746,
     "name (backticked)": 431,
     "name (bare)": 240,
     "name+file (backticked)": 584,
     "name+file (bare)": 160,
-    "own rules/NN": 2887
+    "own rules/NN": 2888
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3419,7 +3419,7 @@
     "name (bare)": 197,
     "name+file (backticked)": 584,
     "name+file (bare)": 155,
-    "own rules/NN": 2817
+    "own rules/NN": 2818
   },
   "rules_index_style": {
     "link": 42

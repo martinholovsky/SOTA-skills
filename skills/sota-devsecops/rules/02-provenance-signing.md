@@ -191,6 +191,22 @@ Whichever pair you choose, write the verification command into the repo (Make ta
 CD step) — verification knowledge that lives in one engineer's shell history fails the
 incident test.
 
+### 2.5.2 Sign what you selected, not what matches a name
+
+**Rule: the step that signs/publishes must bind the artifact to a trusted producer, not pick
+it by name.** A job that selects "the newest artifact named `<label>`"
+(`GET /actions/artifacts?name=<label>` then `sort_by(.created_at) | last`) is exploitable on a
+public repo: a fork `pull_request` run uploads into the **base repo's shared artifact store**,
+so its artifact sits in the same namespace, and any name an attacker can predict (e.g. derived
+from public tree content) can be pre-populated. Nothing binds the name to a producer, so the
+signer signs a fork's bytes. ⚠ The REST artifacts **list does not expand
+`workflow_run.head_repository`** (reads `null`), so a provenance filter written against the
+list silently passes everything — fetch each artifact individually, or carry provenance you
+control. Require `workflow_run.head_repository.full_name == <base repo>` (and/or a trusted
+internal event), and never treat a fork `pull_request` artifact as a signing input. Verified
+2026-10-13: publish code signing the newest same-named artifact selected a fork's tampered
+bytes = Critical.
+
 ## 2.6 Package registry publishing — trusted publishers
 
 Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace them:
