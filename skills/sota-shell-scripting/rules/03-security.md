@@ -254,13 +254,23 @@ Download → verify → execute, with pinned checksum (or signature) committed t
 readonly url="https://github.com/org/tool/releases/download/v1.2.3/tool-linux-amd64"
 readonly sha256="4f5e...committed-constant..."
 tmp=$(mktemp)
-curl --fail --silent --show-error --location --max-time 120 -o "$tmp" -- "$url"
+curl --fail --silent --show-error --location --max-time 120 \
+  --proto '=https' --tlsv1.2 -o "$tmp" -- "$url"
 printf '%s  %s\n' "$sha256" "$tmp" | sha256sum -c - || die "checksum mismatch for $url"
 install -m 0755 -- "$tmp" /usr/local/bin/tool
 ```
 
 Pin versions (never `/latest/`); for higher assurance verify signatures
 (`gpg --verify`, cosign/minisign) not just checksums fetched from the same origin.
+
+**`--location` follows a downgrade unless you forbid it.** curl's default redirect set is
+HTTP, HTTPS, FTP and FTPS, so an `https://` URL that redirects to `http://` is fetched in
+plaintext at exit 0. `--proto '=https'` refuses that, both for a plain-`http` URL and in a
+redirect. The man page says `--proto-redir` cannot re-allow what `--proto` denies, so with
+`--proto` set you don't also need `--proto-redir '=https'`. `--tlsv1.2` sets the *minimum*
+TLS version. Measured on curl 8.7.1 (2026-10-13), https→http redirect: no flag, exit 0;
+`--proto '=https'` alone, `Protocol "http" disabled (in redirect)`, exit 1. A checksum
+catches a tampered *artifact* but not a plaintext fetch of a script that is not pinned.
 
 **Publishing** (you ship an install script): provide versioned artifacts + a checksums
 file signed or served from a separate trust path; make the script safe under truncation
@@ -383,6 +393,10 @@ substitution in help text** rather than literal characters. `--severity=error` s
 - [ ] `grep -rn 'curl[^|]*|[[:space:]]*\(ba\)\?sh\|wget -qO- .*| *sh' -r .` → CRITICAL in
       anything that runs unattended; check install scripts for checksum/signature
       verification and version pinning (no `/latest/`).
+- [ ] A redirect-following fetch with no protocol floor (§5): `grep -rnE 'curl[^#]*(-[a-zA-Z]*L|--location)' --include='*.sh' . | grep -v -e '--proto[ =]'`
+      → MEDIUM (HIGH if the fetched script is executed and not pinned by checksum): add
+      `--proto '=https' --tlsv1.2`. `--proto-redir` alone does not count. Built on a labelled set
+      (5/5 bad caught, 0/6 good flagged, BSD grep and ugrep, 2026-10-13).
 - [ ] Predictable temp names: `grep -rn '/tmp/[^$]*\$\$\|/tmp/[a-zA-Z0-9._-]*\b' --include='*.sh'`
       without mktemp → HIGH (CRITICAL if script runs as root).
 - [ ] `chmod .*60[0]\|chmod .*7[07][07]` *after* content written to sensitive files.
