@@ -222,7 +222,7 @@ corpus, and we have no instrument that would.
 ### What the audit hunts that a scanner can't
 
 <!-- count-check: ^- \*\* -->
-Twenty-nine classes of defect survive every linter, SAST rule, and CVE scanner, because in
+Thirty classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes
 (this said "Eleven" for seventeen days — correct when written on 2026-08-27 and **fifteen
 classes** behind by the time anyone recounted at the v1.41.2 cut. Recount the list, never
@@ -298,8 +298,15 @@ because the same change added three more classes below):
   from the binary. Wiping is the known case (`memset` is dead-store-eliminated); the same
   applies to constant-time arithmetic, where strength reduction is an optimiser courtesy, so
   **constant time is a property of the emitted code**, verified across every architecture and
-  optimisation level you ship — `-Os` and `-Oz` included.
+  optimisation level you ship — `-Os` and `-Oz` included. Two instruments answer it, and
+  neither stands in for the other: Valgrind memcheck taint flags every branch on the secret,
+  and dudect's t-test times the running binary.
   ([code-security rules/22 §1.1](skills/sota-code-security/rules/22-constant-time-comparison.md))
+- **A signing step that picks its input by name.** On a public repo a fork's `pull_request`
+  run uploads into the base repo's artifact store, so "sign the newest artifact named X" can
+  sign a fork's bytes — and the REST list reads the producer as `null`, so a provenance filter
+  over it passes everything.
+  ([devsecops rules/02 §2.5.2](skills/sota-devsecops/rules/02-provenance-signing.md))
 - **A defect that starts where the gates stop.** Formatters, linters and most SAST end at the
   **compiled artifact**; a loader, verifier, dynamic linker, capability check or admission
   controller runs after it, and that whole depth is unprobed while every gate is green. Four
