@@ -5,6 +5,34 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.2] - 2026-10-14
+
+A PATCH: tracker updates, measured results stated beside the claims they qualify, and comment
+text, all inside existing surfaces. Nothing new to run. Four PRs since v1.49.1 (#543–#546).
+
+**Front door checked:** cases-v5 · SOTA_CODE_RULES_HOOK=off
+
+- **The default-on code-rules hook did not help on fresh tasks (#545).** sota-agent-evals v14 ran
+  the shipped default (the router's trigger table plus the hook) on cases-v5. These are 20 tasks
+  sampled from OWASP ASVS 5.0.0 and written blind to the library. Cited rule tests were 0.667 in
+  both arms (NULL, p = 0.75), while reach to a cited rules file rose from 8/20 to 13/20. In 4 of
+  the 5 runs that read the cited file and still failed, the agent named the rule and handed it
+  back as a decision, citing the precise spec. The in-sample result (0.698 → 0.906 on cases-v4)
+  now has this out-of-sample result beside it everywhere it appears: README, `docs/INDEX.md`,
+  `docs/VERIFY-SETUP.md` 2c, the hook's docstring, and the comments and PARTIAL message in
+  `install.sh` and `verify-setup.sh`. The hook stays on by default. To turn it off, set
+  `SOTA_CODE_RULES_HOOK=off`.
+- **Where the hook's cost goes (#546).** v14 cost 38% more per run than the control. About 90%
+  of the increase is input context. Reads of rules files rose from 13 to 65, and from 0.39M to
+  1.90M characters, because the hook asks for each named file in full. Only 20% of that text came
+  from a file the case cites. Measured from the run records with no model calls
+  (sota-agent-evals `reports/2026-10-13-v14/tools/cost.py`).
+- **ROADMAP 73 (#543, #544, #546).**
+  - The fresh case set cases-v5 was built and frozen before any library citation.
+  - It was calibrated USABLE: the control passed 0.69 of rule tests, for $8.25.
+  - The operator decided on 2026-10-14 against further paid runs.
+  - Still open: keep the hook on by default, or make it opt-in.
+
 ## [1.49.1] - 2026-10-13
 
 A PATCH: rule text, an intake and tracker corrections inside existing surfaces, with nothing new
@@ -11377,6 +11405,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.49.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.2
 [1.49.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.1
 [1.49.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.0
 [1.48.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.48.0
