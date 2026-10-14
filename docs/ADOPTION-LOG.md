@@ -7979,3 +7979,20 @@ source this session, and each new probe was built on a labelled set first.
 | The other nine fired deferrals | **re-armed** — #534 changed no visible text in those files. They track moving vendor releases or need a sweep (React 19.3, pnpm 11/Bundler 4, PG18, Apple's age-range API, GCP/AWS controls, Web Bot Auth, architecture lead probes, availability tiers), which piecemeal edits would serve worse | each row's own trigger |
 | Row 1b (router step 2 wording), trigger met 2026-10-12 | **superseded** by ROADMAP 73 (o) and (m) — see the row | — |
 | ROADMAP 73's next step | **decided**: build a fresh case set before (k), (l) or (i) — see the ledger row | ROADMAP 73 |
+
+## 2026-10-14 — field report from this repo's own v14 session (default-hook cost, two shell traps), taken in 2026-10-14
+
+**Source:** `FIELD-REPORT-SOTA-skills-2026-10-14.local.md` (kept local, 270 lines, read in full,
+and corrected in seven places against primary sources before intake). The session measured the
+default install on cases-v5 and cut v1.49.2. Each shell mechanism was reproduced again here with
+a control arm. The cost figures come from sota-agent-evals `reports/2026-10-13-v14/tools/cost.py`
+(no model calls).
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| F1 — the default install puts mostly off-target rules text into context. About 90% of v14's +38% is input; rules-file Reads went 13 → 65, 20% from a cited file. Both the hook and the router table say "read in full", and both carry the authorization and data-exposure rows that fired in 19/20 and 16/20 runs | **DEFERRED — revisit when the operator either makes a budget decision for a paid arm or decides keep-on vs opt-in for the hook** (operator 2026-10-14: no further paid runs). The candidate fixes are untested: send only the named section, and narrow the two generic rows to constructs | ROADMAP 73 (#546, #548) |
+| F2 — I restated a summary line ("partial reads → NULL") as a measured result | **rejected: already covered** — `skills/sota/SKILL.md:144`, principle 7: "Nor is a project's own index … a summary an earlier session wrote". It fired at `/sota-close` step 1, not at the moment of answering. The source line (a local memory index) was corrected | — |
+| F3 — in an agent shell whose stdin is an open socket, a bare `cat > f` blocks until the tool's timeout, and the harness then backgrounds it | **adopted** (re-run 2026-10-14: `/dev/fd/0` is a socket; `timeout 5 cat > f` gives rc 124, and with `</dev/null` rc 0). Only `cat` was measured; the section says so and says to check `ls -l /dev/fd/0` | `sota-shell-scripting` rules/08 §5 + checklist · SKILL.md index · unreleased |
+| F4 — `cd "$UNSET" 2>/dev/null \|\| cd <fallback>` never falls back in zsh: `cd ""` is a no-op at rc 0, while bash 5.3 refuses it at rc 1. A probe wrote two files into the repo root | **adopted** (reproduced in zsh 5.9 and bash 5.3; `cd "${d:?unset}"` aborts at rc 1). A §2b row, since the class (an empty operand gives the callee its default scope) is already there, plus the checklist item | `sota-shell-scripting` rules/06 §2b + checklist · unreleased |
+| W1 — an offline replay of the hook over the control's own edits predicted reach exactly (13/20); fitted prices reproduce SDK cost to $0.00001 | **recorded: worked** | — |
+| Rewording APPLY's escape clause (considered in the report, not proposed) | **recorded as data** — a hypothesis from 4 transcripts, already stated as untested in ROADMAP 73 | ROADMAP 73 |
