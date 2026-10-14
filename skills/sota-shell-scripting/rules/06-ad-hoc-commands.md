@@ -280,6 +280,7 @@ person commit?"*, answered *"what is in this repo?"* Quoted, so this is not SC20
 | **pattern / substring** | **matches everything** | `git log --author=""` and `--grep=""` 373 of 373 · `grep -e ""` 3 of 3 |
 | **identifier** | rejected, or matches nothing | `ps -p ""` exit **1** on BSD *and* procps-ng 4.0.4 · `find -name ""` 0 hits, exit 0 |
 | **positional operands** (a file list) | the callee's **default scope** — often everything | `pytest $(ls …)` emptied by zsh `NOMATCH` ran `testpaths`, 3 of 3 tests for 1 intended (pytest 9.1.1, 2026-09-30). Build lists with `find`, print the count, refuse zero |
+| a **directory** operand (`cd "$dir"`) | zsh: a no-op at **rc 0**, so you stay where you were and write there; bash 5.3: `null directory`, rc 1 | measured 2026-10-14, zsh 5.9: `cd "$UNSET" 2>/dev/null \|\| cd "$scratch"` never took the fallback, and a probe wrote two files into the repo root. Use `cd "${dir:?unset}"` — it aborts the list at rc 1 |
 
 So a `--filter`-shaped flag is dangerous when it filters by *pattern*, merely useless when it
 filters by *id*. (Separately: `ps -axo … -p "$pid"` lists **every** process even for a valid
@@ -445,14 +446,13 @@ independent readers, one cause, so the heading was the defect and not the reader
 names the control in its own title. **A rule filed under where it was first measured is
 filed under the wrong thing** — index it by what it is *for*.
 
-
 ## Audit checklist
 
 - [ ] **Command substitutions that supply a filter are guarded for empty** (§2b) — an empty
       value makes a **pattern** flag match everything (`git log --author=""` returned 373 of
       373); an identifier flag rejects it instead. An implausibly LARGE result is the tell; an
-      empty **file list** hands the callee its default scope — print the count, refuse zero
-
+      empty **file list** hands the callee its default scope — print the count, refuse zero; an
+      empty **`cd` operand** is rc 0 in zsh, so `cd "$d" || fallback` never falls back
 - [ ] **No `rg -r` used to mean "recursive"** (§2a) — it is `--replace`, it rewrites every
       match to the next argument and exits 0, so the output is false *content* rather than a
       false absence. `grep -rn 'rg -r' ` your own scripts and scrollback before quoting a

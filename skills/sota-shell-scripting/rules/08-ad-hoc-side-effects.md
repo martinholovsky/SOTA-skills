@@ -120,6 +120,27 @@ Blast radius is not only disk (§3). It is whatever finite resource the command 
 without anyone counting — and the process table is the one whose exhaustion disables the
 tools you would use to recover.
 
+## 5. A command with no input source waits on a stdin nobody will close
+
+`cat > file` with nothing redirected in, `read` without `-t`, or a tool whose file argument
+expanded empty and so fell back to stdin: each reads fd 0. In a terminal, that waits for you to
+type. **In an agent's shell, fd 0 may be a socket held open by the harness**, so it waits until
+the tool's timeout. The harness may then background it, leaving a process running that someone
+has to stop. Measured 2026-10-14 in one agent shell (macOS, zsh 5.9):
+
+```console
+$ ls -l /dev/fd/0                    →  srw-rw-rw- …          a socket, not a tty or /dev/null
+$ timeout 5 cat > out                →  rc=124 after 5 s      blocked
+$ timeout 5 cat > out </dev/null     →  rc=0 at once          EOF
+```
+
+Only `cat` was measured. The other readers follow from the same fd but were not run, and other
+agent shells may give a closed stdin instead, so check `ls -l /dev/fd/0` rather than assuming.
+
+- **Give every ad-hoc command an input**, a file or `</dev/null`, unless it is meant to read one.
+- **A command that hangs with no CPU is waiting for input until shown otherwise.** Read the
+  command for a bare reader before blaming the work.
+
 ## Audit checklist
 
 - [ ] **Ad-hoc commands that write at scale** (§3): headroom checked (`df -h` on the target
@@ -134,3 +155,7 @@ tools you would use to recover.
       table is already full, **establish parentage before assigning blame** — a
       self-recursive wrapper ([`rules/03`](03-security.md) §3a) produces the same signature, and only
       `ps -axo pid=,ppid=,command=` tells the two apart.
+- [ ] **Commands with no input source** (§5): does any ad-hoc command run a stdin reader
+      (`cat >`, `read` without `-t`, a tool with an empty file argument) with nothing
+      redirected in? In an agent shell whose stdin is an open socket it blocks until the
+      timeout. Add `</dev/null`.
