@@ -118,7 +118,8 @@ exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-pa
   searcher exclusions, patterns parsed as flags, stderr-suppressed absence checks, a hardcoded
   verdict label, non-portable backslash escapes (`\b` `\s` `\d`) — split out of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
   `set -euo pipefail`, disagreeing status variables, GitHub Actions shell defaults, execution
-  policy, PSScriptAnalyzer), 08 ad-hoc side effects (blast radius, process-table exhaustion —
+  policy, PSScriptAnalyzer), 08 ad-hoc side effects (blast radius, process-table exhaustion, a bare stdin reader
+  waiting on an agent shell's open socket —
   split out of 06 in v1.42.2),
   09 listing & selection (a lister's default page read as a population, a selector answering a
   neighbouring question, a `--include` filter that drops the file you named — split out of 06 · v1.43.1)
