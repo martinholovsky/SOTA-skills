@@ -564,7 +564,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 — 37 of 40; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41 — 38 of 41; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -705,6 +705,11 @@ CI scans the full git history, the pre-commit hook scans each commit.
     cited skill in an explicit instruction — "invoke the `sota-shell-scripting` skill and
     read its `rules/06`". A citation that is only provenance for one fact goes in the
     check's pinned `EXEMPT` list, with its reason.
+41. **The router's §BUILD moves and the eval's mirror of it does not.** `ROUTER_BUILD_SHA` in
+    `evals/run-completeness.py` pins §BUILD, but the eval only checks it when it runs, so a
+    §BUILD edit could land with a stale `BUILD_WORKFLOW` for as long as no one paid for a run.
+    Bump the pin the way `sota` router `rules/02` §5 says: re-read the mirror clause by clause,
+    re-sync it if an imperative changed, then set the hash in the same commit.
 
 ## Local setup
 
