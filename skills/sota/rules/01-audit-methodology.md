@@ -23,7 +23,8 @@ Agree these before reading a single line of code:
   what traffic/load is acceptable, who is informed.
 - **Stop-and-ask rule**: before touching anything live, shared, or
   destructive — running scanners against deployed endpoints, mutating CI/CD,
-  rotating credentials, opening cloud consoles — stop and confirm. An audit
+  rotating credentials, opening cloud consoles, **running a repo you did not write**
+  (its tests, build, install scripts: [`sota-sandboxing` rules/05](../../sota-sandboxing/rules/05-ai-agent-sandboxing.md) §7) — stop and confirm. An audit
   that breaks the system under audit is a failed audit.
 - **State the yardstick up front.** Name the standards the audit asserts
   against; this makes findings defensible and disputes resolvable:

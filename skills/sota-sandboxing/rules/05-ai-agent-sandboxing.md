@@ -350,6 +350,14 @@ changes is that the legs are easy to miss, because the tool *is* a security tool
 and its own documentation is usually the thing asserting it is safe (that
 assertion is [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §7 — count it, don't read it).
 
+**An agent auditing a repository it did not write is one of these tools.** "Run the test
+suite" or "build it under sanitizers" in an audit procedure is R7.2 with the auditor's own
+shell, keys and push rights in reach: measured 2026-10-15, `pytest --collect-only` (pytest
+9.1.1) ran a planted `conftest.py`, so even listing the tests executes the target. Before the
+first such command on a target you do not trust, **ask** (`sota` router [`rules/01`](../../sota/rules/01-audit-methodology.md) §1), or
+run it staged with R7.3's scrubbed environment and R7.4's `--network=none`. Reading,
+grepping and scanners that do not build stay unaffected.
+
 Four legs. A compromise needs two or three of them, and they are typically owned
 by different people in different files, which is why no single reviewer sees the
 chain.
@@ -464,6 +472,8 @@ where they coexist. Rate it with the chain named leg by leg ([`sota/rules/03`](.
       target-controlled build metadata; LLM steps over target source spawned
       tools-off, with an explicit `cwd` and a scrubbed environment; egress
       `none` or FQDN-allowlisted. Flag the module where all four coexist (§7).
+- [ ] **High** — An audit of a repository you did not write ran none of its tests, builds
+      or install scripts unasked or unstaged (§7, first paragraph); `--collect-only` counts.
 - [ ] **High** — Each running agent instance holds its own short-lived
       cryptographic identity (SPIFFE-style SVID or equivalent) and authenticates
       downstream as itself; one instance can be revoked without stopping the fleet
