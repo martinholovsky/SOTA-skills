@@ -5,6 +5,38 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.3] - 2026-10-16
+
+A PATCH: an intake, two field-report fixes and a new CI invariant, all inside existing surfaces.
+Nothing new to run. Five PRs since v1.49.2 (#548–#552).
+
+**Front door checked:** its code running as you · 41 invariants · ADOPTION-LOG
+
+- **An audit of a codebase you did not write no longer runs it unasked (#551).** `/sota-deep-audit`
+  said "Execute the test suite" unconditionally, while `/sota-audit` is advertised for a codebase
+  you did not write. Its tests, build and install scripts are its code running as you: on
+  2026-10-15, `pytest --collect-only` (9.1.1) ran a planted `conftest.py`, which wrote a marker
+  file. Both commands, the router's stop-and-ask list (`sota/rules/01` §1) and `sota-sandboxing`
+  rules/05 §7 now say to ask first, or to run it staged with a scrubbed environment and
+  `--network=none`. This came from an external architectural review. Every proposal in it and in
+  the reviewer's follow-up has a verdict in the ADOPTION-LOG. Most were already covered or
+  already decided, and the ones that need paid runs are recorded as data.
+- **Invariant 41: the router's §BUILD pin is checked in CI (#552).** Four copies of the BUILD
+  workflow are guarded by `ROUTER_BUILD_SHA`, which until now was checked only when the paid eval
+  ran. With paid runs frozen, an edit to §BUILD could have landed with a stale eval copy
+  indefinitely. CI now recomputes the hash with the eval runner's own constant and algorithm. Probe
+  41 shows the check can fail: negative controls pass 96 of 96. The repo now has 41 invariants.
+- **Field report, 2026-10-14 (#549, corrected in #550).**
+  - `sota-shell-scripting` rules/06 §2b: `cd "$UNSET" || cd <fallback>` never falls back where
+    `cd ""` is a no-op at rc 0. That is zsh 5.9, bash 3.2 and dash; bash 5.3 refuses it at rc 1.
+    #549 said only zsh, and #550 re-measured and corrected it.
+    `cd "${d:?unset}"` aborts in all five shells measured, though the exit status varies
+    (1, 2 or 127).
+  - rules/08 §5: in an agent shell whose stdin is an open socket, a bare `cat > f` blocks until
+    the tool's timeout. `</dev/null` fixes it. Only `cat` was measured.
+- **ROADMAP 73 (#548).** Correction to #546: the router's trigger table also asks for full-file
+  reads, so the hook's share of v14's rules text can't be separated from the table's.
+
 ## [1.49.2] - 2026-10-14
 
 A PATCH: tracker updates, measured results stated beside the claims they qualify, and comment
@@ -11405,6 +11437,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.49.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.3
 [1.49.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.2
 [1.49.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.1
 [1.49.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.0
