@@ -183,6 +183,11 @@ hours):
   diff-scoped job catches weak tests while they're fresh.
 - **As an audit probe**: one run on a "well-covered" module tells you in an
   afternoon whether 90% line coverage means anything.
+- **Not as a ranking of code against a fixed suite.** Mutants are made from the
+  code under test, so with one suite and several implementations (e.g. model
+  candidates) the score measures how well *that suite* constrains *each*
+  implementation — not which implementation is better. Compare candidates on it
+  only when each candidate wrote its own tests ([`sota-llm-engineering` rules/07](../../sota-llm-engineering/rules/07-code-generation-evals.md) §3).
 - **As an observability probe — mutate, then read the *output*, not the suite.**
   Every use above ends in "run the tests", which answers *is this constrained by a
   test*. A different and equally silent question is *does what this thing reports tell

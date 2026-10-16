@@ -67,7 +67,8 @@ Process:
    absence), and the config/env that selects models.
 2. **Sweep by rules file, prioritized**: 01 (evals — absence is the #1
    systemic finding), 04 (unbounded agents), 05 (cost/reliability), 02
-   (prompt/output hygiene), 03 (RAG), 06 (data lifecycle).
+   (prompt/output hygiene), 03 (RAG), 06 (data lifecycle), 07 (any harness
+   that scores generated code).
 3. **Check the negatives.** Missing controls are findings: no eval suite, no
    regression gate in CI, no `max_tokens`/iteration cap, no timeout, no
    fallback, no trace of prompt/completion/tokens, no schema on extraction,
@@ -117,6 +118,7 @@ systemic themes — "no evals anywhere" is one systemic finding, not twenty).
 | [rules/04-agents-tools.md](rules/04-agents-tools.md) | Workflow vs agent decision, tool design (descriptions, scope, idempotency, model-actionable errors), context management across turns (compaction, memory), MCP integration & spec status, multi-agent costs, human-in-the-loop gates, stopping conditions & budgets | ...anything with tool calls or loops, designing tool schemas, MCP servers/clients, multi-agent proposals, runaway-cost or stuck-agent debugging |
 | [rules/05-production-engineering.md](rules/05-production-engineering.md) | Model selection & routing, capability tiers, fallbacks, provider abstraction caution, latency (streaming, parallel calls, caching), cost engineering (budgets, batch APIs, right-sizing), 429/529 + jittered backoff, LLM observability (trace every call), graceful degradation and an inference kill switch, versioning & rollout (shadow, A/B, pinning vs auto-upgrade), generated-media provenance (C2PA) and likeness consent | ...shipping to production, picking models, cost/latency complaints, retry/fallback design, rollout of a new model or prompt, building dashboards |
 | [rules/06-data-lifecycle.md](rules/06-data-lifecycle.md) | Fine-tune vs prompt vs RAG decision, dataset curation hygiene, training-side safety (content filtering, reward hacking, feedback poisoning, label logs), feedback loops (thumbs → eval sets), embedding/index migration, PII in prompts/logs, provider data-retention settings | ...someone proposes fine-tuning, designing feedback capture, migrating embedding models, setting up logging/retention for an LLM app |
+| [rules/07-code-generation-evals.md](rules/07-code-generation-evals.md) | Scoring generated code: the harness as a target (candidate code attacks the grader — a nine-line `conftest.py`), unbiased pass@k from n ≥ k samples, visible vs held-out suites and suite validation, oracles and bounded equivalence checks, reward hacking of the grader as a hard zero, correct-and-unexploitable security scoring, dependency and API resolution before the run, deterministic constraint checks over judges, mergeability and harness effects in agentic runs, contamination controls, paired intervals and no weighted composite | ...building or auditing a harness that scores code from a model or agent, comparing models/prompts/scaffolds on coding tasks, reading a coding-benchmark claim |
 
 ## Top-10 non-negotiables
 
