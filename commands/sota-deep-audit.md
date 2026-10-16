@@ -57,7 +57,10 @@ the code, the data and a real run this session, quoted as evidence — test coun
 numbers, command output, `file:line`. A claim you cannot back with evidence you produced is
 labelled **UNVERIFIED**, with the thing that would confirm it named.
 
-**Run what matters.** Execute the test suite and the cheap local checks. Where a decision
+**Run what matters.** Execute the test suite and the cheap local checks — on a repository you
+did not write, only after asking or inside a staged, credential-free, `--network=none` sandbox:
+its tests and build are its code running as you, and `pytest --collect-only` alone ran a planted
+`conftest.py` (`sota-sandboxing` rules/05 §7; `sota` router `rules/01` §1). Where a decision
 hinges on a measured result — a benchmark, a recall or false-positive rate, a latency, any
 "this is faster/safer" — re-measure it, including in heavyweight or special environments
 (containers, GPUs, integration harnesses) when that is the only way to confirm it. Respect

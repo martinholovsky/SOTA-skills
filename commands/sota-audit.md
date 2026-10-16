@@ -181,6 +181,11 @@ partial, never as clean.
   unasked.** Live credential verification and scanners pointed at deployed endpoints are
   stop-and-ask actions (`sota` router `rules/01` §1, and the secrets row of §3's matrix). A scanner that is not present is reported
   under **not reached** — never counted as a clean result.
+- **In a codebase you did not write, its tests and builds are its code running as you.** A
+  checklist's `go test -race`, sanitizer build or `swift build`, and even `pytest --collect-only`
+  (which ran a planted `conftest.py`, measured 2026-10-15), is asked for first or run staged with
+  no credentials and `--network=none` (`sota-sandboxing` rules/05 §7). Reading and non-building
+  scanners are unaffected.
 - **Record the tool, its version and the exact command line**, so the result can be re-run.
 - **Triage before anything becomes a finding.** Tool severity is an input: re-rate it in
   context; "dead" and "test-only" are claims with evidence bars that fail closed; existing
