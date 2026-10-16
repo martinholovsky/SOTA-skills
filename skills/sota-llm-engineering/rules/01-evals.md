@@ -67,7 +67,7 @@ Order of preference (cheapest/most reliable first):
 | Type | Use for | Notes |
 |---|---|---|
 | **Code assertions** | Format, schema validity, length, required/forbidden strings, citations resolve, latency/cost ceilings, classification vs gold label | Deterministic, free, zero judge bias. Always start here — a surprising fraction of "quality" is assertable. |
-| **Golden-set exact/fuzzy match** | Extraction, classification, SQL/code with executable check | Execute generated code/SQL against fixtures and compare *results*, not strings. |
+| **Golden-set exact/fuzzy match** | Extraction, classification, SQL/code with executable check | Execute generated code/SQL against fixtures and compare *results*, not strings. Scoring generated code in depth — a harness the candidate can attack, pass@k, exploits: [rules/07](07-code-generation-evals.md). |
 | **Rubric scoring (LLM-judge)** | Graded qualities: faithfulness, completeness, tone, helpfulness | Decompose into binary sub-criteria (see below). |
 | **Pairwise comparison (LLM-judge)** | A/B between prompts/models when absolute scores are unstable | Judges are far more reliable at "which is better" than "score 1–10". Use for regression decisions; randomize order (position bias). |
 | **Human review** | Calibrating judges, high-stakes spot checks, novel failure discovery | Too expensive as the routine grader; indispensable as ground truth. |
@@ -103,8 +103,11 @@ Before judge scores gate anything:
 
 Known judge biases — design around them:
 
-- **Position bias** (pairwise): judges favor the first answer. Run both
-  orderings; a result that flips with order is a tie.
+- **Position bias** (pairwise): judges favor one slot, and which one depends
+  on the judge model — two judges in one study leaned in opposite directions
+  (Bias in the Loop, arXiv 2604.16790, section 4.1). Run both orderings; a result
+  that flips with order is a tie. Report the consistency rate (two runs, same
+  verdict) beside accuracy — it measures repeatability, not correctness.
 - **Verbosity/style bias**: longer, confident, well-formatted answers score
   higher regardless of correctness. Add explicit rubric language ("length
   and formatting are irrelevant") and assert it during validation.
@@ -123,7 +126,8 @@ invalidates every historical score (High finding).
 
 **Offline (pre-merge/pre-deploy):** golden sets + assertions + judges, run on
 demand and in CI. Deterministic harness: pinned model versions, fixed
-seeds/params where supported, retries for transient errors but never silent
+seeds/params where supported, pinned reasoning effort or thinking budget and
+tool availability (both change rankings), retries for transient errors but never silent
 re-grading until pass. Sampling parameters are not a determinism switch:
 `temperature = 0` never guaranteed identical outputs, and some newer models
 reject any non-default `temperature`/`top_p`/`top_k` with a `400` (Anthropic,
@@ -179,7 +183,8 @@ Gate rules that work in practice:
   suite (judges, larger set) for merge-to-main/nightly if judge cost bites.
 
 Eval results are artifacts: persist run ID, git SHA, model versions, scores
-per case. "We can't reproduce last month's score" means you don't have evals,
+per case, and — where a harness executes anything — the container image digest,
+grader logs and full agent trajectories. "We can't reproduce last month's score" means you don't have evals,
 you have anecdotes.
 
 **A replay harness is not an eval.** Recorded-trace or cassette replay —
@@ -407,12 +412,14 @@ published claim rested on that 0.00 for several hours.
       agreement; re-validated on judge model/prompt change; judge model
       pinned and traced.
 - [ ] Pairwise comparisons run in both orders; verbosity/position bias
-      addressed.
+      addressed; the judge's consistency rate is reported beside accuracy.
 - [ ] Evals run automatically in CI on prompt/model/pipeline changes and
       block merge; baselines stored; zero-regression rule on incident/safety
       tags; cost/latency gated alongside quality.
 - [ ] Eval runs persisted as artifacts (run ID, SHA, model versions,
-      per-case results) and reproducible.
+      per-case results; image digest, grader logs and trajectories where the
+      harness executes anything) and reproducible, with reasoning effort and
+      tool availability pinned alongside the model.
 - [ ] Each suite declares what is **live** vs **replayed**, and the quality
       gate fails with the model endpoint unreachable — a replay-only gate
       measures the harness, not the model.

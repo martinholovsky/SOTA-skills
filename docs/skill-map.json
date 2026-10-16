@@ -240,7 +240,7 @@
     {
       "from": "sota-llm-engineering",
       "to": "sota-code-security",
-      "weight": 26,
+      "weight": 28,
       "targets": [
         "rules/07",
         "rules/08",
@@ -437,6 +437,17 @@
       "weight": 11,
       "targets": [
         "rules/06"
+      ]
+    },
+    {
+      "from": "sota-llm-engineering",
+      "to": "sota-sandboxing",
+      "weight": 10,
+      "targets": [
+        "rules/05",
+        "rules/05 \u00a71",
+        "rules/05 \u00a74",
+        "rules/05 \u00a77"
       ]
     },
     {
@@ -740,6 +751,17 @@
       "targets": []
     },
     {
+      "from": "sota-llm-engineering",
+      "to": "sota-testing",
+      "weight": 7,
+      "targets": [
+        "rules/06 \u00a76.1",
+        "rules/07 \u00a77.10",
+        "rules/09 \u00a73",
+        "rules/09 \u00a75"
+      ]
+    },
+    {
       "from": "sota-observability",
       "to": "sota-code-security",
       "weight": 7,
@@ -900,15 +922,6 @@
       "to": "sota-privacy-compliance",
       "weight": 6,
       "targets": []
-    },
-    {
-      "from": "sota-llm-engineering",
-      "to": "sota-sandboxing",
-      "weight": 6,
-      "targets": [
-        "rules/05",
-        "rules/05 \u00a74"
-      ]
     },
     {
       "from": "sota-ml-engineering",
@@ -1637,6 +1650,15 @@
     },
     {
       "from": "sota-testing",
+      "to": "sota-llm-engineering",
+      "weight": 3,
+      "targets": [
+        "rules/04 \u00a73a",
+        "rules/07 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-testing",
       "to": "sota-architecture",
       "weight": 3,
       "targets": [
@@ -1918,14 +1940,6 @@
       ]
     },
     {
-      "from": "sota-llm-engineering",
-      "to": "sota-testing",
-      "weight": 2,
-      "targets": [
-        "rules/07 \u00a77.10"
-      ]
-    },
-    {
       "from": "sota-ml-engineering",
       "to": "sota-data-engineering",
       "weight": 2,
@@ -2122,14 +2136,6 @@
       "weight": 2,
       "targets": [
         "rules/01 \u00a76a"
-      ]
-    },
-    {
-      "from": "sota-testing",
-      "to": "sota-llm-engineering",
-      "weight": 2,
-      "targets": [
-        "rules/04 \u00a73a"
       ]
     },
     {
@@ -2813,6 +2819,14 @@
       ]
     },
     {
+      "from": "sota-llm-engineering",
+      "to": "sota-devsecops",
+      "weight": 1,
+      "targets": [
+        "rules/03"
+      ]
+    },
+    {
       "from": "sota-ml-engineering",
       "to": "sota-kubernetes",
       "weight": 1,
@@ -3400,14 +3414,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1514,
+    "md link, other skill": 1527,
     "md link, outside skills/": 3,
-    "md link, same skill": 2747,
+    "md link, same skill": 2757,
     "name (backticked)": 431,
     "name (bare)": 240,
-    "name+file (backticked)": 585,
+    "name+file (backticked)": 598,
     "name+file (bare)": 160,
-    "own rules/NN": 2890
+    "own rules/NN": 2910
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3417,9 +3431,9 @@
     "md link, same skill": 0,
     "name (backticked)": 416,
     "name (bare)": 197,
-    "name+file (backticked)": 585,
+    "name+file (backticked)": 597,
     "name+file (bare)": 155,
-    "own rules/NN": 2820
+    "own rules/NN": 2831
   },
   "rules_index_style": {
     "link": 42

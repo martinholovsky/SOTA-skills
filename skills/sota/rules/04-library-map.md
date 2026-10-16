@@ -78,7 +78,7 @@ exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-pa
   04 integration/contract/system, 05 e2e & UI, 06 property/fuzzing/mutation, 07 suite health & CI,
   08 BDD/spec-by-example, 09 security testing
 - **sota-llm-engineering/rules**: 01 evals, 02 prompt & context engineering, 03 RAG & retrieval,
-  04 agents & tools, 05 production engineering, 06 data & lifecycle
+  04 agents & tools, 05 production engineering, 06 data & lifecycle, 07 code-generation evals
 - **sota-ml-engineering/rules**: 01 ML systems architecture, 02 data & features (leakage/skew), 03
   training & experimentation, 04 evaluation & validation, 05 deployment & serving, 06 monitoring &
   drift, 07 security & governance
