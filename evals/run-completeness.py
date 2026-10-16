@@ -477,6 +477,13 @@ def main():
     else:
         print(f"\nMEAN completeness  without={tot_wo/n:.2f}  with={tot_wl/n:.2f}  "
               f"LIFT={((tot_wl-tot_wo)/n):+.2f}")
+        # The interval over CASES (evals/README "Intervals"): how much the lift depends on
+        # which cases are in the set. Not an interval over samples or over judge error.
+        from _stats import paired_bootstrap, format_interval
+        ids = list(results)
+        print("LIFT " + format_interval(paired_bootstrap(
+            [results[i]["arms"]["without"]["recall"] for i in ids],
+            [results[i]["arms"]["with"]["recall"] for i in ids])))
     if a.placebo_arm:
         print(f"MEAN placebo={tot_pl/n:.2f}  PLACEBO-LIFT={((tot_pl-tot_wo)/n):+.2f} (vs without)  "
               f"LIBRARY-OVER-PLACEBO={((tot_wl-tot_pl)/n):+.2f}")

@@ -18,10 +18,15 @@ audit STRAT-HIGH-2).
   instrument**: it scores what the model *writes*, not what it finds. `SPEC.md`
   states the operational pressure that makes each unsafe shortcut attractive
   ("cache it", "must never 5xx", "keep the guard cheap") and **never names a
-  defect**; scoring is avoidance of a `fail` pattern the model never sees. Two
+  defect**; scoring is avoidance of a `fail` pattern the model never sees. Three
   references (`unscoped-audit/reportkit` must score 0/7, `build-safe/reference-safe`
-  7/7) are enforced by `run-build-safe.py --selftest` — run it before trusting any
-  number. Note the file is 49 lines of which 42 are comments: **7 real cases**, and
+  7/7, and `build-safe/gamed-by-comment` 0/2 on the two defects it plants) are
+  enforced by `run-build-safe.py --selftest` — run it before trusting any number.
+  Patterns match **code with comments and docstrings blanked** (since 2026-10-16;
+  before that, a `# TODO: maybe add allowed_columns later` comment above an
+  unvalidated `ORDER BY {sort_col}` scored `sqli_sort` avoided *and* safe). The one
+  case whose safe resolution is a deliberate omission, `unreached_quota_handler`,
+  carries `"safe_in_prose": true` and still reads comments and NOTES prose. Note the file is 49 lines of which 42 are comments: **7 real cases**, and
   `load_cases` exits rather than score an empty set. The July 2026 attempt failed
   because the spec leaked the property to preserve and the bare arm saturated; the
   rewrite is what made it discriminate (`results/2026-07-30/BUILD-SAFE.md` →
@@ -662,6 +667,42 @@ that measures the library. So:
   (2026-07-30). Restrict to product code; treat tests, tools and vendored
   environments as out of scope unless they are the thing under test.
 
+### Intervals: what the CI beside a delta means (2026-10-16)
+
+`run-completeness.py` and `run-competitors.py` now print one line under their headline
+delta, existing output unchanged:
+
+```
+LIFT delta +0.405  95% CI [+0.325, +0.488]  n=7 cases  paired bootstrap seed=0  (n<10: ...)
+```
+
+`evals/_stats.py` makes it (stdlib only; `test_scoring.py` covers it, with two
+known-bads — an arm against itself, and a scrambled pairing that must widen the
+interval — each watched to fail under a mutation first). Its CLI re-derives the line
+from any recorded completeness or competitors JSON, read-only:
+`python3 evals/_stats.py RESULT.json --a without --b with`. `--seed N` (default 0) and
+`--boot N` (default 10000 resamples) are printed back in the line, so an interval quoted
+anywhere can be re-derived exactly.
+
+What the interval is, so it is not over-read:
+
+- **It is over cases**, resampled with each case's two arms kept together. It says how
+  much the delta depends on *which* cases were in the set. It is **not** an interval over
+  model samples (the runners average `--samples` per case before it is computed), and it
+  never covers judge error.
+- **With few cases it is too narrow.** n cases allow only C(2n−1, n) distinct resamples —
+  10 at n = 3, 1,716 at n = 7 — so the percentile interval understates what a fresh case
+  set would show. Below 10 cases the line says so itself; read it as a floor on the
+  uncertainty, not the uncertainty.
+- **Nothing published was re-derived.** The results under `results/` keep the points they
+  were reported with; the CLI is how to put an interval beside one when it is quoted again.
+- The `temp 0` noise floor above (≈ ±0.03 run to run) is a separate source of variation
+  and is not in this interval.
+
+**Bradley-Terry is not used**, deliberately: it needs pairwise judgments between
+systems, and every runner here scores each arm on an absolute rubric. If a runner ever
+produces pairwise outcomes, fit it there; do not convert rubric scores into wins.
+
 ### A verdict computed through a pipe can contradict the buffer it read (2026-09-06)
 
 `check-negative-controls.sh` reported a probe as a **FALSE PASS** while the probe's own
@@ -781,7 +822,8 @@ Full run: [results/2026-08-13/REAL-REPO-AUDIT.md](results/2026-08-13/REAL-REPO-A
 ## The scorers are tested (and the tests are mutation-checked)
 
 `evals/test_scoring.py` — plain `python3`, no pytest — covers `run-clean.score()`,
-`run-adjudication.score()` and `run-repo-audit.score()`. It runs in **CI** and in
+`run-adjudication.score()`, `run-repo-audit.score()`, `run-reimplement.score()` and the
+interval helpers in `_stats.py`. It runs in **CI** and in
 **pre-commit** whenever `evals/*.py` changes.
 
 It exists because a mutation probe on 2026-07-21 replaced `run-clean.score()` with

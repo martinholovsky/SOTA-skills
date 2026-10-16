@@ -33,7 +33,7 @@ FAILURES = []
 CHECKS = 0
 # Floor for the number of assertions that must actually execute. Raise it when
 # you add checks; a drop means a test stopped running, not that nothing broke.
-MIN_CHECKS = 38
+MIN_CHECKS = 54
 
 
 def load(fname, modname):
@@ -199,9 +199,58 @@ def test_run_reimplement():
     check("missing predictions -> decision 0.0", m.score(cases, {})["decision"], 0.0)
 
 
+# --------------------------------------------------------------------------
+# _stats — the intervals printed beside headline deltas. Two known-bads from the
+# proposal that asked for them: an arm against itself, and a scrambled pairing.
+# --------------------------------------------------------------------------
+def test_stats():
+    print("_stats")
+    m = load("_stats.py", "evals_stats")
+    a = [0.1, 0.3, 0.5, 0.7, 0.9, 0.2, 0.6]
+
+    r = m.paired_bootstrap(a, a)
+    check("arm vs itself -> delta 0.0", r["point"], 0.0)
+    check("arm vs itself -> CI contains 0", r["lo"] <= 0.0 <= r["hi"], True)
+
+    # A constant per-case shift: every resample has the same mean difference, so a
+    # PAIRED interval collapses to the point. An unpaired resampler does not.
+    b = [x + 0.1 for x in a]
+    paired = m.paired_bootstrap(a, b)
+    check("constant shift -> delta +0.1", round(paired["point"], 9), 0.1)
+    check("constant shift -> paired CI width 0", round(paired["hi"] - paired["lo"], 9), 0.0)
+    scrambled = m.paired_bootstrap(a, list(reversed(b)))
+    check("scrambled pairing widens the interval",
+          (scrambled["hi"] - scrambled["lo"]) > (paired["hi"] - paired["lo"]) + 0.05, True)
+    check("seed is reported", paired["seed"], m.DEFAULT_SEED)
+    check("same seed -> same interval", m.paired_bootstrap(a, list(reversed(b)))["lo"], scrambled["lo"])
+
+    check("McNemar: 0 vs 6 discordant -> p 2/64",
+          m.mcnemar_exact([False] * 6, [True] * 6)["p"], 2 / 64)
+    check("McNemar: balanced discordance -> p 1.0",
+          m.mcnemar_exact([True, False, True, False], [False, True, False, True])["p"], 1.0)
+    check("McNemar: no discordant pairs -> p 1.0",
+          m.mcnemar_exact([True, True], [True, True])["p"], 1.0)
+
+    const = m.bootstrap_mean([0.5] * 5)
+    check("constant arm -> CI is the point", (const["lo"], const["hi"]), (0.5, 0.5))
+    line = m.format_interval(paired)
+    check("printed line carries n and seed", "n=7 cases" in line and "seed=0" in line, True)
+    check("few cases -> the line says the interval is a floor", "floor" in line, True)
+    many = m.format_interval(m.paired_bootstrap(a * 2, b * 2))
+    check("enough cases -> no few-cases warning", "floor" in many, False)
+
+    for label, fn in (("empty arms raise", lambda: m.paired_bootstrap([], [])),
+                      ("mismatched arms raise", lambda: m.paired_bootstrap([1.0], [1.0, 0.0]))):
+        try:
+            fn()
+            check(label, "no exception", "ValueError")
+        except ValueError:
+            check(label, "ValueError", "ValueError")
+
+
 if __name__ == "__main__":
     for t in (test_run_clean, test_run_adjudication, test_run_repo_audit,
-              test_run_reimplement):
+              test_run_reimplement, test_stats):
         try:
             t()
         except Exception as e:                       # a scorer that crashes is a failure
