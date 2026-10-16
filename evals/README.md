@@ -699,6 +699,15 @@ What the interval is, so it is not over-read:
 - The `temp 0` noise floor above (≈ ±0.03 run to run) is a separate source of variation
   and is not in this interval.
 
+**Runners that still print a delta without an interval** (2026-10-16, from a grep of each
+runner's `print` lines for lift/delta/gap, so a lead rather than a census):
+`run-adjudication.py`, `run-clean.py`, `run-comment-triage.py`, `run-desc-routing.py`,
+`run-prompt-independence.py`, `run-repo-audit.py`, `run-routing-shift.py`,
+`run-silent-open.py`, and in `run-completeness.py` every delta except `LIFT` (placebo, pad,
+gate absorption). Converting one is a `format_interval(paired_bootstrap(a, b))` line wherever
+the runner keeps a per-case pairing; where it keeps only means, it cannot be added after the
+fact, which is the first thing to check.
+
 **Bradley-Terry is not used**, deliberately: it needs pairwise judgments between
 systems, and every runner here scores each arm on an absolute rubric. If a runner ever
 produces pairwise outcomes, fit it there; do not convert rubric scores into wins.

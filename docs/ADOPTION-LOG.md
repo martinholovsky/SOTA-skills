@@ -8083,3 +8083,13 @@ WebFetch and was read in a browser.
 | Kim et al. (arXiv 2605.11209), SpecBench, Harness-Bench | **not taken in**: the proposal listed them as unverified and nothing here rests on them | — |
 
 **Not run:** the PR-checklist pre-vs-post ablation. Paid runs have been frozen by operator decision since 2026-10-14, so rules/07's effect on a build is unmeasured.
+
+**Follow-up, 2026-10-16 (same day, after both PRs merged).** A re-check of the table above
+against the merged tree found that it overstated three things:
+- **P14:** the row says "adopted", but rules/07 §10 covered model+*harness* pairs only. The
+  fixed-prompt vs model+prompt decision is now a bullet in §10 and part of its checklist item.
+- **E1–E5:** they landed in **#555**. The skills half is #554.
+- **E2:** the runners not yet printing an interval are now listed in `evals/README.md` under
+  "Intervals". The list in #555's description had been written from memory and named two
+  wrong runners (decay and unscoped-audit print no delta). It also missed six runners that do
+  print one: adjudication, clean, comment-triage, desc-routing, repo-audit and silent-open.

@@ -225,6 +225,11 @@ their merge decisions (METR, 2026-03-10). Where a repository-level eval informs 
   single harness component can move scores "by margins comparable to those between adjacent
   model generations" (Gorinova et al., arXiv 2606.17799). Compare models under one harness, or
   report model+harness pairs — never mix the two in one table.
+- **Decide the same thing for the prompt, before the run.** Model-vs-model means one fixed
+  prompt for every model, so the comparison asks which model is better at *that* prompt. A
+  prompt tuned per model makes each row a model+prompt pair, and the comparison asks which
+  pair is better. Both are legitimate; a table that mixes them answers neither. State which
+  one it is beside the table.
 - **Record the trajectory, not just the patch**: steps, tool calls, cost, whether the agent
   ran the tests, self-repair iterations, and files touched outside scope. Budgets and stopping
   conditions: [rules/04](04-agents-tools.md) §3. Trajectories are also what §5's hard fails are
@@ -283,7 +288,8 @@ contamination rule is rules/01 §8.
 - [ ] The judge sees execution output, reports consistency and prompt sensitivity, and never
       decides correctness or security (§9).
 - [ ] Repository-level results carry a mergeability review; models are compared under one
-      harness; trajectories are kept (§10).
+      harness, and each table states whether its prompt is fixed across models or tuned per
+      model; trajectories are kept (§10).
 - [ ] Contamination controls exist for any public task set (§10).
 - [ ] Deltas carry paired intervals and n; no fixed-weight composite; refusals are an axis;
       image digests, grader logs and trajectories are persisted (§11).
