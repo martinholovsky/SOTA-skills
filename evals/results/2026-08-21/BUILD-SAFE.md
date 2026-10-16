@@ -148,3 +148,15 @@ deliberately kept **out of the headline scoreboard**.
 
 Reproduce: `evals/run-build-safe-arms.py`, `evals/run-calibration.py`,
 `evals/judge-calibration.py`, scored by `evals/run-build-safe.py`.
+
+---
+
+**Note added 2026-10-16: the scorer changed after this run.** `run-build-safe.py` matched
+`safe` and `fail` patterns against comments as well as code. A fixture whose comments name the
+fix while its code keeps the defect (`cases/build-safe/gamed-by-comment`) scored `sqli_sort` and
+`idor_get_report` as avoided *and* safe under that scorer. Since 2026-10-16, patterns match code
+with comments and docstrings blanked, except `unreached_quota_handler`, which opts back in. The
+numbers above are left as reported. **They cannot be re-scored**: only the per-run score JSON
+was kept, not the builds. So whether any `avoided` or `+ safe evidence` cell above rested on a
+comment is unknown. The two `requires_safe` cases (`sqli_sort`, `idor_get_report`) are the ones
+it could have moved.

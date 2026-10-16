@@ -188,6 +188,16 @@ def main():
         m = totals[arm] / n
         delta = f"  (vs sota {m - totals['sota']/n:+.2f}, vs unguided {m - totals['without']/n:+.2f})" if arm not in ("without", "sota") else ""
         print(f"  {arm:20s} {m:.3f}{delta}")
+    # Paired intervals over CASES (evals/README "Intervals"), one line per comparison the
+    # table above already prints as a point.
+    from _stats import paired_bootstrap, format_interval
+    ids = list(results)
+    per = {arm: [results[i]["arms"][arm]["recall"] for i in ids] for arm in arms}
+    print("\nPaired deltas (case-level bootstrap):")
+    print("  sota - without".ljust(30) + format_interval(paired_bootstrap(per["without"], per["sota"])))
+    for arm in arms:
+        if arm not in ("without", "sota"):
+            print(f"  {arm} - sota".ljust(30) + format_interval(paired_bootstrap(per["sota"], per[arm])))
     if a.out:
         print(f"saved {a.out}")
 
