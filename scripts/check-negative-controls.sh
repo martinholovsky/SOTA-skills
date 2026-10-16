@@ -1212,6 +1212,20 @@ p.write_text(t.replace(old, '(verified on gitleaks 8.30.1)', 1))
 probe 40d "a pinned escape the command no longer needs" \
   "stale escape: commands/sota-report.md"
 
+# 41 — §BUILD drifting away from the eval's hand-compressed mirror. Like 20, the edit is
+# inside a step's prose, not a heading, so invariant 18 stays quiet and only the hash sees it.
+# Python with an assert rather than `perl -pi`, so a stale anchor aborts instead of probing
+# an unmutated tree.
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota/SKILL.md')
+t = p.read_text(encoding='utf-8')
+old = '1. Identify the domains the feature touches'
+assert t.count(old) == 1, 'probe stale: the BUILD step-1 anchor not found'
+p.write_text(t.replace(old, '1. Name the domains the feature touches', 1), encoding='utf-8')
+" )
+probe 41 "router §BUILD changed without the eval mirror's pin being re-read" "BUILD DRIFT"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1598,7 +1612,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 (37 of 40)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41 (38 of 41)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
