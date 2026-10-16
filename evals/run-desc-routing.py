@@ -19,6 +19,7 @@ Run: python3 evals/run-desc-routing.py --samples 3 --temp 0.7 \
 """
 import argparse, glob, json, os, re, statistics, sys
 import urllib.request
+import _rawlog  # noqa: E402 — raw responses kept beside results
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASES = os.path.join(ROOT, "evals/cases/desc-routing.jsonl")
@@ -122,6 +123,7 @@ def call(model, key, prompt, temp, tries=4):
                                                   "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=180) as r:
                 d = json.load(r)
+                _rawlog.record(__file__, req, d)   # keep the raw response (evals/_rawlog.py)
             ch = d["choices"][0]
             content = ch["message"]["content"]
             # HTTP 200 with null/empty content is NOT success — a reasoning model can

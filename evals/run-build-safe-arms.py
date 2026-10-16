@@ -8,6 +8,7 @@ Conventions taken from run-build-safe.py's docstring and evals/README:
     is `sota-code-security` rules/10 `sota-code-security` rules/16 §2.7, and would make the score a floor
 """
 import json, os, re, sys, time, urllib.request, hashlib
+import _rawlog  # noqa: E402 — raw responses kept beside results
 
 ROOT = os.environ.get("EVALS_DIR") or os.path.dirname(os.path.abspath(__file__))
 SPEC = open(os.path.join(ROOT, "cases/build-safe/SPEC.md"), encoding="utf-8").read()
@@ -44,6 +45,7 @@ def call(model, prompt, k, max_tokens):
                 data=body, headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=900) as r:
                 d = json.load(r)
+                _rawlog.record(__file__, req, d)   # keep the raw response (evals/_rawlog.py)
             ch = d["choices"][0]; content = ch["message"]["content"]
             if not content:
                 raise RuntimeError(f"empty completion: finish_reason={ch.get('finish_reason')}")

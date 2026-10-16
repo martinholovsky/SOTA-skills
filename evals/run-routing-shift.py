@@ -38,6 +38,7 @@ import statistics
 import sys
 import time
 import urllib.request
+import _rawlog  # noqa: E402 — raw responses kept beside results
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASES = os.path.join(ROOT, "evals/cases/routing-shift.jsonl")
@@ -67,6 +68,7 @@ def call(model, key, msgs, temp, tries=4):
                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=180) as r:
                 d = json.load(r)
+                _rawlog.record(__file__, req, d)   # keep the raw response (evals/_rawlog.py)
             return d["choices"][0]["message"]["content"] or ""
         except Exception as e:
             if attempt == tries - 1:
