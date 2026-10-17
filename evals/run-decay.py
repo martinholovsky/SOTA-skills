@@ -33,6 +33,7 @@ import os
 import sys
 import importlib.util
 import urllib.request
+import _rawlog  # noqa: E402 — raw responses kept beside results
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _spec = importlib.util.spec_from_file_location(
@@ -146,6 +147,7 @@ def chat(model, messages, k, max_tokens=32000, temp=0.0):
                 headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=300) as r:
                 d = json.load(r)
+                _rawlog.record(__file__, req, d)   # keep the raw response (evals/_rawlog.py)
             ch = d["choices"][0]
             content = ch["message"]["content"]
             # HTTP 200 with null/empty content is NOT success — a reasoning model can

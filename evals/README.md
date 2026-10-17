@@ -848,6 +848,20 @@ trusted.**
 
 ## Measurement conventions
 
+- **Every model response is kept, and lives in the repo, not `/tmp`.** Each runner's API call
+  appends one JSON line to `evals/results/raw/<UTC date>/<runner>.jsonl` (`evals/_rawlog.py`):
+  the OpenRouter generation ID, model, git commit, a sha256 of the request body, the full
+  response with secret-shaped strings scrubbed (and counted), and a timestamp. The request
+  body is not stored (it is rebuilt from the commit and the case), and the API key is never
+  read. **Commit the raw files with the results they produced.** Builds and reports that
+  scorers read from disk go under `evals/results/<date>/` too, never `/tmp`. Why: on
+  2026-10-16 a scorer fix could not re-score the 2026-08-21 BUILD-SAFE run. Its builds had been
+  written to `/tmp`, only scores were committed, session logs expire after 30 days, and no
+  runner kept the generation ID, which is the only key to the provider's stored content.
+  A failed write stops the run (`SystemExit`, which no runner's retry loop catches) rather
+  than spend on output that cannot be kept. `test_scoring.py` fails if any function that calls
+  the API stops calling `_rawlog.record`. `EVALS_RAWLOG_DIR` redirects the log, for tests.
+
 - **One run is a data point, not a number. Never publish an n=1 figure without its sample size attached.** Twice in one week
   a single run produced a figure a larger sample walked back: `+0.07` on
   silent-control detection (retracted at n=49) and `+0.40` on completeness (a two-run

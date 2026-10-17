@@ -3,6 +3,11 @@
 
 Scores REPORTING DISCIPLINE only — never recall. Per docs/ROADMAP.md this
 measures adherence to our own doctrine and must not be reported as a lift.
+
+Usage: judge-calibration.py DIR
+  reads DIR/cal_{u,g}{1,2,3}.md (the six audit reports) and writes DIR/cal_scores.json.
+  Use a directory under evals/results/<date>/, not /tmp: until 2026-10-16 both paths were
+  hardcoded to /tmp, so the reports a published score rested on were never kept.
 """
 import os, sys, json, importlib.util, random
 spec = importlib.util.spec_from_file_location("d", os.path.join(
@@ -44,10 +49,13 @@ PROMPT = ("You are scoring the REPORTING DISCIPLINE of a security audit report. 
  "REPORT:\n---\n")
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2 or not os.path.isdir(sys.argv[1]):
+        sys.exit("usage: judge-calibration.py DIR   (DIR holds cal_u1..3.md and cal_g1..3.md)")
+    base = sys.argv[1]
     items = [("CONTROL_BAD", BAD), ("CONTROL_GOOD", GOOD)]
     for a in ("u", "g"):
         for i in (1, 2, 3):
-            items.append((f"{a}{i}", open(f"/tmp/cal_{a}{i}.md", encoding="utf-8").read()))
+            items.append((f"{a}{i}", open(os.path.join(base, f"cal_{a}{i}.md"), encoding="utf-8").read()))
     random.Random(11).shuffle(items)          # blind the judge to arm order
     out = {}
     for name, body in items:
@@ -55,4 +63,4 @@ if __name__ == "__main__":
         m = txt[txt.find("{"): txt.rfind("}") + 1]
         out[name] = json.loads(m)
         print(f"  judged {name}", flush=True)
-    json.dump(out, open("/tmp/cal_scores.json", "w"), indent=2)
+    json.dump(out, open(os.path.join(base, "cal_scores.json"), "w"), indent=2)

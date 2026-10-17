@@ -33,7 +33,7 @@ FAILURES = []
 CHECKS = 0
 # Floor for the number of assertions that must actually execute. Raise it when
 # you add checks; a drop means a test stopped running, not that nothing broke.
-MIN_CHECKS = 54
+MIN_CHECKS = 65
 
 
 def load(fname, modname):
@@ -248,9 +248,67 @@ def test_stats():
             check(label, "ValueError", "ValueError")
 
 
+# --------------------------------------------------------------------------
+# _rawlog — every model response is kept beside the results (added 2026-10-16,
+# after a scorer fix could not re-score a run whose builds had lived in /tmp).
+# --------------------------------------------------------------------------
+def test_rawlog():
+    print("_rawlog")
+    import ast, glob, io, json as _json, tempfile, urllib.request
+    m = load("_rawlog.py", "evals_rawlog")
+    with tempfile.TemporaryDirectory() as tmp:
+        os.environ["EVALS_RAWLOG_DIR"] = tmp
+        try:
+            req = urllib.request.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
+                data=_json.dumps({"model": "x/y", "messages": []}).encode(),
+                headers={"Authorization": "Bearer KEY-MUST-NOT-BE-LOGGED"})
+            # Built at runtime so no secret-shaped literal sits in this file (gitleaks).
+            fake = "sk" + "_live_" + "abcdefgh1234"
+            resp = {"id": "gen-123", "choices": [{"message": {"content": "key " + fake}}]}
+            path = m.record("/x/run-demo.py", req, resp)
+            rows = [_json.loads(l) for l in open(path, encoding="utf-8")]
+            check("one row per call", len(rows), 1)
+            check("generation id kept", rows[0]["generation_id"], "gen-123")
+            check("model read from the body", rows[0]["model"], "x/y")
+            check("file named after the runner", os.path.basename(path), "run-demo.jsonl")
+            text = open(path, encoding="utf-8").read()
+            check("API key never written", "KEY-MUST-NOT-BE-LOGGED" in text, False)
+            check("secret-shaped string scrubbed", fake in text, False)
+            check("scrub is counted", rows[0]["scrubbed_strings"], 1)
+            m.record("/x/run-demo.py", req, resp)
+            check("calls append, never overwrite", sum(1 for _ in open(path)), 2)
+            blocker = os.path.join(tmp, "a-file")
+            open(blocker, "w").close()
+            os.environ["EVALS_RAWLOG_DIR"] = blocker      # a file where a dir must go
+            try:
+                m.record("/x/run-demo.py", req, resp)
+                check("unwritable log stops the run", "returned", "SystemExit")
+            except SystemExit:
+                check("unwritable log stops the run", "SystemExit", "SystemExit")
+        finally:
+            os.environ.pop("EVALS_RAWLOG_DIR", None)
+
+    # Census: a function that calls the API must also keep the response. Adding a
+    # runner with its own call() and no record() fails here, not after a lost run.
+    sites, missing = 0, []
+    for f in sorted(glob.glob(os.path.join(HERE, "run-*.py")) + glob.glob(os.path.join(HERE, "judge-*.py"))):
+        tree = ast.parse(open(f, encoding="utf-8").read())
+        for fn in ast.walk(tree):
+            if not isinstance(fn, ast.FunctionDef):
+                continue
+            calls = [c for c in ast.walk(fn) if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute)]
+            if any(c.func.attr == "urlopen" for c in calls):
+                sites += 1
+                if not any(c.func.attr == "record" and getattr(c.func.value, "id", "") == "_rawlog" for c in calls):
+                    missing.append(f"{os.path.basename(f)}:{fn.name}")
+    check("API call sites found (denominator)", sites >= 12, True)
+    check("every API call site keeps its raw response", missing, [])
+
+
 if __name__ == "__main__":
     for t in (test_run_clean, test_run_adjudication, test_run_repo_audit,
-              test_run_reimplement, test_stats):
+              test_run_reimplement, test_stats, test_rawlog):
         try:
             t()
         except Exception as e:                       # a scorer that crashes is a failure

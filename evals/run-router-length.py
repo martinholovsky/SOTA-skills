@@ -27,6 +27,7 @@ competition between real rules. Write-up: results/2026-08-26/ROUTER-LENGTH.md
 Usage: python3 evals/run-router-length.py
 """
 import glob, json, os, sys, time, urllib.request
+import _rawlog  # noqa: E402 — raw responses kept beside results
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL = "anthropic/claude-sonnet-5"
@@ -133,6 +134,7 @@ def call(prompt):
     r = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", data=body,
         headers={"Authorization": f"Bearer {K}", "Content-Type": "application/json"})
     with urllib.request.urlopen(r, timeout=300) as f: d = json.load(f)
+    _rawlog.record(__file__, r, d)   # keep the raw response (evals/_rawlog.py)
     txt = d["choices"][0]["message"]["content"]
     if not txt: sys.exit("empty completion")
     s, e = txt.find("{"), txt.rfind("}")

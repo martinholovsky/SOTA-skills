@@ -43,6 +43,7 @@ import os
 import sys
 import time
 import urllib.request
+import _rawlog  # noqa: E402 — raw responses kept beside results
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASES = os.path.join(ROOT, "evals/cases/completeness.jsonl")
@@ -70,6 +71,7 @@ def call(model, prompt, k, max_tokens=8000, temp=0.0):
                                          headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=300) as r:
                 d = json.load(r)
+                _rawlog.record(__file__, req, d)   # keep the raw response (evals/_rawlog.py)
             ch = d["choices"][0]
             content = ch["message"]["content"]
             # A 200 with null/empty content is NOT success. Reasoning models can spend
@@ -309,42 +311,9 @@ def judge(artifact, rubric, model, k):
     return verdict
 
 
-# Eval artifacts store MODEL-GENERATED code verbatim, and a model asked to build a
-# payments endpoint will happily write `sk_live_...` into an example. That is not a
-# real credential, but a secret-SHAPED string in a public repo is still wrong: it
-# trips push protection, trains readers on a bad example, and buries any genuine leak
-# in noise. On 2026-07-20 exactly this blocked a push. So scrub at write time — the
-# class, not the instance — and leave a visible marker so the artifact stays honest.
-_SECRET_PATTERNS = [
-    r"sk_(?:live|test)_[A-Za-z0-9]{6,}",       # Stripe
-    r"AKIA[0-9A-Z]{16}",                        # AWS access key id
-    r"gh[pousr]_[A-Za-z0-9]{20,}",              # GitHub tokens
-    r"xox[baprs]-[A-Za-z0-9-]{10,}",            # Slack
-    r"AIza[0-9A-Za-z_\-]{20,}",                 # Google API key
-    r"-----BEGIN [A-Z ]*PRIVATE KEY-----",      # PEM private keys
-    r"eyJ[A-Za-z0-9_-]{5,}\.eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}",   # JWTs
-]
-# The list above is INCOMPLETE by construction — it enumerates shapes, and a model
-# writing example code invents new ones. It missed a fake JWT on 2026-07-21 and
-# gitleaks (a second, independent method) caught it. Treat gitleaks as the backstop,
-# not this list, and add a pattern whenever it fires. Never bypass push protection.
-_UNUSED = [
-]
-
-
-def scrub_secrets(obj):
-    """Replace secret-shaped strings anywhere in a nested structure, visibly."""
-    import re
-    if isinstance(obj, str):
-        out = obj
-        for pat in _SECRET_PATTERNS:
-            out = re.sub(pat, "[SCRUBBED-SECRET-SHAPED-STRING]", out)
-        return out
-    if isinstance(obj, dict):
-        return {k: scrub_secrets(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [scrub_secrets(v) for v in obj]
-    return obj
+# scrub_secrets and its pattern list moved to evals/_rawlog.py on 2026-10-16, so the raw
+# response log and this runner's artifacts share one list.
+from _rawlog import scrub_secrets, _SECRET_PATTERNS  # noqa: E402,F401
 
 
 def main():

@@ -30,6 +30,7 @@ import json
 import os
 import sys
 import urllib.request
+import _rawlog  # noqa: E402 — raw responses kept beside results
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO_DIR = os.path.join(ROOT, "evals/cases/repo-audit/orderdesk")
@@ -123,6 +124,7 @@ def call(model, prompt, k, temp=0.0):
                                  headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=240) as r:
         d = json.load(r)
+        _rawlog.record(__file__, req, d)   # keep the raw response (evals/_rawlog.py)
     ch = d["choices"][0]
     txt = ch["message"]["content"]
     # HTTP 200 with null/empty content is NOT success (see run-completeness.py call()):

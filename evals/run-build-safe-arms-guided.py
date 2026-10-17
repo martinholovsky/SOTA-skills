@@ -57,7 +57,7 @@ def main():
               f"{BUILD_WORKFLOW}{d.SPEC}{d.FORMAT}")
     if len(sys.argv) != 4:
         sys.exit(f"usage: {os.path.basename(sys.argv[0])} OUTDIR MODEL MAX_TOKENS\n"
-                 f"  e.g. {os.path.basename(sys.argv[0])} /tmp/g1 anthropic/claude-sonnet-5 32000\n"
+                 f"  e.g. {os.path.basename(sys.argv[0])} evals/results/<date>/builds/g1 anthropic/claude-sonnet-5 32000\n"
                  f"  (the unguided arm is run-build-safe-arms.py)")
     outdir, model, mt = sys.argv[1], sys.argv[2], int(sys.argv[3])
     txt, tok, fin, trunc = d.call(model, prompt, d.key(), mt)
