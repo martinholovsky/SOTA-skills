@@ -24,7 +24,9 @@ It works by being a **loop, not a prompt dump**: route in only the rules a task 
 re-state them every turn, and re-check them *last* before shipping — so the guidance
 survives a long context instead of fading into it. That's why it beats a bigger prompt
 instead of becoming one. Native on Claude Code; works with Antigravity CLI, Codex, and any
-agent that reads `AGENTS.md`.
+agent that reads `AGENTS.md`. Those agents get the skills and an always-on directive, but not
+the per-turn re-statement, which is a Claude Code hook
+([per-agent detail](docs/MULTI-AGENT.md)), and no lift has yet been measured through them.
 
 Under the hood: **43 skills (347 files, ~89k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —

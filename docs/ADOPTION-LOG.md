@@ -8093,3 +8093,68 @@ against the merged tree found that it overstated three things:
   "Intervals". The list in #555's description had been written from memory and named two
   wrong runners (decay and unscoped-audit print no delta). It also missed six runners that do
   print one: adjudication, clean, comment-triage, desc-routing, repo-audit and silent-open.
+
+## 2026-10-17 — external proposal "harness strategy and tests for SOTA-skills", taken in 2026-10-17
+
+**Source:** a proposals document in `~/Downloads` (103 lines, read in full, kept local). Its
+thesis: do not build a coding harness; own confinement, gates outside the model, and
+evaluation, plus one minimal reference harness used only to measure; then run eight tests
+(T0–T7). External sources were fetched 2026-10-17: arXiv abstracts through WebFetch, and the
+BenchJack and Terminal-Bench full texts as HTML. Every in-tree citation was opened at
+`3314f711`. `sota-agent-evals` was read at `d44bbcf` (findings spot-checked by hand against
+`score.py`, `pyproject.toml` and the v14 report).
+
+**Placement, decided first.** No new repo. `sota-agent-evals` drives the Claude Agent SDK only:
+`run_one` is written against SDK message types, and a search for an adapter abstraction or any
+other harness found nothing (positive control: `claude_agent_sdk` at `agent_evals/runner.py:85`).
+A reference harness and vendor adapters are therefore a new adapter layer **inside**
+`sota-agent-evals`, which already has the grader, the scorer and the statistics they would
+reuse; a separate `sota-harness` repo would duplicate them, and its name would read as the
+product the proposal itself rules out. What lands **here** is guidance (rules/07, rules/01),
+the README's claim, and the results once measured.
+
+**Corrections to the proposal's own citations:**
+- Artificial Analysis's methodology page has **no** model-only board — "each public row is an
+  agent variant, not a model". The neutral-harness idea is Terminal-Bench's: Terminus 2, built
+  as "a neutral testbed for comparing model performance" (arXiv 2601.11868). The same paper
+  concludes that "model selection is usually more important than agent scaffold" (section 4),
+  which the proposal does not mention.
+- The BenchJack abstract does not mention `conftest.py`; the full text does (nine lines,
+  SWE-bench Verified), so the citation holds, as rules/07 §1 already records.
+- "+0.38 completeness, held across model families": +0.38 is `claude-sonnet-5`, the same family.
+  The cross-family number is **+0.44** on `openai/gpt-5.1` (`evals/results/2026-07-22/CROSS-MODEL.md:23`).
+- "Once the evals stats helper lands": it landed in #555.
+- T1's falsifier removes "harness-agnostic" from the README. **The README never says it.** The
+  claim it does make is "re-state them every turn … works with Antigravity CLI, Codex, and any
+  agent that reads `AGENTS.md`".
+- T2's baseline, GATE-ABSORPTION +0.062 [+0.024, +0.099], was measured through the raw API with
+  the self-audit as **prompt text**, not as a hook.
+- Harness-Bench, listed as needing a primary, has one: arXiv 2605.27922, 106 tasks, 5,194
+  trajectories, "agent capability should be reported at the model-harness configuration level".
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| §1 — leave the agent loop to vendors | **agreed, nothing to change**: the library ships no loop | — |
+| §1 — confinement layer ("the broker, separate project") | **not taken in**: no such repo under `~/Github` by name, so it is unverified from here; the guidance is `sota-sandboxing` rules/05 | — |
+| §1 — gates outside the model | **already covered**: `scripts/check-invariants.sh`, `scripts/check-negative-controls.sh`, `scripts/init-gates.sh` | — |
+| §1 — portability layer, "measure before extending" | **adopted as a README correction**: the per-turn re-statement is a Claude Code hook, and `docs/MULTI-AGENT.md:78-85` already says no other agent gets one. The front door now says so, and that no lift has been measured through those agents (`git grep` over docs/evals/README/CHANGELOG for Codex/Antigravity/Gemini CLI/Copilot near measured/lift/arm/run: 0 hits; control `measured` in WHY-IT-WORKS: 15) | README |
+| §2 — reference harness (`refharness`) + vendor adapters | **deferred → `sota-agent-evals`** (placement above). Trigger: the first paid cross-harness run is funded | — |
+| §2 known-bad — a planted grader rewrite scores 0 | **adopted, widened, after reproducing a hole in our own eval repo.** `sota-agent-evals` scores with `python -m unittest discover -s hidden -t .` over the agent's tree (`agent_evals/score.py:50`). Measured 2026-10-17, Python 3.14, scratch tree: a failing hidden test exits 1; a candidate-written `unittest.py` makes the same command exit 0 and print `OK`, which `score.py:68-71` reads as a pass. `-P` closes that case; a shadowed stdlib module still loads, because discovery puts the top-level dir on `sys.path`. Not run inside its scoring container. No trace shows an agent doing it. Fix belongs to `sota-agent-evals` | rules/07 §1 + checklist |
+| §2 known-bad — a diff touching tests/fixtures/grader scores 0 | **already covered** in rules/07:32 (allowlist reset, out-of-scope diff fails the run). **Absent in `sota-agent-evals`** — it drops only an agent-made `hidden/` (`score.py:46-48`) | — |
+| §2 known-bad — container probe for grader, hidden tests, network | **already covered** as guidance: `sota-sandboxing` rules/05 §5. `sota-agent-evals`' `sandbox-probe` measures egress and DNS but gates only on key exposure (`cli.py:278-321`) | — |
+| §2 known-bad — a secret-shaped env value never reaches a transcript | **covered here** for the `evals/` runners (`evals/_rawlog.py` scrub + `test_scoring.py`, #557). **Absent in `sota-agent-evals`**: traces and transcripts are written verbatim | — |
+| T0 — controls first | **deferred → `sota-agent-evals`**, and it is that repo's first task: the shadow-module hole above is a T0 failure today | — |
+| T1 — lift across harnesses | **deferred → `sota-agent-evals`**. Trigger: one non-Claude adapter exists. The README claim was scoped now instead of waiting | — |
+| T2 — hooks on vs off × neutral vs competing prompt | **half already measured, half open.** Hook ON/OFF inside Claude Code ran nine times (v2, v3, v6–v11, v14): the Stop hook changed behaviour but hit a ceiling; the depth and code-rules hooks read INCONCLUSIVE on whether rules text reached context (v6) and NULL or INCONCLUSIVE on rule tests (v7–v9); hook *wording* read SUPPORTED (v10, 0.717 → 0.906); the shipped default read NULL out of sample (v14, 0.667 → 0.667). **Prompt pressure has never been varied inside the agent harness** (search over that repo's pre-registrations, reports and cases: 0 hits). That cell is the open part. Deferred → `sota-agent-evals` | — |
+| T3 — harness effect, unguided | **deferred → `sota-agent-evals`**, with Terminal-Bench's counter-finding as the prior to beat | — |
+| T4 — grader tampering count | **deferred → `sota-agent-evals`**, after T0 | — |
+| T5 — vendor sandbox defaults | **deferred**: the probe is `sota-sandboxing` rules/05 §5; running it per vendor is measurement, not guidance | — |
+| T6 — transcript leak | as §2's secret known-bad | — |
+| T7 — cost per arm | **already covered**: `sota-agent-evals` records `total_cost_usd` per run; `evals/_rawlog.py` keeps `usage.cost` per response | — |
+| §4 — every number names model, harness+version, hooks state, case-set date | **adopted in part.** Hooks and instruction files are now part of the harness record (rules/07 §10, citing Harness-Bench and Terminus 2), and the case set's authoring date is part of the pin (rules/01 §4, with this library's own +0.53 → +0.30 freshness ageing as the example). Model and harness version were already pinned (rules/01 §4, rules/07 checklist) | rules/07 §10 + checklist · rules/01 §4 + checklist |
+| §4 — pre-registration, paired intervals, nulls as rows, one file per experiment | **already practice** in both repos (`sota-agent-evals` `PRE-REGISTRATION-v*.md`, `analyze.py` paired tests; `evals/_stats.py`) | — |
+| §5 — non-goals (no harness product, no vendor leaderboard, not in CI, not a new skill) | **agreed** | — |
+
+**Not run:** none of T0–T7. They need the adapter layer first, and the cheapest informative paid
+cell — T2's competing-prompt arm in the existing SDK harness — is a `sota-agent-evals`
+experiment with its own pre-registration.

@@ -132,7 +132,11 @@ re-grading until pass. Sampling parameters are not a determinism switch:
 `temperature = 0` never guaranteed identical outputs, and some newer models
 reject any non-default `temperature`/`top_p`/`top_k` with a `400` (Anthropic,
 from Opus 4.7 on — verified 2026-09-26 in its migration guide) — repeat runs
-instead (§8).
+instead (§8). Record the date each case set was authored beside every number from it.
+A lift on time-sensitive cases shrinks as the set falls behind the model's training cutoff,
+with nothing in the library changing: this library's own freshness lift read **+0.53** on a
+set authored July 2026 and **+0.30** on the same set re-run once it had aged
+(`evals/results/RESULTS.md`).
 
 **Offline must send the model what production sends.** Build each eval input by calling the
 application's own rendering code — template, role prefixes, provider text extraction,
@@ -419,7 +423,8 @@ published claim rested on that 0.00 for several hours.
 - [ ] Eval runs persisted as artifacts (run ID, SHA, model versions,
       per-case results; image digest, grader logs and trajectories where the
       harness executes anything) and reproducible, with reasoning effort and
-      tool availability pinned alongside the model.
+      tool availability pinned alongside the model, and each case set's authoring date
+      recorded (§4).
 - [ ] Each suite declares what is **live** vs **replayed**, and the quality
       gate fails with the model endpoint unreachable — a replay-only gate
       measures the harness, not the model.
