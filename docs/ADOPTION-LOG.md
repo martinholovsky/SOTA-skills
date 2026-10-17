@@ -8158,3 +8158,15 @@ the README's claim, and the results once measured.
 **Not run:** none of T0–T7. They need the adapter layer first, and the cheapest informative paid
 cell — T2's competing-prompt arm in the existing SDK harness — is a `sota-agent-evals`
 experiment with its own pre-registration.
+
+**Follow-up 2026-10-17 — T0 done in `sota-agent-evals`** ([PR #1](https://github.com/martinholovsky/sota-agent-evals/pull/1)).
+The line above is superseded for T0, which never needed the adapter layer. Reproduced inside the
+scoring container this time, on the failing start of case `c01`: the shadow `unittest.py` scored a
+pass, and so did three tampers no name guard can see, because they sit in the candidate's own
+package that the hidden tests must import (a patched `TestCase.assertEqual`, the same with a forced
+exit 0, a fake verdict printed at import). Fixed with a name guard plus random-named
+expected-failure canaries. Re-scoring every kept workspace (1,020 rows) with the old and the new
+scorer gave identical results, and none held a shadow name, so no published number moves. rules/07
+§1 now names the in-package path and the canary control. Same PR: operator credential variables no
+longer reach the agent, kept artifacts are scrubbed, and a scope report lists edits to given files
+(229 of 1,020 past runs modified a visible test file; none removed or rewrote an assertion line).
