@@ -59,6 +59,8 @@ Same model, same task, library loaded vs. nothing.
 
 **Note 2026-10-16 — the five BUILD-safe rows above were scored before a scorer fix.** `run-build-safe.py` used to match its patterns against comments too, so a comment naming the fix could earn credit for code that still had the defect (#555). The rows are left as measured. They **cannot be re-scored**, because only the scores were kept, not the builds. The *with positive evidence* rows are the most exposed, since that evidence could come from a comment. Until a re-run under the fixed scorer, quote them as "scored with the pre-2026-10-16 scorer" ([BUILD-SAFE note](2026-08-21/BUILD-SAFE.md)).
 
+**Note 2026-10-17 — the sonnet-4.6 re-run under the fixed scorer does not reproduce the +0.19.** Same model, both arms, temp 0.7, 3× each, builds kept: Δ avoided **+0.000** as scored (0.857 → 0.857), **+0.048** after reading the builds by hand; Δ with positive evidence **+0.190** (0.286 → 0.476). The guided prompt has grown to 149k characters since August, so this is today's library, not the one measured above. The hand reading also found two instrument defects, recorded and not yet fixed: a `sqli_sort` false negative, and an `idor_get_report` case that requires an owner-only read the SPEC never states ([BUILD-SAFE-RERUN](2026-10-17/BUILD-SAFE-RERUN.md)).
+
 **Completeness re-verified against the workflow that actually ships (2026-07-20).**
 `run-completeness.py`'s `BUILD_WORKFLOW` is a hand-compressed **mirror** of router
 BUILD steps 3–4, and it had drifted — the falsification clause added in #119 was

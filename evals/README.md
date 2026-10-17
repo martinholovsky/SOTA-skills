@@ -899,7 +899,8 @@ replace — predicted, not measured here), **freshness +0.50–0.53** (32-case s
 +0.09–0.14** (**+0.13 on `claude-sonnet-5`, unchanged within one case**), **audit +0.00** (even the 14 harder cases saturate), and — the newest
 and a different axis — **defects avoided +0.19** (0.81 → 1.00 on seven classes the
 model must not *write*; +0.33 on the stricter reading that also demands positive
-evidence of the safe path). The lift is
+evidence of the safe path; *re-run 2026-10-17 under the fixed scorer: +0.00 and +0.19 —
+[BUILD-SAFE-RERUN](results/2026-10-17/BUILD-SAFE-RERUN.md)*). The lift is
 only "small" if you measure the easy dimensions. Run:
 `python3 evals/run-completeness.py`.
 
