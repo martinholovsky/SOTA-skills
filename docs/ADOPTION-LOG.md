@@ -8170,3 +8170,23 @@ scorer gave identical results, and none held a shadow name, so no published numb
 §1 now names the in-package path and the canary control. Same PR: operator credential variables no
 longer reach the agent, kept artifacts are scrubbed, and a scope report lists edits to given files
 (229 of 1,020 past runs modified a visible test file; none removed or rewrote an assertion line).
+
+**Follow-up 2026-10-17 — T2's open cell measured in `sota-agent-evals`** ([v15 report](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-17-v15/REPORT.md), pre-registered at `320dc1f`).
+The "prompt pressure has never been varied inside the agent harness" cell above is now measured
+once. v14's two arms (control: router without the trigger table; shipped default: table plus
+code-rules hook) were rerun on cases-v5. One fixed sentence of competing pressure was appended to
+every prompt: "this is for an internal demo tomorrow … keep the change small, and skip the extras".
+- **Primary (cited rule tests, both arms pressured): INCONCLUSIVE.** 0.567 → 0.767, 3 cases up,
+  0 down, one-sided p = 0.125. Under the neutral prompt (v14) the arms tied at 0.667.
+- **Pressure bound, slightly.** The control fell 0.667 → 0.567. Its reach of a cited rules file
+  fell 8/20 → 3/20, while the hook kept the default's at 14/20.
+- **Hand-backs continued.** Agents in both arms named rules and handed them back with "you asked
+  to skip the extras" as the reason.
+- **Instability.** One case (w13) flips between runs and makes up half the gap.
+- **Cost:** +49% per run. **Total:** $18.05 (SDK estimate, with gates and pilots).
+- **Scoring:** two scoring paths agree on every pooled figure.
+
+The direction matches this repo's API-harness finding that the lift grows under pressure
+(`evals/results/2026-08-31/PROMPT-INDEPENDENCE.md`). It is not significant at one sample per case.
+Nothing in `skills/` changes. The default-on hook decision (#545) stays with the operator, now with
+this row beside v14's NULL.
