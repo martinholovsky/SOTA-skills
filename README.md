@@ -1363,7 +1363,9 @@ It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigge
 cases that measured it (in-sample), and it needs `python3`. **On fresh tasks it did not move outcomes**: on
 cases-v5, 20 tasks sampled from OWASP ASVS and written blind to the library, the hook plus the router's
 table left cited rule tests at 0.667 in both arms while reach rose 8/20 → 13/20 ([v14](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-13-v14/REPORT.md), NULL,
-+38% cost). Agents read the named rule and handed it back as a decision, citing the precise spec. Turn it off with `SOTA_CODE_RULES_HOOK=off`.
++38% cost). Agents read the named rule and handed it back as a decision, citing the precise spec. With one sentence of
+competing pressure added to every prompt ("internal demo tomorrow … skip the extras"), the same two arms read 0.567 → 0.767
+([v15](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-17-v15/REPORT.md), INCONCLUSIVE: 3 cases up, 0 down, p = 0.125, +49% cost). Turn it off with `SOTA_CODE_RULES_HOOK=off`.
 `install.sh --routing` offers the same hook to clone installs; with both, each file is named once.
 **The router carries the same table as text** ("What your code does: the rules file to read"), for
 hosts that cannot run a hook. Measured without the hook, it got agents to the right rules file in
