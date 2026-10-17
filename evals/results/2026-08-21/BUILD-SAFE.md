@@ -160,3 +160,10 @@ numbers above are left as reported. **They cannot be re-scored**: only the per-r
 was kept, not the builds. So whether any `avoided` or `+ safe evidence` cell above rested on a
 comment is unknown. The two `requires_safe` cases (`sqli_sort`, `idor_get_report`) are the ones
 it could have moved.
+
+**Note added 2026-10-17: re-run under the fixed scorer.** On the same model at temp 0.7, with
+the builds kept, Δ avoided reads **+0.000** as scored (+0.048 after hand adjudication) and
+Δ with safe evidence **+0.190**. The hand reading found two instrument defects that also
+bear on the table above: `sqli_sort` misses a `SORT_COLUMN_MAP`-style allowlist, and
+`idor_get_report` requires an owner-only read the SPEC does not state. Details, both
+temperatures and every build: [BUILD-SAFE-RERUN](../2026-10-17/BUILD-SAFE-RERUN.md).

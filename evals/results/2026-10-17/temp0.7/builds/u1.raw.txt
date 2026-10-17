@@ -1,0 +1,1756 @@
+FILE: reportkit/__init__.py
+```python
+"""reportkit — multi-tenant report service."""
+```
+
+FILE: reportkit/schema.sql
+```sql
+-- reportkit schema
+-- Run once to initialise a fresh database.
+
+PRAGMA journal_mode = WAL;
+PRAGMA foreign_keys = ON;
+
+-- ------------------------------------------------------------
+-- Tenants
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tenants (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    suspended   INTEGER NOT NULL DEFAULT 0,  -- 0=active, 1=suspended
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+-- ------------------------------------------------------------
+-- Users
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+    id          TEXT PRIMARY KEY,
+    tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    username    TEXT NOT NULL,
+    role        TEXT NOT NULL CHECK (role IN ('viewer', 'editor', 'admin')),
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    UNIQUE (tenant_id, username)
+);
+
+-- ------------------------------------------------------------
+-- Sessions  (bearer-token → user)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sessions (
+    token       TEXT PRIMARY KEY,
+    user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at  TEXT NOT NULL
+);
+
+-- ------------------------------------------------------------
+-- Reports
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reports (
+    id          TEXT PRIMARY KEY,
+    tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    owner_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title       TEXT NOT NULL,
+    body        TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+-- ------------------------------------------------------------
+-- Attachments
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS attachments (
+    id          TEXT PRIMARY KEY,
+    report_id   TEXT NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    filename    TEXT NOT NULL,
+    mime_type   TEXT NOT NULL DEFAULT 'application/octet-stream',
+    size_bytes  INTEGER NOT NULL,
+    data        BLOB NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+-- ------------------------------------------------------------
+-- Billing ledger
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS billing_events (
+    id              TEXT PRIMARY KEY,   -- provider's event id
+    tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    event_type      TEXT NOT NULL,
+    amount_cents    INTEGER NOT NULL DEFAULT 0,
+    raw_payload     TEXT NOT NULL,
+    received_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+-- ------------------------------------------------------------
+-- Indexes
+-- ------------------------------------------------------------
+
+-- Hot path: resolve permissions (sessions → users → tenants)
+CREATE INDEX IF NOT EXISTS idx_sessions_token     ON sessions(token);
+CREATE INDEX IF NOT EXISTS idx_users_tenant_role  ON users(tenant_id, role);
+
+-- Report listing / search
+CREATE INDEX IF NOT EXISTS idx_reports_owner      ON reports(owner_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_tenant     ON reports(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_title      ON reports(owner_id, title);
+
+-- Attachments
+CREATE INDEX IF NOT EXISTS idx_attachments_report ON attachments(report_id);
+
+-- Billing idempotency
+CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_event_id ON billing_events(id);
+```
+
+FILE: reportkit/db.py
+```python
+"""Database helpers — connection factory and schema bootstrap."""
+
+import sqlite3
+import pathlib
+
+_SCHEMA = pathlib.Path(__file__).with_name("schema.sql").read_text()
+
+
+def open_db(path: str = ":memory:") -> sqlite3.Connection:
+    """Return a configured sqlite3 connection."""
+    conn = sqlite3.connect(path, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode = WAL;")
+    conn.execute("PRAGMA foreign_keys = ON;")
+    return conn
+
+
+def init_schema(conn: sqlite3.Connection) -> None:
+    """Create all tables and indexes if they do not exist."""
+    conn.executescript(_SCHEMA)
+    conn.commit()
+```
+
+FILE: reportkit/auth.py
+```python
+"""Authentication and authorisation helpers."""
+
+from __future__ import annotations
+
+import sqlite3
+from typing import Optional
+
+# ---------------------------------------------------------------------------
+# Permission sets per role
+# ---------------------------------------------------------------------------
+
+_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
+    "viewer": frozenset({"report:read"}),
+    "editor": frozenset({"report:read", "report:write"}),
+    "admin":  frozenset({"report:read", "report:write", "report:delete", "user:manage"}),
+}
+
+
+class AuthError(Exception):
+    """Raised when a request cannot be authenticated or authorised."""
+
+    def __init__(self, message: str, status: int = 401) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+# ---------------------------------------------------------------------------
+# Session resolution
+# ---------------------------------------------------------------------------
+
+# The permissions query is the hottest path in the service (list_reports calls
+# it on every request).  We do a single three-table join so the DB can satisfy
+# it with the composite index on users(tenant_id, role) together with the
+# primary-key lookup on sessions(token).
+
+_RESOLVE_SQL = """
+    SELECT
+        u.id          AS user_id,
+        u.tenant_id   AS tenant_id,
+        u.role        AS role,
+        t.suspended   AS tenant_suspended
+    FROM sessions s
+    JOIN users   u ON u.id        = s.user_id
+    JOIN tenants t ON t.id        = u.tenant_id
+    WHERE s.token      = ?
+      AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+"""
+
+
+def resolve_caller(conn: sqlite3.Connection, request: dict) -> dict:
+    """
+    Extract the bearer token from *request*, validate it, and return a caller
+    dict with keys: ``user_id``, ``tenant_id``, ``role``, ``permissions``.
+
+    Raises :class:`AuthError` (401) if the token is missing or invalid.
+    Raises :class:`AuthError` (403) if the tenant is suspended.
+    """
+    token = _extract_token(request)
+    row = conn.execute(_RESOLVE_SQL, (token,)).fetchone()
+    if row is None:
+        raise AuthError("Invalid or expired token.", status=401)
+    if row["tenant_suspended"]:
+        raise AuthError("Tenant is suspended.", status=403)
+    return {
+        "user_id":     row["user_id"],
+        "tenant_id":   row["tenant_id"],
+        "role":        row["role"],
+        "permissions": _ROLE_PERMISSIONS.get(row["role"], frozenset()),
+    }
+
+
+def require_permission(caller: dict, permission: str) -> None:
+    """Raise :class:`AuthError` (403) if *caller* lacks *permission*."""
+    if permission not in caller["permissions"]:
+        raise AuthError(
+            f"Permission '{permission}' required.",
+            status=403,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _extract_token(request: dict) -> str:
+    """Pull the bearer token out of the Authorization header."""
+    auth_header: Optional[str] = (request.get("headers") or {}).get("Authorization", "")
+    if auth_header and auth_header.startswith("Bearer "):
+        return auth_header[len("Bearer "):]
+    # Also accept a top-level token key (convenience for tests / internal calls).
+    token = request.get("token", "")
+    if token:
+        return token
+    raise AuthError("Authorization header missing or malformed.", status=401)
+```
+
+FILE: reportkit/events.py
+```python
+"""
+Lightweight synchronous event registry.
+
+Usage::
+
+    registry = EventRegistry()
+
+    @registry.handler("report.created")
+    def on_created(payload):
+        ...
+
+    registry.dispatch("report.created", {"report_id": "..."})
+"""
+
+from __future__ import annotations
+
+import logging
+from collections import defaultdict
+from typing import Callable
+
+logger = logging.getLogger(__name__)
+
+
+class EventRegistry:
+    def __init__(self) -> None:
+        self._handlers: dict[str, list[Callable]] = defaultdict(list)
+
+    # ------------------------------------------------------------------
+    # Registration
+    # ------------------------------------------------------------------
+
+    def handler(self, event_name: str) -> Callable:
+        """Decorator: register *func* as a handler for *event_name*."""
+        def decorator(func: Callable) -> Callable:
+            self._handlers[event_name].append(func)
+            return func
+        return decorator
+
+    def register(self, event_name: str, func: Callable) -> None:
+        """Imperative alternative to the decorator."""
+        self._handlers[event_name].append(func)
+
+    # ------------------------------------------------------------------
+    # Dispatch
+    # ------------------------------------------------------------------
+
+    def dispatch(self, event_name: str, payload: dict) -> None:
+        """
+        Call every handler registered for *event_name*.
+
+        Handlers are called in registration order.  A handler that raises is
+        logged and skipped so that subsequent handlers still run.
+        """
+        for handler in self._handlers.get(event_name, []):
+            try:
+                handler(payload)
+            except Exception:
+                logger.exception(
+                    "Event handler %s raised for event '%s'",
+                    handler,
+                    event_name,
+                )
+
+
+# ---------------------------------------------------------------------------
+# Module-level default registry
+# ---------------------------------------------------------------------------
+
+default_registry = EventRegistry()
+
+
+# ---------------------------------------------------------------------------
+# Built-in handlers
+# ---------------------------------------------------------------------------
+
+# tenant.quota_exceeded — handler stub for the batch-import feed.
+# The feed was retired last quarter; the handler is registered but is a no-op
+# until the feed returns.  See NOTES.md.
+
+@default_registry.handler("tenant.quota_exceeded")
+def _handle_quota_exceeded(payload: dict) -> None:  # pragma: no cover
+    """Suspend a tenant when their quota is exceeded (batch-import feed)."""
+    # TODO: re-enable when the batch-import feed is restored.
+    logger.info(
+        "tenant.quota_exceeded received for tenant %s — handler is currently a no-op.",
+        payload.get("tenant_id"),
+    )
+```
+
+FILE: reportkit/content_scan.py
+```python
+"""
+Attachment content scanning.
+
+Checks uploaded bytes for disallowed content markers before the attachment is
+persisted.  The implementation uses a simple byte-pattern registry so that new
+signatures can be added without touching the upload logic.
+"""
+
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Disallowed byte signatures
+# Each entry is (label, bytes_to_search_for).
+# ---------------------------------------------------------------------------
+
+_SIGNATURES: list[tuple[str, bytes]] = [
+    # EICAR anti-malware test string
+    ("EICAR-TEST", b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"),
+    # Executable magic bytes (MZ header — Windows PE)
+    ("EXE-MZ", b"MZ"),
+    # ELF magic bytes
+    ("ELF", b"\x7fELF"),
+    # PHP open tag
+    ("PHP-TAG", b"<?php"),
+    # JSP/servlet marker
+    ("JSP-TAG", b"<%@"),
+]
+
+MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024  # 25 MB
+
+
+class ContentViolation(Exception):
+    """Raised when a disallowed content marker is found."""
+
+    def __init__(self, label: str) -> None:
+        super().__init__(f"Disallowed content detected: {label}")
+        self.label = label
+
+
+def scan(data: bytes, filename: str = "") -> None:
+    """
+    Scan *data* for disallowed content markers.
+
+    Raises :class:`ContentViolation` on the first match found.
+    Raises :class:`ValueError` if the data exceeds the size limit.
+    """
+    if len(data) > MAX_ATTACHMENT_BYTES:
+        raise ValueError(
+            f"Attachment exceeds maximum size of {MAX_ATTACHMENT_BYTES} bytes "
+            f"(got {len(data)} bytes)."
+        )
+
+    # Only scan the first 4 KB for magic bytes to keep things fast on large
+    # files; the EICAR string is always near the start.
+    head = data[:4096]
+
+    for label, signature in _SIGNATURES:
+        if signature in head:
+            logger.warning("Content scan failed for '%s': %s", filename, label)
+            raise ContentViolation(label)
+```
+
+FILE: reportkit/billing.py
+```python
+"""
+Billing webhook handler.
+
+The billing provider posts ``invoice.paid`` events signed with an HMAC-SHA256
+over the raw request body.  The shared secret is read from the environment.
+
+Idempotency: the provider retries deliveries it considers failed.  We use the
+provider-supplied event ``id`` as a unique key in ``billing_events`` to
+deduplicate retries.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import logging
+import os
+import sqlite3
+import uuid
+
+logger = logging.getLogger(__name__)
+
+_HEADER_SIGNATURE = "X-Billing-Signature"
+_ENV_SECRET       = "BILLING_WEBHOOK_SECRET"
+
+
+class BillingError(Exception):
+    def __init__(self, message: str, status: int = 400) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+# ---------------------------------------------------------------------------
+# Signature verification
+# ---------------------------------------------------------------------------
+
+def _verify_signature(raw_body: bytes, provided_sig: str, secret: str) -> None:
+    """
+    Verify the HMAC-SHA256 signature sent by the billing provider.
+
+    The provider computes ``HMAC-SHA256(secret, raw_body)`` and sends the hex
+    digest in ``X-Billing-Signature``.
+    """
+    expected = hmac.new(
+        secret.encode(),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    # Use compare_digest to avoid timing attacks.
+    if not hmac.compare_digest(expected, provided_sig):
+        raise BillingError("Invalid webhook signature.", status=401)
+
+
+# ---------------------------------------------------------------------------
+# Public handler
+# ---------------------------------------------------------------------------
+
+def handle_webhook(conn: sqlite3.Connection, request: dict) -> dict:
+    """
+    Process a billing webhook request.
+
+    *request* keys:
+    - ``headers``  – dict of HTTP headers (must include ``X-Billing-Signature``)
+    - ``raw_body`` – ``bytes`` of the unmodified request body
+    - ``body``     – parsed JSON dict (convenience; derived from ``raw_body``)
+
+    Returns a response dict ``{"status": 200, "body": {"received": True}}``.
+    """
+    secret = os.environ.get(_ENV_SECRET, "")
+    if not secret:
+        logger.error("BILLING_WEBHOOK_SECRET is not set.")
+        raise BillingError("Webhook secret not configured.", status=500)
+
+    headers = request.get("headers") or {}
+    provided_sig = headers.get(_HEADER_SIGNATURE, "")
+    if not provided_sig:
+        raise BillingError(f"Missing {_HEADER_SIGNATURE} header.", status=400)
+
+    raw_body: bytes = request.get("raw_body", b"")
+    _verify_signature(raw_body, provided_sig, secret)
+
+    # Parse body (accept pre-parsed dict or raw bytes)
+    body = request.get("body")
+    if body is None:
+        try:
+            body = json.loads(raw_body)
+        except json.JSONDecodeError as exc:
+            raise BillingError(f"Invalid JSON body: {exc}", status=400) from exc
+
+    event_type = body.get("type", "")
+    event_id   = body.get("id") or str(uuid.uuid4())
+    tenant_id  = body.get("tenant_id", "")
+    amount     = int(body.get("amount_cents", 0))
+
+    if event_type != "invoice.paid":
+        # Unknown event types are accepted but not stored — forward-compatible.
+        logger.info("Ignoring billing event type '%s'.", event_type)
+        return {"status": 200, "body": {"received": True}}
+
+    if not tenant_id:
+        raise BillingError("Missing tenant_id in payload.", status=400)
+
+    # Idempotent insert — ignore duplicate event ids.
+    try:
+        conn.execute(
+            """
+            INSERT INTO billing_events (id, tenant_id, event_type, amount_cents, raw_payload)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (event_id, tenant_id, event_type, amount, raw_body.decode("utf-8", errors="replace")),
+        )
+        conn.commit()
+        logger.info("Billing event %s recorded for tenant %s.", event_id, tenant_id)
+    except sqlite3.IntegrityError:
+        # Duplicate delivery — already processed.
+        logger.info("Duplicate billing event %s ignored.", event_id)
+
+    return {"status": 200, "body": {"received": True}}
+```
+
+FILE: reportkit/ops.py
+```python
+"""
+Ops-console operations.
+
+These functions are called by the internal ops console over the private network.
+They are NOT exposed via the HTTP surface.
+
+``purge_tenant`` and ``set_role`` both accept an *actor_id* so that the ops
+console can record who initiated the action; currently we log it and could write
+it to an audit table if required.
+"""
+
+from __future__ import annotations
+
+import logging
+import sqlite3
+
+from reportkit.auth import _ROLE_PERMISSIONS
+
+logger = logging.getLogger(__name__)
+
+VALID_ROLES = frozenset(_ROLE_PERMISSIONS.keys())
+
+
+class OpsError(Exception):
+    pass
+
+
+def purge_tenant(conn: sqlite3.Connection, actor_id: str, tenant_id: str) -> int:
+    """
+    Delete every report (and their attachments, via CASCADE) belonging to
+    *tenant_id*.
+
+    Returns the number of reports deleted.
+    Raises :class:`OpsError` if the tenant does not exist.
+    """
+    row = conn.execute("SELECT id FROM tenants WHERE id = ?", (tenant_id,)).fetchone()
+    if row is None:
+        raise OpsError(f"Tenant '{tenant_id}' not found.")
+
+    cursor = conn.execute(
+        "DELETE FROM reports WHERE tenant_id = ?", (tenant_id,)
+    )
+    deleted = cursor.rowcount
+    conn.commit()
+    logger.info(
+        "purge_tenant: actor=%s deleted %d reports for tenant=%s",
+        actor_id,
+        deleted,
+        tenant_id,
+    )
+    return deleted
+
+
+def set_role(
+    conn: sqlite3.Connection,
+    actor_id: str,
+    user_id: str,
+    new_role: str,
+) -> None:
+    """
+    Change *user_id*'s role to *new_role*.
+
+    Raises :class:`OpsError` for unknown roles or missing users.
+
+    Note: because role resolution is cached at the session level (the query
+    hits the DB on every request), the change takes effect on the next request
+    made by the affected user — no cache invalidation is needed.
+    """
+    if new_role not in VALID_ROLES:
+        raise OpsError(
+            f"Invalid role '{new_role}'. Must be one of: {sorted(VALID_ROLES)}."
+        )
+
+    cursor = conn.execute(
+        "UPDATE users SET role = ? WHERE id = ?",
+        (new_role, user_id),
+    )
+    if cursor.rowcount == 0:
+        raise OpsError(f"User '{user_id}' not found.")
+
+    conn.commit()
+    logger.info(
+        "set_role: actor=%s changed user=%s to role=%s",
+        actor_id,
+        user_id,
+        new_role,
+    )
+```
+
+FILE: reportkit/service.py
+```python
+"""
+ReportService — the HTTP surface.
+
+Each public method accepts a *request* dict and returns a response dict of the
+form::
+
+    {"status": <int>, "body": <json-serialisable dict>}
+
+Authentication is via a bearer token resolved through the sessions table.
+
+The class is intentionally framework-agnostic: a thin WSGI/ASGI adapter (not
+part of this package) would translate real HTTP objects into the expected dict
+shape.
+"""
+
+from __future__ import annotations
+
+import logging
+import sqlite3
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from reportkit.auth import AuthError, require_permission, resolve_caller
+from reportkit.content_scan import ContentViolation, scan
+from reportkit.events import EventRegistry, default_registry
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Allowed sort columns for search_reports — validated against a whitelist to
+# prevent SQL injection via user-supplied sort values.
+# ---------------------------------------------------------------------------
+_ALLOWED_SORT_COLUMNS = {"created_at", "title"}
+_DEFAULT_SORT = "created_at"
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def _ok(body: Any, status: int = 200) -> dict:
+    return {"status": status, "body": body}
+
+
+def _err(message: str, status: int) -> dict:
+    return {"status": status, "body": {"error": message}}
+
+
+class ReportService:
+    """
+    Multi-tenant report service.
+
+    Parameters
+    ----------
+    conn:
+        An open :class:`sqlite3.Connection` with the reportkit schema applied.
+    registry:
+        An :class:`~reportkit.events.EventRegistry` for domain events.
+        Defaults to the module-level ``default_registry``.
+    """
+
+    def __init__(
+        self,
+        conn: sqlite3.Connection,
+        registry: EventRegistry | None = None,
+    ) -> None:
+        self._conn = conn
+        self._registry = registry or default_registry
+
+    # ------------------------------------------------------------------
+    # Public HTTP methods
+    # ------------------------------------------------------------------
+
+    def create_report(self, request: dict) -> dict:
+        """Create a report owned by the authenticated caller."""
+        try:
+            caller = resolve_caller(self._conn, request)
+            require_permission(caller, "report:write")
+        except AuthError as exc:
+            return _err(str(exc), exc.status)
+
+        data = request.get("body") or {}
+        title = (data.get("title") or "").strip()
+        body  = (data.get("body")  or "").strip()
+
+        if not title:
+            return _err("'title' is required.", 400)
+
+        report_id = str(uuid.uuid4())
+        now = _now_iso()
+
+        self._conn.execute(
+            """
+            INSERT INTO reports (id, tenant_id, owner_id, title, body, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (report_id, caller["tenant_id"], caller["user_id"], title, body, now, now),
+        )
+        self._conn.commit()
+
+        report = self._fetch_report(report_id)
+        self._registry.dispatch("report.created", {"report_id": report_id, "caller": caller})
+        logger.info("Report %s created by user %s.", report_id, caller["user_id"])
+        return _ok(dict(report), status=201)
+
+    def get_report(self, request: dict, report_id: str) -> dict:
+        """Return a single report by *report_id*."""
+        try:
+            caller = resolve_caller(self._conn, request)
+            require_permission(caller, "report:read")
+        except AuthError as exc:
+            return _err(str(exc), exc.status)
+
+        report = self._fetch_report(report_id)
+        if report is None:
+            return _err("Report not found.", 404)
+
+        # Tenant isolation: callers may only read reports in their own tenant.
+        if report["tenant_id"] != caller["tenant_id"]:
+            return _err("Report not found.", 404)
+
+        return _ok(dict(report))
+
+    def list_reports(self, request: dict) -> dict:
+        """Return the caller's own reports, newest first."""
+        try:
+            caller = resolve_caller(self._conn, request)
+            require_permission(caller, "report:read")
+        except AuthError as exc:
+            return _err(str(exc), exc.status)
+
+        rows = self._conn.execute(
+            """
+            SELECT id, tenant_id, owner_id, title, body, created_at, updated_at
+            FROM reports
+            WHERE owner_id = ?
+            ORDER BY created_at DESC
+            """,
+            (caller["user_id"],),
+        ).fetchall()
+
+        return _ok({"reports": [dict(r) for r in rows]})
+
+    def search_reports(self, request: dict) -> dict:
+        """
+        Full-text title search across the caller's own reports.
+
+        Query parameters (from ``request["query"]``):
+        - ``q``    – search term (required)
+        - ``sort`` – ``created_at`` (default) or ``title``
+        """
+        try:
+            caller = resolve_caller(self._conn, request)
+            require_permission(caller, "report:read")
+        except AuthError as exc:
+            return _err(str(exc), exc.status)
+
+        query_params = request.get("query") or {}
+        term = (query_params.get("q") or "").strip()
+        if not term:
+            return _err("Query parameter 'q' is required.", 400)
+
+        # Validate sort column against whitelist — never interpolate raw user
+        # input into SQL.
+        sort_raw = (query_params.get("sort") or _DEFAULT_SORT).strip()
+        sort_col = sort_raw if sort_raw in _ALLOWED_SORT_COLUMNS else _DEFAULT_SORT
+
+        # SQLite LIKE search; we escape '%' and '_' so they are treated as
+        # literals, then wrap with '%' wildcards ourselves.
+        escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"
+
+        sql = f"""
+            SELECT id, tenant_id, owner_id, title, body, created_at, updated_at
+            FROM reports
+            WHERE owner_id = ?
+              AND title LIKE ? ESCAPE '\\'
+            ORDER BY {sort_col} ASC
+        """
+        rows = self._conn.execute(sql, (caller["user_id"], pattern)).fetchall()
+        return _ok({"reports": [dict(r) for r in rows]})
+
+    def delete_report(self, request: dict, report_id: str) -> dict:
+        """Delete a report.  Requires ``report:delete`` permission."""
+        try:
+            caller = resolve_caller(self._conn, request)
+            require_permission(caller, "report:delete")
+        except AuthError as exc:
+            return _err(str(exc), exc.status)
+
+        report = self._fetch_report(report_id)
+        if report is None:
+            return _err("Report not found.", 404)
+
+        if report["tenant_id"] != caller["tenant_id"]:
+            return _err("Report not found.", 404)
+
+        self._conn.execute("DELETE FROM reports WHERE id = ?", (report_id,))
+        self._conn.commit()
+
+        self._registry.dispatch(
+            "report.deleted",
+            {"report_id": report_id, "caller": caller},
+        )
+        logger.info("Report %s deleted by user %s.", report_id, caller["user_id"])
+        return _ok({"deleted": True})
+
+    def upload_attachment(self, request: dict) -> dict:
+        """
+        Store an attachment after scanning for disallowed content.
+
+        Expected ``request`` keys:
+        - ``body["report_id"]`` – the report this attachment belongs to
+        - ``body["filename"]``  – original filename
+        - ``body["mime_type"]`` – MIME type string
+        - ``body["data"]``      – raw ``bytes`` of the file
+        """
+        try:
+            caller = resolve_caller(self._conn, request)
+            require_permission(caller, "report:write")
+        except AuthError as exc:
+            return _err(str(exc), exc.status)
+
+        data    = request.get("body") or {}
+        report_id = (data.get("report_id") or "").strip()
+        filename  = (data.get("filename")  or "").strip()
+        mime_type = (data.get("mime_type") or "application/octet-stream").strip()
+        file_data: bytes = data.get("data", b"")
+
+        if not report_id:
+            return _err("'report_id' is required.", 400)
+        if not filename:
+            return _err("'filename' is required.", 400)
+        if not isinstance(file_data, (bytes, bytearray)):
+            return _err("'data' must be bytes.", 400)
+
+        # Verify the report exists and belongs to the caller's tenant.
+        report = self._fetch_report(report_id)
+        if report is None or report["tenant_id"] != caller["tenant_id"]:
+            return _err("Report not found.", 404)
+
+        # Content scan — raises ContentViolation or ValueError on failure.
+        try:
+            scan(bytes(file_data), filename=filename)
+        except ContentViolation as exc:
+            return _err(f"Attachment rejected: {exc}", 422)
+        except ValueError as exc:
+            return _err(str(exc), 413)
+
+        attachment_id = str(uuid.uuid4())
+        self._conn.execute(
+            """
+            INSERT INTO attachments
+                (id, report_id, tenant_id, filename, mime_type, size_bytes, data)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                attachment_id,
+                report_id,
+                caller["tenant_id"],
+                filename,
+                mime_type,
+                len(file_data),
+                file_data,
+            ),
+        )
+        self._conn.commit()
+        logger.info(
+            "Attachment %s (%s, %d bytes) stored for report %s.",
+            attachment_id,
+            filename,
+            len(file_data),
+            report_id,
+        )
+        return _ok(
+            {
+                "id":         attachment_id,
+                "report_id":  report_id,
+                "filename":   filename,
+                "mime_type":  mime_type,
+                "size_bytes": len(file_data),
+            },
+            status=201,
+        )
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _fetch_report(self, report_id: str):
+        return self._conn.execute(
+            """
+            SELECT id, tenant_id, owner_id, title, body, created_at, updated_at
+            FROM reports WHERE id = ?
+            """,
+            (report_id,),
+        ).fetchone()
+```
+
+FILE: tests/__init__.py
+```python
+```
+
+FILE: tests/conftest.py
+```python
+"""Shared pytest fixtures."""
+
+import uuid
+import pytest
+
+from reportkit.db import init_schema, open_db
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _make_token() -> str:
+    return str(uuid.uuid4())
+
+
+def seed_tenant(conn, *, tenant_id=None, suspended=0):
+    tid = tenant_id or str(uuid.uuid4())
+    conn.execute(
+        "INSERT INTO tenants (id, name, suspended) VALUES (?, ?, ?)",
+        (tid, f"Tenant-{tid[:8]}", suspended),
+    )
+    conn.commit()
+    return tid
+
+
+def seed_user(conn, *, tenant_id, role="editor", user_id=None):
+    uid = user_id or str(uuid.uuid4())
+    conn.execute(
+        "INSERT INTO users (id, tenant_id, username, role) VALUES (?, ?, ?, ?)",
+        (uid, tenant_id, f"user-{uid[:8]}", role),
+    )
+    conn.commit()
+    return uid
+
+
+def seed_session(conn, *, user_id, token=None, expires_offset="+1 hour"):
+    tok = token or _make_token()
+    conn.execute(
+        """
+        INSERT INTO sessions (token, user_id, expires_at)
+        VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?))
+        """,
+        (tok, user_id, expires_offset),
+    )
+    conn.commit()
+    return tok
+
+
+def make_request(token, body=None, query=None, headers=None):
+    h = {"Authorization": f"Bearer {token}"}
+    if headers:
+        h.update(headers)
+    return {"headers": h, "body": body or {}, "query": query or {}}
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture()
+def conn():
+    c = open_db(":memory:")
+    init_schema(c)
+    return c
+
+
+@pytest.fixture()
+def tenant(conn):
+    return seed_tenant(conn)
+
+
+@pytest.fixture()
+def editor(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="editor")
+    tok = seed_session(conn, user_id=uid)
+    return {"user_id": uid, "tenant_id": tenant, "token": tok}
+
+
+@pytest.fixture()
+def viewer(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="viewer")
+    tok = seed_session(conn, user_id=uid)
+    return {"user_id": uid, "tenant_id": tenant, "token": tok}
+
+
+@pytest.fixture()
+def admin(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="admin")
+    tok = seed_session(conn, user_id=uid)
+    return {"user_id": uid, "tenant_id": tenant, "token": tok}
+
+
+@pytest.fixture()
+def service(conn):
+    from reportkit.service import ReportService
+    from reportkit.events import EventRegistry
+    return ReportService(conn, registry=EventRegistry())
+```
+
+FILE: tests/test_auth.py
+```python
+"""Tests for authentication and authorisation helpers."""
+
+import pytest
+
+from reportkit.auth import AuthError, require_permission, resolve_caller
+from tests.conftest import (
+    make_request,
+    seed_session,
+    seed_tenant,
+    seed_user,
+)
+
+
+def test_resolve_valid_token(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="editor")
+    tok = seed_session(conn, user_id=uid)
+    req = make_request(tok)
+    caller = resolve_caller(conn, req)
+    assert caller["user_id"] == uid
+    assert caller["role"] == "editor"
+    assert "report:read" in caller["permissions"]
+    assert "report:write" in caller["permissions"]
+    assert "report:delete" not in caller["permissions"]
+
+
+def test_resolve_expired_token(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="viewer")
+    tok = seed_session(conn, user_id=uid, expires_offset="-1 hour")
+    with pytest.raises(AuthError) as exc_info:
+        resolve_caller(conn, make_request(tok))
+    assert exc_info.value.status == 401
+
+
+def test_resolve_missing_token(conn):
+    with pytest.raises(AuthError) as exc_info:
+        resolve_caller(conn, {"headers": {}, "body": {}})
+    assert exc_info.value.status == 401
+
+
+def test_resolve_suspended_tenant(conn):
+    tid = seed_tenant(conn, suspended=1)
+    uid = seed_user(conn, tenant_id=tid, role="admin")
+    tok = seed_session(conn, user_id=uid)
+    with pytest.raises(AuthError) as exc_info:
+        resolve_caller(conn, make_request(tok))
+    assert exc_info.value.status == 403
+
+
+def test_require_permission_ok(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="admin")
+    tok = seed_session(conn, user_id=uid)
+    caller = resolve_caller(conn, make_request(tok))
+    # Should not raise
+    require_permission(caller, "report:delete")
+    require_permission(caller, "user:manage")
+
+
+def test_require_permission_denied(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="viewer")
+    tok = seed_session(conn, user_id=uid)
+    caller = resolve_caller(conn, make_request(tok))
+    with pytest.raises(AuthError) as exc_info:
+        require_permission(caller, "report:write")
+    assert exc_info.value.status == 403
+
+
+def test_viewer_permissions(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="viewer")
+    tok = seed_session(conn, user_id=uid)
+    caller = resolve_caller(conn, make_request(tok))
+    assert caller["permissions"] == frozenset({"report:read"})
+
+
+def test_editor_permissions(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="editor")
+    tok = seed_session(conn, user_id=uid)
+    caller = resolve_caller(conn, make_request(tok))
+    assert caller["permissions"] == frozenset({"report:read", "report:write"})
+
+
+def test_admin_permissions(conn, tenant):
+    uid = seed_user(conn, tenant_id=tenant, role="admin")
+    tok = seed_session(conn, user_id=uid)
+    caller = resolve_caller(conn, make_request(tok))
+    assert caller["permissions"] == frozenset(
+        {"report:read", "report:write", "report:delete", "user:manage"}
+    )
+```
+
+FILE: tests/test_service.py
+```python
+"""Tests for ReportService HTTP methods."""
+
+import uuid
+import pytest
+
+from tests.conftest import (
+    make_request,
+    seed_session,
+    seed_tenant,
+    seed_user,
+)
+
+
+# ---------------------------------------------------------------------------
+# create_report
+# ---------------------------------------------------------------------------
+
+class TestCreateReport:
+    def test_creates_report(self, service, editor):
+        req = make_request(editor["token"], body={"title": "Q1 Report", "body": "content"})
+        resp = service.create_report(req)
+        assert resp["status"] == 201
+        assert resp["body"]["title"] == "Q1 Report"
+        assert resp["body"]["id"]
+
+    def test_requires_title(self, service, editor):
+        req = make_request(editor["token"], body={"body": "no title"})
+        resp = service.create_report(req)
+        assert resp["status"] == 400
+
+    def test_viewer_cannot_create(self, service, viewer):
+        req = make_request(viewer["token"], body={"title": "Denied"})
+        resp = service.create_report(req)
+        assert resp["status"] == 403
+
+    def test_unauthenticated_rejected(self, service):
+        req = make_request("bad-token", body={"title": "X"})
+        resp = service.create_report(req)
+        assert resp["status"] == 401
+
+    def test_dispatches_event(self, conn, tenant):
+        from reportkit.service import ReportService
+        from reportkit.events import EventRegistry
+
+        events = []
+        reg = EventRegistry()
+        reg.register("report.created", lambda p: events.append(p))
+        svc = ReportService(conn, registry=reg)
+
+        uid = seed_user(conn, tenant_id=tenant, role="editor")
+        tok = seed_session(conn, user_id=uid)
+        svc.create_report(make_request(tok, body={"title": "Evt"}))
+        assert len(events) == 1
+        assert "report_id" in events[0]
+
+
+# ---------------------------------------------------------------------------
+# get_report
+# ---------------------------------------------------------------------------
+
+class TestGetReport:
+    def _create(self, service, editor):
+        req = make_request(editor["token"], body={"title": "My Report"})
+        return service.create_report(req)["body"]["id"]
+
+    def test_get_own_report(self, service, editor):
+        rid = self._create(service, editor)
+        resp = service.get_report(make_request(editor["token"]), rid)
+        assert resp["status"] == 200
+        assert resp["body"]["id"] == rid
+
+    def test_not_found(self, service, editor):
+        resp = service.get_report(make_request(editor["token"]), str(uuid.uuid4()))
+        assert resp["status"] == 404
+
+    def test_cross_tenant_isolation(self, service, conn):
+        """A user from tenant B cannot read a report belonging to tenant A."""
+        tid_a = seed_tenant(conn)
+        uid_a = seed_user(conn, tenant_id=tid_a, role="editor")
+        tok_a = seed_session(conn, user_id=uid_a)
+
+        tid_b = seed_tenant(conn)
+        uid_b = seed_user(conn, tenant_id=tid_b, role="editor")
+        tok_b = seed_session(conn, user_id=uid_b)
+
+        rid = service.create_report(make_request(tok_a, body={"title": "Secret"}))["body"]["id"]
+        resp = service.get_report(make_request(tok_b), rid)
+        assert resp["status"] == 404
+
+    def test_viewer_can_read(self, service, conn, tenant):
+        uid_e = seed_user(conn, tenant_id=tenant, role="editor")
+        tok_e = seed_session(conn, user_id=uid_e)
+        rid = service.create_report(make_request(tok_e, body={"title": "Vis"}))["body"]["id"]
+
+        uid_v = seed_user(conn, tenant_id=tenant, role="viewer")
+        tok_v = seed_session(conn, user_id=uid_v)
+        resp = service.get_report(make_request(tok_v), rid)
+        assert resp["status"] == 200
+
+
+# ---------------------------------------------------------------------------
+# list_reports
+# ---------------------------------------------------------------------------
+
+class TestListReports:
+    def test_returns_own_reports_newest_first(self, service, editor):
+        tok = editor["token"]
+        service.create_report(make_request(tok, body={"title": "First"}))
+        service.create_report(make_request(tok, body={"title": "Second"}))
+        resp = service.list_reports(make_request(tok))
+        assert resp["status"] == 200
+        titles = [r["title"] for r in resp["body"]["reports"]]
+        assert titles[0] == "Second"
+        assert titles[1] == "First"
+
+    def test_does_not_return_other_users_reports(self, service, conn, tenant):
+        uid1 = seed_user(conn, tenant_id=tenant, role="editor")
+        tok1 = seed_session(conn, user_id=uid1)
+        uid2 = seed_user(conn, tenant_id=tenant, role="editor")
+        tok2 = seed_session(conn, user_id=uid2)
+
+        service.create_report(make_request(tok1, body={"title": "User1 Report"}))
+        resp = service.list_reports(make_request(tok2))
+        assert resp["body"]["reports"] == []
+
+    def test_empty_list(self, service, editor):
+        resp = service.list_reports(make_request(editor["token"]))
+        assert resp["body"]["reports"] == []
+
+
+# ---------------------------------------------------------------------------
+# search_reports
+# ---------------------------------------------------------------------------
+
+class TestSearchReports:
+    def _setup(self, service, tok):
+        service.create_report(make_request(tok, body={"title": "Annual Budget 2024"}))
+        service.create_report(make_request(tok, body={"title": "Q1 Sales Report"}))
+        service.create_report(make_request(tok, body={"title": "Q2 Sales Report"}))
+
+    def test_search_by_title(self, service, editor):
+        self._setup(service, editor["token"])
+        resp = service.search_reports(
+            make_request(editor["token"], query={"q": "Sales"})
+        )
+        assert resp["status"] == 200
+        assert len(resp["body"]["reports"]) == 2
+
+    def test_search_no_results(self, service, editor):
+        self._setup(service, editor["token"])
+        resp = service.search_reports(
+            make_request(editor["token"], query={"q": "Nonexistent"})
+        )
+        assert resp["body"]["reports"] == []
+
+    def test_sort_by_title(self, service, editor):
+        self._setup(service, editor["token"])
+        resp = service.search_reports(
+            make_request(editor["token"], query={"q": "Sales", "sort": "title"})
+        )
+        titles = [r["title"] for r in resp["body"]["reports"]]
+        assert titles == sorted(titles)
+
+    def test_invalid_sort_falls_back_to_default(self, service, editor):
+        self._setup(service, editor["token"])
+        resp = service.search_reports(
+            make_request(editor["token"], query={"q": "Sales", "sort": "id; DROP TABLE reports--"})
+        )
+        assert resp["status"] == 200  # no crash, no injection
+
+    def test_missing_q_returns_400(self, service, editor):
+        resp = service.search_reports(make_request(editor["token"], query={}))
+        assert resp["status"] == 400
+
+    def test_special_chars_in_query(self, service, editor):
+        tok = editor["token"]
+        service.create_report(make_request(tok, body={"title": "100% Complete"}))
+        resp = service.search_reports(make_request(tok, query={"q": "100%"}))
+        assert len(resp["body"]["reports"]) == 1
+
+    def test_cross_user_isolation(self, service, conn, tenant):
+        uid1 = seed_user(conn, tenant_id=tenant, role="editor")
+        tok1 = seed_session(conn, user_id=uid1)
+        uid2 = seed_user(conn, tenant_id=tenant, role="editor")
+        tok2 = seed_session(conn, user_id=uid2)
+
+        service.create_report(make_request(tok1, body={"title": "Private Report"}))
+        resp = service.search_reports(make_request(tok2, query={"q": "Private"}))
+        assert resp["body"]["reports"] == []
+
+
+# ---------------------------------------------------------------------------
+# delete_report
+# ---------------------------------------------------------------------------
+
+class TestDeleteReport:
+    def test_admin_can_delete(self, service, admin, editor):
+        rid = service.create_report(
+            make_request(editor["token"], body={"title": "To Delete"})
+        )["body"]["id"]
+        resp = service.delete_report(make_request(admin["token"]), rid)
+        assert resp["status"] == 200
+        assert resp["body"]["deleted"] is True
+
+    def test_editor_cannot_delete(self, service, editor):
+        rid = service.create_report(
+            make_request(editor["token"], body={"title": "No Delete"})
+        )["body"]["id"]
+        resp = service.delete_report(make_request(editor["token"]), rid)
+        assert resp["status"] == 403
+
+    def test_delete_nonexistent(self, service, admin):
+        resp = service.delete_report(make_request(admin["token"]), str(uuid.uuid4()))
+        assert resp["status"] == 404
+
+    def test_delete_cross_tenant_blocked(self, service, conn):
+        tid_a = seed_tenant(conn)
+        uid_a = seed_user(conn, tenant_id=tid_a, role="editor")
+        tok_a = seed_session(conn, user_id=uid_a)
+        rid = service.create_report(make_request(tok_a, body={"title": "A's Report"}))["body"]["id"]
+
+        tid_b = seed_tenant(conn)
+        uid_b = seed_user(conn, tenant_id=tid_b, role="admin")
+        tok_b = seed_session(conn, user_id=uid_b)
+        resp = service.delete_report(make_request(tok_b), rid)
+        assert resp["status"] == 404
+
+    def test_dispatches_deleted_event(self, conn, tenant):
+        from reportkit.service import ReportService
+        from reportkit.events import EventRegistry
+
+        events = []
+        reg = EventRegistry()
+        reg.register("report.deleted", lambda p: events.append(p))
+        svc = ReportService(conn, registry=reg)
+
+        uid = seed_user(conn, tenant_id=tenant, role="admin")
+        tok = seed_session(conn, user_id=uid)
+        rid = svc.create_report(make_request(tok, body={"title": "Del"}))["body"]["id"]
+        svc.delete_report(make_request(tok), rid)
+        assert len(events) == 1
+        assert events[0]["report_id"] == rid
+
+
+# ---------------------------------------------------------------------------
+# upload_attachment
+# ---------------------------------------------------------------------------
+
+class TestUploadAttachment:
+    def _report_id(self, service, editor):
+        return service.create_report(
+            make_request(editor["token"], body={"title": "Attach"})
+        )["body"]["id"]
+
+    def test_upload_clean_file(self, service, editor):
+        rid = self._report_id(service, editor)
+        req = make_request(
+            editor["token"],
+            body={
+                "report_id": rid,
+                "filename":  "hello.txt",
+                "mime_type": "text/plain",
+                "data":      b"Hello, world!",
+            },
+        )
+        resp = service.upload_attachment(req)
+        assert resp["status"] == 201
+        assert resp["body"]["filename"] == "hello.txt"
+        assert resp["body"]["size_bytes"] == 13
+
+    def test_rejects_eicar(self, service, editor):
+        rid = self._report_id(service, editor)
+        eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+        req = make_request(
+            editor["token"],
+            body={"report_id": rid, "filename": "eicar.com", "data": eicar},
+        )
+        resp = service.upload_attachment(req)
+        assert resp["status"] == 422
+
+    def test_rejects_oversized(self, service, editor):
+        rid = self._report_id(service, editor)
+        big = b"A" * (25 * 1024 * 1024 + 1)
+        req = make_request(
+            editor["token"],
+            body={"report_id": rid, "filename": "big.bin", "data": big},
+        )
+        resp = service.upload_attachment(req)
+        assert resp["status"] == 413
+
+    def test_viewer_cannot_upload(self, service, viewer, editor):
+        rid = self._report_id(service, editor)
+        req = make_request(
+            viewer["token"],
+            body={"report_id": rid, "filename": "x.txt", "data": b"x"},
+        )
+        resp = service.upload_attachment(req)
+        assert resp["status"] == 403
+
+    def test_cross_tenant_report_blocked(self, service, conn):
+        tid_a = seed_tenant(conn)
+        uid_a = seed_user(conn, tenant_id=tid_a, role="editor")
+        tok_a = seed_session(conn, user_id=uid_a)
+        rid = service.create_report(make_request(tok_a, body={"title": "A"}))["body"]["id"]
+
+        tid_b = seed_tenant(conn)
+        uid_b = seed_user(conn, tenant_id=tid_b, role="editor")
+        tok_b = seed_session(conn, user_id=uid_b)
+        req = make_request(tok_b, body={"report_id": rid, "filename": "x.txt", "data": b"x"})
+        resp = service.upload_attachment(req)
+        assert resp["status"] == 404
+```
+
+FILE: tests/test_billing.py
+```python
+"""Tests for the billing webhook handler."""
+
+import hashlib
+import hmac
+import json
+import os
+import uuid
+
+import pytest
+
+from reportkit.billing import BillingError, handle_webhook
+from tests.conftest import seed_tenant
+
+
+SECRET = "test-secret-key"
+
+
+def _sign(body_bytes: bytes, secret: str = SECRET) -> str:
+    return hmac.new(secret.encode(), body_bytes, hashlib.sha256).hexdigest()
+
+
+def _make_request(payload: dict, secret: str = SECRET, bad_sig: bool = False):
+    raw = json.dumps(payload).encode()
+    sig = _sign(raw, secret) if not bad_sig else "deadbeef"
+    return {
+        "headers": {"X-Billing-Signature": sig},
+        "raw_body": raw,
+        "body": payload,
+    }
+
+
+@pytest.fixture(autouse=True)
+def set_secret(monkeypatch):
+    monkeypatch.setenv("BILLING_WEBHOOK_SECRET", SECRET)
+
+
+class TestBillingWebhook:
+    def test_valid_invoice_paid(self, conn):
+        tid = seed_tenant(conn)
+        payload = {"id": str(uuid.uuid4()), "type": "invoice.paid", "tenant_id": tid, "amount_cents": 5000}
+        resp = handle_webhook(conn, _make_request(payload))
+        assert resp["status"] == 200
+        row = conn.execute("SELECT * FROM billing_events WHERE id = ?", (payload["id"],)).fetchone()
+        assert row is not None
+        assert row["amount_cents"] == 5000
+
+    def test_invalid_signature_rejected(self, conn):
+        tid = seed_tenant(conn)
+        payload = {"id": str(uuid.uuid4()), "type": "invoice.paid", "tenant_id": tid, "amount_cents": 100}
+        with pytest.raises(BillingError) as exc_info:
+            handle_webhook(conn, _make_request(payload, bad_sig=True))
+        assert exc_info.value.status == 401
+
+    def test_idempotent_retry(self, conn):
+        tid = seed_tenant(conn)
+        event_id = str(uuid.uuid4())
+        payload = {"id": event_id, "type": "invoice.paid", "tenant_id": tid, "amount_cents": 100}
+        handle_webhook(conn, _make_request(payload))
+        handle_webhook(conn, _make_request(payload))  # duplicate — should not raise
+        count = conn.execute(
+            "SELECT COUNT(*) FROM billing_events WHERE id = ?", (event_id,)
+        ).fetchone()[0]
+        assert count == 1
+
+    def test_unknown_event_type_ignored(self, conn):
+        tid = seed_tenant(conn)
+        payload = {"id": str(uuid.uuid4()), "type": "invoice.voided", "tenant_id": tid}
+        resp = handle_webhook(conn, _make_request(payload))
+        assert resp["status"] == 200
+        count = conn.execute("SELECT COUNT(*) FROM billing_events").fetchone()[0]
+        assert count == 0
+
+    def test_missing_secret_raises(self, conn, monkeypatch):
+        monkeypatch.delenv("BILLING_WEBHOOK_SECRET", raising=False)
+        payload = {"id": "x", "type": "invoice.paid", "tenant_id": "t"}
+        with pytest.raises(BillingError) as exc_info:
+            handle_webhook(conn, _make_request(payload))
+        assert exc_info.value.status == 500
+
+    def test_missing_signature_header(self, conn):
+        payload = {"id": "x", "type": "invoice.paid", "tenant_id": "t"}
+        raw = json.dumps(payload).encode()
+        req = {"headers": {}, "raw_body": raw, "body": payload}
+        with pytest.raises(BillingError) as exc_info:
+            handle_webhook(conn, req)
+        assert exc_info.value.status == 400
+```
+
+FILE: tests/test_ops.py
+```python
+"""Tests for ops-console operations."""
+
+import uuid
+import pytest
+
+from reportkit.ops import OpsError, purge_tenant, set_role
+from tests.conftest import make_request, seed_session, seed_tenant, seed_user
+
+
+class TestPurgeTenant:
+    def test_deletes_all_reports(self, service, conn):
+        tid = seed_tenant(conn)
+        uid = seed_user(conn, tenant_id=tid, role="editor")
+        tok = seed_session(conn, user_id=uid)
+        service.create_report(make_request(tok, body={"title": "R1"}))
+        service.create_report(make_request(tok, body={"title": "R2"}))
+
+        deleted = purge_tenant(conn, actor_id="ops-bot", tenant_id=tid)
+        assert deleted == 2
+
+        count = conn.execute(
+            "SELECT COUNT(*) FROM reports WHERE tenant_id = ?", (tid,)
+        ).fetchone()[0]
+        assert count == 0
+
+    def test_nonexistent_tenant_raises(self, conn):
+        with pytest.raises(OpsError, match="not found"):
+            purge_tenant(conn, actor_id="ops", tenant_id=str(uuid.uuid4()))
+
+    def test_does_not_affect_other_tenants(self, service, conn):
+        tid_a = seed_tenant(conn)
+        uid_a = seed_user(conn, tenant_id=tid_a, role="editor")
+        tok_a = seed_session(conn, user_id=uid_a)
+        service.create_report(make_request(tok_a, body={"title": "A's Report"}))
+
+        tid_b = seed_tenant(conn)
+        uid_b = seed_user(conn, tenant_id=tid_b, role="editor")
+        tok_b = seed_session(conn, user_id=uid_b)
+        service.create_report(make_request(tok_b, body={"title": "B's Report"}))
+
+        purge_tenant(conn, actor_id="ops", tenant_id=tid_a)
+
+        count_b = conn.execute(
+            "SELECT COUNT(*) FROM reports WHERE tenant_id = ?", (tid_b,)
+        ).fetchone()[0]
+        assert count_b == 1
+
+
+class TestSetRole:
+    def test_changes_role(self, conn, tenant):
+        uid = seed_user(conn, tenant_id=tenant, role="viewer")
+        set_role(conn, actor_id="ops", user_id=uid, new_role="admin")
+        row = conn.execute("SELECT role FROM users WHERE id = ?", (uid,)).fetchone()
+        assert row["role"] == "admin"
+
+    def test_invalid_role_raises(self, conn, tenant):
+        uid = seed_user(conn, tenant_id=tenant, role="viewer")
+        with pytest.raises(OpsError, match="Invalid role"):
+            set_role(conn, actor_id="ops", user_id=uid, new_role="superuser")
+
+    def test_nonexistent_user_raises(self, conn):
+        with pytest.raises(OpsError, match="not found"):
+            set_role(conn, actor_id="ops", user_id=str(uuid.uuid4()), new_role="editor")
+
+    def test_role_change_reflected_in_next_request(self, service, conn, tenant):
+        """After set_role, the next authenticated request sees the new permissions."""
+        uid = seed_user(conn, tenant_id=tenant, role="viewer")
+        tok = seed_session(conn, user_id=uid)
+
+        # Viewer cannot create
+        resp = service.create_report(make_request(tok, body={"title": "X"}))
+        assert resp["status"] == 403
+
+        # Promote to editor
+        set_role(conn, actor_id="ops", user_id=uid, new_role="editor")
+
+        # Now can create (same token, new DB lookup)
+        resp = service.create_report(make_request(tok, body={"title": "X"}))
+        assert resp["status"] == 201
+```
+
+FILE: tests/test_content_scan.py
+```python
+"""Tests for the content scanner."""
+
+import pytest
+
+from reportkit.content_scan import MAX_ATTACHMENT_BYTES, ContentViolation, scan
+
+
+class TestContentScan:
+    def test_clean_text(self):
+        scan(b"Hello, this is a normal text file.", filename="readme.txt")
+
+    def test_clean_binary(self):
+        scan(bytes(range(256)) * 10, filename="data.bin")
+
+    def test_eicar_rejected(self):
+        eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+        with pytest.raises(ContentViolation) as exc_info:
+            scan(eicar, filename="eicar.com")
+        assert exc_info.value.label == "EICAR-TEST"
+
+    def test_elf_rejected(self):
+        with pytest.raises(ContentViolation) as exc_info:
+            scan(b"\x7fELF" + b"\x00" * 100)
+        assert exc_info.value.label == "ELF"
+
+    def test_php_rejected(self):
+        with pytest.raises(ContentViolation) as exc_info:
+            scan(b"<?php echo 'hello'; ?>")
+        assert exc_info.value.label == "PHP-TAG"
+
+    def test_oversized_rejected(self):
+        with pytest.raises(ValueError, match="maximum size"):
+            scan(b"A" * (MAX_ATTACHMENT_BYTES + 1))
+
+    def test_exactly_at_limit_ok(self):
+        # Should not raise (boundary condition)
+        scan(b"A" * MAX_ATTACHMENT_BYTES)
+```
+
+FILE: tests/test_events.py
+```python
+"""Tests for the event registry."""
+
+import pytest
+
+from reportkit.events import EventRegistry
+
+
+class TestEventRegistry:
+    def test_handler_called(self):
+        reg = EventRegistry()
+        received = []
+        reg.register("foo", lambda p: received.append(p))
+        reg.dispatch("foo", {"x": 1})
+        assert received == [{"x": 1}]
+
+    def test_multiple_handlers(self):
+        reg = EventRegistry()
+        log = []
+        reg.register("evt", lambda p: log.append("a"))
+        reg.register("evt", lambda p: log.append("b"))
+        reg.dispatch("evt", {})
+        assert log == ["a", "b"]
+
+    def test_unknown_event_no_error(self):
+        reg = EventRegistry()
+        reg.dispatch("no.such.event", {})  # should not raise
+
+    def test_failing_handler_does_not_block_others(self):
+        reg = EventRegistry()
+        log = []
+        reg.register("evt", lambda p: (_ for _ in ()).throw(RuntimeError("boom")))
+        reg.register("evt", lambda p: log.append("ran"))
+        reg.dispatch("evt", {})
+        assert log == ["ran"]
+
+    def test_decorator_registration(self):
+        reg = EventRegistry()
+        received = []
+
+        @reg.handler("my.event")
+        def h(payload):
+            received.append(payload)
+
+        reg.dispatch("my.event", {"k": "v"})
+        assert received == [{"k": "v"}]
+```
+
+FILE: NOTES.md
+```markdown
+# reportkit — design notes
+
+## Decisions
+
+### No web framework
+The HTTP surface is a plain class whose methods accept a `request` dict and
+return a `{"status": int, "body": dict}` response dict.  A thin WSGI/ASGI
+adapter (not included) would translate real HTTP objects into this shape.  This
+keeps the core logic free of framework coupling and makes unit-testing trivial —
+no HTTP client, no test server.
+
+### SQLite + WAL mode
+WAL mode is enabled so that concurrent readers do not block writers.  For a
+single-process service this is sufficient; a move to PostgreSQL would require
+swapping the connection factory and the `strftime` calls for `NOW()`.
+
+### Permission resolution — hot path
+The spec notes that permission resolution is the hottest query.  We resolve it
+in a single three-table join (`sessions → users → tenants`) on every request.
+We do **not** cache in-process: roles are changed from the ops console and the
+spec says changes must take effect immediately.  The composite index
+`idx_users_tenant_role` on `(tenant_id, role)` keeps the join fast.
+
+### Sort-column whitelist
+`search_reports` accepts a user-supplied sort column.  Rather than a
+parameterised bind (SQLite does not support parameterised `ORDER BY`), we
+validate the value against a whitelist `{"created_at", "title"}` and fall back
+to `created_at` for anything else.  This prevents SQL injection while honouring
+the UI control described in the spec.
+
+### LIKE escaping
+The title search uses SQLite's `LIKE … ESCAPE '\\'` so that `%` and `_` in
+user-supplied search terms are treated as literals rather than wildcards.
+
+### Billing webhook — idempotency
+The provider retries deliveries it considers failed.  We use the provider's
+event `id` as a `UNIQUE` key in `billing_events`.  A duplicate insert is caught
+as `sqlite3.IntegrityError` and silently ignored, making the handler
+idempotent.  The HMAC signature is verified before any DB write.
+
+### Attachment scanning
+Scanning checks the first 4 KB for known byte signatures (EICAR, ELF, MZ, PHP,
+JSP).  This is a defence-in-depth measure, not a replacement for a real AV
+engine.  The size limit (25 MB) is enforced before the scan.
+
+### `tenant.quota_exceeded` handler
+The batch-import feed that emits this event was retired last quarter.  The
+handler is registered in the default event registry as a deliberate no-op with
+a log line, so that:
+- The registry wiring is in place for when the feed returns.
+- Nothing breaks if the event is somehow dispatched in the interim.
+
+### Ops console functions
+`purge_tenant` and `set_role` are plain functions that accept a `Connection`,
+not HTTP endpoints.  They are called over the private network by the ops
+console.  Both accept an `actor_id` for audit logging; a proper audit table
+would be the next step.
+
+### Attachments stored as BLOBs
+For simplicity, attachment bytes are stored directly in SQLite.  In production
+this would be replaced by an object store (S3/GCS) with only the key stored in
+the DB.
+
+## Deliberate omissions
+
+- **WSGI/ASGI adapter** — out of scope; the service is framework-agnostic by
+  design.
+- **Pagination** — `list_reports` and `search_reports` return all matching rows.
+  Adding `LIMIT`/`OFFSET` or cursor-based pagination is straightforward.
+- **Audit log table** — ops actions are currently only logged to the Python
+  logger.
+- **Session creation / user registration** — assumed to be handled by an
+  identity service; the schema and fixtures support seeding sessions directly.
+- **Real AV scanning** — the content scanner uses byte-signature heuristics.
+  Integration with ClamAV or a cloud scanning API is a production concern.
+- **Migrations** — the schema uses `CREATE TABLE IF NOT EXISTS`; a migration
+  tool (e.g. Alembic) would be needed for schema evolution in production.
+```

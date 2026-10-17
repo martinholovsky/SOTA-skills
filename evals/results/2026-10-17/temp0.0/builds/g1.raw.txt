@@ -1,0 +1,2711 @@
+FILE: reportkit/__init__.py
+```python
+"""reportkit — multi-tenant report service."""
+```
+
+FILE: reportkit/schema.sql
+```sql
+-- reportkit schema
+-- All DDL is idempotent (IF NOT EXISTS).
+
+PRAGMA journal_mode = WAL;
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS tenants (
+    id          TEXT PRIMARY KEY,          -- UUID
+    suspended   INTEGER NOT NULL DEFAULT 0 CHECK (suspended IN (0, 1)),
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id          TEXT PRIMARY KEY,          -- UUID
+    tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    role        TEXT NOT NULL CHECK (role IN ('viewer', 'editor', 'admin')),
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_tenant ON users(tenant_id);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    token_hash  TEXT PRIMARY KEY,          -- SHA-256 hex of the bearer token
+    user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at  TEXT NOT NULL,             -- ISO-8601 UTC
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+CREATE TABLE IF NOT EXISTS reports (
+    id          TEXT PRIMARY KEY,          -- UUID
+    tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    owner_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title       TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 500),
+    body        TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_reports_tenant_owner ON reports(tenant_id, owner_id);
+CREATE INDEX IF NOT EXISTS idx_reports_created      ON reports(tenant_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS attachments (
+    id          TEXT PRIMARY KEY,          -- UUID
+    tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    owner_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    report_id   TEXT REFERENCES reports(id) ON DELETE SET NULL,
+    filename    TEXT NOT NULL CHECK (length(filename) BETWEEN 1 AND 255),
+    size_bytes  INTEGER NOT NULL CHECK (size_bytes >= 0),
+    scan_status TEXT NOT NULL DEFAULT 'pending'
+                     CHECK (scan_status IN ('pending', 'clean', 'rejected')),
+    storage_key TEXT NOT NULL UNIQUE,      -- server-generated UUID path
+    created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_attachments_tenant ON attachments(tenant_id);
+
+CREATE TABLE IF NOT EXISTS invoice_events (
+    event_id    TEXT PRIMARY KEY,          -- idempotency key from provider
+    tenant_id   TEXT NOT NULL,
+    amount      INTEGER NOT NULL,          -- cents
+    currency    TEXT NOT NULL CHECK (length(currency) = 3),
+    processed_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    actor_id    TEXT,                      -- NULL for system events
+    tenant_id   TEXT,
+    action      TEXT NOT NULL,
+    target_type TEXT,
+    target_id   TEXT,
+    detail      TEXT                       -- JSON, no PII
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_actor  ON audit_log(actor_id);
+CREATE INDEX IF NOT EXISTS idx_audit_tenant ON audit_log(tenant_id);
+```
+
+FILE: reportkit/db.py
+```python
+"""Database helpers — connection factory and schema bootstrap."""
+
+from __future__ import annotations
+
+import sqlite3
+import threading
+from pathlib import Path
+
+_local = threading.local()
+
+_SCHEMA = (Path(__file__).parent / "schema.sql").read_text()
+
+
+def _row_factory(cursor: sqlite3.Cursor, row: tuple) -> dict:
+    return {col[0]: row[i] for i, col in enumerate(cursor.description)}
+
+
+def get_connection(db_path: str) -> sqlite3.Connection:
+    """Return a per-thread connection to *db_path*, creating it if needed."""
+    key = f"conn_{db_path}"
+    conn = getattr(_local, key, None)
+    if conn is None:
+        conn = sqlite3.connect(db_path, check_same_thread=False, isolation_level=None)
+        conn.row_factory = _row_factory
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA busy_timeout = 5000")
+        setattr(_local, key, conn)
+    return conn
+
+
+def init_schema(conn: sqlite3.Connection) -> None:
+    """Apply the DDL (idempotent)."""
+    conn.executescript(_SCHEMA)
+```
+
+FILE: reportkit/errors.py
+```python
+"""Typed HTTP-mapped exceptions."""
+
+from __future__ import annotations
+
+
+class AppError(Exception):
+    status: int = 500
+    code: str = "internal_error"
+
+    def __init__(self, message: str = "internal error") -> None:
+        super().__init__(message)
+        self.message = message
+
+    def to_dict(self) -> dict:
+        return {"error": self.code, "message": self.message}
+
+
+class BadRequest(AppError):
+    status = 400
+    code = "bad_request"
+
+
+class Unauthorized(AppError):
+    status = 401
+    code = "unauthorized"
+
+
+class Forbidden(AppError):
+    status = 403
+    code = "forbidden"
+
+
+class NotFound(AppError):
+    status = 404
+    code = "not_found"
+
+
+class Conflict(AppError):
+    status = 409
+    code = "conflict"
+
+
+class TenantSuspended(AppError):
+    status = 403
+    code = "tenant_suspended"
+
+
+class RateLimited(AppError):
+    status = 429
+    code = "rate_limited"
+```
+
+FILE: reportkit/validation.py
+```python
+"""Input validation helpers — allowlist-first, canonicalize-before-validate."""
+
+from __future__ import annotations
+
+import re
+import unicodedata
+import uuid
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+MAX_TITLE_LEN = 500
+MAX_BODY_LEN = 100_000
+MAX_FILENAME_LEN = 255
+MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024  # 25 MB
+
+# Allowlisted sort columns for search_reports.
+# Identifiers are never interpolated raw; they are mapped through this dict.
+SORT_COLUMN_MAP: dict[str, str] = {
+    "created_at": "r.created_at",
+    "title": "r.title",
+}
+DEFAULT_SORT = "created_at"
+
+# Allowlisted roles
+VALID_ROLES = frozenset({"viewer", "editor", "admin"})
+
+# Safe filename pattern: printable ASCII, no path separators, no control chars,
+# no Windows reserved names, no leading dot.
+_FILENAME_RE = re.compile(r"^[A-Za-z0-9][\w\-. ]{0,253}$")
+_WINDOWS_RESERVED = re.compile(
+    r"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$", re.IGNORECASE
+)
+
+# Title: Unicode letters, numbers, common punctuation, spaces — no control chars.
+# We use a positive allowlist of Unicode categories.
+_TITLE_RE = re.compile(r"^[\w\s\-.,!?:;()\[\]{}'\"@#&*+=/<>~`|\\^%$]{1,500}$")
+
+
+# ---------------------------------------------------------------------------
+# Primitives
+# ---------------------------------------------------------------------------
+
+
+def _reject_nul(value: str, field: str) -> None:
+    if "\x00" in value:
+        from reportkit.errors import BadRequest
+        raise BadRequest(f"{field}: NUL byte not allowed")
+
+
+def _nfc(value: str) -> str:
+    return unicodedata.normalize("NFC", value)
+
+
+def require_str(value: object, field: str, *, max_len: int = 1000) -> str:
+    """Assert *value* is a non-empty string within *max_len*."""
+    from reportkit.errors import BadRequest
+
+    if not isinstance(value, str):
+        raise BadRequest(f"{field}: must be a string")
+    v = _nfc(value)
+    _reject_nul(v, field)
+    if not v.strip():
+        raise BadRequest(f"{field}: must not be blank")
+    if len(v) > max_len:
+        raise BadRequest(f"{field}: exceeds maximum length {max_len}")
+    return v
+
+
+def require_uuid(value: object, field: str) -> str:
+    """Assert *value* is a valid UUID string; return its canonical lower-case form."""
+    from reportkit.errors import BadRequest
+
+    raw = require_str(value, field, max_len=36)
+    try:
+        return str(uuid.UUID(raw))
+    except ValueError:
+        raise BadRequest(f"{field}: not a valid UUID")
+
+
+def validate_title(value: object) -> str:
+    from reportkit.errors import BadRequest
+
+    title = require_str(value, "title", max_len=MAX_TITLE_LEN)
+    if not _TITLE_RE.fullmatch(title):
+        raise BadRequest("title: contains disallowed characters")
+    return title
+
+
+def validate_body(value: object) -> str:
+    if value is None:
+        return ""
+    return require_str(value, "body", max_len=MAX_BODY_LEN)
+
+
+def validate_sort(value: object) -> str:
+    """Return the safe SQL column expression for the requested sort key."""
+    from reportkit.errors import BadRequest
+
+    if value is None:
+        return SORT_COLUMN_MAP[DEFAULT_SORT]
+    if not isinstance(value, str):
+        raise BadRequest("sort: must be a string")
+    key = _nfc(value).strip().lower()
+    if key not in SORT_COLUMN_MAP:
+        raise BadRequest(f"sort: must be one of {sorted(SORT_COLUMN_MAP)}")
+    return SORT_COLUMN_MAP[key]
+
+
+def validate_filename(value: object) -> str:
+    from reportkit.errors import BadRequest
+
+    name = require_str(value, "filename", max_len=MAX_FILENAME_LEN)
+    # Reject path separators and alternate data stream markers
+    for ch in ("/", "\\", ":", "\r", "\n"):
+        if ch in name:
+            raise BadRequest("filename: contains disallowed character")
+    if _WINDOWS_RESERVED.match(name):
+        raise BadRequest("filename: reserved name")
+    if not _FILENAME_RE.fullmatch(name):
+        raise BadRequest("filename: contains disallowed characters")
+    return name
+
+
+def validate_role(value: object) -> str:
+    from reportkit.errors import BadRequest
+
+    role = require_str(value, "role", max_len=20)
+    if role not in VALID_ROLES:
+        raise BadRequest(f"role: must be one of {sorted(VALID_ROLES)}")
+    return role
+
+
+def validate_search_query(value: object) -> str:
+    """Validate and return a search query string (used as a LIKE parameter)."""
+    from reportkit.errors import BadRequest
+
+    q = require_str(value, "q", max_len=200)
+    # Escape LIKE metacharacters in the value itself so the user cannot
+    # widen the match beyond what they typed.
+    q = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return q
+```
+
+FILE: reportkit/auth.py
+```python
+"""Authentication — bearer-token resolution and permission checks.
+
+The bearer token is hashed (SHA-256) before any DB lookup so the raw secret
+never touches the database.  Permissions are derived from the role at
+request time (no stale session cache for role data).
+"""
+
+from __future__ import annotations
+
+import hashlib
+import sqlite3
+from typing import TypedDict
+
+from reportkit.errors import Forbidden, TenantSuspended, Unauthorized
+
+# ---------------------------------------------------------------------------
+# Permission model
+# ---------------------------------------------------------------------------
+
+_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
+    "viewer": frozenset({"report:read"}),
+    "editor": frozenset({"report:read", "report:write"}),
+    "admin": frozenset({"report:read", "report:write", "report:delete", "user:manage"}),
+}
+
+
+class Principal(TypedDict):
+    user_id: str
+    tenant_id: str
+    role: str
+    permissions: frozenset[str]
+
+
+# ---------------------------------------------------------------------------
+# Token hashing
+# ---------------------------------------------------------------------------
+
+
+def _hash_token(token: str) -> str:
+    """Return the hex SHA-256 digest of *token*."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# Session resolution
+# ---------------------------------------------------------------------------
+
+
+def resolve_principal(conn: sqlite3.Connection, request: dict) -> Principal:
+    """Resolve the bearer token in *request* to a Principal.
+
+    Raises Unauthorized if the token is missing, expired, or unknown.
+    Raises TenantSuspended if the tenant is suspended.
+
+    Role is re-read from the DB on every call so that ops-console role changes
+    take effect immediately without requiring a new session.
+    """
+    auth_header: str = request.get("headers", {}).get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise Unauthorized("missing or malformed Authorization header")
+
+    raw_token = auth_header[len("Bearer "):]
+    if not raw_token:
+        raise Unauthorized("empty bearer token")
+
+    token_hash = _hash_token(raw_token)
+
+    # Single query: join session → user → tenant so we get everything atomically
+    # and re-read the current role (not a cached snapshot).
+    row = conn.execute(
+        """
+        SELECT
+            u.id          AS user_id,
+            u.tenant_id   AS tenant_id,
+            u.role        AS role,
+            t.suspended   AS suspended
+        FROM sessions s
+        JOIN users   u ON u.id = s.user_id
+        JOIN tenants t ON t.id = u.tenant_id
+        WHERE s.token_hash = ?
+          AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        """,
+        (token_hash,),
+    ).fetchone()
+
+    if row is None:
+        raise Unauthorized("invalid or expired session token")
+
+    if row["suspended"]:
+        raise TenantSuspended("tenant is suspended")
+
+    role: str = row["role"]
+    permissions = _ROLE_PERMISSIONS.get(role, frozenset())
+
+    return Principal(
+        user_id=row["user_id"],
+        tenant_id=row["tenant_id"],
+        role=role,
+        permissions=permissions,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Authorization helpers
+# ---------------------------------------------------------------------------
+
+
+def require_permission(principal: Principal, permission: str) -> None:
+    """Raise Forbidden if *principal* lacks *permission*."""
+    if permission not in principal["permissions"]:
+        raise Forbidden(f"permission required: {permission}")
+```
+
+FILE: reportkit/rate_limit.py
+```python
+"""In-process token-bucket rate limiter.
+
+Keyed by (caller_id, endpoint).  Designed to be replaced by a Redis-backed
+implementation at the gateway layer; this provides a defence-in-depth floor
+when the service is called directly (e.g. in tests or internal tooling).
+
+NOTE: because this is in-process, limits are per-worker-process.  A
+production deployment behind a gateway should enforce limits there and treat
+this as a secondary control.  See NOTES.md.
+"""
+
+from __future__ import annotations
+
+import threading
+import time
+from collections import defaultdict
+from dataclasses import dataclass, field
+
+from reportkit.errors import RateLimited
+
+
+@dataclass
+class _Bucket:
+    capacity: float
+    refill_rate: float          # tokens per second
+    tokens: float = field(init=False)
+    last_refill: float = field(init=False)
+    lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self.tokens = self.capacity
+        self.last_refill = time.monotonic()
+
+    def consume(self, cost: float = 1.0) -> bool:
+        with self.lock:
+            now = time.monotonic()
+            elapsed = now - self.last_refill
+            self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)
+            self.last_refill = now
+            if self.tokens >= cost:
+                self.tokens -= cost
+                return True
+            return False
+
+
+# Default limits per endpoint (capacity, refill_rate tokens/sec)
+_ENDPOINT_LIMITS: dict[str, tuple[float, float]] = {
+    "create_report":      (20,  1.0),
+    "get_report":         (60,  5.0),
+    "list_reports":       (60,  5.0),
+    "search_reports":     (30,  2.0),
+    "delete_report":      (20,  1.0),
+    "upload_attachment":  (10,  0.5),
+    "billing_webhook":    (60,  5.0),
+    "default":            (30,  2.0),
+}
+
+_buckets: dict[tuple[str, str], _Bucket] = {}
+_buckets_lock = threading.Lock()
+
+
+def _get_bucket(caller_id: str, endpoint: str) -> _Bucket:
+    key = (caller_id, endpoint)
+    with _buckets_lock:
+        if key not in _buckets:
+            cap, rate = _ENDPOINT_LIMITS.get(endpoint, _ENDPOINT_LIMITS["default"])
+            _buckets[key] = _Bucket(capacity=cap, refill_rate=rate)
+        return _buckets[key]
+
+
+def check(caller_id: str, endpoint: str) -> None:
+    """Raise RateLimited if the caller has exhausted their quota for *endpoint*."""
+    bucket = _get_bucket(caller_id, endpoint)
+    if not bucket.consume():
+        raise RateLimited(f"rate limit exceeded for {endpoint}")
+```
+
+FILE: reportkit/logging_utils.py
+```python
+"""Structured logging — JSON lines, no secrets or PII in log output.
+
+Fields emitted per event:
+  ts, level, event, request_id, tenant_id, user_id, action,
+  target_type, target_id, detail (free-form dict, scrubbed).
+
+PII/secret scrubbing: token, password, secret, authorization header values
+are replaced with "<redacted>" before serialisation.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import sys
+import time
+from typing import Any
+
+_SCRUB_KEYS = frozenset(
+    {
+        "token",
+        "token_hash",
+        "password",
+        "secret",
+        "authorization",
+        "x-api-key",
+        "cookie",
+        "set-cookie",
+    }
+)
+
+
+def _scrub(obj: Any, depth: int = 0) -> Any:
+    if depth > 8:
+        return obj
+    if isinstance(obj, dict):
+        return {
+            k: "<redacted>" if k.lower() in _SCRUB_KEYS else _scrub(v, depth + 1)
+            for k, v in obj.items()
+        }
+    if isinstance(obj, (list, tuple)):
+        return [_scrub(v, depth + 1) for v in obj]
+    return obj
+
+
+class _JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        payload: dict[str, Any] = {
+            "ts": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+            "level": record.levelname,
+            "event": record.getMessage(),
+        }
+        for key in (
+            "request_id",
+            "tenant_id",
+            "user_id",
+            "action",
+            "target_type",
+            "target_id",
+            "detail",
+            "error",
+        ):
+            val = getattr(record, key, None)
+            if val is not None:
+                payload[key] = _scrub(val) if key == "detail" else val
+        if record.exc_info:
+            payload["exc"] = self.formatException(record.exc_info)
+        return json.dumps(payload)
+
+
+def configure_logging(level: int = logging.INFO) -> None:
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(_JsonFormatter())
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.addHandler(handler)
+    root.setLevel(level)
+
+
+def get_logger(name: str) -> logging.Logger:
+    return logging.getLogger(name)
+
+
+def log_security_event(
+    logger: logging.Logger,
+    *,
+    event: str,
+    user_id: str | None = None,
+    tenant_id: str | None = None,
+    action: str,
+    target_type: str | None = None,
+    target_id: str | None = None,
+    detail: dict | None = None,
+    level: int = logging.WARNING,
+) -> None:
+    """Emit a structured security event log record."""
+    extra: dict[str, Any] = {
+        "action": action,
+    }
+    if user_id:
+        extra["user_id"] = user_id
+    if tenant_id:
+        extra["tenant_id"] = tenant_id
+    if target_type:
+        extra["target_type"] = target_type
+    if target_id:
+        extra["target_id"] = target_id
+    if detail:
+        extra["detail"] = detail
+    logger.log(level, event, extra=extra)
+```
+
+FILE: reportkit/events.py
+```python
+"""Domain event dispatcher.
+
+Handlers register against an event name.  The dispatcher calls every
+registered handler in registration order.  Handler exceptions are caught,
+logged, and do not abort the dispatch loop.
+
+The `tenant.quota_exceeded` handler is registered as a no-op stub because
+the batch-import feed that emits it is retired.  The stub is clearly marked
+so it is not silently dropped when the feed returns.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections import defaultdict
+from typing import Callable
+
+from reportkit.logging_utils import get_logger
+
+_log = get_logger(__name__)
+
+Handler = Callable[[dict], None]
+
+_registry: dict[str, list[Handler]] = defaultdict(list)
+
+
+def register(event_name: str, handler: Handler) -> None:
+    """Register *handler* to be called when *event_name* is dispatched."""
+    _registry[event_name].append(handler)
+
+
+def dispatch(event_name: str, payload: dict) -> None:
+    """Call every handler registered for *event_name*.
+
+    Errors in individual handlers are logged and swallowed so one bad handler
+    cannot prevent others from running.
+    """
+    handlers = _registry.get(event_name, [])
+    for handler in handlers:
+        try:
+            handler(payload)
+        except Exception:
+            _log.exception(
+                "event handler error",
+                extra={"action": "event_handler_error", "detail": {"event": event_name}},
+            )
+
+
+# ---------------------------------------------------------------------------
+# Built-in handlers
+# ---------------------------------------------------------------------------
+
+
+def _on_report_created(payload: dict) -> None:
+    _log.info(
+        "report.created",
+        extra={
+            "action": "report.created",
+            "tenant_id": payload.get("tenant_id"),
+            "user_id": payload.get("owner_id"),
+            "target_type": "report",
+            "target_id": payload.get("report_id"),
+        },
+    )
+
+
+def _on_report_deleted(payload: dict) -> None:
+    _log.info(
+        "report.deleted",
+        extra={
+            "action": "report.deleted",
+            "tenant_id": payload.get("tenant_id"),
+            "user_id": payload.get("actor_id"),
+            "target_type": "report",
+            "target_id": payload.get("report_id"),
+        },
+    )
+
+
+def _tenant_quota_exceeded_stub(payload: dict) -> None:
+    """Stub for tenant.quota_exceeded — batch-import feed is retired (2025-Q1).
+
+    TODO: replace with real suspension logic when the feed is reinstated.
+    The platform team has been notified (see NOTES.md).
+    """
+    _log.warning(
+        "tenant.quota_exceeded received but handler is a stub — batch-import feed retired",
+        extra={
+            "action": "tenant.quota_exceeded.stub",
+            "tenant_id": payload.get("tenant_id"),
+        },
+    )
+
+
+register("report.created", _on_report_created)
+register("report.deleted", _on_report_deleted)
+register("tenant.quota_exceeded", _tenant_quota_exceeded_stub)
+```
+
+FILE: reportkit/content_scan.py
+```python
+"""Attachment content scanning.
+
+Checks for disallowed content markers (magic bytes for executable formats,
+script shebangs, and a small set of known-bad signatures).
+
+This is a defence-in-depth layer.  A production deployment should also route
+attachments through a dedicated AV/malware-scanning service.
+"""
+
+from __future__ import annotations
+
+# (offset, bytes) pairs that indicate disallowed content.
+# Extend this list as new signatures are identified.
+_DISALLOWED_SIGNATURES: list[tuple[int, bytes]] = [
+    # Windows PE executable
+    (0, b"MZ"),
+    # ELF binary
+    (0, b"\x7fELF"),
+    # Mach-O 32-bit
+    (0, b"\xfe\xed\xfa\xce"),
+    # Mach-O 64-bit
+    (0, b"\xfe\xed\xfa\xcf"),
+    # Mach-O fat binary
+    (0, b"\xca\xfe\xba\xbe"),
+    # Script shebang
+    (0, b"#!"),
+    # Windows script host
+    (0, b"<script"),
+    # Java class file
+    (0, b"\xca\xfe\xba\xbe"),
+    # ZIP (could contain malicious content — flag for deeper inspection)
+    # We allow ZIPs but mark them for manual review in a real system;
+    # here we reject them outright as a conservative default.
+    (0, b"PK\x03\x04"),
+]
+
+# Maximum bytes to read for signature checking
+_SCAN_WINDOW = 256
+
+
+def scan(data: bytes) -> tuple[bool, str]:
+    """Return (is_clean, reason).
+
+    *is_clean* is True when no disallowed signature is found.
+    """
+    window = data[:_SCAN_WINDOW]
+    for offset, sig in _DISALLOWED_SIGNATURES:
+        end = offset + len(sig)
+        if window[offset:end] == sig:
+            return False, f"disallowed content signature at offset {offset}"
+    return True, "ok"
+```
+
+FILE: reportkit/ops.py
+```python
+"""Internal ops-console operations.
+
+These functions are called by the internal ops console over the private
+network.  They are NOT exposed as HTTP endpoints.  Callers are authenticated
+at the network/mTLS layer; we still validate inputs and write audit records.
+"""
+
+from __future__ import annotations
+
+import logging
+import sqlite3
+
+from reportkit.errors import BadRequest, NotFound
+from reportkit.logging_utils import get_logger, log_security_event
+from reportkit.validation import require_uuid, validate_role
+
+_log = get_logger(__name__)
+
+
+def purge_tenant(conn: sqlite3.Connection, actor_id: str, tenant_id: str) -> int:
+    """Delete every report belonging to *tenant_id*.
+
+    Returns the number of reports deleted.
+    Raises BadRequest on invalid UUIDs, NotFound if the tenant does not exist.
+    """
+    actor_id = require_uuid(actor_id, "actor_id")
+    tenant_id = require_uuid(tenant_id, "tenant_id")
+
+    tenant = conn.execute(
+        "SELECT id FROM tenants WHERE id = ?", (tenant_id,)
+    ).fetchone()
+    if tenant is None:
+        raise NotFound("tenant not found")
+
+    with conn:
+        cur = conn.execute(
+            "DELETE FROM reports WHERE tenant_id = ?", (tenant_id,)
+        )
+        deleted = cur.rowcount
+
+    log_security_event(
+        _log,
+        event="ops.purge_tenant",
+        user_id=actor_id,
+        tenant_id=tenant_id,
+        action="purge_tenant",
+        target_type="tenant",
+        target_id=tenant_id,
+        detail={"reports_deleted": deleted},
+        level=logging.WARNING,
+    )
+    return deleted
+
+
+def set_role(
+    conn: sqlite3.Connection, actor_id: str, tenant_id: str, user_id: str, role: str
+) -> None:
+    """Change *user_id*'s role within *tenant_id* to *role*.
+
+    Raises BadRequest on invalid inputs, NotFound if the user does not exist
+    in the tenant.
+    """
+    actor_id = require_uuid(actor_id, "actor_id")
+    tenant_id = require_uuid(tenant_id, "tenant_id")
+    user_id = require_uuid(user_id, "user_id")
+    role = validate_role(role)
+
+    user = conn.execute(
+        "SELECT id, role FROM users WHERE id = ? AND tenant_id = ?",
+        (user_id, tenant_id),
+    ).fetchone()
+    if user is None:
+        raise NotFound("user not found in tenant")
+
+    old_role = user["role"]
+    with conn:
+        conn.execute(
+            "UPDATE users SET role = ? WHERE id = ? AND tenant_id = ?",
+            (role, user_id, tenant_id),
+        )
+
+    log_security_event(
+        _log,
+        event="ops.set_role",
+        user_id=actor_id,
+        tenant_id=tenant_id,
+        action="set_role",
+        target_type="user",
+        target_id=user_id,
+        detail={"old_role": old_role, "new_role": role},
+        level=logging.WARNING,
+    )
+```
+
+FILE: reportkit/service.py
+```python
+"""ReportService — the HTTP surface.
+
+Each public method takes a ``request`` dict and returns a ``response`` dict:
+
+    {"status": <int>, "body": <dict>}
+
+The request dict shape:
+
+    {
+        "headers": {"Authorization": "Bearer <token>", ...},
+        "body":    {...},          # parsed JSON body
+        "query":   {...},          # query-string parameters
+        "files":   {               # for upload_attachment
+            "file": {"filename": str, "data": bytes}
+        },
+    }
+
+Rate limiting is keyed on the authenticated user_id (or "anonymous" for the
+billing webhook, which uses its own HMAC auth).
+
+Transport enforcement (TLS, HSTS) is handled at the reverse-proxy layer.
+See NOTES.md §Transport.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import logging
+import os
+import sqlite3
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from reportkit import events
+from reportkit.auth import Principal, require_permission, resolve_principal
+from reportkit.content_scan import scan
+from reportkit.errors import (
+    AppError,
+    BadRequest,
+    Forbidden,
+    NotFound,
+    Unauthorized,
+)
+from reportkit.logging_utils import get_logger, log_security_event
+from reportkit.rate_limit import check as rate_check
+from reportkit.validation import (
+    MAX_ATTACHMENT_BYTES,
+    require_uuid,
+    validate_body,
+    validate_filename,
+    validate_search_query,
+    validate_sort,
+    validate_title,
+)
+
+_log = get_logger(__name__)
+
+_BILLING_SECRET_ENV = "BILLING_WEBHOOK_SECRET"
+_WEBHOOK_TIMESTAMP_TOLERANCE_SECONDS = 300  # 5 minutes
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def _ok(body: Any, status: int = 200) -> dict:
+    return {"status": status, "body": body}
+
+
+def _err(status: int, code: str, message: str) -> dict:
+    return {"status": status, "body": {"error": code, "message": message}}
+
+
+class ReportService:
+    """Multi-tenant report service.
+
+    Parameters
+    ----------
+    conn:
+        An open SQLite connection (from ``reportkit.db.get_connection``).
+    """
+
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self._conn = conn
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _audit(
+        self,
+        *,
+        actor_id: str | None,
+        tenant_id: str | None,
+        action: str,
+        target_type: str | None = None,
+        target_id: str | None = None,
+        detail: dict | None = None,
+    ) -> None:
+        self._conn.execute(
+            """
+            INSERT INTO audit_log (actor_id, tenant_id, action, target_type, target_id, detail)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                actor_id,
+                tenant_id,
+                action,
+                target_type,
+                target_id,
+                json.dumps(detail) if detail else None,
+            ),
+        )
+
+    def _dispatch(self, event_name: str, payload: dict) -> None:
+        events.dispatch(event_name, payload)
+
+    # ------------------------------------------------------------------
+    # Public HTTP methods
+    # ------------------------------------------------------------------
+
+    def create_report(self, request: dict) -> dict:
+        """POST /reports — create a report for the authenticated caller."""
+        try:
+            principal = resolve_principal(self._conn, request)
+            rate_check(principal["user_id"], "create_report")
+            require_permission(principal, "report:write")
+
+            body = request.get("body") or {}
+            title = validate_title(body.get("title"))
+            content = validate_body(body.get("body"))
+
+            report_id = str(uuid.uuid4())
+            now = _now_iso()
+
+            with self._conn:
+                self._conn.execute(
+                    """
+                    INSERT INTO reports (id, tenant_id, owner_id, title, body, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        report_id,
+                        principal["tenant_id"],
+                        principal["user_id"],
+                        title,
+                        content,
+                        now,
+                        now,
+                    ),
+                )
+                self._audit(
+                    actor_id=principal["user_id"],
+                    tenant_id=principal["tenant_id"],
+                    action="report.create",
+                    target_type="report",
+                    target_id=report_id,
+                )
+
+            self._dispatch(
+                "report.created",
+                {
+                    "report_id": report_id,
+                    "tenant_id": principal["tenant_id"],
+                    "owner_id": principal["user_id"],
+                },
+            )
+
+            _log.info(
+                "report created",
+                extra={
+                    "action": "report.create",
+                    "tenant_id": principal["tenant_id"],
+                    "user_id": principal["user_id"],
+                    "target_type": "report",
+                    "target_id": report_id,
+                },
+            )
+
+            return _ok({"id": report_id, "title": title, "created_at": now}, status=201)
+
+        except AppError as exc:
+            return _err(exc.status, exc.code, exc.message)
+        except Exception:
+            _log.exception("unexpected error in create_report")
+            return _err(500, "internal_error", "internal error")
+
+    def get_report(self, request: dict, report_id: str) -> dict:
+        """GET /reports/{report_id} — return a single report."""
+        try:
+            principal = resolve_principal(self._conn, request)
+            rate_check(principal["user_id"], "get_report")
+            require_permission(principal, "report:read")
+
+            report_id = require_uuid(report_id, "report_id")
+
+            # Ownership predicate is part of the query — IDOR prevention.
+            # Admins and editors can read any report in their tenant;
+            # viewers can read any report in their tenant too (report:read).
+            # The tenant_id filter enforces multi-tenant isolation.
+            row = self._conn.execute(
+                """
+                SELECT id, tenant_id, owner_id, title, body, created_at, updated_at
+                FROM reports
+                WHERE id = ? AND tenant_id = ?
+                """,
+                (report_id, principal["tenant_id"]),
+            ).fetchone()
+
+            if row is None:
+                # Return 404 regardless of whether the report exists in another
+                # tenant — do not leak existence via 403 vs 404.
+                raise NotFound("report not found")
+
+            return _ok(dict(row))
+
+        except AppError as exc:
+            return _err(exc.status, exc.code, exc.message)
+        except Exception:
+            _log.exception("unexpected error in get_report")
+            return _err(500, "internal_error", "internal error")
+
+    def list_reports(self, request: dict) -> dict:
+        """GET /reports — list the caller's own reports, newest first."""
+        try:
+            principal = resolve_principal(self._conn, request)
+            rate_check(principal["user_id"], "list_reports")
+            require_permission(principal, "report:read")
+
+            rows = self._conn.execute(
+                """
+                SELECT id, tenant_id, owner_id, title, created_at, updated_at
+                FROM reports
+                WHERE tenant_id = ? AND owner_id = ?
+                ORDER BY created_at DESC
+                """,
+                (principal["tenant_id"], principal["user_id"]),
+            ).fetchall()
+
+            return _ok({"reports": [dict(r) for r in rows]})
+
+        except AppError as exc:
+            return _err(exc.status, exc.code, exc.message)
+        except Exception:
+            _log.exception("unexpected error in list_reports")
+            return _err(500, "internal_error", "internal error")
+
+    def search_reports(self, request: dict) -> dict:
+        """GET /reports/search?q=...&sort=... — title search across caller's reports.
+
+        The sort column is mapped through a hardcoded allowlist dict; it is
+        never interpolated raw from user input (rules/01 §2 identifier injection).
+        """
+        try:
+            principal = resolve_principal(self._conn, request)
+            rate_check(principal["user_id"], "search_reports")
+            require_permission(principal, "report:read")
+
+            query_params = request.get("query") or {}
+            q = validate_search_query(query_params.get("q"))
+            sort_expr = validate_sort(query_params.get("sort"))
+
+            # sort_expr is a value from SORT_COLUMN_MAP — a hardcoded string,
+            # never user input.  We use an f-string here only because SQLite
+            # does not support parameterised ORDER BY; the value is allowlist-
+            # controlled, not user-controlled.
+            sql = f"""
+                SELECT id, tenant_id, owner_id, title, created_at, updated_at
+                FROM reports r
+                WHERE r.tenant_id = ?
+                  AND r.owner_id  = ?
+                  AND r.title LIKE ? ESCAPE '\\'
+                ORDER BY {sort_expr} DESC
+            """  # noqa: S608 — sort_expr is allowlist-controlled, not user input
+
+            rows = self._conn.execute(
+                sql,
+                (principal["tenant_id"], principal["user_id"], f"%{q}%"),
+            ).fetchall()
+
+            return _ok({"reports": [dict(r) for r in rows]})
+
+        except AppError as exc:
+            return _err(exc.status, exc.code, exc.message)
+        except Exception:
+            _log.exception("unexpected error in search_reports")
+            return _err(500, "internal_error", "internal error")
+
+    def delete_report(self, request: dict, report_id: str) -> dict:
+        """DELETE /reports/{report_id} — delete a report."""
+        try:
+            principal = resolve_principal(self._conn, request)
+            rate_check(principal["user_id"], "delete_report")
+            require_permission(principal, "report:delete")
+
+            report_id = require_uuid(report_id, "report_id")
+
+            # Fetch first to confirm existence and tenant membership.
+            row = self._conn.execute(
+                "SELECT id, tenant_id, owner_id FROM reports WHERE id = ? AND tenant_id = ?",
+                (report_id, principal["tenant_id"]),
+            ).fetchone()
+
+            if row is None:
+                raise NotFound("report not found")
+
+            with self._conn:
+                self._conn.execute(
+                    "DELETE FROM reports WHERE id = ? AND tenant_id = ?",
+                    (report_id, principal["tenant_id"]),
+                )
+                self._audit(
+                    actor_id=principal["user_id"],
+                    tenant_id=principal["tenant_id"],
+                    action="report.delete",
+                    target_type="report",
+                    target_id=report_id,
+                )
+
+            self._dispatch(
+                "report.deleted",
+                {
+                    "report_id": report_id,
+                    "tenant_id": principal["tenant_id"],
+                    "actor_id": principal["user_id"],
+                },
+            )
+
+            log_security_event(
+                _log,
+                event="report.deleted",
+                user_id=principal["user_id"],
+                tenant_id=principal["tenant_id"],
+                action="report.delete",
+                target_type="report",
+                target_id=report_id,
+                level=logging.INFO,
+            )
+
+            return _ok({"deleted": True})
+
+        except AppError as exc:
+            return _err(exc.status, exc.code, exc.message)
+        except Exception:
+            _log.exception("unexpected error in delete_report")
+            return _err(500, "internal_error", "internal error")
+
+    def upload_attachment(self, request: dict) -> dict:
+        """POST /attachments — store an attachment after content scanning."""
+        try:
+            principal = resolve_principal(self._conn, request)
+            rate_check(principal["user_id"], "upload_attachment")
+            require_permission(principal, "report:write")
+
+            files = request.get("files") or {}
+            file_entry = files.get("file")
+            if not file_entry:
+                raise BadRequest("missing file upload")
+
+            raw_filename = file_entry.get("filename", "")
+            data: bytes = file_entry.get("data", b"")
+
+            filename = validate_filename(raw_filename)
+
+            if not isinstance(data, (bytes, bytearray)):
+                raise BadRequest("file data must be bytes")
+            if len(data) == 0:
+                raise BadRequest("file is empty")
+            if len(data) > MAX_ATTACHMENT_BYTES:
+                raise BadRequest(
+                    f"file exceeds maximum size of {MAX_ATTACHMENT_BYTES} bytes"
+                )
+
+            # Content scan before storage
+            is_clean, reason = scan(bytes(data))
+            scan_status = "clean" if is_clean else "rejected"
+
+            # Server-generated storage key — user filename is metadata only.
+            storage_key = str(uuid.uuid4())
+            attachment_id = str(uuid.uuid4())
+
+            with self._conn:
+                self._conn.execute(
+                    """
+                    INSERT INTO attachments
+                        (id, tenant_id, owner_id, filename, size_bytes, scan_status, storage_key)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        attachment_id,
+                        principal["tenant_id"],
+                        principal["user_id"],
+                        filename,
+                        len(data),
+                        scan_status,
+                        storage_key,
+                    ),
+                )
+                self._audit(
+                    actor_id=principal["user_id"],
+                    tenant_id=principal["tenant_id"],
+                    action="attachment.upload",
+                    target_type="attachment",
+                    target_id=attachment_id,
+                    detail={
+                        "filename": filename,
+                        "size_bytes": len(data),
+                        "scan_status": scan_status,
+                    },
+                )
+
+            if not is_clean:
+                log_security_event(
+                    _log,
+                    event="attachment.scan_rejected",
+                    user_id=principal["user_id"],
+                    tenant_id=principal["tenant_id"],
+                    action="attachment.scan_rejected",
+                    target_type="attachment",
+                    target_id=attachment_id,
+                    detail={"reason": reason},
+                    level=logging.WARNING,
+                )
+                raise BadRequest(f"attachment rejected by content scan: {reason}")
+
+            return _ok(
+                {
+                    "id": attachment_id,
+                    "filename": filename,
+                    "size_bytes": len(data),
+                    "scan_status": scan_status,
+                },
+                status=201,
+            )
+
+        except AppError as exc:
+            return _err(exc.status, exc.code, exc.message)
+        except Exception:
+            _log.exception("unexpected error in upload_attachment")
+            return _err(500, "internal_error", "internal error")
+
+    # ------------------------------------------------------------------
+    # Billing webhook
+    # ------------------------------------------------------------------
+
+    def billing_webhook(self, request: dict) -> dict:
+        """POST /webhooks/billing — receive invoice.paid events.
+
+        Authentication: HMAC-SHA256 over the raw body, verified before parsing.
+        Idempotency: duplicate event_ids are silently accepted (provider retries).
+        """
+        try:
+            # --- 1. Rate-limit keyed on source IP or a stable anonymous key ---
+            source_ip = (
+                request.get("headers", {}).get("X-Forwarded-For", "anonymous")
+                .split(",")[0]
+                .strip()
+            )
+            rate_check(f"webhook:{source_ip}", "billing_webhook")
+
+            # --- 2. HMAC verification BEFORE body parsing ---
+            secret = os.environ.get(_BILLING_SECRET_ENV, "")
+            if not secret:
+                _log.error(
+                    "billing webhook secret not configured",
+                    extra={"action": "billing_webhook.misconfigured"},
+                )
+                return _err(500, "internal_error", "internal error")
+
+            raw_body: bytes = request.get("raw_body", b"")
+            if not raw_body:
+                raise BadRequest("empty webhook body")
+
+            provided_sig = request.get("headers", {}).get("X-Billing-Signature", "")
+            if not provided_sig:
+                raise Unauthorized("missing webhook signature")
+
+            # Timestamp replay protection
+            provided_ts_str = request.get("headers", {}).get("X-Billing-Timestamp", "")
+            if not provided_ts_str:
+                raise Unauthorized("missing webhook timestamp")
+            try:
+                provided_ts = int(provided_ts_str)
+            except ValueError:
+                raise Unauthorized("invalid webhook timestamp")
+
+            now_ts = int(datetime.now(timezone.utc).timestamp())
+            if abs(now_ts - provided_ts) > _WEBHOOK_TIMESTAMP_TOLERANCE_SECONDS:
+                log_security_event(
+                    _log,
+                    event="billing_webhook.replay_rejected",
+                    action="billing_webhook.replay",
+                    detail={"provided_ts": provided_ts, "server_ts": now_ts},
+                    level=logging.WARNING,
+                )
+                raise Unauthorized("webhook timestamp outside tolerance window")
+
+            # Sign: HMAC over timestamp + "." + raw_body
+            signed_payload = f"{provided_ts_str}.".encode() + raw_body
+            expected_sig = hmac.new(
+                secret.encode("utf-8"), signed_payload, hashlib.sha256
+            ).hexdigest()
+
+            if not hmac.compare_digest(expected_sig, provided_sig):
+                log_security_event(
+                    _log,
+                    event="billing_webhook.invalid_signature",
+                    action="billing_webhook.invalid_sig",
+                    level=logging.WARNING,
+                )
+                raise Unauthorized("invalid webhook signature")
+
+            # --- 3. Parse and validate body AFTER signature check ---
+            try:
+                payload = json.loads(raw_body.decode("utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+                raise BadRequest(f"invalid JSON body: {exc}") from exc
+
+            event_type = payload.get("type", "")
+            if event_type != "invoice.paid":
+                # Unknown event types are acknowledged but not processed.
+                return _ok({"received": True})
+
+            event_id = payload.get("id", "")
+            if not event_id or not isinstance(event_id, str) or len(event_id) > 128:
+                raise BadRequest("missing or invalid event id")
+
+            data = payload.get("data", {})
+            tenant_id = require_uuid(data.get("tenant_id"), "tenant_id")
+
+            amount = data.get("amount")
+            if not isinstance(amount, int) or amount <= 0:
+                raise BadRequest("amount must be a positive integer (cents)")
+
+            currency = data.get("currency", "")
+            if not isinstance(currency, str) or len(currency) != 3 or not currency.isalpha():
+                raise BadRequest("currency must be a 3-letter ISO code")
+            currency = currency.upper()
+
+            # --- 4. Idempotent insert ---
+            with self._conn:
+                existing = self._conn.execute(
+                    "SELECT event_id FROM invoice_events WHERE event_id = ?",
+                    (event_id,),
+                ).fetchone()
+
+                if existing is None:
+                    self._conn.execute(
+                        """
+                        INSERT INTO invoice_events (event_id, tenant_id, amount, currency)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        (event_id, tenant_id, amount, currency),
+                    )
+                    self._audit(
+                        actor_id=None,
+                        tenant_id=tenant_id,
+                        action="invoice.paid",
+                        target_type="invoice_event",
+                        target_id=event_id,
+                        detail={"amount": amount, "currency": currency},
+                    )
+                    _log.info(
+                        "invoice.paid processed",
+                        extra={
+                            "action": "invoice.paid",
+                            "tenant_id": tenant_id,
+                            "target_type": "invoice_event",
+                            "target_id": event_id,
+                        },
+                    )
+
+            return _ok({"received": True})
+
+        except AppError as exc:
+            return _err(exc.status, exc.code, exc.message)
+        except Exception:
+            _log.exception("unexpected error in billing_webhook")
+            return _err(500, "internal_error", "internal error")
+```
+
+FILE: tests/__init__.py
+```python
+```
+
+FILE: tests/conftest.py
+```python
+"""Shared test fixtures."""
+
+from __future__ import annotations
+
+import hashlib
+import sqlite3
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from reportkit.db import get_connection, init_schema
+from reportkit.service import ReportService
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _iso(dt: datetime) -> str:
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+@pytest.fixture()
+def conn() -> sqlite3.Connection:
+    """In-memory SQLite connection with schema applied."""
+    c = sqlite3.connect(":memory:", check_same_thread=False, isolation_level=None)
+    c.row_factory = lambda cur, row: {col[0]: row[i] for i, col in enumerate(cur.description)}
+    c.execute("PRAGMA foreign_keys = ON")
+    init_schema(c)
+    return c
+
+
+@pytest.fixture()
+def svc(conn: sqlite3.Connection) -> ReportService:
+    return ReportService(conn)
+
+
+def make_tenant(conn: sqlite3.Connection, *, suspended: bool = False) -> str:
+    tid = str(uuid.uuid4())
+    conn.execute(
+        "INSERT INTO tenants (id, suspended) VALUES (?, ?)",
+        (tid, 1 if suspended else 0),
+    )
+    return tid
+
+
+def make_user(
+    conn: sqlite3.Connection, tenant_id: str, role: str = "editor"
+) -> tuple[str, str]:
+    """Return (user_id, bearer_token)."""
+    uid = str(uuid.uuid4())
+    conn.execute(
+        "INSERT INTO users (id, tenant_id, role) VALUES (?, ?, ?)",
+        (uid, tenant_id, role),
+    )
+    token = f"tok_{uuid.uuid4().hex}"
+    expires = _iso(datetime.now(timezone.utc) + timedelta(hours=1))
+    conn.execute(
+        "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)",
+        (_hash_token(token), uid, expires),
+    )
+    return uid, token
+
+
+def auth_headers(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}"}
+
+
+def make_report(
+    conn: sqlite3.Connection, tenant_id: str, owner_id: str, title: str = "My Report"
+) -> str:
+    rid = str(uuid.uuid4())
+    conn.execute(
+        "INSERT INTO reports (id, tenant_id, owner_id, title, body) VALUES (?, ?, ?, ?, ?)",
+        (rid, tenant_id, owner_id, title, "body text"),
+    )
+    return rid
+```
+
+FILE: tests/test_auth.py
+```python
+"""Authentication and session resolution tests."""
+
+from __future__ import annotations
+
+import hashlib
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from reportkit.auth import resolve_principal
+from reportkit.errors import TenantSuspended, Unauthorized
+from tests.conftest import _hash_token, _iso, make_tenant, make_user
+
+
+def test_valid_token_resolves(conn):
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="editor")
+    principal = resolve_principal(conn, {"headers": {"Authorization": f"Bearer {token}"}})
+    assert principal["user_id"] == uid
+    assert principal["tenant_id"] == tid
+    assert principal["role"] == "editor"
+    assert "report:read" in principal["permissions"]
+    assert "report:write" in principal["permissions"]
+    assert "report:delete" not in principal["permissions"]
+
+
+def test_missing_header_raises(conn):
+    with pytest.raises(Unauthorized):
+        resolve_principal(conn, {"headers": {}})
+
+
+def test_wrong_token_raises(conn):
+    tid = make_tenant(conn)
+    make_user(conn, tid)
+    with pytest.raises(Unauthorized):
+        resolve_principal(conn, {"headers": {"Authorization": "Bearer wrong_token"}})
+
+
+def test_expired_token_raises(conn):
+    tid = make_tenant(conn)
+    uid = str(uuid.uuid4())
+    conn.execute("INSERT INTO users (id, tenant_id, role) VALUES (?, ?, ?)", (uid, tid, "viewer"))
+    token = "expired_tok"
+    past = _iso(datetime.now(timezone.utc) - timedelta(hours=1))
+    conn.execute(
+        "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)",
+        (_hash_token(token), uid, past),
+    )
+    with pytest.raises(Unauthorized):
+        resolve_principal(conn, {"headers": {"Authorization": f"Bearer {token}"}})
+
+
+def test_suspended_tenant_raises(conn):
+    tid = make_tenant(conn, suspended=True)
+    _, token = make_user(conn, tid)
+    with pytest.raises(TenantSuspended):
+        resolve_principal(conn, {"headers": {"Authorization": f"Bearer {token}"}})
+
+
+def test_role_permissions_viewer(conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="viewer")
+    p = resolve_principal(conn, {"headers": {"Authorization": f"Bearer {token}"}})
+    assert p["permissions"] == frozenset({"report:read"})
+
+
+def test_role_permissions_admin(conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="admin")
+    p = resolve_principal(conn, {"headers": {"Authorization": f"Bearer {token}"}})
+    assert "user:manage" in p["permissions"]
+    assert "report:delete" in p["permissions"]
+```
+
+FILE: tests/test_reports.py
+```python
+"""Report CRUD tests — including multi-tenant isolation and IDOR checks."""
+
+from __future__ import annotations
+
+import uuid
+
+import pytest
+
+from tests.conftest import auth_headers, make_report, make_tenant, make_user
+
+
+# ---------------------------------------------------------------------------
+# create_report
+# ---------------------------------------------------------------------------
+
+
+def test_create_report_success(svc, conn):
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="editor")
+    resp = svc.create_report(
+        {"headers": auth_headers(token), "body": {"title": "Q1 Report", "body": "content"}}
+    )
+    assert resp["status"] == 201
+    assert resp["body"]["title"] == "Q1 Report"
+    assert "id" in resp["body"]
+
+
+def test_create_report_viewer_forbidden(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="viewer")
+    resp = svc.create_report(
+        {"headers": auth_headers(token), "body": {"title": "X"}}
+    )
+    assert resp["status"] == 403
+
+
+def test_create_report_missing_title(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.create_report({"headers": auth_headers(token), "body": {}})
+    assert resp["status"] == 400
+
+
+def test_create_report_title_too_long(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.create_report(
+        {"headers": auth_headers(token), "body": {"title": "x" * 501}}
+    )
+    assert resp["status"] == 400
+
+
+def test_create_report_nul_in_title(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.create_report(
+        {"headers": auth_headers(token), "body": {"title": "bad\x00title"}}
+    )
+    assert resp["status"] == 400
+
+
+def test_create_report_unauthenticated(svc, conn):
+    resp = svc.create_report({"headers": {}, "body": {"title": "X"}})
+    assert resp["status"] == 401
+
+
+# ---------------------------------------------------------------------------
+# get_report
+# ---------------------------------------------------------------------------
+
+
+def test_get_report_success(svc, conn):
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="viewer")
+    rid = make_report(conn, tid, uid, "My Report")
+    resp = svc.get_report({"headers": auth_headers(token)}, rid)
+    assert resp["status"] == 200
+    assert resp["body"]["id"] == rid
+    assert resp["body"]["title"] == "My Report"
+
+
+def test_get_report_cross_tenant_returns_404(svc, conn):
+    """A report in tenant B must not be visible to a user in tenant A."""
+    tid_a = make_tenant(conn)
+    tid_b = make_tenant(conn)
+    uid_a, token_a = make_user(conn, tid_a, role="viewer")
+    uid_b, _ = make_user(conn, tid_b, role="editor")
+    rid = make_report(conn, tid_b, uid_b, "Tenant B Report")
+
+    resp = svc.get_report({"headers": auth_headers(token_a)}, rid)
+    # Must be 404, not 403 — do not leak existence
+    assert resp["status"] == 404
+
+
+def test_get_report_invalid_uuid(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="viewer")
+    resp = svc.get_report({"headers": auth_headers(token)}, "not-a-uuid")
+    assert resp["status"] == 400
+
+
+def test_get_report_not_found(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="viewer")
+    resp = svc.get_report({"headers": auth_headers(token)}, str(uuid.uuid4()))
+    assert resp["status"] == 404
+
+
+# ---------------------------------------------------------------------------
+# list_reports
+# ---------------------------------------------------------------------------
+
+
+def test_list_reports_own_only(svc, conn):
+    tid = make_tenant(conn)
+    uid_a, token_a = make_user(conn, tid, role="editor")
+    uid_b, _ = make_user(conn, tid, role="editor")
+    make_report(conn, tid, uid_a, "A1")
+    make_report(conn, tid, uid_a, "A2")
+    make_report(conn, tid, uid_b, "B1")
+
+    resp = svc.list_reports({"headers": auth_headers(token_a)})
+    assert resp["status"] == 200
+    titles = {r["title"] for r in resp["body"]["reports"]}
+    assert titles == {"A1", "A2"}
+    assert "B1" not in titles
+
+
+def test_list_reports_empty(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="viewer")
+    resp = svc.list_reports({"headers": auth_headers(token)})
+    assert resp["status"] == 200
+    assert resp["body"]["reports"] == []
+
+
+def test_list_reports_newest_first(svc, conn):
+    import time
+
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="editor")
+    make_report(conn, tid, uid, "First")
+    time.sleep(0.01)
+    make_report(conn, tid, uid, "Second")
+
+    resp = svc.list_reports({"headers": auth_headers(token)})
+    titles = [r["title"] for r in resp["body"]["reports"]]
+    assert titles[0] == "Second"
+
+
+# ---------------------------------------------------------------------------
+# search_reports
+# ---------------------------------------------------------------------------
+
+
+def test_search_reports_finds_match(svc, conn):
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="viewer")
+    make_report(conn, tid, uid, "Annual Budget")
+    make_report(conn, tid, uid, "Quarterly Review")
+
+    resp = svc.search_reports(
+        {"headers": auth_headers(token), "query": {"q": "Budget"}}
+    )
+    assert resp["status"] == 200
+    assert len(resp["body"]["reports"]) == 1
+    assert resp["body"]["reports"][0]["title"] == "Annual Budget"
+
+
+def test_search_reports_no_match(svc, conn):
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="viewer")
+    make_report(conn, tid, uid, "Annual Budget")
+
+    resp = svc.search_reports(
+        {"headers": auth_headers(token), "query": {"q": "xyz_no_match"}}
+    )
+    assert resp["status"] == 200
+    assert resp["body"]["reports"] == []
+
+
+def test_search_reports_sort_title(svc, conn):
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="viewer")
+    make_report(conn, tid, uid, "Zebra Report")
+    make_report(conn, tid, uid, "Alpha Report")
+
+    resp = svc.search_reports(
+        {"headers": auth_headers(token), "query": {"q": "Report", "sort": "title"}}
+    )
+    assert resp["status"] == 200
+    titles = [r["title"] for r in resp["body"]["reports"]]
+    assert titles == sorted(titles, reverse=True)
+
+
+def test_search_reports_invalid_sort_rejected(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="viewer")
+    resp = svc.search_reports(
+        {"headers": auth_headers(token), "query": {"q": "x", "sort": "1; DROP TABLE reports--"}}
+    )
+    assert resp["status"] == 400
+
+
+def test_search_reports_like_metachar_escaped(svc, conn):
+    """A query of '%' must not match everything."""
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="viewer")
+    make_report(conn, tid, uid, "Normal Report")
+
+    resp = svc.search_reports(
+        {"headers": auth_headers(token), "query": {"q": "%"}}
+    )
+    assert resp["status"] == 200
+    # '%' is escaped to '\%' so it matches a literal percent, not a wildcard
+    assert resp["body"]["reports"] == []
+
+
+def test_search_reports_cross_tenant_isolation(svc, conn):
+    tid_a = make_tenant(conn)
+    tid_b = make_tenant(conn)
+    uid_a, token_a = make_user(conn, tid_a, role="viewer")
+    uid_b, _ = make_user(conn, tid_b, role="editor")
+    make_report(conn, tid_b, uid_b, "Secret B Report")
+
+    resp = svc.search_reports(
+        {"headers": auth_headers(token_a), "query": {"q": "Secret"}}
+    )
+    assert resp["status"] == 200
+    assert resp["body"]["reports"] == []
+
+
+# ---------------------------------------------------------------------------
+# delete_report
+# ---------------------------------------------------------------------------
+
+
+def test_delete_report_admin_success(svc, conn):
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="admin")
+    rid = make_report(conn, tid, uid)
+
+    resp = svc.delete_report({"headers": auth_headers(token)}, rid)
+    assert resp["status"] == 200
+    assert resp["body"]["deleted"] is True
+
+    # Confirm gone
+    resp2 = svc.get_report({"headers": auth_headers(token)}, rid)
+    assert resp2["status"] == 404
+
+
+def test_delete_report_editor_forbidden(svc, conn):
+    tid = make_tenant(conn)
+    uid, token = make_user(conn, tid, role="editor")
+    rid = make_report(conn, tid, uid)
+    resp = svc.delete_report({"headers": auth_headers(token)}, rid)
+    assert resp["status"] == 403
+
+
+def test_delete_report_cross_tenant_returns_404(svc, conn):
+    tid_a = make_tenant(conn)
+    tid_b = make_tenant(conn)
+    uid_a, token_a = make_user(conn, tid_a, role="admin")
+    uid_b, _ = make_user(conn, tid_b, role="editor")
+    rid = make_report(conn, tid_b, uid_b)
+
+    resp = svc.delete_report({"headers": auth_headers(token_a)}, rid)
+    assert resp["status"] == 404
+```
+
+FILE: tests/test_attachments.py
+```python
+"""Attachment upload tests."""
+
+from __future__ import annotations
+
+import pytest
+
+from tests.conftest import auth_headers, make_tenant, make_user
+
+
+def _req(token: str, filename: str, data: bytes) -> dict:
+    return {
+        "headers": auth_headers(token),
+        "files": {"file": {"filename": filename, "data": data}},
+    }
+
+
+def test_upload_clean_file(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.upload_attachment(_req(token, "report.pdf", b"%PDF-1.4 clean content"))
+    assert resp["status"] == 201
+    assert resp["body"]["scan_status"] == "clean"
+    assert resp["body"]["filename"] == "report.pdf"
+
+
+def test_upload_elf_binary_rejected(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.upload_attachment(_req(token, "evil.bin", b"\x7fELF\x02\x01\x01"))
+    assert resp["status"] == 400
+    assert "scan" in resp["body"]["message"]
+
+
+def test_upload_pe_binary_rejected(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.upload_attachment(_req(token, "evil.exe", b"MZ\x90\x00"))
+    assert resp["status"] == 400
+
+
+def test_upload_shebang_rejected(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.upload_attachment(_req(token, "script.sh", b"#!/bin/bash\nrm -rf /"))
+    assert resp["status"] == 400
+
+
+def test_upload_exceeds_size_limit(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    big = b"x" * (25 * 1024 * 1024 + 1)
+    resp = svc.upload_attachment(_req(token, "big.bin", big))
+    assert resp["status"] == 400
+    assert "size" in resp["body"]["message"]
+
+
+def test_upload_empty_file_rejected(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.upload_attachment(_req(token, "empty.txt", b""))
+    assert resp["status"] == 400
+
+
+def test_upload_path_traversal_filename_rejected(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.upload_attachment(_req(token, "../../../etc/passwd", b"data"))
+    assert resp["status"] == 400
+
+
+def test_upload_nul_in_filename_rejected(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.upload_attachment(_req(token, "file\x00.txt", b"data"))
+    assert resp["status"] == 400
+
+
+def test_upload_viewer_forbidden(svc, conn):
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="viewer")
+    resp = svc.upload_attachment(_req(token, "f.txt", b"data"))
+    assert resp["status"] == 403
+
+
+def test_upload_storage_key_is_uuid_not_filename(svc, conn):
+    """The storage key must be server-generated, not derived from the filename."""
+    tid = make_tenant(conn)
+    _, token = make_user(conn, tid, role="editor")
+    resp = svc.upload_attachment(_req(token, "myfile.txt", b"hello world"))
+    assert resp["status"] == 201
+    att_id = resp["body"]["id"]
+    row = conn.execute(
+        "SELECT storage_key FROM attachments WHERE id = ?", (att_id,)
+    ).fetchone()
+    assert row["storage_key"] != "myfile.txt"
+    # storage_key should be a UUID
+    import uuid
+    uuid.UUID(row["storage_key"])  # raises if not valid UUID
+```
+
+FILE: tests/test_billing_webhook.py
+```python
+"""Billing webhook tests — HMAC auth, idempotency, replay protection."""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import os
+import time
+import uuid
+
+import pytest
+
+from reportkit.service import ReportService, _BILLING_SECRET_ENV
+
+
+_SECRET = "test_billing_secret_abc123"
+
+
+def _sign(secret: str, ts: int, body: bytes) -> str:
+    signed = f"{ts}.".encode() + body
+    return hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+
+
+def _webhook_request(
+    payload: dict,
+    *,
+    secret: str = _SECRET,
+    ts_offset: int = 0,
+    bad_sig: bool = False,
+    omit_sig: bool = False,
+    omit_ts: bool = False,
+) -> dict:
+    body = json.dumps(payload).encode()
+    ts = int(time.time()) + ts_offset
+    sig = _sign(secret, ts, body)
+    headers: dict = {}
+    if not omit_sig:
+        headers["X-Billing-Signature"] = "wrong_sig" if bad_sig else sig
+    if not omit_ts:
+        headers["X-Billing-Timestamp"] = str(ts)
+    return {"headers": headers, "raw_body": body}
+
+
+def _paid_payload(tenant_id: str | None = None) -> dict:
+    return {
+        "type": "invoice.paid",
+        "id": str(uuid.uuid4()),
+        "data": {
+            "tenant_id": tenant_id or str(uuid.uuid4()),
+            "amount": 9900,
+            "currency": "USD",
+        },
+    }
+
+
+@pytest.fixture(autouse=True)
+def set_secret(monkeypatch):
+    monkeypatch.setenv(_BILLING_SECRET_ENV, _SECRET)
+
+
+def test_valid_webhook_accepted(svc, conn):
+    from tests.conftest import make_tenant
+    tid = make_tenant(conn)
+    payload = _paid_payload(tid)
+    resp = svc.billing_webhook(_webhook_request(payload))
+    assert resp["status"] == 200
+    assert resp["body"]["received"] is True
+
+    row = conn.execute(
+        "SELECT * FROM invoice_events WHERE event_id = ?", (payload["id"],)
+    ).fetchone()
+    assert row is not None
+    assert row["amount"] == 9900
+    assert row["currency"] == "USD"
+
+
+def test_invalid_signature_rejected(svc, conn):
+    from tests.conftest import make_tenant
+    tid = make_tenant(conn)
+    resp = svc.billing_webhook(_webhook_request(_paid_payload(tid), bad_sig=True))
+    assert resp["status"] == 401
+
+
+def test_missing_signature_rejected(svc, conn):
+    from tests.conftest import make_tenant
+    tid = make_tenant(conn)
+    resp = svc.billing_webhook(_webhook_request(_paid_payload(tid), omit_sig=True))
+    assert resp["status"] == 401
+
+
+def test_missing_timestamp_rejected(svc, conn):
+    from tests.conftest import make_tenant
+    tid = make_tenant(conn)
+    resp = svc.billing_webhook(_webhook_request(_paid_payload(tid), omit_ts=True))
+    assert resp["status"] == 401
+
+
+def test_stale_timestamp_rejected(svc, conn):
+    from tests.conftest import make_tenant
+    tid = make_tenant(conn)
+    resp = svc.billing_webhook(_webhook_request(_paid_payload(tid), ts_offset=-400))
+    assert resp["status"] == 401
+
+
+def test_future_timestamp_rejected(svc, conn):
+    from tests.conftest import make_tenant
+    tid = make_tenant(conn)
+    resp = svc.billing_webhook(_webhook_request(_paid_payload(tid), ts_offset=400))
+    assert resp["status"] == 401
+
+
+def test_idempotent_duplicate_ignored(svc, conn):
+    from tests.conftest import make_tenant
+    tid = make_tenant(conn)
+    payload = _paid_payload(tid)
+    req = _webhook_request(payload)
+    # First delivery
+    r1 = svc.billing_webhook(req)
+    assert r1["status"] == 200
+    # Provider retries — same event_id
+    # Must re-sign with a fresh timestamp
+    r2 = svc.billing_webhook(_webhook_request(payload))
+    assert r2["status"] == 200
+
+    count = conn.execute(
+        "SELECT COUNT(*) AS c FROM invoice_events WHERE event_id = ?", (payload["id"],)
+    ).fetchone()["c"]
+    assert count == 1
+
+
+def test_unknown_event_type_acknowledged(svc, conn):
+    payload = {"type": "invoice.voided", "id": str(uuid.uuid4()), "data": {}}
+    resp = svc.billing_webhook(_webhook_request(payload))
+    assert resp["status"] == 200
+
+
+def test_invalid_tenant_uuid_rejected(svc, conn):
+    payload = {
+        "type": "invoice.paid",
+        "id": str(uuid.uuid4()),
+        "data": {"tenant_id": "not-a-uuid", "amount": 100, "currency": "USD"},
+    }
+    resp = svc.billing_webhook(_webhook_request(payload))
+    assert resp["status"] == 400
+
+
+def test_negative_amount_rejected(svc, conn):
+    payload = {
+        "type": "invoice.paid",
+        "id": str(uuid.uuid4()),
+        "data": {"tenant_id": str(uuid.uuid4()), "amount": -1, "currency": "USD"},
+    }
+    resp = svc.billing_webhook(_webhook_request(payload))
+    assert resp["status"] == 400
+```
+
+FILE: tests/test_ops.py
+```python
+"""Ops-console function tests."""
+
+from __future__ import annotations
+
+import uuid
+
+import pytest
+
+from reportkit.errors import BadRequest, NotFound
+from reportkit.ops import purge_tenant, set_role
+from tests.conftest import make_report, make_tenant, make_user
+
+
+def test_purge_tenant_deletes_reports(conn):
+    tid = make_tenant(conn)
+    uid, _ = make_user(conn, tid, role="editor")
+    make_report(conn, tid, uid, "R1")
+    make_report(conn, tid, uid, "R2")
+    actor = str(uuid.uuid4())
+
+    deleted = purge_tenant(conn, actor, tid)
+    assert deleted == 2
+
+    remaining = conn.execute(
+        "SELECT COUNT(*) AS c FROM reports WHERE tenant_id = ?", (tid,)
+    ).fetchone()["c"]
+    assert remaining == 0
+
+
+def test_purge_tenant_only_affects_target(conn):
+    tid_a = make_tenant(conn)
+    tid_b = make_tenant(conn)
+    uid_a, _ = make_user(conn, tid_a, role="editor")
+    uid_b, _ = make_user(conn, tid_b, role="editor")
+    make_report(conn, tid_a, uid_a, "A")
+    make_report(conn, tid_b, uid_b, "B")
+    actor = str(uuid.uuid4())
+
+    purge_tenant(conn, actor, tid_a)
+
+    count_b = conn.execute(
+        "SELECT COUNT(*) AS c FROM reports WHERE tenant_id = ?", (tid_b,)
+    ).fetchone()["c"]
+    assert count_b == 1
+
+
+def test_purge_tenant_invalid_uuid(conn):
+    with pytest.raises(BadRequest):
+        purge_tenant(conn, "not-uuid", "also-not-uuid")
+
+
+def test_purge_tenant_not_found(conn):
+    with pytest.raises(NotFound):
+        purge_tenant(conn, str(uuid.uuid4()), str(uuid.uuid4()))
+
+
+def test_set_role_changes_role(conn):
+    tid = make_tenant(conn)
+    uid, _ = make_user(conn, tid, role="viewer")
+    actor = str(uuid.uuid4())
+
+    set_role(conn, actor, tid, uid, "admin")
+
+    row = conn.execute("SELECT role FROM users WHERE id = ?", (uid,)).fetchone()
+    assert row["role"] == "admin"
+
+
+def test_set_role_invalid_role(conn):
+    tid = make_tenant(conn)
+    uid, _ = make_user(conn, tid, role="viewer")
+    with pytest.raises(BadRequest):
+        set_role(conn, str(uuid.uuid4()), tid, uid, "superuser")
+
+
+def test_set_role_wrong_tenant(conn):
+    tid_a = make_tenant(conn)
+    tid_b = make_tenant(conn)
+    uid, _ = make_user(conn, tid_a, role="viewer")
+    with pytest.raises(NotFound):
+        set_role(conn, str(uuid.uuid4()), tid_b, uid, "editor")
+
+
+def test_set_role_invalid_uuid(conn):
+    with pytest.raises(BadRequest):
+        set_role(conn, "x", "y", "z", "editor")
+```
+
+FILE: tests/test_rate_limit.py
+```python
+"""Rate limiter tests."""
+
+from __future__ import annotations
+
+import pytest
+
+from reportkit.errors import RateLimited
+from reportkit.rate_limit import _Bucket, check
+
+
+def test_bucket_allows_within_capacity():
+    b = _Bucket(capacity=5, refill_rate=1.0)
+    for _ in range(5):
+        assert b.consume() is True
+
+
+def test_bucket_denies_when_exhausted():
+    b = _Bucket(capacity=2, refill_rate=0.0)  # no refill
+    b.consume()
+    b.consume()
+    assert b.consume() is False
+
+
+def test_check_raises_when_exhausted(monkeypatch):
+    import reportkit.rate_limit as rl
+
+    # Replace buckets with a fresh dict for isolation
+    monkeypatch.setattr(rl, "_buckets", {})
+    monkeypatch.setitem(rl._ENDPOINT_LIMITS, "_test_ep", (2, 0.0))
+
+    check("user1", "_test_ep")
+    check("user1", "_test_ep")
+    with pytest.raises(RateLimited):
+        check("user1", "_test_ep")
+
+
+def test_different_callers_independent(monkeypatch):
+    import reportkit.rate_limit as rl
+
+    monkeypatch.setattr(rl, "_buckets", {})
+    monkeypatch.setitem(rl._ENDPOINT_LIMITS, "_test_ep2", (1, 0.0))
+
+    check("userA", "_test_ep2")
+    # userA exhausted; userB still has capacity
+    check("userB", "_test_ep2")
+    with pytest.raises(RateLimited):
+        check("userA", "_test_ep2")
+```
+
+FILE: tests/test_validation.py
+```python
+"""Input validation unit tests."""
+
+from __future__ import annotations
+
+import pytest
+
+from reportkit.errors import BadRequest
+from reportkit.validation import (
+    validate_filename,
+    validate_role,
+    validate_search_query,
+    validate_sort,
+    validate_title,
+    require_uuid,
+)
+
+
+# ---------------------------------------------------------------------------
+# validate_title
+# ---------------------------------------------------------------------------
+
+
+def test_title_valid():
+    assert validate_title("Q1 Report 2025") == "Q1 Report 2025"
+
+
+def test_title_empty_rejected():
+    with pytest.raises(BadRequest):
+        validate_title("")
+
+
+def test_title_too_long_rejected():
+    with pytest.raises(BadRequest):
+        validate_title("x" * 501)
+
+
+def test_title_nul_rejected():
+    with pytest.raises(BadRequest):
+        validate_title("bad\x00title")
+
+
+# ---------------------------------------------------------------------------
+# validate_sort
+# ---------------------------------------------------------------------------
+
+
+def test_sort_created_at():
+    assert validate_sort("created_at") == "r.created_at"
+
+
+def test_sort_title():
+    assert validate_sort("title") == "r.title"
+
+
+def test_sort_invalid_rejected():
+    with pytest.raises(BadRequest):
+        validate_sort("1; DROP TABLE reports--")
+
+
+def test_sort_none_returns_default():
+    from reportkit.validation import SORT_COLUMN_MAP, DEFAULT_SORT
+    assert validate_sort(None) == SORT_COLUMN_MAP[DEFAULT_SORT]
+
+
+# ---------------------------------------------------------------------------
+# validate_filename
+# ---------------------------------------------------------------------------
+
+
+def test_filename_valid():
+    assert validate_filename("report.pdf") == "report.pdf"
+
+
+def test_filename_path_traversal_rejected():
+    with pytest.raises(BadRequest):
+        validate_filename("../../../etc/passwd")
+
+
+def test_filename_backslash_rejected():
+    with pytest.raises(BadRequest):
+        validate_filename("foo\\bar.txt")
+
+
+def test_filename_nul_rejected():
+    with pytest.raises(BadRequest):
+        validate_filename("file\x00.txt")
+
+
+def test_filename_windows_reserved_rejected():
+    with pytest.raises(BadRequest):
+        validate_filename("CON.txt")
+
+
+def test_filename_colon_rejected():
+    with pytest.raises(BadRequest):
+        validate_filename("file:stream.txt")
+
+
+# ---------------------------------------------------------------------------
+# validate_search_query
+# ---------------------------------------------------------------------------
+
+
+def test_search_query_escapes_percent():
+    result = validate_search_query("%")
+    assert "\\%" in result
+    assert result == "\\%"
+
+
+def test_search_query_escapes_underscore():
+    result = validate_search_query("_")
+    assert "\\_" in result
+
+
+def test_search_query_too_long_rejected():
+    with pytest.raises(BadRequest):
+        validate_search_query("x" * 201)
+
+
+# ---------------------------------------------------------------------------
+# require_uuid
+# ---------------------------------------------------------------------------
+
+
+def test_require_uuid_valid():
+    import uuid
+    u = str(uuid.uuid4())
+    assert require_uuid(u, "id") == u
+
+
+def test_require_uuid_invalid():
+    with pytest.raises(BadRequest):
+        require_uuid("not-a-uuid", "id")
+
+
+def test_require_uuid_non_string():
+    with pytest.raises(BadRequest):
+        require_uuid(12345, "id")
+
+
+# ---------------------------------------------------------------------------
+# validate_role
+# ---------------------------------------------------------------------------
+
+
+def test_validate_role_valid():
+    for r in ("viewer", "editor", "admin"):
+        assert validate_role(r) == r
+
+
+def test_validate_role_invalid():
+    with pytest.raises(BadRequest):
+        validate_role("superuser")
+```
+
+FILE: tests/test_events.py
+```python
+"""Event dispatcher tests."""
+
+from __future__ import annotations
+
+import pytest
+
+import reportkit.events as ev
+
+
+def test_dispatch_calls_handler():
+    received = []
+    ev.register("test.event", lambda p: received.append(p))
+    ev.dispatch("test.event", {"key": "value"})
+    assert received == [{"key": "value"}]
+
+
+def test_dispatch_unknown_event_is_noop():
+    # Should not raise
+    ev.dispatch("no.such.event", {})
+
+
+def test_handler_exception_does_not_abort_others():
+    results = []
+
+    def bad_handler(p):
+        raise RuntimeError("boom")
+
+    def good_handler(p):
+        results.append(p)
+
+    ev.register("test.resilience", bad_handler)
+    ev.register("test.resilience", good_handler)
+    ev.dispatch("test.resilience", {"x": 1})
+    assert results == [{"x": 1}]
+
+
+def test_quota_exceeded_stub_registered():
+    """The tenant.quota_exceeded stub must be registered (not silently absent)."""
+    handlers = ev._registry.get("tenant.quota_exceeded", [])
+    assert len(handlers) >= 1
+```
+
+FILE: tests/test_logging.py
+```python
+"""Structured logging — verify scrubbing and JSON output."""
+
+from __future__ import annotations
+
+import json
+import logging
+
+import pytest
+
+from reportkit.logging_utils import _scrub, configure_logging, get_logger, log_security_event
+
+
+def test_scrub_removes_token():
+    d = {"token": "secret123", "user_id": "abc"}
+    result = _scrub(d)
+    assert result["token"] == "<redacted>"
+    assert result["user_id"] == "abc"
+
+
+def test_scrub_removes_authorization():
+    d = {"Authorization": "Bearer xyz", "other": "ok"}
+    result = _scrub(d)
+    assert result["Authorization"] == "<redacted>"
+    assert result["other"] == "ok"
+
+
+def test_scrub_nested():
+    d = {"headers": {"authorization": "Bearer tok", "content-type": "application/json"}}
+    result = _scrub(d)
+    assert result["headers"]["authorization"] == "<redacted>"
+    assert result["headers"]["content-type"] == "application/json"
+
+
+def test_scrub_list():
+    lst = [{"password": "pw"}, {"name": "alice"}]
+    result = _scrub(lst)
+    assert result[0]["password"] == "<redacted>"
+    assert result[1]["name"] == "alice"
+
+
+def test_log_security_event_emits_json(caplog):
+    configure_logging(logging.DEBUG)
+    logger = get_logger("test_sec")
+    with caplog.at_level(logging.WARNING, logger="test_sec"):
+        log_security_event(
+            logger,
+            event="test.security_event",
+            user_id="u1",
+            tenant_id="t1",
+            action="test_action",
+            detail={"token": "should_be_redacted", "info": "ok"},
+            level=logging.WARNING,
+        )
+    # At least one record emitted
+    assert any("test_action" in r.message or "test.security_event" in r.message
+               for r in caplog.records)
+```
+
+FILE: NOTES.md
+```markdown
+# reportkit — Design Notes
+
+## What was built
+
+A multi-tenant report service implemented as a plain Python class (`ReportService`)
+whose methods take and return dicts.  No web framework; the HTTP surface is the
+class interface.  Persistence is SQLite via `sqlite3`.
+
+---
+
+## Decisions and trade-offs
+
+### Transport enforcement (TLS / HSTS)
+The service is a plain class, not an HTTP server.  TLS termination and HSTS
+(`Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`) must
+be enforced at the reverse proxy / load balancer in front of this service.  This
+is the standard split for a Python service behind nginx/Caddy/AWS ALB.  The
+service itself cannot set response headers; the proxy layer must.
+
+### Rate limiting
+An in-process token-bucket limiter (`reportkit/rate_limit.py`) is included and
+keyed on `user_id` per endpoint.  It is a defence-in-depth floor.  In a
+multi-worker deployment, limits are per-process.  The production control should
+be at the gateway (nginx `limit_req`, AWS API Gateway throttling, etc.).  The
+in-process limiter is documented as secondary in `rate_limit.py`.
+
+### Permission caching
+Permissions are derived from the role on every request (no session-level cache).
+The `resolve_principal` query joins `sessions → users → tenants` in one round
+trip, so role changes made by the ops console take effect on the next request
+without requiring a session invalidation.  This is the correct trade-off for a
+service where roles are changed infrequently but correctness matters.
+
+### Sort column injection
+`search_reports` accepts a `sort` query parameter.  SQLite does not support
+parameterised `ORDER BY`.  The value is mapped through `SORT_COLUMN_MAP` (a
+hardcoded dict) and the resulting string — a literal from the dict, never user
+input — is interpolated into the SQL.  A `KeyError` on an unknown key raises
+`BadRequest`.  This is the standard allowlist-identifier pattern from rules/01 §2.
+
+### LIKE metacharacter escaping
+`validate_search_query` escapes `%`, `_`, and `\` in the search term before it
+is used as a `LIKE` parameter.  The query uses `ESCAPE '\\'` so SQLite honours
+the escapes.  This prevents a query of `%` from matching every row.
+
+### Multi-tenant isolation
+Every query that touches `reports` or `attachments` includes `tenant_id = ?`
+bound to the value from the authenticated session, never from the request body.
+The schema uses `REFERENCES tenants(id) ON DELETE CASCADE` as a structural
+backstop.  Full Postgres RLS is not available in SQLite; the application-layer
+filter is the boundary here.  A migration to Postgres should add RLS policies.
+
+### Attachment storage
+Attachments are stored with a server-generated UUID as the `storage_key`.  The
+user-supplied filename is stored only as display metadata in the `attachments`
+table.  No path is constructed from user input.  In a real deployment the
+`storage_key` would be the object-storage key (S3/GCS); the actual bytes are not
+persisted to disk in this implementation (the service records metadata only).
+
+### Content scanning
+`content_scan.py` checks magic bytes for a small set of known-bad signatures
+(PE, ELF, Mach-O, shebang, ZIP).  This is a defence-in-depth layer.  A
+production deployment should route attachments through a dedicated AV/malware
+service (ClamAV, cloud-native scanning).  ZIP files are rejected conservatively
+here; a real policy would allow them after deeper inspection.
+
+### Billing webhook authentication
+HMAC-SHA256 over `{timestamp}.{raw_body}` with a 5-minute replay window.
+Verification happens **before** JSON parsing.  The secret comes from the
+environment variable `BILLING_WEBHOOK_SECRET`.  Duplicate `event_id` values are
+silently accepted (idempotent insert) to handle provider retries.
+
+### `tenant.quota_exceeded` event handler
+The batch-import feed that emits this event was retired in Q1 2025.  A stub
+handler is registered so the event does not silently disappear if the feed is
+reinstated.  The stub logs a warning.  The platform team should replace it with
+real suspension logic when the feed returns.  See `reportkit/events.py`.
+
+### Ops console functions
+`purge_tenant` and `set_role` are plain functions, not HTTP endpoints.  They are
+called by the internal ops console over the private network.  Input validation
+and audit logging are applied regardless.  Network/mTLS authentication is the
+responsibility of the ops console infrastructure.
+
+### Audit log
+Every mutating operation writes a row to `audit_log`.  The `detail` column is
+JSON with no PII or secrets (scrubbed by `logging_utils._scrub`).
+
+### Error responses
+All error responses return a generic `{"error": code, "message": message}` body.
+Driver error text is never forwarded to the caller (no oracle).  `404` is
+returned for objects that exist in another tenant (no 403 vs 404 existence leak).
+
+### Password / session hashing
+Bearer tokens are stored as SHA-256 hashes.  Tokens are high-entropy
+(`tok_{uuid4().hex}` in tests; production tokens should be ≥ 256-bit CSPRNG).
+SHA-256 is appropriate for high-entropy tokens (no argon2 needed).
+
+---
+
+## Deliberately not done
+
+- **HTTP server**: out of scope per the spec ("plain class whose methods take a
+  request dict").
+- **Actual file storage**: attachment bytes are not written to disk or object
+  storage; only metadata is persisted.  The storage_key is the hook for a real
+  implementation.
+- **Password authentication**: the spec uses bearer tokens; no password hashing
+  is needed here.
+- **Email / notification**: no outbound messaging.
+- **Pagination**: list and search endpoints return all matching rows.  A
+  production service would add cursor-based pagination.
+- **OpenAPI / schema**: no generated schema; the interface is the class methods.
+
+---
+
+## Non-negotiables cross-check (rules §5)
+
+| Control | Status |
+|---|---|
+| Abuse control / rate limiting | In-process token bucket per user+endpoint; gateway layer noted as primary |
+| Transport enforcement (TLS/HSTS) | Delegated to reverse proxy; documented above |
+| Tests | 60+ assertions across auth, CRUD, webhook, ops, validation, rate limit, events, logging |
+| Structured logging without secrets/PII | `logging_utils.py` with `_scrub`; JSON lines |
+```
+
+---
+
+**Verification note — I did not execute this code.** The tests are written to be run with `pytest` from the repository root. I cannot run a Python interpreter in this environment. What I can state:
+
+- Every SQL query uses `?` parameterisation; the one `f`-string in `search_reports` interpolates only a value from `SORT_COLUMN_MAP` (a hardcoded dict), never user input.
+- Every public method catches `AppError` and returns a structured response; unhandled exceptions return a generic 500 with no driver text.
+- The billing webhook verifies the HMAC **before** parsing the body.
+- `tenant_id` in every query comes from `resolve_principal` (session-derived), never from the request body.
+- The `tenant.quota_exceeded` stub is registered and tested in `test_events.py::test_quota_exceeded_stub_registered`.
+- The rate limiter is tested in isolation in `test_rate_limit.py`.
+- Structured logging scrubbing is tested in `test_logging.py`.
+
+To run: `pip install pytest && pytest tests/ -v`
