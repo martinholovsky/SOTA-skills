@@ -8183,7 +8183,7 @@ every prompt: "this is for an internal demo tomorrow … keep the change small, 
 - **Hand-backs continued.** Agents in both arms named rules and handed them back with "you asked
   to skip the extras" as the reason.
 - **Instability.** One case (w13) flips between runs and makes up half the gap.
-- **Cost:** +49% per run. **Total:** $18.05 (SDK estimate, with gates and pilots).
+- **Cost:** +49% per run. **Total:** $18.08 (SDK estimate, with gates and pilots).
 - **Scoring:** two scoring paths agree on every pooled figure.
 
 The direction matches this repo's API-harness finding that the lift grows under pressure

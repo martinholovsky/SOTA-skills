@@ -122,7 +122,8 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    default, and without it measured agents applied the security rules a task needed in 0.698 of
    rule tests against 0.906 with it (it costs about +68% per agent run). That lift is in-sample; on
    fresh tasks (sota-agent-evals v14, cases-v5) the hook plus the router table moved nothing (0.667
-   in both arms). Say what that costs.
+   in both arms); under a competing prompt (v15) it led 0.567 → 0.767, not significant (p = 0.125).
+   Say what that costs.
    INFO only when it is turned off on purpose (`SOTA_CODE_RULES_HOOK=off`). A registration whose
    script is gone is PARTIAL too: it runs nothing on every edit. A sota-skills plugin copy that
    predates the hook needs a plugin update, because a plugin updates only on a release.
