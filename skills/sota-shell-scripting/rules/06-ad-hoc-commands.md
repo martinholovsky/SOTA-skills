@@ -25,6 +25,7 @@ interactive shell is zsh**. Check the operator's shell rather than assuming; the
 | one unmatched glob among several, inside `$(ls a b* 2>/dev/null)` | the literal word errors, the matches still print | the **whole** inner command aborts — matched files lost too; `2>/dev/null` inside `$(…)` does not silence zsh's own error | **silently** — the list is empty, and the callee picks its own scope (§2b) |
 | `cmd \| python3 - <<'PY'` (pipe **and** heredoc on fd 0) | heredoc wins, piped data **discarded** | `MULTIOS` **concatenates** them: the data runs as the program's first lines | bash **quietly** (script reads empty stdin); zsh an error naming *your data* (below), or **silently** when the data parses as code (`echo 42` runs) |
 | an unquoted word starting with `=` (`echo =====`, `grep -c =ls f`) | a literal word | `EQUALS` (on by default) rewrites `=ls` to `/bin/ls`; a word naming no command **aborts the whole `;` list** | loudly for `=====` (`==== not found`, exit 1); **silently** for a real command name — measured zsh 5.9: `grep -c =ls` counted 0 where bash counted 1. Quote it, or `setopt noequals` |
+| an unbraced `$var` followed by `:` and a **letter**, even inside double quotes | a literal `:` | the letter is a **modifier**: `"$d:tmp"` → `bmp` (`:t`), `"$d:home"` → `/aome` (`:h`), `r=HEAD; "$r:scripts/check-invariants.sh"` → `HEADk-invariants.sh` (`:s`, `c` as delimiter); `$h:8080` and `$h:$d` are untouched | **silently** when the word completes a modifier — git was asked for a path that does not exist, its error went to stderr, and `grep -c` counted 0 (2026-10-16); loudly (`bad substitution`, the list aborts) when `:s` finds no closing delimiter. Brace it: `"${r}:path"`. Measured zsh 5.9, 2026-10-18 |
 
 **The third is the dangerous one: a failed glob means the command never runs at all.**
 zsh's `NOMATCH` is on by default, so a glob matching nothing is a hard error rather than a
@@ -437,14 +438,12 @@ contained the number, and a reference sweep that reported zero while five refere
 Both were caught only because a second, differently-shaped measurement disagreed. **Run §2's
 positive control on the search itself.**
 
-**The placement defect this paragraph predicted, then repeated.** It used to end: *§2 states
-that control under a heading about symlinked directories … and that placement is why it was
-skipped here.* It happened **again on 2026-09-21**, to a different reader on a different
-stack — a field report whose `git grep -cE '\b(TODO|FIXME)\b'` returned 0 files on macOS with
-its control returning 0 too, exactly this section, three days after it was written. Two
-independent readers, one cause, so the heading was the defect and not the readers: §2 now
-names the control in its own title. **A rule filed under where it was first measured is
-filed under the wrong thing** — index it by what it is *for*.
+**The placement defect this section predicted, then repeated.** §2 once filed its control under a
+heading about symlinked directories, and on 2026-09-21 a second reader on a different stack hit
+this section anyway: `git grep -cE '\b(TODO|FIXME)\b'` returned 0 files on macOS, its control 0
+too. Two independent readers, one cause, so the heading was the defect: §2 now names the control
+in its own title. **A rule filed under where it was first measured is filed under the wrong
+thing** — index it by what it is *for*.
 
 ## Audit checklist
 
@@ -498,3 +497,4 @@ filed under the wrong thing** — index it by what it is *for*.
 - [ ] **Does any command pipe into `interpreter - <<EOF`?** (§1) Both claim fd 0: bash drops
       the pipe, zsh prepends it to the program. Sweep with `grep -nE '\| *[a-z0-9]+ +- *<<'`.
 - [ ] **An unquoted `=word` in a zsh command** (§1, `EQUALS`): `grep -nE '(^|[[:space:]])(=[^[:space:]=]|==+[^[:space:]=]|={3,})' <snippet>` — quote each hit; `=cmd` silently becomes that command's path, and a word naming no command aborts the list.
+- [ ] **An unbraced `$var:` before a letter in a zsh command** (§1, modifiers): `grep -nE '\$[A-Za-z_][A-Za-z0-9_]*:[A-Za-z]' <snippet>` — brace each hit (`"${var}:…"`); `"$rev:path"` can silently become a different path.
