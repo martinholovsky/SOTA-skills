@@ -8200,3 +8200,13 @@ addressed by the section-only fix (#546, the re-armed F1 row above), not by swit
 off. `SOTA_CODE_RULES_HOOK=off` stays the opt-out. Revisit trigger: a measured regression in
 either arm, or a measured section-only arm. ROADMAP 73 stays open on #546, so item 70 stays
 deferred on its own trigger (73 closes).
+
+## 2026-10-18 — `/sota-resume`: zsh colon modifiers, a trap carried only in agent memory
+
+**Source:** a `/sota-resume` pass over this repo. The item existed only in an agent's private
+memory store, recorded during the 2026-10-16 `/sota-close` pass and never taken in. Re-measured
+this session on zsh 5.9 before adoption.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| zsh reads `:` plus a letter after an unbraced `$var` as a history modifier, even inside double quotes | **adopted with a correction** — the note said "`:` after an unbraced parameter". Measured: only a **letter** triggers it (`$h:8080` and `$h:$d` are untouched). `:t` and `:h` rewrite silently (`"$d:tmp"` → `bmp`). `:s` rewrites silently when the word contains its delimiter twice, and fails loudly (`bad substitution`) when it does not. The audit regex was checked on 2 positives and 4 negatives (braced, `${v:-x}`, a numeric port, `$h:$d`). To fit the 500-line cap, §2f's placement-defect paragraph was shortened with its substance kept | `sota-shell-scripting` rules/06 §1 table + Audit checklist |
