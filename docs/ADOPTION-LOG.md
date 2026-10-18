@@ -7990,7 +7990,7 @@ a control arm. The cost figures come from sota-agent-evals `reports/2026-10-13-v
 
 | Idea | Verdict | Landed in |
 |---|---|---|
-| F1 — the default install puts mostly off-target rules text into context. About 90% of v14's +38% is input; rules-file Reads went 13 → 65, 20% from a cited file. Both the hook and the router table say "read in full", and both carry the authorization and data-exposure rows that fired in 19/20 and 16/20 runs | **DEFERRED — revisit when the operator either makes a budget decision for a paid arm or decides keep-on vs opt-in for the hook** (operator 2026-10-14: no further paid runs). The candidate fixes are untested: send only the named section, and narrow the two generic rows to constructs | ROADMAP 73 (#546, #548) |
+| F1 — the default install puts mostly off-target rules text into context. About 90% of v14's +38% is input; rules-file Reads went 13 → 65, 20% from a cited file. Both the hook and the router table say "read in full", and both carry the authorization and data-exposure rows that fired in 19/20 and 16/20 runs | **DEFERRED — revisit trigger: an operator budget for a paid arm of the section-only fix, or a field report of a session whose context ran out on rules-file reads.** *Re-armed 2026-10-18: the previous trigger ("a budget decision for a paid arm, or keep-on vs opt-in") fired when the operator kept the hook on (ROADMAP 73). T2's budget of 2026-10-17 bought the pressure question, not this fix.* The candidate fixes are untested: send only the named section, and narrow the two generic rows to constructs | ROADMAP 73 (#546, #548) |
 | F2 — I restated a summary line ("partial reads → NULL") as a measured result | **rejected: already covered** — `skills/sota/SKILL.md:144`, principle 7: "Nor is a project's own index … a summary an earlier session wrote". It fired at `/sota-close` step 1, not at the moment of answering. The source line (a local memory index) was corrected | — |
 | F3 — in an agent shell whose stdin is an open socket, a bare `cat > f` blocks until the tool's timeout, and the harness then backgrounds it | **adopted** (re-run 2026-10-14: `/dev/fd/0` is a socket; `timeout 5 cat > f` gives rc 124, and with `</dev/null` rc 0). Only `cat` was measured; the section says so and says to check `ls -l /dev/fd/0` | `sota-shell-scripting` rules/08 §5 + checklist · SKILL.md index · v1.49.3 |
 | F4 — `cd "$UNSET" 2>/dev/null \|\| cd <fallback>` never falls back in zsh: `cd ""` is a no-op at rc 0, while bash 5.3 refuses it at rc 1. A probe wrote two files into the repo root | **adopted** (reproduced in zsh 5.9 and bash 5.3; `cd "${d:?unset}"` aborts at rc 1). A §2b row, since the class (an empty operand gives the callee its default scope) is already there, plus the checklist item | `sota-shell-scripting` rules/06 §2b + checklist · v1.49.3 |
@@ -8190,3 +8190,13 @@ The direction matches this repo's API-harness finding that the lift grows under 
 (`evals/results/2026-08-31/PROMPT-INDEPENDENCE.md`). It is not significant at one sample per case.
 Nothing in `skills/` changes. The default-on hook decision (#545) stays with the operator, now with
 this row beside v14's NULL.
+
+**Follow-up 2026-10-18 — operator decision on #545: keep the code-rules hook on by default,
+provisionally.** This supersedes the sentence above. The reasoning, so it is not re-argued:
+pressure is the condition users actually work under, and v15 is the only out-of-sample
+measurement taken under it. Its direction favours the hook (3 cases up, 0 down), and v14
+under the neutral prompt showed no regression (0.667 in both arms). The +38–49% cost is
+addressed by the section-only fix (#546, the re-armed F1 row above), not by switching the hook
+off. `SOTA_CODE_RULES_HOOK=off` stays the opt-out. Revisit trigger: a measured regression in
+either arm, or a measured section-only arm. ROADMAP 73 stays open on #546, so item 70 stays
+deferred on its own trigger (73 closes).
