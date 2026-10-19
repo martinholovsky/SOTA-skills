@@ -8221,6 +8221,18 @@ is not significant, and changing the text the hook sends without measuring it co
 lead up. ROADMAP 73 stays open on #546. The F1 row's trigger is unchanged, and a measured
 regression also reopens it.
 
+**Correction 2026-10-19 (to both follow-ups above).** "+35–38%", "$0.035–0.046 a run" and "about
+a quarter of the overhead" rest on an assumed 3–4 characters per token. The ratio is measurable
+from the same transcripts: the new characters over `cache_creation_input_tokens` for the 24 API
+calls whose new content is at least 90% rules-file text pool to **2.43** (a slight
+underestimate, since cache creation also carries the previous turn's output). This repo's own
+record agrees: the router measured 16,934 tokens with `count_tokens` against 10,211 from
+characters / 4 (CHANGELOG, the router-at-500-lines entry), about 2.4. At 2.43 the default's
+overhead goes from +48% to **+32%** ($0.057 a run, an upper bound): **about a third**, and
+rules-file text is $2.78 of the $3.27 gap. The kept fractions do not change. The script now
+measures the ratio itself (sota-agent-evals #5). The operator's "leave it" was taken on the
+quarter figure; the corrected one was put to the operator the same day.
+
 ## 2026-10-18 — `/sota-resume`: zsh colon modifiers, a trap carried only in agent memory
 
 **Source:** a `/sota-resume` pass over this repo. The item existed only in an agent's private
