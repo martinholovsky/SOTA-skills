@@ -5,6 +5,43 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.4] - 2026-10-19
+
+A PATCH: a new rules file inside an existing skill, a new zsh trap, two eval-harness
+changes and the records that go with them. Nothing new to run: `_stats.py` and `_rawlog.py` are modules the
+existing runners import. Ten PRs since v1.49.3 (#554–#563).
+
+**Front door checked:** evaluating generated code · colon modifier · BUILD-safe · competing pressure
+
+- **`sota-llm-engineering` rules/07, evaluating generated code (#554, #556, #559, #560).** A new
+  289-line rules file for harnesses that score code from a model or agent: the grader as a target,
+  unbiased pass@k, visible vs held-out suites, oracles, and reward hacking scored as a hard zero.
+  §1 grew twice on measurement. A candidate-written `unittest.py` turned a failing
+  `python -m unittest discover` into exit 0 (#559), and a one-line `TestCase.assertEqual` patch in
+  the candidate's own package scored a failing case as a pass, so a name guard is not enough and
+  random-named expected-failure canaries are the control (#560). `rules/01` gains position-bias,
+  pinning and persistence fixes. It came from an external proposals document; every idea has a
+  verdict in the ADOPTION-LOG. Its effect on a build is unmeasured, since paid runs were frozen.
+- **Evals: intervals and kept responses (#555, #557).** `evals/_stats.py` adds a case-level
+  paired bootstrap and an exact McNemar test, and two runners now print an interval under their
+  headline. The BUILD-safe scorer no longer credits comments: a `# TODO: check owner_id` comment
+  had scored an unchecked read as safe. `evals/_rawlog.py` keeps every model response (secrets
+  scrubbed, generation ID kept) under `evals/results/raw/`, because the 2026-08-21 run could not
+  be re-scored once its builds in `/tmp` were gone.
+- **The BUILD-safe +0.19 does not reproduce (#558).** Re-run on the same model under the fixed
+  scorer with every build kept: Δ avoided +0.000 as scored, +0.048 hand-adjudicated, against
+  +0.191 in August. The guided prompt is now 149k characters against ~66k then, so this measures
+  today's library. Two instrument defects are recorded, not fixed.
+- **`sota-shell-scripting` rules/06 §1: zsh's colon modifier (#562).** An unbraced `$var` followed
+  by `:` and a letter is a modifier, even in double quotes: `r=HEAD; "$r:scripts/check-invariants.sh"`
+  becomes `HEADk-invariants.sh`. A digit or `$` after the colon is untouched. Brace it. New table
+  row and checklist probe, measured on zsh 5.9.
+- **ROADMAP 73 (#561, #563).** v15 reran v14's two arms under competing pressure: INCONCLUSIVE,
+  0.567 → 0.767 for the default (3 cases up, 0 down, p = 0.125). The operator kept the code-rules
+  hook on by default, provisionally. An offline replay with no model calls bounds the section-only
+  cost fix (#546) at about a quarter of the overhead: +48% → +35–38%. Priority 2's first-step cell,
+  which still asked for a case set built on 2026-10-13, now names that decision.
+
 ## [1.49.3] - 2026-10-16
 
 A PATCH: an intake, two field-report fixes and a new CI invariant, all inside existing surfaces.
@@ -11437,6 +11474,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.49.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.4
 [1.49.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.3
 [1.49.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.2
 [1.49.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.1
