@@ -8201,6 +8201,18 @@ off. `SOTA_CODE_RULES_HOOK=off` stays the opt-out. Revisit trigger: a measured r
 either arm, or a measured section-only arm. ROADMAP 73 stays open on #546, so item 70 stays
 deferred on its own trigger (73 closes).
 
+**Follow-up 2026-10-19 — the section-only fix (#546) replayed offline, no model calls.** The
+F1 row's fix was priced before buying an arm for it: [v15 addendum](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-17-v15/REPORT.md#addendum-2026-10-19-replaying-the-section-only-fix-sota-skills-546-no-model-calls), script
+`reports/2026-10-17-v15/tools/replay546.py` in sota-agent-evals. Keeping only the preamble,
+the sections the hook names and the Audit checklist leaves 59% of v15's 2,014,300 characters
+of rules text. The default's cost overhead drops from +48% to +35–38% ($0.035–0.046 a run; the
+range is an unmeasured 3–4 characters per token). It is an upper bound, since agents may read
+more, and it says nothing about rule tests. The two generic files shrink least (rules/07 keeps
+76%, rules/03 61%), and checklists are 36% of the kept text. So a paid section-only arm (~$10)
+could confirm about a quarter of the overhead at most. The F1 row's trigger is unchanged, and
+the choice (fund the arm, ship the wording change unmeasured, or try narrowing the two generic
+triggers, which changes reach and cannot be replayed) stays with the operator.
+
 ## 2026-10-18 — `/sota-resume`: zsh colon modifiers, a trap carried only in agent memory
 
 **Source:** a `/sota-resume` pass over this repo. The item existed only in an agent's private
