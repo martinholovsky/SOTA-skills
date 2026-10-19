@@ -70,7 +70,7 @@ tempting shortcut — `1 − (1 − p̂)^k` from the empirical pass@1 — is bia
 underestimate whose gap "doesn't fully close even when n > 5k" (Appendix A). Use the paper's
 numerically stable product form, not the raw binomials.
 
-- Choose n from the k you will report and the interval you need (§8), and print n beside every
+- Choose n from the k you will report and the interval you need (§11), and print n beside every
   pass@k. The library sets no minimum, because a fixed number would be a guess: the bound that is
   not a guess is n ≥ k.
 - **pass@k and pass^k answer different questions.** pass@k asks *can it ever*; pass^k (all k
