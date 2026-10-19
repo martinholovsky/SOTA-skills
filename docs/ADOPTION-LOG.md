@@ -8213,6 +8213,14 @@ could confirm about a quarter of the overhead at most. The F1 row's trigger is u
 the choice (fund the arm, ship the wording change unmeasured, or try narrowing the two generic
 triggers, which changes reach and cannot be replayed) stays with the operator.
 
+**Follow-up 2026-10-19 — operator decision on #546: leave it.** No wording change to the hook
+or the router table, and no paid section-only arm. The reasoning, so it is not re-argued: the
+replay above bounds the saving at about a quarter of the overhead, and that is an upper bound;
+the only evidence that the default-on hook helps is v15's lead (0.567 → 0.767, p = 0.125), which
+is not significant, and changing the text the hook sends without measuring it could give that
+lead up. ROADMAP 73 stays open on #546. The F1 row's trigger is unchanged, and a measured
+regression also reopens it.
+
 ## 2026-10-18 — `/sota-resume`: zsh colon modifiers, a trap carried only in agent memory
 
 **Source:** a `/sota-resume` pass over this repo. The item existed only in an agent's private
