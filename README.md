@@ -687,7 +687,7 @@ are load-bearing, because the ones that aren't are labelled.
 | `sota-web-frameworks` | React 19/Next.js + Vue 3/Nuxt 4: Server Components & Server Actions, RSC/client boundary, caching (`use cache`/PPR/ISR), hydration correctness, SSR state serialization, Nitro routes, framework CVEs |
 | `sota-observability` | Structured logging, metrics, OpenTelemetry tracing, SLOs & alerting, operational readiness |
 | `sota-testing` | Test strategy & design, doubles/test data, contract testing, e2e, property/fuzzing/mutation, suite health, **deadline tests that assert wall-clock** (the one carve-out to "never assert durations" — a timeout has no other oracle) |
-| `sota-llm-engineering` | Evals, prompt/context engineering, RAG, agents & tools, LLM production engineering, data lifecycle — incl. sizing context with the provider's own **token counter** rather than another vendor's **tokenizer**, which under-counts by up to 54% on markdown-dense text |
+| `sota-llm-engineering` | Evals, prompt/context engineering, RAG, agents & tools, LLM production engineering, data lifecycle — incl. sizing context with the provider's own **token counter** rather than another vendor's **tokenizer**, which under-counts by up to 54% on markdown-dense text — and **evaluating generated code**: the grader as an attack target, unbiased pass@k, held-out suites |
 | `sota-ml-engineering` | Production ML/MLOps (classical, not LLM): training→serving→monitoring, feature stores/registries, leakage & train/serve skew, ML Test Score eval, deployment & rollback, drift/retraining, ML security & governance |
 | `sota-cloud-infrastructure` | Accounts/landing zones, cloud IAM, VPC/DNS/CDN setup, compute selection, storage, FinOps, resilience & DR |
 | `sota-kubernetes` | Cluster platform security: RBAC & escalation, admission control, GitOps controllers, operators/CRDs, etcd, Helm supply chain, multi-tenancy, Talos/k3s |
@@ -700,7 +700,7 @@ are load-bearing, because the ones that aren't are labelled.
 | `sota-security-compliance` | Control-frameworks-as-code: NIST CSF 2.0, 800-53, 800-171/CMMC, SSDF, FedRAMP, EU Cyber Resilience Act (SBOM/CVD/updates), ISA/IEC 62443 (OT zones & security levels) |
 | `sota-mobile` | Platform/stack choice, offline-first & push, mobile security, performance budgets, store releases, Swift in apps (the language is `sota-swift`) |
 | `sota-cli-ux` | Command/flag design, output & exit-code contracts, lifecycle behavior, distribution |
-| `sota-shell-scripting` | Bash safety baseline, robustness, script security, CI/entrypoint/Makefile scripts, and **PowerShell** — `pwsh` CI steps and deploy scripts, where `$ErrorActionPreference` is not the `set -e` it looks like |
+| `sota-shell-scripting` | Bash safety baseline, robustness, script security, CI/entrypoint/Makefile scripts, and **PowerShell** — `pwsh` CI steps and deploy scripts, where `$ErrorActionPreference` is not the `set -e` it looks like — and zsh silently rewriting `"$rev:path"` as a **colon modifier** |
 | `sota-docs-workflow` | Documentation architecture, API docs & changelogs, code review/PR workflow, commits & releases |
 | `sota-ux-writing` | Voice/tone & plain language (ISO 24495-1), microcopy, error & feedback messages, accessible/localizable interface text |
 | `sota-copywriting` | Positioning & value props, headlines/landing pages/CTAs, SEO content (E-E-A-T, spam policies), claims & legal trust (FTC, email law) |
