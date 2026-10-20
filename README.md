@@ -876,6 +876,12 @@ session that found it.*
 wrote gives `[WARN] Skill listing over budget: 65 skills, 47324 chars > 8000 budget —
 descriptions will be truncated.` That line goes to `~/.claude/debug/` and appears nowhere
 else, which is exactly why a whole session can run on a crippled listing unnoticed.
+*Since then (code.claude.com/docs/en/skills, re-read 2026-10-20):* the docs name two places to
+look in a session. `/doctor` estimates the listing's context cost and its biggest
+contributors. The Skills row in `/context` reports the listing's size **after** the budget is
+applied, so it matches what the model receives (before v2.1.196 it counted every description
+in full). The docs still name the debug log as the only place the over-budget warning goes.
+Not re-measured here.
 
 **Why it still works anyway, and what actually breaks.** The `sota` router is used every
 session, so it ranks near the top and keeps its description — and a name-only skill is
