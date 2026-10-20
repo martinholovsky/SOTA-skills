@@ -6751,7 +6751,7 @@ BSD grep, the ugrep wrapper, bash and zsh.
   `PYTHON_DISABLE_REMOTE_DEBUG=1` is ignored under `python -I`. The rule teaches the working form.
   The upstream docs bug has not been reported (it would be a public post, so that is the
   operator's call).
-- **DEFERRED — reporting the CPython docs bug upstream (`-X disable_remote_debug` is inert; only `disable-remote-debug` works, and `PYTHON_DISABLE_REMOTE_DEBUG` is ignored under `-I`); revisit trigger: the operator approves the text of a public issue on python/cpython.**
+- **RESOLVED 2026-10-20 (was deferred; obviated — someone else reported it as python/cpython#159010, fixed by #159014 and backported to 3.14 and 3.15, see the 2026-10-20 entry) — reporting the CPython docs bug upstream (`-X disable_remote_debug` is inert; only `disable-remote-debug` works, and `PYTHON_DISABLE_REMOTE_DEBUG` is ignored under `-I`).**
 - **NuGet signature enforcement works on Linux, with two bypasses.** Measured in the .NET 10 SDK
   container: `signatureValidationMode=require` fails restore with NU3034. A package already in the
   global packages folder skips the check, and so does `DOTNET_NUGET_SIGNATURE_VERIFICATION=false`.
@@ -8242,3 +8242,17 @@ this session on zsh 5.9 before adoption.
 | Idea | Verdict | Landed in |
 |---|---|---|
 | zsh reads `:` plus a letter after an unbraced `$var` as a history modifier, even inside double quotes | **adopted with a correction** — the note said "`:` after an unbraced parameter". Measured: only a **letter** triggers it (`$h:8080` and `$h:$d` are untouched). `:t` and `:h` rewrite silently (`"$d:tmp"` → `bmp`). `:s` rewrites silently when the word contains its delimiter twice, and fails loudly (`bad substitution`) when it does not. The audit regex was checked on 2 positives and 4 negatives (braced, `${v:-x}`, a numeric port, `$h:$d`). To fit the 500-line cap, §2f's placement-defect paragraph was shortened with its substance kept | `sota-shell-scripting` rules/06 §1 table + Audit checklist |
+
+## 2026-10-20 — `/sota-resume`: an upstream report someone else filed, and the skills docs re-read
+
+**Source:** a `/sota-resume` pass over this repo. It re-tested the deferral triggers that wait
+on outside events instead of re-reading them. On the operator's question ("have we used latest
+stable?"), it also re-measured the one deferral that would have meant a public post.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| Report the CPython docs bug (`-X disable_remote_debug`) upstream | **obviated — someone else filed it.** The 2026-09 measurement was on 3.14.6, which was no longer current: 3.15.0 came out 2026-10-09 (bugfix, EOL 2031-10), and 3.14.8 2026-09-30 (EOL 2030-10), per devguide.python.org/versions and python.org. Both were re-measured in `python:*-slim` containers. The underscore form leaves `sys.is_remote_debug_enabled()` True, the hyphen form makes it False. The upstream tracker already had python/cpython#159010 (opened 2026-10-08, closed 2026-10-14), fixed by #159014 with backports #159413 (3.14) and #159414 (3.15). `Doc/using/cmdline.rst` on 3.14, 3.15 and main now has 0 underscore and 2 hyphen occurrences. **Correction to the deferral's text:** `PYTHON_DISABLE_REMOTE_DEBUG` being ignored under `-I` is documented behaviour (`-I` implies `-E`), not a bug, and was never part of what upstream should be told. The rule already says so | `sota-python` rules/05 §8b (versions re-measured; "documented spelling" → "underscore spelling", with the upstream fix) |
+| Web Bot Auth deferral: wait for WG last call | **still deferred** — datatracker 2026-10-20: `draft-ietf-webbotauth-httpsig-protocol-00` is a "WG Document" | — |
+| Native package-manager cooldowns: wait for Renovate/Dependabot docs to point at them | **still deferred** — Renovate's minimum-release-age page names npm's `min-release-age` and Poetry, not pnpm or Bundler `--cooldown` | — |
+| Built-in skill size: wait for the Claude Code docs to state it | **still deferred** — the skills page (read in full, both halves) gives no size for bundled skills | — |
+| The skills docs now name `/doctor` (listing cost estimate) and `/context`'s Skills row (post-budget size since v2.1.196) as in-session views | **adopted as a dated note, not re-measured** — the rest matched the page: the README's 1% default, least-invoked dropped first, the 1,536-character cap (`skillListingMaxDescChars`) and the debug-log warning; `sota-skill-security` rules/03's `skillOverrides` name-only and `/skill-doctor` | `README.md` "The skill listing budget" |

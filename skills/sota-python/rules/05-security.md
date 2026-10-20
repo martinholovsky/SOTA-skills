@@ -358,10 +358,11 @@ new privilege boundary: the caller needs the rights a debugger needs (per PEP 76
 root or `CAP_SYS_PTRACE`; macOS `task_for_pid`; Windows `PROCESS_VM_READ`/`WRITE`). It does
 turn those rights into one-call code execution, so switch it off in production as defence
 in depth: `PYTHON_DISABLE_REMOTE_DEBUG=1`, `-X disable-remote-debug`, or a build configured
-`--without-remote-debug`. Measured on 3.14.6 with `sys.is_remote_debug_enabled()`:
-- **The documented spelling does nothing.** The 3.14 command-line docs write
-  `-X disable_remote_debug`; CPython's `initconfig.c` reads `disable-remote-debug`, and the
-  underscore form left it enabled. Use the hyphen.
+`--without-remote-debug`. Measured on 3.14.8 and 3.15.0 with `sys.is_remote_debug_enabled()`:
+- **The underscore spelling does nothing.** CPython's `initconfig.c` reads
+  `disable-remote-debug`; `-X disable_remote_debug` is accepted silently and leaves it
+  enabled. The docs printed the underscore form until gh-159010 (fixed 2026-10-14, 3.14 and
+  3.15 branches), so copies made from them are still in the wild. Use the hyphen.
 - **The variable is ignored under `-E` and `-I`** (they drop every `PYTHON*` variable), so a
   hardened `python -I` entrypoint needs the `-X` form. Any value disables it, even empty.
 - Check it in the running image with the real flags; audit events `sys.remote_exec` (caller)
@@ -476,7 +477,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       (a start file with no switch, or one whose `-I`/`-E` interpreter makes the variable
       inert; the variable may instead be set in the orchestrator's env, so read it there) ;
       `grep -rnE 'disable_remote_debug' --include='Dockerfile*' --include='*.y*ml' --include='*.sh' --include='*.service' --include='*.toml' --include='Procfile' .`
-      (the underscore spelling, which 3.14.6 ignores)
+      (the underscore spelling, which 3.14.8 and 3.15.0 ignore)
 - [ ] **--- Template autoescape (§1) --- [HIGH where user data renders into HTML]** —
       `grep -rnE 'Environment\(|Template\(' --include='*.py' src/` (read each for `autoescape=`:
       measured with Jinja2 3.1.6, `Environment().autoescape` is `False` and `{{ x }}` rendered
