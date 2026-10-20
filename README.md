@@ -880,8 +880,8 @@ else, which is exactly why a whole session can run on a crippled listing unnotic
 look in a session. `/doctor` estimates the listing's context cost and its biggest
 contributors. The Skills row in `/context` reports the listing's size **after** the budget is
 applied, so it matches what the model receives (before v2.1.196 it counted every description
-in full). The docs still name the debug log as the only place the over-budget warning goes.
-Not re-measured here.
+in full). The docs also say the over-budget warning is written to the debug log; they do not
+say whether `/doctor` shows it. Not re-measured here.
 
 **Why it still works anyway, and what actually breaks.** The `sota` router is used every
 session, so it ranks near the top and keeps its description — and a name-only skill is
