@@ -83,6 +83,17 @@ already covered the job. A new control less sensitive than one already running i
 shaped like an improvement. (Rule 5's false-premise pause catches this too, but only after the
 table has reached you.)
 
+**An item whose action is publishing has its own obviation test.** That covers an upstream
+issue, a PR, an advisory or a post. Before handing it over as a decision, re-run the finding
+on the **current stable release**, with its end-of-life date beside it, and search the upstream
+tracker for it. Invoke the `sota-docs-workflow` skill and read its rules/03 §8 for the rest of
+the bar. Otherwise the operator decides on the finding as recorded weeks ago, not as it stands.
+Field-reported 2026-10-20: a "report this docs bug upstream" deferral reached the decision table
+measured two patch releases and one minor release behind. Upstream had filed and fixed it six
+days earlier, and one of its three claims was documented behaviour. An approval trigger
+("when the operator approves the text") reads as "nothing to check until then", so check before
+asking.
+
 Order READY by value against risk. Estimate **blast radius and uncertainty**, not minutes: how
 many files it touches, whether anything else depends on it, and what you would have to know
 that you do not.

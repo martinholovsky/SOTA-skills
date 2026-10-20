@@ -1073,6 +1073,17 @@
       ]
     },
     {
+      "from": "sota-ml-engineering",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/08",
+        "rules/08 \u00a74",
+        "rules/11",
+        "rules/23 \u00a71"
+      ]
+    },
+    {
       "from": "sota-network-security",
       "to": "sota-api-design",
       "weight": 5,
@@ -1265,16 +1276,6 @@
       "to": "sota-observability",
       "weight": 4,
       "targets": []
-    },
-    {
-      "from": "sota-ml-engineering",
-      "to": "sota-code-security",
-      "weight": 4,
-      "targets": [
-        "rules/08",
-        "rules/08 \u00a74",
-        "rules/23 \u00a71"
-      ]
     },
     {
       "from": "sota-privacy-compliance",
@@ -3414,14 +3415,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1527,
+    "md link, other skill": 1529,
     "md link, outside skills/": 3,
-    "md link, same skill": 2757,
+    "md link, same skill": 2760,
     "name (backticked)": 431,
     "name (bare)": 240,
-    "name+file (backticked)": 598,
+    "name+file (backticked)": 599,
     "name+file (bare)": 160,
-    "own rules/NN": 2910
+    "own rules/NN": 2913
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3431,9 +3432,9 @@
     "md link, same skill": 0,
     "name (backticked)": 416,
     "name (bare)": 197,
-    "name+file (backticked)": 597,
+    "name+file (backticked)": 598,
     "name+file (bare)": 155,
-    "own rules/NN": 2831
+    "own rules/NN": 2834
   },
   "rules_index_style": {
     "link": 42

@@ -148,7 +148,38 @@ grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — 
   files under BusyBox, BSD grep, ugrep and GNU grep).
 - **Invariant 37** fails the build on both shapes in any skill file.
 
+## 5c. Selecting processes by command-line substring selects the selector
+
+[`rules/01`](01-safety-baseline.md) §3 records that `pgrep -f` and `pkill -f` match the watching shell's own argv.
+The mechanism is not the tool's: **any** selection by command-line substring has it. That
+includes `ps … | grep`, and a hand-rolled `for p in /proc/*/cmdline` loop. A field session
+hand-rolled the loop over SSH precisely to avoid `pkill`. Its kill list included the remote
+shell running the loop, and the session died with exit 255 (field-reported 2026-10-20).
+
+- **The pattern is in the selector's argv whenever the loop is passed as an argument**:
+  `ssh host '…'`, `bash -c '…'`, `watch '…'`.
+- **An agent harness puts the whole tool call in an ancestor's argv.** In one measured
+  harness, each command ran as `zsh -c 'source … && eval '\''<the entire call>'\'''`. So the
+  selector, **and its parent**, matched, while the target was absent: `bash -c` had exec'd
+  `sleep`, whose argv no longer carried the marker.
+- **The bracket trick (`grep '[t]arget'`) only stops the pattern matching its own text.**
+  It does not help if the plain string appears anywhere else in the same call. Measured
+  2026-10-21: one target, bracket pattern. It counted **4** when the target had been started
+  in the same tool call, and **1** when it had been started in a separate call.
+
+Kill by an identity you obtained **without** substring matching: `$!` saved at launch, a PID
+file, or the port's owner (`ss -lptn 'sport = :PORT'`, `lsof -ti :PORT`). If you must match,
+print the list with PIDs and PPIDs first (`ps -axo pid=,ppid=,command=`). Drop your own `$$`,
+your ancestors, and anything whose command line is your own command. Then act on PIDs.
+
 ## Audit checklist
+
+- [ ] **Does any kill or wait select processes by command-line substring?** (§5c) This means
+      `pkill -f`, `pgrep -f`, `ps … | grep`, or a loop over `/proc/*/cmdline`. Each one
+      matches the selecting shell, and in an agent harness or under `ssh host '…'` its parent
+      too, whenever the plain pattern appears in their argv. Sweep for the shape with
+      `grep -nE '(pkill|pgrep) -f|/proc/\*/cmdline|ps [^|]*\| *grep'`, and act on PIDs taken
+      from `$!`, a PID file or a port.
 
 - [ ] **A search filter next to a named file** (§5b): does any `grep` command combine
       `--include` with an explicitly named file the glob does not match? The named file
