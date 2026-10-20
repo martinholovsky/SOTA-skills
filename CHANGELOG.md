@@ -5,6 +5,34 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.5] - 2026-10-20
+
+A PATCH: records, a re-measured rule and one dated README note. Nothing new to run.
+Three PRs since v1.49.4 (#565–#567).
+
+**Front door checked:** listing budget · /doctor · /context
+
+- **`sota-python` rules/05 §8b re-measured on current stable (#567).** The `-X disable_remote_debug`
+  finding was measured on 3.14.6. On 3.15.0 and 3.14.8 (`python:*-slim`), the underscore form still
+  leaves `sys.is_remote_debug_enabled()` True and the hyphen form makes it False, so the rule and
+  its audit probe stand. The docs bug itself was fixed upstream by someone else
+  (python/cpython#159010, merged 2026-10-14 and backported to 3.14 and 3.15). The ADOPTION-LOG
+  deferral to report it is therefore resolved as obviated, and the rule now names the fix.
+- **Deferral triggers re-tested (#567).** Three deferrals wait on outside events: Web Bot Auth WG
+  last call, Renovate docs pointing at native package-manager cooldowns, and the Claude Code docs
+  stating the size of bundled skills. All three were re-read against their sources, and none has
+  fired.
+- **README: the skill listing budget (#567).** A dated note that the skills docs now name `/doctor`
+  (an estimate of the listing's cost) and the Skills row of `/context` (its size after the budget,
+  since v2.1.196) as in-session views. Taken from the docs, not re-measured.
+- **ROADMAP 73 records (#565, #566).** The operator decided to leave the section-only cost fix
+  (#546) unbuilt and unbought until a trigger fires. `sota-llm-engineering` rules/07 §2's
+  cross-reference now points to §11.
+- **Correction to v1.49.4's ROADMAP 73 bullet (#566).** v1.49.4 bounded #546 at "about a quarter
+  of the overhead: +48% → +35–38%". That figure assumed 3–4 characters per token. Measured from
+  the v15 transcripts it is 2.43, which gives +48% → +32%, about a third (an upper bound). The
+  v1.49.4 entry is left as written.
+
 ## [1.49.4] - 2026-10-19
 
 A PATCH: a new rules file inside an existing skill, a new zsh trap, two eval-harness
@@ -11474,6 +11502,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.49.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.5
 [1.49.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.4
 [1.49.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.3
 [1.49.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.2
