@@ -49,6 +49,15 @@ Rules that follow from how models attend and how caches key (§5):
   call). This is the *opposite* of the on-demand file loading a coding agent
   does from a router — the model executing a prompt has no loader and cannot
   fetch what you name. (Adopted 2026-07-24; see docs/ADOPTION-LOG.md.)
+- **A brief to another agent is a prompt, and its premises propagate.** A subagent
+  brief, a research prompt or a review request becomes the premise of everything sent back,
+  and of every report built on that. Restate each factual premise in it from the artifact
+  (the results file, the commit, the doc), never from your own summary of it. This is
+  [`sota`](../../sota/SKILL.md) principle 7 applied to output that does not *look* user-visible. Field-reported
+  2026-10-20: a research prompt said one probe "matched" another. The results file said the
+  other was best on every category, and two external reports built their verdict on the
+  wrong premise. What caught it was a subagent told to read primary sources, not the brief.
+  The inverse direction, a subagent's *result*, is [rules/04](04-agents-tools.md)'s "validate them".
 - **Don't prompt what you can enforce in code.** Format → schema (§6).
   Authorization → code ([sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md)). Budgets → harness
   ([rules/04](04-agents-tools.md)). Prompts are steering, never the enforcement boundary.
@@ -299,6 +308,8 @@ category = data.get("category", "other")                    # silently launders 
       interpolated into the prefix; per-request content injected late.
 - [ ] Critical instructions placed at the edges of long contexts; no
       contradictions across system prompt / few-shots / templates.
+- [ ] Briefs to other agents (subagent, research, review prompts) state each factual
+      premise from the artifact it came from, not from a summary of it (§1).
 - [ ] Prompt is self-contained: every schema/format/enum/rule it depends on is
       inlined or code-assembled, not referenced by pointing at a file that may
       not be in context (which degrades silently to fabrication).

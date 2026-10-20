@@ -79,6 +79,16 @@ you're actually running.
   on a release branch regresses in the next release).
 - Default branch is protected: required reviews + checks, no direct pushes, no
   force push ([rules/03](03-code-review-pr-workflow.md) §6).
+- **Derive a branch-cleanup list from fresh state, never from what you did.** After a
+  squash merge, git cannot tell the branch landed. `branch -d` refuses it once its
+  upstream is gone, and accepts it with a warning while the upstream still exists (both
+  measured, git 2.55.0). So take the list from PR state, not from `git branch --merged`. Then
+  intersect it with a `git ls-remote --heads origin` taken at the moment you hand the command
+  over. A merge flag is not remote state: `gh pr merge --delete-branch=false` does not stop a
+  repository's own delete-on-merge setting. And a multi-ref `git push origin --delete A B`
+  deletes **nothing** when any one ref is already gone, at rc 1, with or without `--atomic`
+  (measured, git 2.55.0). A stale list fails the whole command, not just the stale name
+  (field-reported 2026-10-20).
 
 ## §4 Versioning discipline
 

@@ -57,6 +57,25 @@ rubric (data / model / infra / monitoring tests) is the backbone.
   not carry over. OWASP: AISVS 3.2.2.
 - A model that can't pass the gate doesn't get promoted — no manual override
   without sign-off. Missing a validation gate is HIGH.
+- **Fit an operating threshold on held-out or out-of-fold scores, never on the rows
+  the model was fit on.** An in-sample quantile ("flag above the 99th percentile of
+  training benign scores") looks right for a weak model and collapses for a strong one,
+  whose training scores sit far below anything unseen. So a capacity increase silently
+  moves the real false-positive rate. Field-reported 2026-10-20: a nominal ~1% per head
+  measured 34.7% on held-out benign rows. scikit-learn's `TunedThresholdClassifierCV`
+  tunes on internal cross-validation by default, and its docs warn: "You should never use
+  the same data for training the classifier and tuning the decision threshold due to
+  the risk of overfitting." The threshold is part of the model, so it is versioned and
+  re-derived with it.
+- **Every decision rule reports what it evaluated, not only what passed**, for example
+  `rule 2: 27 evaluated, 2 pass, 1 hurt, 24 n.s.`. A report of passes alone cannot show a
+  comparison that was never run. Select the population by **exact identity**: an explicit
+  list of names, or a set difference against one. Never select it by a prefix or suffix
+  test, since `name.endswith("_max")` also matches `sfx_max`. Field-reported 2026-10-20: a
+  suffix filter dropped 4 of 27 comparisons, among them the strongest result, and the
+  passes-only report showed nothing missing. Assert `evaluated == expected` before printing
+  any verdict ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md): a gate whose silence and whose skip look
+  the same is not a gate).
 
 ## 5. Test the pipeline, not just the model
 
@@ -85,6 +104,12 @@ rubric (data / model / infra / monitoring tests) is the backbone.
       `err=$(grep -rniE 'threshold|gate|promote|regression|assert.*metric|validate_model' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no automated promotion gate in CI config" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       (the previous form piped through `head`, which exits 0, so its fallback could never fire)
+- [ ] **Operating threshold fit in-sample (§4) — HIGH where the threshold gates a decision** —
+      `grep -rnE '(quantile|percentile)\(' --include='*.py' .`: for each hit that sets a
+      threshold, are the scores held-out or out-of-fold, or the training rows?
+- [ ] **Decision report without a denominator (§4) — MEDIUM** — does every rule print its
+      evaluated count beside its verdicts, and is the population an explicit list?
+      Name-shape filters to read: `grep -rnE '\.(endswith|startswith)\(|rpartition\(' --include='*.py' .`
 - [ ] **Pipeline/model tests (ML Test Score infra) — HIGH** —
       `grep -rniE 'def test_|pytest|golden|integration' --include='*.py' . | grep -iE 'model|pipeline|predict|feature' | head`
 - [ ] **Online experiment before full rollout — MEDIUM/HIGH** —

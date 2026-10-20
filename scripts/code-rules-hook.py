@@ -114,7 +114,7 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
      [("sota-code-security", "17", "§2 session management"),
       ("sota-code-security", "02", "authentication")]),
     ("decides who may do what",
-     r"principal|permission|\brole\b|is_admin|\bowner\b|tenant|authoriz|forbidden|\b403\b",
+     r"principal|permission|\broles?\b|_roles?\b|\broles?_|is_admin|\bowner\b|tenant|authoriz|forbidden|\b403\b",
      [("sota-code-security", "03", "§1-§3 deny by default, IDOR, function-level authorization")]),
     ("sends or receives a webhook or callback",
      r"webhook|callback_?url|x-signature|signing_secret",
@@ -390,6 +390,23 @@ def self_test() -> int:
         check("claim: the marker records the path", named_before(d) == {str(f)})
         rc, c, err = run(None, raw="{not json")
         check("malformed input: exit 0, no output, says why", rc == 0 and c == "" and "code-rules-hook" in err)
+
+    # Labelled trigger cases from three field reports of 2026-10-20 (ADOPTION-LOG). Checked on the
+    # compiled table directly, because the once-per-session rule would hide a second fire.
+    def fires(what, text):
+        return any(w.startswith(what) and rx.search(text) for w, rx, _ in COMPILED)
+
+    for text in ('@require_role("editor")', "if not current_user.roles: deny()",
+                 "SELECT * FROM user_roles", 'if not has_role(u, "ops"): deny()', "role_required(x)"):
+        check("authorization form fires (a missed one costs the rule): %s" % text,
+              fires("decides who may do what", text))
+    # KNOWN false triggers, kept firing ON PURPOSE until a labelled set exists to tighten against
+    # (ADOPTION-LOG 2026-10-20 deferral). If one of these stops firing, resolve that deferral.
+    for what, text in (("logs, returns errors", "git -c user.email=t@example.invalid commit"),
+                       ("returns a list that can grow", 'p.add_argument("--limit", type=int)'),
+                       ("decides who may do what", 'role = m.get("role")\nif role == "user": pass')):
+        check("known false trigger still fires (see the deferral before changing): %s" % what,
+              fires(what, text))
 
     # The real checkout: every file a trigger names exists, and every pattern compiles and fires on
     # at least one sample of its own (no dead row).

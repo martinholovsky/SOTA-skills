@@ -154,7 +154,8 @@ Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
 - **Never report a background job's outcome from the notification.** Report the sentinel, and
   quote it.
 - **`pgrep -f 'pattern'` matches the watching shell's own command line**, so a wait loop
-  containing the pattern matches itself and never exits. Match the process you mean, exclude
+  containing the pattern matches itself and never exits (so does `ps | grep` or a `/proc` loop, and under `ssh`
+  or an agent harness the parent too: [`rules/09`](09-listing-and-selection.md) §5c). Match the process you mean, exclude
   `$$`, or watch the artefact — which you should be doing anyway. **Platform-scoped, and the
   scope is the trap**: measured 2026-09-16 as a differential, the identical loop on
   **procps-ng 4.0.6 (Linux) never exits**, while on **BSD `pgrep` (macOS) it exits
