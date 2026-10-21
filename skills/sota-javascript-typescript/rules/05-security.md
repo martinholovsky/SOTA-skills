@@ -378,7 +378,7 @@ on a runtime without FFI. The class is [`sota-code-security` rules/06](../../sot
       — a `node:ffi` import or `--allow-ffi` grant is native code to audit as C (HIGH if its arguments are request-derived).
 - [ ] `grep -rn "innerHTML\|outerHTML\|insertAdjacentHTML\|document.write" src/` — each with non-constant input is HIGH/CRITICAL; constant strings LOW.
 - [ ] `grep -rn "dangerouslySetInnerHTML\|v-html\|{@html}\|bypassSecurityTrust" src/` — sanitized with DOMPurify at render? Unsanitized user/db content = CRITICAL (stored XSS).
-- [ ] `grep -rn "eval(\|new Function(\|setTimeout(['\"\`]\|setInterval(['\"\`]" src/` — CRITICAL with dynamic input.
+- [ ] ``grep -rn "eval(\|new Function(\|setTimeout(['\"\`]\|setInterval(['\"\`]" src/`` — CRITICAL with dynamic input.
 - [ ] **Dynamic code evaluation beyond `eval(` (§"XSS", the `node:vm` bullet) — CRITICAL
       when request data reaches it** —
       `grep -rnE '(^|[^[:alnum:]_.])Function\(|vm\.(Script|runIn(New|This)?Context|compileFunction|SourceTextModule)|new (vm\.)?Script\(|\[[^]]*req\.(body|query|params)[^]]*\] *\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
@@ -425,7 +425,7 @@ on a runtime without FFI. The class is [`sota-code-security` rules/06](../../sot
       For each name the PR adds to `package.json`, run `npm view <name> time.created maintainers repository.url`: E404 or a days-old package is HIGH until explained.
 - [ ] `grep -n "git+\|git://\|github:\|https://.*\.tgz" package.json` — git-URL or remote-tarball dependencies: unauditable, refused by npm ≥12 unless `allow-git`/`allow-remote` is `root` or `all` (MEDIUM).
 - [ ] SQL built by interpolation (the rule is stated in §"Same family" above; this is its
-      probe, absent until 2026-09-22): `grep -rnE '(query|execute|raw)\\(\\s*`' src/` — a
+      probe, absent until 2026-09-22): ``grep -rnE '(query|execute|raw)\( *`' src/`` — a
       template literal reaching a driver is CRITICAL. Also `grep -rn "knex.raw\\|sequelize.query\\|\\$queryRawUnsafe\\|createQueryBuilder" src/`
       — Prisma's `$queryRaw` tagged template is parameterized while `$queryRawUnsafe` is not,
       and the two differ by one word. Parameterized/bound form everywhere, or HIGH.

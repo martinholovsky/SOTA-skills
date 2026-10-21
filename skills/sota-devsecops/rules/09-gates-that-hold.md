@@ -213,6 +213,13 @@ capability check, a Terraform plan that renders and is refused by admission.
 - **Green from the artifact-level gates is not evidence about load**, and should not be
   quoted as if it were. This is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md)'s *"state the traversed
   path beside the probe"* applied to a whole pipeline: say where the gates stop.
+- **The same boundary runs along the surface, not only the depth.** A content scanner's reach
+  is the tree; a push publishes more than the tree: the branch name, every commit message, and a
+  pull request's title and body. Field-reported 2026-10-21: a denylist that caught an internal
+  name in a file before commit let the same name out through a branch name, and a closed pull
+  request keeps its head-ref name, so it stays published. List what each publishing step emits and scan each
+  one **before** it leaves (a pre-push hook), since CI runs after the text is public. A gate that
+  reports a hit in a public CI log names *where*, never *what*, or it republishes the leak.
 - The mirror-image trap is a gate whose reach is bounded by what the **subject** checks
   first — a runner that exits at a credential check in CI never reaches the code under
   test. Injecting a **dummy** credential makes CI and a laptop measure the same depth.

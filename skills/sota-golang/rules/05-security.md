@@ -442,8 +442,8 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rnE 'ControlContext:|Control:|RegisterProtocol|NewFileTransport' --include='*.go' .`
       (no dial hook in a service that fetches caller URLs = no internal-address check)
 - [ ] **Regex escaping, anchoring & engine (§1) — HIGH** —
-      `grep -rnE 'regexp2?\.(MustCompile|Compile|MatchString|Match)\((fmt\.Sprintf|.*["`] \+ [A-Za-z_]|.*[A-Za-z0-9_)] \+ ["`])' --include='*.go' . | grep -v QuoteMeta`
-      (pattern built from data, not escaped) ; `grep -rnE 'Compile\(`\^[^(`]*\|' --include='*.go' .`
+      ``grep -rnE 'regexp2?\.(MustCompile|Compile|MatchString|Match)\((fmt\.Sprintf|.*["`] \+ [A-Za-z_]|.*[A-Za-z0-9_)] \+ ["`])' --include='*.go' . | grep -v QuoteMeta``
+      (pattern built from data, not escaped) ; ``grep -rnE 'Compile\(`\^[^(`]*\|' --include='*.go' .``
       (`^a|b$` — alternation escapes the anchors) ; `grep -rn 'regexp2\.' --include='*.go' .`
       (backtracking engine: confirm `MatchTimeout` is set)
 - [ ] **TLS — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;

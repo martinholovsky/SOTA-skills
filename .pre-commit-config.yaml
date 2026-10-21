@@ -59,3 +59,12 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
+      # Invariant 3 scans the tree; a push also publishes the branch name and commit messages.
+      # pre-commit passes the first pushed ref as PRE_COMMIT_* variables (one branch per push).
+      - id: sota-published-names
+        name: Branch name and commit messages carry no internal name (what a push publishes)
+        entry: scripts/check-published-names.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

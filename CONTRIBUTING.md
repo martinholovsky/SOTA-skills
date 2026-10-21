@@ -78,6 +78,13 @@ AGENTS.md                     # guidance for AI assistants working on the repo
   (a target, not a floor — compact rules files are fine; the hard cap is 500).
 - Ends with an **`## Audit checklist`** — yes/no questions, ideally with
   grep/lint patterns, so the rule can be used to hunt violations.
+- **Every `grep` probe in a checklist must run** — CI's executable-claims job runs each one
+  under bash on BSD and GNU grep (`scripts/check-checklist-probes.py`) and fails on an exit 2
+  that is not a missing path, because under `2>/dev/null` a probe that never ran reads as a
+  clean codebase. Inside a code span a backslash is literal: write `\[`, never `\\[` (two
+  probes were dead for four weeks that way). A probe containing a backtick goes in a
+  ``` ``double-backtick`` ``` span, or the span ends early. Running is not correctness: also
+  run it once on a fixture it should match.
 - **The two halves must correspond, in both directions.** Invariant 2 checks the
   checklist *exists*; nothing checks that it matches the guidance above it, and the
   mismatch is silent either way:

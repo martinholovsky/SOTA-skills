@@ -45,6 +45,19 @@ jobs:
             echo "::error::SOTA_DENYLIST secret is empty on a trusted run — check 3 would degrade to generic-only. Restore the secret."
             exit 1
           fi
+      - name: Branch name, commit messages and PR text carry no internal name
+        # Invariant 3 scans the tree; a push also publishes the branch name and the commit
+        # messages, and a PR its title and body (scripts/check-published-names.sh; a branch name
+        # leaked one on 2026-10-21). By CI time the text is already public, so this can only stop
+        # the merge; the pre-push hook is the control. PR text reaches the script through env:,
+        # never interpolated into run: (sota-devsecops rules/01). In CI it names WHERE a hit is,
+        # never the text, since this log is public. A fork PR gets no secret: generic phrases only.
+        if: github.event_name == 'pull_request'
+        env:
+          SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: scripts/check-published-names.sh --self-test && scripts/check-published-names.sh
       # The concept matrix is a GENERATOR, and generators in scripts/ are hand-run by
       # convention -- which is exactly how one rots unnoticed. Two things are asserted
       # here, neither of which a human remembering to run it would provide:
@@ -228,6 +241,12 @@ jobs:
         # -- but do not carry it into new prose. If you restate it, state the
         # command too; that is the whole reason this note exists.
         run: ./scripts/check-claims.sh
+      - name: Every audit-checklist grep probe runs (none exits 2)
+        # scripts/check-checklist-probes.py: each `grep` probe after `## Audit checklist` runs under
+        # bash in an empty dir; an rc 2 that is not a missing path is a probe that never searched
+        # anything, which under 2>/dev/null reads as a clean codebase. On both runners because BSD
+        # and GNU grep reject different regexes. 2026-10-21: two probes had been dead 4 weeks.
+        run: python3 scripts/check-checklist-probes.py --self-test && python3 scripts/check-checklist-probes.py
 
   shellcheck:
     name: Shell lint (shellcheck)
