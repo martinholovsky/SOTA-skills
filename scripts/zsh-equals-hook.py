@@ -23,9 +23,10 @@ function body ends only that subshell or that call (measured), so it is flagged 
 half that answers the question is still the half that never ran. NOT LEXED: backquotes inside
 double quotes, and `case` patterns. A miss there costs what no hook costs today.
 
-ONLY UNDER zsh: it acts when $SHELL's basename is `zsh`, which is the shell Claude Code runs Bash
-commands in. Under bash `echo ===` is harmless and the hook allows everything.
-SOTA_ZSH_EQUALS_HOOK=off (or 0 / false / no) disables it, and =on forces it regardless of $SHELL.
+ONLY UNDER zsh: it works out the shell Claude Code runs Bash commands in the way Claude Code does
+(CLAUDE_CODE_SHELL, then $SHELL, then the first zsh or bash on PATH; see agent_shell) and acts only
+when that is zsh. Under bash `echo ===` is harmless and the hook allows everything.
+SOTA_ZSH_EQUALS_HOOK=off (or 0 / false / no) disables it, and =on forces it whatever the shell.
 
 ON A HIT it exits 2 with the reason on stderr. Claude Code blocks the call and shows Claude that
 text as the tool's error (code.claude.com/docs/en/hooks, "Exit code 2", verified 2026-10-21). It
@@ -210,7 +211,25 @@ def active():
         return False
     if mode in {"on", "1", "true", "yes"}:
         return True
-    return os.path.basename(os.environ.get("SHELL", "")) == "zsh"
+    return agent_shell() == "zsh"
+
+
+def agent_shell():
+    """The shell Claude Code runs Bash commands in, in its own order: a working bash/zsh path in
+    CLAUDE_CODE_SHELL, else $SHELL when it is bash or zsh, else the first zsh then bash on PATH
+    (the CLAUDE_CODE_SHELL entry in code.claude.com/docs/en/env-vars, and the binary's own strings:
+    "is not a valid bash/zsh path, falling back to detection", 2.1.306). Reading $SHELL alone
+    refused `echo ===` for a user whose login shell is zsh and whose agent runs bash."""
+    for var in ("CLAUDE_CODE_SHELL", "SHELL"):
+        path = os.environ.get(var, "")
+        name = os.path.basename(path)
+        if name in {"bash", "zsh"} and (var == "SHELL" or os.access(path, os.X_OK)):
+            return name
+    for name in ("zsh", "bash"):
+        for d in os.environ.get("PATH", "").split(os.pathsep):
+            if d and os.access(os.path.join(d, name), os.X_OK):
+                return name
+    return ""
 
 
 def main():
@@ -308,8 +327,10 @@ def self_test(require_zsh):
         print(f"zsh ({zsh}): {len(CASES) - bad}/{len(CASES)} verdicts agree")
 
     # the hook end to end: event in, exit code and stderr out
+    real_bash = shutil.which("bash") or "/bin/bash"
     def run(cmd, env_extra, tool="Bash"):
-        env = {k: v for k, v in os.environ.items() if k != "SOTA_ZSH_EQUALS_HOOK"}
+        env = {k: v for k, v in os.environ.items()
+               if k not in {"SOTA_ZSH_EQUALS_HOOK", "CLAUDE_CODE_SHELL"}}
         env.update(env_extra)
         ev = json.dumps({"hook_event_name": "PreToolUse", "tool_name": tool,
                          "tool_input": {"command": cmd}})
@@ -321,6 +342,9 @@ def self_test(require_zsh):
         ("deny under zsh", run("echo ===; ls", {"SHELL": "/bin/zsh"}), 2, "EQUALS"),
         ("allow clean under zsh", run("echo ---; ls", {"SHELL": "/bin/zsh"}), 0, ""),
         ("allow under bash", run("echo ===; ls", {"SHELL": "/bin/bash"}), 0, ""),
+        ("agent shell bash, login zsh", run("echo ===", {"SHELL": "/bin/zsh", "CLAUDE_CODE_SHELL": real_bash}), 0, ""),
+        ("agent shell zsh, login bash", run("echo ===", {"SHELL": "/bin/bash", "CLAUDE_CODE_SHELL": zsh or real_bash}), 2 if zsh else 0, "EQUALS" if zsh else ""),
+        ("invalid override falls back to $SHELL", run("echo ===", {"SHELL": "/bin/zsh", "CLAUDE_CODE_SHELL": "/nonexistent/bash"}), 2, "EQUALS"),
         ("forced on", run("echo ===", {"SHELL": "/bin/bash", "SOTA_ZSH_EQUALS_HOOK": "on"}), 2, "EQUALS"),
         ("opt-out", run("echo ===", {"SHELL": "/bin/zsh", "SOTA_ZSH_EQUALS_HOOK": "off"}), 0, ""),
         ("other tool", run("echo ===", {"SHELL": "/bin/zsh"}, tool="Read"), 0, ""),

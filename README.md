@@ -1388,7 +1388,7 @@ refuses that command before it runs and tells the agent how to quote it (`sota-s
 rules/06 §1). A written rule did not stop the habit: a field report records the rule read and
 broken 60 seconds later. Over one operator's 43,875 agent Bash calls, it refused the 344 that zsh
 had cut and nothing else (in-sample: the lexer was corrected on that corpus). It adds nothing to
-the context unless it fires, does nothing unless `$SHELL` is zsh, costs about 85 ms per Bash call
+the context unless it fires, does nothing unless the agent's shell is zsh (`CLAUDE_CODE_SHELL`, else `$SHELL`), costs about 85 ms per Bash call
 and needs `python3`. Turn it off with `SOTA_ZSH_EQUALS_HOOK=off`; `install.sh --routing` offers it
 to clone installs.
 

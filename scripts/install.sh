@@ -481,7 +481,7 @@ setup_code_rules_hook() {
 # `[ a == b ]`), which zsh rewrites to a command path or aborts the list on, so the half after it
 # never runs (sota-shell-scripting rules/06 §1). It adds nothing to the context unless it fires:
 # over 43,875 transcript Bash calls it refused 344, all real, and nothing else (2026-10-21, one
-# operator's corpus). It costs ~85 ms per Bash call, and it does nothing unless $SHELL is zsh.
+# operator's corpus). It costs ~85 ms per Bash call, and it does nothing unless the agent's shell (CLAUDE_CODE_SHELL, else $SHELL) is zsh.
 setup_zsh_equals_hook() {
   local s="$HOME/.claude/settings.json" tmp cmd
   cmd="python3 \"$REPO/scripts/zsh-equals-hook.py\""
