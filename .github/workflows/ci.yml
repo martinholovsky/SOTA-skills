@@ -167,7 +167,7 @@ jobs:
         run: python3 scripts/code-rules-hook.py --self-test
 
       - name: Prove the zsh EQUALS hook refuses what zsh would cut, and only that
-        # An opt-in PreToolUse hook on Bash (scripts/zsh-equals-hook.py): an unquoted `=word`
+        # A PreToolUse hook on Bash, on by default (scripts/zsh-equals-hook.py): an unquoted `=word`
         # (`echo ===`, `[ a == b ]`) that zsh rewrites or aborts the list on. --require-zsh runs
         # every lexer case in real zsh too, so a fixture that disagrees with the shell fails
         # rather than skips. Mutation-checked 2026-10-21: a detector that never flags fails 12.

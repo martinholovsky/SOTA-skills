@@ -499,13 +499,14 @@ def surfaces_inventory():
         inv["installer_hooks"].append(("SessionStart", "update-reminder.sh"))
     if "code-rules-hook.py" in ins:
         inv["installer_hooks"].append(("PostToolUse on Edit/Write", "code-rules-hook.py"))
+    if "zsh-equals-hook.py" in ins:
+        inv["installer_hooks"].append(("PreToolUse on Bash", "zsh-equals-hook.py"))
     # Declared, then checked against scripts/*-hook.py both ways: this list was written
     # with two entries and code-rules-hook.py (ROADMAP 73 (h), #531) landed without a box
     # on page 7, and nothing said so. A *-hook.py the plugin registers (code-rules-hook.py since
     # ROADMAP 73 (m)) is accounted for by hooks.json instead of this list.
     optin = [("Stop + PostToolUse", "verified-done-hook.py"),
-             ("PostToolUse on Skill", "skill-depth-hook.py"),
-             ("PreToolUse on Bash", "zsh-equals-hook.py")]
+             ("PostToolUse on Skill", "skill-depth-hook.py")]
     on_disk = {f.name for f in (ROOT / "scripts").glob("*-hook.py")}
     shipped = {h for _, h in inv["plugin_hooks"] if h.endswith("-hook.py")}
     if on_disk != {h for _, h in optin} | shipped or shipped & {h for _, h in optin}:

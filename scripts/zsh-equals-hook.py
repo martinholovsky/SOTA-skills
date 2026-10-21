@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """zsh-equals-hook.py — refuse a Bash command whose unquoted `=word` zsh would rewrite or abort on.
-A Claude Code PreToolUse hook on Bash (opt-in: it is NOT in hooks/hooks.json).
+A Claude Code PreToolUse hook on Bash, ON by default since 2026-10-21 (operator decision, ADOPTION-LOG):
+the plugin registers it (hooks/hooks.json) and install.sh's routing setup offers it.
 
 WHY. zsh's EQUALS option (on by default) expands an unquoted word starting with `=` to the path of
 the command it names: `=ls` becomes `/bin/ls`, silently. A word that names no command aborts the
@@ -32,7 +33,7 @@ never rewrites the command: a silent rewrite would hide the habit on every host 
 Every internal error allows and says so on stderr (fail-open, loudly: a broken guard must not brick
 the shell).
 
-Install (user or project settings.json):
+Install without the plugin (user or project settings.json; install.sh --routing writes this):
   "hooks": {
     "PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "python3 /ABS/PATH/scripts/zsh-equals-hook.py"}]}]
   }
@@ -44,10 +45,10 @@ absent rather than skip the half that checks each case against the real shell)
 """
 import json
 import os
-import shutil
-import subprocess
 import sys
-import tempfile
+
+# shutil, subprocess and tempfile are imported inside self_test(): this runs before every Bash
+# call, and moving them here took a call from 137 to 85 ms median (bare python3: 69; 2026-10-21).
 
 OPERATORS = set(";&|()<>`\n")
 COND_OPERATORS = {"=", "==", "=~"}
@@ -274,6 +275,10 @@ CASES = [
 
 
 def self_test(require_zsh):
+    import shutil
+    import subprocess
+    import tempfile
+
     fails = 0
     for cmd, want, _ in CASES:
         got = equals_words(cmd)
