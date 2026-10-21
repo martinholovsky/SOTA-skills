@@ -283,6 +283,28 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
       genuine no-match ([`rules/06`](06-ad-hoc-commands.md) §1). Every sweep read as an *absence* has been positive-controlled
       against a pattern known to be present.
 
+## 5a. zsh habits that break silently in bash, and in `sh`
+
+A one-liner learned or tested in zsh, which is macOS's interactive shell and a common agent
+shell, can change meaning in bash, which is the login and agent shell on most Linux hosts, and
+in `sh`, which is dash on Debian and Ubuntu and BusyBox ash on Alpine.
+[`rules/06`](06-ad-hoc-commands.md) §1 covers the other direction. Every row here except the
+last fails **silently**, at exit 0 with a plausible result. Measured 2026-10-21 on bash 5.3.15
+(macOS), 5.2.37 (Debian), 3.2.57 (macOS `/bin/bash`), zsh 5.9, dash 0.5.12 and BusyBox ash:
+
+| construct | zsh | bash | dash / BusyBox | write instead |
+|---|---|---|---|---|
+| `**/*.md`, `grep … src/**/*.ts` | recursive | **one directory level**: `globstar` is off by default, and bash 3.2 has no `globstar` at all | one level | `find src -name '*.ts'`, `git ls-files '*.ts'`, or `grep -r --include='*.ts' … src/`. This library shipped the bare form in a checklist, which found 1 of 3 files under bash |
+| `n=0; cmd \| while read -r l; do n=$((n+1)); done; echo "$n"` | **2**: the last stage runs in the current shell | **0**: the loop ran in a subshell | 0 | feed the loop: `done < <(cmd)` (bash, BusyBox) or a heredoc (everywhere, dash included); `shopt -s lastpipe` works only in a bash ≥ 4.2 script ([`rules/02`](02-robustness-correctness.md) §4, SC2031) |
+| `a=(x y z); echo "${a[1]}"` | `x`: 1-based | `y`: 0-based | a syntax error | `${a[0]}` in bash. `${pipestatus[1]}` against `${PIPESTATUS[0]}` is the same split |
+| `echo 'a\tb'` | prints a tab | prints `\t` | dash: a tab; BusyBox: `\t` | `printf '%s\n' "$data"` for data, `printf 'a\tb\n'` for escapes (§4) |
+| `j=0; (( j++ ))` under `set -e` | **ends the script, rc 1, no message** | bash 5.2 and 5.3: **the same**; bash 3.2: carries on | `j++: not found` (127) | `(( ++j ))` or `j=$((j + 1))`. Test on the bash you deploy to: macOS `/bin/bash` hides this |
+| `m=08; echo "$((m + 1))"`: any zero-padded month, day, hour or minute | 9 | **`08: value too great for base`**, so a `date +%m` script fails in August and September only | dash: an error | `$(( ${m#0} + 1 ))` everywhere; `$(( 10#$m + 1 ))` in bash, zsh and BusyBox, but dash rejects it |
+
+**The tell is a result that differs between shells, so a one-liner that passed in one shell is
+not tested for another.** Run it in the shell that will run it: `bash -c '…'` on a zsh machine
+reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces dash.
+
 ## Audit checklist
 
 - [ ] **Is any long-running script rewritten while it may be executing?** (§3d) A deploy that
@@ -318,3 +340,5 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 - [ ] `grep -rn 'echo .*\$' --include='*.sh'` — variable data through `echo` (SC2028 area);
       MEDIUM unless value is constrained.
 - [ ] Glob loops without nullglob/failglob or `[[ -e $f ]]` guard.
+- [ ] **A bare `**` in a bash script or a pasteable command** (§5a): `grep -nE "(^|[[:space:]=])[^[:space:]'\"]*[*][*](/|\$|[[:space:]])" <file>` — bash matches one level unless `shopt -s globstar` (bash ≥ 4.0) is set; use `find`, `git ls-files` or `grep -r --include`.
+- [ ] **Zero-padded numbers in arithmetic** (§5a): `grep -nE 'date \+%[mdHMSj]' <file>` and check each value reaching `$(( ))` is stripped (`${v#0}`) or based (`10#$v`); it fails only on `08` and `09`.

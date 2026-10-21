@@ -248,7 +248,7 @@ steps:
 - [ ] ESLint config is flat + `strictTypeChecked` (type-aware): `grep -rn "strictTypeChecked\|projectService" eslint.config.*` — syntax-only linting in a TS repo = MEDIUM.
 - [ ] **Typed lint actually runs (§"ESLint flat config", the TypeScript 7.0 paragraph)** — `grep -nE '"typescript": *"[~^]?7|"typescript": *"npm:typescript@' package.json` next to `typescript-eslint` means no 6.0 API for the linter; run `npx eslint .` and read the exit code — 2 with "typescript-eslint does not support TS 7.0" is HIGH (every type-aware rule, `no-floating-promises` included, is off).
 - [ ] `grep -rn "eslint-disable" src/ | grep -v -- "--"` — disables without reason comments; count trend (LOW each, MEDIUM in volume).
-- [ ] `grep -rn "querySelector\|container\." src/**/*.test.tsx` and `getByTestId` density — implementation-coupled tests (LOW/MEDIUM).
+- [ ] `grep -rnE --include='*.test.tsx' 'querySelector|container\.' src/` and `getByTestId` density — implementation-coupled tests (LOW/MEDIUM).
 - [ ] `grep -rn "fireEvent" src/` in component tests — should be `userEvent` (LOW).
 - [ ] `grep -rn "waitForTimeout\|setTimeout" e2e/ tests/` — sleep-based waits = flake (MEDIUM).
 - [ ] **Parsers and serializers with no property-based test (Practices: `fast-check`) — LOW,
@@ -257,7 +257,7 @@ steps:
       exist) ; `grep -rlE 'export (async )?(function|const) (parse|decode|deserialize|serialize|encode)[A-Za-z]*' --include='*.ts' --include='*.js' src/`
       (each listed module with no `fc.assert(fc.property(` in its tests is a candidate)
 - [ ] `grep -rn "vi.mock(\|jest.mock(" src/ | wc -l` high vs test count — module-mock-heavy suite; check MSW present for network (`grep -rn "msw" package.json`) (MEDIUM if fetch wrappers are mocked instead).
-- [ ] MSW server with `onUnhandledRequest: 'error'`? Real network calls in unit tests (`grep -rn "localhost\|https://" src/**/*.test.ts`) = MEDIUM (flaky + slow).
+- [ ] MSW server with `onUnhandledRequest: 'error'`? Real network calls in unit tests (`grep -rnE --include='*.test.ts' 'localhost|https://' src/`; an unquoted `src/**/` searches one level in bash, [`sota-shell-scripting` rules/05](../../sota-shell-scripting/rules/05-constructs-and-cleanup.md) §5a) = MEDIUM (flaky + slow).
 - [ ] Coverage thresholds configured and honest (no `**/index.ts` exclusion games) — absent = LOW; tests asserting nothing (`grep -rn "expect(" -L` on test files) = HIGH for the affected area.
 - [ ] knip (or equivalent) in CI? Run `npx knip` during audit — large unused-dependency list = MEDIUM (supply-chain surface).
 - [ ] Libraries: `npx publint && npx @arethetypeswrong/cli --pack` clean; `files` allowlist present — failures = HIGH for published packages.
