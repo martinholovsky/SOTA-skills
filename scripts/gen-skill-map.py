@@ -504,7 +504,8 @@ def surfaces_inventory():
     # on page 7, and nothing said so. A *-hook.py the plugin registers (code-rules-hook.py since
     # ROADMAP 73 (m)) is accounted for by hooks.json instead of this list.
     optin = [("Stop + PostToolUse", "verified-done-hook.py"),
-             ("PostToolUse on Skill", "skill-depth-hook.py")]
+             ("PostToolUse on Skill", "skill-depth-hook.py"),
+             ("PreToolUse on Bash", "zsh-equals-hook.py")]
     on_disk = {f.name for f in (ROOT / "scripts").glob("*-hook.py")}
     shipped = {h for _, h in inv["plugin_hooks"] if h.endswith("-hook.py")}
     if on_disk != {h for _, h in optin} | shipped or shipped & {h for _, h in optin}:

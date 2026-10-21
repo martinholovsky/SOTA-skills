@@ -166,6 +166,15 @@ jobs:
         # merge and a test-file filter removed each fail it.
         run: python3 scripts/code-rules-hook.py --self-test
 
+      - name: Prove the zsh EQUALS hook refuses what zsh would cut, and only that
+        # An opt-in PreToolUse hook on Bash (scripts/zsh-equals-hook.py): an unquoted `=word`
+        # (`echo ===`, `[ a == b ]`) that zsh rewrites or aborts the list on. --require-zsh runs
+        # every lexer case in real zsh too, so a fixture that disagrees with the shell fails
+        # rather than skips. Mutation-checked 2026-10-21: a detector that never flags fails 12.
+        run: |
+          command -v zsh >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends zsh; }
+          python3 scripts/zsh-equals-hook.py --self-test --require-zsh
+
       - name: Prove the MCP server answers correctly and refuses hostile input
         # scripts/sota-mcp-server.py serves the library read-only to agents without a skills
         # loader. The test drives it over real stdio: lifecycle, version negotiation, every

@@ -7,8 +7,7 @@ product**, or damage the thing they were inspecting. Split out of [`rules/01`](0
 its zsh, sweep and blast-radius sections became §1, §2 and §3 here. The blast-radius and
 process-table sections moved on to [`rules/08`](08-ad-hoc-side-effects.md) at v1.42.2, keeping their numbers,
 and the listing and selection sections (§5, §5a) to [`rules/09`](09-listing-and-selection.md) (· v1.43.1) the same
-way. Quoting itself stays in
-[`rules/01`](01-safety-baseline.md) §3, which this file assumes you have read.
+way. Quoting itself stays in [`rules/01`](01-safety-baseline.md) §3, which this file assumes you have read.
 
 ## 1. zsh is not bash — the deviations that bite *pasted* commands
 
@@ -24,7 +23,7 @@ interactive shell is zsh**. Check the operator's shell rather than assuming; the
 | unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
 | one unmatched glob among several, inside `$(ls a b* 2>/dev/null)` | the literal word errors, the matches still print | the **whole** inner command aborts — matched files lost too; `2>/dev/null` inside `$(…)` does not silence zsh's own error | **silently** — the list is empty, and the callee picks its own scope (§2b) |
 | `cmd \| python3 - <<'PY'` (pipe **and** heredoc on fd 0) | heredoc wins, piped data **discarded** | `MULTIOS` **concatenates** them: the data runs as the program's first lines | bash **quietly** (script reads empty stdin); zsh an error naming *your data* (below), or **silently** when the data parses as code (`echo 42` runs) |
-| an unquoted word starting with `=` (`echo =====`, `grep -c =ls f`) | a literal word | `EQUALS` (on by default) rewrites `=ls` to `/bin/ls`; a word naming no command **aborts the whole `;` list** | `echo =====` as a separator is loud **only at the tail**: commands before it printed, so `==== not found` (exit 1) is the last line of a plausible result and everything after it never ran — read top-down it passes as complete (field-reported 2026-10-20: two sessions, five hits, one cancelling the load of this file). **silently** for a real command name — measured zsh 5.9: `grep -c =ls` counted 0 where bash counted 1. Separate with `echo ---`, never a bare run of `=`; quote it, or `setopt noequals`. The tell: a nonzero exit whose last line is `<word> not found` means the list was cut there |
+| an unquoted word starting with `=` (`echo =====`, `grep -c =ls f`) | a literal word | `EQUALS` (on by default) rewrites `=ls` to `/bin/ls`; a word naming no command **aborts the whole `;` list** | `echo =====` as a separator is loud **only at the tail**: commands before it printed, so `==== not found` (exit 1) is the last line of a plausible result and everything after it never ran — read top-down it passes as complete (field-reported 2026-10-20: two sessions, five hits, one cancelling the load of this file). **silently** for a real command name — measured zsh 5.9: `grep -c =ls` counted 0 where bash counted 1. Separate with `echo ---`, never a bare run of `=`; quote it, or `setopt noequals`. The tell: a nonzero exit whose last line is `<word> not found` means the list was cut there. **A bare `==` aborts too, outside `[[ ]]`**: `[ a == a ]` → `= not found` — write `[[ a == a ]]`. A cut inside `( )`, `$( )` or a function body ends only that subshell or call, and is still the half that never ran. **Reading this row does not stop it** (field-reported 2026-10-21: read 07:30:02Z, broken 07:31:02Z) — the separator is a reflex, so the control is structural: the opt-in PreToolUse hook `scripts/zsh-equals-hook.py` refuses the command before it runs, and over one operator's 43,875 agent Bash calls it caught 344 of 344 real cuts with 0 false refusals (measured 2026-10-21) |
 | an unbraced `$var` followed by `:` and a **letter**, even inside double quotes | a literal `:` | the letter is a **modifier**: `"$d:tmp"` → `bmp` (`:t`), `"$d:home"` → `/aome` (`:h`), `r=HEAD; "$r:scripts/check-invariants.sh"` → `HEADk-invariants.sh` (`:s`, `c` as delimiter); `$h:8080` and `$h:$d` are untouched | **silently** when the word completes a modifier — git was asked for a path that does not exist, its error went to stderr, and `grep -c` counted 0 (2026-10-16); loudly (`bad substitution`, the list aborts) when `:s` finds no closing delimiter. Brace it: `"${r}:path"`. Measured zsh 5.9, 2026-10-18 |
 
 **The third is the dangerous one: a failed glob means the command never runs at all.**
@@ -90,6 +89,7 @@ fixture, [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-
 | ugrep 7.8.4 **and** GNU grep 3.11, `-R` | followed | followed |
 | **BSD grep 2.6.0** (macOS `/usr/bin/grep`) **`-r` and `-R` alike** | **skipped** — unless the argument carries a **trailing slash** (`linked/`) | **skipped, silently** |
 | `rg` (defaults) | followed | **skipped** — `--follow` follows |
+| `find` — BSD, GNU findutils 4.10.0 **and** BusyBox 1.36.1 alike (default `-P`) | **not followed: the link itself is the whole traversal, 1 entry, so every `-name` test is 0** — unless a trailing slash, `-H` or `-L` | **skipped, silently** — `-L` follows |
 
 ```text
 scan/plain.md          scan/linked -> ../outside   outside/target.md holds the needle
@@ -127,7 +127,8 @@ printf 'control=%s  hits=%s\n' \
 A control of **0** means the sweep is broken and the `hits=0` beside it means nothing. This
 is [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2's known-good, at one-liner scale. A control on the same
 command line through a different path proves only that the shell ran (field-reported 2026-10-11;
-refutation form: [`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a.1).
+refutation form: [`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a.1). Nor does one whose path passes *through* the suspect link
+rather than starting at it: the kernel resolves every intermediate link, so `find ~/L/repo -name VERSION` found the file while `find ~/L -name …` returned 0 (field-reported 2026-10-21).
 
 **A passing control proves the instrument, not the scope.** A control drawn from *inside* the
 scope you searched passes whether or not that scope excludes the answer. Field-reported: `rg -l
@@ -456,7 +457,6 @@ thing** — index it by what it is *for*.
       match to the next argument and exits 0, so the output is false *content* rather than a
       false absence. `grep -rn 'rg -r' ` your own scripts and scrollback before quoting a
       surprising search result
-
 - [ ] **Is any search pattern passed as a bare argument when it could begin with `-`?** (§2c)
       It is parsed as a flag, the error goes to stderr, and you get a clean zero. Use `-e
       PATTERN` or `--` whenever the pattern is *data*. The unforgivable combination is
@@ -467,7 +467,6 @@ thing** — index it by what it is *for*.
       (unreadable path) is indistinguishable from `1` (absent) once stderr is gone, and it
       manufactures findings about someone else's code. Branch on the exit code and print the
       captured stderr. Sweep your own checklists for the shape: `grep -rn '2>/dev/null ||'`.
-
 - [ ] **Does any command carry a hardcoded label asserting its own result?** (§2e) — a
       trailing `; echo "^ 0 = ..."` is a prediction typed before the run, and `;` cannot
       propagate a contradiction. Sweep your own scripts and scrollback for `; *echo` beside
@@ -496,5 +495,5 @@ thing** — index it by what it is *for*.
       **usage error (exit 2) from the callee**, which looks like the tool is broken.
 - [ ] **Does any command pipe into `interpreter - <<EOF`?** (§1) Both claim fd 0: bash drops
       the pipe, zsh prepends it to the program. Sweep with `grep -nE '\| *[a-z0-9]+ +- *<<'`.
-- [ ] **An unquoted `=word` in a zsh command** (§1, `EQUALS`): `grep -nE '(^|[[:space:]])(=[^[:space:]=]|==+[^[:space:]=]|={3,})' <snippet>` — quote each hit; `=cmd` silently becomes that command's path, and a word naming no command aborts the list. Separators are `echo ---`; a tool result ending `<word> not found` after a nonzero exit was cut there.
+- [ ] **An unquoted `=word` in a zsh command** (§1, `EQUALS`): `python3 scripts/zsh-equals-hook.py --check <snippet>`, a lexer that exempts quotes, heredocs, comments, `[[ ]]` and `(( ))` — the regex once given here flagged 1,686 clean commands of 43,875 and missed bare `==` (2026-10-21); without the script, `grep -nE '(^|[[:space:]])(=[^[:space:]=]|==+([^[:space:]=]|[[:space:]]|$)|={3,})' <snippet>` and read each hit — quote each hit; `=cmd` silently becomes that command's path, and a word naming no command aborts the list. Separators are `echo ---`; a tool result ending `<word> not found` after a nonzero exit was cut there.
 - [ ] **An unbraced `$var:` before a letter in a zsh command** (§1, modifiers): `grep -nE '\$[A-Za-z_][A-Za-z0-9_]*:[A-Za-z]' <snippet>` — brace each hit (`"${var}:…"`); `"$rev:path"` can silently become a different path.

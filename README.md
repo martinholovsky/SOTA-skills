@@ -1029,7 +1029,9 @@ anything". Three corrections, each re-checked 2026-10-02:
   [Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) exposes the same loop with
   hooks and permissions programmatically. **`scripts/verified-done-hook.py`** uses that: an
   opt-in Stop hook that refuses "done" on a changed tree until a verification command has
-  passed on exactly that tree (router principle 6, enforced). The git hooks from
+  passed on exactly that tree (router principle 6, enforced). **`scripts/zsh-equals-hook.py`** is
+  an opt-in PreToolUse hook that refuses a zsh command carrying an unquoted `=word` before it runs
+  (`sota-shell-scripting` rules/06 §1), a reflex the written rule did not stop. The git hooks from
   `scripts/init-gates.sh` and CI are enforcement on every host, whatever the agent.
 - **The router is not an always-on 43 KB blob.** Only each skill's frontmatter `description`
   is in every turn's listing; the router's body loads when the skill is invoked
