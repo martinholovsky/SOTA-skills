@@ -124,6 +124,12 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    fresh tasks (sota-agent-evals v14, cases-v5) the hook plus the router table moved nothing (0.667
    in both arms); under a competing prompt (v15) it led 0.567 → 0.767, not significant (p = 0.125).
    Say what that costs.
+   2d. zsh EQUALS hook (Claude Code only, and only when the agent's shell is zsh): does
+   `~/.claude/settings.json` register `zsh-equals-hook.py` as a `PreToolUse` hook on Bash, or does
+   the plugin? The agent's shell is `CLAUDE_CODE_SHELL` when that names an executable bash or
+   zsh, else `$SHELL`, else the first zsh then bash on PATH. On a bash agent the hook is not
+   needed (INFO). On a zsh agent a missing hook is PARTIAL, because a `git pull` on a symlink
+   install brings the script and registers nothing.
    INFO only when it is turned off on purpose (`SOTA_CODE_RULES_HOOK=off`). A registration whose
    script is gone is PARTIAL too: it runs nothing on every edit. A sota-skills plugin copy that
    predates the hook needs a plugin update, because a plugin updates only on a release.

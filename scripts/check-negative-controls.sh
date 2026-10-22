@@ -1318,8 +1318,14 @@ build_fixture() {  # a machine+repo where every check passes
   # fit, and ANY plugin skill counted on top of them does not. That margin is the probe.
   # …plus the code-rules hook as install.sh writes it (check 2c), pointing at a script that exists
   : > "$VS/repo/scripts/code-rules-hook.py"
-  printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}],"PostToolUse":[{"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"python3 \\"%s\\""}]}]}}\n' \
-    "$VS/repo/scripts/code-rules-hook.py" > "$VS/home/settings.json"
+  # …and the zsh EQUALS hook (check 2d), for an agent whose shell is zsh. The shells are stubs
+  # OFF the PATH, named by CLAUDE_CODE_SHELL in run_vs, so the caller's own $SHELL (zsh on a Mac,
+  # bash on a CI runner) cannot decide a probe.
+  : > "$VS/repo/scripts/zsh-equals-hook.py"
+  mkdir -p "$VS/home/shells"
+  for _sh in zsh bash; do printf '#!/bin/sh\nexit 0\n' > "$VS/home/shells/$_sh"; chmod +x "$VS/home/shells/$_sh"; done
+  printf '{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}],"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"python3 \\"%s\\""}]}],"PostToolUse":[{"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"python3 \\"%s\\""}]}]}}\n' \
+    "$VS/repo/scripts/zsh-equals-hook.py" "$VS/repo/scripts/code-rules-hook.py" > "$VS/home/settings.json"
   printf 'stack\n' > "$VS/home/profiles/example.md"
   # repo context
   cd "$VS/repo"
@@ -1354,6 +1360,7 @@ run_vs() {  # sets VS_OUT / VS_RC
   VS_OUT=$( cd "$VS/repo" && CLAUDE_CONFIG_DIR="$VS/home" HOME="$VS/uhome" PATH="$VS/bin:$PATH" \
             COPILOT_HOME='' CODEX_HOME='' \
             SOTA_SEARCHERS="${VS_SEARCHERS:-grep}" \
+            CLAUDE_CODE_SHELL="${VS_AGENT_SHELL:-$VS/home/shells/zsh}" SHELL="${VS_LOGIN_SHELL:-/bin/sh}" \
             bash "$VS/repo/scripts/verify-setup.sh" 2>&1 ) || VS_RC=$?
 }
 
@@ -1367,6 +1374,20 @@ else
   echo "  The known-good fixture does not pass, so every probe below would be"
   echo "  meaningless. Nothing was run."
   printf '%s\n' "$VS_OUT" | grep -E '^(FAIL|PARTIAL)' | sed 's/^/    /'
+  exit 1
+fi
+# The positive control refuses FAIL only, and 2d's probes assert PARTIAL or INFO rows: a fixture
+# already at PARTIAL on 2d would let every one of them "catch" for free. Require its PASS row.
+# Line-anchored, as vs_out_has_fail is: a glob over the whole buffer would accept any earlier PASS.
+_eq_base=0
+while IFS= read -r _l; do
+  case "$_l" in PASS*"2d. zsh EQUALS hook"*) _eq_base=1 ;; esac
+done <<VSEOF
+$VS_OUT
+VSEOF
+if [ "$_eq_base" -ne 1 ]; then
+  echo "  [positive control] the fixture's 2d row is not PASS, so the 2d probes would be vacuous:"
+  printf '%s\n' "$VS_OUT" | grep -F '2d.' | sed 's/^/    /'
   exit 1
 fi
 
@@ -1528,6 +1549,25 @@ vs_probe_info "the code-rules hook absent and turned off on purpose" "2c. code-r
 unset SOTA_CODE_RULES_HOOK
 rm -f "$VS/repo/scripts/code-rules-hook.py"
 vs_probe_partial "a code-rules hook registration whose script is gone" "2c. code-rules hook"
+# 2d: the zsh EQUALS hook, the same shape as 2c, plus the branch 2c lacks: a non-zsh agent shell
+# needs no hook, so its absence there is INFO. That escape is probed too, and so is the order
+# (CLAUDE_CODE_SHELL decides before $SHELL): a check that read $SHELL alone would fail one of them.
+_eq_nohook='{"skillListingBudgetFraction":0.0002,"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}'
+printf '%s\n' "$_eq_nohook" > "$VS/home/settings.json"
+vs_probe_partial "the zsh EQUALS hook not installed, agent shell zsh" "2d. zsh EQUALS hook"
+printf '%s\n' "$_eq_nohook" > "$VS/home/settings.json"
+export SOTA_ZSH_EQUALS_HOOK=off
+vs_probe_info "the zsh EQUALS hook absent and turned off on purpose" "2d. zsh EQUALS hook" "deliberate opt-out"
+unset SOTA_ZSH_EQUALS_HOOK
+rm -f "$VS/repo/scripts/zsh-equals-hook.py"
+vs_probe_partial "a zsh EQUALS hook registration whose script is gone" "2d. zsh EQUALS hook"
+printf '%s\n' "$_eq_nohook" > "$VS/home/settings.json"
+VS_AGENT_SHELL="$VS/home/shells/bash" VS_LOGIN_SHELL=/bin/zsh
+vs_probe_info "no EQUALS hook, agent shell bash (login shell zsh)" "2d. zsh EQUALS hook" "not needed: the agent's shell is bash"
+printf '%s\n' "$_eq_nohook" > "$VS/home/settings.json"
+VS_AGENT_SHELL="$VS/home/shells/missing/zsh" VS_LOGIN_SHELL=/bin/bash
+vs_probe_info "no EQUALS hook, CLAUDE_CODE_SHELL not executable, \$SHELL bash" "2d. zsh EQUALS hook" "not needed: the agent's shell is bash"
+unset VS_AGENT_SHELL VS_LOGIN_SHELL
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
@@ -1616,5 +1656,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 2c, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 2c, 2d, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."
