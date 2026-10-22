@@ -570,6 +570,65 @@ else
     "not installed — below the default setup. What it costs: in measured agent runs without it, agents applied the security rules a task needed in 0.698 of rule tests, against 0.906 with it; the misses cluster in SSRF checks, CSV formula guards, login throttling, rate limits and session lifetimes (sota-agent-evals v7/v10; clusters from its cases-v4 calibration; in-sample; on fresh tasks, v14, it plus the router table moved nothing). Having it costs about +68% per agent run. Add it: $cr_fix"
 fi
 
+# --- 2d. the zsh EQUALS hook (on by default since 2026-10-21) ---
+# A PreToolUse hook on Bash that refuses a command zsh would cut short: an unquoted `=word`
+# expands to a command path or aborts the whole list (`echo =====` -> "==== not found", and
+# nothing after it runs). Only meaningful when the agent's shell is zsh, found in the hook's own
+# order (scripts/zsh-equals-hook.py agent_shell): CLAUDE_CODE_SHELL when it is an executable
+# bash/zsh, else $SHELL when it is bash or zsh, else the first zsh then bash on PATH. Missing on a
+# zsh agent is PARTIAL: a `git pull` on a symlink install brings the script and registers nothing
+# (field-reported 2026-10-22: the cut recurred with the rule loaded and the hook unwired). The
+# plugin registers it; install.sh --routing offers it.
+eq_shell=""
+eq_name=${CLAUDE_CODE_SHELL:-}; eq_name=${eq_name##*/}
+case "$eq_name" in
+  bash | zsh) [ -x "$CLAUDE_CODE_SHELL" ] && eq_shell=$eq_name ;;
+esac
+if [ -z "$eq_shell" ]; then
+  eq_name=${SHELL:-}; eq_name=${eq_name##*/}
+  case "$eq_name" in bash | zsh) eq_shell=$eq_name ;; esac
+fi
+if [ -z "$eq_shell" ]; then
+  if command -v zsh >/dev/null 2>&1; then eq_shell=zsh
+  elif command -v bash >/dev/null 2>&1; then eq_shell=bash; fi
+fi
+eq_have=""; eq_stale=""
+for s in "$CLAUDE_HOME/settings.json" "$CLAUDE_HOME/settings.local.json"; do
+  [ -f "$s" ] || continue
+  grep -q 'zsh-equals-hook\.py' "$s" 2>/dev/null || continue
+  eq_have="${eq_have:+$eq_have, }$(basename "$s")"
+  while IFS= read -r eq_p; do
+    [ -n "$eq_p" ] && [ ! -f "$eq_p" ] && eq_stale="${eq_stale:+$eq_stale, }$eq_p"
+  done <<EOF_EQ
+$(grep -o '/[^"]*zsh-equals-hook\.py' "$s" 2>/dev/null || true)
+EOF_EQ
+done
+if [ -d "$CLAUDE_HOME/plugins" ] && find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*hooks/hooks.json' \
+     -exec grep -l 'zsh-equals-hook\.py' {} + 2>/dev/null | grep -q .; then
+  eq_have="${eq_have:+$eq_have, }the plugin"
+fi
+case "${SOTA_ZSH_EQUALS_HOOK:-}" in
+  off | OFF | 0 | false | FALSE | no) eq_off=1 ;;
+  *) eq_off=0 ;;
+esac
+if [ -n "$eq_stale" ]; then
+  row "PARTIAL" "2d. zsh EQUALS hook" \
+    "registered but the script is gone: $eq_stale — re-run scripts/install.sh --routing from your current checkout"
+elif [ "$eq_shell" != zsh ]; then
+  row "INFO" "2d. zsh EQUALS hook" "not needed: the agent's shell is ${eq_shell:-unknown}, not zsh${eq_have:+ (registered by: $eq_have; it stays silent)}"
+elif [ -n "$eq_have" ] && [ "$eq_off" -eq 1 ]; then
+  row "INFO" "2d. zsh EQUALS hook" "registered ($eq_have) but turned off by SOTA_ZSH_EQUALS_HOOK=${SOTA_ZSH_EQUALS_HOOK}"
+elif [ -n "$eq_have" ] && ! command -v python3 >/dev/null 2>&1; then
+  row "PARTIAL" "2d. zsh EQUALS hook" "registered ($eq_have) but python3 is not on PATH — it cannot run"
+elif [ -n "$eq_have" ]; then
+  row "PASS" "2d. zsh EQUALS hook" "registered by: $eq_have"
+elif [ "$eq_off" -eq 1 ]; then
+  row "INFO" "2d. zsh EQUALS hook" "not installed, and turned off by SOTA_ZSH_EQUALS_HOOK=${SOTA_ZSH_EQUALS_HOOK} — a deliberate opt-out"
+else
+  row "PARTIAL" "2d. zsh EQUALS hook" \
+    "not installed, and the agent's shell is zsh. Without it an unquoted =word in a command (echo =====, grep -c =x) expands to a path or aborts the rest of the command list, and the output reads as a short, plausible result. Add it: scripts/install.sh --routing"
+fi
+
 # --- 2b. the same directive in the other agents' global instruction files ---
 # Claude Code's hook has no equivalent written here, so for another agent the
 # directive IS the always-on layer. Per vendor docs (docs/MULTI-AGENT.md):
