@@ -36,7 +36,9 @@ most once per session, and at most PER_EVENT new files per edit, so a long sessi
 "Once" holds when two copies run on one edit (the plugin's and the installer's, which Claude Code
 runs in parallel): each file is claimed with an exclusive create, and only the copy that wins
 names it.
-Test files are skipped: what matters is what the shipped code does.
+Test files are skipped: what matters is what the shipped code does. Config files (CONFIG_EXT: YAML,
+.j2, .conf, .service, .toml) are read by the host-config rows only (CONFIG_ROWS), since 2026-10-22;
+JSON is never read.
 
 The triggers are a table of regular expressions over the written text, and they are crude on
 purpose: a false trigger costs one file read, a missed one costs the rule.
@@ -67,6 +69,11 @@ LIMIT = 10_000
 PER_EVENT = 2
 CODE_EXT = {"py", "pyi", "go", "rs", "c", "h", "cc", "cpp", "cxx", "hpp", "java", "kt", "kts",
             "cs", "php", "rb", "swift", "js", "jsx", "mjs", "cjs", "ts", "tsx", "sh", "bash"}
+# Config files are read by the host-config rows only (CONFIG_ROWS, below; operator decision
+# 2026-10-22). Over 161,783 local config files, every row together fired on 40% of them, the
+# generic rows almost always falsely, while these three rows held 28/30, 13/14 and 9/9 on YAML,
+# .conf and friends. JSON stays out: its hits were i18n strings and LLM transcripts.
+CONFIG_EXT = {"yml", "yaml", "j2", "conf", "service", "toml"}
 TEST_PATH = re.compile(r"(^|/)(tests?|spec|__tests__)/|(^|/)test_[^/]*$|_test\.\w+$|\.(test|spec)\.\w+$")
 
 # (what the code does, pattern, [(skill, rules file number, section to check)]). Order is priority:
@@ -164,6 +171,12 @@ HOOK_ONLY = {
     "builds a command-line interface",
     "configures PAM, a login stack",
 }
+# The only rows that also read CONFIG_EXT files. Each name must be a trigger row (--self-test).
+CONFIG_ROWS = {
+    "runs or configures a container or sandbox (seccomp, capabilities, namespaces)",
+    "sets or disables an LSM profile (AppArmor, SELinux)",
+    "configures PAM, a login stack",
+}
 
 
 def skill_dir(name: str) -> Path | None:
@@ -220,11 +233,14 @@ def claim(d: Path, p: Path) -> bool:
     return True
 
 
-def select(text: str, already: set[str]) -> list[tuple[str, Path, str]]:
+def select(text: str, already: set[str], rows: set[str] | None = None) -> list[tuple[str, Path, str]]:
     """(what the code does, rules file, sections) for up to PER_EVENT files not named before. A
-    second trigger naming a file already picked adds its reason and section to that entry."""
+    second trigger naming a file already picked adds its reason and section to that entry.
+    `rows`, when given, limits the triggers to those names (a config file's CONFIG_ROWS)."""
     picked: dict[Path, tuple[list[str], list[str]]] = {}
     for what, rx, refs in COMPILED:
+        if rows is not None and what not in rows:
+            continue
         if not rx.search(text):
             continue
         for skill, num, section in refs:
@@ -265,10 +281,16 @@ def respond(event: dict) -> str:
     ti = event.get("tool_input") or {}
     path = str(ti.get("file_path") or "")
     ext = path.rsplit(".", 1)[-1].lower() if "." in path.rsplit("/", 1)[-1] else ""
-    if ext not in CODE_EXT or TEST_PATH.search(path):
+    if ext in CODE_EXT:
+        rows = None
+    elif ext in CONFIG_EXT:
+        rows = CONFIG_ROWS
+    else:
+        return ""
+    if TEST_PATH.search(path):
         return ""
     sd = state_dir(str(event.get("session_id") or ""))
-    picks = [x for x in select(written_text(ti), named_before(sd)) if claim(sd, x[1])]
+    picks = [x for x in select(written_text(ti), named_before(sd), rows) if claim(sd, x[1])]
     if not picks:
         return ""
     return json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse",
@@ -407,6 +429,13 @@ def self_test() -> int:
                          ("other tool is silent", {"tool_name": "Bash", "tool_input": {"command": "csv"}})):
             rc, c, _ = run(e)
             check(label, rc == 0 and c == "")
+        # Config files: only CONFIG_ROWS fire. A generic row's words in YAML stay silent; JSON is not read.
+        rc, c, _ = run(ev("s8", "/w/roles/selinux/tasks/main.yml", "- name: relax\n  shell: setenforce 0\n"))
+        check("config: a host-config row fires on YAML", "02-linux-os-hardening" in c and "§6 LSMs" in c)
+        rc, c, _ = run(ev("s9", "/w/deploy/app.yaml", "role: admin\ntimeout: 30\nlogging: debug\npassword: x\n"))
+        check("config: generic rows are silent on YAML", rc == 0 and c == "")
+        rc, c, _ = run(ev("s10", "/w/i18n/th.json", '{"unshare": "x", "setenforce 0": "y"}'))
+        check("config: JSON is not read", rc == 0 and c == "")
         rc, c, _ = run(ev("s7", "/w/a.py", "import csv"), {"SOTA_CODE_RULES_HOOK": "off"})
         check("opt-out is silent", rc == 0 and c == "")
         # Two copies on one edit (plugin + installer, run in parallel) must not both name a file.
@@ -457,6 +486,8 @@ def self_test() -> int:
           router_section(ROUTER.read_text(encoding="utf-8")) == router_table())
     names = {what for what, _, _ in TRIGGERS}
     check("every HOOK_ONLY name is a trigger row: %s" % sorted(HOOK_ONLY - names), HOOK_ONLY <= names)
+    check("every CONFIG_ROWS name is a trigger row: %s" % sorted(CONFIG_ROWS - names), CONFIG_ROWS <= names)
+    check("config and code extensions do not overlap", not (CONFIG_EXT & CODE_EXT))
     rt = router_table()
     check("no HOOK_ONLY row reaches the router table", not any(w.split(", which")[0] in rt for w in HOOK_ONLY))
     for what, sample in (("builds a command-line interface", 'p = argparse.ArgumentParser(prog="x")'),

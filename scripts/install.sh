@@ -924,8 +924,12 @@ fi
 # field-reported 2026-09-29. Two fixes, both needed:
 #   1. ask the runtime for a NATIVE link and to fail rather than copy
 #      (`nativestrict`, documented by MSYS2; Git for Windows' own page says only that
-#      Git Bash's `ln -s` "creates copies" by default — whether this variable gives
-#      Git Bash a real link is NEEDS VERIFICATION on Windows).
+#      Git Bash's `ln -s` "creates copies" by default). Measured 2026-10-22 on Windows 11
+#      26100.9457, PortableGit 2.56.0.2 (`uname -s` MINGW64_NT), as an elevated
+#      administrator: default `ln -s` copied at exit 0; `MSYS=winsymlinks:nativestrict`
+#      made a real link that `-L` sees; this script linked 43 of 43 skills. A user
+#      WITHOUT the symlink privilege was not measured, so what nativestrict does there
+#      (fail, as documented, so step 2 copies) is still unverified.
 #   2. probe once, and if no symlink results, say so loudly and copy on purpose,
 #      instead of copying by accident. The probe asserts `-L` on the result rather
 #      than trusting ln's exit status, which is exactly what deepcopy lies about.
