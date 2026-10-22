@@ -115,6 +115,13 @@ exactly the blind spot that let it recur — the count was right both times. **T
 | **An ablation arm must actually differ from its baseline** (2026-09-01) | `run-prompt-independence.py` diffs each case's `pre` and `post` bundles and **aborts** when none differ — otherwise the ablation arm is a duplicate of the treatment wearing a different label, and reports a delta of zero as a result. Cases that *do* match are kept and read as the run's sampling-noise control instead of being dropped |
 | **A probe must assert its own mutation landed** (2026-08-16) | `check-negative-controls.sh probe()`: a stale hardcoded literal used to make the harness report the *gate* inert |
 
+### Gated in CI and pre-push, outside the invariant script (2, added 2026-10-21)
+
+| Convention | Where enforced |
+|---|---|
+| **Every audit-checklist `grep` probe runs** | `scripts/check-checklist-probes.py`, in CI's executable-claims job on both runners (BSD and GNU grep): an exit 2 that is not a missing path fails. Three filters: it had failed (two probes dead four weeks, four earlier); it was silent (`2>/dev/null`); it is mechanical (1,620 probes on 2026-10-21, 0 artefacts once double-backtick spans were parsed). It cannot tell a probe that runs and asks the wrong question |
+| **What a push publishes besides the tree carries no internal name** | `scripts/check-published-names.sh`: pre-push (branch name, unpushed commit messages) and CI on pull requests (plus title and body). Invariant 3's list, loaded the same way; in CI it names where a hit is, never the text |
+
 ### Judgment — correctly ungateable (≈18)
 
 *Verify every claim against a primary source* · *keep it generic* (the judgment half;

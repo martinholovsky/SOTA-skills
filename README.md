@@ -752,7 +752,7 @@ read, hack on, or pin). A few details on the clone path:
   re-run it after every `git pull`, or enable Developer Mode and re-run for live links.
 - Prefer no script? Symlink `skills/*/` into `~/.claude/skills/` and `commands/*.md`
   into `~/.claude/commands/` by hand. You then skip what the script adds beyond links:
-  the update-reminder hook, the routing-hook, code-rules-hook and listing-budget offers, and the
+  the update-reminder hook, the routing-hook, code-rules-hook, zsh EQUALS hook and listing-budget offers, and the
   reach check.
 
 The plugin (or `--copy`) installs the skills; a few extras (routing reminder,
@@ -1029,7 +1029,9 @@ anything". Three corrections, each re-checked 2026-10-02:
   [Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) exposes the same loop with
   hooks and permissions programmatically. **`scripts/verified-done-hook.py`** uses that: an
   opt-in Stop hook that refuses "done" on a changed tree until a verification command has
-  passed on exactly that tree (router principle 6, enforced). The git hooks from
+  passed on exactly that tree (router principle 6, enforced). **`scripts/zsh-equals-hook.py`**, on by
+  default in the plugin, is a PreToolUse hook that refuses a zsh command carrying an unquoted `=word` before it runs
+  (`sota-shell-scripting` rules/06 §1), a reflex the written rule did not stop. The git hooks from
   `scripts/init-gates.sh` and CI are enforcement on every host, whatever the agent.
 - **The router is not an always-on 43 KB blob.** Only each skill's frontmatter `description`
   is in every turn's listing; the router's body loads when the skill is invoked
@@ -1377,6 +1379,18 @@ competing pressure added to every prompt ("internal demo tomorrow … skip the e
 hosts that cannot run a hook. Measured without the hook, it got agents to the right rules file in
 14 of 20 runs, against 6, and rule tests rose 0.679 → 0.792
 ([sota-agent-evals v13](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v13/REPORT.md); in-sample, like the hook's own numbers).
+
+**Since 2026-10-21 it also ships the zsh EQUALS hook**, on by default (`scripts/zsh-equals-hook.py`,
+a `PreToolUse` hook on `Bash`). zsh rewrites an unquoted word starting with `=` to a command's path
+and aborts the rest of the line on one that names no command, so `cat a; echo ===; grep x b` prints
+`a` and a `== not found` that reads like the end of the output, and the `grep` never runs. The hook
+refuses that command before it runs and tells the agent how to quote it (`sota-shell-scripting`
+rules/06 §1). A written rule did not stop the habit: a field report records the rule read and
+broken 60 seconds later. Over one operator's 43,875 agent Bash calls, it refused the 344 that zsh
+had cut and nothing else (in-sample: the lexer was corrected on that corpus). It adds nothing to
+the context unless it fires, does nothing unless the agent's shell is zsh (`CLAUDE_CODE_SHELL`, else `$SHELL`), costs about 85 ms per Bash call
+and needs `python3`. Turn it off with `SOTA_ZSH_EQUALS_HOOK=off`; `install.sh --routing` offers it
+to clone installs.
 
 The plugin does **not** touch your global config or status line. To match the clone experience,
 opt in to any of these; the scripts ship *with* the plugin, under its cache dir:

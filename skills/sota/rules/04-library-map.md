@@ -114,7 +114,7 @@ exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-pa
   lifecycle, 04 distribution & docs
 - **sota-shell-scripting/rules**: 01 safety baseline (shebang, `set -e`, quoting, zsh deviations),
   02 robustness & correctness, 03 security, 04 CI & operational scripts, 05 constructs & cleanup
-  (arrays, IFS, traps/mktemp, tests, globbing), 06 ad-hoc commands (zsh deviations,
+  (arrays, IFS, traps/mktemp, tests, globbing, zsh habits that break silently in bash and `sh` §5a), 06 ad-hoc commands (zsh deviations,
   searcher exclusions, patterns parsed as flags, stderr-suppressed absence checks, a hardcoded
   verdict label, non-portable backslash escapes (`\b` `\s` `\d`) — split out of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
   `set -euo pipefail`, disagreeing status variables, GitHub Actions shell defaults, execution

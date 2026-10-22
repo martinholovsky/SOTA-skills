@@ -2715,6 +2715,14 @@
     },
     {
       "from": "sota-javascript-typescript",
+      "to": "sota-shell-scripting",
+      "weight": 1,
+      "targets": [
+        "rules/05 \u00a75a"
+      ]
+    },
+    {
+      "from": "sota-javascript-typescript",
       "to": "sota-golang",
       "weight": 1,
       "targets": [
@@ -3415,14 +3423,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1529,
+    "md link, other skill": 1530,
     "md link, outside skills/": 3,
-    "md link, same skill": 2760,
+    "md link, same skill": 2764,
     "name (backticked)": 431,
     "name (bare)": 240,
-    "name+file (backticked)": 599,
+    "name+file (backticked)": 600,
     "name+file (bare)": 160,
-    "own rules/NN": 2913
+    "own rules/NN": 2917
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3432,9 +3440,9 @@
     "md link, same skill": 0,
     "name (backticked)": 416,
     "name (bare)": 197,
-    "name+file (backticked)": 598,
+    "name+file (backticked)": 599,
     "name+file (bare)": 155,
-    "own rules/NN": 2834
+    "own rules/NN": 2838
   },
   "rules_index_style": {
     "link": 42

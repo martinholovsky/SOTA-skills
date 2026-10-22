@@ -320,7 +320,7 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
       *narrow a parameter*, *widen a return*, add a **required** property to an accepted
       object, or add a member to a **returned** union? Each compiles for you and breaks a
       consumer's build. `git diff <last-tag>..HEAD -- '**/*.d.ts' 'src/**/*.ts' | grep '^[+-].*export'`
-- [ ] `grep -rnE 'export (const|let) [A-Za-z]+ *= *(\\[|\\{)' src/` — an exported mutable array
+- [ ] `grep -rnE 'export (const|let) [A-Za-z]+ *= *(\[|\{)' src/` — an exported mutable array
       or object literal is a shared singleton every consumer can mutate (MEDIUM).
 
 - [ ] In-band sentinels: `grep -rnE 'return -1' --include='*.ts' --include='*.js' src/` — a
@@ -332,9 +332,9 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
 - [ ] `grep -rn "forEach(async" src/` — fire-and-forget async iteration (HIGH).
 - [ ] `grep -rn "\.sort(\|\.reverse(\|\.splice(" src/` — verify each operates on a locally-owned array, else `toSorted`/`toReversed`/`toSpliced` (MEDIUM).
 - [ ] `grep -rn "JSON.parse(JSON.stringify" src/` — replace with `structuredClone` (LOW/MEDIUM).
-- [ ] `grep -rn "throw ['\"\`]\|throw {" src/` — thrown non-Errors (HIGH).
+- [ ] ``grep -rn "throw ['\"\`]\|throw {" src/`` — thrown non-Errors (HIGH).
 - [ ] `grep -rn "catch ([a-z]*)\s*{\s*}" src/` and `catch.*{\s*$` followed by `}` — swallowed errors (HIGH).
-- [ ] `grep -rn "new Error(.*+\|new Error(\`" src/` — wrapping without `{ cause }` (LOW).
+- [ ] ``grep -rn "new Error(.*+\|new Error(\`" src/`` — wrapping without `{ cause }` (LOW).
 - [ ] `grep -rn "hasOwnProperty" src/` — use `Object.hasOwn` (LOW).
 - [ ] `grep -rn "price\|amount\|total\|balance" --include="*.ts" src/ | grep -i "float\|\* 0\.\|/ 100\|toFixed"` — float money math (HIGH).
 - [ ] `grep -rnE 'parseFloat\(|parseInt\(|(^|[^A-Za-z_])Number\((req|ctx|input|body|query|params|process\.env)[.[]|z\.coerce\.number\(\)|\* *(1e6|1e9|1_000_000|1_000_000_000)([^0-9_n]|$)' --include='*.ts' --include='*.js' src/ | grep -vE 'Number\.isFinite|Number\.isSafeInteger|\.finite\(\)'` — numeric input parsed without a non-finite check (`NaN` passes `x < min || x > max`, `Infinity` passes a lower bound), or a `number` time-unit conversion that overflows past 2^53; also review each `/` and `%` on a request-derived divisor for divide-by-zero (HIGH if money/limits, else MEDIUM).

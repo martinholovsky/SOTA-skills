@@ -163,7 +163,7 @@ and they sit on disk for anyone with the device.
       into the page: it needs `SANITIZE_NAMED_PROPS: true` (absent = MEDIUM).
 - [ ] **Extension: remote code, main-world scripts and message handlers (§"Browser extensions")
       — CRITICAL for remote code, HIGH for a handler that acts without a sender check** —
-      `grep -rnE "\"world\": *\"MAIN\"|world: *['\"]MAIN|import\( *['\"\`]https?:|<script[^>]*src=['\"]https?:|onMessage(External)?\.addListener|onConnect(External)?\.addListener|externally_connectable" --include='*.js' --include='*.ts' --include='*.json' --include='*.html' .`
+      ``grep -rnE "\"world\": *\"MAIN\"|world: *['\"]MAIN|import\( *['\"\`]https?:|<script[^>]*src=['\"]https?:|onMessage(External)?\.addListener|onConnect(External)?\.addListener|externally_connectable" --include='*.js' --include='*.ts' --include='*.json' --include='*.html' .``
       — each listener hit must check `sender.id` and `sender.origin`/`sender.url` before any
       privileged call. Each `MAIN` hit needs a reason, and remote script loading is CRITICAL.
       Secret-bearing UI injected into the page (read the content scripts) is HIGH.

@@ -477,6 +477,42 @@ setup_code_rules_hook() {
   rm -f "$tmp"
 }
 
+# A PreToolUse hook on Bash that refuses a zsh command carrying an unquoted `=word` (`echo ===`,
+# `[ a == b ]`), which zsh rewrites to a command path or aborts the list on, so the half after it
+# never runs (sota-shell-scripting rules/06 §1). It adds nothing to the context unless it fires:
+# over 43,875 transcript Bash calls it refused 344, all real, and nothing else (2026-10-21, one
+# operator's corpus). It costs ~85 ms per Bash call, and it does nothing unless the agent's shell (CLAUDE_CODE_SHELL, else $SHELL) is zsh.
+setup_zsh_equals_hook() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="python3 \"$REPO/scripts/zsh-equals-hook.py\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping the zsh EQUALS hook"; return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found — skipping the zsh EQUALS hook"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "zsh-equals-hook.py" \
+      '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota zsh EQUALS hook already present — up to date"; return
+  fi
+  ask_yn "Add a hook that refuses a zsh command with an unquoted =word (echo ===) before it runs (~85 ms per command, zsh only)?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.PreToolUse = ((.hooks.PreToolUse // []) + [{matcher:"Bash",hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added PreToolUse zsh EQUALS hook (silence it with SOTA_ZSH_EQUALS_HOOK=off)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the zsh EQUALS hook"
+  fi
+  rm -f "$tmp"
+}
+
 # Claude Code reserves a per-turn CHARACTER budget for the skill listing and sizes it
 # as `(contextTokens x 4) x skillListingBudgetFraction`, fraction defaulting to 0.01 —
 # so 8,000 characters on a 200k-context model, for every skill from every source. Read
@@ -813,6 +849,7 @@ maybe_setup_routing() {
   setup_hook || true
   setup_update_reminder || true
   setup_code_rules_hook || true
+  setup_zsh_equals_hook || true
   return 0
 }
 

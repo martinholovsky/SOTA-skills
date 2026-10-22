@@ -228,7 +228,9 @@ Decide per script and enforce with the shebang + `shellcheck -s sh`.
 - POSIX sh required: busybox/alpine and dash-based containers without bash, initramfs,
   `system()`-invoked snippets, packaging hooks. Then: no arrays (use `set -- args...`
   to reuse positional params), `[ ]` not `[[ ]]`, `. file` not `source`, no `${var//}`, no
-  `<<<`/`<( )`, `printf` always (dash `echo` interprets escapes).
+  `<<<`/`<( )`, `printf` always (dash `echo` interprets escapes). dash fails three of these
+  **silently**: `{1..3}` and `$'\t'` stay literal, and `source f` prints `not found` and the script
+  runs on without it at rc 0 (measured 2026-10-21, dash 0.5.12). zsh-tested habits: [`rules/05`](05-constructs-and-cleanup.md) §5a.
 - `pipefail` in sh is **version-dependent**, not absent: POSIX.1-2024 specifies it, busybox
   ash accepts it, dash only from upstream 0.5.13 (Debian bookworm's 0.5.12-2 rejects it,
   trixie's 0.5.12-12 accepts it). Probe **in a subshell** — `set` is a special builtin, so a
