@@ -77,6 +77,15 @@ after this instruction's literal form cost it a red gate.
     Proposed change      — target skill + section, and the rule as you would write it
     Confidence           — and what would falsify it
 
+**Counting from an agent transcript: count unique `tool_use` ids, never blocks or lines.** A call
+is written more than once. Measured 2026-10-22 over 1,840 local Claude Code transcripts: 90,110
+Bash `tool_use` blocks, 45,431 unique ids. Of the 44,679 extra blocks, 2,986 repeat inside one
+file. The rest are the same id in another file: 24,958 in subagent sidechain files, and 16,735 in
+a later session file that re-stamps the record with its own session id. That fits forked subagents and resumed sessions
+carrying history forward, but the harness code that writes them was not read. So a recursive
+glob roughly doubles the count, and a per-file check can look clean. Join each id to its
+`tool_result` when you need the outcome; the join deduplicates too.
+
 ## Four checks that decide whether I can act on it
 
 A. Check coverage in the LIBRARY'S vocabulary, not yours. These checks are sweeps whose
