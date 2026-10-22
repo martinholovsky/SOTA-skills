@@ -307,6 +307,12 @@ sitting verbatim, one line each, in the transcript. A harness's account of *why*
 file is a claim, not evidence — check it the way you would any other
 ([`sota-skill-security` rules/02](../../sota-skill-security/rules/02-trust-boundary-and-capability.md) §2).
 
+- **A provisioning call's machine-readable output is a common way in.** A `create` or
+  `status` call with `--raw` or `-o json` can return a credential the call just minted, and
+  printing the whole object puts it in the transcript. Select the fields you need
+  (`jq '{id, status}'`) instead. Field-reported 2026-10-22, one cloud GPU CLI: a `create
+  instance … --raw` piped to a pretty-printer showed an instance API key. Its scope and
+  lifetime were not verified, and the case was not re-run, since that would print it again.
 - **Inventory the path.** It belongs on the same list as `.env`, shell history, IDE
   settings and CI variables. It is missing from most checklists because it is newer than
   they are, not because it is safe.
