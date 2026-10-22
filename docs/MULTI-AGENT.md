@@ -140,8 +140,9 @@ install was therefore a **snapshot that `git pull` never reaches**, and nothing 
 
 The installer now does three things:
 - It sets `MSYS=winsymlinks:nativestrict`. MSYS2 documents this as enabling native
-  symlinks; whether it does so in **Git Bash** is not stated by Git for Windows and is
-  **not verified**.
+  symlinks. In **Git Bash** it does, for an elevated administrator: measured 2026-10-22 on
+  Windows 11 with Git for Windows 2.56, a real link that `-L` sees, and 43 of 43 skills
+  linked. For a user without the symlink privilege it is **not verified**.
 - It probes once, asserting `-L` on the result rather than trusting the exit status.
 - When no link results, it copies **on purpose** with a warning to re-run after every pull.
 
