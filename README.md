@@ -315,8 +315,12 @@ because the same change added three more classes below):
   gates passed an eBPF object the kernel then refused to load, because a warn-by-default style
   lint had suggested an owned argument that spent 52 bytes of a **512-byte** stack — on a
   constrained target a lint's *premise* can be false, and the word "mechanical" is a
-  classification applied **before** the analysis that would justify it.
+  classification applied **before** the analysis that would justify it. A gate can also stop
+  short by **default**: ShellCheck does not report an unset ALL-CAPS name, so a `set -u` typo
+  passes the lint and `bash -n` and dies at run time; the optional check
+  `check-unassigned-uppercase` reports it, and this repo's CI enables it.
   ([devsecops rules/09 §2a](skills/sota-devsecops/rules/09-gates-that-hold.md),
+  [shell rules/03 §7](skills/sota-shell-scripting/rules/03-security.md),
   [rust rules/07 §1a](skills/sota-rust/rules/07-tooling-ci.md))
 - **A version recalled instead of looked up.** Not a stale pin — a *measurement* of someone
   else's artifact, which never feels like a version decision. A recalled release number
@@ -386,7 +390,8 @@ because the same change added three more classes below):
   file** — exit 0, target untouched. Measured across four implementations, and the danger is
   the **platform split**: only **BSD** sed refuses, so a macOS developer sees the safe
   behaviour and CI (GNU, BusyBox) does not. That one-liner converted this repository's own
-  tracked symlinks.
+  tracked symlinks. And a guard tested in zsh can pass what bash rejects: zsh leaves
+  `BASH_REMATCH` unset, so empty `-eq` empty accepted `43/44` as "N/N checks passed".
   ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md),
   [rules/03 §3a](skills/sota-shell-scripting/rules/03-security.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
@@ -400,7 +405,9 @@ because the same change added three more classes below):
   your control permits it. Worked instance: a memory budget set with `RLIMIT_AS`
   refuses the runaway allocation exactly as intended, and also kills every Go or JVM
   process **at startup**, since those runtimes reserve gigabytes of address space they
-  never touch (measured: 1.17 GiB reserved against 2.3 MiB resident).
+  never touch (measured: 1.17 GiB reserved against 2.3 MiB resident). Its host-hardening twin:
+  forcing AppArmor's shipped `flags=(unconfined)` profiles into complain mode broke rootless
+  Podman, because those profiles exist to grant a permission, not to skip a policy.
   ([rules/12 §1a](skills/sota-code-security/rules/12-verifying-the-verifier.md),
   [sandboxing rules/02](skills/sota-sandboxing/rules/02-linux-os-hardening.md))
 - **Layers that were never layers** — the same test applied to an *architecture*
@@ -547,7 +554,10 @@ because the same change added three more classes below):
   working control's signal, because on the guarded subset it is one. The audit move is a
   **census** — enumerate the protected *operation*, mark each call site, report the ratio —
   and the API fix is that a parameter selecting a trust boundary **defaults to the closed
-  side**. ([code-security rules/14 §6](skills/sota-code-security/rules/14-control-not-in-force.md))
+  side**. The population has a second axis, the principals it runs as: `pam_faillock` returns
+  success when it cannot open its tally, so a 0700 tally directory recorded no lock-screen
+  failures (PAM runs as the user there) while every root-run test passed.
+  ([code-security rules/14 §6](skills/sota-code-security/rules/14-control-not-in-force.md))
 - **Security prose the code no longer keeps** — "containment is applied at every target
   walk" (it was 9 of 61); "no function-calling, no shell — this RCE mechanism is NOT
   APPLICABLE" (tools were on by default). Each had been true when written. Most such

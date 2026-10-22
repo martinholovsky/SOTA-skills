@@ -5,6 +5,49 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.50.0] - 2026-10-22
+
+A MINOR: a new default-on hook and two new gate scripts, plus nine field reports and one operator
+review taken in (seven ADOPTION-LOG entries), and the corrections they forced in the library's own text. Eight PRs since v1.49.5: #569, #570, #572–#576 and this one (#571 was closed unmerged).
+
+**Front door checked:** zsh-equals-hook · check-unassigned-uppercase · BASH_REMATCH · pam_faillock
+
+- **New: the zsh `EQUALS` hook, on by default (#572).** `scripts/zsh-equals-hook.py`, a PreToolUse
+  hook on Bash, refuses a command zsh would cut short: an unquoted `=word` (`echo =====`, `[ a == b ]`)
+  becomes a command path or aborts the rest of the list. Over one operator's 43,875 agent Bash calls
+  it caught 344 of 344 real cuts with 0 false refusals (measured 2026-10-21). The plugin registers
+  it; `install.sh --routing` offers it.
+- **A `git pull` does not register a new hook, and now two things say so.** `verify-setup.sh` check
+  2d reports a zsh agent without the `EQUALS` hook (#575), with five negative-control probes (101 in
+  all). The session-start reminder names, once per hook, a default-on hook that the checkout ships and
+  `settings.json` does not register (#576). Two field reports hit the unwired hook on one day, and so did the machine that took them in.
+- **New gates (#572).** `scripts/check-checklist-probes.py` runs every audit-checklist `grep` probe
+  on an empty fixture, under BSD and GNU grep in CI, and fails on one that cannot run: 1,620 probes,
+  and two had been dead since 2026-09-23. `scripts/check-published-names.sh` checks pushed branch
+  names, commit messages and PR text against the internal-name denylist, at pre-push and in CI.
+- **Corrections to our own text.** rules/06 §1 said a zsh `NOMATCH` probe under `2>/dev/null` is
+  "byte-identical" to a real no-match. Measured on zsh 5.9, stdout and exit match but the error still
+  reaches stderr; corrected there and in three copies: README, `sota-code-security` rules/15 and
+  `sota-shell-scripting` rules/05 (#576). AGENTS.md said the negative-control harness reads the
+  committed tree; its part B copies `verify-setup.sh` from the working tree (this release).
+  `sota-devsecops` rules/07 §7.7 told readers to restart a shared container runtime after a prune
+  without saying a restart ends every co-tenant's containers (#574).
+- **Shell rules.** ShellCheck skips unset ALL-CAPS names, so a `set -u` typo passes the lint; the
+  optional `check-unassigned-uppercase` catches it, and this repo's CI enables it (#573). zsh leaves
+  `BASH_REMATCH` unset, so a capture-comparing guard passed `43/44` as N/N (#576). Also: zsh habits
+  that break in bash and `sh` (rules/05 §5a), `find` on a symlinked root, the zsh `$v[` subscript,
+  and a forwarded port that selects another VM (#572, #574).
+- **Other rules.** `sota-code-security` rules/14 §6 counts a control by the principals it runs as:
+  `pam_faillock` returns success when it cannot open its tally (linux-pam source), so a 0700
+  directory counted no lock-screen failures (#576). `sota-sandboxing` R6.4: AppArmor's shipped
+  `flags=(unconfined)` profiles are grants (#576). Load-and-redump edits of hand-written JSON/YAML/TOML
+  are a reformat (`sota-docs-workflow` rules/03 §5a); a round trip agrees only with itself
+  (`sota-testing` rules/06) (#573). `/sota-resume` tests whether a deferral's trigger has already
+  fired, and `/sota-close` re-tests the triggers its own session fired (#574).
+- **Deferred, with triggers in `docs/ADOPTION-LOG.md`:** code-rules hook rows for CLI construction and
+  for host hardening (both wait on the router's 500-line budget), and a `NOMATCH` hook (waits on a
+  labelled corpus).
+
 ## [1.49.5] - 2026-10-20
 
 A PATCH: records, a re-measured rule and one dated README note. Nothing new to run.
@@ -11502,6 +11545,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.50.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.0
 [1.49.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.5
 [1.49.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.4
 [1.49.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.3
