@@ -306,7 +306,7 @@ shell linting.
 ```yaml
 # CI job (any system) — fail the build on findings
 - run: |
-    git ls-files -z '*.sh' '*.bash' | xargs -0 shellcheck --severity=style --external-sources --enable=check-set-e-suppressed,check-extra-masked-returns
+    git ls-files -z '*.sh' '*.bash' | xargs -0 shellcheck --severity=style --external-sources --enable=check-set-e-suppressed,check-extra-masked-returns,check-unassigned-uppercase
     shfmt -d -i 2 -ci .          # -i 2 is an EXAMPLE — indent width is the repo's to set
 ```
 
@@ -318,6 +318,17 @@ that give [rules/01](01-safety-baseline.md) §2 a static detector: `check-set-e-
 in an `if`/`&&` condition; SC2311 — in `$(…)`, where `set -e` is off) and
 `check-extra-masked-returns` (SC2312 — a command's status masked, e.g. `rm -r "$(f)/home"`).
 SC2312 is noisy; adopt it with a baseline rather than drop it.
+
+**By default ShellCheck does not report an unset ALL-CAPS name, so the lint passes a `set -u` typo.**
+SC2154 ("referenced but not assigned") skips any name with no lowercase letter, on the
+assumption that it comes from the environment. Measured on ShellCheck 0.11.0: `${CONTAINER}`,
+`${C}`, `${CONTAINER_1}` and `${_X}` pass silently while `${Container}` and `${X_y}` are flagged,
+and `bash -n` passes too. The script then dies at run time with `CONTAINER: unbound variable`, on
+the first path that reaches the line (field-reported 2026-10-21). The optional
+`check-unassigned-uppercase` reports all four. Enable it, and give each real environment input a
+default (`${NAME:-}`) or a guard (`: "${NAME:?NAME must be set}"`), which the check accepts. This
+library's own CI scripts gave 0 findings with it on (2026-10-22), so the cost is low where inputs
+are already read that way. Naming script-internal variables in lowercase helps, but only the check enforces it.
 
 **Verifying a gate locally is a different question, and another skill owns it:**
 [`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §5 — *reproduce the gate's exact invocation, not an equivalent*.
@@ -359,6 +370,10 @@ substitution in help text** rather than literal characters. `--severity=error` s
 - [ ] **`set -e`-suppression checks enabled** (§7): `--enable=check-set-e-suppressed,check-extra-masked-returns`
       (SC2310/SC2311/SC2312) in the gate, or an equivalent `enable=` in `.shellcheckrc`; absent → MEDIUM
       for any script relying on `set -e`
+- [ ] **Unset ALL-CAPS names checked** (§7): `--enable=check-unassigned-uppercase` in the gate; absent
+      → LOW, or MEDIUM for a `set -u` script that reads ALL-CAPS names with no `${NAME:-}`/`${NAME:?}`.
+      To find what the default lint missed, run `shellcheck -f gcc --enable=check-unassigned-uppercase <file>`
+      and compare its SC2154 lines with a run without the flag
 
 - [ ] **Interceptor recursion** (§3a): does any wrapper, shim, alias or shell-function
       override invoke a command name that its **own namespace shadows**? For each wrapper,

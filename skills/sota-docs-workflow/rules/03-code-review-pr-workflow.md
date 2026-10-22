@@ -218,6 +218,18 @@ saying 58 when the data said 66. The session's closing re-count caught it. Keep 
 the generated one) or **fully hand-written**, never both. Reviewing a change to a generated
 file's *input*, ask whether the output was regenerated in the same change.
 
+**A scripted edit of a hand-maintained structured file is a reformat until the diff shows
+otherwise.** Loading a JSON, YAML or TOML file, changing one value and dumping it back rewrites
+every line whose spelling the serializer would choose differently: quoting, key order, indent,
+string escapes, and comments (PyYAML 6.0.3 and tomli-w both drop an inline comment, measured). A JSON file that mixes
+`\u2014` escapes with literal `—` cannot survive either `ensure_ascii` setting, because one setting
+rewrites the escaped strings and the other rewrites the literal ones. Reproduced 2026-10-22 with
+Python's `json`: inserting one key into such a file gave a `--numstat` of 3/2 where the insert alone
+is 2/1, while a uniformly literal file gave 2/1 (field-reported 2026-10-21: 9+/3− against an
+expected 6+/0−). Edit at a textual anchor, or with a format-preserving library, and before
+committing compare `git diff --numstat` with the line count the edit should produce. A larger
+count is a drive-by reformat the tool did for you, with the same cost to the reviewer.
+
 **Decompose by reviewability, not by size.** A 600-line PR that is one mechanical
 rename plus one 20-line behaviour change is *two* PRs — and the behaviour change is
 the one that needs eyes. The test is not "how many lines" but "can a reviewer hold
@@ -334,6 +346,9 @@ claim that turns out to be false still burns the credibility.
       lines in separate commits rather than interleaved (§5a)?
 - [ ] **No generated file has been hand-edited** — a doc or report holding a generator's output
       plus hand-written prose cannot be regenerated, so its derived numbers go stale (§5a).
+- [ ] Does a scripted edit of a hand-maintained JSON/YAML/TOML file touch only the lines it meant
+      to? A `git diff --numstat` larger than the intended edit means the serializer rewrote
+      untouched lines: quoting, escapes, order or comments (§5a).
 - [ ] **Was the PR decomposed by reviewability** — mechanical split from semantic, migration
       from the code that uses it — rather than by line count (§5a)?
 - [ ] **Is every commit in a migration sequence independently deployable and rollback-safe**

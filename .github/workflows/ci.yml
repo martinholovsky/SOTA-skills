@@ -275,8 +275,10 @@ jobs:
           files=$(git ls-files '*.sh')
           [ -n "$files" ] || { echo "no shell files matched — pathspec drift"; exit 1; }
           echo "$files" | tr ' ' '\n' | sed 's/^/  /'
+          # check-unassigned-uppercase: by default SC2154 skips ALL-CAPS names, so a `set -u` typo
+          # such as ${CONTAINR} passes the lint and dies at run time (sota-shell-scripting rules/03 §7).
           # shellcheck disable=SC2086  # word splitting is intended: a file list
-          shellcheck -S style $files
+          shellcheck -S style --enable=check-unassigned-uppercase $files
 
   secrets:
     name: Secret scan (gitleaks)
