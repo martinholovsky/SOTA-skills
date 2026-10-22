@@ -469,6 +469,9 @@ def self_test() -> int:
                        # 2026-10-22 field report: an OS tracing session, no authentication in sight
                        ("issues or checks a session or token",
                         "/// Decodes Task Scheduler events read from a private ETW session."),
+                       # 2026-10-22 EDR closure report: WQL text read from an event, parsed as data, not run
+                       ("builds a database query",
+                        '/// The WMI consumer\'s "Query" field holds WQL such as SELECT * FROM __InstanceCreationEvent.'),
                        # 2026-10-22 resume pass: a C++ extension in a set literal, matched case-blind as "Cc"
                        ("builds an email or a message header", 'CODE_EXT = {"c", "h", "cc", "cpp"}')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
