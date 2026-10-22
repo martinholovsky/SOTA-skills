@@ -71,8 +71,9 @@ mkdir -p "$data" 2>/dev/null || exit 0
 
 # --- a default-on hook that a pull brought and nothing registered -----------
 # A `git pull` on a symlink install brings a new hook SCRIPT and registers nothing: only
-# `install.sh --routing` / `--update` writes settings.json. Field-reported three times on
-# 2026-10-22 (a zsh EQUALS cut recurring with the hook shipped "on by default" and unwired).
+# `install.sh --routing` / `--update` writes settings.json. Field-reported twice on 2026-10-22
+# (a zsh EQUALS cut recurring with the hook shipped "on by default" and unwired), and true on
+# the machine that took the reports in.
 # The plugin registers its own hooks, so this is for installs WITHOUT it. Local facts only:
 # the checkout's scripts and the settings files. Each missing hook is named ONCE (recorded in
 # $notified), so a user who declined it at install is told once, not every session. A fresh
