@@ -20,11 +20,12 @@ interactive shell is zsh**. Check the operator's shell rather than assuming; the
 |---|---|---|---|
 | unquoted `$var` with spaces **or newlines** — incl. any `$(…)` file list | splits into words | **joins** into one argument ([`rules/01`](01-safety-baseline.md) §3) | **loudly** — a usage error, exit 2, from the callee — but a *file-list* command then searches **nothing**, and empty output reads as a clean tree |
 | `$?` after a pipeline | last stage (`${PIPESTATUS[0]}` for the first) | same, but `${pipestatus[1]}` ([`rules/01`](01-safety-baseline.md) §3) | **quietly** — a wrong status, read as truth |
-| unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
+| unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command**; the rest of a `;` list still runs | `no matches found` reaches stderr even past the command's own `2>/dev/null`, but stdout and exit (1) match a real no-match, so a check reading `$out` or `$?` gets a **clean result** (below) |
 | one unmatched glob among several, inside `$(ls a b* 2>/dev/null)` | the literal word errors, the matches still print | the **whole** inner command aborts — matched files lost too; `2>/dev/null` inside `$(…)` does not silence zsh's own error | **silently** — the list is empty, and the callee picks its own scope (§2b) |
 | `cmd \| python3 - <<'PY'` (pipe **and** heredoc on fd 0) | heredoc wins, piped data **discarded** | `MULTIOS` **concatenates** them: the data runs as the program's first lines | bash **quietly** (script reads empty stdin); zsh an error naming *your data* (below), or **silently** when the data parses as code (`echo 42` runs) |
 | an unquoted word starting with `=` (`echo =====`, `grep -c =ls f`) | a literal word | `EQUALS` (on by default) rewrites `=ls` to `/bin/ls`; a word naming no command **aborts the whole `;` list** | `echo =====` as a separator is loud **only at the tail**: commands before it printed, so `==== not found` (exit 1) is the last line of a plausible result and everything after it never ran — read top-down it passes as complete (field-reported 2026-10-20: two sessions, five hits, one cancelling the load of this file). **silently** for a real command name — measured zsh 5.9: `grep -c =ls` counted 0 where bash counted 1. Separate with `echo ---`, never a bare run of `=`; quote it, or `setopt noequals`. The tell: a nonzero exit whose last line is `<word> not found` means the list was cut there. **A bare `==` aborts too, outside `[[ ]]`**: `[ a == a ]` → `= not found` — write `[[ a == a ]]`. A cut inside `( )`, `$( )` or a function body ends only that subshell or call, and is still the half that never ran. **Reading this row does not stop it** (field-reported 2026-10-21: read 07:30:02Z, broken 07:31:02Z) — the separator is a reflex, so the control is structural: the PreToolUse hook `scripts/zsh-equals-hook.py` (on by default in the plugin; `install.sh --routing` offers it) refuses the command before it runs, and over one operator's 43,875 agent Bash calls it caught 344 of 344 real cuts with 0 false refusals (measured 2026-10-21) |
 | an unbraced `$var` followed by `:` and a **letter**, or by `[`, even inside double quotes | a literal `:` or `[` | `[…]` is a **subscript**: `"$v[A-Z_]*"` → `*` (the range is arithmetic on unset names, so `$v[0]`, which is empty), `"$f[1]"` → the first character of `$f`. The letter is a **modifier**: `"$d:tmp"` → `bmp` (`:t`), `"$d:home"` → `/aome` (`:h`), `r=HEAD; "$r:scripts/check-invariants.sh"` → `HEADk-invariants.sh` (`:s`, `c` as delimiter); `$h:8080` and `$h:$d` are untouched | **silently** when the word completes a modifier — git was asked for a path that does not exist, its error went to stderr, and `grep -c` counted 0 (2026-10-16); loudly (`bad substitution`, the list aborts) when `:s` finds no closing delimiter. Brace it: `"${r}:path"`. Measured zsh 5.9, 2026-10-18 |
+| `[[ $s =~ re ]]`, then `${BASH_REMATCH[n]}` | the captures, from index 1 | `BASH_REMATCH` is **unset** (captures go to `$match`); with `setopt BASH_REMATCH` it is 1-based, so `[1]` is the **whole match** and every group shifts by one, unless `KSH_ARRAYS` is also set | **silently** — empty `-eq` empty is `0 -eq 0`, so a guard comparing two captures passes: `43/44` accepted as "N/N checks passed" (field-reported 2026-10-22), and after a regex that matched nothing too. Test a bash snippet with `bash -c`. Measured zsh 5.9 |
 
 **The third is the dangerous one: a failed glob means the command never runs at all.**
 zsh's `NOMATCH` is on by default, so a glob matching nothing is a hard error rather than a
@@ -36,19 +37,19 @@ grep -rn --include=*.md TODO .     # zsh: "no matches found: --include=*.md" —
 grep -rn --include='*.md' TODO .   # correct in both
 ```
 
-**Why it earns a rule of its own: with `2>/dev/null` it is byte-identical to a real
-no-match.** That redirect is the standard idiom for hiding `Permission denied` noise in a
-recursive search, and it also hides the one line that would have told you:
+**Why it earns a rule of its own: stdout and exit status match a real no-match exactly.** The
+`2>/dev/null` on the command does **not** hide zsh's line: the glob fails while the line is
+expanded, before that redirect exists (measured zsh 5.9, 2026-10-22; corrected from "byte-identical"):
 
 ```zsh
-out=$(grep -rn --include=*.md   hello . 2>/dev/null)   # BROKEN:  stdout empty, exit 1
-out=$(grep -rn --include='*.md' ABSENT . 2>/dev/null)  # GENUINE: stdout empty, exit 1
+out=$(grep -rn --include=*.md   hello . 2>/dev/null)   # BROKEN:  stdout empty, exit 1, stderr "no matches found"
+out=$(grep -rn --include='*.md' ABSENT . 2>/dev/null)  # GENUINE: stdout empty, exit 1, stderr empty
 ```
 
-Same stdout, same exit code. **An audit sweep written this way cannot distinguish "the
-codebase is clean" from "my search never executed"** — a false-clean produced by the tool
-these checklists are pasted into — [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md)'s instrument
-failure arriving through the shell.
+It goes silent once stderr is dropped **around** the command (`{ …; } 2>/dev/null`, `… ) 2>/dev/null`
+on the assignment, a script run with `2>/dev/null`), and a check reading `$out` or `$?` never sees it. **Such a
+sweep cannot tell "the codebase is clean" from "my search never executed"** — [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md)'s
+instrument failure arriving through the shell.
 
 Rules:
 

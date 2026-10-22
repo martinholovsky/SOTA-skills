@@ -408,7 +408,10 @@ def self_test() -> int:
                        # 2026-10-21 field report: an HTTP-status client, and a CLI's error message
                        ("decides who may do what", 'if r.status == 403:\n    raise RuntimeError(f"GET {url} refused")'),
                        ("checks a password or handles a login",
-                        'print("error: not authenticated with the registry", file=sys.stderr)')):
+                        'print("error: not authenticated with the registry", file=sys.stderr)'),
+                       # 2026-10-22 field report: an OS tracing session, no authentication in sight
+                       ("issues or checks a session or token",
+                        "/// Decodes Task Scheduler events read from a private ETW session.")):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
               fires(what, text))
 

@@ -69,6 +69,43 @@ stamp="${data}/.update-reminder-last"
 
 mkdir -p "$data" 2>/dev/null || exit 0
 
+# --- a default-on hook that a pull brought and nothing registered -----------
+# A `git pull` on a symlink install brings a new hook SCRIPT and registers nothing: only
+# `install.sh --routing` / `--update` writes settings.json. Field-reported three times on
+# 2026-10-22 (a zsh EQUALS cut recurring with the hook shipped "on by default" and unwired).
+# The plugin registers its own hooks, so this is for installs WITHOUT it. Local facts only:
+# the checkout's scripts and the settings files. Each missing hook is named ONCE (recorded in
+# $notified), so a user who declined it at install is told once, not every session. A fresh
+# install (no update stamp yet) records the current state silently: it was just offered them.
+if [ -n "$repo" ] && [ -z "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  conf="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+  notified="${data}/.hooks-notified"
+  first=0; [ -e "$stamp" ] || first=1   # no update stamp yet = a fresh install, which was just offered every hook
+  agent_shell=""
+  case "${CLAUDE_CODE_SHELL:-}" in */zsh | */bash) [ -x "$CLAUDE_CODE_SHELL" ] && agent_shell=${CLAUDE_CODE_SHELL##*/} ;; esac
+  [ -n "$agent_shell" ] || { agent_shell=${SHELL:-}; agent_shell=${agent_shell##*/}; }
+  missing=""
+  for h in code-rules-hook.py zsh-equals-hook.py; do
+    [ -f "$repo/scripts/$h" ] || continue
+    case "$h" in
+      code-rules-hook.py) case "${SOTA_CODE_RULES_HOOK:-}" in off | OFF | 0 | false | FALSE | no) continue ;; esac ;;
+      zsh-equals-hook.py)
+        [ "$agent_shell" = zsh ] || continue
+        case "${SOTA_ZSH_EQUALS_HOOK:-}" in off | OFF | 0 | false | FALSE | no) continue ;; esac ;;
+    esac
+    grep -qF "$h" "$conf/settings.json" "$conf/settings.local.json" 2>/dev/null && continue
+    grep -qxF "$h" "$notified" 2>/dev/null && continue
+    missing="${missing:+$missing }$h"
+    printf '%s\n' "$h" >> "$notified" 2>/dev/null || true
+  done
+  [ "$first" -eq 1 ] && { : >> "$notified" 2>/dev/null || true; missing=""; }
+  if [ -n "$missing" ]; then
+    printf '[sota-skills: a default hook is not registered. Relay this to the user in one line, then continue with their request.]\n'
+    printf 'Shipped on by default by the checkout at %s, but not registered in %s/settings.json: %s (a git pull does not register hooks). Run %s/scripts/install.sh --routing to add them, or set their opt-out variables. This is said once.\n' \
+      "$repo" "$conf" "$missing" "$repo"
+  fi
+fi
+
 # First run: record the moment and say nothing. A just-installed copy is current,
 # and the plugin's first-run notice is already using this turn.
 if [ ! -e "$stamp" ]; then
