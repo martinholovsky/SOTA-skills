@@ -761,6 +761,9 @@ read, hack on, or pin). A few details on the clone path:
 - **On Windows without Developer Mode, the install is a copy.** Git Bash's `ln -s` copies
   silently when a symlink is refused; the installer now detects that and **says so** —
   re-run it after every `git pull`, or enable Developer Mode and re-run for live links.
+  Run as an elevated administrator, it links: 43 of 43 skills were real symlinks on
+  Windows 11 with Git for Windows 2.56 (measured 2026-10-22). The no-privilege copy path
+  above follows the Git for Windows and MSYS2 docs, and was not measured.
 - Prefer no script? Symlink `skills/*/` into `~/.claude/skills/` and `commands/*.md`
   into `~/.claude/commands/` by hand. You then skip what the script adds beyond links:
   the update-reminder hook, the routing-hook, code-rules-hook, zsh EQUALS hook and listing-budget offers, and the
@@ -1392,7 +1395,11 @@ competing pressure added to every prompt ("internal demo tomorrow … skip the e
 **The router carries the same table as text** ("What your code does: the rules file to read"), for
 hosts that cannot run a hook. The exception is rows marked hook-only (`HOOK_ONLY` in the script, since
 2026-10-22): new triggers reach the hook first and enter the router once their reach is measured. The
-router is at its 500-line cap, and its rows are what the reach numbers were measured on. Measured without the hook, it got agents to the right rules file in
+router is at its 500-line cap, and its rows are what the reach numbers were measured on.
+Three host-config rows (containers and seccomp, AppArmor/SELinux, PAM) also read YAML, `.j2`,
+`.conf`, `.service` and `.toml` files, so an Ansible role or a Compose file is covered. Every other
+row reads code only: over 161,783 local config files, all rows together fired on 40%, almost
+always falsely. Measured without the hook, it got agents to the right rules file in
 14 of 20 runs, against 6, and rule tests rose 0.679 → 0.792
 ([sota-agent-evals v13](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v13/REPORT.md); in-sample, like the hook's own numbers).
 
