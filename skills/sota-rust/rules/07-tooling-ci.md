@@ -183,10 +183,22 @@ The profile a reviewer reads in `Cargo.toml` is not the whole build. Measured on
   **parent directory** of the crate. Cargo reads `.cargo/config.toml` from the working
   directory and every ancestor, then `$CARGO_HOME` (cargo reference, "Hierarchical
   structure"). Nothing in the repository changed.
-- **`rustc-wrapper` runs a program on every compile.** A `[build] rustc-wrapper` in any of
-  those files ran on `cargo check` (not on `cargo metadata`). That is build-time code
-  execution with `build.rs`'s trust ([rules/05](05-security-supply-chain.md) §2), except it can come from outside the
-  repository. A legitimate wrapper (e.g. a compiler cache) is named, pinned and documented.
+- **`rustc-wrapper` and `[build] rustc` run a program on every compile, and on commands that
+  only read metadata.** Measured on cargo 1.97.1 and 1.94.0, each command in a fresh crate with no
+  cache: a `[build] rustc-wrapper` in any of those files ran on `cargo metadata` (2 calls), with
+  `--filter-platform` (3), `cargo tree` (2), `cargo fetch` and `fetch --locked` (2), and `cargo
+  check` (4). A `[build] rustc = "…"` replacement ran on the same commands. Cargo queries the
+  target through them (`rustc -vV`, `--print=cfg`). Only `cargo metadata --no-deps` ran neither.
+  *Corrected 2026-10-22: this bullet said the wrapper did not run on `cargo metadata`; a
+  field report refuted it.* So **any cargo command in an untrusted checkout runs that
+  checkout's config.** To read one, pin both: `RUSTC="$(rustup which rustc)" RUSTC_WRAPPER=
+  cargo metadata --format-version 1 --locked` made 0 calls, and its output differed only in the
+  crate's own path. An empty
+  `RUSTC_WRAPPER` alone left the replaced `rustc` running. Other config surfaces (credential
+  providers, a toolchain file naming a path) were not measured, so isolate rather than trust the
+  pin. This is build-time code execution with `build.rs`'s trust ([rules/05](05-security-supply-chain.md) §2), except it
+  can come from outside the repository. A legitimate wrapper (e.g. a compiler cache) is named,
+  pinned and documented.
 - **Dev and test profiles keep their checks.** `overflow-checks` and `debug-assertions` are
   on by default in `dev`/`test`. Turning them off there — in `Cargo.toml` or in a config
   file's `[profile.*]` — made an overflow test and a `debug_assert!` test pass that had

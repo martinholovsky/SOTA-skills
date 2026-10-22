@@ -381,12 +381,20 @@ clippy`, `cargo metadata`-driven tooling, and call-graph modes that compile),
 Python `setup.py` and PEP 517 backends, npm `preinstall`/`install`/`postinstall`
 ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.4), Gradle/Maven build scripts, anything invoking
 `make`. The answer is a property of the command, not the language, and it changes
-between flags: a build-mode-`none` extraction and a build-mode-`autobuild`
-extraction of the same repository differ by arbitrary code execution. **Verify it
-for your invocation** — read the tool's docs for that flag, or run it against a
-canary target that writes a marker file — and treat "it only compiles" as
-execution until proven otherwise, because compilation *is* the execution step for
-several of the ecosystems above.
+between flags. **"Buildless" names the tool's mode, not what it executes.** Measured
+2026-10-22 on CodeQL 2.27.3 (latest) with the default stable toolchain: `database
+create --language=rust --build-mode=none` ran a target's `.cargo/config.toml`
+`rustc-wrapper`, its `build.rs` and a local proc macro, the same three a `cargo build`
+control ran. **Verify it for your invocation** — read the tool's docs for that flag, or
+run it against a canary target that writes a marker file. The canary plants the
+*config* surface (`.cargo/config*`, a toolchain file), not only a build script, and you
+read its result only with the tool's dependency resolution **working**. On 2.26.2 the
+same canary ran the wrapper and **not** `build.rs` or the proc macro. A field report
+traced that to a resolution failure (cargo rejecting rust-analyzer's `--lockfile-path`;
+not reproduced here). A build-script-only canary would have shown nothing: a broken
+tool, not a safe one. Treat "it only
+compiles" as execution until proven otherwise, because compilation *is* the execution
+step for several of the ecosystems above.
 
 **R7.3 — The sub-agent inherits your shell.** An LLM step that reads target
 source is R1.1's untrusted content, and it must be spawned with tools **off** —
@@ -469,7 +477,9 @@ where they coexist. Rate it with the chain named leg by leg ([`sota/rules/03`](.
 - [ ] For any tool that **ingests repositories or archives it did not author**:
       staging drops entries whose `realpath` escapes the source root (and reports
       the drops); every analysis command checked for whether it evaluates
-      target-controlled build metadata; LLM steps over target source spawned
+      target-controlled build metadata, by a canary that plants config and build
+      scripts and runs with dependency resolution working (a "buildless" mode is not
+      evidence: R7.2); LLM steps over target source spawned
       tools-off, with an explicit `cwd` and a scrubbed environment; egress
       `none` or FQDN-allowlisted. Flag the module where all four coexist (§7).
 - [ ] **High** — An audit of a repository you did not write ran none of its tests, builds
