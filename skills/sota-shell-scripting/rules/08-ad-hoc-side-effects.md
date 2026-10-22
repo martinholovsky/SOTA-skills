@@ -38,7 +38,10 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
   a sparse file on the host's, so exhausting the host surfaces *inside* the VM as I/O errors
   and can corrupt the filesystem and image store — minutes later, in an unrelated command,
   long after the one that caused it.
-- Cleanup on a shared runtime is not housekeeping: see [`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) §7.7.
+- Cleanup on a shared runtime is not housekeeping, and neither is **stopping or restarting** it
+  "to speed something up": a `podman machine stop` ends every co-tenant's containers and any
+  state they held only in memory. List what is running and whose it is first: see
+  [`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) §7.7.
 
 ## 4. The loop you left running exhausts the process table — and takes cleanup with it
 

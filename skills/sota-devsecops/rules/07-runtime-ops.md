@@ -339,7 +339,8 @@ found nothing** — the second reading being a conclusion about the target
 
 - **Treat prune/trim as a change requiring a restart and a post-change smoke test**, not as
   maintenance. Restart the runtime, then start one throwaway container and assert it
-  produced output. "Still running" is not "still able to start".
+  produced output. "Still running" is not "still able to start". **On a shared machine
+  that restart is itself destructive (next bullets): list what is running first.**
 - **Enumerate foreign-owned resources before pruning shared infrastructure.** A `container
   prune` removes *another project's* stopped database container, which moves its anonymous
   volume into the dangling set for the next `volume prune` to delete. The check that makes
@@ -347,6 +348,20 @@ found nothing** — the second reading being a conclusion about the target
   one somebody chose to keep.
 - **On a machine you share with other work, prune is a coordination problem.** The blast
   radius is every project on the host, and nothing in the command says so.
+- **Stopping or restarting a shared runtime is destructive, not maintenance.** `podman machine
+  stop`, `colima stop`, restarting Docker Desktop or its daemon, or rebooting the dev VM
+  terminates every container on it (in the field case they exited 143 and 137: SIGTERM and
+  SIGKILL). `podman machine stop` takes no flags and asks nothing (podman 5.7.1). Any in-memory
+  state is lost for good and nothing reports it, including a store run with persistence off,
+  `tmpfs`, or Redis without AOF/RDB. A `--rm` container is gone without a trace. Field-reported
+  2026-10-22: a VM restarted "to speed up a long gate run" (a habit the project's own agent
+  file recommended) stopped another project's graph database, which ran with its write-ahead
+  log and exit snapshot disabled, and that project's API server. Both were in use by a
+  concurrent session. Before stopping, list running containers (`podman ps --format
+  '{{.Names}} {{.Status}}'`, or `docker ps`). If any is not yours, do not stop the runtime
+  without its owner. Afterwards, list with `-a` and report what exited. The framing that hides
+  it is "I am only speeding something up", the sibling of "I am only checking something"
+  ([`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §3).
 - **"Reclaimable" is the tool's definition of unused, not yours.** `podman system df` counts
   an image as reclaimable when no *container* references it (Docker's docs do not define
   the column at all), so every build-only
@@ -382,6 +397,10 @@ found nothing** — the second reading being a conclusion about the target
 - [ ] **Is prune/trim on a shared runtime treated as a change?** (§7.7) Restart plus a
       post-change smoke test that *starts* something, foreign-owned resources enumerated
       first, and dangling volumes confirmed unnamed before deletion.
+- [ ] **Does any runbook, script or agent file stop or restart a shared runtime** (`machine
+      stop`, `colima stop`, a daemon restart, a VM reboot) without first listing running
+      containers and checking who owns them? (§7.7) An unguarded restart of a shared
+      runtime → Medium, or High where a co-tenant keeps state only in memory.
 - [ ] **Would a prune change what the next build compiles against?** (§7.7) Any
       `FROM` on a moving tag (`latest`, `rawhide`, `stable`, a bare major) is pinned only by
       the cache the prune deletes. And is the narrow command (`image prune`) used rather than
