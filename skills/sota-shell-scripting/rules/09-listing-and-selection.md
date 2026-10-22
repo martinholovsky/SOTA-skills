@@ -81,7 +81,8 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
 §5 returned **less** of the right population. This returns **all** of a neighbouring one —
 harder to see: nothing truncated, nothing silent, no rule broken. The selector was reasonable
 and answered a question one step to the left of the one asked. Three in one session, a
-fourth field-reported 2026-09-26, and a fifth 2026-10-22:
+fourth field-reported 2026-09-26, a fifth 2026-10-22, and a sixth and seventh from another
+report the same day:
 
 | the question | the selector typed | what it actually returns |
 |---|---|---|
@@ -90,6 +91,8 @@ fourth field-reported 2026-09-26, and a fifth 2026-10-22:
 | "how much is reclaimable" | `podman system df` | images not backing a *running* container, with shared layers double-counted down the ancestry chain |
 | "what is this Deployment's pod logging" | `kubectl logs deploy/X` | **one** pod matching X's *label selector* — ownership is never checked, so it can be another workload's pod whose labels overlap |
 | "the VM I just started" | `ssh -p 2222 127.0.0.1` through a NAT forward | **whichever process bound the port first**, possibly another VM, whose host key `accept-new` then pins as this one's |
+| "which disk or volume holds X" | `du`/`ls` on X's conventional path | the **path**, not the device: any symlink along it moves the answer. Check `cd X && pwd -P`, or `df X/` (field-reported 2026-10-22: a VM disk "on the internal drive" sat on an external volume via a linked parent directory) |
+| "has *this* job already run" | an existence check by prefix glob, `compgen -G "r_${name}_*"` | **any** name that extends it: `r_short_*` also matches `r_short_regression_*`, so a 236-case job logged `HAVE` and never ran (field-reported 2026-10-22; reproduced in bash 5.3). Anchor the next character (`r_${name}_[0-9]*`) or test the exact path |
 
 `sort -V | tail -1` is the obvious way to get "the latest" and it is simply not "the
 default". Each of the three is the correct answer to a question nobody asked.
@@ -204,7 +207,8 @@ your ancestors, and anything whose command line is your own command. Then act on
       is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is
       not *blocks freed*, *not backing a running container* is not *reclaimable*, *a pod
       matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`), *the
-      process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`). Nothing is
+      process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), *a
+      path* is not *the volume* (`pwd -P`), and a *prefix glob* is not *this name* (`X_*` matches `X_other_*`). Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to
       the subject; read one full record before trusting the aggregate.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/

@@ -209,6 +209,7 @@ touching a line that starts `description:`.
 ```sh
 ./scripts/check-invariants.sh        # same checks as CI
 git checkout -b <branch> && git commit && git push
+# (in a worktree instead if your installed skills link into this checkout: AGENTS.md step 1)
 # open the PR; every required check green → squash-merge
 ```
 

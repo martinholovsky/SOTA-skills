@@ -15,7 +15,8 @@ only this file, never the symlinks.
 `main` is a protected branch and **direct pushes are rejected for everyone** (admin
 enforcement is on). Every change goes through a pull request:
 
-1. `git checkout -b <branch>`
+1. `git checkout -b <branch>`, **or, if your installed skills or hooks link into this checkout,**
+   `git worktree add ../<dir> -b <branch> origin/main`: a branch switch here changes what every live session loads
 2. make the edit, then run `./scripts/check-invariants.sh` (and optionally
    `pre-commit run --all-files`). `pre-commit install` sets up **both** stages —
    pre-push re-runs the invariants, the first moment the **diff-based** ones

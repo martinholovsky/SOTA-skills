@@ -45,7 +45,11 @@ PR description. Grep its distinctive words across the tree *and* across this ses
 (`git log -S '<phrase>'`), **and across the agent's memory directory**, which lives outside the
 repository (e.g. `~/.claude/projects/<slug>/memory/`), so neither search reaches it. A stale line
 there is an instruction the next session follows (field-reported 2026-10-22: a memory index line
-still called a negative result final after the session had overturned it). Correcting the copy you remember and leaving three behind is worse
+still called a negative result final after the session had overturned it). **That directory is
+often a symlink**, and macOS's BSD `grep -r` given a symlink with no trailing slash reads nothing
+and exits 1, the same as a clean result. Search `<dir>/` (trailing slash), `<dir>/*.md` or
+`find -L`, with a control word you know is there (field-reported 2026-10-22: claim and control both
+0 until the slash was added; `sota-shell-scripting` rules/06 §2). Correcting the copy you remember and leaving three behind is worse
 than not correcting at all: the retraction makes the survivors look reviewed.
 
 **And a decision the user made on it.** No grep finds this copy, and it has the largest blast
@@ -140,7 +144,8 @@ comments count. Three rules keep it bounded:
 - **Report the denominator** — *N files changed, M docs checked, K lines fixed* — because "no
   stale docs" over zero docs checked is the empty sweep this command exists to prevent.
 - **The loop sees only tracked files.** Run the same name searches over the agent's memory
-  directory too; its index loads into every session.
+  directory too, as `<dir>/` with a control (step 1: it is often a symlink); its index loads
+  into every session.
 
 Fix every claim your change made false, in this pass. Staleness the session did not cause, in
 docs that do not mention its changes, is out of scope: list it in step 2's hand-off if you saw

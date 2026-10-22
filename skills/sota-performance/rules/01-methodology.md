@@ -241,8 +241,12 @@ slower"* is a far more exciting finding than *"I measured it wrong"*, which is e
 it gets written down first.
 
 Before recording a slowdown against a recorded baseline, establish that the two runs are
-**comparable**: scheduling priority, machine load, and whether the run was backgrounded at
-all. **A job launched into the background may be niced by whatever launched it** — measured
+**comparable**: the **same inputs**, scheduling priority, machine load, and whether the run
+was backgrounded at all. Two medians over different case sets compare the sets, not the
+system. Field-reported 2026-10-22: p50 29.7 s against 2.6 s was written into an agent file,
+memory and a changelog as a 10x slowdown and blamed on a co-tenant build. The two p50s came
+from different probe sets: one case, measured both days, went 2.9 s → 28.9 s, and the slowness
+outlasted the build, so the cause was never established. **A job launched into the background may be niced by whatever launched it** — measured
 on one agent harness, backgrounded jobs ran at `nice 5` while the foreground shell in the
 same invocation was `nice 0`, under a load average of 5.9–8.6. An unprivileged user cannot
 renice back down, so the measurement cannot be rescued in place; it has to be re-run in the

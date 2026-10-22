@@ -362,6 +362,12 @@ found nothing** — the second reading being a conclusion about the target
   without its owner. Afterwards, list with `-a` and report what exited. The framing that hides
   it is "I am only speeding something up", the sibling of "I am only checking something"
   ([`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §3).
+- **When a shared VM goes unreachable mid-run, read its boot history before calling it a
+  hang.** `last -x reboot shutdown` and `uptime -s` inside the VM. A restart with a short outage
+  looks the same from outside, with every connection reset while the hypervisor says "running",
+  and the two need different fixes: a hang is the guest's, a restart is someone's action.
+  Field-reported 2026-10-22: three episodes recorded as a "wedged" VM were reboots at 20:48,
+  21:54 and 23:30, and the last came one minute after the run's final failure.
 - **"Reclaimable" is the tool's definition of unused, not yours.** `podman system df` counts
   an image as reclaimable when no *container* references it (Docker's docs do not define
   the column at all), so every build-only
@@ -400,7 +406,9 @@ found nothing** — the second reading being a conclusion about the target
 - [ ] **Does any runbook, script or agent file stop or restart a shared runtime** (`machine
       stop`, `colima stop`, a daemon restart, a VM reboot) without first listing running
       containers and checking who owns them? (§7.7) An unguarded restart of a shared
-      runtime → Medium, or High where a co-tenant keeps state only in memory.
+      runtime → Medium, or High where a co-tenant keeps state only in memory. And does any
+      incident note or runbook call a VM "hung" or "wedged" without its boot history
+      (`last -x reboot shutdown`)? A restart reads the same from outside.
 - [ ] **Would a prune change what the next build compiles against?** (§7.7) Any
       `FROM` on a moving tag (`latest`, `rawhide`, `stable`, a bare major) is pinned only by
       the cache the prune deletes. And is the narrow command (`image prune`) used rather than
