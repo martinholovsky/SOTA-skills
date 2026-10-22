@@ -94,6 +94,21 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
     ("runs a process",
      r"subprocess|os\.system|os\.popen|shell=True|exec\.Command|Runtime\.getRuntime",
      [("sota-code-security", "01", "§3 command injection")]),
+    ("runs or configures a container or sandbox (seccomp, capabilities, namespaces)",
+     r"seccomp|SCMP_|--security-opt|--cap-(drop|add)\b|--userns\b|\bunshare\b|\b(podman|docker) run\b",
+     [("sota-sandboxing", "02", "§1 namespaces, §3 seccomp-bpf, §5 capabilities"),
+      ("sota-sandboxing", "03", "§1 Docker / OCI hardening checklist")]),
+    ("sets or disables an LSM profile (AppArmor, SELinux)",
+     r"\baa-(complain|enforce|disable)\b|force-complain|apparmor_parser|\bsetenforce\b|\bsetsebool\b|"
+     r"WithApparmorProfile|apparmor[=:]\s*unconfined|security[_-]opt[^\n]*(apparmor|label)",
+     [("sota-sandboxing", "02", "§6 LSMs: AppArmor / SELinux")]),
+    ("builds a command-line interface",
+     r"ArgumentParser|add_argument\(|@click\.command|typer\.Typer|clap::|cobra\.Command",
+     [("sota-cli-ux", "02", "§1 the stream contract, §3 exit codes, §5 line-buffered stdout when piped")]),
+    ("configures PAM, a login stack",
+     r"\bpam_[a-z0-9_]+\.so\b|/etc/pam\.d",
+     [("sota-code-security", "02", "§1, lockout and enumeration"),
+      ("sota-code-security", "14", "§6 count a control by the principals it runs as")]),
     ("builds a database query",
      r"\.execute\(|\bSELECT\b|\bINSERT\s+INTO\b|\bUPDATE\s+\w+\s+SET\b",
      [("sota-code-security", "01", "§2 SQL injection")]),
@@ -138,6 +153,17 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
       ("sota-code-security", "06", "§5 resource exhaustion")]),
 ]
 COMPILED = [(what, re.compile(rx, re.I), refs) for what, rx, refs in TRIGGERS]
+
+# Rows the hook fires on that --router-table does NOT render (operator decision 2026-10-22,
+# ADOPTION-LOG). The router is at its 500-line cap, and its rows are the evidence base v12 measured
+# reach from, so a new trigger starts here, in the hook only, and is promoted into the router once
+# its reach is measured. Each entry is a row's `what`; --self-test fails on a name with no row.
+HOOK_ONLY = {
+    "runs or configures a container or sandbox (seccomp, capabilities, namespaces)",
+    "sets or disables an LSM profile (AppArmor, SELinux)",
+    "builds a command-line interface",
+    "configures PAM, a login stack",
+}
 
 
 def skill_dir(name: str) -> Path | None:
@@ -280,6 +306,8 @@ def router_table() -> str:
     differs."""
     groups: dict[tuple, list[str]] = {}            # one row per set of files, in table order
     for what, _, refs in TRIGGERS:
+        if what in HOOK_ONLY:
+            continue
         what = what.split(", which")[0]
         if len(refs) == 1:                         # one file: its section goes beside the words
             skill, num, section = refs[0]
@@ -411,7 +439,9 @@ def self_test() -> int:
                         'print("error: not authenticated with the registry", file=sys.stderr)'),
                        # 2026-10-22 field report: an OS tracing session, no authentication in sight
                        ("issues or checks a session or token",
-                        "/// Decodes Task Scheduler events read from a private ETW session.")):
+                        "/// Decodes Task Scheduler events read from a private ETW session."),
+                       # 2026-10-22 resume pass: a C++ extension in a set literal, matched case-blind as "Cc"
+                       ("builds an email or a message header", 'CODE_EXT = {"c", "h", "cc", "cpp"}')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
               fires(what, text))
 
@@ -425,6 +455,18 @@ def self_test() -> int:
           len(rows) == sum(len(refs) for _, _, refs in TRIGGERS))
     check("the router's table is the generated one (python3 scripts/code-rules-hook.py --router-table)",
           router_section(ROUTER.read_text(encoding="utf-8")) == router_table())
+    names = {what for what, _, _ in TRIGGERS}
+    check("every HOOK_ONLY name is a trigger row: %s" % sorted(HOOK_ONLY - names), HOOK_ONLY <= names)
+    rt = router_table()
+    check("no HOOK_ONLY row reaches the router table", not any(w.split(", which")[0] in rt for w in HOOK_ONLY))
+    for what, sample in (("builds a command-line interface", 'p = argparse.ArgumentParser(prog="x")'),
+                         ("builds a command-line interface", "#[derive(clap::Parser)]"),
+                         ("runs or configures a container", 'cmd = ["podman", "run", "--cap-drop=ALL", img]'),
+                         ("runs or configures a container", "ctx.add_rule(SCMP_ACT_ERRNO(38), clone3)"),
+                         ("configures PAM", 'line = "auth required pam_faillock.so preauth"'),
+                         ("sets or disables an LSM profile", 'oci.WithApparmorProfile(""),'),
+                         ("sets or disables an LSM profile", "run(['aa-complain', profile])")):
+        check("hook-only row still fires in the hook: %s" % sample, fires(what, sample))
     for f in fails:
         print("FAIL:", f)
     print("%s: %d/%d" % ("FAIL" if fails else "PASS", n - len(fails), n))

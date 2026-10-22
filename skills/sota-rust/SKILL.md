@@ -61,7 +61,8 @@ When writing or modifying Rust code:
 
 When reviewing or auditing existing Rust:
 
-1. **Recon first:** `cargo metadata`/workspace layout, `Cargo.toml` profiles
+1. **Recon first:** `cargo metadata`/workspace layout (in a checkout you do not trust, every
+   cargo command runs its `rustc-wrapper` and `[build] rustc`; pin both first, [rules/07](rules/07-tooling-ci.md) §4a), `Cargo.toml` profiles
    and features, CI config, `rg 'unsafe' --count-matches`, dependency tree
    (`cargo tree -d`). This decides which rules files to load and where risk
    concentrates (network input? unsafe? async service?).

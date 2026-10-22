@@ -1390,7 +1390,9 @@ competing pressure added to every prompt ("internal demo tomorrow … skip the e
 ([v15](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-17-v15/REPORT.md), INCONCLUSIVE: 3 cases up, 0 down, p = 0.125, +49% cost). Turn it off with `SOTA_CODE_RULES_HOOK=off`.
 `install.sh --routing` offers the same hook to clone installs; with both, each file is named once.
 **The router carries the same table as text** ("What your code does: the rules file to read"), for
-hosts that cannot run a hook. Measured without the hook, it got agents to the right rules file in
+hosts that cannot run a hook. The exception is rows marked hook-only (`HOOK_ONLY` in the script, since
+2026-10-22): new triggers reach the hook first and enter the router once their reach is measured. The
+router is at its 500-line cap, and its rows are what the reach numbers were measured on. Measured without the hook, it got agents to the right rules file in
 14 of 20 runs, against 6, and rule tests rose 0.679 → 0.792
 ([sota-agent-evals v13](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v13/REPORT.md); in-sample, like the hook's own numbers).
 

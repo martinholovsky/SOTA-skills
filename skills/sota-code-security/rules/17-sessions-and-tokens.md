@@ -107,10 +107,11 @@ OAuth/OIDC, passkeys, recovery) stays in [rules/02](02-authentication.md).
   cookie after re-authentication. For a weaker signal, step up (or show a CAPTCHA against
   bots) before any side-effecting action; never hard-fail on a bare IP change.
 - **Device Bound Session Credentials** (DBSC) make the cookie sender-constrained: the
-  browser holds a non-exportable key (TPM-backed in Chrome on Windows) and proves
-  possession at a refresh endpoint to renew a short-lived cookie. It is a W3C WebAppSec
-  draft that only Chromium is pursuing (chromestatus, read 2026-09-25: Firefox position
-  negative, Safari no signal), so it adds to the detection above and does not replace it.
+  browser holds a non-exportable key and proves possession at a refresh endpoint to renew a
+  short-lived cookie. It is a W3C WebAppSec draft that only Chromium is pursuing. chromestatus,
+  read 2026-10-22: rollout in Chrome 145 on Windows and Chrome 147 on macOS, Firefox position
+  negative, Safari no signal. So a site's DBSC users are Chrome users on two desktop OSes, and
+  every other client still needs the detection above: DBSC adds to it and does not replace it.
   OWASP: Cookie Theft Mitigation, Session Management cheat sheets; Code Review Guide v2.
 
 ```python

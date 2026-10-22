@@ -96,7 +96,8 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   compiled and run on the developer machine and CI runner with that user's environment.
   Measured on cargo 1.97.1: `cargo check` ran a path dependency's `build.rs` and a proc-macro,
   and an env var exported for the command was readable inside that `build.rs`; `cargo
-  metadata`, `cargo fetch` and `cargo tree` ran neither. rust-analyzer also runs them on
+  metadata`, `cargo fetch` and `cargo tree` ran neither (but each ran a repository's
+  `rustc-wrapper` or `[build] rustc` — [rules/07](07-tooling-ci.md) §4a). rust-analyzer also runs them on
   opening a project (`rust-analyzer.cargo.buildScripts.enable` and
   `rust-analyzer.procMacro.enable`, both default `true`) — set both `false` before opening an
   untrusted checkout. `[build] rustc-wrapper` is the same trust from config ([rules/07](07-tooling-ci.md) §4a).
@@ -107,7 +108,9 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   Your OWN `build.rs`, proc-macro crates, `.cargo/config.toml`, `Cargo.toml`, `Cargo.lock` and
   `rust-toolchain.toml` get CODEOWNERS entries plus the branch rule "Require review from Code
   Owners" — an agent-authored PR included. CI: `cargo fetch --locked` is the networked step
-  and runs no dependency code; build and test with `--frozen` in a job that holds no publish,
+  and runs no *dependency* code, but it does run a `rustc-wrapper` or `[build] rustc` from any
+  `.cargo/config.toml` in the checkout or above it (measured, [rules/07](07-tooling-ci.md) §4a), so run it with
+  `RUSTC` and `RUSTC_WRAPPER` pinned, or where that is acceptable; build and test with `--frozen` in a job that holds no publish,
   deploy or cloud credentials, and hand the artifact to a separate job that does. (OWASP: CI/CD
   Security cheat sheet; Software Supply Chain Security cheat sheet; NPM Security cheat sheet.)
 - **Declared but not reached**: an unused crate is still install/build-time trust
@@ -390,7 +393,7 @@ Running external programs (formerly section 9) moved to
 - [ ] `cargo vet` (or documented dep-review process) for new dependencies;
       build.rs / proc-macro deps enumerated and reviewed.
 - [ ] **Build-time code (build.rs / proc-macro) is inventoried, owned and isolated (§2) —
-      High** — `cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(any(.targets[]; any(.kind[]; . == "custom-build" or . == "proc-macro"))) | "\(.name) \(.version)"'`
+      High** — `RUSTC="$(rustup which rustc)" RUSTC_WRAPPER= cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(any(.targets[]; any(.kind[]; . == "custom-build" or . == "proc-macro"))) | "\(.name) \(.version)"'`
       (every line is code that runs on `cargo check`: each needs a review record, e.g. a
       `cargo vet` audit). Then `rg -n --no-messages 'build\.rs|Cargo\.(toml|lock)|\.cargo/' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS`
       — no line means your own build-executing files merge without an owner. A CI job that

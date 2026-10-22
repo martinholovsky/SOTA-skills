@@ -136,6 +136,14 @@ nobody re-runs rots silently. So:
 command or source, and the result. *"Reproduced in a container: `kernel-headers-4.18.0-553…`
 declares `BPF_MAP_TYPE_RINGBUF`"* is a record. *"Verified"* is not.
 
+**This covers the sentences you write, not only the ones you take in.** Any sentence your change
+adds that states a tool behaviour or a mechanism either has the command that measured it in the
+ledger row, or is worded as an observation ("in the field case …"). It is a review step, not a
+gate: no script can tell a measured sentence from a guessed one. Field-reported 2026-10-22: one
+intake session wrote four unmeasured mechanisms into rule text in a single afternoon, with router
+principle 0 in context. All four were caught only because the author re-read each edit before
+staging.
+
 **2. If the claim is executable and deterministic, ship the check** in
 [`scripts/check-claims.sh`](scripts/check-claims.sh), naming the rule it backs. It runs on
 **Linux and macOS** in CI, because several of these claims are *platform splits* and a single

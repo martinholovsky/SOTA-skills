@@ -45,6 +45,12 @@ PR description. Grep its distinctive words across the tree *and* across this ses
 (`git log -S '<phrase>'`). Correcting the copy you remember and leaving three behind is worse
 than not correcting at all: the retraction makes the survivors look reviewed.
 
+**And a decision the user made on it.** No grep finds this copy, and it has the largest blast
+radius. A choice made on a retracted premise is void: restate the corrected premise and ask again
+before acting on it. Approval in one context does not extend to the next (field-reported
+2026-10-22: a VM resize approved on a misread OOM kill, which was in fact a SIGTERM from another
+session's restart, was re-asked and re-chosen on the corrected premise).
+
 **Delete or supersede — decide per line, this is where the pass goes wrong.**
 
 - **Delete** when the line states *current state*: a README sentence, a rule's imperative, a
