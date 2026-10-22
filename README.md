@@ -569,8 +569,11 @@ because the same change added three more classes below):
   credentials, and the target is the attacker. Four legs, usually owned by four people:
   staging that dereferences symlinks out of the tree, "static" analysis that evaluates
   target-controlled build metadata, an LLM step spawned with tools live and the parent's
-  `cwd`, and egress left on by default.
-  ([sandboxing rules/05 §7](skills/sota-sandboxing/rules/05-ai-agent-sandboxing.md))
+  `cwd`, and egress left on by default. "Buildless" is no defence: measured on CodeQL
+  2.27.3, Rust `--build-mode=none` ran a target's `rustc-wrapper`, `build.rs` and proc
+  macro, and `cargo metadata`, `tree` and `fetch` each ran a repository's `rustc-wrapper`.
+  ([sandboxing rules/05 §7](skills/sota-sandboxing/rules/05-ai-agent-sandboxing.md),
+  [rust rules/07 §4a](skills/sota-rust/rules/07-tooling-ci.md))
 - **Absence claims** — "no hardcoded secrets remain" is the one finding nobody can
   falsify: a narrow search and a true absence produce identical output. Any absence
   claim needs a widened search **plus a second independent method**, with the search

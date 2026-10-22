@@ -5,6 +5,48 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.50.1] - 2026-10-22
+
+A PATCH: no new script, hook, command or eval instrument, so by RELEASING.md's test the changes
+live inside existing surfaces. Five field reports and a `/sota-resume` pass taken in (seven
+ADOPTION-LOG entries), with three operator decisions. Six PRs since v1.50.0: #578–#583.
+
+**Front door checked:** HOOK_ONLY · host-config · rustc-wrapper · Git for Windows
+
+- **Corrections to our own text, each re-measured.**
+  - `sota-rust` rules/07 §4a said a repository's `rustc-wrapper` runs on `cargo check`, not on
+    `cargo metadata`. Measured on cargo 1.97.1 and 1.94.0, it ran on `metadata`, `tree` and
+    `fetch` too, and so did a `[build] rustc` replacement. The library's own audit probe ran the
+    audited checkout's config; it now pins `RUSTC` and `RUSTC_WRAPPER` (#579).
+  - `sota-sandboxing` R7.2 implied a buildless mode is safe. On CodeQL 2.27.3, Rust
+    `--build-mode=none` ran a target's wrapper, `build.rs` and proc macro (#579).
+  - `/sota-close`'s new memory search read nothing on a symlinked memory directory under BSD
+    `grep -r`; it now says `<dir>/` or `find -L`, with a control (#582, #583).
+- **The code-rules hook (operator decisions, #579, #580).** New triggers start as `HOOK_ONLY`
+  rows that the router does not render, so the router stays at its 500-line cap. Four were added
+  on measured precision over 813,412 local code files: CLI 30/30, container/seccomp 20/30, PAM
+  9/10, LSM 11/11. The three host-config rows also read YAML, `.j2`, `.conf`, `.service` and
+  `.toml` files, at 28/30, 13/14 and 9/9; every other row reads code only, since all rows together
+  fired on 40% of 161,783 config files. Reach for these rows is not measured.
+- **Windows (#580, #581).** Git Bash's default `ln -s` copies at exit 0; with
+  `MSYS=winsymlinks:nativestrict` it makes a real link, and `install.sh` linked 43 of 43 skills,
+  measured on Windows 11 with Git for Windows 2.56 as an elevated administrator. A user without
+  the symlink privilege is not measured (deferred by operator decision).
+- **New rule text from the field.**
+  - A side build that shares a target directory can serve a stale dependency
+    (`sota-shell-scripting` rules/08 §3; reproduced, `E0599`) (#582).
+  - Comparable runs need the same inputs (`sota-performance` §9a) (#583).
+  - Read boot history before calling a VM hung (`sota-devsecops` §7.7) (#583).
+  - Two `rules/09` §5a selectors: a path is not its volume (`pwd -P`), and a prefix glob matches
+    its siblings (#583).
+  - Count calls from a transcript by unique `tool_use` id (`/sota-report`) (#578).
+  - Router principle 7: a comment or doc describing a file is not the file (#578).
+  - DBSC now ships in Chrome on Windows and macOS (`sota-code-security` rules/17) (#579).
+- **For maintainers (#583).** When the installed skills or hooks link into the checkout, work in a
+  `git worktree` (AGENTS.md step 1): a branch switch there changes what every live session loads.
+- **Deferred, with triggers in `docs/ADOPTION-LOG.md`:** router rule 13 keyed by system; a hook
+  refusing background commands that mask their exit status; the Windows no-privilege case.
+
 ## [1.50.0] - 2026-10-22
 
 A MINOR: a new default-on hook and two new gate scripts, plus nine field reports and one operator
@@ -11545,6 +11587,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.50.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.1
 [1.50.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.0
 [1.49.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.5
 [1.49.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.4
