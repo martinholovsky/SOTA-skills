@@ -436,10 +436,11 @@ because the same change added three more classes below):
 - **A search that never ran, reported as a clean tree.** In zsh — macOS's interactive
   shell, and the one these checklists get pasted into — an unquoted glob in a flag value
   (`grep --include=*.md`) trips the default `NOMATCH` and **aborts the command**, where
-  bash would pass the word through and run it. Add the `2>/dev/null` everyone uses to
-  hide `Permission denied` noise and the broken probe is byte-identical to a real
-  no-match: empty output, exit 1. The sweep you read as *"nothing is stale"* may never
-  have executed. **A second route reaches the same false-clean**: in zsh an unquoted
+  bash would pass the word through and run it. Its stdout and exit status are those of a
+  real no-match: empty output, exit 1. zsh's `no matches found` still reaches stderr (the
+  command's own `2>/dev/null` does not cover it), so a script reading `$out` or `$?`, or a
+  sweep with stderr dropped around it, reports a clean tree. The sweep you read as *"nothing
+  is stale"* may never have executed. **A second route reaches the same false-clean**: in zsh an unquoted
   expansion does not word-split, so `files=$(git ls-files '*.md'); grep -l X $files`
   passes the whole newline-joined list as **one impossible filename** and it
   **searched nothing** — and the remedy is **separator-specific**, since the `${=var}` fix
@@ -811,7 +812,10 @@ run the check. Installed by `install.sh` (clone) and by the plugin's own hook; s
 it with `SOTA_UPDATE_REMINDER_DAYS=0`, or set your own interval in days. The one thing it
 *can* know locally it says every session: a **copied** install (no symlinks, e.g. Git Bash
 without Developer Mode) is stamped with its release, and once `git pull` moves the checkout past
-it, the hook names the stale copy and the re-install command.
+it, the hook names the stale copy and the re-install command. A second local fact, said **once**: a default-on
+hook script that a `git pull` brought to a clone install and nothing registered (the code-rules
+hook, or the zsh `EQUALS` hook when the agent's shell is zsh), since only `install.sh --routing`
+writes `settings.json`. A fresh install stays silent: it was just offered every hook.
 
 **Which version am I on?** `scripts/install.sh --version` reports the release, the
 checkout (`git describe`), whether your remote is ahead as of the last fetch, and

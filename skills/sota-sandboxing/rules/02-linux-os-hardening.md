@@ -200,6 +200,17 @@ container↔host file isolation for free) or AppArmor (Debian/Ubuntu:
 `label=unconfined`, `apparmor=unconfined`, `:Z`-mounting whole host paths, or a
 permissive-everything custom profile are findings, not fixes.
 
+**R6.4 — A shipped profile declared `flags=(unconfined)` is a grant, not a carve-out.** AppArmor
+ships such profiles so that named binaries keep a permission a policy otherwise withholds. The
+documented case is user-namespace creation under `kernel.apparmor_restrict_unprivileged_userns=1`,
+which allows it only to a profile with a `userns,` rule (Ubuntu's rollout, Launchpad #2035315).
+Leave them as shipped, and do not report them under R6.2. That rule is about runtime opt-outs
+(`apparmor=unconfined`, `--security-opt`) and hand-written permissive profiles. Field-measured
+2026-10-22 on apparmor 4.1.8: 78 of 145 shipped profiles carried the flag, and forcing all of them
+into complain mode broke rootless Podman (`failed to reexec: Permission denied`). Toggling the
+`podman` profile alone, with each other change reverted, reproduced and cleared it. Why complain
+mode denied anything there is **unverified**. Count them: `grep -l 'flags=(unconfined)' /etc/apparmor.d/*`.
+
 **R6.3 — LSM is your mount-scope backstop**, not your primary policy. Primary scoping
 comes from mount namespaces/Landlock; LSM catches what they miss (e.g., leaked FDs,
 `/proc/$pid/root` traversals).
@@ -342,8 +353,9 @@ do not change the boundary class.
 - [ ] Capabilities: bounding set cleared, ambient scrubbed, add-backs individually
       justified; no `CAP_SYS_ADMIN`/`CAP_SYS_PTRACE`/`CAP_BPF` for untrusted work.
 - [ ] `no_new_privs` set on every sandboxed process.
-- [ ] One LSM enforcing on hosts; no unconfined/permissive carve-outs without
-      written justification.
+- [ ] One LSM enforcing on hosts; no unconfined/permissive carve-outs **you added** without
+      written justification. Shipped `flags=(unconfined)` profiles are grants (R6.4): not a
+      finding, and not to be forced into complain or enforce mode.
 - [ ] Read-only rootfs; writable mounts are size-capped tmpfs `nosuid,nodev,noexec`.
 - [ ] FDs, env, signals, TTY scrubbed at the boundary; `RLIMIT_CORE=0`; wall-clock
       kill exists in addition to CPU quota.

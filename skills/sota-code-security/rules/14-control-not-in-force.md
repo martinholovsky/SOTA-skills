@@ -305,6 +305,18 @@ large, sort by *how the unguarded ones differ* — in all three cases above the
 unguarded sites were the ones handling the richer, more attacker-influenced data,
 because those were added later.
 
+**The population has a second axis: the principals the control runs as.** A control whose state
+lives in a file (a lockout tally, a nonce store, a rate-limit counter) runs with its *caller's*
+credentials wherever it is loaded in-process. Tightening that file's mode can then switch it off for
+the unprivileged callers while every root-run test passes. Third-party controls often fail **open**
+on that error: `pam_faillock` reads its tally and, on `EACCES` or `ENOENT`, returns `PAM_SUCCESS`
+without logging (linux-pam `modules/pam_faillock/pam_faillock.c`, master `584ef22752`, read
+2026-10-22). Field-measured: a 0700 root tally directory recorded **0** failures from a lock screen
+that runs PAM as the user, and 0755 recorded 3. `su` and `sudo` tests passed both ways, because
+they run PAM as root. Census the callers **by principal**, and test from the least-privileged one,
+read through an observer that is not itself a caller: a `sudo` read of the tally ran the
+module's success path and cleared it.
+
 This is [`rules/15`](15-instruments-and-guards.md) §3's "verify per target, not once" pointed the other way:
 there the population belongs to a **guard** and you inject a defect per member;
 here it belongs to a **mitigation**, and the tests pass for the honest reason
@@ -467,6 +479,10 @@ was false, and the signature was gone. Only asking a question the benign state c
       protected *operation* enumerated (not the control), every call site marked
       guarded or unguarded, and the **ratio reported** (§6)? "It is applied" is not
       a checkable claim.
+- [ ] For a control that keeps state in a file and runs in its caller's process (PAM
+      modules, lockout or rate-limit stores), is it tested from the **least-privileged**
+      principal that loads it, read by an observer that is not a caller (§6)? A root-only
+      test cannot see a fail-open on `EACCES`.
 - [ ] Does any security-relevant parameter **default to the unsafe value**, so the
       safe one must be remembered at every call site? Read the signature, not the
       docstring, and count the sites that pass it (§6a).

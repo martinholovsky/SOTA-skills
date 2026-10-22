@@ -60,8 +60,9 @@ passing unit test, and a status read through a pipe (`cmd | tail -1; echo $?` re
 route you to when the task does not look shell-shaped. That is exactly when it bites.
 **A fourth tell has no usage error at all: a quoting bug can be the reason a probe never
 fires.** In zsh an unquoted glob in a flag value (`grep --include=*.md`) aborts the
-command under the default `NOMATCH`, and with the customary `2>/dev/null` that is
-byte-identical to a genuine no-match — empty output, exit 1. The sweep you read as *"the
+command under the default `NOMATCH`. Its stdout and exit status match a genuine no-match
+(empty, exit 1); zsh's error line still reaches stderr, past the command's own `2>/dev/null`,
+so a check reading only `$out` or `$?` gets a clean result. The sweep you read as *"the
 tree is clean"* may never have run: [`sota-shell-scripting` rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md) §1.
 
 ### 2.1 Six failure modes specific to instruments
