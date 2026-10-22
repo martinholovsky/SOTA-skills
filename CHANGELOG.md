@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.50.0] - 2026-10-22
 
-A MINOR: a new default-on hook and two new gate scripts, plus seven field-report intakes and the
-corrections they forced in the library's own text. Eight PRs since v1.49.5: #569, #570, #572–#576 and this one (#571 was closed unmerged).
+A MINOR: a new default-on hook and two new gate scripts, plus nine field reports and one operator
+review taken in (seven ADOPTION-LOG entries), and the corrections they forced in the library's own text. Eight PRs since v1.49.5: #569, #570, #572–#576 and this one (#571 was closed unmerged).
 
 **Front door checked:** zsh-equals-hook · check-unassigned-uppercase · BASH_REMATCH · pam_faillock
 
