@@ -80,8 +80,8 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
 
 §5 returned **less** of the right population. This returns **all** of a neighbouring one —
 harder to see: nothing truncated, nothing silent, no rule broken. The selector was reasonable
-and answered a question one step to the left of the one asked. Three in one session, and a
-fourth field-reported 2026-09-26:
+and answered a question one step to the left of the one asked. Three in one session, a
+fourth field-reported 2026-09-26, and a fifth 2026-10-22:
 
 | the question | the selector typed | what it actually returns |
 |---|---|---|
@@ -89,6 +89,7 @@ fourth field-reported 2026-09-26:
 | "how much disk will this free" | `du -sh target` / the tool's own summary | apparent size / logical bytes deleted — **not** blocks returned to the filesystem |
 | "how much is reclaimable" | `podman system df` | images not backing a *running* container, with shared layers double-counted down the ancestry chain |
 | "what is this Deployment's pod logging" | `kubectl logs deploy/X` | **one** pod matching X's *label selector* — ownership is never checked, so it can be another workload's pod whose labels overlap |
+| "the VM I just started" | `ssh -p 2222 127.0.0.1` through a NAT forward | **whichever process bound the port first**, possibly another VM, whose host key `accept-new` then pins as this one's |
 
 `sort -V | tail -1` is the obvious way to get "the latest" and it is simply not "the
 default". Each of the three is the correct answer to a question nobody asked.
@@ -110,6 +111,18 @@ default". Each of the three is the correct answer to a question nobody asked.
 - **Three numbers that disagree are three questions, not a discrepancy to average.** None of
   `du`, the tool's report and `df` is wrong; ask which the decision needs. General form:
   [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §7a.
+- **A forwarded port selects whoever bound it first.** `127.0.0.1:2222` names a port, not a
+  machine. VirtualBox starts a VM whose forward failed to bind and reports success: reproduced
+  2026-10-22 on VirtualBox 7.2.22 with two throwaway VMs forwarding one port. The second
+  `startvm` exited 0 and the VM ran, while the failure (`VERR_NAT_REDIR_SETUP`) appeared only
+  in its `VBox.log`, and the port stayed with the first. In the field case `accept-new` pinned
+  the other VM's host key, and only a key-auth failure stopped test binaries going to the
+  wrong machine. Before trusting a forward (pinning its key, sending a credential, copying an
+  artifact), check that `lsof -nP -iTCP:<port> -sTCP:LISTEN` names the process you started, and
+  that the far end identifies as the machine you meant (OS, hostname, SSH banner). Pick an
+  unused high port rather than a conventional alternative such as 2222 or 8022, which another
+  VM may already hold. The remote-host side of trust on first use is
+  [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md).
 
 ## 5b. A filter that drops the file you named
 
@@ -190,7 +203,8 @@ your ancestors, and anything whose command line is your own command. Then act on
 - [ ] **Does the selector name the population member the question does?** (§5a) — *newest*
       is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is
       not *blocks freed*, *not backing a running container* is not *reclaimable*, *a pod
-      matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`). Nothing is
+      matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`), *the
+      process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`). Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to
       the subject; read one full record before trusting the aggregate.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/

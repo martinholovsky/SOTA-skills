@@ -68,6 +68,13 @@ session would have to read to find it.** If the third answer is "search the repo
 recorded. Prefer the artifact the next session is already forced to read — a failing gate, a
 draft PR, a TODO at the line it applies to, the branch name itself.
 
+**Re-test the deferral triggers your own work fired.** A deferral row names a condition ("re-run
+when a new input domain lands", "before milestone N starts"), and the session that makes it
+true is the one placed to notice. Search the trackers for the deferrals whose trigger names
+something this session changed, and move each fired one to an open item with the date it
+fired. A trigger nobody re-reads schedules nothing (field-reported 2026-10-22: three fired
+deferrals in one repo, found only by a later resume pass).
+
 **Status lives in exactly one place.** If an item's state is tracked in a ledger, every summary
 above it is *derived* — update the summary in the same change, or it drifts within a day. (In
 this library's own roadmap that drift happened three times in one session, and the summary is
