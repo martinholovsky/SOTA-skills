@@ -180,10 +180,10 @@ Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
   reported the gate as never having run; **zero `PASS` lines anywhere in the file** showed
   the log never held the table at all, and the gate had in fact *failed* — which was the
   real finding. [`rules/06`](06-ad-hoc-commands.md) §2.
-- **A foreground, tool-wrapped command has the same consumer problem, and the fix is
-  different.** §2a's remedy above — wait on the artefact, never on the launcher — is for a
-  job the launcher *detaches* from. When the harness runs the command in the foreground and
-  reports *its* status, the status is genuinely about your command; the defect is that a
+- **A tool-wrapped command has the same consumer problem, and the fix is different**, in the
+  foreground *or* an agent's own background mode, which reports the command's status when it
+  ends. §2a's remedy above (wait on the artefact) is for a job the launcher *detaches* from.
+  When the harness runs the command and reports *its* status, it is about your command; the defect is that a
   trailing `echo`, a `|| true` or a final `tail` has already replaced it. Field-reported
   2026-09-21: `make ci > log 2>&1; echo "EXIT=$?"` announced *"completed (exit code 0)"* for
   a run in which 2 of 25 gates failed. Capture and re-raise —

@@ -34,6 +34,14 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
   exactly what a naive recursive copy takes. Exclude them, or better, do not copy: point the
   tool's output elsewhere (`CARGO_TARGET_DIR=/build`, `--target-dir`, `-o`) and leave the
   source read-only.
+- **"Elsewhere" means a directory no other build uses.** A side build that shares a target
+  directory can leave it **stale**, not just full. Incremental builds judge freshness by
+  modification time, and a checkout made for an A/B has files written *later* than your
+  current edits, so its artifacts look newer and get reused. Reproduced 2026-10-22 on cargo
+  1.97.1: a gate built a newer checkout; a side build put an older checkout at the same source
+  path, into the same target directory; the gate then edited one file, rebuilt, and failed
+  with `E0599` against the old build of its dependency. Its own target directory built
+  cleanly. Give every side build its own target directory, especially at the same source path.
 - **A full disk is not a clean failure.** On a VM-backed container runtime the guest's disk is
   a sparse file on the host's, so exhausting the host surfaces *inside* the VM as I/O errors
   and can corrupt the filesystem and image store — minutes later, in an unrelated command,
@@ -149,7 +157,9 @@ agent shells may give a closed stdin instead, so check `ls -l /dev/fd/0` rather 
 - [ ] **Ad-hoc commands that write at scale** (§3): headroom checked (`df -h` on the target
       *and* the runtime's own filesystem), source mounted read-only, output outside the source
       tree, size bounded with `du -sh` before the copy, and build output (`target/`,
-      `node_modules/`, `.venv/`, `vendor/`) excluded or redirected rather than copied.
+      `node_modules/`, `.venv/`, `vendor/`) excluded or redirected rather than copied. A
+      side build or A/B checkout writes to its **own** target directory, never a gate's or
+      a teammate's: a shared one is reused by mtime and goes stale.
 - [ ] **Backgrounded wait loops** (§4): does any `&`-ed loop lack a bound on its
       iterations, and does anything make it stop other than a `pgrep` that matches the
       loop's own argv? Grep for the shape — `grep -nE '(while|until).*(true|pgrep|ps ).*&\s*$'`
