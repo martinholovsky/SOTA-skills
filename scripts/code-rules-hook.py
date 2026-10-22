@@ -404,7 +404,11 @@ def self_test() -> int:
     # (ADOPTION-LOG 2026-10-20 deferral). If one of these stops firing, resolve that deferral.
     for what, text in (("logs, returns errors", "git -c user.email=t@example.invalid commit"),
                        ("returns a list that can grow", 'p.add_argument("--limit", type=int)'),
-                       ("decides who may do what", 'role = m.get("role")\nif role == "user": pass')):
+                       ("decides who may do what", 'role = m.get("role")\nif role == "user": pass'),
+                       # 2026-10-21 field report: an HTTP-status client, and a CLI's error message
+                       ("decides who may do what", 'if r.status == 403:\n    raise RuntimeError(f"GET {url} refused")'),
+                       ("checks a password or handles a login",
+                        'print("error: not authenticated with the registry", file=sys.stderr)')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
               fires(what, text))
 

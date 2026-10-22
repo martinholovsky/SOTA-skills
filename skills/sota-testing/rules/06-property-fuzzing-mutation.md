@@ -41,6 +41,15 @@ slow-but-obviously-correct reference.
    AES-GCM and ChaCha20-Poly1305 ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §2). The race
    window is narrow, so run many iterations, and add the race detector where
    the language has one (`go test -race`). OWASP: Code Review Guide v2.
+   **A round trip proves the two halves agree with each other, not with anyone
+   else.** If you wrote both the encoder and the decoder, they share your
+   assumption about the shape, so a wrong field name or nesting round-trips
+   perfectly. Field-reported 2026-10-21 (one instance): the property passed
+   while the real consumer crashed on the first file. Where the output is
+   read by code you did not write (another service, a CLI, a library's
+   loader), add at least one assertion that feeds it through **that** reader
+   or its published schema. That check is a contract test ([rules/04](04-integration-contract-system.md) §4.5),
+   and the round-trip property cannot stand in for it.
 2. **Invariants**: outputs always satisfy a predicate — sorted output is
    ordered and a permutation of input; balance never negative; output JSON
    always schema-valid.

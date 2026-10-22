@@ -36,8 +36,8 @@ including the zsh deviations that bite them, are
 set -euo pipefail
 ```
 
-- `-e` exit on command failure, `-u` error on unset variable expansion, `-o pipefail` a
-  pipeline fails if any element fails (not just the last).
+- `-e` exit on command failure, `-u` error on unset variable expansion (default ShellCheck misses
+  an ALL-CAPS one: [rules/03](03-security.md) §7), `-o pipefail` a pipeline fails if any element fails.
 - Optionally `shopt -s inherit_errexit` (bash ≥4.4): makes command substitutions inherit
   `-e`; without it, `var=$(false; echo ok)` succeeds silently.
 - bash ≥5.3 adds `${ cmd; }` — command substitution run *in the current shell* (no
