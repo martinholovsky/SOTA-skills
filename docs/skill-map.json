@@ -1626,6 +1626,14 @@
       "targets": []
     },
     {
+      "from": "sota-shell-scripting",
+      "to": "sota-sandboxing",
+      "weight": 3,
+      "targets": [
+        "rules/02"
+      ]
+    },
+    {
       "from": "sota-skill-security",
       "to": "sota-devsecops",
       "weight": 3,
@@ -2095,12 +2103,6 @@
     {
       "from": "sota-shell-scripting",
       "to": "sota-secrets-management",
-      "weight": 2,
-      "targets": []
-    },
-    {
-      "from": "sota-shell-scripting",
-      "to": "sota-sandboxing",
       "weight": 2,
       "targets": []
     },
@@ -3424,12 +3426,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1532,
+    "md link, other skill": 1533,
     "md link, outside skills/": 3,
     "md link, same skill": 2769,
     "name (backticked)": 431,
     "name (bare)": 240,
-    "name+file (backticked)": 602,
+    "name+file (backticked)": 603,
     "name+file (bare)": 160,
     "own rules/NN": 2922
   },
@@ -3441,7 +3443,7 @@
     "md link, same skill": 0,
     "name (backticked)": 416,
     "name (bare)": 197,
-    "name+file (backticked)": 601,
+    "name+file (backticked)": 602,
     "name+file (bare)": 155,
     "own rules/NN": 2843
   },

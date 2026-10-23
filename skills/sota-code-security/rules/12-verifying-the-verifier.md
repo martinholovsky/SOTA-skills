@@ -163,6 +163,12 @@ produce *an* outcome at all. With it, the mechanism reproduced on the first run.
 - **Say which arm you ran when you report a refutation.** A refutation with no control arm
   should be labelled *"did not reproduce here"*, never *"refuted"* — the first is about your
   instrument, the second about the world.
+- **In a before/after measurement, the "after" arm is an absence too, and needs its own control:**
+  run it on a fresh instance where it must succeed. Field-reported 2026-10-23: a resource-leak
+  proof's control first showed a session still held after its peer died. The cause was the
+  harness's own pending request, which re-opened it. Without the control, the write-up would have
+  claimed a stronger leak than the code has. A second control, a fresh scheduler reaching a live
+  peer, had to pass before "the legitimate peer received nothing" counted.
 
 ### 1a.2 A reproduction has three outcomes, and only the sink proves the second
 

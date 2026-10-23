@@ -280,6 +280,13 @@ Fallbacks, best first:
    poll interval, so budget headroom; it terminates rather than throttles, which is
    what a runaway parser needs.
 
+**Not Linux: macOS has no cgroup and accepts no memory rlimit.** `setrlimit` rejects
+`RLIMIT_DATA`, `RLIMIT_AS` and `RLIMIT_RSS` (`EINVAL`; `ulimit -d`/`-v` print "cannot modify
+limit"), and a Python `preexec_fn` that tries aborts the spawn with `SubprocessError`. Measured
+2026-10-23 on macOS 26.7.1 with CPython 3.9.6 and 3.14.8 (control: `RLIMIT_NOFILE` lowers fine);
+the same `preexec_fn` capped a child at 1 GiB on Linux. So only 3 (a container, which on macOS is
+a Linux VM) and 4 remain there.
+
 Runtime knobs are **not** a boundary for untrusted code: `GOMEMLIMIT` is documented
 as a *soft* limit that excludes `syscall.Mmap` and C-allocated memory
 (`runtime/debug.SetMemoryLimit`), `-Xmx` bounds only the Java heap, and the workload

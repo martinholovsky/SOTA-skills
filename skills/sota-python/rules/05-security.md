@@ -64,9 +64,13 @@ subprocess.run(
   (argument injection — applies to git, curl, tar, find especially).
 - Validate or allowlist executables; never let the user pick the binary. Set `timeout=`,
   handle `CalledProcessError`. `os.system` is banned outright.
-- A memory budget on a child is `preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_DATA, …)`,
+- A memory budget on a child is, **on Linux**, `preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_DATA, …)`,
   **never `RLIMIT_AS`**: an AS cap kills a native binary in its loader with exit 127 ("command not
   found"), so a probe reads as EMPTY, not FAILED ([`sota-sandboxing` rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md) R7.2a).
+  **On macOS no memory rlimit can be set**: `setrlimit` rejects `RLIMIT_DATA`, `RLIMIT_AS` and
+  `RLIMIT_RSS` (`ValueError`), so that `preexec_fn` aborts the spawn with `SubprocessError`
+  (measured 2026-10-23, macOS 26.7.1, CPython 3.9.6 and 3.14.8). There, run the child in a
+  container with `--memory`, or under a supervisor that polls the process tree's RSS (R7.2b).
 
 ## 3. SQL: parameters, never interpolation
 
@@ -404,7 +408,8 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
 - [ ] **Subprocess [HIGH]** — `grep -rn "shell=True" --include="*.py" src/` ;
       `grep -rn "os.system\|os.popen" --include="*.py" src/`
 - [ ] **Memory cap via `RLIMIT_AS` (§2) [HIGH when it gates an inspection]** —
-      `grep -rn "RLIMIT_AS" --include="*.py" src/` (use `RLIMIT_DATA` or a cgroup)
+      `grep -rn "RLIMIT_AS" --include="*.py" src/` (use `RLIMIT_DATA` or a cgroup on Linux; on macOS
+      no memory rlimit is settable, so a container or an RSS supervisor)
 - [ ] **Child exit status ignored (§2) [MEDIUM, HIGH when the next step trusts the output]** —
       `grep -rnE 'subprocess\.(run|call)\(' --include="*.py" src/ | grep -v 'check=True'`
       (`run` returns a non-zero `returncode` without raising unless `check=True`; each hit
