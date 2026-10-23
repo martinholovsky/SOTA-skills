@@ -5,6 +5,29 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.50.2] - 2026-10-23
+
+A PATCH: a new CI check on an existing invariant and new behaviour inside an existing hook, with
+no new script, hook or command (RELEASING.md's test). One PR since v1.50.1: #585, taking in this
+repo's own 2026-10-22 maintenance-session field report.
+
+**Front door checked:** update-reminder · git worktree · invariant 27
+
+- **Invariant 27 now fails a deferral written without its marker.** A ledger row naming a revisit
+  trigger must carry `**DEFERRED —` or say it was resolved. Watched to fail on the previous
+  ledger: it flagged exactly the five live deferrals written in other shapes, which `/sota-resume`
+  had never tested. They are normalised (49 → 54 markers). New probe 27b; the negative-control
+  harness runs 102 probes.
+- **The update-reminder hook names a symlinked install whose checkout is off `main`, or dirty.**
+  The session is then loading unreleased text. Silent for plugin and copied installs. Exercised in
+  eight throwaway cases. Maintainers: work in a `git worktree` (AGENTS.md step 1).
+- **Rule text.**
+  - `sota-shell-scripting` rules/09 §5a: an empty `%(upstream:track)` is a stale local ref, since
+    a branch deleted on the remote reads as in sync until `git fetch --prune` (reproduced on git
+    2.55.0).
+  - rules/06 §2: a regex count ships with a sample of its matches.
+  - Router principle 7: a search tool's summary of a page is not the page.
+
 ## [1.50.1] - 2026-10-22
 
 A PATCH: no new script, hook, command or eval instrument, so by RELEASING.md's test the changes
@@ -11587,6 +11610,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.50.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.2
 [1.50.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.1
 [1.50.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.0
 [1.49.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.49.5
