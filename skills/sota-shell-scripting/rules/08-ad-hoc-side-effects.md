@@ -51,6 +51,24 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
   state they held only in memory. List what is running and whose it is first: see
   [`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) §7.7.
 
+## 3a. An experiment's memory has no ceiling unless you give it one
+
+§3 is the disk and §4 the process table. Memory is what an analysis, fuzzer or model step spends,
+and nothing bounds it by default. Field-reported 2026-10-22: a one-off analyzer run over a 4.4 MB
+binary recursed without bound, reached a **28.4 GB** maximum resident set (`/usr/bin/time -l`),
+died with exit 137 and pushed the machine into swap. The user noticed before the agent did.
+
+- **Look at headroom first**: `vm_stat` on macOS, `MemAvailable` in `/proc/meminfo` on Linux
+  (`free` is absent from slim images).
+- **Run it under a cap.** On Linux, `prlimit --data=<bytes> <cmd>` (measured: util-linux 2.41.5
+  capped the child's `ulimit -d` at the value given), or a cgroup ([`sota-sandboxing` rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md) R7.2b).
+  **macOS accepts no memory rlimit at all**, so there it is a container with `--memory`, or a
+  supervisor that sums RSS over the process tree (`ps -Ao pid=,ppid=,rss=`) and kills the tree past
+  the cap. In the field case a 4 GB supervisor fired twice in the next hour, at 4.7 and 4.9 GB,
+  before the machine felt it.
+- **Measure what a run used**: on macOS `/usr/bin/time -l` prints the peak resident set ("maximum
+  resident set size"), so the next cap can be set from a number.
+
 ## 4. The loop you left running exhausts the process table — and takes cleanup with it
 
 §3 is about a command that writes too much. This is the same idea aimed at a resource
@@ -154,6 +172,9 @@ agent shells may give a closed stdin instead, so check `ls -l /dev/fd/0` rather 
 
 ## Audit checklist
 
+- [ ] **Ad-hoc experiments that can grow in memory** (§3a): headroom read first (`vm_stat`,
+      `MemAvailable`), and a cap in place: `prlimit --data` or a cgroup on Linux, a container or an RSS
+      supervisor on macOS, which accepts no memory rlimit.
 - [ ] **Ad-hoc commands that write at scale** (§3): headroom checked (`df -h` on the target
       *and* the runtime's own filesystem), source mounted read-only, output outside the source
       tree, size bounded with `du -sh` before the copy, and build output (`target/`,

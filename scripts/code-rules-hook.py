@@ -36,7 +36,8 @@ most once per session, and at most PER_EVENT new files per edit, so a long sessi
 "Once" holds when two copies run on one edit (the plugin's and the installer's, which Claude Code
 runs in parallel): each file is claimed with an exclusive create, and only the copy that wins
 names it.
-Test files are skipped: what matters is what the shipped code does. Config files (CONFIG_EXT: YAML,
+Test files and an agent's scratchpad (a `scratchpad/` path segment) are skipped: what matters is
+what the shipped code does. Config files (CONFIG_EXT: YAML,
 .j2, .conf, .service, .toml) are read by the host-config rows only (CONFIG_ROWS), since 2026-10-22;
 JSON is never read.
 
@@ -75,6 +76,9 @@ CODE_EXT = {"py", "pyi", "go", "rs", "c", "h", "cc", "cpp", "cxx", "hpp", "java"
 # .conf and friends. JSON stays out: its hits were i18n strings and LLM transcripts.
 CONFIG_EXT = {"yml", "yaml", "j2", "conf", "service", "toml"}
 TEST_PATH = re.compile(r"(^|/)(tests?|spec|__tests__)/|(^|/)test_[^/]*$|_test\.\w+$|\.(test|spec)\.\w+$")
+# An agent's scratchpad holds proofs of concept and probes, not shipped code: the same reason tests
+# are skipped. Operator decision 2026-10-23, after 5 false triggers there and none useful.
+SCRATCH_PATH = re.compile(r"(^|/)scratchpad/")
 
 # (what the code does, pattern, [(skill, rules file number, section to check)]). Order is priority:
 # specific surfaces first, the generic ones (handlers, logging, retries) last. Each row was written
@@ -287,7 +291,7 @@ def respond(event: dict) -> str:
         rows = CONFIG_ROWS
     else:
         return ""
-    if TEST_PATH.search(path):
+    if TEST_PATH.search(path) or SCRATCH_PATH.search(path):
         return ""
     sd = state_dir(str(event.get("session_id") or ""))
     picks = [x for x in select(written_text(ti), named_before(sd), rows) if claim(sd, x[1])]
@@ -424,6 +428,7 @@ def self_test() -> int:
         check("MultiEdit edits are read", "Zip Slip" in c)
         for label, e in (("test file is silent", ev("s6", "/w/tests/test_export.py", "import csv")),
                          ("test_ prefix is silent", ev("s6", "/w/test_export.py", "import csv")),
+                         ("scratchpad file is silent", ev("s6", "/tmp/claude-1/x/scratchpad/poc.py", "import csv")),
                          ("markdown is silent", ev("s6", "/w/README.md", "export as csv")),
                          ("no trigger is silent", ev("s6", "/w/a.py", "x = 1 + 2\n")),
                          ("other tool is silent", {"tool_name": "Bash", "tool_input": {"command": "csv"}})):
@@ -436,6 +441,8 @@ def self_test() -> int:
         check("config: generic rows are silent on YAML", rc == 0 and c == "")
         rc, c, _ = run(ev("s10", "/w/i18n/th.json", '{"unshare": "x", "setenforce 0": "y"}'))
         check("config: JSON is not read", rc == 0 and c == "")
+        rc, c, _ = run(ev("s12", "/w/app/scratchpad_utils.py", "import csv\n"))
+        check("a shipped file NAMED like scratchpad still fires (segment, not substring)", "01-" in c)
         rc, c, _ = run(ev("s7", "/w/a.py", "import csv"), {"SOTA_CODE_RULES_HOOK": "off"})
         check("opt-out is silent", rc == 0 and c == "")
         # Two copies on one edit (plugin + installer, run in parallel) must not both name a file.
@@ -472,6 +479,11 @@ def self_test() -> int:
                        # 2026-10-22 EDR closure report: WQL text read from an event, parsed as data, not run
                        ("builds a database query",
                         '/// The WMI consumer\'s "Query" field holds WQL such as SELECT * FROM __InstanceCreationEvent.'),
+                       # 2026-10-23 field report: a client sending its OWN key outbound, and a ZMQ session class
+                       ("issues or checks a session or token", 'headers = {"Authorization": f"Bearer {api_key}"}'),
+                       ("decides who may do what", 'headers = {"Authorization": f"Bearer {api_key}"}'),
+                       ("issues or checks a session or token", "class ConsumerSession:\n    pass"),
+                       ("decides who may do what", 'cfg = {"ec_role": "producer"}'),
                        # 2026-10-22 resume pass: a C++ extension in a set literal, matched case-blind as "Cc"
                        ("builds an email or a message header", 'CODE_EXT = {"c", "h", "cc", "cpp"}')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,

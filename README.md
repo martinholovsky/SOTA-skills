@@ -836,7 +836,9 @@ hook, or the zsh `EQUALS` hook when the agent's shell is zsh), since only `insta
 writes `settings.json`. A fresh install stays silent: it was just offered every hook. A third, said
 every session while true: a **symlink** install whose checkout is on a feature branch, or carries
 uncommitted changes, so the session is loading unreleased text (the cue for a maintainer to work in a
-`git worktree`, AGENTS.md step 1).
+`git worktree`, AGENTS.md step 1). It runs when the hook does: at session start and, since the hook is
+registered with no matcher, again on resume, `/clear` and compaction (Claude Code's hooks reference
+lists those as SessionStart sources). It does not re-check between compactions in a long session.
 
 **Which version am I on?** `scripts/install.sh --version` reports the release, the
 checkout (`git describe`), whether your remote is ahead as of the last fetch, and
