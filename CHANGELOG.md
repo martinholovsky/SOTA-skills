@@ -5,6 +5,31 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.50.4] - 2026-10-23
+
+A PATCH: rule text and a behaviour change inside an existing hook, with no new script, hook or
+command. One PR since v1.50.3: #589, taking in a vulnerability-discovery pipeline session's field
+report.
+
+**Front door checked:** RLIMIT_DATA · scratchpad · SessionStart
+
+- **The memory cap the library recommended fails on macOS.** `sota-python` rules/05 §2 said to cap a
+  child with `RLIMIT_DATA` in a `preexec_fn`. On macOS no memory rlimit can be set (DATA, AS and RSS
+  all rejected), so the spawn aborts with `SubprocessError`. Measured on macOS 26.7.1 with CPython
+  3.9.6 and 3.14.8; the same cap still works on Linux. The advice is now Linux-scoped wherever it
+  appeared, with a container or an RSS supervisor for macOS (`sota-sandboxing` R7.2b).
+- **Memory for ad-hoc experiments** (`sota-shell-scripting` rules/08 §3a): read headroom first and run
+  under a cap. A field run reached a 28.4 GB resident set.
+- **Rule text.**
+  - Router principle 7: a number written into an agent file, tracker or baseline is a claim; paste
+    it from the output.
+  - `sota-code-security` rules/12 §1a.1: the after-arm of a before/after measurement needs its own
+    control.
+- **The code-rules hook skips an agent's `scratchpad/`**, as it skips test files (operator decision),
+  and labels four more false triggers.
+- **Deferred:** re-checking the checkout branch between compactions. The warning already re-runs on
+  `SessionStart` for startup, resume, `/clear` and compaction.
+
 ## [1.50.3] - 2026-10-23
 
 A PATCH: documentation only. One PR since v1.50.2: #587.
@@ -11620,6 +11645,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.50.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.4
 [1.50.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.3
 [1.50.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.2
 [1.50.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.1

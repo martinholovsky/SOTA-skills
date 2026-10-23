@@ -377,7 +377,10 @@ because the same change added three more classes below):
   Blast radius is not only disk, either: an unbounded backgrounded loop, or **a wrapper that
   invokes a command its own directory shadows**, fills the per-user process table, and every
   tool fails at once *including the ones you would use to diagnose it*. Two unrelated causes
-  produce that one signature and only **parentage** separates them.
+  produce that one signature and only **parentage** separates them. Nor is it only processes: a
+  one-off analyzer run reached a **28 GB** resident set and swapped the host, and on macOS no memory
+  rlimit can be set at all (`RLIMIT_DATA` in a `preexec_fn` aborts the spawn), so the cap there is a
+  container or an RSS supervisor.
   Two more shapes where the command is *correct*: an extraction or fetch into a blob you have
   never opened cannot be positive-controlled at all, because nothing is yet known to be in it —
   so it must print a **denominator** (bytes, members, total files) beside the zero, or `0`
@@ -393,7 +396,8 @@ because the same change added three more classes below):
   tracked symlinks. And a guard tested in zsh can pass what bash rejects: zsh leaves
   `BASH_REMATCH` unset, so empty `-eq` empty accepted `43/44` as "N/N checks passed".
   ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md),
-  [rules/03 §3a](skills/sota-shell-scripting/rules/03-security.md))
+  [rules/03 §3a](skills/sota-shell-scripting/rules/03-security.md),
+  [rules/08 §3a](skills/sota-shell-scripting/rules/08-ad-hoc-side-effects.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
   here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
   policy) can be tightened until it refuses the legitimate case too, and it passes the
@@ -1403,15 +1407,17 @@ competing pressure added to every prompt ("internal demo tomorrow … skip the e
 ([v15](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-17-v15/REPORT.md), INCONCLUSIVE: 3 cases up, 0 down, p = 0.125, +49% cost). Turn it off with `SOTA_CODE_RULES_HOOK=off`.
 `install.sh --routing` offers the same hook to clone installs; with both, each file is named once.
 **The router carries the same table as text** ("What your code does: the rules file to read"), for
-hosts that cannot run a hook. The exception is rows marked hook-only (`HOOK_ONLY` in the script, since
-2026-10-22): new triggers reach the hook first and enter the router once their reach is measured. The
+hosts that cannot run a hook. Measured without the hook, it got agents to the right rules file in
+14 of 20 runs, against 6, and rule tests rose 0.679 → 0.792
+([sota-agent-evals v13](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v13/REPORT.md); in-sample, like the hook's own numbers).
+The router's copy leaves out rows marked hook-only (`HOOK_ONLY` in the script,
+since 2026-10-22): new triggers reach the hook first and enter the router once their reach is measured. The
 router is at its 500-line cap, and its rows are what the reach numbers were measured on.
 Three host-config rows (containers and seccomp, AppArmor/SELinux, PAM) also read YAML, `.j2`,
 `.conf`, `.service` and `.toml` files, so an Ansible role or a Compose file is covered. Every other
 row reads code only: over 161,783 local config files, all rows together fired on 40%, almost
-always falsely. Measured without the hook, it got agents to the right rules file in
-14 of 20 runs, against 6, and rule tests rose 0.679 → 0.792
-([sota-agent-evals v13](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v13/REPORT.md); in-sample, like the hook's own numbers).
+always falsely. Test files and an agent's `scratchpad/` are skipped: what matters is the shipped
+code (scratchpad since 2026-10-23, after five false triggers there).
 
 **Since 2026-10-21 it also ships the zsh EQUALS hook**, on by default (`scripts/zsh-equals-hook.py`,
 a `PreToolUse` hook on `Bash`). zsh rewrites an unquoted word starting with `=` to a command's path
