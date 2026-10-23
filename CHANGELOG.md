@@ -5,6 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.50.3] - 2026-10-23
+
+A PATCH: documentation only. One PR since v1.50.2: #587.
+
+**Front door checked:** invariant 27
+
+- `docs/CONVENTIONS-LEDGER.md` now states invariant 27's extension from v1.50.2: a ledger row naming
+  a revisit trigger without the `**DEFERRED —` marker fails the build. Its row still described the
+  gate as of 2026-09-09. Found by the `/sota-close` documentation sweep after the v1.50.2 cut.
+
 ## [1.50.2] - 2026-10-23
 
 A PATCH: a new CI check on an existing invariant and new behaviour inside an existing hook, with
@@ -11610,6 +11620,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.50.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.3
 [1.50.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.2
 [1.50.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.1
 [1.50.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.0
