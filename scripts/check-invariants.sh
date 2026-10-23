@@ -2099,9 +2099,22 @@ for l in marks:
     if not TRIG.search(cell):
         bad = 1
         print("deferral whose marker cell names no revisit trigger: %s" % cell.strip()[:90])
+# The converse: a deferral WITHOUT the marker is invisible to the check above and to
+# /sota-resume's sweep. Measured 2026-10-23: 5 live deferrals written as "**deferred**",
+# "**DEFERRED, with a correction**" or a trailing "Revisit trigger:" clause, and the day's
+# resume pass tested none of them. So a row naming a revisit trigger must carry the marker,
+# or say it was resolved. On that ledger this flagged the 5 and none of 29 resolved rows.
+MARK = re.compile(r'(?:^|\|)\s*(?:-\s+)?\*\*DEFERRED\s+—')
+RESOLVED = re.compile(r'implemented|trigger fired|RESOLVED|was deferred|obviated|superseded|'
+                      r'built (the same day|that day)', re.I)
+for n, l in enumerate(t.splitlines(), 1):
+    if re.search(r'revisit trigger', l, re.I) and not MARK.search(l) and not RESOLVED.search(l):
+        bad = 1
+        print("deferral without the **DEFERRED — marker at line %d (write the marker, or say it was resolved): %s"
+              % (n, l.strip()[:90]))
 print("SCOPE %d" % len(marks))
 if bad: sys.exit(1)
-print("    ok (%d deferral(s), each naming a trigger)" % len(marks))
+print("    ok (%d deferral(s), each naming a trigger; none unmarked)" % len(marks))
 DFPY
 ) || v27=1
   while IFS= read -r l; do

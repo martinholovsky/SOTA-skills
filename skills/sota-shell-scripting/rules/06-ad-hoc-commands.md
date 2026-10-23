@@ -147,7 +147,7 @@ a fetch returned an empty page (an anti-bot challenge), `apt-cache depends` prin
 (wrong query shape). Every one was the reader failing, and every one rendered as `0`.
 
 The fix is mechanical and needs no prior knowledge of the target: make each extraction,
-fetch or search emit **what it got** beside **what it found**, in the same invocation.
+fetch or search emit **what it got** beside **what it found**, in the same invocation. **And a count from a regex classifier ships with a printed sample of its matches**: a denominator says how much you read, a sample says what you counted (field-reported 2026-10-22, four times in one session: "23 still `exit`" was the word inside `echo "exit=$?"`, and a hook-firing count of 18 included the hook's own source; the real count was 6).
 
 ```bash
 # BAD  — a fact about the subject, or a broken reader. Indistinguishable.
@@ -483,7 +483,7 @@ thing** — index it by what it is *for*.
       default; `type grep` may reveal a wrapper. Control the sweep with a known-present term
       **in the same invocation, through the same input path**, drawn from where the scope is least likely to reach: a
       control from inside a too-narrow glob passes while the answer sits outside it.
-- [ ] **Every extraction or fetch printed a denominator** (§2) — bytes retrieved, members
+- [ ] **Every extraction or fetch printed a denominator, and every regex count a sample of its matches** (§2) — bytes retrieved, members
       listed, total files — in the **same invocation** as the result read from it. `LINES:0`
       alone is a fact about the subject; `LINES:0` beside `MEMBERS:0 BYTES:39802880`
       localises it to the reader. Required wherever a positive control is unavailable

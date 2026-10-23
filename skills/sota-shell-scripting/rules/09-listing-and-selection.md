@@ -81,8 +81,8 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
 §5 returned **less** of the right population. This returns **all** of a neighbouring one —
 harder to see: nothing truncated, nothing silent, no rule broken. The selector was reasonable
 and answered a question one step to the left of the one asked. Three in one session, a
-fourth field-reported 2026-09-26, a fifth 2026-10-22, and a sixth and seventh from another
-report the same day:
+fourth field-reported 2026-09-26, a fifth 2026-10-22, a sixth and seventh from another
+report the same day, and an eighth from the session that took those in:
 
 | the question | the selector typed | what it actually returns |
 |---|---|---|
@@ -93,6 +93,7 @@ report the same day:
 | "the VM I just started" | `ssh -p 2222 127.0.0.1` through a NAT forward | **whichever process bound the port first**, possibly another VM, whose host key `accept-new` then pins as this one's |
 | "which disk or volume holds X" | `du`/`ls` on X's conventional path | the **path**, not the device: any symlink along it moves the answer. Check `cd X && pwd -P`, or `df X/` (field-reported 2026-10-22: a VM disk "on the internal drive" sat on an external volume via a linked parent directory) |
 | "has *this* job already run" | an existence check by prefix glob, `compgen -G "r_${name}_*"` | **any** name that extends it: `r_short_*` also matches `r_short_regression_*`, so a 236-case job logged `HAVE` and never ran (field-reported 2026-10-22; reproduced in bash 5.3). Anchor the next character (`r_${name}_[0-9]*`) or test the exact path |
+| "is this branch still on the remote, and in sync" | `git branch -vv`, `%(upstream:track)` | your **local remote-tracking ref**, which a branch deleted on the remote leaves behind until `git fetch --prune`: an empty track reads as "in sync" for a branch that no longer exists. Ask the remote, `git ls-remote --heads origin <b>` (reproduced on git 2.55.0: `track=[]` with 0 remote refs, `[gone]` only after a prune; field-reported 2026-10-22: 8 of 10 "in sync" branches were gone). And a squash-merged branch's tip is never an ancestor of `main`, so `merge-base --is-ancestor` says "not merged" for every one: use the PR's state |
 
 `sort -V | tail -1` is the obvious way to get "the latest" and it is simply not "the
 default". Each of the three is the correct answer to a question nobody asked.
@@ -208,7 +209,8 @@ your ancestors, and anything whose command line is your own command. Then act on
       not *blocks freed*, *not backing a running container* is not *reclaimable*, *a pod
       matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`), *the
       process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), *a
-      path* is not *the volume* (`pwd -P`), and a *prefix glob* is not *this name* (`X_*` matches `X_other_*`). Nothing is
+      path* is not *the volume* (`pwd -P`), a *prefix glob* is not *this name* (`X_*` matches `X_other_*`), and a
+      *remote-tracking ref* is not *the remote* (`git ls-remote --heads`, not `%(upstream:track)`). Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to
       the subject; read one full record before trusting the aggregate.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/

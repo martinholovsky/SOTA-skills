@@ -429,6 +429,19 @@ MUT
 git add docs/ADOPTION-LOG.md >/dev/null 2>&1 )
 probe 27 "a deferral with no revisit trigger" "names no revisit trigger"
 
+# 27b — the converse: a live deferral written WITHOUT the marker. "**deferred** — revisit
+# trigger: …" is one of the five shapes found in the ledger on 2026-10-23, invisible to the
+# marker check above and to /sota-resume. Asserts the appended row really carries no marker.
+( cd "$WT" && python3 - <<'MUT'
+import re, pathlib
+p = pathlib.Path("docs/ADOPTION-LOG.md")
+row = "| probe idea | **deferred** — revisit trigger: the next probe run | — |"
+assert not re.search(r'(?:^|\|)\s*(?:-\s+)?\*\*DEFERRED\s+—', row), "fixture drift: the row carries the marker"
+p.write_text(p.read_text().rstrip("\n") + "\n" + row + "\n")
+MUT
+git add docs/ADOPTION-LOG.md >/dev/null 2>&1 )
+probe 27b "a live deferral without the marker" "without the **DEFERRED — marker"
+
 # 28 — an eval case set that never says how its cases were chosen. This is
 # prompt-independence.jsonl's own defect replayed: the rule lived in the results doc
 # and not in the case file, in the set backing the +0.509 headline.

@@ -63,6 +63,41 @@ if [ -n "$repo" ]; then
   done
 fi
 
+# --- a symlinked install whose checkout is on a feature branch, or dirty -------
+# With a symlink install the checkout IS the live library: a maintainer's `git checkout -b`
+# there changes what every session on the machine loads. Measured 2026-10-22: ~5.5 h of
+# feature branches across five PRs (reflog), noticed only by another session's field report.
+# The maintainer's session cannot see who else is loading, so the consuming session says it.
+# Local facts only. Silent for a plugin or a --copy install, which do not load this checkout.
+if [ -n "$repo" ]; then
+  conf="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+  link=$(readlink "$conf/skills/sota" 2>/dev/null) || link=""
+  if [ -n "$link" ]; then
+    real_link=$(unset CDPATH; cd -- "$conf/skills/sota" 2>/dev/null && pwd -P) || real_link=""
+    real_repo=$(unset CDPATH; cd -- "$repo" 2>/dev/null && pwd -P) || real_repo=""
+    # Only a git work tree has a branch to report: a tarball install is not a checkout, and an
+    # empty branch there would read as "a detached HEAD" (caught by its own test case, 2026-10-23).
+    in_git=$(git -C "$repo" rev-parse --is-inside-work-tree 2>/dev/null) || in_git=""
+    [ "$in_git" = true ] || real_link=""
+    case "$real_link" in
+      "$real_repo"/skills/*)
+        branch=$(git -C "$repo" symbolic-ref --short -q HEAD 2>/dev/null) || branch=""
+        default=$(git -C "$repo" symbolic-ref --short -q refs/remotes/origin/HEAD 2>/dev/null) || default=""
+        default=${default#origin/}; [ -n "$default" ] || default=main
+        dirty=$(git -C "$repo" status --porcelain --untracked-files=no 2>/dev/null | wc -l | tr -d ' ') || dirty=0
+        what=""
+        [ "$branch" = "$default" ] || what="checked out on ${branch:-a detached HEAD}, not $default"
+        [ "${dirty:-0}" -gt 0 ] 2>/dev/null && what="${what:+$what, and }carrying $dirty uncommitted change(s)"
+        if [ -n "$what" ]; then
+          printf '[sota-skills: this session loads an unreleased library. Relay this to the user in one line, then continue with their request.]\n'
+          printf 'The installed skills link into %s, which is %s, so this session runs that text and hook code, not a release. Maintainers: work in a git worktree instead (AGENTS.md "Landing a change", step 1).\n' \
+            "$repo" "$what"
+        fi
+        ;;
+    esac
+  fi
+fi
+
 # --- where we remember the last nudge -------------------------------------
 data="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/sota-skills-data}"
 stamp="${data}/.update-reminder-last"
