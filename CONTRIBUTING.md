@@ -455,7 +455,11 @@ the "what it means for your PR" version; that table is the index.
     statuses for one item. A deferral now carries `**DEFERRED —` plus its condition, and
     this asserts the condition is there. It reads the marker's **own cell**, not the row: a
     first draft checked the whole line and passed a table row because "revisit" appeared in
-    an unrelated cell — a catch for the wrong reason, which is a false pass.
+    an unrelated cell — a catch for the wrong reason, which is a false pass. **The converse is
+    checked too** (2026-10-23): a row that names a revisit trigger must carry the marker or say
+    it was resolved ("implemented", "trigger fired", …). Five live deferrals written as
+    `**deferred**`, `**DEFERRED, with a correction**` or a trailing clause had gone unseen by
+    this check and by `/sota-resume`.
 
 28. **An `evals/cases/*.jsonl` declares no `SELECTION RULE`.** Building a case set out of
     the cases a model got wrong measures the selection, not the system

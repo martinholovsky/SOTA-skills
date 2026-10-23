@@ -144,8 +144,8 @@ rules files that match the code in front of you. Never load all skills at once.
    asserting or editing against its contents. **Nor is a project's own index, tracker row
    or status table** — a summary an earlier session wrote; open the record it summarises
    before repeating its status (field-reported 2026-09-26: "NOT filed", ten days after
-   filing). **Nor is a comment or doc that describes another file** — read that file; a paraphrase
-   turned "not relied on" into "required" (field-reported 2026-10-22). Summaries silently drop the case
+   filing). **Nor is a comment or doc that describes another file, or a search tool's summary of a page** — open the thing itself; a paraphrase
+   turned "not relied on" into "required", and a cited summary named a state the page did not (both field-reported 2026-10-22). Summaries silently drop the case
    that contradicts them and raw output does not. Full adversarial procedure for audit findings: AUDIT step 7 and [`rules/03`](rules/03-audit-findings.md) §4.
 8. **Publishing under someone else's name raises the bar.** A claim to the
    person who asked costs one reader's trust and is cheap to retract. A claim
