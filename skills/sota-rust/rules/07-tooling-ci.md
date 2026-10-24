@@ -52,10 +52,11 @@ allow-indexing-slicing-in-tests = true
 allow-dbg-in-tests = true
 ```
 
-**The test keys stop at `#[test]` and `#[cfg(test)]`.** Measured 2026-10-24 (clippy 1.97.1 and
-1.99.0, this template, `--all-targets -D warnings`): without `clippy.toml` the build failed on
-a `#[cfg(test)]` unwrap (rc 101); with it, those passed, while an unwrap in a `tests/` helper
-outside a `#[test]` function, in `examples/` and in `benches/` still failed. Use `expect` with
+**The test keys stop at `#[test]` and `#[cfg(test)]`.** Measured 2026-10-24 on clippy 1.97.1 and
+1.99.0 with this template as written, `--all-targets -D warnings`: without `clippy.toml` the build
+failed on a `#[cfg(test)]` unwrap (rc 101); with it, that passed, while an unwrap in a `tests/`
+helper outside a `#[test]` function, in `examples/` and in `benches/` still failed, each on
+`unwrap_used` (`scripts/check-claims.sh` claim 21 re-runs the first half). Use `expect` with
 an invariant message there, or a `Result`-returning helper. There is **no** test key for
 `arithmetic_side_effects` (it is absent from clippy's own key list), so a crate that denies it
 scopes test code with `#![cfg_attr(test, allow(clippy::arithmetic_side_effects, reason = "…"))]`.
@@ -85,9 +86,8 @@ scopes test code with `#![cfg_attr(test, allow(clippy::arithmetic_side_effects, 
     `allow_attributes_without_reason` still rejects an inner allow with no reason. Neither lint
     fired on `#[allow]` emitted by a derive or another crate's `macro_rules!`.
 - **`deny`, never `forbid`, for `unused_must_use` and `unsafe_op_in_unsafe_fn`.** `forbid` also
-  rejects `#[allow]` that macros emit: measured, a proc-macro derive's and another crate's
-  `macro_rules!` `#[allow(unused_must_use)]` both failed with E0453 under `forbid` and compiled
-  under `deny`. `unsafe_code = "forbid"` is still right in crates that need no unsafe (rules/03 §5);
+  rejects `#[allow]` that macros emit: measured for both lints, a proc-macro derive's and another
+  crate's `macro_rules!` `#[allow(…)]` failed with E0453 under `forbid` and compiled under `deny`. `unsafe_code = "forbid"` is still right in crates that need no unsafe (rules/03 §5);
   check that its derives compile.
 - Run clippy on the same pinned toolchain as the build (lint sets drift across
   versions).

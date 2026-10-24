@@ -326,8 +326,10 @@ For each `unsafe` block, in order:
 - [ ] CI: Miri job exists and isn't `continue-on-error: true`; fuzz targets
       exist for unsafe parsers; `cargo geiger` output reviewed for the tree.
 - [ ] **A sanitizer run without `--target`** (§4): `grep -rnE -e '-Zsanitizer=' .github/ .gitlab-ci.yml Makefile justfile scripts/ 2>&1 | grep -v -e '--target'`.
-      Each hit applies the sanitizer to proc macros and build scripts: the job fails on
-      any crate with a proc-macro dependency, or was disabled because it did. Medium if it
+      A hit is a lead, line by line: a `--target` on another line of the same job, or a
+      `No such file` line for an absent path, also prints. A confirmed one applies the sanitizer
+      to proc macros and build scripts: the job fails on any crate with a proc-macro dependency,
+      or was disabled because it did. Medium if it
       is the only memory-safety check on FFI code.
 - [ ] Crates with zero unsafe missing `#![forbid(unsafe_code)]` — Low, but
       free hardening.

@@ -32,7 +32,7 @@ Cumulative obligations — each line adds to the ones above it, it does not repl
 
 **First pass, before hand-writing anything:** `cargo kani autoharness -Z autoharness` builds and
 runs bounded harnesses for every eligible function whose arguments implement `kani::Arbitrary`.
-Measured: without `-Z autoharness` it exits 2 (`the autoharness subcommand is unstable`); with it,
+Measured: without `-Z autoharness` it exits 2 (``The `autoharness` subcommand is unstable and requires -Z autoharness``); with it,
 it found a planted `(v * 2) / 2` overflow. Its output defaults to `terse`. It is triage, not a
 proof plan: it asserts nothing about results (§6).
 
@@ -108,6 +108,16 @@ Run Kani through this, never bare `cargo kani`, in any job whose harnesses carry
 # format it no longer recognises. Usage: kani-cover-gate.sh <cargo kani args>
 set -uo pipefail
 PAT="${KANI_COVER_PAT:-\*\* [0-9]+ of [0-9]+ cover properties satisfied}"
+fmt=""; prev=""
+for a in "$@"; do
+  case "$a" in --output-format=*) fmt="${a#*=}" ;; esac
+  [[ "$prev" == --output-format ]] && fmt="$a"
+  prev="$a"
+done
+[[ -z "$fmt" && "${1:-}" == autoharness ]] && fmt=terse   # autoharness defaults to terse
+if [[ -n "$fmt" && "$fmt" != regular ]]; then
+  printf 'kani-cover-gate: --output-format=%s drops the per-check lines the drift guard counts; use regular\n' "$fmt" >&2; exit 2
+fi
 out="$(cargo kani "$@" 2>&1)"; rc=$?
 printf '%s\n' "$out"
 (( rc == 0 )) || exit "$rc"                      # Kani's own failure wins
@@ -123,17 +133,22 @@ if (( bad )); then printf 'kani-cover-gate: unsatisfied or unreachable kani::cov
 printf 'kani-cover-gate: %s cover checks, %s summaries, all satisfied\n' "$checks" "$nsums" >&2
 ```
 
-Measured on Kani 0.68.0, shellcheck clean: exit **1** on a contradictory-`assume` harness, on a
-dead-branch harness, and on a run mixing a good harness with a vacuous one; exit **0** on a good
-harness (`2 cover checks, 1 summaries`) and on a harness with no covers (`0 cover checks`); exit
+Measured on Kani 0.68.0, shellcheck clean. Live runs: exit **1** on a contradictory-`assume`
+harness, on a dead-branch harness, and on a run mixing a good harness with a vacuous one; exit
 **3** with the pattern mutated to the RFC's wording, which is the format-drift guard firing.
-`--output-format=terse` still printed the summary line, and the gate still failed the vacuous
-harness under it.
+Replayed (recorded Kani output fed through a `cargo` shim, so the arguments reach only the gate):
+exit **1** on the early-return and `Arbitrary` harnesses and on a real bug (Kani's own failure),
+exit **0** on two good harnesses and on a clean harness with no covers (`0 cover checks`).
+**Why it refuses `terse` (exit 2), `autoharness` included:** terse output has no per-check lines,
+so the drift guard cannot fire — replayed, terse output with the summary wording changed passed
+as `0 cover checks, 0 summaries, all satisfied`.
 
 Why it counts cover *checks in Kani's output* rather than `cover!` in the source: a source search
-cannot tell which harnesses this run selected. Measured on a gate that did: run on a single
-harness with no covers in a crate whose other harnesses had them, it failed a clean run (exit 1);
-in an image without that search tool, its guard printed `command not found` and passed (exit 0).
+cannot tell which harnesses this run selected. Measured on a gate that did (a pathless
+`rg -q 'kani::cover!'`): replayed on a clean harness with no covers in a crate whose source has
+covers, it failed (exit 1); with its stdin a pipe, its pathless `rg` read the pipe and the guard
+passed (exit 0); in an image without ripgrep it printed `command not found` and passed a vacuous
+harness (exit 0).
 
 **Its negative controls are part of it.** Keep a harness with a contradictory `assume` and a
 trailing cover in the repository, run the gate on it in CI, and require exit 1; run it once with
@@ -144,14 +159,14 @@ at adoption proves nothing about the next Kani release.
 
 | what | without the flag | measured |
 |---|---|---|
-| `#[kani::requires]` / `ensures` / `proof_for_contract` | build error: *requires activating the unstable `function-contracts` feature* | loud — good |
-| `#[kani::loop_invariant(...)]` | **ignored, silently**: the loop is unrolled instead | a deliberately **false** invariant passed with `VERIFICATION:- SUCCESSFUL`, exit 0; with `-Z loop-contracts` it failed its base and step checks |
+| `#[kani::proof_for_contract(f)]` | build error: *requires activating the unstable `function-contracts` feature* | loud — good. `requires`/`ensures` on a function no contract harness names: not measured |
+| `#[kani::loop_invariant(...)]` | **ignored, silently**: the loop is unrolled instead | a deliberately **false** invariant passed with `VERIFICATION:- SUCCESSFUL`, exit 0; with `-Z loop-contracts` it failed its step check (the base check passed: the invariant held on entry) |
 | `#[kani::stub_verified(f)]` | build error: *requires activating the unstable `stubbing` feature* — `-Z function-contracts` alone is not enough | loud |
 | `--harness name` | **substring** match: `--harness verify_get_bug` also ran `verify_get_bug_should_panic` | add `--exact` and the fully qualified name in CI |
 
 Put the unstable features in `Cargo.toml` so a bare `cargo kani` and CI agree. Measured:
 `[package.metadata.kani.unstable]` with `function-contracts = true` made a bare `cargo kani`
-verify a contract harness; `[package.metadata.kani] flags = ["-Z", "function-contracts"]` did not
+verify a contract harness; `[package.metadata.kani] flags = ["-Z", "function-contracts", "-Z", "loop-contracts"]` did not
 (the same build error as no flag). `loop-contracts` and `stubbing` were not measured in that table.
 
 ## 6. A postcondition needs teeth: mutation adequacy
@@ -231,12 +246,13 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
 
 - [ ] **Security-critical crate parsing untrusted input with no fuzz target and no Kani harness**
       (§1): `rg -l 'fuzz_target!|#\[kani::proof' -t rust .` empty in such a crate = Medium.
-- [ ] **Harnesses that do not end in `kani::cover!()`** (§3): `awk -f` over the program below
+- [ ] **Harnesses that do not end in `kani::cover!()`** (§3): the loop below
       prints `file:line harness-name` for each `#[kani::proof]`/`#[kani::proof_for_contract]`
       function whose body does not end in `kani::cover!()`. It brace-counts lines, so a brace inside a
       string or comment confuses it, and a macro-generated harness is invisible; a hit is a lead,
       not a finding.
-      `awk 'FNR==1{p=0;inb=0} /#\[kani::proof/{p=1} p&&!inb&&/fn [A-Za-z0-9_]+/{match($0,/fn [A-Za-z0-9_]+/);n=substr($0,RSTART+3,RLENGTH-3);l=FNR;inb=1;d=0;s=0;b=""} inb{b=b $0 "\n";o=gsub(/\{/,"{");c=gsub(/\}/,"}");if(o>0)s=1;d+=o-c;if(s&&d<=0){g=b;gsub(/[ \t\n]+/,"",g);if(g!~/kani::cover!\(\);?\}$/)print FILENAME":"l" "n;inb=0;p=0}}' $(rg -l '#\[kani::proof' -t rust .)`
+      `rg -l '#\[kani::proof' -t rust . | while IFS= read -r f; do awk 'FNR==1{p=0;inb=0} /#\[kani::proof/{p=1} p&&!inb&&/fn [A-Za-z0-9_]+/{match($0,/fn [A-Za-z0-9_]+/);n=substr($0,RSTART+3,RLENGTH-3);l=FNR;inb=1;d=0;s=0;b=""} inb{b=b $0 "\n";o=gsub(/\{/,"{");c=gsub(/\}/,"}");if(o>0)s=1;d+=o-c;if(s&&d<=0){g=b;gsub(/[ \t\n]+/,"",g);if(g!~/kani::cover!\(\);?\}$/)print FILENAME":"l" "n;inb=0;p=0}}' "$f"; done`
+      (a loop, not `awk … $(rg -l …)`: an empty file list would leave awk reading stdin)
 - [ ] **A bare `cargo kani` as the CI verdict** (§4): `rg -n 'cargo kani' .github/ .gitlab-ci.yml Makefile justfile scripts/ 2>&1`
       — each hit not wrapped by a cover gate passes vacuous proofs = Medium where the proofs
       back a security claim. Then confirm the gate's negative controls run.
@@ -246,15 +262,15 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
       `--exact` = Low.
 - [ ] **Contract or loop attributes without their feature** (§5):
       `rg -l 'loop_invariant' -t rust .` non-empty while
-      `rg -n --hidden -g '!.git' -g 'Cargo.toml' -g '*.y*ml' -g '*.sh' -g 'Makefile' -g 'justfile' 'loop-contracts' .` is empty = **High** for the
+      `rg -n --hidden -g '!.git' -g 'Cargo.toml' -g '*.y*ml' -g '*.sh' -g 'Makefile' -g 'justfile' -e 'loop-contracts\s*=\s*true' -e '-Z\s*loop-contracts' .` is empty (a `flags = ["-Z", "loop-contracts"]` array does not count: §5 measured it enabling nothing) = **High** for the
       properties those invariants claim: they are not checked, and the run passes.
       Same pair for `stub_verified` → `stubbing` (loud, but a job "fixed" by deleting the
       harness hides it).
-- [ ] **Harness that calls and discards** (§2): `rg -n 'let _ = ' $(rg -l '#\[kani::proof' -t rust .)`
+- [ ] **Harness that calls and discards** (§2): `rg -l '#\[kani::proof' -t rust . | while IFS= read -r f; do rg -nH 'let _ = ' "$f"; done`
       — inside a harness, panic freedom only; Low unless the harness is cited for more.
 - [ ] **Postcondition with no recorded mutation run** (§6): for each harness or `ensures` cited
       as evidence, is there a record of it failing on a mutant? None = Medium for
       security-critical code.
-- [ ] **Flux opt-outs** (§8): `rg -n 'trusted|opaque' -g '*.rs' . | rg 'flux'` — each without a
+- [ ] **Flux opt-outs** (§8): `rg -n -g '*.rs' -e '#\[(flux_rs::|flux::)?(trusted|opaque)\b' .` (the bare form is what `use flux_rs::attrs::*;` produces) — each without a
       reason and a covering harness or test = Low; a Flux job that excludes a crate after an ICE =
       Medium.

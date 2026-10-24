@@ -898,7 +898,7 @@
         <mxCell id="mt_lines" value="rules-file lines" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=10;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="648" width="380" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines0" value="2954" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines0" value="2972" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="430" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines1" value="2591" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
@@ -1002,7 +1002,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="cnote" value="Page 6 — concept x language. Every audit concept scripts/gen-concept-matrix.py tracks, and how many Audit-checklist items each language skill has for it.&lt;br&gt;&lt;br&gt;A number = that many checklist items match the concept. GREEN = present. RED = a required concept is missing (CI should already have failed). AMBER = a universal concept not yet required is absent: a candidate gap. GREY dashed = a conditional concept is absent -- either the mechanism does not exist in that language or nobody has written it; this page does not decide which. WHITE n/a or delegated = an empty cell already TRIAGED (the mechanism does not exist, or another skill owns it); bold AMBER open gap = triaged and real. Verdicts and reasons: TRIAGED in scripts/gen-concept-matrix.py.&lt;br&gt;&lt;br&gt;HONEST LIMIT: cells come from wording matchers over checklist items, so a count says the wording appears, not that the rule is good. Check any cell with: python3 scripts/gen-concept-matrix.py --explain CONCEPT LANG. Items classified / total per language: rust 109/128  ·  go 76/91  ·  c/c++ 78/90  ·  jvm 87/99  ·  python 72/88  ·  js/ts 119/154  ·  .NET 76/83  ·  php 70/80  ·  ruby 64/76  ·  swift 59/62. Concepts owned by a shared rule outside the language skills (e.g. temp files, sota-code-security rules/06 §6.1) do not appear here." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="cnote" value="Page 6 — concept x language. Every audit concept scripts/gen-concept-matrix.py tracks, and how many Audit-checklist items each language skill has for it.&lt;br&gt;&lt;br&gt;A number = that many checklist items match the concept. GREEN = present. RED = a required concept is missing (CI should already have failed). AMBER = a universal concept not yet required is absent: a candidate gap. GREY dashed = a conditional concept is absent -- either the mechanism does not exist in that language or nobody has written it; this page does not decide which. WHITE n/a or delegated = an empty cell already TRIAGED (the mechanism does not exist, or another skill owns it); bold AMBER open gap = triaged and real. Verdicts and reasons: TRIAGED in scripts/gen-concept-matrix.py.&lt;br&gt;&lt;br&gt;HONEST LIMIT: cells come from wording matchers over checklist items, so a count says the wording appears, not that the rule is good. Check any cell with: python3 scripts/gen-concept-matrix.py --explain CONCEPT LANG. Items classified / total per language: rust 111/128  ·  go 76/91  ·  c/c++ 78/90  ·  jvm 87/99  ·  python 72/88  ·  js/ts 119/154  ·  .NET 76/83  ·  php 70/80  ·  ruby 64/76  ·  swift 59/62. Concepts owned by a shared rule outside the language skills (e.g. temp files, sota-code-security rules/06 §6.1) do not appear here." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="1330" height="150" as="geometry"/>
         </mxCell>
         <mxCell id="ch0" value="rust" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;" vertex="1" parent="1">
@@ -1800,7 +1800,7 @@
         <mxCell id="cr0_21" value="profiling before optimizing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="796" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_21_0" value="12" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_21_0" value="13" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="796" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_21_1" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2706,7 +2706,7 @@
         <mxCell id="cr2_6" value="formal verification / model checking  (if has a mature bounded model checker or refinement checker)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1514" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_0" value="5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_0" value="6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_6_1" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
