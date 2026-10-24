@@ -3563,7 +3563,7 @@
       "~/.codex/AGENTS.md (Codex)",
       "~/.gemini/GEMINI.md (Gemini CLI, Antigravity)"
     ],
-    "invariants": 42,
+    "invariants": 43,
     "ci_jobs": [
       "Repository invariants",
       "Negative controls (the gate can fail)",

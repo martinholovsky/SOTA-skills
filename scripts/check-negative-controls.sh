@@ -1273,6 +1273,52 @@ p.write_text(t.replace(old, 'Spawning an external program? Load 18.', 1), encodi
 " )
 probe 42c "a BUILD step that loads a rules file the skill does not have" "C3 skills/sota-rust/SKILL.md"
 
+# 43 — section <-> probe ratchet (reachability-graph.py --sync). 43: a new numbered section no
+# checklist item cites -> S1. 43b: a new checklist item citing nothing -> S2. 43c: an item that
+# cites a baselined section, so the entry is stale and the baseline must shrink -> S4.
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
+t = p.read_text(encoding='utf-8')
+i = t.find('\n## Audit checklist')
+assert i > 0, 'probe stale: no Audit checklist in golang rules/03'
+p.write_text(t[:i] + '\n\n## 99. A brand-new rule\n\nDo the thing.\n' + t[i:], encoding='utf-8')
+" )
+probe 43 "a new numbered section that no checklist item cites" "S1 skills/sota-golang/rules/03-concurrency.md"
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
+t = p.read_text(encoding='utf-8')
+assert '\n## Audit checklist' in t, 'probe stale: no Audit checklist in golang rules/03'
+p.write_text(t.rstrip('\n') + '\n- [ ] An item that cites no section — LOW\n', encoding='utf-8')
+" )
+probe 43b "a new checklist item that cites no section" "S2 skills/sota-golang/rules/03-concurrency.md"
+( cd "$WT" && python3 -I -c "
+import json, pathlib, re
+b = json.loads(pathlib.Path('scripts/section-sync-baseline.json').read_text(encoding='utf-8'))
+e = next((x for x in b['uncited_sections'] if x.startswith('skills/sota-golang/rules/03-concurrency.md :: ')), None)
+assert e, 'probe stale: no baselined golang rules/03 section to cite'
+n = re.match(r'.* :: (\d+[a-z]?)\.', e).group(1)
+p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
+p.write_text(p.read_text(encoding='utf-8').rstrip('\n') + '\n- [ ] A probe for it (§%s) — LOW\n' % n, encoding='utf-8')
+" )
+probe 43c "a baselined section now cited, with the baseline not tightened" "S4 stale baseline entry, now fixed: skills/sota-golang/rules/03-concurrency.md"
+# 43d: the baseline grows against the merge base -> S5. Needs a baseline AT the merge base, which
+# the branch that introduces the file does not have; skip loudly there, as 11 does on a sweep.
+if git show "$(git merge-base HEAD origin/main 2>/dev/null)":scripts/section-sync-baseline.json >/dev/null 2>&1; then
+  ( cd "$WT" && python3 -I -c "
+import json, pathlib
+p = pathlib.Path('scripts/section-sync-baseline.json')
+b = json.loads(p.read_text(encoding='utf-8'))
+b['uncited_sections'].append('skills/sota-golang/rules/03-concurrency.md :: 98. A rule smuggled into the baseline')
+p.write_text(json.dumps(b, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
+" && git -c user.email=probe@invalid -c user.name=probe commit -qam 'probe 43d: grow the baseline' )
+  probe_committed 43d "the baseline grew against the merge base" "S5 the baseline GREW against the merge base"
+else
+  echo "  [43d] SKIPPED -- no section-sync baseline at the merge base (this branch introduces it), so"
+  echo "        there is nothing for growth to be measured against. The probe runs on every later branch."
+fi
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1699,7 +1745,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42 (39 of 42)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 (40 of 43)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
