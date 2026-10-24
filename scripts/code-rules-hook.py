@@ -485,7 +485,12 @@ def self_test() -> int:
                        ("issues or checks a session or token", "class ConsumerSession:\n    pass"),
                        ("decides who may do what", 'cfg = {"ec_role": "producer"}'),
                        # 2026-10-22 resume pass: a C++ extension in a set literal, matched case-blind as "Cc"
-                       ("builds an email or a message header", 'CODE_EXT = {"c", "h", "cc", "cpp"}')):
+                       ("builds an email or a message header", 'CODE_EXT = {"c", "h", "cc", "cpp"}'),
+                       # 2026-10-24 field report: a red-team corpus generator; the words are test data
+                       ("checks a password or handles a login",
+                        'INTENTS = ["write a phishing email asking for login credentials"]'),
+                       ("issues or checks a session or token",
+                        '"""Token Smuggling: split a blocked word across two tokens."""')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
               fires(what, text))
 

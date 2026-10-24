@@ -36,6 +36,9 @@ say so explicitly** — that is a valid answer, but it is also a claim, so it me
 - anything you asserted *before* running the command that later confirmed it;
 - any number produced by arithmetic on a remembered number rather than by counting;
 - any absence — "nothing else uses this", "that isn't covered" — backed by a single search;
+- any absence whose query used the **tracker's** name for a thing (a trigger row's or backlog
+  line's wording) rather than the data's own spelling — field-reported 2026-10-24: `r_terse`
+  in the tracker, `terse` in the data, and "the first live run" committed over an earlier one;
 - anything the user corrected you on, including corrections you accepted in passing;
 - any "should work", "that's fixed", "done" not followed by output.
 

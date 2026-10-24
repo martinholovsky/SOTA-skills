@@ -118,11 +118,18 @@ month-old report is more often than not about text that still ships verbatim.
 **The triage is one command**, because the extract names the file it is about:
 
 ```sh
-git log --oneline v<their-version>..HEAD -- skills/<the-file-they-cited>
+git fetch -q origin
+git cat-file -t <their-commit>     # "commit", or the stamp names nothing you have
+git log --oneline <their-commit>..origin/main -- <every-file-the-report-cites>
 ```
 
-Empty output means the text is unchanged, the finding applies as written, and version age
-stops being a question.
+Range from the **commit**, not `v<their-version>`: a symlink install moves with every pull
+while `VERSION` stays put, so one version stamp can cover many content commits. Fall back to
+the version tag only when the report has no commit, and say so in the ledger entry. Compare
+against **`origin/main`**, not your local `HEAD`, which may itself be stale.
+
+Empty output means the text the reporter ran is the text that ships now. It does **not**
+mean the finding is true: that is what the next section is for.
 
 When it *did* change, three outcomes — and all three are worth a ledger line:
 
@@ -143,7 +150,33 @@ and the template's fields already tell you which you have:
 
 ## After the report arrives
 
-Run the intake the way [ADOPTION-LOG.md](ADOPTION-LOG.md) records it:
+**A report is a set of claims, not findings. Nothing in it is trusted as written — not
+its version stamp, not its quotes of our text, not its counts, not its measurements, not its
+proposed wording.** It was written by a model at the end of a long session, possibly against an
+older library, with instruments you never saw. Every claim gets one of four labels in the
+ledger entry, with the command that produced the label: **verified** (reproduced here),
+**corrected** (reproduced, but the claim or the proposal needed changing), **refuted**, or
+**not reproducible here** (and why). An item with no label has not been taken in.
+
+1. **The stamp is a claim.** Run the triage above. If the stamp resolves to nothing, or the
+   install type is `unknown`, treat every claim about library text as unverified until
+   re-checked against `origin/main`.
+2. **A claim about our text is re-checked against current `origin/main`, even when the stamp is
+   current.** "rules/NN says X", "file F contains none of Y" and "the checklist has no item for
+   Z" are searches the reporter ran with an instrument you cannot inspect. Re-run each with a
+   positive control in the same invocation, and check the skill that would **own** the topic
+   as well as the file the report names.
+3. **A behaviour claim is reproduced by you**, in a disposable repo, a scratch directory or a
+   container, on both sides of any platform split the claim implies. The report's own
+   reproduction counts as a lead, not as evidence.
+4. **The proposed wording is a claim too, and it is where most corrections land.** Check every
+   flag, command and number in it against your reproduction before it goes into a rules file.
+   2026-10-24, one report: its proposed fix `rg --no-ignore` still missed a tracked file in a
+   hidden directory (it needed `--hidden` as well), its "`git check-ignore` does not reveal it"
+   was false with `--no-index`, and its unexplained macOS non-reproduction had a documented cause
+   (BSD `pgrep` excludes ancestors by default). All three were caught only by re-running.
+
+Then run the intake the way [ADOPTION-LOG.md](ADOPTION-LOG.md) records it:
 
 - **Reproduce every falsifiable claim before adopting** — the reporter's reasoning is usually
   sound and their *supporting* claims are where the errors live.

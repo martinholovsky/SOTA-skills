@@ -25,7 +25,15 @@ Search widely before concluding anything:
 - `TODO|FIXME|XXX|HACK` markers in tracked source;
 - `Unreleased`, "planned", "not yet", "for now" in the CHANGELOG and README;
 - deferred items in ADRs and design docs — an ADR that says "we defer X" *is* a tracker row;
-- open issues and PRs, if a remote is configured.
+- open issues and PRs, if a remote is configured;
+- **work nobody wrote down** — output another session left here with no tracker line.
+  `git status --ignored --porcelain` lists ignored paths (`!! campaigns/`); for each
+  output-shaped one (results, campaigns, evidence, runs) count `find <dir> -newer <newest
+  handoff> -type f`. For every sibling repo the trackers name, read
+  `git -C <sibling> log --since=<handoff date> --oneline`. Field-reported 2026-10-24: a sibling
+  session had run this repo's campaign tool into a gitignored directory three days earlier and
+  recorded it only in its own repo. It made an operator-deferred item that carried a spend
+  ALREADY DONE, and no text search above can find it, because nothing describes it.
 
 **A clean "nothing found" is the result you were hoping for, which is exactly when to distrust
 it.** Five failure modes produce a confident zero, and none of them prints an error:
@@ -36,7 +44,9 @@ it.** Five failure modes produce a confident zero, and none of them prints an er
   which tool and which binary you used — `type grep`, which names a shell function or alias
   (`command -v` prints only the bare name for a function, so it cannot answer this); then call
   the real binary by path (`whence -p grep` in zsh, `type -P grep` in bash) — and reach for
-  `find -L`, `rg --follow` or `ugrep -R` (`sota-shell-scripting` rules/06 §2).
+  `find -L`, `rg --follow` or `ugrep -R` (`sota-shell-scripting` rules/06 §2). `rg` also skips
+  any path an ignore rule matches **even when the file is tracked** (`git add -f`): search what
+  the repository holds with `git grep`, or what is on disk with `rg --hidden --no-ignore`.
 - **The flag meant something else.** `rg -r` is `--replace`, not "recursive"; it silently
   rewrites every match to the next token and the output looks like content
   (`sota-shell-scripting` rules/06 §2a).
