@@ -1101,6 +1101,18 @@
       "targets": []
     },
     {
+      "from": "sota-rust",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/12",
+        "rules/12 \u00a71",
+        "rules/15 \u00a72a",
+        "rules/17"
+      ]
+    },
+    {
       "from": "sota-security-compliance",
       "to": "sota-threat-modeling",
       "weight": 5,
@@ -1284,6 +1296,17 @@
       "weight": 4,
       "targets": [
         "rules/06"
+      ]
+    },
+    {
+      "from": "sota-rust",
+      "to": "sota-devsecops",
+      "weight": 4,
+      "targets": [
+        "rules/09 \u00a72",
+        "rules/09 \u00a72a",
+        "rules/10",
+        "rules/10 \u00a75"
       ]
     },
     {
@@ -1588,26 +1611,6 @@
       "weight": 3,
       "targets": [
         "rules/02"
-      ]
-    },
-    {
-      "from": "sota-rust",
-      "to": "sota-devsecops",
-      "weight": 3,
-      "targets": [
-        "rules/09 \u00a72a",
-        "rules/10",
-        "rules/10 \u00a75"
-      ]
-    },
-    {
-      "from": "sota-rust",
-      "to": "sota-code-security",
-      "weight": 3,
-      "targets": [
-        "rules/01 \u00a75",
-        "rules/15 \u00a72a",
-        "rules/17"
       ]
     },
     {
@@ -2059,6 +2062,14 @@
       "to": "sota-sandboxing",
       "weight": 2,
       "targets": []
+    },
+    {
+      "from": "sota-rust",
+      "to": "sota-testing",
+      "weight": 2,
+      "targets": [
+        "rules/06"
+      ]
     },
     {
       "from": "sota-sandboxing",
@@ -3090,12 +3101,6 @@
     },
     {
       "from": "sota-rust",
-      "to": "sota-testing",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-rust",
       "to": "sota-architecture",
       "weight": 1,
       "targets": [
@@ -3426,14 +3431,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1533,
+    "md link, other skill": 1537,
     "md link, outside skills/": 3,
-    "md link, same skill": 2774,
+    "md link, same skill": 2777,
     "name (backticked)": 431,
     "name (bare)": 240,
-    "name+file (backticked)": 603,
+    "name+file (backticked)": 607,
     "name+file (bare)": 160,
-    "own rules/NN": 2932
+    "own rules/NN": 2937
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3443,9 +3448,9 @@
     "md link, same skill": 0,
     "name (backticked)": 416,
     "name (bare)": 197,
-    "name+file (backticked)": 602,
+    "name+file (backticked)": 606,
     "name+file (bare)": 155,
-    "own rules/NN": 2848
+    "own rules/NN": 2851
   },
   "rules_index_style": {
     "link": 42
