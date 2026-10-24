@@ -81,6 +81,17 @@ These track a property of the language. Adding the missing cells would be writin
   section (jvm `04 §7`, python `05 §11`, js/ts `05`, .NET `04 §6`, php `03 §6`, ruby `02 §8`).
 - **Web / HTTP** only where the language is web-shaped — **Go, Node, PHP, Ruby**, plus .NET and
   python (row above) and, since 2026-09-23, **jvm** (`rules/04 §6`, ROADMAP 62).
+- **Formal verification** (`sota-rust` rules/09, 2026-10-24) is a **conditional** concept in
+  `gen-concept-matrix.py`: it applies where the language has a mature bounded model checker or
+  refinement checker. Rust has two in production use (Kani and Flux both run in the Rust standard
+  library verification effort's CI). **C/C++ meets the condition (CBMC) and its cell is empty** —
+  a real candidate, deferred in the ADOPTION-LOG with a trigger, not a principled blank. The other
+  languages have no checker in comparable use, so their blank is expected.
+- **Self-expiring suppression** (`#[expect]`, which reports itself once stale) is a Rust
+  *mechanism* inside a concept that is already universal and pinned (`suppressing a linter / type
+  check`). Other ecosystems have their own forms (`@ts-expect-error`, unused-`noqa` and
+  unused-ignore reports, ESLint's unused-disable reporting); whether each skill should require
+  its form is deferred in the ADOPTION-LOG, not decided here.
 
 The general rule: **the shared skill owns the concept, the language skill owns the
 mechanism.** `sota-async-concurrency` (1,654 lines) teaches data race vs race condition,

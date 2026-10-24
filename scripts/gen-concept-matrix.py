@@ -235,6 +235,11 @@ CONCEPTS = [
      r"suppresswarnings|pragma warning disable|#!?\\\[allow|allow\(|phpstan-ignore|"
      r"psalm-suppress|nosonar|lint:ignore|type: ?ignore|baseline|waiver|"
      r"warning disable|deny\(warnings\)|suppress"),
+    # 2026-10-24, sota-rust rules/09: conditional, because it applies only where the language has a
+    # mature bounded model checker or refinement checker (Rust: Kani, Flux; C: CBMC). Matchers name
+    # the tools and the vacuity probe, never bare "proof" or "verify", which light every skill.
+    ("formal verification / model checking", "conditional:has a mature bounded model checker or refinement checker",
+     r"\bkani\b|kani::|\bcbmc\b|\besbmc\b|crosshair|flux_rs|cargo flux|model[- ]check|vacuous proof|cover!"),
     ("module boundaries & imports", "universal",
      r"(?<![\w\"'])import\b|circular depend|cyclic|module boundar|package (layout|structure)|"
      r"relative import|project reference|internal package|namespace layout|grab[- ]bag|"

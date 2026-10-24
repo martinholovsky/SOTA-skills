@@ -554,6 +554,50 @@ else
   fi
 fi
 
+# --- 21. The rules/07 clippy template fails test code until clippy.toml says so ---
+# sota-rust rules/07 §1. The template and the clippy.toml block are EXTRACTED from the rules
+# file, so an edit to either re-runs this claim against the edited text. Positive control: the
+# arm without clippy.toml must fail on `unwrap_used` specifically, not on some other lint.
+if ! command -v cargo >/dev/null 2>&1 || ! cargo clippy --version >/dev/null 2>&1; then
+  skip 21 "clippy template vs a test-code unwrap" "cargo clippy not installed"
+else
+  d=$(fresh clippytpl)
+  if ! python3 - "$REPO/skills/sota-rust/rules/07-tooling-ci.md" "$d" <<'PY'
+import sys
+src = open(sys.argv[1], encoding="utf-8").read()
+out = sys.argv[2]
+tpl = src.split("```toml\n# workspace Cargo.toml\n", 1)[1].split("```", 1)[0]
+tpl = tpl.replace("[workspace.lints.rust]", "[lints.rust]").replace("[workspace.lints.clippy]", "[lints.clippy]")
+tpl = "\n".join(l for l in tpl.splitlines() if not l.startswith("# member crates"))
+ct = src.split("```toml\n# clippy.toml (workspace root)", 1)[1].split("\n", 1)[1].split("```", 1)[0]
+assert "unwrap_used" in tpl and "allow-unwrap-in-tests" in ct
+open(out + "/Cargo.toml", "w").write('[package]\nname = "tpl"\nversion = "0.1.0"\nedition = "2024"\n\n' + tpl + "\n")
+open(out + "/clippy.toml.rules", "w").write(ct)
+PY
+  then
+    fail 21 "clippy template vs a test-code unwrap" "sota-rust rules/07 §1" \
+      "could not extract the [lints] template or the clippy.toml block from rules/07 §1"
+  else
+    mkdir -p "$d/src"
+    printf '%s\n' '//! Fixture.' '' '/// Parses a number.' '///' '/// # Errors' '/// On invalid input.' \
+      'pub fn parse(s: &str) -> Result<u32, std::num::ParseIntError> {' '    s.parse()' '}' '' \
+      '#[cfg(test)]' 'mod tests {' '    use super::parse;' '' '    #[test]' '    fn parses() {' \
+      '        assert_eq!(parse("7").unwrap(), 7);' '    }' '}' > "$d/src/lib.rs"
+    no_rc=0; ( cd "$d" && cargo clippy -q --offline --all-targets -- -D warnings ) >"$d/no.log" 2>&1 || no_rc=$?
+    cp "$d/clippy.toml.rules" "$d/clippy.toml"
+    yes_rc=0; ( cd "$d" && cargo clippy -q --offline --all-targets -- -D warnings ) >"$d/yes.log" 2>&1 || yes_rc=$?
+    if [ "$no_rc" -ne 0 ] && grep -q 'unwrap_used' "$d/no.log" && [ "$yes_rc" -eq 0 ]; then
+      pass 21 "the rules/07 template fails a #[cfg(test)] unwrap without clippy.toml, passes with it ($(cargo clippy --version))"
+    elif [ "$no_rc" -ne 0 ] && ! grep -q 'unwrap_used' "$d/no.log"; then
+      fail 21 "clippy template vs a test-code unwrap" "sota-rust rules/07 §1" \
+        "positive control: the arm without clippy.toml failed on something other than unwrap_used: $(grep -m1 -E '^(error|warning)' "$d/no.log")"
+    else
+      fail 21 "clippy template vs a test-code unwrap" "sota-rust rules/07 §1" \
+        "without clippy.toml rc=$no_rc, with it rc=$yes_rc; first error with it: $(grep -m1 -E '^error' "$d/yes.log")"
+    fi
+  fi
+fi
+
 # --- Result ----------------------------------------------------------------
 echo
 if [ "$ran" -eq 0 ]; then
