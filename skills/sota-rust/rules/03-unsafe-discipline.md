@@ -238,9 +238,18 @@ Any crate with non-trivial `unsafe` runs **Miri in CI**:
   plus init, alignment, leaks — but **only on executed paths**: unsafe code without tests
   is unaudited code. Write tests that exercise every unsafe branch.
 - Miri can't run FFI/syscall-heavy paths; for those use sanitizers:
-  `RUSTFLAGS="-Zsanitizer=address" cargo +nightly test` (ASan), TSan for
-  concurrency claims, and `loom` for testing lock-free/atomic algorithms
-  exhaustively.
+  `RUSTFLAGS="-Zsanitizer=address" cargo +nightly test --target "$(rustc +nightly -vV | sed -n 's/^host: //p')"`
+  (ASan), TSan for concurrency claims, and `loom` for testing lock-free/atomic algorithms
+  exhaustively. **`--target` is not optional**: without it `RUSTFLAGS` also reaches build
+  scripts and proc macros (the unstable book: *"always remember to pass `--target`"*). Measured
+  2026-10-24 on a crate with one proc-macro dependency: without it, Linux nightly refused
+  (`building proc macro crate with sanitizers enabled is not supported`) and macOS aborted
+  (`Interceptors are not working`), both rc 101; with it, both caught a planted
+  heap-buffer-overflow. The book also strongly recommends `-Zbuild-std` so `std` is
+  instrumented. There is no UBSan for Rust code: nightly rejects `-Zsanitizer=undefined`.
+- Proving rather than sampling — panic-, overflow- and out-of-bounds-freedom over every input
+  within a bound, or pointer validity of an `unsafe` wrapper's safe API — is a Kani harness:
+  [rules/09](09-formal-verification.md). Kani does not replace Miri here.
 - Parsers and any unsafe-touching decoder: fuzz with `cargo fuzz` (libFuzzer)
   — fuzzing + Miri/ASan is the practical soundness net (see [rules/05](05-security-supply-chain.md) §6).
 
@@ -316,6 +325,10 @@ For each `unsafe` block, in order:
       `ptr::read`/`ManuallyDrop` checked for panic-path double-drop.
 - [ ] CI: Miri job exists and isn't `continue-on-error: true`; fuzz targets
       exist for unsafe parsers; `cargo geiger` output reviewed for the tree.
+- [ ] **A sanitizer run without `--target`** (§4): `grep -rnE -e '-Zsanitizer=' .github/ .gitlab-ci.yml Makefile justfile scripts/ 2>&1 | grep -v -e '--target'`.
+      Each hit applies the sanitizer to proc macros and build scripts: the job fails on
+      any crate with a proc-macro dependency, or was disabled because it did. Medium if it
+      is the only memory-safety check on FFI code.
 - [ ] Crates with zero unsafe missing `#![forbid(unsafe_code)]` — Low, but
       free hardening.
 - [ ] Severity calibration: reachable UB = Critical; unsound public API (safe

@@ -28,7 +28,7 @@ agent that reads `AGENTS.md`. Those agents get the skills and an always-on direc
 the per-turn re-statement, which is a Claude Code hook
 ([per-agent detail](docs/MULTI-AGENT.md)), and no lift has yet been measured through them.
 
-Under the hood: **43 skills (347 files, ~89k lines)** of state-of-the-art 2026
+Under the hood: **43 skills (348 files, ~90k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source **as of the last full sweep** (the root
@@ -722,7 +722,7 @@ are load-bearing, because the ones that aren't are labelled.
 | `sota-docs-workflow` | Documentation architecture, API docs & changelogs, code review/PR workflow, commits & releases |
 | `sota-ux-writing` | Voice/tone & plain language (ISO 24495-1), microcopy, error & feedback messages, accessible/localizable interface text |
 | `sota-copywriting` | Positioning & value props, headlines/landing pages/CTAs, SEO content (E-E-A-T, spam policies), claims & legal trust (FTC, email law) |
-| `sota-rust` | Ownership/API design, errors & panics, unsafe discipline, tokio, supply chain, subprocess execution (`std::process::Command`), performance, CI |
+| `sota-rust` | Ownership/API design, errors & panics, unsafe discipline, tokio, supply chain, subprocess execution (`std::process::Command`), performance, CI, formal verification (Kani harnesses that can fail on vacuity, Flux) |
 | `sota-golang` | Errors, package design, goroutine safety, net/http hardening, security, pprof, CI |
 | `sota-c-cpp` | RAII/idioms, memory safety & sanitizers, undefined behavior, security (CERT/MISRA, hardening flags), concurrency, CMake/clang-tidy/fuzzing CI, performance |
 | `sota-jvm` | Java/Kotlin idioms, null/immutability API design, concurrency (virtual threads, JMM, coroutines), security (deserialization/JNDI/XXE/crypto), GC/JFR/GraalVM, Maven/Gradle supply chain & CI |

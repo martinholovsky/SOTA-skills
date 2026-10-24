@@ -36,6 +36,8 @@ When writing or modifying Rust code:
 1. **Scope the work, load the rules.** Pick the relevant `rules/` files from
    the index. Touching async code? Load 04. Adding a dependency, parsing
    network input, or spawning an external program? Load 05. Writing any `unsafe`? Load 03 — no exceptions.
+   Proving a parser, decoder or arithmetic function panic- and overflow-free, or touching any
+   `#[kani::*]` or Flux `#[spec]`? Load 09.
 2. **Design types first.** Newtypes for domain primitives, errors per
    subsystem (thiserror for libs, anyhow for apps), ownership tree before
    `Arc<Mutex<_>>`, public API minimal and borrowed (`&str`/`&[T]` params).
@@ -43,7 +45,7 @@ When writing or modifying Rust code:
 3. **Write to the non-negotiables** (bottom of this file) without being asked.
    They are defaults, not suggestions; deviations carry a written
    justification at the site (e.g. `expect` with invariant message,
-   `#[allow(lint, reason = "...")]`).
+   `#[expect(lint, reason = "...")]`, which fails once the exception is stale; [rules/07](rules/07-tooling-ci.md) §1).
 4. **Wire the scaffolding with the code**, not after: lints in `[lints]`,
    `deny.toml` + `cargo deny` in CI for anything deployed, Miri job if unsafe
    exists, nextest, MSRV declared and tested, benches for claimed-hot paths.
@@ -51,7 +53,8 @@ When writing or modifying Rust code:
 5. **Verify before claiming done:** `cargo fmt --check`, `cargo clippy
    --all-targets --all-features -- -D warnings`, `cargo nextest run` +
    `cargo test --doc`, and `cargo doc` warning-free for libraries. If you
-   wrote unsafe: `cargo +nightly miri test` over it. If you claimed
+   wrote unsafe: `cargo +nightly miri test` over it. If the crate has Kani harnesses: run them
+   through the cover gate ([rules/09](rules/09-formal-verification.md) §4) — a bare `cargo kani` passes vacuous proofs. If you claimed
    performance: show the benchmark.
 6. **Comment intent at decision points** the next reader will question:
    justified clones, cancel-safety of `select!` arms, SAFETY comments,
@@ -64,7 +67,8 @@ When reviewing or auditing existing Rust:
 1. **Recon first:** `cargo metadata`/workspace layout (in a checkout you do not trust, every
    cargo command runs its `rustc-wrapper` and `[build] rustc`; pin both first, [rules/07](rules/07-tooling-ci.md) §4a), `Cargo.toml` profiles
    and features, CI config, `rg 'unsafe' --count-matches`, dependency tree
-   (`cargo tree -d`). This decides which rules files to load and where risk
+   (`cargo tree -d`), and `rg -c 'kani::|flux_rs' -t rust .` (proofs present: load 09, and audit
+   them as controls that can pass vacuously). This decides which rules files to load and where risk
    concentrates (network input? unsafe? async service?).
 2. **Run the audit checklists** at the end of each loaded rules file — they
    are ordered grep/clippy hunts with pre-calibrated severities.
@@ -115,6 +119,7 @@ fixes with outsized value).
 | [rules/06-performance.md](rules/06-performance.md) | Performance work or claims: profiling (samply/perf/flamegraph, criterion/divan), allocation reduction (Cow/SmallVec/buffer reuse), accidental clones, iterator fusion, release profile (LTO, codegen-units, panic=abort), PGO; hasher choice vs HashDoS (unkeyed FxHash/fnv vs runtime-seeded ahash, §4) |
 | [rules/07-tooling-ci.md](rules/07-tooling-ci.md) | Setting up or auditing repo scaffolding: clippy policy and pedantic triage, rustfmt, nextest, MSRV declaration+testing, **build config outside `Cargo.toml`** (`RUSTFLAGS`/`.cargo/config.toml` in any ancestor overriding the profile, `rustc-wrapper`, dev/test profiles keeping overflow checks, stable channel, target tier), additive feature flags, docs.rs discipline, edition 2024 migration (newly `unsafe` `env::set_var`), crates.io Trusted Publishing (GitHub Actions; GitLab.com public beta), CI baseline. **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in [`sota-testing`](../sota-testing/SKILL.md); load it for any build that writes logic. This file owns Rust runner mechanics only.** |
 | [rules/08-external-programs.md](rules/08-external-programs.md) | Spawning processes with `std::process::Command`: argv vs shell, `.bat`/`.cmd` on Windows, environment and working directory, kill-and-wait on every exit path, deadlines, output limits (formerly [rules/05](rules/05-security-supply-chain.md) section 9, now §1); **code evaluation from input — mlua stdlib, rhai limits, `libloading` (R9.8)** |
+| [rules/09-formal-verification.md](rules/09-formal-verification.md) | Proving rather than sampling: Kani harnesses (panic, overflow, out-of-bounds and pointer validity over every input within a bound; function and loop contracts; `autoharness`), Flux refinement types for index/length relations; **vacuity** (a proof over zero executions prints the same success line — the trailing `cover!()` and the cover gate), mutation adequacy of postconditions, the unstable flags that silently change what is checked, and soundness limits of contracts on `unsafe` code. BUILD and AUDIT both |
 
 ## Top-10 non-negotiables
 

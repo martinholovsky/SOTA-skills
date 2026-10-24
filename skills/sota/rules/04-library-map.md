@@ -132,7 +132,7 @@ exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-pa
   03 SEO content, 04 claims/legal/trust
 - **sota-rust/rules**: 01 ownership & API design, 02 errors & panics, 03 unsafe discipline, 04
   async/tokio, 05 security & supply chain, 06 performance, 07 tooling & CI, 08 external
-  programs (split out of 05)
+  programs (split out of 05), 09 formal verification (Kani, Flux)
 - **sota-golang/rules**: 01 errors, 02 design, 03 concurrency, 04 HTTP services, 05 security, 06
   performance, 07 tooling & CI, 08 supply chain (split out of 05)
 - **sota-c-cpp/rules**: 01 idioms (RAII/ownership), 02 memory safety, 03 undefined behavior, 04
