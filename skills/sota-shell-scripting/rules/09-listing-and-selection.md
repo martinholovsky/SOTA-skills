@@ -183,6 +183,14 @@ shell running the loop, and the session died with exit 255 (field-reported 2026-
   It does not help if the plain string appears anywhere else in the same call. Measured
   2026-10-21: one target, bracket pattern. It counted **4** when the target had been started
   in the same tool call, and **1** when it had been started in a separate call.
+- **A macOS test cannot show it, because BSD `pgrep`/`pkill` exclude their own ancestors by
+  default** (`-a` includes them, `man pgrep`): `bash -c 'pgrep -fl MARK; echo'` lists nothing
+  there, and `pgrep -afl` lists the harness shell and the `bash`. Measured 2026-10-24 on
+  procps-ng 4.0.4 (Debian container): the same line listed the parent `bash` and the
+  container's `sh`, and `pkill -f` killed both. So `ssh linux-host '… pkill -f X …'` can kill
+  the shell running it after the identical line passed locally — the mechanism behind
+  [`rules/01`](01-safety-baseline.md) §3's platform split (field-reported 2026-10-24; that
+  session's remote failure stays unconfirmed, since its retry changed two things at once).
 
 Kill by an identity you obtained **without** substring matching: `$!` saved at launch, a PID
 file, or the port's owner (`ss -lptn 'sport = :PORT'`, `lsof -ti :PORT`). If you must match,

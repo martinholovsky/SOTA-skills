@@ -173,7 +173,7 @@ behind a symlinked dir):
 
 | searcher | found | what it dropped, silently |
 |---|---|---|
-| `rg` (defaults) | **1 of 4** | gitignored, hidden, and symlinked-dir contents |
+| `rg` (defaults) | **1 of 4** | gitignored (**tracked ones too**, below), hidden, and symlinked-dir contents |
 | `grep -R` (see below) | 3 of 4 | the gitignored file |
 | `rg --no-ignore` alone | **2 of 4** | **still every hidden dir** — and it searched *more* files |
 | `rg --hidden --no-ignore --follow` | **4 of 4** | — |
@@ -183,7 +183,7 @@ excluding things", so it is the one reached for — and it does not touch hidden
 at all. Because it searches strictly more files than the default (measured on one repo:
 **1042 vs 404**), the run reads as the more thorough one while missing the same matches. An
 agent-rules tree is exactly what this hides: `rg PAT .` never enters `.claude/`, `.github/`
-or `.githooks/`. Only `--hidden` reaches them (404 → 576 files, 2 → 4 matching files).
+or `.githooks/`. Only `--hidden` reaches them (404 → 576 files, 2 → 4 matching files). **A tracked file is not exempt.** `rg` matches ignore patterns against *paths*, never the git index, so a file committed with `git add -f` under an ignored glob (evidence, scorecards, fixtures — the paths most often force-added) is skipped by default, and `git check-ignore -v` is silent on it (exit 1) unless given `--no-index`. Measured 2026-10-24 (ripgrep 15.2.0, git 2.55.0), two tracked files under ignored globs, one inside a hidden dir: default `rg` 0 of 2, `--no-ignore` 1 of 2, `--hidden --no-ignore` 2 of 2, `git grep` 2 of 2. For what the repository holds, `git grep` (the index: tracked only, hidden included); for what is on disk, `rg --hidden --no-ignore` (it enters `.git/` too); `git ls-files -ci --exclude-standard` lists every tracked file an ignore rule hides. Field-reported 2026-10-24: 69 such files, default `rg` 0, and "no cards exist" committed to a handoff.
 
 **And check what your `grep` actually is** (`type grep`): agent and IDE environments
 routinely alias it. In one measured case it was a shell *function* running `ugrep -G
@@ -480,7 +480,7 @@ thing** — index it by what it is *for*.
 - [ ] **Sweeps: is the searcher's traversal and exclusion set stated with the count?** (§2)
       `-r` skips symlinked dirs met in traversal and `-R` follows **only on ugrep/GNU** —
       on BSD grep (macOS `/usr/bin/grep`) neither does; `rg` skips gitignored and hidden by
-      default; `type grep` may reveal a wrapper. Control the sweep with a known-present term
+      default — gitignored **including tracked, force-added files** (`git grep` for the index, `rg --hidden --no-ignore` for disk); `type grep` may reveal a wrapper. Control the sweep with a known-present term
       **in the same invocation, through the same input path**, drawn from where the scope is least likely to reach: a
       control from inside a too-narrow glob passes while the answer sits outside it.
 - [ ] **Every extraction or fetch printed a denominator, and every regex count a sample of its matches** (§2) — bytes retrieved, members
