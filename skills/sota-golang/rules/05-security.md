@@ -12,7 +12,7 @@ misconfiguration are entirely yours.
   where the real check is.
 - Allowlist over denylist: enums via `ParseX(string) (X, error)`, bounded
   lengths/sizes on every string/slice, `utf8.ValidString` on text that
-  reaches storage or other parsers.
+  reaches storage or other parsers (its probe is in the [rules/04](04-http-services.md) checklist).
 - **Regexes as a control** (allowlist, routing, redaction). Stdlib `regexp` is RE2: matching
   is linear in input length, and backreferences/lookaround do not compile. Four rules:
   **escape** caller text spliced into a pattern with `regexp.QuoteMeta` (stdlib since Go 1) —
@@ -201,7 +201,7 @@ n := int32(req.Length)
 
 - High-risk sites: `len()` math into smaller ints, binary protocol parsing,
   `strconv.Atoi` (returns platform `int`) then narrowed — use
-  `strconv.ParseInt(s, 10, 32)` with the explicit bit size instead.
+  `strconv.ParseInt(s, 10, 32)` with the explicit bit size instead. Decoded fields there also hit slice bounds, zero divisors, NaN/Inf and the most negative integer: [rules/02](02-design.md) §4 (*Numeric edges*).
 - gosec rule G115 flags these; triage rather than blanket-`nolint`. For
   hot paths a tiny generic helper (`func conv[T, U constraints.Integer]`)
   centralizes the check.

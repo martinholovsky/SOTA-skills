@@ -278,7 +278,9 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
     expect before its subject becomes an identity: Go `RequestClientCert` and
     `RequireAnyClientCert` do not verify the certificate (`RequireAndVerifyClientCert`
     does); nginx `ssl_verify_client optional_no_ca` does not require a trusted CA, and
-    with `optional` the app must still check `$ssl_client_verify` = `SUCCESS`.
+    with `optional` the app must still check `$ssl_client_verify` = `SUCCESS`. Then authorise
+    the peer by a pinned identity (a typed SAN or SPKI), never by CN/DN or by "signed by a CA we
+    trust": [`sota-network-security` rules/04](../../sota-network-security/rules/04-service-mesh-mtls.md) R4.1.
   - **A forwarded client-certificate header is only as trustworthy as the hop that set
     it.** Envoy's `x-forwarded-client-cert` (XFCC) is sanitised by default;
     `ALWAYS_FORWARD_ONLY` forwards whatever the client sent, even without mTLS. Accept

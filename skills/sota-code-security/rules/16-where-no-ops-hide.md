@@ -299,5 +299,6 @@ half.
 - [ ] **A flag that parses is not a feature that works** (§2.15) — the parser accepting it
       proves the parser, not the behaviour; and a chain of green availability checks proves
       the preconditions, not the operation. Was the real call run once before designing on it?
-- [ ] **No aggregate masking a detection** (§2.16) — a mean, a rollup or a "worst case" that
-      makes a real signal disappear into the total
+- [ ] **No aggregate masking a detection** (§2.16) — an "it produced something" assertion that
+      sums or counts a result mixing derived inputs with findings proves only that the input stage
+      ran: name the field that would be empty if the detector were deleted, and assert on that

@@ -92,6 +92,9 @@ retraining.
 - [ ] **Retraining trigger defined? — MEDIUM/HIGH** —
       `out=$(grep -rniE 'retrain|schedule|cron|airflow|trigger|cadence' . | grep -iE 'train|drift|model'); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; *) echo "no explicit retraining trigger (rc=$rc; if the first grep failed, rerun it alone)" ;; esac`
+      ; manual, for each trigger found: trace the retrain job to promotion — does it pass the
+      [rules/04](04-evaluation-validation.md) gate and the [rules/05](05-deployment-serving.md) progressive rollout (this file's §5)? A retrain that deploys
+      directly = HIGH
 - [ ] **Alerts have an owner/runbook — MEDIUM (manual)**
 - [ ] **Drift method fits the data type; abrupt shifts routed apart (§2) — MEDIUM** — for
       text/image models: `grep -rniE 'embedding.?drift|mmd|mean.discrepancy|domain.?classifier' --include='*.py' . || echo "no embedding-level drift test"`

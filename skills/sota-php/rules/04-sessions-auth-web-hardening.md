@@ -449,6 +449,11 @@ Run from repo root; verify each hit manually.
       `grep -rnE '^[^;#]*disable_classes[[:space:]]*=' --include='*.ini' --include='*.conf' .` ;
       `php -r 'var_dump(ini_get("max_memory_limit"));'` (`-1` = no cap). Only the grep finds
       `disable_classes`: measured on 8.5.9, `ini_get()` returns `false` even when `php.ini` sets it
+- [ ] **FPM pool user and a webroot it cannot write (§5) — HIGH** — repo-shipped pools:
+      `printf 'root_pool_lines=%s\n' "$(grep -rnE '^[[:space:]]*(user|group)[[:space:]]*=[[:space:]]*root([[:space:]]|$)' --include='*.conf' . | wc -l | tr -d ' ')"` (nonzero = HIGH); on the image,
+      `php-fpm -tt 2>&1 | grep -E '[[:space:]](user|group) = '` per pool (prints `user = www-data`
+      on the official image), no two pools sharing a user, and `find <app-root> -writable` run as
+      the pool user listing only the cache, upload and session directories
 - [ ] **Web server / FPM handoff (§5c) — HIGH, CRITICAL when `vendor/` is web-reachable** —
       `vendor/` under a docroot: `find . \( -path '*/public/vendor' -o -path '*/web/vendor' -o -path '*/htdocs/vendor' -o -path '*/public_html/vendor' \) -type d -prune -print`
       ; a docroot that is not a `public/` or `web/` directory (read each hit):

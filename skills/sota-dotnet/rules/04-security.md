@@ -21,6 +21,7 @@ network/file/DB/config as untrusted. Reference:
 - **`BinaryFormatter` is removed in .NET 9+** (the API throws `PlatformNotSupportedException`); it
   was a notorious RCE vector. Never reintroduce it (or `NetDataContractSerializer`, `SoapFormatter`,
   `LosFormatter`, `ObjectStateFormatter`) — CRITICAL on sight.
+- **MessagePack-CSharp defaults to `MessagePackSecurity.TrustedData`**: use `UntrustedData` for any outside input. Detail and probe: [rules/06](06-build-tooling-ci.md) §3, beside the other insecure defaults of what you consume (Npgsql / `TrustServerCertificate` DB-client TLS).
 - **Web Forms ViewState is `ObjectStateFormatter` output, so its key is the only thing between
   a client and that deserializer** (.NET Framework `System.Web`; ASP.NET Core has no ViewState).
   The class is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §8. Three findings. `EnableViewStateMac="false"` is
@@ -214,7 +215,7 @@ network/file/DB/config as untrusted. Reference:
 - **Passkeys**: ASP.NET Core Identity has built-in passkey (WebAuthn) support in .NET 10+ — prefer
   them for new interactive logins (depth: [`sota-code-security`](../../sota-code-security/SKILL.md), [`sota-identity-access`](../../sota-identity-access/SKILL.md)).
 - Validate/bind model input (data annotations / explicit validation); don't
-  over-post (use DTOs/`[Bind]` allowlists, not the EF entity directly). Set
+  over-post (use DTOs/`[Bind]` allowlists, not the EF entity directly; probe: [`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) §3). Set
   security headers/HSTS; don't leak stack traces in production responses.
 - **Secrets**: never in source/`appsettings.json` committed to git — use user secrets (dev), env, or
   a vault ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)); don't log them. Two .NET-specific ways they reach a log

@@ -322,6 +322,11 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
 - [ ] Per-channel/per-action authorization after connect, not handshake-only; token expiry mid-connection handled (close code or refresh frame).
 - [ ] **Revocation closes live sockets (§2.1) — HIGH**: logout/revoke/disable paths close that session's WS/SSE connections on every node. Locator for revocation code that never touches a connection registry (a hit is a file to read, not yet a finding):
       `grep -rliE 'logout|revoke|invalidate_?session' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' --include='*.kt' --include='*.rb' --include='*.cs' --include='*.php' . | xargs -r grep -LiE 'socket|connection|sse|disconnect'`
+- [ ] **`wss://` only, and compression off where secrets meet attacker data (§2.1)** — `printf 'plain_ws=%s compression_on=%s\n' "$(grep -rnE "[\"']ws://" --include='*.js' --include='*.ts' --include='*.tsx' --include='*.py' --include='*.go' --include='*.java' --include='*.kt' . | wc -l | tr -d ' ')" "$(grep -rniE 'perMessageDeflate:[[:space:]]*true|EnableCompression:[[:space:]]*true|compression=.deflate' --include='*.js' --include='*.ts' --include='*.py' --include='*.go' . | wc -l | tr -d ' ')"`
+      — `plain_ws` hits in production client or server code = HIGH where credentials ride the
+      socket (and rules/07's plaintext-listener item); `compression_on` on a socket mixing secrets
+      with attacker-influenced data = MEDIUM. Defaults differ by library, so a 0 is not proof: read
+      `Sec-WebSocket-Extensions` in the server's 101 response for `permessage-deflate`.
 - [ ] Server pings with pong timeout; intervals < LB idle timeout; half-open detection on client.
 - [ ] Client reconnect: exponential backoff with jitter, cap, backoff reset only after stable connection, close codes honored (no reconnect loop on auth failure).
 - [ ] Resume protocol exists: sequence IDs, bounded replay buffer, explicit `resume_failed` → snapshot path; no silent gaps.

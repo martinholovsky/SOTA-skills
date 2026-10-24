@@ -60,7 +60,8 @@ subprocess.run(
 
 - `shell=True` with ANY variable in the string is a HIGH finding. Constant-string
   `shell=True` is still a smell (PATH games, IFS) — rewrite as a list.
-- `--` before user-controlled positional args so `-rf`-style values can't become flags
+- `--` before user-controlled positional args so `-rf`-style values can't become flags (probe:
+  [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §3)
   (argument injection — applies to git, curl, tar, find especially).
 - Validate or allowlist executables; never let the user pick the binary. Set `timeout=`,
   handle `CalledProcessError`. `os.system` is banned outright.
@@ -322,7 +323,7 @@ both. So any validation, authorization, or bounds check written as an `assert`
   user-influenced URLs; validate scheme/host first, and keep the interpreter patched.
 - **Header/CRLF injection:** never place raw user input into HTTP headers, email headers
   (`email.message` does folding — still validate), or redis/SMTP protocol lines; reject
-  `\r`/`\n` in any value destined for a protocol line.
+  `\r`/`\n` in any value destined for a protocol line (probe: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11).
 
 ## 8a. Debug consoles and error pages in production
 

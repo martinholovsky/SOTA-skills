@@ -64,7 +64,8 @@ code around it, never by the prompt itself.
     content, downgrade what it may do (e.g. can no longer call
     send_email/exfiltrate-capable tools) — taint tracking at the orchestrator.
   - Prompt-injection classifiers/heuristics as telemetry and friction, not as
-    the security boundary. Tier them by cost. On every turn, run cheap checks:
+    the security boundary — and evaluated per language before they are trusted at all
+    ([`sota-llm-engineering` rules/01](../../sota-llm-engineering/rules/01-evals.md) §1). Tier them by cost. On every turn, run cheap checks:
     normalise ([rules/09](09-untrusted-data-ingestion.md) §4), collapse repeated whitespace and characters, cap
     length, decode Base64, hex and LaTeX-hidden text in remote content so the
     screen sees the payload, then fuzzy-match known phrases (a Levenshtein-class

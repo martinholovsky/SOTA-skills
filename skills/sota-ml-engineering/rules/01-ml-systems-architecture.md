@@ -130,6 +130,10 @@ Audit for these (Sculley et al.) — each is real ML debt:
       `grep -rnE 'mlflow (server|ui)' . | grep -v 'app-name'`
       (each hit is a tracker with no authentication); manual: do training jobs hold
       credentials that can write serving or feature-store namespaces they don't own?
+- [ ] **Control planes reachable outside their trust domain (§6) — HIGH** — Ray dashboards,
+      notebook servers, pipeline UIs: `printf 'control_planes=%s ray_token_auth=%s\n' "$(grep -rlE 'ray (start|job)|ray\.init|RayCluster|--dashboard-host|jupyter[- ](lab|notebook|server)|kubeflow' . | wc -l | tr -d ' ')" "$(grep -rlE 'RAY_AUTH_MODE[=:[:space:]]+"?token' . | wc -l | tr -d ' ')"`
+      — control planes present with `ray_token_auth=0` on a Ray cluster = HIGH; then, for every
+      hit, confirm the bind address, ingress and security groups keep it inside its trust domain
 - [ ] **Append-only model audit trail and registered checkpoints (§4) — MEDIUM (manual)** —
       can the registry's history be edited or deleted by the same role that promotes? Are
       evaluated checkpoints registered with lineage, or loose files?

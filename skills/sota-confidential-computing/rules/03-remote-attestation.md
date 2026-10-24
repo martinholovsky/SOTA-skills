@@ -325,6 +325,9 @@ that gates nothing.
       distrusted, HA-deployed, every verdict logged?
 - [ ] Written TCB-recovery runbook: fleet re-attestation path, dual-validity
       reference-value rotation, time-boxed signed grace windows, expiry alerts?
+- [ ] On a retired measurement or a platform marked `Revoked`, are the keys and secrets already
+      released to it rotated or revoked (R7.3), not only future releases denied? A deny-list that
+      stops new releases while old ones stay valid = HIGH.
 - [ ] Re-attestation triggers defined (restart, lease renewal, policy change,
       schedule) and secret releases leased rather than perpetual?
 - [ ] Attestation failures, debug-flag sightings, and TCB downgrades alert into

@@ -110,7 +110,7 @@ server.maxRequestsPerSocket = 1000;
 - **Body limits**: cap JSON/body size at the framework (`express.json({ limit: '100kb' })`, Fastify `bodyLimit`). Unbounded bodies = trivial memory DoS. Cap per route by actual need.
 - **Behind a proxy**: set `trust proxy` correctly (exact hop count, not `true`) or rate limiting keys on spoofable `X-Forwarded-For`.
 - **Headers**: `helmet` (or hand-set: `HSTS`, `X-Content-Type-Options: nosniff`, frame-ancestors via CSP). Disable `X-Powered-By`.
-- **Rate limit** auth and expensive endpoints (`rate-limiter-flexible` backed by Redis when multi-instance — in-memory limits don't survive horizontal scaling).
+- **Rate limit** auth and expensive endpoints (`rate-limiter-flexible` backed by Redis when multi-instance — in-memory limits don't survive horizontal scaling). Presence probe: [`sota-api-design` rules/07](../../sota-api-design/rules/07-security-operations.md) §2.
 - **Validation**: every route parses body/query/params with a schema before touching them ([rules/01](01-typescript-config-and-types.md), [rules/05](05-security.md)). Fastify + zod type-provider, or tRPC, makes this structural.
 - **Compression**: gate on response size; never compress encrypted/random content; beware BREACH when reflecting secrets in compressed responses.
 - Prefer Fastify over Express for new services: schema-first validation, structured logging built in (pino), 2-3× throughput, maintained.

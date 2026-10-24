@@ -215,4 +215,7 @@ defaults, dangerous operations, config precedence, env var naming, help text.
 - [ ] Config parse errors name file + key and suggest near-misses; unknown keys are errors or loud warnings, not silence.
 - [ ] All tool-specific env vars carry the `TOOL_` prefix; `NO_COLOR`, proxy vars, `EDITOR`, `PAGER`, `CI` respected.
 - [ ] `-h/--help` on every subcommand: stdout, exit 0, no side effects, examples present, defaults shown.
+- [ ] `tool` with no arguments: `tool >/dev/null 2>&1; echo "rc=$?"` — rc 0 with no default action
+      hides a mistaken invocation from scripts; it prints short usage and exits nonzero, unless the
+      tool has a sensible default action.
 - [ ] Usage errors print the specific error + short usage + exit 2, not the full help wall.
