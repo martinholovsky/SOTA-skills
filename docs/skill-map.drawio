@@ -323,7 +323,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;400 distinct skill-to-skill edges / 1298 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;400 distinct skill-to-skill edges / 1302 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="720" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="f_Security_core" value="Security core&lt;br&gt;11 skills · 291 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
@@ -380,7 +380,7 @@
         <mxCell id="fe19" value="25" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Platform___delivery" target="f_Languages">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="fe20" value="28" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Languages" target="f_Quality">
+        <mxCell id="fe20" value="29" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Languages" target="f_Quality">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fe21" value="29" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Security_core" target="f_Quality">
@@ -395,7 +395,7 @@
         <mxCell id="fe24" value="46" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Product_surface" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="fe25" value="50" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Languages" target="f_Platform___delivery">
+        <mxCell id="fe25" value="51" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Languages" target="f_Platform___delivery">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fe26" value="73" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Data___AI" target="f_Security_core">
@@ -407,10 +407,10 @@
         <mxCell id="fe28" value="116" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=3;" edge="1" parent="1" source="f_Platform___delivery" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="fe29" value="141" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=4;" edge="1" parent="1" source="f_Languages" target="f_Security_core">
+        <mxCell id="fe29" value="143" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=4;" edge="1" parent="1" source="f_Languages" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="panel_h" value="MOST REFERENCED (inbound weight)&lt;br&gt;&lt;br&gt;code-security              315&lt;br&gt;devsecops                  108&lt;br&gt;sandboxing                 87&lt;br&gt;secrets-management         86&lt;br&gt;testing                    63&lt;br&gt;observability              57&lt;br&gt;network-security           53&lt;br&gt;detection-engineering      50&lt;br&gt;privacy-compliance         47&lt;br&gt;api-design                 39" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="panel_h" value="MOST REFERENCED (inbound weight)&lt;br&gt;&lt;br&gt;code-security              317&lt;br&gt;devsecops                  109&lt;br&gt;sandboxing                 87&lt;br&gt;secrets-management         86&lt;br&gt;testing                    64&lt;br&gt;observability              57&lt;br&gt;network-security           53&lt;br&gt;detection-engineering      50&lt;br&gt;privacy-compliance         47&lt;br&gt;api-design                 39" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1180" y="200" width="330" height="240" as="geometry"/>
         </mxCell>
         <mxCell id="panel_e" value="STRONGEST SINGLE LINKS&lt;br&gt;&lt;br&gt;llm-engineering        -&gt; code-security          28&lt;br&gt;devsecops              -&gt; code-security          25&lt;br&gt;shell-scripting        -&gt; code-security          22&lt;br&gt;testing                -&gt; code-security          22&lt;br&gt;code-security          -&gt; testing                18&lt;br&gt;jvm                    -&gt; code-security          18&lt;br&gt;security-compliance    -&gt; devsecops              17&lt;br&gt;identity-access        -&gt; code-security          15&lt;br&gt;confidential-computing -&gt; sandboxing             14&lt;br&gt;network-security       -&gt; code-security          14&lt;br&gt;kubernetes             -&gt; devsecops              13&lt;br&gt;devsecops              -&gt; kubernetes             12" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;" vertex="1" parent="1">
@@ -700,7 +700,7 @@
         <mxCell id="mr5" value="Memory / UB" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="434" width="380" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m5_0" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m5_0" value="03, 09" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="430" y="434" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m5_1" value="05 §7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
@@ -865,7 +865,7 @@
         <mxCell id="mr10" value="Testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="604" width="380" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m10_0" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m10_0" value="07, 09" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="430" y="604" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m10_1" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
@@ -898,7 +898,7 @@
         <mxCell id="mt_lines" value="rules-file lines" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=10;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="648" width="380" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines0" value="2628" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines0" value="2972" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="430" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines1" value="2591" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
@@ -931,7 +931,7 @@
         <mxCell id="mt_files" value="files" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=10;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="682" width="380" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtfiles0" value="8" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtfiles0" value="9" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="430" y="682" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtfiles1" value="8" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
@@ -998,11 +998,11 @@
     </mxGraphModel>
   </diagram>
   <diagram id="p6" name="6 · Concept x language">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="1632" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="1658" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="cnote" value="Page 6 — concept x language. Every audit concept scripts/gen-concept-matrix.py tracks, and how many Audit-checklist items each language skill has for it.&lt;br&gt;&lt;br&gt;A number = that many checklist items match the concept. GREEN = present. RED = a required concept is missing (CI should already have failed). AMBER = a universal concept not yet required is absent: a candidate gap. GREY dashed = a conditional concept is absent -- either the mechanism does not exist in that language or nobody has written it; this page does not decide which. WHITE n/a or delegated = an empty cell already TRIAGED (the mechanism does not exist, or another skill owns it); bold AMBER open gap = triaged and real. Verdicts and reasons: TRIAGED in scripts/gen-concept-matrix.py.&lt;br&gt;&lt;br&gt;HONEST LIMIT: cells come from wording matchers over checklist items, so a count says the wording appears, not that the rule is good. Check any cell with: python3 scripts/gen-concept-matrix.py --explain CONCEPT LANG. Items classified / total per language: rust 100/117  ·  go 76/91  ·  c/c++ 78/90  ·  jvm 87/99  ·  python 72/88  ·  js/ts 119/154  ·  .NET 76/83  ·  php 70/80  ·  ruby 64/76  ·  swift 59/62. Concepts owned by a shared rule outside the language skills (e.g. temp files, sota-code-security rules/06 §6.1) do not appear here." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="cnote" value="Page 6 — concept x language. Every audit concept scripts/gen-concept-matrix.py tracks, and how many Audit-checklist items each language skill has for it.&lt;br&gt;&lt;br&gt;A number = that many checklist items match the concept. GREEN = present. RED = a required concept is missing (CI should already have failed). AMBER = a universal concept not yet required is absent: a candidate gap. GREY dashed = a conditional concept is absent -- either the mechanism does not exist in that language or nobody has written it; this page does not decide which. WHITE n/a or delegated = an empty cell already TRIAGED (the mechanism does not exist, or another skill owns it); bold AMBER open gap = triaged and real. Verdicts and reasons: TRIAGED in scripts/gen-concept-matrix.py.&lt;br&gt;&lt;br&gt;HONEST LIMIT: cells come from wording matchers over checklist items, so a count says the wording appears, not that the rule is good. Check any cell with: python3 scripts/gen-concept-matrix.py --explain CONCEPT LANG. Items classified / total per language: rust 111/128  ·  go 76/91  ·  c/c++ 78/90  ·  jvm 87/99  ·  python 72/88  ·  js/ts 119/154  ·  .NET 76/83  ·  php 70/80  ·  ruby 64/76  ·  swift 59/62. Concepts owned by a shared rule outside the language skills (e.g. temp files, sota-code-security rules/06 §6.1) do not appear here." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="1330" height="150" as="geometry"/>
         </mxCell>
         <mxCell id="ch0" value="rust" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;" vertex="1" parent="1">
@@ -1044,7 +1044,7 @@
         <mxCell id="cr0_0" value="error handling &amp; propagation" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="250" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_0_0" value="22" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_0_0" value="26" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="250" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_0_1" value="4" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -1080,7 +1080,7 @@
         <mxCell id="cr0_1" value="absence / null / in-band sentinel" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="276" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_1_0" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_1_0" value="9" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="276" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_1_1" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -1224,7 +1224,7 @@
         <mxCell id="cr0_5" value="input validation &amp; untrusted data" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="380" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_5_0" value="10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_5_0" value="11" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="380" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_5_1" value="5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -1296,7 +1296,7 @@
         <mxCell id="cr0_7" value="vulnerability scanning of dependencies" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="432" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_7_0" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_7_0" value="4" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="432" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_7_1" value="4" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -1332,7 +1332,7 @@
         <mxCell id="cr0_8" value="static analysis / linter configuration" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="458" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_8_0" value="25" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_8_0" value="26" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="458" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_8_1" value="12" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -1368,7 +1368,7 @@
         <mxCell id="cr0_9" value="build reproducibility &amp; CI gates" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="484" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_9_0" value="16" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_9_0" value="20" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="484" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_9_1" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -1440,7 +1440,7 @@
         <mxCell id="cr0_11" value="suppressing a linter / type check" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="536" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_11_0" value="2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_11_0" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="536" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_11_1" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -1800,7 +1800,7 @@
         <mxCell id="cr0_21" value="profiling before optimizing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="796" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_21_0" value="12" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_21_0" value="13" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="796" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_21_1" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2160,7 +2160,7 @@
         <mxCell id="cr0_31" value="install/build-time code execution" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1056" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc0_31_0" value="2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc0_31_0" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1056" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc0_31_1" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2490,7 +2490,7 @@
         <mxCell id="cr2_0" value="immutability / const discipline  (if has a const or freeze mechanism)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1358" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_0_0" value="4" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_0_0" value="5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1358" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_0_1" value="2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2526,7 +2526,7 @@
         <mxCell id="cr2_1" value="typing / generics discipline  (if gradual or explicit typing)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1384" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_1_0" value="15" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_1_0" value="16" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1384" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_1_1" value="4" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2598,7 +2598,7 @@
         <mxCell id="cr2_3" value="memory safety (bounds, UAF, overflow)  (if has an unsafe/FFI escape hatch)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1436" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_3_0" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_3_0" value="8" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1436" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_3_1" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2670,7 +2670,7 @@
         <mxCell id="cr2_5" value="property-based / fuzz testing  (if a fuzzing or property library exists)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1488" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_5_0" value="2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_5_0" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1488" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_5_1" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2703,46 +2703,46 @@
         <mxCell id="cn2_5" value="10/10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1360" y="1488" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cr2_6" value="encoding, unicode &amp; text  (if the skill handles text decoding explicitly)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cr2_6" value="formal verification / model checking  (if has a mature bounded model checker or refinement checker)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1514" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_0" value="2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_0" value="6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_1" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_1" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="550" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_2" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_2" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="640" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_3" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_3" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="730" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_4" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_4" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="820" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_5" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_5" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="910" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_6" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_6" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="1000" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_7" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_7" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="1090" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_8" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_8" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="1180" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_6_9" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_6_9" value="—" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;fontColor=#777777;fontSize=10;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="1270" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cn2_6" value="10/10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cn2_6" value="1/10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1360" y="1514" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cr2_7" value="exit status / error signalling of tools  (if the skill drives external commands)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cr2_7" value="encoding, unicode &amp; text  (if the skill handles text decoding explicitly)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1540" width="414" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_7_0" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_7_0" value="2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1540" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_7_1" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2775,19 +2775,19 @@
         <mxCell id="cn2_7" value="10/10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1360" y="1540" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cr2_8" value="request-scoped context cleanup  (if has thread-local, context-local or async-local storage)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cr2_8" value="exit status / error signalling of tools  (if the skill drives external commands)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="1566" width="414" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_8_0" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="460" y="1566" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_8_1" value="n/a" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#555555;fontSize=9;" vertex="1" parent="1">
+        <mxCell id="cc2_8_1" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="550" y="1566" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_8_2" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="640" y="1566" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_8_3" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_8_3" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="730" y="1566" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_8_4" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -2802,14 +2802,50 @@
         <mxCell id="cc2_8_7" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1090" y="1566" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_8_8" value="2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_8_8" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1180" y="1566" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_8_9" value="n/a" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#555555;fontSize=9;" vertex="1" parent="1">
+        <mxCell id="cc2_8_9" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1270" y="1566" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cn2_8" value="8/10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cn2_8" value="10/10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1360" y="1566" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cr2_9" value="request-scoped context cleanup  (if has thread-local, context-local or async-local storage)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=8;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1592" width="414" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_0" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="460" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_1" value="n/a" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#555555;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="550" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_2" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="640" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_3" value="3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="730" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_4" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="820" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_5" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="910" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_6" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_7" value="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_8" value="2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cc2_9_9" value="n/a" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#555555;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1270" y="1592" width="84" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="cn2_9" value="8/10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="1592" width="84" height="22" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
@@ -2953,7 +2989,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 8 — how skill files point at each other, by FORM.&lt;br&gt;&lt;br&gt;Since ROADMAP 73 (n), 2026-10-12, a pointer is a relative Markdown link whose visible text is the old name form: 4214 of 4357 skill-name and rules/NN pointers are links (3601 of the 3686 that name a rules file). The unlinked rest are mostly bare prose mentions of a skill. 1434 mentions of another skill&#x27;s name across 347 skill files; 3 @path tokens, all in sota-docs-workflow/rules/01-documentation-architecture.md, which DESCRIBES the CLAUDE.md feature.&lt;br&gt;&lt;br&gt;Why links: with names only, an agent had to turn the name into a directory and the number into a file, and every failed rules-file read in sota-agent-evals v6-v11 was a guessed filename. Measured in v12: links ended the guessing (failed reads 2 -&gt; 0) but did NOT raise how often the cited rules file was reached (5/20 names, 6/20 links): agents follow the links where they sit, not to the file the task needs. A hook naming the file for the code being written reached 18/20 (v9)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 8 — how skill files point at each other, by FORM.&lt;br&gt;&lt;br&gt;Since ROADMAP 73 (n), 2026-10-12, a pointer is a relative Markdown link whose visible text is the old name form: 4225 of 4375 skill-name and rules/NN pointers are links (3612 of the 3704 that name a rules file). The unlinked rest are mostly bare prose mentions of a skill. 1438 mentions of another skill&#x27;s name across 348 skill files; 3 @path tokens, all in sota-docs-workflow/rules/01-documentation-architecture.md, which DESCRIBES the CLAUDE.md feature.&lt;br&gt;&lt;br&gt;Why links: with names only, an agent had to turn the name into a directory and the number into a file, and every failed rules-file read in sota-agent-evals v6-v11 was a guessed filename. Measured in v12: links ended the guessing (failed reads 2 -&gt; 0) but did NOT raise how often the cited rules file was reached (5/20 names, 6/20 links): agents follow the links where they sit, not to the file the task needs. A hook naming the file for the code being written reached 18/20 (v9)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="1100" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="lh0" value="form" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;align=left;spacingLeft=8;" vertex="1" parent="1">
@@ -2971,7 +3007,7 @@
         <mxCell id="lk0" value="name+file (backticked)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="242" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln0" value="603 (602)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln0" value="607 (606)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="242" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le0" value="[sota-code-security rules/06](../../sota-code-security/rules/06-...md) §3" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
@@ -3019,7 +3055,7 @@
         <mxCell id="lk4" value="own rules/NN" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="370" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln4" value="2923 (2844)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln4" value="2937 (2851)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="370" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le4" value="[rules/04](04-library-map.md) §1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
@@ -3031,7 +3067,7 @@
         <mxCell id="lk5" value="md link, same skill" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="402" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln5" value="2770" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln5" value="2777" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="402" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le5" value="[rules/04-library-map.md](rules/04-library-map.md)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
@@ -3043,7 +3079,7 @@
         <mxCell id="lk6" value="md link, other skill" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="434" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln6" value="1533" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln6" value="1537" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="434" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le6" value="[...](../../sota-x/rules/NN-....md)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
@@ -3130,7 +3166,7 @@
         <mxCell id="cre" value="lookup" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#000000;dashed=1;fontSize=10;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="cr" target="c3">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="mt" value="Every skill-to-skill reference: 1298 mentions over 400 pairs (the forms above that carry a NAME; the router&#x27;s own are on pages 1-2). Row = the citing skill, column = the cited one, number = mentions. Ordered by family; red = within a family, blue = across families." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=none;align=left;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="mt" value="Every skill-to-skill reference: 1302 mentions over 400 pairs (the forms above that carry a NAME; the router&#x27;s own are on pages 1-2). Row = the citing skill, column = the cited one, number = mentions. Ordered by family; red = within a family, blue = across families." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=none;align=left;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="854" width="1174" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="mc0" value="code-security" style="text;html=1;rotation=-90;align=left;verticalAlign=middle;fontSize=9;fillColor=#d5e8d4;" vertex="1" parent="1">
@@ -4249,19 +4285,19 @@
         <mxCell id="mr31" value="rust" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;fillColor=#f8cecc;strokeColor=none;align=right;spacingRight=6;fontSize=9;" vertex="1" parent="1">
           <mxGeometry x="40" y="1794" width="186" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="m_31_0" value="3" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#c5c5ff;" vertex="1" parent="1">
+        <mxCell id="m_31_0" value="5" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#b5b5ff;" vertex="1" parent="1">
           <mxGeometry x="230" y="1794" width="23" height="23" as="geometry"/>
         </mxCell>
         <mxCell id="m_31_4" value="3" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#c5c5ff;" vertex="1" parent="1">
           <mxGeometry x="326" y="1794" width="23" height="23" as="geometry"/>
         </mxCell>
-        <mxCell id="m_31_13" value="3" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#c5c5ff;" vertex="1" parent="1">
+        <mxCell id="m_31_13" value="4" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#bcbcff;" vertex="1" parent="1">
           <mxGeometry x="542" y="1794" width="23" height="23" as="geometry"/>
         </mxCell>
         <mxCell id="m_31_15" value="1" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#ddddff;" vertex="1" parent="1">
           <mxGeometry x="590" y="1794" width="23" height="23" as="geometry"/>
         </mxCell>
-        <mxCell id="m_31_28" value="1" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#ddddff;" vertex="1" parent="1">
+        <mxCell id="m_31_28" value="2" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#d0d0ff;" vertex="1" parent="1">
           <mxGeometry x="902" y="1794" width="23" height="23" as="geometry"/>
         </mxCell>
         <mxCell id="mr32" value="golang" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;fillColor=#f8cecc;strokeColor=none;align=right;spacingRight=6;fontSize=9;" vertex="1" parent="1">

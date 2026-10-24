@@ -27,12 +27,40 @@ unwrap_used = "deny"               # production crates (rules/02)
 dbg_macro = "deny"
 todo = "deny"
 undocumented_unsafe_blocks = "deny"
+multiple_unsafe_ops_per_block = "deny"   # one SAFETY comment per obligation (rules/03 §2)
 await_holding_lock = "deny"
+let_underscore_must_use = "deny"   # `let _ = fallible()` bypasses unused_must_use
+allow_attributes = "deny"          # suppress with #[expect], which reports itself when stale
+allow_attributes_without_reason = "deny"
+# security-critical / untrusted-input crates add (noisy on existing code — triage first):
+# arithmetic_side_effects = "deny"  # rules/05 §3
+# indexing_slicing = "deny"         # rules/02
+# string_slice = "deny"             # indexing_slicing does not check &str[a..b]
 # nursery opt-ins (the group is not enabled above):
 redundant_clone = "warn"           # rules/01, rules/06
 
 # member crates: [lints] workspace = true
 ```
+
+```toml
+# clippy.toml (workspace root) — rules/02 allows these in tests; without this file the
+# template fails `--all-targets -D warnings` on the first `.unwrap()` in a #[test]
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-dbg-in-tests = true
+```
+
+**The test keys stop at `#[test]` and `#[cfg(test)]`.** Measured 2026-10-24 on clippy 1.97.1 and
+1.99.0 with this template as written, `--all-targets -D warnings`: without `clippy.toml` the build
+failed on a `#[cfg(test)]` unwrap (rc 101); with it, that passed, while an unwrap in a `tests/`
+helper outside a `#[test]` function, in `examples/` and in `benches/` still failed, each on
+`unwrap_used` (`scripts/check-claims.sh` claim 21 re-runs the first half). Use `expect` with
+an invariant message there, or a `Result`-returning helper. There is **no** test key for
+`arithmetic_side_effects` (it is absent from clippy's own key list), so a crate that denies it
+scopes test code with `#![cfg_attr(test, allow(clippy::arithmetic_side_effects, reason = "…"))]`.
+`allow-print-in-tests` exists for a crate that denies `print_stdout`.
 
 - **Pedantic triage**, not pedantic-blanket: enable the group, then `allow`
   specific lints with a comment — this catches new pedantic lints on toolchain
@@ -44,8 +72,23 @@ redundant_clone = "warn"           # rules/01, rules/06
   environment, not in committed config, so local builds stay on warn.
   Hardcoding `#![deny(warnings)]` in source breaks builds on every new rustc
   lint — don't.
-- Per-site `#[allow(clippy::xyz, reason = "...")]` (lint reasons are stable)
-  over module-level allows; an allow without a reason is a finding.
+- Per-site `#[expect(clippy::xyz, reason = "...")]` over module-level allows; a
+  suppression without a reason is a finding. **`#[expect]`, not `#[allow]`**: when the code it
+  covers is refactored away it raises `unfulfilled_lint_expectations` (warn by default, so
+  `-D warnings` fails), so a stale exception surfaces instead of accumulating. Two traps,
+  both measured 2026-10-24 on clippy 1.99.0:
+  - **An expectation met under only some features fails under `--all-features`.** A plain
+    `#[expect(dead_code)]` on code used only with feature `x` came back unfulfilled. Write
+    `#[cfg_attr(not(feature = "x"), expect(dead_code, reason = "…"))]`, naming the
+    configuration in which the lint *fires*.
+  - **`allow_attributes` checks outer `#[allow]` only.** An inner `#![allow(…, reason = "…")]`
+    inside a `mod` passed both lints, so it is the bypass to probe for (checklist).
+    `allow_attributes_without_reason` still rejects an inner allow with no reason. Neither lint
+    fired on `#[allow]` emitted by a derive or another crate's `macro_rules!`.
+- **`deny`, never `forbid`, for `unused_must_use` and `unsafe_op_in_unsafe_fn`.** `forbid` also
+  rejects `#[allow]` that macros emit: measured for both lints, a proc-macro derive's and another
+  crate's `macro_rules!` `#[allow(…)]` failed with E0453 under `forbid` and compiled under `deny`. `unsafe_code = "forbid"` is still right in crates that need no unsafe (rules/03 §5);
+  check that its derives compile.
 - Run clippy on the same pinned toolchain as the build (lint sets drift across
   versions).
 
@@ -372,7 +415,17 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
 ## Audit checklist
 
 - [ ] `[lints]` table present and workspace-inherited; `rg '#!\[allow' -t rust`
-      — blanket crate-level allows without reasons = Low each, pattern = Medium.
+      — blanket crate-level allows without reasons = Low each, pattern = Medium. Where
+      `allow_attributes` is denied, every inner `#![allow(` is the one form it does not see
+      (§1): each needs a reason and a reviewer, or it is an unreviewed suppression = Low.
+- [ ] **Template denies a panic lint, CI lints tests, nothing tells clippy about tests** (§1):
+      `rg -n -g 'Cargo.toml' '(unwrap_used|expect_used|indexing_slicing|panic)\s*=\s*"(deny|forbid)"' .; rg -n 'allow-(unwrap|expect|indexing-slicing|panic)-in-tests' clippy.toml .clippy.toml 2>&1`
+      — hits in the first and none in the second, with CI on `--all-targets`, means CI fails
+      on test code or the floor was quietly lowered = Low. Remember the keys stop at
+      `#[test]`/`#[cfg(test)]`: `examples/`, `benches/` and `tests/` helpers are still linted.
+- [ ] **Suppression convention** (§1): `rg -c '#\[allow\(' -t rust .` beside `rg -c '#\[expect\(' -t rust .`
+      — `#[allow]` with no `allow_attributes` floor = Low (stale exceptions accumulate);
+      `forbid` on `unused_must_use`/`unsafe_op_in_unsafe_fn` breaks on macro-emitted allows.
 - [ ] CI runs clippy with `-D warnings` on `--all-targets --all-features`;
       source does NOT hardcode `#![deny(warnings)]`.
 - [ ] **Constrained crates (eBPF, `no_std`, embedded, WASM, kernel) — is any lint
