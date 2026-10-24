@@ -82,6 +82,8 @@ For hunting and deception, see [rules/05](rules/05-hunting-intel-deception.md); 
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Assess an existing detection/SOC/IR posture adversarially. Read [rules/06](rules/06-incident-response-validation.md) (IR &
 validation) and [rules/04](rules/04-alerting-triage-soc-soar.md) (SOC/triage) first. Sample real detections, real
 alerts, and real incidents — do not trust a coverage dashboard or a wiki

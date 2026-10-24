@@ -71,6 +71,8 @@ plane internals you cannot see, org IAM, CNI behavior).
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Use when reviewing an existing cluster, its RBAC, policies, GitOps config, or operators.
 
 Procedure: inventory the cluster surface (control plane flags or managed equivalent,

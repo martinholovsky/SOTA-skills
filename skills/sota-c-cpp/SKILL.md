@@ -77,6 +77,8 @@ exists to catch.
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Work through each relevant rules file's audit checklist against the target.
 Run the listed grep/clang-tidy/sanitizer commands; confirm each hit manually
 (greps are recall-oriented). Where feasible, build with `-fsanitize=address,

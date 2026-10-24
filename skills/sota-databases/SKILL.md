@@ -50,13 +50,16 @@ layers, caching, job queues, or database infrastructure.
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Use when reviewing an existing schema, migration set, query workload, ORM
 usage, or database configuration.
 
 Procedure:
 1. Inventory: engine + version, schema (tables, indexes, constraints),
    migration tooling, ORM, pooling setup, backup/replication config.
-2. Load the rules files matching what exists (e.g., no vectors → skip 07).
+2. Load the rules files matching what exists; record any other as not applicable, with the reason
+   (e.g., no vectors → 07 not applicable). Missing backups are a finding in 05, not a reason to skip it.
 3. Check each rule; report deviations as findings. Verify claims against the
    actual schema/queries — never report a finding you have not confirmed in
    the code or DDL.

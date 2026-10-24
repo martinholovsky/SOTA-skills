@@ -99,6 +99,8 @@ When designing or implementing a system that must satisfy a framework:
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 When reviewing a codebase/infrastructure against a framework:
 
 **Process:** (1) Establish the applicable framework(s) and the assessed boundary

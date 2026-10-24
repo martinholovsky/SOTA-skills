@@ -22,6 +22,8 @@ Baseline assumptions (mid-2026): TypeScript ≥5.9 strict (6.0 = last JS-based c
 
 ## AUDIT mode (reviewing existing code)
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Scope first (frontend? Node service? library?), then read the matching rules files and run their audit checklists — each ends with grep/eslint hunt patterns. Validate findings: confirm attacker-controlled data actually reaches the sink, confirm the perf issue is on a hot path. No speculative findings.
 
 **Severity conventions:**

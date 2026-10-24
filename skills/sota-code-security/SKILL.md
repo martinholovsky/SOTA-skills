@@ -43,7 +43,8 @@ adversary-readable; every privileged operation needs an explicit, code-enforced
 2. **Defaults, not options.** Use the rules' default choices without being
    asked: parameterized queries, argv-exec, argon2id, AEAD via libsodium-class
    libraries, `__Host-` cookies, allowlist DTOs (`extra=forbid`), deny-by-default
-   route policy, per-principal rate limits, timeouts on every outbound call.
+   route policy, per-principal rate limits, timeouts on every outbound call. Abuse that rate
+   limits do not stop (fake signups, scraping, credential stuffing at low rate): [rules/19](rules/19-anti-automation-and-abuse.md).
 3. **Structural over disciplinary.** Prefer designs where the insecure variant
    cannot be written: ownership predicates inside queries, RLS for tenancy,
    typed Secret wrappers with masked repr, central crypto/authz modules, logger
@@ -73,6 +74,8 @@ adversary-readable; every privileged operation needs an explicit, code-enforced
    fix every "no".
 
 ## AUDIT mode — hunting vulnerabilities against these rules
+
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
 
 Process:
 1. **Map the attack surface**: entry points (routes, GraphQL resolvers, queue

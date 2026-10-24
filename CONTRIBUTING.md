@@ -583,7 +583,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41 — 38 of 41; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42 — 39 of 42; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -729,6 +729,13 @@ CI scans the full git history, the pre-commit hook scans each commit.
     §BUILD edit could land with a stale `BUILD_WORKFLOW` for as long as no one paid for a run.
     Bump the pin the way `sota` router `rules/02` §5 says: re-read the mirror clause by clause,
     re-sync it if an imperative changed, then set the hash in the same commit.
+42. **A rules file only its index row reaches, or an AUDIT section that skips files.**
+    `scripts/reachability-graph.py` builds the rules-file reference graph and fails on a file
+    with no path but its own index row (add a pointer from the BUILD step, rules file or skill
+    where the task starts), on a domain AUDIT section that neither names every rules file nor
+    carries the canonical coverage line, and on a `rules/NN` or "Load NN" naming a file that
+    does not exist. `--explain <file>` lists what points at a file. It cannot tell whether a
+    trigger fires for the right task: ask that in review (`docs/SKILL-TEMPLATE.md`).
 
 ## Local setup
 

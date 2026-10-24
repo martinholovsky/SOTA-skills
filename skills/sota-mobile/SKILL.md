@@ -18,7 +18,7 @@ Facts in this skill (OS versions, store policies, framework status) were verifie
 
 When creating or extending a mobile app:
 
-1. **Settle the platform decision first.** Stack choice (native vs cross-platform), minimum OS floor, and target SDK are one-way doors. Use [`rules/01`](rules/01-platform-and-stack.md) decision factors; record the decision and its rationale in the repo.
+1. **Settle the platform decision first.** Stack choice (native vs cross-platform), minimum OS floor, and target SDK are one-way doors. Use [`rules/01`](rules/01-platform-and-stack.md) decision factors; record the decision and its rationale in the repo. Native iOS in Swift: [`rules/07`](rules/07-swift-in-apps.md) for the language layer of app code.
 2. **Establish architecture before features.** Unidirectional data flow, DI seams, module boundaries, and navigation pattern from day one ([`rules/02`](rules/02-architecture-and-state.md)). Retrofitting UDF onto a ball of mutable state is a rewrite.
 3. **Decide the offline posture explicitly.** "Online-only with graceful errors" is a valid choice; "accidentally breaks offline" is not. If offline-first: local DB is the source of truth, mutations queue, sync is a background concern ([`rules/03`](rules/03-offline-background-push.md)).
 4. **Wire operational survival kit before v1.0 ships:** crash reporting with symbol upload, forced-update mechanism, remote kill switches for risky features, API version header on every request ([`rules/06`](rules/06-release-and-operations.md)). These cannot be added retroactively for already-shipped binaries.
@@ -27,6 +27,8 @@ When creating or extending a mobile app:
 7. **Comply with current store requirements** before first submission: privacy manifest + required-reason APIs (iOS), Data safety form + target API level + 16 KB page support + developer verification (Android) ([`rules/01`](rules/01-platform-and-stack.md), [`rules/06`](rules/06-release-and-operations.md)).
 
 ## AUDIT mode
+
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
 
 When auditing an existing mobile app, work through the rules files in order and report findings using this convention.
 

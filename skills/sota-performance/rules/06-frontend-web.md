@@ -74,7 +74,8 @@ Budgets (compressed, over-the-wire) — adjust to audience, enforce in CI:
 - Initial CSS: ≤ 50 KB; inline critical CSS if render-blocking matters.
 - Per-route async chunks: ≤ 100 KB each.
 - Track *first-load JS per route* with a bundle analyzer or Lighthouse — Next.js
-  16 removed the `size`/`First Load JS` columns from `next build` output.
+  16 removed the `size`/`First Load JS` columns from `next build` output. React re-render, key and
+  virtualization mechanics: [`sota-javascript-typescript` rules/06](../../sota-javascript-typescript/rules/06-performance.md).
 
 Enforcement: `size-limit`, `bundlesize`, Lighthouse CI `budgets.json`, webpack
 `performance.maxAssetSize` — fail the PR, don't dashboard it. Diagnose with

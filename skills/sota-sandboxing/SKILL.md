@@ -47,6 +47,8 @@ inside-the-sandbox verification probe, and the residual-risk list.
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Use when reviewing existing code/infra for isolation gaps.
 
 Procedure: inventory workloads touching untrusted code/input/tenants → classify

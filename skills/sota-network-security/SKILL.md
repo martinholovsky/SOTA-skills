@@ -73,6 +73,8 @@ ingress/egress controls, PKI/DNS posture, remote access).
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Use when reviewing an existing network for segmentation gaps and exposure.
 
 Process: inventory the fabric (zones, namespaces, CNI policies, mesh config, ingress/egress paths,

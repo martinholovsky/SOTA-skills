@@ -52,6 +52,8 @@ this file routes you to the right one.
 
 ## AUDIT mode — reviewing existing code or designs
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 1. **Scope first.** Identify what you're auditing (whole system, one service, one
    PR) and read the matching rules files from the index. For a full architecture
    audit, work through every rules file; for a PR, pick by topic.
