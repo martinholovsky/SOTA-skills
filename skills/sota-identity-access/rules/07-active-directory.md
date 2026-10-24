@@ -66,7 +66,7 @@ low-privileged domain account — that is the realistic starting position.
   *and* a favourite escalation primitive: an attacker who can **write that
   attribute** on a computer object (often combined with a controlled machine
   account) impersonates any user to it. Restrict who can write it; the write
-  itself is a key detection signal (detection [rules/07](07-active-directory.md), event 5136).
+  itself is a key detection signal (detection [rules/07](../../sota-detection-engineering/rules/07-ad-attack-detection.md), event 5136).
 - Mark truly sensitive accounts **`Account is sensitive and cannot be
   delegated`** (or add them to **Protected Users**, §4) so no delegation can
   impersonate them.
@@ -88,7 +88,7 @@ low-privileged domain account — that is the realistic starting position.
     Aug 2025 — the KDC now requires a bidirectional dMSA↔superseded-account
     link) and **Golden dMSA** (key derivation). Post-patch variants still abuse
     over-permissive dMSA rights, so restrict dMSA creation/migration to tier-0
-    and monitor it (detection [rules/07](07-active-directory.md)).
+    and monitor it (detection [rules/07](../../sota-detection-engineering/rules/07-ad-attack-detection.md)).
   - **AES-only service accounts.** Set `msDS-SupportedEncryptionTypes` to
     AES128/256 (etype 17/18) and disable RC4 so the roast target is far more
     expensive; do this estate-wide only after confirming no RC4 dependency.
@@ -113,7 +113,7 @@ low-privileged domain account — that is the realistic starting position.
 ### NTLM, relay & machine-account quota
 
 - **Prefer Kerberos; retire NTLM.** Audit NTLM use (NTLM Operational log,
-  event 8004 — detection [rules/07](07-active-directory.md)) then restrict it with the **Network Security:
+  event 8004 — detection [rules/07](../../sota-detection-engineering/rules/07-ad-attack-detection.md)) then restrict it with the **Network Security:
   Restrict NTLM** policies; NTLMv1 must be disabled outright.
 - **Relay mitigations.** Enforce **SMB signing** and **LDAP signing + channel
   binding (EPA)** so coerced authentications can't be relayed. Windows Server 2025
@@ -172,7 +172,7 @@ number).
   Ensure CAs embed the SID extension and that no weak `altSecurityIdentities`
   mappings remain.
 - **Protect the CA private key** (HSM), restrict CA administration to tier-0, and
-  monitor issuance (detection [rules/07](07-active-directory.md), events 4886/4887).
+  monitor issuance (detection [rules/07](../../sota-detection-engineering/rules/07-ad-attack-detection.md), events 4886/4887).
 
 ## 4. Credential protection
 

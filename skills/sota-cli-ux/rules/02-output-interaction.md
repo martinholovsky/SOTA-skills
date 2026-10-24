@@ -226,6 +226,9 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
 - [ ] Human tables: no borders; `--plain`/`--no-header` or auto-plain when piped.
 - [ ] Exit codes: 0 only on full success; usage errors = 2; distinct documented codes for failure classes; partial failure ≠ 0; no `exit 0` in catch-all handlers.
 - [ ] SIGINT exits 130; `tool list | head` causes no EPIPE traceback.
+- [ ] Pager never engages when stdout is not a TTY: `out=$(PAGER=false tool <long-output command>); echo "rc=$? bytes=${#out}"`
+      — `bytes=0` with a nonzero rc means it paged with no TTY. No pipe: after `| cat`, `$?` is
+      `cat`'s, so that form reports 0 for a tool that pages (measured).
 - [ ] Color: auto by TTY; `NO_COLOR` (non-empty) and `TERM=dumb` disable; `--color=always|never|auto` supported; the `NO_COLOR`-vs-`FORCE_COLOR` precedence is a documented choice; color never sole carrier of meaning.
 - [ ] Output streams incrementally; stdout line-buffered when piped; no end-of-run dumps for long operations.
 - [ ] >2s operations show progress on stderr (TTY); non-TTY gets sparse plain lines, no `\r` animation spam in CI logs.

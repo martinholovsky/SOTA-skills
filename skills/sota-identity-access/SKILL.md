@@ -84,8 +84,9 @@ Use when assessing an existing identity estate.
 
 1. **Enumerate the IdP config**: clients/relying parties and their redirect URIs,
    client-auth methods, token lifetimes, grant types enabled, signing keys + rotation,
-   session/SLO config, MFA policy, federation/brokering trusts. Pull from the IdP API
-   or config export, not screenshots.
+   session/SLO config, MFA policy, federation/brokering trusts — and, on any hybrid or on-prem
+   estate, the AD domains, ADCS CAs and directory-sync servers (swept by 07). Pull from the IdP
+   API or config export, not screenshots.
 2. **Enumerate the population**: every human and service account, its
    authentication strength, last-login, group/role assignments, and owner. Cross
    against the HR/source-of-truth roster to find orphans.

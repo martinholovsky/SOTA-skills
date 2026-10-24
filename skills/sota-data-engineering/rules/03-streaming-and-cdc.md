@@ -108,6 +108,9 @@ for batch in consumer.batches():
 
 ## CDC patterns
 
+- **Log-based CDC holds a replication slot on the source**, and an abandoned or lagging slot makes
+  the source retain WAL until its disk fills: alert on slot lag, set `max_slot_wal_keep_size` (its
+  default, `-1`, is unlimited), and drop slots no connector owns ([`sota-databases` rules/05](../../sota-databases/rules/05-reliability-and-scale.md)).
 - **Log-based CDC (Debezium-class) is the default** for
   replicating OLTP into the analytical platform: reads the WAL/binlog,
   emits ordered change events, near-zero source impact. Query-based
@@ -196,6 +199,10 @@ retention.
       via new topic/version?
 - [ ] CDC: log-based for sources with deletes; deletes/tombstones applied
       downstream; ordering by LSN not wall-clock; re-snapshot path exists?
+- [ ] CDC replication slots ("CDC patterns" above) — on the source, `SELECT slot_name, active, wal_status,
+      pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) FROM pg_replication_slots;`
+      — an inactive slot no connector owns, or `max_slot_wal_keep_size = -1` with no slot-lag
+      alert = HIGH (the source disk fills)
 - [ ] Aggregations on event time with explicit watermark/lateness policy;
       late-drop counted and alerted?
 - [ ] DLQ per consumer, monitored, with replay procedure; no crash-looping

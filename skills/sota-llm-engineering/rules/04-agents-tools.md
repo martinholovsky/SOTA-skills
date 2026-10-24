@@ -351,7 +351,7 @@ consequences:
 - **When you operate/self-host an MCP server, harden the server,
   not just the client** (OWASP MCP Security): bind local HTTP/SSE transports to
   `127.0.0.1`, not `0.0.0.0`; **validate the `Origin`/`Host` header on every
-  request** to block DNS-rebinding from a browser tab; where a server still
+  request** to block DNS-rebinding from a browser tab (probe: [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md), Host allowlist); where a server still
   issues session IDs (legacy revisions up to 2025-11-25 — 2026-07-28 removed
   protocol sessions, and a server on it neither mints nor echoes
   `Mcp-Session-Id`), or hands out any state handle of its own, make it
@@ -452,7 +452,7 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
       judged against that baseline; agent edits to tests, check/CI config or
       thresholds routed to human review (§3a; detector in [sota-testing
       rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.10). **High**.
-- [ ] MCP transport matches reach: stdio only for a single local client,
+- [ ] MCP transport matches reach (a local HTTP/SSE server binds `127.0.0.1`, never `0.0.0.0`): stdio only for a single local client,
       never to share a server; shared/remote servers on authenticated HTTP
       with TLS (§6). OAuth tokens held by local clients in the OS credential
       store, a `0600` file only as a documented fallback. **High** for a

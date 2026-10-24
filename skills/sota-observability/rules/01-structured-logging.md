@@ -133,7 +133,10 @@ Rules:
   tasks must restore context before logging (see [rules/03](03-tracing.md) §4).
 - Also bind stable dimensions once per request: `user_id` (if policy allows),
   `tenant_id`, `service.version`, `deployment.environment.name` — via logger
-  context, not repeated at every call site.
+  context, not repeated at every call site. **Clear that context at the start of every request**
+  (`structlog.contextvars.clear_contextvars()`, `MDC.clear()` in `finally`): on a reused thread an
+  unreset context logs the previous request's tenant and user ([`sota-python` rules/04](../../sota-python/rules/04-async.md) §6,
+  [`sota-jvm` rules/03](../../sota-jvm/rules/03-concurrency.md) §3).
 - Audit test: pick any prod log line; you must be able to retrieve the full
   request trace and all sibling logs from it. If not, correlation is broken.
 

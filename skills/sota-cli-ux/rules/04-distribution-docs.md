@@ -91,6 +91,8 @@ from a single source of truth, man pages, README quickstart, CI pinning.
 
 ## Audit checklist
 
+- [ ] Release and source builds (`go install`, `cargo install`) report a real version: `tool --version`
+      on each prints a version and commit, not `dev`/`unknown`.
 - [ ] Single-file (or properly isolated) install; no runtime dependency on system interpreter state; runs from any cwd without sibling files; no root required.
 - [ ] Artifacts for linux/macOS (amd64+arm64) and windows with predictable names; old release assets remain downloadable.
 - [ ] `checksums.txt` (SHA-256) published per release; artifacts signed or provenance-attested; verification command documented where the download link is.

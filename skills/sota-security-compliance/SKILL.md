@@ -84,7 +84,7 @@ When designing or implementing a system that must satisfy a framework:
    RBAC, or logging here — reference where they already live.
 3. **Encode controls as gates, not prose.** Encryption-required, FIPS-crypto-only,
    boundary-egress-deny, SBOM-present, no-known-exploitable-vulns-at-release become
-   policy-as-code and CI checks that fail the build ([rules/01](rules/01-control-frameworks-as-code.md) §evidence, [rules/03](rules/03-ssdf-secure-sdlc.md)).
+   policy-as-code and CI checks that fail the build ([rules/01](rules/01-control-frameworks-as-code.md) §4, [rules/03](rules/03-ssdf-secure-sdlc.md)).
 4. **Build product-security obligations in from day one** where the CRA/62443
    apply: SBOM in CI, a coordinated-vulnerability-disclosure intake, a signed
    update channel, and a defined support period are architecture, not paperwork —
@@ -104,7 +104,7 @@ When designing or implementing a system that must satisfy a framework:
 When reviewing a codebase/infrastructure against a framework:
 
 **Process:** (1) Establish the applicable framework(s) and the assessed boundary
-([rules/02](rules/02-nist-800-53-171-cmmc-fedramp.md) §scope). (2) Obtain or build the control crosswalk — control → claimed
+([rules/02](rules/02-nist-800-53-171-cmmc-fedramp.md) §2, §5). (2) Obtain or build the control crosswalk — control → claimed
 mechanism → evidence source ([rules/01](rules/01-control-frameworks-as-code.md)). (3) For each control, verify the mechanism
 *actually enforces* it and the evidence is machine-generated, not asserted — test
 the gate, read the policy-as-code, sample the log. (4) Separate engineering

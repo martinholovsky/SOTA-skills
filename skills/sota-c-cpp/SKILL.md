@@ -46,7 +46,10 @@ Two consumers, one source of truth:
 **What this skill covers about embedded work, and what it does not.** It carries the
 safety-critical *coding* standards — MISRA C:2025 / C++:2023 and SEI CERT ([`rules/04`](rules/04-security.md)),
 freestanding builds with exceptions disabled ([`rules/01`](rules/01-idioms.md) §7), banned APIs and hardened
-build flags — so a firmware codebase gets real coverage of the language layer. It does
+build flags — so a firmware codebase gets real coverage of the language layer. The device's
+boot chain, debug-port lock, over-the-air update integrity and anti-rollback, and decommissioning
+live in [`sota-security-compliance` rules/05](../sota-security-compliance/rules/05-iec-62443-ot-ics.md) §6
+and [rules/04](../sota-security-compliance/rules/04-eu-cyber-resilience-act.md) §2. It does
 **not** cover the systems layer that makes embedded work its own discipline: interrupt
 service routines and reentrancy, DMA buffer coherency, memory-mapped I/O and `volatile`
 semantics against a peripheral, RTOS task scheduling and priority inversion, WCET and

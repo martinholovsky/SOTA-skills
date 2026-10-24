@@ -328,6 +328,10 @@ read it — unnecessary in jobs that never push.
 - [ ] Provenance/signatures are over **digests**, generated outside user-controlled build steps, stored with the artifact
 - [ ] Signing is keyless (Fulcio/Rekor) or KMS-backed; no signing keys in CI secrets
 - [ ] Every signature/attestation has a named, fail-closed verifier (admission policy, CD verify, or promotion verify) with **exact** certificate identity + issuer — no wildcard identities
+- [ ] **Signing input bound to its producer (§2.5.2) — CRITICAL** — an artifact picked by name
+      or newest-first, then signed or published: `printf 'artifact_by_name=%s producer_checked=%s\n' "$(grep -rlE 'actions/artifacts\?name=|sort_by\(\.created_at\)|download-artifact' .github/workflows | wc -l | tr -d ' ')" "$(grep -rlE 'head_repository\.full_name' .github/workflows | wc -l | tr -d ' ')"`
+      — a workflow that signs or publishes with `artifact_by_name` hits and no producer check
+      (`workflow_run.head_repository.full_name` compared per artifact) = CRITICAL
 - [ ] SBOM and (where used) scan results attached as in-toto attestations bound to the digest
 - [ ] Package publishing uses trusted publishers / OIDC provenance; no classic registry tokens in secrets; publish workflow is tag-triggered + environment-gated
 - [ ] **No standing registry token on developer machines (§2.6), Medium:** `grep -n -E '_authToken=[^$]' ~/.npmrc` is empty (a literal token, not a `${VAR}` reference); `npm token list` shows only package-scoped, expiring, CIDR-bound tokens, read-only unless they publish

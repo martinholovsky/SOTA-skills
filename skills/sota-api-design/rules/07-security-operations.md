@@ -11,7 +11,7 @@ multi-tenant isolation at the API layer, API response headers, API inventory.
 | API keys | server-side partner/B2B access, simple integrations | bearer secrets: hash at rest, prefix for identification (`sk_live_…`), scoped, rotatable, never in URLs |
 | OAuth2 client credentials | M2M where you want standard issuance, expiry, scopes, central revocation | short-lived JWT access tokens; the upgrade path from raw API keys |
 | OAuth2 auth code + PKCE | acting on behalf of end users (third-party apps) | never password-grant; never implicit |
-| mTLS | high-assurance B2B (finance/health), service mesh internal | strongest binding; cert lifecycle is the cost; pairs with OAuth (RFC 8705 cert-bound tokens) |
+| mTLS | high-assurance B2B (finance/health), service mesh internal | strongest binding; cert lifecycle is the cost; pairs with OAuth (RFC 8705 cert-bound tokens). Authorise the partner by a pinned identity, never CN: [`sota-network-security` rules/04](../../sota-network-security/rules/04-service-mesh-mtls.md) R4.1 |
 | Session cookies | first-party browser frontends | then CSRF defenses apply; don't mix with bearer on the same endpoints without thought |
 
 Rules regardless of scheme:
@@ -313,7 +313,8 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   a service acting for one, cannot append entries to another tenant's stream,
   which would let it plant or bury evidence. OWASP: Multi Tenant Security cheat
   sheet.
-- **Test it continuously**: automated suite that, for every endpoint, attempts
+- **Test it continuously** (run it as the production DB role and pooler — a superuser or migration
+  role bypasses row-level security and stays green with no isolation: [`sota-testing` rules/09](../../sota-testing/rules/09-security-testing.md) §3, §3a): automated suite that, for every endpoint, attempts
   access to tenant B's resources with tenant A's credentials and asserts 404 —
   the highest-ROI security test an API team can own.
 

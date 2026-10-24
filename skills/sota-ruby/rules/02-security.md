@@ -298,8 +298,13 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rn "Marshal.load\|Marshal.restore" --include='*.rb' .` ;
       `grep -rnE 'unsafe_load(_file)?|\.to_ruby\b|permitted_classes:' --include='*.rb' .`
       (`to_ruby` after `Psych.parse*` revives objects; review each widened class list) ;
-      `grep -rn "create_additions" --include='*.rb' .` ;
+      `grep -rn "create_additions" --include='*.rb' .` ; `grep -rnE 'JSON\.load[[:space:](]' --include='*.rb' .`
+      (`JSON.load` honours `create_additions`, so external input goes through `JSON.parse`) ;
       `grep -rnE "YAML\.(safe_)?load[^_]" --include='*.rb' . | grep "aliases: true"`
+- [ ] **CSV or spreadsheet export of user data without a formula guard (§3) — MEDIUM** —
+      `grep -rnE 'CSV\.(generate|open)|to_csv' --include='*.rb' .` — each hit writing user-controlled
+      cells prefixes values starting `=`, `+`, `-`, `@`, tab or CR with `'`
+      ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11)
 - [ ] **XML parser options that re-enable XXE / expansion — HIGH on untrusted XML** (§3) —
       `grep -rnE '\.(noent|dtdload|dtdattr|nononet|huge)\b|ParseOptions::(NOENT|DTDLOAD|DTDATTR|HUGE)|entity_expansion(_text)?_limit[[:space:]]*=' --include='*.rb' .`
 - [ ] **eval / reflection sinks** —
