@@ -34,6 +34,8 @@ Feature notes below name the release that introduced each feature.
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 1. Recon: `Package.swift` (tools version, language modes, `unsafeFlags`, plugins, macros,
    binary targets), `Package.resolved`, CI config, the server framework in use.
 2. Run what is installed (never install unasked): the compiler in Swift 6 mode with

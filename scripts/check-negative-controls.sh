@@ -1239,6 +1239,40 @@ p.write_text(t.replace(old, '1. Name the domains the feature touches', 1), encod
 " )
 probe 41 "router §BUILD changed without the eval mirror's pin being re-read" "BUILD DRIFT"
 
+# 42 — reachability graph (scripts/reachability-graph.py). One probe per property, each a
+# python edit that asserts its anchor first, so a stale literal fails as a PROBE.
+# 42: delete devsecops/rules/08's only pointer beyond its index row -> C1 (index-only).
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-devsecops/rules/04-build-containers.md')
+t = p.read_text(encoding='utf-8')
+old = 'the registry itself as tier-0 infrastructure: [rules/08](08-registry-security.md).'
+assert t.count(old) == 1, 'probe stale: the rules/04 -> rules/08 pointer not found'
+p.write_text(t.replace(old, 'the registry itself as tier-0 infrastructure.', 1), encoding='utf-8')
+" )
+probe 42 "a rules file left with no path but its own index row" "C1 skills/sota-devsecops/rules/08"
+# 42b: drop one skill's coverage line -> C2 (its AUDIT names none of its files).
+( cd "$WT" && python3 -I -c "
+import pathlib, re
+p = pathlib.Path('skills/sota-golang/SKILL.md')
+t = p.read_text(encoding='utf-8')
+i = t.find('**Coverage:** every \`rules/\` file')
+assert i >= 0, 'probe stale: the coverage line not found in sota-golang'
+j = t.index('\n', i)
+p.write_text(t[:i] + t[j + 1:], encoding='utf-8')
+" )
+probe 42b "an AUDIT section that neither names every rules file nor carries the coverage line" "C2 skills/sota-golang/SKILL.md"
+# 42c: a BUILD step that loads a rules number the skill does not have -> C3.
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-rust/SKILL.md')
+t = p.read_text(encoding='utf-8')
+old = 'Spawning an external program? Load 08.'
+assert t.count(old) == 1, 'probe stale: the rust BUILD step-1 anchor not found'
+p.write_text(t.replace(old, 'Spawning an external program? Load 18.', 1), encoding='utf-8')
+" )
+probe 42c "a BUILD step that loads a rules file the skill does not have" "C3 skills/sota-rust/SKILL.md"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1665,7 +1699,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41 (38 of 41)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42 (39 of 42)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."

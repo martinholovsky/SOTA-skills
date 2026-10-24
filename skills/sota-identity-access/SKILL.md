@@ -76,6 +76,8 @@ Use when standing up or configuring any identity component.
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Use when assessing an existing identity estate.
 
 ### Sweep procedure
@@ -89,7 +91,8 @@ Use when assessing an existing identity estate.
    against the HR/source-of-truth roster to find orphans.
 3. **Sweep by rules file**: 01 (protocol/token misconfig), 02 (IdP hardening),
    03 (over-privilege/SoD), 04 (orphaned/dormant/no-reviews — usually the most
-   findings), 05 (break-glass/standing admin/static workload creds), 06 (weak MFA).
+   findings), 05 (break-glass/standing admin/static workload creds), 06 (weak MFA), 07 (Active
+   Directory / ADCS on any hybrid or on-prem estate — quota, `krbtgt` age, delegation, templates).
 4. **Verify, don't assume**: a wildcard redirect URI, an account that logged in 400
    days ago, a role granting `*` — confirm each against the live config/logs before
    reporting. Never authenticate as a discovered account or trigger break-glass

@@ -69,6 +69,8 @@ full STRIDE-per-interaction model for a new service or auth flow.
 
 ## AUDIT Mode — Reconstructing a Threat Model from Code
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Use when handed an existing system with no (trustworthy) threat model. Goal:
 rebuild the implicit model from artifacts, then diff intended vs. actual
 controls. Full procedure in [`rules/06`](rules/06-audit-reconstruction.md).

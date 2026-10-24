@@ -2984,6 +2984,14 @@
       ]
     },
     {
+      "from": "sota-performance",
+      "to": "sota-javascript-typescript",
+      "weight": 1,
+      "targets": [
+        "rules/06"
+      ]
+    },
+    {
       "from": "sota-php",
       "to": "sota-api-design",
       "weight": 1,
@@ -3431,14 +3439,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1537,
+    "md link, other skill": 1538,
     "md link, outside skills/": 3,
-    "md link, same skill": 2781,
+    "md link, same skill": 2790,
     "name (backticked)": 431,
     "name (bare)": 240,
-    "name+file (backticked)": 607,
+    "name+file (backticked)": 608,
     "name+file (bare)": 160,
-    "own rules/NN": 2942
+    "own rules/NN": 2951
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3448,9 +3456,9 @@
     "md link, same skill": 0,
     "name (backticked)": 416,
     "name (bare)": 197,
-    "name+file (backticked)": 606,
+    "name+file (backticked)": 607,
     "name+file (bare)": 155,
-    "own rules/NN": 2855
+    "own rules/NN": 2864
   },
   "rules_index_style": {
     "link": 42
@@ -3505,7 +3513,7 @@
       "~/.codex/AGENTS.md (Codex)",
       "~/.gemini/GEMINI.md (Gemini CLI, Antigravity)"
     ],
-    "invariants": 41,
+    "invariants": 42,
     "ci_jobs": [
       "Repository invariants",
       "Negative controls (the gate can fail)",

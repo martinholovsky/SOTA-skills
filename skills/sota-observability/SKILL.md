@@ -59,6 +59,8 @@ not afterthoughts. Workflow:
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Assess an existing codebase/deployment. Read [`rules/06`](rules/06-audit-playbook.md) first for the full
 playbook; sample real code paths, do not trust README claims.
 

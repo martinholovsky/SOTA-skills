@@ -69,6 +69,8 @@ When creating docs or setting up workflow:
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 When auditing docs or workflow:
 
 1. Scope the surfaces: docs tree + README + runbooks ([`rules/01`](rules/01-documentation-architecture.md)), generated

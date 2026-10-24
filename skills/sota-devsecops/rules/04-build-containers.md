@@ -2,7 +2,8 @@
 
 Scope: the transformation from source to artifact. Goal: the build is a pure function of
 committed inputs (hermetic, ideally reproducible), the artifact carries nothing it doesn't
-need (minimal runtime), and the registry preserves integrity (digests, immutability).
+need (minimal runtime), and the registry preserves integrity (digests, immutability) — securing
+the registry itself as tier-0 infrastructure: [rules/08](08-registry-security.md).
 
 ## 4.1 Hermetic & reproducible builds
 

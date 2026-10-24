@@ -37,6 +37,8 @@ dependency tooling.
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Use when reviewing existing pipelines, workflows, Dockerfiles, IaC, or dependency posture.
 
 Process: enumerate workflows/build files/IaC; for each, walk the relevant Audit checklist

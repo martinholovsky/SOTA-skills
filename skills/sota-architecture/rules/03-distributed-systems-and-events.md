@@ -56,6 +56,7 @@ side effects. "Exactly-once" broker features (Kafka transactions) cover
 broker-internal read-process-write only. Your contract is: at-least-once
 delivery + idempotent processing = effectively-once outcomes. Any design doc
 that depends on exactly-once delivery is wrong; fix the design, not the broker.
+On NATS JetStream (dedup window, ack semantics, stream limits): [rules/08](08-nats-jetstream.md).
 
 **Rule:** Acknowledge messages only after the state change is durably committed.
 Ack-then-process loses messages on crash; process-then-ack duplicates them —

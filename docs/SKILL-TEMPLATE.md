@@ -40,7 +40,7 @@ description must declare a routing check (invariant 29).
 |---|---|
 | Purpose | one paragraph: what this owns, and explicitly what it does **not** (name the skill that does) |
 | BUILD mode | the workflow when writing new code in this domain |
-| AUDIT mode | the workflow when reviewing existing code |
+| AUDIT mode | the workflow when reviewing existing code. Its first paragraph is the canonical coverage line from `scripts/reachability-graph.py` (`COVERAGE`), copied verbatim — invariant 42 fails a domain skill without it, because a numbered sweep ("01–06") stops growing when 07 is added |
 | Top-10 non-negotiables | the rules that survive context pressure; these are what a long session drops first |
 | Rules index | one row per `rules/NN-*.md`, each with "read this when…" guidance (invariant 10 gates both directions against `skills/sota/rules/04`) |
 
@@ -146,7 +146,14 @@ this — it is the reviewer's job.
 
 - [ ] Every shipped checklist grep run against a **known-bad and a known-good** fixture.
       Measured repeatedly: a probe that can never fire ships silently, and reads as coverage
-- [ ] New `rules/NN` indexed by its `SKILL.md` **and** by `skills/sota/rules/04` (invariants 10, 15)
+- [ ] New `rules/NN` indexed by its `SKILL.md` **and** by `skills/sota/rules/04` (invariants 10, 15),
+      **and** pointed at from where its task starts — a BUILD step, or the rules file an agent
+      would already have open (invariant 42; `python3 scripts/reachability-graph.py --explain <file>`)
+- [ ] **Reachability, the half no gate checks** (2026-10-24 review: 27 confirmed defects with every
+      gate green). Name a task that does **not** mention this rule's subject but needs it — which
+      file would an agent load, and does that file point here? For each **absence** probe ("no fuzz
+      target", "missing backups"), would its file load in a codebase that lacks the thing? If a
+      file split moved content, do BUILD steps and index rows still send that topic to the old file?
 - [ ] A new rule section carries an ADOPTION-LOG entry (invariant 31)
 - [ ] `./scripts/check-invariants.sh` green, and `python3 scripts/gen-concept-matrix.py
       --assert-universal` green if this is a language skill

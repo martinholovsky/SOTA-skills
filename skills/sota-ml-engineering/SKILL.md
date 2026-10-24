@@ -65,6 +65,8 @@ Two consumers, one source of truth:
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Work each relevant rules file's audit checklist against the system: the
 training pipeline, the feature/serving path, the registry, and the monitoring.
 The [ML Test Score](https://research.google/pubs/the-ml-test-score-a-rubric-for-ml-production-readiness-and-technical-debt-reduction/)

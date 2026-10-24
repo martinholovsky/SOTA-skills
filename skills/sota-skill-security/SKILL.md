@@ -70,6 +70,8 @@ Use when installing, authoring or updating anything an agent loads as instructio
 
 ## AUDIT mode
 
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
+
 Use when reviewing an installed skill set, a repo's agent files, or your own library.
 
 1. **Inventory what actually loads.** Not what is documented — what the agent reads:

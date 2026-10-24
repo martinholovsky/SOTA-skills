@@ -32,7 +32,8 @@ When writing new concurrent code:
 
 1. **Classify the workload first.** I/O-bound → async/event loop. CPU-bound →
    threads (if runtime has real parallelism) or processes. Mixed → async
-   front-end + bounded worker pool. Read [`rules/01`](rules/01-models-and-structure.md) before choosing.
+   front-end + bounded worker pool. Read [`rules/01`](rules/01-models-and-structure.md) before choosing; on an event
+   loop, keep blocking and CPU work off it ([`rules/04`](rules/04-event-loop-hygiene.md)).
 2. **Structured concurrency is the default.** Every task lives inside a scope
    (TaskGroup / nursery / errgroup / JoinSet) that joins or cancels it.
    Spawning a task with no owner is a design smell requiring written
@@ -41,17 +42,20 @@ When writing new concurrent code:
    request set, and spawn loop gets an explicit capacity. Unbounded = OOM with
    a delay timer.
 4. **Every await gets a timeout policy** — a number, or a documented reason
-   why it inherits one from an enclosing scope.
+   why it inherits one from an enclosing scope ([`rules/05`](rules/05-cancellation-timeouts-shutdown.md)).
 5. **Cancellation is a feature you build, not an exception you ignore.**
    Propagate context/AbortSignal/CancelledError; clean up in finally blocks;
-   design shutdown order (stop intake → drain → deadline → force).
+   design shutdown order (stop intake → drain → deadline → force) ([`rules/05`](rules/05-cancellation-timeouts-shutdown.md)).
 6. **Shared mutable state needs an owner.** Prefer message passing or
    single-owner tasks; if you must lock, define lock ordering and never hold a
-   lock across an await.
+   lock across an await. Races vs race conditions, atomicity and TOCTOU: [`rules/02`](rules/02-correctness.md);
+   choosing the primitive: [`rules/03`](rules/03-primitives.md).
 7. Re-read the audit checklists at the end of each rules file against your own
    diff before declaring done.
 
 ## AUDIT mode
+
+**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reason in the report — never skip a file because the thing it checks for is absent, since that absence may be the finding.
 
 When auditing existing code, you find races, deadlocks, and leaks by reading —
 grep is your debugger. Workflow:
