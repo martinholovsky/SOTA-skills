@@ -331,6 +331,10 @@ For each `unsafe` block, in order:
       to proc macros and build scripts: the job fails on any crate with a proc-macro dependency,
       or was disabled because it did. Medium if it
       is the only memory-safety check on FFI code.
+- [ ] **A security-critical `unsafe` wrapper with neither Miri tests over its unsafe paths nor a Kani
+      harness on its safe API** (§4, [rules/09](09-formal-verification.md) §1): `printf 'unsafe_files=%s kani_harness_files=%s\n' "$(rg -l 'unsafe \{|unsafe fn|unsafe impl' -g '*.rs' . | wc -l | tr -d ' ')" "$(rg -l '#\[kani::proof' -g '*.rs' . | wc -l | tr -d ' ')"`
+      — unsafe present and no harness: check that its Miri job runs the unsafe paths; neither =
+      Medium. Harnesses present: audit them with rules/09 — a vacuous proof is not evidence.
 - [ ] Crates with zero unsafe missing `#![forbid(unsafe_code)]` — Low, but
       free hardening.
 - [ ] Severity calibration: reachable UB = Critical; unsound public API (safe

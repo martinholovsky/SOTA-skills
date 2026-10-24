@@ -35,7 +35,7 @@ When writing or modifying Rust code:
 
 1. **Scope the work, load the rules.** Pick the relevant `rules/` files from
    the index. Touching async code? Load 04. Adding a dependency, parsing
-   network input, or spawning an external program? Load 05. Writing any `unsafe`? Load 03 — no exceptions.
+   network input? Load 05. Spawning an external program? Load 08. Writing any `unsafe`? Load 03 — no exceptions.
    Proving a parser, decoder or arithmetic function panic- and overflow-free, or touching any
    `#[kani::*]` or Flux `#[spec]`? Load 09.
 2. **Design types first.** Newtypes for domain primitives, errors per
@@ -69,7 +69,7 @@ When reviewing or auditing existing Rust:
    and features, CI config, `rg 'unsafe' --count-matches`, dependency tree
    (`cargo tree -d`), and `rg -c 'kani::|flux_rs' -t rust .`. Load 09 when proofs are present (audit
    them as controls that can pass vacuously) **or** when a security-critical crate parses untrusted
-   input (§1 decides whether a missing harness is a finding). This decides which rules files to load and where risk
+   input or wraps `unsafe` behind a safe API (§1 decides whether a missing harness is a finding). This decides which rules files to load and where risk
    concentrates (network input? unsafe? async service?).
 2. **Run the audit checklists** at the end of each loaded rules file — they
    are ordered grep/clippy hunts with pre-calibrated severities.

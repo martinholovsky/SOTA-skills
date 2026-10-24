@@ -262,7 +262,7 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
       `--exact` = Low.
 - [ ] **Contract or loop attributes without their feature** (§5):
       `rg -l 'loop_invariant' -t rust .` non-empty while
-      `rg -n --hidden -g '!.git' -g 'Cargo.toml' -g '*.y*ml' -g '*.sh' -g 'Makefile' -g 'justfile' -e 'loop-contracts\s*=\s*true' -e '-Z\s*loop-contracts' .` is empty (a `flags = ["-Z", "loop-contracts"]` array does not count: §5 measured it enabling nothing) = **High** for the
+      `rg -n --hidden -g '!.git' -g 'Cargo.toml' -g '*.y*ml' -g '*.sh' -g 'Makefile' -g 'justfile' -e 'loop-contracts\s*=\s*true' -e '-Z\s*loop-contracts' .` is empty (a `flags = ["-Z", "loop-contracts"]` array does not count: §5 measured that form not enabling `function-contracts`, and whether it enables `loop-contracts` was not measured — treat it as off) = **High** for the
       properties those invariants claim: they are not checked, and the run passes.
       Same pair for `stub_verified` → `stubbing` (loud, but a job "fixed" by deleting the
       harness hides it).

@@ -485,7 +485,7 @@ Running external programs (formerly section 9) moved to
       fields, not message interpolation.
 - [ ] `rg 'output\(\)|wait_with_output' -t rust` where the child's output size is
       not bounded by the caller = Medium (R9.6); `rg 'pre_exec' -t rust` — the
-      closure must be async-signal-safe (R9.7).
+      closure must be async-signal-safe (R9.7). R9.x now live in [rules/08](08-external-programs.md); its checklist is the full set.
 - [ ] Severity calibration: RCE/memory corruption = Critical; authn/authz
       bypass, SQLi, traversal = Critical/High; attacker-reachable panic or
       unbounded allocation = High; missing CI audit gates = Medium-High;
