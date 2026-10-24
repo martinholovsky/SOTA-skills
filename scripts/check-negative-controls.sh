@@ -969,7 +969,7 @@ probe 32d "the idiom split across a backslash continuation inside a bash fence" 
 add_checklist_line "'- [ ] **probe** ' + $BQ + 'grep -rni x . | head || echo ' + chr(34) + 'none' + chr(34) + $BQ"
 probe 32e "a '| head || echo' fallback that can never fire" \
   "grep -rni x . | head"
-add_checklist_line "'- [ ] **doc** ' + $BQ + 'cmd 2>/dev/null || echo ' + chr(34) + 'missing X' + chr(34) + $BQ + ' is the idiom, named'"
+add_checklist_line "'- [ ] **doc** (§1) ' + $BQ + 'cmd 2>/dev/null || echo ' + chr(34) + 'missing X' + chr(34) + $BQ + ' is the idiom, named'"
 wt_commit "probe: the documented placeholder form of the idiom"
 probe_committed_green 32f "the library's own cmd placeholder documents the idiom — stays green" \
   "instruction files"

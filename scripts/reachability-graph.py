@@ -260,14 +260,29 @@ def write_baseline(unc, items, unnumbered):
         fh.write("\n")
 
 
-def merge_base_baseline():
-    """The baseline as it was at the merge base with origin/main, or None when there is none."""
+def merge_base_rev():
     mb = subprocess.run(["git", "merge-base", "HEAD", "origin/main"], capture_output=True, text=True)
-    if mb.returncode != 0 or not mb.stdout.strip():
+    return mb.stdout.strip() if mb.returncode == 0 and mb.stdout.strip() else None
+
+
+def merge_base_baseline(rev):
+    """The baseline as it was at the merge base, or None when there is none."""
+    if rev is None:
         return None
-    old = subprocess.run(["git", "show", "%s:%s" % (mb.stdout.strip(), SYNC_BASELINE)],
-                         capture_output=True, text=True)
+    old = subprocess.run(["git", "show", "%s:%s" % (rev, SYNC_BASELINE)], capture_output=True, text=True)
     return load_baseline(old.stdout) if old.returncode == 0 else None
+
+
+def new_files_since(rev):
+    """Rules files that did not exist at the merge base (a split or a new file)."""
+    if rev is None:
+        return set()
+    old = subprocess.run(["git", "ls-tree", "-r", "--name-only", rev, "skills/"], capture_output=True, text=True)
+    return set(git_files("skills/*/rules/*.md")) - set(old.stdout.split())
+
+
+def heading(entry):
+    return entry.split(" :: ", 1)[1]
 
 
 def sync_check():
@@ -277,58 +292,82 @@ def sync_check():
         print("FAIL: %s missing -- the ratchet has nothing to compare against" % SYNC_BASELINE)
         return 1
     b_unc, b_items, b_unnum = base
-    bad = []
+    rev = merge_base_rev()
+    fresh = new_files_since(rev)
+    b_heads, now_heads = {heading(e) for e in b_unc}, {heading(e) for e in unc}
+    bad, moved = [], 0
     for e in unc:
-        if e not in b_unc:
-            bad.append("S1 %s: a numbered section no checklist item cites (§N) -- cite it, or mark it "
-                       "*(advisory)* / *(audited in ...)* under its heading" % e)
+        if e in b_unc:
+            continue
+        if heading(e) in b_heads:  # the same section moved or copied: debt relocated, not added
+            moved += 1
+            continue
+        bad.append("S1 %s: a numbered section no checklist item cites (§N) -- cite it, or mark it "
+                   "*(advisory)* / *(audited in ...)* under its heading" % e)
+    total_now, total_base = sum(items.values()), sum(b_items.values())
     for f, n in items.items():
-        if n > b_items.get(f, 0):
-            bad.append("S2 %s: %d checklist items cite no section (baseline %d) -- a new item cites the "
-                       "section it checks, as (§N)" % (f, n, b_items.get(f, 0)))
+        if n <= b_items.get(f, 0):
+            continue
+        if f in fresh and total_now <= total_base:  # a split: items moved into a new file
+            moved += 1
+            continue
+        bad.append("S2 %s: %d checklist items cite no section (baseline %d) -- a new item cites the "
+                   "section it checks, as (§N)" % (f, n, b_items.get(f, 0)))
     for f in unnumbered:
         if f not in b_unnum:
             bad.append("S3 %s: a rules file with no numbered sections -- number them (## 1. ...) so "
                        "checklist items can cite them" % f)
-    stale = sorted(b_unc - set(unc)) + ["%s (items: baseline %d, now %d)" % (f, n, items.get(f, 0))
-                                        for f, n in b_items.items() if items.get(f, 0) < n] \
-        + sorted(b_unnum - set(unnumbered))
-    for e in stale:
+    stale = [e for e in sorted(b_unc - set(unc)) if heading(e) not in now_heads] \
+        + ["%s (items: baseline %d, now %d)" % (f, n, items.get(f, 0))
+           for f, n in b_items.items() if items.get(f, 0) < n] + sorted(b_unnum - set(unnumbered))
+    relocated = [e for e in sorted(b_unc - set(unc)) if heading(e) in now_heads]
+    for e in stale + ["%s (moved; re-key it)" % e for e in relocated]:
         bad.append("S4 stale baseline entry, now fixed: %s -- run `python3 scripts/reachability-graph.py "
                    "--sync-tighten` and commit the smaller baseline" % e)
-    mb = merge_base_baseline()
-    grow = 0
+    mb = merge_base_baseline(rev)
     if mb is not None:
         m_unc, m_items, m_unnum = mb
-        added = sorted(b_unc - m_unc) + sorted(b_unnum - m_unnum) + \
-            ["%s items %d > %d" % (f, n, m_items.get(f, 0)) for f, n in b_items.items() if n > m_items.get(f, 0)]
-        for e in added:
+        m_heads = {heading(e) for e in m_unc}
+        grew = sorted(b_heads - m_heads)
+        if len(b_unc) > len(m_unc):
+            grew.append("uncited sections %d > %d" % (len(b_unc), len(m_unc)))
+        if total_base > sum(m_items.values()):
+            grew.append("uncited items %d > %d" % (total_base, sum(m_items.values())))
+        grew += sorted(set(b_unnum) - set(m_unnum) - fresh)
+        for e in grew:
             bad.append("S5 the baseline GREW against the merge base: %s -- the debt may only shrink" % e)
-        grow = 1
     print("SCOPE %d" % len(git_files("skills/*/rules/*.md")))
     for b in bad:
         print(b)
     if bad:
         return 1
-    print("    ok (%d numbered sections uncited and %d uncited checklist items, all baselined; %d files "
-          "unnumbered; growth %s)" % (len(unc), sum(items.values()), len(unnumbered),
-                                      "checked against the merge base" if grow else
+    print("    ok (%d numbered sections uncited and %d uncited checklist items, all baselined%s; %d files "
+          "unnumbered; growth %s)" % (len(unc), total_now, ", %d relocated" % moved if moved else "", len(unnumbered),
+                                      "checked against the merge base" if mb is not None else
                                       "not checked: no baseline at the merge base (new here, or no origin/main)"))
     return 0
 
 
 def sync_tighten():
+    """Shrink the baseline to what is still needed, re-keying relocated debt; never adds new debt."""
     unc, items, unnumbered = sync_state()
     base = load_baseline()
     if base is None:
         print("no baseline to tighten; refusing to create one silently")
         return 1
     b_unc, b_items, b_unnum = base
-    new_unc = [e for e in unc if e in b_unc]
+    b_heads = {heading(e) for e in b_unc}
+    fresh = new_files_since(merge_base_rev())
+    new_unc = [e for e in unc if e in b_unc or heading(e) in b_heads]
     new_items = {f: min(n, b_items[f]) for f, n in items.items() if f in b_items}
+    budget = sum(b_items.values()) - sum(new_items.values())
+    for f, n in sorted(items.items()):
+        if f not in b_items and f in fresh and n <= budget:  # items moved into a split-off file
+            new_items[f] = n
+            budget -= n
     new_unnum = [f for f in unnumbered if f in b_unnum]
     write_baseline(new_unc, new_items, new_unnum)
-    print("baseline tightened: sections %d -> %d, items %d -> %d, unnumbered %d -> %d (nothing added)"
+    print("baseline tightened: sections %d -> %d, items %d -> %d, unnumbered %d -> %d (no new debt added)"
           % (len(b_unc), len(new_unc), sum(b_items.values()), sum(new_items.values()), len(b_unnum), len(new_unnum)))
     return 0
 
