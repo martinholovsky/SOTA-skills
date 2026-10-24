@@ -241,6 +241,11 @@ network:
   `typetag`-style registries from untrusted sources without an allowlist.
 - Fuzz every parser of untrusted bytes: `cargo fuzz` target per format, in
   scheduled CI. Combine with [rules/03](03-unsafe-discipline.md) sanitizers when the parser has unsafe.
+- **Security-critical parser whose input can be bounded** (a header, a fixed-size frame, a
+  length-prefixed record up to N bytes): add a Kani harness beside the fuzz target. Fuzzing
+  samples inputs; the harness proves panic-, overflow- and out-of-bounds-freedom over all of them
+  within the bound. When, and how to keep it from passing over nothing:
+  [rules/09](09-formal-verification.md) §1–§4.
 
 ## 7. Service-edge defaults
 
@@ -469,7 +474,10 @@ Running external programs (formerly section 9) moved to
       `rg '\.join\(' -t rust` on user-supplied path segments without
       canonicalize+prefix check = High.
 - [ ] Fuzz targets exist for each untrusted-input parser; absent on a
-      network-facing parser = Medium.
+      network-facing parser = Medium. Count both kinds of evidence in one run:
+      `printf 'fuzz_targets=%s kani_harness_files=%s\n' "$(rg -l 'fuzz_target!' -g '*.rs' . | wc -l | tr -d ' ')" "$(rg -l '#\[kani::proof' -g '*.rs' . | wc -l | tr -d ' ')"`
+      — both 0 on a security-critical crate parsing untrusted input = Medium (§6); harnesses
+      present: load [rules/09](09-formal-verification.md) and audit them, a vacuous proof is not evidence.
 - [ ] Release CI uses `--locked`; binaries built from tags in CI;
       `cargo auditable` (or SBOM) for deployed artifacts = recommended.
 - [ ] Logs: `rg 'info!|warn!|error!|debug!' -t rust` near auth/headers — no

@@ -67,8 +67,9 @@ When reviewing or auditing existing Rust:
 1. **Recon first:** `cargo metadata`/workspace layout (in a checkout you do not trust, every
    cargo command runs its `rustc-wrapper` and `[build] rustc`; pin both first, [rules/07](rules/07-tooling-ci.md) §4a), `Cargo.toml` profiles
    and features, CI config, `rg 'unsafe' --count-matches`, dependency tree
-   (`cargo tree -d`), and `rg -c 'kani::|flux_rs' -t rust .` (proofs present: load 09, and audit
-   them as controls that can pass vacuously). This decides which rules files to load and where risk
+   (`cargo tree -d`), and `rg -c 'kani::|flux_rs' -t rust .`. Load 09 when proofs are present (audit
+   them as controls that can pass vacuously) **or** when a security-critical crate parses untrusted
+   input (§1 decides whether a missing harness is a finding). This decides which rules files to load and where risk
    concentrates (network input? unsafe? async service?).
 2. **Run the audit checklists** at the end of each loaded rules file — they
    are ordered grep/clippy hunts with pre-calibrated severities.
