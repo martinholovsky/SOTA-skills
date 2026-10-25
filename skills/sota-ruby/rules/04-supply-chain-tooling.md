@@ -253,6 +253,10 @@ mechanics only:
   Homebrew LLVM). Property-testing gems (prop_check, rantly) are low-activity — check their
   last release before adopting one. A constrained property or fuzz target proves its
   reach as [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6 says.
+- **No proof tool is expected here.** No bounded model checker or refinement checker is in mainstream use for Ruby. A parser or invariant that must hold for
+  every input gets a property test and a fuzz target whose reach is gated (above): that is the
+  bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
+  mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
 - **A gem with a C extension (`ext/**/extconf.rb`) runs its suite in CI against an
   extension built with a memory checker.** The flags are the C toolchain's
   ([`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §3), and the interpreter must load the runtime at

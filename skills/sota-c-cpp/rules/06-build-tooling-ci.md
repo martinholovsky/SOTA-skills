@@ -160,6 +160,21 @@ Kani ([`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md), w
 to the bound and unwind depth you chose, so it complements fuzzing (§4) and does not replace it.
 Measured with CBMC 6.11.0 unless cited.
 
+**When to prove, and with which tool.** Opt-in per unit, by criticality: nothing here is a default
+for every function. Each line adds to the ones above it, it does not replace them:
+
+- **Untrusted-input parser or decoder** → a fuzz target always (§4); a CBMC harness as well when
+  the input can be bounded and the unit is security-critical.
+- **Index, length and offset arithmetic, ring buffers, bit tricks** → CBMC: the bug sits at one
+  boundary value, which a sampler rarely draws and a bounded check cannot miss.
+- **A contract every caller relies on, or input with no useful bound (C)** → Frama-C WP over ACSL
+  contracts (below): a deductive proof, not a bounded one.
+- **No run-time error anywhere in a C module** → Frama-C Eva, which reports every operation that
+  could fail; per its plugin page it does not handle recursion and analyses sequential code only.
+- **Threads and atomics** → not this section: TSan (§3) and [rules/05](05-concurrency.md).
+- **None of these is feasible for a security-critical unit** → fuzzing plus property tests, and
+  write the residual down where the next reader sees it.
+
 - **Harness.** A `main` (or `--function`) makes the inputs nondeterministic (an uninitialised
   local, or a body-less `nondet_*()` function), constrains them with `__CPROVER_assume`, calls the
   unit, and states each property with `__CPROVER_assert`. Bound: the smallest that covers every

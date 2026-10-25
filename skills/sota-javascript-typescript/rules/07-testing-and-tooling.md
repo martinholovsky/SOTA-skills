@@ -25,6 +25,10 @@ Practices:
 - Test data via factories with overrides (`makeUser({ role: 'admin' })`), not 50-line fixture JSON copies.
 - `it.each` for input/output tables; property-based testing (`fast-check`) for parsers/serializers/invariants.
 - A property whose `fc.pre` or `.filter` rejects most inputs can pass having checked almost nothing: [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6. fast-check's `maxSkipsPerRun` counts `fc.pre` rejections only, and a `.filter` that rejects every value hangs rather than failing.
+- **No proof tool is expected here.** No bounded model checker or refinement checker is in mainstream use for JavaScript or TypeScript. A parser or invariant that must hold for
+  every input gets a property test and a fuzz target whose reach is gated (above): that is the
+  bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
+  mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
 - Mock module boundaries (`vi.mock`) sparingly — heavy module-mocking is a design smell; prefer injecting dependencies (function params, constructor args) so tests pass fakes naturally.
 
 ### Shape of the suite

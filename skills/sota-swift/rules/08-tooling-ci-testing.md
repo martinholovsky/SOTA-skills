@@ -74,6 +74,10 @@ former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) on 202
   on macOS, Swift 6.3.2). SwiftCheck is unmaintained since 2021; `@Test(arguments:)` is
   parameterised, not property-based. A fuzz target that returns early on invalid input must
   also prove reach: [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6.
+- **No proof tool is expected here.** No bounded model checker or refinement checker is in mainstream use for Swift. A parser or invariant that must hold for
+  every input gets a property test and a fuzz target whose reach is gated (above): that is the
+  bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
+  mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
 
 ## Audit checklist
 

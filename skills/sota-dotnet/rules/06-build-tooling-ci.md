@@ -207,6 +207,10 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   control. Target code that parses untrusted bytes or holds an invariant. A green run must also
   prove it reached anything ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). FsCheck has no `Prop.cover`; its
   gate is `MaxRejected` on the `Config`, run with `QuickThrowOnFailure`, and it counts rejections only.
+- **No proof tool is expected here.** No bounded model checker or refinement checker is in mainstream use for C#. A parser or invariant that must hold for
+  every input gets a property test and a fuzz target whose reach is gated (above): that is the
+  bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
+  mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
 - **Code behind `AllowUnsafeBlocks` or P/Invoke runs its tests against a sanitized native side.**
   Prefer `[LibraryImport]` (.NET 7+, needs `AllowUnsafeBlocks`) to `[DllImport]`. There is **no
   `EnableAddressSanitizer` MSBuild property for .NET or Native AOT**; a CI step setting one checks

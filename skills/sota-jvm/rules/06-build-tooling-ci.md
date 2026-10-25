@@ -45,7 +45,8 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   (CycloneDX) for releases. See [`sota-devsecops`](../../sota-devsecops/SKILL.md). A Shade-built JAR
   keeps each dependency's `META-INF/maven/**/pom.properties` by default, but a GraalVM native
   image carries an SBOM only from Oracle GraalVM, which embeds one by default (`--enable-sbom`
-  controls it; `cyclonedx` is not one of its values); Community Edition embeds none. Syft reads the
+  controls it; its options page lists `cyclonedx` as the only format, read 2026-10-25); Community
+  Edition embeds none. Syft reads the
   embedded one while Trivy documents no support. So generate it at build time
   ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6).
   The concrete mechanisms: Gradle records the expected hash of every artifact in
@@ -168,6 +169,11 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   A green run must also prove it reached anything ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). On a pinned 1.9.x
   jqwik that is `@Property(maxDiscardRatio = …)` plus `Statistics.coverage(...)` checking a label
   that a matching `Statistics.collect(...)` records (both are in the 1.9.0 source).
+- **No proof tool is expected here.** JBMC, OpenJML and ESBMC's Kotlin/Java frontend exist, but none is in mainstream
+  use. A parser or invariant that must hold for
+  every input gets a property test and a fuzz target whose reach is gated (above): that is the
+  bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
+  mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
 - **Code with JNI runs its tests under `-Xcheck:jni`, and the job fails on its warnings.** Some
   of its checks only warn. Measured on Temurin 25.0.4: a native method calling JNI with an
   exception pending printed `WARNING in native method: JNI call made with exception pending` and

@@ -215,6 +215,10 @@ parameters:
   that describes itself as *experimental* — useful on a parser, not a CI gate to depend on.
   A constrained property test can pass having reached almost nothing:
   [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6.
+- **No proof tool is expected here.** No bounded model checker or refinement checker is in mainstream use for PHP. A parser or invariant that must hold for
+  every input gets a property test and a fuzz target whose reach is gated (above): that is the
+  bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
+  mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
 - **A C extension, or FFI code, runs its tests under a memory checker in CI.** Under Valgrind,
   run PHP with the Zend allocator off and modules kept loaded, the two settings php-src
   documents for it: `USE_ZEND_ALLOC=0 ZEND_DONT_UNLOAD_MODULES=1 valgrind --error-exitcode=1 php …`.
