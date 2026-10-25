@@ -208,6 +208,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Keep fast-moving claims accurate (sweep runbook + named high-rot targets) | [MAINTENANCE.md](MAINTENANCE.md) |
 | See which external ideas were adopted/rejected and why | [ADOPTION-LOG.md](ADOPTION-LOG.md) |
 | See what's planned / open | [ROADMAP.md](ROADMAP.md) |
+| Find **duplicated guidance that has drifted** between skills (81 leads from the 2026-10-25 unification sweep, unverified until reconciled) | [unification-2026-10-25](unification-2026-10-25/README.md) · [ROADMAP 79](ROADMAP.md) |
 | Report bad guidance or a leaked secret | [SECURITY.md](../SECURITY.md) |
 
 ## Reference
