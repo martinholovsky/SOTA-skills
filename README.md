@@ -870,7 +870,10 @@ never touches symlinks it didn't create (`--copy` snapshots don't auto-update �
 re-run to refresh). With always-on routing enabled, a re-run also **refreshes
 the managed routing directive and reminder hook in place** when their wording
 changes upstream — prompting first, backing up, touching only the managed
-block; a hook you customized is left untouched.
+block; a hook you customized is left untouched. A `git pull` alone never
+rewrites the block: `scripts/verify-setup.sh` check 2e reports one that is older
+than your checkout, and `scripts/install.sh --print-routing-block` prints the
+current text without changing anything.
 
 **What an update does *not* refresh: the gates in your own repos.** `update.sh`
 re-links skills and re-syncs this checkout's own hooks; it never reaches a repo you
@@ -1429,7 +1432,10 @@ broken 60 seconds later. Over one operator's 43,875 agent Bash calls, it refused
 had cut and nothing else (in-sample: the lexer was corrected on that corpus). It adds nothing to
 the context unless it fires, does nothing unless the agent's shell is zsh (`CLAUDE_CODE_SHELL`, else `$SHELL`), costs about 85 ms per Bash call
 and needs `python3`. Turn it off with `SOTA_ZSH_EQUALS_HOOK=off`; `install.sh --routing` offers it
-to clone installs.
+to clone installs. Since 2026-10-25 it also refuses `set -- $p` on a scalar, which zsh does not
+word-split, so `$2` is empty (`ssh -p "$2"` → `Bad port ''`); over 66,195 local agent Bash calls it
+matched 13, every one an intended split, and in the zsh sessions whose outcome is visible each
+one failed downstream.
 
 The plugin does **not** touch your global config or status line. To match the clone experience,
 opt in to any of these; the scripts ship *with* the plugin, under its cache dir:

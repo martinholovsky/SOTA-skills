@@ -26,6 +26,9 @@
 #   scripts/install.sh --update        # git pull --ff-only first, then re-link
 #                                      #   (scripts/update.sh is an alias for it)
 #   scripts/install.sh --version       # report which release is installed, and where
+#   scripts/install.sh --print-routing-block  # print the managed CLAUDE.md block this
+#                                      #   checkout writes, and change nothing (verify-setup
+#                                      #   2e compares your installed block with it)
 #   scripts/install.sh --target all    # ALSO link into ~/.agents/skills, the directory
 #                                      #   Copilot CLI/VS Code, Codex, Cursor and Gemini
 #                                      #   CLI read, and into Antigravity's own global
@@ -77,6 +80,7 @@ DO_UPDATE=0
 # that adds a skill leaves a puller short with no symptom).
 DO_VERIFY=1
 DO_VERSION=0
+DO_PRINT_BLOCK=0
 USE_COPY=0
 DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
 DO_MCP=-1       # -1 = offer, 0 = skip, 1 = force  (--mcp / --no-mcp)
@@ -281,6 +285,24 @@ MD
     "$SKILLS_SRC/sota/SKILL.md"
   # shellcheck disable=SC2016  # Markdown code spans, not command substitution
   printf 'which `sota-*/SKILL.md` and `rules/` files to open next.\n'
+  # Shell reflexes that recur with the rule loaded (field reports 2026-10-20..24): reading a
+  # rule does not change a reflex, so they ride in the always-loaded block, by MECHANISM, not
+  # by tool name — a list of tools reads as complete and the next spelling slips past it.
+  cat <<'MD'
+
+## Shell habits a rule re-read does not fix
+
+- **A newline is `;`.** In a multi-line command a failing line does not stop the
+  next one; join a check to the action it gates with `&&`.
+- **Matching a process by its command line matches the selector.** `pkill -f`,
+  `pgrep -f`, `ps | grep` and a `/proc/*/cmdline` loop also select the shell, or the
+  `ssh`/`bash -c`, whose argv carries the pattern; act on PIDs you recorded.
+- **zsh is not bash.** An unquoted `$var` is not word-split (`set -- $p` sets one
+  argument; write `${=p}`), and an unquoted word starting with `=` is rewritten or
+  aborts the list (`echo ===`; separate with `echo ---`).
+
+Detail: `sota-shell-scripting` rules/04 §1b, rules/09 §5c, rules/06 §1.
+MD
   printf '%s\n' "$RT_END"
 }
 
@@ -857,6 +879,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --update)     DO_UPDATE=1 ;;
     --version)    DO_VERSION=1 ;;
+    --print-routing-block) DO_PRINT_BLOCK=1 ;;
     --copy)       USE_COPY=1 ;;
     --project)    shift; [ $# -gt 0 ] || die "--project needs a directory"
                   TARGET="$1/.claude/skills"; AGENTS_TARGET="$1/.agents/skills" ;;
@@ -892,6 +915,11 @@ init_style   # now with the flags applied
 # --version is a read-only report: print and exit before touching anything.
 if [ "$DO_VERSION" -eq 1 ]; then
   report_version
+  exit 0
+fi
+# So is --print-routing-block: the block a refresh would write, for verify-setup 2e to diff.
+if [ "$DO_PRINT_BLOCK" -eq 1 ]; then
+  emit_routing_block
   exit 0
 fi
 

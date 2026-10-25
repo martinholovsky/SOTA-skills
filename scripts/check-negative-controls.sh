@@ -1426,8 +1426,13 @@ build_fixture() {  # a machine+repo where every check passes
   printf -- '---\ndescription: y\n---\nEnd-of-session closure pass.\n' \
     > "$VS/repo/commands/sota-close.md"
   ln -sfn "$VS/repo/commands/sota-close.md" "$VS/home/commands/sota-close.md"
-  # always-on routing: both layers
-  printf 'routing: consult the sota router.\n' > "$VS/home/CLAUDE.md"
+  # always-on routing: both layers. The directive is the block install.sh writes, from the
+  # fixture's own copy of install.sh, so check 2e (is the managed block CURRENT) reads PASS and
+  # its probes have a current block to age.
+  cp "$REPO/scripts/install.sh" "$VS/repo/scripts/install.sh"
+  cmp -s "$REPO/scripts/install.sh" "$VS/repo/scripts/install.sh" \
+    || { echo "fixture copy of install.sh differs from the original — aborting"; exit 1; }
+  { printf '# my own notes\n\n'; bash "$VS/repo/scripts/install.sh" --print-routing-block; } > "$VS/home/CLAUDE.md"
   # skillListingBudgetFraction 0.0002 = a 160-char budget at the 200K the fixture's
   # unknown window assumes: the three fixture skills (~130 with the built-in allowance)
   # fit, and ANY plugin skill counted on top of them does not. That margin is the probe.
@@ -1503,6 +1508,19 @@ VSEOF
 if [ "$_eq_base" -ne 1 ]; then
   echo "  [positive control] the fixture's 2d row is not PASS, so the 2d probes would be vacuous:"
   printf '%s\n' "$VS_OUT" | grep -F '2d.' | sed 's/^/    /'
+  exit 1
+fi
+# The same for 2e: its probes assert PARTIAL, so a fixture block that is already stale (or a
+# fixture with no managed block, which reads N/A) would let them catch for free.
+_mb_base=0
+while IFS= read -r _l; do
+  case "$_l" in PASS*"2e. managed block current"*) _mb_base=1 ;; esac
+done <<VSEOF
+$VS_OUT
+VSEOF
+if [ "$_mb_base" -ne 1 ]; then
+  echo "  [positive control] the fixture's 2e row is not PASS, so the 2e probes would be vacuous:"
+  printf '%s\n' "$VS_OUT" | grep -F '2e.' | sed 's/^/    /'
   exit 1
 fi
 
@@ -1683,6 +1701,23 @@ printf '%s\n' "$_eq_nohook" > "$VS/home/settings.json"
 VS_AGENT_SHELL="$VS/home/shells/missing/zsh" VS_LOGIN_SHELL=/bin/bash
 vs_probe_info "no EQUALS hook, CLAUDE_CODE_SHELL not executable, \$SHELL bash" "2d. zsh EQUALS hook" "not needed: the agent's shell is bash"
 unset VS_AGENT_SHELL VS_LOGIN_SHELL
+# 2e: the managed block exists and still says `sota`, so checks 2 and 2b PASS; what aged is its
+# content. A block written by an older release, with a paragraph the checkout has since added
+# missing (the 2026-10-25 shell habits): what a `git pull` without install.sh --routing leaves.
+sed '/^## Shell habits/,/^Detail:/d' "$VS/home/CLAUDE.md" > "$VS/home/CLAUDE.md.new"
+mv "$VS/home/CLAUDE.md.new" "$VS/home/CLAUDE.md"
+grep -q '^## Shell habits' "$VS/home/CLAUDE.md" && { echo "probe 2e mutation did not land — aborting"; exit 1; }
+vs_probe_partial "a managed block written by an older release" "2e. managed block current"
+# …the same staleness in a MIRRORED file (Codex), with CLAUDE.md current: the loop must reach it
+bash "$VS/repo/scripts/install.sh" --print-routing-block | sed '/^## Shell habits/,/^Detail:/d' > "$VS/uhome/.codex/AGENTS.md"
+grep -qxF '<!-- <<< sota-skills routing <<< -->' "$VS/uhome/.codex/AGENTS.md" || { echo "probe 2e (mirror) fixture has no end marker — aborting"; exit 1; }
+vs_probe_partial "a stale managed block in another agent's file" "2e. managed block current"
+# …and a current block naming a router path that no longer exists (a moved or deleted clone)
+# shellcheck disable=SC2016  # the backticks are literal Markdown in the block
+sed 's#read `[^`]*`#read `/gone/skills/sota/SKILL.md`#' "$VS/home/CLAUDE.md" > "$VS/home/CLAUDE.md.new"
+mv "$VS/home/CLAUDE.md.new" "$VS/home/CLAUDE.md"
+grep -qF '/gone/skills/sota/SKILL.md' "$VS/home/CLAUDE.md" || { echo "probe 2e (path) mutation did not land — aborting"; exit 1; }
+vs_probe_partial "a managed block naming a router path that is gone" "2e. managed block current"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
@@ -1771,5 +1806,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 2c, 2d, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1b, 1c, 1d, 1e, 1f, 1g, 1h, 2, 2b, 2c, 2d, 2e, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

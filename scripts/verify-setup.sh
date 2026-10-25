@@ -659,6 +659,51 @@ else
   row "PASS" "2b. other agents' directive" "sota directive in: $oa_have"
 fi
 
+# --- 2e. is the install.sh-managed block CURRENT? ---------------------------
+# Check 2 and 2b grep for `sota`, which a block written by ANY past release passes. A `git pull`
+# updates the skills and leaves the block as it was written, so guidance added to the block (the
+# shell habits, 2026-10-25) never reaches a machine until install.sh --routing runs again. The
+# expected text is `install.sh --print-routing-block` from THIS checkout (read-only), with the
+# one machine-specific line, the router's absolute path, left out of the comparison and checked
+# on its own: a block written from another clone is current if only that line differs.
+MB_BEGIN="<!-- >>> sota-skills routing (managed by install.sh) >>> -->"
+MB_END="<!-- <<< sota-skills routing <<< -->"
+# shellcheck disable=SC2016  # the backtick is literal Markdown in the line being matched
+MB_PATHLINE='^If your agent cannot load a skill by name, read `'
+mb_extract() { awk -v b="$MB_BEGIN" -v e="$MB_END" '$0 == b { on = 1 } on { print } on && $0 == e { exit }' "$1"; }
+mb_want=""
+if [ -n "$LIB_ROOT" ] && [ -f "$LIB_ROOT/scripts/install.sh" ]; then
+  mb_want=$(bash "$LIB_ROOT/scripts/install.sh" --print-routing-block 2>/dev/null | grep -v "$MB_PATHLINE") || mb_want=""
+fi
+mb_ok=""; mb_stale=""; mb_badpath=""; mb_seen=0
+for mb_f in "$CLAUDE_HOME/CLAUDE.md" "${COPILOT_HOME:-$HOME/.copilot}/copilot-instructions.md" \
+            "${CODEX_HOME:-$HOME/.codex}/AGENTS.md" "$HOME/.gemini/GEMINI.md"; do
+  [ -f "$mb_f" ] || continue
+  grep -qxF "$MB_BEGIN" "$mb_f" 2>/dev/null || continue
+  mb_seen=$((mb_seen + 1))
+  mb_got=$(mb_extract "$mb_f")
+  # shellcheck disable=SC2016  # the backticks are literal Markdown, matched by sed
+  mb_router=$(printf '%s\n' "$mb_got" | sed -n 's/^If your agent cannot load a skill by name, read `\([^`]*\)`.*/\1/p')
+  [ -n "$mb_router" ] && [ ! -f "$mb_router" ] && mb_badpath="${mb_badpath:+$mb_badpath, }$mb_router"
+  if [ "$(printf '%s\n' "$mb_got" | grep -v "$MB_PATHLINE" || true)" = "$mb_want" ]; then
+    mb_ok="${mb_ok:+$mb_ok, }$mb_f"
+  else
+    mb_stale="${mb_stale:+$mb_stale, }$mb_f"
+  fi
+done
+if [ "$mb_seen" -eq 0 ]; then
+  row "N/A" "2e. managed block current" "no install.sh-managed routing block found (a hand-written directive is check 2's row)"
+elif [ -z "$mb_want" ]; then
+  row "UNVERIFIED" "2e. managed block current" "could not run install.sh --print-routing-block from ${LIB_ROOT:-an unresolved library}, so there is nothing to compare against"
+elif [ -n "$mb_stale" ]; then
+  row "PARTIAL" "2e. managed block current" \
+    "out of date in: $mb_stale — guidance added since it was written is not loaded. Run scripts/install.sh --routing (it rewrites only between the markers)"
+elif [ -n "$mb_badpath" ]; then
+  row "PARTIAL" "2e. managed block current" "the router path it names does not exist: $mb_badpath — re-run scripts/install.sh --routing from your current checkout"
+else
+  row "PASS" "2e. managed block current" "matches this checkout's block in: $mb_ok"
+fi
+
 # Profile: report the FILENAME only. Its contents are the user's stack.
 prof_found=0; prof_dangling=""
 for p in "$CLAUDE_HOME"/profiles/*.md; do

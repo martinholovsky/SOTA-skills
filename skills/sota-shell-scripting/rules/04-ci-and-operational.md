@@ -105,6 +105,12 @@ than merely ignored:
 - **A pipe rewrites the status.** `check.sh | tail -2` reports `tail`'s success, so even
   `&&` would not save you — read the producer's status (`${PIPESTATUS[0]}` in bash,
   `${pipestatus[1]}` in zsh, [rules/01](01-safety-baseline.md) §3) or drop the pipe.
+- **A newline is a `;`.** In a multi-line command, each line runs whatever the one above
+  it returned: an edit script that *asserts* its replacement landed fails, and the next
+  line still builds, publishes or pushes the unedited file (measured bash and zsh,
+  2026-10-25; field-reported 2026-10-24, where the assertion failed and the action ran). An
+  assertion gates only what is joined to it: end the line with `&&`, or put the sequence
+  in a script under `set -e`.
 - **Diff-based checks can legitimately differ before and after a push**, because their
   merge base changes. Re-run the gate *after* the branch exists upstream before
   concluding the tree is broken — and never let the first, pre-push result authorise the
