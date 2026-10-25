@@ -2,7 +2,7 @@
 
 Stack choice is a one-way door: migrating a shipped app between stacks is a rewrite, and a half-migrated hybrid is worse than either endpoint. Decide deliberately, record the rationale, and revisit only on major product inflection points.
 
-## Current baselines (verified June 2026 — re-verify before relying on specifics)
+## 1. Current baselines (verified June 2026 — re-verify before relying on specifics)
 
 | Item | State |
 |---|---|
@@ -19,7 +19,7 @@ Stack choice is a one-way door: migrating a shipped app between stacks is a rewr
 | Kotlin Multiplatform | KMP stable since 2023 for shared logic (e.g. Netflix and Cash App share logic with it). Compose Multiplatform for iOS **stable since 1.8.0 (May 2025)** — production-ready, but iOS fidelity still trails SwiftUI for platform-idiomatic feel; budget per-platform polish. |
 | OWASP MASVS | v2.1 added MASVS-PRIVACY (verify the latest at mas.owasp.org); verification levels replaced by MAS profiles + MASWE weakness enumeration. MASTG v2.0.0 stable (June 2026) supplies the test procedures. |
 
-## Rules
+## 2. Rules
 
 ### 1.1 Choose the stack from team and product constraints, not fashion
 

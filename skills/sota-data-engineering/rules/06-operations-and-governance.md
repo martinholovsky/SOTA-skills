@@ -4,7 +4,7 @@ A pipeline that works is a prototype; a pipeline that is deployable,
 observable, recoverable, and access-controlled is a product. This file
 covers the gap.
 
-## Environments for data
+## 1. Environments for data
 
 Code environments are easy; **data** environments are where platforms cheat.
 
@@ -29,7 +29,7 @@ Code environments are easy; **data** environments are where platforms cheat.
 - Per-PR ephemeral schemas (e.g. `pr_1234` in a CI database) beat one
   shared, perpetually-dirty "staging" everyone fights over.
 
-## Deploying pipeline changes
+## 2. Deploying pipeline changes
 
 Pipeline code is software: version control, review, CI ([rules/02](02-pipelines-and-orchestration.md), 04). The
 extra dimension is that deploys change *tables others read*.
@@ -78,7 +78,7 @@ consumer comparison.
 - **AUDIT:** Logic changes that rewrite consumer-facing tables in place
   with no validation gate = HIGH; with no rollback artifact = HIGH.
 
-## Access control
+## 3. Access control
 
 (Mechanics of RBAC/row policies live with the engine — [`sota-databases`](../../sota-databases/SKILL.md);
 PII classification and lawful basis — [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md). This is the
@@ -97,7 +97,7 @@ data-platform layer.)
 - Audit logging on access to sensitive marts; review grants on a schedule
   (orphaned humans, over-privileged services).
 
-## Retention & GDPR deletion in immutable-ish stores
+## 4. Retention & GDPR deletion in immutable-ish stores
 
 "Immutable raw forever" collides with deletion duties. Design for erasure
 up front; retrofitting is brutal.
@@ -124,7 +124,7 @@ up front; retrofitting is brutal.
 - Deletion requests are pipelines too: idempotent, monitored, with
   completion SLO and verification query.
 
-## Observability for pipelines
+## 5. Observability for pipelines
 
 (Generic telemetry stack: [`sota-observability`](../../sota-observability/SKILL.md). Data-specific layer here.)
 
@@ -143,7 +143,7 @@ up front; retrofitting is brutal.
 - SLOs documented per critical mart (freshness target + measurement) and
   reviewed; an SLO nobody measures is decoration.
 
-## Runbook discipline
+## 6. Runbook discipline
 
 - Every production pipeline has a runbook answering: what it produces and
   for whom (links to contracts/SLOs); how to rerun/backfill an interval

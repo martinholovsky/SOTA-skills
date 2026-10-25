@@ -19,7 +19,7 @@ map deliberately drops.
 15 requires every `rules/NN` file that exists to be listed, and every listed file to
 exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-path-diagnostics.md) sat unlisted for two releases before 15 existed.
 
-## Library map (rules files per skill)
+## 1. Library map (rules files per skill)
 
 - **sota/rules**: 01 audit methodology (scoping, tool matrix, triage, hygiene), 02 build workflow
   (the four BUILD steps, and the four surfaces a BUILD change must be mirrored into), 03 audit
@@ -114,7 +114,7 @@ exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-pa
   lifecycle, 04 distribution & docs
 - **sota-shell-scripting/rules**: 01 safety baseline (shebang, `set -e`, quoting, zsh deviations),
   02 robustness & correctness, 03 security, 04 CI & operational scripts, 05 constructs & cleanup
-  (arrays, IFS, traps/mktemp, tests, globbing, zsh habits that break silently in bash and `sh` §5a), 06 ad-hoc commands (zsh deviations,
+  (arrays, IFS, traps/mktemp, tests, globbing, zsh habits that break silently in bash and `sh`: `sota-shell-scripting` rules/05 §5a), 06 ad-hoc commands (zsh deviations,
   searcher exclusions, patterns parsed as flags, stderr-suppressed absence checks, a hardcoded
   verdict label, non-portable backslash escapes (`\b` `\s` `\d`) — split out of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
   `set -euo pipefail`, disagreeing status variables, GitHub Actions shell defaults, execution
@@ -160,7 +160,7 @@ exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-pa
   unsafe, 05 security, 06 server-side (Vapor/Hummingbird/NIO), 07 performance, 08 tooling, CI &
   testing, 09 supply chain
 
-## A routing gap ends as a test, not just a report
+## 2. A routing gap ends as a test, not just a report
 
 *Moved from the router 2026-10-12 to make room for its "what your code does" table (ROADMAP 73 (o)).*
 

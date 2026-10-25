@@ -1,6 +1,6 @@
 # 07 — Vector Search & AI-Era Data
 
-## Engine choice
+## 1. Engine choice
 
 ### Rule: pgvector in your existing Postgres until a measured limit says otherwise.
 The Postgres-as-default heuristic (file 01) applies doubly here, because
@@ -96,7 +96,7 @@ The vector DB is now a datastore in scope for every other file of this skill:
   the collection from Postgres must always be possible (it's your recovery
   path and your migration path).
 
-## Vector store exposure hardening
+## 2. Vector store exposure hardening
 
 ### Rule: A dedicated vector DB is locked down like the database it is — auth, network, TLS, tenancy, quotas.
 Self-hosted vector DBs ship insecure: Qdrant's own docs state self-deployed
@@ -141,7 +141,7 @@ unauthenticated reachable vector DB as an active breach, not a hardening gap.
   embedding space). Cap them server-side in your API layer; never proxy raw
   search bodies to the vector DB.
 
-## Hybrid search
+## 3. Hybrid search
 
 ### Rule: Hybrid (lexical + vector) beats either alone; fuse with RRF.
 Pure vector search misses exact identifiers, names, codes, and rare terms;
@@ -172,7 +172,7 @@ GROUP BY id ORDER BY rrf_score DESC LIMIT 10;
   before and after every retrieval change. Retrieval changes without an eval
   harness are vibes.
 
-## Embedding versioning & lifecycle
+## 4. Embedding versioning & lifecycle
 
 ### Rule: An embedding is derived data, versioned by (model, dimensions, chunking, preprocessing).
 Embeddings from different models — or the same model after a provider
@@ -217,7 +217,7 @@ must delete embeddings everywhere — including a dedicated vector DB if used
 (this is also a GDPR surface: file 06; vectors and their payload metadata can
 reconstruct PII).
 
-## Cost & capacity notes
+## 5. Cost & capacity notes
 
 - RAG chunk stores grow ~10–100× the source text (chunk overlap + per-chunk
   vectors + index) — capacity-plan the vector table like a real table

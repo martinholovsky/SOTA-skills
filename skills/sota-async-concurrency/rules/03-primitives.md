@@ -1,6 +1,6 @@
 # 03 — Primitives: Locks, Semaphores, Condvars, Channels, Select, Once
 
-## Picking the primitive
+## 1. Picking the primitive
 
 | Need | Use | Not |
 |---|---|---|
@@ -15,7 +15,7 @@
 Prefer the highest-level primitive that fits: channel > semaphore > mutex >
 atomic > condvar (condvars are last because they're the easiest to misuse).
 
-## Mutex vs RwLock — RwLock is not "mutex but faster"
+## 2. Mutex vs RwLock — RwLock is not "mutex but faster"
 
 - RwLock pays for its bookkeeping; under short critical sections a plain mutex
   often outperforms it. Choose RwLock only for **read-heavy, long-ish reads,
@@ -43,7 +43,7 @@ Upgradable locks (read→write upgrade) deadlock when two readers both try to
 upgrade. If your design "needs" an upgrade, restructure: release, re-acquire
 write, **re-validate** (state may have changed — TOCTOU otherwise).
 
-## Semaphores: the bounding primitive
+## 3. Semaphores: the bounding primitive
 
 A semaphore's job in modern code is **admission control**: cap in-flight
 work, connections, memory-heavy operations.
@@ -68,7 +68,7 @@ Rules:
 - Weighted semaphores (`golang.org/x/sync/semaphore`) for memory-proportional
   bounding: acquire `n = estimated_bytes`, not 1.
 
-## Condition variables: two famous bugs
+## 4. Condition variables: two famous bugs
 
 **Bug 1 — spurious wakeups & stolen wakeups.** `wait()` can return without a
 notify, and another thread may consume the state between notify and your
@@ -99,7 +99,7 @@ In async code, prefer events/channels over condvars; if you use
 `asyncio.Condition`, the same predicate-loop law applies (`await
 cond.wait_for(pred)` encodes it).
 
-## Channels & queues: bounded or it's a bug
+## 5. Channels & queues: bounded or it's a bug
 
 **An unbounded channel is a memory leak with extra steps.** If the producer
 is ever faster than the consumer — and under load it will be — the queue
@@ -144,7 +144,7 @@ Channel discipline:
   pull semantics or a library — `Array.push` into a shared array consumed by
   an interval is an unbounded queue in disguise.
 
-## Select / race patterns
+## 6. Select / race patterns
 
 `select` (Go), `tokio::select!`, `asyncio.wait(FIRST_COMPLETED)`,
 `Promise.race` — wait on multiple sources, proceed with the first.
@@ -178,7 +178,7 @@ await asyncio.gather(*pending, return_exceptions=True)  # reap, don't leak
 result = done.pop().result()
 ```
 
-## Once / lazy init
+## 7. Once / lazy init
 
 One-time initialization under concurrency must be a primitive, not a flag:
 
@@ -211,7 +211,7 @@ function getConn() {
   if init can call back into something needing the same Once (or lock),
   that's a self-deadlock; `sync.Once` re-entry deadlocks.
 
-## Reentrancy & lock scope hygiene
+## 8. Reentrancy & lock scope hygiene
 
 - Recursive/reentrant mutexes paper over design problems and break invariant
   reasoning (the invariant may be broken when you re-enter). Avoid; refactor

@@ -1,6 +1,6 @@
 # 04 — Transactions & Concurrency
 
-## Isolation levels — what actually goes wrong
+## 1. Isolation levels — what actually goes wrong
 
 ### Rule: Know the anomalies your isolation level permits; default READ COMMITTED is weaker than your intuition.
 Postgres READ COMMITTED (the default) takes a fresh snapshot per statement.
@@ -33,7 +33,7 @@ Real anomalies you will ship if you don't design for them:
   **Using REPEATABLE READ/SERIALIZABLE without 40001 retry logic is a HIGH
   finding: those levels signal conflicts by erroring.**
 
-## Locking
+## 2. Locking
 
 ### Rule: Lock rows you're about to update; pick the weakest sufficient mode.
 ```sql
@@ -94,7 +94,7 @@ WHERE id = $2 AND version = $3;   -- rowcount 0 ⇒ conflict ⇒ reload/merge/40
   balances), short transactions. Retrying optimistic conflicts on a hot row
   livelocks — lock instead.
 
-## Idempotency & retries
+## 3. Idempotency & retries
 
 ### Rule: Every retryable write path is idempotent — enforced by the database.
 Queues redeliver, webhooks re-fire, clients re-POST, your own deadlock-retry
@@ -124,7 +124,7 @@ retry non-transient errors (constraint violations are answers, not glitches).
 Deadlocks at low rates are normal in concurrent systems — log them, retry
 them; rising rates mean inconsistent lock ordering (fix that, see above).
 
-## Long transactions — the silent killer
+## 4. Long transactions — the silent killer
 
 ### Rule: No transaction outlives ~1s on the OLTP path; nothing slow happens inside BEGIN.
 An open transaction pins its snapshot → vacuum cannot remove any dead tuple
@@ -178,7 +178,7 @@ polling intervals adaptively. NOTIFY payloads are advisory only — the worker
 still claims work via SKIP LOCKED (notification delivery is not transactional
 work assignment, and notifications are lost on disconnect).
 
-## Connection pooling
+## 5. Connection pooling
 
 ### Rule: A pooler is mandatory; size pools small.
 Each Postgres connection is a process (~MBs, scheduler load). Throughput

@@ -2,7 +2,7 @@
 
 Mobile performance is policed by the OS and the stores, not just by users: ANRs and crashes above Android vitals "bad behavior" thresholds reduce Play Store visibility; the iOS watchdog kills apps that block at launch; janky lists drive uninstalls measurable in retention curves. Budgets live in CI and production telemetry — a performance "initiative" after launch is an admission the budgets didn't exist.
 
-## Budgets
+## 1. Budgets
 
 Set these in the repo (`docs/perf-budgets.md` or CI config). Adjust the numbers per product; never delete the rows.
 
@@ -17,7 +17,7 @@ Set these in the repo (`docs/perf-budgets.md` or CI config). Adjust the numbers 
 | Download size | Tracked per release with a delta gate (e.g., +2 MB needs sign-off). Play: compressed download limits of 500 MB for the base module and for each feature module, 4 GB cumulative for all modules and install-time asset packs; above 200 MB, cellular users see a non-blocking size dialog; iOS: large apps prompt on cellular | CI size report |
 | Memory | Flat across a 10-min core-loop soak; survives `onTrimMemory`/`didReceiveMemoryWarning` without data loss | soak test, LeakCanary |
 
-## Rules
+## 2. Rules
 
 ### 5.1 Main-thread discipline is rule zero
 

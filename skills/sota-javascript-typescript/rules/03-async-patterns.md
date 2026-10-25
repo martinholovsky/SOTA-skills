@@ -1,6 +1,6 @@
 # Async JavaScript
 
-## Promise combinators: pick deliberately
+## 1. Promise combinators: pick deliberately
 
 | Combinator | Resolves when | Rejects when | Use for |
 |---|---|---|---|
@@ -30,7 +30,7 @@ const limit = pLimit(8);
 const results = await Promise.all(ids.map(id => limit(() => fetchUser(id))));
 ```
 
-## Floating promises and unhandled rejections
+## 2. Floating promises and unhandled rejections
 
 A promise nobody awaits or `.catch`es crashes Node (default since v15) and silently drops errors in browsers.
 
@@ -50,7 +50,7 @@ void saveAudit(event).catch(e => logger.error({ err: e }, 'audit failed'));
 - Don't mix `.then` chains and `await` in one function; pick `await` + try/catch.
 - `return await fn()` inside try/catch is required for the catch to see the rejection; bare `return fn()` skips it (`@typescript-eslint/return-await` rule, `in-try-catch` option).
 
-## AbortController everywhere
+## 3. AbortController everywhere
 
 Every cancellable operation takes an `AbortSignal`. fetch, event listeners, streams, and your own long-running functions.
 
@@ -85,7 +85,7 @@ async function processAll(items: Item[], signal: AbortSignal) {
 - React: abort in-flight fetches in effect cleanup to kill setState-after-unmount and stale-response races. Stale-response guarding via abort beats `let cancelled = true` flags.
 - Public async APIs in your codebase should accept `signal` as part of an options object. Functions doing network/FS/timers without a signal path are unkillable — that's a finding for long-running ops.
 
-## Event loop: microtasks vs macrotasks
+## 4. Event loop: microtasks vs macrotasks
 
 Ordering model: run-to-completion of current task → drain ALL microtasks (promise reactions, `queueMicrotask`, MutationObserver) → render (browser) → next macrotask (`setTimeout`, I/O, UI events).
 
@@ -94,7 +94,7 @@ Ordering model: run-to-completion of current task → drain ALL microtasks (prom
 - Long synchronous work blocks everything (see workers below). Chunk big loops: process N items, then `await (globalThis.scheduler?.yield?.() ?? new Promise(r => setTimeout(r)))` (browser — `scheduler.yield()` is not Baseline, so feature-detect) / `setImmediate` (Node).
 - Zalgo: never make an API sometimes-sync, sometimes-async. If a function may return cached-sync or fetched-async, always go async (`return cached !== undefined ? Promise.resolve(cached)…` — just declare it `async`).
 
-## Top-level await
+## 5. Top-level await
 
 Allowed in ESM only. Implications:
 - It blocks every importer until resolution — a slow TLA in a shared module delays the whole graph. Fine for app entrypoints (config load, DB connect); avoid in library code and widely-imported modules.
@@ -102,7 +102,7 @@ Allowed in ESM only. Implications:
 - A rejected TLA fails module evaluation permanently — every subsequent import of that module rethrows. Wrap in try/catch with a fallback if the module must stay importable.
 - Prefer lazy init (exported `async function init()` or a memoized `getClient()`) over TLA for connections, so tests and tooling can import the module without side effects.
 
-## Workers for CPU-bound work
+## 6. Workers for CPU-bound work
 
 The event loop handles I/O concurrency; it cannot parallelize CPU. Anything >~50ms of synchronous compute (parsing huge JSON, image processing, crypto, compression, large sorts) belongs off-thread.
 
@@ -123,7 +123,7 @@ worker.postMessage(buf, [buf]);       // transfer ArrayBuffer — zero copy, sou
 - Comlink (browser) wraps workers in async proxies and removes postMessage boilerplate.
 - Don't use workers for I/O-bound work — that's what async already does, workers just add overhead.
 
-## Async iteration and web streams
+## 7. Async iteration and web streams
 
 `for await...of` consumes async iterables — paginated APIs, streams, message queues — with backpressure for free (you don't pull the next chunk until you're done with this one).
 
@@ -147,7 +147,7 @@ await readable
 - `Array.fromAsync(asyncIterable)` (ES2026) materializes when you genuinely need the full array.
 - `ReadableStream` is async-iterable; respect cancellation: a `break` out of `for await` cancels the stream (releases the lock) — that's correct behavior, rely on it.
 
-## Retries with backoff, abort-aware
+## 8. Retries with backoff, abort-aware
 
 Retry only transient failures (network errors, 429/503), only idempotent operations, bounded attempts, exponential backoff with full jitter, and propagate the caller's signal so cancellation stops the retry loop too.
 
@@ -171,7 +171,7 @@ async function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>, opts: { att
 
 Retrying on every error (including 400s and bugs) hammers dependencies and hides defects — classify first. Libraries: `p-retry` does this correctly; don't hand-roll in more than one place.
 
-## Race conditions in async code
+## 9. Race conditions in async code
 
 `await` is a suspension point — shared state may change across it.
 
@@ -198,7 +198,7 @@ function getUser(id: string) {
 }
 ```
 
-## Async generator cleanup and resource safety
+## 10. Async generator cleanup and resource safety
 
 Generators suspended at `yield` still hold resources. A consumer that `break`s or throws triggers the generator's `return()` — put cleanup in `finally`:
 
@@ -220,7 +220,7 @@ async function* readBatches(db: Db, signal: AbortSignal) {
 - ES2027 explicit resource management (Stage 4 May 2026) generalizes this: `await using cursor = await db.openCursor();` with `[Symbol.asyncDispose]` on the resource — adopt for locks, files, connections as the runtimes/tsconfig (`lib: esnext.disposable`) allow.
 - Browser-side last-resort rejection telemetry: `window.addEventListener('unhandledrejection', e => { report(e.reason); e.preventDefault(); })` — report, don't suppress silently; this is monitoring, not error handling.
 
-## Deferred patterns worth knowing
+## 11. Deferred patterns worth knowing
 
 - `Promise.withResolvers()` (ES2024) replaces the deferred anti-boilerplate when bridging callback/event worlds:
 

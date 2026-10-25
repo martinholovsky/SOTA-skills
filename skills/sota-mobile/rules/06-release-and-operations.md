@@ -2,7 +2,7 @@
 
 The defining constraint of mobile: **you cannot roll back a shipped binary.** Store review takes hours to days, users update on their own schedule, and a meaningful cohort runs every version you ever shipped — for years. All mobile release engineering is the discipline of designing around that single fact. The toolkit: kill switches instead of rollbacks, staged exposure instead of big bangs, forced updates as the last resort, and a server that never assumes clients are current.
 
-## Store requirements (verified June 2026 — these ratchet annually; re-check Apple's "Upcoming Requirements" page and Play policy updates quarterly, with a named owner)
+## 1. Store requirements (verified June 2026 — these ratchet annually; re-check Apple's "Upcoming Requirements" page and Play policy updates quarterly, with a named owner)
 
 ### 6.1 iOS / App Store
 
@@ -20,7 +20,7 @@ The defining constraint of mobile: **you cannot roll back a shipped binary.** St
 - AAB is the required upload format. The free **pre-launch report** runs your build on a device farm per track upload — read it; it catches crashes, accessibility, and security warnings at zero cost.
 - Tracks: internal → closed → open → production with **staged rollout** at a percentage you control. Critical mechanic: a *halted* staged rollout leaves the affected users on the bad build — your fix path is always a new, higher version rolled out fast (see 6.5).
 
-## Rules
+## 2. Rules
 
 ### 6.3 Forced-update mechanism ships in v1.0
 

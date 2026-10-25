@@ -4,7 +4,7 @@ Streaming is the most expensive way to move data. It buys latency and pays
 in operational complexity, harder testing, and harder reprocessing. Make it
 earn its place.
 
-## When streaming is justified
+## 1. When streaming is justified
 
 - **Require a named consumer with a sub-minute (or low-minutes) latency
   need:** fraud/abuse decisions, operational dashboards driving immediate
@@ -21,7 +21,7 @@ earn its place.
   latency requirement for a streaming component = ask; absence of any
   consumer needing it = finding.
 
-## Kafka-style log fundamentals
+## 2. Kafka-style log fundamentals
 
 (Kafka 4.0 removed ZooKeeper — KRaft-only; the KIP-848 consumer
 rebalance protocol is GA since 4.0 and consumers opt in via
@@ -54,7 +54,7 @@ rebalance protocol is GA since 4.0 and consumers opt in via
   than retention and recover. Lag monitoring with alerts on every production
   group is mandatory; lag approaching retention = imminent data loss.
 
-## Exactly-once reality
+## 3. Exactly-once reality
 
 "Exactly-once" end-to-end is achieved as **effectively-once: at-least-once
 delivery + idempotent application of effects.** Audit the sink, not the
@@ -93,7 +93,7 @@ for batch in consumer.batches():
   table feeds metrics. "We have exactly-once because idempotent producer is
   on" = misunderstanding; check the sink.
 
-## Schema registry & evolution
+## 4. Schema registry & evolution
 
 - **Every production topic has a registered schema** (Avro/Protobuf/JSON
   Schema). Schemaless JSON topics shared across teams = HIGH; every consumer
@@ -106,7 +106,7 @@ for batch in consumer.batches():
   contract-versioned subject) + migration window, not an in-place break.
 - Defaults on new fields; never reuse field IDs/positions (Protobuf/Avro).
 
-## CDC patterns
+## 5. CDC patterns
 
 - **Log-based CDC holds a replication slot on the source**, and an abandoned or lagging slot makes
   the source retain WAL until its disk fills: alert on slot lag, set `max_slot_wal_keep_size` (its
@@ -148,7 +148,7 @@ WHEN NOT MATCHED AND s.op != 'd' THEN INSERT ...;
   type-widening paths; alert on incompatible DDL rather than silently
   dropping fields.
 
-## Watermarks, windowing, late data
+## 6. Watermarks, windowing, late data
 
 - **Event time, not processing time,** for any business aggregation.
   Processing-time windows shift numbers whenever the pipeline lags.
@@ -163,7 +163,7 @@ WHEN NOT MATCHED AND s.op != 'd' THEN INSERT ...;
   metrics, session for activity grouping. State for long/huge windows needs
   TTLs — unbounded keyed state is a slow OOM.
 
-## DLQ & poison messages
+## 7. DLQ & poison messages
 
 - **Every streaming consumer has a poison-message policy.** Default: retry
   N times (with backoff), then route the message + error metadata +
@@ -176,7 +176,7 @@ WHEN NOT MATCHED AND s.op != 'd' THEN INSERT ...;
 - Never DLQ-and-forget messages whose absence corrupts aggregates; for
   those, halt and page instead (block-tier, by analogy with [rules/04](04-data-quality-and-contracts.md)).
 
-## Backpressure
+## 8. Backpressure
 
 Consumers must degrade by slowing intake (pause/resume, bounded buffers),
 not by buffering unboundedly in memory. Mechanics and patterns are owned by

@@ -29,7 +29,7 @@ disables it); existing consumers are kept, but creating new ones fails past the
 limit — a design that creates per-tenant or per-session consumers must set it
 explicitly before upgrading.
 
-## Core NATS vs JetStream: choose per subject, not per cluster
+## 1. Core NATS vs JetStream: choose per subject, not per cluster
 
 ### Rule: Use core NATS for fire-and-forget; reach for JetStream only when you need persistence, replay, or dedup.
 - **Core NATS** (plain `nc.Publish`/`Subscribe`, request-reply, queue groups) is
@@ -46,7 +46,7 @@ explicitly before upgrading.
 - "Exactly-once" on JetStream is **dedup-on-publish + idempotent consumption**,
   not a delivery guarantee ([rules/03](03-distributed-systems-and-events.md) §3). Do not design as if it were one.
 
-## Subject design: the schema of your whole bus
+## 2. Subject design: the schema of your whole bus
 
 ### Rule: Design the subject hierarchy deliberately; tokens are your routing and authz surface.
 - Dot-separated tokens, hierarchy from general to specific:
@@ -65,7 +65,7 @@ explicitly before upgrading.
   (`orders.>` → `agg.orders.>`), not as a substitute for getting the producer's
   subjects right.
 
-## Streams: an unbounded stream is a latent outage
+## 3. Streams: an unbounded stream is a latent outage
 
 ### Rule: Every stream has explicit limits. No max-bytes and no max-age = a disk-fill incident waiting to happen.
 - Set `MaxBytes` and `MaxAge` on every stream, sized to retention need and disk.
@@ -115,7 +115,7 @@ BAD: nats stream add ORDERS --subjects 'orders.>' --storage file
   failover — a recovery lever, not HA: the mirror is async and may lag behind
   the origin at promotion time, so reconcile for the tail you may have lost.
 
-## Publish & idempotent dedup: the duplicate window
+## 4. Publish & idempotent dedup: the duplicate window
 
 ### Rule: Publishers set `Nats-Msg-Id`; the stream's duplicate window dedups. This is the publish half of effectively-once.
 - JetStream publish is at-least-once: a publish ack can be lost and the client
@@ -148,7 +148,7 @@ if err != nil { return err }       // NOT durable until ack returns without erro
 _ = ack.Sequence
 ```
 
-## Consumers: pull is the modern default; explicit ack after processing
+## 5. Consumers: pull is the modern default; explicit ack after processing
 
 ### Rule: Use durable pull consumers via the `jetstream` package. Push and JetStreamContext are legacy.
 - The `github.com/nats-io/nats.go/jetstream` package is the current API. Create a
@@ -213,7 +213,7 @@ defer cc.Stop()
 // BAD: msg.Ack() before process()  → crash = silent loss (rules/03 §3)
 ```
 
-## Error handling: ack/nak/term/inprogress, and the DLQ you must build
+## 6. Error handling: ack/nak/term/inprogress, and the DLQ you must build
 
 ### Rule: JetStream has no built-in DLQ. Route poison messages out yourself after `MaxDeliver`.
 - The four dispositions:
@@ -235,7 +235,7 @@ defer cc.Stop()
   lost ack, double-ack timeout, or `AckWait` expiry will hand you the same
   message again.
 
-## KV & Object stores: config, coordination, and the claim-check
+## 7. KV & Object stores: config, coordination, and the claim-check
 
 ### Rule: Use JetStream KV for config/locks/dedup-state; Object store for large blobs (claim-check).
 - **KV** is a JetStream-backed bucket (GA). Each key is versioned with a
@@ -256,7 +256,7 @@ defer cc.Stop()
   let the consumer fetch from the object store. The bus is a shared failure
   domain, not a file server — fat messages saturate streams and replication.
 
-## Clustering, HA & multi-tenancy: accounts are the isolation boundary
+## 8. Clustering, HA & multi-tenancy: accounts are the isolation boundary
 
 ### Rule: Accounts isolate tenants; domains/leafnodes bridge edge↔hub; per-account quotas bound blast radius.
 - JetStream runs a cluster-wide **meta RAFT** group plus a per-stream/per-consumer
@@ -278,7 +278,7 @@ defer cc.Stop()
   transport security, and mesh in **[sota-network-security](../../sota-network-security/SKILL.md)**. JetStream over a
   cluster with no TLS and a shared account is not production-ready.
 
-## Operations: monitor lag, snapshot, drain
+## 9. Operations: monitor lag, snapshot, drain
 
 ### Rule: Watch consumer lag and ack-pending; back up streams; drain on shutdown.
 - Monitor per consumer: **`num_pending`** (unprocessed backlog),
@@ -300,7 +300,7 @@ defer cc.Stop()
   bound concurrency ([sota-async-concurrency rules/06](../../sota-async-concurrency/rules/06-backpressure-flow-control.md)). A blocking callback stalls
   delivery and inflates ack-pending.
 
-## Anti-patterns (JetStream-specific)
+## 10. Anti-patterns (JetStream-specific)
 
 - **Unbounded stream** — no `MaxBytes`/`MaxAge`: disk fills, RAFT peers degrade.
 - **No `MaxDeliver`** — a poison message redelivers forever ([rules/03](03-distributed-systems-and-events.md) §7).

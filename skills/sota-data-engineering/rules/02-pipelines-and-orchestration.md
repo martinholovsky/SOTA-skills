@@ -5,7 +5,7 @@ backfills, and "just rerun it" are how data platforms are actually operated;
 a pipeline that corrupts on rerun is broken even if its happy path is
 perfect.
 
-## Idempotency — the prime directive
+## 1. Idempotency — the prime directive
 
 A task given the same logical interval must produce the same stored result
 no matter how many times it runs, and a partial failure mid-run must not
@@ -48,7 +48,7 @@ WHEN MATCHED THEN UPDATE SET ...
 WHEN NOT MATCHED THEN INSERT ...;
 ```
 
-## Logical time, not wall-clock time
+## 2. Logical time, not wall-clock time
 
 - **The orchestrator supplies the interval; the task uses only that.**
   `WHERE created_at >= NOW() - INTERVAL '1 day'` is a HIGH finding: results
@@ -77,7 +77,7 @@ def extract(data_interval_start, data_interval_end):
     )
 ```
 
-## Incremental processing & watermarks
+## 3. Incremental processing & watermarks
 
 - **Incremental by default for large sources.** Track a high-water mark on a
   monotonic column (`updated_at`, log sequence number, ingestion time) and
@@ -110,7 +110,7 @@ COMMIT;
   incremental model that appends without a key is the same CRITICAL as
   above.
 
-## Backfill design
+## 4. Backfill design
 
 Backfills are a feature you design, not an emergency you improvise.
 
@@ -129,7 +129,7 @@ Backfills are a feature you design, not an emergency you improvise.
 - **AUDIT:** Ask "how would you reload March?" If the answer involves editing
   code or manual SQL, that's a HIGH finding.
 
-## Orchestration discipline
+## 5. Orchestration discipline
 
 Applies to Airflow 3+, Dagster, Prefect, and kin.
 
@@ -171,7 +171,7 @@ mart_dag   = DAG("marts",  schedule=[orders_stg])   # consumer triggered by prod
   Event-driven chains still need end-to-end freshness SLAs, since "nothing
   triggered" looks like success.
 
-## dbt-style transformation discipline
+## 6. dbt-style transformation discipline
 
 (Applies to dbt and equivalents — SQLMesh, etc. dbt note: dbt v2, the
 Fusion-based engine, is GA since 2026-09-14 (a native binary; on PyPI it is

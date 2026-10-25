@@ -7,7 +7,7 @@ Threat model first: the attacker **owns the device**. They can decompile your bi
 
 Anchor audits to **OWASP MASVS v2.1** (control groups: MASVS-STORAGE, -CRYPTO, -AUTH, -NETWORK, -PLATFORM, -CODE, -RESILIENCE, -PRIVACY) with the **MASTG v2** (v2.0.0 stable since June 2026; modular tests with stable `MASTG-TEST-*` IDs — cite the IDs in findings) for concrete test procedures. An audit should be able to state, per group, what was examined.
 
-## Storage & secrets
+## 1. Storage & secrets
 
 ### 4.1 Secrets go in Keychain/Keystore — nothing else, ever
 
@@ -72,7 +72,7 @@ let acl = SecAccessControlCreateWithFlags(nil,
 - **Choose the passcode fallback on purpose.** Keys guarding high-value operations (payments, vault unlock, key export) accept biometrics only: `BIOMETRIC_STRONG` alone, `.biometryCurrentSet`. Letting the device PIN or passcode stand in (`BIOMETRIC_STRONG or DEVICE_CREDENTIAL` in `setAllowedAuthenticators`/`setUserAuthenticationParameters`, the deprecated `setDeviceCredentialAllowed(true)`, `LAPolicy.deviceOwnerAuthentication`, `.userPresence`, `.devicePasscode`) means anyone who has watched the passcode being typed passes, and `.userPresence` keys also survive fingerprint and face re-enrollment. The fallback is sometimes right (accessibility, users without biometrics): where you offer it, record which keys accept it and that their assurance is only "knows the passcode". Time-window keys need the same decision: `setUserAuthenticationParameters` with a timeout above 0 (formerly `setUserAuthenticationValidityDurationSeconds`), which the deprecated Confirm Credentials flow (`KeyguardManager.createConfirmDeviceCredentialIntent`) relies on, lets every use inside the window through after one unlock. Keep the window short and never use it for per-transaction keys. Face and iris match without a deliberate act, so an explicit `setConfirmationRequired(false)` (the default is `true`, and it is only a hint the system may ignore) belongs to low-value re-authentication, never to a payment or data-release prompt. OWASP: MASTG-TEST-0268, MASTG-TEST-0269, MASTG-TEST-0326, MASTG-TEST-0327, MASTG-TEST-0329, MASTG-TEST-0330, OWASP Cornucopia AA3, OWASP Mobile Application Security cheat sheet.
 - **Find out whether the device has a lock screen at all.** Without a PIN, pattern or passcode, file protection and user-authenticated keys lose their meaning, and on Android a key that requires user authentication cannot be created. Check `KeyguardManager.isDeviceSecure()` (API 23+) and, on iOS, `LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error:)`, which fails with `LAError.passcodeNotSet`. With no secure lock screen, don't store or show sensitive data locally: run server-only or refuse the feature, and tell the user why. On iOS, `kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly` enforces this for Keychain items, which cannot be stored without a passcode and are deleted when it is removed. OWASP: MASTG-TEST-0246, MASTG-TEST-0247, MASTG-TEST-0248, MASTG-TEST-0249, OWASP Cornucopia NS6.
 
-## Network
+## 2. Network
 
 ### 4.3 TLS everywhere; pin only with an exit strategy
 
@@ -109,7 +109,7 @@ For endpoints attractive at scale — auth, signup, promotions, scraping-prone c
 - **Compliance controls enforced only in the app are optional for anyone who patches it.** Consent state, age gates, region locks, parental controls and data-sharing opt-outs decide what the backend may do, so the backend holds that state and enforces it per request: it serves age-restricted content only to an account with a server-side age decision, and it does not start tracking because a client sent `consent: true` with no consent record behind it. Where a client-side gate cannot be avoided (offline content), pair it with the attestation above so a modified binary at least shows up. OWASP: OWASP Cornucopia JOAM.
 - Attestation raises bot cost substantially; it is still not absolute (device farms with genuine hardware exist). Keep server-side rate limiting, anomaly detection, and abuse economics as the real control.
 
-## Platform attack surface
+## 3. Platform attack surface
 
 ### 4.6 Deep links and universal links: untrusted input from hostile neighbors
 
@@ -184,7 +184,7 @@ Hand-rolled detection (su binary checks, jailbreak file paths, hook-framework sc
 - **Device identifiers are not credentials.** A modified client reports whatever `ANDROID_ID`, IMEI, serial, MAC address or `identifierForVendor` it likes, so none of them authenticates a user or proves a request comes from a known device; that takes a hardware-bound key (4.1) or attestation (4.5). For analytics and fraud signals, use the narrowest resettable identifier that works: an app-generated install ID, `ANDROID_ID` (scoped to app-signing key, user and device since Android 8.0), `identifierForVendor` (per vendor, changes once all that vendor's apps are removed), advertising IDs only with consent. Persistent hardware IDs link one person across apps and reinstalls, and Android 10 restricts IMEI and serial access for ordinary apps. OWASP: MASVS-PRIVACY-2, OWASP Mobile Application Security cheat sheet.
 - **Design against the app being turned on its owner.** Location-sharing, family, device-management and remote-support apps are what a stalker installs on someone else's phone. While location is shared, a microphone or camera is live, or someone has remote access, the monitored device shows it with an indicator no setting can hide; a new viewer, device or share raises a notification on that device; and there is no hidden mode, icon hiding, or remote feature that leaves no on-device trace. Treat a request for covert operation as a threat-model finding. OWASP: OWASP Cornucopia JOBM.
 
-## Device data and the inter-app surface
+## 4. Device data and the inter-app surface
 
 ### 4.11 Where non-secret app data lives: app-private vs shared storage, file protection classes, App Group containers
 

@@ -1,6 +1,6 @@
 # TypeScript Configuration & Type Craft
 
-## tsconfig: strict everything, no exceptions
+## 1. tsconfig: strict everything, no exceptions
 
 New projects start from this baseline. Existing projects migrate flag-by-flag; never ship with `strict: false`.
 
@@ -55,7 +55,7 @@ TypeScript 6.0 (March 2026) is the last release on the JavaScript codebase; Type
 
 Measured: this installs cleanly beside typescript-eslint 8.70.1, `npx tsc -v` reports 7.0.2, `npx tsc6 -v` reports 6.0.x, and typed lint reports a floating promise. Check the typescript-eslint release notes before dropping the alias. Frameworks embedding the compiler API via Volar (Vue, Angular, Astro, Svelte, MDX) stay on 6.0 for the same reason.
 
-## No `any`. Use `unknown` + narrowing
+## 2. No `any`. Use `unknown` + narrowing
 
 `any` disables the compiler transitively — it infects everything it touches. `unknown` is the type-safe top type: you must narrow before use.
 
@@ -77,7 +77,7 @@ function handle(e: unknown) {
 
 Narrowing toolkit: `typeof`, `instanceof`, `in`, `Array.isArray`, discriminant property checks, user-defined guards (`x is T`), assertion functions (`asserts x is T`). Prefer discriminant checks over custom guards — guards are unchecked promises; a wrong guard body is a silent `as`.
 
-## Discriminated unions are the workhorse
+## 3. Discriminated unions are the workhorse
 
 Model states as a closed union with a literal discriminant. This makes illegal states unrepresentable and gives exhaustive switches for free.
 
@@ -107,7 +107,7 @@ The `never` default makes adding a variant a compile error at every consumer —
 
 Use unions for: API responses (success/error), form states, events (`{ type: 'click', ... } | { type: 'keydown', ... }`), Result types. If you find yourself writing `field?: T` pairs that are "both or neither", that's a union begging to exist.
 
-## Branded types for IDs and units
+## 4. Branded types for IDs and units
 
 Structural typing means `UserId` and `OrderId` as plain `string` are interchangeable — a swapped argument compiles. Brand them:
 
@@ -127,7 +127,7 @@ getOrders(orderId);            // compile error — the bug class is dead
 
 Brand at the validation boundary (zod 4: `z.uuid().brand<'UserId'>()`). Brand money, durations (ms vs s), and anything where unit confusion has bitten anyone ever. Zero runtime cost.
 
-## `satisfies` and `as const`
+## 5. `satisfies` and `as const`
 
 `satisfies` validates against a type while preserving the narrower inferred type. `: Type` annotation widens; `as Type` lies.
 
@@ -147,7 +147,7 @@ Pattern: derive types from values (`as const` + `typeof` + indexed access), not 
 
 `as` casts: legitimate only at (1) trusted boundaries already validated at runtime, (2) `as const`, (3) widening `as unknown as T` quarantined in one adapter file with a comment. `as` in business logic is a finding.
 
-## Validate at the boundary, trust the types inside
+## 6. Validate at the boundary, trust the types inside
 
 TypeScript types are erased — they verify nothing at runtime. Every untrusted input (HTTP body, query params, env vars, JSON.parse, webhooks, LLM output, DB rows from untyped clients, and anything the browser persisted: `localStorage`/`sessionStorage`, IndexedDB, Cache Storage) must be parsed, not cast. Browser-stored values are input because the user can edit them and an earlier XSS can plant them: parse on read and output-encode like network data ([rules/09](09-browser-platform-security.md) §"Client-side storage"). *OWASP: HTML5 Security cheat sheet.*
 
@@ -175,7 +175,7 @@ const user = result.data;   // genuinely CreateUser from here on
 - Inside the boundary, do NOT re-validate everywhere — that's noise. Types carry the proof.
 - `JSON.parse` returns `any`. Wrap it: `const parseJson = (s: string): unknown => JSON.parse(s);`
 
-## Utility types: use the built-ins, derive don't duplicate
+## 7. Utility types: use the built-ins, derive don't duplicate
 
 `Partial`, `Required`, `Readonly`, `Pick`, `Omit`, `Record`, `Exclude`, `Extract`, `NonNullable`, `Parameters`, `ReturnType`, `Awaited`. Derive variants from one canonical type:
 
@@ -190,7 +190,7 @@ Caveats:
 - Prefer `Readonly<T>`/`readonly T[]` on function parameters you don't mutate — it documents and enforces.
 - `ReturnType<typeof fn>` couples consumers to implementation; fine internally, avoid in public API.
 
-## Enums: don't. Use unions or const objects
+## 8. Enums: don't. Use unions or const objects
 
 `enum` is non-erasable syntax (generates runtime code, breaks single-file transpilers — TS 5.8's `erasableSyntaxOnly` flag bans it outright), numeric enums are unsound (any number assigns), and const enums break under isolatedModules.
 
@@ -209,7 +209,7 @@ Object.values(Role);                      // runtime list for zod enums, dropdow
 
 Same reasoning bans `namespace` and parameter properties in new code: prefer plain modules and explicit field assignment. Enable `erasableSyntaxOnly` where the toolchain is TS ≥5.8 — it guarantees the whole codebase is type-strippable (Node's native TS execution, esbuild, swc all benefit).
 
-## Functions: generics, overloads, and shape
+## 9. Functions: generics, overloads, and shape
 
 - Generic only when a type relationship must be preserved (`function first<T>(xs: readonly T[]): T | undefined`). A type parameter used once in the signature is usually noise — take `unknown` or the concrete type.
 - Constrain at the parameter (`<T extends HasId>`), return the narrow type; avoid `extends object` (allows arrays/functions — usually you mean `Record<string, unknown>`).
@@ -218,7 +218,7 @@ Same reasoning bans `namespace` and parameter properties in new code: prefer pla
 - Return types: annotate exported/public functions explicitly (inference drift across refactors changes your API silently; `explicit-module-boundary-types` lint); let locals infer.
 - Template literal types shine for constrained string APIs: `type EventName = \`on${Capitalize<string>}\`;`, route params extraction, CSS unit types — stop before you've written a parser in the type system (see next section).
 
-## When type gymnastics hurt
+## 10. When type gymnastics hurt
 
 Types serve the code. Stop when:
 - A conditional/mapped type takes longer to understand than the duplication it removes. Two similar interfaces are often cheaper than one clever generic.
@@ -228,7 +228,7 @@ Types serve the code. Stop when:
 
 Heuristics: max ~2 levels of nested conditional types in app code; name intermediate types; if a type needs a comment explaining how it works (not what it means), simplify it. Libraries can spend more complexity than apps — their users see only the inferred results.
 
-## ESM-first and monorepo project references
+## 11. ESM-first and monorepo project references
 
 - New code is ESM: `"type": "module"` in package.json, `import`/`export` only. No `require`, no `module.exports`. CJS interop via default-import of CJS packages works under `esModuleInterop`.
 - `module: "NodeNext"` requires explicit extensions on relative imports. When `tsc` emits the code Node runs, write `.js` (`import { x } from './util.js'`). Bundled apps using `moduleResolution: "Bundler"` may omit them.

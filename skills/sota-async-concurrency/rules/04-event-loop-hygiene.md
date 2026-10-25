@@ -1,6 +1,6 @@
 # 04 — Event-Loop Hygiene: Never Block the Loop
 
-## The contract
+## 1. The contract
 
 An event loop multiplexes thousands of tasks onto one thread. Any task that
 holds the thread for more than ~10–50ms steals latency from **every** other
@@ -11,7 +11,7 @@ One blocking call in one handler degrades the whole process. There is no
 Latency math: a 200ms sync call on a loop serving 500 req/s queues ~100
 requests behind it. Blocking is a tail-latency multiplier, not a local cost.
 
-## The blocklist — what must never run on the loop thread
+## 2. The blocklist — what must never run on the loop thread
 
 1. **Sync I/O:** file reads/writes (`open`/`read`, `fs.readFileSync`),
    sync HTTP clients (`requests`, `urllib`, `http.client`), sync DB drivers
@@ -50,7 +50,7 @@ async def register(req):
     await asyncio.sleep(0.1)
 ```
 
-## Offloading correctly
+## 3. Offloading correctly
 
 | Runtime | I/O-blocking call | CPU-bound work |
 |---|---|---|
@@ -74,7 +74,7 @@ Offloading rules:
   state from worker threads; return data and apply it on the loop
   (`call_soon_threadsafe` / channel back / `postMessage`).
 
-## Long-task chunking
+## 4. Long-task chunking
 
 When CPU work must run on the loop (small, frequent, not worth a pool),
 chunk it so other tasks interleave:
@@ -100,7 +100,7 @@ bound the chunk's own cost — size N so each chunk stays under ~10ms. Chunking
 mutable shared state reintroduces interleaving races (rule 02): your data
 structure is now visible mid-aggregation.
 
-## Microtask vs macrotask (JS — and the asyncio analogue)
+## 5. Microtask vs macrotask (JS — and the asyncio analogue)
 
 - **Microtasks** (promise callbacks, `queueMicrotask`, `await` resumption)
   run to exhaustion after the current task, *before* rendering, I/O events,
@@ -128,7 +128,7 @@ while (!done) { await new Promise(r => setImmediate(r)); doSmallStep(); }
   But a coroutine that awaits only immediately-ready awaitables can still hog;
   the loop runs ready callbacks in batches.
 
-## Sync-over-async: the self-deadlock
+## 6. Sync-over-async: the self-deadlock
 
 Blocking the loop on a result *the loop itself must produce* doesn't just
 degrade — it deadlocks instantly. The loop thread waits on a future; the
@@ -169,7 +169,7 @@ the JS analogue is `Atomics.wait` on the main thread. Variants to flag:
 the program (one `asyncio.run` / `#[tokio::main]` / single runtime), not
 sprinkled through the call graph. Crossings mid-stack are findings.
 
-## Detecting a blocked loop (build it in; check for it in audits)
+## 7. Detecting a blocked loop (build it in; check for it in audits)
 
 - **Python:** run with `loop.set_debug(True)` + `loop.slow_callback_duration =
   0.05` in staging — logs any callback >50ms with its name. `aiomonitor`
@@ -184,7 +184,7 @@ sprinkled through the call graph. Crossings mid-stack are findings.
 - An audit of an async service that has **no loop-lag metric** should flag
   that as a MEDIUM observability finding by itself.
 
-## Sneaky blockers (audit-grade list)
+## 8. Sneaky blockers (audit-grade list)
 
 - Logging handlers doing sync file/network writes on the loop (Python
   `logging` to a slow disk; use `QueueHandler`).

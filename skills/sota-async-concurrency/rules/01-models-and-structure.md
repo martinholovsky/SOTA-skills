@@ -1,6 +1,6 @@
 # 01 — Concurrency Models & Structured Concurrency
 
-## Choosing a model
+## 1. Choosing a model
 
 There are four models. Pick by workload shape, not by familiarity.
 
@@ -58,7 +58,7 @@ classic failures: blocked loops (rule 04) and 10,000 threads.
   the main hazard on JDK ≤23 (use `ReentrantLock` instead in hot paths) —
   fixed in JDK 24+ (JEP 491), but JDK 21 LTS deployments still hit it.
 
-## Structured concurrency is the default
+## 2. Structured concurrency is the default
 
 A task whose lifetime exceeds the scope that created it is an **orphan**: its
 exceptions vanish, its resources leak, and nothing cancels it on shutdown.
@@ -184,7 +184,7 @@ Use this instead of a mutex when: state has invariants spanning multiple
 fields; operations must serialize anyway; or you need to bound the request
 rate to the state (mailbox = built-in backpressure).
 
-## Sizing rules
+## 3. Sizing rules
 
 - Thread/process pool for CPU: `n_cores` (maybe `n_cores ± 1`); more adds
   context-switch overhead, not throughput.

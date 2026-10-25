@@ -1,6 +1,6 @@
 # 02 — Correctness: Races, Atomicity, Memory Ordering, Deadlock
 
-## Data race vs race condition — different bugs, different fixes
+## 1. Data race vs race condition — different bugs, different fixes
 
 - **Data race:** two threads access the same memory location concurrently,
   at least one writes, with no synchronization. In C/C++/Rust(unsafe)/Go this
@@ -37,7 +37,7 @@ async def get_user(uid):
         raise
 ```
 
-## Atomicity: find the invariant, protect the whole transition
+## 2. Atomicity: find the invariant, protect the whole transition
 
 `count += 1` is read-modify-write: three steps, racy everywhere (yes, also in
 CPython — the GIL serializes bytecodes, not statements; and `+=` on an
@@ -65,7 +65,7 @@ Heuristics:
   lock across the compound, or a primitive that is compound-atomic
   (`dict.setdefault`, `sync.Map.LoadOrStore`, `compute_if_absent`, UPSERT).
 
-## Check-then-act / TOCTOU
+## 3. Check-then-act / TOCTOU
 
 Any `if <state> then <act-on-state>` where state is shared (memory, file
 system, DB, remote API) is suspect. The gap between check and act is the race
@@ -84,7 +84,7 @@ window — and on the filesystem it's also a security hole (symlink swap between
 atomic syscall, compound-atomic API). Checking first and acting second is only
 valid as an optimization *before* an atomic operation, never as the guard.
 
-## Memory visibility & ordering (the 20% you need)
+## 4. Memory visibility & ordering (the 20% you need)
 
 On multicore hardware, writes by one thread are not visible to others in
 program order unless synchronization establishes **happens-before**. Without
@@ -133,7 +133,7 @@ atomic release-store, task join), never via a plain flag. The same bug in
 Java is a non-volatile `done`; in C++ a non-atomic bool (UB); in Rust the
 compiler simply refuses — which is the correct default to internalize.
 
-## Deadlock
+## 5. Deadlock
 
 Requires all four Coffman conditions: mutual exclusion, hold-and-wait, no
 preemption, circular wait. Break any one — in practice you break **circular
@@ -184,7 +184,7 @@ handler waiting on a pool slot held by its own parent; a bounded channel
 where the consumer awaits the producer's reply on the same full channel.
 Audit the **wait-for graph**, not just the mutexes.
 
-## Livelock & starvation
+## 6. Livelock & starvation
 
 - **Livelock:** everyone busy, nobody progresses (mutual try-lock-retry,
   retry storms in lockstep). Fix: randomized backoff (jitter), or impose
@@ -195,7 +195,7 @@ Audit the **wait-for graph**, not just the mutexes.
   shadowing others. Fix: fair/queued primitives, bounded work per turn, or
   explicit rotation.
 
-## Idempotency under retries
+## 7. Idempotency under retries
 
 Every retry (and every at-least-once queue) means your operation can execute
 **twice**. Concurrency-correct code is idempotent or deduplicated:
@@ -209,7 +209,7 @@ Every retry (and every at-least-once queue) means your operation can execute
   Retrying a timed-out non-idempotent call without a dedupe key is a
   double-charge bug (HIGH in audits).
 
-## Async-signal-safety (pointer)
+## 8. Async-signal-safety (pointer)
 
 Signal handlers (POSIX) may only call async-signal-safe functions — no
 malloc, no printf, no locks (the interrupted thread may hold them → instant

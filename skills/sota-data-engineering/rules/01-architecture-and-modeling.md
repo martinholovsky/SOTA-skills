@@ -4,7 +4,7 @@ Decisions in this file are made once per platform, not once per pipeline.
 When auditing, mismatches between the platform's stated architecture and what
 the code actually does are findings in themselves.
 
-## Size the problem honestly
+## 1. Size the problem honestly
 
 - **Default to single-node engines below ~100 GB working set.** DuckDB or
   Polars on one machine outperforms a Spark cluster on
@@ -33,7 +33,7 @@ duckdb.sql("""
 """)
 ```
 
-## ELT over ETL — and the exceptions
+## 2. ELT over ETL — and the exceptions
 
 - **Default: extract-load raw, transform in the warehouse/lakehouse (ELT).**
   Raw data lands unmodified; transformations are versioned SQL run where the
@@ -50,7 +50,7 @@ duckdb.sql("""
 - **Never transform-in-flight as an excuse to skip raw retention.** If the
   transform is wrong, untransformed data is gone.
 
-## Warehouse vs lakehouse
+## 3. Warehouse vs lakehouse
 
 Decide by ownership and access patterns, not fashion. Both converge: every
 major warehouse reads/writes Iceberg (v3 is GA on Snowflake/Databricks and
@@ -76,7 +76,7 @@ and lakehouse engines speak SQL.
   transform stacks = HIGH (divergence is inevitable). Two table formats with
   no stated rationale = MEDIUM.
 
-## Layered modeling (medallion / staging-core-mart)
+## 4. Layered modeling (medallion / staging-core-mart)
 
 Names differ (bronze/silver/gold ≈ raw/staging/core/mart); the contract is
 what matters:
@@ -112,7 +112,7 @@ FROM raw.orders
 QUALIFY row_number() OVER (PARTITION BY order_id ORDER BY _loaded_at DESC) = 1
 ```
 
-## Dimensional modeling still matters
+## 5. Dimensional modeling still matters
 
 Star schemas remain the right core-layer shape for business processes:
 cheap-to-scan fact tables plus reusable conformed dimensions. Columnar
@@ -146,7 +146,7 @@ engines did not obsolete them — they made the joins cheap.
   Type 1 dimension = HIGH (numbers are silently wrong for any historical
   period).
 
-## One Big Table pragmatism
+## 6. One Big Table pragmatism
 
 Wide denormalized tables (OBT) are legitimate **mart-layer** artifacts:
 build the star in core, then flatten into OBT where a BI tool or consumer
@@ -157,7 +157,7 @@ benefits. Columnar storage makes width nearly free to store and scan-prune.
 - Never maintain the same metric logic in two OBTs. Derive both from one
   core model.
 
-## Semantic layers
+## 7. Semantic layers
 
 - Define each business metric **once** — in a semantic layer (dbt MetricFlow,
   Cube, LookML-class) if you have multiple BI/consumer surfaces, or simply in
@@ -170,7 +170,7 @@ benefits. Columnar storage makes width nearly free to store and scan-prune.
   definitions. Divergent definitions of one metric = HIGH (trust erosion is
   the most expensive data failure).
 
-## Data mesh caution
+## 8. Data mesh caution
 
 Data mesh is an **org pattern** (domain ownership, data-as-a-product,
 federated governance), not a technology purchase. Apply it only when multiple

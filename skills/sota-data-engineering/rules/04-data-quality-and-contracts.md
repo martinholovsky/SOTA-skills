@@ -4,7 +4,7 @@ Bad data that flows is worse than no data: dashboards stay green, decisions
 get made, and trust — the only real product of a data platform — erodes.
 Quality is enforced at boundaries and tiered by consequence.
 
-## Data contracts at the producer boundary
+## 1. Data contracts at the producer boundary
 
 A contract is **schema + semantics + SLOs**, owned by the producer, enforced
 mechanically. Schema alone is half a contract.
@@ -42,7 +42,7 @@ models:
         data_type: bigint
 ```
 
-## Expectation testing — the core battery
+## 2. Expectation testing — the core battery
 
 Every core/mart model carries checks from this battery; critical ones carry
 all that apply.
@@ -105,7 +105,7 @@ models:
               arguments: {to: ref('dim_customer'), field: customer_id}
 ```
 
-## Severity tiers: block vs warn
+## 3. Severity tiers: block vs warn
 
 Two failure modes to avoid: everything blocks (one flaky check halts the
 platform nightly, team starts ignoring red) and nothing blocks (corrupt data
@@ -123,7 +123,7 @@ flows downstream while a Slack channel nobody reads fills up).
 - Implement tiers natively: dbt test `severity: error|warn`, Great
   Expectations / Soda / pandera equivalents all support it.
 
-## Anomaly detection caution
+## 4. Anomaly detection caution
 
 ML-based anomaly detection on data metrics (auto-thresholds on volume,
 freshness, distributions) is a **supplement, not a substitute** for explicit
@@ -137,7 +137,7 @@ checks.
   detection for the unknown-unknowns on a *small* set of business-critical
   tables.
 
-## Lineage
+## 5. Lineage
 
 - Table-level lineage is table stakes — it falls out of dbt/orchestrator
   graphs. Use it for impact analysis ("what breaks if I change this?") and
@@ -149,7 +149,7 @@ checks.
 - Lineage that requires manual upkeep will rot; derive it from code
   (parsed SQL, orchestrator metadata) or don't claim it.
 
-## Data incident response
+## 6. Data incident response
 
 When bad data ships, the order is: **stop the spread → communicate →
 quarantine → fix → reprocess → verify → postmortem.**
@@ -173,7 +173,7 @@ quarantine → fix → reprocess → verify → postmortem.**
   known-bad to consumers = MEDIUM; becomes HIGH for platforms feeding
   financial or operational decisions.
 
-## Testing pipelines (CI)
+## 7. Testing pipelines (CI)
 
 Quality checks validate *data in production*; tests validate *logic before
 merge*. You need both — a check can't catch a bug that produces plausible

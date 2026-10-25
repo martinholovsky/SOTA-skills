@@ -1,6 +1,6 @@
 # Testing & Tooling
 
-## Test runner: vitest (apps), node:test (deps-free libs)
+## 1. Test runner: vitest (apps), node:test (deps-free libs)
 
 Vitest (use the latest stable major; check vitest.dev): native ESM/TS, vite-config reuse, watch mode, `projects` for multi-config repos (the old `workspace` option was removed in v4), jest-compatible API. Version boundaries that change behaviour: Vitest 5.0 (September 2026) requires Node `^22.12.0 || ^24 || >=26` and turns `clearMocks` on by default (`restoreMocks` stays off, so keep it set). Vitest 4 stabilized Browser Mode (via `@vitest/browser-playwright` etc.) — real-browser component tests where jsdom fidelity isn't enough. Don't start new projects on jest (CJS-era transform pain). Pure libraries with zero build can use `node:test` and skip the dependency entirely.
 
@@ -46,7 +46,7 @@ expect(OrderSchema.parse(res.json())).toMatchObject({ sku: 'A1' });
 - Determinism rules: no real network (MSW errors on it), no real time (fake timers), no shared mutable fixtures, no test-order dependence (`vitest --sequence.shuffle` in CI surfaces it).
 - A flaky test is a P1 on the suite: quarantine immediately, fix or delete within days — tolerated flake trains the team to ignore red.
 
-## Testing-library: test behavior, not implementation
+## 2. Testing-library: test behavior, not implementation
 
 Tests should survive refactors that don't change behavior. Query like a user, assert what the user sees.
 
@@ -70,7 +70,7 @@ expect(await screen.findByRole('alert')).toHaveTextContent(/invalid credentials/
 - Don't assert internal state, spy on setState, or shallow-render. Don't test "renders without crashing" only.
 - The same philosophy applies server-side: test handlers via HTTP (`fastify.inject`, supertest) against responses, not by spying on internals.
 
-## Network: MSW
+## 3. Network: MSW
 
 Mock at the network boundary, not the fetch wrapper — tests then exercise your real client code (serialization, error handling, retries).
 
@@ -97,7 +97,7 @@ server.use(http.get('/api/users/:id', () => HttpResponse.json({}, { status: 500 
 - Same handlers reusable in the browser (`setupWorker`) for Storybook/dev.
 - Don't mock your own modules to avoid network (`vi.mock('./api')`) — that skips the very code most likely to be wrong.
 
-## E2E: Playwright
+## 4. E2E: Playwright
 
 Unit/integration tests for logic breadth; a thin Playwright layer for critical user journeys (signup, checkout, the money paths) — not a port of every unit case.
 
@@ -107,7 +107,7 @@ Unit/integration tests for logic breadth; a thin Playwright layer for critical u
 - `trace: 'on-first-retry'` for CI debugging; run against production builds; shard in CI.
 - API-seed test data; don't drive setup through the UI.
 
-## ESLint flat config + typescript-eslint strict
+## 5. ESLint flat config + typescript-eslint strict
 
 Flat config (`eslint.config.js`) is the only supported format since ESLint 9; ESLint 10 (Feb 2026) removes the eslintrc system entirely, resolves config from each linted file's directory (multiple configs per run — monorepo-friendly), and requires Node ≥20.19. typescript-eslint v8 supports ESLint 9 and 10. Type-aware strict preset catches real bugs (floating promises, unsafe any-flow) that syntax-only linting can't.
 
@@ -175,7 +175,7 @@ export default defineConfig(
   `suppressions/unused` is a warning: `biome ci` exited 0 on a stale suppression and 1 with
   `--error-on-warnings` (Biome 2.6.3).
 
-## Formatting and pre-commit
+## 6. Formatting and pre-commit
 
 - One formatter, zero debate: Prettier (default) or Biome format (faster, one tool with its linter). Config committed; editor format-on-save; CI checks `--check`. No ESLint formatting rules alongside (`eslint-config-prettier` if any legacy stylistic rules linger).
 - Pre-commit via lefthook/husky + lint-staged: format + eslint --fix on staged files only. Keep hooks <5s — slow hooks get `--no-verify`'d into irrelevance; typecheck and tests belong in CI, not pre-commit.
@@ -191,7 +191,7 @@ pre-commit:
 
 - TS build perf in CI: `tsc -b --incremental` with restored `.tsbuildinfo` cache; in monorepos, run typecheck per-package via turborepo/nx so only affected packages pay.
 
-## Dead code: knip
+## 7. Dead code: knip
 
 Knip finds unused files, exports, types, and dependencies — the stuff `tsc` can't see because exported-but-never-imported is still "used" to the compiler.
 
@@ -205,7 +205,7 @@ Knip finds unused files, exports, types, and dependencies — the stuff `tsc` ca
 - Knip's output is a **candidate list, not a finding**: a package loaded dynamically (string `require`, plugin manifest, DI by convention) reads as unused, and a package whose symbol is referenced only on an unreachable branch reads as used. Prove each candidate by deleting it in a scratch copy and running the real build + suite — [`sota-devsecops` rules/10](../../sota-devsecops/rules/10-inert-dependencies.md).
 - Unused exports kill tree-shaking analysis precision and mislead readers; deleting code is a feature.
 
-## Library publishing: publint + arethetypeswrong
+## 8. Library publishing: publint + arethetypeswrong
 
 Broken `exports`/types maps are the top npm-library bug class (works in dev, breaks in consumers' bundlers or `NodeNext` resolution).
 
@@ -233,7 +233,7 @@ Broken `exports`/types maps are the top npm-library bug class (works in dev, bre
   against a committed expected list and fail on any new path. *OWASP: NPM Security cheat sheet.*
 - Dual ESM/CJS only if consumers demand it (tsdown/unbuild make it tolerable; tsup's README says it is no longer actively maintained and points to tsdown); otherwise ESM-only and say so in the README. On Node ≥ v20.19 / v22.12, `require(esm)` lets CJS consumers load an ESM-only package whose graph has no top-level `await` ([rules/04](04-node-backend.md) §"Native ESM in Node").
 
-## Type-level testing
+## 9. Type-level testing
 
 Libraries and complex generics deserve type tests — types are API surface and they regress silently.
 
@@ -249,7 +249,7 @@ test('parse narrows to branded id', () => {
 
 `vitest --typecheck` runs these; `@ts-expect-error` lines double as negative type assertions. For published libraries, snapshot the public API surface with `api-extractor` or `tsd` so breaking type changes show up in review.
 
-## CI gates (the minimum bar)
+## 10. CI gates (the minimum bar)
 
 Order fast→slow, all blocking: `tsc --noEmit` → eslint → unit/integration (vitest, coverage thresholds) → knip → build → playwright smoke. Plus `npm audit`/osv-scan and lockfile-frozen install ([rules/05](05-security.md)). A repo where `tsc --noEmit` isn't in CI will accumulate `as any` until types are decorative.
 

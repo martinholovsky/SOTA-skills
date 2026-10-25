@@ -1,6 +1,6 @@
 # 06 — Backpressure & Flow Control
 
-## The law of rate mismatch
+## 1. The law of rate mismatch
 
 Whenever a producer can outpace a consumer — and under load, some producer
 always can — the difference goes somewhere: memory (unbounded queue → OOM),
@@ -12,7 +12,7 @@ latencies in minutes, then a crash that loses everything buffered.
 Design question for every queue/channel/buffer: *what happens when it's
 full?* If the answer is "it can't fill up", the design is wrong.
 
-## Bounded queues everywhere
+## 2. Bounded queues everywhere
 
 Every queue gets a capacity and a full-policy:
 
@@ -47,7 +47,7 @@ also produces into the same queue, or A→B and B→A both bounded-blocking)
 deadlocks when both fill. Cycles need shed/coalesce somewhere, or strictly
 acyclic flow.
 
-## End-to-end propagation
+## 3. End-to-end propagation
 
 Backpressure only works if the pressure reaches the **source**. Audit the
 chain: socket → parser → queue → workers → DB. One unbounded link (or one
@@ -82,7 +82,7 @@ Natural backpressure carriers — don't defeat them:
 - **HTTP server concurrency limits:** cap in-flight requests at the listener
   (semaphore/middleware); past the cap, 503 immediately.
 
-## Load shedding
+## 4. Load shedding
 
 When demand exceeds capacity, serving fewer requests *well* beats serving all
 requests *too late to matter*. A response delivered after the client's
@@ -99,7 +99,7 @@ timeout is pure waste — you paid the cost and got zero utility ("goodput").
   never shed (or the orchestrator kills an overloaded-but-alive pod —
   conversely, *readiness* should fail under overload to divert traffic).
 
-## Rate limiting: token bucket as the workhorse
+## 5. Rate limiting: token bucket as the workhorse
 
 Token bucket = sustained rate `r` + burst capacity `b`. Use it for: outbound
 calls to dependencies (protect *them*), per-tenant fairness (protect *you*),
@@ -124,7 +124,7 @@ Notes:
   style) outperforms static limits when downstream capacity varies; SOTA for
   service meshes, overkill for a single worker pool.
 
-## Streaming with pull-based demand
+## 6. Streaming with pull-based demand
 
 The streaming SOTA is **demand-driven (pull) flow**: the consumer signals
 capacity; the producer sends at most that much. Push-with-buffering is the
@@ -168,7 +168,7 @@ bounded queue + drop-old/disconnect-on-lag (this is why Go's `rxgo`-style
 broadcast and NATS use lag-based eviction). Decide per endpoint: kill the
 laggard, or degrade its stream.
 
-## Circuit breakers: backpressure for failure
+## 7. Circuit breakers: backpressure for failure
 
 Retry budgets slow the bleeding; a circuit breaker stops calling a dependency
 that is down, failing fast locally and giving it room to recover.
@@ -205,7 +205,7 @@ except (TimeoutError, DependencyError) as e:
 breaker.record_success()
 ```
 
-## Batching & coalescing
+## 8. Batching & coalescing
 
 Batching raises throughput (amortized syscalls/commits) at the cost of
 latency. Correct batcher shape: flush on **size OR time, whichever first**

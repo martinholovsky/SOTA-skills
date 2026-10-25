@@ -1,6 +1,6 @@
 # 05 — Reliability & Scale
 
-## Backups & PITR
+## 1. Backups & PITR
 
 ### Rule: A backup is restorable, point-in-time, off-box, and rehearsed — or it isn't a backup.
 - **PITR** (base backup + continuous WAL archiving — pgBackRest, WAL-G, or
@@ -20,7 +20,7 @@
 - Protect backups from the database's own credentials (a compromised DB host
   must not be able to delete its backups — object lock / separate creds).
 
-## Replication & read replicas
+## 2. Replication & read replicas
 
 ### Rule: Async by default; sync only for the durability you'll pay latency for.
 - **Async** streaming: primary doesn't wait; replica crash-lag = lost recent
@@ -66,7 +66,7 @@ Read-your-own-writes breaks when a user's next request hits a lagging replica.
   sequences aren't replicated (resync at cutover); large transactions can
   stall apply.
 
-## Partitioning
+## 3. Partitioning
 
 ### Rule: Partition when lifecycle or scale demands it — not before, and plan it early enough.
 Triggers for partitioning: table > ~100GB and growing; time-based retention
@@ -85,7 +85,7 @@ the monolith can't keep up.
 - Converting a live monolith table is a project (file 02: dual-write + swap);
   partition *at creation* any table you know will be append-heavy.
 
-## Vacuum & bloat
+## 4. Vacuum & bloat
 
 ### Rule: Autovacuum is correctly tuned, never disabled, and bloat is measured.
 MVCC means every UPDATE/DELETE leaves a dead tuple; vacuum reclaims them.
@@ -110,7 +110,7 @@ forced shutdown.
 - Mass deletes: batch them (file 02) or partition; an unbatched
   multi-million-row DELETE is self-inflicted bloat + replication lag.
 
-## Monitoring — the metric set that matters
+## 5. Monitoring — the metric set that matters
 
 ### Rule: If these aren't graphed and alerted, the database is unmonitored.
 - **Saturation:** connections vs max (+ pooler `cl_waiting`), CPU, disk space
@@ -145,7 +145,7 @@ SELECT left(query, 80), calls, total_exec_time, mean_exec_time, rows
 FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 20;
 ```
 
-## Scaling order of operations
+## 6. Scaling order of operations
 
 ### Rule: Exhaust these, in order, before saying "shard": measure → index/query
 (file 03) → pooling (file 04) → caching (below) → read replicas → vertical
@@ -157,7 +157,7 @@ beyond one primary's I/O after tuning; working set far beyond max RAM;
 vacuum/replication permanently behind despite tuning; single-tenant whales
 (extract them first — file 01 hybrid tenancy).
 
-## Redis & the caching layer
+## 7. Redis & the caching layer
 
 Everything here applies equally to **Valkey** (BSD-3, Linux Foundation fork;
 the default open alternative since Redis moved to AGPLv3 tri-licensing — AWS
