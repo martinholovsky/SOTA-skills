@@ -160,22 +160,31 @@ up front; retrofitting is brutal.
 ## Audit checklist
 
 - [ ] Dev/staging/prod separated in storage *and* credentials; dev cannot
-      write prod?
-- [ ] Dev data is cloned/sampled (masked where PII), refreshed by
-      automation; schemas built from the same code as prod?
-- [ ] Risky changes gated by WAP or blue-green + reconciliation; consumers
-      read through views?
+      write prod (dev holding prod write credentials = CRITICAL) (§1)?
+- [ ] Dev data is cloned/sampled (masked where PII; production PII in dev =
+      HIGH), refreshed by automation, not synthetic-only; schemas built from
+      the same code as prod (§1)?
+- [ ] Risky changes gated by WAP (publish atomically only on a passed
+      block-tier audit) or blue-green + reconciliation; consumers read through
+      views? In-place rewrite with no validation gate = HIGH (§2)
 - [ ] Rollback artifact (previous table/snapshot) retained for every
-      consumer-facing change?
-- [ ] Layer-based grants: no consumer/BI access to raw; no shared human
-      use of service accounts?
+      consumer-facing change until it has survived N cycles (none = HIGH)
+      (§2)?
+- [ ] Layer-based grants: no consumer/BI access to raw (BI `SELECT ANY` on
+      raw = HIGH); pipelines write only to their layer; no shared human use of
+      service accounts (§3)?
 - [ ] PII columns tagged; masking/row policies keyed off tags; access to
-      sensitive marts audit-logged?
+      sensitive marts audit-logged; grants reviewed on a schedule (§3)?
 - [ ] GDPR erasure path covers snapshots, compaction, DLQs, dev clones,
-      and Kafka retention — with a measured SLA?
+      and Kafka retention — with a measured SLA; deletion requests run as
+      idempotent, monitored pipelines with a verification query (§4)?
 - [ ] Retention enforced by scheduled jobs for every layer (raw, snapshots,
-      DLQ, dev clones)?
+      DLQ, dev clones)? Unbounded-retention PII stores = HIGH (§4)
 - [ ] Freshness/volume/quality dashboard for critical marts; alerts
-      symptom-based, owned, runbook-linked, low-noise?
-- [ ] Per-pipeline cost visible with trend alerts?
-- [ ] Runbooks current, co-located with code, executable by a newcomer?
+      symptom-based, owned, runbook-linked, low-noise (unrouted or >daily noise
+      = MEDIUM, HIGH for critical marts); freshness SLO documented and measured
+      per critical mart (§5)?
+- [ ] Per-pipeline cost visible with trend alerts (§5)?
+- [ ] Runbooks current, co-located with code, linked from every alert,
+      executable by a newcomer (rerun/backfill command, failure modes,
+      contacts, escalation)? A pipeline only one person can operate = HIGH (§6)

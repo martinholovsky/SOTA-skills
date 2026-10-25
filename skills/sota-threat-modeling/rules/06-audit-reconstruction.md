@@ -254,16 +254,27 @@ Meta-findings — the audit also rates the team's PROCESS:
 - [ ] Implied assumptions written down and each tested against code/config;
       broken assumptions rated by what relied on them.
 - [ ] Control-presence matrix complete for in-scope components; every cell
-      Present/Partial/Absent/N-A/Unverifiable with evidence or search trail.
+      Present/Partial/Absent/N-A/Unverifiable with evidence or search trail
+      (§2).
 - [ ] Sampling rules stated; all top-asset paths examined, not sampled.
 - [ ] Negative space checked: exclusion lists, skip-auth decorators, disabled
       tests, commented-out IaC.
 - [ ] Reachability walked for every finding; hygiene vs. primary-control vs.
       defense-in-depth gaps distinguished and rated accordingly.
-- [ ] Exploit chains assembled and rated as chains; no severity-by-volume.
+- [ ] Exploit chains assembled and rated as chains; no severity-by-volume
+      (one thematic finding instead); an unverifiable control on a Critical
+      path reported "Unverified, potential High", never downgraded; a
+      context-sensitivity note where one config change would jump the
+      rating (§4).
 - [ ] Every finding in the binding format with file:line evidence and a
-      located, pattern-reusing recommendation.
-- [ ] Positive controls acknowledged; process meta-findings (stale model,
-      expired acceptances) included.
+      located, pattern-reusing recommendation; one decidable remediation
+      per finding (split by owner, merged across instances of a pattern),
+      Evidence reproducible from the repo alone (§6).
+- [ ] Report follows the §7 structure: findings Critical → Low with chains
+      first, thematic observations, matrix appendix, assumption results,
+      remediation ordering. Positive controls acknowledged; process
+      meta-findings (no model → Medium, drifted model with its missed
+      triggers listed, expired acceptances, deleted or skipped abuse-case
+      tests) included.
 - [ ] Baseline model delivered, pinned to the audited SHA, ready for living
       maintenance per 05.

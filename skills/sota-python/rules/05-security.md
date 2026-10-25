@@ -415,26 +415,26 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       `grep -rnE 'subprocess\.(run|call)\(' --include="*.py" src/ | grep -v 'check=True'`
       (`run` returns a non-zero `returncode` without raising unless `check=True`; each hit
       must read `.returncode` itself, or the failed command reads as success)
-- [ ] **SQL [CRITICAL]** —
+- [ ] **SQL (§3) [CRITICAL]** —
       `grep -rn 'execute(f"\|execute(".*%s" *%\|execute(.*+ ' --include="*.py" src/` ;
       `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` (Django edges);
-      `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string)
+      `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string) ; `grep -rnE '(^|[^A-Za-z_])I?LIKE[[:space:]]|\.i?like\(' --include='*.py' --exclude-dir=.venv .` (a bound `LIKE` value escapes `%` and `_` first [MEDIUM])
 - [ ] **--- t-string consumers that render values raw (§3a) --- [CRITICAL where the value
       is request-derived and the output is SQL or a shell string; HIGH for HTML]** —
       `grep -rlE 'string\.templatelib' --include='*.py' . | while IFS= read -r f; do grep -nE '\.values?([^A-Za-z0-9_]|$)|str\((t|tmpl|template)\)' "$f" | grep -vE 'escape|quote|param|bind' | while IFS= read -r l; do printf '%s:%s\n' "$f" "$l"; done; done`
       (the filter reads only the code, never the file name, so `html_escape.py` is still
       searched; each hit is a value or a whole `Template` used with no escape or binding on that line;
       read it — a value escaped a line earlier is a false positive, `str(template)` is a repr)
-- [ ] **Path traversal & archives [HIGH]** —
-      `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ;
+- [ ] **Path traversal & archives (§4, §5) [HIGH]** —
+      `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ; `grep -rlE 'zipfile' --include='*.py' --exclude-dir=.venv . | xargs -r grep -LE 'file_size'` (no uncompressed-size budget) ;
       `grep -rn "request.*filename\|\.filename" --include="*.py" src/` (then check containment);
       `grep -rn "is_relative_to\|realpath" --include="*.py" src/` (mitigations present?)
-- [ ] **Randomness & secrets [HIGH]** —
+- [ ] **Randomness & secrets (§6) [HIGH]** —
       `grep -rn "random\.\(choice\|choices\|randint\|random\)" --include="*.py" src/ # security context?`
       ; `grep -rn "== .*token\|token.* ==" --include="*.py" src/ | head` (timing-unsafe
       compare); `grep -rn "verify=False\|_create_unverified" --include="*.py" src/` ;
       `grep -rnE "(api_key|secret|password|token) *= *['\"][A-Za-z0-9_\-]{12,}" --include="*.py" .`
-      (hardcoded); `grep -rn "md5(\|sha1(" --include="*.py" src/ | grep -v usedforsecurity`
+      (hardcoded); `grep -rn "md5(\|sha1(" --include="*.py" src/ | grep -v usedforsecurity` ; `grep -rniE '(md5|sha1|sha256|sha512)\([^)]*passw' --include='*.py' --exclude-dir=.venv .` (a password through a bare digest: argon2/bcrypt)
 - [ ] **XML / SSRF** —
       `grep -rn "lxml.etree\|xml.etree\|xml.dom\|xml.sax" --include="*.py" src/` (defused?
       entities off?); `grep -rn "get(url\|get(request\.\|urlopen(" --include="*.py" src/ | head`

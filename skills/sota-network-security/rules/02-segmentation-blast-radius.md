@@ -165,20 +165,29 @@ sheet, Zero Trust Architecture cheat sheet.
 
 ## Audit checklist
 
-- [ ] Are zones/tiers defined with deny-by-default *between* them, or is the network flat? Probe
-      cross-tier reachability (app pod → data tier on a non-declared port must fail).
+- [ ] Are zones/tiers defined with deny-by-default *between* them, or is the network flat (any
+      host reaching any other on any port, one subnet or namespace for everything, a security group
+      allowing the whole VPC CIDR to itself)? Probe east-west, not only the edge: cross-tier
+      reachability (app pod → data tier on a non-declared port must fail) (§1, §2).
 - [ ] Hunt over-broad rules: `grep -rEn '0\.0\.0\.0/0|::/0|\bany\b|\bworld\b' policies firewall`.
       For each hit touching a sensitive service (secrets/DB/registry/admin/PKI), prove reachability
-      and rate Critical until fixed.
-- [ ] Do internal firewall/SG rules reference identities/tags/SGs, not bare CIDRs?
+      and rate Critical until fixed — a rule *named* `restrict` is judged by its effective policy,
+      and the fix is proven by re-running the probe (§3).
+- [ ] Do internal firewall/SG rules reference identities/tags/SGs, not bare CIDRs? Is inbound
+      and outbound deny-by-default, with no `0.0.0.0/0` or `::/0` ingress except 80/443 on the edge
+      tier (IPv6 audited exactly like IPv4) (§5)?
 - [ ] Is the data tier reachable only by the specific services that use it (not `any`, not the
-      whole VPC/cluster CIDR)?
+      whole VPC/cluster CIDR) (§2)?
 - [ ] Are cross-zone flows funneled through inspectable choke points (egress gateway, firewall,
-      mesh waypoint)?
-- [ ] Is SSH/RDP exposed to `0.0.0.0/0`? (`nmap`/SG scan for 22/3389 from outside → finding.)
+      mesh waypoint)? Within the app tier, does service A reach service B only if declared, with
+      the data tier and crown-jewel paths microsegmented first (§4)?
+- [ ] Is SSH/RDP exposed to `0.0.0.0/0` (§6)? (`nmap`/SG scan for 22/3389 from outside → finding.)
 - [ ] Remote access: ZTNA/IAP for web, identity-aware bastion for shells, WireGuard (scoped
-      `AllowedIPs`, per-peer keys) for site/machine links — not flat VPN, not shared keys?
-- [ ] For each control layer, is there a next layer if it's bypassed (defense in depth)?
+      `AllowedIPs`, per-peer keys rotated on offboarding) for site/machine links — not flat VPN,
+      not shared keys? Does the bastion issue short-lived per-session certs, record sessions, sit
+      behind the IdP, and stay the *only* SSH path (hosts refuse SSH from anything but its
+      identity/SG) (§6)?
+- [ ] For each control layer, is there a next layer if it's bypassed (defense in depth, §7)?
 - [ ] **High — unintended external exposure.** Enumerate what you actually expose, then diff it
       against the intended list: every owned subdomain (DNS zone exports plus a Certificate
       Transparency search for the domain — CT shows names nobody put in the inventory) and every
@@ -186,11 +195,11 @@ sheet, Zero Trust Architecture cheat sheet.
       `nmap -Pn -sV -p- -iL targets.txt -oX exposure.xml` (only against ranges you own or are
       authorised to test). Any listening service not on the intended exposure list is a finding;
       repeat on a schedule, not once.
-- [ ] **Medium — zone refinements (R7.1).** Outbound-only segment has no inbound allow; directory
+- [ ] **Medium — zone refinements (§4, R7.1).** Outbound-only segment has no inbound allow; directory
       and log infrastructure in their own firewalled segments with ingest and read paths split;
       apps sharing a network behind one L7 balancer audited on the balancer's rules; a
       human-readable network policy with diagrams exists and matches the policy-as-code?
-- [ ] **High — legacy / plaintext systems not quarantined (R11.1).** Triage allows for plaintext
+- [ ] **High — legacy / plaintext systems not quarantined (§7, R11.1).** Triage allows for plaintext
       protocols: `grep -rnE '(dport|port|from_port|to_port)[^0-9]{1,6}(21|23|69|110|143|161|512|513)([^0-9]|$)' policies firewall`
       — each hit must sit in the quarantine zone, reachable only via an authenticated modern
       front, with flow logging.

@@ -246,19 +246,22 @@ The real design decisions are about **key control and blast radius**:
       — file-level; in files it spares, confirm each read compares stored tenant
       metadata or tag with the caller's tenant (or the policy uses `s3:ExistingObjectTag`).
 - [ ] Stateful resources carry backup-tier tags; org backup plans select by tag;
-      sample-verify an actual recovery point exists for each tier-1 system.
+      sample-verify an actual recovery point exists for each tier-1 system (§3).
 - [ ] Backups copied cross-account; immutability/vault-lock on tier-1; verify prod
-      admin role genuinely cannot delete backup copies.
+      admin role genuinely cannot delete backup copies (§3).
 - [ ] Restore tested within the last quarter for tier-1 (ask for the record and
-      the measured time); retention matches stated policy, both min and max.
+      the measured time); retention matches stated policy, both min and max; the
+      restore covered the whole unit of recovery — DB + config + KMS access (§3).
 - [ ] Unattached volumes, orphaned snapshots, stale AMIs reaped or scheduled;
-      no snapshots/images shared public or to unknown accounts.
+      no snapshots/images shared public or to unknown accounts; delete-on-termination
+      set deliberately on block volumes (§2, §5).
 - [ ] **Medium** — a decommissioning runbook exists and its last use left no
       residue (§5): pick a retired resource and search for its snapshots, backups,
       roles, secrets, DNS records and inventory entry by name/tag.
 - [ ] Default encryption on for block storage and DBs account-wide; CMKs used for
-      confidential/regulated data classes.
+      confidential/regulated data classes (§2, §4).
 - [ ] Key-per-domain segmentation (no single god key); key admins ≠ data readers in
-      key policies; rotation on; ScheduleKeyDeletion alarmed.
+      key policies; rotation on; ScheduleKeyDeletion alarmed; external key stores
+      (XKS/EKM/HYOK) only under a recorded regulatory mandate (§4).
 - [ ] Regulated data regions match residency policy; exports/temp copies of
       sensitive data inventoried and governed.

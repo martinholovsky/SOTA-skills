@@ -311,16 +311,23 @@ Keep overload sets small (2–4); a 10-overload function wants a redesign. Typed
 
 ## Audit checklist
 
-- [ ] **Any leakage [MEDIUM where it crosses module boundaries]** —
+- [ ] **Any leakage (§3) [MEDIUM where it crosses module boundaries]** —
       `grep -rn "-> Any\|: Any" --include="*.py" src/ | grep -v "test_" | head -50` ;
       `grep -rn "dict\[str, Any\]" --include="*.py" src/ | wc -l` (boundary-only is OK;
       everywhere is not); `grep -rn "Callable\[\.\.\., " --include="*.py" src/`
-      (signature-erasing decorators?)
+      (signature-erasing decorators: `ParamSpec`, §8) ;
+      `grep -rnE '(^|[^A-Za-z_])TypeVar\(' --include='*.py' --exclude-dir=.venv .`
+      (hand-written TypeVars: PEP 695 syntax, used at least twice, `_co` on read-only containers) ;
+      `find . -path ./.venv -prune -o -name '*.py' -exec awk '/^class [A-Za-z_]/{c=$2; sub(/[(:].*/,"",c)} c!="" && /^[[:space:]]+def [A-Za-z_][A-Za-z0-9_]*\((self|cls)/ && ($0 ~ ("-> \"?" c "\"?:")) {print FILENAME":"FNR": "$0}' {} +`
+      (a method returning its own class by name: `Self`) ; un-parameterized `dict`/`list`/`Callable` in signatures
+      are the `[type-arg]` errors of the `mypy --strict` run below (measured, mypy 2.4.0)
 - [ ] **Bare/unscoped ignores [LOW each, MEDIUM in aggregate]** —
       `grep -rn "type: ignore$" --include="*.py" .` ; `grep -rn "# noqa$" --include="*.py" .`
-- [ ] **Legacy typing forms — ruff UP should be clean** —
+- [ ] **Unannotated APIs and legacy typing forms (§1) — ruff UP and ANN should be clean** —
       `uvx ruff check --select UP,ANN --statistics .` ;
-      `grep -rn "typing.Optional\|typing.List\|typing.Dict\|Optional\[" --include="*.py" src/ | head`
+      `grep -rn "typing.Optional\|typing.List\|typing.Dict\|Optional\[" --include="*.py" src/ | head` ;
+      `grep -rnE 'def [A-Za-z_][A-Za-z0-9_]*\([^)]*:[[:space:]]*list\[' --include='*.py' --exclude-dir=.venv .`
+      (a parameter that demands `list` where `Sequence`/`Iterable` would do [LOW, read each])
 - [ ] **In-band sentinels standing in for None (§2a) [HIGH where the value is compared]** —
       `grep -rnE "return -1|return 0[^.0-9]|= *-1 *(#|$)" --include="*.py" src/` (producer: same
       constant from two branches?);
@@ -329,21 +336,31 @@ Keep overload sets small (2–4); a 10-overload function wants a redesign. Typed
       (asymmetric guard: one operand filtered);
       `grep -rnE "^\s*if [a-z_]*(num|idx|index|count|offset|line|col)[a-z_]*:" --include="*.py" src/`
       (truthiness-as-presence)
-- [ ] **Unhandled Optionals / implicit None returns** —
+- [ ] **Unhandled Optionals / implicit None returns (§2)** —
       `uvx mypy --strict src/ 2>&1 | grep -c "error"` (any errors = not strict-clean);
       `grep -rn "or \[\]\|or {}\|or ''" --include="*.py" src/` (falsy-default smell [LOW,
       verify])
-- [ ] **Exhaustiveness** —
+- [ ] **Exhaustiveness (§7)** —
       `grep -rn "match " --include="*.py" src/ -A1 | grep -B1 "case _" | head` (then check
       assert_never use);
       `grep -rln "assert_never" --include="*.py" src/ || echo "no exhaustiveness guards"`
-- [ ] **Validation layering** — `grep -rn "model_validate\|TypeAdapter" --include="*.py" src/`
+- [ ] **Validation layering (§5)** — `grep -rn "model_validate\|TypeAdapter" --include="*.py" src/`
       (should cluster at edges); `grep -rn "model_construct" --include="*.py" src/` (smell:
       wanted a dataclass [LOW]); `grep -rn 'extra.*allow\|extra="ignore"' --include="*.py" src/`
-      (permissive input models [LOW-MEDIUM])
-- [ ] **Protocol/ABC hygiene** —
+      (permissive input models [LOW-MEDIUM], §6) ;
+      `grep -rnE 'except[[:space:]]+\(?[A-Za-z_.]*ValidationError' --include='*.py' --exclude-dir=.venv .`
+      (read each: field paths surfaced, not a vague 500 [LOW])
+- [ ] **Protocol/ABC hygiene (§4)** —
       `grep -rn "class.*ABC).*:" --include="*.py" src/ -A3 | grep -c abstractmethod` (1-method
       ABCs → Protocol?); `grep -rn "isinstance.*Protocol" --include="*.py" src/`
       (runtime_checkable misuse)
-- [ ] **cast() density [investigate each]** —
-      `grep -rn "cast(" --include="*.py" src/ | grep -v test`
+- [ ] **Future import, missing `@override` (§10) [LOW]** —
+      `grep -rln 'from __future__ import annotations' --include='*.py' --exclude-dir=.venv .`
+      (on a 3.14+ floor new code must not add it; below 3.14, a hit in a FastAPI/pydantic module needs
+      a read) ; the gating mypy run with `--enable-error-code explicit-override` (each
+      `[explicit-override]` is an overriding method without `@override`; measured, mypy 2.4.0) ;
+      `Literal` for closed sets and `NewType` for ids are a read of the signatures
+- [ ] **cast() density, narrowing tools (§3, §9) [investigate each]** —
+      `grep -rn "cast(" --include="*.py" src/ | grep -v test` (a guard written once beats a `cast`
+      after every check) ; `grep -rn 'TypeGuard\[' --include='*.py' --exclude-dir=.venv .` (prefer `TypeIs` [LOW]) ;
+      `grep -rnE '\*\*kwargs:[[:space:]]*(Any|object)' --include='*.py' --exclude-dir=.venv .` (typed `**kwargs` take `Unpack[TypedDict]` [LOW])

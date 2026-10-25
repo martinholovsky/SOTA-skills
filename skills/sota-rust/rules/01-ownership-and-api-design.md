@@ -307,26 +307,42 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 
 ## Audit checklist
 
-- [ ] `rg '\.clone\(\)' -t rust` — review each hit near a `for`/borrow error
+- [ ] `rg '\.clone\(\)' -t rust` (§1) — review each hit near a `for`/borrow error
       fix; flag clones of `String`/`Vec`/large structs that exist only to
       appease borrowck. `clippy::redundant_clone` — a **nursery** lint, so
       enable it explicitly (`all` + `pedantic` leave it off); known false
       negatives, still run it.
 - [ ] `rg 'fn \w+\((&self, )?\w+: (String|Vec<|PathBuf)' -t rust` — owned params
-      that are only read → should borrow.
+      that are only read → should borrow (§1).
 - [ ] `rg '&String|&Vec<|&PathBuf|&Box<' -t rust` — double-indirection params
-      (`clippy::ptr_arg` catches most).
-- [ ] `rg 'Arc<Mutex<' -t rust` — each one: is shared mutable state actually
+      (`clippy::ptr_arg` catches most) (§1).
+- [ ] `rg 'Arc<Mutex<' -t rust` (§2) — each one: is shared mutable state actually
       required, or would a channel/owner task work? Check for `Weak` where
-      graphs/cycles appear: `rg 'Rc<RefCell<'`.
-- [ ] `rg '_ =>' -t rust` — wildcard arms on local enums lose exhaustiveness;
-      `clippy::wildcard_enum_match_arm` (pedantic) to enforce.
-- [ ] Public enums likely to grow without `#[non_exhaustive]`:
-      `rg -B2 'pub enum' | rg -v non_exhaustive`.
-- [ ] `rg 'for i in 0\.\.' -t rust` — index loops; check `clippy::needless_range_loop`.
-- [ ] `rg 'unwrap_or\([a-zA-Z_]+\(' -t rust` — eager argument evaluation
+      graphs/cycles appear: `rg 'Rc<RefCell<'`. Immutable config behind a lock:
+      `grep -rnE 'Arc<(Mutex|RwLock)<[A-Za-z_]*Config' --include='*.rs' .` — `Arc<Config>` when
+      nothing writes it = Low. A `RefCell` borrow held across a call into a caller-supplied
+      closure or callback = Medium (runtime double-borrow panic). Refcount bumps spelled
+      `Rc::clone(&x)`/`Arc::clone(&x)`: `clippy::clone_on_ref_ptr` (restriction).
+- [ ] `rg '_ =>' -t rust` (§7) — wildcard arms on local enums lose exhaustiveness;
+      `clippy::wildcard_enum_match_arm` (restriction, not pedantic) to enforce.
+- [ ] Public enums likely to grow without `#[non_exhaustive]` (§7):
+      `rg -B2 'pub enum' | rg -v non_exhaustive`. Inversely, `#[non_exhaustive]` on a closed set
+      (an `Ordering`-like enum) removes downstream exhaustiveness checking for no gain = Low.
+- [ ] `rg 'for i in 0\.\.' -t rust` (§8) — index loops; check `clippy::needless_range_loop`.
+- [ ] `rg 'unwrap_or\([a-zA-Z_]+\(' -t rust` (§8) — eager argument evaluation
       (`clippy::or_fun_call`).
 - [ ] Raw primitive IDs in public signatures: `rg 'fn .*\b(id|user|key)\w*: (u32|u64|i64|String)'`.
+- [ ] **Typestate transition that leaves the old state usable (§4) — Low** —
+      `grep -rlE 'PhantomData<' --include='*.rs' .` lists files with state-parameterised types. In
+      each, a method returning the same type in another state must take `self` by value; one that
+      takes `&self`/`&mut self` leaves the previous state callable. A runtime `enum` is not a
+      finding where states are dynamic, numerous or serialized.
+- [ ] **Builders (§5) — Low** —
+      `grep -rnE 'fn build\(&?(mut )?self\)' --include='*.rs' . | grep -v 'Result<'` lists
+      infallible `build()`s: one that unwraps, expects or panics on a missing or invalid field
+      should return `Result<T, BuildError>` or take the field in `T::builder(required)`. Also:
+      one builder mixing `self` and `&mut self` setters; a constructor past ~4 parameters with no
+      builder (`clippy::too_many_arguments` with `too-many-arguments-threshold = 4` in `clippy.toml`).
 - [ ] **Money in binary floats (§3) — MEDIUM, HIGH in money paths** —
       `grep -rniE '(price|amount|total|balance|cost|fee|tax)[a-z0-9_]*[[:space:]]*:[[:space:]]*f(32|64)' --include='*.rs' .`
       (a money field, parameter or binding typed as a float) ;

@@ -199,20 +199,37 @@ docs.getdbt.com.)
 ## Audit checklist
 
 - [ ] Every scheduled write is partition-overwrite, MERGE, or full
-      rebuild — zero blind appends outside raw landing?
-- [ ] Writes atomic per run (no separately-failable delete-then-insert)?
+      rebuild — zero blind appends outside raw landing? A scheduled
+      `INSERT INTO ... SELECT` against a modeled table = CRITICAL (§1)
+- [ ] Writes atomic per run (no separately-failable delete-then-insert)
+      (§1)?
 - [ ] Side effects (notifications, reverse-ETL pushes, API calls) carry idempotency keys
-      or run in a terminal step after the data write commits (§"Idempotency — the prime directive")?
-- [ ] All tasks parameterized by logical interval; no `NOW()`-relative
-      filters in scheduled code?
-- [ ] Watermarks persisted atomically with the data they describe?
-- [ ] Late-data policy documented per incremental table?
+      or run in a terminal step after the data write commits (§1)?
+- [ ] All tasks parameterized by a half-open logical interval
+      `[interval_start, interval_end)` (no overlap, no gap); no `NOW()`-relative
+      filters in scheduled code (HIGH); a fixed "reprocess last N days" window
+      is not the only late-data mechanism (§2)?
+- [ ] Watermarks bounded above (`> last AND <= new`) and persisted
+      atomically with the data they describe; incremental syncs periodically
+      reconciled against source row counts (§3)?
+- [ ] Late-data policy documented per incremental table; every dbt
+      incremental model sets `unique_key` or an insert-overwrite strategy (an
+      unkeyed appending incremental = CRITICAL) (§3)?
 - [ ] Backfill: arbitrary interval, same code path, bounded parallelism,
-      checks still run?
-- [ ] DAG edges match actual data dependencies (no cron-offset coupling)?
+      checks still run, `depends_on_past`-style ordering declared where models
+      depend on prior intervals? "How would you reload March?" answered
+      without code edits or manual SQL, else HIGH (§4)
+- [ ] DAG edges match actual data dependencies (no cron-offset coupling,
+      HIGH); tasks pass references, not dataframes, through XCom/orchestrator
+      metadata; no business logic in DAG Python (§5)?
 - [ ] Retries bounded with backoff; timeouts set; final-failure alerts
-      routed to an owner?
-- [ ] Freshness/SLA alerting on outputs, independent of task success?
-- [ ] dbt (or equivalent): key tests on every core/mart model, no
-      cross-model `SELECT *`, exposures declared, CI builds changed models
-      before merge?
+      routed to an owner (§5)?
+- [ ] Freshness/SLA alerting on outputs, independent of task success,
+      including event-driven chains (§5)?
+- [ ] dbt (or equivalent): `unique` + `not_null` on the primary key of
+      every core/mart model, relationship tests on critical FKs, no
+      cross-model `SELECT *`, mart models documented (description + columns),
+      exposures declared, no 1,500-line mega-models, CI builds changed models
+      and their downstream against a non-prod target before merge, package and
+      adapter versions pinned; before a dbt v2 upgrade, no deprecation warnings
+      left (§6)?

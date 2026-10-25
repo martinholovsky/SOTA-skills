@@ -282,25 +282,39 @@ still "works", just for the wrong user:
 - [ ] Unbounded in-process caches (plain `Map`/dict with no LRU/TTL) → memory
       leak ([rules/03](03-memory.md)), High.
 - [ ] TTLs constant (no jitter)? Mass-populated keys expiring in sync
-      (deploy/cron)?
+      (deploy/cron) (§4)?
 - [ ] Hot keys: singleflight or soft-TTL in place? What happens on expiry
-      under peak load — and on full cache flush/restart?
+      under peak load — and on full cache flush/restart? "Everyone queries the
+      origin" → High, regardless of current hit ratio (§4).
 - [ ] Promise/value memoization in JS: are *errors* cached forever
-      (rejected promise never cleared)?
+      (rejected promise never cleared) (§4)?
 - [ ] Keys: schema-versioned? Inputs normalized? Cardinality bounded?
-      User-controlled fragments hashed/escaped?
+      User-controlled fragments hashed/escaped (§2)?
 - [ ] Invalidation: delete-vs-update on writes? TTL backstop present even
       with event-driven purge? Any `KEYS pattern*` scans? Read-your-own-writes
-      handled after mutations?
+      handled after mutations (§3)? Write strategy (§5): DB and cache updated
+      together (dual write) where delete-on-write + TTL or CDC-driven
+      invalidation would do? Cache-aside fills able to overwrite a concurrent
+      delete with no short TTL, `SET ... NX` or version check? Write-behind on
+      business data without a replicated cache tier, idempotent replay and
+      flush-lag monitoring?
 - [ ] Negative caching present for high-miss lookups? Sentinel distinct from
-      miss? Short TTL? Bounded against enumeration?
+      miss? Short TTL? Bounded against enumeration? Upstream 5xx cached only
+      briefly (~1–5 s), never as long as successes (§6)?
 - [ ] Cache client timeouts set (~50–100 ms) and a degradation path if the
-      cache tier is down? Or does cache-down = site-down?
-- [ ] Hit ratio, eviction rate, and origin offload measured per logical
-      cache? Any cache with hit ratio < 50% — should it exist?
+      cache tier is down? Or does cache-down = site-down? In-process L1 caches
+      small, bounded and short-TTL (1–60 s), backed by the distributed layer
+      (§1)?
+- [ ] Hit ratio, eviction rate, origin offload and cache-path p99 latency
+      measured per logical cache (§7)? Stale-serve rate and invalidation lag
+      where those mechanisms exist? Any cache with hit ratio < 50% — should
+      it exist (§8)?
 - [ ] Any cache papering over an uninvestigated slow query / N+1 / missing
-      index? Recommend the honest fix first.
-- [ ] Authz/financial data cached? TTL and invalidation justified in writing?
+      index? Recommend the honest fix first. A cache in front of an origin
+      about as cheap as the cache hop, or directly in front of another cache
+      with no distinct purpose (§8)?
+- [ ] Authz/financial data cached? TTL and invalidation justified in writing
+      (§8)?
 - [ ] Shared-cache keys for per-user/per-tenant responses include the
       identity/tenant (and role where it varies)? Any personalized response
       cacheable by URL alone (cache deception / key bypass —

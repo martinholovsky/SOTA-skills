@@ -105,7 +105,7 @@ Split out of [rules/05](05-security.md) (formerly sections 9 and 10) on 2026-09-
 
 ## Audit checklist
 
-- [ ] **One-shot scanners** — `uvx ruff check --select S --statistics .` ;
+- [ ] **One-shot scanners (§2)** — `uvx ruff check --select S --statistics .` ;
       `uvx bandit -r src/ -ll -q` ;
       `uv export --format requirements-txt --no-emit-project -o audit-req.txt && uvx pip-audit --disable-pip -r audit-req.txt`
       (never bare `uvx pip-audit`: it scans its own tool venv and exits 0, §1; exit 1 with
@@ -114,7 +114,8 @@ Split out of [rules/05](05-security.md) (formerly sections 9 and 10) on 2026-09-
       `osv-scanner --lockfile uv.lock`
 - [ ] **Supply chain** —
       `grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"` ;
-      `grep -rn "nosec\|noqa: S" --include="*.py" src/` (justified suppressions?)
+      `grep -rn "nosec\|noqa: S" --include="*.py" src/` (justified suppressions?, §2) ;
+      `grep -rnE '#[[:space:]]*nosec[[:space:]]*$' --include='*.py' --exclude-dir=.venv .` (bare `# nosec` [LOW])
 - [ ] **--- Adopting a dependency and its insecure defaults (§1) --- [MEDIUM; HIGH for a
       name that does not match its intended project]** —
       `git diff origin/main -- uv.lock | grep -E '^\+name = '` (each new package: vetted on

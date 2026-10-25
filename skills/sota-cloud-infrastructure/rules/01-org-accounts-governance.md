@@ -225,10 +225,13 @@ contacts.
 ## Audit checklist
 
 - [ ] Org exists; all accounts/projects/subscriptions are members; none standalone.
-- [ ] Management account/root project has no workloads, no daily-use identities.
-- [ ] Prod and non-prod are separate accounts/projects (not tags in one).
+- [ ] Management account/root project has no workloads, no daily-use identities (§1, §7).
+- [ ] Prod and non-prod are separate accounts/projects (not tags in one); sandbox
+      accounts carry hard budget caps and auto-cleanup (§1, §7).
 - [ ] Security/log-archive account exists; org audit trail delivers there; producers
-      cannot delete/modify logs (bucket policy / object lock / sink permissions).
+      cannot delete/modify logs (bucket policy / object lock / sink permissions);
+      control-plane audit, DNS query, VPC flow, sensitive-bucket access and LB access
+      logs are centralized there too (§1, §4).
 - [ ] Root/owner credentials: MFA enforced, no access keys, usage alarmed (any root
       login pages someone).
 - [ ] SCPs/org policies enforce all eight §3 guardrails: no audit-log tampering, no public
@@ -243,12 +246,20 @@ contacts.
       required, snapshot block public access `block_all_sharing`, AMI and VPC block
       public access; `aws organizations describe-effective-policy --policy-type DECLARATIVE_POLICY_EC2 --target-id <acct>`
       on a sample account shows them.
-- [ ] Guardrails attached at OU/folder level, inherited by new accounts automatically.
+- [ ] Guardrails attached at OU/folder level, inherited by new accounts automatically;
+      top-level OUs/folders follow policy needs, not the org chart; prod OUs carry at
+      least the guardrails non-prod does (§2, §7).
 - [ ] Account vending is automated and IaC-defined; pick a recent account and verify
-      it matches the baseline.
+      it matches the baseline: OU placement, SSO with no local users, break-glass role,
+      central audit logging, network pattern, budget + anomaly alert, tags; console-only
+      steps are limited to the runbooked bootstrap exceptions (§6).
 - [ ] Mandatory tag set defined, enforced on create, and a compliance report exists;
-      sample 10 resources across accounts for tag presence and vocabulary compliance.
-- [ ] Consolidated billing with cost export to queryable store; per-team visibility.
-- [ ] Quarantine/suspended OU (or equivalent) exists with deny-most policy.
+      sample 10 resources across accounts for tag presence and vocabulary compliance;
+      `managed-by: manual` resources sit on a monthly-reviewed exception list; IaC sets
+      the tags. Probe (AWS provider files without `default_tags`):
+      `grep -rl --null 'provider "aws"' --include='*.tf' . | xargs -0 -r grep -L 'default_tags'`
+      — file-level; a module that takes the tags as mandatory variables passes (§5).
+- [ ] Consolidated billing with cost export to queryable store; per-team visibility (§4).
+- [ ] Quarantine/suspended OU (or equivalent) exists with deny-most policy (§2).
 - [ ] No unknown accounts: reconcile org account list against billing and ownership
-      records; every account has a responsive owner.
+      records, including unknown payer lines; every account has a responsive owner (§7).

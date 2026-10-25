@@ -271,7 +271,8 @@ fn main() -> ExitCode {
       use. A hit timing a timeout, latency or window panics on a clock step: High on a request
       path. Use `Instant`. A chain split across lines needs reading.
 - [ ] `rg '\.unwrap_or_default\(\)|filter_map\(Result::ok\)|\.ok\(\)[;)]' -t rust`
-      — silently swallowed errors; require a comment justifying each.
+      — silently swallowed errors; require a comment justifying each (§6). Re-wrapping
+      `match`es that are `.map(f)` or `?`: `clippy::manual_map`, `question_mark`, `needless_match`.
 - [ ] `rg 'panic!|unreachable!|todo!|unimplemented!' -t rust -g '!*test*'` —
       `todo!`/`unimplemented!` in shipped code = High; `panic!` on
       input-derived conditions = High (DoS).
@@ -279,28 +280,48 @@ fn main() -> ExitCode {
       parse/decode code; string slicing `&s[`, plus `clippy::indexing_slicing`
       (restriction lint) on parser crates.
 - [ ] Library crates exporting `anyhow::Error`/`Box<dyn Error>` in public
-      signatures: `rg 'pub fn .*-> .*(anyhow|Box<dyn Error)' -t rust`.
-- [ ] thiserror enums: variants missing `#[source]`/`#[from]` on wrapped
+      signatures (§1): `rg 'pub fn .*-> .*(anyhow|Box<dyn Error)' -t rust`. Inversely, error
+      enums in a binary crate whose variants are only ever printed = Low (use `anyhow`).
+- [ ] thiserror enums (§2): variants missing `#[source]`/`#[from]` on wrapped
       errors (broken causality chains); public error enums missing
-      `#[non_exhaustive]`.
-- [ ] Double-logging: error logged at propagation site AND handler.
-- [ ] `?` chains with no `.context(...)` anywhere between syscall and `main` —
-      undebuggable errors.
-- [ ] FFI: `grep -rnE 'extern "C(-unwind)?" fn' --include='*.rs' .` — a body that
+      `#[non_exhaustive]`; one crate-wide enum every function returns; a `#[from] io::Error`
+      variant reached from several operations, so path and operation are lost; error types not
+      `Send + Sync + 'static`; stringly errors,
+      `grep -rnE 'impl From<[A-Za-z0-9_:]+> for String' --include='*.rs' .`; oversized `Err`
+      payloads (`clippy::result_large_err`).
+- [ ] Double-logging (§3): error logged at propagation site AND handler.
+- [ ] `?` chains with no `.context(...)` anywhere between syscall and `main` (§3) —
+      undebuggable errors. Eager context on the success path:
+      `grep -rnE '\.context\(format!' --include='*.rs' .` — want `with_context(|| format!(..))` = Low.
+- [ ] FFI (§5): `grep -rnE 'extern "C(-unwind)?" fn' --include='*.rs' .` — a body that
       can panic without an inner `catch_unwind` aborts the process (since 1.81) =
       High (DoS); with a declared MSRV below 1.81 it is UB = Critical.
 - [ ] `grep -rnE '(debug_)?assert(_eq|_ne)?!\(' --include='*.rs' --exclude-dir=tests --exclude-dir=benches --exclude-dir=examples .`
       (then skip `#[cfg(test)]` modules) — `assert!` on an input-derived condition =
-      High (DoS); `debug_assert!` as the only guard of one = no check in release, High.
-- [ ] `Drop` impls that can panic: `rg -A15 'impl Drop' -t rust` then scan for
+      High (DoS); `debug_assert!` as the only guard of one = no check in release, High (§5).
+- [ ] `Drop` impls that can panic (§5): `rg -A15 'impl Drop' -t rust` then scan for
       `unwrap`/`expect`/`panic!`/indexing/`?` inside `fn drop` — double-panic
       aborts the process (DoS), High. `LANG-DROP-NO-PANIC`.
-- [ ] Retry loops: `rg 'retry|backoff' -t rust -i` — retries without
+- [ ] **Mutex poison policy undecided (§5) — Low** —
+      `grep -rnE '\.lock\(\)\.unwrap\(\)' --include='*.rs' .` — each hit neither states the
+      invariant (`expect("not poisoned: …")`) nor recovers
+      (`unwrap_or_else(PoisonError::into_inner)`); pick one policy and document it.
+- [ ] Retry loops (§7): `rg 'retry|backoff' -t rust -i` — retries without
       classification (retrying 4xx), without jitter/cap, or around
-      non-idempotent operations.
+      non-idempotent operations. Error-to-status mapping repeated per handler instead of one
+      `IntoResponse`/`From<Error> for Status` impl = Low.
 - [ ] Error tests assert variants (`matches!`), not just `.is_err()`; error
-      seams injectable (trait boundaries) for fault testing.
+      seams injectable (trait boundaries) for fault testing (§8):
+      `grep -rnE '#\[should_panic\]|assert!\(.*\.is_err\(\)\)' --include='*.rs' .` — a bare
+      `should_panic` with no `expected =`, or an `is_err()` assert a wrong variant passes = Low;
+      user-facing `Display` output has a snapshot test.
 - [ ] Lints to enforce in CI: `clippy::unwrap_used`, `clippy::panic` (servers),
       `clippy::result_large_err`, `clippy::or_fun_call`,
       `clippy::manual_let_else`; consider `#![deny(clippy::unwrap_used)]` at
       crate roots of network-facing crates.
+- [ ] **Error reporting at the top (§9) — Low; Medium when internal error text reaches a
+      client** — `grep -rnE '(eprintln|error|warn)!\(.*\{(e|err|error)\}' --include='*.rs' .`
+      (a plain `{e}` renders the outermost message only: want `{e:#}` or `error = ?err`);
+      `grep -rlE 'panic::set_hook' --include='*.rs' .` printing nothing in a service means no
+      panic hook into the structured logger; read the error-to-response mapping for the internal
+      error's `to_string()` or `{:?}` in a response body.

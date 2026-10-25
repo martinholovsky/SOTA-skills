@@ -212,24 +212,33 @@ unit_tests:
 ## Audit checklist
 
 - [ ] Producer-boundary contracts exist (schema + semantics + SLOs) and are
-      CI-enforced, not wiki-only?
+      CI-enforced, not wiki-only, placed where ownership changes hands
+      (source→platform, mart→consumer)? Consumers breaking on producer deploys
+      despite a contract = HIGH (§1)
 - [ ] Every core/mart model: freshness, volume, unique-key, not-null-key
-      checks at minimum?
+      checks at minimum; on critical models also null-rate jumps, accepted
+      values/ranges and distribution drift (§2)?
 - [ ] Checks explicitly tiered; block-tier actually stops downstream
-      (not just alerts)?
-- [ ] Zero-row and duplicate-key conditions block on critical marts?
-- [ ] Warn alerts owned and triaged — no weeks-old ignored failures?
-- [ ] Referential integrity checked between facts and dimensions?
+      (not just alerts) (§3)?
+- [ ] Zero-row, duplicate-key, null-key and broken referential integrity
+      conditions block on critical marts (§3)?
+- [ ] Warn alerts owned and triaged — no warn-tier check failing 3+ weeks
+      untriaged (MEDIUM) (§3)?
+- [ ] Referential integrity checked between facts and dimensions (§2)?
 - [ ] HIGH: data sets moved between systems reconciled on control totals
       (count + key-measure sums + order-independent key hash), block-tier —
-      not on row count alone? Probe (lists reconciliation files with no
+      not on row count alone (§2)? Probe (lists reconciliation files with no
       sum/hash):
       `grep -rliE 'reconcil|row_?count' --null --include='*.sql' --include='*.py' --include='*.yml' . | xargs -0 -r grep -LiE 'sum\(|hash|checksum|md5|sha'`
-- [ ] Anomaly detection (if any) supplements explicit checks and isn't an
-      alert-fatigue source?
+- [ ] Anomaly detection (if any) supplements explicit checks, never blocks,
+      stays on a small set of business-critical tables, and has an
+      alerts-per-week budget per owner (§4)?
 - [ ] Lineage derivable from code; column-level where PII/regulatory needs
-      it?
-- [ ] Incident path documented: pause downstream, notify, quarantine,
-      reprocess via backfill, verify?
-- [ ] Transform logic unit-tested with fixtures; CI builds changed models
-      pre-merge?
+      it (§5)?
+- [ ] Incident path documented: pause downstream, notify and mark data
+      known-bad to consumers, quarantine, reprocess via backfill (never
+      hand-`UPDATE` a mart), verify, postmortem adding the missing check? None =
+      MEDIUM, HIGH when feeding financial or operational decisions (§6)
+- [ ] Transform logic unit-tested with fixtures (nulls, duplicates, late
+      rows, timezone boundaries, empty input); CI builds changed models plus
+      downstream on sample data pre-merge; zero tests = HIGH (§7)?

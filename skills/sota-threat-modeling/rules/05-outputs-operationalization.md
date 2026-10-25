@@ -292,13 +292,17 @@ never. Generate views from the threat table instead.
 ## Audit checklist
 
 - [ ] Threat model exists in-repo, versioned, with owner and last-review date;
-      follows (or maps cleanly onto) the template sections.
+      follows (or maps cleanly onto) the template sections (§1), with
+      diagrams kept as code in the same repo.
 - [ ] The threat table has L/I/rating/disposition/requirement-ID columns
-      filled for every row; no prose-only threats.
+      filled for every row; no prose-only threats; a row closed as
+      "already handled" names the file or control that handles it (§6).
 - [ ] Assumptions are explicit, numbered, and individually testable; spot-
       check 2–3 against reality (network reachability, contract terms).
 - [ ] Security requirements live in the team's actual backlog with threat-ID
-      links and rating-derived priority — not a side spreadsheet.
+      links and rating-derived priority — not a side spreadsheet; a security
+      story closes only when its abuse-case test passes and its structural
+      guard is in CI (§2).
 - [ ] Every mitigated High+ threat has an automated abuse-case test citing
       its threat ID; tests assert observable effects and run in CI.
 - [ ] Baseline requirements cite a verification catalog. Probe:
@@ -318,12 +322,21 @@ never. Generate views from the threat table instead.
       and tests → Low.
 - [ ] Posture controls (headers, IaC, IAM) covered by policy-as-code checks,
       not manual review notes.
-- [ ] Re-model trigger list documented for this system; PR template or CI
-      heuristics enforce it; sample 5 trigger-matching PRs for security notes.
+- [ ] Re-model trigger list documented for this system, no shorter than the
+      canonical table, with at least two enforcement mechanics (§4); PR
+      template or CI heuristics enforce it, the PR template carrying the
+      `## Security notes` block (trigger boxes incl. `none`, model-updated
+      link) with no bare "N/A" in sampled PRs (§5); sample 5
+      trigger-matching PRs for security notes.
 - [ ] Model changelog shows trigger-driven incremental updates (not one big-
-      bang revision years ago); covered-SHA or date range recorded.
+      bang revision years ago); covered-SHA or date range recorded; a full
+      re-read within the last year or major version, and removed features'
+      rows marked retired, not left live (§4).
 - [ ] Incidents/pentest findings traceable into threat rows + regression
-      tests.
+      tests; escape rate and the other program-health metrics (trigger
+      compliance, model freshness, verification coverage, acceptance
+      hygiene) tracked quarterly per service, none of them a count of
+      threats found (§7).
 - [ ] Risk register ≤ 1 page, current owners, no expired review dates.
 - [ ] Model confidentiality matches its location: find in-tree models with
       `git ls-files | grep -i -E "threat[-_ ]?model|risk[-_ ]?register"` and the

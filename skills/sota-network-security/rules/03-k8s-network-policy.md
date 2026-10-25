@@ -271,30 +271,39 @@ audit cross-cluster policies for `world`/wildcard exactly as single-cluster.
 ## Audit checklist
 
 - [ ] Does *every* namespace have a default-deny for **both** Ingress and Egress? List namespaces
-      with no NetworkPolicy/CNP: those are flat segments.
+      with no NetworkPolicy/CNP: those are flat segments (§1, §2).
 - [ ] Is any "default-deny" actually allow-all? Hunt `namespaceSelector: {}`, `podSelector: {}` on
       the *from* side, missing `Egress` in `policyTypes`, `0.0.0.0/0`/`world`/`reserved:world` in
-      CNPs. Then **probe** cross-namespace and egress reachability to confirm.
+      CNPs. Then **probe** cross-namespace and egress reachability to confirm (§1).
 - [ ] Is DNS allowed explicitly under default-deny egress (else everything breaks), and is the DNS
-      policy constraining *which* names resolve?
-- [ ] Is egress FQDN-allowlisted for sensitive namespaces, not open to `0.0.0.0/0`?
-- [ ] Is `169.254.0.0/16` (metadata) blocked from pod egress?
+      policy constraining *which* names resolve (§2, §5)?
+- [ ] Is egress FQDN-allowlisted for sensitive namespaces, not open to `0.0.0.0/0`? Where partners
+      allowlist your source IP, or egress must pass one inspected point, does it leave through an
+      egress gateway (§5)?
+- [ ] Is `169.254.0.0/16` (and `fd00:ec2::254`) — the metadata endpoint — blocked from pod
+      egress (§5)?
 - [ ] Every `ipBlock` justified: `grep -n 'ipBlock' -r policies/` and for each hit ask which side
       of §3's R3a it is on — an **in-cluster** peer written as a CIDR is a finding (recycled pod
       IPs re-point it silently), and an external one needs the destination, the reason, and a
       prefix no wider than the peer. A CIDR overlapping the pod/service range is in-cluster
       regardless of what the comment claims
 - [ ] Are sensitive services (secrets/DB/registry/admin) selected by identity and reachable only
-      from declared callers? Prove with Hubble + a probe.
+      from declared callers? Prove with Hubble + a probe. Audit every CNP for the `world`, `all`
+      and `0.0.0.0/0` peers, and use L7 rules where they tighten the allow (§4).
 - [ ] Is there a cluster-scoped default-deny baseline (BANP/ANP if stable, else
-      CiliumClusterwideNetworkPolicy) so new namespaces aren't allow-all?
-- [ ] Is Hubble enabled and flows exported to detection?
-- [ ] **Medium — unused allows (R9.1).** Is there a recurring permitted-vs-observed diff over
+      CiliumClusterwideNetworkPolicy) so new namespaces aren't allow-all (§6)?
+- [ ] Is Hubble enabled and flows exported to detection, not left UI-only (§7)?
+- [ ] **Medium — unused allows (§7, R9.1).** Is there a recurring permitted-vs-observed diff over
       exported flows (`hubble observe --verdict FORWARDED -o json` as the source shape), with unused
       allows removed and broad-rule-only flows given narrow rules?
 - [ ] ANP/BANP/ClusterNetworkPolicy usage: is the alpha API status pinned, CNI support verified,
-      and migration to `ClusterNetworkPolicy` (v1alpha2, tiered; `Accept`, `protocols`) planned?
+      and migration to `ClusterNetworkPolicy` (v1alpha2, tiered; `Accept`, `protocols`) planned (§6)?
 - [ ] Is Cilium at/above the 2026 advisory-fix floor (1.19.6 / 1.18.12 / 1.17.18 as of
-      2026-09-26) and checked against the current security advisories?
+      2026-09-26) and checked against the current security advisories (§4)?
 - [ ] Does a clusterwide default-deny (CCNP) exclude kube-system and allow kube-dns on 53, rather
-      than selecting every endpoint with `endpointSelector: {}`?
+      than selecting every endpoint with `endpointSelector: {}` (§6)?
+- [ ] **High — a broad allow spans the cluster mesh (§8, R10).** If `cilium clustermesh status`
+      shows connected clusters, run the over-broad hunt in *every* cluster's context, not only the
+      one you are on: `kubectl --context <ctx> get cnp,ccnp -A -o yaml | grep -nE -e '- (world|all)$|reserved:world|0\.0\.0\.0/0'`
+      — each hit carries multi-cluster blast radius; every cluster in the mesh holds the same
+      default-deny and identity-scoped allows.

@@ -89,10 +89,10 @@ actor AccountCache {
 
 ## Audit checklist
 
-- [ ] All first-party targets build in Swift 6 language mode (or carry a dated plan); no `-strict-concurrency=minimal`; UI modules use default `MainActor` isolation, libraries stay `nonisolated`.
-- [ ] Data race / shared mutable state: every `nonisolated(unsafe)`, `@unchecked Sendable`, `@preconcurrency` and mutable `static var` (grep `nonisolated\(unsafe\)|@unchecked +Sendable|@preconcurrency|static +var `) has a comment naming its synchronisation; none sits on a class with public mutable state.
-- [ ] Actor methods re-establish invariants after each `await`; no read-await-write with a stale local.
-- [ ] Unstructured `Task { }` handles are owned and cancelled (no fire-and-forget task leaks); `Task.detached` justified per use (grep `Task\.detached|Task *\{`).
-- [ ] Cancellation / timeouts: long loops and retries check cancellation; every network call, wait and subprocess has a timeout bound.
-- [ ] No `DispatchSemaphore.wait`, `sleep(` or blocking I/O inside async code (blocking the executor); continuations resume exactly once on every path.
-- [ ] `AsyncStream` sets an explicit buffering policy (no unbounded queue between fast producer and slow consumer); task-group fan-out is bounded; no stream has two consumers.
+- [ ] Language mode (§1): all first-party targets build in Swift 6 language mode (or carry a dated plan); a target still in Swift 5 mode builds with `-strict-concurrency=complete`, never `-strict-concurrency=minimal`; UI modules use default `MainActor` isolation, libraries stay `nonisolated`.
+- [ ] Data race / shared mutable state (§2): every `nonisolated(unsafe)`, `@unchecked Sendable`, `@preconcurrency`, `unowned(unsafe)` and mutable `static var` (grep `nonisolated\(unsafe\)|@unchecked +Sendable|@preconcurrency|unowned\(unsafe\)|static +var `) has a comment naming its synchronisation; none sits on a class with public mutable state.
+- [ ] Actor isolation (§3): actor methods re-establish invariants after each `await`; no read-await-write with a stale local; new shared mutable state is an `actor`, not a class guarded by `DispatchQueue`/`NSLock`; server code does not funnel work through `@MainActor`; an `@unchecked Sendable` fix appears only after a value type, an actor and a `sending` parameter were ruled out, and carries a lock.
+- [ ] Unstructured tasks (§4): fan-out uses `async let` or a task group before an unstructured `Task { }`; unstructured `Task { }` handles are owned and cancelled (no fire-and-forget task leaks); `Task.detached` justified per use (grep `Task\.detached|Task *\{`).
+- [ ] Cancellation / timeouts (§4): long loops and retries check cancellation (`try Task.checkCancellation()`); callback resources use `withTaskCancellationHandler`; every network call, wait and subprocess has a timeout bound.
+- [ ] No `DispatchSemaphore.wait`, `sleep(` or blocking I/O inside async code (§4) (blocking the executor); continuations resume exactly once on every path.
+- [ ] Streams and backpressure (§5): `AsyncStream` sets an explicit buffering policy (no unbounded queue between fast producer and slow consumer); task-group fan-out is bounded; no stream has two consumers.

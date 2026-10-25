@@ -200,21 +200,23 @@ Slow builds are a perf problem too — they tax every iteration.
 
 ## Audit checklist
 
-- [ ] Benchmarks exist for claimed-hot code (criterion/divan in `benches/`);
+- [ ] Benchmarks exist for claimed-hot code (§1) (criterion/divan in `benches/`);
       perf-sensitive PRs include before/after numbers. Claims without
       measurements = Low finding, ask for receipts.
 - [ ] `rg '\.clone\(\)|to_vec\(\)|to_string\(\)|to_owned\(\)' -t rust` scoped
       to loop bodies / per-request paths — review each; clippy
       `redundant_clone` (a **nursery** lint — enable it explicitly, `all` +
-      `pedantic` do not turn it on), `cloned_instead_of_copied`, `unnecessary_to_owned`.
-- [ ] `rg 'format!' -t rust` in hot loops (want `write!` into reused buffer);
+      `pedantic` do not turn it on), `cloned_instead_of_copied`, `unnecessary_to_owned` (§3).
+- [ ] `rg 'format!' -t rust` in hot loops (§2) (want `write!` into reused buffer);
       `rg 'String::new\(\)|Vec::new\(\)' -t rust` inside loops (want hoisted
       clear-and-reuse or `with_capacity`).
-- [ ] `rg 'collect::<Vec' -t rust` immediately followed by `.iter()`/`into_iter()`
+- [ ] `rg 'collect::<Vec' -t rust` immediately followed by `.iter()`/`into_iter()` (§2)
       — needless materialization (`clippy::needless_collect`).
-- [ ] `[profile.release]` reviewed: LTO set, codegen-units decision, strip,
+- [ ] `[profile.release]` reviewed (§1, §5): LTO set, codegen-units decision, strip,
       panic-strategy documented; profiling profile with `debug = true` exists.
-- [ ] `rg 'inline\(always\)' -t rust` — each needs benchmark justification.
+      `target-cpu=native` in the build of a distributed binary = Medium:
+      `git grep -nE 'target-cpu=native'` (`git grep` reads `.cargo/` and `.github/`).
+- [ ] `rg 'inline\(always\)' -t rust` (§8) — each needs benchmark justification.
 - [ ] Hash maps on hot non-adversarial keys still on SipHash (perf left on
       table) or, inversely, an unkeyed or fixed-seed hasher on attacker-controlled
       keys (HashDoS — High, §4): `rg 'FxHash|rustc_hash|FnvHash|fnv::|with_seeds\(' -t rust`,
@@ -222,13 +224,18 @@ Slow builds are a perf problem too — they tax every iteration.
       Default-feature `ahash` is runtime-seeded — not a finding on its own.
 - [ ] `clippy::large_enum_variant`, `large_types_passed_by_value`,
       `large_futures`, `needless_range_loop`, `or_fun_call`, `manual_memcpy`
-      enabled; `Vec<Box<T>>`-style pointer-chasing layouts in scanned data.
-- [ ] Alloc-heavy multithreaded service on default allocator — try
+      enabled (§3, §4); `Vec<Box<T>>`-style pointer-chasing layouts in scanned data.
+- [ ] Alloc-heavy multithreaded service on default allocator (§6) — try
       mimalloc/jemalloc with a benchmark; musl deployments especially.
-- [ ] `rg 'File::create|TcpStream' -t rust` write paths without `BufWriter`;
+- [ ] `rg 'File::create|TcpStream' -t rust` write paths without `BufWriter` (§6);
       `rg 'BufWriter' -A20` missing explicit `flush()` before drop.
 - [ ] Network parsing copying into owned `String`/`Vec` where
-      `Bytes`/`#[serde(borrow)]` would zero-copy.
+      `Bytes`/`#[serde(borrow)]` would zero-copy (§6).
 - [ ] CI bench regression gate (criterion + `critcmp`/`cargo bench` artifacts,
       or codspeed/gungraun (formerly iai-callgrind) instruction counting for
-      noise-free CI).
+      noise-free CI) — thresholds, not single runs (§8).
+- [ ] **Developer-loop build time (§7) — Low** — `cargo build --timings` names the long pole;
+      `grep -rnE --include=Cargo.toml '"full"' .` lists dependencies pulled with every feature
+      (`tokio`, `syn` full): trim to the features used or move the integration behind a feature.
+      Hot-edit crates are leaves of the workspace; heavy generic functions delegate to a
+      non-generic inner fn.

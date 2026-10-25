@@ -444,19 +444,19 @@ Running external programs (formerly section 9) moved to
       cannot reach production: a dev-only route, a console behind a feature that is off, no
       `ROCKET_PROFILE=debug`, and images built with `--release`. Also confirm the startup
       check that refuses a debug build.
-- [ ] Arithmetic on input: `rg '(len|size|count|offset|idx)\s*[+*-]' -t rust`
+- [ ] Arithmetic on input (§3): `rg '(len|size|count|offset|idx)\s*[+*-]' -t rust`
       near parsing code — wrapped math on untrusted values = High;
       `rg 'as u(8|16|32)|as usize' -t rust` in protocol code for truncating
       casts; release profile `overflow-checks` decision documented.
-- [ ] Panic surface in handlers: run [rules/02](02-errors-and-panics.md) checklist scoped to
+- [ ] Panic surface in handlers (§4): run [rules/02](02-errors-and-panics.md) checklist scoped to
       request-reachable code; `rg 'with_capacity\(' -t rust` where the arg
       derives from input = High.
 - [ ] `rg '#\[derive\(.*Debug' -t rust` on structs with `password|secret|key|
       token` fields; `rg '==' -t rust` comparing MACs/tokens (want `ct_eq`);
-      secrets not in `SecretString`/`Zeroizing` = Medium-High.
+      secrets not in `SecretString`/`Zeroizing` = Medium-High (§5).
 - [ ] `rg 'thread_rng|rand::rng\(|SmallRng|StdRng::seed|seed_from_u64' -t rust` in
       key/nonce/token generation paths → require the OS RNG (`SysRng` in rand
-      ≥ 0.10, `OsRng` earlier) or `getrandom`.
+      ≥ 0.10, `OsRng` earlier) or `getrandom`; `strings target/release/app | rg -i secret` clean (§5).
 - [ ] `rg 'bincode' -g 'Cargo.toml' -g 'Cargo.lock' .` — unmaintained (RUSTSEC-2025-0141):
       new use = Low (pick a maintained format); decoding untrusted bytes without
       `.with_limit` = High (§2, §6).
@@ -484,11 +484,11 @@ Running external programs (formerly section 9) moved to
       present: load [rules/09](09-formal-verification.md) and audit them, a vacuous proof is not evidence.
 - [ ] **Unlocked tool installs (§1) — Medium** —
       `find . \( -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name justfile -o -name Dockerfile \) -type f -not -path '*/target/*' -exec grep -nE 'cargo[[:space:]]+install' /dev/null {} + | grep -v -e '--locked'`
-- [ ] Release CI uses `--locked`; binaries built from tags in CI;
+- [ ] Release CI uses `--locked` (§8); binaries built from tags in CI;
       `cargo auditable` (or SBOM) for deployed artifacts = recommended.
 - [ ] Logs: `rg 'info!|warn!|error!|debug!' -t rust` near auth/headers — no
       `Authorization`/`Cookie`/body logging; user strings as structured
-      fields, not message interpolation.
+      fields, not message interpolation; no `error!` on client 4xx (§8).
 - [ ] `rg 'output\(\)|wait_with_output' -t rust` where the child's output size is
       not bounded by the caller = Medium (R9.6); `rg 'pre_exec' -t rust` — the
       closure must be async-signal-safe (R9.7). R9.x now live in [rules/08](08-external-programs.md); its checklist is the full set.

@@ -287,19 +287,23 @@ For each `unsafe` block, in order:
 
 ## Audit checklist
 
-- [ ] `rg 'unsafe' -t rust --count-matches` — map the surface first; unsafe
-      outside dedicated modules/crates is a structure finding.
-- [ ] Undocumented blocks: `rg -B2 'unsafe \{' -t rust | rg -v 'SAFETY'` (then
-      verify by eye); enforce `clippy::undocumented_unsafe_blocks`.
-- [ ] `rg 'transmute' -t rust` — each one: why not `bytemuck`/`zerocopy`/
+- [ ] `rg 'unsafe' -t rust --count-matches` (§1) — map the surface first; unsafe
+      outside dedicated modules/crates is a structure finding. For each block: is there a safe
+      equivalent from the §1 list? An `unsafe` "optimization" with no benchmark showing the safe
+      version is the bottleneck = Low–Medium.
+- [ ] Undocumented blocks (§2): `rg -B2 'unsafe \{' -t rust | rg -v 'SAFETY'` (then
+      verify by eye); enforce `clippy::undocumented_unsafe_blocks`, and `clippy::missing_safety_doc`
+      for an `unsafe fn` with no `/// # Safety`; `unsafe_op_in_unsafe_fn` not `allow`ed. A SAFETY
+      comment that does not address each precondition of the called API counts as missing.
+- [ ] `rg 'transmute' -t rust` (§3) — each one: why not `bytemuck`/`zerocopy`/
       `from_bits`/`cast`? Lifetime-extending transmute = Critical.
-- [ ] `rg 'from_utf8_unchecked|get_unchecked|assume_init|set_len' -t rust` —
+- [ ] `rg 'from_utf8_unchecked|get_unchecked|assume_init|set_len' -t rust` (§3) —
       verify the stated invariant actually holds on all paths incl. panics.
-- [ ] `rg 'static mut|&mut \*\(|as \*mut' -t rust`; compiler lints
+- [ ] `rg 'static mut|&mut \*\(|as \*mut' -t rust` (§3); compiler lints
       `static_mut_refs`, `invalid_reference_casting` must be deny.
-- [ ] `rg 'unsafe impl (Send|Sync)' -t rust` — require per-field justification
+- [ ] `rg 'unsafe impl (Send|Sync)' -t rust` (§3) — require per-field justification
       comment; absence = High.
-- [ ] FFI: `rg 'extern "C"' -t rust` — check `#[repr(C)]` on crossing types,
+- [ ] FFI (§3): `rg 'extern "C"' -t rust` — check `#[repr(C)]` on crossing types,
       panic containment, allocator pairing (`into_raw`/`from_raw` symmetry),
       `as_ptr()` on temporaries.
 - [ ] **Hand-written bindings and untyped handles** (§3b) — `grep -rnE 'c_void' --include='*.rs' .`
@@ -322,14 +326,14 @@ For each `unsafe` block, in order:
       `uninitialized` = Critical for almost every type; `zeroed` is UB wherever all-zero is
       invalid (references, `NonNull`, fn pointers, most enums). rustc's `invalid_value`
       lint flagged both on concrete types and said nothing for a generic `T` (measured).
-- [ ] Layout assumptions: `rg 'repr\(' -t rust` — byte-casting/FFI types have
+- [ ] Layout assumptions (§3a): `rg 'repr\(' -t rust` — byte-casting/FFI types have
       `repr(C)`/`repr(transparent)`; `rg 'as usize as \*|usize as \*' -t rust`
       — int→ptr casts (provenance loss).
-- [ ] `rg 'map_unchecked_mut|Pin::new_unchecked|get_unchecked_mut' -t rust` —
+- [ ] `rg 'map_unchecked_mut|Pin::new_unchecked|get_unchecked_mut' -t rust` (§3a) —
       hand-rolled pin projections; prefer `pin-project`. Drop impls using
       `ptr::read`/`ManuallyDrop` checked for panic-path double-drop.
 - [ ] CI: Miri job exists and isn't `continue-on-error: true`; fuzz targets
-      exist for unsafe parsers; `cargo geiger` output reviewed for the tree.
+      exist for unsafe parsers; `cargo geiger` output reviewed for the tree (§4, §5).
 - [ ] **A sanitizer run without `--target`** (§4): `grep -rnE -e '-Zsanitizer=' .github/ .gitlab-ci.yml Makefile justfile scripts/ 2>&1 | grep -v -e '--target'`.
       A hit is a lead, line by line: a `--target` on another line of the same job, or a
       `No such file` line for an absent path, also prints. A confirmed one applies the sanitizer
@@ -341,7 +345,13 @@ For each `unsafe` block, in order:
       — unsafe present and no harness: check that its Miri job runs the unsafe paths; neither =
       Medium. Harnesses present: audit them with rules/09 — a vacuous proof is not evidence.
 - [ ] Crates with zero unsafe missing `#![forbid(unsafe_code)]` — Low, but
-      free hardening.
+      free hardening (§5).
+- [ ] **Soundness walk per `unsafe` block (§6) — Critical when safe code can break the
+      invariant** — for each block: list the unsafe operations and each documented
+      precondition; check that the SAFETY comment discharges all of them; hunt invariant escapes
+      (pub fields, safe methods, trait impls, `Deref`, `Drop`, a panic from user closures,
+      `T: Clone` or comparators mid-modification, reentrant callbacks); a written per-field
+      argument on any manual `unsafe impl Send/Sync`; Miri runs this path in CI.
 - [ ] Severity calibration: reachable UB = Critical; unsound public API (safe
       code can trigger UB) = Critical even if unexercised; missing SAFETY
       comment = Medium; missing Miri CI on unsafe crate = Medium.

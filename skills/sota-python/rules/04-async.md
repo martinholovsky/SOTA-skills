@@ -243,7 +243,7 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
 
 - [ ] **Ruff async rules first — blocking calls, sync sleep, etc.** —
       `uvx ruff check --select ASYNC --statistics .`
-- [ ] **Blocking calls inside async defs [HIGH in servers]** —
+- [ ] **Blocking calls inside async defs (§3) [HIGH in servers]** —
       `grep -rn "time\.sleep" --include="*.py" src/` (cross-check: inside async def?);
       `grep -rn "requests\.\(get\|post\|put\|delete\|Session\)" --include="*.py" src/` ;
       `grep -rn "subprocess\.\(run\|check_output\|call\)" --include="*.py" src/` (in async
@@ -252,14 +252,14 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
       `grep -rn 'DJANGO_ALLOW_ASYNC_UNSAFE' .` (settings, CI, Dockerfiles, env files) plus the
       deployed environment's variables; any hit turns `SynchronousOnlyOperation` into a silent
       block, which Django's docs warn risks data loss
-- [ ] **Fire-and-forget tasks [MEDIUM-HIGH]** —
+- [ ] **Fire-and-forget tasks (§2) [MEDIUM-HIGH]** —
       `grep -rn "asyncio.create_task" --include="*.py" src/` (is the return value kept +
       callback added?); `grep -rn "ensure_future" --include="*.py" src/` (legacy spelling, same
       issue)
-- [ ] **gather usage [review each]** — `grep -rn "asyncio.gather" --include="*.py" src/` ;
+- [ ] **gather usage (§1) [review each]** — `grep -rn "asyncio.gather" --include="*.py" src/` ;
       `grep -rn "return_exceptions=True" --include="*.py" src/` (are results isinstance-checked
       after?)
-- [ ] **Swallowed cancellation [HIGH]** —
+- [ ] **Swallowed cancellation (§4) [HIGH]** —
       `grep -rn -A3 "except asyncio.CancelledError" --include="*.py" src/ | grep -L raise` ;
       `grep -rn "except BaseException" --include="*.py" src/`
 - [ ] **Timeouts** — `grep -rn "asyncio.timeout\|wait_for" --include="*.py" src/ | wc -l` (zero
@@ -268,12 +268,18 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
 - [ ] **Loop-bound objects at import time [MEDIUM]** —
       `grep -rn "^[a-zA-Z_]* = asyncio.\(Queue\|Lock\|Event\)" --include="*.py" src/` ;
       `grep -rn "get_event_loop" --include="*.py" src/` (legacy API [LOW-MEDIUM])
-- [ ] **Async generators holding resources without aclosing** —
+- [ ] **Async generators holding resources without aclosing (§5)** —
       `grep -rln "async def.*->.*AsyncIterator\|AsyncGenerator" --include="*.py" src/` ;
       `grep -rn "aclosing" --include="*.py" src/` (compare counts)
-- [ ] **Forgotten awaits — runtime + type checker** —
+- [ ] **Forgotten awaits — runtime + type checker; async test setup (§10)** —
       `grep -rn "asyncio_mode" pyproject.toml setup.cfg 2>/dev/null` ;
+      `grep -rnE 'await[[:space:]]+asyncio\.sleep\([[:space:]]*([1-9]|0?\.[0-9]*[1-9])' --include='test_*.py' --include='*_test.py' --include='conftest.py' --exclude-dir=.venv .`
+      (a real-time sleep in a test: inject a clock [MEDIUM]) ;
+      `grep -rlE '\.cancel\(\)' --include='test_*.py' --include='*_test.py' --exclude-dir=.venv . | grep -q . || echo "no test cancels a task"` [LOW] ;
       `python -W error::RuntimeWarning -m pytest -x 2>&1 | grep "never awaited"`
+- [ ] **anyio and asyncio structured APIs mixed in one codebase (§8) [LOW]** —
+      `a=$(grep -rlE '^[[:space:]]*(import anyio|from anyio)' --include='*.py' --exclude-dir=.venv . | wc -l); b=$(grep -rlE 'asyncio\.(TaskGroup|timeout)\(' --include='*.py' --exclude-dir=.venv . | wc -l); [ "$a" -gt 0 ] && [ "$b" -gt 0 ] && echo "both idioms: $a anyio files, $b asyncio files"`
+      (pick one idiom)
 - [ ] **Unbounded queue or fan-out (§9) — MEDIUM, HIGH when the producer is user traffic** —
       `grep -rnE 'asyncio\.Queue(\[[^]]*\])?\((maxsize[[:space:]]*=[[:space:]]*0)?\)' --include='*.py' src/`
       (measured on 3.14: `asyncio.Queue().maxsize` is `0`, and 10,000 `put_nowait` calls never

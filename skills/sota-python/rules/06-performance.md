@@ -215,7 +215,7 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
 ## Audit checklist
 
 - [ ] **Ruff perf rules** — `uvx ruff check --select PERF,C4,SIM --statistics .`
-- [ ] **String building & containers [hot-loop suspects]** —
+- [ ] **String building & containers (§2) [hot-loop suspects]** —
       `grep -rn "+= .*str(\|+= f\"\|+= \"" --include="*.py" src/` (concat in loops? check
       context); `grep -rn "\.pop(0)\|insert(0," --include="*.py" src/` (O(n) deque ops);
       `grep -rn "in \[" --include="*.py" src/ | head` (list membership in conditions)
@@ -223,18 +223,32 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
       `grep -rn "re.compile\|re.match\|re.search" --include="*.py" src/ | head -30`
 - [ ] **DataFrame antipatterns [MEDIUM in data code]** —
       `grep -rn "iterrows\|itertuples\|\.apply(lambda" --include="*.py" src/` ;
-      `grep -rn "for .* in df\[" --include="*.py" src/`
-- [ ] **Cache hygiene** — `grep -rn "@cache$\|@functools.cache" --include="*.py" src/`
+      `grep -rn "for .* in df\[" --include="*.py" src/` ; `grep -rnE '(np|numpy)\.vectorize\(' --include='*.py' --exclude-dir=.venv .`
+      (not faster than a loop, §3)
+- [ ] **Cache hygiene (§4)** — `grep -rn "@cache$\|@functools.cache" --include="*.py" src/`
       (unbounded — user-controlled args? on methods?);
       `grep -rn "@lru_cache" --include="*.py" src/ -A2 | grep "def .*(self"` (instance leak
       [MEDIUM]); `grep -rn "cache_clear" --include="*.py" tests/ src/` (invalidation/test
       isolation present?)
-- [ ] **Concurrency model sanity** — `grep -rn "ThreadPoolExecutor" --include="*.py" src/` (used
+- [ ] **Concurrency model sanity (§5)** — `grep -rn "ThreadPoolExecutor" --include="*.py" src/` (used
       for CPU-bound work? [MEDIUM]);
       `grep -rn "multiprocessing\|ProcessPoolExecutor" --include="*.py" src/ | head` ;
       `grep -rln "if __name__" $(grep -rln ProcessPoolExecutor --include="*.py" src/ 2>/dev/null)`
-- [ ] **Import-time cost (CLIs/lambdas)** —
+- [ ] **Import-time cost (CLIs/lambdas) (§6)** —
       `python -X importtime -c "import mypkg" 2>&1 | sort -t'|' -k2 -rn | head -15` ;
       `grep -rn "^import pandas\|^import numpy\|^import torch" --include="*.py" src/*cli* src/*/cli* 2>/dev/null`
-- [ ] **Benchmarks exist for perf-critical code?** —
-      `grep -rln "pytest-benchmark\|pyperf" pyproject.toml tests/ 2>/dev/null`
+- [ ] **Memory: whole inputs materialized, caches retaining frames (§7) [LOW; MEDIUM where
+      inputs reach GBs]** —
+      `grep -rnE '\.read\(\)\.splitlines\(\)|\.readlines\(\)' --include='*.py' --exclude-dir=.venv .` (iterate
+      the file instead) ;
+      `grep -rn -A3 -E '@(functools\.)?(cache|lru_cache)' --include='*.py' --exclude-dir=.venv . | grep -E 'DataFrame|ndarray'`
+      (an `lru_cache` on a function taking a DataFrame keeps it alive)
+- [ ] **A round trip or an open/close per loop iteration (§8) [MEDIUM]** —
+      `grep -rn -A2 -E '^[[:space:]]*for .+:[[:space:]]*$' --include='*.py' --exclude-dir=.venv . | grep -E -- '-[0-9]+-.*(\.(execute|save|insert_one|put_object)\(|[^.A-Za-z_]open\()'`
+      (batch with `executemany`/`COPY`/`bulk_create`, or hoist the file handle) ;
+      `grep -rnE '^[[:space:]]*(import gzip|from gzip import)' --include='*.py' --exclude-dir=.venv .`
+      (gzip on service-to-service payloads where zstd would do [LOW])
+- [ ] **Benchmarks exist for perf-critical code? (§1, §9)** —
+      `grep -rln "pytest-benchmark\|pyperf" pyproject.toml tests/ 2>/dev/null` ;
+      `grep -rnE 'time\.time\(\)[[:space:]]*-[[:space:]]*[A-Za-z_]' --include='*.py' --exclude-dir=.venv .`
+      (a wall-clock delta used as a timer: `time.perf_counter()` [LOW])

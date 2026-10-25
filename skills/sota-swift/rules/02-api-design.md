@@ -53,9 +53,9 @@ Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) (2026-10-07).
 
 ## Audit checklist
 
-- [ ] Public API surface & evolution: every `public`/`open` symbol is intended; module boundaries hold — cross-module internals use `package`, not `public`, and no target depends on another's internals through `@testable import` outside tests; `open` only on designed extension points.
-- [ ] Removed or retyped public symbols bump the major version; deprecations use `@available(*, deprecated, renamed:)` first.
-- [ ] No public function uses typed `throws(E)`; `@frozen`/`@inlinable`/`@usableFromInline` (grep) appear only in a library-evolution binary framework, each justified.
-- [ ] Hot or library-facing signatures use `some`/generics; `any` only where heterogeneity is needed.
-- [ ] `Package.swift` declares `swiftLanguageModes:` (no deprecated `swiftLanguageVersions`); any target pinned to `.v5` has a dated migration note.
-- [ ] Behaviour-switching `Bool` parameters on public APIs are enums; results that must be used are not `@discardableResult`.
+- [ ] Public API surface & evolution (§2): every `public`/`open` symbol is intended; module boundaries hold — cross-module internals use `package`, not `public`, and no target depends on another's internals through `@testable import` outside tests; `open` only on designed extension points; nothing public depends on `@_spi` symbols.
+- [ ] Removed or retyped public symbols bump the major version (§3); deprecations use `@available(*, deprecated, renamed:)` first.
+- [ ] No public function uses typed `throws(E)` (§3); `@frozen`/`@inlinable`/`@usableFromInline` (grep) appear only in a library-evolution binary framework, each justified; clients of a library-evolution module's public enums handle `@unknown default`.
+- [ ] Protocols and generics (§1): hot or library-facing signatures use `some`/generics; `any` only where heterogeneity is needed; generic constraints are the smallest protocol that works, and a changed constraint on a public generic signature is treated as a breaking change; no protocol is invented per type for testability where a struct of closures or a generic parameter is simpler.
+- [ ] `Package.swift` declares `swiftLanguageModes:` (§3) (no deprecated `swiftLanguageVersions`); any target pinned to `.v5` has a dated migration note.
+- [ ] Shape of calls (§4): behaviour-switching `Bool` parameters on public APIs are enums; results that must be used are not `@discardableResult`; argument labels make call sites read as phrases; no `init` half-builds state where a non-throwing initialiser plus a validating factory belongs.

@@ -62,10 +62,10 @@ let leaky     = app.grouped(UserToken.authenticator())                          
 
 ## Audit checklist
 
-- [ ] Authn / authz checks: every protected route group has a guard after its authenticators (grep `\.grouped\(` with an authenticator and no `guardMiddleware`/`IsAuthenticatedMiddleware`); object-level authorization checked per handler.
-- [ ] App-set cookie defaults: session cookies set `isSecure`/`secure: true` and `isHTTPOnly: true` with a `sameSite` value — grep `SessionsConfiguration\.default\(\)|isSecure: *false|isHTTPOnly: *false|secure: *false`.
-- [ ] Debug mode never ships: the shipped binary is a release mode build (`swift build -c release`); startup asserts a release build in a production environment; no `#if DEBUG` route or bypass reachable in release.
-- [ ] Resource limits / DoS guards: body sizes capped per route (no unlimited `maxSize`); streaming uploads capped; outbound calls time out; per-caller rate limiting present or delegated to the edge and stated.
-- [ ] Error responses expose no stack traces, SQL or paths; detail is logged server-side with a request ID.
-- [ ] No blocking calls on NIO event-loop threads; `EventLoopFuture` bridged only at edges; clients and event-loop groups shut down on exit.
-- [ ] CI runs on the deployment OS (Linux) and does not rely on Darwin-only Foundation behaviour.
+- [ ] Authn / authz checks (§1): every protected route group has a guard after its authenticators (grep `\.grouped\(` with an authenticator and no `guardMiddleware`/`IsAuthenticatedMiddleware`); object-level authorization checked per handler.
+- [ ] App-set cookie defaults (§2): session cookies set `isSecure`/`secure: true` and `isHTTPOnly: true` with a `sameSite` value — grep `SessionsConfiguration\.default\(\)|isSecure: *false|isHTTPOnly: *false|secure: *false`.
+- [ ] Debug mode never ships (§3): the shipped binary is a release mode build (`swift build -c release`); startup asserts a release build in a production environment; no `#if DEBUG` route or bypass reachable in release.
+- [ ] Resource limits / DoS guards (§4): body sizes capped per route (no unlimited `maxSize`); streaming uploads capped; outbound calls time out; per-caller rate limiting present or delegated to the edge and stated.
+- [ ] Error responses (§4) expose no stack traces, SQL or paths; detail is logged server-side with a request ID.
+- [ ] No blocking calls on NIO event-loop threads (§5); `EventLoopFuture` bridged only at edges; clients and event-loop groups shut down on exit.
+- [ ] CI runs on the deployment OS (Linux) (§5) and does not rely on Darwin-only Foundation behaviour.

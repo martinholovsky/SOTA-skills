@@ -203,7 +203,7 @@ spec:
 ## Audit checklist
 
 - [ ] Compute choice per workload has a justification; K8s clusters have a written
-      reason + named platform owner; no orchestrator running 3 trivial services.
+      reason + named platform owner; no orchestrator running 3 trivial services (§1).
 - [ ] Serverless: every async consumer has DLQ + alert + redrive runbook; handlers
       idempotent (check for idempotency keys on at-least-once triggers).
 - [ ] Function timeouts/memory tuned vs p99; reserved concurrency caps on
@@ -221,16 +221,19 @@ spec:
 - [ ] Multi-step workflows in a workflow engine (or durable functions), not
       sleep/retry loops in handler code.
 - [ ] K8s version within provider standard support, ≤ 1 behind default; upgrade
-      runbook exists and was exercised.
+      runbook exists and was exercised (§1, §3).
 - [ ] All prod pods have resource requests; memory limits set; no
-      requests-vs-usage gap > 2x sustained (check VPA recs / metrics).
+      requests-vs-usage gap > 2x sustained (check VPA recs / metrics) (§3).
 - [ ] PDBs present on multi-replica workloads and none block drains
-      (minAvailable < replicas).
-- [ ] Topology spread or anti-affinity across zones on HA-claimed services.
+      (minAvailable < replicas) (§3).
+- [ ] Topology spread or anti-affinity across zones on HA-claimed services (§3).
 - [ ] All three autoscaling layers configured; cluster/node autoscaler max set;
-      spot pools tainted with tolerating workloads only.
-- [ ] Probes sane (liveness dependency-free); SIGTERM handled; grace period ≥ drain.
+      spot pools tainted with tolerating workloads only; HPA and VPA not both active
+      on CPU (§3).
+- [ ] Probes sane (liveness dependency-free); SIGTERM handled; grace period ≥ drain (§3).
 - [ ] Cluster API endpoint private/IP-restricted; RBAC via IdP groups; quotas per
-      namespace.
+      namespace; prod and non-prod on separate clusters, managed control plane (§3).
 - [ ] VMs in ASGs/MIGs from pipeline-built images; no snowflakes (check instance
-      age + provenance); no inbound SSH from internet.
+      age + provenance); no inbound SSH from internet; patched by image rebake +
+      rolling replace; stateful VMs have snapshot schedules and a written failover
+      story (§4).

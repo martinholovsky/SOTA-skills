@@ -172,6 +172,9 @@ evidence:
 
 ## 8. Common audit findings (what to actually look for)
 
+*(advisory)* — severity and detection reference: each row restates a rule of §1–§7,
+probed by the checklist item that cites that section.
+
 | Finding | Severity (typical) | Detection |
 |---|---|---|
 | Role/bucket/topic assumable or readable by `*` / `allUsers` | Critical | Access Analyzer external findings; policy grep for `"Principal":"*"` without conditions |
@@ -188,21 +191,31 @@ evidence:
 ## Audit checklist
 
 - [ ] Credential report / key inventory: zero human IAM users with keys or passwords
-      (exceptions documented, conditioned, rotated).
+      (exceptions documented, conditioned, rotated) (§1).
 - [ ] SSO enforced with MFA; admin roles require phishing-resistant MFA; sessions
-      time-bound.
-- [ ] Access granted via IdP groups → permission sets; no direct user bindings.
+      ≤ 8h standard, ≤ 1h privileged; just-in-time elevation preferred over standing
+      admin (§1).
+- [ ] Access granted via IdP groups → permission sets; no direct user bindings (§1).
 - [ ] Every workload identity is platform-issued or federated; zero static SA
-      keys/access keys in apps or CI (check key-creation org policy is enforced).
-- [ ] All OIDC federation trusts pin issuer + audience + exact subject.
+      keys/access keys in apps or CI (check key-creation org policy is enforced);
+      one identity per workload, no role shared across services (§2).
+- [ ] All OIDC federation trusts pin issuer + audience + exact subject (§2).
 - [ ] No `Action:*`/`Resource:*` writes outside admin roles; PassRole/actAs scoped;
-      escalation primitives enumerated and justified.
+      escalation primitives enumerated and justified; each broad grant in IaC carries
+      a comment saying why it exists (§3).
 - [ ] Resource policies reviewed: no `Principal:"*"` without strong conditions;
-      org-ID conditions on shared resources.
+      org-ID conditions on shared resources; a resource policy that grants an AWS service
+      principal carries `aws:SourceArn` / `SourceAccount` / `SourceOrgID` (§3).
 - [ ] Cross-account trusts inventoried; every external account ID identified;
-      ExternalId or federation for third parties.
-- [ ] Permission boundaries (or provider equivalent) on self-service IAM.
+      ExternalId or federation for third parties; trusts pin the exact principal ARN,
+      not account root unless deliberate (§6).
+- [ ] Permission boundaries (or provider equivalent) on self-service IAM; role creation
+      without the boundary is denied; no role both administers a KMS key policy and
+      decrypts prod data (§4).
 - [ ] Unused-access analyzer running; findings older than 90 days are zero or
-      ticketed.
-- [ ] Break-glass: exists, IdP-independent, alarmed, tested within last quarter.
-- [ ] Offboarding test: pick a recent leaver; verify zero residual access.
+      ticketed; external/public-access analysis runs continuously; privileged grants
+      reviewed quarterly with a who-has-admin diff (§5).
+- [ ] Break-glass: both paths (org root, account-level role) exist, IdP-independent,
+      alarmed, tested within last quarter; each use reviewed within 24h and its
+      credentials rotated (§7).
+- [ ] Offboarding test: pick a recent leaver; verify zero residual access (§1).

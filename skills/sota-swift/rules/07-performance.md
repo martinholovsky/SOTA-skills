@@ -37,7 +37,7 @@ Swift's cost model.
 
 ## Audit checklist
 
-- [ ] Profiling before optimizing: performance changes cite a release-build profile (Instruments, `perf`, or package-benchmark), not a debug build or intuition.
-- [ ] Allocation / GC-style pressure: hot paths avoid `any P` existentials (grep `: *any +[A-Z]|\[any +[A-Z]`), per-iteration closure or class allocations, and string building in loops.
-- [ ] No accidental copy-on-write copies on hot collections (extra references reviewed); capacity reserved where sizes are known.
-- [ ] Benchmarks that gate CI compare baselines from the same package-benchmark version; no `Task` per tiny work item; hot actors are not a serialisation bottleneck.
+- [ ] Profiling before optimizing (§1): performance changes cite a release-build profile (Instruments, `perf`, or package-benchmark), not a debug build or intuition.
+- [ ] Allocation / GC-style pressure (§2): hot paths avoid `any P` existentials (grep `: *any +[A-Z]|\[any +[A-Z]`), per-iteration closure or class allocations, and string building in loops; hot-path classes are `final`.
+- [ ] No accidental copy-on-write copies on hot collections (§2) (extra references reviewed); capacity reserved where sizes are known.
+- [ ] Benchmarks that gate CI compare baselines from the same package-benchmark version (§1); no `Task` per tiny work item, hot actors are not a serialisation bottleneck, and each `@concurrent` is justified by a profile (§3).

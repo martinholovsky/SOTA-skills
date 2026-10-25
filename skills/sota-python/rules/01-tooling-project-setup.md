@@ -371,16 +371,44 @@ Run from repo root. Severity guidance in brackets.
       `grep -rnE 'uv[[:space:]]+(sync|run|export)[^#]*--frozen|UV_FROZEN' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' .`
       (each hit installs a lock nobody compared with `pyproject.toml`: use `--locked`) ;
       `grep -rlE 'poetry[[:space:]]+install' --include='*.y*ml' . | while IFS= read -r f; do grep -qE 'poetry[[:space:]]+check[[:space:]]+--lock' "$f" || echo "$f: poetry install with no poetry check --lock"; done`
-- [ ] **requires-python vs syntax reality** — `grep -n "requires-python" pyproject.toml` ;
+- [ ] **requires-python vs syntax reality; `pyproject.toml` as the single source (§2)** —
+      `grep -n "requires-python" pyproject.toml` ;
       `grep -rln "match \|type [A-Z].* = \|def .*\[T" --include="*.py" src/ | head` (3.12 syntax
-      w/ old floor?)
-- [ ] **Layout** — `ls -d src/ 2>/dev/null | grep -q . || echo "flat layout"` (flat layout in a
+      w/ old floor? [HIGH: release-blocking]) ;
+      `find . -maxdepth 1 \( -name setup.py -o -name setup.cfg -o -name pytest.ini -o -name mypy.ini -o -name .flake8 \) -print`
+      (config outside `pyproject.toml` [LOW]) ;
+      `find . -maxdepth 1 -name pyproject.toml -exec grep -nA8 '^\[project\.optional-dependencies\]' {} + | grep -E '"(pytest|ruff|mypy|coverage)'`
+      (dev tooling published as a user extra, not a `[dependency-groups]` group [LOW]) ;
+      `find . -maxdepth 1 -name pyproject.toml -exec grep -nE '"[A-Za-z0-9_.-]+[^"]*<[0-9][^"]*"' {} +`
+      (an upper-bound cap: justified only for a dep with a history of breaking [LOW])
+- [ ] **Layout (§5)** — `ls -d src/ 2>/dev/null | grep -q . || echo "flat layout"` (flat layout in a
       library [LOW]); `find src -name py.typed | head -1` (annotated lib without py.typed
-      [MEDIUM])
+      [MEDIUM]) ; `find . -path ./.venv -prune -o -path ./tests -prune -o \( -name 'test_*.py' -o -name '*_test.py' -o -name conftest.py \) -print | head -3`
+      (tests inside the package ship with it [LOW])
 - [ ] **Ruff coverage** — `uvx ruff check --statistics .` (what's currently violated);
       `grep -n "select" pyproject.toml` (B/S/ASYNC missing from select [LOW])
-- [ ] **Hygiene** — `git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"` (committed artifacts
-      [LOW])
+- [ ] **Hygiene (§10)** — `git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"` (committed artifacts
+      [LOW]) ; `git ls-files .python-version | grep -q . || echo "no .python-version committed"` [LOW] ;
+      `git ls-files | grep -E '(^|/)requirements[^/]*\.txt$'` (each must be a generated `uv export`,
+      marked as such [LOW]) ;
+      `v=$(grep -rlE '^__version__[[:space:]]*=' --include='__init__.py' --exclude-dir=.venv . | wc -l); p=$(find . -maxdepth 1 -name pyproject.toml -exec grep -cE '^version[[:space:]]*=' {} +); [ "$v" -gt 0 ] && [ "${p:-0}" -gt 0 ] && echo "version in pyproject.toml and $v __init__.py"`
+      (the version in two places [LOW]) ;
+      `grep -rnE 'python3? src/[A-Za-z0-9_/]+\.py' --include='*.md' --include='*.rst' --exclude-dir=.venv .` (run-by-path
+      instructions instead of `[project.scripts]` [LOW]) ; `uvx deptry .` (DEP002/DEP003/DEP005 are
+      candidates: prove each removal as §10 says)
+- [ ] **Pre-PEP 695 generics and aliases on a 3.12+ floor (§7) [LOW]** —
+      `uvx ruff check --select UP040,UP046,UP047 --statistics .` (`TypeAlias`, `Generic[T]` and
+      `TypeVar` boilerplate where PEP 695 syntax is the default; measured, ruff 0.16.2, the three
+      fire only when `target-version` is `py312` or later) ; a `match` with no closing `case _`
+      is [rules/02](02-typing-correctness.md)'s exhaustiveness item, and hand-rolled chunking is
+      [rules/03](03-idioms-pitfalls.md)'s itertools item
+- [ ] **Python image built with dev dependencies, or source copied before the lock (§9) [MEDIUM
+      for dev deps in the image; LOW for layer order]** —
+      `grep -rnE 'uv[[:space:]]+sync' --include='Dockerfile*' --include='Containerfile*' . | grep -v -- '--no-dev'`
+      (the dev group shipped in the image) ;
+      `find . \( -name 'Dockerfile*' -o -name 'Containerfile*' \) -not -path '*/.venv/*' -exec awk 'FNR==1{s=0} /^(COPY|ADD)[[:space:]]+(\.|\.\/|src\/?)[[:space:]]/ && !s {print FILENAME":"FNR": source copied before the first uv sync"} /uv[[:space:]]+sync/{s=1}' {} +`
+      (every code change rebuilds the dependency layer) ; non-root `USER`, a minimal final
+      stage and digest-pinned `FROM` are [`sota-devsecops` rules/04](../../sota-devsecops/rules/04-build-containers.md)'s checklist
 - [ ] **pre-commit hooks pinned by tag, not SHA (§6) [LOW]** —
       `grep -nE '^[[:space:]]*rev:[[:space:]]*[^[:space:]#]' .pre-commit-config.yaml | grep -vE 'rev:[[:space:]]*[0-9a-f]{40}([[:space:]]|$)'`
       (each hit is a movable tag: `pre-commit autoupdate --freeze`)

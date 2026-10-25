@@ -312,7 +312,7 @@ scope must be written down — silent exclusions are where breaches live.
 ## Audit checklist
 
 - [ ] DFD exists, uses the 4-element vocabulary, every flow labeled with data
-      + channel; logs/backups/caches drawn as stores.
+      + channel; logs/backups/caches drawn as stores (§1).
 - [ ] Trust boundaries explicit and justified by network/identity/privilege/
       org/validation/time changes — not just "internal vs external".
 - [ ] Entry-point table covers HTTP, gRPC, queues, cron, webhooks, callbacks,
@@ -350,7 +350,7 @@ scope must be written down — silent exclusions are where breaches live.
       and add cron/consumer/webhook callers by reading. A path enforcing fewer
       checks than its sibling → High (Critical if reachable pre-auth).
 - [ ] Boundaries inferred from IaC/middleware/IAM match documented
-      architecture; drift recorded as findings.
+      architecture; drift recorded as findings (§2).
 - [ ] Time-shifted crossings (queues, caches, stored content, scheduled jobs)
       modeled as boundary crossings.
 - [ ] Privilege-reach map built from actual grants (IAM/DB/network), and
