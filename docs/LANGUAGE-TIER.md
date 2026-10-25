@@ -87,11 +87,20 @@ These track a property of the language. Adding the missing cells would be writin
   library verification effort's CI). **C/C++ meets the condition (CBMC) and its cell is empty** —
   a real candidate, deferred in the ADOPTION-LOG with a trigger, not a principled blank. The other
   languages have no checker in comparable use, so their blank is expected.
+  **SUPERSEDED 2026-10-25:** #599 filled the C/C++ cell (`sota-c-cpp` rules/06 §4a, CBMC with a
+  two-pass gate), so the deferral is resolved; the per-language state is the 2026-10-25 table
+  below. Since the same day, the seven skills with no checker also say so in their own testing
+  text, because an agent never loads this file: an absence the skill does not state reads as an
+  omission.
 - **Self-expiring suppression** (`#[expect]`, which reports itself once stale) is a Rust
   *mechanism* inside a concept that is already universal and pinned (`suppressing a linter / type
   check`). Other ecosystems have their own forms (`@ts-expect-error`, unused-`noqa` and
   unused-ignore reports, ESLint's unused-disable reporting); whether each skill should require
   its form is deferred in the ADOPTION-LOG, not decided here.
+  **SUPERSEDED 2026-10-25:** decided by #599. Every language skill now requires its form and
+  turns the unused-suppression report into a CI failure where the toolchain has one; the
+  universal concept `unused suppression reported in CI` is pinned 10/10. The three toolchains
+  with no CLI mechanism are in the 2026-10-25 table below.
 
 The general rule: **the shared skill owns the concept, the language skill owns the
 mechanism.** `sota-async-concurrency` (1,654 lines) teaches data race vs race condition,

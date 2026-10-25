@@ -127,7 +127,9 @@ the type system, and expression-oriented code**. References:
   collection capacity, and give recursive descent a depth counter. Jackson 2's
   `StreamReadConstraints` defaults (jackson-core source): `maxNestingDepth` 1000,
   `maxNumberLength` 1000, `maxStringLength` 20,000,000 (since 2.15.1; 2.15.0 had 5,000,000), and
-  **`maxDocumentLength` (since 2.16) and `maxTokenCount` (since 2.18) unlimited (`-1`)**. Set those
+  **`maxDocumentLength` (since 2.16) and `maxTokenCount` (since 2.18) unlimited (`-1`)**. Jackson 3
+  changes two of them (jackson-core 3.x source, read 2026-10-25): `maxNestingDepth` 500 and
+  `maxStringLength` 100,000,000; document length and token count are still unlimited. Set those
   two, and depth to what the schema needs, on the factory:
   `JsonFactory.builder().streamReadConstraints(StreamReadConstraints.builder().maxDocumentLength(n).build())`.
 

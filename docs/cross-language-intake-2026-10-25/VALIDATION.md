@@ -59,3 +59,11 @@ Measured by the editing passes and re-run by an independent reviewer:
 - **Go**: a panic in a child goroutine prints `panic:`, not `fatal error:`. It kills the process past middleware, but it is an unrecovered panic, not a runtime fatal error.
 
 The reviewer also confirmed seven defects in the first draft of the edits, all fixed before merge: four probes that missed their bad case or flagged their good case (.NET `MaxDepth`, js/ts `npm install` inside `pnpm install`, js/ts input-sized allocation, PHP `json_decode` depth); two contradictions with existing text (PHP `--prefer-lowest`, the SwiftLint blanket rule); and the Go "fatal error" wording. The fixed probes were re-run under BSD grep: every bad case hit, no good case did.
+
+## Errata (2026-10-25, second pass)
+
+Appended rather than edited in, so the record above stays what was believed when #599 merged.
+
+- **P6/P8, GraalVM:** "cyclonedx is NOT a value" is **wrong**. The GraalVM options page lists `cyclonedx` as an accepted `--enable-sbom` value, "the only format currently supported". SBOM.md does not enumerate the values.
+- **P6/P8, `cargo auditable`:** "rust rules/05 line 368 not 363" is **wrong for the proposal's commit**. At `58edc7a` the line is 363, as the proposal said; 368 is its position at `edb0d8a7~1`.
+- **Not re-validated here:** the rest of this record. The second pass re-checked the version-sensitive refutations at the latest releases, and they all still hold (ADOPTION-LOG, 2026-10-25 second-pass entry).

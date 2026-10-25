@@ -222,6 +222,12 @@ In Go, assert that a counter is non-zero in an ordinary `TestXxx` that runs the 
 the parser. A counter checked after `f.Fuzz` false-fails under `-fuzz`, because inputs run in
 separate worker processes.
 
+- **No proof tool is expected here.** Gobra, a verifier for Go, exists, but no bounded model checker or refinement checker is in
+  mainstream use for Go. A parser or invariant that must hold for
+  every input gets a property test and a fuzz target whose reach is gated (above): that is the
+  bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
+  mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
+
 `go test -fuzz=FuzzParseManifest -fuzztime=60s` in a periodic CI job; commit
 found crashers from `testdata/fuzz/` as permanent regression seeds. Seeds run
 on every normal `go test`.
