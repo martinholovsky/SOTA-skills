@@ -101,7 +101,9 @@ AGENTS.md                     # guidance for AI assistants working on the repo
     the rule rather than leaving a silent hole.
   - **The exception, stated so it is not treated as a defect:** advisory sections
     ("prefer X where it fits") and sections whose check genuinely lives in a sibling
-    skill do not need a local item. Cross-reference the owner instead.
+    skill do not need a local item. Cross-reference the owner instead, and say so under the
+    heading — `*(advisory)*` or `*(audited in [`sota-x` rules/NN](…) §M)*` — which is what
+    invariant 43 reads. Every other new section is cited `(§N)` by an item in its own checklist.
   This is a **judgement** convention and is deliberately not gated — see
   [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) for the measurement that
   showed why a mechanical version does not work.
@@ -583,7 +585,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42 — 39 of 42; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 — 40 of 43; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -736,6 +738,13 @@ CI scans the full git history, the pre-commit hook scans each commit.
     carries the canonical coverage line, and on a `rules/NN` or "Load NN" naming a file that
     does not exist. `--explain <file>` lists what points at a file. It cannot tell whether a
     trigger fires for the right task: ask that in review (`docs/SKILL-TEMPLATE.md`).
+43. **A numbered section with no checklist item citing it, or a checklist item citing no section.**
+    A ratchet over `scripts/section-sync-baseline.json` (1,246 uncited sections and 3,124 uncited
+    items on 2026-10-24). A new `## N.` section is cited `(§N)` by an item in its own checklist, or
+    marked `*(advisory)*` / `*(audited in …)*` in its first lines; a new item cites the section it
+    checks; a new rules file numbers its sections. Fixing an old entry makes it stale: run
+    `python3 scripts/reachability-graph.py --sync-tighten` (it only removes) and commit the smaller
+    baseline. The baseline may not grow against the merge base.
 
 ## Local setup
 

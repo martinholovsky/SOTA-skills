@@ -20,8 +20,20 @@ This script makes the graph explicit and checks three exact properties (invarian
 
 What it cannot check is whether a trigger fires for the RIGHT task: that is semantic (ROADMAP 16).
 
+`--sync` checks the other half, BUILD rule <-> AUDIT probe, at section level (invariant 43). A
+numbered section (`## N.`, `## Na.`, `## §N`) is a BUILD rule; a checklist item citing `(§N)` in the
+same file is its probe. Measured 2026-10-24: 1,246 of 1,770 numbered sections had no citing item and
+3,124 of 4,146 items cited no section, so the check is a RATCHET over a committed baseline
+(SYNC_BASELINE): S1 every numbered section is cited by its own checklist, marked `*(advisory)*` or
+`*(audited in ...)*` within its first lines, or listed in the baseline; S2 per file, checklist items
+citing no section never exceed the baseline count; S3 a rules file with no numbered sections is in
+the baseline (new files number their sections); S4 every baseline entry is still needed (a fixed one
+must leave, so the debt only shrinks); S5 the baseline does not grow against the merge base.
+
 Usage:
   reachability-graph.py --check            run C1-C3; exit 1 on any violation
+  reachability-graph.py --sync             run S1-S5; exit 1 on any violation
+  reachability-graph.py --sync-tighten     rewrite the baseline, REMOVING stale entries only
   reachability-graph.py --json             print the graph (nodes, edges with their source kind)
   reachability-graph.py --explain PATH     print every inbound edge of one rules file
 """
@@ -189,9 +201,188 @@ def check():
     return 0
 
 
+# --- invariant 43: section <-> probe sync, as a ratchet ------------------------------------------
+SYNC_BASELINE = "scripts/section-sync-baseline.json"
+SECTION = re.compile(r"^## (?:§\s?)?(\d+[a-z]?)\.?\s+(.*)$", re.M)
+MARKER = re.compile(r"\*\((?:advisory|audited in)\b", re.I)
+
+
+def local_cites(text):
+    """Section numbers a checklist cites in its OWN file: `§N` not preceded (same line, 60 chars) by
+    another file's reference, so `[rules/03](...) §2` and `sota-x` rules/NN §M do not count."""
+    out = set()
+    for line in text.splitlines():
+        for m in re.finditer(r"§\s?(\d+[a-z]?)(?:\.\d+)*", line):
+            if re.search(r"rules/\d|sota-[a-z]|SKILL\.md|\]\(", line[max(0, m.start() - 60):m.start()]):
+                continue
+            out.add(m.group(1))
+    return out
+
+
+def sync_state():
+    """(uncited sections as 'file :: heading', {file: uncited item count}, [files with no sections])."""
+    unc, items, unnumbered = [], {}, []
+    for f in git_files("skills/*/rules/*.md"):
+        s = open(f, encoding="utf-8").read()
+        i = s.find("\n## Audit checklist")
+        body, chk = (s[:i], s[i:]) if i >= 0 else (s, "")
+        secs = list(SECTION.finditer(body))
+        if not secs:
+            unnumbered.append(f)
+        cited = local_cites(chk)
+        for k, m in enumerate(secs):
+            end = secs[k + 1].start() if k + 1 < len(secs) else len(body)
+            head = "\n".join(body[m.end():end].strip().splitlines()[:3])
+            if m.group(1) in cited or MARKER.search(m.group(0) + "\n" + head):
+                continue
+            unc.append("%s :: %s" % (f, m.group(0)[3:].strip()))
+        n = sum(1 for it in re.findall(r"^- \[ \].*?(?=^- \[ \]|\Z)", chk, re.M | re.S) if not local_cites(it))
+        if n:
+            items[f] = n
+    return sorted(unc), items, sorted(unnumbered)
+
+
+def load_baseline(text=None):
+    if text is None:
+        if not os.path.exists(SYNC_BASELINE):
+            return None
+        text = open(SYNC_BASELINE, encoding="utf-8").read()
+    b = json.loads(text)
+    return set(b["uncited_sections"]), dict(b["uncited_items"]), set(b["unnumbered_files"])
+
+
+def write_baseline(unc, items, unnumbered):
+    with open(SYNC_BASELINE, "w", encoding="utf-8") as fh:
+        json.dump({"_note": "invariant 43 ratchet: entries may only be REMOVED. Regenerate with "
+                            "`python3 scripts/reachability-graph.py --sync-tighten`, which never adds one.",
+                   "uncited_sections": sorted(unc), "uncited_items": dict(sorted(items.items())),
+                   "unnumbered_files": sorted(unnumbered)}, fh, indent=1, ensure_ascii=False)
+        fh.write("\n")
+
+
+def merge_base_rev():
+    mb = subprocess.run(["git", "merge-base", "HEAD", "origin/main"], capture_output=True, text=True)
+    return mb.stdout.strip() if mb.returncode == 0 and mb.stdout.strip() else None
+
+
+def merge_base_baseline(rev):
+    """The baseline as it was at the merge base, or None when there is none."""
+    if rev is None:
+        return None
+    old = subprocess.run(["git", "show", "%s:%s" % (rev, SYNC_BASELINE)], capture_output=True, text=True)
+    return load_baseline(old.stdout) if old.returncode == 0 else None
+
+
+def new_files_since(rev):
+    """Rules files that did not exist at the merge base (a split or a new file)."""
+    if rev is None:
+        return set()
+    old = subprocess.run(["git", "ls-tree", "-r", "--name-only", rev, "skills/"], capture_output=True, text=True)
+    return set(git_files("skills/*/rules/*.md")) - set(old.stdout.split())
+
+
+def heading(entry):
+    return entry.split(" :: ", 1)[1]
+
+
+def sync_check():
+    unc, items, unnumbered = sync_state()
+    base = load_baseline()
+    if base is None:
+        print("FAIL: %s missing -- the ratchet has nothing to compare against" % SYNC_BASELINE)
+        return 1
+    b_unc, b_items, b_unnum = base
+    rev = merge_base_rev()
+    fresh = new_files_since(rev)
+    b_heads, now_heads = {heading(e) for e in b_unc}, {heading(e) for e in unc}
+    bad, moved = [], 0
+    for e in unc:
+        if e in b_unc:
+            continue
+        if heading(e) in b_heads:  # the same section moved or copied: debt relocated, not added
+            moved += 1
+            continue
+        bad.append("S1 %s: a numbered section no checklist item cites (§N) -- cite it, or mark it "
+                   "*(advisory)* / *(audited in ...)* under its heading" % e)
+    total_now, total_base = sum(items.values()), sum(b_items.values())
+    for f, n in items.items():
+        if n <= b_items.get(f, 0):
+            continue
+        if f in fresh and total_now <= total_base:  # a split: items moved into a new file
+            moved += 1
+            continue
+        bad.append("S2 %s: %d checklist items cite no section (baseline %d) -- a new item cites the "
+                   "section it checks, as (§N)" % (f, n, b_items.get(f, 0)))
+    for f in unnumbered:
+        if f not in b_unnum:
+            bad.append("S3 %s: a rules file with no numbered sections -- number them (## 1. ...) so "
+                       "checklist items can cite them" % f)
+    stale = [e for e in sorted(b_unc - set(unc)) if heading(e) not in now_heads] \
+        + ["%s (items: baseline %d, now %d)" % (f, n, items.get(f, 0))
+           for f, n in b_items.items() if items.get(f, 0) < n] + sorted(b_unnum - set(unnumbered))
+    relocated = [e for e in sorted(b_unc - set(unc)) if heading(e) in now_heads]
+    for e in stale + ["%s (moved; re-key it)" % e for e in relocated]:
+        bad.append("S4 stale baseline entry, now fixed: %s -- run `python3 scripts/reachability-graph.py "
+                   "--sync-tighten` and commit the smaller baseline" % e)
+    mb = merge_base_baseline(rev)
+    if mb is not None:
+        m_unc, m_items, m_unnum = mb
+        m_heads = {heading(e) for e in m_unc}
+        grew = sorted(b_heads - m_heads)
+        if len(b_unc) > len(m_unc):
+            grew.append("uncited sections %d > %d" % (len(b_unc), len(m_unc)))
+        if total_base > sum(m_items.values()):
+            grew.append("uncited items %d > %d" % (total_base, sum(m_items.values())))
+        grew += sorted(set(b_unnum) - set(m_unnum) - fresh)
+        for e in grew:
+            bad.append("S5 the baseline GREW against the merge base: %s -- the debt may only shrink" % e)
+    print("SCOPE %d" % len(git_files("skills/*/rules/*.md")))
+    for b in bad:
+        print(b)
+    if bad:
+        return 1
+    print("    ok (%d numbered sections uncited and %d uncited checklist items, all baselined%s; %d files "
+          "unnumbered; growth %s)" % (len(unc), total_now, ", %d relocated" % moved if moved else "", len(unnumbered),
+                                      "checked against the merge base" if mb is not None else
+                                      "not checked: no baseline at the merge base (new here, or no origin/main)"))
+    return 0
+
+
+def sync_tighten():
+    """Shrink the baseline to what is still needed, re-keying relocated debt; never adds new debt."""
+    unc, items, unnumbered = sync_state()
+    base = load_baseline()
+    if base is None:
+        print("no baseline to tighten; refusing to create one silently")
+        return 1
+    b_unc, b_items, b_unnum = base
+    b_heads = {heading(e) for e in b_unc}
+    fresh = new_files_since(merge_base_rev())
+    new_unc = [e for e in unc if e in b_unc or heading(e) in b_heads]
+    new_items = {f: min(n, b_items[f]) for f, n in items.items() if f in b_items}
+    budget = sum(b_items.values()) - sum(new_items.values())
+    for f, n in sorted(items.items()):
+        if f not in b_items and f in fresh and n <= budget:  # items moved into a split-off file
+            new_items[f] = n
+            budget -= n
+    new_unnum = [f for f in unnumbered if f in b_unnum]
+    write_baseline(new_unc, new_items, new_unnum)
+    print("baseline tightened: sections %d -> %d, items %d -> %d, unnumbered %d -> %d (no new debt added)"
+          % (len(b_unc), len(new_unc), sum(b_items.values()), sum(new_items.values()), len(b_unnum), len(new_unnum)))
+    return 0
+
+
 def main(argv):
     if argv[1:2] == ["--check"]:
         return check()
+    if argv[1:2] == ["--sync"]:
+        return sync_check()
+    if argv[1:2] == ["--sync-tighten"]:
+        return sync_tighten()
+    if argv[1:2] == ["--sync-init"]:  # one-time: write the first baseline (refuses if one exists)
+        if load_baseline() is not None:
+            print("baseline exists; use --sync-tighten"); return 1
+        write_baseline(*sync_state()); print("baseline written"); return 0
     if argv[1:2] == ["--json"]:
         rules, _, _, edges, unresolved = build()
         json.dump({"nodes": rules, "edges": [dict(source=s, kind=k, target=t) for s, k, t in edges],

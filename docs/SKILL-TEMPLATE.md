@@ -130,7 +130,7 @@ A **new language skill** starts from this template and must be registered in `LA
 "Any … code" has no entry there, because an unregistered language skill is never checked
 against the floor.
 
-## The rule that is not yet a gate, and is the most common real defect
+## The rule that is only half a gate, and is the most common real defect
 
 **A stated rule with no probe is invisible in AUDIT mode.** Three independent instances in
 two days: the `$?` rule (bash had neither half while PowerShell had both), the analyser
@@ -139,8 +139,11 @@ rule was written and no checklist ever asked for it.
 
 So for **every** rule you write, ask the second question before moving on: *how would an
 auditor detect a violation?* If the answer is not in the `## Audit checklist`, the rule
-ships as prose that only a reader of the file will ever apply. Nothing currently gates
-this — it is the reviewer's job.
+ships as prose that only a reader of the file will ever apply. **Invariant 43 now gates the
+mechanical half**: a new `## N.` section must be cited `(§N)` by an item in its own checklist, or
+marked `*(advisory)*` / `*(audited in …)*` under its heading. It cannot tell whether the citing
+item would actually *detect* the violation — that half is still the reviewer's job, which is why a
+new probe is run against a known-bad and a known-good fixture (below).
 
 ## Before opening the PR
 
