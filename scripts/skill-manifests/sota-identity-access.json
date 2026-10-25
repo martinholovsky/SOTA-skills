@@ -1,0 +1,33 @@
+{
+ "_note": "Declared BUILD routing for sota-identity-access (stage-3 pilot, invariant 42 C4). rules/07 (Active Directory) is reached in BUILD only through its index row; no BUILD step names it. Declared here so that is a visible decision, not an accident.",
+ "skill": "sota-identity-access",
+ "tags": {
+  "oidc-saml": ["OIDC", "OAuth", "SAML"],
+  "idp-ops": ["IdP"],
+  "authz-model": ["RBAC", "ABAC", "ReBAC"],
+  "lifecycle": ["joiner", "provisioning"],
+  "privileged": ["break-glass", "Admin-account"],
+  "mfa": ["MFA", "passkeys"],
+  "active-directory": ["Active Directory", "Kerberos", "ADCS"]
+ },
+ "files": {
+  "01": {"build": ["oidc-saml"]},
+  "02": {"build": ["idp-ops"]},
+  "03": {"build": ["authz-model"]},
+  "04": {"build": ["lifecycle"]},
+  "05": {"build": ["privileged"]},
+  "06": {"build": ["mfa"]},
+  "07": {"build": ["active-directory"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "harden our on-prem Active Directory and ADCS", "mode": "build",
+   "tags": ["active-directory"], "must_load": ["07"]},
+  {"task": "add passkey login at our self-hosted IdP", "mode": "build",
+   "tags": ["mfa", "idp-ops"], "must_load": ["06", "02"]},
+  {"task": "design break-glass access for the admin plane", "mode": "build",
+   "tags": ["privileged"], "must_load": ["05"]},
+  {"task": "audit a hybrid estate's identity layer", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+ ]
+}

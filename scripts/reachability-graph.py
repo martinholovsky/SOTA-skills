@@ -19,6 +19,12 @@ This script makes the graph explicit and checks three exact properties (invarian
       to a rules file that exists.
 
 What it cannot check is whether a trigger fires for the RIGHT task: that is semantic (ROADMAP 16).
+For the skills that DECLARE their routing it checks the declaration instead (C4, the stage-3 pilot):
+a manifest in MANIFEST_DIR names, per rules file, the task tags that should route a builder there;
+every tag's keywords must appear in that file's own routing prose (its index row and the BUILD lines
+that reference it), every declared `via` hop (05 -> 09 when the parser is security-critical) must be
+a real edge in this graph, and every labelled case must reach the files it names. A BUILD trigger
+that is removed from the prose, or a pointer that is deleted, then fails a named case.
 
 `--sync` checks the other half, BUILD rule <-> AUDIT probe, at section level (invariant 43). A
 numbered section (`## N.`, `## Na.`, `## §N`) is a BUILD rule; a checklist item citing `(§N)` in the
@@ -152,6 +158,81 @@ def build():
     return rules, skill_mds, by_skill, sorted(set(edges)), unresolved
 
 
+# --- C4: declared routing (stage-3 pilot) --------------------------------------------------------
+MANIFEST_DIR = "scripts/skill-manifests"
+
+
+def routing_prose(sm_text, rules_file):
+    """The prose that routes a builder to one rules file: its own rules-index row (the row whose FIRST
+    cell links it -- another row may mention it, as rust's 05 row mentions 08's move) and every BUILD
+    line that references it by link, `rules/NN` or "Load NN"."""
+    b, n = os.path.basename(rules_file), os.path.basename(rules_file)[:2]
+    idx = section(sm_text, r"Rules? index")
+    row = next((l for l in idx.splitlines() if re.match(r"^\|\s*\[`?rules/%s" % re.escape(b[:2]), l)
+                and b in l.split("|")[1]), "")
+    build = [l for l in section(sm_text, "BUILD").splitlines()
+             if b in l or re.search(r"rules/%s\b|[Ll]oad %s\b" % (n, n), l)]
+    return "\n".join([row] + build)
+
+
+def manifest_check(edges):
+    bad, cases_run, manifests = [], 0, 0
+    if not os.path.isdir(MANIFEST_DIR):
+        return bad, 0, 0
+    for mf in sorted(os.listdir(MANIFEST_DIR)):
+        if not mf.endswith(".json"):
+            continue
+        manifests += 1
+        m = json.load(open(os.path.join(MANIFEST_DIR, mf), encoding="utf-8"))
+        sk = m["skill"]
+        sm = "skills/%s/SKILL.md" % sk
+        text = strip_code(open(sm, encoding="utf-8").read())
+        have = {os.path.basename(f)[:2]: f for f in git_files("skills/%s/rules/*.md" % sk)}
+        decl = m["files"]
+        for n in sorted(set(have) - set(decl)):
+            bad.append("C4 %s: rules/%s has no declared route" % (mf, n))
+        for n in sorted(set(decl) - set(have)):
+            bad.append("C4 %s: declares rules/%s, which does not exist" % (mf, n))
+        for n, spec in sorted(decl.items()):
+            if n not in have:
+                continue
+            if not spec.get("build"):
+                bad.append("C4 %s: rules/%s declares no BUILD tag" % (mf, n))
+            prose = routing_prose(text, have[n]).lower()
+            for tag in spec.get("build", []):
+                kws = m["tags"].get(tag)
+                if kws is None:
+                    bad.append("C4 %s: rules/%s uses undefined tag %r" % (mf, n, tag))
+                elif not any(k.lower() in prose for k in kws):
+                    bad.append("C4 %s: rules/%s is declared for %r, but none of %s appears in its index row or "
+                               "the BUILD lines that reference it" % (mf, n, tag, kws))
+        for v in m.get("via", []):
+            src, dst = have.get(v["from"]), have.get(v["to"])
+            if not (src and dst and (src, "same-skill", dst) in edges):
+                bad.append("C4 %s: declared hop rules/%s -> rules/%s (when %s) has no link in the graph"
+                           % (mf, v["from"], v["to"], v["when"]))
+        aud_all = COVERAGE in section(text, "AUDIT")
+        for c in m.get("cases", []):
+            cases_run += 1
+            tags = set(c["tags"])
+            if c["mode"] == "audit":
+                got = set(have) if aud_all else set()
+            else:
+                got = {n for n, spec in decl.items() if tags & set(spec.get("build", []))}
+                grew = True
+                while grew:
+                    grew = False
+                    for v in m.get("via", []):
+                        src, dst = have.get(v["from"]), have.get(v["to"])
+                        if (v["from"] in got and v["to"] not in got and set(v["when"]) <= tags
+                                and src and dst and (src, "same-skill", dst) in edges):
+                            got.add(v["to"]); grew = True
+            miss = sorted(set(c["must_load"]) - got)
+            if miss:
+                bad.append("C4 %s: case %r (%s) does not reach rules/%s" % (mf, c["task"], c["mode"], ", rules/".join(miss)))
+    return bad, manifests, cases_run
+
+
 def check():
     rules, skill_mds, by_skill, edges, unresolved = build()
     inbound = {f: [] for f in rules}
@@ -190,6 +271,9 @@ def check():
             c2_enum += 1
     # C3 -- numeric references resolve
     bad += ["C3 " + u for u in unresolved]
+    # C4 -- declared routing, for the skills that have a manifest
+    c4, n_manifests, n_cases = manifest_check(set(edges))
+    bad += c4
     domain = sum(1 for sm in skill_mds if sm.split("/")[1] not in (ROUTER,) and sm.split("/")[1] in by_skill)
     print("SCOPE %d" % len(rules))
     for b in bad:
@@ -197,8 +281,8 @@ def check():
     if bad:
         return 1
     print("    ok (%d rules files, %d edges, 0 index-only; AUDIT coverage: %d by the coverage line, %d by naming "
-          "every file, of %d domain skills; every numeric reference resolves)"
-          % (len(rules), len(edges), c2_line, c2_enum, domain))
+          "every file, of %d domain skills; every numeric reference resolves; %d declared manifests, %d labelled cases)"
+          % (len(rules), len(edges), c2_line, c2_enum, domain, n_manifests, n_cases))
     return 0
 
 

@@ -1272,6 +1272,27 @@ assert t.count(old) == 1, 'probe stale: the rust BUILD step-1 anchor not found'
 p.write_text(t.replace(old, 'Spawning an external program? Load 18.', 1), encoding='utf-8')
 " )
 probe 42c "a BUILD step that loads a rules file the skill does not have" "C3 skills/sota-rust/SKILL.md"
+# 42d / 42e — C4, declared routing (scripts/skill-manifests/). 42d deletes rust rules/05's link to
+# rules/09: the original 2026-10-24 incident, a security-critical parser task that never reaches the
+# proof rules. 42e strips every "kani"/"proving" from rust's SKILL.md, so the prose no longer routes 09.
+( cd "$WT" && python3 -I -c "
+import pathlib, re
+p = pathlib.Path('skills/sota-rust/rules/05-security-supply-chain.md')
+t = p.read_text(encoding='utf-8')
+u = re.sub(r'\[rules/09\]\(09-formal-verification\.md\)', 'rules nine', t)
+assert u != t, 'probe stale: rust rules/05 no longer links rules/09'
+p.write_text(u, encoding='utf-8')
+" )
+probe 42d "a declared routing hop whose link was deleted (rust 05 -> 09)" "C4 sota-rust.json: declared hop rules/05 -> rules/09"
+( cd "$WT" && python3 -I -c "
+import pathlib, re
+p = pathlib.Path('skills/sota-rust/SKILL.md')
+t = p.read_text(encoding='utf-8')
+u = re.sub(r'(?i)kani|proving', 'X', t)
+assert u != t, 'probe stale: no kani/proving in rust SKILL.md'
+p.write_text(u, encoding='utf-8')
+" )
+probe 42e "prose that no longer routes a file its manifest declares (rust 09)" "C4 sota-rust.json: rules/09 is declared for 'proof'"
 
 # 43 — section <-> probe ratchet (reachability-graph.py --sync). 43: a new numbered section no
 # checklist item cites -> S1. 43b: a new checklist item citing nothing -> S2. 43c: an item that
@@ -1312,7 +1333,8 @@ p = pathlib.Path('scripts/section-sync-baseline.json')
 b = json.loads(p.read_text(encoding='utf-8'))
 b['uncited_sections'].append('skills/sota-golang/rules/03-concurrency.md :: 98. A rule smuggled into the baseline')
 p.write_text(json.dumps(b, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
-" && git -c user.email=probe@invalid -c user.name=probe commit -qam 'probe 43d: grow the baseline' )
+" )
+  wt_commit "probe 43d: grow the baseline"   # --no-verify: the pre-commit hook would reject it
   probe_committed 43d "the baseline grew against the merge base" "S5 the baseline GREW against the merge base"
 else
   echo "  [43d] SKIPPED -- no section-sync baseline at the merge base (this branch introduces it), so"
