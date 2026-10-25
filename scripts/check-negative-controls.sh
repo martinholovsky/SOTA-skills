@@ -1382,6 +1382,50 @@ else
   echo "        there is nothing for growth to be measured against. The probe runs on every later branch."
 fi
 
+# 43e/43f — the CONVERSION exemption of S5 (2026-10-25), probed on both sides. A file the merge base
+# lists as unnumbered may move its debt to section level through --sync-convert (43e must stay GREEN),
+# and the exemption must not let a bogus entry ride in under such a file's name (43f: S4 calls it stale).
+# Targets are ASKED of the merge-base baseline, never literals: the unnumbered list shrinks as item 76
+# numbers files, and a literal would go stale the day its file is numbered.
+pick43() {  # prints one file unnumbered at the merge base and still unnumbered now
+  ( cd "$WT" && b=$(git merge-base HEAD origin/main 2>/dev/null) && [ -n "$b" ] \
+      && git show "$b:scripts/section-sync-baseline.json" 2>/dev/null \
+      | python3 -I -c "
+import json, sys, pathlib
+m = json.load(sys.stdin)['unnumbered_files']
+now = json.loads(pathlib.Path('scripts/section-sync-baseline.json').read_text(encoding='utf-8'))['unnumbered_files']
+print(next((f for f in m if f in now), ''))" )
+}
+f43=$(pick43)
+if [ -n "$f43" ] && [ -f "$WT/$f43" ]; then
+  ( cd "$WT" && F="$f43" python3 -I -c "
+import os, pathlib, re
+p = pathlib.Path(os.environ['F']); t = p.read_text(encoding='utf-8')
+m = re.search(r'^## (?!Audit checklist)(.+)$', t, re.M)
+assert m, 'probe stale: no non-checklist heading in ' + str(p)
+p.write_text(t[:m.start()] + '## 1. ' + m.group(1) + t[m.end():], encoding='utf-8')
+" && python3 -I scripts/reachability-graph.py --sync-convert >/dev/null \
+      && printf '\n<!-- probe 43e: numbering a file is new sections, which check 31 asks the ledger to record -->\n' \
+         >> docs/ADOPTION-LOG.md ) \
+    || { echo "FATAL: probe 43e could not number and convert $f43."; exit 1; }
+  wt_commit "probe 43e: number a merge-base-unnumbered file and convert its debt"
+  probe_committed_green 43e "a sanctioned conversion of an unnumbered file — the gate must stay green" \
+    "numbered sections uncited"
+  ( cd "$WT" && F="$f43" python3 -I -c "
+import json, os, pathlib
+p = pathlib.Path('scripts/section-sync-baseline.json'); b = json.loads(p.read_text(encoding='utf-8'))
+b['uncited_sections'].append(os.environ['F'] + ' :: 97. A section that does not exist')
+p.write_text(json.dumps(b, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
+" )
+  wt_commit "probe 43f: smuggle a bogus entry under an unnumbered file's name"
+  probe_committed 43f "a bogus baseline entry riding the conversion exemption" \
+    "S4 stale baseline entry, now fixed: $f43 :: 97. A section that does not exist"
+else
+  echo "  [43e] SKIPPED -- no file is unnumbered both at the merge base and now (item 76 numbered them"
+  echo "        all, or there is no baseline at the merge base), so the conversion exemption is unused."
+  echo "  [43f] SKIPPED -- same reason as 43e."
+fi
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================

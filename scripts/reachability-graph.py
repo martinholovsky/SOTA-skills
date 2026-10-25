@@ -27,7 +27,7 @@ a real edge in this graph, and every labelled case must reach the files it names
 that is removed from the prose, or a pointer that is deleted, then fails a named case.
 
 `--sync` checks the other half, BUILD rule <-> AUDIT probe, at section level (invariant 43). A
-numbered section (`## N.`, `## Na.`, `## §N`) is a BUILD rule; a checklist item citing `(§N)` in the
+numbered section (`## N.`, `## Na.`, `## §N`, and since 2026-10-25 dotted `## N.M`) is a BUILD rule; a checklist item citing `(§N)` in the
 same file is its probe. Measured 2026-10-24: 1,246 of 1,770 numbered sections had no citing item and
 3,124 of 4,146 items cited no section, so the check is a RATCHET over a committed baseline
 (SYNC_BASELINE): S1 every numbered section is cited by its own checklist, marked `*(advisory)*` or
@@ -35,12 +35,15 @@ same file is its probe. Measured 2026-10-24: 1,246 of 1,770 numbered sections ha
 citing no section never exceed the baseline count; S3 a rules file with no numbered sections is in
 the baseline (new files number their sections), and S2 skips such a file since it has nothing
 to cite; S4 every baseline entry is still needed (a fixed one
-must leave, so the debt only shrinks); S5 the baseline does not grow against the merge base.
+must leave, so the debt only shrinks); S5 the baseline does not grow against the merge base, except
+by CONVERSION: a file unnumbered at the merge base that is now numbered moves its debt from file level
+to section level through --sync-convert (probes 43e and 43f hold both sides of that exemption).
 
 Usage:
   reachability-graph.py --check            run C1-C3; exit 1 on any violation
   reachability-graph.py --sync             run S1-S5; exit 1 on any violation
   reachability-graph.py --sync-tighten     rewrite the baseline, REMOVING stale entries only
+  reachability-graph.py --sync-convert     move newly numbered, formerly unnumbered files to section-level debt
   reachability-graph.py --json             print the graph (nodes, edges with their source kind)
   reachability-graph.py --explain PATH     print every inbound edge of one rules file
 """
@@ -288,7 +291,9 @@ def check():
 
 # --- invariant 43: section <-> probe sync, as a ratchet ------------------------------------------
 SYNC_BASELINE = "scripts/section-sync-baseline.json"
-SECTION = re.compile(r"^## (?:§\s?)?(\d+[a-z]?)\.?\s+(.*)$", re.M)
+# Dotted ids count (`## 6.1`, `## 3.4a`): until 2026-10-25 only `## N.` / `## Na` did, so every rules file
+# of sota-devsecops and sota-testing, numbered `## N.M`, read as UNNUMBERED and sat outside the ratchet.
+SECTION = re.compile(r"^## (?:§\s?)?(\d+[a-z]?(?:\.\d+[a-z]?)*)\.?\s+(.*)$", re.M)
 MARKER = re.compile(r"\*\((?:advisory|audited in)\b", re.I)
 
 
@@ -297,10 +302,12 @@ def local_cites(text):
     another file's reference, so `[rules/03](...) §2` and `sota-x` rules/NN §M do not count."""
     out = set()
     for line in text.splitlines():
-        for m in re.finditer(r"§\s?(\d+[a-z]?)(?:\.\d+)*", line):
+        for m in re.finditer(r"§\s?(\d+[a-z]?(?:\.\d+[a-z]?)*)", line):
             if re.search(r"rules/\d|sota-[a-z]|SKILL\.md|\]\(", line[max(0, m.start() - 60):m.start()]):
                 continue
-            out.add(m.group(1))
+            parts = m.group(1).split(".")  # `§6.3.2` cites 6, 6.3 and 6.3.2: a top-level `## 6.` is cited
+            for k in range(1, len(parts) + 1):  # by `§6.3` exactly as before, and a dotted `## 6.3` by itself
+                out.add(".".join(parts[:k]))
     return out
 
 
@@ -415,9 +422,14 @@ def sync_check():
     if mb is not None:
         m_unc, m_items, m_unnum = mb
         m_heads = {heading(e) for e in m_unc}
-        grew = sorted(b_heads - m_heads)
-        if len(b_unc) > len(m_unc):
-            grew.append("uncited sections %d > %d" % (len(b_unc), len(m_unc)))
+        # CONVERTED debt is not growth (2026-10-25): a file the merge base listed as UNNUMBERED that is now
+        # numbered moves its debt from file level to section level, and its uncited sections enter the
+        # baseline through --sync-convert. Exempt only files unnumbered AT THE MERGE BASE, so the exemption
+        # cannot be granted by editing the branch's own baseline; a bogus entry for such a file is stale (S4).
+        conv = [e for e in b_unc if e.split(" :: ", 1)[0] in m_unnum]
+        grew = sorted(b_heads - m_heads - {heading(e) for e in conv})
+        if len(b_unc) - len(conv) > len(m_unc):
+            grew.append("uncited sections %d > %d" % (len(b_unc) - len(conv), len(m_unc)))
         if total_base > sum(m_items.values()):
             grew.append("uncited items %d > %d" % (total_base, sum(m_items.values())))
         grew += sorted(set(b_unnum) - set(m_unnum) - fresh)
@@ -459,7 +471,33 @@ def sync_tighten():
     return 0
 
 
+def sync_convert():
+    """Move files the baseline lists as UNNUMBERED, and that now have numbered sections, from file-level
+    to section-level debt: their uncited sections and items enter the baseline, the file leaves the
+    unnumbered list. Touches no other entry; S5 accepts it only for files unnumbered at the merge base."""
+    unc, items, unnumbered = sync_state()
+    base = load_baseline()
+    if base is None:
+        print("no baseline to convert into; refusing to create one silently")
+        return 1
+    b_unc, b_items, b_unnum = base
+    done = sorted(f for f in b_unnum if f not in unnumbered)
+    add = [e for e in unc if e.split(" :: ", 1)[0] in done and e not in b_unc]
+    new_items = dict(b_items)
+    for f in done:
+        if f in items:
+            new_items[f] = items[f]
+        else:
+            new_items.pop(f, None)
+    write_baseline(sorted(set(b_unc) | set(add)), new_items, sorted(b_unnum - set(done)))
+    print("converted %d file(s) from unnumbered to section-level debt: %d uncited section(s) added; "
+          "unnumbered %d -> %d" % (len(done), len(add), len(b_unnum), len(b_unnum) - len(done)))
+    return 0
+
+
 def main(argv):
+    if argv[1:2] == ["--sync-convert"]:
+        return sync_convert()
     if argv[1:2] == ["--check"]:
         return check()
     if argv[1:2] == ["--sync"]:
