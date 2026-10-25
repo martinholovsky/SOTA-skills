@@ -24,6 +24,7 @@ Practices:
 - Fake time explicitly: `vi.useFakeTimers()` + `vi.setSystemTime()`; restore in `afterEach`. Flaky time/`Date.now` math in tests is a bug factory.
 - Test data via factories with overrides (`makeUser({ role: 'admin' })`), not 50-line fixture JSON copies.
 - `it.each` for input/output tables; property-based testing (`fast-check`) for parsers/serializers/invariants.
+- A property whose `fc.pre` or `.filter` rejects most inputs can pass having checked almost nothing: [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6. fast-check's `maxSkipsPerRun` counts `fc.pre` rejections only, and a `.filter` that rejects every value hangs rather than failing.
 - Mock module boundaries (`vi.mock`) sparingly — heavy module-mocking is a design smell; prefer injecting dependencies (function params, constructor args) so tests pass fakes naturally.
 
 ### Shape of the suite
@@ -119,7 +120,10 @@ export default defineConfig(
   tseslint.configs.strictTypeChecked,        // not just "recommended"
   tseslint.configs.stylisticTypeChecked,
   {
-    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    linterOptions: { reportUnusedDisableDirectives: 'error' },   // the default 'warn' exits 0
+    languageOptions: { parserOptions: {
+      projectService: { allowDefaultProject: ['eslint.config.js'] },   // `eslint .` lints this file too
+      tsconfigRootDir: import.meta.dirname } },
     rules: {
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
@@ -130,11 +134,15 @@ export default defineConfig(
         { selector: "CallExpression[callee.name='eval']", message: 'eval is banned' }],
     },
   },
-  { files: ['**/*.test.ts'], rules: { '@typescript-eslint/no-unsafe-assignment': 'off' } },
+  { // tests only, by path; the glob matches Vitest's default include
+    files: ['**/*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'],
+    rules: { '@typescript-eslint/no-non-null-assertion': 'off',   // rules/02 bans `!` in app code
+             '@typescript-eslint/no-unsafe-assignment': 'off' } },
 );
 ```
 
-- `projectService: true` (replaces `project: true` boilerplate) enables type-aware rules with good perf.
+- `projectService` (replaces `project: true` boilerplate) enables type-aware rules with good perf. A file outside every tsconfig, such as `eslint.config.js` itself, fails with "was not found by the project service" unless listed in `allowDefaultProject`.
+- **Test code is exempted by path, in config.** CI lints tests with the same strict set. Where these rules allow a construct in tests only (`!`, which [rules/02](02-language-idioms.md) bans in app code), turn the rule off in a `files` block whose glob matches the runner's: Vitest's default include is `**/*.{test,spec}.?(c|m)[jt]s?(x)` (vitest 5.0.5), so a `**/*.test.ts` glob leaves `.spec.ts` and `.test.tsx` tests under the full set. A strict rule switched off for the whole repo because tests failed is a finding, and so are per-line disables piling up in tests. Check the config against its own CI line: measured with ESLint 10.13.0 and typescript-eslint 8.72.0, this file's earlier example failed its own `eslint .` on `eslint.config.js` (not in the project service), on `.spec.ts`/`.test.tsx` tests (outside the old `**/*.test.ts` glob), and on its type-test example (`no-unused-vars`, §"Type-level testing").
 - Formatting belongs to Prettier (or Biome): no stylistic-format ESLint rules fighting the formatter. Biome is a fast single-tool alternative when its rule coverage suffices — but typescript-eslint's type-aware rules have no Biome equivalent yet; security-sensitive repos keep typescript-eslint.
 - Security lint, both in flat-config form: `eslint-plugin-no-unsanitized` has two rules,
   `method` and `property`, for DOM sinks such as `innerHTML` and `insertAdjacentHTML`.
@@ -148,6 +156,20 @@ export default defineConfig(
   [rules/05](05-security.md).
 - Useful plugins: `eslint-plugin-regexp` (ReDoS), `eslint-plugin-react-hooks` (v7: the React-Compiler-powered rules ship in `configs.flat.recommended`; `recommended-latest` is the plugin's experimental channel), `eslint-plugin-jsx-a11y`, `eslint-plugin-import-x` (cycles: `import-x/no-cycle`).
 - Downgrading errors to warnings "to get CI green" creates a permanent warning swamp — fix or explicitly disable per-line with a reason comment.
+- **A suppression names its rule, gives a reason, and fails CI once it is stale.** Measured on
+  ESLint 9.39.5 and 10.13.0: `reportUnusedDisableDirectives` defaults to `"warn"`, so a stale
+  `eslint-disable` alone exits 0; only `--max-warnings 0` or `--report-unused-disable-directives`
+  made it exit 1. Set it to `'error'` in `linterOptions` (above) so the gate does not live in a
+  CLI flag. `@eslint-community/eslint-plugin-eslint-comments` adds `no-unlimited-disable` (a bare
+  `/* eslint-disable */`), `require-description` (the `-- reason`) and `no-unused-disable`. A
+  blanket disable also hides the *next* finding on its lines: measured, it made a later
+  rule-specific disable report as unused. TypeScript comments: `ban-ts-comment` allows
+  `@ts-expect-error` only with a description; the `strict*` presets set
+  `minimumDescriptionLength: 10`, while the `recommended*` presets keep the rule's default 3
+  (typescript-eslint 8.72.0), and TS2578 fails a stale `@ts-expect-error` ([rules/01](01-typescript-config-and-types.md)).
+  Biome: `// biome-ignore lint/<group>/<rule>: <reason>` is an error without the reason, but
+  `suppressions/unused` is a warning: `biome ci` exited 0 on a stale suppression and 1 with
+  `--error-on-warnings` (Biome 2.6.3).
 
 ## Formatting and pre-commit
 
@@ -215,8 +237,9 @@ Libraries and complex generics deserve type tests — types are API surface and 
 import { expectTypeOf } from 'vitest';
 test('parse narrows to branded id', () => {
   expectTypeOf(parseUserId('x')).toEqualTypeOf<UserId>();
+  const takesId = (id: UserId) => id;
   // @ts-expect-error — plain string must not be assignable
-  const _: UserId = 'raw';
+  takesId('raw');   // a call, not `const _: UserId = 'raw'`, which fails no-unused-vars
 });
 ```
 
@@ -248,6 +271,14 @@ steps:
 - [ ] ESLint config is flat + `strictTypeChecked` (type-aware): `grep -rn "strictTypeChecked\|projectService" eslint.config.*` — syntax-only linting in a TS repo = MEDIUM.
 - [ ] **Typed lint actually runs (§"ESLint flat config", the TypeScript 7.0 paragraph)** — `grep -nE '"typescript": *"[~^]?7|"typescript": *"npm:typescript@' package.json` next to `typescript-eslint` means no 6.0 API for the linter; run `npx eslint .` and read the exit code — 2 with "typescript-eslint does not support TS 7.0" is HIGH (every type-aware rule, `no-floating-promises` included, is off).
 - [ ] `grep -rn "eslint-disable" src/ | grep -v -- "--"` — disables without reason comments; count trend (LOW each, MEDIUM in volume).
+- [ ] **Suppressions that never expire (§"ESLint flat config", the suppression bullet) — MEDIUM, HIGH for blanket disables in volume** —
+      `grep -nE "reportUnusedDisableDirectives:[[:space:]]*['\"]?(error|2)" eslint.config.*` (no hit: a stale disable exits 0 unless every lint step carries `--max-warnings 0`)
+      ; `grep -rnE 'eslint-disable(-next-line|-line)?[[:space:]]*(\*/[[:space:]]*)?$' --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules .`
+      (a directive naming no rule hides every future finding on its lines) ;
+      `grep -rnE 'biome[[:space:]]+(ci|check|lint)' .github/workflows/ | grep -v -- '--error-on-warnings'` (a stale `biome-ignore` passes).
+- [ ] **Strict rules weakened for test code (§"ESLint flat config", the test-code bullet) — MEDIUM** —
+      `grep -nE "'@typescript-eslint/[a-z-]+':[[:space:]]*['\"]?(off|0)" eslint.config.*` — a hit outside a block whose `files` glob names tests disables the rule for app code too.
+      Then `npx eslint --print-config <file>` on one test file of each naming shape the repo uses (`.spec.ts`, `.test.tsx`, `tests/…`): a shape the exemption misses gets the full set, which breeds per-line disables in tests.
 - [ ] `grep -rnE --include='*.test.tsx' 'querySelector|container\.' src/` and `getByTestId` density — implementation-coupled tests (LOW/MEDIUM).
 - [ ] `grep -rn "fireEvent" src/` in component tests — should be `userEvent` (LOW).
 - [ ] `grep -rn "waitForTimeout\|setTimeout" e2e/ tests/` — sleep-based waits = flake (MEDIUM).

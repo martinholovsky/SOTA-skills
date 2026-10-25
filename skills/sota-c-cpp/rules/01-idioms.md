@@ -113,6 +113,17 @@ public:
   `errno` the caller forgets to check.
 - `noexcept` on functions that truly can't throw (destructors, swaps, moves);
   a `throw` escaping `noexcept` calls `std::terminate`.
+- **Some failures never reach a `catch`, so recovery middleware does not cover them.** Measured
+  with Apple clang 21 and libc++, each inside `try { … } catch (...)`: a throw escaping a
+  `noexcept` function, a `std::thread` destroyed while joinable, and an exception leaving a
+  thread's function all ended in `std::terminate` (exit 134), and unbounded recursion overflowed
+  the stack (SIGSEGV, exit 139). A handler wrapped in `catch (...)` is not crash-proof against
+  input that controls nesting depth or a count. Bound both **before** the recursion or the
+  allocation: a depth counter in every recursive descent, a length cap before any
+  `new`/`malloc`/`reserve` sized from input ([rules/04](04-security.md) §2). Parser defaults:
+  simdjson stops at a maximum depth of 1024 (`DEFAULT_MAX_DEPTH`); nlohmann::json's parser is
+  iterative, so deep input costs memory and CPU rather than stack, and its depth limit is yours to
+  impose in a `parser_callback_t` (it receives `depth`), after capping the input bytes.
 - **A child process's failure is a return value you must decode.** `system()` and `pclose()`
   return the *termination status* in `waitpid()` format, not an exit code, and `-1` when the
   child could not be created or waited for (POSIX.1-2024). Check `-1`, then
@@ -330,6 +341,11 @@ existing parameter means.
       (empty catch — HIGH); `grep -rn 'catch (...)' --include='*.cpp' .` (swallow-all: needs a
       rethrow or a logged reason);
       `clang-tidy --checks='bugprone-empty-catch,bugprone-exception-escape,misc-throw-by-value-catch-by-reference' <files>`
+- [ ] **Process-fatal failures a `catch (...)` cannot stop (§7) — HIGH on input-facing code** —
+      `clang-tidy --checks='misc-no-recursion,bugprone-exception-escape' <files>` (each recursive
+      cycle over input needs a depth bound) ;
+      `grep -rnE 'json::parse[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.hpp' .`
+      (each nlohmann parse of untrusted bytes: input size capped first, depth bounded by callback)
 - [ ] **Ignored error returns — the C half of §7, and the one nobody greps then ask the §7
       question a grep cannot: is ONE error model used across a given boundary, or do exceptions,
       codes and expected<> meet at an ABI seam? Mixed models at a boundary is the finding, not

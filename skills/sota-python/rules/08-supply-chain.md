@@ -86,6 +86,11 @@ Split out of [rules/05](05-security.md) (formerly sections 9 and 10) on 2026-09-
   install into the interpreter that runs your OS tooling.
 - Containers: multi-stage build, `uv sync --locked --no-dev`, run as non-root, no compiler
   toolchain in the final image.
+- **A bundled artifact may carry no scanner-readable dependency list.** PyInstaller drops each
+  package's `*.dist-info` unless the spec calls `copy_metadata()`, and a `--onefile` build
+  scanned as 0 packages; a shiv zipapp keeps the metadata, but Syft does not read it. Generate
+  the SBOM from the lock at build time and fail on an empty one
+  ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6).
 
 ## 2. Static analysis gates
 
@@ -131,3 +136,7 @@ Split out of [rules/05](05-security.md) (formerly sections 9 and 10) on 2026-09-
       (scoped to that one step: the action's `password` input is a token, and its `attestations`
       input defaults to `true`, so only an explicit `false` turns PEP 740 provenance off. A
       fixed `grep -A` window reached a later step's registry `password:` and reported it)
+- [ ] **Bundled artifact with no build-time SBOM (§1) — MEDIUM, HIGH for a deployed
+      service** — `grep -rlE 'pyinstaller|PyInstaller|shiv[[:space:]]' --include='*.y*ml' --include='*.spec' --include='*.sh' --include='*.toml' . | head -3`
+      (each hit builds a bundle: find the step that writes an SBOM from `uv.lock` and asserts
+      a non-zero component count; an image scan of the bundle alone reads 0 packages)

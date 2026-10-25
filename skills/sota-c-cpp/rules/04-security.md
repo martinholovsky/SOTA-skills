@@ -68,7 +68,7 @@ Replace on sight (CERT STR/FIO; MISRA):
   of any inflate/uncompress output (meter it while streaming; the header's claimed size is
   input too). Never pass `XML_PARSE_HUGE` on untrusted input: libxml2 documents it as
   relaxing every hardcoded parser limit. OWASP XML Security cheat sheet (coercive parsing,
-  quadratic blowup).
+  quadratic blowup). Failures no `catch` stops, parser depth defaults: [rules/01](01-idioms.md) §7.
 
 ## 3. Format-string and injection
 

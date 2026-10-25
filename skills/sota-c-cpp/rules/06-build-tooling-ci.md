@@ -94,6 +94,20 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - **clang-tidy** with a curated set is the primary linter:
   `bugprone-*, cppcoreguidelines-*, cert-*, performance-*, modernize-*,
   clang-analyzer-*, misc-*` (tune noisy checks). Commit a `.clang-tidy`.
+- **A clang-tidy suppression names its checks and carries a reason, and nothing expires it.**
+  Write `// NOLINT(check-name)` or `// NOLINTNEXTLINE(check-name)` with the reason in an adjacent
+  comment. A bare `NOLINT`, `NOLINTNEXTLINE` or `NOLINTBEGIN` silences every check there, and the
+  check list takes globs (the docs' own `NOLINT(google*)` silences a whole module), so `NOLINT(*)`
+  is the bare form spelled differently. clang-tidy has **no unused-NOLINT report**: LLVM issue
+  #69674 ("clang-tidy: warn on unnecessary `NOLINT`") is open, and its `clang-tidy-nolint`
+  diagnostic covers only unpaired or mismatched `NOLINTBEGIN`/`NOLINTEND`. So no CI gate catches a
+  stale one, and a gate written to expect that checks nothing. The substitute is the blanket probe
+  (checklist) plus a reviewer re-reading every `NOLINT` on a line the change touches.
+- **Test code is exempted in config, never by weakening the root.** A check the rules allow in
+  tests (e.g. `readability-magic-numbers` on expected values) is removed in a `tests/.clang-tidy`
+  that sets `InheritParentConfig: true`. clang-tidy reads the `.clang-tidy` closest to each
+  source file, so a nested file without that key replaces the root's checks instead of narrowing
+  them. A check dropped from the root config because the tests failed it is a finding.
 - **cppcheck** (`--enable=warning,performance,portability`) and the
   **Clang Static Analyzer** (`scan-build` or via clang-tidy) catch path-
   sensitive bugs the compiler misses. Commercial: Coverity, PVS-Studio for
@@ -134,6 +148,61 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   high-value OSS in [OSS-Fuzz](https://google.github.io/oss-fuzz/).
 - Keep a seed corpus and regression corpus in-repo; a new crash is a CRITICAL
   finding. Pair fuzzing with ASan/UBSan so memory/UB bugs surface.
+- A target whose guard (`if (size < N) return 0;`) rejects nearly every input stays green and
+  reaches nothing: require evidence of reach ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). libFuzzer's
+  `-print_final_stats=1` prints statistics; it fails nothing.
+
+## 4a. Bounded model checking for parsers and bounded functions (CBMC)
+
+Where a unit's input space is bounded (a header parser, a length-prefixed decoder, a ring-buffer
+index), CBMC checks **every** input up to the bound rather than a sample. It is the engine under
+Kani ([`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md), which carries the same discipline for Rust). The result holds only up
+to the bound and unwind depth you chose, so it complements fuzzing (§4) and does not replace it.
+Measured with CBMC 6.11.0 unless cited.
+
+- **Harness.** A `main` (or `--function`) makes the inputs nondeterministic (an uninitialised
+  local, or a body-less `nondet_*()` function), constrains them with `__CPROVER_assume`, calls the
+  unit, and states each property with `__CPROVER_assert`. Bound: the smallest that covers every
+  structural case, one element past each limit. The default checks already include bounds,
+  pointer, signed-overflow and unwinding assertions (`cbmc --help`; a planted out-of-bounds read
+  failed with no flags). **Never pass `--no-unwinding-assertions`**: it turned that failing
+  harness into `VERIFICATION SUCCESSFUL`, exit 0, by cutting the loop before the bug.
+- **An `assume` that excludes every input passes vacuously.** Guard it with `__CPROVER_cover`:
+  one inside each intended path, plus `__CPROVER_cover(1)` at the end after every assume. Covers
+  need their own run, so the gate is **two passes**:
+  1. **Safety:** `cbmc harness.c --unwind N`, covers compiled out (`#ifdef CBMC_COVER`); require
+     exit 0 and `VERIFICATION SUCCESSFUL`. A cover left in fails this pass (`no body for callee
+     __CPROVER_cover`, exit 10), and `--no-standard-checks` plus explicit check flags did not
+     change that.
+  2. **Reach:** `cbmc harness.c -DCBMC_COVER --cover cover --unwind N` through the script below.
+     It **exits 0 at `0 of 3 covered`**, and a harness with no covers reads `0 of 0 covered
+     (100.0%)`, so parse the per-cover `SATISFIED`/`FAILED` lines. Cover mode turns every
+     assertion, the default checks included, into an assumption (the planted out-of-bounds harness
+     read `3 of 3 covered`, exit 0) and refuses `--unwinding-assertions` (exit 1). It answers only
+     "was each path reachable", never "is it safe".
+
+```bash
+#!/usr/bin/env bash
+# cbmc-cover-gate: the reach pass. Exit 1 on any unreached cover, 2 if no cover line parsed.
+# Usage: cbmc-cover-gate.sh harness.c -DCBMC_COVER --unwind N [more cbmc args]
+set -uo pipefail
+out=$(cbmc --cover cover "$@" 2>&1); rc=$?
+if (( rc != 0 )); then printf '%s\n' "$out" >&2; echo "cbmc-cover-gate: cbmc exited $rc" >&2; exit "$rc"; fi
+sat=$(grep -cE '^\[[^]]*coverage\.[0-9]+\] .*: SATISFIED$' <<<"$out")
+bad=$(grep -cE '^\[[^]]*coverage\.[0-9]+\] .*: FAILED$' <<<"$out")
+echo "cbmc-cover-gate: $sat satisfied, $bad not reached" >&2
+if (( sat + bad == 0 )); then echo "cbmc-cover-gate: no cover lines; none in the harness, or the format changed" >&2; exit 2; fi
+if (( bad > 0 )); then grep -E ': FAILED$' <<<"$out" >&2; exit 1; fi
+```
+
+Measured: exit 0 on a good harness (3 satisfied), 1 with a contradictory `assume` (3 not reached),
+2 on a harness with no covers. **Prove the safety pass can fail**: plant a bug in a scratch copy,
+require `VERIFICATION FAILED` naming the broken check, revert, and record the run.
+
+- **Other tools.** Frama-C, for C, is industrial: WP proves ACSL contracts deductively, Eva finds
+  runtime errors by abstract interpretation. ESBMC is a further bounded model checker (C/C++, and
+  Python and Kotlin/Java frontends). The same three rules apply: state the bound, show
+  non-vacuity, watch it fail.
 
 ## 5. Dependencies and supply chain
 
@@ -141,10 +210,21 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   *manifest* and a **lockfile** (`vcpkg.json`+baseline / `conan.lock`) so
   builds are reproducible and versions are pinned. Avoid vendoring random
   source or system-package drift.
+- **What silently unfreezes the pin.** vcpkg: a `vcpkg.json` with no `builtin-baseline` (and no
+  registry `baseline` in `vcpkg-configuration.json`) "operates according to the Classic mode
+  algorithm and ignores all versioning information" (vcpkg versioning reference), so it builds
+  whatever ports the runner's vcpkg checkout carries. Conan 2: a `conan.lock` beside the
+  conanfile is applied automatically and a requirement missing from it fails (`not in lockfile`);
+  `--lockfile-partial` accepted that requirement, and an empty `--lockfile=` resolved a newer
+  version than the lock (measured, Conan 2.33.0). CMake: a branch or tag in `GIT_TAG` follows
+  upstream; pin the 40-hex commit (checklist).
 - Pin versions; review and update deliberately (Dependabot/Renovate where
   supported). Verify checksums/signatures of fetched artifacts. Generate an
   **SBOM** (CycloneDX/SPDX) for releases and scan dependencies for known CVEs.
-  See [`sota-devsecops`](../../sota-devsecops/SKILL.md).
+  See [`sota-devsecops`](../../sota-devsecops/SKILL.md). **Generate it at build time**: a C/C++
+  binary carries no dependency list a scanner can read unless you opt into the ELF
+  `.note.package` note (UAPI package-metadata spec; Syft reads it), so take it from the Conan
+  lock or vcpkg manifest and the link inputs ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6).
 - Minimize the dependency tree; each header-only or binary dep is attack
   surface and a build-integrity risk. Prefer the standard library.
 - **Before adding a dependency** (typed by a person or proposed by an AI assistant),
@@ -225,13 +305,16 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - [ ] **What has been SILENCED? -- the analyser's escape hatch (ROADMAP 60) clang-tidy (syntax
       from its own docs): NOLINT silences the SAME line, NOLINTNEXTLINE the NEXT one,
       NOLINTBEGIN/END a range whose markers must pair and match. A bare form with no (check)
-      list silences EVERY check there. the `|$` is load-bearing: a bare `// NOLINT` at END OF
+      list silences EVERY check there. No tool reports an unused NOLINT (llvm/llvm-project#69674, open): re-read each check-listed hit, delete it and re-run clang-tidy; one whose removal changes nothing is stale. the `|$` is load-bearing: a bare `// NOLINT` at END OF
       LINE has no character after it, so `[^(]` alone silently misses the most common blanket
       form (measured: 1 of 2).** —
       `grep -rn 'NOLINT' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' .`
-      ; `grep -rnE 'NOLINT(NEXTLINE|BEGIN)?([^(]|$)' --include='*.cpp' --include='*.h' .` (no
-      (check-list) = blanket);
-      `grep -rn 'NOLINTBEGIN' . | wc -l ; grep -rn 'NOLINTEND' . | wc -l` (must be equal)
+      ; `grep -rnE 'NOLINT(NEXTLINE|BEGIN)?([^(A-Z]|$|\([^)]*\*)' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' --include='*.hpp' .`
+      (§2: no check list, or a glob in it = blanket, MEDIUM. The `A-Z` stops `NOLINTNEXTLINE(check)`
+      and `NOLINTEND` matching through the optional group, which the earlier `[^(]` form did:
+      measured, it flagged all three check-listed forms in a clean file and missed `NOLINT(*)`) ;
+      `grep -rn 'NOLINTBEGIN' . | wc -l ; grep -rn 'NOLINTEND' . | wc -l` (must be equal). No tool
+      reports a stale `NOLINT(check)` (§2): read each one on a changed line
 - [ ] **cppcheck: `// cppcheck-suppress <id>` on the line BEFORE the reported line -- and it is
       INERT unless --inline-suppr is passed. Measured with cppcheck 2.21.0: without that flag
       both planted warnings still fired; with it, one was suppressed and the other was NOT,
@@ -276,14 +359,34 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - [ ] **clang-tidy / clang-format / cppcheck configs present?** —
       `ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"`
       ; `test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt`
+- [ ] **Test code linted to a different standard, scoped in config (§2) — LOW, MEDIUM when the
+      root config lost a security check to make tests pass** —
+      `find . -name .clang-tidy -not -path './.clang-tidy' -not -path './build/*' -exec grep -LE 'InheritParentConfig:[[:space:]]*true' {} +`
+      (each file printed replaces the root checks for its subtree: read what it drops) ; then
+      `git log -p -- .clang-tidy | grep -E '^\+([^+].*)?[^a-z0-9_-]-[a-z*]'` (an added `-check`
+      removal at the root: was it the tests?)
 - [ ] **Sanitizer & fuzzing jobs in CI?** —
       `err=$(grep -rniE 'fsanitize|asan|ubsan|tsan|libfuzzer|oss-fuzz|scan-build' --include='*.yml' --include='*.yaml' --include='Jenkinsfile' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no sanitizer/fuzz job in CI config — HIGH for input-parsing code" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; each fuzz target with an early-return guard has reach evidence (§4), not only `-print_final_stats`
+- [ ] **CBMC harnesses gated in two passes (§4a) — MEDIUM: a one-pass gate proves nothing** —
+      `grep -rlE '__CPROVER_(assume|assert|cover)' --include='*.c' --include='*.cpp' .` (the harnesses) ;
+      `grep -rnE 'cbmc[^|]*(--cover|--no-unwinding-assertions)' --include='*.yml' --include='*.yaml' --include='Makefile*' --include='*.sh' .`
+      — `--no-unwinding-assertions` anywhere = MEDIUM; a `--cover` run whose exit code is the
+      verdict (outside a per-line parse like §4a's script) = MEDIUM, since it exits 0 at 0 covered; harnesses with no
+      `__CPROVER_cover`, or with covers and no separate safety pass = MEDIUM
 - [ ] **Dependency manager + lockfile?** —
       `ls vcpkg.json conan.lock conanfile.* 2>/dev/null | grep -q . || echo "no pinned dependency manifest/lockfile"`
       ;
       `grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null`
       (verify pinning)
+- [ ] **Something unfreezes the pin (§5) — MEDIUM** —
+      `test -f vcpkg.json && ! find . -maxdepth 1 \( -name vcpkg.json -o -name vcpkg-configuration.json \) -exec grep -qE '"(builtin-)?baseline"' {} + && echo "vcpkg.json with no baseline: classic-mode resolution"` ;
+      `find . \( -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name Jenkinsfile -o -name '*.sh' \) -type f -not -path './build/*' -exec grep -nE -e '--lockfile-partial|--lockfile=([[:space:]]|$|"")' /dev/null {} +`
+      (a Conan step that accepts or ignores what the lock does not hold)
+- [ ] **Shipped binary scanned with no build-time SBOM (§5) — MEDIUM** — an image or binary
+      scan step with no SBOM generated from the lock/manifest: the scanner finds no C/C++
+      components and reports clean
 - [ ] **Fetched sources verified, and dependencies scanned (§5) — HIGH for a shipped
       binary** —
       `grep -rnE 'URL[[:space:]]+[^[:space:]]*(https?|ftp)://' --include='CMakeLists.txt' --include='*.cmake' .`

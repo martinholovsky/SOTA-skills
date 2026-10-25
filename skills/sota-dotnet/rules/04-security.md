@@ -55,7 +55,7 @@ network/file/DB/config as untrusted. Reference:
   with a `SimpleTypeResolver` is the same gadget class as `TypeNameHandling` (CA2321/CA2322).
 - **JSON**: prefer `System.Text.Json` with known types. Newtonsoft `TypeNameHandling.Auto/All/Objects`
   (or `System.Text.Json` with an unrestricted polymorphic type resolver) on untrusted input enables
-  gadget-style RCE — don't. Bind to explicit DTOs.
+  gadget-style RCE — don't. Bind to explicit DTOs. Depth limits (`MaxDepth`): [rules/02](02-design-api.md) §7.
 - **`System.Text.Json` defaults are lenient**: unknown members are ignored, a repeated property is
   accepted, nullability and required constructor parameters go unenforced. For untrusted JSON on
   .NET 10+ use the `JsonSerializerOptions.Strict` preset (`UnmappedMemberHandling.Disallow`,
@@ -279,7 +279,7 @@ P/Invoke (`[LibraryImport]`, .NET 7+). `[DllImport]` and `Marshal.*` on raw poin
 the same boundary. **That one property in a `.csproj` is the signal**: without it a project
 has no unsafe code to audit, and with it every `unsafe` block and native signature is audited
 with the C rules (buffer lengths, lifetimes, `SetLastError`, string marshalling). The class
-is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
+is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3. Its CI checker (ASan on the native side): [rules/06](06-build-tooling-ci.md) §4.
 
 ## 7. ASP.NET Core defaults that fail open
 

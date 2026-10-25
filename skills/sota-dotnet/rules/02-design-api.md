@@ -138,6 +138,15 @@ server". Defaults below were read from the option objects on .NET 10.0.12 (2026-
   `MinRequestBodyDataRate` or `MinResponseDataRate` to `null` removes the slow-client (slowloris)
   guard. Kestrel does not enforce its timeouts and data rates while a debugger is attached, so a
   debug session proves nothing about them.
+- **Some failures end the process, and no handler sees them.** A `StackOverflowException` cannot
+  be caught and terminates the process, so `UseExceptionHandler` (§4) and every `catch` are
+  bypassed: one deeply nested body takes down every request on that instance. Bound depth
+  **before** recursing. `System.Text.Json` stops at `MaxDepth` ("the default (i.e. 0) indicating a
+  max depth of 64", per the runtime source) with a catchable `JsonException`. Newtonsoft.Json's
+  `MaxDepth` is 64 by default only since 13.0.1 and was unlimited before (CVE-2024-21907), and
+  `MaxDepth = null` turns the limit off again. Give your own recursive walkers and converters a
+  depth counter, and cap a length read from the wire before it sizes `new byte[n]`,
+  `ArrayPool<T>.Shared.Rent(n)` or a collection's capacity.
 
 ## 8. Worked example: one minimal-API endpoint done right
 
@@ -244,3 +253,11 @@ record ([`rules/04`](04-security.md) §4).
       `grep -rnE 'MaxRequestBodySize"?[[:space:]]*[=:][[:space:]]*null|DisableRequestSizeLimit|(MultipartBodyLengthLimit|MultipartHeadersLengthLimit|ValueCountLimit|ValueLengthLimit|KeyLengthLimit|BufferBodyLengthLimit|MaxRequestBodySize)[[:space:]]*=[[:space:]]*(int|long)\.MaxValue|Min(RequestBody|Response)DataRate[[:space:]]*=[[:space:]]*null' --include='*.cs' --include='*.json' .`
       ; connection caps (default unlimited):
       `grep -rnE 'MaxConcurrent(Upgraded)?Connections' --include='*.cs' --include='*.json' . || echo "no Kestrel connection cap (default unlimited): confirm a proxy caps connections"`
+- [ ] **Parser depth unbounded or raised, or an allocation sized by the wire — HIGH on an
+      anonymous endpoint (a stack overflow kills the process, past every handler)** (§7) —
+      `grep -rnE 'MaxDepth"?[[:space:]]*[=:][[:space:]]*(null|int\.MaxValue|6[5-9]|[7-9][0-9]|[0-9]{3,})' --include='*.cs' --include='*.json' .`
+      (read any value above 64) ; Newtonsoft.Json below 13.0.1 (unlimited depth):
+      `grep -rnE 'Include="Newtonsoft\.Json"[^>]*Version="(([0-9]|1[0-2])\.|13\.0\.0")' --include='*.csproj' --include='*.props' .`
+      ; `grep -rn -A3 '"Newtonsoft.Json": {' --include='packages.lock.json' . | grep -E '"resolved": "(([0-9]|1[0-2])\.|13\.0\.0")'`
+      ; non-literal buffer sizes, each traced to its source:
+      `grep -rnE 'new (byte|char)\[[^]0-9]|ArrayPool<[^>]+>\.Shared\.Rent\([^0-9)]' --include='*.cs' .`

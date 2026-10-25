@@ -83,6 +83,7 @@ grew the same day as ROADMAP 66 added concepts; `UNIVERSAL_FLOOR` is the count, 
 - [ ] **test suite health & determinism** — flakiness, and the runner by name
 - [ ] **suppressing a linter / type check** — *every* escape hatch, including the bulk and
       config-level ones. A per-site grep alone misses a whole rule disabled in a project file
+- [ ] **unused suppression reported in CI** — the switch that makes a suppression which no longer suppresses anything fail the build. Where the toolchain has none, say so and give the probe; never write a gate that cannot fire
 - [ ] **public API surface & evolution** — what is exported, and how it changes without breaking callers
 - [ ] **logging hygiene / PII in logs** — structured logging, and what must never reach a log line
 - [ ] **date, time & timezone** — the time API, UTC storage, and the naive-datetime trap
@@ -98,6 +99,7 @@ grew the same day as ROADMAP 66 added concepts; `UNIVERSAL_FLOOR` is the count, 
 - [ ] **numeric precision & money** — the decimal type, and the float-for-money trap
 - [ ] **deserialization / unsafe parsing** — the unsafe loaders and the parser settings (XXE, entity expansion) to flag
 - [ ] **resource limits / DoS guards** — depth, size and decompression caps on everything that parses input
+- [ ] **failures that bypass catch / recover** — the runtime's process-fatal failures (stack overflow, OOM, traps) that no handler or middleware sees, and the limit that must come before the allocation or recursion
 - [ ] **TLS / transport verification** — the switches that turn verification off, by API name
 - [ ] **supply-chain provenance & publishing** — where packages come from, and how a private registry avoids dependency confusion
 - [ ] **SSRF / outbound request validation** — where this language's HTTP client lets you check the dialled address at connect time, plus its redirect and scheme settings

@@ -104,7 +104,8 @@ IO.popen(["grep", "--", pattern, "log.txt"])
   - Code still on Ruby ≤3.0/Psych 3 (EOL anyway): `YAML.load` there is
     unsafe-by-default — treat every call as `unsafe_load`.
 - **JSON**: `JSON.parse` is safe; `JSON.load` / `create_additions: true`
-  enables object revival via `json_class` — don't use it on external input.
+  enables object revival via `json_class` — don't use it on external input. Depth limits and
+  `SystemStackError`: [rules/01](01-language-idioms.md) §5.
 - **XML (XXE, entity expansion)** — the class and its fixes are
   [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §6; the Ruby spelling:
   - **Nokogiri's defaults are safe**: `DEFAULT_XML` sets `NONET` and leaves

@@ -314,6 +314,26 @@ CONCEPTS = [
     ("SSRF / outbound request validation", "universal",
      r"ssrf|server-side request forgery|outbound request|internal address|metadata endpoint|"
      r"169\.254|dns rebind"),
+    # 2026-10-25, cross-language intake (docs/cross-language-intake-2026-10-25/): the two DEPTH
+    # concepts behind "suppressing a linter" and "resource limits", which every language already
+    # had and which the matrix therefore could not tell apart from the deeper rule. A suppression
+    # that is never reported unused outlives the code it excused; a failure no catch/recover sees
+    # is a process-wide DoS. Where a toolchain has no CLI gate (.NET IDE0079, javac, clang-tidy),
+    # the item that says so and gives the probe is the presence.
+    ("unused suppression reported in CI", "universal",
+     r"unused[- ](suppress|disable|noqa|ignore|directive|nolint|`?@ts-expect-error)|"
+     r"redundantcopdisabledirective|superfluous_disable_command|reportunuseddisabledirectives|"
+     r"warn_unused_ignores|unused-ignore|reportunmatchedignorederrors|findunusedpsalmsuppress|"
+     r"useless_suppression|unnecessarywarningsuppression|unfulfilled_lint_expectations|"
+     r"allow-unused|ts2578|ide0079|no unused-nolint|unused nolint|stale suppression|"
+     r"suppressions that expire|stale-directive|reports an unused"),
+    ("failures that bypass catch / recover", "universal",
+     r"process-fatal|uncatchable|cannot be caught|can't be caught|no handler sees|"
+     r"bypass(es)? (every |the )?(catch|recover|rescue)|skips? every `?catch|recover` never sees|"
+     r"stackoverflowexception|systemstackerror|std::terminate|heap out of memory|"
+     r"exitonoutofmemoryerror|traps? (end|kill|terminate)|handle_alloc_error|abort, not|"
+     r"aborts the process|kills the process|past every handler|c-stack crash|traps before limits|"
+     r"middleware is not the fix"),
     ("resource limits / DoS guards", "universal",
      r"rate limit|quota|\bdos\b|denial of service|redos|catastrophic backtrack|"
      r"max (depth|length|size|connections)|recursion (depth|limit)|maxbytesreader|"
@@ -396,6 +416,12 @@ UNIVERSAL_FLOOR = [
     "dynamic code evaluation",
     "app-set cookie defaults",
     "debug / dev mode in production",
+    # Cross-language intake, 2026-10-25: written into all ten and pinned the same day. Every
+    # cell's matched substring was read with `--explain`; two absences were real audit gaps
+    # (rust: no item checked unfulfilled_lint_expectations; c/c++: no item said what to do about
+    # a stale NOLINT that no tool reports) and were closed before pinning.
+    "unused suppression reported in CI",
+    "failures that bypass catch / recover",
 ]
 
 

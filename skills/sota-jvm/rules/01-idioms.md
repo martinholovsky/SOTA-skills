@@ -118,6 +118,18 @@ the type system, and expression-oriented code**. References:
   an `Error` out of its failure path. The one place to catch `Throwable` is a last-resort
   boundary (an `UncaughtExceptionHandler`, a worker loop) that logs and then exits or rethrows.
   OWASP: Code Review Guide v2.
+- **Handlers that catch `Exception` never see what takes the JVM down, so prevent it.**
+  `StackOverflowError` and `OutOfMemoryError` are `Error`s, missed by every filter or handler
+  written for `Exception`. An `OutOfMemoryError` ends the process only under
+  `-XX:+ExitOnOutOfMemoryError` or `-XX:+CrashOnOutOfMemoryError`, both off by default; set one so
+  the orchestrator restarts a clean JVM. Then put the limit **before** the allocation or
+  recursion: cap a length read from the wire before `new byte[n]`, `ByteBuffer.allocate(n)` or a
+  collection capacity, and give recursive descent a depth counter. Jackson 2's
+  `StreamReadConstraints` defaults (jackson-core source): `maxNestingDepth` 1000,
+  `maxNumberLength` 1000, `maxStringLength` 20,000,000 (since 2.15.1; 2.15.0 had 5,000,000), and
+  **`maxDocumentLength` (since 2.16) and `maxTokenCount` (since 2.18) unlimited (`-1`)**. Set those
+  two, and depth to what the schema needs, on the factory:
+  `JsonFactory.builder().streamReadConstraints(StreamReadConstraints.builder().maxDocumentLength(n).build())`.
 
 ## 5. Immutability and finality
 
@@ -164,6 +176,13 @@ the type system, and expression-oriented code**. References:
       `grep -rnE -A4 'catch[[:space:]]*\(([^)]*[^A-Za-z.])?(java\.lang\.)?(Throwable|Error|VirtualMachineError|OutOfMemoryError|StackOverflowError|LinkageError)([^A-Za-z]|$)' --include='*.java' --include='*.kt' . | awk '/catch[[:space:]]*\(([^)]*[^A-Za-z.])?(java\.lang\.)?(Throwable|Error|VirtualMachineError|OutOfMemoryError|StackOverflowError|LinkageError)([^A-Za-z]|$)/ {if(h!=""&&!t)print h; h=$0; t=($0 ~ /throw[[:space:]]/); next} /throw[[:space:]]/{t=1} /^--$/{if(h!=""&&!t)print h; h=""} END{if(h!=""&&!t)print h}'`
       (a `throw new ...Exception(e)` passes the probe but is recovery by wrapping; read those;
       `runCatching` needs a separate read)
+- [ ] **Limits after the fact: no OOM exit flag, Jackson on its unlimited defaults, or a limit
+      raised to unlimited (§4) — MEDIUM, HIGH on a parser of anonymous input** —
+      `err=$(grep -rnE 'ExitOnOutOfMemoryError|CrashOnOutOfMemoryError' --include='Dockerfile*' --include='Containerfile*' --include='*.sh' --include='*.y*ml' --include='jvm.config' --include='*.gradle*' --include='pom.xml' . 2>&1 >/dev/null); rc=$?; case $rc in 0) ;; 1) echo "no Exit/CrashOnOutOfMemoryError: an OOME leaves the JVM running" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; `err=$(grep -rn 'StreamReadConstraints' --include='*.java' --include='*.kt' . 2>&1 >/dev/null); rc=$?; case $rc in 0) ;; 1) echo "no StreamReadConstraints: every Jackson parser has unlimited document length and token count" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; `grep -rnE 'max(NestingDepth|StringLength|NumberLength|DocumentLength|TokenCount)\([[:space:]]*(-1|Integer\.MAX_VALUE|Long\.MAX_VALUE)' --include='*.java' --include='*.kt' .`
+      ; non-literal buffer sizes, each traced to its source:
+      `grep -rnE 'new (byte|char)\[[^]0-9]|ByteBuffer\.allocate(Direct)?\([^0-9)]' --include='*.java' --include='*.kt' .`
 - [ ] **Legacy idioms — LOW** —
       `grep -rnE 'new (ArrayList|HashMap|HashSet)<>\(\)' --include='*.java' .` (consider List.of
       / records); `grep -rnE '\braw\b|new Vector|new Hashtable' --include='*.java' .` ;

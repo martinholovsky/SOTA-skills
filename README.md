@@ -28,7 +28,7 @@ agent that reads `AGENTS.md`. Those agents get the skills and an always-on direc
 the per-turn re-statement, which is a Claude Code hook
 ([per-agent detail](docs/MULTI-AGENT.md)), and no lift has yet been measured through them.
 
-Under the hood: **43 skills (348 files, ~90k lines)** of state-of-the-art 2026
+Under the hood: **43 skills (348 files, ~91k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source **as of the last full sweep** (the root

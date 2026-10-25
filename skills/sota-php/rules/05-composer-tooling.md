@@ -10,6 +10,15 @@ audit gate, and PHPStan/Psalm in CI is unreviewed by 2026 standards.
   installs the exact locked versions — never `composer update`, which
   re-resolves and rewrites the lock (getcomposer.org CLI docs). Updates are
   deliberate PRs with a lock diff.
+- **`composer install` does not refuse a stale lock.** Measured on Composer 2.10.3: after a
+  `composer.json` constraint change the lock still satisfied, `install` printed "The lock file
+  is not up to date with the latest changes in composer.json", installed the old resolution and
+  exited 0. Only a lock that cannot satisfy `composer.json` (a package missing from it, a
+  constraint it does not meet) exited 4. `composer validate --strict` exited 2 in both cases (0
+  with `--no-check-lock`), so it runs before `install` in CI (§5). The other ways round the
+  lock: `composer update` or `composer require` in a CI or image step, `composer.lock` in an
+  application's `.gitignore`, and `composer global require` of a tool, which resolves outside
+  the project's lock.
 - Libraries don't ship a lock to consumers but should still test against
   lowest and highest supported dependency sets
   (`composer update --prefer-lowest` in one CI job).
@@ -175,8 +184,9 @@ parameters:
   level, generate a baseline (`phpstan analyse --generate-baseline`), and
   enforce the **ratchet**: the baseline file only ever shrinks. A growing
   baseline means the gate is theater — MEDIUM finding.
-- Don't silence with `@phpstan-ignore` casually; each ignore carries a reason
-  string. Prefer fixing types; use generics PHPDoc
+- Don't silence with `@phpstan-ignore` casually; each ignore names its error
+  identifier and carries a reason string, and the CI switches that fail a blanket
+  or stale one are in §5. Prefer fixing types; use generics PHPDoc
   (`@template`, `array<int, Order>`) so collections stay typed.
 - **Psalm** is the equivalent alternative (note its levels run inverted:
   1 = strictest, 8 = loosest). Run one of them, not both, at the strictest
@@ -203,6 +213,14 @@ parameters:
 - **Property-test and fuzz the parsers.** Eris (maintained, PHPUnit 10–13) generates inputs
   for invariant-bearing code; nikic/PHP-Fuzzer is a coverage-guided fuzzer for PHP libraries
   that describes itself as *experimental* — useful on a parser, not a CI gate to depend on.
+  A constrained property test can pass having reached almost nothing:
+  [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6.
+- **A C extension, or FFI code, runs its tests under a memory checker in CI.** Under Valgrind,
+  run PHP with the Zend allocator off and modules kept loaded, the two settings php-src
+  documents for it: `USE_ZEND_ALLOC=0 ZEND_DONT_UNLOAD_MODULES=1 valgrind --error-exitcode=1 php …`.
+  Valgrind's default `--error-exitcode` is `0`, which returns PHP's own exit code whatever
+  Valgrind found (Valgrind manual), so the flag is what makes the job a gate. FFI is the same
+  class ([`rules/03`](03-files-deserialization-ssrf.md) §6).
 
 ## 5. CI pipeline: the minimum gate set
 
@@ -217,6 +235,23 @@ vendor/bin/phpstan analyse --no-progress
 vendor/bin/phpunit                  # or: vendor/bin/pest
 ```
 
+- **Suppressions name the error, carry a reason, and fail once stale.** Write
+  `// @phpstan-ignore argument.type (legacy caller passes a string)`: the identifier form
+  exists since PHPStan 1.11, and a bare `@phpstan-ignore` with no identifier is already a parse
+  error. The trap is the blanket forms, `@phpstan-ignore-next-line` and `@phpstan-ignore-line`.
+  Measured on PHPStan 2.3.2: one `-next-line` above a line with an `argument.type` error also
+  hid a `method.notFound` and a `binaryOp.invalid` on that line, where
+  `@phpstan-ignore argument.type` let both through. A stale ignore of either form is reported
+  (`ignore.unmatchedLine`), because `reportUnmatchedIgnoredErrors` is on by default: never set it
+  to `false`. Set `reportIgnoresWithoutComments: true` (since 2.1.41): measured, it reports an
+  identifier ignore with no `(reason)` (`ignore.noComment`) and rejects every blanket line
+  ignore (`ignore.allLineErrors`), exit 1. Psalm: set `findUnusedPsalmSuppress="true"` in
+  `psalm.xml`; it is off by default.
+- **Tests are exempted by path, in config.** `paths: [src, tests]` (§3) runs the full level
+  over tests. Where a construct is acceptable in tests only, exempt it with an `ignoreErrors`
+  entry naming both `identifier` and `path` (measured: `identifier: argument.type` with
+  `path: tests/*` silenced it under `tests/` only). Lowering `level`, or dropping `tests` from
+  `paths`, because the tests failed is the finding.
 - **Matrix:** run tests on every PHP minor the code claims to support
   (`require.php`), floor *and* current — a `^8.2` constraint tested only on
   8.5 is untested advertising.
@@ -253,6 +288,13 @@ Run from repo root; verify each hit manually.
       ; `composer validate --strict` (flags json/lock drift);
       `grep -nE '"(php|ext-)' composer.json` (platform reqs declared?);
       `grep -n '"platform"' composer.json` (config.platform.php pinned?)
+- [ ] **Frozen install bypassed (§1) — MEDIUM, HIGH on a deploy or image build** — with
+      `P='composer[[:space:]]+(update|require|global)|--no-check-lock'`:
+      `grep -rnE "$P" .github/workflows/ ; grep -rnE "$P" --include='Dockerfile*' --include='*.sh' --include='Makefile' --exclude-dir=vendor .`
+      (each hit re-resolves or skips the lock check, except a library's `composer update --prefer-lowest`
+      matrix job (§1), which re-resolves on purpose) ;
+      `grep -rnE 'composer[[:space:]]+validate[^#]*--strict' --include='*.yml' --include='*.yaml' --exclude-dir=vendor .`
+      (no hit: a stale lock installs with exit 0)
 - [ ] **Advisory + abandonment status right now** — `composer audit --locked --abandoned=report`
 - [ ] **Advisory blocking switched off (§2) — HIGH in CI or a shared `composer.json`** —
       `grep -rnE -e '--no(-security)?-blocking|COMPOSER_NO(_SECURITY)?_BLOCKING|COMPOSER_POLICY_(ADVISORIES|MALWARE)_BLOCK[=:"[:space:]]+"?0' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='Makefile' --include='*.sh' --include='.env*' --exclude-dir=vendor --exclude-dir=node_modules .`
@@ -289,6 +331,15 @@ Run from repo root; verify each hit manually.
       ; `grep -n 'level' phpstan*.neon* 2>/dev/null` ; `wc -l phpstan-baseline.neon 2>/dev/null`
       (compare against last audit: shrinking?);
       `git log --oneline -5 -- phpstan-baseline.neon 2>/dev/null`
+- [ ] **Suppressions that never expire, and tests exempted globally (§5) — MEDIUM, HIGH for
+      blanket ignores on security code** —
+      `grep -rnE '@phpstan-ignore-(next-)?line' --include='*.php' --exclude-dir=vendor .`
+      (each blanket ignore hides every later error on its line) ;
+      `grep -nE 'reportUnmatchedIgnoredErrors:[[:space:]]*false|reportIgnoresWithoutComments:[[:space:]]*true' phpstan*.neon*`
+      (the first is the finding; no second means a reasonless or blanket ignore passes) ;
+      `grep -n 'findUnusedPsalmSuppress="true"' psalm*.xml*` (absent on a Psalm project: stale
+      suppressions pass). Then read `level`, `paths` and each `ignoreErrors` entry without a
+      `path`: a level lowered or `tests` dropped to get the suite green is the finding.
 - [ ] **CI gates actually wired (adjust path to CI system)** —
       `grep -rnE '(composer audit|phpstan|psalm|php-cs-fixer|phpcs|phpunit|pest)' .github/workflows/ .gitlab-ci.yml 2>/dev/null`
 - [ ] **PHP floor out of support, or no Rector gate to move it (§5) — HIGH when the floor
@@ -308,6 +359,12 @@ Run from repo root; verify each hit manually.
 - [ ] **Property-based / fuzz tests on the parsers (§4) — LOW, MEDIUM for a parser of
       untrusted input** — `grep -nE '"(giorgiosironi/eris|nikic/php-fuzzer)"' composer.json`
       (none: no generated-input test exists; a parser of request data is the first target)
+- [ ] **C extension or FFI with no memory-checker job (§4) — MEDIUM, HIGH when it parses
+      request data** — applies when `config.m4`/`config.w32` exists or
+      `grep -rlE '\\?FFI::(cdef|load)' --include='*.php' --exclude-dir=vendor .` lists files;
+      then `grep -rlE 'valgrind|USE_ZEND_ALLOC=0|fsanitize=address' --include='*.yml' --include='*.yaml' --exclude-dir=vendor .`
+      (no hit: the escape hatch's tests never run under a checker; a `valgrind` line without
+      `--error-exitcode` cannot fail)
 
 Severity guide: app with no committed lock or CI running `composer update`
 MEDIUM (HIGH once envs drift); no advisory gate MEDIUM; known-vulnerable dep

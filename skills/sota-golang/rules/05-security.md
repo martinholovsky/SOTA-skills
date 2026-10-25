@@ -33,7 +33,7 @@ misconfiguration are entirely yours.
   admin, while a proxy or validator that keeps the first sees user: a parser differential
   (generic rule: [sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) §11). On 1.27+ decode trust-boundary input with
   `encoding/json/v2`, which rejects duplicates and matches names case-sensitively (measured
-  go1.27.1). Pair with `http.MaxBytesReader`; probe in [`rules/04`](04-http-services.md) checklist.
+  go1.27.1). Pair with `http.MaxBytesReader` ([`rules/04`](04-http-services.md) probe); depth limits: [rules/01](01-errors.md) §5.
 - Numbers from JSON into `any` become `float64` — large int64 IDs silently
   lose precision; decode into concrete struct types or `json.Number`.
 - Never echo raw input into errors/logs without bounding

@@ -20,6 +20,15 @@ go build ./...                           # catches main-package breakage tests m
 Pin tool versions (see §4); cache `~/go/pkg/mod` and golangci-lint cache.
 A repo missing `-race` or govulncheck in CI: HIGH audit finding.
 
+**Code that uses the escape hatch (`unsafe`, cgo) runs its tests under the runtime checker.**
+`-race`, `-msan` and `-asan` imply `-gcflags=all=-d=checkptr` unless it is set explicitly
+(`cmd/compile/internal/base/flag.go`, read at go1.27.1), so the `-race` job above already checks
+`unsafe.Pointer` conversions; without `-race`, pass the flag yourself. `-race` runs on darwin;
+`-asan` (since 1.18) and `-msan` are Linux-only — add a Linux `go test -asan ./...` job for
+cgo packages. Strict cgo pointer checks are build-time since Go 1.21:
+`GOEXPERIMENT=cgocheck2 go test ./...` (`GODEBUG=cgocheck=2` was removed). Escape hatch present
+and no checker job: HIGH.
+
 On toolchain upgrades, run Go 1.26's revamped `go fix` — it now applies
 "modernizer" fixers (built on the vet analysis framework) that rewrite code
 to current idioms; review the diff like any refactor.
@@ -49,7 +58,17 @@ linters:
     - copyloopvar    # obsolete loop-var copies (go >= 1.22)
     - gosec          # security incl. G115
     - musttag        # struct tags on (un)marshaled types
+    - nolintlint     # every //nolint names a linter, says why, still suppresses something
+  exclusions:        # v2 key; v1 used issues.exclude-rules
+    rules:
+      - path: _test\.go # tests only, one rule, with the reason
+        linters: [gosec]
+        text: G304       # golden/testdata paths built from t.Name()
   settings:
+    nolintlint:
+      require-specific: true     # default false
+      require-explanation: true  # default false
+      allow-unused: false        # the default: an unused //nolint is itself an issue
     errcheck:
       check-type-assertions: true
     gosec:
@@ -64,7 +83,21 @@ Add per-repo: `prealloc`/`perfsprint` (perf-sensitive), `revive` (style
 depth), `exhaustive` (enum switches), `gomodguard` (dependency policy).
 Inline suppressions require a reason:
 `//nolint:gosec // G304: path validated by os.Root above` — bare `//nolint`
-is itself a LOW finding.
+is itself a LOW finding. **`nolintlint` makes that a gate, not a convention**: with the settings
+above `golangci-lint run` exits 1 on a bare `//nolint`, on one with no `// reason`, and on one
+whose linter no longer reports anything there (measured, golangci-lint 2.13.2). The unused
+check only covers linters that were enabled and ran. With default `uniq-by-line`, a
+real issue on the same line can hide the nolintlint report.
+
+**Strict linters versus test code: exempt by path in config, never by switching the linter
+off.** golangci-lint lints `_test.go` files by default (`run.tests: true`). When a construct
+the rules allow in tests trips a linter, scope the exemption to `_test\.go`, one linter, one
+rule (`text:`), as above. A v2 config takes it under `linters.exclusions.rules`; the v1 key
+`issues.exclude-rules` is rejected by a v2 binary (`golangci-lint config verify` exits 3,
+measured). `run.tests: false`, or a strict linter dropped project-wide because tests failed it,
+is a MEDIUM finding. Measured against this file: the golden-file example in §3 failed its own
+config (errcheck on an unchecked `os.WriteFile`, G304, G306) until it checked the error and
+wrote `0o600`. The G304 exemption above is the only one it needs.
 
 `staticcheck` ships inside golangci-lint; running the standalone binary too
 is fine but redundant. `gofumpt` over `gofmt`: stricter, zero-config,
@@ -153,8 +186,11 @@ via flag:
 var update = flag.Bool("update", false, "rewrite golden files")
 
 golden := filepath.Join("testdata", t.Name()+".golden")
-if *update { os.WriteFile(golden, got, 0o644) }
-want, _ := os.ReadFile(golden)
+if *update {
+    if err := os.WriteFile(golden, got, 0o600); err != nil { t.Fatal(err) }
+}
+want, err := os.ReadFile(golden)
+if err != nil { t.Fatal(err) }
 if diff := cmp.Diff(string(want), string(got)); diff != "" {
     t.Errorf("mismatch (-want +got):\n%s", diff)
 }
@@ -174,10 +210,17 @@ func FuzzParseManifest(f *testing.F) {
         if err != nil { return }              // invalid input may error — must not panic
         round, err := m.MarshalBinary()       // invariants: roundtrip, no panic, bounded output
         if err != nil { t.Fatal(err) }
-        _ = round
+        m2, err := ParseManifest(round)
+        if err != nil || !reflect.DeepEqual(m, m2) { t.Fatalf("round trip: %v", err) }
     })
 }
 ```
+
+The early `return` means a target can stay green while almost nothing parses. Prove reach as
+[`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6 says.
+In Go, assert that a counter is non-zero in an ordinary `TestXxx` that runs the seed corpus through
+the parser. A counter checked after `f.Fuzz` false-fails under `-fuzz`, because inputs run in
+separate worker processes.
 
 `go test -fuzz=FuzzParseManifest -fuzztime=60s` in a periodic CI job; commit
 found crashers from `testdata/fuzz/` as permanent regression seeds. Seeds run
@@ -292,6 +335,18 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
 - [ ] **Lint config exists and is curated (not empty, not enable-all)** —
       `ls .golangci.yml .golangci.yaml 2>/dev/null` ;
       `grep -n 'enable-all\|disable-all' .golangci.y*ml 2>/dev/null`
+- [ ] **Suppressions that expire (§2) — LOW, MEDIUM when the suppressed linter is gosec** —
+      `grep -nE 'nolintlint|require-(specific|explanation)|allow-unused' .golangci.yml .golangci.yaml 2>/dev/null`
+      (no `nolintlint` with both `require-*: true`, or `allow-unused: true`, means
+      suppressions never expire)
+- [ ] **Test-code exemptions in config, not global (§2) — MEDIUM** —
+      `grep -nE '^[[:space:]]*(exclude-rules|exclude-dirs|exclude-files):|^[[:space:]]*tests:[[:space:]]*false' .golangci.yml .golangci.yaml 2>/dev/null`
+      (v1 keys a v2 binary rejects, or tests not linted at all) ; `golangci-lint config verify` ;
+      read every `exclusions.rules` entry: no `path:` means it applies to production code too
+- [ ] **Escape hatch without its runtime checker (§1) — HIGH** —
+      `grep -rlE 'unsafe\.Pointer|^import "C"' --include='*.go' .` ; then
+      `grep -rnE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null`
+      (files use unsafe or cgo and no hit means nothing checks it)
 - [ ] **Suppression hygiene** — `grep -rn 'nolint' --include='*.go' . | grep -v '//' | head`
       (malformed); `grep -rnE '//nolint(:\w+)?$' --include='*.go' .` (no justification — LOW);
       `grep -rn '#nosec' --include='*.go' .` (justify each)
@@ -312,6 +367,10 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       `grep -rlE 'gin\.(Default|New)\(' --include='*.go' . | xargs -r grep -L 'SetTrustedProxies'`
       (gin engine trusting every proxy). Single-line shapes only: a multi-line `cors.Options{`
       or `jwt.Parse(` call needs reading
+- [ ] **Fuzz targets prove reach (§3) — MEDIUM for a parser of untrusted bytes** — each
+      `func Fuzz` with an early `return` on error has an ordinary `TestXxx` asserting that
+      seeds got past the parse, and its round-trip compares values instead of discarding them
+      (`grep -rnA8 'f\.Fuzz(func' --include='*_test.go' . | grep -E '_ = '`)
 - [ ] **Test quality** — `grep -rln 'func Test' --include='*_test.go' . | wc -l` ;
       `grep -rn 't.Parallel' --include='*_test.go' . | wc -l` ;
       `grep -rn 'time.Sleep' --include='*_test.go' .` (flaky sync — MEDIUM);

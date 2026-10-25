@@ -45,6 +45,23 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   `IDbCommand.CommandText` assignment, and `CA3075` fired on none of three DTD-enabled XML
   readers in a `net10.0` project (not investigated further). Keep the grep checklists
   ([`rules/04`](04-security.md)) as the second instrument.
+- **A suppression names one rule and says why, and no CLI gate reports a stale one.** Write
+  `[SuppressMessage("Category", "CA1234", Justification = "why")]`, or `#pragma warning disable
+  CA1234 // why` with a matching `restore`. With no list, `disable` "disables all warnings" (C#
+  preprocessor-directive docs). The unused-suppression rule, **IDE0079, is IDE-only**: even with
+  code style enforced on build "this rule is not enabled. It only surfaces in the IDE" (its docs
+  page). So never write a CI step that expects `dotnet build` to fail on a stale suppression. The
+  CLI substitute is the checklist's inventory, plus deleting a suppression and rebuilding: no new
+  diagnostic means it was dead.
+- **Exempt tests by project or path in config, never by switching a rule off.** The §1 baseline
+  reaches test projects too. Measured on SDK 10.0.402 with it in `Directory.Build.props`: an xUnit
+  test named `Parse_ReturnsNull_WhenEmpty` failed the build on CA1707. `IsTestProject` comes from
+  the `Microsoft.NET.Test.Sdk` package and is not yet set while `Directory.Build.props` is read:
+  a `Condition="'$(IsTestProject)' == 'true'"` `NoWarn` there was ignored, and the same group in
+  `Directory.Build.targets` worked (both measured). By path, a root `.editorconfig` section
+  `[**.Tests/**.cs]` matched a test project at the root and under `src/`, `[**/*.Tests/**.cs]` only
+  under `src/`, and `[*.{Tests,IntegrationTests}/**/*.cs]` neither (measured). A security rule
+  (CA2100, CA53xx/CA54xx, CA23xx) switched off solution-wide because tests tripped it is a finding.
 - **`dotnet format --verify-no-changes`** in CI so style/whitespace never enters
   review. EditorConfig holds the rules.
 - Consider a SAST (the security CA rules, or a dedicated scanner) for deeper
@@ -55,6 +72,13 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - **Lock dependencies**: enable `<RestorePackagesWithLockFile>true</...>` to
   generate `packages.lock.json`, and restore with **`--locked-mode`** in CI so
   builds are reproducible and a changed transitive dependency fails loudly.
+- **Two things silently unfreeze it** (both measured, SDK 10.0.402). `dotnet build`, `test` and
+  `publish` restore implicitly unless given `--no-restore`, and that restore is not locked: with
+  the lock at 13.0.1 and the `.csproj` at 13.0.3, `restore --locked-mode` failed NU1004 while a
+  plain `dotnet build` exited 0 and rewrote `packages.lock.json` to 13.0.3. Set
+  `<RestoreLockedMode>true</RestoreLockedMode>` (in `Directory.Build.props`, conditioned on CI if
+  you like) so every restore is locked; that build then failed NU1004. And `--locked-mode` with
+  **no** lock file exited 0 and wrote one, so a project missing its `packages.lock.json` is unlocked.
 - **Package Source Mapping** (`nuget.config`) so each package only resolves from
   its intended feed — defeats **dependency confusion** (an internal name
   resolving from nuget.org). Restrict feeds to trusted sources over HTTPS.
@@ -118,7 +142,10 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   NuGet on Linux read the file and enforced the setting under each of `nuget.config`,
   `NuGet.Config`, `NuGet.config`, `Nuget.Config` and `NUGET.CONFIG` (measured), so match the name
   case-insensitively when you search for it. Generate an **SBOM** for releases. See
-  [`sota-devsecops`](../../sota-devsecops/SKILL.md).
+  [`sota-devsecops`](../../sota-devsecops/SKILL.md). **Generate it at build time for AOT and
+  single-file output**: a standard publish ships `*.deps.json`, a Native AOT binary has none and
+  Syft and Trivy both found 0 packages in it, and a single-file bundle was read by Syft but not
+  Trivy (measured; [`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6).
 - **Runtime and framework patch level is an audit surface** ([`rules/04`](04-security.md) §4 points here). The memory-safe runtime's residual risk includes
   framework CVEs, e.g. CVE-2025-55315 (Kestrel HTTP request smuggling, fixed in 8.0.21/9.0.10/10.0 RC2)
   and CVE-2026-45591 (SignalR/Blazor Server MessagePack nested-array DoS, fixed in 8.0.28/9.0.17/10.0.9,
@@ -177,7 +204,16 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - **Fuzz and property-test the parsers.** SharpFuzz instruments .NET assemblies for AFL and
   libFuzzer; FsCheck and CsCheck are maintained property-testing libraries. Microsoft OneFuzz
   is **archived** (2023) — do not adopt it, and treat a pipeline still calling it as a dead
-  control. Target code that parses untrusted bytes or holds an invariant.
+  control. Target code that parses untrusted bytes or holds an invariant. A green run must also
+  prove it reached anything ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). FsCheck has no `Prop.cover`; its
+  gate is `MaxRejected` on the `Config`, run with `QuickThrowOnFailure`, and it counts rejections only.
+- **Code behind `AllowUnsafeBlocks` or P/Invoke runs its tests against a sanitized native side.**
+  Prefer `[LibraryImport]` (.NET 7+, needs `AllowUnsafeBlocks`) to `[DllImport]`. There is **no
+  `EnableAddressSanitizer` MSBuild property for .NET or Native AOT**; a CI step setting one checks
+  nothing. Build the native library you own with ASan (MSVC `<EnableASAN>true</EnableASAN>` or
+  `/fsanitize=address`; clang/gcc `-fsanitize=address`) and run the interop tests against that
+  build. Plant one out-of-bounds write first and see the job fail: loading an instrumented
+  library into the `dotnet` host is platform-specific ([`rules/04`](04-security.md) §6).
 - Build deterministically (`<Deterministic>true</Deterministic>`, ContinuousIntegrationBuild)
   and produce symbols.
 
@@ -198,6 +234,21 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rn '<NoWarn>' --include='*.csproj' --include='*.props' .` (whole-project,
       whole-solution if in Directory.Build.props);
       `grep -rnE 'dotnet_diagnostic\.[A-Z]+[0-9]+\.severity *= *none' --include='.editorconfig' --include='*.globalconfig' .`
+- [ ] **Blanket or reason-less suppressions, and a CI step relying on IDE0079 — MEDIUM, HIGH for
+      a list-less pragma** (§2) — no CLI gate finds a stale suppression, so inventory:
+      `grep -rnE '#pragma warning disable[[:space:]]*(//.*)?$' --include='*.cs' .` (no list: every
+      warning off to the `restore` or end of file) ;
+      `grep -rn 'SuppressMessage(' --include='*.cs' . | grep -v 'Justification'` (no reason;
+      multi-line attributes need a read) ;
+      `grep -rn 'IDE0079' --include='*.yml' --include='*.yaml' --include='*.props' --include='*.csproj' --include='.editorconfig' .`
+      (a build gate on IDE0079 is dead: it never runs outside the IDE)
+- [ ] **Tests exempted by switching a rule off for everyone, or by a condition that never fires
+      — MEDIUM, HIGH for a security CA rule** (§2) —
+      `grep -rn 'IsTestProject' --include='Directory.Build.props' .` (inert there: move it to
+      `Directory.Build.targets`) ;
+      `grep -rnE 'CA(2100|23[0-9][0-9]|53[0-9][0-9]|54[0-9][0-9])' --include='.editorconfig' --include='*.globalconfig' --include='Directory.Build.props' --include='*.csproj' .`
+      (for each `severity = none` or `NoWarn` hit, read its section or condition: a test-path
+      glob or `.targets` condition is the scoped form; anything else disables it for production)
 - [ ] **"Build and Suppress Active Issues" is BASELINING: Microsoft's own term for suppressing
       every current violation at once. A large GlobalSuppressions.cs with uniform timestamps is
       its signature, and it means the analyser's verdict on that code was never read. NOTE:
@@ -230,6 +281,22 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       ;
       `err=$(grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' --include='[Nn][Uu][Gg][Ee][Tt].[Cc][Oo][Nn][Ff][Ii][Gg]' --include='Directory.Build.props' --include='*.csproj' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no source mapping / locked restore / NuGetAudit CI gate" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+- [ ] **Locked restore undone by an implicit restore, or a project with no lock file — HIGH**
+      (§3) — with no `RestoreLockedMode` anywhere, prints each CI step that restores unlocked:
+      `err=$(grep -rn 'RestoreLockedMode' --include='*.props' --include='*.targets' --include='*.csproj' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?; case $rc in 0) ;; 1) grep -rnE 'dotnet[[:space:]]+(build|test|publish|pack|run)' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.ps1' --include='Dockerfile*' . | grep -v -- '--no-restore' ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; projects with no lock beside them (locked mode creates one and passes):
+      `find . -name '*.csproj' -not -path '*/obj/*' | while IFS= read -r p; do test -f "$(dirname "$p")/packages.lock.json" || echo "$p: no packages.lock.json"; done`
+- [ ] **AOT or single-file artifact with no build-time SBOM — MEDIUM** (§3) —
+      `grep -rnE 'PublishAot|PublishSingleFile' --include='*.csproj' --include='*.props' --include='*.pubxml' --include='*.yml' --include='*.yaml' .`
+      ; for each hit, the release job must emit an SBOM before publish:
+      `grep -rniE 'cyclonedx|sbom|spdx' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.ps1' .`
+      (an image scan alone reads 0 packages from an AOT binary)
+- [ ] **Unsafe or P/Invoke code with no sanitized native test job, or a dead ASan property —
+      MEDIUM, HIGH on input-derived lengths** (§4) —
+      `grep -rlE 'AllowUnsafeBlocks' --include='*.csproj' --include='*.props' .` ;
+      `grep -rnE 'fsanitize=address|EnableASAN|EnableAddressSanitizer' --include='*.yml' --include='*.yaml' --include='*.vcxproj' --include='*.props' --include='*.csproj' --include='CMakeLists.txt' --include='*.sh' .`
+      (first hits with no second: the escape hatch is never checked at run time; an
+      `EnableAddressSanitizer` hit in a .NET project file checks nothing)
 - [ ] **Strong name treated as publisher trust, or the signing key in the repo — MEDIUM (HIGH
       for a `.pfx`)** (§3) — `git ls-files '*.snk' '*.pfx' '*.p12'` (a full `.snk` is a
       key pair; a `.pfx` is an Authenticode key) ;
