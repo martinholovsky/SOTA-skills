@@ -59,7 +59,7 @@ async def create_user(payload: UserIn, svc: UserService = Depends(get_user_servi
   its job is "is the event loop responsive", so [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §1 specifies
   process-internal-only, "usually just return 200". Written as `def` it runs in the anyio
   threadpool, where saturation by slow sync handlers delays the probe and the orchestrator
-  restarts a process whose event loop was fine — the restart storm [rules/05](05-security.md) exists to
+  restarts a process whose event loop was fine — the restart storm [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §1 exists to
   prevent. So a no-`await` `async def` is **correct** here and the marker does not apply.
   Say so in the docstring, or the next reader "fixes" it. Readiness (`/readyz`), which does
   check dependencies, follows the normal rule.
@@ -285,7 +285,8 @@ testpaths = ["tests"]
       instead); `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` ([HIGH if
       interpolated]); `git log --oneline -- '**/migrations/*.py' | head` (edited-after-merge
       migrations?); `grep -rn "makemigrations --check" .github/ .gitlab-ci.yml 2>/dev/null`
-      (drift gate present?)
+      (drift gate present?); `grep -rn "check --deploy" .github/ .gitlab-ci.yml 2>/dev/null`
+      (empty → LOW, no deploy-settings gate, §2; read the output, as the status is 2 whenever either path is absent)
 - [ ] **--- App-set cookies: Secure / HttpOnly / SameSite flags (§2 cookies) --- [HIGH for an
       auth or identity token; MEDIUM for a preference]** —
       `grep -rnE '\.set_(signed_)?cookie\(' --include='*.py' src/ | grep -vE 'secure[[:space:]]*=[[:space:]]*True.*httponly[[:space:]]*=[[:space:]]*True|httponly[[:space:]]*=[[:space:]]*True.*secure[[:space:]]*=[[:space:]]*True'`

@@ -380,6 +380,11 @@ and how records travel.
   Events from clients and other trust zones stay untrusted input
   ([`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) §2).
 
+- **Keep a logging inventory.** Per stack layer: which events are logged, in what format,
+  to which sink, read by whom, under what access and for how long. Ship it with the release
+  documentation and update it with the code. Sinks not in it are unreviewed exposure
+  ([`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) §2). OWASP: ASVS 5.0 V16.1.1.
+
 OWASP: Logging cheat sheet, ASVS 5.0 V16.4.2 and V16.4.3.
 
 ## Audit checklist

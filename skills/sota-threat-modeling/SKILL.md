@@ -44,7 +44,7 @@ full STRIDE-per-interaction model for a new service or auth flow.
    yet — stop and ask.
 3. **Pick the methodology** (see [`rules/01`](rules/01-methodologies.md)): STRIDE-per-interaction by
    default; add LINDDUN if personal data flows; attack trees for a single
-   high-value asset; four-questions-only for low-risk deltas.
+   high-value asset; four-questions-only for low-risk deltas — but the system's tier ([`rules/04`](rules/04-risk-rating-treatment.md) §8) sets the floor: a High-tier system gets its tier's depth even for a small delta.
 4. **Enumerate threats** crossing each boundary using the per-component
    catalogs in [`rules/03`](rules/03-threat-catalogs.md). Write each threat as: *actor → action → asset →
    impact*. No vague entries ("hacking", "data breach").

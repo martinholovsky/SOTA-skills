@@ -269,8 +269,13 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rniE 'TrustServerCertificate *= *(true|yes)|SSL ?Mode *= *(Disable|Allow|Prefer|Require)' --include='*.cs' --include='*.json' --include='*.config' .` ;
       Npgsql strings left on the `Prefer` default (also try `Server=`):
       `grep -rniE 'Host *= *[^;"]+;' --include='*.cs' --include='*.json' --include='*.config' . | grep -viE 'SSL ?Mode *='` ;
-      Fuzz / property-based tests on the parsers (§4; LOW, MEDIUM for a parser of untrusted
-      bytes — a OneFuzz hit is a dead control):
-      `grep -rnE 'SharpFuzz|FsCheck|CsCheck|OneFuzz|onefuzz' --include='*.csproj' --include='*.cs' --include='*.yml' --include='*.yaml' .` ;
       MessagePack deserialization in a file that never opts into `UntrustedData`:
       `grep -rlE 'MessagePackSerializer[.]Deserialize' --include='*.cs' . | while IFS= read -r f; do grep -q 'UntrustedData' "$f" || echo "$f: MessagePack on TrustedData default"; done`
+- [ ] **Parsers of untrusted bytes have fuzz / property-based tests (§4) — LOW, MEDIUM for a
+      parser of untrusted bytes; a OneFuzz hit is a dead control** —
+      `grep -rnE 'SharpFuzz|FsCheck|CsCheck|OneFuzz|onefuzz' --include='*.csproj' --include='*.cs' --include='*.yml' --include='*.yaml' .`
+- [ ] **Restore/build job holds publish or signing credentials (§3) — HIGH** — read the CI job
+      that runs `dotnet restore`/`build`/`test`: any `secrets.` beyond a read-only feed token,
+      `id-token: write`, or a signing/publish key in its env or steps is HIGH, because a
+      package's `build/*.targets` `<Exec>` runs with it; sign and publish belong in a separate
+      job ([`sota-devsecops` rules/01](../../sota-devsecops/rules/01-pipeline-security.md) §1.10)

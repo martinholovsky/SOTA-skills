@@ -52,7 +52,7 @@ the model.
   environment, and eval report.
 - Every change to a model (registration, alias move, promotion, rollback,
   deletion) writes an append-only audit record: who, what, when, the approval
-  reference. A registry whose history can be edited in place cannot answer
+  reference ([`sota-code-security` rules/18](../../sota-code-security/rules/18-tamper-evident-logs.md) §1: append-only is not tamper-evident against a writer of the store). A registry whose history can be edited in place cannot answer
   "what served on the 3rd". Fine-tuning checkpoints that may ever be evaluated
   or served are registered as their own artifacts, with their own lineage, not
   kept as loose files beside the final model (dataset lineage: [`rules/02`](02-data-and-features.md) §5).

@@ -159,7 +159,8 @@ Review *new* dependencies (human + automated) for:
   malicious packages (MAL- advisories); GitHub/registry advisories for hijacked versions.
 - Process: adding a dependency is an architectural decision — require PR description to
   justify new direct deps; prefer zero-dep or stdlib solutions for trivial needs
-  (left-pad lesson: every dep is a maintainer you now trust forever).
+  (left-pad lesson: every dep is a maintainer you now trust forever). The selection
+  checklist and the source review for a high-risk dependency are [rules/15](15-dependency-adoption.md) §15.1, §15.3.
 
 ### 3.4.1 Lockfile poisoning in PRs
 
@@ -453,6 +454,7 @@ So require a second value that **cannot** be produced from plausibility:
 
 - [ ] Lockfiles committed for every manifest; CI/Docker builds use frozen/hash-verified installs; no `npm install`/bare `pip install` in CI
 - [ ] Dependency-review gate on PRs, required, failing on high severity + license denylist
+- [ ] **Lockfile `resolved` hosts allowlisted (§3.4.1), MEDIUM (HIGH if a non-allowlisted host is present):** CI runs `lockfile-lint --allowed-hosts <registries> --validate-https` (or pnpm `verifyStoreIntegrity`), and `jq -r '.packages[]?.resolved // empty' package-lock.json | grep -v -E '^https://(registry\.npmjs\.org|<internal-registry>)/'` prints nothing (reads the lockfileVersion 2/3 `packages` map only); lockfile-only PRs from non-bot authors get a named reviewer
 - [ ] No `--extra-index-url` public/private mixing; npm internals scoped; GOPRIVATE set; internal names reserved publicly; fetches go through a caching proxy with audit log
 - [ ] Install scripts disabled by default in CI (`--ignore-scripts`/pnpm allowlist); new-dependency review covers install hooks, obfuscation, maintainer churn, and package age / downloads / sole-maintainer signals (§3.4)
 - [ ] **No TLS/checksum disablers and no build-time config rewrites (§3.3), High:** `grep -rn -E 'strict-ssl[[:space:]]*=[[:space:]]*false|strict-ssl false|trusted-host|PIP_TRUSTED_HOST|allow-insecure-host|GOINSECURE|GOSUMDB[=:[:space:]]+"?off|NODE_TLS_REJECT_UNAUTHORIZED[=:[:space:]]+"?0|(npm|pnpm|yarn|pip|uv|poetry) config set|go env -w' .` over CI files, Dockerfiles and committed rc files is empty; the rc files CI reads are tracked (`git ls-files`)

@@ -340,7 +340,7 @@ results = vstore.search(
   exposed keyless vector endpoint is full corpus read/write (poisoning + theft).
   Restrict *write* access to the ingestion pipeline identity only, and hash each
   ingested document (e.g. SHA-256) so tampered/poisoned chunks are detectable
-  and excludable at retrieval.
+  and excludable at retrieval. Auth, network, TLS and tenancy probes: [`sota-databases` rules/07](../../sota-databases/rules/07-vector-and-ai.md).
 - Cache keyed on prompts must be principal-scoped (semantic caches returning
   user A's answer — containing A's data — to user B).
 - **All serving-layer shared state is tenant-scoped, not only the response

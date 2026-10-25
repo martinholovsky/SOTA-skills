@@ -475,7 +475,7 @@ DllImportSearchPath.(AssemblyDirectory|ApplicationDirectory|LegacyBehavior) | lo
 - [ ] Does every declared length/offset get validated against bytes-actually-available before allocation or read?
 - [ ] Are decompression ratio caps, image pixel limits, and JSON/GraphQL depth+complexity limits enforced?
 - [ ] Do all inbound listeners and outbound calls have timeouts, with cancellation propagation?
-- [ ] Is rate limiting per-principal with bounded queues and load shedding (no unbounded buffering)?
+- [ ] Is rate limiting per-principal with bounded queues and load shedding (no unbounded buffering), and does no unauthenticated path trigger metered work — SMS/OTP sends limited per number AND per requester, and a per-tenant budget cap with an alert on every usage-billed API (§5)? MEDIUM, HIGH on an unauthenticated SMS-send endpoint.
 - [ ] Are check-then-act sequences (files, balances, redemptions) made atomic at the storage layer?
 - [ ] Is any race accepted because its window is "too small" (§6)? HIGH on balances, redemptions and limits: single-packet and last-byte-sync attacks reach millisecond windows. Probe for the rationalisation in comments and tickets: `grep -rniE 'race.{0,40}(unlikely|rare|tiny|small|negligible|acceptable)|(unlikely|rare|tiny|small|negligible).{0,40}race' .` (also matches `trace`; read each hit).
 - [ ] Is every temp file created atomically, owner-only, under a name not chosen in advance (§6.1)? Run §6.1's detector row for the language, and read each hit: a predictable name in a shared temp directory is HIGH when the file holds secrets or is later read back as trusted.

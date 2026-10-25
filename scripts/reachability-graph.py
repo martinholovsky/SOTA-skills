@@ -27,7 +27,8 @@ same file is its probe. Measured 2026-10-24: 1,246 of 1,770 numbered sections ha
 (SYNC_BASELINE): S1 every numbered section is cited by its own checklist, marked `*(advisory)*` or
 `*(audited in ...)*` within its first lines, or listed in the baseline; S2 per file, checklist items
 citing no section never exceed the baseline count; S3 a rules file with no numbered sections is in
-the baseline (new files number their sections); S4 every baseline entry is still needed (a fixed one
+the baseline (new files number their sections), and S2 skips such a file since it has nothing
+to cite; S4 every baseline entry is still needed (a fixed one
 must leave, so the debt only shrinks); S5 the baseline does not grow against the merge base.
 
 Usage:
@@ -307,6 +308,8 @@ def sync_check():
     total_now, total_base = sum(items.values()), sum(b_items.values())
     for f, n in items.items():
         if n <= b_items.get(f, 0):
+            continue
+        if f in unnumbered:  # no `## N.` to cite: S3 tracks the file itself until it is numbered
             continue
         if f in fresh and total_now <= total_base:  # a split: items moved into a new file
             moved += 1

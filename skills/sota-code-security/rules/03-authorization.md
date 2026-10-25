@@ -262,7 +262,7 @@ SET LOCAL app.tenant_id = '...';
   tool means staff know a credential they could later use as that user. OWASP: ASVS 5.0 V6.4.6.
 - Every admin mutation needs an immutable audit trail (actor, target, before/
   after, reason) — both a compliance requirement and your insider-threat and
-  incident-forensics control (pairs with [rules/07](07-data-exposure.md) §2 security logging).
+  incident-forensics control (pairs with [rules/07](07-data-exposure.md) §2 security logging; integrity against a writer of the store: [rules/18](18-tamper-evident-logs.md) §1).
 - Break-glass paths (emergency access) must alert loudly and expire; a
   permanent quiet backdoor "for ops" is indistinguishable from a compromise.
 

@@ -19,7 +19,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   one.** It returns process memory. The `show-values` sanitization (default `never`) covers
   `/env`, `/configprops` and `/quartz`, not a heap dump, which holds every secret the process
   has loaded. Prefer `management.server.port` on an internal-only interface.
-- **Typed request bodies.** §1 states the rule. The web layer is where it fires, because a
+- **Typed request bodies.** [rules/04](04-security.md) §1 states the rule. The web layer is where it fires, because a
   `@RequestBody` is JSON the caller wrote. `@JsonTypeInfo(use = Id.CLASS)` or `Id.MINIMAL_CLASS`
   on a type reachable from a request lets the caller name the class to instantiate. Use
   `Id.NAME` with registered subtypes. `enableDefaultTyping` was deprecated in jackson-databind

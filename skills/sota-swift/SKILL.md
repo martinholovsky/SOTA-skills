@@ -44,7 +44,7 @@ Feature notes below name the release that introduced each feature.
 3. Walk every applicable rules file's Audit checklist; each probe below is a grep you can run.
 4. Report in the canonical format; severity per the table, chain closure per the [`sota`](../sota/SKILL.md) router.
 
-### Severity conventions (refines the router's [`rules/03`](rules/03-concurrency.md) §1 inside this skill)
+### Severity conventions (refines the router's [`rules/03`](../sota/rules/03-audit-findings.md) §1 inside this skill)
 
 | Severity | Swift examples |
 |---|---|

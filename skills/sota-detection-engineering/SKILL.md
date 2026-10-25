@@ -41,7 +41,7 @@ metrics, traces, SLOs, log shipping, retention plumbing). This skill owns
 turning that telemetry into *security* detections, the SOC workflow, hunting,
 and IR. [`sota-threat-modeling`](../sota-threat-modeling/SKILL.md) owns design-time threat enumeration (STRIDE/
 ATT&CK/ATLAS catalogs); this skill owns catching those threats at runtime. If
-you find yourself designing the logging schema, that's observability [rules/01](rules/01-detection-engineering-discipline.md);
+you find yourself designing the logging schema, that's observability [rules/01](../sota-observability/rules/01-structured-logging.md);
 if you find yourself enumerating threats on a DFD, that's threat-modeling.
 
 ## BUILD mode
@@ -68,7 +68,7 @@ test → deploy → tune → retire. Workflow:
 5. **Engineer for low FP from the start** ([rules/04](rules/04-alerting-triage-soc-soar.md)): scope tightly, add
    allowlist context, require corroboration for noisy signals, set a severity
    honestly. Every detection ships with a runbook (link to observability
-   [rules/04](rules/04-alerting-triage-soc-soar.md) alerting plumbing) and an owner.
+   [rules/04](../sota-observability/rules/04-slos-alerting.md) alerting plumbing) and an owner.
 6. **Test before deploy.** Validate with adversary emulation — Atomic Red Team
    (endpoint), Stratus Red Team (cloud), Caldera (campaigns). Confirm the
    detection fires on the real technique and stays quiet on benign baselines.

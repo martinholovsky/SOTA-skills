@@ -286,7 +286,7 @@ FROM python:3.14-slim-trixie
 RUN useradd --create-home app
 USER app
 COPY --from=builder --chown=app /app /app
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH" PYTHON_DISABLE_REMOTE_DEBUG=1
 CMD ["python", "-m", "mypkg"]
 ```
 

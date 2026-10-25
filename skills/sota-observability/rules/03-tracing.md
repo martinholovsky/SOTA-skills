@@ -285,6 +285,9 @@ services — and into every outbound header.
       boundaries, not leaking to third-party APIs.
 - [ ] Collector pipeline monitored (dropped spans, queue saturation, export
       failures); tail-sampling memory sized for peak.
+- [ ] SDK limits and shutdown (§5): no `SimpleSpanProcessor` in production config
+      (`grep -rn 'SimpleSpanProcessor' .`), attribute value-length limit set explicitly,
+      provider shutdown/flush wired to SIGTERM.
 - [ ] Collector hardened (§5): `memory_limiter` first in every
       pipeline; no receiver or `zpages`/`pprof`/`health_check` endpoint on
       `0.0.0.0` without auth and a network restriction. Probe, then read each

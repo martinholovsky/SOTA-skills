@@ -346,7 +346,9 @@ release tag directly is the finding.
       on a representative target — otherwise that whole depth is unprobed while every gate
       is green. Conversely, a gate whose subject exits early (a credential check in CI)
       reaches nothing past that point: inject a **dummy** credential so CI and a developer
-      machine measure the same depth.
+      machine measure the same depth. Along the surface too: the branch name, every commit
+      message and the PR title/body are scanned by a pre-push hook before they leave, not
+      only by CI after they are public.
 - [ ] **Does failing a gate make the artifact unconsumable, or merely unannotated?** For each
       pipeline, confirm the *consumable* identifier is published only after every gate: the
       pre-gate identifier **provably fails the deploy watcher's allow-pattern**, promotion is a
@@ -360,4 +362,5 @@ release tag directly is the finding.
 - [ ] **Does any check branch on the shape of the diff?** (§2c) Sweep versus small edit,
       release versus not. If so, was the other arm run before merge, and was the default
       branch's run on the merge commit read, not just the PR's?
+- [ ] **No required gate is skippable to Success (§1), Medium-High:** no required check's job carries an `if:` that PR-controlled input (labels, paths, actor, branch name) can make false, since a job skipped by `if:` reports Success; and the ruleset's required-check names diff clean against the current job names (a renamed job is silently un-required)
 - [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§2, [`rules/11`](11-after-the-gate-fails.md) §5)

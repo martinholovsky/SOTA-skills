@@ -350,7 +350,9 @@ do not change the boundary class.
 - [ ] Memory bounded by cgroup `memory.max` or `RLIMIT_DATA` — **never
       `RLIMIT_AS`**, which kills Go/JVM workloads at startup (R7.2a); where no
       cgroup can be created, the fallback is chosen deliberately and write access
-      was probed with `mkdir`, not inferred from `cgroup.controllers` (R7.2b).
+      was probed with `mkdir`, not inferred from `cgroup.controllers` (R7.2b). On a
+      macOS host neither applies (R7.2b, *Not Linux*): `setrlimit` returns `EINVAL`, so
+      require a container or an RSS watchdog and confirm the `setrlimit` return is checked.
 - [ ] seccomp: deny-by-default allowlist (not the Docker default for high-risk
       workloads); all ABIs covered; R3.2 hard-deny set absent from allowlist;
       filter loaded after `no_new_privs`, before untrusted code.

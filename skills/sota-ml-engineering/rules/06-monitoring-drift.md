@@ -54,7 +54,9 @@ retraining.
   range violations, unexpected categories, feature freshness/staleness — a broken
   upstream feature is a common silent failure (ML Test Score monitoring tests).
 - Watch for **training/serving skew** continuously by comparing logged served
-  features to training ([`rules/02`](02-data-and-features.md)).
+  features to training ([`rules/02`](02-data-and-features.md)). The served-feature log
+  carries the same PII minimisation as training data: mask or drop PII fields before
+  logging ([`rules/07`](07-security-governance.md) §3, [`rules/02`](02-data-and-features.md) §6).
 - Record the out-of-distribution flags raised by the inference-time gate
   ([`rules/07`](07-security-governance.md) §1) and trend their rate; a rising rate is early drift.
 

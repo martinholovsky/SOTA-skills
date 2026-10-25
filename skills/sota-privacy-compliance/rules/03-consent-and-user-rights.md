@@ -179,7 +179,9 @@ recorded derivative graph ([rules/01](01-data-inventory-classification.md) §5) 
 8. **ML training data & derived models** — remove from training sets and feature
    stores; for models already trained, document the position (retrain cadence
    within which the data washes out; vector-store entries deleted immediately).
-   An ML pipeline with no answer here is a HIGH finding as of 2026.
+   An ML pipeline with no answer here is a HIGH finding as of 2026. An LLM feature adds
+   prompt/completion trace stores, eval sets sampled from production, and agent memory
+   ([`sota-llm-engineering` rules/06](../../sota-llm-engineering/rules/06-data-lifecycle.md) §5).
 9. **Derived materializations on consent withdrawal** — the same fan-out runs
    for a withdrawn purpose, not only for erasure: audience segments, lookalike
    and propensity scores, cached embeddings, LLM KV/prefix caches and warm

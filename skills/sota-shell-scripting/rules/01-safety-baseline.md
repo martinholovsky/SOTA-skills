@@ -479,7 +479,7 @@ splitting/joining class** — no widely-adopted static analyser catches
       reads as empty, which is itself a silent wrong answer.
 - [ ] **Background jobs: is any outcome read from the launcher's status?** (§2a) The
       completion signal describes `nohup`/the runner detaching; wait on a sentinel the job
-      writes last, and quote it.
+      writes last, and quote it. **And does a retry, rollback or `--force` follow a failed push, deploy or write without reading the resource back first?** (§2b) `grep -rnE '(push|apply|deploy)[^|]*\|\|[^|]*(--force|reset --hard|retry)' scripts/ .github/` lists same-line fallbacks only; also read any CI step that runs after a failed push.
 - [ ] **Does a recorded exit code get re-raised for whoever reads the status?** (§2a, §3)
       `grep -rnE 'echo "?EXIT=\$\?|; *echo .*\$\?' scripts/ .github/` — a compound ending in
       `echo`, `|| true` or `tail` returns *that* command's status, so a CI step, a `&&` chain

@@ -352,7 +352,7 @@ existing parameter means.
       defines NDEBUG. written this way on purpose. The one-line form -- a grep with stderr
       discarded, then an or-echo announcing absence -- reports YOUR broken sweep as THEIR
       defect, because the or-branch fires on every non-zero exit and the discarded stderr took
-      the reason with it. [rules/06](06-build-tooling-ci.md) 2d. Invariant 32 rejected the short form here while this
+      the reason with it. [`sota-shell-scripting` rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md) §2d. Invariant 32 rejected the short form here while this
       section was written, and then rejected this very comment for spelling the pattern out
       literally: refer to it by name, never by its characters, in prose that shares a file with
       the check.** —

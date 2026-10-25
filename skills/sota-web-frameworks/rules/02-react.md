@@ -128,3 +128,4 @@ import DOMPurify from 'dompurify';
 - [ ] Stable domain IDs as list keys (not array index) for insertable/reorderable lists?
 - [ ] Rules of Hooks enforced by lint (also required for the React Compiler)?
 - [ ] Error boundaries around lazy/third-party/RSC subtrees; error text not rendered as HTML?
+- [ ] No attacker-influenced object spread onto a DOM element (§5)? Probe the call sites where the props are built: [`sota-frontend-design` rules/03](../../sota-frontend-design/rules/03-design-systems-components.md) Audit checklist.

@@ -206,7 +206,8 @@ token = secrets.token_urlsafe(32)                                  # 256-bit URL
   is exactly this risk — back it up to hardware/escrow). **Back up / escrow
   data-encryption keys** so encrypted data stays recoverable; **never escrow signing or
   authentication keys** — a second copy destroys non-repudiation. Store key backups
-  under the same KMS/HSM control as the originals, with their own access audit.
+  under the same KMS/HSM control as the originals, with their own access audit. Probe:
+  [`sota-secrets-management` rules/05](../../sota-secrets-management/rules/05-credential-types.md) §7.
 - Key material in memory: avoid copies (immutable strings in GC languages spread
   copies — prefer byte arrays you can zero); never in logs, exceptions, or
   serialized debug output.

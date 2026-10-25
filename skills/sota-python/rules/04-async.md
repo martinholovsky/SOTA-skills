@@ -248,6 +248,10 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
       `grep -rn "requests\.\(get\|post\|put\|delete\|Session\)" --include="*.py" src/` ;
       `grep -rn "subprocess\.\(run\|check_output\|call\)" --include="*.py" src/` (in async
       modules?)
+- [ ] **Django async-safety guard disabled (§7) [HIGH on a production path]** —
+      `grep -rn 'DJANGO_ALLOW_ASYNC_UNSAFE' .` (settings, CI, Dockerfiles, env files) plus the
+      deployed environment's variables; any hit turns `SynchronousOnlyOperation` into a silent
+      block, which Django's docs warn risks data loss
 - [ ] **Fire-and-forget tasks [MEDIUM-HIGH]** —
       `grep -rn "asyncio.create_task" --include="*.py" src/` (is the return value kept +
       callback added?); `grep -rn "ensure_future" --include="*.py" src/` (legacy spelling, same

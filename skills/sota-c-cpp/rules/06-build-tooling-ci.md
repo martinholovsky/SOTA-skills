@@ -165,7 +165,7 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   `SSL_set_verify` changes it (and checks no host name without `SSL_set1_host`);
   libcurl's `CURLOPT_TIMEOUT` defaults to 0, "never times out", and
   `CURLOPT_CONNECTTIMEOUT` to 300 s, so a stalled peer holds the thread; libcurl's
-  `CURLOPT_PROTOCOLS_STR` allows every compiled-in scheme ([`rules/04`](04-security.md) §4). Audit every
+  `CURLOPT_PROTOCOLS_STR` allows every compiled-in scheme ([`rules/04`](04-security.md) §3). Audit every
   option passed to a library at a trust boundary, and the ones *not* passed.
 - **Sample code is not production code.** curl's own `docs/examples/https.c` carries
   `CURLOPT_SSL_VERIFYPEER, 0L` behind `SKIP_PEER_VERIFICATION`; a copied README snippet

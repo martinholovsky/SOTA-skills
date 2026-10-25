@@ -46,7 +46,7 @@ Non-negotiables:
 - **Short token/lease TTLs** (≤1h default, renewable) so a stolen token expires; audit devices
   enabled and shipped off-box; auto-unseal via cloud KMS, recovery keys Shamir-split among ≥3
   officers and never stored together.
-- **Treat the vault itself as a tier-0 asset** (same bar as the IdP, identity-access [rules/02](02-storage-backends.md)):
+- **Treat the vault itself as a tier-0 asset** (same bar as the IdP, [`sota-identity-access` rules/02](../../sota-identity-access/rules/02-idp-operations.md) §1):
   run it **HA** (Raft ≥3 nodes / clustered) so one node loss isn't an outage; take **encrypted
   Raft/storage snapshots on a schedule, ship them off-box, and DR-restore-drill** them — an
   unrecoverable secrets store is a total outage *and* the place every dynamic credential dies;
@@ -295,7 +295,9 @@ between handle only ciphertext and plaintext exists solely inside the consumer.
 - [ ] Terraform/Pulumi state not in VCS; state backend encrypted and access-controlled;
       write-only/ephemeral used for new secret-bearing resources.
 - [ ] Vault/OpenBao: platform-identity auth (no static tokens), deny-by-default path-scoped
-      policies, short TTLs, audit devices on, KMS auto-unseal, dynamic engines preferred to KV.
+      policies, short TTLs, audit devices on, KMS auto-unseal, dynamic engines preferred to KV;
+      run HA (≥3 Raft nodes), with scheduled off-box encrypted snapshots, a dated restore drill, and
+      an offline break-glass path that alerts on use (§2; restore scope: [`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) §7.4.1).
 - [ ] Cloud secret managers: per-secret per-principal IAM (no wildcard access), native or
       scheduled rotation, audit/data-access logs enabled and alerted.
 - [ ] SOPS: per-env keys in `.sops.yaml`, encrypted_regex for k8s, age/KMS private keys never in

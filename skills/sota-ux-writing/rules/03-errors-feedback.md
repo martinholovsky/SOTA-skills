@@ -98,7 +98,7 @@ rules/02](../../sota-code-security/rules/02-authentication.md) (authn) and [rule
 - Confirm the **object and the effect**, not the click: "Invoice #1042 sent
   to billing@acme.com", not "Success!".
 - Include the reversal path in the same breath when one exists: "Archived —
-  Undo" (undo-over-confirm pattern: frontend [rules/04](04-accessibility-localization.md) §6).
+  Undo" (undo-over-confirm pattern: frontend [rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §6).
 - Report partial success honestly: "Imported 200 of 203 rows — 3 failed
   (download report)". Rounding partial failure up to "Done!" is a trust
   bug that surfaces as "the product loses data".

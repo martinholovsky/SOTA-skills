@@ -434,7 +434,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rnE 'http\.FileServer(FS)?\((http\.(Dir|FS)|os\.DirFS)\(' --include='*.go' .`
 - [ ] **Unpinged pool; pool-level prepared statements (§2) — LOW, MEDIUM behind a
       transaction-mode pooler** — `grep -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs grep -L 'Ping'` ;
-      `grep -rnE '(db|DB|pool)\.Prepare(Context)?\(' --include='*.go' .`
+      `grep -rnE '(db|DB|pool)\.Prepare(Context)?\(' --include='*.go' .` ; pool limits left at the unlimited default (§2): `grep -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs -r grep -L 'SetMaxOpenConns'` — read each hit, the setter may live in another file
 - [ ] **SSRF: outbound request to a caller-chosen URL (§4c) — HIGH, CRITICAL on a cloud host
       with a metadata endpoint** —
       `grep -rnE '(Get|Post|Head|PostForm|NewRequest|NewRequestWithContext)\(.*(r\.(URL|Form|PostForm|Header)|FormValue\(|Query\(\))' --include='*.go' .`

@@ -231,8 +231,12 @@ contacts.
       cannot delete/modify logs (bucket policy / object lock / sink permissions).
 - [ ] Root/owner credentials: MFA enforced, no access keys, usage alarmed (any root
       login pages someone).
-- [ ] SCPs/org policies enforce, at minimum: no audit-log tampering, no public
-      buckets, region restriction, no new IAM users/SA keys, no leaving org.
+- [ ] SCPs/org policies enforce all eight §3 guardrails: no audit-log tampering, no public
+      buckets, region restriction, no new IAM users/SA keys, no leaving org, no root actions
+      in member accounts, no unencrypted storage creation, no default VPC where the provider
+      supports it (§3).
+- [ ] Detective baseline (AWS Config / Security Hub, GCP SCC, Azure Defender for Cloud /
+      Policy compliance) deployed org-wide from the security account, findings centralised (§3).
 - [ ] AWS: RCPs enforce the org-wide data perimeter on supported services (deny
       principals outside the org, require TLS) — not left to per-resource policies.
 - [ ] AWS: an EC2 declarative policy pins the baseline org-wide (§3) — IMDSv2

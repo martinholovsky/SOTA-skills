@@ -26,7 +26,7 @@ file owns what the strings say).
   instruction ("Enter your work email here") — the instruction form breaks
   scanning and translation reuse.
 - **Placeholder is never the label** (it vanishes on input — mechanics in
-  frontend [rules/04](04-accessibility-localization.md) §1). Use placeholders only for *format examples*
+  frontend [rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §1). Use placeholders only for *format examples*
   ("name@company.com") and treat them as expendable.
 - Persistent requirements go in **hint text below the field**, present before
   the user types, not revealed as a scolding after failure: "8+ characters
@@ -36,7 +36,7 @@ file owns what the strings say).
 
 ## 3. Empty states: three different scripts
 
-Empty states differ by cause (pattern split in frontend [rules/04](04-accessibility-localization.md) §5); the
+Empty states differ by cause (pattern split in frontend [rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §5); the
 copy jobs differ too:
 
 - **First use** — orient + invite: what this area will hold, why it's
@@ -67,7 +67,7 @@ copy jobs differ too:
 
 ## 5. Confirmation dialogs
 
-The words are the safety mechanism (interaction rules in frontend [rules/04](04-accessibility-localization.md) §6):
+The words are the safety mechanism (interaction rules in frontend [rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §6):
 
 ```text
 GOOD                                        BAD
@@ -88,7 +88,7 @@ Buttons: [Cancel]  [Delete project]         Buttons: [No]  [Yes]
 
 - A toast is **one sentence, outcome first, optional single action**:
   "Invoice sent — Undo". No stacked clauses, no second sentence; if it needs
-  more, it needs a different surface (toast mechanics: frontend [rules/04](04-accessibility-localization.md) §9).
+  more, it needs a different surface (toast mechanics: frontend [rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §9).
 - Notifications (push/in-app) must stand alone on a lock screen: actor +
   action + object ("Ana commented on Q3 budget"), no "You have a new
   notification" (that's the notification's job description, not its content).
@@ -123,7 +123,7 @@ Buttons: [Cancel]  [Delete project]         Buttons: [No]  [Yes]
 ## 9. Loading & progress text
 
 - Name the work, not the wait: "Importing 3 of 12 contacts…" beats
-  "Loading…" beats a bare spinner (thresholds in frontend [rules/04](04-accessibility-localization.md) §4).
+  "Loading…" beats a bare spinner (thresholds in frontend [rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §4).
 - Long operations set expectations honestly ("This usually takes ~2 min");
   never promise "a few seconds" unmeasured.
 - Post-completion, say what changed: "Imported 12 contacts (2 duplicates

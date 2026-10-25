@@ -174,7 +174,9 @@ the core Search ranking and quality systems, so **"GEO"/"AEO" is still SEO** —
 - [ ] Claims cite primary sources; no citation chains into blogspam
 - [ ] Spam-policy sweep: no page sets matching scaled/doorway patterns
       (mass permutation pages, thin location pages); no rented third-party
-      sections riding the domain; structured data matches visible content
+      sections riding the domain; structured data matches visible content; no back-button
+      hijacking — Back from a landing page returns to the referrer, and no
+      `history.pushState`/`replaceState` outside the router, ad and analytics scripts included (§3)
 - [ ] No keyword-density thinking anywhere in the process; natural topic
       vocabulary only
 - [ ] Titles unique, front-loaded, truthful; meta descriptions written as

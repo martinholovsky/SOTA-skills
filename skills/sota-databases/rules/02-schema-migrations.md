@@ -279,3 +279,6 @@ The expand/contract and lock-timeout doctrines are identical; mechanics differ:
 - [ ] Migrations tested against prod-sized/prod-shaped data and timed; risky
       rollbacks rehearsed; concurrent-migration lock enabled.
 - [ ] ORM-generated migrations reviewed as SQL, not as DSL.
+- [ ] Seed/reference-data changes ship as migrations and are idempotent (`INSERT … ON
+      CONFLICT DO UPDATE` or equivalent): no empty-table assumption, no duplicate rows on
+      re-run (rule "Seed/reference data changes are migrations too").

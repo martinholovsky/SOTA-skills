@@ -329,6 +329,8 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 - [ ] **Randomness / comparison — HIGH for security uses** —
       `grep -rnE '\brand\(|Random\.(rand|new)|\.sample\b' --include='*.rb' . | grep -viE "spec|test|seed"`
       ; `grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .` ;
+      `grep -rniE 'Digest::(SHA[0-9]*|MD5|RMD160).*passw|passw.*Digest::(SHA[0-9]*|MD5|RMD160)' --include='*.rb' .`
+      (a password through a fast digest, §6 — HIGH; use bcrypt/argon2) ;
       `grep -rn 'fixed_length_secure_compare' --include='*.rb' .` (raises on a length
       mismatch — use `secure_compare` for caller-supplied values)
 - [ ] **Path traversal** —

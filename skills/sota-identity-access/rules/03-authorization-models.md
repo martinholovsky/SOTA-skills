@@ -186,4 +186,5 @@ def test_authz_matrix(groups, action, expected):
 - [ ] Is the policy store itself a protected/privileged resource?
 - [ ] Is there an allow/deny matrix test suite (including negatives and the unmapped-group case) gating CI?
 - [ ] Does the engine fail **closed** (deny) on timeout/error?
+- [ ] Does the decision point emit a structured event for every deny and every privileged allow (who, action, resource, decision, rule id; never the token), and does it reach detection (§4)? MEDIUM. The app-side probe is [`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md)'s security-events item.
 - [ ] **Medium** — Is the authorization matrix one machine-readable file (expected decision and refusal code per role × resource × action) that generates the tests and is rendered for reviewers, rather than a spreadsheet kept beside the code?

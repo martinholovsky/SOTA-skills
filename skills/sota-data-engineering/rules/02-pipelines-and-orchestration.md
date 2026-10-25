@@ -201,6 +201,8 @@ docs.getdbt.com.)
 - [ ] Every scheduled write is partition-overwrite, MERGE, or full
       rebuild — zero blind appends outside raw landing?
 - [ ] Writes atomic per run (no separately-failable delete-then-insert)?
+- [ ] Side effects (notifications, reverse-ETL pushes, API calls) carry idempotency keys
+      or run in a terminal step after the data write commits (§"Idempotency — the prime directive")?
 - [ ] All tasks parameterized by logical interval; no `NOW()`-relative
       filters in scheduled code?
 - [ ] Watermarks persisted atomically with the data they describe?

@@ -18,7 +18,7 @@ Two complementary layers; mature setups run both:
   it adds cross-function taint *within one file*, opt-in via `--taint-intrafile` (CE is
   intraprocedural only; cross-file taint stays Semgrep Pro-only); the **rule format
   is compatible**, so existing rules and community rulesets port unchanged
-  ([`sota/rules/01`](../../sota/rules/01-audit-methodology.md) §2). Prefer it for anything you need to keep running. Semgrep CE
+  ([`sota/rules/01`](../../sota/rules/01-audit-methodology.md) §3). Prefer it for anything you need to keep running. Semgrep CE
   remains a drop-in alternative.
 - **CodeQL** — deep interprocedural taint tracking with **names and types resolved**;
   catches what pattern-matching cannot (source→sink across files). Heavier:

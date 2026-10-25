@@ -137,7 +137,8 @@ incident's cause.
 - **Bound the iterations, not just the sleep**: `for i in $(seq 1 60)`, never a bare
   `while true` / `until`. A loop that gives up is a loop that cannot leak forever.
 - **Keep it in the foreground** so it dies with the command that started it, and **watch
-  an artifact rather than a process** — `until grep -q DONE run.log` forks less and
+  an artifact rather than a process** ([`rules/01`](01-safety-baseline.md) §2a: the launcher's
+  exit is not the job's) — `until grep -q DONE run.log` forks less and
   cannot match itself.
 - **Check headroom for the resource you are about to spend**, exactly as §3 asks for
   `df -h`: `ps -A | wc -l` against `sysctl -n kern.maxprocperuid` (macOS) or `ulimit -u`.

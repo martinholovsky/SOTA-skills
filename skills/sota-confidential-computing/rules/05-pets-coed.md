@@ -7,7 +7,7 @@ Umbrella term: **COED** (computing on encrypted data). This file owns the
 choose/deploy/audit rules for these tools and the honest cost model. It does NOT
 own: TEE selection and the isolation ladder ([rules/01](01-threat-model-and-selection.md)–02), attestation ([rules/03](03-remote-attestation.md)),
 confidential K8s ([rules/04](04-confidential-kubernetes.md)), differential privacy and data-minimization
-([sota-privacy-compliance rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md)), federated learning / DP-SGD
+([sota-privacy-compliance rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md)), DP-SGD (federated learning: not covered by the library)
 ([sota-ml-engineering rules/07](../../sota-ml-engineering/rules/07-security-governance.md)), or classical crypto — AEAD, TLS, key management
 ([sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md) + [sota-secrets-management rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md)).
 

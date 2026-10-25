@@ -286,7 +286,7 @@ main "$@"   # nothing executes until fully downloaded and parsed
 - Predictable temp paths (`/tmp/myapp.$$`, `/tmp/build.tmp`) → symlink attack: attacker
   pre-creates a symlink at that path, your root script writes through it onto
   `/etc/passwd`. **Only `mktemp`** (unpredictable name, `O_EXCL`, mode 0600) — already
-  required by [rules/01](01-safety-baseline.md) §6; here it is a security control, not hygiene.
+  required by [rules/05](05-constructs-and-cleanup.md) §3; here it is a security control, not hygiene.
 - Don't `chmod` a file *after* writing sensitive content — create restrictive, then write:
   `umask 077` before creating key material, or `install -m 0600 /dev/null "$f"` then write.
 - Set `umask` explicitly in scripts that create files whose permissions matter; inherited
@@ -407,7 +407,7 @@ substitution in help text** rather than literal characters. `--severity=error` s
       (it matches `/` and spaces — §4); an argument `^…$` regex over a caller-writable path → HIGH.
 - [ ] `grep -rn 'curl[^|]*|[[:space:]]*\(ba\)\?sh\|wget -qO- .*| *sh' -r .` → CRITICAL in
       anything that runs unattended; check install scripts for checksum/signature
-      verification and version pinning (no `/latest/`).
+      verification and version pinning (no `/latest/`); a script you ship wraps all logic in a function called only on its last line (§5 Publishing).
 - [ ] A redirect-following fetch with no protocol floor (§5): `grep -rnE 'curl[^#]*(-[a-zA-Z]*L|--location)' --include='*.sh' . | grep -v -e '--proto[ =]'`
       → MEDIUM (HIGH if the fetched script is executed and not pinned by checksum): add
       `--proto '=https' --tlsv1.2`. `--proto-redir` alone does not count. Built on a labelled set
