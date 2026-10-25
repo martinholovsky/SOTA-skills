@@ -1200,6 +1200,27 @@ p.write_text(t.replace(old, '    return None\\n', 1))
 probe 39c "the trigger detector regresses against its own corpus" \
   "the trigger detector failed its own labelled corpus"
 
+# 39d — the path half of the resolver (2026-10-25): a deferral whose trigger names a tracked
+# file by path (a script, the router), not a skill's rules file. Before that half existed,
+# five deferrals were UNRESOLVED and an edit to their file passed silently. Same shape as 39:
+# the target is ASKED of the detector, restricted to paths outside skills/*/rules/, so this
+# probe exercises the literal-path route and not the skill route 39 already covers.
+t39=$( cd "$WT" && b=$(for r in origin/main main; do git merge-base HEAD "$r" 2>/dev/null && break; done) \
+      && [ -n "$b" ] && git show "$b:docs/ADOPTION-LOG.md" > docs/ADOPTION-LOG.md \
+      && python3 scripts/lib/check-deferral-triggers.py --list docs/ADOPTION-LOG.md \
+         | while IFS="$(printf '\t')" read -r f n; do
+             case "$f" in skills/*/rules/*) continue ;; esac
+             git diff --quiet "$b" HEAD -- "$f" && { printf '%s\t%s\n' "$f" "$n"; break; }
+           done )
+f39=${t39%%"$(printf '\t')"*}; n39=${t39##*"$(printf '\t')"}
+if [ -z "$f39" ] || [ ! -f "$WT/$f39" ]; then
+  echo "FATAL: probe 39d found no path-guarded file — no deferral trigger names a tracked path."; exit 1
+fi
+( cd "$WT" && perl -pi -e 's/$/ (probe 39d)/ if $. == 1' "$f39" )
+wt_commit "probe: edit a file a path-triggered deferral waits on, leave the row untouched"
+probe_committed 39d "a branch fires a path-named deferral trigger and ignores the row" \
+  "the deferral at docs/ADOPTION-LOG.md:$n39 waits on it"
+
 # 40 — a command cites a skill's rules file and never says to load it. Remove /sota-resume's
 # step-0 instruction: its six rules/06 citations are then pointers that load nothing.
 ( cd "$WT" && python3 -c "
