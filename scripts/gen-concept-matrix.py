@@ -454,8 +454,6 @@ TRIAGED = {
         ("delegated", "sota-databases rules/03 (Hibernate), sota-performance rules/02 (JPA)"),
     ("module boundaries & imports", "php"):
         ("delegated", "no language-level visibility; sota-architecture rules/01 §2 (deptrac)"),
-    ("request-scoped context cleanup", "golang"):
-        ("n/a", "goroutines have no local storage by design (Go FAQ); LANGUAGE-TIER spine"),
     ("request-scoped context cleanup", "swift"):
         ("n/a", "@TaskLocal is bound only inside withValue and unbound when it returns "
                 "(measured, Swift 6.3.2; SE-0311); triage 2026-10-07"),
