@@ -164,6 +164,8 @@ validation (purple teaming, BAS) feeding the hypothesis backlog.
 
 ## 7. Concurrent siblings & owned boundaries
 
+*(advisory)* — an ownership map pointing at sibling skills; it states no rule of its own, and each rule it points to is probed in the skill that owns it.
+
 - **[sota-observability](../../sota-observability/SKILL.md)** owns the telemetry pipeline. Detection logic consumes
   its output. Reference [rules/01](../../sota-observability/rules/01-structured-logging.md) (structured logging) for the schema you query
   and [rules/04](../../sota-observability/rules/04-slos-alerting.md) (alerting/SLO) for the *plumbing* that routes your security
@@ -218,23 +220,33 @@ have passed every test, because the test corpus is the demo.
 ## Audit checklist
 
 - [ ] Are detections in version control, with PR review and CI tests, or edited
-      directly in the SIEM console?
+      directly in the SIEM console? Does CI lint each rule and run it against a
+      known-malicious sample (must alert) and a benign corpus (must not), gating the
+      merge on both, and does a pipeline, not a hand edit, deploy it? (§2)
 - [ ] Does each detection carry required metadata (ATT&CK ID, owner, severity,
-      data source, FP notes, test ref)? Enforced in CI?
+      data source, FP notes, test ref)? Enforced in CI? (§2)
 - [ ] Is there an ADS (or equivalent) doc per detection, including a blind-spots
-      / assumptions section?
+      / assumptions section, false positives and a validation procedure? A
+      detection with no ADS doc is a Medium finding. (§3)
 - [ ] Pick 5 detections: how many are validated against the real technique vs.
       "written and hoped"? (`grep -rLiE '^#+ *validation' docs/ads/` lists specs with
       no validation heading.)
 - [ ] Is the portfolio TTP-weighted, or dominated by hash/IP/domain IOC feeds?
-      (Count rules whose only condition is an IOC match.)
+      (Count rules whose only condition is an IOC match.) (§4)
 - [ ] Is ATT&CK pinned to a known version, and is the Navigator coverage layer
-      generated from metadata (not hand-maintained)?
+      generated from metadata (not hand-maintained) and colored by validation
+      confidence (validated / unvalidated / none) rather than rule existence? (§5)
 - [ ] Does coverage prioritization follow threat intel for the org's sector, or
-      chase matrix completeness?
+      chase matrix completeness? (§5)
 - [ ] Are coverage, precision, and MTTD measured? Or only vanity metrics (rule
-      count, alert volume)?
+      count, alert volume)? Is coverage counted from *validated* detections only,
+      MTTD measured by emulation rather than by waiting for incidents, and
+      detection-as-code health (% with tests, ADS docs, owners) tracked? (§6)
 - [ ] Is there a retirement process? When did a detection last get deleted?
+      Does each detection trace to a written, falsifiable hypothesis naming the
+      technique, the actor capability and the telemetry that witnesses it (no
+      hypothesis, no detection), and was it tested to fire on the technique and
+      stay quiet on a benign baseline, both kept as regression fixtures? (§1)
 - [ ] Hunt query for stale detections: in the rule repo, list detections whose
       last meaningful edit predates the last ATT&CK version bump and that target
       systems still in the asset inventory.

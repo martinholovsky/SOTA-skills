@@ -396,20 +396,31 @@ OWASP: Logging cheat sheet, ASVS 5.0 V16.4.2 and V16.4.3.
 - [ ] Sample 20 ERROR lines from production: every one represents something
       a human should act on. No expected 4xx/no-rows/retry noise at ERROR.
 - [ ] Every production log line carries trace_id (or correlation ID); IDs
-      flow into async/queue/cron work.
+      flow into async/queue/cron work. The ID is the active OTel trace_id
+      (a legacy request_id is logged beside it, not instead of it), injected
+      from logger context rather than passed by hand, and that context is
+      cleared at the start of every request; from any one prod line the
+      full trace and its sibling logs can be retrieved (§3).
 - [ ] Redaction enforced at logger/pipeline level, not call sites; grep logs
       for `Authorization`, `password=`, `eyJ` (JWT), card-number patterns —
-      zero hits.
+      zero hits. A test logs each known-bad shape (headers, user objects,
+      error objects) through the real logger and asserts no secret value
+      appears; any secret ever found in logs was rotated and the log history
+      purged (§4).
 - [ ] One wide event per request/job exists with outcome, duration breakdown,
-      and business context; it fires on exceptions too.
+      and business context; it fires on exceptions too. Its counts and
+      outcome are derived from what the unit of work actually returned or
+      wrote: changing the function's return changes the emitted line (§5).
 - [ ] No per-item INFO logging in loops/batch jobs; hot-path DEBUG is sampled
-      or disabled in prod.
-- [ ] Sampling never drops errors or splits a request's logs; audit/security
-      logs are unsampled on a separate stream.
+      or disabled in prod (§6).
+- [ ] Sampling never drops errors, the wide events of failed or slow
+      requests, or splits a request's logs; audit/security logs are
+      unsampled on a separate stream (§6).
 - [ ] Log volume/cost reviewed; top producers known; retention set per
-      stream; health-check traffic not logged.
+      stream; health-check traffic not logged at INFO in the operational
+      stream (§6).
 - [ ] Exception serialization scrubbed (no connection strings/tokens in
-      messages or stack locals).
+      messages or stack locals); errors serialized from an allowlist (§4).
 - [ ] (**Medium**) Every log-emitting host and collector syncs time and drift
       is alerted (`node_timex_sync_status == 0` or an offset threshold);
       clients and edge devices carry a received/observed timestamp beside

@@ -203,19 +203,23 @@ defaults, dangerous operations, config precedence, env var naming, help text.
 
 ## Audit checklist
 
-- [ ] One subcommand grammar (noun-verb or verb-noun) used consistently; conventional verb names; ≤2 levels deep.
-- [ ] Unknown command/flag → suggestion + nonzero exit; never auto-executes the guess.
-- [ ] Every flag has a long form; kebab-case; `--flag=value` and `--` separator work; repeated flags accumulate.
-- [ ] No short-flag meaning collisions across subcommands; standard names (`-h`, `-q`, `-v`, `-o`, `-f`, `--json`, `--yes`) mean the standard things.
-- [ ] ≤2 positional arg types per command; everything else is a flag; no required flags on common-path commands.
-- [ ] `-` accepted for stdin where files are accepted; no command silently blocks reading TTY stdin.
-- [ ] No secret accepted via argv; file/stdin/no-echo-prompt paths exist.
-- [ ] Destructive ops: TTY confirmation (typed name for severe), non-TTY refuses with `--force` hint, `--yes` ≠ `--force`.
-- [ ] Config precedence is flags > env > project > user > system > defaults, deterministic, and documented; `--show-config` (or equivalent) prints resolved values with sources.
-- [ ] Config parse errors name file + key and suggest near-misses; unknown keys are errors or loud warnings, not silence.
-- [ ] All tool-specific env vars carry the `TOOL_` prefix; `NO_COLOR`, proxy vars, `EDITOR`, `PAGER`, `CI` respected.
-- [ ] `-h/--help` on every subcommand: stdout, exit 0, no side effects, examples present, defaults shown.
+- [ ] One subcommand grammar (noun-verb or verb-noun) used consistently; conventional verb names; ≤2 levels deep; `tool help <cmd>`, `tool version` and `tool completion <shell>` exist and match `tool <cmd> --help`/`tool --version`; a single-purpose tool has no lone `run` subcommand; an alias resolves in completion and docs too (§1).
+- [ ] Unknown command/flag → suggestion + nonzero exit; never auto-executes the guess (§1).
+- [ ] Every flag has a long form; kebab-case; `--flag=value` and `--` separator work; repeated flags accumulate; no single-dash long flags (`-output`); a boolean that defaults to true has a `--no-<flag>` negation (§2).
+- [ ] No short-flag meaning collisions across subcommands; standard names (`-h`, `-q`, `-v`, `-o`, `-f`, `--json`, `--yes`) mean the standard things (§2).
+- [ ] ≤2 positional arg types per command; everything else is a flag; no required flags on common-path commands (§3).
+- [ ] `-` accepted for stdin where files are accepted; no command silently blocks reading TTY stdin (§3).
+- [ ] No secret accepted via argv; file/stdin/no-echo-prompt paths exist; a secret env var, if supported at all, is documented with its leak risk (§3).
+- [ ] Destructive ops: TTY confirmation (typed name for severe), non-TTY refuses with `--force` hint, `--yes` ≠ `--force`; each has a `--dry-run`, and an "everything" scope needs `--all` plus `--force` (§5).
+- [ ] Config precedence is flags > env > project > user > system > defaults, deterministic, and documented; `--show-config` (or equivalent) prints resolved values with sources (§4, §6).
+- [ ] Config parse errors name file + key and suggest near-misses; unknown keys are errors or loud warnings, not silence; one config format; one-shot flags (`--dry-run`, `--force`) have no config key, so no file can force them on (§6).
+- [ ] All tool-specific env vars carry the `TOOL_` prefix; `NO_COLOR`, proxy vars, `EDITOR`, `PAGER`, `CI` respected; boolean env vars read `0`/`false` as false and the convention is documented (§7).
+- [ ] `-h/--help` on every subcommand: stdout, exit 0, no side effects, examples present, defaults shown; order is description, usage line, examples, flags, docs URL; the usage line uses `<required>`, `[optional]`, `...` (§4, §8).
 - [ ] `tool` with no arguments: `tool >/dev/null 2>&1; echo "rc=$?"` — rc 0 with no default action
       hides a mistaken invocation from scripts; it prints short usage and exits nonzero, unless the
-      tool has a sensible default action.
-- [ ] Usage errors print the specific error + short usage + exit 2, not the full help wall.
+      tool has a sensible default action (§8).
+- [ ] Usage errors print the specific error + short usage + exit 2, not the full help wall (§8).
+- [ ] **Zero-flag defaults are safe and narrow** — in a throwaway directory or account, run each
+      destructive-capable command with no flags (`tool clean`) and diff the state before and after:
+      it touches only the narrowest scope, and widening takes an explicit flag. Manual run. HIGH when
+      the zero-flag default deletes or overwrites beyond that scope (§4).

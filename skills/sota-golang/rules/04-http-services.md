@@ -379,26 +379,30 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
 - [ ] **Naked servers — HIGH** —
       `grep -rn 'http.ListenAndServe\|http.ListenAndServeTLS' --include='*.go' .` ;
       `grep -rn -A8 'http.Server{' --include='*.go' .` (verify all four timeouts present)
-- [ ] **Default client / package-level helpers — HIGH** —
+- [ ] **Default client / package-level helpers (§2) — HIGH** —
       `grep -rnE 'http\.(Get|Post|PostForm|Head)\(' --include='*.go' .` ;
       `grep -rn 'http.DefaultClient' --include='*.go' .` ;
       `grep -rn -A6 'http.Client{' --include='*.go' .` (Timeout set? Transport tuned?);
       `grep -rn 'MaxIdleConnsPerHost' --include='*.go' .` (absent + high fan-out = bottleneck)
-- [ ] **Body hygiene** — `grep -rn 'client.Do\|\.Get(\|\.Post(' --include='*.go' .` (then verify
+- [ ] **Body hygiene (§2)** — `grep -rn 'client.Do\|\.Get(\|\.Post(' --include='*.go' .` (then verify
       defer Close + drain near each); `grep -rn 'resp.Body.Close' --include='*.go' .` ;
       `grep -rn 'io.ReadAll(r.Body\|io.ReadAll(req.Body' --include='*.go' .` (MaxBytesReader
-      present? — HIGH); `grep -rn 'MaxBytesReader' --include='*.go' .`
-- [ ] **Shutdown** — `grep -rn 'signal.NotifyContext\|signal.Notify' --include='*.go' .` ;
+      present? — HIGH); `grep -rn 'MaxBytesReader' --include='*.go' .` ; manual: `resp.StatusCode`
+      checked after each `Do` (`err == nil` on 4xx/5xx)
+- [ ] **Shutdown (§3)** — `grep -rn 'signal.NotifyContext\|signal.Notify' --include='*.go' .` ;
       `grep -rn 'srv.Shutdown\|.Shutdown(' --include='*.go' .` (absent => no graceful drain —
-      MEDIUM); `grep -rn 'ErrServerClosed' --include='*.go' .`
-- [ ] **Per-request client/transport construction — MEDIUM perf** —
+      MEDIUM); `grep -rn 'ErrServerClosed' --include='*.go' .` ; manual: the shutdown deadline is
+      below the orchestrator's kill grace period, `srv.Close()` runs when `Shutdown` errors,
+      `RegisterOnShutdown` signals hijacked conns, dependencies close after the drain
+- [ ] **Per-request client/transport construction (§2) — MEDIUM perf** —
       `grep -rn -B3 'http.Client{' --include='*.go' . | grep -E 'func.*\(w http|Handler'`
-- [ ] **Logging** —
+- [ ] **Logging (§5)** —
       `grep -rnE '\b(fmt\.Print|log\.Print)' --include='*.go' . | grep -v _test.go` (LOW);
       `grep -rn 'slog.' --include='*.go' . | grep -v Context` (request paths should use
       *Context);
       `grep -rnE '(password|token|secret|authorization|api_?key)' --include='*.go' . | grep -i 'slog\|log\.'`
-      (PII in logs — HIGH)
+      (PII in logs — HIGH) ; manual: client mistakes (4xx) logged at Info/Warn, not Error;
+      sensitive types implement `slog.LogValuer`
 - [ ] **Middleware ResponseWriter wrappers missing Flush/Hijack passthrough** —
       `grep -rn -A4 'http.ResponseWriter$' --include='*.go' . | grep 'struct'`
 - [ ] **Path-based authorization on the raw request path (§4) — HIGH when the router behind
@@ -418,8 +422,10 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       (v1 decoder in a file declaring a privilege field; v1 keeps the last duplicate and
       `DisallowUnknownFields` does not reject it — measured go1.27.1; on 1.27+ decode with
       `encoding/json/v2`, which errors on duplicates)
-- [ ] **Tooling** — `golangci-lint run --enable-only bodyclose,noctx,gosec ./...` (noctx:
-      requests without ctx); `go vet ./...`
+- [ ] **Tooling; request-scoped values (§6)** — `golangci-lint run --enable-only bodyclose,noctx,gosec ./...` (noctx:
+      requests without ctx, so ctx never reaches the downstream call); `go vet ./...` ;
+      `grep -rnF 'Header.Get("Authorization")' --include='*.go' .` (a hit outside the auth
+      middleware is a handler re-parsing the token) ; ctx keys and payloads: the design-file context item
 - [ ] **--- Cookies and redirects (§4a, §4b) ---** —
       `grep -rn 'SetCookie' --include='*.go' . | grep -v _test` (then read each for
       Secure/HttpOnly/SameSite [HIGH]);

@@ -272,9 +272,11 @@ err := g.Wait()
 
 ## Audit checklist
 
-- [ ] **go.mod language version — decides loop-var semantics (HIGH if <1.22 with closures in
+- [ ] **go.mod language version (§5) — decides loop-var semantics (HIGH if <1.22 with closures in
       loops)** — `grep -E '^go ' go.mod`
-- [ ] **Fire-and-forget goroutines — review each: exit path? join? error?** —
+- [ ] **Fire-and-forget goroutines (§1) — HIGH — review each: exit path? join? error? a deferred
+      recover inside when it runs panic-capable code? in a library, a `Close`/`Shutdown` that joins
+      it?** —
       `grep -rn 'go func' --include='*.go' . | grep -v _test.go` ;
       `grep -rnE '^\s*go [a-zA-Z]' --include='*.go' .`
 - [ ] **Goroutines without ctx plumbed (manual: does the func take/select on ctx?)** —
@@ -283,20 +285,27 @@ err := g.Wait()
       `grep -rn -B5 'time.After' --include='*.go' . | grep -E 'for |select'`
 - [ ] **Unbounded fan-out: go inside range — HIGH if input is external** —
       `grep -rn -B2 'go func' --include='*.go' . | grep 'for .*range'`
-- [ ] **WaitGroup misuse: Add inside goroutine, copied WG** —
+- [ ] **WaitGroup misuse: Add inside goroutine, copied WG (§4)** —
       `grep -rn -A2 'go func' --include='*.go' . | grep 'wg.Add'` ; `go vet ./...` (copylocks,
       loopclosure (pre-1.22))
-- [ ] **Raw atomic on plain ints (prefer atomic.Int64 types)** —
+- [ ] **Raw atomic on plain ints (prefer atomic.Int64 types) (§4)** —
       `grep -rnE 'atomic\.(Add|Load|Store|Swap)(Int|Uint|Pointer)' --include='*.go' .`
-- [ ] **sync.Map usage — verify it matches its niche** —
-      `grep -rn 'sync.Map' --include='*.go' .`
-- [ ] **Consumer-side close, double close candidates** — `grep -rn 'close(' --include='*.go' .`
-      (verify producer owns each)
+- [ ] **sync.Map, RWMutex and Once — verify each matches its niche (§4)** —
+      `grep -rn 'sync.Map' --include='*.go' .` ; `grep -rnE 'sync\.(RWMutex|Once)' --include='*.go' .`
+      (RWMutex only where a profile showed read contention; a panicking `Once` fn is consumed, so
+      retryable init needs a mutex + done flag)
+- [ ] **Consumer-side close, double close candidates; channel sizing (§3)** — `grep -rn 'close(' --include='*.go' .`
+      (verify producer owns each) ;
+      `grep -rnE 'make\(chan [^,]+,[[:space:]]*([2-9]|[1-9][0-9]+)\)|make\(chan struct\{\},[[:space:]]*1\)' --include='*.go' .`
+      (a literal buffer other than 0 or 1 needs a comment — MEDIUM; a 1-slot `struct{}` channel used
+      as a lock needs a commented ctx-aware reason)
 - [ ] **Sleep-based synchronization — MEDIUM (flaky + racy)** —
       `grep -rn 'time.Sleep' --include='*.go' . | grep _test.go`
-- [ ] **Race detector + leak detection — non-negotiable** — `go test -race ./...` ;
+- [ ] **Race detector + leak detection — non-negotiable (§5)** — `go test -race ./...` ;
       `go test -race -count=5 ./...` (shake out flaky interleavings);
-      `grep -rn 'goleak' --include='*_test.go' .` (present in goroutine-spawning pkgs?)
+      `grep -rn 'goleak' --include='*_test.go' .` (present in goroutine-spawning pkgs?) ; manual:
+      every map, counter, lazy-init or flag that a handler or spawned goroutine touches is
+      mutex-guarded or atomic (a confirmed race is CRITICAL)
 - [ ] **Runtime evidence (live systems)** —
       `curl -s localhost:6060/debug/pprof/goroutine?debug=2 | head -100` ;
       `curl -s localhost:6060/debug/pprof/goroutineleak?debug=1 | head -50` (1.27+)

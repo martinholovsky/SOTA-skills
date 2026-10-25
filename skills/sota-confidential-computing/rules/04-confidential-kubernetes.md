@@ -295,33 +295,48 @@ feature without recorded risk acceptance: **High**.
 - [ ] Does the design state which adversary each confidential layer excludes —
       and is "protects from cluster admin" claimed only for pod-level TEEs,
       never for confidential nodes? (grep design docs for `confidential node`
-      near `cluster admin`)
+      near `cluster admin`) A cluster-admin claim for confidential nodes is Critical.
+      Is workload-bound attestation claimed only where pod-level evidence covers the
+      guest image and policy, never inferred from node attestation (R4.2, §1)?
 - [ ] Is the GA/preview status of every managed confidential feature verified
-      against current vendor docs and recorded, with preview use risk-accepted?
+      against current vendor docs and recorded, with preview use risk-accepted
+      and its fallback named — compliance evidence on an unaccepted preview is High —
+      and nothing built on a retired offering such as the AKS Confidential Containers
+      preview (R4.13, §6)?
+      Is confidential-node attestation checked (attestation-gated scheduling where
+      offered), or its absence recorded as a decision — unrecorded: Medium (R4.4, §2)?
 - [ ] Do confidential pods declare a TEE RuntimeClass, and does admission
       policy enforce it for the sensitive namespaces? (`grep -rn runtimeClassName manifests/`;
-      check Kyverno/VAP rules)
+      check Kyverno/VAP rules) Is an admission pass never cited as evidence that the
+      workload is attested (R4.12, §5)?
 - [ ] Is a restrictive Kata agent policy attached to every confidential pod,
       generated from the manifest, denying exec/log APIs, with its digest bound
-      into attestation and checked by KBS policy?
+      into attestation and checked by KBS policy, with image references pinned by
+      digest inside it? Missing or permissive policy on a pod claimed confidential:
+      Critical (R4.7, §3).
 - [ ] Do secrets reach confidential pods only via attest-then-release (KBS
       fetch or sealed secrets) — no plaintext K8s Secret feeds sensitive data?
       (`grep -r "secretKeyRef\|envFrom" manifests` for confidential workloads)
+      A plaintext K8s Secret feeding sensitive data is High (R4.8, §4).
 - [ ] Are images for confidential pods pulled inside the guest, signature-
       verified in-guest, and (where confidentiality requires) encrypted with
-      KBS-held keys?
+      KBS-held keys? A host-side check alone does not count — it is a claim by the
+      distrusted party (R4.11, §5).
 - [ ] Is host-visible storage treated as untrusted — in-guest encryption with
       attestation-released keys for any sensitive persistent volume, and no
-      hostPath into confidential pods? (`grep -r hostPath` manifests)
+      hostPath into confidential pods? (`grep -r hostPath` manifests) Cloud-managed
+      disk encryption does not count — its keys sit with the infrastructure (R4.10, §4).
 - [ ] Does a written debug/break-glass plan exist — debug-policy pods, KBS
-      refusing production keys to them, logged approval path?
+      refusing production keys to them, logged approval path? None for a production
+      CoCo estate: Medium; prod keys released to debug-policy pods: Critical (R4.9, §4).
 - [ ] Is in-guest telemetry egress in place (the team is not depending on
-      `kubectl logs`/termination logs for a locked-down pod)?
+      `kubectl logs`/termination logs for a locked-down pod) (R4.9, §4)?
 - [ ] Are Trustee (KBS/AS) availability, reference-value updates, and policy
       change control owned and documented ([rules/03](03-remote-attestation.md) for appraisal depth)?
 - [ ] Does the design doc contain the limitations block — no availability
       guarantee, side-channel posture, moved-not-removed TCB, maturity
-      caveats?
+      caveats? A design assuming the TEE guarantees liveness or timely execution is
+      High (§7).
 - [ ] Are bare-metal/child-VM/peer-pod placement constraints verified for the
       target environment (no silent assumption that TEE VMs nest on ordinary
-      cloud instances)?
+      cloud instances)? Assuming CoCo on ordinary cloud VMs is High (R4.6, §3).

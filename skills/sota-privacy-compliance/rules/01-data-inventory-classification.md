@@ -233,16 +233,16 @@ what's load-bearing.
 ## Audit checklist
 
 - [ ] Machine-readable data inventory exists, is versioned, and was updated within the current quarter (or is CI-generated)
-- [ ] Every schema field holding personal data carries classification + purpose + retention annotations; CI rejects unannotated additions
-- [ ] Classification tiers have documented, bound minimum controls; spot-check 5 `pii` fields for control compliance
+- [ ] Every schema field holding personal data carries classification + purpose + retention annotations; CI rejects unannotated additions and attaches the generated catalog diff to the PR (§1)
+- [ ] Classification tiers have documented, bound minimum controls; spot-check 5 `pii` fields for control compliance; tier definitions state that derived data (embeddings, scores, replays) inherits its source tier, inferred special-category data is tiered as such, and aggregates drop tier only after a documented anonymization review (§2)
 - [ ] Internal identifiers (user IDs, device IDs, IPs) are classified as PII, not `internal`
 - [ ] Special-category data is explicitly tiered with lawful-basis reference and DPIA link
-- [ ] Logs, object storage, backups, analytics events, search indexes, caches, and ML datasets are covered by the inventory (sample each)
+- [ ] Logs, object storage, backups, analytics events, search indexes, caches, and ML datasets are covered by the inventory (sample each); scanner-detected PII is confirmed by schema-owner review (§3)
 - [ ] Analytics event schema registry exists; no free-text/whole-object payloads to third parties
-- [ ] Processor list is reconciled against actual production egress and SDK usage; every processor has a DPA reference and region
-- [ ] Each personal-data entity has a designated system of record; derivative copies and sync paths are recorded
+- [ ] Processor list is reconciled against actual production egress and SDK usage; every processor has a DPA reference, region, data categories, purpose and sending code path; internal cross-boundary flows (warehouse, sandbox, prod-seeded staging) are mapped too (§4) — HIGH for a production processor without DPA and inventory entry, CRITICAL if special-category data flows to it
+- [ ] Each personal-data entity has a designated system of record; derivative copies, sync paths and staleness bounds are recorded (§5)
 - [ ] Backup retention per datastore is recorded and consistent with deletion obligations
-- [ ] Every data category and datastore has a current owner; staleness is detected (owner no longer exists → alert)
+- [ ] Every data category and datastore has a current owner; staleness is detected (owner no longer exists → alert) (§4b)
 - [ ] No production personal data in staging/dev/sandbox environments (or masked irreversibly); "temporary" copies have TTL + owner
-- [ ] Catalog entries carry confidence levels; load-bearing consumers (DSAR, breach scoping) rely only on verified entries
+- [ ] Catalog entries carry confidence levels; load-bearing consumers (DSAR, breach scoping) rely only on verified entries; on a legacy estate the unannotated-field CI gate is live before backfill completes (§6)
 - [ ] RoPA (where GDPR applies) is derivable from the inventory, not maintained as a separate divergent document

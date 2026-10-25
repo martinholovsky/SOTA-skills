@@ -37,6 +37,8 @@ recently-fired alerts; open the on-call dashboard cold and try to answer
 
 ## 2. Evidence-gathering greps and probes
 
+*(advisory)* — a reference list of lead-finding greps for the §1 trace; its one rule, a hit is a lead and not a finding, is probed by the §6 evidence item.
+
 Adapt to language/stack; these locate the load-bearing code fast.
 
 ```bash
@@ -236,9 +238,15 @@ Rules for findings:
 ## Audit checklist (meta — did the audit itself cover everything)
 
 - [ ] 2–3 critical user journeys traced through actual code, entry to
-      async tail, including the failure path.
-- [ ] The two verdict questions answered with named evidence.
-- [ ] All five pillars scored; gaps mapped to catalog IDs and rules files.
+      async tail, including the failure path; the 3am on-call path walked
+      (alert → runbook → dashboard → trace/log query), each missing link
+      recorded as a finding (§1).
+- [ ] The two verdict questions answered with named evidence, whatever the
+      time box, with the CRITICAL hunts (secrets in telemetry, liveness
+      dependency checks, exposed debug endpoints) run first (§4).
+- [ ] All five pillars scored 0–3 against the rubric, the profile reported
+      rather than only a total (§5); gaps mapped to catalog IDs and rules
+      files, at the catalog's severities (§3).
 - [ ] Secrets/PII telemetry scan performed (logs, span attributes, baggage,
       error tracker payloads).
 - [ ] Probe configs (liveness/readiness) read from deploy manifests, not
@@ -247,8 +255,10 @@ Rules for findings:
       on-call interviewed or page history sampled if accessible.
 - [ ] Telemetry pipeline itself assessed (sampling config, export loss,
       collector SPOF, dead-man's-switch).
-- [ ] Findings carry file:line evidence, severity, concrete fix, effort;
-      "shortest path to YES" list delivered.
+- [ ] Findings carry file:line evidence, severity, concrete fix, effort (no
+      evidence, no finding); "absent" is kept apart from "present but
+      broken", what is good is noted, and the "shortest path to YES" list
+      is delivered (§6).
 - [ ] Logging inventory requested and compared with the code (G29): pick
       three events it lists (e.g. a failed login, an authorization denial, an
       admin change), trigger each in a test or sandbox, and confirm the record

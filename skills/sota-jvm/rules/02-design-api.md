@@ -96,28 +96,40 @@ such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the cla
 
 ## Audit checklist
 
-- [ ] **Optional misuse — LOW (field/param/collection)** —
+- [ ] **Optional misuse — LOW (field/param/collection)** (§1) —
       `grep -rnE '(private|protected|public)\s+Optional<' --include='*.java' .` ;
       `grep -rnE '\(.*Optional<[^>]+>\s+\w+\)' --include='*.java' .`
-- [ ] **Mutable internal state handed out — MEDIUM** —
+- [ ] **Mutable internal state handed out — MEDIUM** (§2) —
       `grep -rnE 'return [a-zA-Z_]+;\s*$' --include='*.java' . | grep -iE 'list|map|set|array'`
       (verify copy/unmodifiable)
-- [ ] **equals without hashCode (and vice versa) — MEDIUM** —
+- [ ] **equals without hashCode (and vice versa), or a mutable field in a map key's equality —
+      MEDIUM** (§3) —
       `grep -rlE 'public boolean equals|override fun equals' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -q 'hashCode' "$f" || echo "$f"; done`
-- [ ] **Bare close()/no try-with-resources — MEDIUM** —
+      ; then read each hand-written `equals`/`hashCode` on a type used as a `HashMap` key: none
+      compares a field that changes after insertion
+- [ ] **Bare close()/no try-with-resources — MEDIUM** (§5) —
       `grep -rnE '\.close\(\)' --include='*.java' --include='*.kt' .` (verify
       try-with-resources/use); `grep -rn 'finally' --include='*.java' --include='*.kt' . | grep -i close`
 - [ ] **Mutable static state — MEDIUM** —
       `grep -rnE '^[[:space:]]*((public|private|protected)[[:space:]]+)?static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[a-z][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' . | grep -vwE 'final|class|interface|enum|record'`
       (a `(?!final)` lookahead stood here until 2026-09-24: POSIX ERE has none, and it
       exited 2 under BSD grep and ugrep)
-- [ ] **throws Exception / overbroad — LOW/MEDIUM** —
-      `grep -rn 'throws Exception' --include='*.java' .`
-- [ ] **Deprecated Spring nullability annotations (Spring 7+ is JSpecify) — LOW** —
+- [ ] **throws Exception / overbroad, or an implementation exception across a boundary —
+      LOW/MEDIUM** (§4) —
+      `grep -rn 'throws Exception' --include='*.java' .` ;
+      `grep -rnE 'throws ([A-Za-z_]+\.)*(SQLException|[A-Za-z]*(Jdbc|Hibernate|Persistence)[A-Za-z]*Exception)' --include='*.java' .`
+      (a hit on an interface or public service method leaks the implementation: translate it to
+      the layer's exception, keeping the cause)
+- [ ] **Deprecated Spring nullability annotations (Spring 7+ is JSpecify) — LOW** (§1) —
       `grep -rnE 'org\.springframework\.lang\.(Nullable|NonNull|NonNullApi|NonNullFields)([^A-Za-z]|$)' --include='*.java' --include='*.kt' .`
       (the package-level `@NonNullApi`/`@NonNullFields` in `package-info.java` are replaced by
       JSpecify `@NullMarked` on the package, and member-level ones by JSpecify `@Nullable`)
-- [ ] **Enforcement: Error Prone + NullAway, SpotBugs, detekt**
+- [ ] **Enforcement: Error Prone + NullAway, SpotBugs, detekt; packages `@NullMarked`; no `null`
+      collection returns** (§1) —
+      `grep -rliE 'nullaway' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' . || echo "no NullAway: nullness annotations are not enforced"`
+      ; `grep -rl '@NullMarked' --include='package-info.java' . || echo "no package is @NullMarked"`
+      ; `grep -rn 'return null;' --include='*.java' .` (read each: a method returning a collection
+      or array returns an empty one)
 - [ ] **In-band sentinels (§1a) — `-1` is not absence** —
       `grep -rnE 'return -1;' --include='*.java' --include='*.kt' .` (producer; prefer
       OptionalInt / Integer + @Nullable);

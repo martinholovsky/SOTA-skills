@@ -256,6 +256,8 @@ risk than none. OWASP: User Privacy Protection cheat sheet.
 
 ## 6. LINDDUN threats → build patterns (quick map)
 
+*(advisory)* — a cross-reference table: each mitigation is a rule of another section, probed there (account-existence leaks: sota-code-security rules/02).
+
 When a LINDDUN session ([sota-threat-modeling](../../sota-threat-modeling/SKILL.md)) raises a threat, these are the
 default mitigations in this skill:
 
@@ -271,6 +273,8 @@ default mitigations in this skill:
 
 ## 7. Retrofit order for existing systems (AUDIT → remediation)
 
+*(advisory)* — a remediation ordering for findings raised by the items below; it adds no rule to probe.
+
 When auditing a system that was not built this way, recommend remediation in this
 order (highest risk-reduction per effort first):
 1. Stop the bleeding: kill unpurposed collection, PII logging, `SELECT *` exports.
@@ -285,13 +289,13 @@ order (highest risk-reduction per effort first):
 - [ ] Every collected field traces to a named feature/purpose; sample 10 fields and demand the consumer code path
 - [ ] Precision minimized where full precision is unused (GPS, full DOB, full IP)
 - [ ] Internal APIs return minimal projections; no whole-user-object passing or `SELECT *` across trust boundaries
-- [ ] Purpose tags exist and are enforced by at least code review; access roles segmented by purpose for high tiers
-- [ ] New-purpose reuse of existing data triggers a documented review (check git history of purpose tags)
-- [ ] No "anonymized" claim rests on hashing identifiers or removing direct identifiers only; quasi-identifier risk assessed, k-threshold on aggregate releases
+- [ ] Purpose tags exist and are enforced by at least code review; access roles segmented by purpose for high tiers; access to purpose-tagged data outside a declared purpose is denied or at minimum audited (§2)
+- [ ] New-purpose reuse of existing data triggers a documented review (check git history of purpose tags) (§2)
+- [ ] No "anonymized" claim rests on hashing identifiers or removing direct identifiers only; quasi-identifier risk assessed, k-threshold on aggregate releases; a linkable pseudonym is keyed per context (HMAC with a managed key), never a bare hash (§3)
 - [ ] Cardholder/SSN-class data is tokenized or vaulted; verify no raw values in app DB, logs, or backups
-- [ ] Public/partner-facing aggregates use DP or k ≥ threshold with documented rationale
-- [ ] All privacy-affecting settings default private/off; check the three most recent features
-- [ ] Session replay / heatmap tooling absent or mask-allowlisted and consent-gated
+- [ ] Public/partner-facing aggregates use DP or k ≥ threshold with documented rationale; a k-threshold is enforced in the view or endpoint itself with query auditing, and DP comes from a maintained library, not hand-rolled noise (§4)
+- [ ] All privacy-affecting settings default private/off, discoverability is opt-in, and new fields stay out of existing exports/shares until reviewed; check the three most recent features (§5)
+- [ ] Session replay / heatmap tooling absent or mask-allowlisted and consent-gated (§4)
 - [ ] Browser/device fingerprinting (canvas, WebGL, fonts, behavioural telemetry) is listed in the tracker inventory and privacy notice, used only on sensitive flows, consent-gated where required, stored hashed/truncated with hours-to-days raw retention (§1) — MEDIUM. Probe: `grep -rnE "toDataURL\(|UNMASKED_RENDERER_WEBGL|WEBGL_debug_renderer_info|@fingerprintjs|FingerprintJS" .`
 - [ ] Third-party remote content (hot-linked avatars, feed images, embeds) can be blocked by the user; rendered HTML email blocks remote content by default or loads it through a proxy (§5b) — MEDIUM. Probe for HTML email rendered straight into the page: `grep -rnE "(innerHTML|dangerouslySetInnerHTML|v-html)[^;]*(mail|message)[A-Za-z_.]*(html|body)" .` — each hit must show the remote-content rewrite or proxy
 - [ ] Where the user base includes people at risk of coercion, a duress credential or panic mode was considered; if built, it is indistinguishable from normal use (§5c) — judgment, no probe

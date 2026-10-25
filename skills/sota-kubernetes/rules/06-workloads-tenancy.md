@@ -117,12 +117,12 @@ or a cluster-scoped resource crosses namespaces. So:
 
 ## Audit checklist
 
-- [ ] Every container sets memory requests+limits and CPU requests (CPU limits a deliberate decision)? Critical workloads Guaranteed QoS? (`kubectl get pods -A -o json | jq '..|.resources? // empty'`)
+- [ ] Every container sets memory requests+limits and CPU requests (CPU limits a deliberate decision)? Critical workloads Guaranteed QoS? (`kubectl get pods -A -o json | jq '..|.resources? // empty'`) (§1)
 - [ ] Namespaces have `ResourceQuota` + `LimitRange` so a tenant can't starve the cluster or schedule unbounded pods? (`kubectl get resourcequota,limitrange -A`)
-- [ ] Multi-replica critical workloads have a PDB; PDB values won't block legitimate drains or allow full takedown? (`kubectl get pdb -A`)
+- [ ] Multi-replica critical workloads have a PDB; PDB values won't block legitimate drains or allow full takedown? (`kubectl get pdb -A`) (§2)
 - [ ] Topology spread / anti-affinity spreads replicas across zones/nodes (no single-node single-zone critical service)?
 - [ ] PriorityClasses reserve top priorities for the platform; tenants can't preempt platform pods?
-- [ ] Tenancy model stated explicitly: is "namespace" being relied on as a security boundary against untrusted tenants? (that's a High finding — escalate to vCluster / separate clusters / node isolation + gVisor/Kata per [sota-sandboxing](../../sota-sandboxing/SKILL.md))
+- [ ] Tenancy model stated explicitly (§3): is "namespace" being relied on as a security boundary against untrusted tenants? (that's a High finding — escalate to vCluster / separate clusters / node isolation + gVisor/Kata per [sota-sandboxing](../../sota-sandboxing/SKILL.md))
 - [ ] Soft-tenant namespaces enforce RBAC isolation, quota, PSA restricted, and default-deny NetworkPolicy (depth → [sota-network-security](../../sota-network-security/SKILL.md))?
-- [ ] etcd Secrets encrypted with KMS v2 ([rules/01](01-control-plane-etcd.md)); secrets mounted as files not env where possible; ESO/sealed-secrets/CSI used over plaintext-in-git ([sota-secrets-management](../../sota-secrets-management/SKILL.md))?
+- [ ] Platform secrets (§4): etcd Secrets encrypted with KMS v2 ([rules/01](01-control-plane-etcd.md)); secrets mounted as files not env where possible; ESO/sealed-secrets/CSI used over plaintext-in-git ([sota-secrets-management](../../sota-secrets-management/SKILL.md))? Env-delivered Secrets: the `secretKeyRef` probe in [`sota-secrets-management` rules/02](../../sota-secrets-management/rules/02-storage-backends.md) §6.
 - [ ] Secret read RBAC scoped and audited ([rules/02](02-rbac-serviceaccounts.md))?

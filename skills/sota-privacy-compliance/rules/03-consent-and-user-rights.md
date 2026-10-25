@@ -304,14 +304,14 @@ module "bucket" {
 - [ ] Profiling consent is checked before the feature fetch and model call, never passed as a model feature; the identifier join and the model call are gated separately (§1). HIGH where a non-consented request reaches the model. Probe for consent in a feature vector: `grep -rnE "(features|feature_vector|model_input)[^#]*[\"'](has_|is_)?consent[a-z_]*[\"']" .`
 - [ ] No non-essential trackers fire pre-consent (verify with fresh-session network diff); GPC honored where CCPA/CPRA applies; GPP, ATT status and Android ad-ID deletion/reset also read at feature-fetch time (§2) — MEDIUM
 - [ ] Consent withdrawal invalidates derived segments, scores, embeddings and model caches; a withdraw-and-replay regression test exists (§5 item 9). HIGH if derived artefacts survive withdrawal. Probe for memoized derived artefacts keyed without consent: `grep -rnE -A1 '@(functools\.)?(lru_cache|cache)' . | grep -E 'def [a-z_]*(segment|lookalike|embed|audience)'`
-- [ ] DSAR export is inventory-driven with CI completeness test; identity verification precedes disclosure and is logged; output machine-readable; other subjects' data excluded
+- [ ] DSAR export is inventory-driven with CI completeness test; identity verification precedes disclosure and is logged; output machine-readable; other subjects' data excluded; each request is ticketed with a deadline clock, delivered through an authenticated expiring link (not an email attachment), with fulfillment proof recorded (§3)
 - [ ] Deletion request flow exists as a state machine with deadline tracking; end-to-end deletion test (fixture user → delete → catalog residue scan) in CI
-- [ ] Soft deletes paired with running, monitored purge jobs
+- [ ] Soft deletes paired with running, monitored purge jobs; each datastore's deletion mechanism (hard, soft→purge, crypto-shred, anonymize-in-place) is chosen and recorded, and anonymize-in-place overwrites every identifying field, not only the name (§4)
 - [ ] Propagation covers caches, search, warehouse, logs (or bounded log retention), third-party processors, ML datasets; backup window documented; restore replays tombstones
-- [ ] Crypto-shredding used (or justified absent) for immutable/long-retention stores; key destruction provable
+- [ ] Crypto-shredding used (or justified absent) for immutable/long-retention stores; key destruction provable and logged (§4)
 - [ ] Tombstones prevent re-ingestion and contain no deleted data; per-system proof-of-deletion records produced
-- [ ] Every PII store has cataloged retention + running enforcement (partition drops, lifecycle rules, TTLs) + oldest-record monitoring; "indefinite" only with signed justification
-- [ ] Legal holds modeled as explicit exemptions, not blanket non-deletion
-- [ ] Rectification propagates along the derivative graph (test: correct a fixture user's email, verify downstream copies)
-- [ ] Objection/profiling opt-outs implemented per purpose; direct-marketing objection suppresses unconditionally
-- [ ] Storage modules require retention + classification parameters at creation (IaC-level enforcement)
+- [ ] Every PII store has cataloged retention + running enforcement (partition drops, lifecycle rules, TTLs) + oldest-record monitoring; "indefinite" only with signed justification (§6)
+- [ ] Legal holds modeled as explicit exemptions, not blanket non-deletion (§4)
+- [ ] Rectification propagates along the derivative graph (test: correct a fixture user's email, verify downstream copies) (§7)
+- [ ] Objection/profiling opt-outs implemented per purpose; direct-marketing objection suppresses unconditionally; fully automated decisions with significant effects have a human-review path and decision-input logging (§7)
+- [ ] Storage modules require retention + classification parameters at creation (IaC-level enforcement) (§6)

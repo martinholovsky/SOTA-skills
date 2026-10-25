@@ -109,10 +109,10 @@ per route, so match each route to its data:
       `grep -rnE '"start":[[:space:]]*"[^"]*((next|nuxt|nuxi) dev|next"|vite( |")|vite preview)|(CMD|ENTRYPOINT).*((next|nuxt|nuxi)"?,?[[:space:]]*"?dev|run"?,?[[:space:]]*"?dev)' --include=package.json --include='Dockerfile*' --include='Containerfile*' --exclude-dir=node_modules .`
       (also read Procfiles, unit files and platform start settings, which it does not scan)
 
-- [ ] Every framework major is supported and receiving security patches (no Vue 2, Nuxt 2, Nuxt 3, Next < 15; no Next 15 after 2026-10-21)?
-- [ ] Exact versions pinned + lockfile committed + automated dependency updates on?
-- [ ] Production starts the built server (`next start`, `node .output/server/index.mjs`), never `next dev`/`nuxt dev`/`vite`?
-- [ ] Render mode chosen per route to match its data (personalized ⇒ SSR + private cache)?
-- [ ] TypeScript strict; hooks/vue lint rules enforced in CI?
-- [ ] Public-env boundary understood: no secrets in `NEXT_PUBLIC_`/`public`/`VITE_`?
-- [ ] For a no-SEO auth-gated app: is a meta-framework actually needed, or would a plain SPA shed the SSR attack surface?
+- [ ] Every framework major is supported and receiving security patches (no Vue 2, Nuxt 2, Nuxt 3, Next < 15; no Next 15 after 2026-10-21), and new code on the table's "floor for new code" majors (§1)?
+- [ ] Exact versions pinned + lockfile committed + automated dependency updates on (§4)?
+- [ ] Production starts the built server (`next start`, `node .output/server/index.mjs`), never `next dev`/`nuxt dev`/`vite` (§4)?
+- [ ] Render mode chosen per route to match its data (personalized ⇒ SSR + private cache) (§3)?
+- [ ] TypeScript strict (the generated `tsconfig` extended, not loosened); hooks/vue lint rules enforced in CI; CI also runs typecheck, tests, `npm audit`/`osv-scanner` and a build (§4)?
+- [ ] Public-env boundary understood: no secrets in `NEXT_PUBLIC_`/`public`/`VITE_`; `.env` not committed (§4)?
+- [ ] For a no-SEO auth-gated app: is a meta-framework actually needed, or would a plain SPA shed the SSR attack surface; is the stack decision recorded as an ADR (§2)?

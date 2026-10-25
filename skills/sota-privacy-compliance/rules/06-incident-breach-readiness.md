@@ -199,16 +199,16 @@ incident. Reconcile explicitly in the IR runbook:
 ## Audit checklist
 
 - [ ] Breach triage decision flow documented; first-hours questions (§1) answerable — test: pick a datastore, demand "what personal data, whose, which regimes" in under 30 minutes
-- [ ] Clock table with regulator submission paths and DPA notice clauses embedded in IR runbook; incident tracker auto-computes deadlines from awareness time
+- [ ] Clock table with regulator submission paths and DPA notice clauses embedded in IR runbook; incident tracker auto-computes deadlines from awareness time (§2)
 - [ ] Processor-role obligations mapped: every customer DPA's breach-notice clause inventoried with its clock
 - [ ] Data-access audit logging enabled on all special-category/financial/regulated stores; write-once, clock-synced, retention ≥ regime minimum and cataloged as a justified exception
 - [ ] Security telemetry pseudonymized; no secrets/tokens/bodies in logs (sample); log stores classified and access-controlled accordingly
 - [ ] Analytics/telemetry emitters that carry personal data consult current consent, opt-out (incl. GPC) and jurisdiction state before emitting; security-log event classes have a recorded lawful basis (§3) — MEDIUM. Probe for direct emitter calls to review for a consent guard: `grep -rnE "(analytics|telemetry|posthog|mixpanel|segment)\.(identify|track|capture)\(" .`
 - [ ] Affected-subject enumeration capability demonstrated (query from access logs + store snapshot), not asserted
 - [ ] Encryption/tokenization state per store recorded so "data was protected" claims are provable in a notification decision
-- [ ] Communication templates (regulator, individual, customer, public) exist, counsel-reviewed, version-controlled; decision-rights matrix current
-- [ ] Tabletop exercised within 12 months with real clocks and template drafting; record retained
-- [ ] Breach register includes non-reportable incidents with documented rationale
-- [ ] Legal-hold mechanism is scoped per case, not a global deletion freeze; forensic copies inventoried, access-controlled, destroyed at closure with disposition record
-- [ ] External DFIR/forensics vendors covered by DPA and present in the processor map before any data flows
-- [ ] Post-incident loop verified on last incident: corrective actions tracked to closure, credential rotation done, retention question asked in the post-mortem
+- [ ] Communication templates (regulator, individual, customer, public) exist, counsel-reviewed, version-controlled; decision-rights matrix current (§4)
+- [ ] Tabletop exercised within 12 months with real clocks and template drafting; record retained (§4)
+- [ ] Breach register includes non-reportable incidents with documented rationale (§5)
+- [ ] Legal-hold mechanism is scoped per case, not a global deletion freeze; forensic copies inventoried, access-controlled, destroyed at closure with disposition record; investigation access to subject data is itself logged (§4b)
+- [ ] External DFIR/forensics vendors covered by DPA and present in the processor map before any data flows (§4b)
+- [ ] Post-incident loop verified on last incident: corrective actions tracked to closure, credential rotation done, retention question asked in the post-mortem; suppression lists re-verified where consent/contact records leaked, and inventory gaps the breach exposed fixed at discovery (§5)

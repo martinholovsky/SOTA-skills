@@ -232,10 +232,12 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - [ ] **Each hit needs a written reason. A suppression with no justification is the finding, not
       the warning it hides -- a silenced analyser is how a green gate stops meaning anything (
       [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).**
-- [ ] **Wrapper pinned? LTS targeted?** —
+- [ ] **Wrapper pinned? LTS targeted?** (§1) —
       `ls mvnw gradlew 2>/dev/null | grep -q . || echo "no build wrapper (version not pinned)"`
       ;
       `grep -rnE 'release|sourceCompatibility|targetCompatibility|languageVersion' pom.xml build.gradle* 2>/dev/null`
+      (`sourceCompatibility`/`targetCompatibility` or `-source`/`-target` with no `release` or
+      toolchain: newer APIs compile against an older bytecode target)
 - [ ] **Dependency CVE scan + locking in CI?** —
       `err=$(grep -rniE 'dependency-check|osv-scanner|dependabot|snyk|cyclonedx' --include='*.yml' --include='*.yaml' --include='pom.xml' --include='build.gradle*' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no dependency CVE scan — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`

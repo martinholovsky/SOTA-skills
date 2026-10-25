@@ -219,23 +219,23 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
 
 ## Audit checklist
 
-- [ ] Data on stdout only; logs/progress/prompts/errors on stderr; verified by `tool cmd >out 2>err` inspection.
-- [ ] `tool list | jq .` works: no ANSI, no banner, no log lines in the stream.
-- [ ] Untrusted strings (filenames, remote fields, commit text) printed to a TTY have control characters and `ESC` escaped — try a name containing `\x1b[2J` (CWE-150).
-- [ ] `--json` (or `-o json`) on every list/read command; NDJSON for streams; JSON-mode errors are machine-readable; fields treated as versioned API.
-- [ ] Human tables: no borders; `--plain`/`--no-header` or auto-plain when piped.
-- [ ] Exit codes: 0 only on full success; usage errors = 2; distinct documented codes for failure classes; partial failure ≠ 0; no `exit 0` in catch-all handlers.
-- [ ] SIGINT exits 130; `tool list | head` causes no EPIPE traceback.
+- [ ] Data on stdout only; logs/progress/prompts/errors on stderr; verified by `tool cmd >out 2>err` inspection (§1).
+- [ ] `tool list | jq .` works: no ANSI, no banner, no log lines in the stream (§1).
+- [ ] Untrusted strings (filenames, remote fields, commit text) printed to a TTY have control characters and `ESC` escaped — try a name containing `\x1b[2J` (CWE-150) (§4).
+- [ ] `--json` (or `-o json`) on every list/read command; NDJSON for streams; JSON-mode errors are JSON with `code`/`message` fields and a nonzero exit; fields treated as versioned API (§2).
+- [ ] Human tables: no borders; `--plain`/`--no-header` or auto-plain when piped (§2).
+- [ ] Exit codes: 0 only on full success; usage errors = 2; distinct documented codes for failure classes; partial failure ≠ 0; no `exit 0` in catch-all handlers (§3).
+- [ ] SIGINT exits 130; `tool list | head` causes no EPIPE traceback (§3, §4).
 - [ ] Pager never engages when stdout is not a TTY: `out=$(PAGER=false tool <long-output command>); echo "rc=$? bytes=${#out}"`
       — `bytes=0` with a nonzero rc means it paged with no TTY. No pipe: after `| cat`, `$?` is
-      `cat`'s, so that form reports 0 for a tool that pages (measured).
-- [ ] Color: auto by TTY; `NO_COLOR` (non-empty) and `TERM=dumb` disable; `--color=always|never|auto` supported; the `NO_COLOR`-vs-`FORCE_COLOR` precedence is a documented choice; color never sole carrier of meaning.
-- [ ] Output streams incrementally; stdout line-buffered when piped; no end-of-run dumps for long operations.
-- [ ] >2s operations show progress on stderr (TTY); non-TTY gets sparse plain lines, no `\r` animation spam in CI logs.
-- [ ] First output within ~100ms; no silent multi-second startup.
-- [ ] No prompt when stdin is not a TTY: `tool cmd </dev/null` never hangs; `--yes`/`--no-input` paths exist; prompts on stderr; safe default answer.
-- [ ] Errors name the failing path/value, state the cause, and give a copy-pasteable fix; stack traces only under `--debug`; errors prefixed and on stderr.
-- [ ] `-q` and `-v`/`-vv` exist; verbosity alters stderr only; stdout data identical at every level.
-- [ ] No secret/token appears at any verbosity level, including `--debug`.
-- [ ] Agent-facing surface: JSON output field-selectable (`--fields` or equivalent); JSON-mode errors include a machine-actionable remediation; mutations offer a non-interactive confirm protocol (plan + explicit `--confirm` re-invocation), not a TTY-only prompt.
-- [ ] Inputs validated locally (format/charset) before network calls; in machine modes unknown commands/flags fail hard rather than fuzzy-matching.
+      `cat`'s, so that form reports 0 for a tool that pages (measured) (§4).
+- [ ] Color: auto by TTY; `NO_COLOR` (non-empty) and `TERM=dumb` disable; `--color=always|never|auto` supported; the `NO_COLOR`-vs-`FORCE_COLOR` precedence is a documented choice; color never sole carrier of meaning; TTY detection is per stream (with stdout piped, `tool cmd | cat` still shows progress on a TTY stderr); `--json`/`--plain` output is never truncated to terminal width (§4).
+- [ ] Output streams incrementally; stdout line-buffered when piped; no end-of-run dumps for long operations (§5).
+- [ ] >2s operations show progress on stderr (TTY); non-TTY gets sparse plain lines, no `\r` animation spam in CI logs; progress names the current item (§5).
+- [ ] First output within ~100ms; no silent multi-second startup (§5).
+- [ ] No prompt when stdin is not a TTY: `tool cmd </dev/null` never hangs; `--yes`/`--no-input` paths exist; prompts on stderr; safe default answer; every prompted value also has a flag/env/config path; password prompts do not echo on a TTY (§6).
+- [ ] Errors name the failing path/value, state the cause, and give a copy-pasteable fix; stack traces only under `--debug`; errors prefixed and on stderr; expected failures (not found, already exists) are one-line errors with distinct exit codes (§7).
+- [ ] `-q` and `-v`/`-vv` exist; verbosity alters stderr only; stdout data identical at every level; `-q` still prints errors; verbose stderr lines carry level prefixes (`debug:`/`info:`) (§8).
+- [ ] No secret/token appears at any verbosity level, including `--debug` (§8).
+- [ ] Agent-facing surface: JSON output field-selectable (`--fields` or equivalent); JSON-mode errors include a machine-actionable remediation; mutations offer a non-interactive confirm protocol (plan + explicit `--confirm` re-invocation), not a TTY-only prompt (§9).
+- [ ] Inputs validated locally (format/charset) before network calls; in machine modes unknown commands/flags fail hard rather than fuzzy-matching (§9).

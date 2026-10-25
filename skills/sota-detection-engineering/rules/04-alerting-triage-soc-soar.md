@@ -177,19 +177,25 @@ correctly and fast.
 ## Audit checklist
 
 - [ ] What's the alert volume per analyst per shift, and the % auto-closed/
-      ignored? Is any detection chronically muted (a Critical defect)?
+      ignored? Is any detection chronically muted (a Critical defect)? (§1)
 - [ ] Are low-precision detections paging humans, or moved to hunting/
-      corroboration?
+      corroboration? (§1)
 - [ ] Do all suppressions have an owner, reason, and **expiry**? Hunt the
-      suppression config for entries lacking an `expires`/`ttl` field.
+      suppression config for entries lacking an `expires`/`ttl` field. Is
+      tuning done by adding scope, commented allowlists or corroboration rather
+      than by deleting the detection, and are expired suppressions re-reviewed
+      rather than auto-renewed? (§2)
 - [ ] Is severity based on impact × confidence × asset criticality, or inflated
-      so everything is Critical?
+      so everything is Critical? Is the page-now tier reserved for
+      high-confidence, high-impact signals? (§3)
 - [ ] Do alerts arrive enriched (asset/identity/TI/related signals), or must
-      analysts do manual lookups per alert?
+      analysts do manual lookups per alert? (§4)
 - [ ] Are alerts deduplicated and correlated into incidents, or does the analyst
       face a firehose of atomic events?
 - [ ] Pick 5 paging detections: how many have a linked, concrete, executed-at-
-      least-once runbook?
+      least-once runbook, linked from the alert payload and covering meaning,
+      blast radius, TP-vs-FP confirmation, first containment steps and
+      escalation? (§6)
 - [ ] Does any auto-containment exist? If so: confidence gate, blast-radius
       allowlist of untouchables, reversibility, audit logging, and human-in-loop
       above a threshold?
@@ -201,6 +207,9 @@ correctly and fast.
       (point it at the SOAR playbook directory) means device revocation is
       missing.
 - [ ] Is every alert dispositioned, and do FP dispositions feed back into tuning
-      (suppression-with-expiry / allowlist)?
+      (suppression-with-expiry / allowlist)? Does each incident have one case
+      accumulating its correlated alerts, enrichment, analyst notes and actions? (§8)
 - [ ] Are SOC metrics outcome-based (precision, time-to-disposition, runbook
-      coverage) or vanity-based (alerts handled, events processed)?
+      coverage) or vanity-based (alerts handled, events processed)? Are auto-close
+      rate and security-signal rates (auth success/failure ratio, policy-violation
+      counts) trended beside MTTD/MTTR? (§9)

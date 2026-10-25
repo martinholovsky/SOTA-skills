@@ -304,15 +304,22 @@ Run from repo root; verify each hit manually.
       comma-ok); `grep -rnE ':?= .*strconv\.Atoi\(' --include='*.go' . | grep -v 'err'` (the 0
       is in-band if err is dropped)
 
-- [ ] **Discarded errors (also rely on errcheck via golangci-lint)** —
+- [ ] **Discarded or double-handled errors (§1) (also rely on errcheck via golangci-lint)** —
       `grep -rnE '^\s*[a-zA-Z_].*,\s*_\s*(:?=).*\(' --include='*.go' . | grep -v _test.go` ;
-      `grep -rn '_ = ' --include='*.go' . | grep -vE '(test|//)'`
-- [ ] **String matching on errors — MEDIUM+** —
+      `grep -rn '_ = ' --include='*.go' . | grep -vE '(test|//)'` (each kept discard says why it
+      cannot fail) ; `grep -rnE -A2 '(log|slog)\.[A-Za-z]+\(.*err' --include='*.go' . | grep -E -- '-[0-9]+-[[:space:]]*return .*err'`
+      (log-and-return: the caller handles it a second time — LOW) ;
+      `grep -rlE 'os\.(Create|OpenFile)\(' --include='*.go' . | xargs -r grep -nHE 'defer [A-Za-z_][A-Za-z0-9_.]*\.Close\(\)'`
+      (a writer's `Close` error discarded; capture it in a deferred func — HIGH on a write/commit path)
+- [ ] **String matching on errors (§3) — MEDIUM+** —
       `grep -rnE 'strings\.(Contains|HasPrefix|HasSuffix)\(\s*err\.Error\(\)' --include='*.go' .`
       ; `grep -rn '\.Error() ==' --include='*.go' .`
-- [ ] **== comparison against sentinels (should be errors.Is) — MEDIUM** —
+- [ ] **== comparison against sentinels (should be errors.Is) (§3) — MEDIUM** —
       `grep -rnE 'err\s*[!=]=\s*(sql\.ErrNoRows|io\.EOF|os\.ErrNotExist|context\.(Canceled|DeadlineExceeded))' --include='*.go' .`
-- [ ] **%v wrapping where %w likely intended (manual review)** —
+      ; manual: failure counters and alerts skip `context.Canceled`/`DeadlineExceeded` first
+- [ ] **%v wrapping where %w likely intended (§2) (manual review: `%v` only where breaking the
+      chain is deliberate; each wrap names what this layer was doing, with identifiers, and does
+      not restate the callee)** —
       `grep -rnE 'fmt\.Errorf\([^)]*%v[^)]*err\s*\)' --include='*.go' .`
 - [ ] **Panics outside main/init/Must/tests — HIGH if reachable from input** —
       `grep -rn 'panic(' --include='*.go' . | grep -vE '(_test\.go|Must|init\()'`
@@ -321,15 +328,31 @@ Run from repo root; verify each hit manually.
       (a slice sized by a decoded field: read back for a cap against a constant) ;
       `grep -rn 'debug.SetMaxStack' --include='*.go' .` (a raised stack cap hides deep recursion)
       ; each recursive function over decoded data takes and checks a depth bound (manual). A
-      `recover` middleware is not the fix for any of these: they are fatal errors
-- [ ] **log.Fatal / os.Exit outside main package — HIGH in libraries** —
-      `grep -rnE '(log\.Fatal|os\.Exit)' --include='*.go' . | grep -v 'main\.go'`
-- [ ] **Error strings: capitalized or "failed to" noise — INFO/LOW (ST1005)** —
+      `recover` middleware is not the fix for any of these: a stack overflow or an unreservable `make`
+      is a fatal error, and an out-of-range length, though a recoverable panic, must still be capped
+      before `make`
+- [ ] **Error flow shape (§6) — LOW** — no `else` after a `return`:
+      `grep -rnE -B1 '^[[:space:]]*\} else( if .*)? \{' --include='*.go' . | grep -E -- '-[0-9]+-[[:space:]]*return'`
+      ; golangci-lint `govet` with its `shadow` analyzer enabled (an inner `:=` hiding the outer
+      `err`) ; manual: each error-collecting loop says fail-fast or `errors.Join` and why, and every
+      send on an error channel has a guaranteed receiver (prefer `errgroup`)
+- [ ] **log.Fatal / os.Exit outside main package; library logging; leaked error chains (§6, §7)
+      — HIGH in libraries** —
+      `grep -rnE '(log\.Fatal|os\.Exit)' --include='*.go' . | grep -v 'main\.go'` ;
+      `grep -rLE '^package main' --include='*.go' . | grep -v '_test\.go$' | xargs -r grep -nHE '(^|[^A-Za-z0-9_.])s?log\.(Print|Fatal|Panic|Info|Warn|Error|Debug)'`
+      (a non-main package that logs instead of returning) ;
+      `grep -rnE 'http\.Error\([^,]+,[[:space:]]*err\.Error\(\)' --include='*.go' .` (an error chain
+      echoed to a client: only a validation error's message may go out) ; manual: errors map to
+      status codes in ONE place, and a library documents the sentinels/types it returns
+- [ ] **Error strings: capitalized or "failed to" noise (§2) — INFO/LOW (ST1005)** —
       `grep -rnE 'errors\.New\("[A-Z]|fmt\.Errorf\("[A-Z]' --include='*.go' .` ;
       `grep -rn 'failed to' --include='*.go' . | grep -E '(errors\.New|fmt\.Errorf)'`
-- [ ] **Typed-nil hazard: functions returning concrete error pointer types** —
-      `grep -rnE 'func .*\) \*\w+Error( |$)' --include='*.go' .`
-- [ ] **recover outside defer; missing Unwrap on wrapper types (manual)** —
+- [ ] **Typed-nil hazard; error kinds and names (§4)** —
+      `grep -rnE 'func .*\) \*\w+Error( |$)' --include='*.go' .` (functions return `error`) ;
+      `grep -rnE '^(var[[:space:]]+|[[:space:]]+)[A-Z][A-Za-z0-9_]*[[:space:]]+=[[:space:]]+errors\.New\(' --include='*.go' . | grep -vE '[[:space:]]Err[A-Z]'`
+      (exported sentinel without the `Err` prefix) ; manual: each exported sentinel or type has a
+      caller that branches on it (exports are API forever); wrapper types are in the next item
+- [ ] **recover outside defer; missing Unwrap on wrapper types (§4, §5) (manual)** —
       `grep -rn 'recover()' --include='*.go' .` ;
       `grep -rln 'type .*Error struct' --include='*.go' . | xargs grep -L 'func (.*) Unwrap()'`
 - [ ] **Tooling** — `go vet ./...` ;

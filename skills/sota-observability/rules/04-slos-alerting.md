@@ -223,6 +223,8 @@ independently.
 
 ## 8. Burn-rate math reference
 
+*(advisory)* — worked arithmetic behind the §3 burn-rate thresholds; the alerts it sizes are probed by the §3 item.
+
 For SLO target T over window W, with budget B = 1 − T:
 
 - Burn rate b means the W-budget is exhausted in W/b.
@@ -239,20 +241,27 @@ For SLO target T over window W, with budget B = 1 − T:
 ## Audit checklist
 
 - [ ] SLOs exist, are user-journey-based, and are written down (target,
-      window, SLI query, exclusions, owner); 2–5 per service, not 0, not 20.
+      window, SLI query, exclusions, owner); 2–5 per service, not 0, not 20;
+      "valid events" exclusions are documented, and 429s caused by
+      under-provisioning are counted, not excluded (§1).
 - [ ] Latency SLI computed from histogram bucket boundary at the threshold,
-      not from averaged quantiles.
+      not from averaged quantiles (§1).
 - [ ] Error budget policy documented and signed off by product; evidence it
-      has actually gated a decision at least once.
+      has actually gated a decision at least once; SLO windows are rolling,
+      not calendar, and SLOs are reviewed quarterly (§2).
 - [ ] Paging alerts are multi-window burn-rate (or equivalently
       symptom-based with auto-resolve); no raw "error rate > X for 5m"
       pagers; no cause-based pagers (CPU/restarts/disk%) except
-      lead-time-to-irreversible cases.
-- [ ] Sample 10 recent pages: every one was actionable, runbook-linked, and
-      led to action; pages per shift within budget; monthly alert review
-      happens.
+      lead-time-to-irreversible cases; sparse-traffic SLIs carry a
+      minimum-traffic guard or use synthetic probes as their source (§3).
+- [ ] Sample 10 recent pages: every one was actionable, symptom-based,
+      runbook-linked, owned, and led to action; pages per shift within
+      budget; monthly alert review happens (§4).
 - [ ] Every alert has: severity label, owner/route, runbook URL (resolving,
-      current), dashboard link.
+      current), dashboard link (§4); each severity matches the page-vs-ticket
+      table — fast burn, a critical journey down and the telemetry pipeline
+      down page; slow burn, a degraded dependency with the SLI fine and a
+      tracker spike ticket; a self-replaced single pod OOM pages no one (§7).
 - [ ] Inhibition/grouping configured; silences expire and carry reasons.
 - [ ] Dead-man's-switch on the alerting pipeline; monitoring-down pages via
       an independent channel.
@@ -260,4 +269,7 @@ For SLO target T over window W, with budget B = 1 − T:
       the gauge's absence), so a job that never ran pages (§5).
 - [ ] Low-traffic journeys covered by synthetic probes feeding SLIs.
 - [ ] Alert definitions in version control, code-reviewed, deployed like
-      code (no hand-edited live alerts).
+      code (no hand-edited live alerts); each SLO is a versioned spec beside
+      its alert code; SLI ratios are recording rules shared by alerts and
+      dashboards; availability and latency each have their own burn-rate
+      alert pair (§6).

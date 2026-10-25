@@ -194,12 +194,12 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
 - [ ] **CVE fingerprint** —
       `grep -E '"(react|react-dom|react-server-dom-webpack|next|nuxt|nitropack|h3|ipx|devalue|serialize-javascript)"' package.json`
 
-- [ ] No secret in `NEXT_PUBLIC_`/`VITE_`/`runtimeConfig.public`; server secrets behind `server-only`/`server/`?
-- [ ] No raw rows/tokens/`process.env` crossing server→client; minimal DTOs only?
-- [ ] Every Server Action / Route Handler / Nitro route authenticates, authorizes the specific resource (no IDOR), and validates input — not relying on edge middleware?
-- [ ] `next/image`/IPX `remotePatterns` allowlisted to explicit hosts (no `**`); user-URL fetchers block private ranges + metadata IP + redirects?
-- [ ] Absolute URLs/redirects built from config, not reflected `Host`/`X-Forwarded-Host`; redirect targets allowlisted?
-- [ ] External rewrite/proxy targets (`rewrites()`, `NextResponse.rewrite`, `routeRules` `proxy`, `proxyRequest`) have a fixed or allowlisted scheme/host/port, never one taken from the request?
+- [ ] No secret in `NEXT_PUBLIC_`/`VITE_`/`runtimeConfig.public`; server secrets behind `server-only`/`server/` (§1)?
+- [ ] No raw rows/tokens/`process.env` crossing server→client; minimal DTOs only; production source maps sent privately to the error tracker, not served publicly (§1)?
+- [ ] Every Server Action / Route Handler / Nitro route authenticates, authorizes the specific resource (no IDOR), and validates input — not relying on edge middleware (§2)?
+- [ ] `next/image`/IPX `remotePatterns` allowlisted to explicit hosts (no `**`); user-URL fetchers block private ranges + metadata IP + redirects (§3)?
+- [ ] Absolute URLs/redirects built from config, not reflected `Host`/`X-Forwarded-Host`; redirect targets allowlisted (§3)?
+- [ ] External rewrite/proxy targets (`rewrites()`, `NextResponse.rewrite`, `routeRules` `proxy`, `proxyRequest`) have a fixed or allowlisted scheme/host/port, never one taken from the request (§3)?
 - [ ] The boundary was checked against the RUNNING app — an unmatched-path request refused by the data layer, and captured HTML/flight/payload/action responses free of server-only fields?
 - [ ] All framework + loader deps (react-server-dom, next, nuxt, h3, ipx, devalue, serialize-javascript) patched against §4; automated updates on?
-- [ ] Nonce/hash CSP + standard security headers; rate limiting on public endpoints; production errors not leaked as HTML?
+- [ ] Nonce/hash CSP + standard security headers; rate limiting on public endpoints; production errors not leaked as HTML, nor stack traces/internal paths sent to the client; lockfile committed and `npm audit`/`osv-scanner` in CI (§5)?

@@ -157,10 +157,10 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
       ;
       `grep -rn "Content-Security-Policy\|nonce\|strict-dynamic\|nuxt-security" --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
 
-- [ ] Render deterministic — no `Date`/random/`window`/locale branching outside effects/`onMounted`; stable `useId`?
-- [ ] Mismatch suppression scoped to individual unavoidable nodes, never blanket, never patched with injected user HTML?
-- [ ] SSR state serialized via the framework serializer or `<`-escaped JSON (no naked `JSON.stringify` into `<script>`); `serialize-javascript` ≥ 7.0.5; devalue ≥ 5.9.2?
-- [ ] No secret/token/full row in the serialized payload (`useState`/client props)? Confirm it on the running app too — capture HTML, flight and `_payload.json` responses and search them ([`rules/07`](07-security.md) Audit checklist, "Runtime: what the browser actually receives").
-- [ ] No module-level mutable state in server-reachable code (cross-request leak)?
-- [ ] Personalized responses `Cache-Control: private`/uncached; not relying on `Vary` at the CDN; framework patched against cache-poisoning CVEs?
-- [ ] CSP present and nonce/hash-based (not `'unsafe-inline'` on `script-src`), with the dynamic-rendering trade-off understood?
+- [ ] Render deterministic — no `Date`/random/`window`/locale branching outside effects/`onMounted`; stable `useId` (§1)?
+- [ ] Mismatch suppression scoped to individual unavoidable nodes, never blanket, never patched with injected user HTML (§1)?
+- [ ] SSR state serialized via the framework serializer or `<`-escaped JSON (no naked `JSON.stringify` into `<script>`); `serialize-javascript` ≥ 7.0.5; devalue ≥ 5.9.2 (§2)?
+- [ ] No secret/token/full row in the serialized payload (`useState`/client props) (§2)? Confirm it on the running app too — capture HTML, flight and `_payload.json` responses and search them ([`rules/07`](07-security.md) Audit checklist, "Runtime: what the browser actually receives").
+- [ ] No module-level mutable state in server-reachable code (cross-request leak) (§3)?
+- [ ] Personalized responses `Cache-Control: private`/uncached; not relying on `Vary` at the CDN; framework patched against cache-poisoning CVEs (§4)?
+- [ ] CSP present and nonce/hash-based (not `'unsafe-inline'` on `script-src`, no `'unsafe-eval'` in production), with the dynamic-rendering trade-off understood (§5)?

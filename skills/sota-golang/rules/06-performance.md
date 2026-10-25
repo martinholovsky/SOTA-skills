@@ -217,32 +217,44 @@ profiler) so the incident carries its own evidence.
 
 ## Audit checklist
 
-- [ ] **Profiling wired up? (absence in a latency-sensitive service = LOW gap)** —
+- [ ] **Profiling wired up? (§1) (absence in a latency-sensitive service = LOW gap)** —
       `grep -rn 'net/http/pprof' --include='*.go' .` ;
       `grep -rn 'pprof' --include='*.go' . | grep -i 'listen\|mux\|handle'` (exposed publicly? —
       MEDIUM)
-- [ ] **Benchmarks exist for hot packages; b.Loop adoption** —
+- [ ] **Benchmarks exist for hot packages; b.Loop adoption (§2)** —
       `grep -rln 'func Benchmark' --include='*_test.go' .` ;
       `grep -rn 'b.N' --include='*_test.go' .` (candidates to migrate to b.Loop (1.24+));
-      `grep -rn 'ReportAllocs' --include='*_test.go' .`
-- [ ] **Growth-by-append without prealloc near loops (then check if size was knowable)** —
+      `grep -rn 'ReportAllocs' --include='*_test.go' .` ; manual: a claimed speedup comes from
+      benchstat over `-count=10` runs, not a single run
+- [ ] **Growth-by-append without prealloc near loops (then check if size was knowable) (§3)** —
       `grep -rnE 'var \w+ \[\]' --include='*.go' . | head -50` ;
       `golangci-lint run --enable-only prealloc,perfsprint,makezero ./...`
-- [ ] **String concat in loops — O(n²)** —
+- [ ] **String concat in loops — O(n²) (§3)** —
       `grep -rn -B3 '+= ' --include='*.go' . | grep -E 'for |range' | grep -i 'str\|msg\|out'`
-- [ ] **fmt on hot paths (handler/loop proximity — manual confirm)** —
+- [ ] **fmt on hot paths (handler/loop proximity — manual confirm) (§3)** —
       `grep -rnE 'fmt\.Sprintf' --include='*.go' . | wc -l`
-- [ ] **sync.Pool correctness: Reset on reuse? cap check? aliasing?** —
+- [ ] **sync.Pool correctness: Reset on reuse? cap check? aliasing? (§3)** —
       `grep -rn -A5 'sync.Pool' --include='*.go' .`
-- [ ] **io.ReadAll on large/unbounded inputs — MEDIUM** —
+- [ ] **io.ReadAll on large/unbounded inputs — MEDIUM (§3)** —
       `grep -rn 'io.ReadAll\|ioutil.ReadAll' --include='*.go' .`
-- [ ] **GC knobs & ballast** —
+- [ ] **GC knobs & ballast (§5)** —
       `grep -rn 'GOGC\|GOMEMLIMIT\|SetMemoryLimit\|SetGCPercent' -r . --include='*.go' --include='*.yaml' --include='Dockerfile*'`
-      ; `grep -rn 'ballast' --include='*.go' .` (obsolete pattern — LOW)
-- [ ] **PGO** —
-      `ls cmd/*/default.pgo 2>/dev/null; grep -rn 'pgo' Makefile* .github/ 2>/dev/null`
-- [ ] **Escape analysis spot-check on hot package** —
-      `go build -gcflags='-m' ./internal/hotpkg 2>&1 | grep 'escapes to heap' | head -30`
+      ; `grep -rn 'ballast' --include='*.go' .` (obsolete pattern — LOW) ; manual: `GOMEMLIMIT`
+      ≈ 90% of the container limit, `GOGC=off` only for batch jobs
+- [ ] **PGO (§6)** —
+      `git ls-files '*default.pgo'` ; `git grep -n 'pgo' -- '*Makefile*' '.github/*'` (no output: no
+      profile and no refresh job; `git grep` because zsh aborts on an unmatched `cmd/*/` or
+      `Makefile*` glob and standalone ugrep skips `.github/`)
+- [ ] **Hot-path leftovers (§8) — LOW on a profiled hot path, INFO otherwise** —
+      `grep -rnE 'sort\.Slice(Stable)?\(' --include='*.go' .` (`slices.SortFunc` avoids interface
+      boxing) ; `grep -rniE '//.*defer.*(slow|overhead|cost)' --include='*.go' .` (stale "defer is
+      slow" comment — INFO)
+- [ ] **Runtime metrics exported (§7) — LOW gap** —
+      `grep -rlE '"runtime/metrics"|NewGoCollector|instrumentation/runtime|promhttp\.Handler\(' --include='*.go' .`
+      (no file: no allocation-rate, GC-CPU, scheduler-latency or goroutine-count signal) ; manual:
+      alerts fire on trends and capture a CPU+heap profile when they do
+- [ ] **Escape analysis spot-check on hot package (§4)** —
+      `go build -gcflags='-m' <hot package path> 2>&1 | grep 'escapes to heap' | head -30`
 
 Severity guide: pool aliasing/missing reset HIGH (corruption); unbounded
 ReadAll MEDIUM; missing prealloc/Builder on measured hot path LOW–MEDIUM;

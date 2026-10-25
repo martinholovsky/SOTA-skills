@@ -141,19 +141,19 @@ the decoy from the real thing).
 ## Audit checklist
 
 - [ ] Is hunting hypothesis-driven (stated, falsifiable hypotheses) or
-      unstructured log-staring?
+      unstructured log-staring? (§1)
 - [ ] Does every successful/repeatable hunt get operationalized into a detection
-      ([rules/01](01-detection-engineering-discipline.md))? Or do findings evaporate after the hunt?
-- [ ] Is the hunt program behavior/TTP-weighted, or mostly IOC sweeps?
+      ([rules/01](01-detection-engineering-discipline.md))? Or do findings evaporate after the hunt? (§1)
+- [ ] Is the hunt program behavior/TTP-weighted, or mostly IOC sweeps? (§2)
 - [ ] Are structured analytic techniques used to counter confirmation bias
-      (alternative hypotheses, disconfirming evidence)?
+      (alternative hypotheses, disconfirming evidence)? (§2)
 - [ ] Does the threat-intel program have *direction* and *feedback*, or is the
-      TIP an IOC landfill?
+      TIP an IOC landfill? (§3)
 - [ ] Are indicators scored by confidence/source and **aged out**, or kept
-      forever (decayed IOCs = noise)?
-- [ ] Is intel converted into *TTP detections*, or only imported as IOC matches?
+      forever (decayed IOCs = noise)? (§3)
+- [ ] Is intel converted into *TTP detections*, or only imported as IOC matches? (§3)
 - [ ] Does the TIP speak **STIX 2.1 / TAXII 2.1** for interoperability with
-      sharing communities?
+      sharing communities? (§3)
 - [ ] Are honeytokens/canaries/honeypots deployed along *real attack paths*
       (credential stores, lateral-movement targets), not in unused corners?
 - [ ] Does every deception asset alert at max severity with context and route

@@ -224,18 +224,18 @@ how carefully the person reads the line.
       handover. High wherever a lockout is possible: the recovery is often a factory reset
       that destroys unrelated material.
 
-- [ ] `time tool --help` ≪ 500ms; no network I/O on `--help`/`--version` (verify: airplane-mode or strace/dtruss spot-check).
-- [ ] Re-running `init`/`create`/`apply` twice converges; second run no-ops or reports "already" without failing.
-- [ ] Every mutating command has `--dry-run`; it runs the real plan path, prints concrete changes, writes nothing, and fails (nonzero) on what would fail.
-- [ ] Verdict-producing tools (lint/scan/check/`doctor`) ship a `--self-test` that injects each check's known-bad and asserts the **named** check caught it; every run prints what it examined, and skips are reported with a reason, never folded into passes.
-- [ ] Batch operations: per-item results + summary; nonzero exit on partial failure; resumable rather than restart-from-zero.
-- [ ] First Ctrl-C: prompt cleanup + quick exit, status 130 (signal re-raised); second Ctrl-C: immediate; terminal state (echo, cursor, raw mode) restored — tested inside prompts and progress bars.
-- [ ] Ctrl-C interrupts in-flight network calls promptly; SIGTERM handled like non-interactive SIGINT.
-- [ ] State/config writes are write-tmp-fsync-rename; no truncate-in-place; interrupted runs leave resumable or ignorable state, with a note on next run.
-- [ ] Locks self-clean (flock or staleness detection); no "delete the lock file" support folklore.
-- [ ] All network calls have connect + overall timeouts and `--timeout`; retries are bounded, jittered, idempotent-only, and announced; offline failure is fast and names the unreachable host.
-- [ ] Update check (if any): async, cached, stderr, TTY-only, off under `CI`, killable by env var; self-update opt-in, signature-verified, refuses package-manager-owned installs.
-- [ ] Telemetry opt-in or disclosed-on-first-run with documented scope and one-command opt-out; honors `DO_NOT_TRACK`; never collects argv/contents; no hidden network calls (verify with a proxy/strace if suspicious).
-- [ ] No new top-level `~/.tool*` litter: config/data/state/cache in XDG locations, env vars respected; cache survives `rm -rf` (tool regenerates); token files 0600 and checked.
-- [ ] Flags/exit codes/JSON fields never removed or repurposed without deprecation warnings naming the replacement; deprecated aliases still function for a full cycle.
-- [ ] `tool completion bash|zsh|fish` works and is generated from the parser source; dynamic completion is fast, offline-safe, and silent on failure.
+- [ ] `time tool --help` ≪ 500ms; no network I/O on `--help`/`--version` (verify: airplane-mode or strace/dtruss spot-check) (§1).
+- [ ] Re-running `init`/`create`/`apply` twice converges; second run no-ops or reports "already" without failing (§2).
+- [ ] Every mutating command has `--dry-run`; it runs the real plan path, prints concrete changes, writes nothing, and fails (nonzero) on what would fail (§2).
+- [ ] Verdict-producing tools (lint/scan/check/`doctor`) ship a `--self-test` that injects each check's known-bad and asserts the **named** check caught it; every run prints what it examined, and skips are reported with a reason, never folded into passes (§2a).
+- [ ] Batch operations: per-item results + summary; nonzero exit on partial failure; resumable rather than restart-from-zero (§2, §4).
+- [ ] First Ctrl-C: prompt cleanup + quick exit, status 130 (signal re-raised); second Ctrl-C: immediate; terminal state (echo, cursor, raw mode) restored — tested inside prompts and progress bars (§3).
+- [ ] Ctrl-C interrupts in-flight network calls promptly; SIGTERM handled like non-interactive SIGINT; SIGHUP does not corrupt state; a batch command never traps SIGINT just to print a "use exit" hint (§3).
+- [ ] State/config writes are write-tmp-fsync-rename; no truncate-in-place; interrupted runs leave resumable or ignorable state, with a note on next run (§4).
+- [ ] Locks self-clean (flock or staleness detection); no "delete the lock file" support folklore (§4).
+- [ ] All network calls have connect + overall timeouts and `--timeout`; retries are bounded, jittered, idempotent-only, and announced; offline failure is fast and names the unreachable host (§5).
+- [ ] Update check (if any): async, cached, stderr, TTY-only, off under `CI`, killable by env var; self-update opt-in, signature-verified, refuses package-manager-owned installs (§5).
+- [ ] Telemetry opt-in or disclosed-on-first-run with documented scope and one-command opt-out; honors `DO_NOT_TRACK`; never collects argv/contents; no hidden network calls (verify with a proxy/strace if suspicious); telemetry never blocks or fails a command and stays off under `CI` (§6).
+- [ ] No new top-level `~/.tool*` litter: config/data/state/cache in XDG locations, env vars respected; cache survives `rm -rf` (tool regenerates); token files 0600 and checked (§6).
+- [ ] Flags/exit codes/JSON fields never removed or repurposed without deprecation warnings naming the replacement; deprecated aliases still function for a full cycle; `tool --version` prints a parseable `tool X.Y.Z` with no network call (§7).
+- [ ] `tool completion bash|zsh|fish` works and is generated from the parser source; dynamic completion is fast, offline-safe, and silent on failure; completion covers subcommands and enum flag values (§8).

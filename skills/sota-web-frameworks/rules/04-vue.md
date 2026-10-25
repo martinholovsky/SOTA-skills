@@ -103,11 +103,17 @@ core `escapeHtml` escapes `" ' & < >`). The sinks are where you leave that prote
       `grep -rnE 'watch(Effect)?\(' --include='*.vue' src | head` (verify async-created ones are
       scoped);
       `grep -rn 'ref(' --include='*.ts' src/composables 2>/dev/null # module-level refs? (rules/06 SSR leak)`
+- [ ] **`<script setup>` default; no Vapor mode in production (§1)** — Vapor SFCs (MEDIUM while
+      Vue 3.6 is not stable):
+      `grep -rnE '<script[^>]*[[:space:]]vapor([[:space:]>=]|$)' --include='*.vue' --exclude-dir=node_modules .`
+      ; components not on `<script setup>` (LOW in app code; fine for no-build enhancement; a
+      template-only file lists too):
+      `grep -rLE '<script[^>]*[[:space:]]setup([[:space:]>=]|$)' --include='*.vue' --exclude-dir=node_modules .`
 
-- [ ] Every `v-html` fed sanitizer output, not raw user/CMS HTML (or rendered as text instead)?
-- [ ] No component `template`/runtime-compiled component built from user input?
-- [ ] Vue never mounted on DOM containing server-rendered user content?
-- [ ] `:href`/`:src` scheme-validated (no `javascript:`/`data:`); `:style` bound as typed props, not raw strings?
-- [ ] No reactivity lost by destructuring `reactive` (use `toRefs`/`ref`); destructured props not passed bare into `watch`/composables?
-- [ ] Async-created watchers/effects scoped (`effectScope`/`onScopeDispose`) so they don't leak?
-- [ ] `defineModel` for two-way binding; type-based `defineProps`; `shallowRef` for large structures?
+- [ ] Every `v-html` fed sanitizer output, not raw user/CMS HTML (or rendered as text instead) (§4)?
+- [ ] No component `template`/runtime-compiled component built from user input (§4)?
+- [ ] Vue never mounted on DOM containing server-rendered user content (§4)?
+- [ ] `:href`/`:src` scheme-validated (no `javascript:`/`data:`); `:style` bound as typed props, not raw strings; no user value bound to an event handler (§4)?
+- [ ] No reactivity lost by destructuring `reactive` (use `toRefs`/`ref`); destructured props not passed bare into `watch`/composables; a reactive object's property watched through a getter (§2)?
+- [ ] Async-created watchers/effects scoped (`effectScope`/`onScopeDispose`) so they don't leak (§2)?
+- [ ] `defineModel` for two-way binding; type-based `defineProps`; typed `InjectionKey<T>` for provide/inject; `shallowRef` for large structures (§2, §3)?

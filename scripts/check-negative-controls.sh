@@ -1370,12 +1370,17 @@ p.write_text(t.rstrip('\n') + '\n- [ ] An item that cites no section — LOW\n',
 probe 43b "a new checklist item that cites no section" "S2 skills/sota-golang/rules/03-concurrency.md"
 ( cd "$WT" && python3 -I -c "
 import json, pathlib, re
-b = json.loads(pathlib.Path('scripts/section-sync-baseline.json').read_text(encoding='utf-8'))
-e = next((x for x in b['uncited_sections'] if x.startswith('skills/sota-golang/rules/03-concurrency.md :: ')), None)
-assert e, 'probe stale: no baselined golang rules/03 section to cite'
-n = re.match(r'.* :: (\d+[a-z]?)\.', e).group(1)
-p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
-p.write_text(p.read_text(encoding='utf-8').rstrip('\n') + '\n- [ ] A probe for it (§%s) — LOW\n' % n, encoding='utf-8')
+# Self-contained since 2026-10-25: the paydown left no uncited section to cite, so the probe no longer
+# FINDS a baselined one -- it adds a baseline entry for a section that IS cited, which is stale by
+# construction, and S4 must report it. Picks the first numbered section of golang rules/03.
+f = 'skills/sota-golang/rules/03-concurrency.md'
+m = re.search(r'^## (?:§\\s?)?(\\d+[a-z]?(?:\\.\\d+[a-z]?)*)\\.?\\s+(.*)$', pathlib.Path(f).read_text(encoding='utf-8'), re.M)
+assert m, 'probe stale: no numbered section in golang rules/03'
+p = pathlib.Path('scripts/section-sync-baseline.json'); b = json.loads(p.read_text(encoding='utf-8'))
+e = '%s :: %s' % (f, m.group(0)[3:].strip())
+assert e not in b['uncited_sections'], 'probe stale: the section is genuinely uncited, so the entry would not be stale'
+b['uncited_sections'].append(e)
+p.write_text(json.dumps(b, indent=1, ensure_ascii=False) + '\\n', encoding='utf-8')
 " )
 probe 43c "a baselined section now cited, with the baseline not tightened" "S4 stale baseline entry, now fixed: skills/sota-golang/rules/03-concurrency.md"
 # 43d: the baseline grows against the merge base -> S5. Needs a baseline AT the merge base, which

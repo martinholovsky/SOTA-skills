@@ -288,13 +288,16 @@ func UserFrom(ctx context.Context) (*User, bool) {
 
 ## Audit checklist
 
-- [ ] **Grab-bag packages — LOW** —
-      `find . -type d | grep -iE '/(util|utils|common|helpers|shared|misc)($|/)'`
-- [ ] **Returned interfaces from constructors (manual review) — LOW** —
-      `grep -rnE 'func New\w*\([^)]*\) [A-Z]\w*(Interface| interface)' --include='*.go' .`
-- [ ] **Fat interfaces: >4 methods (then inspect)** —
+- [ ] **Grab-bag packages (§2) — LOW** —
+      `find . -type d | grep -iE '/(util|utils|common|helpers|shared|misc|base|types)($|/)'`
+      (manual: no stutter such as `http.HTTPServer`)
+- [ ] **Returned interfaces from constructors; producer-side interfaces (§1) (manual review) — LOW** —
+      `grep -rnE 'func New\w*\([^)]*\) [A-Z]\w*(Interface| interface)' --include='*.go' .` ;
+      `grep -rnE 'type [A-Z][A-Za-z0-9]*Interface interface|type [A-Za-z0-9]*Impl struct' --include='*.go' .`
+      (an `XInterface` + `XImpl` pair declared beside its implementation; the consumer should own it)
+- [ ] **Fat interfaces: >4 methods (then inspect) (§1)** —
       `grep -rn -A 12 'interface {' --include='*.go' . | less` (manual)
-- [ ] **Package-level mutable state — MEDIUM** —
+- [ ] **Package-level mutable state (§2) — MEDIUM** —
       `grep -rnE '^var \w+ (=|\*|map\[|\[\])' --include='*.go' . | grep -vE '(Err|_test|MustCompile|regexp)'`
       ; `grep -rn 'func init()' --include='*.go' .`
 - [ ] **Time values (§4) — MEDIUM** —
@@ -312,21 +315,36 @@ func UserFrom(ctx context.Context) (*User, bool) {
       outside a recovered `net/http` handler, MEDIUM inside one** —
       `grep -rnE '\[[^]:]*[a-z]+\.[A-Z][A-Za-z0-9]*[^]:]*:|\[[^]]*:[^]]*[a-z]+\.[A-Z][A-Za-z0-9]*[^]]*\]|\[[a-z]+\.(Index|Idx|Pos|Offset|N)\]' --include='*.go' .`
       (a field of a struct as the bound; read back for the check)
-- [ ] **Context violations** —
+- [ ] **Context violations (§8)** —
       `grep -rnE 'ctx\s+context\.Context' --include='*.go' . | grep -E 'struct|^\s+[A-Za-z]+ +context\.Context'`
       (ctx in struct — MEDIUM);
       `grep -rnE 'func [^(]*\([^)]*\bctx context\.Context' --include='*.go' . | grep -vE '\(ctx context\.Context'`
       (ctx not first param); `grep -rn 'context.WithValue' --include='*.go' .` (check key types
       & payloads); `grep -rn 'context.TODO()' --include='*.go' .` (LOW, should be tracked);
       `grep -rnE 'context\.Background\(\)' --include='*.go' . | grep -v 'main\|_test'`
-      (suspicious mid-stack)
-- [ ] **Blocking calls missing ctx variants — HIGH on request paths** —
+      (suspicious mid-stack) ; manual: work that outlives a request uses
+      `context.WithoutCancel(ctx)` with its own timeout, never the request ctx or `Background()`
+- [ ] **Blocking calls missing ctx variants (§8) — HIGH on request paths** —
       `grep -rnE '\.(Query|QueryRow|Exec)\(' --include='*.go' . | grep -v Context` ;
       `grep -rn 'http.Get(\|http.Post(' --include='*.go' .` ;
       `grep -rn 'exec.Command(' --include='*.go' . | grep -v CommandContext`
-- [ ] **Naming drift — INFO** — `grep -rnE 'func.*Get[A-Z]\w*\(\) ' --include='*.go' .`
+- [ ] **Functional options misuse (§7) — LOW** —
+      `grep -rnE '^type [A-Za-z0-9_]*Option func|^func With[A-Z][A-Za-z0-9_]*\(' --include='*.go' .`
+      (manual: a required parameter passed as an option, an option with no default, an invalid
+      combination accepted without an `error`, or options on a constructor with ≤2 stable knobs)
+- [ ] **Embedding that leaks API or rewrites encoding (§6) — MEDIUM on API types** —
+      `grep -rnE '^[[:space:]]+\*?([a-z][a-z0-9]*\.)?[A-Z][A-Za-z0-9_]*[[:space:]]*$' --include='*.go' .`
+      (embedded fields; also hits interface embeds and implicit-`iota` const lines — read each) —
+      on an exported struct: does it export `Lock`/`Unlock` or a whole `*sql.DB`, flatten JSON
+      fields or promote a `MarshalJSON`? An embedded interface left nil outside tests panics
+- [ ] **Generics without a second type (§5) — LOW** —
+      `grep -rnE '^(func|type) [A-Za-z0-9_]+\[[A-Z]' --include='*.go' .` (generic declarations; for
+      each: one instantiation only, an `any` constraint saving one duplicate, a generic
+      repository/service layer, or an interface that already says it = write it concrete) ;
+      manual: hand-written loops duplicating `slices`/`maps`/`cmp.Or`/`min`/`max`
+- [ ] **Naming drift (§3) — INFO** — `grep -rnE 'func.*Get[A-Z]\w*\(\) ' --include='*.go' .`
       (Get-prefixed getters); `grep -rnE '\b(Id|Url|Http|Api)\b' --include='*.go' .` (acronym
-      casing)
+      casing) ; `grep -rnE 'func \((this|self) ' --include='*.go' .` (receiver named `this`/`self`)
 - [ ] **Tooling** — `go vet ./...` (lostcancel, composites);
       `golangci-lint run --enable-only revive,ireturn,containedctx,contextcheck,fatcontext ./...`
       ; `staticcheck ./...` (ST1003 naming, S1021, SA1029 ctx keys)

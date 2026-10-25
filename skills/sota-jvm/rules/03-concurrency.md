@@ -134,7 +134,7 @@ coroutines. References:
 
 ## Audit checklist
 
-- [ ] **Data-race smells — MEDIUM/HIGH (verify happens-before)** —
+- [ ] **Data-race smells — MEDIUM/HIGH (verify happens-before)** (§1) —
       `grep -rnE '^[[:space:]]*((public|private|protected)[[:space:]]+)?static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[a-z][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' . | grep -vwE 'final|class|interface|enum|record'` (mutable shared
       static; the old `(?!final)` form exited 2, POSIX ERE has no lookahead); `grep -rnE 'volatile |@Volatile' --include='*.java' --include='*.kt' . | grep -E '\+\+|--|\+='` (compound op
       on volatile = race);
@@ -190,3 +190,9 @@ coroutines. References:
       `finally` on every request path)
 - [ ] **Bare lock without finally — MEDIUM** —
       `grep -rnE '\.lock\(\)' --include='*.java' --include='*.kt' .` (verify unlock in finally)
+- [ ] **Shared mutable state with no concurrency tooling (§5) — LOW, MEDIUM when the data-race
+      item above has hits** —
+      `grep -rlE 'jcstress' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.java' . || echo "no jcstress"`
+      ; `grep -rn '@GuardedBy' --include='*.java' --include='*.kt' . || echo "no @GuardedBy"`
+      (both absent while state is shared: nothing tests the memory model and Error Prone has no
+      lock contract to check; whether SpotBugs runs is the build file's static-analysis item)

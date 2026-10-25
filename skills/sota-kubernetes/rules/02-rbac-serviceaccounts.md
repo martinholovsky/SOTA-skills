@@ -224,13 +224,13 @@ closure of what subject X can do, and can it escalate?" Tools:
 
 ## Audit checklist
 
-- [ ] No wildcard `*` verbs/resources/apiGroups in any Role/ClusterRole bound to a workload, CI, or tenant? (`kubectl get clusterroles,roles -A -o json | jq` for `"*"`)
+- [ ] No wildcard `*` verbs/resources/apiGroups in any Role/ClusterRole bound to a workload, CI, or tenant? (`kubectl get clusterroles,roles -A -o json | jq` for `"*"`) Roles enumerate verbs and resources explicitly (write verbs only where proven, `resourceNames` where the API supports it), and a ServiceAccount gets a namespaced `Role`/`RoleBinding` unless the resource is cluster-scoped or it genuinely needs all namespaces? (`kubectl get clusterrolebindings -o json | jq -r '.items[] | select(any(.subjects[]?; .kind=="ServiceAccount")) | "\(.metadata.name) -> \(.roleRef.name)"'` — each hit needs a cluster-wide justification; one mega-role bound everywhere is the distributed `cluster-admin`) (§1)
 - [ ] `escalate`/`bind`/`impersonate` granted only to a named, audited admin path — never automation? (reverse index via krane; `grep -rnwE 'escalate|impersonate|bind' rbac/`)
 - [ ] No `cluster-admin` (or any broad role) bound to a ServiceAccount, `system:authenticated`, or `system:unauthenticated`? (`kubectl get clusterrolebindings -o json | jq '...roleRef.name=="cluster-admin"'`)
 - [ ] Aggregated ClusterRoles reviewed — nothing unexpected aggregates into `admin`/`edit`/`view`?
 - [ ] Broad `secrets` read, `pods` create, `serviceaccounts/token` create, and policy-engine CRD writes ([`rules/03`](03-admission-policy.md)) scoped tightly (treated as escalation primitives)?
 - [ ] §2.7 grants held by nothing outside the control plane and named operators: `nodes/proxy` (any verb — **Critical** on a workload or tenant subject), `persistentvolumes` create, CSR `approval` update, `namespaces` patch/update? (the §4 `jq` hunt; `kubectl auth can-i get nodes --subresource=proxy --as=<subject>`)
-- [ ] `automountServiceAccountToken: false` is the default; only API-calling pods opt in? (`grep -rL automountServiceAccountToken` deployments; check SA spec)
+- [ ] `automountServiceAccountToken: false` is the default; only API-calling pods opt in? (`grep -rL automountServiceAccountToken` deployments; check SA spec) (§3)
 - [ ] No manually-created long-lived `service-account-token` Secrets; external consumers use short-lived audience-scoped TokenRequest tokens?
 - [ ] Bootstrap tokens short-lived and deleted after the join? **High** for a token with no expiry, **Medium** for one older than the join window. (`kubectl -n kube-system get secrets --field-selector type=bootstrap.kubernetes.io/token -o json | jq -r '.items[] | [.metadata.name, .metadata.creationTimestamp, ((.data.expiration // "") | @base64d | if . == "" then "NO-EXPIRY" else . end)] | @tsv'`; in join scripts and kubeadm configs `grep -rnE -- '--ttl[= ]+(0[hms]?)+([^0-9a-z.]|$)|ttl:[[:space:]]*"?(0[hms]?)+"?[[:space:]]*$' <scripts> <kubeadm-configs>` — each hit is a never-expiring token)
 - [ ] One SA per workload, `default` SA unused/unbound, no SA shared across apps?
