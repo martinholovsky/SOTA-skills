@@ -142,7 +142,7 @@ rule was written and no checklist ever asked for it.
 So for **every** rule you write, ask the second question before moving on: *how would an
 auditor detect a violation?* If the answer is not in the `## Audit checklist`, the rule
 ships as prose that only a reader of the file will ever apply. **Invariant 43 now gates the
-mechanical half**: a new `## N.` section must be cited `(§N)` by an item in its own checklist, or
+mechanical half**: a new `## N.` (or dotted `## N.M`) section must be cited `(§N)` by an item in its own checklist, or
 marked `*(advisory)*` / `*(audited in …)*` under its heading. It cannot tell whether the citing
 item would actually *detect* the violation — that half is still the reviewer's job, which is why a
 new probe is run against a known-bad and a known-good fixture (below).

@@ -748,7 +748,10 @@ CI scans the full git history, the pre-commit hook scans each commit.
     marked `*(advisory)*` / `*(audited in …)*` in its first lines; a new item cites the section it
     checks; a new rules file numbers its sections. Fixing an old entry makes it stale: run
     `python3 scripts/reachability-graph.py --sync-tighten` (it only removes) and commit the smaller
-    baseline. The baseline may not grow against the merge base.
+    baseline. The baseline may not grow against the merge base, except by **conversion**: numbering
+    a file the baseline lists as unnumbered surfaces its sections, and
+    `python3 scripts/reachability-graph.py --sync-convert` moves its debt to section level (dotted
+    `## N.M` headings count since 2026-10-25).
 
 ## Local setup
 
