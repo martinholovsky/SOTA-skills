@@ -421,7 +421,7 @@ KeyAgreement/KeyGenerator | createCipheriv/Hash/Hmac/Sign | crypto.subtle | hash
 - [ ] Is nonce generation per-key safe (counter or XChaCha/SIV for random), never hardcoded or derived from predictable values?
 - [ ] Is AAD used to bind ciphertexts to their context?
 - [ ] Do all security tokens/keys come from the OS CSPRNG with ≥128-bit entropy?
-- [ ] Are there zero hardcoded secrets in source, git history, or client bundles, with CI secret scanning enforced?
+- [ ] Are there zero hardcoded secrets in source, git history, or client bundles, with CI secret scanning blocking merges and every hit rotated before history is scrubbed, no secret in a URL or query string, log line, error message, client-visible config or CI log (CI using OIDC-federated short-lived credentials, not static keys), and each secret class held in its own store (signing keys non-exportable in KMS, service credentials in a secrets manager with TTL, per-user tokens hashed) (§9)?
 - [ ] Are keys separated per purpose/environment, versioned, and rotatable without downtime?
 - [ ] Is every TLS client verifying certificates and hostnames (no skip-verify flags), TLS ≥1.2 AEAD-only?
 - [ ] **Is every SSH client verifying host keys? HIGH on any hit** — the §10 host-key row, plus
@@ -463,10 +463,10 @@ KeyAgreement/KeyGenerator | createCipheriv/Hash/Hmac/Sign | crypto.subtle | hash
 - [ ] Is MD5/SHA-1 absent from any security-relevant use?
 - [ ] Do decryption/verification failures return uniform errors and stop processing before plaintext use?
 - [ ] **Is every AEAD tag 128 bits and every ciphertext length-checked before slicing (§2)? MEDIUM**: `grep -rnE 'GCMParameterSpec\((32|64|96|104|112|120)[,)]|NewGCMWithTagSize\([^,]*,[[:space:]]*(1[0-5]|[0-9])\)|min_tag_length[[:space:]]*=[[:space:]]*([0-9]|1[0-5])([^0-9]|$)|authTagLength:[[:space:]]*([0-9]|1[0-5])([^0-9]|$)' .` ; then read each `[:nonceSize]`-style slice for a preceding length check.
-- [ ] Are signed URLs/blobs HMAC'd over canonical encodings with expiry, verified before any field is used?
+- [ ] Are signed URLs/blobs HMAC'd over canonical (length-prefixed or serialized-struct) encodings with expiry, verified before any field is used, with the signature covering the key version, Ed25519 used wherever a third party verifies, and verification keys published as a versioned key set with key IDs (§7)?
 - [ ] Is sensitive-field encryption application-layer (envelope, AAD-bound), with deterministic encryption confined to blind indexes?
-- [ ] Are dependencies and release artifacts checksum/signature-verified in CI/CD?
-- [ ] Is there a single crypto wrapper module rather than scattered primitive calls?
+- [ ] Are dependencies lockfile- and checksum-verified, and are release artifacts and containers signed (Sigstore/cosign-class) and verified in the deploy pipeline (§7)?
+- [ ] Is there a single crypto wrapper module rather than scattered primitive calls, holding algorithms and parameters with a version tag on every ciphertext so an algorithm break is a planned migration (§9)?
 - [ ] **Is key strength consistent and at 128 bits for new designs (§4)** — every KEK at least
       as strong as what it wraps, DEK and KEK independent, sizes chosen for the data's secrecy
       lifetime? MEDIUM (HIGH at 1024-bit RSA or a sub-224-bit curve): `grep -rnE 'key_size=(1024|2048)([^0-9]|$)|genrsa[^|;&]*[[:space:]](1024|2048)([^0-9]|$)|initialize\((1024|2048)[,)]|modulusLength:[[:space:]]*(1024|2048)([^0-9]|$)|GenerateKey\([^,]*,[[:space:]]*(1024|2048)\)|ssh-keygen[^|;&]*-b[[:space:]]*(1024|2048)([^0-9]|$)|secp192|secp224|SECP192R1|SECP224R1|P-224|prime192' .`

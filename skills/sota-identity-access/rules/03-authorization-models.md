@@ -173,18 +173,18 @@ def test_authz_matrix(groups, action, expected):
 
 ## Audit checklist
 
-- [ ] Is the authorization model chosen deliberately (RBAC/ABAC/ReBAC) and the simplest that expresses the rules?
-- [ ] Does the app authorize on permissions/relationships, not hardcoded role-name string checks?
-- [ ] Is there role explosion (combinatorial, unused, or context-encoding roles) that should be ABAC attributes?
-- [ ] On role/group change, are effective permissions recomputed (no accumulation/creep)?
-- [ ] Is birthright access minimal, with all privileged access requested + approved + expiring?
-- [ ] Is the group→role mapping explicit and **default-deny** — does an unmapped user get NO role rather than a silent default? (hunt for `default.*role`, `|| "viewer"`, fallback role assignment)
-- [ ] Are upstream/external group claims re-mapped through the local model, never trusted to grant privileged roles directly?
-- [ ] Does any role grant estate-wide `*`/admin without justification? (grep policy for `"*"`, `Action::"*"`, `allow.*true` without conditions)
-- [ ] Are segregation-of-duties conflicting pairs defined and enforced at grant time?
-- [ ] Is policy authored as versioned code (OPA/Cedar/OpenFGA/SpiceDB) with a single decision API, not clicked into a UI?
-- [ ] Is the policy store itself a protected/privileged resource?
-- [ ] Is there an allow/deny matrix test suite (including negatives and the unmapped-group case) gating CI?
-- [ ] Does the engine fail **closed** (deny) on timeout/error?
+- [ ] Is the authorization model chosen deliberately (RBAC/ABAC/ReBAC) and the simplest that expresses the rules? (§1)
+- [ ] Does the app authorize on permissions/relationships, not hardcoded role-name string checks? (§2)
+- [ ] Is there role explosion (combinatorial, unused, or context-encoding roles) that should be ABAC attributes? (§2)
+- [ ] On role/group change, are effective permissions recomputed (no accumulation/creep)? (§2)
+- [ ] Is birthright access minimal, with all privileged access requested + approved + expiring? (§2)
+- [ ] Is the group→role mapping explicit and **default-deny** — does an unmapped user get NO role rather than a silent default? (hunt for `default.*role`, `|| "viewer"`, fallback role assignment) (§3)
+- [ ] Are upstream/external group claims re-mapped through the local model, never trusted to grant privileged roles directly? (§3)
+- [ ] Does any role grant estate-wide `*`/admin without justification? (grep policy for `"*"`, `Action::"*"`, `allow.*true` without conditions) (§4)
+- [ ] Are segregation-of-duties conflicting pairs defined and enforced at grant time? (§4)
+- [ ] Is policy authored as versioned code (OPA/Cedar/OpenFGA/SpiceDB) with a single decision API, not clicked into a UI? (§5)
+- [ ] Is the policy store itself a protected/privileged resource? (§5)
+- [ ] Is there an allow/deny matrix test suite (including negatives and the unmapped-group case) gating CI? (§6)
+- [ ] Does the engine fail **closed** (deny) on timeout/error? (§6)
 - [ ] Does the decision point emit a structured event for every deny and every privileged allow (who, action, resource, decision, rule id; never the token), and does it reach detection (§4)? MEDIUM. The app-side probe is [`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md)'s security-events item.
-- [ ] **Medium** — Is the authorization matrix one machine-readable file (expected decision and refusal code per role × resource × action) that generates the tests and is rendered for reviewers, rather than a spreadsheet kept beside the code?
+- [ ] **Medium** — Is the authorization matrix one machine-readable file (expected decision and refusal code per role × resource × action) that generates the tests and is rendered for reviewers, rather than a spreadsheet kept beside the code? (§6)

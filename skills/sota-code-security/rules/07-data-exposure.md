@@ -381,6 +381,8 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
 
 ## 7. Audit grep starters
 
+*(advisory)* — a pattern list feeding the §1–§6 checklist items; it states no rule of its own.
+
 ```text
 printStackTrace|traceback.format_exc|err.Error\(\) flowing into responses
 DEBUG\s*=\s*True | app.debug | NODE_ENV !== 'production' branches serving errors
@@ -431,10 +433,10 @@ resources :x without only:/except: | spring-boot-starter-data-rest | @Repository
       (§6)?** MEDIUM:
       `grep -rnE '^[[:space:]]*resources?[[:space:]]+:[a-z_]+|spring-boot-starter-data-rest|@RepositoryRestResource' . | grep -vE 'only:|except:|exported[[:space:]]*=[[:space:]]*false'`
 - [ ] Are query strings free of secrets and PII?
-- [ ] Does every write endpoint bind through an explicit allowlist DTO (`extra="forbid"`) — no direct body-to-model assignment?
-- [ ] Are privileged fields (role, verified, tenant_id, price) unwritable via any public schema?
+- [ ] Does every write endpoint bind through an explicit allowlist DTO (`extra="forbid"`) — no direct body-to-model assignment — with separate create, update and admin schemas (§3)? HIGH when a privileged field is reachable; each hit of `grep -rnE "\*\*request\.(json|form|POST|data)|Object\.assign\([^,]+,[[:space:]]*req\.body|\.update\(req\.body|permit[!]|fields[[:space:]]*=[[:space:]]*[\"']__all__[\"']" --include='*.py' --include='*.js' --include='*.ts' --include='*.rb' .` binds a request body wholesale
+- [ ] Are privileged fields (role, verified, tenant_id, price) unwritable via any public schema, and are prices, subtotals, taxes, totals, discounts, balances and quotas recomputed server-side from identifiers and quantities, never accepted from the client (§3)?
 - [ ] Do responses use explicit output DTOs (no raw entity serialization), with field-level authz on GraphQL?
-- [ ] Are client-controlled field/include/expand/sort params allowlist-resolved?
+- [ ] Are client-controlled field/include/expand/sort params allowlist-resolved (§3)?
 - [ ] Are debug endpoints, playgrounds, actuators, source maps, `.git`/`.env`, and magic test bypasses absent from prod, and staging data masked or staging prod-hardened?
 - [ ] Are error trackers, session replay, analytics, warehouses, caches, and backups covered by the same scrubbing/retention/access rules as the primary DB?
 - [ ] Do deletion flows reach secondary stores, and do exports carry full authz, audit, and short-TTL signed links?

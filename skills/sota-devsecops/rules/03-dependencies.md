@@ -452,8 +452,8 @@ So require a second value that **cannot** be produced from plausibility:
 
 ## Audit checklist
 
-- [ ] Lockfiles committed for every manifest; CI/Docker builds use frozen/hash-verified installs; no `npm install`/bare `pip install` in CI
-- [ ] Dependency-review gate on PRs, required, failing on high severity + license denylist
+- [ ] Lockfiles committed for every manifest; CI/Docker builds use frozen/hash-verified installs; no `npm install`/bare `pip install` in CI; a Poetry install is preceded by `poetry check --lock` (alone, `poetry install` exits 0 with no lockfile); Go CI fails on a dirty `go mod tidy` diff (§3.1), High
+- [ ] Dependency-review gate on PRs, required, failing on high severity + license denylist; ecosystems the gate does not cover get an `osv-scanner` diff against the base branch in the same PR workflow (§3.2)
 - [ ] **Lockfile `resolved` hosts allowlisted (§3.4.1), MEDIUM (HIGH if a non-allowlisted host is present):** CI runs `lockfile-lint --allowed-hosts <registries> --validate-https` (or pnpm `verifyStoreIntegrity`), and `jq -r '.packages[]?.resolved // empty' package-lock.json | grep -v -E '^https://(registry\.npmjs\.org|<internal-registry>)/'` prints nothing (reads the lockfileVersion 2/3 `packages` map only); lockfile-only PRs from non-bot authors get a named reviewer
 - [ ] No `--extra-index-url` public/private mixing; npm internals scoped; GOPRIVATE set; internal names reserved publicly; fetches go through a caching proxy with audit log
 - [ ] Install scripts disabled by default in CI (`--ignore-scripts`/pnpm allowlist); new-dependency review covers install hooks, obfuscation, maintainer churn, and package age / downloads / sole-maintainer signals (§3.4)
@@ -468,11 +468,11 @@ So require a second value that **cannot** be produced from plausibility:
       questions — measured 1 advisory vs 19 alerts on one tree. State the question beside the
       verdict, reconcile any disagreement to a named cause, and check each alert's
       `first_patched_version` against the **resolved** graph rather than a bump's PR title
-- [ ] SBOM (CycloneDX/SPDX) generated per artifact from lockfile + image, attached to the digest, queryable centrally
+- [ ] SBOM (one format org-wide, CycloneDX or SPDX) regenerated per build for each artifact from lockfile + image, with component hashes and PURLs, attached to the digest, queryable centrally (§3.5); none = Medium
 - [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
 - [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned
 - [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
-- [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream)
+- [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream) (§3.8)
 - [ ] **Inert-dependency sweep run** — declared-but-not-reached dependencies, modules and plugins, proven by deletion rather than by a tool's silence: [rules/10](10-inert-dependencies.md), a full pass with its own checklist
 - [ ] **Does any support-matrix row infer a capability from a version number? (§3.9)** That
       holds only where the distro tracks upstream and is **false for backporting enterprise

@@ -461,14 +461,14 @@ was impossible. OWASP: Injection Prevention, GraphQL cheat sheets.
 ## Audit checklist
 
 - [ ] Is every SQL/NoSQL query parameterized, with raw/`whereRaw`/`$where` escape hatches audited and identifiers allowlist-mapped?
-- [ ] Are all process invocations argv-array based (no `shell=True`/`exec(string)`), with `--` separators and leading-dash rejection for user args?
+- [ ] Are all process invocations argv-array based (no `shell=True`/`exec(string)`), with `--` separators and leading-dash rejection for user args, shell-outs replaced by a native library where one exists, and every token interpolated into an unavoidable shell allowlist-validated against `^[A-Za-z0-9._-]+$` (§3)?
 - [ ] Are file paths canonicalized (`realpath`) then containment-checked with a path-aware comparison before any filesystem access?
 - [ ] Does archive extraction validate entry paths, reject symlinks/absolute entries, and cap decompressed size?
 - [ ] Do URL fetchers enforce scheme allowlist, block private/link-local/metadata IPs *post-DNS-resolution*, pin the connection IP, and re-check on redirects?
 - [ ] Are DTDs/external entities explicitly disabled on every XML/SVG/Office-doc parser?
-- [ ] Is user input confined to template variables (never concatenated into template strings)?
+- [ ] Is user input confined to template variables (never concatenated into template strings), and do user-authored templates (email editors, CMS) render only in a logic-less or sandboxed engine (Mustache/Liquid strict mode, Jinja2 `SandboxedEnvironment`) (§7)?
 - [ ] Is all untrusted deserialization via data-only formats with schema validation (no pickle/ObjectInputStream/unserialize/Marshal/yaml.load)?
-- [ ] Do JS deep-merge/set utilities fed by request data block `__proto__`/`constructor`/`prototype` keys?
+- [ ] Do JS deep-merge/set utilities fed by request data (lodash `merge`/`set`/`defaultsDeep`, bracket-syntax query-string parsers such as `?a[__proto__][x]=1`) block `__proto__`/`constructor`/`prototype` keys, or hold attacker-keyed dictionaries in `Object.create(null)`/`Map`, with `--frozen-intrinsics` or a frozen `Object.prototype` considered as defence in depth (§9)?
 - [ ] Are regexes on untrusted input linear-time or length-capped, with no nested quantifiers?
 - [ ] Is validation allowlist-based, server-side, performed after canonicalization, with length limits on every field?
 - [ ] Are CR/LF rejected from header/email-field values, and absolute URLs (reset links) built from configured origins, never the Host header?

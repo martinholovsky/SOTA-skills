@@ -451,8 +451,8 @@ was false, and the signature was gone. Only asking a question the benign state c
       body actually needs and confirm the predicate tests *that*. Grep the codebase for
       the proxy setting — if it is read in more than one place for more than one purpose,
       the two uses can be configured apart. High when the control is the only attestation
-      of something.
-- [ ] **Skip messages are derived from live state**, not string literals written when the
+      of something. Then falsify it: if the proxy flipped and the dependency did not, would anything observable differ (§4a)?
+- [ ] **Skip messages are derived from live state** (§4a), not string literals written when the
       branch was added. A hardcoded reason cannot go stale loudly.
 
 - [ ] Does any **report or output** claim more than the run establishes — a count

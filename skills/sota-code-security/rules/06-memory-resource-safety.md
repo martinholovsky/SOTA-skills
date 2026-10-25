@@ -444,6 +444,8 @@ belong to `grep -v`, and a failed first stage would read as clean.
 
 ## 7. Audit grep starters
 
+*(advisory)* — a pattern list feeding the §1–§6 checklist items; it states no rule of its own.
+
 ```text
 gets\(|strcpy|strcat|sprintf\(|scanf\("%s     malloc\(.*\*  (unchecked multiply)
 alloca\(  with input-derived arg              memcpy\(.*, *len\)  trace len's origin
@@ -468,12 +470,12 @@ DllImportSearchPath.(AssemblyDirectory|ApplicationDirectory|LegacyBehavior) | lo
 - [ ] Do money/quantity fields enforce positive, bounded, integer/decimal semantics?
 - [ ] Does money and share arithmetic multiply before it divides, round in the system's favour (issued/paid out down, owed up), and reject amounts below a minimum meaningful unit (§1)? MEDIUM, HIGH on value-moving paths. Probe for divide-then-multiply, reading each hit (money and share maths first): `grep -rnE '[[:alnum:]_)][[:space:]]*/[[:space:]]*[[:alnum:]_.]+[[:space:]]*\)?[[:space:]]*\*[[:space:]]*[[:alnum:]_(]' .`
 - [ ] Are NaN/±Infinity rejected from parsed floats, divisors guarded against zero, unit conversions and multi-term intermediates bounded, MIN/MAX extremes handled, and every unchecked region's bound written down (§1)? MEDIUM, HIGH where the value sizes, prices or authorizes something. Probe listing files that parse floats and never test finiteness: `grep -rlE '(float|parseFloat|ParseFloat|parseDouble|strto[dfl]|atof)[[:space:]]*\(' . | while IFS= read -r f; do grep -qiE 'is_?finite|is_?nan|isinf' "$f" || echo "$f"; done` — file-level, so one check hides the rest of that file; then run the language skill's own probe.
-- [ ] Are banned C string functions absent and parsers of untrusted bytes fuzzed with sanitizers in CI?
+- [ ] Are banned C string functions absent (with `snprintf`/`strlcpy` truncation returns checked), raw pointer arithmetic and manual ownership confined to small reviewed modules (RAII/single owner, freed pointers nulled in legacy code), binaries built with PIE, stack protectors, `_FORTIFY_SOURCE=3` and CFI where available (confirm with `checksec --file=<binary>` or `readelf -d`), new parsers of untrusted input written in a memory-safe language or isolated in a least-privilege process, and parsers of untrusted bytes fuzzed with sanitizers in CI (§2)?
 - [ ] Is `unsafe`/FFI code confined to designated modules with SAFETY comments, safe wrappers, and Miri/ASan coverage?
 - [ ] In a GC language, does any code use its escape hatch into raw memory (§3's per-language list)? Each use is audited with the C rules, and a project-wide opt-in (`AllowUnsafeBlocks`, `ffi.enable=true`, `--enable-native-access=ALL-UNNAMED`) is justified in writing.
 - [ ] Is every native library loaded by absolute path, or through a search restricted to directories only the owner can write (§3.1)? Run §3.1's detector row for the platform and language, `readelf -d`/`otool -l` the shipped binaries for relative or `$ORIGIN` run paths, and on .NET enable CA5392, CA5393 and CA3011, which are off by default. HIGH when the process runs with more privilege than whoever can write the CWD, the application folder, or an `LD_LIBRARY_PATH` entry.
-- [ ] Does every declared length/offset get validated against bytes-actually-available before allocation or read?
-- [ ] Are decompression ratio caps, image pixel limits, and JSON/GraphQL depth+complexity limits enforced?
+- [ ] Does every declared length/offset get validated against a protocol maximum and bytes-actually-available (offsets after an overflow-safe add) before allocation, read or seek, with redundant size fields (header total vs section sums vs file size) cross-checked and a mismatch rejected rather than repaired, through length-aware cursors that error on underrun (§4)?
+- [ ] Are decompression ratio caps, image pixel limits, and JSON/GraphQL depth+complexity limits enforced (§4)?
 - [ ] Do all inbound listeners and outbound calls have timeouts, with cancellation propagation?
 - [ ] Is rate limiting per-principal with bounded queues and load shedding (no unbounded buffering), and does no unauthenticated path trigger metered work — SMS/OTP sends limited per number AND per requester, and a per-tenant budget cap with an alert on every usage-billed API (§5)? MEDIUM, HIGH on an unauthenticated SMS-send endpoint.
 - [ ] Are check-then-act sequences (files, balances, redemptions) made atomic at the storage layer?

@@ -114,15 +114,15 @@ SVC_API_KEY="sk_live_8f3...permanent"        # in env/config, never rotates, sha
 
 ## Audit checklist
 
-- [ ] Do admins use a separate privileged identity from their daily account, with the privileged account barred from email/browsing?
-- [ ] Do privileged accounts require phishing-resistant MFA and shorter session caps?
-- [ ] Are there shared admin logins (non-break-glass)? Every privileged action should attribute to a named principal.
-- [ ] Is privileged access just-in-time (no standing admin) — requested, approved, reason-logged, auto-expiring?
-- [ ] Is elevation just-enough (narrowest role), with a second approver for the highest tiers?
-- [ ] Do break-glass accounts exist, stay dormant, and fire a loud real-time alert on every use?
-- [ ] Are break-glass uses time-boxed, fully logged, and the credential rotated after use (and split-knowledge if shared)?
-- [ ] For Kanidm: are `admin`/`idm_admin` treated as break-glass only (recovered via `kanidmd recover-account`), with daily admin on separate named accounts? Is `recover-account` use alerted?
-- [ ] Are highest-tier sessions brokered/recorded via a PAM/bastion, with dynamically-issued (not standing) privileged credentials?
-- [ ] Do workloads use short-lived federated/attested identity (SPIFFE/SPIRE SVIDs or workload identity federation) instead of static keys? Hunt config/env for long-lived `*_API_KEY`, `*-key.json`, service-account key files.
-- [ ] Is there one least-privilege identity per workload (no shared service accounts)?
-- [ ] Are decommissioned workload identities retired and dormant service credentials detected ([rules/04](04-lifecycle-provisioning.md))?
+- [ ] Do admins use a separate privileged identity from their daily account, with the privileged account barred from email/browsing? (§1)
+- [ ] Do privileged accounts require phishing-resistant MFA and shorter session caps? (§1)
+- [ ] Are there shared admin logins (non-break-glass)? Every privileged action should attribute to a named principal. (§1)
+- [ ] Is privileged access just-in-time (no standing admin) — requested, approved, reason-logged, auto-expiring? (§2)
+- [ ] Is elevation just-enough (narrowest role), with a second approver for the highest tiers? (§2)
+- [ ] Do break-glass accounts exist, stay dormant, and fire a loud real-time alert on every use? (§3)
+- [ ] Are break-glass uses time-boxed, fully logged, and the credential rotated after use (and split-knowledge if shared)? (§3)
+- [ ] For Kanidm: are `admin`/`idm_admin` treated as break-glass only (recovered via `kanidmd recover-account`), with daily admin on separate named accounts? Is `recover-account` use alerted? (§3)
+- [ ] Are highest-tier sessions brokered/recorded via a PAM/bastion, with dynamically-issued (not standing) privileged credentials? (§4)
+- [ ] Do workloads use short-lived federated/attested identity (SPIFFE/SPIRE SVIDs or workload identity federation) instead of static keys? Hunt config/env for long-lived `*_API_KEY`, `*-key.json`, service-account key files. (§5)
+- [ ] Is there one least-privilege identity per workload (no shared service accounts)? (§5)
+- [ ] Are decommissioned workload identities retired and dormant service credentials detected (§5) ([rules/04](04-lifecycle-provisioning.md))?

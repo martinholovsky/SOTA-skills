@@ -274,8 +274,8 @@ Two exits matter beyond [rules/01](01-input-injection.md)'s sinks:
 
 ## Audit checklist
 
-- [ ] Is every collector/webhook/upload/feed/RAG loader treated as a trust boundary with size cap, timeout, and schema validation?
-- [ ] Are records tagged with provenance (source, fetched_at, integrity_verified, validated) and is "authenticated transport" not conflated with "trusted payload"?
+- [ ] Is every collector/webhook/upload/feed/RAG loader treated as a trust boundary with size cap, timeout, and schema validation (§1)?
+- [ ] Are records tagged with provenance (source, fetched_at, integrity_verified, validated) and is "authenticated transport" not conflated with "trusted payload", with declared `Content-Type`, extension, `Content-Length` and charset re-derived from the bytes on every ingest path (§1)?
 - [ ] Are untrusted formats parsed in a sandboxed subprocess (CPU/mem/time/FD limits, no secrets, no egress) rather than in-process in a long-running service?
 - [ ] Image decode: header-only dimension check (`DecodeConfig`) and pixel/byte budget *before* full `Decode`? (grep: `image.Decode`, `Image.open`, `imread` without a preceding dimension/`DecodeConfig` check)
 - [ ] Archive extraction: per-entry path validation (no `..`/absolute/symlink), decompressed-size cap, compression-ratio cap, entry-count cap, bounded nesting depth? (grep: `zipfile`, `tarfile`, `extractall`, `archive/zip` without a metered byte counter)
@@ -283,12 +283,12 @@ Two exits matter beyond [rules/01](01-input-injection.md)'s sinks:
 - [ ] XML/SVG/RSS/SAML/Office parsers: DTDs + external entities disabled, entity expansion capped? ([rules/01](01-input-injection.md) §6)
 - [ ] JSON/CSV/feed: max nesting depth, document/field size caps, unbounded arrays rejected, streaming parser for large inputs?
 - [ ] Fuzzy-hash/similarity libs (ssdeep/tlsh/imagehash) run inside the parser sandbox, time-bounded, crash-isolated?
-- [ ] Is every raw read bounded by a `LimitReader`/bounded reader? (grep: `io.ReadAll`, `read()` with no limit, `request.body` without size cap, missing `LimitReader`)
-- [ ] Backpressure + bounded concurrency + per-source rate limits, with a dead-letter/quarantine for poison records and idempotent re-ingest?
+- [ ] Is every raw read bounded by a `LimitReader`/bounded reader, with body, field, file, decompressed-size and entry-count caps at every layer and a wall-clock timeout per parse (§3)? (grep: `io.ReadAll`, `read()` with no limit, `request.body` without size cap, missing `LimitReader`)
+- [ ] Backpressure + bounded concurrency + per-source rate limits, with a dead-letter/quarantine carrying provenance for poison records (no crash, endless retry or silent drop) and idempotent re-ingest keyed by a stable source id (§3)?
 - [ ] Parse-don't-validate into typed objects with reject-unknown-fields, allowlist values, canonicalize-then-validate?
 - [ ] Upload type determined from magic bytes (not declared Content-Type/extension), polyglots rejected via re-encode/normalize, AV scan, server-generated storage id, isolated serving origin?
 - [ ] Feed integrity verified where available (signatures/checksums), poisoned-upstream treated as a supply-chain risk, ingest/parse separated from the trusted core (broker pattern)?
-- [ ] Ingested content encoded at the *render* boundary ([rules/05](05-web-security.md)) not sanitized-on-ingest, and provenance-tagged before reaching an LLM context ([rules/08](08-llm-ai-security.md))?
+- [ ] Ingested content stored raw and taint-tagged, encoded at the *render* boundary ([rules/05](05-web-security.md)) not sanitized-on-ingest, with SVG and HTML feed content sanitized or served from an isolated origin, provenance-tagged before reaching an LLM context ([rules/08](08-llm-ai-security.md)), and never placed in a system or instruction role (§6)?
 - [ ] Ingest anomalies (volume spikes, ratio-bomb/schema-violation bursts, AV hits) emitted as detection events?
 - [ ] XML structural limits (§2): nesting depth, element/attribute counts and name/value lengths capped, strict XSD instead of DTD, and tests for malformed-vs-normal parse time and for each limit? HIGH on an unauthenticated XML endpoint; each hit of `grep -rnE 'huge_tree[[:space:]]*=[[:space:]]*True|XML_PARSE_HUGE|ET\.(fromstring|parse|XMLParser)\(|minidom\.parse(String)?\(|expat\.ParserCreate' --include='*.py' --include='*.c' --include='*.cpp' --include='*.h' .` is a parser with a relaxed or absent depth limit
 - [ ] **Cascading validation (§4)**: does validation reach every nested object and collection (`@Valid` on each nested reference, nested models)? MEDIUM, HIGH when a nested field reaches a query or a decision; each hit of `grep -rnE '^[[:space:]]*(private|protected|public)[[:space:]]+([A-Z][A-Za-z]*(Dto|DTO|Request)|(List|Set|Collection)<[A-Z][A-Za-z]*(Dto|DTO|Request)>)[[:space:]]+[a-z]' --include='*.java' . | grep -v '@Valid'` is a nested DTO without `@Valid` on the same line (check the line above)

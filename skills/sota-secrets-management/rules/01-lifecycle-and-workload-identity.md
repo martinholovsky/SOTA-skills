@@ -318,7 +318,7 @@ Operational rules for dynamic/leased credentials:
 
 ## Audit checklist
 
-- [ ] All token/key generation uses a CSPRNG with ≥256-bit entropy; no UUIDs, timestamps, or
+- [ ] All token/key generation uses a CSPRNG with ≥256-bit entropy (§1); no UUIDs, timestamps, or
       hashes-of-predictables used as secrets.
 - [ ] Internally minted tokens carry a scannable prefix.
 - [ ] Asymmetric keys are Ed25519/P-256 (RSA ≥3072 only for interop) and generated where they
@@ -345,16 +345,16 @@ Operational rules for dynamic/leased credentials:
       leaver or role-changer could read, not only on a schedule or confirmed compromise (§3) —
       Medium. Runbooks that never mention it:
       `grep -rLiE 'offboard|leaver|leaves|departure' runbooks/`
-- [ ] No long-lived cloud keys where IAM roles / managed identity / workload identity
+- [ ] No long-lived cloud keys (§4) where IAM roles / managed identity / workload identity
       federation are available (in-cloud workloads, CI jobs, cross-cloud calls).
 - [ ] CI→cloud auth uses OIDC with `aud` + pinned `sub` trust conditions; one least-privilege
       role per repo/purpose; prod roles gated by reviewed environments.
 - [ ] Package publishing from CI uses trusted publishing (registry OIDC) where the registry
       supports it; no long-lived publish tokens stored in CI.
-- [ ] Database access uses dynamic creds or IAM DB auth where the engine supports it; leased
+- [ ] Database access uses dynamic creds or IAM DB auth where the engine supports it; (§6) an alert on lease-creation rate per role exists; leased
       credentials renew at ~2/3 TTL and recover from revocation; revocation drills performed.
 - [ ] Third-party CI actions/orbs pinned by SHA in secret-bearing jobs; CI secrets scoped to
       environment level, masked, and absent from fork-triggered workflows.
 - [ ] Secret reads are audit-logged in production with alerting on anomalous principals.
-- [ ] A secret inventory exists (store listing + owner/age/last-read), reviewed quarterly;
+- [ ] A secret inventory exists (store listing + owner/age/last-read), reviewed quarterly (§7); each secret lives in one store (replicated by the store's own sync, never copied by hand) and is versioned;
       unused and orphaned secrets deleted; retired services' secrets revoked promptly.

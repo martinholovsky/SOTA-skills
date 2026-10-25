@@ -387,9 +387,9 @@ found nothing** — the second reading being a conclusion about the target
 
 ## Audit checklist
 
-- [ ] Admission enforces (not audits) image verification in prod: exact signer identity + issuer, provenance attestation required, registry allowlist, tag→digest mutation, `failurePolicy: Fail`, all Pod-paths covered; Kyverno >= 1.19.1; policies on the CEL v1 types (ClusterPolicy officially deprecated in 1.19, the last fully supported line; 1.20 rejects new/changed legacy policies — kyverno#17214); ImageValidatingPolicy `failurePolicy` set at `spec`, `subject` exact (no `*`)
-- [ ] Baseline workload policies enforced: PSA restricted-equivalent, no `:latest`, non-root, resource limits, attribution labels
-- [ ] Policies in git, GitOps-deployed, with CI-tested deny cases; exceptions are scoped, owned, time-bound, PR-reviewed, and inventoried
+- [ ] Admission enforces (not audits) image verification in prod (§7.1): exact signer identity + issuer, provenance attestation required, registry allowlist, tag→digest mutation, `failurePolicy: Fail`, all Pod-paths covered; Kyverno >= 1.19.1; policies on the CEL v1 types (ClusterPolicy officially deprecated in 1.19, the last fully supported line; 1.20 rejects new/changed legacy policies — kyverno#17214); ImageValidatingPolicy `failurePolicy` set at `spec`, `subject` exact (no `*`)
+- [ ] Baseline workload policies enforced (§7.2): PSA restricted-equivalent with `enforce-version` pinned to the cluster minor (not `latest`), no `:latest`, non-root, resource limits, attribution labels, no `default` ServiceAccount with API access
+- [ ] Policies in git, GitOps-deployed, with CI-tested deny cases; exceptions are scoped, owned, time-bound, PR-reviewed, and inventoried (§7.2)
 - [ ] CI/CD, deploy, admission, registry, and control-plane audit events stream to tamper-resistant storage with ≥1y retention; pipeline identities are alertable principals
 - [ ] Deploy traceability: digest → source SHA → run → approver queryable in seconds; deploy markers in observability
 - [ ] High-signal alerts wired: release-workflow modification, runner registration, policy change, unsigned-image attempt, break-glass use, push-protection bypass
@@ -397,8 +397,8 @@ found nothing** — the second reading being a conclusion about the target
 - [ ] **Secret-exfiltration detections wired (§7.3.1), Medium:** `grep -rn -E 'base64[^|]*\|[[:space:]]*base64([[:space:]]|$)|openssl[[:space:]]+(enc|aes-[0-9]+|des)' .github/workflows` is empty or each hit is reviewed; job logs are searched for `U2FsdGVkX1`; UI reveal or export of CI variables alerts where the platform logs it
 - [ ] **Containment layers exist for a malicious dependency (§7.3.2), High:** `kubectl get networkpolicy -A -o json | jq -r '.items[] | select(.spec.podSelector == {} and ((.spec.policyTypes // []) | index("Egress")) and ((.spec.egress // []) | length == 0)) | .metadata.namespace' | sort -u` lists every production namespace (default-deny egress); workloads use per-service identities; runtime detection covers process and outbound-connection anomalies
 - [ ] **Security defect metrics reported (§7.6), Low:** open vulnerabilities by severity, layer and component; fix rate against SLA per team; patch-available-to-production time; recurrence by class, reviewed on a schedule
-- [ ] Backup inventory covers state/registry/git/secrets/keys; restores tested on schedule against RPO/RTO; backups immutable, in a separate trust domain, not deletable by prod-compromising credentials
-- [ ] Break-glass documented per gate, alarmed on use, time-bound, post-reviewed, reconciled to git; routine admin bypass absent
+- [ ] Backup inventory covers databases/object stores/state/registry/git/secrets/keys/CI config (§7.4); restores tested on schedule against RPO/RTO; backups immutable, in a separate trust domain, not deletable by prod-compromising credentials, and deletion needs a second identity; a restored environment comes back under the same admission policies with old credentials not resurrected
+- [ ] Break-glass documented per gate, alarmed on use (a page, not a log line), time-bound, post-reviewed with the credential re-rotated, reconciled to git; routine admin bypass absent, and frequent use opens a gate fix (§7.5)
 - [ ] Feedback loop metrics tracked: gate latency, exception age/count, remediation SLAs, rollback drill and restore test recency
 - [ ] **Is prune/trim on a shared runtime treated as a change?** (§7.7) Restart plus a
       post-change smoke test that *starts* something, foreign-owned resources enumerated

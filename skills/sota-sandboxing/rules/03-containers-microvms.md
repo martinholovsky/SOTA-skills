@@ -367,21 +367,26 @@ is good for security but plan checkpointing/image capture for incident response
 ## Audit checklist
 
 - [ ] Images: non-root numeric `USER`, distroless/minimal base, pinned by digest,
-      scanned + signed; no secrets in layers/env; multi-stage builds.
+      scanned + signed, SBOM generated; no secrets in layers/env; multi-stage
+      builds (§1).
 - [ ] No container runs `--privileged`, with the Docker/CRI socket, host
       namespaces (`pid/net/ipc/userns`), writable `/sys`-`/proc`, raw devices, or
-      sensitive hostPath — verified by admission policy, not convention.
+      sensitive hostPath — verified by admission policy, not convention (§1).
 - [ ] Every container: cap-drop ALL (justified add-backs only),
       no-new-privileges/allowPrivilegeEscalation=false, read-only rootfs +
       size-capped tmpfs, seccomp RuntimeDefault-or-stricter (never unconfined),
-      memory/CPU/pids limits.
+      memory/CPU/pids limits, `--network none` or a scoped egress network (§1).
 - [ ] Untrusted/multi-tenant workloads run under gVisor or Kata/Firecracker
       (RuntimeClass), on tainted dedicated node pools; `hostUsers: false` set
-      where nodes support user namespaces (GA in v1.36).
+      where nodes support user namespaces (GA in v1.36); any GPU or device
+      passthrough into them is recorded as a boundary weakening (§2).
 - [ ] PSA `restricted` enforced (+ audit/warn) on all non-system namespaces;
-      exceptions enumerated with owners.
-- [ ] `automountServiceAccountToken: false` by default; RBAC reviewed for
-      escalation verbs (`pods/exec`, secrets, create pods, escalate/bind/impersonate).
+      exceptions enumerated with owners; kubelet `--anonymous-auth=false` with
+      webhook authorization, and etcd encrypted at rest (kube-apiserver
+      `--encryption-provider-config` set) (§3).
+- [ ] `automountServiceAccountToken: false` by default; per-workload service
+      accounts with no `cluster-admin` or wildcard verbs; RBAC reviewed for
+      escalation verbs (`pods/exec`, secrets, create pods, escalate/bind/impersonate) (§3).
 - [ ] Every IN-cluster egress peer selected by identity (`podSelector`/`namespaceSelector`),
       not by a pod CIDR — `grep -n 'ipBlock' policies/` and, for each hit, require either an
       out-of-cluster destination or a rewrite; a recycled pod IP re-points the allow silently
@@ -391,7 +396,9 @@ is good for security but plan checkpointing/image capture for incident response
 - [ ] Secrets short-lived and file-mounted; no long-lived cloud keys in pods;
       metadata service unreachable or audience-bound.
 - [ ] Runtime detection deployed on all nodes with the R4.1 minimum rule set,
-      routed to on-call, and canary-tested within the last quarter.
+      routed to on-call, and canary-tested within the last quarter; container logs
+      shipped off-node and an incident capture path (runtime checkpoint or
+      `kubectl debug` node profile) documented (§4).
 - [ ] Rootless/userns-remapped engine on hosts where dev containers run; Docker
       API never on unauthenticated TCP; runc ≥ 1.2.8/1.3.3 (November 2025
       escape trio, R1.4), ≥ 1.3.6/1.4.3 under podman/containerd (CVE-2026-41579);

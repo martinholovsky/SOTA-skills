@@ -146,18 +146,18 @@ ORDER BY a.is_privileged DESC, a.last_login_at NULLS FIRST;
 
 ## Audit checklist
 
-- [ ] Is there a single authoritative source of identity, and does every account map to a record in it?
-- [ ] Is birthright access minimal and automatic, with all other access requested + approved + expiring?
-- [ ] On role change (mover), is access **recomputed** rather than accumulated? Look for long-tenured users with grants from old roles.
-- [ ] Is there a defined leaver SLA, and does termination revoke ALL access — disable account, kill sessions/refresh tokens, rotate owned credentials?
-- [ ] Is deprovisioning SCIM-driven where possible, with an explicit verified manual runbook for non-SCIM apps?
-- [ ] Does an end-to-end test confirm a disabled identity can no longer authenticate downstream?
-- [ ] Is there continuous reconciliation against the source of truth to find orphaned accounts? (no record → disable → delete)
-- [ ] Does every account — human, service, external, break-glass — have a named individual owner?
-- [ ] Are there orphaned privileged or service accounts of departed staff / dissolved teams / ended contracts? (highest priority)
-- [ ] Are access reviews/recertification run on a risk-based cadence, default-revoke, with decisions retained as audit evidence?
-- [ ] Do JIT-provisioned (federated) accounts have a working leaver/dormancy path, with linking on a verified immutable id?
-- [ ] Is there a dormant-account detection job (with reliable last-login telemetry) that disables stale accounts and escalates dormant privileged ones?
-- [ ] **High** — Do CI/CD systems and internal tools sign in only through the central IdP, with self-registration and local accounts off and sign-in limited to organisation-controlled domains; are service accounts refused at every interactive surface; and is each account creation or change logged with the privileges granted? Self-registration switched on: `grep -rniE '(self_?registration|registration_?allowed|allow_?(self_?)?sign_?up|sign_?up_?enabled|enable_?sign_?up|allow_?registration)["'\'']?\]?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled)|disable_?registration["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(false|off|no)' .`
-- [ ] **Medium** — Do access reviews cover every account (standard, service, external, agent) at least yearly, not only privileged access?
-- [ ] **High** — Is there an inventory of AI agents and assistants (identity, human owner, purpose, permissions, connected systems), reviewed periodically, with unregistered agents hunted in IdP and audit-log data, and does retiring an agent or non-human identity follow a written checklist that ends in a verified "no access remains"?
+- [ ] Is there a single authoritative source of identity, and does every account map to a record in it? (§1)
+- [ ] Is birthright access minimal and automatic, with all other access requested + approved + expiring? (§1)
+- [ ] On role change (mover), is access **recomputed** rather than accumulated? Look for long-tenured users with grants from old roles. (§1)
+- [ ] Is there a defined leaver SLA, and does termination revoke ALL access — disable account, kill sessions/refresh tokens, rotate owned credentials? (§1)
+- [ ] Is deprovisioning SCIM-driven where possible, with an explicit verified manual runbook for non-SCIM apps? (§2)
+- [ ] Does an end-to-end test confirm a disabled identity can no longer authenticate downstream? (§2)
+- [ ] Is there continuous reconciliation against the source of truth to find orphaned accounts? (no record → disable → delete) (§3)
+- [ ] Does every account — human, service, external, break-glass — have a named individual owner? (§3)
+- [ ] Are there orphaned privileged or service accounts of departed staff / dissolved teams / ended contracts? (highest priority) (§3)
+- [ ] Are access reviews/recertification run on a risk-based cadence, default-revoke, with decisions retained as audit evidence? (§4)
+- [ ] Do JIT-provisioned (federated) accounts have a working leaver/dormancy path, with linking on a verified immutable id? (§5)
+- [ ] Is there a dormant-account detection job (with reliable last-login telemetry) that disables stale accounts and escalates dormant privileged ones? (§6)
+- [ ] **High** — Do CI/CD systems and internal tools sign in only through the central IdP, with self-registration and local accounts off and sign-in limited to organisation-controlled domains; are service accounts refused at every interactive surface; and is each account creation or change logged with the privileges granted? Self-registration switched on: `grep -rniE '(self_?registration|registration_?allowed|allow_?(self_?)?sign_?up|sign_?up_?enabled|enable_?sign_?up|allow_?registration)["'\'']?\]?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled)|disable_?registration["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(false|off|no)' .` (§1)
+- [ ] **Medium** — Do access reviews cover every account (standard, service, external, agent) at least yearly, not only privileged access? (§4)
+- [ ] **High** — Is there an inventory of AI agents and assistants (identity, human owner, purpose, permissions, connected systems), reviewed periodically, with unregistered agents hunted in IdP and audit-log data, and does retiring an agent or non-human identity follow a written checklist that ends in a verified "no access remains"? (§3)

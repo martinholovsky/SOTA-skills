@@ -126,11 +126,11 @@ later prove who asked for what. Primitive choice and the canonical-encoding rule
 
 ## Audit checklist
 
-- [ ] Is any "tamper-evident"/audit ledger keyed (HMAC/signature) or externally anchored — not a bare unkeyed hash chain — with tail truncation and whole-stream deletion detectable?
-- [ ] Is ledger completeness attested separately from integrity (source-assigned seq / close markers), and is verification possible off the storing system?
-- [ ] If the ledger is segmented (epochs, daily partitions, rotated files), does the first record of each segment chain to the previous segment's head **and** the verifier carry its running hash across the boundary — demonstrated against a fixture with one whole interior segment removed?
-- [ ] Is the hash preimage a **named** canonicalization (RFC 8785 or a written encoder spec) rather than a default JSON/map serializer, pinned by a committed known-answer vector that every verifier implementation reproduces byte-for-byte?
-- [ ] Is a TEE/confidential-computing control proposed to fix a **completeness** gap ("records that were never emitted")? That is a liveness failure and sits outside the CC guarantee — the fix is a separate completeness attestation at a vantage the monitored component does not control.
+- [ ] Is any "tamper-evident"/audit ledger keyed (HMAC/signature) or externally anchored — not a bare unkeyed hash chain — with tail truncation and whole-stream deletion detectable, and does the hashed preimage cover every attested field, server-assigned timestamps and ordering/attribution columns included (§1)?
+- [ ] Is ledger completeness attested separately from integrity (source-assigned seq / close markers), and is verification possible off the storing system, with security evidence taken at an independent chokepoint (proxy, gateway, kernel, append-only sink) rather than emitted by the monitored component, and per-subject crypto-shredding designed in where the ledger holds personal data (§1)?
+- [ ] If the ledger is segmented (epochs, daily partitions, rotated files), does the first record of each segment chain to the previous segment's head **and** the verifier carry its running hash across the boundary — demonstrated against a fixture with one whole interior segment removed (§1)?
+- [ ] Is the hash preimage a **named** canonicalization (RFC 8785 or a written encoder spec) rather than a default JSON/map serializer, pinned by a committed known-answer vector that every verifier implementation reproduces byte-for-byte (§1)?
+- [ ] Is a TEE/confidential-computing control proposed to fix a **completeness** gap ("records that were never emitted")? That is a liveness failure and sits outside the CC guarantee — the fix is a separate completeness attestation at a vantage the monitored component does not control (§1).
 - [ ] **Are signed exchanges signed in both directions, with nonce and timestamp checked, the
       peer key obtained out of band, and replays keyed on the message rather than the
       signature (§2)?** HIGH when a signature is the replay or idempotency key:

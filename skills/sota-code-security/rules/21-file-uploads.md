@@ -47,6 +47,7 @@ user-content origin — stays in [rules/05](05-web-security.md) §6 and [rules/2
 
 ## Audit checklist
 
-- [ ] Are uploads content-validated, renamed server-side, stored non-executable (ideally separate origin), size-capped pre-buffer, and served with nosniff + attachment disposition?
-- [ ] Are SVGs sanitized or never served inline from the app origin?
-- [ ] **Per-directory execution overrides — HIGH on upload paths**: `grep -rnEi -- "AllowOverride[[:space:]]+(All|FileInfo|Options)|overrideMode=['\"]Allow|accessPolicy=['\"][^'\"]*(Script|Execute)" .`; upload volume mounted `noexec,nosuid,nodev`?
+- [ ] Are uploads content-validated (magic bytes or a real decoder; an extension allowlist that rejects double extensions, leading/repeated/trailing dots, leading hyphens, spaces and NUL), renamed server-side, stored non-executable outside the web root (ideally separate origin), size-capped pre-buffer with a per-request file count, rate limit and per-user quota on an authenticated, authorized endpoint, and served with nosniff + attachment disposition and a server-set `filename*=UTF-8''…` download name (§1)?
+- [ ] Are SVGs sanitized or never served inline from the app origin (§1)?
+- [ ] **Per-directory execution overrides — HIGH on upload paths**: `grep -rnEi -- "AllowOverride[[:space:]]+(All|FileInfo|Options)|overrideMode=['\"]Allow|accessPolicy=['\"][^'\"]*(Script|Execute)" .`; upload volume mounted `noexec,nosuid,nodev`, files written `0640`/`0440` (§1)?
+- [ ] **Upload processing and retention (§1) — MEDIUM, HIGH when public uploads reach an unsandboxed image decoder**: are images decoded in a sandboxed least-privilege worker with a pixel-count cap before decode, EXIF/GPS stripped from re-served images (upload a GPS-tagged JPEG, download it, and `exiftool -gps:all` prints nothing), archives refused where the feature needs none, shared files AV/CDR-scanned with current definitions, and each completion logged with uploader, stored name and detected type? Each hit of `grep -rniE "virustotal\.com/(api|vtapi)|api\.metadefender\.com|hybrid-analysis\.com/api" .` that submits user files to a public multi-scanner is a finding.

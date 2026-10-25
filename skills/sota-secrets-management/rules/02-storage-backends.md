@@ -290,7 +290,7 @@ between handle only ciphertext and plaintext exists solely inside the consumer.
 
 ## Audit checklist
 
-- [ ] Backend matches the decision table; no custom/homegrown secret stores; no secrets in
+- [ ] Backend matches the decision table (§1); no custom/homegrown secret stores; no secrets in
       Consul/Redis/plain DB columns.
 - [ ] Terraform/Pulumi state not in VCS; state backend encrypted and access-controlled;
       write-only/ephemeral used for new secret-bearing resources.
@@ -300,9 +300,9 @@ between handle only ciphertext and plaintext exists solely inside the consumer.
       an offline break-glass path that alerts on use (§2; restore scope: [`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) §7.4.1).
 - [ ] Cloud secret managers: per-secret per-principal IAM (no wildcard access), native or
       scheduled rotation, audit/data-access logs enabled and alerted.
-- [ ] SOPS: per-env keys in `.sops.yaml`, encrypted_regex for k8s, age/KMS private keys never in
+- [ ] SOPS (§4): per-env keys in `.sops.yaml`, encrypted_regex for k8s, age/KMS private keys never in
       repo; decryption happens in controller, not CI artifacts.
-- [ ] Kubernetes: etcd encryption at rest, secrets RBAC tightened, no real `Secret` manifests in
+- [ ] Kubernetes (§5): etcd encryption at rest, secrets RBAC tightened, no real `Secret` manifests in
       git; ESO/CSI/Vault-agent used; secret volumes `0400`, read-only, and no `subPath` mounts
       on rotating secrets.
 - [ ] No secrets in Dockerfile ENV/ARG, image layers, compose files, systemd `Environment=`, or
@@ -318,6 +318,6 @@ between handle only ciphertext and plaintext exists solely inside the consumer.
       rotate, invocable only by the secret manager (§3).
 - [ ] Where the store or relay is outside the trust boundary, secrets are encrypted to the
       consumer's key and that private key is itself sealed or identity-bound (§8).
-- [ ] Secrets wrapped in redacting types; debug/heap-dump endpoints disabled in prod; core
+- [ ] Secrets wrapped in redacting types; (§7) secrets not stashed on long-lived global config objects; debug/heap-dump endpoints disabled in prod; core
       dumps disabled for key-holding processes; long-lived keys zeroized where the runtime
       permits.
