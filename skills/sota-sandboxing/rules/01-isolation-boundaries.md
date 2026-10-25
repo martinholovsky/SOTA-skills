@@ -154,6 +154,8 @@ the correct amount for untrusted code is zero (broker pattern, `04`).
 
 ## 4. Reference stacks (known-good compositions)
 
+*(advisory)* — worked starting-point compositions; the rules they assemble are probed by the layer, boundary-floor and secrets items.
+
 Use these as starting points; each line is an independent layer per R1.2.
 
 ### Stack A — public code-execution service (untrusted code, multi-tenant)
@@ -237,27 +239,33 @@ finding (Medium).
 ## Audit checklist
 
 - [ ] Workload classified (untrusted code / untrusted input / multi-tenant) and the
-      chosen boundary meets the floor in the decision table.
+      chosen boundary meets the floor in the decision table; an in-process isolate,
+      WASM engine or language jail (rank 7) is never the sole boundary for untrusted
+      code (§2).
 - [ ] Privileges derived from an explicit needs-list; allowlist, not blocklist, at
-      every layer (syscalls, files, network, capabilities).
+      every layer (syscalls, files, network, capabilities) (§1).
 - [ ] At least two *independent* layers between untrusted execution and the crown
-      jewels; documented "what does the attacker hold if layer N falls?"
+      jewels; documented "what does the attacker hold if layer N falls?" (§1)
 - [ ] All holes through the boundary inventoried: mounts, sockets, device nodes,
-      shared memory, env vars, tokens, metadata endpoints.
-- [ ] Sandbox setup fails closed (workload aborts if any layer can't be applied).
+      shared memory, env vars, tokens, metadata endpoints (§1).
+- [ ] Sandbox setup fails closed (workload aborts if any layer can't be applied);
+      no design doc waives the sandbox because input is validated, or waives
+      validation because a sandbox exists (§1).
 - [ ] Sandboxes are per-trust-domain and ephemeral; no reuse across users/tenants.
 - [ ] No secrets, cloud credentials, or metadata service reachable from inside.
 - [ ] Untrusted workloads scheduled away from control-plane/secrets workloads.
 - [ ] No anti-pattern from §6 present; any boundary downgrade has a written,
       dated risk acceptance.
 - [ ] In-sandbox denial probe exists and runs in CI; fail-closed behavior
-      chaos-tested; runtime state matches the spec (CapEff/Seccomp/NoNewPrivs
-      inspected, not assumed).
+      chaos-tested within the last year; runtime state matches the spec
+      (CapEff/Seccomp/NoNewPrivs inspected, not assumed) (§5).
 - [ ] The probe has an **allow arm** as well as its denial arms — the real
       workload completes inside the real policy, so a sandbox that denies
       everything cannot pass CI (R5.1b).
 - [ ] Side-channel posture documented for cross-tenant confidentiality (SMT,
-      core scheduling, memory dedup disabled where required).
+      core scheduling, memory dedup disabled where required); mutually distrusting
+      tenants with secrets on both sides sit on ranks 1–3 (dedicated hardware, VM,
+      microVM) unless a shared-kernel placement has a recorded risk acceptance (§2).
 - [ ] **High** — Model inference runs as its own isolated workload at the floor
       for its weights format: code-bearing loads put it in class A (§3 B):
       `grep -rnE 'trust_remote_code[[:space:]]*=[[:space:]]*True|weights_only[[:space:]]*=[[:space:]]*False|TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD' .`

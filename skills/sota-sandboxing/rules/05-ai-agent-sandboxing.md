@@ -428,29 +428,30 @@ where they coexist. Rate it with the chain named leg by leg ([`sota/rules/03`](.
       A probe that tests only a named rogue resolver passes a sandbox whose own resolver
       recurses to the internet; a curl exit 7 there means the name resolved.
 - [ ] All model-generated code executes in ≥ gVisor-grade sandbox (microVM
-      preferred), ephemeral per session, never shared across users/trust domains.
+      preferred), ephemeral per session, never shared across users/trust domains (§1).
 - [ ] Lethal-trifecta map exists per agent: private-data access, untrusted-content
       exposure, egress — at least one leg removed or gated by approval; any agent
-      with all three flagged Critical.
-- [ ] Sandbox interior contains zero secrets: no env keys, no orchestrator/LLM
-      credentials, no `~/.aws`/`.ssh`/dotfiles, metadata endpoint blocked; verified
-      by running a secret-hunting probe inside, not by reading the spec.
+      with all three flagged Critical (§1).
+- [ ] Sandbox interior contains zero secrets: no env keys, orchestrator/LLM credentials,
+      `~/.aws`/`.ssh`/dotfiles, SSH agent socket or host mount beyond the job workspace; metadata
+      endpoint blocked; verified by a secret-hunting probe run inside, not by reading the spec (§2).
 - [ ] Sandbox cannot write to anything the orchestrator later executes or trusts
-      (agent config, hooks, CI definitions) without human approval.
-- [ ] Network: default-deny egress; FQDN allowlist via proxy or CNI; metadata +
-      RFC1918 + raw-IP + unapproved-DNS blocked; proxy logs retained.
-- [ ] Tools are narrow validated verbs with server-side authz; no generic
-      exec/HTTP/SQL tool reachable without sandbox + approval; tool args
-      canonicalized (paths beneath workspace, URLs against allowlist).
+      (agent config, hooks, CI definitions) without human approval (§2).
+- [ ] Network: default-deny egress; FQDN allowlist via proxy or CNI, enforced by the netns route
+      (not `HTTPS_PROXY`); metadata, RFC1918, raw-IP, unapproved DNS blocked; proxy logs kept (§4).
+- [ ] Tools are narrow validated verbs with server-side authz; no generic exec/HTTP/SQL tool without
+      sandbox + approval; args canonicalized (paths beneath workspace, URLs against allowlist);
+      `.env`/`*.pem` denied in the workspace too; checked-in agent config treated as untrusted code;
+      remote MCP servers require OAuth; tool definitions hash-pinned (re-approve on change) (§3).
 - [ ] Per-agent short-lived least-privilege identities; revocation kill-switch
-      tested; sub-agent scope monotonically shrinks.
+      tested; sub-agent scope monotonically shrinks (§3).
 - [ ] Human approval on irreversible/external/spend actions, showing the raw
-      action, not a model summary.
+      action, not a model summary (§3).
 - [ ] Limits enforced on every run: wall-clock kill, memory/CPU/pids, output size,
-      tool-call/token/spend caps.
-- [ ] Tool/sandbox outputs treated as untrusted on re-entry (size caps, schema
-      validation, injection-aware prompting); browser agents use credential-free
-      profiles in their own sandbox.
+      tool-call/token/spend and sub-agent depth/fan-out caps (§4).
+- [ ] Tool/sandbox outputs and cross-agent messages are untrusted on re-entry (size caps, schema
+      validation, injection-aware prompting); browser agents get credential-free profiles in their
+      own sandbox, downloads untrusted; no process or filesystem shared with the orchestrator (§6).
 - [ ] Append-only action log outside the sandbox with denied-action alerting;
       MCP/third-party tool servers inventoried, pinned, and scope-reviewed.
 - [ ] **High** — Locally launched MCP servers run in their own sandbox, not bare on
@@ -495,3 +496,5 @@ where they coexist. Rate it with the chain named leg by leg ([`sota/rules/03`](.
       or target, admin-level calls, call rate, failed-call bursts, injection
       detections per session, high-risk-action share, and human approval drift
       (rubber-stamping, repeated bypass attempts), each mapped to an R4.5 step (R4.4).
+- [ ] **High** — Sandbox package installs use a pre-baked image or allowlisted mirror (§2, R2.4):
+      no hit from `grep -rnE '(^|[[:space:]])(--)?index-url|PIP_INDEX_URL|^[[:space:]]*registry[[:space:]]*=|NPM_CONFIG_REGISTRY' .` where `pip`/`npm install` runs means the public index; each `grep -rnE 'extra-index-url|PIP_EXTRA_INDEX_URL' .` hit adds one — a finding; confirm the netns reaches only the mirror.

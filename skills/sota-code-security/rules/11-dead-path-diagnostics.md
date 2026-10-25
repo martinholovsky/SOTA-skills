@@ -279,6 +279,8 @@ the same arithmetic from the other end.
 
 ## 3. Five classes [rules/10](10-silent-control-failure.md) does not cover
 
+*(audited in [rules/13](13-context-dependent-silence.md))* — a pointer stub; the five classes and their checklist items live in rules/13.
+
 Moved to [`rules/13`](13-context-dependent-silence.md) — scale-dependent silence,
 stale-artifact no-ops, format assumptions generalised from one sample, contract
 drift at an undeclared seam, and location-dependent silence. §2's diagnostics are
@@ -413,6 +415,10 @@ unvalidated instrument is not yet a finding.
 
 ## Audit checklist
 
+- [ ] For every stage, gate, job and query whose valid result can be empty (`0 results`,
+      `exit 0`, an empty list, `None`), name the evidence that separates "ran and found
+      nothing" from "never ran" — a count, a denominator, a duration or an execution
+      marker (§1)? None is a finding, HIGH on a security gate, whether or not it has fired yet.
 - [ ] **Duration recorded per stage** and compared against the work claimed —
       any stage returning "nothing found" far faster than its claimed work allows
       flagged, with the measured seconds and input size (§2.1)?
@@ -470,5 +476,5 @@ unvalidated instrument is not yet a finding.
       the component such filters tend to exclude.
 - [ ] **Every collection a suite iterates has a non-empty assertion** — without one an
       empty parameter set reports SKIPPED and the suite passes vacuously.
-- [ ] The tools that produced these findings held to the same standard —
-      mutation probe (**[rules/12](12-verifying-the-verifier.md)**), instrument bar and guard recursion (**[rules/15](15-instruments-and-guards.md)**) (§7)?
+- [ ] The tools that produced these findings held to the same standard (§7) —
+      mutation probe (**[rules/12](12-verifying-the-verifier.md)**), instrument bar and guard recursion (**[rules/15](15-instruments-and-guards.md)**), with no finding quoted from an instrument not yet validated?

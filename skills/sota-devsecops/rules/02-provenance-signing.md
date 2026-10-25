@@ -324,17 +324,18 @@ read it — unnecessary in jobs that never push.
 
 ## Audit checklist
 
-- [ ] Released artifacts have build provenance (SLSA L2+; L3 for shipped software: attestations generated in an isolating reusable workflow and verified with `--signer-workflow` — attestations alone are L2; `slsa-github-generator` is unmaintained)
-- [ ] Provenance/signatures are over **digests**, generated outside user-controlled build steps, stored with the artifact
-- [ ] Signing is keyless (Fulcio/Rekor) or KMS-backed; no signing keys in CI secrets
+- [ ] Released artifacts have build provenance (SLSA L2+; L3 for shipped software: attestations generated in an isolating reusable workflow and verified with `--signer-workflow` — attestations alone are L2; `slsa-github-generator` is unmaintained); none on deployed artifacts = Medium, High with mutable tags or shared registry push credentials (§2.1)
+- [ ] Provenance/signatures are over **digests**, generated outside user-controlled build steps, stored with the artifact (§2.2)
+- [ ] Signing is keyless (Fulcio/Rekor) or KMS-backed; no signing keys in CI secrets; the cosign version is pinned in CI; transparency logging is not switched off outside a documented air-gapped/private-Sigstore setup (§2.3), Medium: `find . -type f \( -name '*.yml' -o -name '*.yaml' -o -name '*.sh' -o -name Makefile \) -not -path './.git/*' -print0 | xargs -0 -r grep -H -n -E -e '--tlog-upload(=|[[:space:]]+)false|--insecure-ignore-tlog([[:space:]]|=true|$)'` prints nothing
 - [ ] Every signature/attestation has a named, fail-closed verifier (admission policy, CD verify, or promotion verify) with **exact** certificate identity + issuer — no wildcard identities
+- [ ] **Verifier anti-patterns swept (§2.9), High:** `find . -type f \( -name '*.yml' -o -name '*.yaml' -o -name '*.sh' -o -name Makefile \) -not -path './.git/*' -print0 | xargs -0 -r grep -H -n -E -e '--certificate-identity-regexp[= ]+.{0,2}(\.\*|https://github\\?\.com/[A-Za-z0-9_.-]+/\.\*)'` prints nothing (`.*` or a whole-org regexp), and the same file list with `-e 'gh attestation verify'` piped to `grep -v -E -e '--signer-(workflow|repo)'` prints nothing (a hit whose flags continue on the next line is read by hand). The other anti-patterns listed there are the signing-key, tag-triggered-publish, checksum and `persist-credentials` items
 - [ ] **Signing input bound to its producer (§2.5.2) — CRITICAL** — an artifact picked by name
       or newest-first, then signed or published: `printf 'artifact_by_name=%s producer_checked=%s\n' "$(grep -rlE 'actions/artifacts\?name=|sort_by\(\.created_at\)|download-artifact' .github/workflows | wc -l | tr -d ' ')" "$(grep -rlE 'head_repository\.full_name' .github/workflows | wc -l | tr -d ' ')"`
       — a workflow that signs or publishes with `artifact_by_name` hits and no producer check
       (`workflow_run.head_repository.full_name` compared per artifact) = CRITICAL
-- [ ] SBOM and (where used) scan results attached as in-toto attestations bound to the digest
+- [ ] SBOM and (where used) scan results attached as in-toto attestations bound to the digest; each attached predicate type is required by a named policy — an attestation nobody verifies = Medium (§2.4)
 - [ ] Package publishing uses trusted publishers / OIDC provenance; no classic registry tokens in secrets; publish workflow is tag-triggered + environment-gated
 - [ ] **No standing registry token on developer machines (§2.6), Medium:** `grep -n -E '_authToken=[^$]' ~/.npmrc` is empty (a literal token, not a `${VAR}` reference); `npm token list` shows only package-scoped, expiring, CIDR-bound tokens, read-only unless they publish
 - [ ] **Publishing maintainers use write-covering 2FA (§2.6), High:** for each maintainer, `npm profile get --json | jq -r 'if (.tfa and (.tfa.pending | not)) then .tfa.mode else "disabled" end'` prints `auth-and-writes`; packages with trusted publishing set "Require two-factor authentication and disallow tokens"; recovery codes stored offline
-- [ ] Release tags protected; releases immutable; checksums signed; install paths verify before executing
-- [ ] Deployed-digest → source-SHA → build-run traceability exists and is queryable
+- [ ] Release tags protected; releases immutable; checksums signed; install paths verify before executing; release tags signed and verified before the build where the threat model includes repo-write compromise; build/release checkouts set `persist-credentials: false` (§2.7)
+- [ ] Deployed-digest → source-SHA → build-run traceability exists and is queryable; the binary or its version endpoint reports its source SHA (§2.8)

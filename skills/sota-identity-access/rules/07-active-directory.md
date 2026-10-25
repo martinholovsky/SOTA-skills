@@ -237,19 +237,19 @@ a cloud compromise (and vice-versa):
 
 ## Audit checklist
 
-- [ ] Is a **tier-0 / Enterprise Access Model** boundary defined and enforced (DCs, `krbtgt`, Domain/Enterprise Admins, ADCS CAs, sync servers), with **no higher-tier credential exposed on a lower-tier host** (PAWs + `Deny log on` + auth silos)?
-- [ ] Any **unconstrained delegation** outside DCs? (Hunt `userAccountControl` for `TRUSTED_FOR_DELEGATION` — should be DCs only.)
-- [ ] Is **constrained delegation** tightly scoped, protocol-transition avoided, and **who can write `msDS-AllowedToActOnBehalfOfOtherIdentity` (RBCD)** restricted?
-- [ ] Are sensitive/admin accounts marked **`Account is sensitive and cannot be delegated`** or in **Protected Users**?
-- [ ] Do service accounts use **gMSA/dMSA** (randomized keys) or, failing that, **AES-only** encryption and 25+ char rotated passwords? Are there **SPNs on privileged user accounts** (Kerberoast bait) or stale/duplicate SPNs?
-- [ ] Any account with **Kerberos pre-auth disabled** (`DONT_REQ_PREAUTH`, AS-REP roastable)? Any **RC4 (etype 23)** still permitted where AES is feasible — after CVE-2026-20833, any `msDS-SupportedEncryptionTypes` including RC4 or a `DefaultDomainSupportedEncTypes` override on a DC, and any KDCSVC 201–209 events?
-- [ ] Is **NTLM audited and restricted** (NTLMv1 disabled), and are **SMB signing — inbound on servers, not only the Server 2025 outbound default** — and **LDAP signing + channel binding (EPA)** enforced (Server 2025 defaults confirmed, channel binding set beyond *When supported* where possible)?
-- [ ] Is **`ms-DS-MachineAccountQuota` set to 0** (default 10)?
-- [ ] ADCS: any **auth template allowing enrollee-supplied subject** (ESC1), broad **Enroll** to Domain/Authenticated Users, weak **template/CA ACLs** (ESC4), `EDITF_ATTRIBUTESUBJECTALTNAME2` (ESC6), exposed **web enrollment without HTTPS+EPA** (ESC8), or a CA not enforcing RPC request encryption (ESC11, `IF_ENFORCEENCRYPTICERTREQUEST`)?
-- [ ] Are **enrollment agents restricted** by template/target, and is the **CA key HSM-protected** and CA admin tier-0?
-- [ ] Is **strong certificate mapping (KB5014754)** enforced — SID extension embedded, Full Enforcement in effect (post-Feb/Sep-2025 timeline), no weak `altSecurityIdentities` mappings?
-- [ ] Is **Windows LAPS** (not the deprecated legacy MSI) deployed to randomize/rotate local admin passwords, with encryption + history?
-- [ ] Are **Credential Guard** and **authentication policies/silos** enabled for privileged accounts/hosts?
-- [ ] Is **`krbtgt` rotated on a cadence and twice on suspected compromise** (rotations spaced beyond max ticket lifetime)? A never-rotated `krbtgt` is a finding.
-- [ ] Is the **directory-sync host + connector account treated as tier-0**, and is the **PHS/PTA/federation** choice deliberate, documented, and consistent with the tiering model?
-- [ ] Any remaining **legacy Azure AD Graph API** dependencies, and is anomalous **Graph/actor-token** activity alerted on (CVE-2025-55241 class)?
+- [ ] Is a **tier-0 / Enterprise Access Model** boundary defined and enforced (DCs, `krbtgt`, Domain/Enterprise Admins, ADCS CAs, sync servers), with **no higher-tier credential exposed on a lower-tier host** (PAWs + `Deny log on` + auth silos)? (§1)
+- [ ] Any **unconstrained delegation** outside DCs? (Hunt `userAccountControl` for `TRUSTED_FOR_DELEGATION` — should be DCs only.) (§2)
+- [ ] Is **constrained delegation** tightly scoped, protocol-transition avoided, and **who can write `msDS-AllowedToActOnBehalfOfOtherIdentity` (RBCD)** restricted? (§2)
+- [ ] Are sensitive/admin accounts marked **`Account is sensitive and cannot be delegated`** or in **Protected Users**? (§2, §4)
+- [ ] Do service accounts use **gMSA/dMSA** (randomized keys) or, failing that, **AES-only** encryption and 25+ char rotated passwords? Are there **SPNs on privileged user accounts** (Kerberoast bait) or stale/duplicate SPNs? (§2)
+- [ ] Any account with **Kerberos pre-auth disabled** (`DONT_REQ_PREAUTH`, AS-REP roastable)? Any **RC4 (etype 23)** still permitted where AES is feasible — after CVE-2026-20833, any `msDS-SupportedEncryptionTypes` including RC4 or a `DefaultDomainSupportedEncTypes` override on a DC, and any KDCSVC 201–209 events? (§2)
+- [ ] Is **NTLM audited and restricted** (NTLMv1 disabled), and are **SMB signing — inbound on servers, not only the Server 2025 outbound default** — and **LDAP signing + channel binding (EPA)** enforced (Server 2025 defaults confirmed, channel binding set beyond *When supported* where possible)? (§2)
+- [ ] Is **`ms-DS-MachineAccountQuota` set to 0** (default 10)? (§2)
+- [ ] ADCS: any **auth template allowing enrollee-supplied subject** (ESC1), broad **Enroll** to Domain/Authenticated Users, weak **template/CA ACLs** (ESC4), `EDITF_ATTRIBUTESUBJECTALTNAME2` (ESC6), exposed **web enrollment without HTTPS+EPA** (ESC8), or a CA not enforcing RPC request encryption (ESC11, `IF_ENFORCEENCRYPTICERTREQUEST`)? (§3)
+- [ ] Are **enrollment agents restricted** by template/target, and is the **CA key HSM-protected** and CA admin tier-0? (§3)
+- [ ] Is **strong certificate mapping (KB5014754)** enforced — SID extension embedded, Full Enforcement in effect (post-Feb/Sep-2025 timeline), no weak `altSecurityIdentities` mappings? (§3)
+- [ ] Is **Windows LAPS** (not the deprecated legacy MSI) deployed to randomize/rotate local admin passwords, with encryption + history? (§4)
+- [ ] Are **Credential Guard** and **authentication policies/silos** enabled for privileged accounts/hosts? (§4)
+- [ ] Is **`krbtgt` rotated on a cadence and twice on suspected compromise** (rotations spaced beyond max ticket lifetime)? A never-rotated `krbtgt` is a finding. (§4)
+- [ ] Is the **directory-sync host + connector account treated as tier-0**, and is the **PHS/PTA/federation** choice deliberate, documented, and consistent with the tiering model? (§5)
+- [ ] Any remaining **legacy Azure AD Graph API** dependencies, and is anomalous **Graph/actor-token** activity alerted on (CVE-2025-55241 class)? (§5)

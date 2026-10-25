@@ -281,19 +281,19 @@ token; [rules/01](01-lifecycle-and-workload-identity.md) §4) and treat any resi
 
 ## Audit checklist
 
-- [ ] DB access uses IAM auth or dynamic creds where supported; static passwords rotate via
+- [ ] DB access uses IAM auth or dynamic creds where supported; (§1) static passwords rotate via
       dual users; app DB users least-privilege; no DSNs with userinfo in code/logs; TLS to DB.
-- [ ] API keys: per-service per-env, vendor-side restricted, test keys in non-prod/CI, ≤90d
+- [ ] API keys (§2): per-service per-env, vendor-side restricted, test keys in non-prod/CI, ≤90d
       rotation, none in client-shipped code; webhook signatures constant-time + dual-secret +
       replay-protected.
-- [ ] Signing keys non-exportable in KMS/HSM (or Sigstore keyless); one key per purpose;
+- [ ] Signing keys (§3) non-exportable in KMS/HSM (or Sigstore keyless); one key per purpose;
       verification material published/versioned; signing operations audit-logged.
 - [ ] TLS: ACME automation, ≤90d certs, keys generated in place, `0400`, no key files in
       repos/images/build contexts; internal mTLS via private CA; no disabled cert verification.
-- [ ] SSH: Ed25519 per-person per-device or SSH CA certs; `authorized_keys` inventoried and
+- [ ] SSH (§5): Ed25519 per-person per-device or SSH CA certs; `authorized_keys` inventoried and
       pruned on offboarding; no private keys in repos/images; no unrestricted CI SSH keys;
       agent forwarding off.
-- [ ] JWT: asymmetric alg for multi-verifier setups, algorithm pinned, no `none`/confusion
+- [ ] JWT (§6): asymmetric alg for multi-verifier setups, algorithm pinned, no `none`/confusion
       paths, `kid`-based JWKS rotation with refresh-on-unknown-`kid`, ≤15m access-token TTL,
       no JWT secrets with defaults, no real JWTs in fixtures.
 - [ ] Field/object encryption uses KMS envelope (wrapped DEKs, encryption context, maintained

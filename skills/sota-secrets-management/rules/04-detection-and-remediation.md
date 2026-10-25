@@ -272,6 +272,8 @@ chain).
 
 ## 6. Audit sweep quick reference
 
+*(advisory)*
+
 Condensed from SKILL.md AUDIT mode — the grep set when tools aren't available:
 
 ```bash
@@ -344,7 +346,7 @@ inventory that does not name the transcript path = **Medium**.
 
 - [ ] gitleaks (or equivalent) pre-commit hook in `.pre-commit-config.yaml` and documented in
       dev setup; custom rules cover internal token prefixes.
-- [ ] Blocking CI secret-scan on every PR; scheduled full-history scan; built images scanned;
+- [ ] Blocking CI secret-scan on every PR; (§2) scheduled full-history scan; built images scanned;
       scanner output redacted.
 - [ ] **Every gate described as a working-tree scan really reads uncommitted files** — it is
       `gitleaks dir` or `--no-git`, not `gitleaks git` / `detect --source .`, which scan commits
@@ -375,13 +377,13 @@ inventory that does not name the transcript path = **Medium**.
 - [ ] **Detector set covers every secret class held (§1)** and tests use one standard fake
       per type — Medium. A gitleaks config with no custom rule for your own formats:
       `grep -q '^\[\[rules\]\]' .gitleaks.toml || echo 'no custom [[rules]] (or no .gitleaks.toml)'`
-- [ ] Past incidents: history actually rewritten (filter-repo + force-push + re-clone), forks/
+- [ ] Past incidents: (§4) history actually rewritten (filter-repo + force-push + re-clone), forks/
       PR quotes/CI logs scrubbed, full-history rescan clean, and the leaked values rotated.
 - [ ] Legacy-repo adoption used a triaged baseline (live findings rotated first); baseline file
       reviewed like code and shrinking over time.
 - [ ] Non-git leak surfaces (CI logs, chat, issue/error trackers) covered by the runbook with
       retention/scrub procedures.
-- [ ] Honeytokens planted in at least repos + CI + one backup surface; register maintained
+- [ ] Honeytokens (§5) planted in at least repos + CI + one backup surface; register maintained
       out-of-band; alerts route to incident response and have been test-fired.
 - [ ] No audit practice involves invoking discovered credentials against providers without
       explicit owner permission.

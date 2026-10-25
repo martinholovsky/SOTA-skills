@@ -15,6 +15,8 @@ registry's own posture.
 
 ## 8.1 The trust-anchor model — why this is tier-0
 
+*(advisory)* The model and its severity tiers; each of its three properties is probed by the §8.2, §8.3 and §8.6 items.
+
 - The registry sits on the critical path of every deploy. Compromise it and you do not need to
   compromise CI, source, or the cluster: you change what the cluster *pulls*. This is the same
   authority as repo-write or CI-secret theft, often with worse detection (no PR, no audit trail).
@@ -237,6 +239,8 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
 
 ## 8.8 Product notes (brief — verify current at use)
 
+*(advisory)* Per-product facts to verify at use; the controls they inform are probed by the §8.2–§8.7 items.
+
 - **Zot** (latest stable — verify at github.com/project-zot/zot/releases): OCI-native, minimal,
   no DB. `accessControl` with `repositories`/`anonymousPolicy`/`defaultPolicy`/`policies`/
   `adminPolicy`; OIDC/LDAP/bearer/mTLS auth; workload-identity OIDC for secretless CI; **sync**
@@ -262,30 +266,30 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
 
 Hunt patterns in brackets.
 
-- [ ] **No anonymous push**, and no anonymous pull on any instance holding private images
+- [ ] **No anonymous push** (§8.2), and no anonymous pull on any instance holding private images
   [grep config for `anonymousPolicy` non-empty / missing auth; commented-out `accessControl`/auth
   mount; `0.0.0.0` bind with no `auth` block]
-- [ ] Auth is OIDC/token/mTLS, not bare htpasswd; CI/robot accounts are **per-repo, expiring,
+- [ ] Auth is OIDC/token/mTLS, not bare htpasswd (§8.2); CI/robot accounts are **per-repo, expiring,
   non-admin**; push and pull identities are separate [shared read-write cred used by nodes and CI]
-- [ ] Humans cannot push to release/promoted repos; CI is the sole writer there
-- [ ] **Immutable tags** enabled where supported (Harbor rules / ECR `IMMUTABLE` / GAR setting /
+- [ ] Humans cannot push to release/promoted repos; CI is the sole writer there (§8.2)
+- [ ] **Immutable tags** (§8.3) enabled where supported (Harbor rules / ECR `IMMUTABLE` / GAR setting /
   ACR lock); release tags are not re-pushable [try re-pushing an existing release tag in staging]
-- [ ] Consumers **pin digests**, not tags (enforced at admission by [sota-kubernetes](../../sota-kubernetes/SKILL.md))
+- [ ] Consumers **pin digests** (§8.3), not tags (enforced at admission by [sota-kubernetes](../../sota-kubernetes/SKILL.md))
   [`:latest` or bare mutable tags in deploy manifests]
-- [ ] Signatures/SBOM/scan **attestations stored** with the image via OCI referrers, and a named
+- [ ] Signatures/SBOM/scan **attestations stored** (§8.3) with the image via OCI referrers (the registry answers `/v2/<name>/referrers/<digest>`), no Notary v1/DCT signing left, and a named
   verifier exists ([rules/02](02-provenance-signing.md) + [sota-kubernetes](../../sota-kubernetes/SKILL.md)) [signing present, zero verification]
-- [ ] **Scan-on-push + continuous re-scan**; failing images quarantined/unpullable for prod, not
+- [ ] **Scan-on-push + continuous re-scan** (§8.4); failing images quarantined/unpullable for prod, not
   just dashboarded [scanner enabled but no block/quarantine policy]
 - [ ] Upstream pulls go through a **pull-through cache**; internal image names cannot fall through
   to public (image-layer dependency confusion); allowed-registries enforced ([sota-kubernetes](../../sota-kubernetes/SKILL.md))
   [direct `docker.io/...` pulls in manifests; proxy fall-through for internal namespaces]
 - [ ] **Proxy contents verified; malicious versions purged (§8.5), High:** clients verify hashes/signatures from sources other than the proxy (no `GOSUMDB=off`); for each cached package version, `curl -s -d '{"package":{"name":"<pkg>","ecosystem":"npm"},"version":"<ver>"}' https://api.osv.dev/v1/query | jq -r '.vulns[]?.id | select(startswith("MAL-"))'` prints nothing, and any hit is deleted and blocked at the proxy
-- [ ] Retention/GC **excludes digests referenced by running workloads** + release artifacts +
-  their attestations [tag-age GC with no live-digest exclusion → ImagePullBackOff risk]
-- [ ] Registry is **HA + backed up + restore-tested**; treated as tier-0 [single copy of release
+- [ ] Retention/GC (§8.6) **excludes digests referenced by running workloads** + release artifacts +
+  their attestations, and GC runs in the registry's supported maintenance mode, not as ad-hoc blob deletion [tag-age GC with no live-digest exclusion → ImagePullBackOff risk]
+- [ ] Registry is **HA + backed up + restore-tested** (§8.6), metadata DB and blob store backed up together; treated as tier-0 [single copy of release
   artifacts, no tested restore]
-- [ ] **Not internet-exposed while anonymous**; **TLS** on; no `--insecure-registry`; no
+- [ ] **Not internet-exposed while anonymous** (§8.7); **TLS** on; no `--insecure-registry`; no
   `hostNetwork` unless required; reachability restricted ([sota-network-security](../../sota-network-security/SKILL.md)) and workload
   hardened ([sota-sandboxing](../../sota-sandboxing/SKILL.md)) [public IP + port 5000 + no auth; `hostNetwork: true`]
-- [ ] Registry config rendered from reviewed source; startup **fails closed** if auth/accessControl
-  is absent on a non-public registry [config drift between repo and running instance]
+- [ ] Registry config (§8.7) rendered from reviewed source; startup **fails closed** if auth/accessControl
+  is absent on a non-public registry, and an alert fires if the running config permits anonymous write [config drift between repo and running instance]

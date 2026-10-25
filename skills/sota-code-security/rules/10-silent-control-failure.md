@@ -90,6 +90,8 @@ is a specific way the answer comes out "no".
 
 ## 2. Where silent no-ops hide — moved to [`rules/16`](16-where-no-ops-hide.md)
 
+*(audited in [rules/16](16-where-no-ops-hide.md))* — a pointer stub; the catalogue and its checklist items live in rules/16.
+
 The catalogue of sixteen shapes (weak existence checks, degraded optional dependencies,
 swallowed exceptions, truncation into an inspector, the control that is not in force, a flag
 that parses, the aggregate that masks a detection) now lives in
@@ -272,9 +274,14 @@ what will that caller do instead*. Both answers belong in the commit that adds t
 - [ ] Mutation probe run on security-critical paths, and the instrument or guard
       that reported the result validated in turn — the whole of [rules/12](12-verifying-the-verifier.md) and [rules/15](15-instruments-and-guards.md)?
 - [ ] One shared degraded-control helper, deduped per cause, emitting log +
-      gauge + health state — not per-request warnings?
+      gauge + span/response attribute, with health/readiness reporting a distinct
+      `degraded` state and an alert when the gauge stays 1 past a deploy — not
+      per-request warnings (§3)?
 - [ ] Findings state what looks enabled, why it is inert, and a concrete
       failure scenario; loud failures excluded; deliberate fail-open
-      distinguished from silent bypass?
-- [ ] Every "nothing found" backed by a widened search and a second independent
-      method, with the search performed stated?
+      distinguished from silent bypass; every claimed fix backed by a regression
+      test watched to fail with the fix reverted (command and counts quoted), the
+      fixture checked before the code is called broken, and enforcement-changing
+      fixes presented as a decision, not applied silently (§4)?
+- [ ] Every "nothing found" stated per category and backed by a widened search and a
+      second independent method, with the search performed stated (§4)?

@@ -360,6 +360,8 @@ Platform and supply-chain notes (formerly section 5) moved to [rules/23](23-llm-
 
 ## 6. Audit grep starters
 
+*(advisory)* — a pattern list feeding the §1–§4 checklist items; it states no rule of its own.
+
 ```text
 f-string/template building prompts from request data with no data/instruction framing
 tools=|functions=|tool_choice passed where context includes fetched/retrieved content

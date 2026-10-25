@@ -260,26 +260,26 @@ refresh_token_lifetime  = "never"
 
 ## Audit checklist
 
-- [ ] Is the IdP run HA with a tested failover and a documented degraded-mode?
-- [ ] Is the identity store (and signing-key material) backed up encrypted, with restore tested?
-- [ ] Is the admin console network-restricted, MFA-gated with separate admin accounts, and immutably audit-logged?
-- [ ] Is there one client per app with exact redirect URIs and minimal scopes (no shared clients, no unused claims)?
-- [ ] Is Dynamic Client Registration disabled or authenticated+policy-gated?
-- [ ] Does each confidential client use `private_key_jwt` or mTLS rather than `client_secret_basic` where supported? Grep config for `client_secret_basic`/`token_endpoint_auth_method`.
-- [ ] Are no client secrets embedded in public (SPA/mobile) clients?
-- [ ] Are access tokens short-lived (≤~15m)?
-- [ ] Is refresh-token rotation enabled with reuse detection (family revocation), or are tokens sender-constrained (DPoP/mTLS)?
-- [ ] Are there any non-expiring / never-rotating refresh tokens? (High finding)
-- [ ] Do signing keys rotate on a schedule with `kid` overlap in the JWKS, using asymmetric algorithms?
-- [ ] Are idle and absolute SSO session timeouts set, with shorter caps for privileged sessions?
-- [ ] Is back-channel (or reliable) Single Logout configured so sign-out / disable ends sessions across all RPs?
-- [ ] Do third-party clients show informative, revocable consent, with high-scope apps admin-gated?
-- [ ] For brokered/upstream IdPs: is the issuer pinned, tokens fully validated, identities linked on a verified immutable id, and upstream group claims re-mapped (not trusted) into the local model?
-- [ ] When an upstream IdP, broker link, or client is disabled, is it tested that its login path fails closed (Keycloak CVE-2026-3047 / CVE-2026-2603 class), with unused IdP-initiated broker endpoints restricted?
-- [ ] **High** — Is an authorization code single-use, expiring within minutes (RFC 6749 recommends at most 10), with a second redemption refused and the tokens already issued from it revoked? Code lifetimes over 10 minutes: `grep -rniE '(auth(orization)?_?)?code_?(lifetime|lifespan|ttl|expir[a-z]*)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?([0-9]+[[:space:]]*[hd]|(1[1-9]|[2-9][0-9]|[0-9]{3,})[[:space:]]*m|(60[1-9]|6[1-9][0-9]|[7-9][0-9]{2}|[0-9]{4,})[[:space:]]*s?["'\'']?[[:space:]]*$)' .`
-- [ ] **High** — Is the workforce directory/IdP kept out of the authentication path of public and DMZ apps, and is any hosted IdP or MFA provider assessed as a tier-0 supplier, with a break-glass path that does not depend on it?
-- [ ] **High** — Does Dynamic Client Registration treat metadata as self-asserted (redirect and `*_uri` host checks, SSRF rules on fetched URLs, unverified-app consent), refuse client-chosen ids that can equal a user `sub`, and pin each client's `response_mode`? Anonymous registration or a wide-open `response_mode`: `grep -rniE '(anonymous|unauthenticated|open)_?(client_?)?registration["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled)|response_modes?["'\'']?[[:space:]]*[:=].*(fragment|["'\''][*]["'\'']|any)' .`
-- [ ] **Medium** — Is consent always prompted for public, dynamically registered or otherwise unauthenticated clients, and does each client request only the scopes the feature uses?
-- [ ] **High** — Can a signed token be revoked before `exp` where the risk needs it (Token Status List or introspection), are critical operations validated online, and is every use of a revoked token logged at critical severity and alerted? Revocation checks that never log: `grep -rlE '[Ii]s_?[Rr]evoked|[Rr]evoked[A-Za-z_]*\(|deny_?list|status_list' . | xargs -r grep -LE '(log|logger|logging|LOG|Log)\.[A-Za-z]+\(|audit|security_event'`
-- [ ] **High** — Does every back-channel logout endpoint validate the logout token (signature, `iss`, `aud`, `iat`, `exp` short, `typ` `logout+jwt`, `events` member, `sub`/`sid`, no `nonce`), does the OP confirm with the user when `id_token_hint` is missing or foreign, and is every session in the SSO chain inventoried with its lifetime and termination path? Logout-token handlers that never check the event member: `grep -rlE 'logout_token|logoutToken' . | xargs -r grep -LE 'schemas\.openid\.net/event/backchannel-logout'`
-- [ ] **Medium** — For each adopted SaaS tenant: are admins named and few, connected apps and data-sharing integrations inventoried with scope and owner and reviewed, and are tenant scripts, webhooks and custom apps security-reviewed before they run?
+- [ ] Is the IdP run HA with a tested failover and a documented degraded-mode? (§1)
+- [ ] Is the identity store (and signing-key material) backed up encrypted, with restore tested? (§1)
+- [ ] Is the admin console network-restricted, MFA-gated with separate admin accounts, and immutably audit-logged? (§1)
+- [ ] Is there one client per app with exact redirect URIs and minimal scopes (no shared clients, no unused claims)? (§2)
+- [ ] Is Dynamic Client Registration disabled or authenticated+policy-gated? (§2)
+- [ ] Does each confidential client use `private_key_jwt` or mTLS rather than `client_secret_basic` where supported? Grep config for `client_secret_basic`/`token_endpoint_auth_method`. (§3)
+- [ ] Are no client secrets embedded in public (SPA/mobile) clients? (§3)
+- [ ] Are access tokens short-lived (≤~15m)? (§4)
+- [ ] Is refresh-token rotation enabled with reuse detection (family revocation), or are tokens sender-constrained (DPoP/mTLS)? (§4)
+- [ ] Are there any non-expiring / never-rotating refresh tokens? (§4) (High finding)
+- [ ] Do signing keys rotate on a schedule with `kid` overlap in the JWKS, using asymmetric algorithms? (§5)
+- [ ] Are idle and absolute SSO session timeouts set, with shorter caps for privileged sessions? (§6)
+- [ ] Is back-channel (or reliable) Single Logout configured so sign-out / disable ends sessions across all RPs? (§6)
+- [ ] Do third-party clients show informative, revocable consent, with high-scope apps admin-gated? (§7)
+- [ ] For brokered/upstream IdPs: is the issuer pinned, tokens fully validated, identities linked on a verified immutable id, and upstream group claims re-mapped (not trusted) into the local model? (§8)
+- [ ] When an upstream IdP, broker link, or client is disabled, is it tested that its login path fails closed (Keycloak CVE-2026-3047 / CVE-2026-2603 class), with unused IdP-initiated broker endpoints restricted? (§8)
+- [ ] **High** — Is an authorization code single-use, expiring within minutes (RFC 6749 recommends at most 10), with a second redemption refused and the tokens already issued from it revoked? Code lifetimes over 10 minutes: `grep -rniE '(auth(orization)?_?)?code_?(lifetime|lifespan|ttl|expir[a-z]*)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?([0-9]+[[:space:]]*[hd]|(1[1-9]|[2-9][0-9]|[0-9]{3,})[[:space:]]*m|(60[1-9]|6[1-9][0-9]|[7-9][0-9]{2}|[0-9]{4,})[[:space:]]*s?["'\'']?[[:space:]]*$)' .` (§4)
+- [ ] **High** — Is the workforce directory/IdP kept out of the authentication path of public and DMZ apps, and is any hosted IdP or MFA provider assessed as a tier-0 supplier, with a break-glass path that does not depend on it? (§1)
+- [ ] **High** — Does Dynamic Client Registration treat metadata as self-asserted (redirect and `*_uri` host checks, SSRF rules on fetched URLs, unverified-app consent), refuse client-chosen ids that can equal a user `sub`, and pin each client's `response_mode`? Anonymous registration or a wide-open `response_mode`: `grep -rniE '(anonymous|unauthenticated|open)_?(client_?)?registration["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled)|response_modes?["'\'']?[[:space:]]*[:=].*(fragment|["'\''][*]["'\'']|any)' .` (§2)
+- [ ] **Medium** — Is consent always prompted for public, dynamically registered or otherwise unauthenticated clients, and does each client request only the scopes the feature uses? (§2, §7)
+- [ ] **High** — Can a signed token be revoked before `exp` where the risk needs it (Token Status List or introspection), are critical operations validated online, and is every use of a revoked token logged at critical severity and alerted? Revocation checks that never log: `grep -rlE '[Ii]s_?[Rr]evoked|[Rr]evoked[A-Za-z_]*\(|deny_?list|status_list' . | xargs -r grep -LE '(log|logger|logging|LOG|Log)\.[A-Za-z]+\(|audit|security_event'` (§4)
+- [ ] **High** — Does every back-channel logout endpoint validate the logout token (signature, `iss`, `aud`, `iat`, `exp` short, `typ` `logout+jwt`, `events` member, `sub`/`sid`, no `nonce`), does the OP confirm with the user when `id_token_hint` is missing or foreign, and is every session in the SSO chain inventoried with its lifetime and termination path? Logout-token handlers that never check the event member: `grep -rlE 'logout_token|logoutToken' . | xargs -r grep -LE 'schemas\.openid\.net/event/backchannel-logout'` (§6)
+- [ ] **Medium** — For each adopted SaaS tenant: are admins named and few, connected apps and data-sharing integrations inventoried with scope and owner and reviewed, and are tenant scripts, webhooks and custom apps security-reviewed before they run? (§7)

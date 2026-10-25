@@ -342,34 +342,50 @@ do not change the boundary class.
 ## Audit checklist
 
 - [ ] All seven namespace types unshared unless a documented need to share; host
-      `/proc` never bind-mounted into PID-namespaced sandboxes.
+      `/proc` never bind-mounted into PID-namespaced sandboxes; PID 1 inside is a
+      reaping init (`tini`, `catatonit`, `--init`); the root is built with
+      `pivot_root` (not chroot), mount propagation `MS_PRIVATE`/`MS_SLAVE`, and
+      `/proc/kcore`, `/proc/sys`, `/sys/firmware`, `/proc/sysrq-trigger` masked (§1).
 - [ ] Userns posture decided explicitly: rootless mapping used for sandboxes AND
-      unprivileged userns creation restricted on untrusted-code hosts.
+      unprivileged userns creation restricted on untrusted-code hosts (§1).
 - [ ] cgroup v2 budget present: `memory.max` + `swap.max=0`, `pids.max`, `cpu.max`,
-      `memory.oom.group=1`; host cgroupfs not writable from inside.
+      `io.max`, `memory.oom.group=1`; host cgroupfs not writable from inside; on mixed
+      hosts the enforcing hierarchy is confirmed v2 (`stat -fc %T /sys/fs/cgroup`
+      with GNU stat on the host prints `cgroup2fs`) (§2).
 - [ ] Memory bounded by cgroup `memory.max` or `RLIMIT_DATA` — **never
       `RLIMIT_AS`**, which kills Go/JVM workloads at startup (R7.2a); where no
       cgroup can be created, the fallback is chosen deliberately and write access
       was probed with `mkdir`, not inferred from `cgroup.controllers` (R7.2b). On a
       macOS host neither applies (R7.2b, *Not Linux*): `setrlimit` returns `EINVAL`, so
       require a container or an RSS watchdog and confirm the `setrlimit` return is checked.
+      `GOMEMLIMIT` or `-Xmx` never stands as the memory cap for code you do not trust (§7).
 - [ ] seccomp: deny-by-default allowlist (not the Docker default for high-risk
       workloads); all ABIs covered; R3.2 hard-deny set absent from allowlist;
-      filter loaded after `no_new_privs`, before untrusted code.
-- [ ] No design relies on seccomp filtering pointer arguments (paths).
+      filter loaded after `no_new_privs`, before untrusted code; a `clone3` deny
+      returns `"errnoRet": 38` (ENOSYS), not the default `EPERM` (§3).
+- [ ] No design relies on seccomp filtering pointer arguments (paths), and no
+      `seccomp_unotify` supervisor makes a security decision on a pointer
+      argument (§3).
 - [ ] Landlock (or mount-ns scoping) restricts file access to enumerated paths;
-      every `handled_access_fs` bit handled; fails closed on old kernels.
+      every `handled_access_fs` bit the running ABI supports handled, and
+      `handled_access_net` and `scoped` (abstract-UNIX socket, signal) set where
+      the ABI has them; fails closed on old kernels (§4).
 - [ ] Capabilities: bounding set cleared, ambient scrubbed, add-backs individually
-      justified; no `CAP_SYS_ADMIN`/`CAP_SYS_PTRACE`/`CAP_BPF` for untrusted work.
-- [ ] `no_new_privs` set on every sandboxed process.
+      justified; no `CAP_SYS_ADMIN`/`CAP_SYS_PTRACE`/`CAP_BPF`, nor any other
+      root-equivalent capability R5.1 lists, for untrusted work (§5).
+- [ ] `no_new_privs` set on every sandboxed process (§5).
 - [ ] One LSM enforcing on hosts; no unconfined/permissive carve-outs **you added** without
-      written justification. Shipped `flags=(unconfined)` profiles are grants (R6.4): not a
-      finding, and not to be forced into complain or enforce mode.
-- [ ] Read-only rootfs; writable mounts are size-capped tmpfs `nosuid,nodev,noexec`.
-- [ ] FDs, env, signals, TTY scrubbed at the boundary; `RLIMIT_CORE=0`; wall-clock
-      kill exists in addition to CPU quota.
-- [ ] systemd services: `systemd-analyze security` exposure reviewed; the R7.4 set
-      applied or deviations justified.
+      written justification, no `:Z` relabel of a whole host path, and no `setenforce 0`
+      used to clear a denial. Shipped `flags=(unconfined)` profiles are grants (R6.4): not a
+      finding, and not to be forced into complain or enforce mode (§6).
+- [ ] Read-only rootfs; writable mounts are size-capped tmpfs `nosuid,nodev,noexec`;
+      nothing both writable and executable except a confined JIT dir (§7).
+- [ ] FDs, env, signals, TTY scrubbed at the boundary; `umask 077`; `RLIMIT_CORE=0`,
+      `RLIMIT_NOFILE` and `RLIMIT_FSIZE` set; wall-clock kill exists in addition to
+      CPU quota (§7).
+- [ ] systemd services: `systemd-analyze security` exposure reviewed (above 8.0 on a
+      network-facing service is a finding); the R7.4 set applied or deviations
+      justified (§7).
 - [ ] Sandbox hosts apply the R8.1 sysctl baseline (esp. unprivileged BPF,
       userfaultfd, ptrace_scope, perf_event_paranoid) and restrict on-demand
-      module autoloading; deviations documented.
+      module autoloading; deviations documented (§8).
