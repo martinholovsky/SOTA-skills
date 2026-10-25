@@ -1064,7 +1064,7 @@ anything". Three corrections, each re-checked 2026-10-02:
   hooks and permissions programmatically. **`scripts/verified-done-hook.py`** uses that: an
   opt-in Stop hook that refuses "done" on a changed tree until a verification command has
   passed on exactly that tree (router principle 6, enforced). **`scripts/zsh-equals-hook.py`**, on by
-  default in the plugin, is a PreToolUse hook that refuses a zsh command carrying an unquoted `=word` before it runs
+  default in the plugin, is a PreToolUse hook that refuses a zsh command carrying an unquoted `=word`, or a `set -- $scalar` zsh will not split, before it runs
   (`sota-shell-scripting` rules/06 §1), a reflex the written rule did not stop. The git hooks from
   `scripts/init-gates.sh` and CI are enforcement on every host, whatever the agent.
 - **The router is not an always-on 43 KB blob.** Only each skill's frontmatter `description`
