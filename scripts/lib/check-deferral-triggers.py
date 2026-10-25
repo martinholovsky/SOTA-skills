@@ -20,9 +20,14 @@ either the item was done (the row flips to RESOLVED and stops being a marker), o
 annotated ("trigger fired <date>: ..., still due"). A deferral added in the same branch is
 added lines too, so it is acknowledged by construction.
 
+A trigger may also name a tracked file by its path, in backticks ("the next edit of
+`scripts/code-rules-hook.py`"); that path is guarded as it stands. Added 2026-10-25, when five
+of eighteen edit-triggered deferrals were UNRESOLVED: four named a script, the router or a
+rules file by path, which the skill-only resolver could not read.
+
 WHAT IT CANNOT SEE, stated so the gap is not mistaken for coverage: an edit-trigger that
-names no skill or no rules file ("the next DMARC/email-authentication edit" on a skill-level
-row) is reported as UNRESOLVED and not enforced -- skip rather than guess.
+names no skill, no rules file and no tracked path ("the next DMARC/email-authentication edit"
+on a skill-level row) is reported as UNRESOLVED and not enforced -- skip rather than guess.
 
 Built corpus-first (the lesson of check 38's detector): --self-test runs a labelled set of
 real ledger rows before the tree is judged, and a detector regression fails the check.
@@ -44,6 +49,8 @@ RULES = re.compile(r'rules/(\d{2})((?:\s*(?:,|or|and)\s*\d{2}\b)*)')
 # ("the next §3.7 edit" was missed by a first draft that excluded them); ";" ends a clause.
 EDIT = re.compile(r'\bnext\b[^;]{0,80}?\bedit(?:ed)?\b', re.I)
 TRIGGER_START = re.compile(r'revisit|trigger', re.I)
+# a tracked path named in backticks inside the trigger clause (2026-10-25)
+PATH = re.compile(r'`((?:skills|scripts|docs|evals|commands|\.github)/[^`\s]+)`')
 
 
 def marker_cell(line):
@@ -89,6 +96,29 @@ def resolve(cell):
     skill = sm.group(1)
     nums += rules_numbers(trig)
     return (skill, sorted(set(nums)))
+
+
+def trigger_paths(cell):
+    """Backticked repo paths in an EDIT trigger clause; [] when the trigger is not an edit."""
+    _, trig = split_row(cell)
+    return PATH.findall(trig) if EDIT.search(trig) else []
+
+
+# Labelled corpus for trigger_paths: real rows (2026-10-25), trimmed. A path in the SUBJECT
+# is not guarded (it is what the row is about, not what it waits on); a path in a trigger
+# that is not an edit is not guarded either.
+PATH_CORPUS = [
+    ("| x | **DEFERRED — tightening the false triggers; revisit trigger: a labelled set of real "
+     "hook firings, or the next edit of the TRIGGERS table in `scripts/code-rules-hook.py` "
+     "that changes a pattern's precision.** | — |", ["scripts/code-rules-hook.py"]),
+    ("| x | **DEFERRED — design-level verification has no owner; revisit trigger: the next edit "
+     "of `skills/sota-architecture/rules/03-distributed-systems-and-events.md` §12, or a field "
+     "report.** | — |", ["skills/sota-architecture/rules/03-distributed-systems-and-events.md"]),
+    ("| x | **DEFERRED — a check in `scripts/verify-setup.sh`; revisit trigger: a second "
+     "field report.** | — |", []),
+    ("| x | **DEFERRED — `docs/LANGUAGE-TIER.md` table; revisit trigger: the next router "
+     "edit.** | — |", []),
+]
 
 
 # Labelled corpus: real rows from docs/ADOPTION-LOG.md (2026-09-30), trimmed to the part the
@@ -139,7 +169,13 @@ def self_test():
         if got != want:
             bad += 1
             print("SELF-TEST MISS: %r -> %r, expected %r" % (row[:70], got, want))
-    print("SELF-TEST %d/%d" % (len(CORPUS) - bad, len(CORPUS)))
+    for row, want in PATH_CORPUS:
+        got = trigger_paths(marker_cell(row))
+        if got != want:
+            bad += 1
+            print("SELF-TEST MISS (paths): %r -> %r, expected %r" % (row[:70], got, want))
+    n = len(CORPUS) + len(PATH_CORPUS)
+    print("SELF-TEST %d/%d" % (n - bad, n))
     return bad == 0
 
 
@@ -154,6 +190,7 @@ def rules_files():
 def mapping(ledger_lines):
     """[(lineno, line, [paths])] for resolved edit deferrals, plus unresolved [(lineno, why)]."""
     files = rules_files()
+    tracked = set(p for p in git("ls-files").split("\n") if p)
     resolved, unresolved = [], []
     for i, line in enumerate(ledger_lines, 1):
         if not MARKER.search(line):
@@ -167,8 +204,11 @@ def mapping(ledger_lines):
             hit = [p for p in files if p.startswith("skills/%s/rules/%s-" % (skill, n))]
             if len(hit) == 1:
                 paths.append(hit[0])
+        for lit in trigger_paths(marker_cell(line)):
+            if lit in tracked and lit not in paths:
+                paths.append(lit)
         if not paths:
-            why = "names no skill" if skill is None else \
+            why = "names no skill or tracked path" if skill is None else \
                   ("`%s` but no rules file" % skill if not nums else
                    "`%s` rules/%s matches no single file" % (skill, ",".join(nums)))
             unresolved.append((i, why))
