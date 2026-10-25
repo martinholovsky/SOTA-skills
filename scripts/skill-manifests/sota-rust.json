@@ -1,0 +1,46 @@
+{
+ "_note": "Declared BUILD routing for sota-rust (stage-3 pilot, invariant 42 C4). Every tag's keywords must appear in the routing prose of each file declared for it; every via hop must be a real link; every case must reach its must_load files. Cases are the incidents that motivated this: see docs/ADOPTION-LOG.md 2026-10-24/25.",
+ "skill": "sota-rust",
+ "tags": {
+  "ownership-api": ["structs", "borrow checker", "traits"],
+  "errors": ["error", "unwrap", "panic"],
+  "unsafe": ["unsafe"],
+  "ffi": ["FFI"],
+  "async": ["async", "tokio"],
+  "untrusted-input": ["network input", "untrusted input", "network-facing"],
+  "dependency": ["dependenc"],
+  "performance": ["performance", "profiling"],
+  "ci-tooling": ["clippy", "CI shape"],
+  "external-process": ["external program", "std::process::Command"],
+  "proof": ["Kani", "Proving"]
+ },
+ "files": {
+  "01": {"build": ["ownership-api"]},
+  "02": {"build": ["errors"]},
+  "03": {"build": ["unsafe", "ffi"]},
+  "04": {"build": ["async"]},
+  "05": {"build": ["untrusted-input", "dependency"]},
+  "06": {"build": ["performance"]},
+  "07": {"build": ["ci-tooling"]},
+  "08": {"build": ["external-process"]},
+  "09": {"build": ["proof"]}
+ },
+ "via": [
+  {"from": "05", "to": "09", "when": ["security-critical"]},
+  {"from": "03", "to": "09", "when": ["security-critical"]}
+ ],
+ "cases": [
+  {"task": "build a parser for this binary network protocol", "mode": "build",
+   "tags": ["untrusted-input", "security-critical"], "must_load": ["05", "09"]},
+  {"task": "write a safe wrapper around a C library", "mode": "build",
+   "tags": ["unsafe", "ffi", "security-critical"], "must_load": ["03", "09"]},
+  {"task": "shell out to ffmpeg to transcode uploads", "mode": "build",
+   "tags": ["external-process", "untrusted-input"], "must_load": ["08", "05"]},
+  {"task": "add a tokio service with cancellation-safe timeouts", "mode": "build",
+   "tags": ["async"], "must_load": ["04"]},
+  {"task": "set up clippy and CI for a new crate", "mode": "build",
+   "tags": ["ci-tooling"], "must_load": ["07"]},
+  {"task": "audit a Rust network service", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08", "09"]}
+ ]
+}
