@@ -348,6 +348,54 @@ BAD:  if redis.setnx(key): do_work()        # GC pause > TTL → two holders, no
 etcd/DB/k8s Lease) with the same fencing discipline, and must be idempotent
 anyway because elections overlap.
 
+## 12a. Check the design before you build it (model checking)
+
+**When.** Write and check a small model when correctness depends on interleavings or partial
+failure that a reviewer can only simulate in their head: a replication, consensus or membership
+protocol; leases, locks and leader handover (§12); a workflow split into asynchronous steps (§5);
+cache or index invalidation; a lock removed or a message-ordering constraint weakened for
+performance. AWS found bugs this way that "passed unnoticed through extensive design reviews,
+code reviews, and testing", one needing a 35-step trace, because "testing the code is inadequate
+as a method for finding subtle errors in design" (CACM 2015). Model one protocol, not the system:
+MongoDB reports that one huge spec is doomed by state-space explosion. Not for performance or
+metastable failure, which AWS handles with simulation (CACM 2025).
+
+**With which tool** (checked against each project 2026-10-25): **TLA+** with the TLC model checker
+(explicit-state, safety and liveness; MIT) is the most used; **Apalache** (Apache-2.0) checks the
+same specs symbolically, bounded, and proves inductive invariants. **P** (MIT) writes the model as
+communicating state machines close to the code, and its checker samples schedules rather than
+exhausting them by default; AWS used it for S3's move to strong consistency. **Quint** (Apache-2.0)
+is TLA-based with programming-language syntax: `quint run` simulates, `quint verify` is bounded.
+**Alloy 6** is bounded and suits relational structure. Where no model is justified, test the system
+instead: deterministic simulation (FoundationDB's simulator, TigerBeetle's VOPR, `turmoil` or
+`shuttle` in Rust), or Jepsen with the Elle checker against a running system, whose README asks
+you to confirm reported anomalies by hand.
+
+**A check that explores nothing passes.** Measured on TLC (v1.7.4 and the 1.8.0 pre-release,
+2026-10-25): an `Init` that admits no state printed "No error has been found", exit 0, **0
+distinct states**; a `Next` that is never enabled reported a deadlock (exit 11) unless run with
+`-deadlock`, which made it pass, exit 0. So the job asserts what was explored:
+
+- No `-deadlock` unless the protocol is meant to stop, and then `-coverage 1`, failing on any
+  action whose count stays `0:0`.
+- A floor on distinct states, not exit 0 alone.
+- A reach check per state that matters (committed, leader elected, lease expired): a separate
+  config whose invariant says the state is never reached (`x # 3`) must be **violated**, exit 12.
+  Measured: exit 12 on the real spec, exit 0 on the empty-`Init` one. It is the counterpart of
+  Kani's `cover!` ([`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md)).
+
+**Exit status is not a verdict on every tool** (measured 2026-10-25): TLC exits 12 on a violated
+invariant and 11 on a deadlock, but Alloy 6.2.0 exits 0 whether a `check` finds a counterexample
+or not (and a contradictory fact reads `UNSAT`, like a real pass), FizzBee 0.5.4 exits 0 on
+`FAILED`, and Quint exits 1 for a violation and for its own tool errors alike. Parse the result
+line, and give Alloy a `run` that must be satisfiable.
+
+**The model is not the code.** A checked design says nothing about whether the implementation
+follows it; AWS wrote in 2015 "we do not know". Where the gap matters, derive tests from the model
+(MongoDB's generated tests reached full branch coverage on one component) or check test and
+production traces against it (AWS's PObserve). Trace-checking a large existing server against an
+abstract spec is the expensive end: MongoDB stopped after ten weeks because the traces never matched.
+
 ## 13. The fallacies, applied
 
 Design reviews must not contain these assumptions; each appears in real designs
@@ -393,4 +441,5 @@ weekly:
 - Is consumer parallelism aligned with broker partitioning? Any head-of-line blocking from mixed-weight messages on one queue?
 - Are distributed locks lease-based with fencing tokens verified at the resource? Any bare `setnx`-style locks guarding critical sections?
 - Are singleton/scheduled jobs leader-elected and idempotent under overlapping elections?
+- [ ] A replication, consensus, lease or multi-step async protocol designed with no checked model (§12a)? Where a model exists: does CI run it, assert a distinct-state floor and reach checks that must be violated, and parse the result line rather than trusting exit 0 (`-deadlock` with no coverage check; Alloy, FizzBee and Quint exit codes)? Locate the jobs: `grep -rnE 'tlc2\.TLC|apalache-mc|quint (run|verify)|fizz |alloy.*exec' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.mk' .` (standalone `ugrep` skips `.github/` unless given `--hidden`; measured: 1 of 2 known hits); then read each for `-deadlock` → Medium.
 - Do any designs assume reliable network, ordered clocks, or stable topology (check failure branches on every remote call)?
