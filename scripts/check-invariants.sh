@@ -2094,7 +2094,9 @@ TRIG = re.compile(r'revisit|until|once|if a second|when |trigger', re.I)
 # row pass because "revisit" appeared in a different cell — a catch for the wrong
 # reason, which is a false pass rather than a catch (`sota-code-security` rules/15).
 for l in marks:
-    cell = next((c for c in (l.split('|') if '|' in l else [l])
+    # Split on UNESCAPED pipes: Markdown writes a literal pipe in a cell as `\|`, and a bare
+    # split cut a valid marker cell at the backslash (2026-10-25, a cell quoting `cmd || echo`).
+    cell = next((c for c in (re.split(r'(?<!\\)\|', l) if '|' in l else [l])
                  if 'DEFERRED' in c), l)
     if not TRIG.search(cell):
         bad = 1

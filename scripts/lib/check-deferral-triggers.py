@@ -47,7 +47,9 @@ TRIGGER_START = re.compile(r'revisit|trigger', re.I)
 
 
 def marker_cell(line):
-    return next((c for c in (line.split('|') if '|' in line else [line]) if 'DEFERRED' in c), line)
+    # unescaped pipes only: a literal pipe in a Markdown cell is written `\|` (2026-10-25)
+    return next((c for c in (re.split(r'(?<!\\)\|', line) if '|' in line else [line])
+                 if 'DEFERRED' in c), line)
 
 
 def split_row(cell):
@@ -92,6 +94,10 @@ def resolve(cell):
 # Labelled corpus: real rows from docs/ADOPTION-LOG.md (2026-09-30), trimmed to the part the
 # detector reads. Expected value: None (not an edit trigger) or (skill, [rules numbers]).
 CORPUS = [
+    # a TABLE row whose marker cell quotes an escaped pipe (`\|`); a bare split cut it (2026-10-25)
+    ("| probe | **DEFERRED — absence reporters like `cmd \\|\\| echo none` in "
+     "`sota-shell-scripting` rules/06; revisit trigger: the next rules/06 edit.** | — |",
+     ("sota-shell-scripting", ["06"])),
     ("- **DEFERRED — Iceberg `rewrite_position_delete_files` / `rewrite_manifests` in "
      "`sota-data-engineering` rules/05's maintenance example; revisit trigger: the next "
      "table-format maintenance edit.**", ("sota-data-engineering", ["05"])),

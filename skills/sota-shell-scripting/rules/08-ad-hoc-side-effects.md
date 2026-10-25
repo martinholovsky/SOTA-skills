@@ -69,6 +69,24 @@ died with exit 137 and pushed the machine into swap. The user noticed before the
 - **Measure what a run used**: on macOS `/usr/bin/time -l` prints the peak resident set ("maximum
   resident set size"), so the next cap can be set from a number.
 
+## 3b. A crash on purpose leaves the operating system's crash artifacts behind
+
+Reproducing a "failure that bypasses catch/recover" means running programs that abort, segfault or
+trap: an overrun under a debug allocator, a C-stack overflow, a `noexcept` violation, an integer
+trap. The operating system records each one, outside the scratch directory you worked in:
+
+- **macOS** writes a report per crash to `~/Library/Logs/DiagnosticReports/` (`<process>-<date>-<time>.ips`)
+  and may show a dialog;
+- **Linux** writes a core file or a `systemd-coredump` entry (`coredumpctl list`), depending on
+  `kernel.core_pattern` and `ulimit -c`.
+
+The report names the **runtime** (`/usr/local/…/Python`, `ruby`), not your script, so it reads as a
+fault in the installation. Field-reported 2026-10-25: 21 reports in one session (`Python-*` ×2,
+`ruby-*` ×6, `t-*` ×13 for test binaries named `t`), and the operator asked whether the machine was
+broken. **Say so before launching crash reproductions**, and attribute a report afterwards by its
+launch time against the script's modification time (`stat -f '%Sm' -t '%H:%M:%S' <script>` on macOS,
+`stat -c %y` on Linux) and its stack against the script's last statement.
+
 ## 4. The loop you left running exhausts the process table — and takes cleanup with it
 
 §3 is about a command that writes too much. This is the same idea aimed at a resource
@@ -173,6 +191,10 @@ agent shells may give a closed stdin instead, so check `ls -l /dev/fd/0` rather 
 
 ## Audit checklist
 
+- [ ] **Crash reproductions announced, and their artifacts attributed** (§3b): before a session
+      runs programs that abort on purpose, the operator is told that crash reports will appear
+      (`ls -lt ~/Library/Logs/DiagnosticReports/ | head`, `coredumpctl list`). A report found
+      afterwards is matched to a script by launch time and stack, never assumed. LOW.
 - [ ] **Ad-hoc experiments that can grow in memory** (§3a): headroom read first (`vm_stat`,
       `MemAvailable`), and a cap in place: `prlimit --data` or a cgroup on Linux, a container or an RSS
       supervisor on macOS, which accepts no memory rlimit.

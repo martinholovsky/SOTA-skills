@@ -548,6 +548,26 @@ probe_committed_green() {  # <id> <name> <expected ok-substring> — commit alre
   cmp -s "$REPO/$GATE" "$WT/$GATE" || { echo "FAIL: gate copy did not survive rewind"; exit 1; }
 }
 
+# 27c — the exemption side of 27: a valid deferral whose marker cell QUOTES a pipe. Markdown
+# writes a literal pipe inside a table cell as `\|`, and a bare split('|') cut the cell at the
+# backslash, so "revisit trigger" fell into the next fragment and a correct row failed
+# (2026-10-25, a cell quoting `cmd || echo none`). Green, with 27's own ok-line, or it is not
+# the escape being proven.
+( cd "$WT" && python3 - <<'MUT'
+import pathlib, re
+p = pathlib.Path("docs/ADOPTION-LOG.md")
+row = ("| probe idea | **DEFERRED — absence reporters of the form `cmd \\|\\| echo none`; "
+       "revisit trigger: the next probe run** | — |")
+cells = [c for c in row.split('|') if 'DEFERRED' in c]
+assert cells and not re.search('revisit', cells[0]), "fixture drift: a bare split no longer cuts the cell"
+p.write_text(p.read_text().rstrip("\n") + "\n" + row + "\n")
+MUT
+)
+wt_commit "probe: a deferral whose marker cell quotes an escaped pipe"
+probe_committed_green 27c "a marker cell quoting an escaped pipe still names its trigger" \
+  "each naming a trigger"
+
+
 # 29 — a release that edits a skill description and declares no routing check. This
 # is v1.35.0's own defect replayed: sota-skill-security shipped a description carrying
 # "instruction file" twice, took r1_token_count's traffic from sota-llm-engineering
