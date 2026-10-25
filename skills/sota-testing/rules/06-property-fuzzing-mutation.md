@@ -188,8 +188,24 @@ Discipline:
 Mutation testing answers the question coverage can't: **would the tests
 notice if the code were wrong?** Tools mutate the SUT (flip `<` to `<=`,
 delete statements, swap constants) and run your tests; surviving mutants =
-tests that exercise the line but don't constrain it. Tools: Stryker
-(JS/TS, C#, Scala), PIT (JVM), mutmut (Python), cargo-mutants (Rust).
+tests that exercise the line but don't constrain it.
+
+**Tools, and what actually fails the build** (checked 2026-10-25 against each repository; "measured"
+means a toy project with one weak test was run). A mutation job that prints a score and exits 0 is
+a report, not a gate:
+
+| Language | Tool (licence) | What fails CI | Trap |
+|---|---|---|---|
+| JS/TS | StrykerJS (Apache-2.0) | `thresholds.break` in the config file; no CLI flag; default `null` never fails | fails only when score < break: 80.00 against break 80 exited 0 (measured) |
+| C# | Stryker.NET (Apache-2.0) | `--break-at N` or `thresholds.break`; default 0 | — |
+| Java | PIT (Apache-2.0) | `mutationThreshold` (also `maxSurviving`) | **Kotlin** needs Arcmutate's Kotlin plugin, which is commercial (free for open source on request); without it PIT's FAQ warns of junk mutants |
+| Python | mutmut (BSD-3-Clause); cosmic-ray (MIT) | mutmut: **nothing**, `mutmut run` exited 0 with every mutant surviving (measured, 3.8.0); gate on `mutmut export-cicd-stats` JSON. cosmic-ray: `cr-rate --fail-over N` | cosmic-ray's gate is a *survival-rate ceiling*, not a score floor |
+| Rust | cargo-mutants (MIT) | exit 2 on any missed mutant; no partial score | it generates **no `>=`→`>` boundary mutant** (its operator table maps `>=` only to `<`): a test missing the boundary passed, exit 0 (measured). Check boundaries by hand |
+| Go | gremlins (Apache-2.0) | `unleash.threshold.efficacy` in `.gremlins.yaml` → exit 10 | **`--threshold-efficacy` on the command line was silently ignored** (measured 2026-10-25 on v0.6.0: same project, flag exit 0, config file exit 10; open PR #281). Little upstream activity since 2026-03. avito-tech/go-mutesting (MIT, active) has no gate and exits 0 |
+| PHP | Infection (BSD-3-Clause) | `--min-msi N` / `--min-covered-msi N` → exit 1 (measured, 0.35.8) | needs a coverage driver (PCOV or Xdebug) |
+| C/C++ | Mull (Apache-2.0) | `--mutation-score-threshold`, default **100**; `--allow-surviving` disables failure | the compiler plugin must match the clang/LLVM major version |
+| Ruby | mutant (**proprietary EULA**) | exits non-zero unless every mutation is covered; no percentage threshold | free only for public projects under an OSI licence; otherwise paid per developer, and the EULA forbids publishing benchmarks. Check the licence before adopting it. Not run here for that reason |
+| Swift | muter (MIT) | **nothing**: its `coverageThreshold` skips files, it is not a gate | no release since 2023-09; wrap it and gate on its report |
 
 **When it's worth the cost** (it is CPU-expensive — full-suite runs can take
 hours):
@@ -411,8 +427,13 @@ label it as such.
 - [ ] Crash corpus in the PR suite? Fuzz targets exist but past crashers
       aren't replayed as tests → Medium.
 - [ ] Any mutation-testing signal on risk-critical modules (config present:
-      `stryker.conf|pitest|mutmut|cargo-mutants`)? None anywhere + high
-      coverage claims → Medium (run one probe during the audit if cheap).
+      `stryker.conf|pitest|mutmut|cargo-mutants|gremlins|infection.json|mull|mutant|muter|cosmic-ray`)?
+      None anywhere + high coverage claims → Medium (run one probe during the audit if cheap).
+- [ ] A mutation job that cannot fail (§6.3 table): `mutmut run`, `muter` or
+      `go-mutesting` with no wrapper gating on the report; StrykerJS with no
+      `thresholds.break`; gremlins given `--threshold-efficacy` on the command
+      line instead of `.gremlins.yaml`. Read the job's exit status on a run with
+      a known survivor → Medium (it reports a score nobody is held to).
 - [ ] Mutation score gamed? Tests asserting incidental internals near
       mutation-config thresholds, blanket mutant suppressions without reasons
       → High.

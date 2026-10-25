@@ -257,6 +257,8 @@ mechanics only:
   every input gets a property test and a fuzz target whose reach is gated (above): that is the
   bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
   mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
+- **Mutation testing: mutant** is the Ruby tool, under a proprietary licence that is free only for
+  public open-source projects; check it before adding mutant to CI ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
 - **A gem with a C extension (`ext/**/extconf.rb`) runs its suite in CI against an
   extension built with a memory checker.** The flags are the C toolchain's
   ([`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §3), and the interpreter must load the runtime at

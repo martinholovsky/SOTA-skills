@@ -1029,6 +1029,15 @@
       ]
     },
     {
+      "from": "sota-c-cpp",
+      "to": "sota-testing",
+      "weight": 5,
+      "targets": [
+        "rules/06 \u00a76.3",
+        "rules/06 \u00a76.6"
+      ]
+    },
+    {
       "from": "sota-cloud-infrastructure",
       "to": "sota-observability",
       "weight": 5,
@@ -1228,14 +1237,6 @@
       "targets": [
         "rules/01",
         "rules/02"
-      ]
-    },
-    {
-      "from": "sota-c-cpp",
-      "to": "sota-testing",
-      "weight": 4,
-      "targets": [
-        "rules/06 \u00a76.6"
       ]
     },
     {
@@ -1560,6 +1561,15 @@
     },
     {
       "from": "sota-golang",
+      "to": "sota-testing",
+      "weight": 3,
+      "targets": [
+        "rules/06 \u00a76.3",
+        "rules/06 \u00a76.6"
+      ]
+    },
+    {
+      "from": "sota-golang",
       "to": "sota-devsecops",
       "weight": 3,
       "targets": [
@@ -1705,6 +1715,15 @@
       ]
     },
     {
+      "from": "sota-ruby",
+      "to": "sota-testing",
+      "weight": 3,
+      "targets": [
+        "rules/06 \u00a76.3",
+        "rules/06 \u00a76.6"
+      ]
+    },
+    {
       "from": "sota-rust",
       "to": "sota-testing",
       "weight": 3,
@@ -1742,6 +1761,15 @@
       "weight": 3,
       "targets": [
         "rules/01 \u00a71.8"
+      ]
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-testing",
+      "weight": 3,
+      "targets": [
+        "rules/06 \u00a76.3",
+        "rules/06 \u00a76.6"
       ]
     },
     {
@@ -2027,14 +2055,6 @@
       ]
     },
     {
-      "from": "sota-golang",
-      "to": "sota-testing",
-      "weight": 2,
-      "targets": [
-        "rules/06 \u00a76.6"
-      ]
-    },
-    {
       "from": "sota-identity-access",
       "to": "sota-kubernetes",
       "weight": 2,
@@ -2200,14 +2220,6 @@
     },
     {
       "from": "sota-ruby",
-      "to": "sota-testing",
-      "weight": 2,
-      "targets": [
-        "rules/06 \u00a76.6"
-      ]
-    },
-    {
-      "from": "sota-ruby",
       "to": "sota-c-cpp",
       "weight": 2,
       "targets": [
@@ -2289,14 +2301,6 @@
       "to": "sota-observability",
       "weight": 2,
       "targets": []
-    },
-    {
-      "from": "sota-swift",
-      "to": "sota-testing",
-      "weight": 2,
-      "targets": [
-        "rules/06 \u00a76.6"
-      ]
     },
     {
       "from": "sota-testing",
@@ -3704,12 +3708,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1629,
+    "md link, other skill": 1633,
     "md link, outside skills/": 3,
     "md link, same skill": 2813,
     "name (backticked)": 433,
     "name (bare)": 240,
-    "name+file (backticked)": 673,
+    "name+file (backticked)": 677,
     "name+file (bare)": 161,
     "own rules/NN": 2998
   },
@@ -3721,7 +3725,7 @@
     "md link, same skill": 0,
     "name (backticked)": 418,
     "name (bare)": 197,
-    "name+file (backticked)": 672,
+    "name+file (backticked)": 676,
     "name+file (bare)": 156,
     "own rules/NN": 2908
   },

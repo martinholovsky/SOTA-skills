@@ -227,6 +227,8 @@ separate worker processes.
   every input gets a property test and a fuzz target whose reach is gated (above): that is the
   bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
   mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
+- **Mutation testing: gremlins**, gated through `.gremlins.yaml` (`unleash.threshold.efficacy`),
+  not the `--threshold-efficacy` flag, which was ignored when measured 2026-10-25 on v0.6.0 ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
 
 `go test -fuzz=FuzzParseManifest -fuzztime=60s` in a periodic CI job; commit
 found crashers from `testdata/fuzz/` as permanent regression seeds. Seeds run
