@@ -276,19 +276,21 @@ fast-path, no media queries, no automatic cleanup. You re-implement the hygiene:
 
 ## Audit checklist
 
-- [ ] Every animation states a purpose (orientation/feedback/continuity/status); decoration-only motion on task surfaces removed
-- [ ] Durations within standard bands (micro ≤ 150ms, enter 200–300ms, exit faster, nothing > 500ms interactive); values from duration/easing tokens, not literals
-- [ ] Ease-out on enter, ease-in/fast on exit, no `linear`/default-`ease` on deliberate motion; springs used for gestural/interruptible interactions
-- [ ] Stagger ≤ 50ms/item capped ~400ms total; transitions have one hero element; directional metaphors consistent (and RTL-mirrored)
-- [ ] Micro-interactions match the catalog standards (tooltip intent delay, accordion via 0fr→1fr, toast FLIP stacking, shake ≤ 2 cycles); no max-height transition hacks
-- [ ] View Transitions: customized old/new animations (no default-blink), per-item names assigned dynamically on large lists, DOM update fast and post-await, reduced-motion + support gates in place
-- [ ] Only transform/opacity animated (grep for transitions on width/height/top/left/margin/box-shadow and `transition: all`)
-- [ ] `will-change` absent from static stylesheets; applied/removed around animation only
-- [ ] Layout changes use FLIP/View Transitions/Motion layout — no JS animating layout properties per frame
-- [ ] View Transitions and scroll-driven animations feature-detected with working instant fallbacks; no content stuck at opacity 0 without JS
-- [ ] `prefers-reduced-motion` honored globally (CSS override + JS/matchMedia in every animation lib entry point); movement replaced by fades, parallax/autoplay killed; *end events still fire
-- [ ] Autoplay > 5s pausable; no flashing > 3/sec; ambient loops pause off-screen
-- [ ] 60fps verified under CPU throttle on mid-tier mobile profile; no animation blocks first interaction
-- [ ] Canvas/WebGL loops are delta-time based (rAF timestamp, not frame counts), stop on `document.hidden` and when the scene is static; force/physics sims freeze once settled
-- [ ] WebGL/Three.js teardown disposes geometries, materials, textures, render targets, and the renderer; `renderer.info.memory` stable across mount/unmount cycles
-- [ ] Reduced-motion branch exists *inside* canvas/WebGL render paths (matchMedia in JS — the CSS override doesn't reach the draw loop)
+- [ ] Every animation states a purpose (orientation/feedback/continuity/status); decoration-only motion on task surfaces removed; motion on high-frequency task screens near-instant (§1)
+- [ ] Durations within standard bands (micro ≤ 150ms, enter 200–300ms, exit faster, nothing > 500ms interactive); values from duration/easing tokens, not literals (§2)
+- [ ] Ease-out on enter, ease-in/fast on exit, no `linear`/default-`ease` on deliberate motion; springs used for gestural/interruptible interactions (§2)
+- [ ] Stagger ≤ 50ms/item capped ~400ms total; transitions have one hero element; directional metaphors consistent (and RTL-mirrored); scale transitions originate at the trigger (`transform-origin`) (§3)
+- [ ] Micro-interactions match the catalog standards (tooltip intent delay, accordion via 0fr→1fr, toast FLIP stacking, shake ≤ 2 cycles); no max-height transition hacks (§4b)
+- [ ] View Transitions: customized old/new animations (no default-blink), per-item names assigned dynamically on large lists, DOM update fast and post-await, reduced-motion + support gates in place; root transitions ≤ 250ms, shared-element morphs ≤ 350ms (§4c)
+- [ ] Only transform/opacity animated (grep for transitions on width/height/top/left/margin/box-shadow and `transition: all`); animated `filter: blur()`/`backdrop-filter` confined to small areas (§5)
+- [ ] `will-change` absent from static stylesheets; applied/removed around animation only (§5)
+- [ ] Layout changes use FLIP/View Transitions/Motion layout — no JS animating layout properties per frame; scroll-linked effects use scroll-driven CSS or IntersectionObserver, never scroll listeners mutating style; no full animation library loaded for a few fades (§4)
+- [ ] View Transitions and scroll-driven animations feature-detected with working instant fallbacks; no content stuck at opacity 0 without JS; reveal-on-scroll fires once (no re-hide); no scroll-jacking in product UI (§7)
+- [ ] `prefers-reduced-motion` honored globally (CSS override + JS/matchMedia in every animation lib entry point); movement replaced by fades, parallax/autoplay killed; *end events still fire (§6)
+- [ ] Autoplay > 5s pausable; no flashing > 3/sec; ambient loops pause off-screen; ambient loops are slow (≥ 8s cycle) (§6, §7)
+- [ ] 60fps verified under CPU throttle on mid-tier mobile profile; no animation blocks first interaction (§5)
+- [ ] Canvas/WebGL loops are delta-time based (rAF timestamp, not frame counts), stop on `document.hidden` and when the scene is static; force/physics sims freeze once settled; large frame deltas clamped; repeated meshes instanced (§7c)
+- [ ] WebGL/Three.js teardown disposes geometries, materials, textures, render targets, and the renderer; `renderer.info.memory` stable across mount/unmount cycles (§7c)
+- [ ] Reduced-motion branch exists *inside* canvas/WebGL render paths (matchMedia in JS — the CSS override doesn't reach the draw loop) (§7c)
+- [ ] **Gesture motion spec (§7b) — Major**: on a device, drags track the pointer 1:1 while down; release dismisses past ~50% distance OR a ~500px/s flick, else springs back; a new touch mid-spring catches the element; boundaries rubber-band; each gesture surface's computed `touch-action` is set (e.g. `pan-y` on a horizontally swiped card) and a non-gesture path exists. Gesture surfaces to test: `grep -rnE 'pointermove|onPointerMove|touchmove|onTouchMove' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' .`
+- [ ] **Motion as a system (§8) — Minor**: the JS animation layer imports the exported motion tokens rather than literals; a Playwright test runs with `page.emulateMedia({ reducedMotion: 'reduce' })` and asserts movement is replaced; press feedback renders via CSS `:active` while handlers stay under ~50ms or yield; an idle dashboard reads 0% CPU in the Performance monitor. Duration literals in JS (each hit should read a token): `grep -rnE '\bduration:[[:space:]]*[0-9]' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' .`; no reduced-motion test exists when `grep -rlE "reducedMotion:[[:space:]]*['\"]reduce" .` lists zero files

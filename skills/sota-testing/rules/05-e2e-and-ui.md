@@ -172,27 +172,36 @@ destroys signal. The economics (full policy in [`rules/07`](07-suite-health-and-
 ## Audit checklist
 
 - [ ] Is there a written critical-path list, and does the suite map 1:1 to
-      it? Suite >~2× the flow list or no list at all → Medium (accretion).
+      it? Suite >~2× the flow list or no list at all → Medium (accretion). E2E
+      specs carrying validation matrices, permission combinations or boundary values
+      → Medium; push them to the API layer (§5.1).
 - [ ] Suite runtime vs budget: e2e stage wall-clock >15 min pre-merge →
-      Medium; engineers routinely skipping/bypassing it → High.
+      Medium; engineers routinely skipping/bypassing it → High. (§5.1)
 - [ ] Structural selectors? Grep:
-      `nth-child|nth-of-type|xpath=|//div|css=.*>.*>|\.css-[a-z0-9]|querySelector\(` in e2e specs → Medium each cluster; suite-wide pattern → High.
-- [ ] Hard waits? Grep: `waitForTimeout|cy\.wait\([0-9]|sleep\(|page\.wait_for_timeout|Thread\.sleep` in e2e code → High each.
-- [ ] Forced interactions hiding bugs? Grep `force:\s*true|{force}|dispatchEvent\(.*click` → Medium, investigate each.
+      `nth-child|nth-of-type|xpath=|//div|css=.*>.*>|\.css-[a-z0-9]|querySelector\(` in e2e specs → Medium each cluster; suite-wide pattern → High. (§5.2)
+- [ ] Hard waits? Grep: `waitForTimeout|cy\.wait\([0-9]|sleep\(|page\.wait_for_timeout|Thread\.sleep` in e2e code → High each. Assertions racing
+      transient state (a loading indicator expected visible) → Medium (§5.3).
+- [ ] Forced interactions hiding bugs? Grep `force:\s*true|{force}|dispatchEvent\(.*click` → Medium, investigate each. (§5.3)
 - [ ] Assertions in page objects? Grep page-object dirs for
-      `expect|assert|should` → Low–Medium (move to tests).
+      `expect|assert|should` → Low–Medium (move to tests). Page-object
+      inheritance trees, or page objects and screenplay mixed in one suite → Low (§5.4).
 - [ ] Does each test UI-drive its own login? Grep specs for repeated
       `getBy.*(password|email).*fill` arrange blocks → Medium (use API/session
-      arrangement; keep one login test).
+      arrangement; keep one login test). (§5.4)
 - [ ] Test data isolation: unique-per-test users/tenants, or shared accounts?
       Grep for hardcoded credentials/emails reused across specs
-      (`test@example.com` in >3 files) → High (parallel-unsafe).
+      (`test@example.com` in >3 files) → High (parallel-unsafe). (§5.7)
 - [ ] Auto-retry config: global retries enabled with no quarantine process or
-      flake tracking → High (signal destroyed silently).
+      flake tracking → High (signal destroyed silently). (§5.6)
 - [ ] Failure artifacts: are traces/videos/screenshots captured in CI on
-      failure? No → Medium.
+      failure? No → Medium. No tagged smoke subset (login + one money path)
+      for deploy gates → Low (§5.7).
 - [ ] Visual tests: baseline updates reviewed (check recent
       `git log -- '**/*.png' '**/__screenshots__/**'` for bulk auto-updates)
-      → High if rubber-stamped; unmasked dynamic regions → Medium.
+      → High if rubber-stamped; unmasked dynamic regions → Medium. Screenshot
+      tests beyond a handful of layout-critical pages/components with no managed
+      triage → Medium (§5.5).
 - [ ] When did the e2e suite last catch a real bug? No one knows and flakes
-      are weekly → recommend the deletion review (5.6).
+      are weekly → recommend the deletion review (5.6). E2E deletions with no
+      rationale in the deleting commit, or a red test deleted without a root cause →
+      Medium (§5.6).

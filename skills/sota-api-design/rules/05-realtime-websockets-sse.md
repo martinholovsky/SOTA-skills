@@ -316,8 +316,9 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
 
 ## Audit checklist
 
-- [ ] Transport choice justified; server-push-only features use SSE, not a WS with one direction unused.
-- [ ] WebRTC (self-hosted only): TURN relay allowlists non-special IPs (v4+v6) and caps per-user allocations; media server uses approved DTLS-SRTP + SRTP auth, survives malformed/flooded SRTP, not ClientHello-race vulnerable, checks DTLS cert vs SDP fingerprint; signaling rate-limited + malformed-input-safe. (CPaaS-only consumers: provider-owned — N/A.)
+- [ ] Transport choice justified (§1): server-push-only features use SSE, not a WS with one direction unused; occasional client→server messages go over plain POSTs beside SSE; long-polling only as a fallback; WebTransport keeps a WS fallback; a self-hosted realtime server is confirmed maintained before adoption.
+- [ ] **Long-polling fallback, if present (§4) — LOW**: an idle poll returns `204` before ~25s (`curl -s -o /dev/null -w '%{http_code} %{time_total}\n' '<poll-url>?last_seq=<n>'`), resumes from `last_seq` with the same sequence semantics as WS, and product code reaches it only through the shared transport abstraction with automatic downgrade.
+- [ ] WebRTC (self-hosted only) (§6): TURN relay allowlists non-special IPs (v4+v6) and caps per-user allocations; media server uses approved DTLS-SRTP + SRTP auth, survives malformed/flooded SRTP, not ClientHello-race vulnerable, checks DTLS cert vs SDP fingerprint; DTLS cert key held under the key-management policy; signaling rate-limited + malformed-input-safe and authenticated/authorized like any API channel. (CPaaS-only consumers: provider-owned — N/A.)
 - [ ] WS auth: Origin checked server-side (CSWSH), or one-time short-lived tickets, or first-message auth with timeout; no long-lived tokens in query strings; nothing smuggled via `Sec-WebSocket-Protocol`.
 - [ ] Per-channel/per-action authorization after connect, not handshake-only; token expiry mid-connection handled (close code or refresh frame).
 - [ ] **Revocation closes live sockets (§2.1) — HIGH**: logout/revoke/disable paths close that session's WS/SSE connections on every node. Locator for revocation code that never touches a connection registry (a hit is a file to read, not yet a finding):
@@ -341,8 +342,8 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
       `grep -rnE 'new[[:space:]]+EventSource\([^)]*(location|[pP]arams|query|\.search|\.hash|input)' --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' --include='*.vue' --include='*.svelte' .`
 - [ ] Close codes documented incl. app-range (4xxx); deploys drain gracefully (1001/1012) instead of mass-killing.
 - [ ] SSE: `id:` on every event with `Last-Event-ID` replay, comment heartbeats, proxy buffering disabled, terminal `done` event on finite streams.
-- [ ] Cross-node fanout via pub/sub backplane; sticky sessions not abused as state storage; node death recoverable from client-held resume state.
-- [ ] Presence uses TTL + heartbeat with flap debouncing; roster sync on join + deltas.
-- [ ] Hot-channel throttling/coalescing exists; reconnect-stampede tested (kill a node in staging, watch the herd).
+- [ ] Cross-node fanout via pub/sub backplane; sticky sessions not abused as state storage; node death recoverable from client-held resume state (§5).
+- [ ] Presence uses TTL + heartbeat with flap debouncing; roster sync on join + deltas (§5).
+- [ ] Hot-channel throttling/coalescing exists; reconnect-stampede tested (kill a node in staging, watch the herd); autoscaling keys on connection count and send-queue depth, not CPU alone (§5).
 - [ ] Frames are enveloped (type/seq/channel), unknown frame types ignored, commands correlated by ID with ack/nack and client-side timeouts; protocol versioned.
 - [ ] Realtime errors machine-readable (code + retry hints), mirroring the HTTP error discipline.

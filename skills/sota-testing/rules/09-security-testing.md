@@ -381,10 +381,13 @@ Management cheat sheets.
       redirect re-validation)?
 - [ ] Business-logic/abuse cases derived from the threat model
       ([`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md)), testing observable effect not implementation:
-      workflow order, value re-derivation, one-time replay, TOCTOU races?
+      workflow order, value re-derivation, one-time replay, quantity/limit abuse
+      (negative, zero, overflow, fractional), TOCTOU races, with a representative set run
+      in CI? (§4)
 - [ ] Every fixed vuln/CVE has a regression test that fails on the vulnerable code?
 - [ ] SAST + SCA in the PR gate; authenticated DAST baseline + fuzzing out-of-band;
-      DAST/SAST baselines reviewed in PRs (no silent ignore-list growth)?
+      DAST/SAST baselines reviewed in PRs (no silent ignore-list growth)? DAST runs
+      authenticated and OpenAPI-fed, its findings confirmed exploitable before filing (§5)?
 - [ ] Security tests deterministic (injected clock for expiry, seeded principals,
       no shared state) and able to fail (verified against the vulnerable version)?
 - [ ] WSTG categories relevant to the surface walked as a coverage check — any

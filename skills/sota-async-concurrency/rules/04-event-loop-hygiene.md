@@ -2,6 +2,8 @@
 
 ## 1. The contract
 
+*(advisory)* — the rationale and latency math behind §2–§8; its rule is probed there.
+
 An event loop multiplexes thousands of tasks onto one thread. Any task that
 holds the thread for more than ~10–50ms steals latency from **every** other
 task: timers fire late, heartbeats miss, health checks fail, sockets back up.
@@ -206,22 +208,32 @@ sprinkled through the call graph. Crossings mid-stack are findings.
       `subprocess.run`, `open(`, `.read()`/`.write()` on files, `sqlite3`,
       `psycopg2`, `boto3` (sync), `Sync(` suffixed Node APIs, `hashSync`,
       `pbkdf2Sync`, `execSync`, `std::thread::sleep`, `std::sync::Mutex` in
-      hot async paths, `reqwest::blocking`.
+      hot async paths, `reqwest::blocking`, `threading.Lock` acquire and
+      `queue.Queue` `.get()`/`.join()` inside coroutines (§2).
 - [ ] Sync-over-async crossings mid-stack: `run_until_complete`/`block_on`/
       `.result()`/`.Result` reachable from loop threads (deadlock-capable:
-      CRITICAL); `nest_asyncio` anywhere.
+      CRITICAL); `nest_asyncio` anywhere; offloaded functions calling
+      `fut.result()` back into the loop (§6).
 - [ ] Password hashing / crypto in request handlers: offloaded? (HIGH if not.)
 - [ ] Large JSON/template/compression work on the loop thread?
 - [ ] Offload pools: bounded? Sized deliberately? Semaphore in front of
-      `spawn_blocking`/executor for expensive ops?
+      `spawn_blocking`/executor for expensive ops? Large payloads shipped to a
+      process pool (serialization cost)? Calls whose p99 can exceed 10ms left
+      on the loop? (§3)
 - [ ] Worker results applied to shared state via loop-safe mechanism
       (`call_soon_threadsafe`, channels, `postMessage`) — not direct mutation
       from the worker thread?
 - [ ] Long loops over unbounded input without a yield point (and is the
-      chunked state safe to observe mid-flight)?
+      chunked state safe to observe mid-flight)? Chunk size kept under ~10ms
+      per chunk? (§4)
 - [ ] JS: recursive microtask/`nextTick` patterns; `await Promise.resolve()`
-      used as a "yield" (it isn't).
+      used as a "yield" (it isn't) (§5).
 - [ ] Node `dns.lookup` on hot paths / `UV_THREADPOOL_SIZE` left at 4 with
       heavy fs+crypto+dns use?
+- [ ] Sneaky blockers (§8), MEDIUM: imports inside handlers —
+      `grep -rnE '^[[:space:]]+(import [A-Za-z_]|from [A-Za-z_.]+ import )' --include='*.py' .`
+      (keep hits inside `async def`; a module-level `try:` import is noise);
+      logging to file/network on the loop without `QueueHandler`; "async" ORM
+      facades over sync drivers; metrics endpoints rendering on the loop.
 - [ ] Loop-lag metric exported and alerted on? Debug slow-callback logging
-      available in staging?
+      available in staging? No loop-lag metric = MEDIUM (§7).

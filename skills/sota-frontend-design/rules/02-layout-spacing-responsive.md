@@ -247,18 +247,19 @@ Z-index wars are an architecture failure, not a numbers game.
 
 ## Audit checklist
 
-- [ ] All spacing values resolve to the 4/8 scale tokens; zero magic-number margins/paddings in component code
-- [ ] Components are margin-free externally; parents use `gap` (grep for `margin-bottom` + `:last-child` resets)
-- [ ] Card/listing grids use `auto-fill/minmax`, not media-query column ladders; `min(…, 100%)` guards present
-- [ ] Cross-card alignment uses subgrid where internals must line up
-- [ ] Reusable components respond via container queries, not viewport queries
-- [ ] No fixed heights on text containers; no overflow clipping at 320px width or 200% zoom (WCAG 1.4.10)
-- [ ] Logical properties throughout; layout verified under `dir="rtl"`; directional icons mirror
-- [ ] Breakpoints in em/rem, mobile-first; `pointer: coarse` honored for hit areas
-- [ ] Cascade layers declared; vendor CSS layered; no `!important` outside an explicit overrides layer
-- [ ] `prefers-contrast` and `forced-colors` don't break the UI (Windows High Contrast pass)
-- [ ] Popovers/menus use Popover API or equivalent top-layer + light-dismiss + Esc semantics; anchored positioning has a fallback
-- [ ] App shells use `dvh` not `vh`; safe-area insets handled on fixed bottom elements; keyboard doesn't cover focused inputs
-- [ ] Z-index values come from the ≤ 7-token scale (grep for `z-index: 9{3,}`); overlays prefer top-layer APIs; no portal sprawl
-- [ ] Images: dimensions/aspect-ratio set (zero CLS), correct `sizes`, modern formats via `<picture>`, lazy below fold, `fetchpriority` on LCP only; meaningful images are `<img>` with alt
-- [ ] `scrollbar-gutter: stable`, `overscroll-behavior` on nested scrollers, `scroll-margin` under sticky headers
+- [ ] All spacing values resolve to the 4/8 scale tokens; zero magic-number margins/paddings in component code; within-group gaps ≤ ½ the between-group gap (§1)
+- [ ] Components are margin-free externally; parents use `gap` (grep for `margin-bottom` + `:last-child` resets) (§1)
+- [ ] Card/listing grids use `auto-fill/minmax`, not media-query column ladders; `min(…, 100%)` guards present (§2)
+- [ ] Cross-card alignment uses subgrid where internals must line up (§2)
+- [ ] Reusable components respond via container queries, not viewport queries; each queried container is a dedicated wrapper element with `container-type: inline-size` (`size` only where height must be queried) (§3)
+- [ ] No fixed heights on text containers (`min-height` instead); no overflow clipping at 320px width or 200% zoom (WCAG 1.4.10) (§2)
+- [ ] Logical properties throughout; layout verified under `dir="rtl"`; directional icons mirror (§5)
+- [ ] Breakpoints in em/rem, mobile-first; `pointer: coarse` honored for hit areas; `(hover: none)` never used to remove functionality (§4)
+- [ ] Cascade layers declared; vendor CSS layered; no `!important` outside an explicit overrides layer; unlayered app rules flagged; `:user-invalid`/`:user-valid`, not `:invalid`; nesting ≤ 2 levels; focus rings on `:focus-visible`, not `:focus` (§6)
+- [ ] `prefers-contrast` and `forced-colors` don't break the UI (Windows High Contrast pass); no `forced-color-adjust: none` without a stated reason (§4)
+- [ ] Popovers/menus use Popover API or equivalent top-layer + light-dismiss + Esc semantics; anchored positioning has a fallback behind `@supports (anchor-name: --a)`; invoker commands and View Transitions keep a working fallback (features detected, not browsers) (§7)
+- [ ] App shells use `dvh` not `vh`; safe-area insets handled on fixed bottom elements; keyboard doesn't cover focused inputs; viewport units used only for the page shell, not whole layouts (§3c)
+- [ ] Z-index values come from the ≤ 7-token scale (grep for `z-index: 9{3,}`); overlays prefer top-layer APIs; no portal sprawl (§8)
+- [ ] Images: dimensions/aspect-ratio set (zero CLS), correct `sizes`, modern formats via `<picture>`, lazy below fold, `fetchpriority` on LCP only; meaningful images are `<img>` with alt; video uses `preload="none"`/`metadata` + a poster, never autoplays with sound, and ambient autoplay has a pause control (§9)
+- [ ] `scrollbar-gutter: stable`, `overscroll-behavior` on nested scrollers, `scroll-margin` under sticky headers; scrollable regions keyboard-reachable (`tabindex="0"` + `role="region"` + `aria-label`); no JS wheel hijacking; pinned headers use `position: sticky`, not scroll listeners (§10)
+- [ ] **Intrinsic sizing (§3b) — Minor**: boxes are sized by content keywords and flex bases (`flex: 1 1 20rem`), not percentage widths; media frames use `aspect-ratio`, never padding-top percentage hacks; `field-sizing: content` fields are bounded by `min-*`/`max-*`, not a fixed `width`/`height`. Percentage widths and padding hacks (a hit is a rule to read — a deliberate percentage can be right): `grep -rnE '(^|[[:space:]{;])(padding-(top|bottom)|width):[[:space:]]*[0-9.]+%' --include='*.css' --include='*.scss' .`

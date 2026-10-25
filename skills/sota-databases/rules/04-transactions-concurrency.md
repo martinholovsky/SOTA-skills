@@ -260,31 +260,44 @@ OWASP: Multi Tenant Security cheat sheet.
 
 - [ ] No read-modify-write across statements without FOR UPDATE / atomic
       SET expr / optimistic version in the UPDATE's WHERE; no app-level
-      uniqueness checks standing in for UNIQUE constraints.
+      uniqueness checks standing in for UNIQUE constraints; no row lock held
+      across user think time (§1, §2).
 - [ ] REPEATABLE READ / SERIALIZABLE usage paired with whole-transaction
       retry on 40001; deadlock (40P01) retry bounded with backoff; multi-row
-      locks acquired in consistent order.
+      locks acquired in consistent order; multi-row invariants constraints
+      cannot express (write skew) use SERIALIZABLE or a lock on a common row;
+      non-transient errors (constraint violations) never retried (§1, §2, §3).
 - [ ] DB-backed job queues use FOR UPDATE SKIP LOCKED + partial index +
-      stuck-job reaper + attempt caps; no lock held across long work.
+      stuck-job reaper + attempt caps + dead-letter status; no lock held across
+      long work (§2).
 - [ ] Advisory locks transaction-scoped (xact variants) or provably released;
-      keyspace documented; none session-scoped behind transaction pooling.
+      keyspace documented; none session-scoped behind transaction pooling (§2).
 - [ ] All retryable writes (webhooks, queue consumers, POSTs) idempotent via
-      unique keys / guarded state transitions; no bare counters on retry paths.
+      unique keys / guarded state transitions; no bare counters on retry paths;
+      `ON CONFLICT DO UPDATE` only where overwrite-with-latest is the intended
+      semantics (§3).
 - [ ] No network I/O, user waits, or unbatched loops inside transactions;
       outbox pattern for txn-coupled messaging; idle_in_transaction_session_timeout
       and statement_timeout set per role (PG17+: transaction_timeout as a
-      backstop above both); alerting on old transactions.
+      backstop above both); alerting on old transactions (§4).
 - [ ] Pooler present; pool sizes load-tested and small; PgBouncer mode known
       and code audited against its restrictions (SET LOCAL only, prepared
-      statements compatible, no session advisory locks/LISTEN in txn mode).
-- [ ] Separate admin/migration pool; query_wait_timeout bounds queueing.
+      statements compatible, no session advisory locks/LISTEN/session temp
+      tables/WITH HOLD cursors in txn mode — conditioned on the actual
+      operation: NOTIFY and `ON COMMIT DROP` temp tables are supported there)
+      (§5).
+- [ ] Separate admin/migration pool; query_wait_timeout bounds queueing;
+      `cl_waiting` and pool saturation monitored (§5).
 - [ ] CRITICAL: tenant context never outlives its transaction — every
       transaction ends (commit or rollback, error path included) before the
       connection is released, and a one-connection pool test proves tenant
-      B cannot see tenant A's context. Probe for session-level context:
+      B cannot see tenant A's context; context is set only inside an open
+      transaction (`SET LOCAL` outside one is ignored with a WARNING) (§5).
+      Probe for session-level context:
       ``grep -rniE "(^|[\"'\`(])[[:space:]]*SET[[:space:]]+(SESSION[[:space:]]+)?[[:alnum:]_]+\.[[:alnum:]_]+[[:space:]]*(=|TO)|set_config\([^,]+,[^,]+,[[:space:]]*false" .``
       (a MySQL multi-line `UPDATE ... SET alias.col` can hit; discard it).
 - [ ] No deep/looped savepoint usage (nested atomic blocks, per-row error
-      recovery); subtransaction SLRU pressure monitored on busy systems.
+      recovery; nesting ≤ 2); subtransaction SLRU pressure monitored
+      (`pg_stat_slru`) on busy systems (§4).
 - [ ] Workers wake via LISTEN/NOTIFY or adaptive backoff (not tight polling),
-      and still claim work via SKIP LOCKED, not via notification payloads.
+      and still claim work via SKIP LOCKED, not via notification payloads (§4).

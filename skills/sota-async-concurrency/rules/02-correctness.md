@@ -222,26 +222,36 @@ do real work in a raw handler.
 ## Audit checklist
 
 - [ ] Every shared mutable variable: what synchronizes it? "It's just a flag"
-      is not an answer in threaded code (visibility).
+      is not an answer in threaded code (visibility) (§1, §4).
 - [ ] Grep for read-modify-write on shared state: `+=`, `count++`,
-      `x = x + `, `append` to shared slices/lists from multiple tasks.
+      `x = x + `, `append` to shared slices/lists from multiple tasks (§2).
+      Fields that must change together guarded by one lock or owner task, not
+      by separate atomics? Compound map ops (check-then-insert,
+      get-then-update) under one lock or a compound-atomic primitive?
 - [ ] Check-then-act sweep: `if ... in` / `exists(` / `has(` followed by a
       mutation of the same state — is the pair atomic? Includes
-      filesystem (TOCTOU) and SELECT-then-INSERT.
+      filesystem (TOCTOU) and SELECT-then-INSERT (§3).
 - [ ] In async code: any await between a check and its act? Any shared-state
-      invariant temporarily broken across an await?
+      invariant temporarily broken across an await? (§1)
 - [ ] Multi-lock code: is there a documented order? Build the lock graph from
-      the call sites; any cycle is CRITICAL.
+      the call sites; any cycle is CRITICAL (§5).
 - [ ] Callbacks/virtual calls/logging/awaits inside lock regions?
-- [ ] Lock reachable by outside code (rule 5; HIGH where untrusted or
+- [ ] Lock reachable by outside code (§5 rule 5; HIGH where untrusted or
       plugin code can reach the object, else MEDIUM):
       `grep -rnE '(^|[^A-Za-z0-9_])(lock|synchronized) *\( *((this|getClass\(\)|[A-Za-z_][A-Za-z0-9_]*\.class) *\)|"|typeof *\()|(public|protected)( [a-z]+)* synchronized |synchronized( [a-z]+)* (public|protected) |^[[:space:]]+\*?sync\.(RW)?Mutex[[:space:]]*(//.*)?$' --include='*.cs' --include='*.java' --include='*.kt' --include='*.go' .`
       — a Go hit is an embedded mutex; confirm the enclosing type escapes.
 - [ ] Wait-for cycles without locks: tasks awaiting each other, self-feeding
       queues, pool-within-pool acquisition.
-- [ ] RwLocks under write-heavy or reader-storm load: starvation analysis.
+- [ ] RwLocks under write-heavy or reader-storm load: starvation analysis
+      (§6). Also: try-lock/retry loops without jitter or asymmetry
+      (livelock); a `select` with an always-ready branch, unfair locks or
+      priority tasks starving other waiters?
 - [ ] Every retried or queued mutation: idempotency key or natural
-      idempotence? Timeout treated as "unknown", not "failed"?
+      idempotence? Processed keys stored in the same transaction as the
+      effect? Timeout treated as "unknown", not "failed"? (§7)
 - [ ] Atomics: any load-then-write-based-on-it that isn't a CAS loop? Any
-      `Relaxed` ordering guarding non-counter data?
-- [ ] Signal handlers doing more than set-flag/write-byte?
+      `Relaxed` ordering guarding non-counter data? Hand-rolled
+      double-checked locking instead of a `Once` primitive? (§2, §4)
+- [ ] Signal handlers doing more than set-flag/write-byte, or raw handlers
+      where the runtime's facility (`add_signal_handler`, `signal.Notify`,
+      `tokio::signal`) exists? (§8)

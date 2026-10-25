@@ -346,18 +346,19 @@ Secure Coding with AI cheat sheet.
       sample size, and record next to the constant which population it was measured on.
 
 - [ ] Is there a written flaky-test policy with quarantine + expiry? No
-      policy and visible retry-to-green culture → High.
+      policy and visible retry-to-green culture → High. (§7.1)
 - [ ] Blanket retries? Grep CI/test config:
       `retries:|retry:|jest.retryTimes|flaky|rerun-fails|--retry` without
-      per-test tracking/tickets → High.
+      per-test tracking/tickets → High. (§7.1)
 - [ ] Quarantine pile: how many tests are quarantined/skipped and how old?
       Grep `skip|xfail|disabled|@Ignore|\.todo|t\.Skip` with `git blame` on a
-      sample; skips >90 days with no ticket → Medium each, pattern → High.
+      sample; skips >90 days with no ticket → Medium each, pattern → High. (§7.1, §7.6)
 - [ ] Coverage gating: hard global threshold (`fail_under|coverageThreshold`
       with a flat number) and evidence of gaming (assertion-light tests on
-      trivial code) → Medium; ratchet/diff-coverage instead → good.
+      trivial code) → Medium; ratchet/diff-coverage instead → good. Line-only
+      coverage where the tool offers branch coverage → Low (§7.2).
 - [ ] Is generated/vendored code excluded from coverage? Check coverage
-      config excludes vs `*_pb2.py|.pb.go|generated|vendor` → Low.
+      config excludes vs `*_pb2.py|.pb.go|generated|vendor` → Low. (§7.2)
 - [ ] Does the measured scope match the testable core, or does an
       environment-bound shell (UI, device, process-spawn adapters) sit in the
       denominator? Whole-tree measurement with an untestable region →
@@ -368,23 +369,27 @@ Secure Coding with AI cheat sheet.
       the percentage fastest (trivial modules) → Medium (effort aimed at the
       metric, not the risk).
 - [ ] Pipeline timing: PR wall-clock now vs 6 months ago (CI history). >15
-      min and growing with no sharding/selection plan → Medium.
+      min and growing with no sharding/selection plan → Medium. (§7.3)
 - [ ] Slowest tests known? Runner timing reports enabled and reviewed? No
-      timing visibility → Low; top test >60s in the unit lane → Medium.
+      timing visibility → Low; top test >60s in the unit lane → Medium. (§7.3)
 - [ ] Parallel + shuffled in CI? Config shows `-shuffle|--randomize|-p auto|
       --parallel|maxWorkers` in the blocking lane; serial-only suite for
       speed reasons → Medium (isolation debt).
 - [ ] Fixed ports/paths blocking parallelism? Grep
       `:8080|:5432|/tmp/test|port = [0-9]{4}` literals in tests → High.
 - [ ] Shards balanced by timing? One shard consistently 3× the others in CI
-      history → Low–Medium (rebalance).
+      history → Low–Medium (rebalance). E2E staged before unit, heuristic test
+      selection with no periodic full run, or test results cached across code changes
+      without a trusted content hash → Medium (§7.5).
 - [ ] Does main/merge-queue run the full blocking suite? PR-only testing
-      with merge-queue skips → High.
+      with merge-queue skips → High. (§7.5)
 - [ ] Red-main discipline: recent history of main staying red >1 day →
-      High (process, not code).
+      High (process, not code). `continue-on-error` on a once-important suite, or
+      reruns-to-green with no recorded classification (real bug / flaky / infra) →
+      Medium (§7.6).
 - [ ] Nightly jobs owned? Long-running suites whose failures nobody triages
       (check last 10 nightly failures for follow-up) → Medium (dead letter
-      queue).
+      queue). (§7.3)
 - [ ] **Is every long-run result recorded with the revision it started from?** (§7.7) — and is
       an unexplained ±1 in the test count investigated rather than accepted?
 - [ ] **When a ratchet fires, was the flagged site read before the baseline moved?** (§7.8)

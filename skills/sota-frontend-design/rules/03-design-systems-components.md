@@ -244,18 +244,21 @@ button/
 
 ## Audit checklist
 
-- [ ] Tokens exist in a source format (DTCG JSON or equivalent) and compile to all platforms; no parallel hand-maintained palettes
-- [ ] Three-tier token hierarchy; components reference semantic tokens only (grep for hex/px literals and primitive-tier names in component code)
-- [ ] Theming works by swapping the semantic layer; dark/brand themes contain zero component-level CSS forks
-- [ ] Token names are role-based with a closed vocabulary; bg/fg tokens paired; changes flow through the tokens package with cross-theme visual regression
-- [ ] One styling strategy; theming surface is documented custom properties (no consumer reaching into internal classes); no arbitrary-value utilities or `@apply` sprawl
-- [ ] A11y enforced by the system: required label props on unlabeled-prone primitives, APG behavior baked in, contrast guaranteed at token layer per theme
-- [ ] Component APIs: rest props spread + className/style merged + ref forwarded; closed variant enums; `asChild`/render escape hatch on interactive primitives
-- [ ] No component spreads a rest object that originated in untrusted data (`{...JSON.parse(…)}`, an API response, parsed query params) onto a DOM node — grep the call sites, not the component: the spread that injects `dangerouslySetInnerHTML` or an `on*` handler is written where the props are *built* ([`sota-web-frameworks` rules/02](../../sota-web-frameworks/rules/02-react.md) §5)
-- [ ] Stateful components implement value/defaultValue/onChange (and open/defaultOpen/onOpenChange); no mode-switching warnings in console
-- [ ] 9-state contract complete per interactive component; data views implement loading/error/empty/partial/ideal
-- [ ] Buttons in async flows: width-stable loading, double-submit guarded, `aria-busy`
-- [ ] Behavior comes from a headless layer (library or isolated hooks); styling keyed off data attributes
-- [ ] Storybook (or equivalent) covers every state incl. overflow/RTL/dark/reduced-motion; axe + visual regression run in CI
-- [ ] Keyboard interaction documented per component and matches WAI-ARIA APG patterns
-- [ ] Breaking changes semver'd with deprecation path; no silent token renames
+- [ ] Tokens exist in a source format (DTCG JSON or equivalent) and compile to all platforms; no parallel hand-maintained palettes (§1)
+- [ ] Three-tier token hierarchy; components reference semantic tokens only (grep for hex/px literals and primitive-tier names in component code) (§1)
+- [ ] Theming works by swapping the semantic layer; dark/brand themes contain zero component-level CSS forks; no one-off tokens that exist for a single screen (§1)
+- [ ] Token names are role-based with a closed vocabulary; bg/fg tokens paired; changes flow through the tokens package with cross-theme visual regression (§1b)
+- [ ] One styling strategy; theming surface is documented custom properties (no consumer reaching into internal classes); no arbitrary-value utilities or `@apply` sprawl; no runtime CSS-in-JS in a new system; variant prop types derived from the style source (`VariantProps` or equivalent) (§5b)
+- [ ] A11y enforced by the system: required label props on unlabeled-prone primitives, APG behavior baked in, contrast guaranteed at token layer per theme; axe on every story gates CI and each new primitive gets one manual screen-reader pass before stable (§6b)
+- [ ] Component APIs: rest props spread + className/style merged + ref forwarded; closed variant enums (no contradictory boolean pairs like `primary` + `secondary`); events named `onVerb`, state props nouns; `asChild`/render escape hatch on interactive primitives (§2)
+- [ ] No component spreads a rest object that originated in untrusted data (`{...JSON.parse(…)}`, an API response, parsed query params) onto a DOM node (§2) — grep the call sites, not the component: the spread that injects `dangerouslySetInnerHTML` or an `on*` handler is written where the props are *built* ([`sota-web-frameworks` rules/02](../../sota-web-frameworks/rules/02-react.md) §5)
+- [ ] Stateful components implement value/defaultValue/onChange (and open/defaultOpen/onOpenChange); no mode-switching warnings in console (§3)
+- [ ] 9-state contract complete per interactive component; data views implement loading/error/empty/partial/ideal; stacked states (focused + hovered + invalid) render coherently (§4)
+- [ ] Buttons in async flows: width-stable loading, double-submit guarded, `aria-busy` (§4)
+- [ ] Behavior comes from a headless layer (library or isolated hooks); styling keyed off data attributes (§5)
+- [ ] Storybook (or equivalent) covers every state incl. overflow/RTL/dark/reduced-motion and long content (German +35%, CJK, a 40-character unbroken word, emoji) with an explicit truncation policy; axe + visual regression run in CI (§6)
+- [ ] Keyboard interaction documented per component and matches WAI-ARIA APG patterns (§7)
+- [ ] Breaking changes semver'd with deprecation path; no silent token renames; deprecated tokens alias old → new until usage grep hits zero; each component documents anatomy, props and keyboard tables (§7)
+- [ ] **Component API smells (§6c) — Minor**: no non-primitive with > ~10 props, no slots faked through config props, no `onClick` on Card/Row-type components, no near-duplicate sibling components, no internal state reached via `document.querySelector` from outside. Slot-faking prop names: `grep -rnE '\b(header|footer)(Left|Right)?(Icon|ButtonText|Action|Label)\b' --include='*.tsx' --include='*.jsx' .`; outside reach-ins (a hit is a call site to read): `grep -rn 'document\.querySelector' --include='*.tsx' --include='*.jsx' .`
+- [ ] **Density and brand as theme axes (§6d) — Minor**: density switches by `[data-density]` remapping control-height/space tokens, never per-component props; `pointer: coarse` forces comfortable density; brands differ only in primitive-ramp assignments and brand-shape tokens. Per-component density props (each hit is a prop to replace with the token axis): `grep -rnE '\b(compact|dense|density)\??:' --include='*.ts' --include='*.tsx' .`
+- [ ] **One public export point per component (§8) — Minor**: the system package's `exports` map hides internals; consumers and sibling components never deep-import; importing one component does not pull another's dependency graph (check with a bundle analyzer). Deep imports into a scoped package (a hit is a lead — a subpath the `exports` map declares is fine): `grep -rnE "(from|import)[[:space:]]+['\"]@[^/'\"]+/[^/'\"]+/[^'\"]+['\"]" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' .`

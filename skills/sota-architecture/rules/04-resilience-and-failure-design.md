@@ -280,11 +280,11 @@ Don't back into it via "we just added a second region for latency".
 
 ## Audit checklist
 
-- [ ] Does every remote call (HTTP, DB, cache, queue) have an explicit timeout? Grep for client construction sites and verify.
-- [ ] Are timeouts derived from measured callee latency, and do nested timeouts fit within the edge deadline?
-- [ ] Are retries bounded, jittered, restricted to idempotent operations and retryable errors, and owned by exactly one layer per edge?
-- [ ] Is there a retry budget or equivalent guard against retry storms?
-- [ ] Are circuit breakers per-dependency, with alerting on state change and a defined fallback per open circuit?
+- [ ] Does every remote call (HTTP, DB, cache, queue) have an explicit timeout? Grep for client construction sites and verify. (§1)
+- [ ] Are timeouts derived from measured callee latency, and do nested timeouts fit within the edge deadline? (§1)
+- [ ] Are retries bounded, jittered, restricted to idempotent operations and retryable errors, and owned by exactly one layer per edge? Is the user's synchronous critical path retried at most once? (§2)
+- [ ] Is there a retry budget or equivalent guard against retry storms? (§2)
+- [ ] Are circuit breakers per-dependency, with alerting on state change and a defined fallback per open circuit? (§3)
 - [ ] Are connection/thread pools bulkheaded per dependency and per workload class, or is there one shared pool?
 - [ ] Where a workload-wide failure is unaffordable: is the system split into cells behind a router with no business logic, is each cell capped at a tested size, and do deploys roll out cell by cell with automatic halt? A single shared stack serving every tenant, or a router that calls business services, is a finding (§4).
 - [ ] Is each dependency of each critical flow classified required/optional, with degradation behavior implemented and tested?
@@ -293,11 +293,11 @@ Don't back into it via "we just added a second region for latency".
 - [ ] **Connection ceilings are documented per backing service (§4), Medium:** list the pool settings with `grep -rnE -i '(maximumPoolSize|SetMaxOpenConns|max_?pool_?size|pool_?size|max_?connections)' .` and, for each, find the doc that states pool × max replicas against the server limit and the at-limit behaviour. A pool with no such doc is a finding. It is High if pool × max replicas is already above the server's limit.
 - [ ] **Limited drops use randomised, identity-bound admission (§6), Medium:** a waiting room admits at random and its tokens are bound to session and identity. Probe for FIFO ticketing: `grep -rnE -i '(queue|waiting|wait)[_-]?(position|pos|ticket|number)([^=]*=[^=]*(incr|nextval|[+][+])|[[:space:]]*([+]=[[:space:]]*1|[+][+]))' .` Any hit on a scarce-inventory flow is a finding.
 - [ ] Is there admission control / load shedding with priority ordering, bounded queues, and deadline-aware dropping?
-- [ ] Do liveness probes avoid dependency checks? Does readiness avoid mass-unready on shared-dependency failure?
-- [ ] Are SLOs defined per user journey, and are chaos experiments (latency, errors, instance/AZ kill) run on a schedule with results tracked?
-- [ ] Can every service roll back in minutes, shut down gracefully, and start while its dependencies are down?
-- [ ] Are cache TTLs/crons jittered, and is stampede protection (single-flight) in place for hot keys?
-- [ ] Is rate limiting present at the public edge (per client), per tenant internally, and outbound toward third-party limits?
-- [ ] Is hedging, if used, restricted to idempotent reads with a load cap?
-- [ ] Does each critical flow have a failure-mode table (slow/down/garbage per dependency) with designed responses, and are dependencies tiered T0/T1/T2?
-- [ ] Are RTO/RPO defined per datastore, backups restore-tested on a schedule, and the cross-region posture an explicit ADR?
+- [ ] Do liveness probes avoid dependency checks? Does readiness avoid mass-unready on shared-dependency failure? Are health endpoints cheap (<10 ms, no fan-out), unauthenticated only on internal interfaces, and exempt from load shedding? (§7)
+- [ ] Are SLOs defined per user journey, and are chaos experiments (latency, errors, instance/AZ kill) run on a schedule with results tracked? Has each incident's failure mode become a permanent chaos experiment? (§8)
+- [ ] Can every service roll back in minutes, shut down gracefully, and start while its dependencies are down? Are schema changes expand/contract so a code rollback never needs a schema rollback, and are startup migrations idempotent and lock-guarded? (§9)
+- [ ] Are cache TTLs/crons jittered, and is stampede protection (single-flight) in place for hot keys? (§9)
+- [ ] Is rate limiting present at the public edge (per client), per tenant internally, and outbound toward third-party limits? Do internal hops use adaptive concurrency limits rather than fixed RPS, and is the burst policy (token vs leaky bucket) written down per edge? (§10)
+- [ ] Is hedging, if used, restricted to idempotent reads with a load cap? (§11)
+- [ ] Does each critical flow have a failure-mode table (slow/down/garbage per dependency) with designed responses, and are dependencies tiered T0/T1/T2? Does every T0 dependency have at least timeout + breaker + tested fallback-or-fail-closed + page? (§12)
+- [ ] Are RTO/RPO defined per datastore, backups restore-tested on a schedule, and the cross-region posture an explicit ADR? Is any active-active multi-region setup backed by its own Type 1 ADR covering conflict resolution, residency and ID generation? (§13)

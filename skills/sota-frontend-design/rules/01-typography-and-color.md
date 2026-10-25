@@ -235,15 +235,18 @@ Dark mode is a redesign, not an inversion:
 
 ## Audit checklist
 
-- [ ] Type sizes come from a named scale (≤ 8 steps); no rogue `font-size` literals in components
-- [ ] Body text ≥ 16px, line-height 1.5–1.7 unitless, measure ≤ 75ch
-- [ ] Fluid type uses `clamp()` with a rem term; page is readable and un-clipped at 200% zoom (WCAG 1.4.4) and 320px width (1.4.10 reflow)
-- [ ] `text-spacing` override survives (1.4.12): bump line-height 1.5 / letter 0.12em / word 0.16em — nothing clips
-- [ ] Variable font self-hosted, subset, `font-display` set, metric-matched fallback (no font-swap CLS)
-- [ ] ≤ 2 text families (+mono); 3–4 tokenized weights; `font-synthesis` controlled; full fallback stacks
-- [ ] Tabular figures on numeric columns/timers; real quotes/dashes; tracking via scale tokens only
-- [ ] State colors derived via relative-color/`color-mix` rules (one definition per theme), not hand-picked per component; text tokens opaque; `::selection` and `--focus-ring` defined and contrast-checked
-- [ ] All text 4.5:1 (3:1 large); all UI boundaries, icons, focus rings, states 3:1 (1.4.11) — verified in BOTH themes
-- [ ] Links in prose distinguishable without color; status never encoded by color alone
-- [ ] Tokens are two-layer; components never reference primitive ramps or hex literals
-- [ ] Dark mode: no pure black/white, elevation = lighter surface, accents desaturated, `color-scheme` declared, no flash of wrong theme, system preference honored with manual override
+- [ ] Type sizes come from a named scale (≤ 8 steps) whose steps are named by role (`--text-sm`, `--text-h2`), not by pixel value (`--text-14`); no rogue `font-size` literals in components (§1)
+- [ ] Body text ≥ 16px, line-height 1.5–1.7 unitless (headings 1.1–1.25), measure ≤ 75ch; no `text-align: justify`; prose containers set `overflow-wrap: break-word` (§1, §2)
+- [ ] Fluid type uses `clamp()` with a rem term; page is readable and un-clipped at 200% zoom (WCAG 1.4.4) and 320px width (1.4.10 reflow) (§1)
+- [ ] `text-spacing` override survives (1.4.12): bump line-height 1.5 / letter 0.12em / word 0.16em — nothing clips (§2)
+- [ ] Variable font self-hosted, subset, `font-display` set, metric-matched fallback (no font-swap CLS); `preload` limited to the primary above-the-fold face as woff2; `font-variation-settings` used only for custom axes, not for weight/optical size (§3)
+- [ ] ≤ 2 text families (+mono); 3–4 tokenized weights, none outside the loaded/variable range; `font-synthesis` controlled; full fallback stacks; no `hyphens: auto` on headings or UI labels (§3b)
+- [ ] Tabular figures on numeric columns/timers; real quotes/dashes; tracking via scale tokens only (§3, §3b)
+- [ ] State colors derived via relative-color/`color-mix` rules (one definition per theme), not hand-picked per component; text tokens opaque; `::selection` and `--focus-ring` defined and contrast-checked; mixes use `in oklch`/`in oklab`, not sRGB; no state difference carried only by a P3-only chroma (check on an sRGB display) (§4b)
+- [ ] All text 4.5:1 (3:1 large); all UI boundaries, icons, focus rings, states 3:1 (1.4.11) — verified in BOTH themes against WCAG 2.x ratios (APCA may guide the choice, not pass/fail); a disabled field whose value users must read is rendered as read-only text (§5)
+- [ ] Links in prose distinguishable without color; status never encoded by color alone (§5)
+- [ ] Tokens are two-layer; components never reference primitive ramps or hex literals (§6)
+- [ ] Dark mode: no pure black/white, elevation = lighter surface, accents desaturated, `color-scheme` declared, no flash of wrong theme, system preference honored with manual override; glaring images have a dark variant (`<picture>` + `prefers-color-scheme`) or are tempered (§6)
+- [ ] **Palette authored in OKLCH (§4) — Minor**: primitives are OKLCH ramps (fixed or gently shifting hue, stepped lightness) with an `@supports`/build-time fallback where legacy targets matter; hover states are not `filter: brightness()` hacks. Custom properties defined as hex (each hit is a primitive to re-author, unless it is the build-time fallback): `grep -rnE --include='*.css' --include='*.scss' -e '--[a-z0-9-]+:[[:space:]]*#[0-9a-fA-F]{3,8}' .`; brightness filters (a hit on a `:hover`/state rule is the finding — a tempered dark-mode photo is allowed): `grep -rnE 'filter:[[:space:]]*brightness' --include='*.css' --include='*.scss' .`
+- [ ] **Contrast verified by automation over the token matrix (§6b) — Major**: CI runs a script that iterates every documented fg/bg token pair × every theme and fails under threshold (find it in the CI config or package scripts; a screenshot-only checker does not count); text over images/gradients is checked at its lightest region or sits on a scrim; a DevTools emulation pass covers `prefers-contrast`, `forced-colors` and the common color-vision deficiencies
+- [ ] **Color restraint (§7) — Minor**: status hues (success/warning/danger/info) appear only on status UI, never decoratively; accent covers ≤ ~15% of a screen (estimate from a screenshot); grays tinted toward the brand hue (C 0.005–0.02). Status tokens in use (each hit's selector must be a status element — a banner, promo or decoration is the finding): `grep -rnE 'var\(--(danger|error|success|warning|info)[a-z0-9-]*\)' --include='*.css' --include='*.scss' .`

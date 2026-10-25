@@ -116,7 +116,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 
 ## Audit checklist
 
-- [ ] `grep -rn "exec(\|execSync(" src/` — template/concat input = CRITICAL; migrate to execFile array form.
+- [ ] `grep -rn "exec(\|execSync(" src/` — template/concat input = CRITICAL; migrate to execFile array form. Array-form args taken from input still need a character allowlist or a `--` separator (MEDIUM); a `timeout:` on a child that may fork needs `detached: true` and a process-group kill (MEDIUM); `grep -rn 'DEP0190' --exclude-dir=node_modules .` hits in Node ≥24 logs or CI output mark a live `shell: true` sink (HIGH) (§1).
 - [ ] `grep -rn "child_process" src/ | grep "shell"` — `shell: true` (HIGH).
 - [ ] **Child exit status never read — MEDIUM, HIGH when the output is trusted** — `execFileSync`
       and `execSync` throw on a non-zero exit and the `exec`/`execFile` callback receives an
@@ -124,12 +124,12 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
       reports only through the `'close'`/`'exit'` event's `code` (Node.js `child_process` docs).
       Files that spawn and never read either:
       `grep -rlE 'spawnSync\(|spawn\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' src/ | while IFS= read -r f; do grep -qE "\.status|[\"'](close|exit)[\"']" "$f" || echo "$f"; done`
-- [ ] **SSRF: a request value becoming an outbound request's URL (§"SSRF and server-side validation")** —
+- [ ] **SSRF: a request value becoming an outbound request's URL (§2)** —
       ``grep -rnE '(fetch|axios(\.[a-z]+)?|got(\.[a-z]+)?|https?\.(get|request)|goto|new URL)\( *(`\$\{ *)?req\.(body|query|params|headers)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
       — each hit must go through a connect-time `lookup` guard plus a literal-IP check, with
       `redirect: 'error'`/`'manual'`, or it is HIGH (internal address / metadata endpoint
       reachable). A pre-fetch `dns.lookup` as the only check is HIGH (DNS rebinding). The probe
-      sees single-line calls with the request value first; a URL held in a variable needs a read.
+      sees single-line calls with the request value first; a URL held in a variable needs a read. Also `grep -rnE '\.(update|create|insert|save|findByIdAndUpdate)[A-Za-z]*\( *([^,()]+, *)?req\.body *\)' --include='*.ts' --include='*.js' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules .` — a request body passed whole to a model write is mass assignment (HIGH).
 - [ ] **Credentials re-added on a redirect (§"SSRF", the credentials sub-bullet) — HIGH** —
       `grep -rnE 'beforeRedirect.*([Aa]uthorization|[Cc]ookie|headers)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       — a redirect hook that touches headers can send the token to the redirect target. A hook

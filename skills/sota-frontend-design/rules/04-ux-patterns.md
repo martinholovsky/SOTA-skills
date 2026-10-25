@@ -46,6 +46,8 @@ Always set the full attribute stack — this is free conversion and accessibilit
 
 ## 2a. Internationalization-aware UX
 
+*(audited in [`sota-ux-writing` rules/04](../../sota-ux-writing/rules/04-accessibility-localization.md): concatenated translated fragments, ICU plurals, `Intl.*`, `dir="auto"` — one set of i18n probes, held there)*
+
 i18n breakage is a layout *and* logic class of bug — design for it up front:
 
 - Reserve expansion room: German/Finnish run ~+35% over English, Russian +20%; buttons, tabs,
@@ -253,20 +255,20 @@ Escalation ladder — use the *least* interruptive surface that fits:
 
 ## Audit checklist
 
-- [ ] Every input: visible associated label, correct `type`, `autocomplete` (1.3.5), `inputmode`; no placeholder-only labels; no `type="number"` for codes/IDs
-- [ ] Validation on blur → re-validate on input after first error; `:user-invalid` not `:invalid`; submit focuses first error; errors specific, adjacent, linked via `aria-describedby` + `aria-invalid`, not color-only
-- [ ] Failed submit preserves all user input; server errors map to fields; multi-field forms draft-persist
-- [ ] No paste-blocking, no `user-scalable=no`, no dead-end disabled submit
+- [ ] Every input: visible associated label (above the input), correct `type`, `autocomplete` (1.3.5), `inputmode`; no placeholder-only labels; no `type="number"` for codes/IDs; radio/checkbox sets in `<fieldset>` + `<legend>`; one column except tightly bound groups; optional fields marked "(optional)" (§1)
+- [ ] Validation on blur → re-validate on input after first error; `:user-invalid` not `:invalid`; submit focuses first error; errors specific, adjacent, linked via `aria-describedby` + `aria-invalid`, not color-only; long forms show a top summary linking to each error (§3)
+- [ ] Failed submit preserves all user input; server errors map to fields; multi-field forms draft-persist; unmappable server errors land in a focused `role="alert"` summary with retry (§3)
+- [ ] No paste-blocking, no `user-scalable=no`, no dead-end disabled submit (§8)
 - [ ] **Credential fields (§2) — MEDIUM**: password inputs are `type="password"` in markup (reveal is a toggle), username and password are one Tab apart, and no username/password/OTP field blocks paste. Password-named inputs declared as text: `grep -rniE '<input[^>]*type="text"[^>]*(name|id)="[^"]*(passw|pwd)|<input[^>]*(name|id)="[^"]*(passw|pwd)[^"]*"[^>]*type="text"' .`; paste handlers (a hit is a file to read — block-on-paste is the finding): `grep -rniE 'onpaste=|addEventListener\(.paste' .`
 - [ ] **Sign-out and idle expiry (§7, §5b) — MEDIUM**: every authenticated view carries a `POST` sign-out control in a consistent place; at server idle expiry the client clears sensitive rendered data and lands on a signed-out screen. Header/nav components with no sign-out control (a hit is a file to read — public-page headers legitimately lack one): `grep -rliE '<(header|nav)' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --include='*.html' . | xargs -r grep -LiE 'log.?out|sign.?out|log.?off'`
-- [ ] Loading: ~300ms grace before indicators; skeletons match final layout (zero CLS); buttons width-stable + double-submit guarded; optimistic updates roll back with explanation
-- [ ] Empty states differentiated (first-use vs filtered-zero vs error) with action; error states always include a recovery path
-- [ ] Destructive: undo pattern where reversible; confirms name the object + consequence, verb-labeled button, cancel focused; type-to-confirm only for top-tier irreversibles; destructive separated from frequent actions
-- [ ] Right control for the job: radios ≤ 5 visible, switch only for immediate effect, no sliders for precise values, native pickers on mobile unless the custom one clears the APG bar
-- [ ] Lists: pagination/load-more for product data (no unforced infinite scroll), scroll restored on Back, virtualization keeps keyboard/AT working; tables have `aria-sort`, sticky headers, a deliberate mobile strategy; filters chip-visible + URL-persisted
-- [ ] Overlay escalation respected (inline → popover → drawer → modal → page); no stacked modals; dirty-state guards on dismiss; scroll lock without layout shift
-- [ ] Navigation: `aria-current`, per-view titles, working Back button, state in URL, ≤ 7 top-level items, mobile primary actions in thumb zone
-- [ ] Touch: 44px build standard (24px + spacing absolute floor), 8px gaps, gestures and drags have visible/keyboard alternatives, hover-only affordances gated and mirrored for touch/focus
-- [ ] Long-form input autosaves (with visible status) or guards navigation; tab-close flushes; session expiry preserves data; collaborative overwrites surfaced
-- [ ] Shortcuts: visible-path-first, discoverable bindings, single-key remappable (WCAG 2.1.4), IME/composition safe, no browser-binding theft
-- [ ] Feedback < 100ms on every interaction; toasts non-critical, pausable, role-correct; honest progress
+- [ ] Loading: ~300ms grace before indicators; skeletons match final layout (zero CLS); buttons width-stable + double-submit guarded; optimistic updates roll back with explanation; once shown, an indicator stays ≥ 300ms; waits > 10s get determinate progress + cancel; no optimistic UI for payments, sends or deletes (§4)
+- [ ] Empty states differentiated (first-use vs filtered-zero vs error) with action; error states always include a recovery path; filtered-zero states echo the query and offer "clear filters" (§5)
+- [ ] Destructive: undo pattern where reversible; confirms name the object + consequence, verb-labeled button, cancel focused; type-to-confirm only for top-tier irreversibles; destructive separated from frequent actions; bulk destructive actions state the count before and after (§6)
+- [ ] Right control for the job: radios ≤ 5 visible, switch only for immediate effect, no sliders for precise values, native pickers on mobile unless the custom one clears the APG bar; marketing consent never preselected (§2b)
+- [ ] Lists: pagination/load-more for product data (no unforced infinite scroll), scroll restored on Back, virtualization keeps keyboard/AT working; tables have `aria-sort`, sticky headers, a deliberate mobile strategy; filters chip-visible + URL-persisted; result counts announced via `role="status"`; row actions in a trailing menu (§7b)
+- [ ] Overlay escalation respected (inline → popover → drawer → modal → page); no stacked modals; dirty-state guards on dismiss; scroll lock without layout shift; Esc and scrim click close every overlay (§7c)
+- [ ] Navigation: `aria-current`, per-view titles, working Back button, state in URL, ≤ 7 top-level items, mobile primary actions in thumb zone (§7, §8)
+- [ ] Touch: 44px build standard (24px + spacing absolute floor), 8px gaps, gestures and drags have visible/keyboard alternatives, hover-only affordances gated and mirrored for touch/focus; gestures stay clear of browser back-swipe edge zones (§8)
+- [ ] Long-form input autosaves (with visible status) or guards navigation; tab-close flushes; session expiry preserves data; collaborative overwrites surfaced (§5b)
+- [ ] Shortcuts: visible-path-first, discoverable bindings, single-key remappable (WCAG 2.1.4), IME/composition safe, no browser-binding theft (§8b)
+- [ ] Feedback < 100ms on every interaction; toasts non-critical, pausable, role-correct; honest progress; no marketing modal on load over a task (§9)

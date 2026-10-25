@@ -266,33 +266,45 @@ Same applies to running totals, gaps-and-islands, deduplication
 - [ ] Geospatial: `grep -rniE 'ST_Distance\(|haversine|acos\(sin\(' --include='*.sql' --include='*.py' --include='*.js' --include='*.ts' --include='*.rb' --include='*.go' .`
       — a distance in a `WHERE` clause is a sequential scan; the indexable form is
       `ST_DWithin`. Confirm with `EXPLAIN`, since every one of these returns the *right
-      answer* while scanning the table.
+      answer* while scanning the table (§5).
 - [ ] Geospatial columns declare their SRID (`geometry(Point,4326)`), and the
       geometry-vs-geography choice matches the data's extent — degrees-as-distance on a
-      `geometry` lat/long column is meaningless, not merely imprecise.
+      `geometry` lat/long column is meaningless, not merely imprecise (§5).
 
 - [ ] Slow-query capture exists (pg_stat_statements + auto_explain); tuning
-      evidence is EXPLAIN (ANALYZE, BUFFERS), with estimate-vs-actual checked.
+      evidence is EXPLAIN (ANALYZE, BUFFERS), with estimate-vs-actual checked
+      and bad estimates fixed (ANALYZE, statistics target, `CREATE STATISTICS`)
+      before indexes are added; queries ranked by total time (§1).
 - [ ] Every hot query maps to a named index; composite indexes follow
-      equality→range/sort order; ORDER BY+LIMIT paths are sort-free.
+      equality→range/sort order; ORDER BY+LIMIT paths are sort-free (§3).
 - [ ] No unused (`idx_scan=0`), redundant-prefix, or lone low-cardinality
-      indexes; partial indexes used for skewed predicates (soft delete, queues).
+      indexes; partial indexes used for skewed predicates (soft delete, queues);
+      no index on a frequently-updated column without need (it blocks HOT
+      updates); bulk loads drop/recreate non-constraint indexes (§3).
 - [ ] JSONB/array/full-text predicates use GIN with the right opclass;
       append-only time filters considered for BRIN; expression indexes match
-      query expressions exactly.
+      query expressions exactly; no hash index without a measurement; partial
+      indexes' predicates implied by the queries that rely on them (§2).
 - [ ] No N+1: eager loading explicit, N+1 detection wired into dev/CI; no
-      query-in-loop patterns.
+      query-in-loop patterns (§4).
 - [ ] No `SELECT *` on hot paths; projections used; bulk writes are set-based
-      SQL, not ORM save-loops.
+      SQL, not ORM save-loops; multi-statement business operations run in an
+      explicit transaction; no full-column `save()` on concurrently updated
+      rows; thousand-ID `IN (...)` lists replaced by `= ANY($1)` (§4).
 - [ ] Pagination is keyset with a unique tiebreaker on all deep/scrolling
-      lists; no exact `count(*)` per page on large tables.
+      lists; cursors opaque (last row's sort key, not a page number); no exact
+      `count(*)` per page on large tables (§6).
 - [ ] Multi-referenced expensive CTEs deliberately MATERIALIZED (or not);
       per-group latest/rank uses window functions or DISTINCT ON, not
-      correlated subqueries.
-- [ ] All SQL parameterized; generic-plan risk assessed for skewed params;
+      correlated subqueries (§7).
+- [ ] All SQL parameterized (ORDER BY direction and LIMIT whitelisted, never
+      interpolated); generic-plan risk assessed for skewed params; PgBouncer
+      transaction mode has non-zero `max_prepared_statements` (≥1.21) (§8);
       statement_timeout set per role; no index-defeating expressions or type
-      mismatches in hot predicates.
+      mismatches in hot predicates; no `LIKE '%term%'` without a trigram or
+      full-text index; `EXISTS` instead of `count(*) > 0` (§9).
 - [ ] MEDIUM (HIGH with a non-UTF-8 multibyte charset): every client-side
       interpolation mode is known and justified, with UTF-8 pinned in the DSN.
       Probe: `grep -rniE "interpolateParams=true|default_query_exec_mode=simple_protocol|QueryExecModeSimpleProtocol|ATTR_EMULATE_PREPARES[^,)]*[,>][[:space:]]*(true|1)|preferQueryMode=simple" .`
-      (PDO's silent fallback has no line to hit).
+      (PDO's silent fallback has no line to hit); where a mode interpolates, a
+      test proves a quote/backslash payload comes back as data (§8).

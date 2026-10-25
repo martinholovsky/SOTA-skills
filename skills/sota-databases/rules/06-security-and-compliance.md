@@ -395,71 +395,71 @@ for app-side review. Database-layer obligations:
 
 - [ ] Separate migration/app/human roles; app role non-superuser, non-owner,
       NOBYPASSRLS, table-scoped grants only; ALTER DEFAULT PRIVILEGES set; no
-      GRANT ALL fixes; append-only tables lack UPDATE/DELETE grants.
+      GRANT ALL fixes; append-only tables lack UPDATE/DELETE grants; app roles hold no `pg_execute_server_program` membership or `EXECUTE` on `pg_read_file`/`lo_import`/`dblink` (§1).
 - [ ] HIGH: under an API-only model the app role holds no base-table grant
       (catalog query above returns no rows), function `EXECUTE` is revoked
-      from PUBLIC, and no app login is in `db_owner`. Probe:
+      from PUBLIC, and no app login is in `db_owner` (§1). Probe:
       `grep -rniE "sp_addrolemember[[:space:]]+N?'db_owner'|ALTER[[:space:]]+ROLE[[:space:]]+\[?db_owner\]?[[:space:]]+ADD[[:space:]]+MEMBER" .`
 - [ ] HIGH: each FDW/dblink/linked server/database link has a written reason
       and a dedicated least-privilege remote account; no PUBLIC or all-logins
-      mapping, no `sa`/superuser remote login. Probe:
+      mapping, no `sa`/superuser remote login (§1). Probe:
       `grep -rniE "USER[[:space:]]+MAPPING[[:space:]]+FOR[[:space:]]+PUBLIC|password_required[[:space:]]+'false'|sp_addlinkedsrvlogin.*(@rmtuser[[:space:]]*=[[:space:]]*N?'sa'|,[[:space:]]*NULL[[:space:]]*,)" .`
 - [ ] Per-role connection limits and timeouts; individual (not shared) human
-      logins; break-glass write access time-boxed.
+      logins; break-glass write access time-boxed (§1).
 - [ ] HIGH: no vendor default survives install — catalog login roles and
       databases match the repo's expected inventory (no anonymous user, no
       `test`/sample DB, bootstrap superuser password set, MongoDB
-      authorization on). Config probe:
+      authorization on, SQL Server `sa` disabled or renamed, hardening scripted in provisioning) (§2). Config probe:
       `grep -rniE 'POSTGRES_HOST_AUTH_METHOD[=:][[:space:]]*"?trust|(MYSQL_ALLOW_EMPTY_PASSWORD|MARIADB_ALLOW_EMPTY_ROOT_PASSWORD)[=:][[:space:]]*"?[^"[:space:]]|authorization:[[:space:]]*"?disabled' .`
 - [ ] HIGH: in-server code execution off unless documented — no untrusted PL
       languages, CLR/xp_cmdshell 0, MongoDB javascriptEnabled false, Redis
-      debug/module commands not `yes`; `pg_extension` matches the expected list.
+      debug/module commands not `yes`; `pg_extension` matches the expected list; unused stored procedures and discovery listeners (e.g. SQL Server Browser) removed or disabled (§2).
       Probe: `grep -rniE "(EXTENSION|LANGUAGE)[[:space:]]+(IF[[:space:]]+NOT[[:space:]]+EXISTS[[:space:]]+)?\"?(plpython3u|plperlu|pltclu)|'(clr enabled|xp_cmdshell)',[[:space:]]*'?1|enable-(debug|module)-command[[:space:]]+\"?yes|javascriptEnabled:[[:space:]]*true|--allow-scripting" .`
       (config that relies on MongoDB's default `true` has no line to hit —
       check the running `getCmdLineOpts` too).
 - [ ] HIGH: self-managed server runs as a dedicated non-root OS account that
       does not own the binaries; host hardened from a CIS/vendor baseline with
-      deviations recorded. Probe (unit files, my.cnf, compose, Dockerfiles):
+      deviations recorded (§2). Probe (unit files, my.cnf, compose, Dockerfiles):
       `grep -rniE "^[[:space:]]*user[[:space:]]*[=:][[:space:]]*[\"']?(root|0)([\"':]|$)|^USER[[:space:]]+(root|0)([[:space:]:]|$)" .`
 - [ ] HIGH: every engine, pooler, cache and proxy has a named advisory feed,
       owner and patch SLA; running versions (`SELECT version()`, PgBouncer
       `SHOW VERSION`, Redis `INFO server`) are at or above the fix for
       each advisory reachable in this config, pre-auth ones first; no EOL
       branch. Feed check: `gh api --paginate 'repos/OWNER/REPO/security-advisories?per_page=100' --jq '.[]|[.published_at[:10],.severity,.cve_id,.summary]|@tsv'`
-      — an empty result means "look at the changelog", not "no advisories".
+      — an empty result means "look at the changelog", not "no advisories"; each advisory's preconditions read against this config, the vendor workaround recorded where the fix lags (§2).
 - [ ] Credentials from secret manager/workload identity, rotatable without
-      deploy, one per service; DB not publicly reachable; pg_hba explicit;
-      no secrets in repos/images/CI logs.
+      deploy, one per service; DB not publicly reachable; pg_hba explicit (`hostssl` per network/role, no `0.0.0.0/0` row for a write role);
+      no secrets in repos/images/CI logs (§3).
 - [ ] HIGH: every engine's listener bound to localhost/private interfaces (TCP
       off when co-located), superuser login local-only, admin consoles behind
-      TLS + auth. Probe:
+      TLS + auth (§3). Probe:
       `grep -rniE "listen_addresses[[:space:]]*=[[:space:]]*'(\*|0\.0\.0\.0|::)'|bind[-_]address[[:space:]]*=[[:space:]]*(\*|0\.0\.0\.0|::)|bindIp(All)?:[[:space:]]*\"?(0\.0\.0\.0|true)|--bind_ip(_all|[[:space:]=]+[\"']?(0\.0\.0\.0|::|\*))|^bind[[:space:]]+(\*|0\.0\.0\.0)|'root'@'%'|^host(ssl)?[[:space:]]+[^[:space:]]+[[:space:]]+postgres[[:space:]]+[^[:space:]]+[[:space:]]+(scram|md5|password|trust|cert)" .`
       (MySQL and a config-less Redis listen on all interfaces with no line to
       hit — check `SHOW VARIABLES LIKE 'bind_address'` / `CONFIG GET bind`).
 - [ ] pgaudit (or equivalent) on DDL/roles/sensitive writes, logs shipped
-      off-host; no log_statement='all' in prod; connection logging on.
+      off-host; no log_statement='all' in prod; connection logging on (§4).
 - [ ] RLS enabled AND forced on protected tables; policies have WITH CHECK,
       fail closed on missing context, use SET LOCAL; security_invoker views;
-      SECURITY DEFINER functions pin search_path; cross-tenant leak test in CI.
+      SECURITY DEFINER functions pin search_path; policy functions `STABLE`; cross-tenant leak test in CI (§5, §7).
 - [ ] CRITICAL: a catalog tenancy gate runs against the migrated database —
       request role not `rolsuper`/`rolbypassrls`, every table classified,
-      tenant tables RLS-enabled, forced and with a policy (query above).
+      tenant tables RLS-enabled, forced and with a policy (query above) (§5).
       Migration probe:
       `grep -rniE '(CREATE|ALTER)[[:space:]]+(ROLE|USER)[[:space:]].*[[:space:]](SUPERUSER|BYPASSRLS)|NO[[:space:]]+FORCE[[:space:]]+ROW[[:space:]]+LEVEL' .`
 - [ ] TLS enforced server-side (hostssl, scram-sha-256) and verified
-      client-side (verify-full); Redis has TLS+auth and no public binding.
+      client-side (verify-full); no `md5`/`trust`/`password` auth; Redis has TLS+auth and no public binding (§6).
 - [ ] Disk encryption on; targeted column encryption (KMS keys, never in-DB,
       never in SQL text) for secrets/regulated fields, with blind indexes
-      where lookup is needed; encrypted backups with separated keys.
+      where lookup is needed; key rotation documented with the key-id stored beside the ciphertext; encrypted backups with separated keys (§6).
 - [ ] MEDIUM: embedded SQLite holding sensitive data sets `secure_delete`
       ON and `temp_store` MEMORY, and its db/-wal/-shm/-journal files are
-      0600 (`ls -l app.db*`). Probe for explicit weakening:
+      0600 (`ls -l app.db*`) (§6). Probe for explicit weakening:
       `grep -rniE "secure_delete[[:space:]]*=[[:space:]]*[\"']?(0|off|false|no)|temp_store[[:space:]]*=[[:space:]]*[\"']?(1|file)|SQLITE_TEMP_STORE=0" .`
 - [ ] No string-built SQL anywhere (including raw ORM escape hatches and
-      PL/pgSQL EXECUTE); identifier whitelist for dynamic ORDER BY/columns.
+      PL/pgSQL EXECUTE, which uses `USING` + `format()` `%I`/`%L`); identifier whitelist for dynamic ORDER BY/columns; LIKE inputs escape `%`/`_`; no Redis `EVAL` body or command name, and no Qdrant filter, built from untrusted input (§7).
 - [ ] PII inventory exists; no PII in logs/error trackers; non-prod
       environments use masked or synthetic data; BI roles see masking views,
-      not base tables.
+      not base tables; PII kept out of analytics events and statement text (§8).
 - [ ] Automated retention jobs per data category; RTBF flow enumerates all
       stores (cache, search, vector, queues, logs) with deadline tracking;
-      backup expiry or crypto-shredding documented; soft-deleted rows purged.
+      backup expiry or crypto-shredding documented; soft-deleted rows purged; audit payloads hold IDs, not names/emails; anonymization used instead of deletion is irreversible (§9).

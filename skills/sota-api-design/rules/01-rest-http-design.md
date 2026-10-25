@@ -323,7 +323,7 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
 
 ## Audit checklist
 
-- [ ] URLs are nouns; no verbs except reified action sub-resources; consistent plural casing.
+- [ ] URLs are nouns; no verbs except reified action sub-resources; consistent plural casing; no path nested deeper than two resource levels (`/orgs/{org}/projects/{id}`), deeper relations served as filtered top-level collections (§1).
 - [ ] No GET/HEAD endpoint mutates state.
 - [ ] Each route answers `405` with an `Allow` header for every method it does not declare (§2): in staging, send `TRACE`, `PUT` and `DELETE` to three read-only routes. Any 2xx = LOW, MEDIUM when the method reaches a handler.
 - [ ] Status codes semantically correct; no `200 {"error":...}` anti-pattern anywhere.
@@ -333,19 +333,21 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
       method that sets none (Spring's javadoc: a method-level value *overrides* it). Misses: an annotation
       split across lines, and a static import (`method = POST`). (Labelled set: 5/5 bad, 0/6 good, BSD grep
       and ugrep, 2026-10-13.) Response `Content-Type` is chosen from that list, never copied from `Accept`: send `Accept: text/html` and an unknown type to three endpoints and read the response header; no JSON served as `application/javascript`.
-- [ ] 201 responses include `Location`; async operations return 202 + status resource.
-- [ ] Collection endpoints use cursor pagination with opaque cursors, enforced max limit, stable sort with unique tiebreaker.
-- [ ] No unbounded `COUNT(*)`/total on large collections by default.
-- [ ] Filter/sort fields allowlisted; sorts hit indexes; no raw query-language injection path.
-- [ ] Every non-idempotent unsafe operation (payments, orders, sends) supports idempotency keys with stored-response replay and same-key-different-body rejection.
-- [ ] Concurrent duplicate idempotency-key requests cannot double-execute (locking/unique constraint verified).
-- [ ] ETags emitted; mutating endpoints on contended resources honor `If-Match`/412.
-- [ ] Cache-Control explicitly set; sensitive responses `no-store`.
-- [ ] Errors are RFC 9457 problem+json, single shape API-wide, machine-readable `type`/`code`, all validation errors batched, trace ID present.
-- [ ] No stack traces / SQL / internal paths in any client-visible error.
-- [ ] IDs opaque and non-enumerable; no sequential integers exposed.
-- [ ] Resources mapped through explicit DTOs, not raw ORM serialization.
+- [ ] 201 and 202 responses include `Location`; async operations return 202 + status resource; link fields (pagination, `Location`, result links) carry absolute or root-relative URLs, not bare IDs clients must string-build into URLs (§8).
+- [ ] **Async operations (§11) — MEDIUM**: send the same long-running `POST` twice with one `Idempotency-Key` and expect both `202`s to point at the same operation; `GET` the operation while pending (`Retry-After` present) and after it ends (`status` one of `pending|running|succeeded|failed`, timestamps, a result link on success, a problem+json `error` on failure); operations are listable per principal and still readable 24h after finishing.
+- [ ] **Batch endpoints (§12) — MEDIUM**: each documents its max size and its atomicity (all-or-nothing or per-item); send max+1 items and expect a 4xx; send a per-item batch with one invalid entry and expect per-item results in input order, each with its own status and problem details. An overall `200` with the failure visible only in prose is the finding.
+- [ ] Collection endpoints use cursor pagination with opaque cursors, enforced max limit, stable sort with unique tiebreaker; a cursor replayed with different filter/sort params is rejected (or carries them), and paging still works after the cursor's anchor row is deleted (§4).
+- [ ] No unbounded `COUNT(*)`/total on large collections by default (§4).
+- [ ] Filter/sort fields allowlisted; sorts hit indexes; no raw query-language injection path; `?fields=` has one documented unknown-field behaviour (ignored or `400`) and `?expand=` has a depth cap: send an unknown field and an over-deep expansion to confirm (§5).
+- [ ] Every non-idempotent unsafe operation (payments, orders, sends) supports idempotency keys with stored-response replay and same-key-different-body rejection; the dedupe record is scoped to key + endpoint + auth principal, expires, and is persisted in the same transaction as the side effect or via an outbox, never as a Redis-only record (§6).
+- [ ] Concurrent duplicate idempotency-key requests cannot double-execute (locking/unique constraint verified) (§6).
+- [ ] ETags emitted and `If-None-Match` answers `304`; mutating endpoints on contended resources honor `If-Match`/412, and where `If-Match` is required its absence returns `428` (§7).
+- [ ] Cache-Control explicitly set; per-user responses `private`, `public` only on genuinely shared data; sensitive responses `no-store` (§7).
+- [ ] Errors are RFC 9457 problem+json, single shape API-wide, machine-readable `type`/`code`, all validation errors batched, trace ID present (§9).
+- [ ] No stack traces / SQL / internal paths in any client-visible error (§9).
+- [ ] IDs opaque and non-enumerable; no sequential integers exposed (§1).
+- [ ] Resources mapped through explicit DTOs, not raw ORM serialization (§1).
 - [ ] OpenAPI spec exists, is in CI, breaking-change diff fails the build, and matches the served API (spot-check 3 endpoints).
 - [ ] **Per-operation security (§10) — HIGH when a write is unauthenticated**: every operation declares scheme and scopes and feeds the authz regression suite. Operations that drop or relax auth (each hit must be an intended public endpoint):
       `grep -rnE '"?security"?[[:space:]]*:[[:space:]]*\[[[:space:]]*\]|"?security"?[[:space:]]*:[[:space:]]*\[[[:space:]]*\{[[:space:]]*\}|^[[:space:]]*-[[:space:]]*\{[[:space:]]*\}[[:space:]]*$' --include='*.yaml' --include='*.yml' --include='*.json' .`
-- [ ] Timestamps RFC 3339 with timezone; money not floats.
+- [ ] **Data and interface defaults (§13)**: timestamps RFC 3339 with offset, never epoch floats; money in integer minor units or decimal strings, not floats; one field-naming case enforced by a lint rule; booleans not flag-strings, enums as strings not ints; `null` vs absent in PATCH defined; a parameter selecting a trust boundary defaults to the closed side, the open side explicit and keyword-only; a security-critical algorithm comes from a server-side allowlist, never from the caller or payload. Per-endpoint request size limit and timeout budget are probed in rules/07's checklist.

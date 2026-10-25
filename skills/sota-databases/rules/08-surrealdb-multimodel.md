@@ -239,31 +239,38 @@ surreal start --deny-all \
 - [ ] Version line known and pinned; no pre-2.0 `DEFINE SCOPE` syntax in
       migrations/docs; version meets the advisory patch floor re-read from
       the feed — 3.x: ≥ 3.2.0 on every deployment; 2.x: ≥ 2.6.1 AND flagged
-      as no longer receiving fixes, with a dated plan to move to 3.x.
+      as no longer receiving fixes, with a dated plan to move to 3.x (§1, §5).
 - [ ] Auth via `DEFINE ACCESS` (RECORD for end users); `DURATION FOR TOKEN`
       and `FOR SESSION` short and explicit; `AUTHENTICATE` re-checks account
-      state; JWT access methods pin algorithm/keys.
+      state; JWT access methods pin algorithm/keys; permissions authorize on
+      `$auth`/record state, not unverified `$token` claims (§1).
 - [ ] App never connects as root/OWNER; per-service system users scoped
       `ON DATABASE` with lowest role; services needing record-level authz use
-      record users; credentials from secret manager, rotatable.
+      record users; credentials from secret manager, rotatable (§2).
 - [ ] All queries use bound `$params`; no string-built SurrealQL anywhere
-      (grep SDK call sites for interpolation); dynamic identifiers whitelisted.
+      (grep SDK call sites for interpolation); record IDs from input bound
+      (`type::record($table, $id)`); dynamic identifiers whitelisted (§3).
 - [ ] Integrity-critical tables SCHEMAFULL with TYPE/ASSERT/READONLY fields;
       record links checked for orphans where it matters; no untyped critical
-      fields on SCHEMALESS tables.
+      fields on SCHEMALESS tables; server-computed fields use `VALUE`/`DEFAULT`
+      so clients cannot supply them (§4).
 - [ ] No `PERMISSIONS FULL` on user-data tables; all four verbs scoped to
       `$auth`; field-level permissions on sensitive fields; cross-tenant leak
       test in CI covers LIVE queries, graph/reference traversals, and indexed
-      ORDER BY on restricted fields.
+      ORDER BY on restricted fields (§5).
 - [ ] Server runs deny-by-default capabilities: no `--allow-all`, no
       `--allow-guests`, scripting denied, functions and outbound net
-      allow-listed; flags re-verified against current docs.
+      allow-listed; `SURREAL_FILE_ALLOWLIST` unset or pinned to exact
+      directories; flags re-verified against current docs (§6).
 - [ ] Not publicly reachable; TLS on all client connections; no credentials
-      in compose files/CI logs.
+      in compose files/CI logs; system credentials and JWT signing keys from
+      the secret manager, per service and rotatable (§7).
 - [ ] Hot-path queries EXPLAIN-verified (`Iterate Index`); uniqueness via
       UNIQUE indexes; index builds on live tables use CONCURRENTLY; vector
-      indexes follow file 07 rules.
+      indexes follow file 07 rules (§8).
 - [ ] Modeling: embed/reference/edge choices match access patterns; edge
-      tables have schema + permissions.
+      tables have schema + permissions; record-link fetch depth deliberate, not
+      `*` expansion everywhere (§9).
 - [ ] Both `surreal export` and storage-engine backups scheduled, encrypted,
-      restore-rehearsed; export files handled as secrets.
+      restore-rehearsed with RPO/RTO stated; keys stored apart from the backups;
+      export files handled as secrets (§10).

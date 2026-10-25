@@ -228,16 +228,31 @@ function getConn() {
       goroutine-per-send. Each is MEDIUM minimum; HIGH on network-fed paths.
 - [ ] Condvar waits: `if` instead of `while` around `wait()` (HIGH);
       predicate mutated outside the mutex; `notify_one` with heterogeneous
-      waiters.
+      waiters (§4).
 - [ ] RwLock: recursive read acquisition; reader-storm writer starvation;
-      upgrade patterns; would snapshot-swap be simpler?
+      upgrade patterns (state re-validated after release and re-acquire);
+      would snapshot-swap be simpler? Chosen without read-heavy, measured
+      contention, where a plain mutex is likely faster? (§2)
 - [ ] Semaphores: released on all paths (RAII/finally)? Acquired with
-      timeout/cancellation? Nested under another semaphore/pool?
+      timeout/cancellation? Nested under another semaphore/pool without a
+      global order? Memory-heavy work bounded by weight (bytes), not 1? (§3)
 - [ ] Channel sends/receives without a cancellation branch; close() called
-      from consumer side or from multiple producers (Go panic).
+      from consumer side or from multiple producers (Go panic); capacity
+      choice undocumented (§5).
 - [ ] `Promise.race` / `select!` / `wait(FIRST_COMPLETED)`: are losers
       cancelled and reaped? Are tokio `select!` arms cancellation-safe?
+      Hand-rolled "check A then B" loops starving B, or a shutdown branch that
+      must win ties without `biased;` or an explicit first check? (§6)
 - [ ] Lazy init: value memoized instead of future (stampede)? Failed init
-      cached forever (permanent outage)? DCL without acquire/release?
+      cached forever (permanent outage)? DCL without acquire/release? Init
+      inside a Once that can call back into the same Once or lock
+      (self-deadlock)? (§7)
+- [ ] Primitive mismatches (§1), MEDIUM: read each hand-off and wait site for
+      a shared list + lock + sleep-poll used as a queue, a polling loop
+      waiting for a state change, a spin-checked counter bounding access, or
+      two atomics guarding one invariant; replace with the table's "Use".
 - [ ] Critical sections containing I/O, awaits, callbacks, or logging.
-- [ ] Reentrant locks or `fooLocked` conventions violated (double-acquire).
+- [ ] Reentrant locks or `fooLocked` conventions violated (double-acquire);
+      critical sections doing more than lock, mutate, unlock (see the item
+      above); lock not named after and declared next to the data it guards
+      (§8).

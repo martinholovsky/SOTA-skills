@@ -347,38 +347,55 @@ multi-tenant system: HIGH.
 ## Audit checklist
 
 - [ ] Engine choice justified; no second datastore without a written reason
-      Postgres can't satisfy; no analytics workload on the OLTP primary.
+      Postgres can't satisfy; no analytics workload on the OLTP primary, no
+      OLTP on a columnar store, no Redis/Valkey as a system of record (§1).
 - [ ] No natural primary keys; no UUIDv4 PKs on high-insert tables; no `int`
-      PKs on growing tables; exposed IDs are non-enumerable (UUIDv7/public_id).
-- [ ] No mutable business facts duplicated without a documented sync mechanism;
-      temporal snapshots (prices, addresses) frozen at event time.
+      PKs on growing tables; no `serial`; exposed IDs are non-enumerable
+      (UUIDv7/public_id); composite PKs only on pure join tables, with the
+      reverse-order index added (§4).
+- [ ] No mutable business facts duplicated without a documented sync mechanism
+      and a drift-detecting audit query; cached aggregates keep their source rows;
+      temporal snapshots (prices, addresses) frozen at event time; no array/JSONB
+      element that is queried, joined, constrained or updated individually (it is
+      a child table) (§2).
 - [ ] No JSONB keys used in hot WHERE/JOIN/ORDER BY without a generated column
-      + index; no money/FKs/status inside JSONB.
+      + index; no money/FKs/status inside JSONB; GIN on JSONB only for
+      containment/existence (`jsonb_path_ops` when `@>`-only); required structure
+      enforced by CHECK (`jsonb_typeof`); hot mutable fields split out of large
+      documents (§3).
 - [ ] Soft-delete tables have partial unique + partial hot-path indexes,
       centralized filtering, and a purge job; "deleted" is not conflated with
-      business states.
+      business states; FK behaviour on soft delete decided explicitly (§5).
 - [ ] Audit/history requirements met by trigger-based append-only tables with
-      actor attribution and partitioned retention — not ad hoc app logging.
+      actor attribution (`SET LOCAL app.actor`) and partitioned retention — not
+      ad hoc app logging; the app role has no UPDATE/DELETE grant on audit tables;
+      point-in-time history uses `valid_from`/`valid_to` with an
+      `EXCLUDE USING gist` non-overlap constraint (§6).
 - [ ] Money and consumable balances: append-only entries, at least two per
       movement summing to zero, with sum-zero enforced by a **deferred DB
       constraint** rather than app code; balance derived (or a rollup that a job
-      re-derives and compares); corrections posted as reversing entries. A
+      re-derives and compares); corrections posted as reversing entries;
+      idempotency key `external_id UNIQUE` on the journal; sum-zero checked per
+      (journal, currency) (§7). A
       mutable `balance` column UPDATEd in place on a money path is CRITICAL —
       `grep -rn "balance *= *balance\|SET balance" migrations/ src/`.
 - [ ] Multi-tenant: RLS enabled AND forced on every tenant-scoped table,
-      SET LOCAL tenant context, non-BYPASSRLS app role, tenant_id-leading
-      indexes, automated cross-tenant isolation test.
+      `tenant_id NOT NULL` with an FK to tenants, SET LOCAL tenant context,
+      non-owner non-BYPASSRLS app role, tenant_id-leading indexes, automated
+      cross-tenant isolation test (§8).
 - [ ] HIGH: schema-per-tenant uses a role per tenant with USAGE on its own
       schema only and a pinned or transaction-local `search_path`;
       DB-per-tenant has per-tenant credentials, network rules, admin path and
-      backups. Probe for session-level path switching from app code:
+      backups; tenant names never spliced unquoted into `search_path` (§8).
+      Probe for session-level path switching from app code:
       `grep -rniE "[\"']SET[[:space:]]+(SESSION[[:space:]]+)?search_path" .`
 - [ ] Types: timestamptz everywhere, no float money, FK columns indexed,
       ON DELETE explicit, NOT NULL default, citext for case-insensitive
-      unique text.
+      unique text; `created_at timestamptz NOT NULL DEFAULT now()` on every table;
+      enum-like states as `text` + CHECK or a lookup table, not native `ENUM` (§9).
 - [ ] Absence modeled as `NULL`/omitted property, not an in-band sentinel
       (`-1`, `0`, `9999-12-31`, `""`). Where one is forced: per-field domain
       documented, a CHECK constraint distinguishing sentinel from legitimate
       value, and read-path filtering centralized rather than repeated per query.
       Check the queries that **order or compare** the column first — that is
-      where a sentinel changes an answer instead of just looking odd.
+      where a sentinel changes an answer instead of just looking odd (§9).

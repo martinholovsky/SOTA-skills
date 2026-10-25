@@ -165,6 +165,8 @@ Use Result (hand-rolled discriminated union, or neverthrow if the team wants com
 
 ## 8. Iterators and generators
 
+*(advisory)* — when to reach for generators and iterator helpers; the single-pass caveat is a reading hazard with no mechanical probe.
+
 - Generators for lazy/infinite/paginated sequences — they avoid materializing intermediate arrays:
 
 ```ts
@@ -304,7 +306,7 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
 
 ## Audit checklist
 
-- [ ] **Public surface** (§"Designing a public surface"): `grep -n '"exports"' package.json` —
+- [ ] **Public surface** (§13): `grep -n '"exports"' package.json` —
       absent means **every file is importable** and a refactor breaks consumers silently;
       present means adding it later was (or will be) a major. Where present, check `"types"` is
       the **first** key in each conditions object — conditions match in declaration order, so a
@@ -323,21 +325,24 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
 - [ ] `grep -rnE 'export (const|let) [A-Za-z]+ *= *(\[|\{)' src/` — an exported mutable array
       or object literal is a shared singleton every consumer can mutate (MEDIUM).
 
-- [ ] In-band sentinels: `grep -rnE 'return -1' --include='*.ts' --include='*.js' src/` — a
+- [ ] In-band sentinels (§4): `grep -rnE 'return -1' --include='*.ts' --include='*.js' src/` — a
       `-1` that is **stored or passed** rather than tested on the next line. Remember `??`
       does not rescue it (`-1 ?? x` is `-1`); only `null`/`undefined` trigger it.
 
-- [ ] `grep -rn "[^=!]==[^=]\|!=[^=]" --include="*.ts" src/` — loose equality (MEDIUM; eqeqeq lint).
-- [ ] `grep -rn "|| 0\||| ''\||| \[\]\||| {}" src/` and `\b(port|count|index|limit|offset|retries)\s*=.*||` — `||` where `??` is meant (MEDIUM, HIGH if money/ports).
-- [ ] `grep -rn "forEach(async" src/` — fire-and-forget async iteration (HIGH).
-- [ ] `grep -rn "\.sort(\|\.reverse(\|\.splice(" src/` — verify each operates on a locally-owned array, else `toSorted`/`toReversed`/`toSpliced` (MEDIUM).
+- [ ] `grep -rn "[^=!]==[^=]\|!=[^=]" --include="*.ts" src/` — loose equality (MEDIUM; eqeqeq lint). Then `grep -rnE '(^|[^.[:alnum:]_$])(isNaN|isFinite)\(' --include='*.ts' --include='*.js' --exclude-dir=node_modules .` — the global `isNaN`/`isFinite` coerce (`isNaN('foo')` is true): use `Number.isNaN`/`Number.isFinite` (LOW) (§1).
+- [ ] `grep -rn "|| 0\||| ''\||| \[\]\||| {}" src/` and `\b(port|count|index|limit|offset|retries)\s*=.*||` — `||` where `??` is meant (MEDIUM, HIGH if money/ports). Long `a?.b?.c?.d` chains usually mean validation was skipped upstream (LOW); `?.` combined with `!` is the non-null item below (§2).
+- [ ] `grep -rn "forEach(async" src/` — fire-and-forget async iteration (HIGH). Then `grep -rnE 'filter\(.*\)(\[0\]|\.length *> *0)' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules .` — `filter(…)[0]` / `filter(…).length > 0` where `find`/`some` state intent and short-circuit (LOW) (§3).
+- [ ] `grep -rn '\.sort(\|\.reverse(\|\.splice(\|\.fill(\|\.copyWithin(' --include='*.ts' --include='*.js' --exclude-dir=node_modules .` — verify each operates on a locally-owned array, else `toSorted`/`toReversed`/`toSpliced`/`with` (MEDIUM); `push`/`pop`/`shift`/`unshift` on a parameter or shared array is the same finding (§5).
 - [ ] `grep -rn "JSON.parse(JSON.stringify" src/` — replace with `structuredClone` (LOW/MEDIUM).
-- [ ] ``grep -rn "throw ['\"\`]\|throw {" src/`` — thrown non-Errors (HIGH).
+- [ ] ``grep -rn "throw ['\"\`]\|throw {" src/`` — thrown non-Errors (HIGH). (§7)
 - [ ] `grep -rn "catch ([a-z]*)\s*{\s*}" src/` and `catch.*{\s*$` followed by `}` — swallowed errors (HIGH).
-- [ ] ``grep -rn "new Error(.*+\|new Error(\`" src/`` — wrapping without `{ cause }` (LOW).
-- [ ] `grep -rn "hasOwnProperty" src/` — use `Object.hasOwn` (LOW).
-- [ ] `grep -rn "price\|amount\|total\|balance" --include="*.ts" src/ | grep -i "float\|\* 0\.\|/ 100\|toFixed"` — float money math (HIGH).
-- [ ] `grep -rnE 'parseFloat\(|parseInt\(|(^|[^A-Za-z_])Number\((req|ctx|input|body|query|params|process\.env)[.[]|z\.coerce\.number\(\)|\* *(1e6|1e9|1_000_000|1_000_000_000)([^0-9_n]|$)' --include='*.ts' --include='*.js' src/ | grep -vE 'Number\.isFinite|Number\.isSafeInteger|\.finite\(\)'` — numeric input parsed without a non-finite check (`NaN` passes `x < min || x > max`, `Infinity` passes a lower bound), or a `number` time-unit conversion that overflows past 2^53; also review each `/` and `%` on a request-derived divisor for divide-by-zero (HIGH if money/limits, else MEDIUM).
-- [ ] `grep -rn "from 'moment'\|require('moment')" src/` — dead library; migrate (MEDIUM). `new Date(` arithmetic with `86400000`/`3600000` constants — DST bugs (MEDIUM).
+- [ ] ``grep -rn "new Error(.*+\|new Error(\`" src/`` — wrapping without `{ cause }` (LOW). Then `grep -rnE '\.message *(===|!==|\.includes\(|\.startsWith\()' --include='*.ts' --include='*.js' --exclude-dir=node_modules .` — routing on message text instead of `instanceof` or a `code` field (MEDIUM); Error subclasses must set `this.name` (§7).
+- [ ] `grep -rn "hasOwnProperty" src/` — use `Object.hasOwn` (LOW). Then `grep -rnE '(Record<string, *[^>]+>|: *\{\}) *= *\{\}' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules .` — a plain object used as a dictionary inherits `Object.prototype` and is the prototype-pollution sink: use `Map`, or `Object.create(null)` (MEDIUM when keyed by external strings) (§6).
+- [ ] `grep -rn "price\|amount\|total\|balance" --include="*.ts" src/ | grep -i "float\|\* 0\.\|/ 100\|toFixed"` — float money math (HIGH). Then `grep -rnE '(id|Id|ID|snowflake)[[:space:]]*:[[:space:]]*(z\.)?number' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules .` — 64-bit IDs and snowflakes typed as `number` corrupt past 2^53: keep them strings (HIGH) (§11).
+- [ ] `grep -rnE 'parseFloat\(|parseInt\(|(^|[^A-Za-z_])Number\((req|ctx|input|body|query|params|process\.env)[.[]|z\.coerce\.number\(\)|\* *(1e6|1e9|1_000_000|1_000_000_000)([^0-9_n]|$)' --include='*.ts' --include='*.js' src/ | grep -vE 'Number\.isFinite|Number\.isSafeInteger|\.finite\(\)'` — numeric input parsed without a non-finite check (`NaN` passes `x < min || x > max`, `Infinity` passes a lower bound), or a `number` time-unit conversion that overflows past 2^53; also review each `/` and `%` on a request-derived divisor for divide-by-zero (HIGH if money/limits, else MEDIUM). A computed `setTimeout` delay not clamped below `2**31 - 1` ms fires after 1 ms (MEDIUM).
+- [ ] `grep -rn "from 'moment'\|require('moment')" src/` — dead library; migrate (MEDIUM). `new Date(` arithmetic with `86400000`/`3600000` constants — DST bugs (MEDIUM). Timestamps stored or sent as local-time strings rather than UTC ISO-8601 or epoch ms are the same class (§10).
 - [ ] `grep -rn "!" --include="*.tsx" -l src/` then targeted `grep -rn "\w!\.\|\w!;" src/` — non-null assertions; each needs justification (MEDIUM in app code).
 - [ ] ESLint: `eqeqeq`, `prefer-const`, `no-param-reassign`, `@typescript-eslint/no-floating-promises`, `no-non-null-assertion` configured.
+- [ ] **`Proxy` in application code (§9) — LOW** — `grep -rn 'new Proxy(' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .` — outside a framework, each hit pays a trap per property access, breaks identity (`proxy !== target`) and `this`-binding for private fields and built-ins (Map/Date). Replace it with an explicit function, a class or a `Map`.
+- [ ] **Classes as namespaces and import-time side effects (§12) — LOW, MEDIUM when the side effect opens a connection** — `grep -rnE '^[[:space:]]+(public |private |protected )?static (async )?[A-Za-z_$#]' --include='*.ts' --include='*.js' --exclude-dir=node_modules .` — a class whose members are all `static` should be a module. `grep -rnE '^(await |[A-Za-z_$.]+\.(connect|listen|register|use)\()' --include='*.ts' --include='*.js' --exclude-dir=node_modules .` — module-scope `await`, `.connect(`, `.listen(`, `.register(` or `.use(` runs on import; outside the composition root it breaks tree-shaking, tests and tooling.
+- [ ] **Unicode-unaware string handling (§14) — LOW, MEDIUM where user-visible text is cut or matched** — `grep -rnE '\.(slice|substring|substr)\( *0 *,' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules .` — truncation by UTF-16 code units splits emoji and combining marks: use `Intl.Segmenter`. Then read user-entered text comparisons for a missing `.normalize('NFC')`, human-facing sorts using `<` or a bare `.sort()` instead of `Intl.Collator`/`localeCompare`, and hand-rolled date/number strings instead of `Intl.*`.

@@ -362,7 +362,7 @@ tied to a measurable symptom (incident class, lead-time drag, cost line).
 
 - [ ] **Every control that spends a scarce resource per use states its cost profile**
       (*what, how often*), and that frequency was checked against the ADRs and contributor
-      docs (§4). A control whose per-use cost contradicts a decision already in force is a
+      docs (§4, §4a). A control whose per-use cost contradicts a decision already in force is a
       finding even though it works.
 
 - [ ] **Retired services are fully gone and out of the inventory (§12a), Medium:** list
@@ -375,18 +375,18 @@ tied to a measurable symptom (incident class, lead-time drag, cost line).
       DNS record that still resolves).
 
 - Is there a written rationale (ADR) for the current architecture style, with consequences and alternatives?
-- Could this system be a modular monolith? If it's microservices, can the team name the measured force that justified each extraction?
-- Are module/service boundaries enforced by CI tooling (import rules, architecture tests), not just convention?
-- Does any module reach into another module's internals or tables directly?
+- Could this system be a modular monolith? If it's microservices, can the team name the measured force that justified each extraction? Inside the monolith, does each module own a separate schema? (§1)
+- Are module/service boundaries enforced by CI tooling (import rules, architecture tests), not just convention? (§2)
+- Does any module reach into another module's internals or tables directly? (§2)
 - Do services deploy independently in practice (check release history), or do they ship in lockstep?
-- Is every Type 1 decision (datastore, broker, tenancy, public contracts) covered by an ADR with an exit strategy?
+- Is every Type 1 decision (datastore, broker, tenancy, public contracts) covered by an ADR with an exit strategy? (§6)
 - Are ADRs immutable and superseded rather than edited? Is the most recent ADR less than ~3 months old (i.e., is the practice alive)?
-- Are architectural qualities (latency, coupling, resilience, cost) encoded as automated fitness functions that run in CI or on a schedule?
-- Does every service/module have exactly one owning team, recorded machine-readably?
-- Were recent extractions done strangler-style with a deleted old path, or do zombie code paths remain?
-- Is any commodity capability (auth, flags, queues, search) hand-built without an ADR justifying it?
+- Are architectural qualities (latency, coupling, resilience, cost) encoded as automated fitness functions that run in CI or on a schedule? Where two qualities conflict, does an ADR name the winner and does the fitness function enforce that chosen trade-off rather than both? (§5)
+- Does every service/module have exactly one owning team, recorded machine-readably? Does any service boundary cross a team boundary (shared ownership)? An orphaned service is Critical (§7)
+- Were recent extractions done strangler-style with a deleted old path, or do zombie code paths remain? Did any extraction change more than one variable at once (new service AND new datastore AND new language)? (§8)
+- Is any commodity capability (auth, flags, queues, search) hand-built without an ADR justifying it? Does each adopted dependency have an ADR and a fitness function proving all calls go through its adapter? (§9)
 - Do sync vs async interaction choices match the semantics (answers vs facts), or are request/response flows tunneled through events?
-- Do clients reach internal services directly, or through a gateway/BFF? Does the gateway contain business logic?
-- Are context/container diagrams stored as text in the repo and current (spot-check three services against the diagram)?
-- Is any rewrite running big-bang style with parallel feature development on old and new?
-- Do superseded ADRs exist (evidence assumptions get re-validated), or has nothing been revisited since launch?
+- Do clients reach internal services directly, or through a gateway/BFF? Does the gateway contain business logic? Is each BFF owned by the client team it serves, or is one BFF shared by all clients? (§10)
+- Are context/container diagrams stored as text in the repo and current (spot-check three services against the diagram)? Did significant (Type 1) designs get an RFC/design doc before implementation, circulated with a comment deadline? (§11)
+- Is any rewrite running big-bang style with parallel feature development on old and new? Is each rewrite scoped to one bounded context, with a feature freeze on the replaced slice and a kill date for the old path? (§12)
+- Do superseded ADRs exist (evidence assumptions get re-validated), or has nothing been revisited since launch? Is architecture debt in the feature backlog with each item tied to a measurable symptom (incident class, lead-time drag, cost line)? (§13)
