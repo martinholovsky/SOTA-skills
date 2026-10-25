@@ -1333,7 +1333,8 @@ p = pathlib.Path('scripts/section-sync-baseline.json')
 b = json.loads(p.read_text(encoding='utf-8'))
 b['uncited_sections'].append('skills/sota-golang/rules/03-concurrency.md :: 98. A rule smuggled into the baseline')
 p.write_text(json.dumps(b, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
-" && git -c user.email=probe@invalid -c user.name=probe commit -qam 'probe 43d: grow the baseline' )
+" )
+  wt_commit "probe 43d: grow the baseline"   # --no-verify: the pre-commit hook would reject it
   probe_committed 43d "the baseline grew against the merge base" "S5 the baseline GREW against the merge base"
 else
   echo "  [43d] SKIPPED -- no section-sync baseline at the merge base (this branch introduces it), so"
