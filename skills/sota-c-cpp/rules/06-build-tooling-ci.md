@@ -151,6 +151,8 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - A target whose guard (`if (size < N) return 0;`) rejects nearly every input stays green and
   reaches nothing: require evidence of reach ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). libFuzzer's
   `-print_final_stats=1` prints statistics; it fails nothing.
+- **Mutation testing: Mull**, a clang plugin matched to the compiler's LLVM major version; its
+  `--mutation-score-threshold` defaults to 100 ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
 
 ## 4a. Bounded model checking for parsers and bounded functions (CBMC)
 

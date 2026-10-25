@@ -78,6 +78,8 @@ former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) on 202
   every input gets a property test and a fuzz target whose reach is gated (above): that is the
   bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
   mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
+- **Mutation testing: muter** has no failing gate (its `coverageThreshold` skips files); wrap it and
+  gate on its report ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
 
 ## Audit checklist
 
