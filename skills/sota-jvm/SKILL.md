@@ -56,7 +56,7 @@ Two consumers, one source of truth:
    unmodifiable collections) and the type system (sealed hierarchies, no raw
    types, `Optional`/Kotlin nullable types) over runtime checks.
 5. Never let untrusted bytes reach a deserializer, an XML parser with DTDs on,
-   a JNDI lookup, or a string-built query/EL expression ([`rules/04`](rules/04-security.md)).
+   a JNDI lookup, or a string-built query/EL expression ([`rules/04`](rules/04-security.md); XML parsers: [`rules/07`](rules/07-xml.md)).
 6. When you must use a sharp tool (reflection, `ObjectInputStream`, `Unsafe`,
    a `@SuppressWarnings`), leave a `// NOTE(sota):` comment explaining why and
    what bounds it.

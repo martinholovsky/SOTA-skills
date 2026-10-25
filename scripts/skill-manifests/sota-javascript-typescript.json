@@ -1,0 +1,49 @@
+{
+ "_note": "Declared BUILD routing for sota-javascript-typescript (invariant 42 C4, ROADMAP item 78). No keyword matches the file's own link text. Known stale pointer, NOT declared as a via: rules/04's headless-browser section sends 'SSRF and server-side validation' to rules/05, a section that moved to rules/08 on 2026-09-25; the headless-browser case reaches 08 by its own tag instead.",
+ "skill": "sota-javascript-typescript",
+ "tags": {
+  "ts-config": ["tsconfig"],
+  "type-design": ["designing types", "validating input shape"],
+  "idioms": ["writing any JS/TS logic"],
+  "sentinel": ["in-band sentinels"],
+  "async": ["promises/async", "floating promises"],
+  "node-service": ["Node services", "graceful shutdown", "HTTP hardening"],
+  "headless-browser": ["headless browsers"],
+  "xss": ["XSS", "CSP"],
+  "token-storage": ["token storage"],
+  "npm-supply-chain": ["npm supply chain", "pnpm"],
+  "external-process": ["spawns processes", "execFile"],
+  "outbound-fetch": ["caller-influenced URL", "connect-time"],
+  "performance": ["bundle size", "re-renders", "event-loop blocking"],
+  "testing": ["writing tests", "vitest", "Playwright"],
+  "browser-platform": ["service workers", "browser extensions", "client-side storage"]
+ },
+ "files": {
+  "01": {"build": ["ts-config", "type-design"]},
+  "02": {"build": ["idioms", "sentinel"]},
+  "03": {"build": ["async"]},
+  "04": {"build": ["node-service", "headless-browser"]},
+  "05": {"build": ["xss", "token-storage", "npm-supply-chain"]},
+  "06": {"build": ["performance"]},
+  "07": {"build": ["testing"]},
+  "08": {"build": ["external-process", "outbound-fetch"]},
+  "09": {"build": ["browser-platform"]}
+ },
+ "via": [
+  {"from": "05", "to": "09", "when": ["browser-storage"]}
+ ],
+ "cases": [
+  {"task": "render a user-supplied URL to PDF with a headless browser in a Node service", "mode": "build",
+   "tags": ["node-service", "headless-browser", "outbound-fetch"], "must_load": ["04", "08"]},
+  {"task": "keep the session token and a cached user profile in the browser", "mode": "build",
+   "tags": ["token-storage", "browser-storage"], "must_load": ["05", "09"]},
+  {"task": "spawn ffmpeg from an Express route with a caller-supplied filename", "mode": "build",
+   "tags": ["node-service", "external-process"], "must_load": ["04", "08"]},
+  {"task": "set up a new TypeScript library with strict tsconfig and vitest", "mode": "build",
+   "tags": ["ts-config", "testing"], "must_load": ["01", "07"]},
+  {"task": "replace indexOf-style -1 returns in a lookup helper", "mode": "build",
+   "tags": ["sentinel"], "must_load": ["02"]},
+  {"task": "audit a Node and React monorepo", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08", "09"]}
+ ]
+}

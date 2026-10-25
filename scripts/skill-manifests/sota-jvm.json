@@ -1,0 +1,48 @@
+{
+ "_note": "Declared BUILD routing for sota-jvm (invariant 42 C4, ROADMAP item 78). No keyword matches the file's own link text (so 07's tag avoids the bare word 'XML', which its filename contains). BUILD step 5 still sends 'an XML parser with DTDs on' to rules/04, though XML moved to rules/07 on 2026-09-25; the via 04 -> 07 declares the forwarding link that keeps that route alive, and 07's own row is its primary route. Step 5 wraps across two lines and routing_prose reads BUILD by physical line, so only its second line (JNDI, string-built query, the link) counts as 04's prose; 'untrusted bytes' and 'XML parser' do not. BUILD step 1 names 02/03/04/08/07 as bare numbers, which neither the graph nor the routing prose counts.",
+ "skill": "sota-jvm",
+ "tags": {
+  "idioms": ["Writing/reviewing any Java/Kotlin", "sealed types", "pattern matching"],
+  "input-limits": ["StreamReadConstraints", "limits before allocation"],
+  "api-design": ["Designing types/APIs", "nullability discipline"],
+  "sentinel": ["in-band sentinels"],
+  "concurrency": ["threads, executors", "virtual threads", "coroutines"],
+  "untrusted-input": ["trust boundary", "path traversal"],
+  "deserialization": ["deserialization", "gadget chains"],
+  "jndi": ["JNDI"],
+  "crypto": ["JCA crypto", "SecureRandom"],
+  "xml": ["XML parsing", "XXE"],
+  "performance": ["Latency/throughput/memory", "GC choice", "JFR"],
+  "build-ci": ["build/CI", "Maven vs Gradle", "Error Prone"],
+  "dependency": ["adopting a new dependency", "dependency locking"],
+  "web-endpoint": ["web layer", "Actuator", "Spring Security"]
+ },
+ "files": {
+  "01": {"build": ["idioms", "input-limits"]},
+  "02": {"build": ["api-design", "sentinel"]},
+  "03": {"build": ["concurrency"]},
+  "04": {"build": ["untrusted-input", "deserialization", "jndi", "crypto"]},
+  "05": {"build": ["performance"]},
+  "06": {"build": ["build-ci", "dependency"]},
+  "07": {"build": ["xml"]},
+  "08": {"build": ["web-endpoint"]}
+ },
+ "via": [
+  {"from": "04", "to": "07", "when": ["xml"]},
+  {"from": "04", "to": "08", "when": ["spring-boot"]}
+ ],
+ "cases": [
+  {"task": "parse XML documents uploaded by customers (the 2026-09-25 split moved XXE to rules/07)", "mode": "build",
+   "tags": ["untrusted-input", "xml"], "must_load": ["04", "07"]},
+  {"task": "accept polymorphic JSON in a Spring Boot controller", "mode": "build",
+   "tags": ["deserialization", "spring-boot"], "must_load": ["04", "08"]},
+  {"task": "move a blocking service to virtual threads with request-scoped MDC", "mode": "build",
+   "tags": ["concurrency"], "must_load": ["03"]},
+  {"task": "set up a Gradle build with dependency locking and SpotBugs", "mode": "build",
+   "tags": ["build-ci", "dependency"], "must_load": ["06"]},
+  {"task": "pick a GC and heap settings for a latency-sensitive container", "mode": "build",
+   "tags": ["performance"], "must_load": ["05"]},
+  {"task": "audit a Spring Boot service", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08"]}
+ ]
+}

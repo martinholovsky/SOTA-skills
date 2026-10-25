@@ -1,0 +1,51 @@
+{
+ "_note": "Declared BUILD routing for sota-ruby (invariant 42 C4, ROADMAP item 78 rollout). BUILD step 1 says a web endpoint touching the DB plus a background job 'needs `02`, `03`, `05`' by bare number, which routing_prose() does not read, so rules/05 is reached only through its index row. Case 2 is the 2026-10-25 cross-language intake's P4 finding (a second deep JSON.parse! killed Ruby, rc 132), reached from rules/02's JSON bullet through its link to rules/01 §5.",
+ "skill": "sota-ruby",
+ "tags": {
+  "ruby-idioms": ["Ruby version baseline", "pattern matching", "general idioms"],
+  "error-handling": ["exception design", "JSON depth limits"],
+  "typing": ["RBS/Sorbet/Steep"],
+  "untrusted-input": ["trust boundary"],
+  "sql": ["SQL injection"],
+  "command-exec": ["command injection", "Open3"],
+  "deserialization": ["Marshal", "YAML/Psych", "deserialization"],
+  "xml": ["Nokogiri", "XXE"],
+  "secrets": ["master.key", "secrets"],
+  "web": ["web-facing", "ERB escaping", "CSRF"],
+  "uploads": ["file uploads"],
+  "outbound-http": ["SSRF", "outbound TLS verification"],
+  "admin-ui": ["mounted admin apps", "Sidekiq::Web"],
+  "dependency": ["Bundler", "Gemfile.lock", "alternative index or mirror"],
+  "ci-tooling": ["RuboCop/StandardRB", "Brakeman", "CI gates"],
+  "tests": ["RSpec/Minitest"],
+  "gem-publishing": ["gem authoring/publishing"],
+  "concurrency": ["Threads, fibers, Ractors", "GVL"],
+  "background-jobs": ["background-job idempotency"],
+  "performance": ["YJIT", "GC and memory", "N+1", "profiling"]
+ },
+ "files": {
+  "01": {"build": ["ruby-idioms", "error-handling", "typing"]},
+  "02": {"build": ["untrusted-input", "sql", "command-exec", "deserialization", "xml", "secrets"]},
+  "03": {"build": ["web", "uploads", "outbound-http", "admin-ui"]},
+  "04": {"build": ["dependency", "ci-tooling", "tests", "gem-publishing"]},
+  "05": {"build": ["concurrency", "background-jobs", "performance"]}
+ },
+ "via": [
+  {"from": "02", "to": "01", "when": ["parses-untrusted-json"]},
+  {"from": "02", "to": "03", "when": ["serves-files"]}
+ ],
+ "cases": [
+  {"task": "add a web endpoint that writes to the DB and enqueues a background job", "mode": "build",
+   "tags": ["web", "sql", "background-jobs"], "must_load": ["02", "03", "05"]},
+  {"task": "accept a JSON webhook payload from a third party", "mode": "build",
+   "tags": ["untrusted-input", "deserialization", "parses-untrusted-json"], "must_load": ["02", "01"]},
+  {"task": "let users download their own exported files by name", "mode": "build",
+   "tags": ["untrusted-input", "serves-files"], "must_load": ["02", "03"]},
+  {"task": "mount the Sidekiq dashboard in a Rails app", "mode": "build",
+   "tags": ["admin-ui"], "must_load": ["03"]},
+  {"task": "start a new gem: lockfile, RuboCop, RSpec and CI", "mode": "build",
+   "tags": ["dependency", "ci-tooling", "tests", "gem-publishing"], "must_load": ["04"]},
+  {"task": "audit a Rails application", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05"]}
+ ]
+}

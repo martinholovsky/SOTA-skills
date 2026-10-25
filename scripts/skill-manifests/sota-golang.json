@@ -1,0 +1,47 @@
+{
+ "_note": "Declared BUILD routing for sota-golang (invariant 42 C4, ROADMAP item 78). No keyword matches the file's own link text, so stripping a row's description can always fail its tag. Known routing gap, recorded and NOT declared: BUILD step 4 still sends 'Each dependency must earn its place' to rules/05's supply chain section, which moved to rules/08 on 2026-09-25; the dependency tag is declared on 07 and 08 only.",
+ "skill": "sota-golang",
+ "tags": {
+  "errors": ["error path", "panic"],
+  "sentinel": ["in-band sentinels"],
+  "api-design": ["Designing packages or APIs", "interface placement", "functional options"],
+  "concurrency": ["goroutine", "errgroup", "worker pools"],
+  "http-service": ["HTTP servers", "graceful shutdown", "middleware"],
+  "untrusted-input": ["trust boundary", "SQL parameterization", "path traversal"],
+  "external-process": ["os/exec"],
+  "tls": ["TLS config"],
+  "performance": ["pprof", "Latency/memory", "allocation reduction"],
+  "testing": ["table tests", "fuzzing", "golden files"],
+  "ci-tooling": ["golangci-lint", "staticcheck"],
+  "dependency": ["dependenc"],
+  "build-time-code": ["build time", "go:generate"],
+  "godebug": ["GODEBUG"]
+ },
+ "files": {
+  "01": {"build": ["errors", "sentinel"]},
+  "02": {"build": ["api-design"]},
+  "03": {"build": ["concurrency"]},
+  "04": {"build": ["http-service"]},
+  "05": {"build": ["untrusted-input", "external-process", "tls"]},
+  "06": {"build": ["performance"]},
+  "07": {"build": ["testing", "ci-tooling", "dependency"]},
+  "08": {"build": ["dependency", "build-time-code", "godebug"]}
+ },
+ "via": [
+  {"from": "05", "to": "08", "when": ["tls"]}
+ ],
+ "cases": [
+  {"task": "add a third-party module to a Go service", "mode": "build",
+   "tags": ["dependency"], "must_load": ["08", "07"]},
+  {"task": "shell out to git from a Go CLI with a caller-supplied ref (the cmd.WaitDelay incident, 2026-08-18)", "mode": "build",
+   "tags": ["external-process", "untrusted-input"], "must_load": ["05"]},
+  {"task": "terminate TLS in a Go HTTPS server", "mode": "build",
+   "tags": ["http-service", "tls"], "must_load": ["04", "05", "08"]},
+  {"task": "fan out backend calls with errgroup and bounded concurrency", "mode": "build",
+   "tags": ["concurrency"], "must_load": ["03"]},
+  {"task": "replace a -1-for-not-found return in a lookup function", "mode": "build",
+   "tags": ["sentinel", "api-design"], "must_load": ["01", "02"]},
+  {"task": "audit a Go microservice", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08"]}
+ ]
+}

@@ -1,0 +1,53 @@
+{
+ "_note": "Declared BUILD routing for sota-c-cpp (invariant 42 C4, ROADMAP item 78 rollout). BUILD step 1 says a parser of untrusted bytes 'needs `02`, `03`, `04`' by bare number, which routing_prose() does not read; the parser case reaches 02 and 03 through rules/04's own opening links, and 06 through its 'Fuzz the parser' link. Case 4 is the CBMC item the 2026-10-25 cross-language intake resolved into rules/06 §4a.",
+ "skill": "sota-c-cpp",
+ "tags": {
+  "cpp-idioms": ["Writing/reviewing any C++", "RAII", "error handling"],
+  "failure-paths": ["parser depth", "std::terminate"],
+  "memory": ["pointers, buffers", "use-after-free", "lifetimes"],
+  "undefined-behavior": ["Reasoning about UB", "integer overflow", "strict aliasing"],
+  "untrusted-input": ["trust boundary"],
+  "command-exec": ["command injection", "banned functions"],
+  "hardening-flags": ["OpenSSF hardening flag", "Windows/MSVC binary hardening"],
+  "outbound-http": ["SSRF through libcurl"],
+  "privilege-drop": ["privilege drop", "setuid"],
+  "threads": ["threads, atomics", "data races", "TSan"],
+  "build-ci": ["builds/CI", "CMake", "clang-tidy"],
+  "sanitizers-ci": ["sanitizer CI matrix", "the sanitizers"],
+  "fuzzing": ["fuzzing", "libFuzzer"],
+  "formal-proof": ["CBMC", "bounded model checking"],
+  "dependency": ["supply chain", "vcpkg/Conan", "selecting a new dependency"],
+  "performance": ["Latency/throughput/memory", "profiling", "cache locality"]
+ },
+ "files": {
+  "01": {"build": ["cpp-idioms", "failure-paths"]},
+  "02": {"build": ["memory"]},
+  "03": {"build": ["undefined-behavior"]},
+  "04": {"build": ["untrusted-input", "command-exec", "hardening-flags", "outbound-http", "privilege-drop"]},
+  "05": {"build": ["threads"]},
+  "06": {"build": ["build-ci", "sanitizers-ci", "fuzzing", "formal-proof", "dependency"]},
+  "07": {"build": ["performance"]}
+ },
+ "via": [
+  {"from": "04", "to": "02", "when": ["parser"]},
+  {"from": "04", "to": "03", "when": ["parser"]},
+  {"from": "04", "to": "06", "when": ["parser"]},
+  {"from": "04", "to": "01", "when": ["recursive-format"]}
+ ],
+ "cases": [
+  {"task": "write a parser for an untrusted binary file format", "mode": "build",
+   "tags": ["untrusted-input", "parser"], "must_load": ["02", "03", "04", "06"]},
+  {"task": "parse nested JSON documents from the network", "mode": "build",
+   "tags": ["untrusted-input", "parser", "recursive-format"], "must_load": ["01", "02", "03", "04", "06"]},
+  {"task": "add a worker thread pool draining a shared queue", "mode": "build",
+   "tags": ["threads"], "must_load": ["05"]},
+  {"task": "set up CMake, warnings, hardening flags, sanitizers and clang-tidy CI for a new project", "mode": "build",
+   "tags": ["build-ci", "sanitizers-ci", "hardening-flags"], "must_load": ["04", "06"]},
+  {"task": "prove a ring-buffer index stays in bounds with CBMC", "mode": "build",
+   "tags": ["formal-proof"], "must_load": ["06"]},
+  {"task": "drop root in a daemon that binds port 443 at start-up", "mode": "build",
+   "tags": ["privilege-drop"], "must_load": ["04"]},
+  {"task": "audit a C/C++ codebase", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+ ]
+}

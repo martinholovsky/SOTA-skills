@@ -38,8 +38,8 @@ Two consumers, one source of truth:
    config and a CI step
    running `go vet`, `golangci-lint run`, `go test -race ./...`,
    `govulncheck ./...` from day one (see [`rules/07`](rules/07-tooling-ci.md)).
-4. Prefer stdlib. Each dependency must earn its place (see [`rules/05`](rules/05-security.md) supply
-   chain section).
+4. Prefer stdlib. Each dependency must earn its place (see [`rules/08`](rules/08-supply-chain.md) §1,
+   supply chain).
 5. Write table tests alongside the code, not after. Exported behavior gets a
    test; concurrency gets a `-race` test; parsers get a fuzz target.
 6. When generating code that violates a rule for a legitimate reason (e.g.
