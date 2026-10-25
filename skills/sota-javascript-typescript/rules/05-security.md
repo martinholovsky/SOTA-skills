@@ -378,7 +378,7 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
 - [ ] **Uninitialized buffers and native addons — HIGH if the buffer can leave the process** —
       `grep -rnE 'Buffer\.allocUnsafe(Slow)?\(|new Buffer\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       ; `grep -rnE 'node-addon-api|node-gyp|"gypfile"|\.node([^a-zA-Z0-9]|$)|node:ffi|--allow-ffi' --include='package.json' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --include='Dockerfile*' --include='*.yml' --include='*.yaml' .`
-      — a `node:ffi` import or `--allow-ffi` grant is native code to audit as C (HIGH if its arguments are request-derived). A repo with its own `binding.gyp` where `grep -rlsE 'fsanitize=(address|undefined)' binding.gyp .github/workflows/` prints nothing has no sanitizer job (MEDIUM, §"Native addons").
+      — a `node:ffi` import or `--allow-ffi` grant is native code to audit as C (HIGH if its arguments are request-derived). A repo with its own `binding.gyp` where `grep -rlE 'fsanitize=(address|undefined)' --include='binding.gyp' --include='*.yml' --include='*.yaml' --exclude-dir=node_modules .` prints nothing has no sanitizer job (MEDIUM, §"Native addons").
 - [ ] `grep -rn "innerHTML\|outerHTML\|insertAdjacentHTML\|document.write" src/` — each with non-constant input is HIGH/CRITICAL; constant strings LOW.
 - [ ] `grep -rn "dangerouslySetInnerHTML\|v-html\|{@html}\|bypassSecurityTrust" src/` — sanitized with DOMPurify at render? Unsanitized user/db content = CRITICAL (stored XSS).
 - [ ] ``grep -rn "eval(\|new Function(\|setTimeout(['\"\`]\|setInterval(['\"\`]" src/`` — CRITICAL with dynamic input.

@@ -293,7 +293,7 @@ Run from repo root; verify each hit manually.
       `grep -rnE "$P" .github/workflows/ ; grep -rnE "$P" --include='Dockerfile*' --include='*.sh' --include='Makefile' --exclude-dir=vendor .`
       (each hit re-resolves or skips the lock check, except a library's `composer update --prefer-lowest`
       matrix job (§1), which re-resolves on purpose) ;
-      `grep -rnsE 'composer[[:space:]]+validate[^#]*--strict' .github/workflows/ .gitlab-ci.yml`
+      `grep -rnE 'composer[[:space:]]+validate[^#]*--strict' --include='*.yml' --include='*.yaml' --exclude-dir=vendor .`
       (no hit: a stale lock installs with exit 0)
 - [ ] **Advisory + abandonment status right now** — `composer audit --locked --abandoned=report`
 - [ ] **Advisory blocking switched off (§2) — HIGH in CI or a shared `composer.json`** —
@@ -362,7 +362,7 @@ Run from repo root; verify each hit manually.
 - [ ] **C extension or FFI with no memory-checker job (§4) — MEDIUM, HIGH when it parses
       request data** — applies when `config.m4`/`config.w32` exists or
       `grep -rlE '\\?FFI::(cdef|load)' --include='*.php' --exclude-dir=vendor .` lists files;
-      then `grep -rlsE 'valgrind|USE_ZEND_ALLOC=0|fsanitize=address' .github/workflows/ .gitlab-ci.yml`
+      then `grep -rlE 'valgrind|USE_ZEND_ALLOC=0|fsanitize=address' --include='*.yml' --include='*.yaml' --exclude-dir=vendor .`
       (no hit: the escape hatch's tests never run under a checker; a `valgrind` line without
       `--error-exitcode` cannot fail)
 
