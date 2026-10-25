@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""zsh-equals-hook.py — refuse a Bash command whose unquoted `=word` zsh would rewrite or abort on.
+"""zsh-equals-hook.py — refuse a Bash command whose unquoted `=word` zsh would rewrite or abort on,
+or whose `set -- $scalar` zsh would not split.
 A Claude Code PreToolUse hook on Bash, ON by default since 2026-10-21 (operator decision, ADOPTION-LOG):
 the plugin registers it (hooks/hooks.json) and install.sh's routing setup offers it.
 
@@ -22,6 +23,14 @@ A double-quoted `"$( … )"` is lexed as the command line it is. A cut inside `(
 function body ends only that subshell or that call (measured), so it is flagged all the same: the
 half that answers the question is still the half that never ran. NOT LEXED: backquotes inside
 double quotes, and `case` patterns. A miss there costs what no hook costs today.
+
+ALSO FLAGS (2026-10-25): `set -- $p` or `set -- ${p}` on a scalar, at the start of a simple
+command (after `do`, `then`, `{` and the like). zsh does not word-split an unquoted scalar, so it
+sets ONE positional parameter and `$2` is empty: a field report (2026-10-24) has `set -- $p; ssh
+-p "$2"` end in `Bad port ''`. Exempt: `$@`, `$*`, `$argv`, `${=p}`, `${(s: :)p}`, `$(cmd)`,
+quoted `"$p"`, and a name assigned as an array in the same command (`a=(x y)`). MEASURED over
+66,195 local agent Bash calls: 13 matched, all intended splits; every zsh session whose outcome is
+visible failed downstream (one argument), so the false-refusal count found there is 0.
 
 ONLY UNDER zsh: it works out the shell Claude Code runs Bash commands in the way Claude Code does
 (CLAUDE_CODE_SHELL, then $SHELL, then the first zsh or bash on PATH; see agent_shell) and acts only
@@ -53,6 +62,11 @@ import sys
 
 OPERATORS = set(";&|()<>`\n")
 COND_OPERATORS = {"=", "==", "=~"}
+# `set -- $p` in zsh: an unquoted scalar is NOT word-split (no SH_WORD_SPLIT), so it sets ONE
+# positional parameter. `$@`, `$*`, `$argv`, `${=p}`, `${(s: :)p}` and `$(cmd)` do not match.
+SCALAR_REF = __import__("re").compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
+ARRAY_ASSIGN = __import__("re").compile(r"(?:^|[\s;&|(])(?:typeset -a |local -a |declare -a )?([A-Za-z_][A-Za-z0-9_]*)=\(")
+RESERVED = {"do", "then", "else", "elif", "{", "!", "time", "if", "while", "until"}
 
 
 def _skip_quoted(s, i, quote, subs=None):
@@ -132,8 +146,32 @@ def _read_heredoc_word(s, i):
 
 def equals_words(cmd):
     """Return the unquoted `=word`s zsh's EQUALS would expand, in order."""
-    s, i, found = cmd, 0, []
+    return _lex(cmd)[0]
+
+
+def split_words(cmd):
+    """Return each unquoted `$name` in `set -- $name` that zsh will NOT word-split, in order."""
+    return _lex(cmd)[1]
+
+
+def _set_split(words, arrays):
+    """The scalar `$name` arguments of a `set -- …` simple command (leading reserved words skipped)."""
+    while words and words[0] in RESERVED:
+        words = words[1:]
+    if words[:2] != ["set", "--"]:
+        return []
+    out = []
+    for w in words[2:]:
+        m = SCALAR_REF.fullmatch(w)
+        if m and (m.group(1) or m.group(2)) not in arrays | {"argv"}:
+            out.append(w)
+    return out
+
+
+def _lex(cmd):
+    s, i, found, split = cmd, 0, [], []
     at_start, cond, heredocs = True, 0, []
+    words, arrays = [], set(ARRAY_ASSIGN.findall(cmd))
     while i < len(s):
         c = s[i]
         if c == "\n":
@@ -147,6 +185,8 @@ def equals_words(cmd):
                     if (line.lstrip("\t") if strip else line) == delim:
                         break
             heredocs, at_start = [], True
+            split.extend(_set_split(words, arrays))
+            words = []
             continue
         if c in " \t":
             i, at_start = i + 1, True
@@ -166,14 +206,19 @@ def equals_words(cmd):
             continue
         if c in OPERATORS:
             i, at_start = i + 1, True
+            split.extend(_set_split(words, arrays))
+            words = []
             continue
         if at_start:
             end, subs = i, []
             while end < len(s) and s[end] not in " \t" and s[end] not in OPERATORS:
                 end = _skip_quoted(s, end + 1, s[end], subs) if s[end] in "'\"" else end + 1
             word = s[i:end]
+            words.append(word)
             for inner in subs:
-                found.extend(equals_words(inner))
+                e, sp = _lex(inner)
+                found.extend(e)
+                split.extend(sp)
             if word == "[[":
                 cond += 1
             elif word == "]]" and cond:
@@ -186,12 +231,15 @@ def equals_words(cmd):
             subs = []
             i = _skip_quoted(s, i + 1, c, subs)
             for inner in subs:
-                found.extend(equals_words(inner))
+                e, sp = _lex(inner)
+                found.extend(e)
+                split.extend(sp)
         elif c == "\\":
             i += 2
         else:
             i += 1
-    return found
+    split.extend(_set_split(words, arrays))
+    return found, split
 
 
 def reason(words):
@@ -202,6 +250,17 @@ def reason(words):
         "prints, nothing after it runs. Quote it (`echo '==='`), separate with `echo ---`, and "
         "use `[[ a == b ]]` rather than `[ a == b ]`. Not run. "
         "(sota-shell-scripting rules/06 §1; this hook: scripts/zsh-equals-hook.py)"
+    )
+
+
+def split_reason(words):
+    shown = ", ".join(f"`set -- {w}`" for w in words[:5])
+    return (
+        f"zsh word splitting: {shown} sets ONE positional parameter in zsh, which does not split an "
+        "unquoted scalar the way bash does, so `$2` is empty (measured: `Bad port ''`). Split it "
+        "explicitly: `set -- ${=p}` (zsh), or `read -r a b <<<\"$p\"` (both shells). If the name is "
+        "an array, write `set -- \"${p[@]}\"`. Not run. "
+        "(sota-shell-scripting rules/01 §3; this hook: scripts/zsh-equals-hook.py)"
     )
 
 
@@ -242,9 +301,10 @@ def main():
         cmd = (event.get("tool_input") or {}).get("command")
         if not isinstance(cmd, str):
             return 0
-        words = equals_words(cmd)
-        if words:
-            print(reason(words), file=sys.stderr)
+        words, split = _lex(cmd)
+        msg = [m for m in (words and reason(words), split and split_reason(split)) if m]
+        if msg:
+            print("\n".join(msg), file=sys.stderr)
             return 2
         return 0
     except Exception as e:  # noqa: BLE001 -- the hook's top-level boundary: fail open, loudly
@@ -293,6 +353,26 @@ CASES = [
 ]
 
 
+# (command, expected flagged `set --` words, $# in real zsh). Each command is run in zsh by the
+# self-test and must print N=<that count>: 1 for a flagged scalar is the defect the hook names.
+SPLIT_CASES = [
+    ('p="a b"; set -- $p; echo N=$#', ["$p"], 1),
+    ('p="a b"; set -- ${p}; echo N=$#', ["${p}"], 1),
+    ('for x in "a b"; do set -- $x; echo N=$#; done', ["$x"], 1),
+    ('p="a b"; if true; then set -- $p; fi; echo N=$#', ["$p"], 1),
+    ('p="a b"; echo "$(set -- $p; echo N=$#)"', ["$p"], 1),
+    ('p="a b"; set -- ${=p}; echo N=$#', [], 2),
+    ('p="a b"; set -- ${(s: :)p}; echo N=$#', [], 2),
+    ('p="a b"; set -- "$p"; echo N=$#', [], 1),
+    ('a=(p q); set -- $a; echo N=$#', [], 2),
+    ('set -- $(echo a b); echo N=$#', [], 2),
+    ('set -- a b; set -- $@; echo N=$#', [], 2),
+    ('set -- a b; set -- $argv; echo N=$#', [], 2),
+    ("p='a b'; echo set -- $p; echo N=$#", [], 0),
+    ('p="a b"\n# set -- $p\necho N=$#', [], 0),
+]
+
+
 def self_test(require_zsh):
     import shutil
     import subprocess
@@ -305,6 +385,14 @@ def self_test(require_zsh):
             fails += 1
             print(f"FAIL lexer {cmd!r}: want {want} got {got}")
     print(f"lexer: {len(CASES) - fails}/{len(CASES)} cases")
+    sfails = 0
+    for cmd, want, _ in SPLIT_CASES:
+        got = split_words(cmd)
+        if got != want or equals_words(cmd):
+            sfails += 1
+            print(f"FAIL split lexer {cmd!r}: want {want} got {got}")
+    fails += sfails
+    print(f"split lexer: {len(SPLIT_CASES) - sfails}/{len(SPLIT_CASES)} cases")
 
     zsh = shutil.which("zsh")
     if zsh is None:
@@ -325,6 +413,15 @@ def self_test(require_zsh):
                       f"(stderr {r.stderr.strip()[:60]!r})")
         fails += bad
         print(f"zsh ({zsh}): {len(CASES) - bad}/{len(CASES)} verdicts agree")
+        bad = 0
+        for cmd, _, n in SPLIT_CASES:
+            r = subprocess.run([zsh, "-fc", cmd], check=False, capture_output=True, text=True, timeout=10,
+                               cwd="/", stdin=subprocess.DEVNULL)
+            if f"N={n}" not in r.stdout.split():
+                bad += 1
+                print(f"FAIL zsh disagrees on {cmd!r}: expected N={n}, got {r.stdout.strip()!r}")
+        fails += bad
+        print(f"zsh ({zsh}): {len(SPLIT_CASES) - bad}/{len(SPLIT_CASES)} split counts agree")
 
     # the hook end to end: event in, exit code and stderr out
     real_bash = shutil.which("bash") or "/bin/bash"
@@ -341,6 +438,9 @@ def self_test(require_zsh):
     e2e = [
         ("deny under zsh", run("echo ===; ls", {"SHELL": "/bin/zsh"}), 2, "EQUALS"),
         ("allow clean under zsh", run("echo ---; ls", {"SHELL": "/bin/zsh"}), 0, ""),
+        ("deny set -- $p under zsh", run('p="h 22"; set -- $p; ssh -p "$2" "$1"', {"SHELL": "/bin/zsh"}), 2, "word splitting"),
+        ("allow set -- $p under bash", run('p="h 22"; set -- $p', {"SHELL": "/bin/bash"}), 0, ""),
+        ("allow set -- ${=p} under zsh", run('p="h 22"; set -- ${=p}', {"SHELL": "/bin/zsh"}), 0, ""),
         ("allow under bash", run("echo ===; ls", {"SHELL": "/bin/bash"}), 0, ""),
         ("agent shell bash, login zsh", run("echo ===", {"SHELL": "/bin/zsh", "CLAUDE_CODE_SHELL": real_bash}), 0, ""),
         ("agent shell zsh, login bash", run("echo ===", {"SHELL": "/bin/bash", "CLAUDE_CODE_SHELL": zsh or real_bash}), 2 if zsh else 0, "EQUALS" if zsh else ""),
@@ -365,15 +465,19 @@ def self_test(require_zsh):
             f.write("cat a\necho ===\ngrep x b\n")
         with open(good, "w", encoding="utf-8") as f:
             f.write("cat a\necho ---\n")
+        split = os.path.join(d, "split.sh")
+        with open(split, "w", encoding="utf-8") as f:
+            f.write('p="h 22"\nset -- $p\n')
         me = [sys.executable, os.path.abspath(__file__), "--check"]
         for name, argv, want in [("check hit", [bad], 1), ("check clean", [good], 0),
+                                 ("check split hit", [split], 1),
                                  ("check unreadable", [os.path.join(d, "nope")], 2),
                                  ("check no files", [], 2)]:
             r = subprocess.run(me + argv, check=False, capture_output=True, text=True, timeout=30)
             if r.returncode != want:
                 fails += 1
                 print(f"FAIL {name}: rc={r.returncode} (want {want}) {r.stdout.strip()[:80]!r}")
-    print(f"end to end: {len(e2e) + 5} checks")
+    print(f"end to end: {len(e2e) + 6} checks")
     print("ok" if not fails else f"FAILED: {fails}")
     return 1 if fails else 0
 
@@ -391,8 +495,12 @@ def check(paths):
             print(f"{path}: unreadable: {e}", file=sys.stderr)
             return 2
         total += len(text.encode())
-        for w in equals_words(text):
+        words, split = _lex(text)
+        for w in words:
             print(f"{path}: unquoted {w}")
+            rc = 1
+        for w in split:
+            print(f"{path}: set -- {w} (zsh does not word-split it)")
             rc = 1
     print(f"checked {len(paths)} file(s), {total} bytes: {'HITS' if rc else 'clean'}")
     return rc
