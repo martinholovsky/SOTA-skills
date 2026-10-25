@@ -2419,6 +2419,14 @@
       ]
     },
     {
+      "from": "sota-architecture",
+      "to": "sota-rust",
+      "weight": 1,
+      "targets": [
+        "rules/09"
+      ]
+    },
+    {
       "from": "sota-async-concurrency",
       "to": "sota-performance",
       "weight": 1,
@@ -3708,12 +3716,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1633,
+    "md link, other skill": 1634,
     "md link, outside skills/": 3,
     "md link, same skill": 2813,
     "name (backticked)": 433,
     "name (bare)": 240,
-    "name+file (backticked)": 677,
+    "name+file (backticked)": 678,
     "name+file (bare)": 161,
     "own rules/NN": 2998
   },
@@ -3725,7 +3733,7 @@
     "md link, same skill": 0,
     "name (backticked)": 418,
     "name (bare)": 197,
-    "name+file (backticked)": 676,
+    "name+file (backticked)": 677,
     "name+file (bare)": 156,
     "own rules/NN": 2908
   },
