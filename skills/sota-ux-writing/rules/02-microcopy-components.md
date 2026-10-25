@@ -134,25 +134,39 @@ Buttons: [Cancel]  [Delete project]         Buttons: [No]  [Yes]
 
 - [ ] No "Submit", "OK/Yes/No" pairs, or bare "Cancel/Confirm" on
       consequential dialogs:
-      `grep -riE '"(Submit|OK|Yes|No)"' locales/ src/ --include='*.json'`
-- [ ] Destructive buttons repeat the verb and object; dialog bodies state the
-      concrete consequence, not just "cannot be undone"
+      `grep -rniE '[">](Submit|OK|Yes|No)["<]' --include='*.json' --include='*.tsx' --include='*.jsx' --include='*.html' --exclude-dir=node_modules .`;
+      every button label leads with a verb, runs ≤ ~3 words, and carries a
+      trailing "…" exactly when it opens a further step, applied
+      consistently (§1)
+- [ ] Destructive buttons repeat the verb and object; dialog titles ask about
+      the specific object (never "Are you sure?"); bodies state the concrete
+      consequence (what, how much, reversible or not), not just "cannot be
+      undone"; type-to-confirm prompts name what to type and why (§1, §5)
 - [ ] Every input: visible noun label; placeholders are format examples only;
-      requirements shown as hints before first failure
+      requirements shown as hints before first failure; a number field's
+      label names its unit ("Timeout (seconds)") (§2)
 - [ ] Empty states: three variants (first-use / filtered / error) with
       distinct copy; filtered-zero echoes the query; error-empty never poses
-      as "you have nothing"
+      as "you have nothing" (§3)
 - [ ] Tooltips carry no critical-path information; no "New!" badges older
-      than a release cycle
+      than a release cycle and no tip shown again after two dismissals;
+      onboarding steps teach one concept each, are skippable, and never
+      re-explain what the UI already says (§4)
 - [ ] Toasts are single-sentence, outcome-first; notifications name
-      actor+action+object and stand alone out of app context
+      actor+action+object and stand alone out of app context; a badge count
+      means actionable items and can reach zero (§6)
 - [ ] No concatenated plurals:
-      `grep -rnE '\+ *["'\''] *(item|file|result|user)s?["'\'']|\$\{ *([a-zA-Z_.]*([Cc]ount|[Tt]otal|[Ll]ength)|n|num) *\} +(item|file|result|user)s' src/`
+      `grep -rnE '\+ *["'\''] *(item|file|result|user)s?["'\'']|\$\{ *([a-zA-Z_.]*([Cc]ount|[Tt]otal|[Ll]ength)|n|num) *\} +(item|file|result|user)s' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules .`
       is clean (catches `count + " items"` and `` `${count} items` ``);
-      ICU plural forms used for every count
+      ICU plural forms used for every count; zero reads as a sentence ("No
+      results") outside dense dashboards (§7)
 - [ ] Relative timestamps switch to absolute past ~1 week and expose exact
-      time; truncation never hides the distinguishing segment
-- [ ] Link text stands alone: `grep -riE '>(click here|here|learn more)<' src/`
-      returns nothing unlabeled
+      time; truncation never hides the distinguishing segment (§7)
+- [ ] Link text stands alone:
+      `grep -rniE '>(click here|here|learn more)<' --include='*.html' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --exclude-dir=node_modules .`
+      returns nothing unlabeled — a "Learn more" passes only with an
+      accessible extension naming its object; links name the action, not a
+      vague noun (§8)
 - [ ] Loading strings name the operation; completion strings report what
-      changed, including skips/failures
+      changed, including skips/failures; any duration promise ("usually ~2
+      min") is measured, never an unmeasured "a few seconds" (§9)

@@ -222,28 +222,30 @@ with `Invoke-Formatter` as the `shfmt` analogue.
 ## Audit checklist
 
 - [ ] Does every `.ps1` that runs in CI, deploy or an entrypoint set `$ErrorActionPreference`
-      explicitly rather than inheriting `Continue`?
+      explicitly rather than inheriting `Continue`? (§1)
 - [ ] Where native commands are called, is `$PSNativeCommandUseErrorActionPreference` set to
       `$true` — or is each call's `$LASTEXITCODE` checked on its own line? (Default `$false`
-      makes an `ErrorActionPreference = 'Stop'` script silently tolerate a failed `git`.)
-- [ ] Is `Set-StrictMode -Version Latest` set, so a typo'd variable is an error and not `$null`?
+      makes an `ErrorActionPreference = 'Stop'` script silently tolerate a failed `git`.) (§1, §4)
+- [ ] Is `Set-StrictMode -Version Latest` set, so a typo'd variable is an error and not `$null`? (§1)
 - [ ] Does any `catch` guard a cmdlet that was never made terminating (no `-ErrorAction Stop`,
-      no `Stop` preference)?
+      no `Stop` preference)? (§1)
 - [ ] Does a wrapper function signal failure only through `Write-Error`, which does not set
-      `$?` for its caller?
-- [ ] Is `$?` read anywhere other than immediately after the command it describes?
+      `$?` for its caller? (§2)
+- [ ] Is `$?` read anywhere other than immediately after the command it describes? (§2)
 - [ ] Is `$LASTEXITCODE` read where no native command has necessarily run, so it is stale or
-      unset?
+      unset? (§2)
 - [ ] Under `pwsh -Command`, does the script end with a convenience call (logging, cleanup)
-      whose `$?` becomes the process exit code?
+      whose `$?` becomes the process exit code? (§3)
 - [ ] Does any GitHub Actions step use a **custom** `shell:` string for PowerShell, dropping
-      the built-in prepend/append — and if so, does it exit explicitly?
+      the built-in prepend/append — and if so, does it exit explicitly? (§4)
 - [ ] Any `Invoke-Expression`, `iex`, `[scriptblock]::Create()` or `iwr | iex` reachable from
-      untrusted input?
-- [ ] Is `-Path` used with externally supplied values where `-LiteralPath` is meant?
-- [ ] Are command lines built by string concatenation rather than splatting?
-- [ ] Is an execution policy cited anywhere as a security control?
+      untrusted input? (§5)
+- [ ] Is `-Path` used with externally supplied values where `-LiteralPath` is meant? (§5)
+- [ ] Are command lines built by string concatenation rather than splatting, or does a double-quoted string carry a
+      password or token onto a native command line (§5)?
+- [ ] Is an execution policy cited anywhere as a security control, or a file fetched with `curl.exe`/`Invoke-WebRequest`/
+      `Invoke-RestMethod` assumed to carry the mark-of-the-web (§6)?
 - [ ] Is the target dialect stated (7.x vs Windows PowerShell 5.1), and is each pinned version
-      recorded with its end-of-support date?
+      recorded with its end-of-support date? (§7)
 - [ ] Does CI run PSScriptAnalyzer over the whole tree, gate on Warning and above, and has the
-      gate been watched producing a finding rather than only a clean run?
+      gate been watched producing a finding rather than only a clean run? (§8)

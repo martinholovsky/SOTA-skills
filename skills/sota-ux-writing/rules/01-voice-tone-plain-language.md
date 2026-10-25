@@ -124,21 +124,40 @@ user, the plainer and calmer the language**:
 
 ## Audit checklist
 
-- [ ] A written voice definition with this-not-that pairs exists in the repo,
-      and error strings actually follow it
-- [ ] Strings front-load the point — grep long openers:
-      `grep -riE '"(In order to|Please note that|It is (necessary|recommended)|Are you sure you would like)' --include='*.json' --include='*.ts' --include='*.tsx'`
-- [ ] Active voice and present tense dominate; no double negatives in any
-      user-facing string
-- [ ] Filler ban holds: `grep -riE '"(Simply|Just) ' locales/ src/` returns
-      only justified hits
-- [ ] One name per concept: sample 10 core nouns; UI, docs, and API agree on
-      all 10; glossary file exists and is current
-- [ ] No internal codenames/team jargon in UI strings
-- [ ] delete/remove/archive each mean exactly one thing across the product
+- [ ] A written voice definition (3–4 attributes, each a this-not-that pair)
+      exists in the repo, not only in a slide deck, and every user-visible
+      string follows it — validation messages, plan names, and 404 pages, not
+      just marketing-adjacent surfaces; no joke in an error that cost the
+      user something (§1)
+- [ ] Strings front-load the point (the first three words carry it) — grep
+      long openers:
+      `grep -rniE '"(In order to|Please note that|It is (necessary|recommended)|Are you sure you would like)' --include='*.json' --include='*.yaml' --include='*.yml' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.html' --exclude-dir=node_modules .`;
+      each string says only what the user needs at this step (background goes
+      to docs), in common words, one idea per sentence, and ends at the
+      action the user takes next (§2)
+- [ ] Active voice and present tense dominate; no double negatives or nested
+      conditionals in any user-facing string; verbs over noun-stacks;
+      "please" only where the user does work for the system's benefit,
+      "sorry" only where the product failed them (§3)
+- [ ] Filler ban holds:
+      `grep -rniE '"(Simply|Just|Easily|Obviously) ' --include='*.json' --include='*.yaml' --include='*.yml' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.html' --exclude-dir=node_modules .`
+      returns only justified hits (§3)
+- [ ] One name per concept: sample 10 core nouns; UI, docs, API, CLI, and
+      support macros agree on all 10; glossary is a tracked file and current;
+      no half-renamed concept — a rename updated UI, docs, templates, and
+      support content in one release, the old term kept only as a help-search
+      alias (§4)
+- [ ] No internal codenames/team jargon in UI strings (§4)
+- [ ] delete/remove/archive each mean exactly one thing across the product (§4)
 - [ ] Tone matrix respected: no humor or exclamation marks in error strings
-      (`grep -riE '"[^"]*(Oops|Whoops|Uh.?oh)[^"]*"' src/ locales/`)
-- [ ] One casing convention (sentence case or Title Case) applied everywhere;
-      buttons carry no trailing periods
-- [ ] Numbers, dates, and currency are locale-formatted in code, not
-      hand-written into strings
+      (`grep -rniE '"[^"]*(Oops|Whoops|Uh.?oh)[^"]*"' --include='*.json' --include='*.yaml' --include='*.yml' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.html' --exclude-dir=node_modules .`);
+      data-loss and security strings are sober and direct, with no mascots (§5)
+- [ ] One casing convention (sentence case or Title Case), written into the
+      review checklist and applied everywhere; buttons, labels, fragments, and
+      single-sentence tooltips carry no trailing period; contractions except
+      in legal/consent text; in-progress ellipsis is the one `…` character —
+      `grep -rnE '"[^"]*[A-Za-z]\.\.\."' --include='*.json' --include='*.yaml' --include='*.yml' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.html' --exclude-dir=node_modules .`
+      lists three-dot strings to fix (§6)
+- [ ] UI numbers are numerals ("3 files", not "three files"); numbers, dates,
+      and currency are locale-formatted in code, not hand-written into
+      strings (§6)

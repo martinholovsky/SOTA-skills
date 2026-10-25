@@ -94,17 +94,19 @@ are mechanical — follow them. Reference:
 
 ## Audit checklist
 
-- [ ] **Blocking on async — CRITICAL/HIGH (deadlock / thread-pool starvation)** —
+- [ ] **Blocking on async (§1) — CRITICAL/HIGH (deadlock / thread-pool starvation)** —
       `grep -rnE '\.(Result|Wait\(\))|GetAwaiter\(\)\.GetResult\(\)' --include='*.cs' . | head`
       ; `grep -rnE 'Task\.Run\(' --include='*.cs' . | head` (sync wrapped as async on server?)
-- [ ] **async void (non-handler) — MEDIUM/HIGH** —
+- [ ] **async void (non-handler) (§3) — MEDIUM/HIGH** —
       `grep -rnE 'async void ' --include='*.cs' . | grep -vE 'EventHandler|_Click|[[:space:]]On[A-Z][[:alnum:]_]*\('`
       (case-sensitive on purpose: `-i` would also drop `ContinueProcessing(`; confirm each
-      remaining hit is not a handler whose name misses the convention)
-- [ ] **Missing ConfigureAwait(false) in libraries — MEDIUM** —
+      remaining hit is not a handler whose name misses the convention) ;
+      `grep -rnE '^[[:space:]]*_[[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_.]*Async\(' --include='*.cs' .` (a discarded
+      `Task`: fire-and-forget whose faults nobody observes; await it, or document and handle faults)
+- [ ] **Missing ConfigureAwait(false) in libraries (§2) — MEDIUM** —
       `grep -rnE 'await ' --include='*.cs' . | grep -v 'ConfigureAwait' | head` (in library
       projects)
-- [ ] **Cancellation not flowed — MEDIUM** —
+- [ ] **Cancellation not flowed (§4) — MEDIUM** —
       `grep -rnE 'async Task[<A-Za-z, >]* [A-Za-z]+\([^)]*\)' --include='*.cs' . | grep -v 'CancellationToken' | head`
 - [ ] **await inside lock — HIGH (won't compile for lock, but SemaphoreSlim misuse /
       sync-over-async)** — `grep -rnE 'lock\s*\(' --include='*.cs' . | head` ;

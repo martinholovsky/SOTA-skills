@@ -119,14 +119,14 @@ pipeline guidance. When a PW/PS/RV practice needs implementing, jump to:
 
 ## Audit checklist
 
-- [ ] SSDF practices (PO/PS/PW/RV) crosswalked to concrete pipeline stages and sota-* mechanisms ([rules/01](01-control-frameworks-as-code.md)); gaps tracked, not hand-waved
-- [ ] PW machine-checkable practices are CI gates that fail the build: SAST, DAST, secret-scanning, dependency scanning, test suites
-- [ ] PS: signed commits, SHA-pinned actions, build provenance (SLSA) and artifact signing; releases immutable, signed, provenance retained
-- [ ] PW.1 secure-design/threat-modeling gate for features crossing trust boundaries, referencing the threat model
-- [ ] **Outsourced development and suppliers (PO.1.3) — MEDIUM:** contracts state the security requirements, minimum SDL practices, per-delivery artifacts (SBOM, scan results, provenance) and acceptance criteria; each delivery passes the same CI gates as in-house code before it is accepted, and the acceptance record is kept as evidence
-- [ ] RV: continuous vuln identification (deps/containers/runtime) with SLA-tracked remediation and root-cause analysis
-- [ ] If federal self-attestation applies: the attested practices are demonstrably enforced *before* signing; SBOM/provenance/scan artifacts produced from the pipeline; obligation read from the agency contract (M-26-05 rescinded the government-wide M-22-18/M-23-16 mandate), not assumed
-- [ ] If developing/fine-tuning AI: SP 800-218A additions applied — training-data provenance/integrity, model weights protected & signed as high-value assets, eval/misuse testing before release
-- [ ] Attestation, if any, backed by mechanisms not prose — no signed claim without an enforcing gate (False Claims exposure)
+- [ ] SSDF practices (PO/PS/PW/RV) (§1) crosswalked to concrete pipeline stages and sota-* mechanisms ([rules/01](01-control-frameworks-as-code.md)); gaps tracked, not hand-waved
+- [ ] PW machine-checkable practices are CI gates that fail the build (§2): SAST, DAST, secret-scanning, dependency scanning with an allowlist/denylist and no unvetted transitive pull-through, SBOM generation, test suites; each practice's crosswalk row cites its gate and the CI log as its evidence
+- [ ] PS: signed commits, SHA-pinned actions, build provenance (SLSA) and artifact signing; releases immutable, signed, provenance retained (§2)
+- [ ] PW.1 secure-design/threat-modeling gate for features crossing trust boundaries, referencing the threat model (§2)
+- [ ] **Outsourced development and suppliers (PO.1.3, §2) — MEDIUM:** contracts state the security requirements, minimum SDL practices, per-delivery artifacts (SBOM, scan results, provenance) and acceptance criteria; each delivery passes the same CI gates as in-house code before it is accepted, and the acceptance record is kept as evidence
+- [ ] RV: continuous vuln identification (deps/containers/runtime) with SLA-tracked remediation and root-cause analysis (§2)
+- [ ] If federal self-attestation applies: the attested practices are demonstrably enforced *before* signing; SBOM/provenance/scan artifacts produced from the pipeline; obligation read from the agency contract (M-26-05 rescinded the government-wide M-22-18/M-23-16 mandate), not assumed (§3)
+- [ ] If developing/fine-tuning AI: SP 800-218A additions applied — training-data provenance/integrity, model weights protected & signed as high-value assets, eval/misuse testing before release (§4)
+- [ ] Attestation, if any, backed by mechanisms not prose — no signed claim without an enforcing gate (False Claims exposure) (§3)
 - [ ] SSDF version referenced is a final revision with no finalized successor (SP 800-218 is v1.1; check csrc.nist.gov); drafts not cited as baseline
-- [ ] No pipeline guidance duplicated here — implementation deferred to [`sota-devsecops`](../../sota-devsecops/SKILL.md) / [`sota-testing`](../../sota-testing/SKILL.md) / [`sota-code-security`](../../sota-code-security/SKILL.md)
+- [ ] No pipeline guidance duplicated here (§5) — implementation deferred to [`sota-devsecops`](../../sota-devsecops/SKILL.md) / [`sota-testing`](../../sota-testing/SKILL.md) / [`sota-code-security`](../../sota-code-security/SKILL.md)

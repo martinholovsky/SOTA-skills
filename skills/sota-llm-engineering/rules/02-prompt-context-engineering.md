@@ -316,7 +316,8 @@ category = data.get("category", "other")                    # silently launders 
 - [ ] Context assembled under explicit per-category token budgets; provider
       token counter used; truncation explicit, boundary-aware, surfaced.
 - [ ] Few-shots consistent with current instructions, demonstrate boundary
-      cases, count justified by evals.
+      cases, count justified by evals; dynamic few-shots placed after the cached
+      prefix with a versioned selector (§3).
 - [ ] Untrusted content enters via typed, delimited, trust-labeled slots
       with delimiter escaping — no f-string concatenation into instructions
       (cross-check [sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md)).
@@ -327,9 +328,11 @@ category = data.get("category", "other")                    # silently launders 
       `grep -rnE 'allowed_special[[:space:]]*=[[:space:]]*.all|split_special_tokens[[:space:]]*=[[:space:]]*False' .`
       (also read calls that omit `split_special_tokens` — False is the default).
 - [ ] Prompts are named constants/files in the repo, versioned, diffable;
-      traces carry prompt version.
+      traces carry prompt version; no dashboard-edited prompt bypasses review
+      and CI evals — Medium, High if it gates consequential output (§7).
 - [ ] Cache-aware ordering verified: frozen prefix, deterministic
-      serialization, volatile content last, cache-hit rate monitored.
+      serialization, volatile content last, no tool-set or model swap
+      mid-conversation, cache-hit rate monitored (§5).
 - [ ] All machine-consumed output schema-constrained (structured output API
       or strict tool schema), client-validated, bounded repair then explicit
       reject; no regex/substring JSON harvesting.
@@ -344,7 +347,7 @@ category = data.get("category", "other")                    # silently launders 
 - [ ] Schemas: descriptions on fields, enums for closed sets, escape-hatch
       field present, provider-unsupported constraints validated client-side.
 - [ ] No prompt rot: every rule traceable to an eval case; legacy
-      model-specific scaffolding removed on model migration.
+      model-specific scaffolding removed on model migration (§7).
 - [ ] User input over the token budget rejected with an error by default;
       chunking/summarization only where chosen per route; no slice or
       tokenizer truncation of user text or the assembled prompt (§2).

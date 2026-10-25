@@ -465,9 +465,9 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
       side effects inside a retrying loop.
 - [ ] Harness enforces ALL budget dimensions (iterations, tokens, cost,
       wall-clock, consecutive-error, repeat-call) with loud, state-
-      preserving failure — grep every loop for its bound.
-- [ ] `stop_reason` exhaustively handled; truncated output never parsed as
-      complete.
+      preserving failure; a detected loop gets one change-approach turn, then aborts (§3) — grep every loop for its bound.
+- [ ] `stop_reason` exhaustively handled, context-window and pause/continue stops included;
+      truncated output never parsed as complete (§3).
 - [ ] Consequential actions behind per-action human/policy gates that
       suspend durably and feed deny-reasons back; authorization additionally
       code-enforced ([sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md)).

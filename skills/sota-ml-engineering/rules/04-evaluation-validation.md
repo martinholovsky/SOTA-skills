@@ -95,9 +95,12 @@ rubric (data / model / infra / monitoring tests) is the backbone.
 
 ## Audit checklist
 
-- [ ] **Single-metric / no-baseline evaluation — MEDIUM/HIGH** —
+- [ ] **Single-metric / no-baseline evaluation (§1, §2) — MEDIUM/HIGH** —
       `grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head` (is there
-      a baseline + current-prod comparison? A single aggregate number is a finding.)
+      a baseline + current-prod comparison? A single aggregate number is a finding.) Manual: does
+      the metric fit the objective (not accuracy alone on imbalanced data), is the offline metric's
+      relation to the online business metric stated, and does each added feature survive an
+      ablation on held-out data?
 - [ ] **Sliced / fairness evaluation — HIGH if absent on a high-stakes model** —
       `grep -rniE 'group_?by|slice|segment|subgroup|fairness|by_cohort|disaggregat' --include='*.py' . || echo "no sliced evaluation — aggregate metrics only"`
 - [ ] **Validation gate before promotion — HIGH if missing** —
@@ -110,10 +113,13 @@ rubric (data / model / infra / monitoring tests) is the backbone.
 - [ ] **Decision report without a denominator (§4) — MEDIUM** — does every rule print its
       evaluated count beside its verdicts, and is the population an explicit list?
       Name-shape filters to read: `grep -rnE '\.(endswith|startswith)\(|rpartition\(' --include='*.py' .`
-- [ ] **Pipeline/model tests (ML Test Score infra) — HIGH** —
+- [ ] **Pipeline/model tests (ML Test Score infra) (§5) — HIGH** —
       `grep -rniE 'def test_|pytest|golden|integration' --include='*.py' . | grep -iE 'model|pipeline|predict|feature' | head`
-- [ ] **Online experiment before full rollout — MEDIUM/HIGH** —
+      ; manual: NaN/inf and schema-conformance tests, a golden-prediction regression test on a
+      canonical input, an integration test of the full pipeline, and a tested rollback
+- [ ] **Online experiment before full rollout (§6) — MEDIUM/HIGH** —
       `grep -rniE 'a/?b.?test|experiment|interleav|shadow|canary|holdout' . | head`
+      ; manual: the business metric, sample size and guardrail metrics fixed before the experiment
 - [ ] **Compressed artifact re-validated (§4) — HIGH** — files that quantise, prune or
       distil: `grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .`
       ; manual: does the gate run the eval suite on the compressed output, not the parent?

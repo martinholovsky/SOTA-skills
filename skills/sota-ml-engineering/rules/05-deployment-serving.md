@@ -82,24 +82,32 @@ progressive rollout validated on live traffic.
 
 ## Audit checklist
 
-- [ ] **Serving/training parity — CRITICAL if features reimplemented in the server** —
+- [ ] **Serving pattern matches the freshness need (§1) — LOW (manual)** — is a real-time service
+      built where scheduled batch would meet the freshness requirement, and does the feature
+      path match the chosen pattern (batch, online, streaming)?
+- [ ] **Serving/training parity (§2) — CRITICAL if features reimplemented in the server** —
       `grep -rniE 'predict|inference|serve' --include='*.py' . | head` (confirm the server calls
       the SAME feature transform code/store as training, [rules/02](02-data-and-features.md))
-- [ ] **Safe model format & reproducible env — HIGH** —
+- [ ] **Safe model format & reproducible env (§2) — HIGH** —
       `grep -rniE 'pickle|joblib|torch.load|cloudpickle' --include='*.py' . | head` (unsafe
       load? ([rules/07](07-security-governance.md))); `grep -rniE 'safetensors|onnx|torchscript' --include='*.py' . | head` ;
       `grep -rniE 'torchserve|torch-model-archiver' . | head` (EOL runtime (archived Aug 2025,
       no security patches) — HIGH);
       `find . -maxdepth 3 -not -path '*/node_modules/*' \( -name 'Dockerfile*' -o -name 'requirements*.txt' -o -name poetry.lock -o -name uv.lock -o -name 'conda*.yml' \)` (serving env
       pinned?)
-- [ ] **Registry-gated deploy + rollback — HIGH** —
+- [ ] **Registry-gated deploy + rollback (§3) — HIGH** —
       `out=$(grep -rniE 'registry|stage|promote|production|rollback|previous.*model|champion|challenger' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no registry/rollback path found" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
+      ; manual: is the deployed artifact immutable and traceable to its lineage, and the previous
+      production model kept deployable? Signature at admission and load: the model-signing item
+      in [rules/07](07-security-governance.md)
 - [ ] **Progressive rollout — MEDIUM/HIGH** —
       `out=$(grep -rniE 'shadow|canary|a/?b|traffic.*split|gradual|ramp' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no progressive rollout" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
-- [ ] **Serving input validation — MEDIUM** —
+- [ ] **Serving input validation and operability (§5) — MEDIUM** —
       `grep -rniE 'validate|schema|pydantic|unseen|unknown.*categor|fillna|missing' --include='*.py' . | head`
+      ; manual: load-tested against the latency budget before launch, and a versioned,
+      backward-compatible serving API
 - [ ] **Full-state rollback and isolated caches (§4) — MEDIUM/HIGH** — cache keys with no
       model version: `grep -rniE 'cache_?key' --include='*.py' . | grep -viE 'model_?(version|id)'`
       ; manual: does the rollback bundle pin tokenizer, config, features, prompts and index?

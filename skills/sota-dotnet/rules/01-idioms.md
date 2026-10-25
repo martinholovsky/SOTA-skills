@@ -138,10 +138,12 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       ; `grep -rnE 'CA1307|CA1309|CA1310|CA1311' .editorconfig *.props 2>/dev/null` (none: the
       analyzers that flag these are off — they are not enabled by default)
 
-- [ ] **Null-forgiving overuse — MEDIUM (defeats NRT)** —
+- [ ] **Null-forgiving overuse (§2) — MEDIUM (defeats NRT)** —
       `grep -rnE '[A-Za-z0-9_)\]]\!\.' --include='*.cs' . | grep -v '!=' | head` (x!.Member)
-- [ ] **Is NRT even enabled?** —
+- [ ] **Is NRT even enabled? (§2)** —
       `grep -rniE '<Nullable>\s*enable' . --include='*.csproj' --include='Directory.Build.props' || echo "NRT not enabled — HIGH"`
+      ; `grep -rnE 'JsonSerializer\.Deserialize|ReadFromJsonAsync|GetFromJsonAsync' --include='*.cs' .`
+      (a deserialized value can be null whatever its annotation: confirm a guard at the boundary)
 - [ ] **Swallowed exceptions / throw ex — MEDIUM** —
       `grep -rnzoE 'catch\s*\([^)]*\)\s*\{\s*\}' --include='*.cs' .` ;
       `grep -rnE 'throw ex;' --include='*.cs' .` (loses stack trace);
@@ -171,9 +173,11 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       (cast or parse of external data into an enum: want `Enum.IsDefined` or a rejecting
       default arm before use; a cast hit that is not an enum is noise) ;
       `grep -rnE 'NoWarn[^<]*CS8524|CS8524[^/]*none|pragma warning disable CS8524' --include='*.cs' --include='*.csproj' --include='*.props' --include='.editorconfig' .`
-- [ ] **Legacy idioms — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
+- [ ] **Legacy idioms (§1, §4) — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
       should be records?); `grep -rnE 'namespace [A-Za-z0-9_.]+\s*\{' --include='*.cs' .`
       (non-file-scoped namespaces)
-- [ ] **Multiple enumeration / LINQ on hot path — LOW (verify)** —
+- [ ] **Multiple enumeration / LINQ on hot path (§5) — LOW (verify)** —
       `grep -rnE '\.Where\(|\.Select\(|\.Count\(\)' --include='*.cs' . | head`
+      (a locator: an `IEnumerable` enumerated twice is materialized once with `ToList()`; the EF Core
+      lazy-loading N+1 half is the N+1 item in [rules/05](05-performance.md) §4)
 - [ ] **Broad analyzer pass (idioms): enable .NET analyzers + IDE rules in CI ([rules/06](06-build-tooling-ci.md))**

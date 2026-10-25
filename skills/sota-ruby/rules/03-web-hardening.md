@@ -312,13 +312,21 @@ minimums:
 Run from repo root; verify each hit manually. Rails apps: run `brakeman -q`
 first — it covers XSS/mass-assignment/redirect sinks mechanically.
 
-- [ ] **Escaping bypasses — CRITICAL if user-influenced** —
-      `grep -rnE '\.html_safe\b|raw\s*\(|<%==' --include='*.erb' --include='*.rb' app/ lib/ views/ 2>/dev/null`
-- [ ] **Sinatra/plain-ERB apps: is auto-escape on? absent = HIGH** —
+- [ ] **Escaping bypasses (§1) — CRITICAL if user-influenced** —
+      `grep -rnE '\.html_safe\b|raw\s*\(|<%==' --include='*.erb' --include='*.rb' app/ lib/ views/ 2>/dev/null` ;
+      `grep -rnE '\.(gsub|sub)!?\([[:space:]]*/<' --include='*.rb' .` (tags stripped by regex: use an
+      allowlist sanitizer) ; `grep -rlE 'content_security_policy|Content-Security-Policy' --include='*.rb' --include='config.ru' . || echo "no CSP configured"`
+      (no CSP — MEDIUM per the severity guide; defence in depth, not a substitute for escaping) ;
+      manual: values reaching `<script>`, handlers, CSS or URLs get context escaping, and URLs a
+      `http`/`https` scheme allowlist
+- [ ] **Sinatra/plain-ERB apps: is auto-escape on? absent = HIGH (§1)** —
       `grep -rn "escape_html" --include='*.rb' . | head -3`
-- [ ] **Mass assignment** — `grep -rn "permit!" --include='*.rb' .` ;
+- [ ] **Mass assignment (§2)** — `grep -rn "permit!" --include='*.rb' .` ;
       `grep -rnE '(new|create|update|assign_attributes)\s*\(\s*params\b' --include='*.rb' . | grep -v permit`
       ; `grep -rnE 'permit\([^)]*(:role|:admin|:account_id|:state)' --include='*.rb' .`
+      ; `grep -rnE '(new|create|update|assign_attributes)[[:space:]]*\([[:space:]]*(JSON\.parse\(|payload[[:space:]]*\))' --include='*.rb' .`
+      (parsed JSON or a raw payload into a model — HIGH) ; `grep -rnE '\.set\([[:space:]]*(params|payload)' --include='*.rb' .`
+      (Sequel mass `set`: use `set_fields` with an explicit list)
 - [ ] **CSRF** — `grep -rn "skip_before_action :verify_authenticity_token" --include='*.rb' .` ;
       `grep -rn "protect_from_forgery" --include='*.rb' . | head` ;
       Sinatra/Rack protection switched off (§3) — HIGH on a cookie-session app:
@@ -353,11 +361,13 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       (every hit connects to whatever the name resolves to at connect time — a
       check done earlier is a DNS-rebinding window; confirm the destination is
       fixed, or that the call pins with `ipaddr:` and a `nil` proxy argument)
-- [ ] **Uploads / downloads** —
+- [ ] **Uploads / downloads (§7)** —
       `grep -rnE 'send_file\s*\(?\s*params|send_file[^,]*#\{' --include='*.rb' .` ;
       `grep -rn "original_filename" --include='*.rb' . | grep -v basename` ;
       `grep -rnE 'render\s*\(?\s*file:' --include='*.rb' .` (user-influenced path = file
-      disclosure)
+      disclosure) ; `grep -rnE 'MiniMagick|Magick::|ImageProcessing|Vips' --include='*.rb' .` (untrusted
+      images through a processor: kept current, formats restricted, worker sandboxed) ; manual: a
+      server-side size cap, extension allowlist and content sniffing run before storing
 - [ ] **Secrets reaching logs (§8) — HIGH** —
       `grep -rniE 'logger\.(debug|info|warn|error|fatal|unknown).*#\{[^}]*(passw|secret|token|api_?key|credential)' --include='*.rb' .`
       (a credential interpolated into a log line) ;

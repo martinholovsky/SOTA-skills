@@ -408,13 +408,18 @@ Run from repo root; verify each hit manually.
 - [ ] **Laravel decrypt that unserializes (§3) — HIGH where the payload is request-derived** —
       `grep -rnE '(^|[^_A-Za-z])decrypt[[:space:]]*\(|\$serialize[[:space:]]*=[[:space:]]*true' --include='*.php' --exclude-dir=vendor .`
       (a `decrypt(` with no second argument `false` unserializes; `decryptString(` is not matched)
-- [ ] **CSRF — token verified centrally? exclusions?** —
+- [ ] **CSRF — token verified centrally? exclusions? (§4) — HIGH on a state change** —
       `grep -rnE '(csrf|_token)' -il --include='*.php' src/ | head` ;
-      `grep -rn 'VerifyCsrfToken' -r app/ 2>/dev/null` (e.g. Laravel: check $except)
-- [ ] **ini hardening + headers** —
+      `grep -rn 'VerifyCsrfToken' -r app/ 2>/dev/null` (e.g. Laravel: check $except) ;
+      `grep -rniE "Route::get[[:space:]]*\([[:space:]]*['\"][^'\"]*(delete|remove|destroy|update|logout)" --include='*.php' --exclude-dir=vendor .`
+      (a GET route that mutates state is a CSRF hole through `<img src>`)
+- [ ] **ini hardening + headers (§5, §6) — MEDIUM for a missing header, HIGH for a reflected
+      Origin with credentials** —
       `php -r 'foreach (["display_errors","expose_php","allow_url_include","allow_url_fopen","open_basedir","disable_functions"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`
       ;
-      `curl -sI https://target/ | grep -iE 'content-security|strict-transport|x-content-type|x-powered-by'`
+      `curl -sI https://target/ | grep -iE 'content-security|strict-transport|x-content-type|referrer-policy|permissions-policy|x-powered-by'`
+      ; `grep -rnE 'Access-Control-Allow-Origin[^;]*HTTP_ORIGIN' --include='*.php' --exclude-dir=vendor .`
+      (the request's Origin echoed back: HIGH when credentials are allowed)
 - [ ] **Error and attack-surface directives (§5) — MEDIUM (`display_errors` on in production
       per the severity guide)** — each hit turns on HTML errors, `dl()`, repeat suppression or
       error display, or keeps `E` in `variables_order`:

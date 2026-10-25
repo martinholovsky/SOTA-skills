@@ -330,7 +330,7 @@ Run from repo root; verify each hit manually.
       (the first command prints explicit unsafe values, the loop prints files that construct
       one of these libraries and never set the option; the options are the ones §1 lists, so
       extend both halves for every other library whose defaults you have checked)
-- [ ] **Static analysis presence + ratchet health** —
+- [ ] **Static analysis presence + ratchet health (§3) — MEDIUM** —
       `ls phpstan*.neon* psalm*.xml* 2>/dev/null | grep -q . || echo "NO STATIC ANALYSIS CONFIG (MEDIUM)"`
       ; `grep -n 'level' phpstan*.neon* 2>/dev/null` ; `wc -l phpstan-baseline.neon 2>/dev/null`
       (compare against last audit: shrinking?);

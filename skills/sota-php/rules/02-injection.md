@@ -374,13 +374,17 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE '(^|[^A-Za-z0-9_>:$])eval[[:space:]]*\(|createTemplate[[:space:]]*\(|template_from_string|Blade::render[[:space:]]*\(' --include='*.php' --include='*.twig' src/ templates/`
       (a method named `eval`, e.g. a Redis client's, is excluded). Trace each string to a
       literal; `disable_functions` does not cover `eval`
-- [ ] **XSS — echo/print of request data, raw template sinks** —
+- [ ] **XSS — echo/print of request data, raw template sinks (§3) — HIGH** —
       `grep -rnE '(echo|print|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' .`
       ; `grep -rnE '<\?=[[:space:]]*\$' --include='*.php' templates/ | grep -vE '<\?=[[:space:]]*\$this'`
       (a `(?!this)` lookahead here exited 2 with its stderr discarded, so it reported nothing) ;
       `grep -rn '{!!' --include='*.blade.php' resources/ 2>/dev/null` ;
       `grep -rn '|raw' --include='*.twig' templates/ 2>/dev/null` ;
-      `grep -rn 'strip_tags' --include='*.php' src/` (not an XSS defense)
+      `grep -rn 'strip_tags' --include='*.php' src/` (not an XSS defense) ;
+      `grep -rn 'htmlspecialchars(' --include='*.php' --exclude-dir=vendor . | grep -v 'ENT_QUOTES'`
+      (single-quoted attributes left open) ;
+      `grep -rnE 'href=["'"'"']?<\?(=|php[[:space:]]+echo)[[:space:]]*\$' --include='*.php' --exclude-dir=vendor .`
+      (a user URL in `href` needs the `https?` scheme allowlist)
 - [ ] **Header/redirect injection** —
       `grep -rnE 'header\s*\(\s*["'"'"']Location:.*\$' --include='*.php' src/`
 - [ ] **Execution after redirect (§4a) — HIGH on an authz path** — each hit is a `Location`
@@ -393,7 +397,7 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       (request data written straight into a log line; measured on PHP 8.5, `error_log()` to a
       file wrote an embedded `\n` through, so one call produced two log lines). Strip CR/LF or
       log it as a structured field. Values that reach the call via a variable need tracing
-- [ ] **json_encode into <script> without hex flags** —
+- [ ] **json_encode into <script> without hex flags (§3) — MEDIUM** —
       `grep -rn 'json_encode' --include='*.php' src/ | grep -v 'JSON_HEX'`
 - [ ] **Attacker-chosen class, session key or property (§5)** — trace each name to a literal or
       an allowlist:

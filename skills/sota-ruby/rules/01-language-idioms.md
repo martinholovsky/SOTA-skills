@@ -350,11 +350,17 @@ conversion and from hand-rolled returns:
       use Integer(s)); `grep -rnE 'return (-1|0)$' --include='*.rb' app/ lib/` (prefer nil,
       which is falsy and pattern-matchable)
 
-- [ ] **Interpreter floor — EOL Ruby is HIGH** —
+- [ ] **Interpreter floor — EOL Ruby is HIGH (§1)** —
       `cat .ruby-version 2>/dev/null; grep -n "^ruby" Gemfile 2>/dev/null`
-- [ ] **(compare against the branches page table above)**
-- [ ] **Missing frozen_string_literal comments — LOW (bulk-fix with rubocop -a)** —
-      `grep -rL "frozen_string_literal: true" --include='*.rb' app/ lib/ 2>/dev/null | head`
+      (compare against the branches page table in §1) ;
+      `grep -rnE --include='Gemfile' '^[[:space:]]*ruby[[:space:]]' . | grep -vE 'ruby[[:space:]]+file:'`
+      (a Gemfile `ruby` requirement that does not read `.ruby-version`: two version sources that
+      drift) ; CI's copy is probed by the CI-gates item in [`rules/04`](04-supply-chain-tooling.md) §7. Manual: no feature
+      above the floor (`Data.define` and `Regexp.timeout` need 3.2, `it` 3.4, `Ractor::Port` 4.0)
+- [ ] **Missing frozen_string_literal comments (§2) — LOW (bulk-fix with rubocop -a)** —
+      `grep -rL "frozen_string_literal: true" --include='*.rb' app/ lib/ 2>/dev/null | head` ;
+      `grep -rnE '\+=[[:space:]]*["'"'"']' --include='*.rb' .` (a string literal appended with `+=`:
+      in a loop each pass allocates a new string; build into a `+""` buffer with `<<`)
 - [ ] **rescue Exception — MEDIUM (HIGH if it wraps a main loop)** —
       `grep -rn "rescue Exception" --include='*.rb' .`
 - [ ] **Silenced errors — MEDIUM+** — `grep -rn "rescue nil" --include='*.rb' .` ;
@@ -366,19 +372,26 @@ conversion and from hand-rolled returns:
       no hit = the default gem of the running Ruby: `ruby -rjson -e 'puts JSON::VERSION'`)
 - [ ] **raise losing the original class/cause** —
       `grep -rnE "raise\s+e\.message" --include='*.rb' .`
-- [ ] **OpenStruct in new code — LOW** — `grep -rn "OpenStruct" --include='*.rb' .`
-- [ ] **Struct built positionally (silent-nil / member-order hazard) — INFO/LOW** —
+- [ ] **OpenStruct in new code (§4) — LOW** — `grep -rn "OpenStruct" --include='*.rb' .`
+- [ ] **Struct built positionally (silent-nil / member-order hazard) (§4) — INFO/LOW** —
       `grep -rn "Struct.new" --include='*.rb' . | grep -v keyword_init`
-- [ ] **Pattern matching without pin where comparison was intended (manual review)** —
+      (a value object never mutated after construction belongs in `Data.define`, which raises on a
+      missing member)
+- [ ] **Pattern matching without pin where comparison was intended (§3, manual review)** —
       `grep -rnE "in \{[^}]*: [a-z_]+ *\}" --include='*.rb' . | head`
+      (while reading each `case/in`, also confirm it has an `else` or is meant to raise
+      `NoMatchingPatternError`, and that no pattern nests three or more levels deep)
 - [ ] **Monkey patches on core classes — MEDIUM in app code** —
       `grep -rnE "^\s*class (String|Array|Hash|Integer|Symbol|Object)\b" --include='*.rb' app/ lib/ 2>/dev/null`
 - [ ] **method_missing without respond_to_missing?** —
       `grep -rln "def method_missing" --include='*.rb' . | xargs grep -L "respond_to_missing?" 2>/dev/null`
 - [ ] **Wall-clock durations — LOW** —
       `grep -rnE "Time\.now.*-.*Time\.now|=\s*Time\.now\b.*# .*(elapsed|duration)" --include='*.rb' . | head`
-- [ ] **Typing posture — INFO** —
+- [ ] **Typing posture (§6) — INFO** —
       `ls sig/ sorbet/ 2>/dev/null; grep -rn "# typed:" --include='*.rb' . | head -3`
+      (both `sig/` and `sorbet/` = two half-adopted checkers; confirm CI gates the one picked) ;
+      `grep -rnoE 'T\.unsafe|T\.untyped|(^|[^[:alnum:]_])untyped([^[:alnum:]_]|$)' --include='*.rb' --include='*.rbs' . | cut -d: -f1 | sort | uniq -c | sort -rn | head`
+      (escape hatches per file: more than a few in one file means the design, not the checker, is wrong)
 
 Severity guide: EOL interpreter HIGH; `rescue Exception`/`rescue nil` around
 critical logic MEDIUM–HIGH; missing frozen-string comments LOW (bulk-fixable);

@@ -105,10 +105,18 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
 
 ## Audit checklist
 
-- [ ] **Bare lock/unlock (no RAII) — MEDIUM/HIGH (lock leak on exception)** —
+- [ ] **Shared mutable state with no stated discipline (§1) — MEDIUM, HIGH when more than one
+      thread writes it** —
+      `grep -rnE '^[[:space:]]*static[[:space:]]+[^(]*[;={]' --include='*.c' --include='*.cpp' --include='*.cc' . | grep -vE 'static[[:space:]]+(const|constexpr|thread_local|inline|void)[^A-Za-z0-9_]|\('`
+      (each mutable static reached from more than one thread: confine it to one thread, or put
+      every access under one discipline documented at the type, e.g. `GUARDED_BY`)
+- [ ] **Bare lock/unlock (no RAII) (§2) — MEDIUM/HIGH (lock leak on exception)** —
       `grep -rnE '\.(lock|unlock)\(\)' --include='*.cpp' .` (prefer lock_guard/scoped_lock);
-      `grep -rn 'pthread_mutex_lock' --include='*.c' --include='*.cpp' .`
-- [ ] **volatile used for threading — HIGH (not a sync primitive)** —
+      `grep -rn 'pthread_mutex_lock' --include='*.c' --include='*.cpp' .` ;
+      `grep -rnE 'std::(lock_guard|unique_lock)' --include='*.cpp' --include='*.cc' . | awk -F: '$1 == f && $2 - l <= 3 { print } { f = $1; l = $2 }'`
+      (a second lock taken within three lines of the first: one `std::scoped_lock(m1, m2)`, or the
+      documented global order)
+- [ ] **volatile used for threading (§3) — HIGH (not a sync primitive)** —
       `grep -rn 'volatile' --include='*.cpp' --include='*.c' . | grep -iE 'flag|ready|done|count|shared'`
 - [ ] **Unjoined std::thread / detached without lifetime reasoning — MEDIUM** —
       `grep -rn 'std::thread' --include='*.cpp' . | grep -v jthread` (verify join/detach + arg
@@ -126,9 +134,11 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
       (each hit: who resets it, and is it read after a `co_await`?) ;
       `grep -rlE '(MDC|mdc)::put[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -r grep -LE '(MDC|mdc)::(remove|clear)[[:space:]]*\('`
       (a file that puts MDC keys and never removes them)
-- [ ] **Relaxed/weak memory order without justification — MEDIUM** —
+- [ ] **Relaxed/weak memory order without justification (§3) — MEDIUM** —
       `grep -rnE 'memory_order_(relaxed|acquire|release|consume)' --include='*.cpp' .`
-- [ ] **condition_variable wait without predicate — MEDIUM (spurious/lost wakeup)** —
+- [ ] **condition_variable wait without predicate (§2) — MEDIUM (spurious/lost wakeup)** —
       `grep -rnE 'cv?\.wait\([^,)]*\)' --include='*.cpp' .` (one-arg wait == no predicate)
-- [ ] **Ground truth: run concurrent tests under TSan cmake
+- [ ] **Ground truth (§5): run concurrent tests under TSan cmake
       -DCMAKE_CXX_FLAGS="-fsanitize=thread" && ctest # any race report == CRITICAL**
+      ; thread-safety annotations with no `-Wthread-safety` check nothing:
+      `grep -rlE 'GUARDED_BY|REQUIRES\(' --include='*.h' --include='*.hpp' --include='*.cpp' --include='*.cc' . | grep -q . && { grep -rqE -e '-Wthread-safety' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' .; case $? in 0) ;; 1) echo "GUARDED_BY annotations but no -Wthread-safety" ;; *) echo "SWEEP FAILED, not a finding about their code" ;; esac; }`

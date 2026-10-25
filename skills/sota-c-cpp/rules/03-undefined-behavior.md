@@ -130,6 +130,9 @@ T* p = (T*)malloc(bytes);
 
 ## 5. Data races are UB (see [rules/05](05-concurrency.md))
 
+*(audited in [rules/05](05-concurrency.md))* — a pointer stub; the race rules and their checklist
+items, the TSan run included, live in rules/05.
+
 Two threads accessing the same non-atomic object, at least one writing, with no
 happens-before relation, is UB — not "a stale read". Use `std::atomic` or a
 mutex. Build threaded code under TSan.
@@ -188,10 +191,16 @@ mutex. Build threaded code under TSan.
       (read each: when the right side is one of the addends and the type is signed, the check is
       gone at `-O2`. Rewrite with `ckd_add`/`__builtin_add_overflow`, and until then look for
       `-fwrapv` or `-fno-strict-overflow` on that target)
-- [ ] **Type punning / strict-aliasing — HIGH** —
+- [ ] **Type punning / strict-aliasing (§3) — HIGH; fix with `std::bit_cast` or `memcpy`, and each
+      surviving `reinterpret_cast` carries a comment saying why it is defined** —
       `grep -rn 'reinterpret_cast' --include='*.cpp' --include='*.hpp' .` ;
       `grep -rnE '\*\s*\(\s*[A-Za-z_][A-Za-z0-9_ ]*\*\s*\)' --include='*.c' .` (C pointer-cast
       deref (heuristic)); `grep -rn 'union' --include='*.cpp' .` (union type-pun is UB in C++)
+- [ ] **Storage reused outside an object's lifetime, or a misaligned access (§4) — HIGH** —
+      `grep -rnE 'new[[:space:]]*\([^)]*\)[[:space:]]*[A-Za-z_]' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' . | grep -v nothrow`
+      (placement new: find the explicit destructor call that ends each lifetime before the
+      storage is reused) ; build with `-Wcast-align` and run the suite under UBSan, which traps
+      misalignment
 - [ ] **Bad shifts / conversions — MEDIUM/HIGH** —
       `grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '(cout|cerr|<<=|stream)'`
       (verify shift amounts)
@@ -205,7 +214,7 @@ mutex. Build threaded code under TSan.
       `grep -rLE 'isfinite|isnan' --include='*.c' --include='*.cc' --include='*.cpp' . | xargs grep -nE '(strto(d|f|ld)|sto(d|f|ld)|atof)[[:space:]]*\(' /dev/null`
       (float parsed in a file that never checks finiteness); then review each `/` and `%`
       by an input-derived divisor for the zero and MIN/-1 guards
-- [ ] **Build with conversion warnings: -Wconversion -Wsign-conversion -Wshadow -Wcast-align
+- [ ] **Build with conversion warnings (§6): -Wconversion -Wsign-conversion -Wshadow -Wcast-align
       -Wshift-overflow=2**
 - [ ] **Uninitialized — MEDIUM** —
       `clang-tidy --checks='cppcoreguidelines-init-variables,clang-analyzer-core.uninitialized.*' <files>`
@@ -221,7 +230,9 @@ mutex. Build threaded code under TSan.
       `grep -rnE '\)[^;{]*[[:space:]](pre|post)[[:space:]]*\(|contract_assert[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
       (read each: is there an explicit check on the input path before it?) ;
       `grep -rnE -e '-fcontract-evaluation-semantic=[a-z_]+' . || echo "contract semantic not pinned"`
-- [ ] **Ground truth: run under UBSan, aborting on first diagnostic (Clang only: `integer` is a
+- [ ] **Ground truth (§6): run under UBSan, aborting on first diagnostic (Clang only: `integer` is a
       Clang sanitizer group; with GCC drop it) cmake -DCMAKE_CXX_COMPILER=clang++
       -DCMAKE_CXX_FLAGS="-fsanitize=undefined,integer -fno-sanitize-recover=all" ctest # any
-      abort == CRITICAL/HIGH**
+      abort == CRITICAL/HIGH** ; where a periodic TypeSanitizer job runs (`-fsanitize=type`,
+      Clang only), it fails on `type-aliasing-violation` in the output, not on the exit status,
+      which stays 0 (§6)

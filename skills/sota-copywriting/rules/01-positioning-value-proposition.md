@@ -126,24 +126,33 @@ without sources, "award-winning" without naming the award.
 ## Audit checklist
 
 - [ ] Each major asset names (in a brief or comment) its primary audience,
-      awareness stage, and single conversion goal
+      awareness stage, and single conversion goal; one primary audience per
+      asset (mixed audiences split into pages or labelled sections), addressed
+      in that audience's own vocabulary (§1)
 - [ ] The value proposition is written down in template form and every
-      headline/subheadline derives from it
+      headline/subheadline derives from it; one primary value proposition per
+      product per audience (§2)
 - [ ] Category anchor present; differentiator framed against what the reader
-      does today
+      does today (§2)
 - [ ] "So what?" test passes on every section: benefit stated, feature
       attached as proof — no feature-list-only sections, no proof-free
-      benefit sections
-- [ ] Flipped-pronoun test: you/your dominates we/our —
-      `grep -ciE '\b(we|our)\b' page.md` vs `\b(you|your)\b` as a smoke test
+      benefit sections (§3)
+- [ ] Flipped-pronoun test: you/your dominates we/our — per-file counts of
+      `grep -rciwE 'we|our' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules .`
+      vs `grep -rciwE 'you|your' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules .` as a smoke test; a quantified benefit carries its
+      substantiation, otherwise it stays qualitative (§3)
 - [ ] Message match verified across ad/email → landing page → CTA for the
-      top acquisition paths
+      top acquisition paths (§4)
 - [ ] Objections handled at their moment (pricing, migration, security) with
-      links to real docs, not adjective badges
-- [ ] Zero unsubstantiated superlatives/only/first claims:
-      `grep -rniwE 'best|#1|leading|fastest|only|first|world-class|revolutionary' site/`
-      — every hit has evidence on file or gets cut ([`rules/04`](04-claims-legal-trust.md))
+      links to real docs, not adjective badges; every section maps to a node
+      of promise → benefits → proof → objections → action, and orphan
+      sections are cut or moved (§4)
+- [ ] Zero unsubstantiated superlatives/only/first claims (§5):
+      `grep -rniwE 'best|#1|leading|fastest|only|first|world-class|revolutionary' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules .`
+      — every hit has evidence on file or gets cut ([`rules/04`](04-claims-legal-trust.md));
+      "only/first" claims re-verified on a schedule; no competitor weakness
+      claimed without proof
 - [ ] Every proof element is top-3-tier where possible; no anonymous quotes,
-      sourceless stats, or unnamed awards
+      sourceless stats, or unnamed awards; logos shown only with permission (§6)
 - [ ] Aggregate numbers ("10,000+ users") match an internal source of truth
-      and an honest unit
+      and an honest unit (§6)

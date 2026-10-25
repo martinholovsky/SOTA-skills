@@ -133,8 +133,8 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       *same code path* as the one serving it — a shared library or a feature store — or
       two implementations that must be kept in step by hand? Two implementations is the
       finding, whether or not they currently agree.
-- [ ] **Point-in-time correctness**: does every training label join features **as of** the
-      label's timestamp? A join that picks up feature values computed after the event
+- [ ] **Point-in-time correctness and target leakage (§1)**: does every training label join features **as of** the
+      label's timestamp, and is no feature a proxy for, or derived after, the label? A join that picks up feature values computed after the event
       leaks the future into training and inflates offline metrics — it will not reproduce
       in serving, which is how it is usually discovered.
 - [ ] If a **feature store** is in use: are offline and online stores written from one
@@ -143,15 +143,17 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 - [ ] If one is **not** in use: what enforces the two answers above instead? "We are
       careful" is not a mechanism ([`rules/01`](01-ml-systems-architecture.md) §3).
 
-- [ ] **Preprocessing leakage — CRITICAL** —
+- [ ] **Preprocessing leakage (§1) — CRITICAL** —
       `grep -rnE '\.fit(_transform)?\(' --include='*.py' . | grep -vE 'Pipeline|fit\(X_train|fit\(train'`
       (fit on full data?);
       `grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?`
-- [ ] **Split correctness — CRITICAL/HIGH** —
+- [ ] **Split correctness (§1, §3) — CRITICAL/HIGH** —
       `grep -rnE 'train_test_split\(' --include='*.py' . | grep -v 'stratify\|TimeSeries\|Group'`
       (temporal/group needed?);
       `grep -rniE 'TimeSeriesSplit|GroupKFold|GroupShuffle' --include='*.py' . || echo "no temporal/group split — verify IID"`
-- [ ] **Train/serve skew — CRITICAL Diff training feature code vs serving feature code; are
+      ; manual: is the held-out test set touched only for the final evaluation, with model selection
+      by CV on train and no tuning on the test set?
+- [ ] **Train/serve skew (§2) — CRITICAL Diff training feature code vs serving feature code; are
       served features logged for training?** —
       `grep -rniE 'feature.?store|feast|log.*feature|skew' --include='*.py' . | head`
 - [ ] **Data/feature versioning — HIGH** —
@@ -175,3 +177,10 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       ; manual: create/modify/approve separated on the labeling platform
 - [ ] **Adjudication-window quarantine (§7) — HIGH where outcomes can be reversed** —
       `grep -rniE 'quarantine|adjudicat|chargeback|holdback' --include='*.py' --include='*.sql' . || echo "no quarantine before outcome events reach training"`
+- [ ] **Feature documentation and identical missing/unseen handling (§4) — MEDIUM** — encoders left on
+      the default that raises on an unseen category:
+      `grep -rnE '(OneHotEncoder|OrdinalEncoder)\(' --include='*.py' . | grep -v 'handle_unknown'`
+      (scikit-learn defaults to `handle_unknown='error'`; read multi-line calls by hand, and read an
+      explicit setting for silent mis-encoding); manual: each feature's source, semantics and
+      freshness documented, unused features dropped, and missing values and categoricals encoded by
+      the same code in both paths

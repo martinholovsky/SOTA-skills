@@ -231,11 +231,13 @@ rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-e
 - [ ] **Extraction/inference exposure — MEDIUM** —
       `grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head`
       (raw scores exposed? rate-limited?)
-- [ ] **Governance docs — MEDIUM/LOW** —
+- [ ] **Governance docs (§4) — MEDIUM/LOW** —
       `out=$(grep -rniE 'model.?card|MODEL_CARD|datasheet|intended.use|limitation' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no model card" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
       ; `grep -rniE 'nist|ai.?rmf|risk.?assessment|fairness|bias' . | head`
-- [ ] **EU AI Act / regulatory tier considered — HIGH for high-risk domains (manual)** —
+      ; manual: does each production model's card carry intended use, per-slice metrics,
+      limitations and an owner, and are fairness findings and mitigations documented?
+- [ ] **EU AI Act / regulatory tier considered (§5) — HIGH for high-risk domains (manual)** —
       `grep -rniE 'ai.?act|high.?risk|gdpr|differential.privacy|anonymiz' . | head`
 - [ ] **Model signing verified at admission and load (§2) — HIGH** —
       `grep -rnE 'model_signing[ .](verify|verifying)|from model_signing import .*verifying|verifying\.Config\(' . || echo "no model signature verification at admission/load"` ;

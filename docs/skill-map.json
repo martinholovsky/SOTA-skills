@@ -443,6 +443,21 @@
       ]
     },
     {
+      "from": "sota-php",
+      "to": "sota-code-security",
+      "weight": 11,
+      "targets": [
+        "rules/01",
+        "rules/01 \u00a710",
+        "rules/04",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73",
+        "rules/07 \u00a73",
+        "rules/07 \u00a76",
+        "rules/17 \u00a72"
+      ]
+    },
+    {
       "from": "sota-llm-engineering",
       "to": "sota-sandboxing",
       "weight": 10,
@@ -473,21 +488,6 @@
       "targets": [
         "rules/03",
         "rules/03 \u00a710"
-      ]
-    },
-    {
-      "from": "sota-php",
-      "to": "sota-code-security",
-      "weight": 10,
-      "targets": [
-        "rules/01",
-        "rules/01 \u00a710",
-        "rules/04",
-        "rules/04 \u00a75",
-        "rules/06 \u00a73",
-        "rules/07 \u00a73",
-        "rules/07 \u00a76",
-        "rules/17 \u00a72"
       ]
     },
     {
@@ -606,6 +606,20 @@
       ]
     },
     {
+      "from": "sota-ruby",
+      "to": "sota-code-security",
+      "weight": 9,
+      "targets": [
+        "rules/01 \u00a711",
+        "rules/01 \u00a74",
+        "rules/01 \u00a75",
+        "rules/01 \u00a76",
+        "rules/04",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73"
+      ]
+    },
+    {
       "from": "sota-security-compliance",
       "to": "sota-secrets-management",
       "weight": 9,
@@ -697,19 +711,6 @@
         "rules/14 \u00a74b",
         "rules/16 \u00a72.15",
         "rules/18"
-      ]
-    },
-    {
-      "from": "sota-ruby",
-      "to": "sota-code-security",
-      "weight": 8,
-      "targets": [
-        "rules/01 \u00a711",
-        "rules/01 \u00a75",
-        "rules/01 \u00a76",
-        "rules/04",
-        "rules/04 \u00a75",
-        "rules/06 \u00a73"
       ]
     },
     {
@@ -1034,6 +1035,17 @@
       ]
     },
     {
+      "from": "sota-ux-writing",
+      "to": "sota-frontend-design",
+      "weight": 6,
+      "targets": [
+        "rules/04",
+        "rules/04 \u00a72a",
+        "rules/04 \u00a73",
+        "rules/05"
+      ]
+    },
+    {
       "from": "sota-web-frameworks",
       "to": "sota-javascript-typescript",
       "weight": 6,
@@ -1049,6 +1061,14 @@
       "targets": [
         "rules/06 \u00a76.3",
         "rules/06 \u00a76.6"
+      ]
+    },
+    {
+      "from": "sota-c-cpp",
+      "to": "sota-sandboxing",
+      "weight": 5,
+      "targets": [
+        "rules/04"
       ]
     },
     {
@@ -1199,17 +1219,6 @@
       ]
     },
     {
-      "from": "sota-ux-writing",
-      "to": "sota-frontend-design",
-      "weight": 5,
-      "targets": [
-        "rules/04",
-        "rules/04 \u00a72a",
-        "rules/04 \u00a73",
-        "rules/05"
-      ]
-    },
-    {
       "from": "sota-web-frameworks",
       "to": "sota-performance",
       "weight": 5,
@@ -1242,12 +1251,6 @@
         "rules/01",
         "rules/02"
       ]
-    },
-    {
-      "from": "sota-c-cpp",
-      "to": "sota-sandboxing",
-      "weight": 4,
-      "targets": []
     },
     {
       "from": "sota-cli-ux",
@@ -2233,6 +2236,14 @@
       "to": "sota-sandboxing",
       "weight": 2,
       "targets": []
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-secrets-management",
+      "weight": 2,
+      "targets": [
+        "rules/04 \u00a72"
+      ]
     },
     {
       "from": "sota-ruby",
@@ -3373,12 +3384,6 @@
     },
     {
       "from": "sota-ruby",
-      "to": "sota-secrets-management",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-ruby",
       "to": "sota-observability",
       "weight": 1,
       "targets": [
@@ -3391,6 +3396,14 @@
       "weight": 1,
       "targets": [
         "rules/09"
+      ]
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-devsecops",
+      "weight": 1,
+      "targets": [
+        "rules/02 \u00a72.6"
       ]
     },
     {
@@ -3749,14 +3762,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1643,
+    "md link, other skill": 1649,
     "md link, outside skills/": 3,
-    "md link, same skill": 2820,
+    "md link, same skill": 2831,
     "name (backticked)": 433,
     "name (bare)": 240,
-    "name+file (backticked)": 687,
+    "name+file (backticked)": 693,
     "name+file (bare)": 165,
-    "own rules/NN": 3009
+    "own rules/NN": 3021
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3766,9 +3779,9 @@
     "md link, same skill": 0,
     "name (backticked)": 418,
     "name (bare)": 197,
-    "name+file (backticked)": 683,
+    "name+file (backticked)": 689,
     "name+file (bare)": 159,
-    "own rules/NN": 2915
+    "own rules/NN": 2926
   },
   "rules_index_style": {
     "link": 42

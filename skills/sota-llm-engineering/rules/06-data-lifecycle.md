@@ -211,20 +211,24 @@ stores: [sota-code-security rules/07](../../sota-code-security/rules/07-data-exp
 
 - [ ] Any fine-tuning proposal/document shows: eval suite first, prompt+RAG
       plateau evidence, behavioral (not knowledge) gap, data volume, named
-      lifecycle owner. Tuning used for facts/knowledge injection → finding.
+      lifecycle owner. Tuning used for facts/knowledge injection → finding (§1).
 - [ ] Tuned models: base version pinned where possible; scheduled
       re-validation against evals; adapter rollback path; provider offering
-      verified current, not assumed.
+      verified current, not assumed (§1).
 - [ ] Datasets: provenance + license per example; deduped; entity-level
       splits; inter-annotator agreement measured; refusal/negative cases
-      present; versioned releases with pinned eval results.
+      present; annotator disagreements adjudicated, not averaged; PII scrubbed
+      at ingestion; versioned releases with pinned eval results (§2).
 - [ ] Feedback: implicit signals (edits, regenerations, copies, escalations)
       captured and trace-linked, not just thumbs; 👎/escalation → eval-case
       pipeline exists and is exercised; positive pool sample-reviewed before
-      reuse as examples/training data.
+      reuse as examples/training data; time from bad output to gating-suite
+      case tracked; consent/notice covers reuse of feedback (§3).
 - [ ] Vectors stamped with model/version/chunker; migrations are blue/green
       with dual-write and retrieval-eval gates; no mixed vector spaces
-      queryable; re-embedding cost planned via batch.
+      queryable; re-embedding cost planned via batch; recall@k delta quantified
+      before the flip; chunker changes run as migrations, with stable source-doc
+      IDs plus offsets in anything user-facing (§4).
 - [ ] PII minimized at the model boundary (projection, pseudonymization);
       redaction layer in front of trace logging, eval promotion, and dataset
       storage; traces have distinct retention + access control.

@@ -10,6 +10,9 @@ below.
 
 ## 1. The bug classes
 
+*(advisory)* — a taxonomy that states no rule of its own; each class is probed by the §2–§6
+items and the sanitizer run.
+
 - **Buffer overflow/underflow** — index or pointer outside an object's bounds.
   Read = info leak; write = corruption/RCE.
 - **Use-after-free (UAF)** — dereferencing a pointer to freed/destroyed
@@ -139,17 +142,27 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
       `grep -rn -A1 -E 'strncpy[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | awk '/strncpy[[:space:]]*\(/ { if (p != "") print p; p = $0; if ($0 ~ /\[[^]]*-[[:space:]]*1[[:space:]]*\][[:space:]]*=[[:space:]]*(0|.\\0.)[[:space:]]*;/) p = ""; next } { if (p != "" && $0 !~ /\[[^]]*-[[:space:]]*1[[:space:]]*\][[:space:]]*=[[:space:]]*(0|.\\0.)[[:space:]]*;/) print p; p = "" } END { if (p != "") print p }'`
       (each line printed is a `strncpy` whose own line and next line write no `[... - 1] = '\0'`:
       read whether the length leaves room, or replace it with `snprintf`/`strlcpy`)
-- [ ] **Dangling: returning address/ref/view of a local — HIGH** —
+- [ ] **Dangling: returning address/ref/view of a local, a stored view, a `[&]` capture (§3) —
+      HIGH** —
       `grep -rnE 'return &[A-Za-z_]' --include='*.cpp' --include='*.c' .` ;
       `grep -rnE 'return (std::)?(string_view|span)' --include='*.cpp' .` (verify backing
       outlives);
       `clang-tidy --checks='bugprone-dangling-handle,bugprone-use-after-move,clang-analyzer-cplusplus.*' <files>`
-- [ ] **Iterator invalidation / erase-in-loop — MEDIUM** —
+      ; `grep -rnE '\[&\]' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
+      (a `[&]` lambda stored, returned or handed to a thread outlives the scope) ;
+      `grep -rnE 'std::(string_view|span<[^>]*>)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*;' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
+      (a stored view: who owns the bytes, and do they outlive it?)
+- [ ] **Iterator invalidation / erase-in-loop (§4) — MEDIUM** —
       `grep -rnE 'for *\(.*begin\(\).*\).*\.(erase|push_back|insert|clear)\(' --include='*.cpp' .`
-- [ ] **Allocation checks — HIGH** —
+      ; `grep -rnE '\.erase[[:space:]]*\(' --include='*.cpp' --include='*.cc' . | grep -vE '=[[:space:]]*[A-Za-z_][A-Za-z0-9_.>-]*\.erase'`
+      (an `erase` whose returned iterator is dropped: inside an iterator loop, write
+      `it = v.erase(it)` or use `std::erase_if`)
+- [ ] **Allocation checks (§6) — HIGH** —
       `grep -rnE '=\s*(malloc|calloc|realloc)\(' --include='*.c' --include='*.cpp' .` (confirm
       NULL-check follows); `grep -rnE '(new|new\[\])' --include='*.cpp' . | grep -v make_`
-      (confirm RAII ownership)
+      (confirm RAII ownership) ;
+      `clang-tidy --checks='bugprone-suspicious-realloc-usage,clang-analyzer-unix.MismatchedDeallocator,clang-analyzer-unix.Malloc' <files>`
+      (`p = realloc(p, n)` leaks on failure; a `malloc`/`delete` or `new[]`/`delete` pair is UB)
 - [ ] **Safe Buffers enabled for new C++, and its opt-outs justified (§2) — MEDIUM on a
       Clang-built C++ tree (INFO where the toolchain is GCC-only)** —
       `grep -rn -e 'unsafe-buffer-usage' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . || echo "Safe Buffers not enabled"`
@@ -157,10 +170,11 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
       (each opt-out region needs a stated reason and should be small)
 - [ ] **Sanitizer/hardening presence in the build — HIGH if a network binary lacks them** —
       `grep -rn 'fsanitize' . ; grep -rn '_GLIBCXX_ASSERTIONS\|_LIBCPP_HARDENING\|_FORTIFY_SOURCE' .`
-- [ ] **A check that is on by default, switched off — MEDIUM (HIGH for a shipped `OBSERVE` or
+- [ ] **A check that is on by default, switched off (§2, §5) — MEDIUM (HIGH for a shipped `OBSERVE` or
       `IGNORE`, which continues past a failed check into UB)** —
       `grep -rnE -e '-fno-sanitize-address-use-after-scope|_LIBCPP_ASSERTION_SEMANTIC_(OBSERVE|IGNORE)|_LIBCPP_HARDENING_MODE_NONE' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='*.h' --include='*.hpp' .`
       (libc++ calls `observe` an adoption aid only; `ignore` is not a conforming hardened mode)
-- [ ] **Build & run the suite under sanitizers (ground truth) cmake -DCMAKE_BUILD_TYPE=Debug
+- [ ] **Build & run the suite under sanitizers (§5, ground truth; TSan in its own job, since it
+      cannot share one with ASan; Valgrind only for binaries you cannot rebuild) cmake -DCMAKE_BUILD_TYPE=Debug
       -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all" ctest # any
       ASan/UBSan abort == CRITICAL/HIGH finding**

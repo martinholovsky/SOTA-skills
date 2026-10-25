@@ -130,23 +130,26 @@ typicality — is [`rules/04`](04-claims-legal-trust.md) §2–3):
 
 - [ ] Headline states an outcome, not a product description; ≥5 variants
       were considered (in the draft PR/brief); subheadline explains mechanism
-      + audience
+      + audience; meaning survives without any wordplay; a number in a
+      headline has its benchmark (§1)
 - [ ] Above-fold contract holds on mobile and desktop: what/for-whom/next
-      action + one proof element, no carousel of rotating value props
+      action + one proof element, no carousel of rotating value props (§2)
 - [ ] Skim test passes: headings alone tell the argument; no "Features"/
-      "Why us" label headings
-- [ ] Paragraphs ≤ 3 sentences; bullets parallel; bold ≤ 1 phrase per screen
+      "Why us" label headings (§3)
+- [ ] Paragraphs ≤ 3 sentences; bullets parallel; bold ≤ 1 phrase per screen;
+      every heading and bullet front-loaded (§3)
 - [ ] Every CTA is verb+outcome; grep the ban list:
-      `grep -riE '>(Submit|Click here|Learn more)<' site/` — bare hits fixed
-      or given named objects
+      `grep -riE '>(Submit|Click here|Learn more)<' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules .`
+      — bare hits fixed or given named objects (§4)
 - [ ] One primary CTA per page; repeated verbatim on long pages; commitment
-      level matches traffic temperature
+      level matches traffic temperature (§4)
 - [ ] Every friction reducer ("no credit card", "cancel anytime",
-      "5-minute setup") verified true in the product today
+      "5-minute setup") verified true in the product today (§4)
 - [ ] Testimonials specific and fully attributed; proof placed at the
-      objection it answers; press/"as seen in" logos reflect earned coverage
+      objection it answers; press/"as seen in" logos reflect earned coverage;
+      logo walls only with permission; counts in an honest unit (§5)
 - [ ] Pricing page answers limit/trial/cancel questions; no costs revealed
       only at checkout; "Most popular" is factually most popular; EU price
-      reductions on goods show the lowest price of the prior ≥ 30 days
+      reductions on goods show the lowest price of the prior ≥ 30 days (§6)
 - [ ] Comparison tables dated, sourced, re-verification scheduled; no
-      unprovable competitor claims
+      unprovable competitor claims (§6)

@@ -297,10 +297,12 @@ them follows the same pipeline:
 - [ ] Each route's model chosen by eval evidence; tier-below test performed;
       models/params/prompts in a config registry, none inline; price/limit
       claims in code or docs re-verified, not folklore; token counts
-      re-baselined when the model (and its tokenizer) generation changes.
+      re-baselined when the model (and its tokenizer) generation changes;
+      each route has a configured fallback, recorded in traces and eval-tested
+      in advance; no auto-tracking "latest" alias outside dev (§1).
 - [ ] Single gateway module owns all provider calls (auth, retries, tracing,
       budgets); no scattered direct SDK calls; abstraction does not mask
-      provider-native caching/structured-output/batch features.
+      provider-native caching/structured-output/batch features (§1).
 - [ ] Retries: jittered exponential backoff, `retry-after` honored, 4xx not
       retried, a 429 without `retry-after` treated as a spend cap (breaker,
       not retry), attempt+elapsed caps, typed error classes; client-side
@@ -311,7 +313,8 @@ them follows the same pipeline:
 - [ ] Streaming on user-facing and long-running generations; TTFT and idle
       timeouts; no >1-minute non-streaming calls.
 - [ ] Latency levers applied in order (stream, cache, parallelize,
-      right-size, bound output) before exotic ones; hedged calls budgeted.
+      right-size, bound output) before exotic ones; hedged calls budgeted;
+      semantic/response cache keys scoped per user (§3).
 - [ ] Cost: per-route budget + alerting; caching hit-rate verified; offline
       workloads on batch API (−50%); cost attribution to
       feature/tenant/prompt-version queryable.

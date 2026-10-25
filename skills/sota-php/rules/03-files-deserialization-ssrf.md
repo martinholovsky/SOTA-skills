@@ -243,26 +243,33 @@ Run from repo root; verify each hit manually.
 - [ ] **FFI — HIGH if enabled for every request** (§6) —
       `grep -rniE 'ffi\.enable[[:space:]]*=[[:space:]]*"?(true|1|on)' --include='*.ini' --include='*.conf' --include='Dockerfile*' .` ;
       `grep -rnE '\\?FFI::(cdef|load|scope|new)' --include='*.php' .`
-- [ ] **Uploads — client-trusted name/type, executable destinations** —
+- [ ] **Uploads — client-trusted name/type, executable destinations (§1) — HIGH** —
       `grep -rnE "\\\$_FILES\[[^]]+\]\['(name|type)'\]" --include='*.php' src/` ;
       `grep -rn 'move_uploaded_file' --include='*.php' src/` (trace dest: webroot? renamed?);
-      `grep -rn 'is_uploaded_file' --include='*.php' src/` (absent near move_* = MEDIUM)
-- [ ] **LFI/RFI/traversal — user data reaching include/fs functions** —
+      `grep -rn 'is_uploaded_file' --include='*.php' src/` (absent near move_* = MEDIUM) ;
+      `grep -rnE -e '->extractTo[[:space:]]*\(|new[[:space:]]+\\?(ZipArchive|PharData)' --include='*.php' --exclude-dir=vendor .`
+      (archive extraction, §1: each entry name checked against the target directory, entry count
+      and sizes capped; the generic checks are the archive item in
+      [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md))
+- [ ] **LFI/RFI/traversal — user data reaching include/fs functions (§2) — CRITICAL** —
       `grep -rnE '(include|require)(_once)?\s*[( ][^;]*\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' src/`
       ;
       `grep -rnE '(file_get_contents|fopen|readfile|file_put_contents|copy|unlink)\s*\([^;]*\$_' --include='*.php' src/`
       ; `grep -rnE '(phar|expect|data|zip)://' --include='*.php' src/` ;
       `grep -rn 'php://filter' --include='*.php' src/` ;
       `php -r 'echo ini_get("allow_url_include"), "|", ini_get("allow_url_fopen"), PHP_EOL;'`
-- [ ] **Deserialization — CRITICAL on external data** —
+- [ ] **Deserialization (§3) — CRITICAL on external data** —
       `grep -rn 'unserialize(' --include='*.php' src/ | grep -v 'allowed_classes'` ;
       `grep -rnE 'unserialize\s*\(\s*\$_(GET|POST|COOKIE|REQUEST)' --include='*.php' src/` ;
       `grep -rn 'getMetadata' --include='*.php' src/` ;
       `grep -rnE '__(destruct|wakeup|toString)' --include='*.php' src/` (gadget surface
-      inventory)
-- [ ] **XML** — `grep -rnE 'LIBXML_(NOENT|DTDLOAD)' --include='*.php' src/` ;
+      inventory) ; a `serialize()`d blob from a cache or queue is verified with `hash_equals()`
+      against a `hash_hmac()` before it is deserialized
+- [ ] **XML (§4) — HIGH** — `grep -rnE 'LIBXML_(NOENT|DTDLOAD)' --include='*.php' src/` ;
       `grep -rn 'libxml_disable_entity_loader' --include='*.php' src/` (deprecated; check PHP<8
-      paths)
+      paths) ;
+      `grep -rnE -e '->loadXML[[:space:]]*\(|simplexml_load_(string|file)[[:space:]]*\(|XMLReader::(open|XML)' --include='*.php' --exclude-dir=vendor . | grep -v 'LIBXML_NONET'`
+      (each untrusted parse: `LIBXML_NONET`, and the document rejected when `doctype` is not null)
 - [ ] **SSRF — user URLs fetched server-side** —
       `grep -rnE '(curl_init|file_get_contents|fopen|getimagesize|get_headers|get_meta_tags|->request|->get)[[:space:]]*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`
       ; `grep -rn 'CURLOPT_SSL_VERIFYPEER' --include='*.php' src/` (false = HIGH);

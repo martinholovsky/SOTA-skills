@@ -333,7 +333,7 @@ twin (`AuditDynamicCode` for `BlockDynamicCode`), run the audit form first and r
 OWASP: C-Based Toolchain Hardening cheat sheet.
 
 ## 6. Memory-safety strategy (the meta-control)
-
+*(audited in [`sota-sandboxing` rules/04](../../sota-sandboxing/rules/04-process-app-sandboxing.md) and [rules/02](02-memory-safety.md))* — parser isolation, and hardened mode.
 - Where feasible, move new untrusted-input-parsing code to a memory-safe
   language (Rust), or isolate the C/C++ parser (sandbox/seccomp, separate
   process) — see [`sota-sandboxing`](../../sota-sandboxing/SKILL.md). CISA/NSA and the OpenSSF now treat "C/C++
@@ -376,7 +376,7 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
 
 ## Audit checklist
 
-- [ ] **Banned functions — HIGH/CRITICAL** —
+- [ ] **Banned functions (§1) — HIGH/CRITICAL** —
       `grep -rnwE '(gets|strcpy|strcat|sprintf|vsprintf|stpcpy|scanf|system|popen|strtok|atoi|atol)' --include='*.c' --include='*.cpp' --include='*.h' .`
       ; `grep -rnE '\balloca\b|\[[^]]*\] *= *\{?' --include='*.c' .` (VLA/alloca on dynamic
       size)

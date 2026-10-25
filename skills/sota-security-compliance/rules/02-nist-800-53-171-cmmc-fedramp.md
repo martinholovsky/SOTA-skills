@@ -153,13 +153,13 @@ read 2026-09-26). *Future-phase dates are FedRAMP plans — re-verify there.*
 
 ## Audit checklist
 
-- [ ] System categorized (impact level / FIPS 199) and the correct 800-53 baseline (low/moderate/high) inherited then tailored, with justification as code
-- [ ] If CUI is present: a defined, segmented CUI enclave/boundary — verified in network/IAM config, not asserted; publicly accessible components subnetworked
-- [ ] FIPS-validated (140-3, active CMVP certificate — 140-2 certificates are Historical since 22 Sep 2026) crypto module protects CUI/federal data at rest and in transit; the *loaded* module verified, and it runs in FIPS mode
-- [ ] 800-171 revision in use matches the **contract** requirement (CMMC L2 may pin Rev 2); exact requirement IDs confirmed against the primary PDF, not memory
-- [ ] CMMC level matches the contract; SSP + POA&M generated from the control crosswalk and kept current; SPRS score posted where required; annual affirmation wired
-- [ ] AU/audit-logging controls implemented with retention + tamper-evidence; logs reviewed (mechanism, not manual promise)
-- [ ] AC/IA controls: least privilege, separation of duties, MFA for privileged/network access — enforced by the IdP, not policy prose ([`sota-identity-access`](../../sota-identity-access/SKILL.md))
-- [ ] FedRAMP (if applicable): authorization boundary drawn and enforced; asset inventory reconciled continuously; ConMon (scans/POA&M/change control) operating monthly; CRM published
-- [ ] Where FedRAMP 20x applies, control evidence emitted as machine-readable KSIs from the enforcing system; OSCAL used for SSP/SAP/SAR interchange
+- [ ] System categorized (impact level / FIPS 199) and the correct 800-53 baseline (low/moderate/high) inherited then tailored, with justification as code; the privacy baseline applied regardless of impact; SSP/SAP/SAR emitted as OSCAL from the crosswalk rather than hand-maintained documents (§1)
+- [ ] If CUI is present: a defined, segmented CUI enclave/boundary — verified in network/IAM config, not asserted; publicly accessible components subnetworked (§2)
+- [ ] FIPS-validated (140-3, active CMVP certificate — 140-2 certificates are Historical since 22 Sep 2026) crypto module protects CUI/federal data at rest and in transit; the *loaded* module verified, and it runs in FIPS mode; in cloud, the provider's FIPS-validated endpoints/KMS used and the module recorded in the crosswalk; an existing system still on a 140-2 module has the agency's transition decision recorded (§4)
+- [ ] 800-171 revision in use matches the **contract** requirement (CMMC L2 may pin Rev 2); exact requirement IDs confirmed against the primary PDF, not memory (§2)
+- [ ] CMMC level matches the contract; SSP + POA&M generated from the control crosswalk and kept current; SPRS score posted where required; annual affirmation wired (§3)
+- [ ] AU/audit-logging controls implemented with retention + tamper-evidence; logs reviewed (mechanism, not manual promise) (§2)
+- [ ] AC/IA controls: least privilege, separation of duties, MFA for privileged/network access (§2) — enforced by the IdP, not policy prose ([`sota-identity-access`](../../sota-identity-access/SKILL.md))
+- [ ] FedRAMP (if applicable): authorization boundary drawn and enforced; asset inventory reconciled continuously; ConMon (scans/POA&M/change control) operating monthly; CRM published (§5)
+- [ ] Where FedRAMP 20x applies, control evidence emitted as machine-readable KSIs from the enforcing system; OSCAL used for SSP/SAP/SAR interchange (§5)
 - [ ] All statuses/dates in this file re-verified against primary sources (CSRC, fedramp.gov, Federal Register) within the last 6 months

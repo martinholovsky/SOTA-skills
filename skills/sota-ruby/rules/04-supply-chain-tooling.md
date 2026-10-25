@@ -352,10 +352,18 @@ Run from repo root; verify each hit manually.
       `grep -rnE '#[[:space:]]*rubocop:(disable|todo)[[:space:]]' --include='*.rb' . | grep -v ' -- '` ;
       `grep -n 'AllowWithReason' .rubocop.yml` ;
       `awk '/^[A-Z][A-Za-z]*\/[A-Za-z]+:/ { c = $1 } /^[[:space:]]+Enabled:[[:space:]]*false/ { print FILENAME ": " c " disabled" }' .rubocop.yml`
-- [ ] **Brakeman ignores without justification (manual review)** —
+- [ ] **Static security analysis: Brakeman gates CI, every ignore is explained (§5)** —
       `python3 -c "import json;d=json.load(open('config/brakeman.ignore'));print(len(d.get('ignored_warnings',[])))" 2>/dev/null`
-- [ ] **CI Ruby version drift** —
-      `grep -rn "ruby-version\|ruby:" .github/workflows/ 2>/dev/null | grep -v ".ruby-version" | head`
+      ; `find . -name brakeman.ignore -not -path './vendor/*' -exec python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1])); print(sys.argv[1], sum(1 for w in d.get("ignored_warnings", []) if not str(w.get("note", "")).strip()), "ignored warnings without a note")' {} \;`
+      (an ignore nobody can explain is a finding) ; Brakeman's presence in CI is the
+      vulnerability-gates item above: confirm it runs with `--exit-on-warn` ; non-Rails code: the
+      `rubocop:disable Security` hits in the lint-posture item. Secret scanning on every push and
+      once over full history is probed in [`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §2
+- [ ] **CI gates incomplete, or CI Ruby version drift (§7) — MEDIUM for a missing audit gate** —
+      `grep -rn "ruby-version\|ruby:" .github/workflows/ 2>/dev/null | grep -v ".ruby-version" | head` ;
+      `grep -rhoE 'BUNDLE_FROZEN|frozen true|rubocop|standardrb|bundle(-| )audit|brakeman|rspec|rails test|rake test|srb tc|steep check' --include='*.yml' --include='*.yaml' . | sort -u`
+      (which of the five gates CI runs: frozen install, lint, `bundle audit`/Brakeman, tests, and
+      `srb tc`/`steep check` on typed projects; a missing one is the finding)
 - [ ] **Test determinism** —
       `grep -rn "order = :random\|--seed" .rspec spec/spec_helper.rb 2>/dev/null | head -2` ;
       `grep -rn "disable_net_connect" spec/ test/ 2>/dev/null | head -1`
@@ -369,6 +377,15 @@ Run from repo root; verify each hit manually.
       extension parsing untrusted input** —
       `grep -nE "ruzzy|prop_check|rantly" Gemfile Gemfile.lock 2>/dev/null`
       (none: nothing generates inputs; a native extension in the bundle is the first target)
+- [ ] **Gem authoring: metadata, file list, credentials (§8) — LOW for metadata, HIGH for tracked
+      `.gem/` credentials** — skip when the repo builds no gem. First prints each gemspec missing
+      a key §8 asks for; second, a file list built from a glob rather than `git ls-files`; third,
+      a tracked RubyGems credentials directory —
+      `find . -name '*.gemspec' -not -path './vendor/*' | while IFS= read -r f; do for k in homepage source_code_uri changelog_uri required_ruby_version; do grep -q "$k" "$f" || echo "$f: no $k"; done; done` ;
+      `grep -rnE 'files[[:space:]]*=[[:space:]]*Dir' --include='*.gemspec' .` ;
+      `git ls-files | grep -E '(^|/)\.gem/'`
+      ; manual: a removed public method ships only in a major version. Publishing through OIDC
+      trusted publishing or an MFA account is probed in [`sota-devsecops` rules/02](../../sota-devsecops/rules/02-provenance-signing.md) §2.6
 
 Severity guide: no lockfile / unfrozen production installs MEDIUM (HIGH if
 deploys resolve fresh); unpinned git gems, missing vulnerability gate MEDIUM;

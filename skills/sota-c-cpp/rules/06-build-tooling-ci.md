@@ -436,3 +436,10 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -qE 'CMakeLists|\.cmake|conanfile|vcpkg' || echo "no CODEOWNERS entry for build-executing files"`
 - [ ] **Global (non-target) CMake anti-patterns — LOW/MEDIUM** —
       `grep -rnE 'include_directories\(|link_libraries\(|^set\(CMAKE_CXX_FLAGS' CMakeLists.txt 2>/dev/null`
+- [ ] **Build paths and times reach the binary (§6) — LOW, MEDIUM where releases claim
+      reproducibility** —
+      `grep -rnE '__(DATE|TIME|TIMESTAMP)__' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' --include='*.hpp' .`
+      ; `err=$(grep -rnE -e '-f(file|debug|macro)-prefix-map|SOURCE_DATE_EPOCH' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' --include='*.yml' --include='*.yaml' --include='Dockerfile*' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no -ffile-prefix-map or SOURCE_DATE_EPOCH: build paths and times reach the binary" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; then read the release job: LTO on, the suite still run under UBSan, and split debug
+      symbols kept for each shipped binary
