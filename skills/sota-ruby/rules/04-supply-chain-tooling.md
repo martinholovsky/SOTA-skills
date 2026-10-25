@@ -17,6 +17,13 @@ all wired into CI from day one.
   still passing it fails rather than installing frozen. On Bundler 2.x the flag
   still worked but printed a deprecation; replace it either way.
 - Deployment installs also set `BUNDLE_WITHOUT=development:test`.
+- **What frozen does not cover.** `gem install <tool>` is RubyGems, not
+  Bundler: it ignores `Gemfile.lock` and `BUNDLE_FROZEN`. Measured (Bundler
+  4.0.16): with `rake (13.0.0)` locked and `BUNDLE_FROZEN=true`,
+  `gem install --explain rake` planned the newest rake. Put CI tools in the
+  Gemfile and run them with `bundle exec`, or pin `-v`. `bundle update` under
+  frozen refuses (exit 16, "the lockfile can't be updated because frozen mode
+  is set"), so a CI `bundle update` is a finding only where frozen is off.
 - Version constraints: pessimistic (`~> 7.2`) for frameworks, exact pins only
   with a reason; `>=`-only constraints on security-sensitive gems are drift.
 - **Git-sourced gems pinned to a full SHA** (`git: ..., ref: "<sha>"`), never
@@ -123,7 +130,7 @@ the same thing more quietly.
   [ruby-advisory-db](https://github.com/rubysec/ruby-advisory-db):
 
 ```bash
-gem install bundler-audit
+gem install bundler-audit -v "$BUNDLER_AUDIT_VERSION"   # pinned: unversioned ignores the lock (§1)
 bundle audit check --update    # --update pulls the latest advisory DB
 ```
 
@@ -193,6 +200,22 @@ Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)
   permanent mute — flag todo files older than ~6 months.
 - **Never silence Security/* cops** to get green; each `rubocop:disable
   Security/...` needs a justification comment.
+- **Every disable names a cop, carries a reason, and expires.** Write
+  `# rubocop:disable Security/Eval -- fixed literal, reviewed`.
+  `Lint/RedundantCopDisableDirective` is on by default and reports a directive
+  whose cop no longer fires, so keep it enabled and the stale directive fails
+  CI. To require the reason, enable `Style/DisableCopsWithinSourceCodeDirective`
+  with `AllowWithReason: true` (RuboCop ≥ 1.92). Without `AllowWithReason` that
+  cop bans every directive. Measured on 1.92.1: with it, only the directives
+  lacking ` -- ` were reported.
+- **Specs are exempted by path, not by switching the cop off.** A cop that
+  test code legitimately trips (`Metrics/BlockLength` on a long `describe`)
+  gets `Exclude: ['spec/**/*', 'test/**/*']` under that cop. `Enabled: false`
+  because the spec run went red removes it from `lib/` too, and that is a
+  finding. A cop's `Exclude` replaces its default list (`**/*.gemspec` for
+  `Metrics/BlockLength`) unless `inherit_mode: merge: [Exclude]` is set
+  (measured on 1.92.1: a 30-line gemspec block was reported without the merge
+  and passed with it).
 
 ## 5. Static security analysis
 
@@ -228,7 +251,15 @@ mechanics only:
 - **Fuzz the parsers and C extensions.** Ruzzy (Trail of Bits) is a coverage-guided,
   libFuzzer-based fuzzer for pure Ruby and C extensions (Linux; macOS on Apple Silicon with
   Homebrew LLVM). Property-testing gems (prop_check, rantly) are low-activity — check their
-  last release before adopting one.
+  last release before adopting one. A constrained property or fuzz target proves its
+  reach as [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6 says.
+- **A gem with a C extension (`ext/**/extconf.rb`) runs its suite in CI against an
+  extension built with a memory checker.** The flags are the C toolchain's
+  ([`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §3), and the interpreter must load the runtime at
+  start: measured on macOS (Ruby 4.0.6), an ASan-built extension loaded into a stock
+  `ruby` aborted on `require` ("Interceptors are not working ... loaded too late (e.g.
+  via dlopen)", exit 134). The exact Ruby recipe (preloaded runtime, an ASan-built
+  Ruby, or Valgrind on Linux) is not verified here; record the one you use.
 
 ## 7. CI gates (the minimum green wall)
 
@@ -268,6 +299,11 @@ Run from repo root; verify each hit manually.
       (no hit = installs are not frozen, MEDIUM) ;
       `grep -rnE 'bundle[[:space:]]+install[^#]*--frozen' --exclude-dir=.git --exclude-dir=vendor --exclude-dir=node_modules .`
       (each hit is a removed flag: exit 15 on Bundler 4, deprecated on 2.x — not compliance)
+- [ ] **Installs outside the frozen lock (§1) — MEDIUM** — first command prints each
+      unversioned `gem install` in CI or images; second prints each `bundle update`
+      (a finding where frozen is off) —
+      `grep -rnE 'gem[[:space:]]+install[[:space:]]' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' . | grep -vE -e '(-v|--version)[[:space:]=]'` ;
+      `grep -rnE 'bundle[[:space:]]+update' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' .`
 - [ ] **Code that runs at install time (Bundler plugins, extconf builds) without an
       owner — MEDIUM (HIGH if the install step holds secrets)** (§1.1) — each hit is a Bundler
       plugin; the second part prints when no CODEOWNERS entry covers the build files —
@@ -303,6 +339,13 @@ Run from repo root; verify each hit manually.
 - [ ] **Lint posture** — `ls .rubocop.yml .standard.yml 2>/dev/null` ;
       `grep -rn "rubocop:disable Security" --include='*.rb' .` ;
       `find . -name .rubocop_todo.yml -newermt "6 months ago" 2>/dev/null | head -1`
+- [ ] **Disables with no reason, stale-directive check off, cops switched off globally (§4) —
+      LOW; MEDIUM for a `Security/*` or `Lint/*` cop** — first command prints each directive
+      lacking a ` -- ` reason; second prints nothing when reasons are not enforced; third
+      prints each cop disabled outright (exempt specs by `Exclude` instead) —
+      `grep -rnE '#[[:space:]]*rubocop:(disable|todo)[[:space:]]' --include='*.rb' . | grep -v ' -- '` ;
+      `grep -n 'AllowWithReason' .rubocop.yml` ;
+      `awk '/^[A-Z][A-Za-z]*\/[A-Za-z]+:/ { c = $1 } /^[[:space:]]+Enabled:[[:space:]]*false/ { print FILENAME ": " c " disabled" }' .rubocop.yml`
 - [ ] **Brakeman ignores without justification (manual review)** —
       `python3 -c "import json;d=json.load(open('config/brakeman.ignore'));print(len(d.get('ignored_warnings',[])))" 2>/dev/null`
 - [ ] **CI Ruby version drift** —
@@ -311,6 +354,11 @@ Run from repo root; verify each hit manually.
       `grep -rn "order = :random\|--seed" .rspec spec/spec_helper.rb 2>/dev/null | head -2` ;
       `grep -rn "disable_net_connect" spec/ test/ 2>/dev/null | head -1`
 
+- [ ] **C extension with no memory-checker job (§6) — MEDIUM, HIGH where the extension
+      parses untrusted input** — first command prints each extension build; second prints
+      nothing when no CI job uses a sanitizer or Valgrind —
+      `find . -name extconf.rb -not -path './vendor/*' | head -3` ;
+      `grep -rnE 'fsanitize|valgrind|ASAN_OPTIONS' --include='*.y*ml' --include='Rakefile' --include='*.rake' --include='*.sh' . | head -3`
 - [ ] **Fuzz / property-based tests on parsers and C extensions (§6) — LOW, MEDIUM for a C
       extension parsing untrusted input** —
       `grep -nE "ruzzy|prop_check|rantly" Gemfile Gemfile.lock 2>/dev/null`

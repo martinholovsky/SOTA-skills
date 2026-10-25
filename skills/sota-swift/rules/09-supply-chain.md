@@ -11,6 +11,10 @@ Moved from the former Swift-language file in [`sota-mobile`](../../sota-mobile/S
 - CI resolves with **`--force-resolved-versions`** (aliases `--disable-automatic-resolution`,
   `--only-use-versions-from-resolved-file`): *"fail resolution if it is out-of-date."* A silent
   re-resolve is how a hijacked tag slides in.
+- **What silently unfreezes it**: `Package.resolved` listed in `.gitignore` for an app or
+  service; `swift package update` in CI; a `swift build`/`swift test` step without
+  `--force-resolved-versions`; an Xcode build without `-onlyUsePackageVersionsFromResolvedFile`
+  (`xcodebuild`'s equivalent); a `branch:` requirement (below).
 - Requirements: `from:` / `.upToNextMajor` for libraries; `.exact` is *"not recommended as they
   can cause conflicts"*; **no `branch:` or `revision:` dependencies in anything that ships** —
   they are unpinned by definition and cannot be depended on by version-based packages.
@@ -74,6 +78,7 @@ Moved from the former Swift-language file in [`sota-mobile`](../../sota-mobile/S
 ## Audit checklist
 
 - [ ] Dependency pinning & lockfiles: `Package.resolved` committed for apps and services; CI resolves with `--force-resolved-versions`; no `branch:`/`revision:` requirements in shipped products (grep `branch: *"|revision: *"`); `.exact` only with a reason.
+- [ ] Frozen resolution thawed (§1) (MEDIUM, HIGH for a shipped service): `grep -nE '^/?Package\.resolved$' .gitignore` (ignored lockfile) ; `grep -rnE 'swift (package )?(update|resolve|build|test)|xcodebuild' .github/workflows/ | grep -vE 'force-resolved-versions|disable-automatic-resolution|only-use-versions-from-resolved-file|onlyUsePackageVersionsFromResolvedFile'` (each hit may re-resolve).
 - [ ] Remote `binaryTarget`s carry checksums and appear in a binary-dependency inventory.
 - [ ] Supply-chain provenance & publishing: package identities are unambiguous (no two dependencies sharing a last path component); internal packages come from a private registry or mirror; registry consumers set fingerprint and signing-entity checking to `strict` and `onUnsigned: error`; no `--resolver-fingerprint-checking warn`.
 - [ ] Install/build-time code execution: every `.plugin(`, `.macro(`, `pluginTarget`, `binaryTarget` and `unsafeFlags` in the dependency tree is reviewed; CI never passes `--disable-sandbox`, `--allow-network-connections` or `--allow-writing-to-package-directory` unreviewed; Linux CI treats plugins as unsandboxed; `Package.swift`/`Package.resolved` are code-owner protected.

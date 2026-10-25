@@ -15,7 +15,7 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
 - Prefer data formats with no code-execution semantics: JSON/protobuf/Avro with
   an explicit schema, deserialized into known DTOs. Disable polymorphic type
   handling unless allowlisted (Jackson `enableDefaultTyping`/`@JsonTypeInfo`
-  with untrusted input is the JSON equivalent of the gadget problem).
+  with untrusted input is the JSON equivalent of the gadget problem). Size and depth limits (`StreamReadConstraints`): [`rules/01`](01-idioms.md) §4.
 - **Jackson 3 changes the spellings, not the rule.** Packages and Maven groups move from
   `com.fasterxml.jackson` to `tools.jackson`, except `com.fasterxml.jackson.annotation`, which
   stays. So `@JsonTypeInfo` keeps its import. `enableDefaultTyping` is gone, because 3.0 drops
@@ -325,14 +325,14 @@ the class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-m
 linking a JNI library a restricted operation, and `--illegal-native-access` defaults to `warn`.
 `deny` throws `IllegalCallerException` instead. Grant access per module with
 `--enable-native-access=M1,M2`. `ALL-UNNAMED` (the only value the `Enable-Native-Access`
-JAR-manifest attribute takes) grants the whole class path. JEP 498 does the same for `Unsafe`
-memory access. `--sun-misc-unsafe-memory-access` defaults to `warn` on JDK 24, and `deny`
-throws `UnsupportedOperationException`. A warning printed once to stderr gets read by nobody.
+JAR-manifest attribute takes) grants the whole class path. JEP 498 does the same for `Unsafe` memory
+access. `--sun-misc-unsafe-memory-access` (available since JDK 23, JEP 471) defaults to `warn` on JDK 24,
+and `deny` throws `UnsupportedOperationException`. A warning printed once to stderr gets read by nobody.
 On JDK 24+, run CI and production with `--illegal-native-access=deny` and
 `--sun-misc-unsafe-memory-access=deny`. Then a new dependency that reaches native code or
 `Unsafe` fails the build instead of printing that warning. Where you do need an exception, grant
 only the named module. **JEP 483's AOT cache refuses any `--illegal-native-access` value**, so
-with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-performance.md) §2).
+with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-performance.md) §2). Test JNI under `-Xcheck:jni`: [`rules/06`](06-build-tooling-ci.md) §4.
 
 ## Audit checklist
 

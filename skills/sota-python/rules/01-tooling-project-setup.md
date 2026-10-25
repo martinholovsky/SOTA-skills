@@ -22,9 +22,16 @@ uvx ruff check .               # ephemeral tool run (pipx replacement)
 Rules:
 - **Commit `uv.lock`.** Applications MUST commit it. Libraries commit it for dev reproducibility
   even though it isn't published.
-- **CI installs with `uv sync --locked`** (or `--frozen`). Never bare `pip install -r requirements.txt`
-  in new projects; if a legacy `requirements.txt` must exist, generate it:
-  `uv export --format requirements-txt --output-file requirements.txt`.
+- **CI installs with `uv sync --locked`, never `--frozen`.** `--frozen` (and `UV_FROZEN=1`)
+  installs `uv.lock` without checking that it still matches `pyproject.toml`; `--locked`
+  fails instead. Measured (uv 0.12.0), a dependency added to `pyproject.toml` after `uv lock`:
+  `--frozen` and `UV_FROZEN=1` exited 0 without installing it, `--locked` exited 1. Never bare
+  `pip install -r requirements.txt` in new projects; if a legacy `requirements.txt` must exist,
+  generate it: `uv export --format requirements-txt --output-file requirements.txt`.
+- **What else unfreezes a frozen install.** A later `pip install <tool>` / `uv pip install` /
+  unversioned `uvx <tool>` step in the same job resolves whatever is newest, outside the lock:
+  put tools in a dependency group, or pin them (`uvx ruff@<version>`). On Poetry,
+  `poetry install --no-root` is not a freeze check; gate it with `poetry check --lock` first.
 - **A tool that is not uv gets `pylock.toml`, not a requirements file.** PEP 751 (Final,
   March 2025) is the standard, tool-neutral lock: every package with its artifact URLs, sizes
   and hashes, installable with no resolution at install time.
@@ -108,13 +115,30 @@ select = [
   "PTH",              # pathlib over os.path
   "T20",              # stray print()
   "PERF", "G",        # perf antipatterns, logging format
+  "PGH",              # PGH003/PGH004: no bare `# type: ignore` / `# noqa`
 ]
 ignore = ["E501"]      # formatter owns line length
 
-[tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]  # assert is fine in tests
+[tool.ruff.lint.per-file-ignores]  # assert and fixture tokens are fine in tests
+"tests/**" = ["S101", "S105", "S106"]
+"**/test_*.py" = ["S101", "S105", "S106"]    # co-located tests: `tests/**` misses them
+"**/*_test.py" = ["S101", "S105", "S106"]
+"**/conftest.py" = ["S101", "S105", "S106"]
 ```
 
+- **Suppressions name a rule, carry a reason, and expire.** `# noqa: S603  # argv list, no
+  shell` and `# type: ignore[assignment]  # legacy fixture`: `PGH004`/`PGH003` reject the bare
+  forms, and `RUF100` (in `RUF`) reports a `noqa` whose rule no longer fires, so a stale one
+  fails `ruff check`. No tool requires the reason; that is a review rule with a grep probe
+  below. Run one-off RUF100 checks with `--extend-select`, never a narrowed `--select`:
+  measured (ruff 0.16.2), `--select RUF100` reported every `# noqa: S101` as "non-enabled",
+  and `--fix` would delete them all.
+- **Test code is exempted by path in config, not by weakening the rule.** A rule that tests
+  legitimately trip (`S101` assert, `S105`/`S106` fixture passwords) goes in
+  `per-file-ignores` for test paths; moving it to the global `ignore` because the test job
+  went red disables it for production code too. Measured (ruff 0.16.2): with only
+  `"tests/**"`, an `assert` in `src/pkg/test_util.py` still failed, and the four globs above
+  exempted it while `assert` in `src/pkg/core.py` stayed an error.
 - If you find black/flake8/isort/pylint configs in a repo: that's a MEDIUM audit finding —
   consolidate to ruff. Mixed formatters cause churn diffs.
 - `ruff format` is the formatter; do not also run black.
@@ -140,6 +164,11 @@ enable_error_code = ["ignore-without-code", "possibly-undefined"]
 ```
 
 - Every `# type: ignore` MUST carry a code: `# type: ignore[arg-type]`. Bare ignores rot.
+  An ignore that no longer suppresses anything must fail too: mypy `strict = true` already
+  enables `warn_unused_ignores` (reported as `[unused-ignore]`; set it explicitly without
+  `strict`); pyright's `reportUnnecessaryTypeIgnoreComment` defaults to `"none"`, so set it to
+  `"error"`. Requiring a rule on pyright's own ignores (`reportIgnoreCommentWithoutRule`) is
+  basedpyright-only.
 - The checker runs in CI and fails the build. "We run mypy locally sometimes" = not typed.
 
 ## 5. src/ layout
@@ -324,6 +353,24 @@ Run from repo root. Severity guidance in brackets.
       `grep -n "mypy\|pyright\|basedpyright\| ty " .github/workflows/*.yml .gitlab-ci.yml 2>/dev/null`
       ; `grep -rn "type: ignore$\|type: ignore " --include="*.py" src/ | grep -v "ignore\["`
       (bare ignores [LOW])
+- [ ] **Suppressions that never expire (§3, §4) [LOW; MEDIUM where they silence `S` rules]** —
+      `uvx ruff check --extend-select PGH003,PGH004,RUF100 --statistics .` (bare and stale
+      `noqa`/`type: ignore`; `--extend-select` keeps the project's rules, §3) ;
+      `grep -nE 'reportUnnecessaryTypeIgnoreComment|warn_unused_ignores|strict[[:space:]]*=' pyproject.toml pyrightconfig.json 2>/dev/null`
+      (no hit for the gating checker = an unused ignore never fails) ;
+      `grep -rnE '#[[:space:]]*(noqa(:[[:space:]]*[A-Z]+[0-9]+([[:space:]]*,[[:space:]]*[A-Z]+[0-9]+)*)?|type:[[:space:]]*ignore(\[[^]]*\])?|pyright:[[:space:]]*ignore(\[[^]]*\])?)[[:space:]]*$' --include='*.py' .`
+      (each hit is a suppression with no reason after it)
+- [ ] **Test-only rules disabled globally, or co-located tests not exempted (§3) [MEDIUM for
+      `S101`/`S105`/`S106` in the global ignore]** —
+      `grep -nE '^[[:space:]]*(extend-)?ignore[[:space:]]*=.*"(S101|S105|S106)"' pyproject.toml ruff.toml .ruff.toml 2>/dev/null`
+      (each hit turns the rule off for production code) ;
+      `find . -path ./tests -prune -o -path ./.venv -prune -o \( -name 'test_*.py' -o -name '*_test.py' \) -print | head -3`
+      (any hit while `per-file-ignores` keys only `"tests/**"` = those tests fail the lint, or
+      someone widened the global ignore)
+- [ ] **Frozen install that is not checked (§1) [MEDIUM]** —
+      `grep -rnE 'uv[[:space:]]+(sync|run|export)[^#]*--frozen|UV_FROZEN' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' .`
+      (each hit installs a lock nobody compared with `pyproject.toml`: use `--locked`) ;
+      `grep -rlE 'poetry[[:space:]]+install' --include='*.y*ml' . | while IFS= read -r f; do grep -qE 'poetry[[:space:]]+check[[:space:]]+--lock' "$f" || echo "$f: poetry install with no poetry check --lock"; done`
 - [ ] **requires-python vs syntax reality** — `grep -n "requires-python" pyproject.toml` ;
       `grep -rln "match \|type [A-Z].* = \|def .*\[T" --include="*.py" src/ | head` (3.12 syntax
       w/ old floor?)

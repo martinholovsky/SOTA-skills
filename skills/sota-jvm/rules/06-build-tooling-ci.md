@@ -25,13 +25,29 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   via the dependency-management section + a reproducible resolution (or the
   `maven-lockfile`-style plugins). Pin versions; avoid version ranges and
   `latest`. Commit the lock state.
+- **What leaves a locked build unlocked.** **(a)** `dependencyLocking { lockAllConfigurations() }`
+  "will lock all project configurations, but not the buildscript ones" (Gradle's
+  dependency-locking guide). Lock the plugin classpath too, with `buildscript {
+  configurations.classpath { resolutionStrategy.activateDependencyLocking() } }`; its state is
+  `buildscript-gradle.lockfile`. **(b)** In the default lock mode a locked configuration with no
+  lock state still resolves; `lockMode = LockMode.STRICT` fails it. **(c)** `--write-locks` or
+  `--update-locks` in a CI command rewrites the lock from whatever resolves. **(d)**
+  `verification-metadata.xml` checks the checksums of what resolved and locks no version, so it
+  does not replace locking. **(e)** Maven: `maven-enforcer-plugin`'s `banDynamicVersions` fails
+  ranges, `LATEST`/`RELEASE` and `-SNAPSHOT` (its `allow*` parameters re-admit each), beside
+  `requireUpperBoundDeps`.
 - **Scan for known CVEs in CI**: OWASP **dependency-check** or **OSV-Scanner**
   (or Snyk/GitHub Dependabot) gating the build; triage transitive CVEs. Log4Shell
   and Spring4Shell were dependency CVEs — this gate is non-negotiable.
 - Resolve only from trusted repositories (Maven Central / your mirror) over
   HTTPS; verify signatures/checksums; beware dependency confusion (don't let an
   internal coordinate resolve from a public repo). Generate an **SBOM**
-  (CycloneDX) for releases. See [`sota-devsecops`](../../sota-devsecops/SKILL.md).
+  (CycloneDX) for releases. See [`sota-devsecops`](../../sota-devsecops/SKILL.md). A Shade-built JAR
+  keeps each dependency's `META-INF/maven/**/pom.properties` by default, but a GraalVM native
+  image carries an SBOM only from Oracle GraalVM, which embeds one by default (`--enable-sbom`
+  controls it; `cyclonedx` is not one of its values); Community Edition embeds none. Syft reads the
+  embedded one while Trivy documents no support. So generate it at build time
+  ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6).
   The concrete mechanisms: Gradle records the expected hash of every artifact in
   `gradle/verification-metadata.xml` and fails the build on a mismatch (Gradle's
   dependency-verification guide). Maven repositories take a `<checksumPolicy>` of
@@ -109,6 +125,26 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   An exclude filter naming an `XXE_` pattern is a suppression to justify. The Semgrep/Opengrep
   Java XXE rules are a second opinion at source level. OWASP: XML External Entity Prevention
   cheat sheet.
+- **A suppression names one check and a reason, and is reported once it suppresses nothing,
+  where a tool can do that.** SpotBugs: `@SuppressFBWarnings(value = "PATTERN", justification =
+  "why")`. `justification` defaults to `""`, and `value` takes a category, kind or pattern matched
+  **by prefix** unless `matchType = SuppressMatchType.EXACT` (annotation source), so a short value hides more
+  than it names. Since 4.9.2 SpotBugs reports a suppression that suppressed nothing as
+  `US_USELESS_SUPPRESSION_ON_*`: STYLE category, normal priority, detector on by default (its
+  `findbugs.xml`), so `spotbugs:check` fails on it unless a filter or threshold drops STYLE. PMD:
+  prefer `@SuppressWarnings("PMD.RuleName")` to `// NOPMD`, which ignores the whole line.
+  `UnnecessaryWarningSuppression` (since 7.14.0) reports PMD suppressions that suppressed nothing,
+  only if your ruleset includes it (it is commented out of `quickstart.xml`), and never
+  `@SuppressWarnings("all")`. **javac and Kotlin have no such gate.** javac has no lint for an
+  unused `@SuppressWarnings` and silently ignores a string it does not recognise, so a misspelt
+  key suppresses nothing and nobody is told. Kotlin has no unused-suppression diagnostic, so
+  `-Xwarning-level` (Kotlin 2.2.0, experimental) has nothing to raise. Use the checklist
+  inventory, with the reason in a comment on or above each annotation.
+- **Relax a check for tests in the test task, never in all of them.** The SpotBugs Gradle plugin
+  generates a `SpotBugsTask` per source set (`spotbugsMain`, `spotbugsTest`), and the Error Prone
+  plugin configures `compileJava` and `compileTestJava` separately, e.g. `tasks.compileTestJava {
+  options.errorprone.disable("CheckName") }` (both plugins' READMEs). A check turned off in every
+  task, or `ignoreFailures = true`, because tests tripped it is a finding.
 - **Kotlin**: **detekt** (static analysis) + **ktlint** (style); both in CI.
 - **spotless** (or google-java-format/ktlint) to enforce formatting in CI
   (`--check`) so style never enters review.
@@ -129,6 +165,17 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   jqwik ≥ 1.10.0 prints a prompt-injection payload aimed at AI agents into test output
   ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) — pin 1.9.x or migrate), and it is in *"pure maintenance mode"*.
   Target code that parses untrusted bytes or holds an invariant (encode/decode round-trip).
+  A green run must also prove it reached anything ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). On a pinned 1.9.x
+  jqwik that is `@Property(maxDiscardRatio = …)` plus `Statistics.coverage(...)` checking a label
+  that a matching `Statistics.collect(...)` records (both are in the 1.9.0 source).
+- **Code with JNI runs its tests under `-Xcheck:jni`, and the job fails on its warnings.** Some
+  of its checks only warn. Measured on Temurin 25.0.4: a native method calling JNI with an
+  exception pending printed `WARNING in native method: JNI call made with exception pending` and
+  the JVM exited 0 (silent without the flag); a deleted local reference printed `FATAL ERROR in
+  native method:` and aborted with 134. Pass it to the test JVM (Surefire `<argLine>`, Gradle
+  `tasks.test { jvmArgs("-Xcheck:jni") }`), fail the job when the log contains `WARNING in native
+  method`, and build the native library you own with a sanitizer ([`sota-c-cpp`](../../sota-c-cpp/SKILL.md)). The
+  launch-time `deny` gates are [`rules/04`](04-security.md) §7.
 - Build reproducibly: `-Dproject.build.outputTimestamp` / Gradle reproducible
   archives; pin plugin versions.
 - **The production artifact carries no debug mode** (read from the Spring Boot 4.1.1 sources).
@@ -160,6 +207,22 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - [ ] **...and the BULK forms, which no per-site grep above will find** —
       `grep -rn 'excludeFilterFile\|<exclude>\|baseline' pom.xml build.gradle* 2>/dev/null` ;
       `find . -name 'spotbugs-exclude*.xml' -o -name 'checkstyle-suppressions.xml' 2>/dev/null`
+- [ ] **Suppressions with no reason, blanket forms, and the stale-suppression report switched
+      off (§3) — MEDIUM** —
+      `grep -rn 'SuppressFBWarnings' --include='*.java' --include='*.kt' . | grep -v 'justification'`
+      (no reason; a multi-line annotation needs a read) ;
+      `grep -rnE '//[[:space:]]*NOPMD[[:space:]]*$' --include='*.java' --include='*.kt' .` (whole line
+      ignored, no reason) ;
+      `grep -rnE '@(SuppressWarnings|Suppress)\(' --include='*.java' --include='*.kt' . | grep -v '//'`
+      (javac and Kotlin report no stale suppression, so each needs a reason; one on the line above
+      needs a read) ; with PMD configured,
+      `grep -rln 'UnnecessaryWarningSuppression' --include='*.xml' .` (none: stale PMD
+      suppressions are never reported) ; and what drops SpotBugs' report:
+      `grep -rnE 'category="STYLE"|<threshold>High|reportLevel|omitVisitors' --include='*.xml' --include='*.gradle*' .`
+- [ ] **A check relaxed for tests in every task (§3) — MEDIUM, HIGH for a security detector** —
+      `grep -rnE 'ignoreFailures[[:space:]]*=[[:space:]]*true|disableAllChecks|errorprone\.enabled[[:space:]]*=[[:space:]]*false|errorprone\.disable\(|<failOnError>false|<skip>true' --include='*.gradle' --include='*.gradle.kts' --include='pom.xml' .`
+      (read the enclosing block: inside `compileTestJava`/`spotbugsTest` it is scoped; at the
+      top level or in `withType<…>` it disables the check for production code too)
 - [ ] **Each hit needs a written reason. A suppression with no justification is the finding, not
       the warning it hides -- a silenced analyser is how a green gate stops meaning anything (
       [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).**
@@ -174,6 +237,15 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `ls gradle.lockfile gradle/dependency-locks 2>/dev/null; grep -rn 'dependencyLocking' build.gradle* 2>/dev/null`
       ; `grep -rnE 'version ranges|\[.*,.*\)|latest\.release|\+' build.gradle* 2>/dev/null`
       (unpinned ranges)
+- [ ] **Lock that leaves something unlocked (§2) — HIGH for the plugin classpath, MEDIUM
+      otherwise** — with project locking on, is the buildscript locked and the mode strict?
+      `grep -rnE 'lockAllConfigurations|activateDependencyLocking|LockMode\.STRICT' --include='*.gradle' --include='*.gradle.kts' .`
+      ; `ls buildscript-gradle.lockfile */buildscript-gradle.lockfile 2>/dev/null` (none: plugins
+      float) ; CI commands that regenerate the lock:
+      `grep -rnE -e '--(write|update)-locks' --include='*.y*ml' --include='*.sh' --include='Dockerfile*' .`
+      ; Maven: `grep -rln 'banDynamicVersions' --include='pom.xml' .` (none: dynamic versions
+      allowed) ; `grep -rnE '<allow(Snapshots|Release|Latest|Ranges)>true' --include='pom.xml' .`
+      (banned, then re-admitted)
 - [ ] **Artifact checksums verified, not just downloaded? (the provenance half of §2)** —
       `if test -f gradle/verification-metadata.xml; then echo "ok: gradle/verification-metadata.xml present"; else echo "FINDING: no gradle/verification-metadata.xml, so artifact checksums are not verified (Gradle builds)"; fi`
       ; `grep -rn 'checksumPolicy' --include='pom.xml' --include='settings.xml' .`
@@ -212,3 +284,13 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       bytes** — `grep -rnE '@FuzzTest|com\.code_intelligence\.jazzer|net\.jqwik|io\.kotest[:.]property' --include='*.java' --include='*.kt' --include='pom.xml' --include='build.gradle*' .`
       (none: no parser in the repo is fuzzed; a `net.jqwik` hit at ≥ 1.10.0 is HIGH where agents
       read test output — [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md))
+- [ ] **JNI with no `-Xcheck:jni` test job, or one whose warnings pass (§4) — MEDIUM, HIGH on
+      untrusted lengths** — JNI present:
+      `grep -rlE '(^|[^[:alnum:]_])native[[:space:]][^;]*\(|(^|[^[:alnum:]_])external fun[[:space:]]|System\.load(Library)?\(' --include='*.java' --include='*.kt' .`
+      ; the checker: `grep -rn 'Xcheck:jni' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' --include='*.sh' .`
+      ; and the log check: `grep -rn 'WARNING in native method' --include='*.gradle*' --include='*.y*ml' --include='*.sh' .`
+      (JNI with no checker hit is the finding; a checker with no log check lets a warning exit 0)
+- [ ] **Native image or bundled JAR shipped with no build-time SBOM (§2) — MEDIUM** —
+      `grep -rnE 'native-image|nativeCompile|graalvm' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' --include='Dockerfile*' .`
+      ; for each hit: `grep -rniE 'cyclonedx|enable-sbom|sbom' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' .`
+      (none, or a Community Edition builder: the image scan reads no dependency list)

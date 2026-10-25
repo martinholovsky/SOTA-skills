@@ -209,6 +209,21 @@ Rules:
       for e in eg.exceptions: logger.error("fetch failed: %s", e)
   ```
   Code that catches `Exception` around a TaskGroup and inspects nothing loses errors.
+- **What no `except` reaches: bound depth and size before the work, not after.**
+  `RecursionError` and `MemoryError` are `Exception` subclasses, so a top-level handler does
+  catch them, once the CPU and memory are already spent. Three failures run no handler at
+  all: a crash inside a C extension or `ctypes` call (SIGSEGV), the kernel or a container
+  limit killing the process for memory (SIGKILL cannot be caught, signal(3)), and on CPython
+  ≤ 3.11 C-level recursion after `sys.setrecursionlimit` was raised. Measured: a
+  10⁶-deep list through `repr()` with the limit raised exited 139 (SIGSEGV) on 3.11.15 and
+  raised a catchable `RecursionError` on 3.12.13 and 3.14.8, which have their own C-stack
+  guard. Rules: never raise `sys.setrecursionlimit` on a request path; cap the body size
+  before `json.loads` (n levels of nesting cost only 2n bytes); bound the depth of any
+  recursive walk over parsed data yourself. `json.loads` has no depth parameter, and the
+  depth it accepts depends on the version: measured, 3.12.13 and 3.13.13 rejected 10,000
+  levels, 3.14.8 accepted 100,000 and rejected 200,000 (its C-stack guard, not
+  `sys.getrecursionlimit()`). So a 3.14 parse can hand a 100,000-deep tree to your own
+  recursive code.
 
 ## 11. Logging done right
 
@@ -354,6 +369,12 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       `grep -rn -A1 "except Exception" --include="*.py" src/ | grep -B1 "pass$"`
 - [ ] **Exception chaining lost** — `uvx ruff check --select B904 .` (raise-without-from in
       except)
+- [ ] **Depth and size unbounded before parse or recursion (§10) [HIGH where a request body
+      reaches it; MEDIUM otherwise]** —
+      `grep -rnE 'setrecursionlimit\(' --include='*.py' src/` (raised: a C-stack crash on
+      ≤ 3.11, deeper recursion before the error on any version) ;
+      `grep -rnE 'json\.loads?\(' --include='*.py' src/` (for each request-reachable call,
+      find the body-size cap before it, and a depth bound in any recursive walk after it)
 - [ ] **Mutable defaults & late binding** — `uvx ruff check --select B006,B023 .`
 - [ ] **Logging** —
       `grep -rn 'logger\.\(debug\|info\|warning\|error\)(f"' --include="*.py" src/` (f-strings

@@ -28,6 +28,20 @@ former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) on 202
     `@available(*, deprecated)` on your own wrapper hides callers' deprecation warnings.
   - Each needs a reason in a comment; a project-level `disabled_rules` entry is a decision for
     review, not a convenience.
+- **Suppressions that expire.** Name the rule, scope it, and give the reason after it:
+  `// swiftlint:disable:next force_cast - NSNumber by API contract`. Never `swiftlint:disable all`,
+  which the SwiftLint README says disables *"all rules until the linter sees a matching enable
+  comment"*. `superfluous_disable_command` (on by default) reports a disable whose rule would not
+  have fired, and `blanket_disable_command` (on by default) reports a disable that is neither
+  scoped (`:next`, `:this`, `:previous`) nor closed by a matching `enable`. Both default to **warning** severity (SwiftLint rule docs), so
+  plain `swiftlint lint` exits 0 on them. Gate with `swiftlint lint --strict` (*"Upgrades
+  warnings to serious violations (errors)"*) or `strict: true` in `.swiftlint.yml`.
+- **Strict rules versus test code: exempt by path in config.** When a rule the tests may break
+  by design trips there (`force_try`, `force_unwrapping` in fixtures), put a nested
+  `Tests/.swiftlint.yml` that disables only those rules. The README: a nested config *"applies
+  only to files in its directory subtree"*, and nested configs are ignored when `--config` is
+  passed. A safety rule in the root `disabled_rules`, switched off for production code because
+  the tests failed it, is a finding. In Swift Testing, `try #require(x)` replaces `x!` in tests.
 
 ## 3. Static analysis and formatting
 
@@ -50,17 +64,24 @@ former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) on 202
   test-suite health smell to fix, not a flake to hide. No `Task.sleep`/`sleep` to wait for
   async work: await it, or use `confirmation()`.
 - Sanitizers in CI, per swift.org's server guide: `swift test --sanitize=thread` and
-  `--sanitize=address` on the deployment OS.
+  `--sanitize=address` on the deployment OS. **Required for any target that uses the escape
+  hatch** (`Unsafe*Pointer`, `unsafeBitCast`, `Unmanaged`, C interop): that code runs its tests
+  under ASan/TSan (`swift build --sanitize=`, `swiftc -sanitize=`), and any
+  `.strictMemorySafety()` target builds with its warnings gated ([rules/04](04-memory-and-unsafe.md) §4).
 - **Fuzz the parsers** with Swift's built-in libFuzzer integration: `-sanitize=fuzzer` (plus
   `-parse-as-library`), or `swift build --sanitize=fuzzer`, on a **swift.org Linux toolchain** —
   Apple's Xcode toolchain rejects the option (measured: `unsupported option '-sanitize=fuzzer'`
   on macOS, Swift 6.3.2). SwiftCheck is unmaintained since 2021; `@Test(arguments:)` is
-  parameterised, not property-based.
+  parameterised, not property-based. A fuzz target that returns early on invalid input must
+  also prove reach: [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6.
 
 ## Audit checklist
 
 - [ ] Build reproducibility & CI gates: toolchain pinned (`.swift-version` or a versioned image — grep `swift:latest|swift:nightly`); CI builds `-c release` with `--force-resolved-versions`.
 - [ ] Static analysis / linter configuration: CI runs the compiler with `-warnings-as-errors` (or `.treatAllWarnings(as: .error)`), `swift format lint --strict` and SwiftLint with `force_unwrapping`, `implicitly_unwrapped_optional` and `unowned_variable_capture` enabled.
+- [ ] Suppressions that expire (§2) (LOW, MEDIUM on a security rule): `grep -rnE 'swiftlint:disable' --include='*.swift' . | grep -vE 'swiftlint:disable(:next|:this|:previous)?[[:space:]]+[a-z_ ]+[[:space:]]-[[:space:]]+[^[:space:]]'` (no ` - reason`) ; `grep -rnE 'swiftlint:disable(:next|:this|:previous)?[[:space:]]+all([^a-z_]|$)' --include='*.swift' .` ; CI runs `swiftlint lint --strict` or the config sets `strict: true` (grep `swiftlint[^|]*--strict` in CI files) — without it the superfluous and blanket disable reports are warnings at exit 0.
+- [ ] Test-code exemptions by path (§2) (MEDIUM): `awk '/^[a-z_]+:/{s=($0 ~ /^disabled_rules:/)} s && /force_(try|unwrapping|cast)/' .swiftlint.yml` — a safety rule disabled for the whole project; scope it in `Tests/.swiftlint.yml` instead.
+- [ ] Escape hatch without its runtime checker (§4) (HIGH): `grep -rlE 'Unsafe(Mutable)?(Raw)?(Buffer)?Pointer|unsafeBitCast' --include='*.swift' .` ; then `grep -rnE -- '-?-sanitize[= ](address|thread)' .github/workflows/` — files with unsafe code and no sanitizer job is the finding.
 - [ ] Suppressing a linter / type check: every `swiftlint:disable`, `.swiftlint.yml` `disabled_rules`/`excluded` entry, `-Wwarning`/`.treatWarning(..., as: .warning)`, `@diagnose(` and `@preconcurrency import` (grep) carries a reason; none hides a security rule.
 - [ ] Test suite health & determinism: tests run in parallel without `.serialized` except with a stated reason; no `sleep`/`Task.sleep` waits in tests; CI runs the suite under `--sanitize=thread` and `--sanitize=address`.
 - [ ] Version floor / EOL awareness: the minimum supported Swift version is declared (`swift-tools-version`, `swiftLanguageModes:` language version) and documented; swift.org publishes no end of life policy, so the project states which toolchains it supports and bumps deliberately.

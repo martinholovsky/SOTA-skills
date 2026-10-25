@@ -41,7 +41,11 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   The same scheduled job enforces ignore reviews: fail when a `review by` date
   in an `advisories.ignore` reason has passed — the tool itself cannot expire one.
 - Commit `Cargo.lock` for binaries **and** (current guidance) for libraries —
-  reproducible CI; `cargo update` is a reviewed PR, not a side effect.
+  reproducible CI; `cargo update` is a reviewed PR, not a side effect. **What unfreezes it:**
+  `cargo install <tool>` ignores the tool's packaged `Cargo.lock` without `--locked` (write
+  `cargo install --locked <tool>@<version>`), and a third-party subcommand with no `--locked` flag
+  gets none — gate its job with `cargo metadata --locked --format-version 1 >/dev/null` first
+  (with `RUSTC` and `RUSTC_WRAPPER` pinned: it runs a configured wrapper, [rules/07](07-tooling-ci.md) §4a).
 - Dependabot/Renovate for bumps; review changelogs of security-sensitive deps
   (crypto, TLS, parsing) instead of auto-merging.
 - Minimize the tree first: every dep is attack surface and build time.
@@ -478,6 +482,8 @@ Running external programs (formerly section 9) moved to
       `printf 'fuzz_targets=%s kani_harness_files=%s\n' "$(rg -l 'fuzz_target!' -g '*.rs' . | wc -l | tr -d ' ')" "$(rg -l '#\[kani::proof' -g '*.rs' . | wc -l | tr -d ' ')"`
       — both 0 on a security-critical crate parsing untrusted input = Medium (§6); harnesses
       present: load [rules/09](09-formal-verification.md) and audit them, a vacuous proof is not evidence.
+- [ ] **Unlocked tool installs (§1) — Medium** —
+      `find . \( -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name justfile -o -name Dockerfile \) -type f -not -path '*/target/*' -exec grep -nE 'cargo[[:space:]]+install' /dev/null {} + | grep -v -e '--locked'`
 - [ ] Release CI uses `--locked`; binaries built from tags in CI;
       `cargo auditable` (or SBOM) for deployed artifacts = recommended.
 - [ ] Logs: `rg 'info!|warn!|error!|debug!' -t rust` near auth/headers — no

@@ -212,6 +212,28 @@ Legitimate panic patterns:
 `recover()` only works in a deferred function in the same goroutine. Audit any
 `recover` outside `defer` as dead code (vet catches some of these).
 
+**Failures `recover` never sees.** These end the process and every connection on it, and no
+middleware `recover` runs: runtime `fatal error`s, plus a panic in a goroutine with no recover of its own:
+
+- goroutine stack past `runtime/debug.SetMaxStack` (default 1 GB on 64-bit, 250 MB on 32-bit),
+  which is where unbounded recursion over nested input ends;
+- concurrent map read and write ([rules/03](03-concurrency.md) §5), and `Unlock` of an unlocked
+  `sync.Mutex`;
+- a panic in a child goroutine with no deferred recover of its own (above);
+- `make([]T, n)`: an out-of-range `n` (negative, or past the limit) is a recoverable panic, but a
+  legal `n` the runtime cannot reserve is `fatal error: out of memory`. Overcommit may let it
+  succeed and fail later. **Cap `n` against a constant before `make`**, never after.
+
+So the limits come **before** allocation and recursion. Bound bytes with `http.MaxBytesReader`
+([rules/04](04-http-services.md)). Bound every length read from the input before `make`. Give
+every recursive descent you write a depth parameter, and reject at a stated limit. The stdlib
+decoders cap depth for you, but not at your limit. `encoding/json` hard-codes 10000 nesting levels
+(`const maxNestingDepth` in both v1's `scanner.go` and v2's `jsontext/state.go`, read at go1.27.1).
+**Neither v1 nor `encoding/json/v2` has a depth option**, and `jsontext.WithMaxDepth` does not
+exist. `encoding/xml` caps unmarshal depth at 10000 (5000 on wasm). `encoding/gob`'s limit only
+covers skipping ignored fields. For a lower JSON limit, pre-scan the tokens: v1 `Decoder.Token`,
+or v2 `jsontext.Decoder.ReadToken` with `StackDepth()`. Then reject before you decode.
+
 ## 6. Error flow patterns
 
 - **Guard clauses, happy path left-aligned.** `if err != nil { return ... }`
@@ -294,6 +316,12 @@ Run from repo root; verify each hit manually.
       `grep -rnE 'fmt\.Errorf\([^)]*%v[^)]*err\s*\)' --include='*.go' .`
 - [ ] **Panics outside main/init/Must/tests — HIGH if reachable from input** —
       `grep -rn 'panic(' --include='*.go' . | grep -vE '(_test\.go|Must|init\()'`
+- [ ] **Limits before allocation and recursion (§5) — HIGH when the input is untrusted** —
+      `grep -rnE 'make\(\[\][^,]+,[[:space:]]*(int(32|64)?\()?[a-z][A-Za-z0-9_]*\.[A-Z][A-Za-z0-9_]*' --include='*.go' .`
+      (a slice sized by a decoded field: read back for a cap against a constant) ;
+      `grep -rn 'debug.SetMaxStack' --include='*.go' .` (a raised stack cap hides deep recursion)
+      ; each recursive function over decoded data takes and checks a depth bound (manual). A
+      `recover` middleware is not the fix for any of these: they are fatal errors
 - [ ] **log.Fatal / os.Exit outside main package — HIGH in libraries** —
       `grep -rnE '(log\.Fatal|os\.Exit)' --include='*.go' . | grep -v 'main\.go'`
 - [ ] **Error strings: capitalized or "failed to" noise — INFO/LOW (ST1005)** —

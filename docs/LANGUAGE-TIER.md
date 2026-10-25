@@ -411,6 +411,19 @@ of a family and absent for its neighbours, invisible to every file-level view be
 three skills *have* a tooling file. It matters because a suppression is how a green gate
 stops meaning anything — `sota-code-security` rules/10's subject, one layer down.
 
+### Deliberately uneven, 2026-10-25: what the cross-language intake did NOT align, and why
+
+The intake carried the Rust verification findings across all ten skills
+([validation record](cross-language-intake-2026-10-25/VALIDATION.md)). Four places stay uneven
+on purpose, so that a later sweep does not "fix" the absence:
+
+| Where | Why it is not aligned |
+|---|---|
+| **Formal / bounded verification** (`formal verification / model checking` is conditional) | Rust (Kani, Flux: `sota-rust` rules/09) and C/C++ (CBMC; Frama-C and ESBMC named) carry rules. Python gets a CrossHair paragraph only: it is a bounded symbolic search that finds counterexamples and proves nothing. JVM (JBMC, OpenJML, ESBMC's Kotlin/Java frontend), Go (Gobra), JS/TS, .NET, Swift, Ruby and PHP have no mainstream checker. They rely on property tests and fuzzing (`sota-testing` rules/06), and that is the right default there |
+| **Unused-suppression gate: no CLI mechanism in three toolchains** | .NET `IDE0079` is IDE-only and never runs in `dotnet build`. `javac` has no lint for an unnecessary `@SuppressWarnings` (and silently ignores an unrecognised string). clang-tidy does not report an unused `NOLINT` (llvm/llvm-project#69674, open). These skills give a grep probe and say so. A rule promising a CI failure there would be a dead gate |
+| **Escape-hatch runtime checking** | Rust (Miri, sanitizers) and C/C++ (sanitizers by design) are complete. The others name the checker their ecosystem has. There is no documented MSBuild property that turns on ASan for a .NET app, and on macOS `DYLD_INSERT_LIBRARIES` is stripped for protected and hardened binaries, so the Node-addon ASan recipe is Linux-only |
+| **Parser depth defaults** | They differ by design and are quoted per language, not unified. Go `encoding/json` hard-codes 10,000 (json/v2 has no depth option). Node `JSON.parse` has been iterative since V8 7.6 with no limit. .NET is 64. Ruby `JSON.parse`/`JSON.load` default to 100 (since json 2.8.0 for `load`). PHP is 512. Darwin Foundation is about 512. Jackson nesting is 1000. CPython's C scanner is bounded by its C-stack guard, not the recursion limit |
+
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
 ### Depth, measured 2026-09-23: breadth is uniform, depth is not

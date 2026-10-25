@@ -221,6 +221,24 @@ Two ordinary errors take this path without anyone deciding they should:
   Express 4, wrap every async handler (`(fn) => (req, res, next) => fn(req, res, next).catch(next)`)
   or upgrade. *OWASP: Nodejs Security cheat sheet.*
 
+**Failures no handler sees.** A service that counts on `try/catch` and error middleware for
+availability is wrong about the inputs an attacker picks:
+
+- **Heap exhaustion is fatal, not an exception.** Measured on Node 22.22.1 with
+  `--max-old-space-size=32`: `FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap
+  out of memory`, exit 134. Neither the surrounding `try/catch` nor the `uncaughtException`
+  handler ran, and every in-flight request on the process died with it. So the cap comes
+  *before* the allocation: body bytes at the parser (§"HTTP server hardening"), and every count
+  or length taken from input (`new Array(n)`, `Buffer.alloc(n)`, `str.repeat(n)`, a page size, a
+  length field in a decoded message) checked against a maximum first.
+- **`JSON.parse` has no depth or size option**, and it is synchronous, so a big body blocks the
+  loop for its whole parse. It is iterative (since V8 7.6): measured, 1,000,000 nested arrays
+  parsed. The overflow comes later, in code that walks the result: `JSON.stringify` and a
+  recursive walker over 100,000 levels both threw `RangeError: Maximum call stack size exceeded`.
+  That `RangeError` is catchable, but it fails per request in your validator, deep merge or
+  sanitizer. Cap the body in bytes, and give recursive code over parsed input an explicit depth
+  limit, or make it iterative.
+
 - `process.on('warning')` → log it (catches MaxListenersExceeded, deprecations).
 - Don't call `process.exit()` in normal flow — it skips pending I/O and `finally` blocks; let the loop drain or use exit codes from the shutdown path only.
 
@@ -410,6 +428,9 @@ channel.
       `grep -rnE "\.(get|post|put|patch|delete|all|use)\([^)]*async *(\(|function|[[:alnum:]_]+ *=>)" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -vE "[Hh]andler\(|wrap\(|catch\(next"`
       — an unwrapped async handler on Express 4 hangs the request on a rejection (HIGH).
 - [ ] `grep -rn "uncaughtException" src/` — handler that doesn't exit (HIGH); no `unhandledRejection` policy at all (MEDIUM).
+- [ ] **Allocation or recursion sized by the request (§"Process-level error policy", failures no handler sees) — HIGH on a request path: one request kills the process** —
+      `grep -rnE '(Array|Buffer\.(alloc|allocUnsafe)|\.repeat)\( *([^)]*[^[:alnum:]_])?(req\.|body|query|params|headers|length|size|count)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules .`
+      — each hit needs a maximum checked before the call. Then read each recursive function that walks parsed request data (validators, deep merge, sanitizers) for a depth limit.
 - [ ] `grep -rn "console.log\|console.error" src/ | grep -v test` — in services, replace with pino (LOW; MEDIUM if logging objects with secrets).
 - [ ] Logger redaction configured? `grep -rn "redact" src/` — logging auth headers/bodies without redaction (HIGH).
 - [ ] `grep -rn "trust proxy" src/` and rate-limiter keying — spoofable client IP (MEDIUM).

@@ -90,7 +90,9 @@ def test_sort_invariants(xs):
   (combining chars, RTL, NUL), boundaries (0, -1, MAX, leap days, DST),
   duplicates, deeply nested. A generator producing only pretty values is an
   example test with extra steps. Constrain with care: every `filter`/
-  `assume` narrows the explored space — prefer constructive generation.
+  `assume` narrows the explored space — prefer constructive generation. A
+  filtered, assumed or early-returning property must also **prove it ran**
+  (§6.6): the framework's statistics output alone does not fail anything.
 - **Tautology check**: a property that restates the implementation
   (`assert f(x) == f(x)`-shaped) verifies nothing; properties must be derived
   from the spec, not the code.
@@ -160,6 +162,11 @@ func FuzzParseConfig(f *testing.F) {
     })
 }
 ```
+
+This target proves crash-freedom on every input, but its **roundtrip** runs only on inputs that
+parse. A corpus that almost never parses leaves the property near-vacuous while the run reports
+green (measured: an always-failing `Parse` under `-fuzz` ran 648,778 execs, PASS). Assert reach
+as §6.6 says.
 
 Discipline:
 
@@ -330,6 +337,41 @@ against SLOs with observability in place. See [`sota-observability`](../../sota-
 [`sota-architecture`](../../sota-architecture/SKILL.md) for resilience patterns; do not bolt chaos experiments
 into the CI test suite.
 
+## 6.6 Reach — a constrained property or fuzz target must prove it exercised anything
+
+A property that filters, assumes or returns early, and a fuzz target that returns on a parse
+error, can pass over an empty set. Kani's `cover!` exists for this reason, and the same failure
+applies to every framework. **Density of `assume`/`filter` is a proxy. Evidence of reach is the
+control**: the valid-input branch and the assertion each ran a meaningful number of times, and
+**the run fails when they did not**.
+
+**Observability is not a gate.** These print and exit 0 even when 0% of inputs reached the
+assertion: Hypothesis `--hypothesis-show-statistics` and `event()`, fast-check `fc.statistics`
+(which samples the arbitrary and never runs the property), FsCheck `Prop.classify`/`collect`,
+jqwik `Statistics.collect` alone, and libFuzzer `-print_final_stats`. Hypothesis `target()`
+steers the search; it is not a gate either.
+
+What fails natively, and on what (run 2026-10-25 for Hypothesis, proptest, fast-check and Go; FsCheck, jqwik and Kani read from their source and docs):
+
+| Framework | Fails the run on | Does NOT catch |
+|---|---|---|
+| Hypothesis | near-total `assume()` or `.filter()` rejection (`HealthCheck.filter_too_much`) | a 2%-pass filter; any early `return` in the body |
+| proptest | `prop_assume!` past `max_global_rejects` (default 1024 aborts); `prop_filter` past `max_local_rejects` | early `return`s |
+| fast-check | `fc.pre` past `maxSkipsPerRun` × `numRuns` (default 100 per run fails only total rejection, so lower it) | early `return`s; a `.filter` rejecting everything **hangs** rather than failing |
+| jqwik | assumptions past `@Property(maxDiscardRatio)` (default 5); `Statistics.coverage(...)` with a matching `Statistics.collect` label fails on unmet coverage (docs; not run) | — |
+| FsCheck | `==>`/filter rejections past `Config.MaxRejected` under `Check.QuickThrowOnFailure` | early returns (FsCheck has no `Prop.cover`; that is Haskell QuickCheck) |
+| Kani | nothing: an unsatisfiable or unreachable `kani::cover!` still ends `VERIFICATION:- SUCCESSFUL` | — parse `** N of M cover properties satisfied` (allow a suffix) and fail below M |
+| Go native fuzzing | nothing | — see below |
+
+**The portable gate is a counter you assert.** Count runs that reached the assertion and fail
+below a floor: in Hypothesis, a wrapper test calls the `@given` function and then asserts
+`valid >= MIN` (replays and shrinking also count, so set the floor with margin). **Go:** do not
+check a counter after `f.Fuzz`. Under `-fuzz` the workers are separate processes, so it
+false-fails on a target whose inputs were all valid (measured). Put the corpus reach assertion
+in an ordinary `TestXxx` that parses `testdata/fuzz/<Name>/` and the seeds and requires some to
+reach the property. A target that only asserts "no crash" proves crash-freedom and nothing else:
+label it as such.
+
 ## Audit checklist
 
 - [ ] **Mutation probes: is the revert verified, not assumed?** (§6.3) Any hand-mutation
@@ -352,6 +394,11 @@ into the CI test suite.
       re-derive via the SUT's own logic → Critical (verifies nothing).
 - [ ] Over-filtered generators? Grep `assume\(|\.filter\(|suchThat|prop_assume`
       density; heavy filtering → Medium (space not actually explored).
+- [ ] **Reach is enforced, not printed** (§6.6)? For each property with `assume`/`filter`/`pre`
+      or an early `return`, and each fuzz target that returns on a parse error, look for a
+      failing reach gate: a lowered rejection cap, an asserted counter, jqwik `Statistics.coverage`,
+      or a Kani cover-count parse. Statistics output alone, or none → Medium (High where the
+      property guards untrusted input).
 - [ ] Are shrunk counterexamples pinned as example tests / failure DB
       committed or cached in CI? No → Low–Medium (regressions can resurface).
 - [ ] Was any **green** acted on from a single seed — a property promoted to

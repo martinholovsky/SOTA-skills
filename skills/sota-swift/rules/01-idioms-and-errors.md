@@ -62,6 +62,20 @@ register(email)
   `init(floatLiteral value: Double)`, so the literal is a `Double` first and the binary error
   is already in it. Use `Decimal(string: "0.1")` or `Decimal(sign:exponent:significand:)`.
 
+### 4a. Traps end the process: limits come before allocation and recursion
+
+- Overflow, an out-of-bounds `array[i]`, and a failed `!`, `try!` or `as!` are **traps, not
+  errors**. Measured on Swift 6.3.2 macOS: an out-of-bounds index inside `do { } catch` is not
+  caught, and the process exits 132 (SIGILL). Unbounded recursion overflows the stack and the
+  process exits 139 (SIGSEGV). No `catch`, Vapor `ErrorMiddleware` or Hummingbird error
+  handler runs. On a server, one crafted request ends the process for every connection on it.
+- So check **before** the operation. Compare an index with `indices` or use `.first`/`.last`.
+  Cap a count read from input before `Array(repeating:count:)` or `reserveCapacity`. Give a
+  recursive descent you write a depth parameter and reject past a stated limit. Cap the body
+  size before decoding ([rules/06](06-server-side.md) §4). `JSONDecoder` rejects deep nesting
+  itself (measured on Darwin: 512 levels decode, 513 throw a catchable `DecodingError`), and
+  the limit is not configurable.
+
 ## 5. Dates, clocks and time zones
 
 - **Elapsed time and timeouts use a clock, not `Date`**: `ContinuousClock` (does not stop while
@@ -89,5 +103,6 @@ register(email)
 - [ ] Types default to `struct`/`let`; classes are `final` unless designed for subclassing; owned-enum `switch`es are exhaustive without `default`.
 - [ ] Absence / null handling: no force unwraps on input-derived optionals — grep `[A-Za-z0-9_)\]]!(\.|\s|\)|$)`, `as!`, `try!`; IUO `T!` only in two-phase init; no in-band sentinel (`-1`, `""`) where an optional or enum belongs.
 - [ ] Error handling: public APIs use plain `throws`; no `try?` on write/sync/payment paths; no empty `catch { }`; no `fatalError`/`precondition` standing in for input validation; no `-Ounchecked` in release settings.
+- [ ] Traps before limits (§4a) (HIGH when the input is untrusted): `grep -rnE '(repeating:[^)]*count:|reserveCapacity\()[[:space:]]*[a-z][A-Za-z0-9_]*\.[a-z][A-Za-z0-9_]*' --include='*.swift' .` (an allocation sized by a decoded field: read back for a cap) ; every recursive function over decoded data takes and checks a depth bound (manual); no reliance on `catch` or error middleware for an index, unwrap or overflow on input.
 - [ ] Wrapping operators (`&+`, `&-`, `&*`) on input-derived sizes and indices are justified; money uses `Decimal(string:)` or integer minor units — grep `: *Decimal *= *[0-9]+\.[0-9]` and `(price|amount|total|balance)\w* *: *(Double|Float)`.
 - [ ] Date, time & timezone: elapsed time and timeouts use `ContinuousClock`/`Duration`, not `Date()` subtraction (grep `timeIntervalSince`); instants stored as UTC/ISO 8601; no `TimeZone.current`/`Calendar.current` in server logic that must not depend on the host.

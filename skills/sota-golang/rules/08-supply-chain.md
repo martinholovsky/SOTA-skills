@@ -38,6 +38,22 @@ code that runs at build time, adopting a dependency, and GODEBUG overrides (§2)
   silence is not proof — the sweep, the deletion proof, and the leverage-ratio
   and upstream-health checks are [`sota-devsecops` rules/10](../../sota-devsecops/rules/10-inert-dependencies.md).
 - `go mod tidy` enforced in CI (`git diff --exit-code go.mod go.sum` after).
+- **What silently unfreezes a frozen build.** `go build`/`go test` default to `-mod=readonly`
+  (since 1.16), or to vendor mode when a `vendor/` directory is present. So the module graph is
+  frozen unless something in CI thaws it:
+  - `GOFLAGS=-mod=mod` in the CI environment or a Makefile;
+  - `go get` or `go mod tidy` in a check step with no `git diff --exit-code` after it;
+  - `go install pkg@version` or `go run pkg@version`, which ignore the main module's `go.mod`.
+    They are still checked against GOSUMDB, but `@latest` floats. Use a `tool` directive and
+    `go tool <name>` ([rules/07](07-tooling-ci.md) §4);
+  - verification switched off: `GOSUMDB=off`, `GONOSUMDB`/`GOPRIVATE` wider than your own
+    modules, `GOINSECURE`. `GOFLAGS=-insecure` is not one of them: the flag was removed, so
+    `go get` rejects it and other commands silently ignore it. Look for the variables instead.
+- **The binary's dependency list (for the SBOM).** Go embeds module build info natively
+  (`go version -m <bin>`), and `-ldflags="-s -w"` does not strip it (not since 1.13).
+  `-buildvcs=false` drops only the `vcs.*` lines. What it never records is the C and C++
+  libraries that cgo links, so a scanner reading the binary misses them. Generate the SBOM at
+  build time and add those libraries ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6).
 - Pin tool versions via 1.24 `tool` directives in go.mod ([`rules/07`](07-tooling-ci.md)) so the
   linter/codegen supply chain is hash-verified too.
 - **Build-time code execution.** The toolchain is designed so fetching or building a module
@@ -87,6 +103,13 @@ prints it for a main package — empty means current defaults.
       `direct`/`off` for public modules, any `GOINSECURE`, a wildcard `GONOSUMDB`, `GOSUMDB=off`,
       `GOFLAGS=-mod=mod` in CI — the §1 list) ; `go mod verify` ;
       `govulncheck ./...` ; `go mod tidy && git diff --exit-code go.mod go.sum`
+- [ ] **Frozen install thawed in CI (§1) — MEDIUM, HIGH when verification is off** —
+      `grep -rnE -- '-mod=mod|go get |go mod tidy|go (install|run) [^[:space:]]+@' .github/workflows/ Makefile Dockerfile 2>/dev/null | grep -v 'git diff --exit-code'`
+      (every hit is a step that may rewrite or bypass go.mod/go.sum) ; `ls -d vendor 2>/dev/null`
+      (present: CI needs `go mod vendor` then `git diff --exit-code vendor/`)
+- [ ] **cgo binary without a build-time SBOM (§1) — MEDIUM** —
+      `grep -rlE '^import "C"' --include='*.go' .` ; any hit and the SBOM is only scanned from the
+      binary (`go version -m`) means the linked C libraries are missing from it
 - [ ] **Build-time code execution (§1) — MEDIUM, HIGH if CI secrets are in scope** —
       `grep -rnE '^//go:generate[[:space:]]+(go run [^ ]+@|sh |bash |curl |wget )' --include='*.go' .` ;
       `grep -rnE 'CGO_[A-Z]+FLAGS_ALLOW|GOVCS.*[*c]:all|-toolexec' . | grep -v '\.go:'` ;

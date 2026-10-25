@@ -56,7 +56,10 @@ allow-dbg-in-tests = true
 1.99.0 with this template as written, `--all-targets -D warnings`: without `clippy.toml` the build
 failed on a `#[cfg(test)]` unwrap (rc 101); with it, that passed, while an unwrap in a `tests/`
 helper outside a `#[test]` function, in `examples/` and in `benches/` still failed, each on
-`unwrap_used` (`scripts/check-claims.sh` claim 21 re-runs the first half). Use `expect` with
+`unwrap_used` (`scripts/check-claims.sh` claim 21 re-runs the first half). The mechanism:
+`--all-targets` builds `examples/` **without** `cfg(test)`; `tests/` and `benches/` build with it,
+but the keys exempt only `#[test]` functions and `#[cfg(test)]` items, so a bench body or a test
+helper `fn` is linted as production code. Use `expect` with
 an invariant message there, or a `Result`-returning helper. There is **no** test key for
 `arithmetic_side_effects` (it is absent from clippy's own key list), so a crate that denies it
 scopes test code with `#![cfg_attr(test, allow(clippy::arithmetic_side_effects, reason = "…"))]`.
@@ -82,7 +85,9 @@ scopes test code with `#![cfg_attr(test, allow(clippy::arithmetic_side_effects, 
     `#[cfg_attr(not(feature = "x"), expect(dead_code, reason = "…"))]`, naming the
     configuration in which the lint *fires*.
   - **`allow_attributes` checks outer `#[allow]` only.** An inner `#![allow(…, reason = "…")]`
-    inside a `mod` passed both lints, so it is the bypass to probe for (checklist).
+    inside a `mod` passed both lints, so it is the bypass to probe for (checklist). So did a
+    crate-level `#![cfg_attr(test, allow(…, reason = "…"))]`, the form recommended above for
+    `arithmetic_side_effects`, while an outer `#[cfg_attr(…, allow(…))]` was caught (clippy 0.1.97).
     `allow_attributes_without_reason` still rejects an inner allow with no reason. Neither lint
     fired on `#[allow]` emitted by a derive or another crate's `macro_rules!`.
 - **`deny`, never `forbid`, for `unused_must_use` and `unsafe_op_in_unsafe_fn`.** `forbid` also
@@ -193,7 +198,9 @@ a commit message as fact. The verifier's own numbers before and after were **ide
   examples guaranteed to compile).
 - Property tests (`proptest`) for parsers/serializers/invariant-heavy code;
   snapshot tests (`insta`) for rendered output; `loom` for atomics ([rules/03](03-unsafe-discipline.md));
-  fuzz for untrusted-input parsers ([rules/05](05-security-supply-chain.md)).
+  fuzz for untrusted-input parsers ([rules/05](05-security-supply-chain.md)). A constrained
+  property test must show it reached its target ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6): proptest
+  aborts past `max_global_rejects` (default 1024) for `prop_assume!`, `max_local_rejects` (65536) for `prop_filter`.
 - Coverage: `cargo llvm-cov nextest` — track trend, don't worship the number.
 
 ## 4. MSRV policy
@@ -414,17 +421,18 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
 
 ## Audit checklist
 
-- [ ] `[lints]` table present and workspace-inherited; `rg '#!\[allow' -t rust`
+- [ ] `[lints]` table present and workspace-inherited;
+      `rg -n '#!\[[[:space:]]*(cfg_attr\(.*)?allow[[:space:]]*\(' -t rust .`
       — blanket crate-level allows without reasons = Low each, pattern = Medium. Where
-      `allow_attributes` is denied, every inner `#![allow(` is the one form it does not see
-      (§1): each needs a reason and a reviewer, or it is an unreviewed suppression = Low.
+      `allow_attributes` is denied, every inner `#![allow(` or `#![cfg_attr(…, allow(` is the form
+      it does not see (§1): each needs a reason and a reviewer, or it is an unreviewed suppression = Low.
 - [ ] **Template denies a panic lint, CI lints tests, nothing tells clippy about tests** (§1):
       `rg -n -g 'Cargo.toml' '(unwrap_used|expect_used|indexing_slicing|panic)\s*=\s*"(deny|forbid)"' .; rg -n 'allow-(unwrap|expect|indexing-slicing|panic)-in-tests' clippy.toml .clippy.toml 2>&1`
       — hits in the first and none in the second, with CI on `--all-targets`, means CI fails
       on test code or the floor was quietly lowered = Low. Remember the keys stop at
       `#[test]`/`#[cfg(test)]`: `examples/`, `benches/` and `tests/` helpers are still linted.
 - [ ] **Suppression convention** (§1): `rg -c '#\[allow\(' -t rust .` beside `rg -c '#\[expect\(' -t rust .`
-      — `#[allow]` with no `allow_attributes` floor = Low (stale exceptions accumulate);
+      — `#[allow]` with no `allow_attributes` floor = Low (stale exceptions accumulate); `unfulfilled_lint_expectations` not `deny` in `[lints.rust]` (`rg -n 'unfulfilled_lint_expectations' Cargo.toml`) = Low — an unused `#[expect]` is then only a warning that CI ignores;
       `forbid` on `unused_must_use`/`unsafe_op_in_unsafe_fn` breaks on macro-emitted allows.
 - [ ] CI runs clippy with `-D warnings` on `--all-targets --all-features`;
       source does NOT hardcode `#![deny(warnings)]`.
@@ -443,8 +451,9 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
       time is ungated until one gate executes it on the real target.
 - [ ] `cargo fmt --check` green and in CI; `rustfmt.toml` deviations are
       deliberate and few.
-- [ ] Tests: nextest in CI + separate doctest step; per-test timeout
-      configured; `rg '#\[ignore\]' -t rust` — ignored tests have reasons.
+- [ ] Tests (§3): nextest in CI + separate doctest step; per-test timeout
+      configured; `rg '#\[ignore\]' -t rust .` — ignored tests have reasons; a proptest that
+      raises `max_global_rejects`/`max_local_rejects` or early-returns has no reach evidence = Low.
 - [ ] `rust-version` declared AND exercised by a CI job; binaries have
       `rust-toolchain.toml`. `cargo msrv verify` passes.
 - [ ] **Profile overrides** (§4a): `find . \( -name Cargo.toml -o -path '*/.cargo/config' -o -path '*/.cargo/config.toml' \) -type f -not -path '*/target/*' -exec grep -nE '^[[:space:]]*(overflow-checks|debug-assertions)[[:space:]]*=[[:space:]]*false' /dev/null {} +`

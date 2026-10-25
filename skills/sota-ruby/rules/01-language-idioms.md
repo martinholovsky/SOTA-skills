@@ -131,6 +131,24 @@ end
 - **Exceptions are for exceptional flow**, not control flow: `Hash#fetch`
   with a default, `find` vs `find!`-style APIs — pick the non-raising variant
   when absence is normal.
+- **What `rescue => e` never reaches: bound depth before the work.**
+  `SystemStackError` and `NoMemoryError` inherit from `Exception`, not
+  `StandardError`, so the `rescue => e` in a Rack error handler, a job runner
+  or a controller `rescue_from StandardError` never sees them: a deeply nested
+  request body takes down the worker past every handler. `rescue Exception` is
+  no fix either. Measured (Ruby 4.0.6, json 2.18.0): a pure-Ruby recursion's
+  `SystemStackError` could be rescued five times in a row, but after one
+  rescued stack overflow inside the C JSON parser, the next one in the same
+  process killed it (exit 132, no message). Limits go in before parsing and
+  recursion:
+  - `JSON.parse` stops at `max_nesting: 100` (`JSON::NestingError`, a
+    `StandardError`), and so does `JSON.load` since json 2.8.0 (on older json,
+    `JSON.load` is unlimited). Ban on untrusted input `JSON.parse!`,
+    `JSON.unsafe_load` and `max_nesting: false` (`nil` and `0` also lift the
+    limit): each parsed 100,000 levels straight into `SystemStackError` (same
+    measurement).
+  - Cap the request body size before any parse, and bound the depth of your
+    own recursive walks over parsed data explicitly.
 
 ## 5a. In-band sentinels — the stdlib is clean, the converters are not
 
@@ -341,6 +359,11 @@ conversion and from hand-rolled returns:
       `grep -rn "rescue Exception" --include='*.rb' .`
 - [ ] **Silenced errors — MEDIUM+** — `grep -rn "rescue nil" --include='*.rb' .` ;
       `grep -rnE "rescue(\s+StandardError)?\s*(=>\s*_?e?)?\s*$" --include='*.rb' . | head`
+- [ ] **Parse or recursion with no depth limit (§5) — HIGH where request data
+      reaches it** — `grep -rnE 'JSON\.(parse!|unsafe_load)|max_nesting:[[:space:]]*(false|nil|0)([^0-9]|$)' --include='*.rb' .`
+      (each hit parses to `SystemStackError`, which `rescue => e` misses) ;
+      `grep -nE '^    json \(' Gemfile.lock` (below 2.8.0, every `JSON.load` is unlimited too;
+      no hit = the default gem of the running Ruby: `ruby -rjson -e 'puts JSON::VERSION'`)
 - [ ] **raise losing the original class/cause** —
       `grep -rnE "raise\s+e\.message" --include='*.rb' .`
 - [ ] **OpenStruct in new code — LOW** — `grep -rn "OpenStruct" --include='*.rb' .`

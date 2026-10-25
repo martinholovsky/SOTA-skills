@@ -224,6 +224,14 @@ def test_sort_idempotent(xs: list[int]) -> None:
   (roundtrip, idempotence, commutativity, oracle vs reference impl).
 - Persist the example database (`.hypothesis/` in CI cache) so regressions replay;
   failing examples get promoted to `@example(...)` regression pins.
+- **A green property with `assume()`, `.filter()` or an early `return` may have tested almost
+  nothing**: `HealthCheck.filter_too_much` fails only near-total rejection (a 2% pass rate
+  passed), and an early `return` is never counted. Gate reach as
+  [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6 says.
+- **Contracts on pure functions: CrossHair** searches symbolically (Z3) over PEP 316 docstring,
+  `icontract` or `deal` contracts and type hints, and returns counterexamples. It is a bounded
+  search, not a proof: "no counterexample" is not "correct". (ESBMC, a bounded model checker,
+  also has a Python frontend.)
 
 ### Markers, selection, and suite layering
 
@@ -261,6 +269,14 @@ testpaths = ["tests"]
   never `sleep`.
 - Coverage gate (`--cov --cov-fail-under=N`) measures *executed*, not *asserted* — treat as
   floor, not target; mutation testing (`mutmut`) where correctness is critical.
+- **Code with an escape hatch (`ctypes`, `cffi`, a C extension: [rules/05](05-security.md) §11) runs its
+  suite under `python -X dev` in CI.** Dev mode enables `faulthandler` and the debug hooks
+  on the memory allocators. Measured on 3.14.8: writing 10 bytes past a 1000-byte
+  `ctypes.create_string_buffer` exited 0 under plain `python`, and under `-X dev` printed
+  "pad bytes ... are not all FORBIDDENBYTE" and aborted (exit 134). Use the `-X dev` flag,
+  not `PYTHONDEVMODE=1`: `-I` and `-E` drop every `PYTHON*` variable (measured, dev mode off).
+  Free-threaded builds (`3.14t`; `Py_MOD_GIL_NOT_USED`): [rules/01](01-tooling-project-setup.md) §8. A compiled extension's
+  own C belongs under the C toolchain's sanitizers as well ([`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §3).
 
 ## Audit checklist
 
@@ -302,3 +318,13 @@ testpaths = ["tests"]
       `grep -rln "hypothesis" --include="*.py" tests/ || echo "no property tests"` ;
       `pytest -q -n auto 2>&1 | tail -3` (parallel-safe = independent);
       `pytest -q -p randomly 2>&1 | tail -3` (order-independent?)
+- [ ] **Escape hatch with no runtime checker in CI (§3) [MEDIUM; HIGH where the native call
+      takes a length or pointer from input]** —
+      `grep -rlE '^[[:space:]]*(import|from)[[:space:]]+(ctypes|cffi)' --include='*.py' . | head -1 ; find . -name '*.c' -not -path './.venv/*' | head -1`
+      (any hit = an escape hatch) ;
+      `grep -rnE -e '-X[[:space:]]?dev' --include='*.y*ml' --include='*.toml' --include='*.cfg' --include='*.ini' --include='*.sh' . | head -3`
+      (no hit = the suite never ran with the debug allocator; `PYTHONDEVMODE` alone is inert
+      under `-I`/`-E`)
+- [ ] **Property tests whose reach nobody checks (§3) [LOW; MEDIUM on parsers]** —
+      `grep -rnE 'assume\(|\.filter\(' --include='*.py' tests/` (each property using one needs
+      the reach gate of [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6)

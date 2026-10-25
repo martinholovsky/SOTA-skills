@@ -129,6 +129,30 @@ even when its code differs by one line. Make that visible everywhere.
   VEX statement for the variant, not an ignore rule that also hides the next advisory.
   (OWASP: Vulnerable Dependency Management cheat sheet; SCVS 2.17, 6.4, 6.5, 6.6, 6.7)
 
+## 14.6 A shipped binary may carry no dependency list: generate at build time, assert a count
+
+A scanner run over the **final** image or binary reads only the metadata the packaging step left
+behind. Several steps leave none, and the scan then reports **zero components, which reads as
+clean**. Measured 2026-10-25 with Syft and Trivy unless marked:
+
+| Artifact | What a post-build scan sees |
+|---|---|
+| Go binary | modules, from the embedded buildinfo (`go version -m`), even with `-ldflags='-s -w'`. **C/C++ libraries linked through cgo are never recorded** |
+| Rust binary | nothing, unless built with `cargo auditable` (an embedded `.dep-v0` section both scanners read) |
+| .NET standard publish | packages, from `*.deps.json`. **Single-file publish:** embedded, and Syft read it while Trivy found 0. **Native AOT:** no `deps.json`, 0 packages in both |
+| Python wheel or virtualenv | packages, from `*.dist-info`. **PyInstaller** collects no metadata by default (`copy_metadata` adds it); `--onefile` gave 0. A **shiv** zip carried the metadata and Syft still found 0 |
+| JVM jar, including a Maven Shade jar | packages, from `META-INF/maven/**/pom.properties` (Shade keeps them by default; an explicit `<filters>` exclude drops them). **GraalVM native image:** Oracle GraalVM embeds an SBOM by default (`--enable-sbom`), which Syft reads; **GraalVM Community Edition has no SBOM feature** (docs) |
+| JS bundle or Node single-executable | no `node_modules/**/package.json`, so nothing |
+| C/C++ binary | nothing by default; the opt-in ELF `.note.package` note is readable by Syft (docs) |
+
+- **Generate the SBOM at build time**, from the lockfile and the build graph, where the
+  dependency set is still intact (and from the bundler's metafile for JS). Ship it with the
+  artifact or attest it ([`rules/03`](03-dependencies.md)).
+- **Embed where the toolchain can**: `cargo auditable`, Oracle GraalVM's default embedded SBOM.
+- **Assert a non-zero component count on the shipped artifact in CI.** A scan that finds nothing
+  must fail, not pass. The count is the denominator that tells "clean" from "blind"
+  ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2).
+
 ## Audit checklist
 
 - [ ] **Document-level SBOM fields present (§14.1), Medium:** `jq -e '((.serialNumber // "")|test("^urn:uuid:")) and (.metadata.timestamp != null) and (((.metadata.tools.components // .metadata.tools) // []) | length > 0) and ((.metadata.component.name // "") | . != "" and . != ".") and ((.dependencies // []) | length > 0)' <sbom>.cdx.json` exits `0`; the CI run ID is recorded; a written SBOM policy names format, generator, fields, access and retention
@@ -137,3 +161,4 @@ even when its code differs by one line. Make that visible everywhere.
 - [ ] **Shared SBOMs scrubbed; internal SBOMs access-controlled (§14.3), Medium:** `grep -n -E '"/(home|Users|builds|runner|github/workspace|private|tmp)/|://[^/"]*\.(internal|corp|lan|local)[/":]' <sbom-to-publish>.json` (plus your own internal domains) prints nothing; the internal SBOM store is not publicly readable
 - [ ] **Supplier SBOMs required and ingested (§14.4), Medium:** each procured product in the inventory has a current supplier SBOM in the scanning pipeline, or a recorded risk acceptance with an owner
 - [ ] **Patched components carry a distinct version and pedigree (§14.5), Medium:** with your suffix convention (here `acme`), `jq -e '[.components[] | select((.version // "") | test("[-+]acme\\.")) | select(.pedigree == null)] | length == 0' <sbom>.cdx.json` exits `0`; no local-path dependency stands in for a patched component ([`rules/13`](13-vulnerability-remediation.md) §13.7)
+- [ ] **The shipped artifact's scan is not blind (§14.6), Medium (High for a deployed service):** for each bundled, single-file, AOT, native-image or PyInstaller artifact, a build-time SBOM is generated and CI fails on an empty one: `jq -e '(.components // []) | length > 0' <artifact>.cdx.json` exits `0`. An image scan of such an artifact with no build-time SBOM and no count assertion is the finding

@@ -316,7 +316,7 @@ both. So any validation, authorization, or bounds check written as an `assert`
 - **`int()`/numeric parsing:** Python ints are unbounded — `int(user_str)` of a 10MB digit
   string allocates happily; 3.11+ caps str→int at 4300 digits by default
   (`sys.set_int_max_str_digits`) — don't raise that limit on request paths. Cap input length
-  before parsing.
+  before parsing; nesting depth and what no `except` catches: [rules/03](03-idioms-pitfalls.md) §10.
 - **`webbrowser.open()` command injection:** crafted URLs (e.g. containing `%action`)
   passed to `webbrowser.open()` reach the shell with certain browser types —
   CVE-2026-4519 and its incomplete-fix follow-up CVE-2026-4786 (2026). Never pass
@@ -384,7 +384,7 @@ library's own warning is that incorrect use "can corrupt data and objects, revea
 information, cause crashes, or otherwise compromise the running process". A wrong `argtypes`,
 a buffer sized from input, or a pointer kept after its owner is freed is a C bug with no C
 file to review. Confine these calls to one module, declare `argtypes`/`restype` on every
-foreign function, and validate lengths before they cross. The class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
+foreign function, and validate lengths before they cross. The class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3. Their tests run under `-X dev` in CI ([rules/07](07-frameworks-testing.md) §3).
 
 ## Audit checklist
 

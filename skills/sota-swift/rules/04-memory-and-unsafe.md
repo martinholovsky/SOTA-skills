@@ -57,12 +57,17 @@ task = Task { [weak self] in
 ## 4. Strict memory safety (opt-in, Swift 6.2)
 
 - SE-0458: enable with `-strict-memory-safety`, or in SwiftPM
-  `swiftSettings: [.strictMemorySafety()]`; diagnostics land in the `StrictMemorySafety` group,
-  and each unsafe use must be acknowledged with an `unsafe` expression or `@unsafe`. The
+  `swiftSettings: [.strictMemorySafety()]`; diagnostics land in the `StrictMemorySafety` group.
+  Each unsafe use is acknowledged with the `unsafe` expression keyword (`unsafe p.pointee`);
+  `@unsafe` marks a *declaration* as unsafe and pushes the acknowledgement to its callers. The
   proposal is explicit about its limits: *"strict safety checking does not by itself make the code
   more memory-safe… making it easier to audit for unsafe behavior."*
 - Turn it on for modules that parse attacker-controlled bytes (codecs, protocol parsers,
   crypto glue): it turns the unsafe surface into a reviewable list.
+- **The diagnostics are warnings.** Measured on Swift 6.3.2: `swiftc -strict-memory-safety` on an
+  unacknowledged pointer use prints the warning and exits 0. Add `-Werror StrictMemorySafety`
+  (SE-0443) or warnings-as-errors and it exits 1. Without one of those in CI, the flag does not
+  gate anything. Tests of this code run under the sanitizers ([rules/08](08-tooling-ci-testing.md) §4).
 
 ## Audit checklist
 
@@ -70,4 +75,5 @@ task = Task { [weak self] in
 - [ ] Resource lifecycle: every file handle, socket, connection pool and client is released on all paths — a `defer ` block right after acquisition, or explicit shutdown; unique resources use `~Copyable` or a single-owner wrapper.
 - [ ] Unsafe surface is small, concentrated and comment-justified — grep `Unsafe(Mutable)?(Raw)?(Buffer)?Pointer|unsafeBitCast|assumingMemoryBound|withMemoryRebound|Unmanaged|withUnsafe`; no pointer escapes its closure or C call.
 - [ ] Modules parsing untrusted bytes use `Span`/`InlineArray`, or enable `.strictMemorySafety()` (SE-0458) and acknowledge each `unsafe` use.
+- [ ] Strict memory safety gates (§4) (MEDIUM): a target with `strictMemorySafety` or `-strict-memory-safety` (grep `Package.swift` and CI) also builds with `-Werror StrictMemorySafety`, `-warnings-as-errors` or `.treatAllWarnings(as: .error)`; without that it exits 0 on every unacknowledged use.
 - [ ] Leak checks are empirical: `deinit`-fires tests for controller-like objects, RSS-under-load for servers.

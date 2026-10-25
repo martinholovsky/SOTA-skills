@@ -200,6 +200,21 @@ if (strpos($h, $n) === false) { /* not found */ }   // === is mandatory, not sty
   with `previous:`.
 - `json_decode(..., flags: JSON_THROW_ON_ERROR)` — silent `null` returns are a
   classic injection/logic hazard. 8.3+ `json_validate()` for validate-only.
+- **Some failures skip every `catch`.** Exhausting `memory_limit` is a fatal error, not an
+  exception: measured on 8.5.9, `str_repeat` past a 16M limit inside `try { } catch
+  (\Throwable)` printed "Allowed memory size … exhausted", skipped the `catch`, ran the
+  `register_shutdown_function` callback and exited 255. A framework's error handler and
+  middleware never see it, and the FPM worker loses the request. Unbounded userland recursion
+  ends the same way (measured: it reached `memory_limit` at ~915,000 frames). Recursion through
+  an internal function (a callback via `array_map`) uses the C stack
+  instead, and since 8.3 `zend.max_allowed_stack_size` (default `0`, auto-detect) turns its
+  overflow into a catchable `Error` ("Maximum call stack size … reached"); measured, `-1`
+  turned the same overflow into a segfault (exit 139). So cap before allocating: check every
+  count or length from input (`str_repeat`, `array_fill`, `str_pad`, `range`, a page size)
+  against a maximum, cap raw body size before `json_decode`, give recursive code over parsed
+  input a depth limit, and pass an explicit `$depth` below the default 512 (measured: 511
+  nested arrays decode, 512 fail with "Maximum stack depth exceeded"). Log fatals from a
+  shutdown function with `error_get_last()`, because nothing else runs.
 - Since 8.5, uncaught fatal errors include backtraces (php.net/releases/8.5) —
   make sure stack traces still never reach responses ([`rules/04`](04-sessions-auth-web-hardening.md) §5, §5b).
 - `DateTimeImmutable` over `DateTime`; pass an explicit `DateTimeZone`; never
@@ -334,6 +349,14 @@ Run from repo root; verify each hit manually.
       (a cast accepts `"1e999"` as INF; confirm `FILTER_VALIDATE_FLOAT` plus `is_finite()`
       before any range check, a divisor check before `/`, `%`, `intdiv()`, and `is_int()` or
       GMP/bcmath on products that can pass `PHP_INT_MAX`)
+- [ ] **Failures that skip every `catch` (§5) — HIGH when request input sizes the allocation or
+      the stack guard is off** —
+      `grep -rnE '(str_repeat|array_fill|str_pad|range)\([^;]*\$_(GET|POST|REQUEST|COOKIE)|json_decode\([^;]*(,|depth:)[[:space:]]*(PHP_INT_MAX|51[3-9]|5[2-9][0-9]|[6-9][0-9]{2}|[0-9]{4,})[[:space:]]*[,)]' --include='*.php' --exclude-dir=vendor .`
+      (an input-sized allocation with no cap, or a raised JSON depth; a size passed through a
+      variable needs a read) ;
+      `grep -rnE 'zend\.max_allowed_stack_size[[:space:]]*=[[:space:]]*"?-1' --include='*.ini' --include='*.conf' --include='Dockerfile*' .`
+      ; on the runtime, `php -r 'var_dump(ini_get("zend.max_allowed_stack_size"));'` (`"-1"`:
+      deep recursion segfaults the worker instead of throwing)
 - [ ] **strpos truthiness bug** — `grep -rnE 'if\s*\(\s*!?\s*strpos\(' --include='*.php' src/`
 - [ ] **Error suppression and silent JSON** —
       `grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'` ;
