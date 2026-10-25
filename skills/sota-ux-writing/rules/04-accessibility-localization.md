@@ -97,6 +97,9 @@ The engineering contract that makes translation possible:
   are all locale data, not copy.
 - RTL: user-generated content gets `dir="auto"`; avoid strings that assume
   left/right ("see the panel on the right" → name the panel).
+- Name fields accept the world's names: no Latin-only (alphabetical-only)
+  validation on a name field — it rejects most of the world's names (shared
+  with [`sota-frontend-design` rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §2a, whose i18n audit lives here).
 - Idioms, sports/culture metaphors, humor, and wordplay don't travel —
   "home run", "back to square one", puns in empty states all become
   translator tickets. Plain language ([`rules/01`](01-voice-tone-plain-language.md)) is the pre-translation.
@@ -123,31 +126,53 @@ The engineering contract that makes translation possible:
 ## Audit checklist
 
 - [ ] `<html lang>` set and correct; inline foreign phrases carry `lang`;
-      pages with switchable UI language update it dynamically
+      pages with switchable UI language update it dynamically (§1)
 - [ ] Every icon-only control has an accessible name; names contain the
-      visible label (2.5.3); repeated row actions announce their object —
-      `grep -rn 'aria-label' src/ | grep -iE 'click|here'` is empty
+      visible label (2.5.3) and are nouns or verb phrases, not instructions;
+      repeated row actions announce their object —
+      `grep -rniE 'aria-label=.[^"]*(click|\bhere\b)' --include='*.html' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --exclude-dir=node_modules .`
+      is empty; status updates that appear visually are announced in
+      self-sufficient wording ("Saving… Saved") (§2)
 - [ ] Headings/labels descriptive (2.4.6); required-input instructions
-      present (3.3.2)
+      present (3.3.2) (§1)
 - [ ] Every automatically detected input error names its field and says in text what is
       wrong (3.3.1), and gives the fix when one is known (3.3.3), except where the fix
-      would leak security state (login, account enumeration)
-- [ ] No meaning carried by symbol/emoji alone; alt text is functional, empty
-      for decorative, and never starts with "image of":
-      `grep -riE 'alt="(image|picture|photo) of' src/`
+      would leak security state (login, account enumeration) (§1)
+- [ ] No meaning carried by symbol/emoji alone; no decorative-unicode
+      lettering or ASCII art; abbreviations expanded on first use per
+      surface; alt text is functional, empty for decorative, a takeaway
+      summary for charts, and never starts with "image of":
+      `grep -rniE 'alt="(image|picture|photo) of' --include='*.html' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --exclude-dir=node_modules .` (§3)
 - [ ] Zero hardcoded UI strings in components (spot-check by adding a
-      pseudo-locale and hunting untranslated text)
-- [ ] No string concatenation or linguistic code:
-      `grep -rnE '\+\s*["'\''](s|es)["'\'']|["'\'']\s*\+\s*(count|n|num)|\$\{ *([a-zA-Z_.]*([Cc]ount|[Tt]otal|[Ll]ength)|n|num) *\} +[a-zA-Z]' src/`
-      and no `toUpperCase()`/`capitalize` on translated strings
-- [ ] ICU plurals with named placeholders everywhere counts appear; no
-      positional `{0}` placeholders
+      pseudo-locale and hunting untranslated text); new strings are reviewed
+      in the locale-file diff (§4)
+- [ ] No concatenated translated fragments and no linguistic code (§4) —
+      linguistic code:
+      `grep -rnE '\+\s*["'\''](s|es)["'\'']|["'\'']\s*\+\s*(count|n|num)|\$\{ *([a-zA-Z_.]*([Cc]ount|[Tt]otal|[Ll]ength)|n|num) *\} +[a-zA-Z]' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules .`;
+      sentences built from fragments (`"You have " + n + " items"`):
+      `grep -rnE "['\"][^'\"]* ['\"][[:space:]]*\+[[:space:]]*[A-Za-z_\$][A-Za-z0-9_.\$]*[[:space:]]*\+[[:space:]]*['\"] " --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules .`;
+      no `"a " + noun`, and no `toUpperCase()`/`capitalize` on translated
+      strings
+- [ ] ICU plurals with named placeholders everywhere counts appear, carrying
+      every plural form the target language has (Slavic `few`, not just
+      `one`/`other`), and `select` for gender where the language needs it; no
+      positional placeholders —
+      `grep -rnE '\{[0-9]+\}' --include='*.json' --include='*.yaml' --include='*.yml' --exclude-dir=node_modules .`
+      is clean in locale files (§4)
 - [ ] Translator context present for ambiguous strings; no key reused across
-      different meanings
-- [ ] All dates/numbers/currency via `Intl.*`/platform locale APIs:
-      `grep -rnE '(MM/DD|DD/MM|toFixed\(2\).*[$€£])' src/` reviewed
+      different meanings (§4)
+- [ ] All dates, numbers, currency, lists, and relative times via
+      `Intl.*`/platform locale APIs:
+      `grep -rnE '(MM/DD|DD/MM|toFixed\(2\).*[$€£])' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.json' --exclude-dir=node_modules .`
+      reviewed (§5)
 - [ ] `dir="auto"` on user-generated text containers; no "left/right"
-      directional language in strings; no text embedded in images
+      directional language in strings; no text embedded in images; no idioms,
+      sports or culture metaphors, or wordplay in strings; a +35% pseudo-locale
+      pass shows labels wrapping or containers growing, never clipped (§5)
+- [ ] **Name fields accept non-Latin names (§5) — High**: Latin-only
+      validators (a hit on a name field is the finding):
+      `grep -rnE '\^\[(A-Za-z|a-zA-Z)' --include='*.html' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules .`
 - [ ] Inclusive-language sweep:
-      `grep -riE '(whitelist|blacklist|sanity check|master/slave)' src/ locales/ docs/`
-      returns nothing user-visible
+      `grep -rniE '(whitelist|blacklist|sanity check|master/slave|crazy|insane|blind spot|he/she)' --include='*.json' --include='*.yaml' --include='*.yml' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.html' --include='*.md' --exclude-dir=node_modules .`
+      returns nothing user-visible; unspecified people are "they"; example
+      data uses diverse or neutral names (§6)

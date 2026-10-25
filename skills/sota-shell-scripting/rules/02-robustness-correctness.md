@@ -448,7 +448,7 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
       a hit's continuation lines for a trailing `|| true`. Tested on a labelled set of 8
       bad and 10 good lines (8/8 caught, 0/10 flagged) with BSD grep and ugrep:
       `grep -rnE '[$][(][^)]*(grep|jq -e)' --include='*.sh' . | grep -vE '[|][|]|^[^:]*:[0-9]+:[[:space:]]*(#|if[[:space:]]|elif[[:space:]]|while[[:space:]]|until[[:space:]])'`
-- [ ] **Missing-tool behaviour classified**: does every `command -v` failure `die`,
+- [ ] **Missing-tool behaviour classified** (§6): does every `command -v` failure `die`,
       skip-with-a-named-note, or ask an interactive human — and does the summary ever
       read clean while a check did not execute? Probe:
       `PATH=/usr/bin:/bin <script>` with a dependency removed, and confirm the run
@@ -468,25 +468,27 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
 - [ ] **Arbitrary selection**: `grep -rnE '\|\s*head -1|\| head -n ?1' --include='*.sh'`
       over set-emitting commands with no `--sort`/`sort`. Confirm a two-element fixture
       exists; a one-element test cannot fail.
-- [ ] **Second-run safety**: re-run the script on unchanged inputs and diff the store.
+- [ ] **Second-run safety** (§9): re-run the script on unchanged inputs and diff the store.
       Any write keyed by commit/id/date must be an upsert that preserves linked records.
-- [ ] No `--help`: `grep -rLn -- '--help\|-h)' --include='*.sh'` → MEDIUM for any operator-facing script.
-- [ ] Unknown options silently ignored: `case` parse loops missing a `-*)` error arm.
-- [ ] SC2230 — `grep -rn 'which ' --include='*.sh'` → replace with `command -v`.
-- [ ] Errors to stdout: `grep -rn 'echo.*[Ee]rror\|echo.*[Ff]ail' --include='*.sh'` lacking `>&2`.
-- [ ] `exit 0` at end of failure paths; functions calling `exit` where `return` is right.
-- [ ] Bare curl/wget: `grep -rn 'curl ' --include='*.sh' | grep -v -- '--max-time\|--fail'`
-      → MEDIUM (no timeout) / HIGH if output is piped to a shell or parsed as data.
-- [ ] Retries on non-idempotent operations (`--retry` + POST) → HIGH.
+- [ ] No `--help` (§1): `grep -rLn -- '--help\|-h)' --include='*.sh'` → MEDIUM for any operator-facing script, and for a distributed tool with no `--version`.
+- [ ] Unknown options silently ignored (§1): `case` parse loops missing a `-*)` error arm or a `--)` arm; misuse that prints `usage` to stdout or exits 0 (only `--help` goes to stdout with 0); external `getopt` with no `getopt -T` check for GNU getopt.
+- [ ] **A captured value compared as a string against `0`** (§2): `grep -rnE '\[\[?[[:space:]]+"?\$\{?[A-Za-z_][A-Za-z0-9_]*\}?"?[[:space:]]+!=[[:space:]]+"?0"?[[:space:]]+\]' --include='*.sh' .`
+      is a locator: where the value came from `$( )`, an empty or error string satisfies `!= "0"` → MEDIUM. Also flag values used without a `[[ =~ ]]`/`case` check, and required env vars not checked up front with `: "${VAR:?…}"`. (4/4 bad, 0/4 good, BSD grep and ugrep.)
+- [ ] SC2230 (§6) — `grep -rn 'which ' --include='*.sh'` → replace with `command -v`; dependencies checked at first use rather than up front in one place; hard-coded tool paths outside a privileged script with a sanitized `PATH`.
+- [ ] Errors to stdout (§3): `grep -rn 'echo.*[Ee]rror\|echo.*[Ff]ail' --include='*.sh'` lacking `>&2`; context-free messages (`die "error"`) naming no object or cause.
+- [ ] `exit 0` at end of failure paths; functions calling `exit` where `return` is right (§3); the shell-reserved 126/127 emitted by the script itself: `grep -rnE 'exit[[:space:]]+12[67]([^0-9]|$)' --include='*.sh' .` (3/3 bad, 0/5 good, BSD grep and ugrep).
+- [ ] Bare curl/wget (§7): no timeout, `grep -rn 'curl ' --include='*.sh' . | grep -v -e '--max-time'`; no `--fail`,
+      `grep -rn 'curl ' --include='*.sh' . | grep -v -e '--fail' -e ' -[a-zA-Z]*f'` → MEDIUM (no timeout) / HIGH if output is piped to a shell or parsed as data. One `grep -v` of both flags passes a line holding either. Non-curl network commands not under `timeout`.
+- [ ] Retries on non-idempotent operations (`--retry` + POST) → HIGH (§7).
 - [ ] SC2031/SC2030 — `| while read` subshell variable loss.
 - [ ] Pipeline status ignored where producer matters and no `pipefail`/PIPESTATUS check.
-- [ ] Lock discipline: cron-invoked or deploy scripts without `flock`/lock dir → MEDIUM;
+- [ ] Lock discipline (§8): cron-invoked or deploy scripts without `flock`/lock dir → MEDIUM;
       pidfile-based locks → MEDIUM (racy).
-- [ ] Unmanaged `&`: `grep -rn ' &$' --include='*.sh'` without matching `wait` on PID.
+- [ ] Unmanaged `&` (§8): `grep -rn ' &$' --include='*.sh'` without matching `wait` on PID; a bare `wait` with no PID where job status matters: `grep -rnE '(^|[;&|])[[:space:]]*wait[[:space:]]*($|[;&|#])' --include='*.sh' .` (4/4 bad, 0/5 good, BSD grep and ugrep).
 - [ ] In-place writes of consumed files: `grep -rn '> */etc/\|> *.*\.conf' --include='*.sh'`
-      without mktemp+mv → HIGH for configs read by daemons.
+      without mktemp+mv → HIGH for configs read by daemons (§9); a `mktemp`+`mv` that publishes without `chmod` ships a 0600 file; a download moved into place before it is verified.
 - [ ] `for .* in \$(find\|in \$(ls` and `xargs` without `-0` paired with `-print0` → HIGH
-      in destructive contexts (SC2044, SC2011).
-- [ ] Missing `--` before variable operands of `rm/mv/cp/chown/chmod/git`.
+      in destructive contexts (SC2044, SC2011; §10).
+- [ ] Missing `--` before variable operands of `rm/mv/cp/chown/chmod/git` (§10); not BSD/macOS `chmod`, which rejects `--` (§5): use `./"$f"`; filenames embedded in a `ssh`/`bash -c` string without `printf '%q'` or positional args.
 - [ ] Bashisms in `#!/bin/sh` files destined for alpine/busybox images (cross-check
-      Dockerfiles for base image).
+      Dockerfiles for base image) (§5): run `shellcheck -s sh` on each. A bare `set -o pipefail` there exits bookworm dash unless probed in a subshell first: `grep -nE '^[[:space:]]*set[[:space:]]+-[a-zA-Z]*o[[:space:]]+pipefail' <file>` (3/3 bad, 0/4 good, BSD grep and ugrep). In bash run on macOS: bash ≥ 4 features (`declare -A`, `mapfile`, `${var,,}`, `inherit_errexit`) with no version check.

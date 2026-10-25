@@ -411,15 +411,18 @@ published claim rested on that 0.00 for several hours.
       added because something failed; a measurement case may not.
 - [ ] Cheapest-grader rule followed: assertions where assertable; judges only
       for genuinely graded qualities; rubrics decomposed into binary checks
-      with quoted evidence.
+      with quoted evidence and a structured-output verdict; generated code/SQL
+      executed against fixtures and compared on results, not strings (§2).
 - [ ] Any LLM-as-judge validated against ≥50 human labels with measured
       agreement; re-validated on judge model/prompt change; judge model
-      pinned and traced.
+      pinned and traced; judge prompt versioned in the repo; a judge from a
+      different model family where the eval compares providers (§3).
 - [ ] Pairwise comparisons run in both orders; verbosity/position bias
-      addressed; the judge's consistency rate is reported beside accuracy.
-- [ ] Evals run automatically in CI on prompt/model/pipeline changes and
-      block merge; baselines stored; zero-regression rule on incident/safety
-      tags; cost/latency gated alongside quality.
+      addressed; the judge's consistency rate is reported beside accuracy (§3).
+- [ ] Evals run automatically in CI on prompt/template/retrieval-config/model/pipeline
+      changes and block merge; baselines stored; zero-regression rule on incident/safety
+      tags; cost/latency gated alongside quality; the suite is run against
+      model-deprecation candidates and any model being switched to (§5).
 - [ ] Eval runs persisted as artifacts (run ID, SHA, model versions,
       per-case results; image digest, grader logs and trajectories where the
       harness executes anything) and reproducible, with reasoning effort and
@@ -432,8 +435,16 @@ published claim rested on that 0.00 for several hours.
       distinct from — not a substitute for — offline gates.
 - [ ] Offline eval inputs are built by the application's own rendering code (template, role
       prefixes, normalisation), not a re-implementation or the bare payload (§4).
-- [ ] Error-analysis loop visible in history: failure taxonomy, incident
-      cases promoted into the set.
+- [ ] Error-analysis loop visible in history: failed transcripts coded into a
+      failure taxonomy, each failure attributed to a pipeline stage, and every
+      fixed failure promoted as a permanent case tagged with its taxonomy label
+      and `source: incident` (§6).
+- [ ] **Production traffic sampled into the golden set (§7) — Medium** —
+      `grep -rnE 'source:[[:space:]]*(production|incident)' . || echo "no production-sourced eval cases"`
+      ; manual: a random + stratified daily sample feeds a review queue; traces behind
+      complaints, regenerations, escalations and incidents are auto-promoted; near-duplicates
+      capped and every case date-stamped. PII redaction before promotion: the PII item in
+      [rules/06](06-data-lifecycle.md).
 - [ ] Dev set ≠ gating set; no prompt tuning against the held-out set; no
       model selection justified by public benchmarks alone.
 - [ ] Injection and content classifiers evaluated per language, including

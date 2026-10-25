@@ -387,20 +387,23 @@ substitution in help text** rather than literal characters. `--severity=error` s
       `str.format`.
 
 - [ ] `grep -rn 'eval ' --include='*.sh'` → every hit CRITICAL until proven constant-input
-      (SC2294 hints at array-eval misuse).
+      (SC2294 hints at array-eval misuse) (§1).
 - [ ] `grep -rn 'bash -c\|sh -c' --include='*.sh' --include='Makefile*' --include='Dockerfile*' --include='*.mk' .` with `$` inside
       the string → CRITICAL/HIGH.
-- [ ] `ssh .*\$` and `su -c .*\$` — remote re-parsing injection; check for `printf '%q'`.
+- [ ] `ssh .*\$` and `su -c .*\$` — remote re-parsing injection; check for `printf '%q'` (§1). A variable inside a double-quoted
+      `awk`/`sed`/`jq` program instead of `awk -v`/`jq --arg`: `grep -rnE '(awk|jq|sed)([[:space:]]+-[a-zA-Z]+)*[[:space:]]+"' --include='*.sh' .`
+      (a locator: a constant double-quoted program is a false positive; 4/4 bad, 0/4 good, BSD grep and ugrep).
 - [ ] SC2064 — `trap "$cmd" ...` with double quotes (expands now, runs later — often
       stale/injected values).
-- [ ] Secrets in argv: `grep -rni 'password\|token\|secret\|api[_-]key' --include='*.sh'`
+- [ ] Secrets in argv (§2): `grep -rni 'password\|token\|secret\|api[_-]key' --include='*.sh'`
       then trace each into argv (`-p"$X"`, `-H "Auth.* $X"`, URL userinfo `https://user:$X@`)
       → CRITICAL.
 - [ ] `set -x` (or `bash -x` in shebang/CI) in scripts handling secrets without `set +x`
-      bracketing → HIGH.
-- [ ] `env\|printenv\|declare -p` piped to logs/files in secret-bearing contexts.
+      bracketing → HIGH (§2); also a debug `sh -x script` run against live secrets, which traces lines nobody bracketed.
+- [ ] `env\|printenv\|declare -p` piped to logs/files in secret-bearing contexts (§2); a secret `base64`- or URL-encoded into logs, which CI masking misses.
 - [ ] Privileged scripts (cron files, `sudo` callers, Docker root entrypoints) missing
-      explicit `PATH=` and `umask` → HIGH; `CDPATH` not unset → MEDIUM.
+      explicit `PATH=` and `umask` → HIGH; `CDPATH` not unset → MEDIUM (§3). Also: `IFS`, `ENV`, `BASH_ENV`, `LD_PRELOAD`
+      and the rest of §3's list not unset; an unchecked `cd` (SC2164); `source` of a file a less-privileged user can write.
 - [ ] `grep -rn 'sudo ' --include='*.sh'` — variable after sudo, `sudo -S`, blanket sudo,
       `sudo .* >` redirects.
 - [ ] Documented or shipped sudoers entries: any `*` in a command's **arguments** → HIGH
@@ -413,8 +416,9 @@ substitution in help text** rather than literal characters. `--severity=error` s
       `--proto '=https' --tlsv1.2`. `--proto-redir` alone does not count. Built on a labelled set
       (5/5 bad caught, 0/6 good flagged, BSD grep and ugrep, 2026-10-13).
 - [ ] Predictable temp names: `grep -rn '/tmp/[^$]*\$\$\|/tmp/[a-zA-Z0-9._-]*\b' --include='*.sh'`
-      without mktemp → HIGH (CRITICAL if script runs as root).
-- [ ] `chmod .*60[0]\|chmod .*7[07][07]` *after* content written to sensitive files.
+      without mktemp → HIGH (CRITICAL if script runs as root) (§6).
+- [ ] `chmod .*60[0]\|chmod .*7[07][07]` *after* content written to sensitive files (§6); no explicit `umask` where created files' permissions
+      matter; work done in pre-existing `/tmp` paths rather than inside a fresh `mktemp -d`.
 - [ ] No shellcheck/shfmt in CI config (`.github/workflows`, `.gitlab-ci.yml`,
       `Jenkinsfile`) for a repo containing `*.sh` → HIGH (process gap).
 - [ ] `.shellcheckrc` blanket-disabling SC2086/SC2046/SC2155/SC2064 → finding.

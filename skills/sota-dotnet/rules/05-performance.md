@@ -81,26 +81,30 @@ profiler before optimizing. Cross-reference [`sota-performance`](../../sota-perf
 
 ## Audit checklist
 
-- [ ] **Allocation/boxing on hot paths — LOW/MEDIUM (verify with profiler)** —
+- [ ] **Allocation/boxing on hot paths (§2) — LOW/MEDIUM (verify with profiler)** —
       `grep -rnE '\+ ?"' --include='*.cs' . | grep -iE 'for ?\(|foreach|while'` (string concat
       in loops); `grep -rnE 'string\.Format|\$"' --include='*.cs' . | head` (hot-path
       formatting); `grep -rnE '\.ToList\(\)|\.ToArray\(\)' --include='*.cs' . | head` (needless
-      materialization in loops)
+      materialization in loops) ; `grep -rnE '(^|[^[:alnum:]_])(ArrayList|Hashtable)([^[:alnum:]_]|$)' --include='*.cs' .`
+      (non-generic collections box value types)
 - [ ] **EF Core N+1 (§4) — MEDIUM, HIGH on a hot path** —
       `grep -rnE 'UseLazyLoadingProxies|ILazyLoader' --include='*.cs' .` (lazy loading on: every
       loop over entities needs reading for navigation access) ;
       `grep -rnE -A6 '(foreach|for)[[:space:]]*\(' --include='*.cs' . | grep -E '\.(FirstOrDefault|SingleOrDefault|First|Single|Find|Any|Count|ToList|ToArray)(Async)?\('`
       (a query-shaped call within six lines of a loop head; confirm it runs against a
       `DbSet`/`IQueryable` and not an in-memory list)
-- [ ] **Server GC configured for a server app?** —
+- [ ] **Server GC configured for a server app? (§1)** —
       `grep -rnE 'ServerGarbageCollection|ConcurrentGarbageCollection|GarbageCollectionAdaptationMode|System\.GC\.(Server|DynamicAdaptationMode)|DOTNET_(gcServer|GCDynamicAdaptationMode)' --include='*.csproj' --include='*.props' --include='runtimeconfig*.json' --include='*.runtimeconfig.json' --include='Dockerfile*' --include='*.yaml' --include='*.yml' .`
       (Server GC on .NET 9+ runs DATAS unless the adaptation mode is `0`: fine for dense hosting,
       measure it off for a throughput-bound service)
-- [ ] **Span/pooling opportunities (hot path) — LOW** —
+- [ ] **Span/pooling opportunities (hot path) (§3) — LOW** —
       `grep -rnE 'new byte\[|Substring\(|Split\(' --include='*.cs' . | head` (Span/ArrayPool
       candidates)
-- [ ] **Benchmark hygiene — verify BenchmarkDotNet, not Stopwatch loops** —
+- [ ] **Benchmark hygiene — verify BenchmarkDotNet, not Stopwatch loops (§5)** —
       `grep -rnE 'Stopwatch' --include='*.cs' . | grep -i bench | head` ;
       `grep -rnE '\[Benchmark\]|MemoryDiagnoser' --include='*.cs' . || echo "no BenchmarkDotNet benchmarks"`
-- [ ] **Native AOT / trimming used? verify trim-safety** —
+- [ ] **Native AOT / trimming used? verify trim-safety (§6)** —
       `grep -rnE 'PublishAot|PublishTrimmed|IsAotCompatible' --include='*.csproj' --include='*.props' .`
+      (for each AOT or trimmed app: CI tests the published binary; a library meant for AOT consumers
+      sets `IsAotCompatible`, which turns the trim and AOT analyzers on, and what they flag is
+      annotated, not suppressed)

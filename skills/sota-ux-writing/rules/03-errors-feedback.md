@@ -124,23 +124,36 @@ rules/02](../../sota-code-security/rules/02-authentication.md) (authn) and [rule
 ## Audit checklist
 
 - [ ] Every user-facing error has all applicable parts: what happened, why
-      (if known), next step, side effects; zero dead ends
+      (if known), next step, side effects; zero dead ends; error codes kept
+      for support but in fine print, never the headline (§1)
 - [ ] Generic-error ban:
-      `grep -riE '"(An error (has )?occurred|Something went wrong)([^a-zA-Z"][^"]*)?"' src/ locales/` — each hit either enriched or justified
-- [ ] System-blame framing: `grep -riE '"(Invalid|Illegal|Bad|Forbidden)[^"]*"' locales/`
-      — no protocol vocabulary or user-blame in UI strings
+      `grep -rniE '"(An error (has )?occurred|Something went wrong)([^a-zA-Z"][^"]*)?"' --include='*.json' --include='*.yaml' --include='*.yml' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.html' --exclude-dir=node_modules .`
+      — each hit either enriched or justified (§1)
+- [ ] System-blame framing:
+      `grep -rniE '"(Invalid|Illegal|Bad|Forbidden)[^"]*"' --include='*.json' --include='*.yaml' --include='*.yml' --exclude-dir=node_modules .`
+      — no protocol vocabulary or user-blame in UI strings; no ALL CAPS in
+      error prose; one apology, only where the product genuinely failed (§2)
 - [ ] No humor/exclamations in errors:
-      `grep -riE '"[^"]*(Oops|Whoops|!)[^"]*"' locales/` reviewed
+      `grep -rniE '"[^"]*(Oops|Whoops|!)[^"]*"' --include='*.json' --include='*.yaml' --include='*.yml' --exclude-dir=node_modules .` reviewed (§2)
 - [ ] Validation messages state the rule and (where helpful) the offending
-      value; constraints also appear as hints before first failure
-- [ ] Login/reset/lockout copy confirms no account existence; user-facing
-      error strings contain no stack traces, paths, hostnames, or exception
-      names (pair with [`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) greps)
-- [ ] "Try again later" appears only where retry can actually succeed
+      value, in the field's own label term; constraints also appear as hints
+      before first failure (§3)
+- [ ] Login/reset/lockout copy confirms no account existence (§4); lockout
+      copy states the wait, not the detection logic; unauthorized IDs get
+      not-found copy; session-expiry copy says why and that the work is kept;
+      user-facing error strings contain no stack traces, paths, hostnames, or
+      exception names (pair with [`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md) greps)
+- [ ] "Try again later" appears only where retry can actually succeed (§1)
 - [ ] Severity honest: no info styled/worded as warning, no warning as error;
-      no unactionable persistent warnings
-- [ ] Success messages name object + effect; partial failures reported with
-      counts and a path to the details
-- [ ] Permission/upsell prompts state user benefit in context; decline
-      options are neutral ("Not now") — grep for confirmshaming patterns:
-      `grep -riE '"No thanks, I' locales/ src/`
+      no unactionable persistent warnings; a warning states the consequence
+      and the choice (§5)
+- [ ] Success messages name object + effect, with the reversal path ("Undo")
+      in the same message when one exists; partial failures reported with
+      counts and a path to the details; no toast for a micro-action whose
+      effect is already visible (§6)
+- [ ] Permission/upsell prompts state the user's benefit and the trigger and
+      are asked in context, never as a launch-time battery; paywalls name the
+      limit just hit; decline options are neutral ("Not now") and never
+      smaller, lower-contrast, or delayed; review prompts appear once, with a
+      dismiss-forever option — grep for confirmshaming patterns:
+      `grep -rniE '[">]No thanks, I' --include='*.json' --include='*.yaml' --include='*.yml' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.html' --exclude-dir=node_modules .` (§7)

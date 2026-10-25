@@ -256,10 +256,13 @@ queries needing tool choice (search vs SQL vs API).
       no weights-as-knowledge-store.
 - [ ] Chunking is structure-aware; tables/code not split mid-unit; chunks
       carry title/section context and full metadata (source, ACL, dates,
-      model+chunker versions).
+      model+chunker versions); semantic chunking only where it beats
+      structural chunking on the retrieval eval (§2).
 - [ ] Embedding model chosen via own-domain retrieval eval; exact
       model+version pinned and stamped per vector; query/document encoders
-      provably identical; task prefixes used where required.
+      provably identical; task prefixes used where required; index distance
+      metric matches the model's training metric; quantization only with
+      retrieval-eval evidence of acceptable recall loss (§3).
 - [ ] Embedding migrations are reindex-and-cutover with eval-gated flips —
       never mixed vector spaces in one queried index.
 - [ ] Hybrid retrieval in place (dense + lexical + fusion) or its absence
@@ -268,11 +271,12 @@ queries needing tool choice (search vs SQL vs API).
 - [ ] Tenant/ACL/date filters enforced inside the retrieval engine, never
       post-hoc client-side.
 - [ ] Conversational queries rewritten to standalone before retrieval;
-      query-transform LLM calls traced and evaluated; HyDE/multi-query only
-      with eval evidence.
+      query-transform LLM calls on a cheap/fast tier, traced and evaluated;
+      HyDE/multi-query only with eval evidence (§5).
 - [ ] Golden retrieval set exists (≥50 queries, includes "nothing in
-      corpus"); recall@k at prompt-k tracked; retrieval eval gates chunking/
-      embedding/reranker/k changes in CI.
+      corpus"); recall@k at prompt-k tracked; retrieval evaluated separately
+      from generation; retrieval eval gates chunking/embedding/fusion-weight/
+      reranker/k changes in CI (§6).
 - [ ] Faithfulness judged with quoted evidence; refusal-on-missing-context
       behavior present and eval-covered.
 - [ ] Citations structurally validated in code against supplied context IDs.
@@ -290,8 +294,9 @@ queries needing tool choice (search vs SQL vs API).
       **High** (Critical if a revoked document's answer is still served).
       Probe — cache writes with no expiry:
       `grep -rnE '(semantic_cache|answer_cache|response_cache)\.(set|put|add)\(' . | grep -vE 'ttl|ex=|expire'`
-- [ ] Agentic retrieval only where one-shot demonstrably fails; bounded per
-      [rules/04](04-agents-tools.md).
+- [ ] Agentic retrieval (§8) only where one-shot demonstrably fails on the
+      eval; a verify-and-retry pass capped at one iteration; trajectories judged,
+      not only answers; bounded per [rules/04](04-agents-tools.md).
 - [ ] Retrieval has a calibrated relevance floor beside top-k, diversity-aware
       selection, and anchor chunks (k of n, else a rules path) for restricted
       policy categories (§4). **Medium** (High where retrieved text drives an

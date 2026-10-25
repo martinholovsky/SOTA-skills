@@ -223,13 +223,13 @@ If 2.1–2.8 hold, testing is cheap. If testing is hard, the architecture is wro
 
 ## Audit checklist
 
-- [ ] Single UDF pattern applied consistently; every screen's state has exactly one writer; no mixed paradigms without a written migration plan.
-- [ ] UI state modeled as sealed/closed types with stale/offline variants; no loading/error/data boolean piles.
-- [ ] State triaged for process death: saved-state handles for ephemeral UI, DB for durable data, idempotent/resumable in-flight work; QA exercises "Don't keep activities" / simulated termination / launch-from-notification.
-- [ ] No `GlobalScope`/detached effects; no network or side effects launched from view/render code; in-flight work cancelled on screen exit.
-- [ ] One-shot effects (navigation, toasts) delivered as consumed events, never sticky state.
-- [ ] Constructor injection throughout; no singleton reach-ins from business logic; clock and dispatchers injectable; one composition root.
-- [ ] Module graph: features don't import features (enforced by tooling, not convention); composition root only in `:app`; build times tracked in CI.
-- [ ] Navigation centralized, route-as-data; every push/deep-link target survives cold-start entry with synthesized back stack; navigation decisions unit-tested.
-- [ ] Repository layer present; DTOs don't leak past it; repositories exposed as fakeable interfaces with reactive reads.
-- [ ] Test pyramid intact: fast unit bulk on VMs/reducers, snapshot coverage of design system + state cases (incl. dark/RTL/font scale), ≤ ~10 E2E flows.
+- [ ] (§1: 2.1) Single UDF pattern applied consistently; every screen's state has exactly one writer; no mixed paradigms without a written migration plan.
+- [ ] (§1: 2.2) UI state modeled as sealed/closed types with stale/offline variants; no loading/error/data boolean piles.
+- [ ] (§1: 2.3) State triaged for process death: saved-state handles for ephemeral UI, DB for durable data, idempotent/resumable in-flight work; QA exercises "Don't keep activities" / simulated termination / launch-from-notification.
+- [ ] (§1: 2.4) No `GlobalScope`/detached effects; no network or side effects launched from view/render code; in-flight work cancelled on screen exit.
+- [ ] (§1: 2.4) One-shot effects (navigation, toasts) delivered as consumed events, never sticky state.
+- [ ] (§1: 2.5) Constructor injection throughout; no singleton reach-ins from business logic; clock and dispatchers injectable; one composition root.
+- [ ] (§1: 2.6) Module graph: features don't import features (enforced by tooling, not convention); composition root only in `:app`; build times tracked in CI.
+- [ ] (§1: 2.7) Navigation centralized, route-as-data; every push/deep-link target survives cold-start entry with synthesized back stack; navigation decisions unit-tested.
+- [ ] (§1: 2.8) Repository layer present; DTOs don't leak past it; repositories exposed as fakeable interfaces with reactive reads.
+- [ ] (§1: 2.9) Test pyramid intact: fast unit bulk on VMs/reducers, snapshot coverage of design system + state cases (incl. dark/RTL/font scale), ≤ ~10 E2E flows.

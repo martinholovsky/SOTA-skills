@@ -321,7 +321,7 @@ Run from repo root; verify each hit manually.
       `git diff <last-release-tag>..HEAD -- '*.php' | grep -nE '^\+.*(function |final |readonly )'`
       ; `grep -rnE '^\s*(class|abstract class) [A-Z]' --include='*.php' src/ | grep -v 'final'`
       ; `grep -rn 'public readonly\|public function __construct(' --include='*.php' src/`
-- [ ] **Missing strict_types — LOW per file, MEDIUM if project-wide** —
+- [ ] **Missing strict_types (§2) — LOW per file, MEDIUM if project-wide** —
       `grep -rL --include='*.php' 'declare(strict_types=1)' src/ | head -50`
 - [ ] **EOL / lapsing PHP floor — check require.php against the table in §1** —
       `grep -n '"php"' composer.json` ; `php -v` (a branch past its php.net end date is EOL
@@ -357,17 +357,30 @@ Run from repo root; verify each hit manually.
       `grep -rnE 'zend\.max_allowed_stack_size[[:space:]]*=[[:space:]]*"?-1' --include='*.ini' --include='*.conf' --include='Dockerfile*' .`
       ; on the runtime, `php -r 'var_dump(ini_get("zend.max_allowed_stack_size"));'` (`"-1"`:
       deep recursion segfaults the worker instead of throwing)
-- [ ] **strpos truthiness bug** — `grep -rnE 'if\s*\(\s*!?\s*strpos\(' --include='*.php' src/`
+- [ ] **strpos truthiness bug and other in-band sentinels (§4a) — MEDIUM, HIGH on a security
+      decision** — `grep -rnE 'if\s*\(\s*!?\s*strpos\(' --include='*.php' src/`
+      ; `grep -rnE '(strpos|stripos|strrpos|array_search)[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -v '==='`
+      (every hit without `===` is a finding) ;
+      `grep -rnE '(intval\(|\(int\)[[:space:]]*)\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' --exclude-dir=vendor .`
+      (`0` for garbage and for `"0"` alike: `FILTER_VALIDATE_INT`, tested with `===`)
 - [ ] **Error suppression and silent JSON** —
       `grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'` ;
       `grep -rn 'json_decode' --include='*.php' src/ | grep -v 'JSON_THROW_ON_ERROR'`
-- [ ] **Removed/deprecated constructs** —
+- [ ] **Removed/deprecated constructs (§7)** —
       `grep -rnE '(create_function|each\(|__sleep|__wakeup|\$\$[a-zA-Z]|extract\s*\(\s*\$_)' --include='*.php' src/`
       ; ``grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'`` (backtick exec)
-- [ ] **Untyped properties (heuristic; rely on PHPStan level 6+ for the real sweep)** —
+      ; `grep -rnE 'mcrypt_|(^|[^A-Za-z0-9_$>])global[[:space:]]+\$' --include='*.php' --exclude-dir=vendor .`
+      ; `find . -name '*.php' -not -path './vendor/*' -exec php -d error_reporting=-1 -d log_errors=0 -d display_errors=1 -l {} \; 2>&1 | grep -i 'deprecated'`
+      (compile-time deprecations, an implicitly nullable parameter among them (§2); run it on the
+      production PHP version)
+- [ ] **Untyped properties (§2; heuristic; rely on PHPStan level 6+ for the real sweep)** —
       `grep -rnE '^\s*(public|protected|private)\s+\$' --include='*.php' src/`
-- [ ] **switch on request-derived values — prefer match** —
+- [ ] **switch on request-derived values — prefer match (§3) — MEDIUM on security-relevant
+      values** —
       `grep -rn 'switch\s*(' --include='*.php' src/`
+      ; `grep -rnE '::from[[:space:]]*\([[:space:]]*\$' --include='*.php' --exclude-dir=vendor .`
+      (`from()` throws `ValueError` on unknown input, `tryFrom()` returns null: read which each
+      trust-boundary call needs)
 - [ ] **Mutable dates and implicit zones (§5)** —
       `grep -rnE 'new \\?DateTime\(|date_create\(' --include='*.php' src/` (mutable: measured on
       PHP 8.5, `$d->modify('+1 day')` returns the SAME object, so every holder of `$d` moves;

@@ -258,10 +258,12 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       its signature, and it means the analyser's verdict on that code was never read. NOTE:
       [SuppressMessage] is conditional on the CODE_ANALYSIS compilation symbol, so the attribute
       can be present in source and absent from the shipped assembly.**
-- [ ] **TFM/SDK pinned? settings centralized?** —
+- [ ] **TFM/SDK pinned? settings centralized? (§1)** —
       `grep -rnE '<TargetFramework' --include='*.csproj' --include='*.props' .` ;
       `ls global.json Directory.Build.props Directory.Packages.props 2>/dev/null | grep -q . || echo "no central build config"`
-- [ ] **Nullable + warnings-as-errors + analyzers?** —
+      ; `for f in global.json Directory.Build.props Directory.Packages.props; do test -f "$f" || echo "missing: $f"; done`
+      (the `ls` above passes when any one exists; this names each missing pin)
+- [ ] **Nullable + warnings-as-errors + analyzers? (§1)** —
       `err=$(grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' --include='*.csproj' --include='Directory.Build.props' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "nullable/analyzers/warnings-as-errors not enforced — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
 - [ ] **Security CA rules opted in? HIGH if not — 70 of 94 ship disabled, the rest Hidden** (§2) —

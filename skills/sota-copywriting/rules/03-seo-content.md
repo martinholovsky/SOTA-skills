@@ -165,31 +165,36 @@ the core Search ranking and quality systems, so **"GEO"/"AEO" is still SEO** —
 ## Audit checklist
 
 - [ ] Each search-targeted page names its query + intent (in brief/frontmatter)
-      and matches the format the current SERP validates
-- [ ] The query's answer appears in the first screen; no 800-word preambles
+      and matches the format the current SERP validates; one page per intent —
+      no intent split across near-duplicates, no two intents fused (§1)
+- [ ] The query's answer appears in the first screen; no 800-word preambles (§1)
 - [ ] First-hand value present: original data/screenshots/experience per
-      page; nothing assembleable purely from existing top-10 results
+      page; nothing assembleable purely from existing top-10 results (§2)
 - [ ] Real named authors with bios on expertise-sensitive content; no
-      fabricated personas; publish/updated dates truthful
-- [ ] Claims cite primary sources; no citation chains into blogspam
+      fabricated personas; publish/updated dates truthful (§2)
+- [ ] Claims cite primary sources; no citation chains into blogspam; contact
+      and about pages exist, and publications publish an editorial/AI-usage
+      policy (§2)
 - [ ] Spam-policy sweep: no page sets matching scaled/doorway patterns
       (mass permutation pages, thin location pages); no rented third-party
       sections riding the domain; structured data matches visible content; no back-button
       hijacking — Back from a landing page returns to the referrer, and no
       `history.pushState`/`replaceState` outside the router, ad and analytics scripts included (§3)
 - [ ] No keyword-density thinking anywhere in the process; natural topic
-      vocabulary only
+      vocabulary only (§3)
 - [ ] Titles unique, front-loaded, truthful; meta descriptions written as
-      SERP ad copy; one H1; H2s carry the argument (skim test)
+      SERP ad copy; one H1; H2s carry the argument (skim test) (§4)
 - [ ] Internal links use descriptive anchors; no orphan pages; external
-      links to primary sources present
+      links to primary sources present; slugs short and stable, and a changed
+      slug redirects (§4)
 - [ ] AI-assisted content: human domain review recorded, all numbers/
       citations verified, no fabricated experience framing; AI-usage policy
       published if applicable; EU public-interest text either disclosed as
-      AI-generated or carries a named editor (AI Act Art. 50(4))
+      AI-generated or carries a named editor (AI Act Art. 50(4)) (§5)
 - [ ] No GEO/AEO folklore in the strategy: no llms.txt-for-Google, chunking,
       AI-rewriting, or special-schema tactics sold as AI-visibility work;
       AI-surface appearance managed via the standard preview controls /
-      Search Console setting
+      Search Console setting (§6)
 - [ ] Re-verification schedule exists for time-sensitive facts; overlap
-      merged; prune list maintained; every moved URL has a 301
+      merged; prune list maintained; every moved URL has a 301; near-duplicates
+      that must exist are canonicalized, one canonical per intent (§7)

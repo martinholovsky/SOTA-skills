@@ -364,9 +364,12 @@ reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces da
       `[[ ${BASH_SOURCE[0]} == "$0" ]] && main "$@"` — so a caller can source them to test one
       function without the script `cd`-ing itself somewhere else and failing every `git` call
 
-- [ ] SC2046 (unquoted `$(...)`), SC2068 (unquoted `$@`/array), SC2048 (`$*`).
-- [ ] SC2012/SC2045 — `grep -rn 'in \$(ls\|ls .*| *wc\|ls .*| *grep' --include='*.sh'`
-- [ ] SC2162 — `grep -rn 'read [^-]' --include='*.sh'` (missing `-r`).
+- [ ] SC2046 (unquoted `$(...)`), SC2068 (unquoted `$@`/array), SC2048 (`$*`); SC2089/SC2090/SC2086, options built in a string
+      and expanded unquoted instead of an array (§1); a bare `"${arr[@]}"` under `set -u` where bash < 4.4 must be supported.
+- [ ] SC2012/SC2045 (§5) — `grep -rn 'in \$(ls\|ls .*| *wc\|ls .*| *grep' --include='*.sh'`
+- [ ] SC2162 (§2) — `grep -rn 'read [^-]' --include='*.sh'` (missing `-r`); `IFS` set globally rather than scoped to one command:
+      `grep -rnE '^[[:space:]]*(export[[:space:]]+)?IFS=[^[:space:]]*[[:space:]]*(;|#|$)' --include='*.sh' .` (4/4 bad, 0/5 good, BSD grep and ugrep;
+      it misses a value holding a literal space).
 - [ ] Temp files: `grep -rn '/tmp/[a-zA-Z]\|\$\$' --include='*.sh'` — predictable names,
       `$$`-suffixed paths → HIGH (race), must be `mktemp`.
 - [ ] Cleanup: every `mktemp` has a reachable `trap ... EXIT`; cleanup function is
@@ -375,7 +378,9 @@ reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces da
       'set -[a-zA-Z]*E|set -o errtrace'` lists files whose ERR trap misses function failures
       (bash; in a `#!/bin/sh` script the ERR trap itself is the defect).
 - [ ] `grep -rn 'echo .*\$' --include='*.sh'` — variable data through `echo` (SC2028 area);
-      MEDIUM unless value is constrained.
-- [ ] Glob loops without nullglob/failglob or `[[ -e $f ]]` guard.
+      MEDIUM unless value is constrained (§4). Post-increment under `set -e`, which ends the script when the value was 0:
+      `grep -rnE '(^|[^$])\(\([[:space:]]*[A-Za-z_][A-Za-z0-9_]*(\+\+|--)[[:space:]]*\)\)' --include='*.sh' .` (3/3 bad, 0/5 good, BSD grep and
+      ugrep); function variables not declared `local`.
+- [ ] Glob loops without nullglob/failglob or `[[ -e $f ]]` guard (§5); `for f in *` without the `./` prefix, so a file named `-rf` becomes an option.
 - [ ] **A bare `**` in a bash script or a pasteable command** (§5a): `grep -nE "(^|[[:space:]=])[^[:space:]'\"]*[*][*](/|\$|[[:space:]])" <file>` — bash matches one level unless `shopt -s globstar` (bash ≥ 4.0) is set; use `find`, `git ls-files` or `grep -r --include`.
 - [ ] **Zero-padded numbers in arithmetic** (§5a): `grep -nE 'date \+%[mdHMSj]' <file>` and check each value reaching `$(( ))` is stripped (`${v#0}`) or based (`10#$v`); it fails only on `08` and `09`.

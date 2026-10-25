@@ -146,14 +146,14 @@ you're actually running.
 
 ## Audit checklist
 
-- [ ] History bisects: sampled main-branch commits build and pass tests; no WIP/broken commits on main.
-- [ ] Commits are atomic — one logical change with its tests; mechanical changes isolated (and in `.git-blame-ignore-revs` where repo-wide).
-- [ ] Subjects imperative and ≤72 chars; bodies on non-trivial commits explain why; sampled `git log` is readable as a narrative.
-- [ ] If Conventional Commits: enforced by commitlint/PR-title check, types honest, and an automation pipeline actually consumes them; if not adopted, no half-applied `feat:` cargo-culting.
-- [ ] Branches are short-lived (check age of open branches); no zombie long-lived feature branches; flags used for incomplete work.
-- [ ] Branch model matches release reality (no gitflow on a continuous-deploy service); hotfix path documented and lands back on main.
-- [ ] Version numbers honor SemVer (diff a recent minor for breaking changes) or the project explicitly uses CalVer/0.x.
-- [ ] Breaking changes followed the pipeline: deprecation → changelog → migration guide → major; never a surprise minor.
+- [ ] History bisects: sampled main-branch commits build and pass tests; no WIP/broken commits on main (§1).
+- [ ] Commits are atomic — one logical change with its tests; mechanical changes isolated (and in `.git-blame-ignore-revs` where repo-wide); no build artifacts, `.env` or editor droppings tracked, kept out by `.gitignore` + pre-commit secret scanning (§1).
+- [ ] Subjects imperative, ≤72 chars, no trailing period; bodies on non-trivial commits explain why and link issues/incidents; sampled `git log` is readable as a narrative (§2).
+- [ ] If Conventional Commits: enforced by commitlint/PR-title check, types honest, and an automation pipeline actually consumes them; if not adopted, no half-applied `feat:` cargo-culting (§2).
+- [ ] Branches are short-lived (check age of open branches); no zombie long-lived feature branches; flags used for incomplete work (§3).
+- [ ] Branch model matches release reality (no gitflow on a continuous-deploy service); hotfix path documented and lands back on main; any branch-cleanup script or runbook takes its list from PR state intersected with a fresh `git ls-remote --heads origin`, never from `git branch --merged` (§3).
+- [ ] Version numbers honor SemVer (diff a recent minor for breaking changes — including tightened validation, changed defaults, changed error codes/types, changed wire formats and raised minimum runtime/OS versions) or the project explicitly uses CalVer/0.x, without staying on 0.x for years while telling users it is production-ready (§4).
+- [ ] Breaking changes followed the pipeline: deprecation → changelog → migration guide → major; never a surprise minor (§4).
 - [ ] Published tags never moved/deleted (compare tag dates vs. registry artifacts if suspicious); releases built by CI from the tag.
 - [ ] Release notes curated with breaking changes first; changelog `Unreleased` section flows into versioned sections at release; pre-releases can't resolve as latest.
 - [ ] **(Low; Medium for a distributed artifact) Build reproduction is documented** (§5): toolchain version, pinned inputs and the exact release command are written in the repo. Probe: `[ -n "$(grep -r -s -i -l -E 'reproduc[a-z]*[^.]*build|build[^.]*reproduc' README.md BUILDING.md RELEASING.md CONTRIBUTING.md docs)" ] || echo "no build-reproduction doc"` (either word order; tests output, not an exit status an absent file or `pipefail` would falsify).

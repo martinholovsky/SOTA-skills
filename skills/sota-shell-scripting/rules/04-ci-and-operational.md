@@ -254,26 +254,28 @@ corrupts the next run.
       makes every reading around it stale and repeats on re-run. High on hardware, where
       the mutation is usually irreversible.
 
-- [ ] **Gate-then-act joined by `;`**: `grep -rnE '\.(sh|py)[^&|]*; *(git (push|tag|commit)|kubectl|terraform apply|rm )' --include='*.sh' .` — a check whose exit status the next command ignores. Also flag `check | tail`/`| head` before an action: the pipe hides the producer's status.
-- [ ] Workflows: `grep -rn '\${{' .github/workflows/ | grep -i 'head_ref\|pull_request\.\(title\|body\)\|commits\|issue\.\(title\|body\)\|comment\.body'`
+- [ ] **Gate-then-act joined by `;`** (§1b): `grep -rnE '\.(sh|py)[^&|]*; *(git (push|tag|commit)|kubectl|terraform apply|rm )' --include='*.sh' .` — a check whose exit status the next command ignores. Also flag `check | tail`/`| head` before an action: the pipe hides the producer's status. In a multi-line command, an asserting line not ending in `&&` gates nothing: a newline is a `;`.
+- [ ] Workflows (§1): `grep -rn '\${{' .github/workflows/ | grep -i 'head_ref\|pull_request\.\(title\|body\)\|commits\|issue\.\(title\|body\)\|comment\.body'`
       inside `run:` → CRITICAL (injection); fix via `env:` indirection.
 - [ ] `grep -rL --include='*.yml' --include='*.yaml' -e 'shell: bash' -e 'pipefail' .github/workflows/`
-      — steps relying on default shell semantics → MEDIUM. (Not `.github/workflows/*.yml`:
+      — steps relying on default shell semantics → MEDIUM (§1). (Not `.github/workflows/*.yml`:
       that misses `*.yaml` and, unmatched, aborts zsh with `no matches found`.)
 - [ ] `>> "$GITHUB_OUTPUT"` / `$GITHUB_ENV` writes of non-constant values without heredoc
-      delimiters → HIGH.
+      delimiters → HIGH (§1).
 - [ ] Run `actionlint` (embeds ShellCheck) and `zizmor` on workflows; `hadolint` on
-      Dockerfiles (DL4006 pipefail-in-RUN, SC-rules inside RUN).
-- [ ] Entrypoints: `grep -rn --include='*entrypoint*' -e '"\$@"' -e 'exec ' .` — final command lacking
+      Dockerfiles (DL4006 pipefail-in-RUN, SC-rules inside RUN). `run: "…"` double-quoted YAML, or a `run:` body beyond ~30
+      lines not moved to a committed script (§1) → LOW.
+- [ ] Entrypoints (§2): `grep -rn --include='*entrypoint*' -e '"\$@"' -e 'exec ' .` — final command lacking
       `exec` → HIGH (signal loss); `su -c`/`sudo` for privilege drop instead of
-      gosu/su-exec/USER → HIGH.
+      gosu/su-exec/USER → HIGH. A resident entrypoint with no `trap … TERM` forwarding and re-`wait`; a forking app with no init (`--init`, tini).
 - [ ] `#!/usr/bin/env bash` entrypoint with alpine/busybox base image in Dockerfile → HIGH.
 - [ ] `git ls-files --eol -- '*.sh'` showing `w/crlf` → HIGH for any image-bound script;
       missing `*.sh text eol=lf` in `.gitattributes` → LOW.
-- [ ] Makefiles: missing `.SHELLFLAGS`/`SHELL := bash` where recipes use bashisms;
+- [ ] Makefiles (§3): missing `.SHELLFLAGS`/`SHELL := bash` where recipes use bashisms;
       `grep -n '\$[a-zA-Z{(]' Makefile` inside recipes for single-`$` shell vars
       (silent empty expansion) → HIGH; multi-line recipes without `&&` or `.ONESHELL`.
-- [ ] Missing `.DELETE_ON_ERROR` in Makefiles producing artifacts → MEDIUM.
-- [ ] Long-running scripts: no timestamps, no heartbeat in wait loops, `tee` without
-      `stdbuf -oL` for crash-time tails → LOW/MEDIUM.
-- [ ] Crontabs/`cron.d`: entries without output redirection or with implicit PATH → MEDIUM.
+- [ ] Missing `.DELETE_ON_ERROR` in Makefiles producing artifacts → MEDIUM (§3); `@` on a nontrivial recipe line with no explicit error
+      message, or a recipe beyond ~5 lines not moved to `scripts/*.sh` → LOW.
+- [ ] Long-running scripts (§4): no timestamps, no heartbeat in wait loops, `tee` without
+      `stdbuf -oL` for crash-time tails, no inputs logged at start or status and duration at end → LOW/MEDIUM.
+- [ ] Crontabs/`cron.d` (§4): entries without output redirection or with implicit PATH → MEDIUM.

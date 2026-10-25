@@ -207,43 +207,50 @@ Two regimes cover most senders; apply the stricter when audiences mix:
 ## Audit checklist
 
 - [ ] Claims register exists: every objective claim on high-traffic surfaces
-      mapped to evidence, owner, and re-verify date
+      mapped to evidence, owner, and re-verify date — evidence on file before
+      publication, not assembled after a challenge (§1, §6)
 - [ ] Superlative/absolute sweep clean or substantiated:
-      `grep -rniwE '#1|best|only|first|fastest|guaranteed|never|100%' site/ emails/`
+      `grep -rniwE '#1|best|only|first|fastest|guaranteed|never|100%' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .` (§1)
 - [ ] Security/uptime claims state real, currently-true controls and
-      measured numbers — no "bank-level/military-grade" filler
+      measured numbers — no "bank-level/military-grade" filler; uptime figures
+      match the contractual SLA and state the measurement window; comparative
+      claims substantiate both sides, dated; health, financial, security, and
+      earnings claims passed legal review (§1)
 - [ ] Every endorsement with a material connection carries a clear,
-      proximate disclosure (not bio-only, not hashtag-only); employee
-      social-media policy covers advocacy disclosure
+      proximate disclosure (not bio-only, not hashtag-only), including brand
+      reposts; employee social-media policy covers advocacy disclosure;
+      endorsements are the endorser's honest, current opinion, not a brand
+      script (§2)
 - [ ] Reviews surface: no fake/AI/insider-undisclosed reviews, no
       sentiment-conditioned incentives, sentiment-neutral moderation
-      documented, no purchased social-proof metrics (16 CFR 465 exposure)
+      documented, no purchased social-proof metrics (16 CFR 465 exposure) (§3)
 - [ ] Testimonials: consent on file, real identities, typicality honest or
-      clearly qualified
+      clearly qualified (§3)
 - [ ] EU audiences: every "verified review" claim backed by an actual
       check, and the reviews surface says whether/how reviews are checked
-      (UCPD Annex I 23b, Art. 7(6))
-- [ ] EU green claims (from 2026-09-27): each hit of
-      `grep -rniwE 'eco[- ]?friendly|environmentally friendly|climate[- ](friendly|neutral|positive)|(carbon|CO2)[- ](neutral|negative|friendly|compensated)|net[- ]zero|green(er)?|sustainable|biodegradable|energy[- ]efficient' site/ emails/`
+      (UCPD Annex I 23b, Art. 7(6)) (§3)
+- [ ] EU green claims (from 2026-09-27) (§1): each hit of
+      `grep -rniwE 'eco[- ]?friendly|environmentally friendly|climate[- ](friendly|neutral|positive)|(carbon|CO2)[- ](neutral|negative|friendly|compensated)|net[- ]zero|green(er)?|sustainable|biodegradable|energy[- ]efficient' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .`
       is specified on the same medium or backed by recognised excellent
       performance; no offset-based neutrality claim; no whole-product claim
       for one aspect; every sustainability label from a certification scheme
       or public authority
-- [ ] Dark-pattern sweep: no confirmshaming
-      (`grep -riE '"No thanks, I' site/`), no resetting timers or fabricated
+- [ ] Dark-pattern sweep (§4): no confirmshaming
+      (`grep -riE '[">]No thanks, I' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .`), no resetting timers or fabricated
       scarcity/viewer counts, no drip pricing, no pre-ticked consent,
       cancellation effort ≈ signup effort; EU online contracts expose a
       "withdraw from contract here" function throughout the withdrawal period
 - [ ] Email: unsubscribe present, working for ≥ 30 days after each send, honored
       ≤ 10 business days;
       physical address present; EU sends have consent or soft-opt-in records;
-      subjects truthful; no promotions disguised as transactional mail
+      subjects truthful; no promotions disguised as transactional mail (§5)
 - [ ] Bulk sends (5,000+/day): SPF + DKIM + DMARC aligned, RFC 8058
-      one-click-unsubscribe headers present, reported spam rate < 0.3%
+      one-click-unsubscribe headers present, reported spam rate < 0.3% (§5)
 - [ ] Legal pages consistent with marketing promises; badges current and
-      verifiable
+      verifiable (§6)
 - [ ] App-store metadata: name/title ≤ 30 characters; no prices, ranking or
       promotion terms, other apps' names, emojis/ALL CAPS in title; no
-      unattributed testimonials (Apple 2.3.7, Google Play Metadata policy)
+      unattributed testimonials (Apple 2.3.7, Google Play Metadata policy) (§6)
 - [ ] Re-verification schedule ran on time for comparisons/stats/pricing;
-      failed claims corrected on-page (and to customers when material)
+      failed claims corrected on-page (and to customers when material);
+      press/award mentions link their source (§6)

@@ -7,6 +7,9 @@ profile before optimizing.
 
 ## 1. The GVL and the concurrency decision table
 
+*(advisory)* A decision table for choosing the tool: which workload is CPU-bound is a design
+judgement no grep makes; the checkable consequences are probed under §2, §3, §5 and §6.
+
 CRuby's Global VM Lock lets **one thread execute Ruby code at a time per
 process**; the GVL is released during blocking I/O and by many C extensions.
 Consequences:
@@ -212,23 +215,28 @@ Run from repo root; verify each hit manually.
       `grep -rn "Thread.new" --include='*.rb' . | grep -v join | head`
 - [ ] **Ractor use — verify experimental caveats & removed APIs (Ractor.yield/#take gone in
       4.0)** — `grep -rnE "Ractor\.(new|yield)|\.take\b" --include='*.rb' . | head`
-- [ ] **Jobs: object args (GlobalID mitigates for AR models; raw objects = MEDIUM)** —
+- [ ] **Jobs: object args (GlobalID mitigates for AR models; raw objects = MEDIUM) (§4)** —
       `grep -rnE "perform_(async|later)\(" --include='*.rb' . | grep -vE "\(\s*[a-z_]*id|\(\s*\d|\(\s*\)" | head`
-- [ ] **Enqueue inside transactions — race, MEDIUM+** —
+- [ ] **Enqueue inside transactions — race, MEDIUM+ (§4)** —
       `grep -rn -B3 "perform_later\|perform_async" --include='*.rb' app/ lib/ 2>/dev/null | grep "transaction do" | head`
-- [ ] **Idempotency signals absent (manual: look for guards/upserts in job bodies)** —
+- [ ] **Idempotency signals absent (manual: look for guards/upserts in job bodies) (§4)** —
       `grep -rln "def perform" app/jobs/ 2>/dev/null | head`
-- [ ] **JIT posture — INFO** —
+      (also manual: retries bounded with backoff, a dead-letter queue someone monitors, alerts on
+      queue depth and oldest-job age)
+- [ ] **JIT posture (§5) — INFO; confirm `RubyVM::YJIT.enabled?` is true in the production process** —
       `grep -rn "yjit\|YJIT" --include='Dockerfile*' --include='Procfile*' --include='*.rb' --include='*.y*ml' . | head -3` ;
       `grep -rn "zjit" --include='Dockerfile*' --include='Procfile*' --include='*.rb' --include='*.y*ml' . | head -1` (experimental in prod =
       MEDIUM)
-- [ ] **Allocator / memory posture — INFO** —
+- [ ] **Allocator / memory posture (§6) — INFO** —
       `grep -rn "MALLOC_ARENA_MAX\|jemalloc" --include='Dockerfile*' --include='Procfile*' --include='*.rb' --include='*.y*ml' . | head -3`
-- [ ] **N+1 guards present? absent detector = note it** —
+      ; `grep -rn 'RUBY_GC_HEAP_' --include='Dockerfile*' --include='Procfile*' --include='*.rb' --include='*.y*ml' .`
+      (each GC knob needs before/after measurements committed next to it) ; manual: few threads
+      per process for CPU-heavy apps, and workers × (base + JIT + heap growth) below the container limit
+- [ ] **N+1 guards present? absent detector = note it (§7)** —
       `grep -rn "bullet\|prosopite" Gemfile 2>/dev/null | head -2` ;
       `grep -rn "strict_loading" --include='*.rb' app/ config/ 2>/dev/null | head -2` ;
       `grep -rnE "\.all\.each\b" --include='*.rb' . | head`
-- [ ] **Unbounded scans** —
+- [ ] **Unbounded scans (§7)** —
       `grep -rnE "\.(map|each)\b" --include='*.rb' app/ 2>/dev/null | grep -vE "find_each|in_batches" | grep -E "\.(all|where\([^)]*\))\." | head`
 - [ ] **Unbounded producer/consumer queue (§2) — MEDIUM, HIGH when the producer is external
       input** — `grep -rnE 'Queue\.new' --include='*.rb' app/ lib/ | grep -v 'SizedQueue'`

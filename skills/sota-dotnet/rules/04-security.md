@@ -374,11 +374,12 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
 - [ ] **`unsafe` / P/Invoke — HIGH on input-derived lengths** (§6) —
       `grep -rnE 'AllowUnsafeBlocks' --include='*.csproj' --include='*.props' .` ;
       `grep -rnE '(^|[^[:alnum:]_])unsafe([^[:alnum:]_]|$)|(^|[^[:alnum:]_])fixed[[:space:]]*\(|\[(DllImport|LibraryImport)|Marshal\.(Copy|PtrToStructure|AllocHGlobal|ReadIntPtr)' --include='*.cs' .`
-- [ ] **SQL injection — CRITICAL** —
+- [ ] **SQL injection (§1) — CRITICAL** —
       `grep -rnE 'FromSqlRaw|ExecuteSqlRaw|SqlQueryRaw' --include='*.cs' .` (each SQL argument must be a constant) ;
       `grep -rnE '(FromSqlRaw|ExecuteSqlRaw|SqlQueryRaw)(Async)?(<[^>]*>)?\([^)]*(\+|\$)|CommandText[[:space:]]*=[^;]*(\+|\$")|new SqlCommand\([^)]*(\+|\$")' --include='*.cs' .`
       ; `grep -rnE '\.(Query|Execute)[A-Za-z]*(<[^>]*>)?\([[:space:]]*(\$@?|@\$)?"[^"]*\{' --include='*.cs' .`
       (Dapper `Query*`/`Execute*` with interpolated SQL; a raw `"""` literal or SQL built earlier escapes all three)
+      ; `grep -rnE '(ORDER|GROUP)[[:space:]]+BY[^"]*(\{|"[[:space:]]*\+)' --include='*.cs' .` (an identifier or `ORDER BY` from input: allowlist it)
 - [ ] **Deserialization — CRITICAL** —
       `grep -rnE 'BinaryFormatter|NetDataContractSerializer|LosFormatter|SoapFormatter|ObjectStateFormatter' --include='*.cs' .` ; `grep -rnE 'TypeNameHandling\.(Auto|All|Objects|Arrays)' --include='*.cs' .`
 - [ ] **XXE / command / path — HIGH/CRITICAL** —

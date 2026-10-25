@@ -282,12 +282,15 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 - [ ] **Fiddle / `ffi` / C extensions — HIGH where a length or pointer comes from input** (§8) —
       `grep -rnE "require[[:space:]]+['\"](fiddle|ffi)['\"]|Fiddle::|extend[[:space:]]+FFI::Library|attach_function" --include='*.rb' .`
       ; `grep -rnE 'ext/.*extconf\.rb|extensions' --include='*.gemspec' .`
-- [ ] **SQL injection — CRITICAL on any hit with non-literal interpolation** —
+- [ ] **SQL injection (§1) — CRITICAL on any hit with non-literal interpolation** —
       `grep -rnE '\.(where|order|group|having|select|joins|pluck|find_by_sql|update_all)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .`
       ; `grep -rn "Arel.sql" --include='*.rb' .` ;
       `grep -rn "Sequel.lit" --include='*.rb' . | grep '#{'` ;
-      `grep -rnE '\.(exec|query)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .`
-- [ ] **Command injection — CRITICAL with external input** —
+      `grep -rnE '\.(exec|query)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .` ;
+      `grep -rnE '\.(order|group|select|pluck|joins|having)\([[:space:]]*params' --include='*.rb' .` (input as a column or
+      direction with no interpolation: needs the allowlist lookup) ; `grep -rn 'LIKE' --include='*.rb' . | grep -v 'sanitize_sql_like'`
+      (read each: the bound `LIKE` term passes through `sanitize_sql_like`, or `%`/`_` are wildcards)
+- [ ] **Command injection (§2) — CRITICAL with external input** —
       `grep -rnE '(system|exec|spawn)\s*\(\s*["'"'"'][^,)]*#\{' --include='*.rb' .` ;
       ``grep -rnE '`[^`]*#\{|%x[({\[][^)}\]]*#\{' --include='*.rb' .`` ;
       `grep -rnE '^[[:space:]]*system[[:space:](]' --include='*.rb' . | grep -v 'exception:[[:space:]]*true'`
@@ -295,6 +298,10 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       reads as success — MEDIUM, HIGH when the next step trusts it) ;
       `grep -rnE 'IO\.popen\s*\(\s*["'"'"']' --include='*.rb' .` ;
       `grep -rnE '(Kernel#?open|URI\.open|[^.]open)\s*\(\s*(params|.*user|.*input)' --include='*.rb' . | head`
+      ; `grep -rnE 'Open3\.[a-z0-9_]+\([[:space:]]*["'"'"'][^,)]*#\{' --include='*.rb' .` (a single-string `Open3`
+      call goes through the shell) ; `grep -rnE 'Shellwords|shellescape|shelljoin' --include='*.rb' .`
+      (a legacy shell-string call site: convert it to argv form) ; manual: an argv that carries a
+      user value puts `--` before it
 - [ ] **Deserialization — CRITICAL on external data** —
       `grep -rn "Marshal.load\|Marshal.restore" --include='*.rb' .` ;
       `grep -rnE 'unsafe_load(_file)?|\.to_ruby\b|permitted_classes:' --include='*.rb' .`
@@ -308,7 +315,7 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11)
 - [ ] **XML parser options that re-enable XXE / expansion — HIGH on untrusted XML** (§3) —
       `grep -rnE '\.(noent|dtdload|dtdattr|nononet|huge)\b|ParseOptions::(NOENT|DTDLOAD|DTDATTR|HUGE)|entity_expansion(_text)?_limit[[:space:]]*=' --include='*.rb' .`
-- [ ] **eval / reflection sinks** —
+- [ ] **eval / reflection sinks (§4)** —
       `grep -rnE '\beval\s*[( ]|(instance|class|module)_eval\s*\(?\s*["'"'"'%]|\$SAFE\b' --include='*.rb' .`
       (paren-less `class_eval "..."` too; a `$SAFE` hit is a sandbox that no longer exists) ; `grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .` ;
       `grep -rn "constantize\|const_get" --include='*.rb' . | grep -iE "params|input|name"` ;
@@ -317,13 +324,15 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       (method-object reflection) ;
       `grep -rnE 'render\s*\(?\s*inline:' --include='*.rb' .` (template RCE if the string is
       user-influenced)
-- [ ] **Regex: ^/$ anchors in validations — HIGH; ReDoS candidates** —
+- [ ] **Regex: ^/$ anchors in validations — HIGH; ReDoS candidates (§5)** —
       `grep -rnE 'format:.*(\^|\$)|match\?\(/\^' --include='*.rb' . | grep -v '\\\\A'` ;
       `grep -rn "Regexp.timeout" --include='*.rb' config/ . 2>/dev/null | head -1` (absent =
       note it); `grep -rnE '\((\.\*|\\w\+|\[[^]]+\]\+)\)[+*]' --include='*.rb' . | head` (nested
-      quantifiers)
+      quantifiers) ; `grep -rnE '\\[1-9]|\\k<' --include='*.rb' .` (a backreference: no
+      linear-time guarantee, so only `Regexp.timeout` bounds it; a user-supplied pattern needs an
+      RE2-class engine)
 - [ ] **Regex built from data without `Regexp.escape` — HIGH with external input
-      (pattern injection / ReDoS)** — every hit is a dynamic pattern; confirm each
+      (pattern injection / ReDoS) (§5)** — every hit is a dynamic pattern; confirm each
       interpolated piece is escaped, the input is length-capped, and a
       `Regexp::TimeoutError` rejects —
       `grep -rnE 'Regexp\.(new|compile)\( *([^"'"'"'/ ]|"[^"]*#\{)|%r.*#\{|(=~|match\??\(|scan\(|sub!?\(|split\() */[^/]*#\{' --include='*.rb' . | grep -v 'Regexp\.escape\|Regexp\.union'`
@@ -334,10 +343,14 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       (a password through a fast digest, §6 — HIGH; use bcrypt/argon2) ;
       `grep -rn 'fixed_length_secure_compare' --include='*.rb' .` (raises on a length
       mismatch — use `secure_compare` for caller-supplied values)
-- [ ] **Path traversal** —
+- [ ] **Path traversal (§7)** —
       `grep -rnE 'File\.(open|read|write|join)\([^)]*params' --include='*.rb' .` ;
       `grep -rnE 'Pathname.*(\+|\.join\()[^)]*params' --include='*.rb' .` (an absolute argument
-      replaces the base; confirm an expand-then-prefix check follows)
+      replaces the base; confirm an expand-then-prefix check follows) ;
+      `grep -rnE '["'"'"']/tmp/[^"'"'"']*#\{' --include='*.rb' .` (a hand-built temp path: use
+      `Tempfile`/`Dir.mktmpdir`) ; `grep -rnE 'Zip::|TarReader|Minitar' --include='*.rb' .` (each entry name
+      goes through the same expand-and-prefix check; the zip-slip class and its probe are
+      [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §4) ; manual: stored upload names pass `File.basename`
 
 Severity guide: interpolated SQL / shell string with external input,
 `Marshal.load`/`unsafe_load` on external data, string `eval` — CRITICAL.

@@ -42,9 +42,9 @@ this file held the language rules; they moved to [`sota-swift` rules/01](../../s
 
 ## Audit checklist
 
-- [ ] UI modules use default `MainActor` isolation; domain/networking modules stay `nonisolated`; frame-blocking work leaves the main actor explicitly.
-- [ ] View-owned async work uses `.task { }` or a stored, cancelled `Task` handle — no uncancelled `Task { }` from `onAppear`.
-- [ ] View models and controllers have `deinit`-fires tests; cycles in closures, delegates, timers, observers and stored cancellables reviewed; leaks checked with the memory graph on device.
-- [ ] XCUITest and `measure` suites remain on XCTest deliberately; new unit tests use Swift Testing.
-- [ ] Binary SDKs carry checksums and their privacy manifests are reflected in the app's own.
+- [ ] (§1) UI modules use default `MainActor` isolation; domain/networking modules stay `nonisolated`; frame-blocking work leaves the main actor explicitly.
+- [ ] (§2) View-owned async work uses `.task { }` or a stored, cancelled `Task` handle — no uncancelled `Task { }` from `onAppear`.
+- [ ] (§3) View models and controllers have `deinit`-fires tests; cycles in closures, delegates, timers, observers and stored cancellables reviewed; leaks checked with the memory graph on device.
+- [ ] (§4) XCUITest and `measure` suites remain on XCTest deliberately; new unit tests use Swift Testing.
+- [ ] (§5) Binary SDKs carry checksums and their privacy manifests are reflected in the app's own.
 - [ ] Every language-level Swift finding in the app is reported against [`sota-swift`](../../sota-swift/SKILL.md), not this file.

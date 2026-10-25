@@ -77,17 +77,25 @@ regression gates); this file is the C/C++ specifics.
 
 ## Audit checklist
 
-- [ ] **Copies that should be references/moves — LOW** —
+- [ ] **Copies that should be references/moves (§2, §3) — LOW** —
       `grep -rnE 'for *\( *auto [A-Za-z_]+ *:' --include='*.cpp' .` (range-for by value → const
       auto&); `grep -rn 'return std::move' --include='*.cpp' .` (disables NRVO);
-      `grep -rnE '\.push_back\(' --include='*.cpp' .` (reserve()? emplace_back?)
-- [ ] **Allocation on hot paths / node containers — LOW/MEDIUM (verify with profiler)** —
+      `grep -rnE '\.push_back\(' --include='*.cpp' .` (reserve()? emplace_back?) ;
+      `clang-tidy --checks='performance-noexcept-move-constructor' <files>` (a move that is not
+      `noexcept` is copied on container growth)
+- [ ] **Allocation on hot paths / node containers (§2, §4) — LOW/MEDIUM (verify with profiler)** —
+      `grep -rnE '\[\[(likely|unlikely)\]\]' --include='*.cpp' --include='*.cc' --include='*.hpp' .`
+      (each needs profile evidence, §4) ;
       `grep -rnE 'std::(list|map|set|unordered_map|unordered_set)<' --include='*.cpp' .`
       (cache-unfriendly?); `grep -rn 'shared_ptr' --include='*.cpp' .` (needed, or unique_ptr?)
-- [ ] **Flush-per-line — LOW** — `grep -rn 'std::endl' --include='*.cpp' .`
-- [ ] **Benchmark hygiene — verify release build + DoNotOptimize** —
+- [ ] **Flush-per-line and other §6 pitfalls — LOW** — `grep -rn 'std::endl' --include='*.cpp' .`
+      ; `grep -rn 'std::function<' --include='*.cpp' --include='*.cc' --include='*.hpp' .` (in a
+      tight loop, a template or `auto` lambda would inline)
+- [ ] **Benchmark hygiene (§1, §6) — verify release build + DoNotOptimize, and a distribution
+      reported rather than one number** —
       `grep -rn 'chrono::' --include='*.cpp' . | grep -i bench` (prefer Google Benchmark);
       `grep -rn 'DoNotOptimize\|ClobberMemory' --include='*.cpp' .`
-- [ ] **Optimization flags for release?** —
+- [ ] **Optimization flags for release (§5)? A `-march=native` in a build shipped to CPUs you do
+      not control is the finding** —
       `grep -rnE '\-O[23]|-flto|fprofile-(generate|use)|march=' CMakeLists.txt cmake/ 2>/dev/null`
-- [ ] **Profile first (no static grep): perf record -g ./bench && perf report**
+- [ ] **Profile first (§1, no static grep): perf record -g ./bench && perf report**

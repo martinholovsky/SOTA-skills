@@ -5,6 +5,8 @@ DI and options patterns. Idioms are in `01`, async in `03`.
 
 ## 1. Nullability as contract
 
+*(audited in [rules/01](01-idioms.md) §2: the NRT-enabled, null-forgiving and deserialized-null items probe this contract)*
+
 - With NRT enabled ([`rules/01`](01-idioms.md)), the API signature *is* the null contract:
   return `T?` only when null is meaningful; accept `T` to require non-null.
   Annotate with `[NotNullWhen(true)]` etc. for `Try` patterns.
@@ -150,6 +152,8 @@ server". Defaults below were read from the option objects on .NET 10.0.12 (2026-
 
 ## 8. Worked example: one minimal-API endpoint done right
 
+*(advisory)* A worked example; each rule it demonstrates is probed under §4 and §7 here, or in [rules/04](04-security.md).
+
 Built with SDK 10.0.401 and `TreatWarningsAsErrors` (0 warnings), then driven through
 `WebApplicationFactory` in the `Production` environment (2026-09-25): anonymous → 401
 problem+json; `limit=5000` or a missing `status` → 400 validation problem; a quote-injection
@@ -210,16 +214,20 @@ record ([`rules/04`](04-security.md) §4).
 
 ## Audit checklist
 
-- [ ] **HttpClient per-call — HIGH (socket exhaustion)** —
-      `grep -rnE 'new HttpClient\(' --include='*.cs' . | head` (prefer IHttpClientFactory)
-- [ ] **IDisposable not in using — MEDIUM** —
+- [ ] **HttpClient per-call (§3) — HIGH (socket exhaustion)** —
+      `grep -rnE 'new HttpClient\(' --include='*.cs' . | head` (prefer IHttpClientFactory) ;
+      `grep -rlE 'static[^;=(]*HttpClient[[:space:]]' --include='*.cs' . | while IFS= read -r f; do grep -q 'PooledConnectionLifetime' "$f" || echo "$f: static HttpClient without PooledConnectionLifetime"; done`
+      (a long-lived client without a pooled-connection lifetime keeps an old DNS answer)
+- [ ] **IDisposable not in using (§3) — MEDIUM** —
       `grep -rnE 'new (SqlConnection|FileStream|StreamReader|StreamWriter|MemoryStream|HttpResponseMessage)\(' --include='*.cs' . | head`
-      (verify using/await using)
-- [ ] **DI lifetime bugs — MEDIUM/HIGH (captive dependency)** —
+      (verify using/await using; manual: nothing disposes an injected or factory-owned instance)
+- [ ] **DI lifetime bugs (§5) — MEDIUM/HIGH (captive dependency)** —
       `grep -rnE 'AddSingleton|AddScoped|AddTransient' --include='*.cs' . | head` ;
       `grep -rnE 'GetService|GetRequiredService|IServiceProvider' --include='*.cs' . | head`
-      (service locator?)
-- [ ] **Mutable static state — MEDIUM** —
+      (service locator?) ; `grep -rlE 'AddOptions<|Configure<' --include='*.cs' . | while IFS= read -r f; do grep -q 'ValidateOnStart' "$f" || echo "$f: options registered, none validated on start"; done`
+      (options read without start-up validation fail on first use instead of at boot; a
+      `Configure<T>(o => ...)` set in code is a false hit)
+- [ ] **Mutable static state (§5) — MEDIUM** —
       `grep -rnE '^[[:space:]]*((public|private|protected|internal)[[:space:]]+)*static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(=|;|\{)' --include='*.cs' . | grep -vwE 'readonly|const|class|struct|record|interface|enum|delegate'`
       (static fields and properties. The earlier one-pattern form used a `(?!` lookahead, which
       POSIX ERE rejects: exit 2 under BSD grep and ugrep alike, measured 2026-09-24)
@@ -228,7 +236,7 @@ record ([`rules/04`](04-security.md) §4).
       `grep -rlE 'UseExceptionHandler' --include='*.cs' . | while IFS= read -r f; do grep -E 'app\.Use[A-Z]' "$f" | grep -v UseDeveloperExceptionPage | head -n 1 | grep -q UseExceptionHandler || echo "$f: middleware registered before UseExceptionHandler"; done`
 - [ ] **throw ex / swallow — MEDIUM (see [rules/01](01-idioms.md))** —
       `grep -rnE 'throw ex;' --include='*.cs' .`
-- [ ] **Mutable collection exposed — LOW** —
+- [ ] **Mutable collection exposed (§2) — LOW** —
       `grep -rnE 'public (List|Dictionary|HashSet)<' --include='*.cs' . | head` (prefer
       IReadOnly* / encapsulate)
 - [ ] **Assembly boundary widened for production code (§6) — MEDIUM** —

@@ -127,13 +127,13 @@ Lab benchmarks regress quietly; production distributions are the truth.
 
 ## Audit checklist
 
-- [ ] Budgets documented in-repo with CI/telemetry enforcement; numbers exist for startup, frames, ANR, crash-free, size, memory.
-- [ ] StrictMode (debug/CI) and Main Thread Checker active; no disk/network/parse/decode on main in hot paths; formatters cached; no `runBlocking`/`.get()` on main.
-- [ ] Startup segments instrumented; SDKs lazy-initialized post-first-frame; first frame renders from local data; Baseline Profiles generated and benchmarked (Android); no blocking splash hiding setup.
-- [ ] Long lists virtualized with stable keys and `contentType`; row bodies free of formatting/decoding/allocation; pagination at the data layer; RN lists on FlashList/FlatList, never mapped ScrollViews.
-- [ ] Standard image loader; decode-time downsampling verified (inspect memory cache entry sizes); bounded memory+disk caches; CDN size variants.
-- [ ] Memory-pressure callbacks implemented and tested; LeakCanary in CI; soak test asserts flat memory; release ritual includes Instruments/Memory Graph pass.
-- [ ] Network batched and coalesced; no polling where push suffices; location coarsest/shortest possible and provably stopped; no convenience wakelocks; vitals wakeup metrics clean.
-- [ ] AAB + R8 + shrinking; per-device download size tracked; CI size-delta gate; no symbols/fixtures in release artifacts.
-- [ ] Jank validated on low-end hardware; framework-specific recomposition/rebuild hygiene applied to hot screens; animations off the main thread.
-- [ ] MetricKit + Android vitals reviewed per release; APM traces tagged by version/device/flags; p95 alerts wired to rollout gates; ANR < 0.47% and crash-free ≥ 99.9% or a dated remediation plan exists.
+- [ ] (§1) Budgets documented in-repo with CI/telemetry enforcement; numbers exist for startup, frames, ANR, crash-free, size, memory.
+- [ ] (§2: 5.1) StrictMode (debug/CI) and Main Thread Checker active; no disk/network/parse/decode on main in hot paths; formatters cached; no `runBlocking`/`.get()` on main.
+- [ ] (§2: 5.2) Startup segments instrumented; SDKs lazy-initialized post-first-frame; first frame renders from local data; Baseline Profiles generated and benchmarked (Android); no blocking splash hiding setup.
+- [ ] (§2: 5.3) Long lists virtualized with stable keys and `contentType`; row bodies free of formatting/decoding/allocation; pagination at the data layer; RN lists on FlashList/FlatList, never mapped ScrollViews.
+- [ ] (§2: 5.4) Standard image loader; decode-time downsampling verified (inspect memory cache entry sizes); bounded memory+disk caches; CDN size variants.
+- [ ] (§2: 5.5) Memory-pressure callbacks implemented and tested; LeakCanary in CI; soak test asserts flat memory; release ritual includes Instruments/Memory Graph pass.
+- [ ] (§2: 5.6) Network batched and coalesced; no polling where push suffices; location coarsest/shortest possible and provably stopped; no convenience wakelocks; vitals wakeup metrics clean.
+- [ ] (§2: 5.7) AAB + R8 + shrinking; per-device download size tracked; CI size-delta gate; no symbols/fixtures in release artifacts.
+- [ ] (§2: 5.8) Jank validated on low-end hardware; framework-specific recomposition/rebuild hygiene applied to hot screens; animations off the main thread.
+- [ ] (§1; §2: 5.9) MetricKit + Android vitals reviewed per release; APM traces tagged by version/device/flags; p95 alerts wired to rollout gates; ANR < 0.47% and crash-free ≥ 99.9% or a dated remediation plan exists.

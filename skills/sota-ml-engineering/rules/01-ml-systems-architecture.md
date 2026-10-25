@@ -9,6 +9,8 @@ the model.
 
 ## 1. The model is the small part
 
+*(audited in [rules/03](03-training-experimentation.md) §6, [rules/04](04-evaluation-validation.md) §1 and [rules/05](05-deployment-serving.md) §1: simple model first, metrics, serving pattern)*
+
 - [Rules of ML](https://developers.google.com/machine-learning/guides/rules-of-ml)
   #1–#4: don't be afraid to ship without ML; design and implement **metrics**
   first; a **simple model with a solid pipeline** beats a sophisticated model on
@@ -112,20 +114,21 @@ Audit for these (Sculley et al.) — each is real ML debt:
 
 ## Audit checklist
 
-- [ ] **Reproducibility — HIGH if a prod model can't be rebuilt Is there a versioned link model
-      → (data hash, code commit, config, env)?** —
+- [ ] **Reproducibility (§5) — HIGH if a prod model can't be rebuilt Is there a versioned link model
+      → (data hash, code commit, config, env, seeds)?** —
       `grep -rniE 'mlflow|wandb|model.?registry|model.?card|lineage' . | head` ;
       `ls -R | grep -iE 'requirements|environment.ya?ml|poetry.lock|uv.lock|Dockerfile|conda'`
       (env pinned?)
-- [ ] **Train/serve consistency — CRITICAL if features computed two ways** —
+- [ ] **Train/serve consistency (§2, §3) — CRITICAL if features computed two ways** —
       `grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head` (compare training
       feature code vs serving feature code — same source?)
-- [ ] **Glue code / pipeline jungle / config sprawl — MEDIUM** —
+- [ ] **Glue code / pipeline jungle / config sprawl (§7) — MEDIUM** —
       `grep -rniE 'TODO|FIXME|HACK|temp|quick' --include='*.py' . | grep -iE 'pipeline|feature|etl' | head`
       ; `find . -name '*.ipynb' | head` (notebook-only training/serving == debt)
-- [ ] **Undeclared consumers / feedback loops — MEDIUM/HIGH (manual) Who reads the model's
-      outputs? Does the model's action affect its future training data?**
-- [ ] **Unused features kept in infra — LOW (Rules of ML: drop them)**
+- [ ] **Undeclared consumers / feedback loops / entanglement (§7) — MEDIUM/HIGH (manual) Who reads the model's
+      outputs, and is each consumer declared and access-controlled? Does the model's action affect its future
+      training data? Is model behaviour monitored after any input change (CACE)?**
+- [ ] **Unused features kept in infra; data sources unversioned (§7) — LOW (Rules of ML: drop them)**
 - [ ] **Trust-domain separation (§6) — HIGH** — trackers started without auth:
       `grep -rnE 'mlflow (server|ui)' . | grep -v 'app-name'`
       (each hit is a tracker with no authentication); manual: do training jobs hold

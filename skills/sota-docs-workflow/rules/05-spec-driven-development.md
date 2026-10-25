@@ -130,23 +130,26 @@ The library's audience runs these specs through coding agents, so:
 ## Audit checklist
 
 - [ ] Do non-trivial/multi-step features carry a written, in-repo spec (intent +
-      acceptance criteria), not just chat history or a PR description? Missing on
-      a multi-step feature → Medium.
-- [ ] Do specs separate *what* (requirements) from *how* (design)? Implementation
-      detail in the requirements doc → Low.
-- [ ] Are acceptance criteria concrete and testable (each maps to a check)?
+      acceptance criteria), not just chat history or a PR description (§3)? Missing on
+      a multi-step feature → Medium. Conversely, one-file fixes, exploratory spikes and
+      thin glue are not burdened with a spec (§7).
+- [ ] Do specs separate *what* (requirements) from *how* (design), and state scope and
+      non-goals (§2)? Implementation detail in the requirements doc → Low.
+- [ ] Are acceptance criteria concrete and testable (each maps to a check) (§2)?
       Vague "works correctly" criteria → Medium.
 - [ ] Are unknowns marked explicitly (open-questions / `[NEEDS CLARIFICATION]`)
-      rather than silently assumed? `grep -rin "NEEDS CLARIFICATION" specs/`
+      rather than silently assumed (§2)? `grep -rin "NEEDS CLARIFICATION" specs/`
       surfacing markers shipped into implementation → Medium.
-- [ ] Is the spec updated in the same PR as the behavior (no drift)? Sample a
-      recent feature; a spec older than the code it describes → High (it misleads).
+- [ ] Is the spec updated in the same PR as the behavior (no drift) (§3)? Sample a
+      recent feature; a spec older than the code it describes → High (it misleads),
+      and it is updated or deleted rather than left in place.
 - [ ] Are durable house rules in a steering/constitution/AGENTS file, not
       copy-pasted into each spec? Duplication → Low.
 - [ ] Are decisions/contracts **linked** (ADRs, OpenAPI/SDL) rather than copied
-      into the spec? A copied contract drifting from its source → Medium.
-- [ ] Do agent-built tasks land as small reviewed PRs with tests, verified
-      against the acceptance criteria? "Done" with no criteria check on a
+      into the spec (§5)? A copied contract drifting from its source → Medium.
+- [ ] Do agent-built tasks land as small reviewed PRs with tests and the spec update,
+      verified against the acceptance criteria (§6), with any decision the spec did not
+      cover raised as `[NEEDS CLARIFICATION]` rather than improvised? "Done" with no criteria check on a
       money/auth/critical path → High.
 - [ ] **(Medium) Spec and plan gates carry security (§1):** every feature spec has
       security acceptance criteria and a recorded human sign-off at the spec and

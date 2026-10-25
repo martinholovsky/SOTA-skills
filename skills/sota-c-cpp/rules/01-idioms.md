@@ -314,26 +314,43 @@ existing parameter means.
 - [ ] **Child exit status ignored or read raw (§7) — MEDIUM, HIGH when the next step trusts
       the child's output** — files that run a child and never decode its status:
       `grep -rlE '(^|[^A-Za-z0-9_])(system|pclose)[[:space:]]*\(' --include='*.c' --include='*.cc' --include='*.cpp' . | while IFS= read -r f; do grep -qE 'WIFEXITED|WEXITSTATUS|WIFSIGNALED' "$f" || echo "$f"; done`
-- [ ] **Owning raw pointers / manual new-delete — MEDIUM (CRITICAL if leak/double-free)** —
+- [ ] **Owning raw pointers / manual new-delete (§2) — MEDIUM (CRITICAL if leak/double-free)** —
+      `grep -rn 'shared_ptr<' --include='*.cpp' --include='*.hpp' .` (each: is ownership
+      genuinely shared, or would `unique_ptr` do?) ;
       `grep -rnE '\bnew\b[^=]*;' --include='*.cpp' --include='*.h' --include='*.hpp' . | grep -v make_`
       ; `grep -rnE '\bdelete\b\s' --include='*.cpp' --include='*.hpp' .` ;
       `grep -rn 'malloc\|calloc\|realloc\|free(' --include='*.c' --include='*.cpp' .`
-- [ ] **C-style casts and reinterpret_cast — MEDIUM/HIGH** —
+- [ ] **C-style casts and reinterpret_cast (§5) — MEDIUM/HIGH; each `reinterpret_cast` needs a
+      comment and a strict-aliasing review, each `static_cast` that silences a sign or narrowing
+      warning a range check before it** —
       `grep -rnE '\([[:space:]]*[A-Za-z_][A-Za-z0-9_:<> ]*[*&]?[[:space:]]*\)[[:space:]]*[A-Za-z_(]' --include='*.cpp' .`
       (heuristic, expect FPs);
       `grep -rn 'reinterpret_cast\|const_cast' --include='*.cpp' --include='*.hpp' .`
-- [ ] **Rule of five violations — class with destructor but not all 5 special members** —
+- [ ] **Mutable by default, constness cast away, macros for constants (§4) — LOW, HIGH where a
+      `const_cast` result is written through** —
+      `clang-tidy --checks='misc-const-correctness,cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-macro-usage' <files>`
+      (writing through a `const_cast` of an object declared `const` is UB)
+- [ ] **Rule of five violations — class with destructor but not all 5 special members (§1) —
+      MEDIUM, HIGH when the class owns a raw handle (memberwise copy double-frees)** —
       `clang-tidy --checks='cppcoreguidelines-special-member-functions' <files>` (the check that
       implements the rule of five/zero; no clang-tidy check is named `rule-of-*`, so that glob
-      silently enables nothing)
+      silently enables nothing) ; a C resource handled raw in C++ instead of through one RAII
+      wrapper:
+      `grep -rnE '(^|[^A-Za-z0-9_:.>])(fopen|fdopen|open|close|fclose|dlopen|dlclose)[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.cxx' .`
+      (each hit outside the one wrapper that owns that resource is the finding)
 - [ ] **Missing virtual destructor in polymorphic base — HIGH (UB on delete-via-base)** —
       `clang-tidy --checks='cppcoreguidelines-virtual-class-destructor,modernize-use-override' <files>`
       (`virtual-class-destructor` is the virtual-destructor check; `modernize-use-override` flags
       overrides missing `override`. The `hicpp-*` module, including the `hicpp-use-override`
       alias, was removed in clang-tidy 23 (the 23.1.0 release notes map each check to its new
-      module), so an old `.clang-tidy` naming it checks nothing there)
-- [ ] **Move/idiom smells — LOW** — `grep -rn 'return std::move' --include='*.cpp' .`
-      (pessimizes RVO); `grep -rn 'using namespace std;' --include='*.h' --include='*.hpp' .`
+      module), so an old `.clang-tidy` naming it checks nothing there) — §6 ;
+      `clang-tidy --checks='cppcoreguidelines-use-enum-class,google-explicit-constructor,modernize-use-nodiscard,modernize-use-using' <files>`
+      (§6's other levers, LOW: a plain `enum`, an implicit single-argument constructor, a
+      missing `[[nodiscard]]`, a `typedef`)
+- [ ] **Move/idiom smells (§3) — LOW (MEDIUM for a read after `std::move`)** —
+      `grep -rn 'return std::move' --include='*.cpp' .` (pessimizes RVO);
+      `clang-tidy --checks='bugprone-use-after-move,performance-move-const-arg,performance-noexcept-move-constructor' <files>`
+      (a moved-from object read, a `const` object moved, a move constructor not `noexcept`); `grep -rn 'using namespace std;' --include='*.h' --include='*.hpp' .`
       (in headers: bad); `grep -rnE '#define [A-Z_]+\(' --include='*.h' .` (function-like macros
       → constexpr/inline)
 - [ ] **Error handling (§7) — the section had no probe at all until 2026-08-21** —
@@ -355,7 +372,9 @@ existing parameter means.
       `grep -rn 'std::expected\|absl::Status\|tl::expected' --include='*.cpp' --include='*.hpp' . | head`
 - [ ] **Broad idiom enforcement (the canonical config)** —
       `clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>`
-- [ ] **In-band sentinels (§7/§8) — absence encoded as a value** —
+- [ ] **In-band sentinels (§7/§7a/§8) — absence encoded as a value — MEDIUM** —
+      `grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*(getchar|fgetc|getc)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' .`
+      (`EOF` stored in a `char`: the loop never ends where `char` is unsigned) ;
       `grep -rnE 'return -1;' --include='*.c' --include='*.cpp' .` (producer: same constant from
       2 branches?); `grep -rn 'atoi(\|atol(' --include='*.c' --include='*.cpp' .` (0 on garbage
       == 0 on "0" ([rules/04](04-security.md)))

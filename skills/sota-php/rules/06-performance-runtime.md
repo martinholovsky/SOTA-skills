@@ -165,23 +165,28 @@ OWASP: Multi-Tenant Security, Session Management cheat sheets.
 
 Run from repo root / against the runtime; verify each hit manually.
 
-- [ ] **OPcache posture — the single highest-leverage check** —
+- [ ] **OPcache posture (§1, §2, §3) — the single highest-leverage check; OPcache off in production
+      HIGH** —
       `php -r 'var_export(function_exists("opcache_get_status") ? (opcache_get_status(false)["opcache_statistics"] ?? opcache_get_status(false)) : "OPCACHE MISSING");'`
       ;
       `php -r 'foreach (["enable","memory_consumption","max_accelerated_files","validate_timestamps","preload","jit","jit_buffer_size"] as $k) echo "opcache.$k=", ini_get("opcache.$k"), PHP_EOL;'`
+      (`opcache.jit` other than `disable` with no benchmark on record = INFO, §3; a non-empty
+      `opcache.preload` on a host whose FPM master runs several apps' pools = LOW, §2)
 - [ ] **validate_timestamps=1 on immutable deploys = LOW perf debt; cache-full/oom_restarts>0 =
-      MEDIUM**
-- [ ] **FPM sizing** —
+      MEDIUM (§1)**
+- [ ] **FPM sizing (§4)** —
       `grep -rnE '^(pm|pm\.max_children|pm\.max_requests|request_slowlog_timeout)' /etc/php*/fpm/pool.d/ 2>/dev/null`
-- [ ] **max_children default-ish (5) on a production box, or no slowlog = MEDIUM**
-- [ ] **N+1 / query-in-loop heuristics — confirm by reading the loop** —
+- [ ] **max_children default-ish (5) on a production box, or no slowlog = MEDIUM (§4)**
+- [ ] **N+1 / query-in-loop heuristics (§5) — confirm by reading the loop; MEDIUM on a hot path** —
       `grep -rnE '(foreach|while)[^{]*\{[^}]*->(query|prepare|find|get)\(' --include='*.php' src/ | head`
       ; `grep -rn 'fetchAll' --include='*.php' src/` (unbounded result sets?);
       `grep -rnE '(curl_exec|file_get_contents\s*\(\s*.http)' --include='*.php' src/` (HTTP in
-      loops?)
-- [ ] **Autoloader optimization in the deploy path** —
+      loops?) ;
+      `grep -rnE -e '(apcu_(store|add)|->set)[[:space:]]*\([^,()]*,[^,()]*\)[[:space:]]*;' --include='*.php' --exclude-dir=vendor .`
+      (a two-argument cache write: no TTL)
+- [ ] **Autoloader optimization in the deploy path (§5)** —
       `grep -rn 'optimize-autoloader\|classmap-authoritative\|composer install.* -o\b' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' .`
-- [ ] **Xdebug in production (HIGH if confirmed on prod hosts)** — `php -m | grep -i xdebug`
+- [ ] **Xdebug in production (§6; HIGH if confirmed on prod hosts)** — `php -m | grep -i xdebug`
 - [ ] **Worker mode: request-scoped state reset (§4a) — HIGH where it carries a tenant, user
       or authorization, MEDIUM otherwise** — applies when the app runs under Octane, FrankenPHP
       worker mode, RoadRunner or Swoole (check `composer.json` and the container `CMD`). Each
@@ -190,9 +195,9 @@ Run from repo root / against the runtime; verify each hit manually.
       `grep -rnE '(self|static|[A-Z][A-Za-z0-9_]*)::\$[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\[[^]]*\])?[[:space:]]*(\?\?)?=[^=>]|\$GLOBALS[[:space:]]*\[|\$_ENV[[:space:]]*\[[^]]*\][[:space:]]*=[^=]|putenv[[:space:]]*\(' --include='*.php' src/ | grep -vE '=[[:space:]]*(null|\[\])[[:space:]]*;'`
       (the second filter drops the resets themselves). Singletons built from the request or
       container need reading
-- [ ] **Session lock hygiene on slow endpoints** —
+- [ ] **Session lock hygiene on slow endpoints (§4)** —
       `grep -rn 'session_write_close' --include='*.php' src/`
-- [ ] **Performance claims without measurements — check PR/commit rationale** —
+- [ ] **Performance claims without measurements (§6) — check PR/commit rationale** —
       `git log --oneline --grep='perf\|optimi' -10`
 
 Severity guide: OPcache off in production HIGH (perf); Xdebug on production
