@@ -179,6 +179,8 @@ High finding — it combines the worst of secrets and crypto). Use envelope encr
 - **Use a maintained client library** (AWS Encryption SDK, Tink, cloud KMS client envelopes) —
   they handle DEK caching (bound: time *and* message count), nonce management, and
   algorithm-suite headers. Hand-rolled AES around KMS calls gets nonce reuse wrong.
+  Where a regime requires FIPS 140-3 validated modules (CUI, FedRAMP), use the provider's
+  validated endpoint and record the module ([`sota-security-compliance` rules/02](../../sota-security-compliance/rules/02-nist-800-53-171-cmmc-fedramp.md) §4).
 - **Encryption context / AAD:** bind ciphertexts to their identity (`tenant_id`, `record_id`)
   so ciphertext can't be swapped between rows; it also lands in KMS audit logs.
 - **Wrapped and stored keys need integrity, not only confidentiality.** A wrapped DEK or a

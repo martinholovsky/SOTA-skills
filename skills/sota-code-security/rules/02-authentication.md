@@ -103,6 +103,9 @@ if ph.check_needs_rehash(hash): store(ph.hash(attempt))
 - **Measure each defence**: detected and mitigated counts, filterable by address, so a
   defence that fails (a CAPTCHA pass rate that climbs) shows. OWASP: Credential Stuffing
   Prevention, Bot Management and Anti-Automation, Authentication cheat sheets.
+- **Emit the events the detective half runs on**: failed and locked logins per account
+  and per source, requests presenting an unknown session ID (a truncated hash, never the
+  ID), and failures per target role — [sota-detection-engineering rules/02](../../sota-detection-engineering/rules/02-telemetry-siem-data-layer.md) §7.
 
 Sessions and JWT (formerly §2 and §3) moved to [rules/17](17-sessions-and-tokens.md) on
 2026-09-25, section numbers kept.

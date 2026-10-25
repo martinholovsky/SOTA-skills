@@ -325,6 +325,7 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
 
 - [ ] URLs are nouns; no verbs except reified action sub-resources; consistent plural casing.
 - [ ] No GET/HEAD endpoint mutates state.
+- [ ] Each route answers `405` with an `Allow` header for every method it does not declare (§2): in staging, send `TRACE`, `PUT` and `DELETE` to three read-only routes. Any 2xx = LOW, MEDIUM when the method reaches a handler.
 - [ ] Status codes semantically correct; no `200 {"error":...}` anti-pattern anywhere.
 - [ ] **Media types allowlisted per operation (§3) — MEDIUM, HIGH if an XML parser is reachable**: undeclared `Content-Type` → `415`; the spec lists every operation's request/response types. Spring write mappings with no `consumes` (each hit accepts whatever converters are registered; confirm by sending `Content-Type: application/xml`):
       `grep -rnE '@(Post|Put|Patch)Mapping|@RequestMapping\(.*method[[:space:]]*=.*RequestMethod\.(POST|PUT|PATCH)' --include='*.java' --include='*.kt' . | grep -v 'consumes'`

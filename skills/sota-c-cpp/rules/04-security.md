@@ -410,7 +410,7 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
 - [ ] **Format string — CRITICAL (user-controlled fmt)** —
       `grep -rnE '(printf|fprintf|snprintf|syslog|err|warn)\s*\([^,"]*\)' --include='*.c' --include='*.cpp' .`
 - [ ] **build with: -Wformat=2 -Werror=format-security**
-- [ ] **Secrets reaching logs (§3) — HIGH** —
+- [ ] **Secrets reaching logs, or unneutralised CR/LF in them (§3) — HIGH for a credential, LOW/MEDIUM for raw input** —
       `grep -rniE '(syslog|fprintf[[:space:]]*\([[:space:]]*stderr|spdlog::[a-z]+|LOG\([A-Z]+\))[^;]*(passw|secret|token|api_?key|private_?key|credential)' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
       (read the arguments: a credential passed to the call is the finding, while message text
       that only names one also matches)
@@ -462,7 +462,7 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
       ; `grep -rn 'memcmp' --include='*.cpp' . | grep -iE 'mac|hmac|token|secret|sig|digest'`
       (timing leak)
 - [ ] **Hardening flags present? — HIGH if missing on network/setuid binary** —
-      `grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"`
+      `grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"`; production row and flex arrays (§5), each `missing` → MEDIUM, HIGH on a network-facing binary: `for f in -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero -fstrict-flex-arrays=3; do grep -rqF --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' -e "$f" . || echo "missing $f"; done`
 - [ ] **Hardening switched off by an opt-out macro or flag (§5, §5a) — HIGH on a network-facing
       binary unless a comment justifies it** —
       `grep -rnE --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='*.ac' -e '-U[[:space:]]*_FORTIFY_SOURCE|_FORTIFY_SOURCE=0' . | grep -vE -- '-D[[:space:]]*_FORTIFY_SOURCE=[1-9]'`

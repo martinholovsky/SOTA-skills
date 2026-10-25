@@ -63,7 +63,7 @@ cover it.
 **Related skills — reference, do not duplicate:**
 - [`sota-privacy-compliance`](../sota-privacy-compliance/SKILL.md) — personal-data lifecycle, GDPR/CCPA/HIPAA/PCI, SOC 2 & ISO 27001 audit-ready engineering, breach clocks, data residency
 - [`sota-devsecops`](../sota-devsecops/SKILL.md) — the actual pipeline: SLSA/provenance, SBOM tooling, signing, dependency scanning (SSDF's PS/PW practices live here)
-- [`sota-secrets-management`](../sota-secrets-management/SKILL.md) — key management, FIPS-validated KMS, rotation
+- [`sota-secrets-management`](../sota-secrets-management/SKILL.md) — key management, KMS envelope encryption, rotation (the FIPS 140-3 validated-module requirement is this skill's [rules/02](rules/02-nist-800-53-171-cmmc-fedramp.md) §4)
 - [`sota-identity-access`](../sota-identity-access/SKILL.md) — NIST 800-63 assurance levels, MFA, RBAC/ABAC (the IA/AC control families)
 - [`sota-detection-engineering`](../sota-detection-engineering/SKILL.md) — detective controls, NIST 800-61 incident response (the DE/RS/RC functions)
 - [`sota-network-security`](../sota-network-security/SKILL.md) — segmentation depth, zero-trust, egress control (SC family, 62443 conduits)
@@ -80,7 +80,7 @@ When designing or implementing a system that must satisfy a framework:
    make; a flat network drags the whole estate into scope ([rules/02](rules/02-nist-800-53-171-cmmc-fedramp.md), [rules/05](rules/05-iec-62443-ot-ics.md)).
 2. **Pick the framework spine, then crosswalk down.** Use NIST CSF 2.0 as the
    organizing map, then bind each outcome to a concrete mechanism from an existing
-   sota-* skill and record it as code ([rules/01](../sota/rules/01-audit-methodology.md)). Do not re-implement encryption,
+   sota-* skill and record it as code ([rules/01](rules/01-control-frameworks-as-code.md)). Do not re-implement encryption,
    RBAC, or logging here — reference where they already live.
 3. **Encode controls as gates, not prose.** Encryption-required, FIPS-crypto-only,
    boundary-egress-deny, SBOM-present, no-known-exploitable-vulns-at-release become

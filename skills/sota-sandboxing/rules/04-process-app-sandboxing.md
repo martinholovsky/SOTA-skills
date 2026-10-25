@@ -295,7 +295,8 @@ building block, not a per-process sandbox API.
 - [ ] The timeout is a real deadline in *this* language — pipes held by a
       grandchild cannot extend it past the limit (Go: `cmd.WaitDelay` set) — and
       memory is capped with `RLIMIT_DATA`/cgroup, never `RLIMIT_AS` (R5.3a, `02`
-      R7.2a).
+      R7.2a); on macOS no memory rlimit applies, so a container or an RSS watchdog
+      with the `setrlimit` return checked (`02` R7.2b).
 - [ ] macOS: shipped apps use App Sandbox + Hardened Runtime with minimal
       entitlements; untrusted code on macOS runs in VMs, not sandbox-exec alone;
       any sandbox-exec use documented as unsupported-interface risk.

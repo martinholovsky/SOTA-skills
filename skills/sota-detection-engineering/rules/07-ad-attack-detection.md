@@ -61,7 +61,7 @@ detect: one principal requesting TGS for many distinct SPNs in a short window,
 - **Signal:** RC4 (0x17) service-ticket requests — an attacker downgrades to the
   crackable etype — especially a **fan-out** of distinct SPNs from one account.
 - **FPs:** legacy apps/appliances that genuinely negotiate RC4; scanners. Reduce
-  by AES-hardening service accounts (identity [rules/07](07-ad-attack-detection.md)) so RC4 becomes anomalous,
+  by AES-hardening service accounts (identity [rules/07](../../sota-identity-access/rules/07-active-directory.md)) so RC4 becomes anomalous,
   then alert on RC4 at all.
 - **RC4 default change (CVE-2026-20833, KB5073381):** DC updates from
   2026-01-13 add KDCSVC events **201–209** — 201/202 warn that an RC4-only
@@ -86,7 +86,7 @@ detect: AS-REQ for a preauth-disabled account, esp. many accounts from one sourc
 ```
 
 - **Signal:** a TGT issued without pre-auth is the roastable AS-REP. In a hardened
-  domain **no account should have pre-auth disabled** (identity [rules/07](07-ad-attack-detection.md)), so any
+  domain **no account should have pre-auth disabled** (identity [rules/07](../../sota-identity-access/rules/07-active-directory.md)), so any
   such 4768 is inherently suspicious. **FPs:** rare legacy accounts — enumerate
   and allowlist them (and fix them).
 
@@ -195,7 +195,7 @@ detect: NTLM authentication where the *source* workstation and the account's
   authenticating outbound to an operator-controlled host (relay to LDAP/ADCS).
   **FPs:** legacy apps that only speak NTLM — inventory and allowlist, then treat
   new NTLM as anomalous. Pairs with the SMB/LDAP-signing hardening (identity
-  [rules/07](07-ad-attack-detection.md) §2) that makes relay fail.
+  [rules/07](../../sota-identity-access/rules/07-active-directory.md) §2) that makes relay fail.
 
 ### Password spraying — T1110.003
 

@@ -166,7 +166,8 @@ in a later, often more privileged context.
 ## 6. CI/CD & build pipeline
 
 The pipeline holds deploy creds and shapes every artifact — it is usually the
-highest-privilege, least-modeled component.
+highest-privilege, least-modeled component. Control-presence probes:
+[`sota-devsecops` rules/01](../../sota-devsecops/rules/01-pipeline-security.md) and [rules/02](../../sota-devsecops/rules/02-provenance-signing.md).
 
 - **Poisoned pipeline execution (T/E):** PRs from forks executing privileged
   workflows; `pull_request_target` + checkout-of-PR-head; injectable

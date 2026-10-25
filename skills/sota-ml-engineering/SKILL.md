@@ -47,7 +47,7 @@ Two consumers, one source of truth:
 ## BUILD mode
 
 1. Before building, read the rules files relevant to the task (see index). A new
-   model service needs `01`, `02`, `04`, `05`, `06`.
+   model service needs `01`, `02`, `04`, `05`, `06`, `07`.
 2. Apply the **top-10 non-negotiables** (below) unconditionally.
 3. Start simple (Rules of ML #1: *don't be afraid to launch a product without
    ML*; then a simple model with a solid pipeline beats a fancy model on a

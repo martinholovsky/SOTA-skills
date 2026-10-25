@@ -392,7 +392,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `grep -rnE 'PersistKeysTo|ProtectKeysWith' --include='*.cs' . || echo "key ring not shared or protected (§5) — MEDIUM with >1 instance"`
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'` ; `grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .` ;
-      `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head`
+      `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head` ; non-constant-time MAC/token compare (§5, MEDIUM; HIGH on webhook/HMAC verification): `grep -rniE '(hmac|signature|digest|token|mac)[A-Za-z0-9_]*([[:space:]]*[!=]=|\.(SequenceEqual|Equals)\()|([!=]=[[:space:]]*|(SequenceEqual|Equals)\([^;]*)[A-Za-z0-9_.]*(hmac|signature|digest|token|mac)' --include='*.cs' . | grep -viE '[!=]=[[:space:]]*null|null[[:space:]]*[!=]=|FixedTimeEquals'`
 - [ ] **Secrets in config/source — HIGH** —
       `grep -rniE '"?(password|pwd|secret|apikey|api_key|connectionstrings?)"?[[:space:]]*[=:]' --include='appsettings*.json' --include='*.cs' .` (a `"ConnectionStrings":` hit: read the section for `Password=`/`Pwd=`)
 - [ ] **Data Protection package patch level — HIGH** (§5) —

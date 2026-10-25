@@ -220,7 +220,7 @@ surreal start --deny-all \
 
 ## Backups
 
-### Rule: A SurrealDB you can't restore is file 06's "backup that isn't" — rehearse both layers.
+### Rule: A SurrealDB you can't restore is file 05's "backup that isn't" — rehearse both layers.
 - Logical: `surreal export` produces a `.surql` script (scope what's included:
   records, accesses, users, functions). Note the emitted `OPTION IMPORT`
   line — it disables events and table views on import (required by

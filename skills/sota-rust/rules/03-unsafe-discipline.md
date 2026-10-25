@@ -302,6 +302,11 @@ For each `unsafe` block, in order:
 - [ ] FFI: `rg 'extern "C"' -t rust` — check `#[repr(C)]` on crossing types,
       panic containment, allocator pairing (`into_raw`/`from_raw` symmetry),
       `as_ptr()` on temporaries.
+- [ ] **Hand-written bindings and untyped handles** (§3b) — `grep -rnE 'c_void' --include='*.rs' .`
+      (a `*mut c_void`/`*const c_void` standing for a foreign object in an `extern` signature is an
+      untyped handle = Medium); for each crate with an `extern "C"` block,
+      `grep -rnE 'bindgen|cbindgen' build.rs Cargo.toml .github/ 2>/dev/null` printing nothing
+      means hand-written bindings with no regenerate-or-diff step = Medium (layout drift).
 - [ ] **Values that foreign code fills** (§3b):
       `grep -rnE -A12 'extern "C(-unwind)?"' --include='*.rs' . | grep -E '(: *|-> *)(bool|char|&)|: *(unsafe )?extern "C(-unwind)?" fn|(: *|-> *)[A-Z][A-Za-z0-9_]*([,;)]|$| *\{)'`
       — an inbound `bool`, `char`, `&T`, non-`Option` fn pointer, or a capitalised by-value

@@ -35,7 +35,9 @@ from a single source of truth, man pages, README quickstart, CI pinning.
   - supports `TOOL_VERSION=1.4.2` pinning and a target-dir override; never
     silently `sudo`;
   - downloads over HTTPS and **verifies the checksum** of the artifact it
-    fetches before installing.
+    fetches before installing — every fetch in the script, the checksum file's included,
+    follows [`sota-shell-scripting` rules/03](../../sota-shell-scripting/rules/03-security.md) §5
+    (`--proto '=https' --tlsv1.2`, so a redirect cannot downgrade to `http`; download → verify → execute).
 - Publish `checksums.txt` (SHA-256 of every artifact) with each release, and
   sign your releases — current SOTA favors keyless signing (e.g. Sigstore
   `cosign`) and/or build provenance attestations (SLSA-style, GitHub artifact

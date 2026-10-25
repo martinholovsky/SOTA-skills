@@ -253,6 +253,8 @@ blocks **every** in-flight request.
       or per-request 1.1 connections?
 - [ ] Compression: static precompressed (brotli)? Dynamic on gzip-only when
       zstd/brotli available? Compressing compressed media or < 1 KB bodies?
+      Responses that carry a secret or CSRF token *and* reflect request input are left
+      uncompressed, or the token is masked per response (§6, BREACH) — MEDIUM.
 - [ ] TLS 1.3? Resumption rate monitored? 0-RTT restricted to idempotent
       requests?
 - [ ] CDN: immutable hashed assets with long max-age? Cache key normalized?

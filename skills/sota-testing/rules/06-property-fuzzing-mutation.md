@@ -342,7 +342,8 @@ into the CI test suite.
 - [ ] Do parser/serializer/codec modules have roundtrip properties? Grep for
       both a PBT import (`hypothesis|fast-check|proptest|quickcheck|jqwik`)
       and `parse|decode|deserialize` modules; encode/decode pairs with only
-      example tests → Medium (High if input is untrusted).
+      example tests → Medium (High if input is untrusted). Output read by code you did not
+      write, tested only by a roundtrip and never through that reader or its schema → Medium (§6.1).
 - [ ] Encryption wrappers with a round-trip test that is **never run concurrently**
       (§6.1)? List crypto test files with no concurrency:
       `grep -rliE '(en|de)crypt' tests | xargs -r grep -LE 'ThreadPool|concurrent\.futures|asyncio\.gather|go func|t\.Parallel|Promise\.all|parallelStream|Executors|thread::(spawn|scope)|rayon'`

@@ -303,7 +303,7 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
   one client can't exhaust the relay (resource exhaustion).
 - **Media servers (SFU/MCU/recording) — only if you host them.** Pure browser-to-
   browser P2P is out of scope here. Use **approved DTLS-SRTP cipher suites + protection
-  profiles**, manage the DTLS cert key under your key-management policy ([rules/04](04-grpc-protocols.md)),
+  profiles**, manage the DTLS cert key under your key-management policy ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)),
   and **verify SRTP authentication** so an attacker can't inject RTP (media insertion
   or DoS). The server must **survive malformed and flooded SRTP** (input validation,
   bounded buffers, drop excess packets) and must not be vulnerable to the **DTLS

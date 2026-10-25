@@ -232,6 +232,9 @@ Run from repo root; verify each hit manually.
       `grep -rnE "\.(map|each)\b" --include='*.rb' app/ 2>/dev/null | grep -vE "find_each|in_batches" | grep -E "\.(all|where\([^)]*\))\." | head`
 - [ ] **Unbounded producer/consumer queue (§2) — MEDIUM, HIGH when the producer is external
       input** — `grep -rnE 'Queue\.new' --include='*.rb' app/ lib/ | grep -v 'SizedQueue'`
+- [ ] **Process-global client not drawn from a pool (§2) — MEDIUM–HIGH** —
+      `grep -rnE '(\$|@@|[A-Z_]+ *=).*(Redis\.new|Net::HTTP\.new|PG\.connect|Faraday\.new)' --include='*.rb' . | grep -v ConnectionPool`
+      (each hit shared across threads needs a pool sized ≥ thread count; a local inside a method is not listed)
 - [ ] **A profiler exists before an optimisation lands (§8) — INFO; a perf PR with no
       before/after numbers = LOW** —
       `grep -nE 'stackprof|vernier|memory_profiler|benchmark-ips' Gemfile Gemfile.lock`

@@ -63,7 +63,7 @@ controller, or installing an operator/chart.
    controller reconciles. Scope the controller's own privileges and AppProjects tightly
    ([`rules/04`](rules/04-gitops-controllers.md)).
 6. **Plan the upgrade before you build**: version skew, EOL date, CVE-response runbook,
-   tested etcd restore ([`rules/01`](rules/01-control-plane-etcd.md), [`rules/07`](rules/07-supply-chain-audit.md)).
+   tested etcd restore ([`rules/01`](rules/01-control-plane-etcd.md) §4, §7).
 
 Deliverables: topology + threat statement, the concrete manifests/configs, the
 AUDIT→ENFORCE rollout, and the residual-risk/assumptions list (cloud-managed control

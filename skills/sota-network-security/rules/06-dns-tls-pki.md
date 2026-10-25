@@ -114,7 +114,7 @@ OWASP: Transport Layer Security cheat sheet, Zero Trust Architecture cheat sheet
 
 ## 3. DNS security
 
-**R4 — Registrar & issuance hygiene.** (Setup is cloud-infra [rules/03](03-k8s-network-policy.md); the *security* controls:)
+**R4 — Registrar & issuance hygiene.** (Setup is cloud-infra [rules/03](../../sota-cloud-infrastructure/rules/03-networking.md); the *security* controls:)
 - **CAA records on every public zone** restricting issuance to your CA(s) — limits who can mint a
   cert for your domains.
   - **Bind the record to your account and method** with the RFC 8657 parameters:

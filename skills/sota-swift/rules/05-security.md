@@ -28,6 +28,8 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
   entities regardless (entity-expansion DoS); cap XML input size either way.
 - `PropertyListDecoder`/`PropertyListSerialization` on untrusted data: decode into concrete
   `Codable` types, never into `NSObject` graphs.
+- A parser of untrusted bytes: bounds-checked `Span` over `Unsafe*Pointer`, `.strictMemorySafety()`
+  on that module ([rules/04](04-memory-and-unsafe.md) §3–§4), and a fuzz target ([rules/08](08-tooling-ci-testing.md) §4).
 
 ## 3. Cryptography and randomness
 

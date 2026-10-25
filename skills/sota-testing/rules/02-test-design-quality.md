@@ -394,6 +394,10 @@ More precise *and* more sensitive, not a trade.
       was passing because a real call succeeded → High each; then re-read those
       tests' names against their assertions, and check whether the config they
       construct is the config the SUT actually reads (§2.6).
+- [ ] **Resource optimism, the host half** (§2.7): tests that read absolute host paths or
+      mounts without creating them or skipping with a host-derived reason → High each.
+      Lead list (lang-adjust the test path):
+      `grep -rnE '(^|[^A-Za-z0-9_.~-])/(etc|var|mnt|opt|home|Users|srv)/|[A-Za-z]:\\' tests/`
 - [ ] Sleeps as sync? Grep: `time\.sleep|time\.Sleep|Thread\.sleep|setTimeout|waitForTimeout|page\.wait_for_timeout` in tests → High each.
 - [ ] Order/parallel safety: does CI run the suite shuffled and parallel?
       Run shuffled once during audit; any new failure → High.

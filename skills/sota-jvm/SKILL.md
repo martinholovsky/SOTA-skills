@@ -45,7 +45,7 @@ Two consumers, one source of truth:
 ## BUILD mode
 
 1. Before writing, read the rules files relevant to the task (see index). A web
-   service handling untrusted input + threads + a DB needs `02`, `03`, `04`.
+   service handling untrusted input + threads + a DB needs `02`, `03`, `04`, `08` (plus `07` if it parses XML).
 2. Apply the **top-10 non-negotiables** (below) unconditionally.
 3. New projects: target the latest LTS (verify at
    the Oracle Java SE support roadmap), Maven or Gradle with a

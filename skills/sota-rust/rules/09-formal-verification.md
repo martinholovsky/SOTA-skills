@@ -246,6 +246,8 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
 
 - [ ] **Security-critical crate parsing untrusted input with no fuzz target and no Kani harness**
       (§1): `rg -l 'fuzz_target!|#\[kani::proof' -t rust .` empty in such a crate = Medium.
+      A security-critical crate wrapping `unsafe` behind a safe API (§1) where
+      `rg -l '#\[kani::proof' -t rust .` is empty and `rg -l 'unsafe' -t rust .` is not = Low.
 - [ ] **Harnesses that do not end in `kani::cover!()`** (§3): the loop below
       prints `file:line harness-name` for each `#[kani::proof]`/`#[kani::proof_for_contract]`
       function whose body does not end in `kani::cover!()`. It brace-counts lines, so a brace inside a

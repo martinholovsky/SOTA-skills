@@ -49,7 +49,9 @@ When writing new concurrent code:
 6. **Shared mutable state needs an owner.** Prefer message passing or
    single-owner tasks; if you must lock, define lock ordering and never hold a
    lock across an await. Races vs race conditions, atomicity and TOCTOU: [`rules/02`](rules/02-correctness.md);
-   choosing the primitive: [`rules/03`](rules/03-primitives.md).
+   choosing the primitive: [`rules/03`](rules/03-primitives.md). Ambient per-request context
+   (tenant, user) is reset when the request ends, or a reused worker serves the next request
+   with it: [`rules/07`](rules/07-audit-bug-catalog.md) §3.
 7. Re-read the audit checklists at the end of each rules file against your own
    diff before declaring done.
 

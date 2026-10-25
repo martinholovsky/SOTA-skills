@@ -348,7 +348,7 @@ File uploads:
 
 - Compare secrets (HMAC signatures, API keys, tokens) with `crypto.timingSafeEqual` (equal-length buffers — hash both sides first if lengths vary), never `===` (timing oracle).
 - Randomness for anything security-relevant (tokens, IDs in URLs, reset codes): `crypto.randomUUID()` / `crypto.getRandomValues()` / `crypto.randomBytes` — never `Math.random()` (predictable, seedable state recovery is practical).
-- Password hashing: argon2id (or scrypt/bcrypt with sane cost), async variants only ([rules/04](04-node-backend.md)); never SHA-256-of-password, never homegrown.
+- Password hashing: argon2id (or scrypt/bcrypt with sane cost), async variants only ([rules/04](04-node-backend.md)); never SHA-256-of-password, never homegrown (audit: [`sota-code-security` rules/02](../../sota-code-security/rules/02-authentication.md) §1).
 - Web Crypto (`crypto.subtle`) for in-app encryption/signing; AES-GCM with unique IVs per encryption (IV reuse with GCM is catastrophic); keys from KMS/secret manager, not constants.
 
 ## Native addons and uninitialized buffers
@@ -424,7 +424,7 @@ on a runtime without FFI. The class is [`sota-code-security` rules/06](../../sot
       — each hit is a default or README sample left in place (open CORS, no timeout, unsanitized Markdown, the demo session secret).
       For each name the PR adds to `package.json`, run `npm view <name> time.created maintainers repository.url`: E404 or a days-old package is HIGH until explained.
 - [ ] `grep -n "git+\|git://\|github:\|https://.*\.tgz" package.json` — git-URL or remote-tarball dependencies: unauditable, refused by npm ≥12 unless `allow-git`/`allow-remote` is `root` or `all` (MEDIUM).
-- [ ] SQL built by interpolation (the rule is stated in §"Same family" above; this is its
+- [ ] SQL built by interpolation (the rule is the "Same family" bullet in [rules/08](08-process-and-outbound.md) §"Command injection via child_process"; this is its
       probe, absent until 2026-09-22): ``grep -rnE '(query|execute|raw)\( *`' src/`` — a
       template literal reaching a driver is CRITICAL. Also `grep -rn "knex.raw\\|sequelize.query\\|\\$queryRawUnsafe\\|createQueryBuilder" src/`
       — Prisma's `$queryRaw` tagged template is parameterized while `$queryRawUnsafe` is not,

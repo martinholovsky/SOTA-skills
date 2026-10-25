@@ -43,7 +43,7 @@ are satisfied or violated *by the words themselves*:
   visually-hidden text — a link list of ten identical "Delete"s is unusable.
 - Status updates that appear visually get announced textually (`role=status`
   regions) with self-sufficient wording: "Saving… Saved" — mechanics in
-  frontend [rules/04](04-accessibility-localization.md), the *string* is owned here.
+  frontend [rules/05](../../sota-frontend-design/rules/05-accessibility.md) §4, the *string* is owned here.
 
 ## 3. Writing for the ear and the eye
 

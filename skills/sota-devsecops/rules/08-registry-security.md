@@ -173,7 +173,7 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
   public ones. If you pull `mycorp/base` and a proxy can resolve that from Docker Hub's
   `mycorp/base`, an attacker who registers the public name owns your base image. Pin internal
   images to **your** registry by full path + digest; never let a proxy silently fall through to
-  public for internal-looking names. (Same class as package dependency-confusion in [rules/03](03-dependencies.md) §3.2,
+  public for internal-looking names. (Same class as package dependency-confusion in [rules/03](03-dependencies.md) §3.3,
   applied to images.)
 - **Allowed-registries policy.** Workloads pull only from your registry / blessed mirrors. This
   is **enforced at admission** by **[sota-kubernetes](../../sota-kubernetes/SKILL.md)** (registry allowlist) — reference it; do not

@@ -108,7 +108,7 @@ class Secret(str):
 - Do log (security observability, OWASP A09): authn successes/failures, authz
   denials, validation rejections, privilege/role changes, MFA/recovery events,
   admin actions — with actor, action, target, result, source IP, timestamp;
-  ship to an append-only store with alerting on anomalies.
+  ship to an append-only store with alerting on anomalies (append-only is not tamper-evident against a writer of the store: [rules/18](18-tamper-evident-logs.md) §1).
 - **Payment integrations keep a full trail**: log every initiation, redirect to the gateway
   and callback with timestamp and source IP, and retain the raw callback request (headers
   and body, as received) so a dispute or forensic review can re-verify it later. Retain it

@@ -490,7 +490,7 @@ one covers coverage, tooling and hygiene. Both run.
 
 **Hygiene**
 - [ ] Audit was read-only; nothing in the target mutated without explicit
-      instruction?
+      instruction? Agent-memory pass run (§4a): each repository fact held only in memory mapped to the file that owns it, homeless ones reported, searched by distinctive phrase with a positive control?
 - [ ] Re-audit loop defined for verifying remediation — and does it verify each fix
       by **re-pointing the original hunt at the patched code**, rather than only
       confirming the reported input stopped working (§4)?

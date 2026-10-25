@@ -40,7 +40,8 @@ Two consumers, one source of truth:
 ## BUILD mode
 
 1. Before writing, read the rules files relevant to the task (see index). A web
-   API touching untrusted input + a DB + async needs `02`, `03`, `04`.
+   API touching untrusted input + a DB + async needs `02`, `03`, `04`; a parser of
+   untrusted bytes also gets a fuzz target ([`rules/06`](rules/06-build-tooling-ci.md) §4).
 2. Apply the **top-10 non-negotiables** (below) unconditionally.
 3. New projects: target the latest LTS TFM (verify at the .NET
    support policy page), `<Nullable>enable</Nullable>`,

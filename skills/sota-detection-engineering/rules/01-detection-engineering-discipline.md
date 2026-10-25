@@ -165,8 +165,8 @@ validation (purple teaming, BAS) feeding the hypothesis backlog.
 ## 7. Concurrent siblings & owned boundaries
 
 - **[sota-observability](../../sota-observability/SKILL.md)** owns the telemetry pipeline. Detection logic consumes
-  its output. Reference [rules/01](01-detection-engineering-discipline.md) (structured logging) for the schema you query
-  and [rules/04](04-alerting-triage-soc-soar.md) (alerting/SLO) for the *plumbing* that routes your security
+  its output. Reference [rules/01](../../sota-observability/rules/01-structured-logging.md) (structured logging) for the schema you query
+  and [rules/04](../../sota-observability/rules/04-slos-alerting.md) (alerting/SLO) for the *plumbing* that routes your security
   alerts — you own the security *content*, not the pipe.
 - **[sota-threat-modeling** rules/03](../../sota-threat-modeling/rules/03-threat-catalogs.md) (threat catalogs, STRIDE/ATT&CK/ATLAS)
   enumerates threats at design time; turn each high-priority threat into a
