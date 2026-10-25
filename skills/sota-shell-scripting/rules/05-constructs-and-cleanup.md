@@ -230,6 +230,36 @@ it printed the original line 3. Field case in this library: a 27-minute run died
 script was rewritten beneath it. **Never rewrite a script while it runs**: write a new file and
 rename it over the old one, or wait for the run to end. Other shells are not measured here.
 
+## 3e. A heredoc inside a heredoc closes the outer one, and the rest runs as shell
+
+A heredoc ends at the **first** line equal to its delimiter; there is no nesting. A payload that
+contains the same delimiter closes the outer heredoc early, and **every line after it is read as
+shell**: a script that writes a script, an edit script whose replacement text carries an example
+heredoc, a Python program fed on stdin that patches a shell file. Measured 2026-10-25 on bash 5.3,
+bash 3.2 and zsh 5.9 alike:
+
+```bash
+# collide.sh — the payload contains a line that is exactly PY (a nested <<'PY' … PY has one)
+python3 - <<'PY'
+print('outer start')
+inner = '''
+PY
+touch LEAKED_AS_SHELL      # runs as a shell command, in both shells
+print('outer end')
+PY
+```
+
+`bash collide.sh` printed Python's `SyntaxError` (the program was cut at the inner `PY`), then
+**created `LEAKED_AS_SHELL`**, then failed on `print(...)`. The failure is loud only by accident: in
+the field the leaked lines were shell commands meant to be written into a file, and only an
+unrelated unmatched quote further down stopped zsh before it ran them.
+
+- **Give every nesting level its own delimiter**: `<<'EDIT'` around a payload that contains
+  `<<'PY'`. A quoted delimiter (`'PY'`) stops expansion; it does not make the heredoc nest.
+- **Or do not nest**: write the payload to a file with an editor or a single-level heredoc, and pass
+  the path. For an agent, the file-writing tool is the safe default for any program that itself
+  contains a heredoc.
+
 ## 4. Test constructs, printf, declarations
 
 - `[[ ]]` over `[ ]` in bash: no word splitting of unquoted vars, `&&`/`||` inside,
@@ -307,6 +337,13 @@ reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces da
 
 ## Audit checklist
 
+- [ ] **A heredoc whose payload contains its own delimiter?** (§3e) The nested shape — a second
+      opener of the same delimiter before the first one closed — is mechanical:
+      ``awk -v q="'" 'BEGIN{re="<<-?[" q "\"]?[A-Za-z_]+"} {for(k in open) if(open[k] && $0==k){open[k]=0; next}} match($0,re){d=substr($0,RSTART,RLENGTH); sub(/^<<-?/,"",d); sub(/^[^A-Za-z_]/,"",d); if(open[d]) print FILENAME":"NR": second <<"d" opened before the first one closed"; open[d]=1}' <file>``
+      prints each one (tested on BSD awk: a nested `<<'PY'` flagged; distinct delimiters, a reused
+      `EOF` and a quoted `<<-"END"` not). A payload line that merely equals the delimiter is not
+      mechanical: its tell at run time is the payload's own lines failing as shell commands. HIGH in a
+      script that edits files, since the leaked lines run.
 - [ ] **Is any long-running script rewritten while it may be executing?** (§3d) A deploy that
       writes over `run.sh` with `cat >` while a cron job is mid-run, or an agent editing a
       harness it just started, makes the running process execute a splice of old and new.

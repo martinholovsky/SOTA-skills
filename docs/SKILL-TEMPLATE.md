@@ -150,7 +150,11 @@ new probe is run against a known-bad and a known-good fixture (below).
 ## Before opening the PR
 
 - [ ] Every shipped checklist grep run against a **known-bad and a known-good** fixture.
-      Measured repeatedly: a probe that can never fire ships silently, and reads as coverage
+      Measured repeatedly: a probe that can never fire ships silently, and reads as coverage.
+      **A probe that names a file also runs on a fixture where that file is absent**: `grep -s`
+      on a missing named path exits 2, which a reader takes for a clean result. Three presence
+      probes passed every fixture their author built, because each fixture contained the file, and
+      failed in CI's probe check (2026-10-25). Prefer `--include` over naming the file
 - [ ] New `rules/NN` indexed by its `SKILL.md` **and** by `skills/sota/rules/04` (invariants 10, 15),
       **and** pointed at from where its task starts — a BUILD step, or the rules file an agent
       would already have open (invariant 42; `python3 scripts/reachability-graph.py --explain <file>`).
