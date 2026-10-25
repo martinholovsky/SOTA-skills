@@ -386,6 +386,10 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       `ls testdata/fuzz 2>/dev/null` (crash corpus committed?);
       `grep -rn 'testcontainers' go.mod` ; `go test -shuffle=on ./...` (ordering deps?);
       `go test -race -count=3 ./...`
+- [ ] **Reproducible builds (§5) — LOW** —
+      `git grep -nE 'go build' -- '*Makefile*' '*Dockerfile*' '*.sh' '*.y*ml' | grep -v -- '-trimpath'`
+      (a build line without `-trimpath`; `git grep` reaches `.github/`, which standalone ugrep skips) ;
+      `go version -m <binary>` on every artifact you did not build (module versions, build settings)
 - [ ] **Formatting drift** — `gofumpt -l . | head` ; `goimports -l . | head`
 - [ ] **Toolchain & vuln state** — `go version; go env GOTOOLCHAIN` ; `govulncheck ./...`
 

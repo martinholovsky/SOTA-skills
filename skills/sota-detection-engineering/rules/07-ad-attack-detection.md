@@ -275,19 +275,19 @@ an untested Kerberoasting rule is a hope, not a detection.
 
 ## Audit checklist
 
-- [ ] Can you **join** SP/cloud federated sign-ins against IdP token-issuance events, and does anything fire when a valid sign-in has no matching IdP event (Golden SAML, T1606.002)? If the two logs are not in one system, this detection does not exist.
-- [ ] Are DC **Advanced Audit Policy** subcategories enabled (Kerberos AS + Service Ticket ops, Credential Validation, Logon, **Directory Service Changes with SACLs on tier-0 objects**) and **DC Security logs shipped centrally** (not triaged on the DC)?
-- [ ] Is **NTLM audit (event 8004)** and **CA issuance auditing (4886/4887)** enabled where NTLM/ADCS are in scope?
-- [ ] Is there a **Kerberoasting** detection on **RC4 (0x17) 4769** with SPN fan-out, and is it meaningful (are service accounts AES-hardened so RC4 is anomalous)?
-- [ ] Is there an **AS-REP roasting** detection on **4768 PreAuthType==0 / RC4**, with preauth-disabled accounts enumerated and allowlisted?
-- [ ] Does a **DCSync** detection watch **4662 for the replication GUIDs** (`1131f6aa-…`, `1131f6ad-…`, `89e95b76-…` — §DCSync) from **non-DC, non-sync** principals, with the legitimate replicators explicitly allowlisted?
-- [ ] Are **golden/silver ticket** indicators covered — TGS (4769) without a preceding TGT (4768), abnormal ticket lifetimes/RIDs, and **service logons with no matching DC TGS** (silver)?
-- [ ] Is **DCShadow** covered (rogue `nTDSDSA`/DC SPN registration on a non-DC, then replication)?
-- [ ] Is **ADCS abuse (T1649)** detected — cert request where **requester != SAN principal (ESC1)**, privileged cert to low-priv requester, PKINIT TGT after anomalous issuance — with enrollment agents allowlisted?
-- [ ] Is **NTLM relay / forced auth (T1187)** covered (NTLMv1 usage, relayed-identity mismatch, machine-account outbound auth after coercion)?
-- [ ] Is **password spraying (T1110.003)** detected across **both 4625 and Kerberos 4768/4771 failures** (horizontal fan-out below lockout threshold)?
-- [ ] Is there a **5136 detection on writes to `msDS-AllowedToActOnBehalfOfOtherIdentity`** (RBCD) and SPN-added-to-user, alerting on non-tier-0 writers?
-- [ ] Where **Windows Server 2025 DCs** exist, is **dMSA abuse (BadSuccessor, CVE-2025-53779)** covered — dMSA creation (5137) by non-tier-0 principals or in unusual OUs, **5136 writes to `msDS-ManagedAccountPrecededByLink` / `msDS-DelegatedMSAState`**, and repeated dMSA TGTs (2946)?
-- [ ] Are **honeytoken SPN accounts / canary objects** deployed (any 4769/4662 against them = high-fidelity alert) and **wired to IR at max severity**?
+- [ ] Can you **join** SP/cloud federated sign-ins against IdP token-issuance events, and does anything fire when a valid sign-in has no matching IdP event (Golden SAML, T1606.002)? If the two logs are not in one system, this detection does not exist. (§2)
+- [ ] Are DC **Advanced Audit Policy** subcategories enabled (Kerberos AS + Service Ticket ops, Credential Validation, Logon, **Directory Service Changes with SACLs on tier-0 objects**) and **DC Security logs shipped centrally** (not triaged on the DC)? (§1)
+- [ ] Is **NTLM audit (event 8004)** and **CA issuance auditing (4886/4887)** enabled where NTLM/ADCS are in scope? (§1)
+- [ ] Is there a **Kerberoasting** detection on **RC4 (0x17) 4769** with SPN fan-out, and is it meaningful (are service accounts AES-hardened so RC4 is anomalous)? Are the KDCSVC **201–209** events (CVE-2026-20833) collected as the RC4 dependency list, so that after enforcement an RC4 4769 is treated as an attack or an explicit RC4 re-enable? (§2)
+- [ ] Is there an **AS-REP roasting** detection on **4768 PreAuthType==0 / RC4**, with preauth-disabled accounts enumerated and allowlisted? (§2)
+- [ ] Does a **DCSync** detection watch **4662 for the replication GUIDs** (`1131f6aa-…`, `1131f6ad-…`, `89e95b76-…` — §DCSync) from **non-DC, non-sync** principals, with the legitimate replicators explicitly allowlisted? (§2)
+- [ ] Are **golden/silver ticket** indicators covered — TGS (4769) without a preceding TGT (4768), abnormal ticket lifetimes/RIDs, and **service logons with no matching DC TGS** (silver)? (§2)
+- [ ] Is **DCShadow** covered (rogue `nTDSDSA`/DC SPN registration on a non-DC, then replication)? (§2)
+- [ ] Is **ADCS abuse (T1649)** detected — cert request where **requester != SAN principal (ESC1)**, privileged cert to low-priv requester, PKINIT TGT after anomalous issuance — with enrollment agents allowlisted? (§2)
+- [ ] Is **NTLM relay / forced auth (T1187)** covered (NTLMv1 usage, relayed-identity mismatch, machine-account outbound auth after coercion)? (§2)
+- [ ] Is **password spraying (T1110.003)** detected across **both 4625 and Kerberos 4768/4771 failures** (horizontal fan-out below lockout threshold)? (§2)
+- [ ] Is there a **5136 detection on writes to `msDS-AllowedToActOnBehalfOfOtherIdentity`** (RBCD) and SPN-added-to-user, alerting on non-tier-0 writers? (§2)
+- [ ] Where **Windows Server 2025 DCs** exist, is **dMSA abuse (BadSuccessor, CVE-2025-53779)** covered — dMSA creation (5137) by non-tier-0 principals or in unusual OUs, **5136 writes to `msDS-ManagedAccountPrecededByLink` / `msDS-DelegatedMSAState`**, and repeated dMSA TGTs (2946)? (§2)
+- [ ] Are **honeytoken SPN accounts / canary objects** deployed (any 4769/4662 against them = high-fidelity alert) and **wired to IR at max severity**? (§2)
 - [ ] Is each detection **ATT&CK-mapped, FP-documented, and validated against the real technique** ([rules/06](06-incident-response-validation.md)) before it is trusted?
 - [ ] Does each detection carry known **false positives and an owner** ([rules/01](01-detection-engineering-discipline.md)/04), with suppressions expiring rather than permanent?

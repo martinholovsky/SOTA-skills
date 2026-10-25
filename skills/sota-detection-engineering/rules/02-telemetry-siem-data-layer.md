@@ -354,13 +354,18 @@ cheat sheet.
 - [ ] Do events carry the fields detections need (full command lines, user,
       process ancestry), or are they truncated/empty?
 - [ ] Are detections written against a normalized schema (OCSF/ECS), or against
-      raw per-vendor formats that won't port?
+      raw per-vendor formats that won't port? (§3)
 - [ ] Is security retention sized to out-last realistic dwell time (≥12 months
-      for high-value sources), not ops retention (days)?
+      for high-value sources), not ops retention (days)? (§5)
 - [ ] Is there a hot/cold tiering that keeps long-history retro-hunting
-      affordable?
-- [ ] Has any security source been dropped or sampled purely for cost without
-      documenting the resulting blind spot?
+      affordable, with detections running hot and hunts and investigations
+      reaching into cold? If detection runs on a log/observability platform
+      (e.g. Loki), were its correlation limits checked against the detections it
+      must run? (§4, §5)
+- [ ] **Cost cuts (§6) — Critical:** has any security source been dropped or
+      sampled purely for cost without documenting the resulting blind spot in the
+      affected detections' ADS? Is noise filtered at the edge by event type, and
+      high-volume/low-value sources routed to the cheap tier, instead?
 - [ ] Are logs shipped off-host promptly so a compromised host can't erase its
       own evidence?
 - [ ] **App-login attacks (§7) — High:** do application/IdP login logs feed a

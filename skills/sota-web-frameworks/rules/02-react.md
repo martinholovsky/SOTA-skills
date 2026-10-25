@@ -118,14 +118,18 @@ import DOMPurify from 'dompurify';
       `find . -maxdepth 2 -path ./node_modules -prune -o \( -name '.eslintrc*' -o -name 'eslint.config.*' -o -name package.json \) -type f -exec grep -Hn 'react-hooks' {} +`
 - [ ] **Legacy patterns** —
       `grep -rn 'forwardRef\|class .* extends .*Component' --include='*.tsx' src app`
-      (forwardRef unneeded in 19); `grep -rnE 'key=\{.*index' --include='*.tsx' src app`
-      (index-as-key on dynamic lists)
+      (class components: no new ones (§1); forwardRef unneeded in 19 (§3)); `grep -rnE 'key=\{.*index' --include='*.tsx' src app`
+      (index-as-key on dynamic lists (§4))
+- [ ] **`use()` fed a promise created during render (MEDIUM) (§3)** —
+      `grep -rnE '(^|[^A-Za-z0-9_.$])use\((fetch\(|new Promise|[A-Za-z_$][A-Za-z0-9_$.]*\()' --include='*.tsx' --include='*.jsx' --include='*.ts' --include='*.js' --exclude-dir=node_modules .`
+      — a hit is a candidate: fine when the call returns a cached/stable promise (from an RSC or a
+      cache); a promise made inline is new every render and never resolves
 
 - [ ] Every `dangerouslySetInnerHTML` fed sanitizer output (allowlist), not raw user/CMS HTML?
 - [ ] `href`/`src`/URL props validated against a scheme allowlist (no `javascript:`/`data:`)?
-- [ ] No `Math.random()`/`Date.now()`/`window` used *during render* (hydration determinism)?
-- [ ] Effects only for external synchronization, each with cleanup; no fetch-in-bare-effect racing?
-- [ ] Stable domain IDs as list keys (not array index) for insertable/reorderable lists?
-- [ ] Rules of Hooks enforced by lint (also required for the React Compiler)?
-- [ ] Error boundaries around lazy/third-party/RSC subtrees; error text not rendered as HTML?
+- [ ] No `Math.random()`/`Date.now()`/`window` used *during render* (hydration determinism); element IDs from `useId`, never a random value or a module counter (§1)?
+- [ ] Effects only for external synchronization, each with cleanup; no fetch-in-bare-effect racing; no `ref.current` read or written during render (§1)?
+- [ ] Stable domain IDs as list keys (not array index) for insertable/reorderable lists; state and props never mutated in place (immutable updates) (§4)?
+- [ ] Rules of Hooks enforced by lint (also required for the React Compiler) (§1, §4)?
+- [ ] Every `<Suspense>` boundary has a fallback; error boundaries around lazy/third-party/RSC subtrees; error text not rendered as HTML (§2)?
 - [ ] No attacker-influenced object spread onto a DOM element (§5)? Probe the call sites where the props are built: [`sota-frontend-design` rules/03](../../sota-frontend-design/rules/03-design-systems-components.md) Audit checklist.

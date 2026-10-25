@@ -296,39 +296,48 @@ TME-MK-only silicon.
 
 - [ ] Every "SEV" reference specifies SEV-**SNP**; no design relies on plain SEV or
       SEV-ES for operator exclusion (grep design docs and IaC for `sev` without
-      `snp`; check guest `dmesg` for `SEV-SNP`).
+      `snp`; check guest `dmesg` for `SEV-SNP`). High (R1.1, §1).
 - [ ] No claim treats memory encryption alone (TME, TME-MK, "encrypted RAM") as
-      confidential computing; TDX/TD attestation present where Intel is the platform.
+      confidential computing; TDX/TD attestation present where Intel is the platform,
+      with SKU, region and TDX-module version verified at the provider (R1.4). Every
+      offering called confidential passes all three legs — confidentiality against
+      the host, tamper/replay/remap detection, remote attestation (R1.2, §1).
 - [ ] Any ARM CCA dependency carries a dated availability verification for the
       actual target platform, not an assumption.
 - [ ] SGX designs: target is Xeon (not client CPUs); EPC sizing checked against the
       actual SKU; the LibOS's maintenance status verified within the last quarter
-      (last release + non-bot commits).
+      (last release + non-bot commits). A dead LibOS is High; a whole-app-in-enclave
+      design records why a confidential VM was not chosen instead (R2.3, §2).
 - [ ] Nitro Enclaves designs state explicitly that the Nitro hypervisor/AWS is in the
       TCB, and the documented threat model does not require excluding the cloud
       operator (grep for "Nitro" near "memory encryption" — that pairing is usually
-      the R3.1 misclaim).
+      the R3.1 misclaim, High) (§3).
 - [ ] Confidential-AI designs name the GPU generation, CC mode status, interconnect
-      protection, and GPU attestation verifier — not just the CPU TEE.
+      protection, and GPU attestation verifier — not just the CPU TEE. A hand-waved
+      GPU is High (R4.2, §4).
 - [ ] Multi-GPU designs declare the approved topology (GPU and switch count, allowed
       device identities); every peer GPU and switch is attested before it joins, and
-      appraisal rejects an unexpected peer (R4.2). In PPCIE mode, switch attestation
+      appraisal rejects an unexpected peer (R4.2, §4). In PPCIE mode, switch attestation
       and the topology check both run — GPU-only attestation is High. This is a
       design and verifier-policy review; no line-level grep proves it.
 - [ ] GPU attestation policy pins driver and VBIOS versions to an owned allowlist,
       requires the per-RIM signature and measurement-match claims, and re-attests
       per workload or key release with an expiring cache that a GPU reset or
-      reassignment clears (R4.3). High if any verifier-softening flag is in a
+      reassignment clears (R4.3, §4). High if any verifier-softening flag is in a
       deployed script or manifest:
       `grep -rnE -e '--(test_no_gpu|allow[_-]hold[_-]cert|ocsp[_-]nonce[_-]disabled)' .`
 - [ ] No dependency on dormant Wasm-TEE projects (Enarx-class) without a documented
-      fork/maintenance plan; project liveness checked, not assumed.
+      fork/maintenance plan; project liveness checked, not assumed. Reliance on a
+      dormant one is Medium (R5.1, §5).
 - [ ] A side-channel posture section exists: applicable classes (ciphertext,
-      single-stepping, transient execution, SMT), current mitigations, accepted
-      residual risk, and the advisory→TCB-bump→policy-update trigger.
+      single-stepping, transient execution, SMT, physical bus interposition,
+      security-processor firmware), current mitigations, accepted residual risk, and
+      the advisory→TCB-bump→policy-update trigger. Absent: Medium; a "TEEs stop
+      side channels" claim: High (R6.1, §6).
 - [ ] Secrets code inside TEEs reviewed for TEE-specific leakage (ciphertext side
       channels on SEV-SNP; secret-dependent control flow on SGX), not just generic
-      constant-time rules.
+      constant-time rules (R6.2, §6).
 - [ ] The technology matches the [rules/01](01-threat-model-and-selection.md) threat model: the excluded party is
       actually outside the chosen technology's TCB, and its attestation is verified
-      per [rules/03](03-remote-attestation.md).
+      per [rules/03](03-remote-attestation.md). An excluded party inside the chosen technology's
+      TCB is the defining Critical finding (R7.1, §7).

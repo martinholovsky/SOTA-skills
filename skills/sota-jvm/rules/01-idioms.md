@@ -162,6 +162,14 @@ the type system, and expression-oriented code**. References:
       invalid bytes with U+FFFD)
 - [ ] **Kotlin !! (non-null assertion) — MEDIUM (latent NPE)** —
       `grep -rnE '!!' --include='*.kt' . | grep -v '!!='`
+- [ ] **Java↔Kotlin boundary with unchecked platform types (§3) — MEDIUM (the #1 interop NPE
+      source)** — in a module with Kotlin sources, each Java package with no `@NullMarked`
+      `package-info.java`:
+      `find . -name '*.kt' | grep -q . && find . -name '*.java' ! -name package-info.java ! -path '*/build/*' ! -path '*/target/*' | sed 's|/[^/]*$||' | sort -u | while IFS= read -r d; do if [ -f "$d/package-info.java" ] && grep -q '@NullMarked' "$d/package-info.java"; then :; else echo "$d"; fi; done`
+      (each printed package is seen by Kotlin as platform types unless its classes carry
+      `@Nullable`/`@NonNull`; read them) ; manual: each Kotlin API exposed to Java carries the
+      `@JvmStatic`/`@JvmOverloads`/`@JvmName` its Java callers need, and no Java caller relies
+      on `copy`/destructuring
 - [ ] **`data class` whose non-public constructor leaks through `copy()` (§2) — MEDIUM, HIGH
       when the factory enforces a security or money invariant** — prints each such class with
       no `@ConsistentCopyVisibility` on its own line or the line above:
@@ -197,9 +205,12 @@ the type system, and expression-oriented code**. References:
       (an interval on the wall clock; use `nanoTime`) ;
       `grep -rnE 'java\.util\.(Date|Calendar)|LocalDateTime\.now\(' --include='*.java' --include='*.kt' .`
       (legacy types, or a zone-less "now" that is later stored or compared as an instant)
-- [ ] **Mutable returns / collections from APIs — LOW** —
+- [ ] **Mutable returns / collections from APIs, and classes open to inheritance by default (§5)
+      — LOW** —
       `grep -rnE 'return (this\.)?[a-zA-Z]*[Ll]ist;' --include='*.java' .` (verify defensive
-      copy / unmodifiable)
+      copy / unmodifiable) ; `grep -rnE '^(public )?class [A-Z]' --include='*.java' .`
+      (a top-level class that is not `final`, `abstract` or `sealed`: mark it `final` unless it
+      is designed for inheritance)
 - [ ] **Exact decimals (§1) — MEDIUM, HIGH in money paths** —
       `grep -rnE 'new BigDecimal\([[:space:]]*-?[0-9]+\.[0-9]|new BigDecimal\([[:space:]]*[a-z][A-Za-z0-9_]*[[:space:]]*\)' --include='*.java' --include='*.kt' .`
       (a double literal, or a variable whose type you then check) ;

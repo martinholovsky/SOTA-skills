@@ -138,10 +138,10 @@ Floors as of 2026-09-26 ("fixed in", not "current"): **Nuxt ≥ 4.5.1**, **h3 �
 - [ ] **NuxtLink / URL sinks** —
       `grep -rn ':to=\|:href=' --include='*.vue' pages components | grep -iv 'sanitiz'`
 
-- [ ] Nuxt/Nitro/h3/IPX/devalue versions patched against the table (Nuxt ≥ 4.5.1 for CVE-2026-71315/-71320/-71316; h3 ≥ 1.15.9; nitropack ≥ 2.13.4; devalue ≥ 5.9.2) and not on EOL Nuxt 3?
-- [ ] No secret under `runtimeConfig.public`; server secrets at the root only?
-- [ ] No module-level `ref`/`reactive` state outside `setup` (cross-request leak); `useState`/Pinia used instead?
-- [ ] Every `server/api` handler authenticates, authorizes (ownership), and schema-validates input; responses filtered?
-- [ ] `useFetch`/`useAsyncData` (not bare `$fetch`) for SSR data; payload shrunk via `pick`/`transform`?
-- [ ] No `swr`/`isr`/`prerender` route serving personalized content; `routeRules` matchers actually match?
-- [ ] `nuxt-security` (or equivalent headers/CSP/rate-limit) in place for internet-facing apps?
+- [ ] Nuxt/Nitro/h3/IPX/devalue versions patched against the table (Nuxt ≥ 4.5.1 for CVE-2026-71315/-71320/-71316; h3 ≥ 1.15.9; nitropack ≥ 2.13.4; devalue ≥ 5.9.2) and not on EOL Nuxt 3 (§6)?
+- [ ] No secret under `runtimeConfig.public`; server secrets at the root only; every `NUXT_*` override has a matching key in `nuxt.config`, and production gets real env vars (the built server does not read `.env`) (§3)?
+- [ ] No module-level `ref`/`reactive` state outside `setup` (cross-request leak); `useState`/Pinia used instead, holding only serializable values (§2)?
+- [ ] Every `server/api` handler authenticates, authorizes (ownership), and schema-validates input; errors via `createError({ statusCode })`; responses filtered (§4)?
+- [ ] `useFetch`/`useAsyncData` (not bare `$fetch`) for SSR data, `useAsyncData` with an explicit key; payload shrunk via `pick`/`transform` (§1)?
+- [ ] No `swr`/`isr`/`prerender` route serving personalized content; `routeRules` matchers actually match; no authz decision made inside island (`.server.vue`) rendering (§5)?
+- [ ] `nuxt-security` (or equivalent headers/CSP/rate-limit) in place for internet-facing apps (§6)?

@@ -94,13 +94,13 @@ from a single source of truth, man pages, README quickstart, CI pinning.
 ## Audit checklist
 
 - [ ] Release and source builds (`go install`, `cargo install`) report a real version: `tool --version`
-      on each prints a version and commit, not `dev`/`unknown`.
-- [ ] Single-file (or properly isolated) install; no runtime dependency on system interpreter state; runs from any cwd without sibling files; no root required.
-- [ ] Artifacts for linux/macOS (amd64+arm64) and windows with predictable names; old release assets remain downloadable.
-- [ ] `checksums.txt` (SHA-256) published per release; artifacts signed or provenance-attested; verification command documented where the download link is.
-- [ ] Install script (if any): function-wrapped against partial download, HTTPS-only, checksum-verifying, version-pinnable, no silent sudo.
-- [ ] Man page and/or web CLI reference generated from the same definitions as `--help`; spot-check three commands for drift between `--help` and published docs.
-- [ ] Docs include exit-code table, env-var table, and config schema; examples copy-pasteable and current.
-- [ ] README: install + working 5-line quickstart on the first screen.
-- [ ] CI consumers can pin an exact version through every advertised install channel; a "latest"-only channel is not the sole option.
-- [ ] Changelog exists; breaking changes called out with migration steps; deprecation warnings link to them.
+      on each prints a version and commit, not `dev`/`unknown` (§1).
+- [ ] Single-file (or properly isolated) install; no runtime dependency on system interpreter state; runs from any cwd without sibling files; no root required; docs never say `sudo pip install`, and the published artifact locks its dependency versions (§1).
+- [ ] Artifacts for linux/macOS (amd64+arm64) and windows with predictable names; old release assets remain downloadable (§1, §4).
+- [ ] `checksums.txt` (SHA-256) published per release; artifacts signed or provenance-attested; verification command documented where the download link is; channels include a package manager and direct versioned binary downloads (§2).
+- [ ] Install script (if any): function-wrapped against partial download, HTTPS-only, checksum-verifying, version-pinnable, no silent sudo (§2).
+- [ ] Man page and/or web CLI reference generated from the same definitions as `--help`; spot-check three commands for drift between `--help` and published docs; with no man page, every `tool <cmd> --help` ends with the docs URL (§3).
+- [ ] Docs include exit-code table, env-var table, and config schema; examples copy-pasteable and current (§3).
+- [ ] README: install + working 5-line quickstart on the first screen (§4).
+- [ ] CI consumers can pin an exact version through every advertised install channel; a "latest"-only channel is not the sole option (§4).
+- [ ] Changelog exists; breaking changes called out with migration steps; deprecation warnings link to them (§4).

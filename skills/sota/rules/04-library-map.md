@@ -183,9 +183,17 @@ control that cannot fail.
 - [ ] Does every `skills/sota-*/rules/NN-*.md` in the tree appear in the map above, and
       does every number in the map name a file that exists (invariant 15 checks both
       directions — a missing entry is invisible to a router-driven load, and a stale one
-      sends the model after nothing)?
+      sends the model after nothing)? (§1)
 - [ ] Does every domain skill have a `**<skill>/rules**` entry (invariant 7)?
 - [ ] When a `rules/NN` file is added, split or renumbered, was this map updated in the
       **same commit** — and the owning `SKILL.md` index too (invariant 10)?
 - [ ] Is this file still only a lookup table? Guidance that belongs at the point of use
       has drifted here if an entry has grown a rule rather than a title.
+- [ ] **Medium** — (§2) Was each routing gap closed by fixing the skill's
+      `description` (after ruling out the listing budget: `scripts/verify-setup.sh`
+      or `/doctor` showing the skill name-only), pinned by a new case in the
+      routing-regressions case file, and that case run against the PRE-change tree
+      and seen to fail there? A case that scores the same in both arms pins nothing.
+      Triage: `git diff --name-only <base>...HEAD | grep -cE '(^|/)SKILL\.md$'`
+      non-zero with `... | grep -c desc-routing-regressions` at 0 is a changed
+      description to read for a missing case.

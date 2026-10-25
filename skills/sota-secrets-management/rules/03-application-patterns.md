@@ -163,8 +163,8 @@ High.
 ```bash
 # BAD — password visible in `ps aux`, shell history, CI log
 mysql -u app -pS3cr3t! prod
-curl -H "Authorization: Bearer $TOKEN" https://api...   # OK-ish: env expansion not in ps,
-                                                        # but lands in shell history if literal
+curl -H "Authorization: Bearer $TOKEN" https://api...   # ALSO BAD: the shell expands $TOKEN before
+                                                        # exec, so the token sits in argv for `ps` (measured)
 # GOOD — read from file/env/stdin
 mysql --defaults-extra-file=/run/secrets/my.cnf prod
 curl -H @/run/secrets/auth_header https://api...

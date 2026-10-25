@@ -577,6 +577,15 @@
       ]
     },
     {
+      "from": "sota-kubernetes",
+      "to": "sota-secrets-management",
+      "weight": 9,
+      "targets": [
+        "rules/02",
+        "rules/02 \u00a76"
+      ]
+    },
+    {
       "from": "sota-privacy-compliance",
       "to": "sota-secrets-management",
       "weight": 9,
@@ -664,17 +673,17 @@
     },
     {
       "from": "sota-kubernetes",
-      "to": "sota-detection-engineering",
+      "to": "sota-network-security",
       "weight": 8,
-      "targets": []
+      "targets": [
+        "rules/03"
+      ]
     },
     {
       "from": "sota-kubernetes",
-      "to": "sota-secrets-management",
+      "to": "sota-detection-engineering",
       "weight": 8,
-      "targets": [
-        "rules/02"
-      ]
+      "targets": []
     },
     {
       "from": "sota-observability",
@@ -803,12 +812,6 @@
         "rules/05",
         "rules/07"
       ]
-    },
-    {
-      "from": "sota-kubernetes",
-      "to": "sota-network-security",
-      "weight": 7,
-      "targets": []
     },
     {
       "from": "sota-llm-engineering",
@@ -1695,6 +1698,15 @@
     },
     {
       "from": "sota-privacy-compliance",
+      "to": "sota-code-security",
+      "weight": 3,
+      "targets": [
+        "rules/02",
+        "rules/05 \u00a78"
+      ]
+    },
+    {
+      "from": "sota-privacy-compliance",
       "to": "sota-devsecops",
       "weight": 3,
       "targets": []
@@ -2189,14 +2201,6 @@
       "targets": [
         "rules/02",
         "rules/02 \u00a78a"
-      ]
-    },
-    {
-      "from": "sota-privacy-compliance",
-      "to": "sota-code-security",
-      "weight": 2,
-      "targets": [
-        "rules/05 \u00a78"
       ]
     },
     {
@@ -3745,13 +3749,13 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1641,
+    "md link, other skill": 1643,
     "md link, outside skills/": 3,
     "md link, same skill": 2820,
     "name (backticked)": 433,
     "name (bare)": 240,
-    "name+file (backticked)": 685,
-    "name+file (bare)": 164,
+    "name+file (backticked)": 687,
+    "name+file (bare)": 165,
     "own rules/NN": 3009
   },
   "link_forms_linked": {
@@ -3762,7 +3766,7 @@
     "md link, same skill": 0,
     "name (backticked)": 418,
     "name (bare)": 197,
-    "name+file (backticked)": 681,
+    "name+file (backticked)": 683,
     "name+file (bare)": 159,
     "own rules/NN": 2915
   },

@@ -230,13 +230,13 @@ protocols, and paths ([`rules/07`](07-security.md)).
       `grep -rLE "^.use client" --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' app src 2>/dev/null | xargs grep -HnE 'fetch\(.(https?://(localhost|127\.0\.0\.1)[^/]*|\$\{[^}]*\})/api/'`
       — if no browser or third party calls that handler, replace it with a DAL call
 
-- [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182 (Next: GHSA-9qr9-h5gf-34mp), CVE-2025-29927 and the 2026-09-08 RCEs (Next ≥ 15.5.24 / ≥ 16.3.3)?
-- [ ] Every Server Action and Route Handler authenticates, authorizes (ownership/IDOR), and schema-validates input — not relying on middleware?
-- [ ] No secrets or whole DB rows crossing server→client; data layer marked `server-only`; DTOs minimal?
-- [ ] Authorization enforced at the data layer, not only in `proxy.ts`/middleware or a layout?
-- [ ] Caching understood per route; no personalized page cached at a shared cache; `use cache` keyed per-user where needed, on verified ids + a permission version, never a raw cookie/token?
-- [ ] `next/image` `remotePatterns` limited to explicit trusted hosts (no `**`)?
-- [ ] `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` set for multi-replica deploys; `allowedOrigins` limited to the exact public/front-door hosts, no wildcard over a suffix others can host on?
-- [ ] Draft Mode enable handler: constant-time secret check, unknown ids refused, redirect built from the CMS record?
-- [ ] Every `revalidateTag`/`revalidatePath`/`updateTag` caller authenticated and authorized, targets from an allowlist, external triggers signature-verified and rate-limited?
-- [ ] No Route Handler that exists only for your own Server Components?
+- [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182 (Next: GHSA-9qr9-h5gf-34mp), CVE-2025-29927 and the 2026-09-08 RCEs (Next ≥ 15.5.24 / ≥ 16.3.3) (§5)?
+- [ ] Every Server Action and Route Handler authenticates, authorizes (ownership/IDOR), schema-validates input, and filters its return value like a prop — not relying on middleware (§2)?
+- [ ] No secrets or whole DB rows crossing server→client; data layer marked `server-only`; DTOs minimal; `"use client"` pushed to the interactive leaves (§1)?
+- [ ] Authorization enforced at the data layer, not only in `proxy.ts`/middleware or a layout (§3)?
+- [ ] Caching understood per route; no personalized page cached at a shared cache; `use cache` keyed per-user where needed, on verified ids + a permission version, never a raw cookie/token (§4)?
+- [ ] `next/image` `remotePatterns` limited to explicit trusted hosts (no `**`) (§5)?
+- [ ] `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` set for multi-replica deploys; `allowedOrigins` limited to the exact public/front-door hosts, no wildcard over a suffix others can host on (§2)?
+- [ ] Draft Mode enable handler: constant-time secret check, unknown ids refused, redirect built from the CMS record (§3)?
+- [ ] Every `revalidateTag`/`revalidatePath`/`updateTag` caller authenticated and authorized, targets from an allowlist, external triggers signature-verified and rate-limited; `updateTag` called only from Server Actions (it throws in a Route Handler) (§4)?
+- [ ] No Route Handler that exists only for your own Server Components (§3)?

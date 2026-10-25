@@ -152,12 +152,23 @@ was measured against a workflow that no longer shipped).
 ## Audit checklist (meta — for changes to this workflow)
 
 - [ ] A change to §BUILD in the router is reflected in this file's reasoning, in
-      `BUILD_WORKFLOW`, and in `ROUTER_BUILD_SHA` — all four, same commit.
+      `BUILD_WORKFLOW`, and in `ROUTER_BUILD_SHA` — all four, same commit (§5).
 - [ ] `ROUTER_BUILD_SHA` was updated only **after** the mirror was re-read against the
       new §BUILD, and the commit says whether an imperative changed or only prose moved.
       Run the guard once and confirm it passes rather than assuming it.
 - [ ] The router's §BUILD still states every imperative; only reasoning lives here. An
       agent that never opens this file must still build correctly.
 - [ ] Any new step is checkable at step 4 — it states an outcome, not an intention.
+      Did the build's plan meet the same bar: every item an outcome with a number or
+      a subject ("reject uploads over N MB", not "validate uploads") (§2)?
 - [ ] Every gate item is phrased as **evidence to produce** (a grep, a command, a
       file:line), not a yes/no question about your own work (§4).
+- [ ] **Medium** — No sentence here or in the router claims that extra or irrelevant
+      context reduces how many rules a model applies unless it cites a run that
+      shows the drop; the case for lean stays "costs nothing, measured no worse,
+      and the gate absorbs padding", and the one standing-load exception keeps its
+      written falsifier (§1).
+- [ ] **Medium** — Does the self-audit still run as the build's LAST step, never
+      first or continuously; for a large build, as a separate pass over the diff in
+      a fresh context; and is each truly critical invariant the build names held by
+      a deterministic gate (a lint or CI check) rather than by attention (§3)?

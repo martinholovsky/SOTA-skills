@@ -313,32 +313,59 @@ distinguishable from telemetry production writes, at the point of collection.**
 
 - [ ] Liveness, readiness, startup probes distinct; liveness contains NO
       dependency checks; readiness fails only on required deps; probes are
-      cheap, cached, and bounded.
+      cheap, cached, and bounded; health endpoints are not internet-exposed
+      and are excluded from access logs and request metrics (§1).
 - [ ] Optional-dependency failure degrades service without failing
       readiness; shared-dependency behavior (fail vs degrade) is a
-      documented decision.
+      documented decision (§1).
 - [ ] All degradation paths (fallbacks, breakers, kill switches) emit
       metric + log + span attribute when active; long-running degradation
-      tickets someone.
+      tickets someone; degradation goes through one shared helper deduped
+      per (component, reason), not per request; breaker state is a metric;
+      every fallback is exercised in CI or a chaos drill (§2).
 - [ ] Port/route inventory done: no pprof/actuator/metrics/heapdump/env/
       introspection endpoints reachable without auth from outside the
       internal network; Go DefaultServeMux not publicly served with pprof
-      imported.
-- [ ] Continuous profiling running with version tags; on-demand capture
-      path documented; off-CPU/lock profiling available where supported.
+      imported; Actuator exposes an explicit include-list only; log-level and
+      other debug togglers are authenticated, audited and rate-limited (§3).
+- [ ] Continuous profiling running with version tags, CPU and allocation
+      profiles at minimum; on-demand capture path documented; off-CPU/lock
+      profiling available where supported (§4).
 - [ ] No sink receives both test-suite and production telemetry without a write-time
       marker or a separate destination; any analysis over a shared sink states its
       exclusion filter (§8a).
 - [ ] Error tracker captures all runtimes incl. frontend with sourcemaps;
-      release+environment on every event; trace_id linked; PII scrubbed.
+      release+environment on every event; trace_id linked; PII scrubbed (§5).
 - [ ] Issue grouping healthy (no message-interpolation shatter); triage
       rota exists; regression notifications enabled; open-untriaged count
-      is bounded.
+      is bounded; new-issue, regression and spike notifications go to a
+      ticket or chat, never a page (§5).
+- [ ] (**Medium**) Shutdown and crashes are observable (§6): on SIGTERM the
+      process logs `shutdown_started`, fails readiness, drains with a
+      deadline, flushes every telemetry exporter (spans, metrics, logs, error
+      tracker) and logs `shutdown_completed` with drained/aborted counts;
+      fatal paths write a structured last-gasp line to stdout; OOM kills
+      (`OOMKilled`, exit code 137) and restarts per workload are tracked and
+      ticketed; startup logs version, config hash and listening ports once.
+      Probe for termination handlers whose file neither flushes telemetry
+      nor logs completion — a lead, since the flush may live in another
+      file; read each one listed:
+      `grep -rlE 'SIGTERM|addShutdownHook|SignalKind::terminate' --include='*.py' --include='*.go' --include='*.js' --include='*.ts' --include='*.java' --include='*.kt' --include='*.rs' . | while IFS= read -r f; do grep -qE '[Ff]orce_?[Ff]lush|shutdown_completed' "$f" || echo "$f"; done`
 - [ ] Per-service dashboard follows symptom→cause layout with deploy
       annotations; paging alerts link runbook + dashboard; panels
-      click-through to traces/logs.
+      click-through to traces/logs (§7).
 - [ ] Dashboards and alerts are code-reviewed and provisioned, not
-      hand-edited; stale dashboards pruned.
+      hand-edited; stale dashboards pruned (§7).
+- [ ] (**High** where a critical journey has no end-to-end probe, **Medium**
+      otherwise) Synthetic monitoring (§8): every critical journey has a
+      scripted end-to-end probe (login → action → assertion on response
+      content, not just `/health`) run from outside the network in the
+      regions users are in; synthetic traffic is tagged (`synthetic: true`)
+      and excluded from SLIs and business metrics; a probe pages only on
+      consecutive failures from multiple locations; certificate, DNS and
+      domain expiry are probed. Manual check: diff the synthetic-check
+      inventory against the critical-journey list — a journey covered only
+      by a `/health` probe, or by none, is the finding.
 - [ ] Edge access logs (gateway/ingress/LB) exist for every deprecable surface,
       with per-route/per-field usage counters and retention covering a full
       deprecation runway — and where a usage question was answered from stored

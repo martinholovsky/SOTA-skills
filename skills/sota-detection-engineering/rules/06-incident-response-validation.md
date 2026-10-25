@@ -172,7 +172,7 @@ agents and confirm runtime detections fire.
 
 - [ ] Is there a written IR plan mapped to a maintained standard (e.g., NIST SP
       800-61r3 / CSF 2.0; check csrc.nist.gov for a newer revision), with roles, severity tiers, and authority-to-contain defined
-      *before* an incident?
+      *before* an incident? (§1)
 - [ ] Are there incident-type playbooks (account compromise, ransomware, cloud-
       key abuse, data exfil, container, LLM/agent abuse) — concrete and current?
 - [ ] **LLM/agent playbook (§2) — High where an agent ships:** does it disable
@@ -189,20 +189,26 @@ agents and confirm runtime detections fire.
       named and ranked in the playbooks, tied to BCP recovery targets?
 - [ ] Is forensic readiness real: can you snapshot a pod/instance/memory *before*
       containment destroys it, especially for ephemeral cloud/container workloads?
+      Is the most volatile state (memory, network) captured before the durable
+      (disk, logs)? (§3)
 - [ ] Is there a chain-of-custody process (collector, time, hashing, read-only
-      storage, access logging) for evidence that may be used legally?
+      storage, access logging) for evidence that may be used legally? (§3)
 - [ ] Does containment preserve evidence and scope blast radius before
-      eradication, and rotate all exposed credentials?
+      eradication, and rotate all exposed credentials? Does recovery include
+      heightened monitoring of the affected entities for re-entry over a defined
+      window? (§4)
 - [ ] Are post-incident reviews blameless, and do they *produce* new detections/
-      runbook fixes/forensic-gap closures (not just a doc)?
+      runbook fixes/forensic-gap closures (not just a doc)? Are timeline metrics
+      (time to detect, contain, eradicate, recover) tracked across incidents? (§5)
 - [ ] Are tabletop exercises run regularly with the real responders, exercising
-      decisions and verifying contacts are current?
+      decisions and verifying contacts are current, with scenarios rotated to the
+      top threats and recent intel? (§6)
 - [ ] Are detections **validated against the real technique** via Atomic Red
       Team / Caldera / Stratus before they're trusted? Pick 5 — how many have a
-      passing emulation test?
+      passing emulation test? (§7)
 - [ ] Is detection regression testing wired into CI so a broken detection fails
-      the build?
+      the build? (§7)
 - [ ] Is coverage continuously assessed via emulation/purple-teaming, and does
-      the Navigator reflect *validated* coverage?
+      the Navigator reflect *validated* coverage? (§7)
 - [ ] For LLM/agent systems, are ATLAS-class threats (prompt injection, agent
-      abuse) emulated against your own agents to validate runtime detection?
+      abuse) emulated against your own agents to validate runtime detection? (§7)

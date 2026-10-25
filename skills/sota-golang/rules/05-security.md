@@ -422,9 +422,9 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rnE '(Sprintf|fmt\.Sprint|\+ ?\w+ ?\+).*((?i)select|insert|update|delete|where)' --include='*.go' .`
       ; `grep -rnE '(Query|Exec|QueryRow)[^(]*\(("[^"]*"\s*\+|fmt\.Sprintf)' --include='*.go' .`
       ; `grep -rnE '\.(Raw|Where)\(fmt\.Sprintf' --include='*.go' .` (GORM-style)
-- [ ] **Command injection — CRITICAL** —
+- [ ] **Command injection (§3) — CRITICAL** —
       `grep -rnE 'exec\.Command(Context)?\(\s*"(sh|bash|cmd|powershell)"' --include='*.go' .` ;
-      `grep -rn 'exec.Command' --include='*.go' .` (verify argv construction per site)
+      `grep -rn 'exec.Command' --include='*.go' .` (verify argv per site: `--` before caller values, a minimal `cmd.Env`, `WaitDelay` set; constant-only `sh -c` is MEDIUM)
 - [ ] **Path traversal — HIGH** —
       `grep -rnE 'filepath\.Join\([^)]*(r\.|req\.|input|name|param|id)' --include='*.go' .` ;
       `grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .` (mitigations present?);
@@ -446,9 +446,9 @@ Supply chain and vulnerability management (formerly section 8) moved to
       (pattern built from data, not escaped) ; ``grep -rnE 'Compile\(`\^[^(`]*\|' --include='*.go' .``
       (`^a|b$` — alternation escapes the anchors) ; `grep -rn 'regexp2\.' --include='*.go' .`
       (backtracking engine: confirm `MatchTimeout` is set)
-- [ ] **TLS — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
+- [ ] **TLS (§6) — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
       `grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .` ;
-      `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'`
+      `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'` ; `grep -rnE 'CipherSuites|CurvePreferences' --include='*.go' .` (hand-picked lists only where compliance forces them)
 - [ ] **Integer conversion — gosec G115** —
       `grep -rnE '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)'`
       ; `gosec -include=G115,G118,G119,G120,G121,G124,G201,G202,G204,G304,G401,G402,G701,G702,G703,G704,G705,G706,G707,G708,G709,G710 ./...`
@@ -465,7 +465,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
       (rules/rulelist.go = 39, analyzers/analyzerslist.go = 22, 61 total at v2.29.0). A
       denominator taken from rulelist.go alone silently omits every taint-analysis check
       (G701-G710) and the modern HTTP ones (G119-G124).**
-- [ ] **CSPRNG misuse — HIGH (security-bearing randomness from a PRNG)** —
+- [ ] **CSPRNG misuse (§6) — HIGH (security-bearing randomness from a PRNG)** —
       `grep -rn 'math/rand' --include='*.go' .` (any import: verify each call site is
       non-secret);
       `grep -rnE '\brand\.(Int|Intn|Int31|Int63|Uint|Float|Perm|Shuffle|N)\b' --include='*.go' . # PRNG calls — crypto context?`
@@ -478,8 +478,8 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rnE '(template\.New\([^)]*\)|[Tt]mpl|[Tt]emplate)\.Parse\([A-Za-z_]|interp\.New\(|goja\.New\(|plugin\.Open\(|MethodByName\(|expr\.Eval\(' --include='*.go' .`
       (template text or a call target from a variable; embedded interpreter) ;
       `grep -rn 'expr\.Compile(' --include='*.go' . | grep -v 'expr\.Env('` (no declared env)
-- [ ] **unsafe / cgo** — `grep -rn 'unsafe.Pointer\|go:linkname' --include='*.go' .` ;
-      `grep -rln 'import "C"' --include='*.go' .`
+- [ ] **unsafe / cgo (§7) — HIGH for new `unsafe.Pointer` arithmetic** — `grep -rn 'unsafe.Pointer\|go:linkname\|reflect.SliceHeader\|reflect.StringHeader' --include='*.go' .` ;
+      `grep -rln 'import "C"' --include='*.go' .` ; `git grep -n 'CGO_ENABLED=1'` (each cgo use justified, in one package)
 - [ ] **Secrets in repo** —
       `grep -rnE '(api[_-]?key|secret|password|token)\s*[:=]\s*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .`
 - [ ] **--- Temp files and permissions (§4a) ---** —

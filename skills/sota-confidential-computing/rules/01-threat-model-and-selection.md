@@ -221,31 +221,45 @@ attackers and our own bugs," CC adds cost without adding a defense — rungs 0�
 - [ ] Does every "confidential computing" claim rest on a hardware-based, **attested**
       TEE (CCC definition) — not on memory encryption alone (TME-only, SEV without
       SNP)? Grep design docs for `TME`, `SEV` without `SNP`, "memory encryption"
-      used as a synonym for confidential.
+      used as a synonym for confidential. A "memory is encrypted, therefore
+      confidential" claim is High (§1).
 - [ ] Is attestation evidence actually **verified by a relying party before secrets
-      or data flow** (RFC 9334 roles assigned), rather than merely available?
+      or data flow** (RFC 9334 roles assigned), rather than merely available? (§1)
       (Depth: [rules/03](03-remote-attestation.md).)
 - [ ] Does the design doc name the adversary per R4.1 and justify the chosen rung as
       the lowest sufficient one — with each layer of any stacked isolation mapped to
-      a threat?
+      a threat? Do the lower rungs (TLS, at-rest encryption, KMS custody) stay in
+      place beneath the chosen one (R4.2)? Unjustified rung: Medium; with waived
+      compensating controls: High (§4). Does the mechanism meet the §7 minimum for
+      each named adversary — e.g. a malicious hypervisor needs SNP/TDX-class
+      integrity, not plain SEV; a DRAM-bus interposer is answered only by physical
+      access control?
 - [ ] Is the residual TCB written down (CPU vendor, firmware, guest image, verifier,
-      workload code) and is someone accountable for patching each element?
+      workload code) and is someone accountable for patching each element? An
+      unstated residual TCB is Medium (R2.1, §2).
 - [ ] Are out-of-scope threats explicitly handled elsewhere: workload vulnerabilities
       ([sota-code-security](../../sota-code-security/SKILL.md)), side channels (vendor patches + workload discipline),
-      availability/DoS (resilience design), sophisticated physical attacks (accepted
-      or mitigated)?
+      availability/DoS (resilience design), physical attacks — cheap DRAM-bus
+      interposers included, owned by facility security or a recorded threat
+      acceptance (accepted or mitigated)? An app-layer control skipped "because we
+      run confidential" is High (R2.2, §2).
 - [ ] Where the system also runs untrusted code or parses untrusted input, is there a
       sandbox boundary *inside or alongside* the TEE with its direction of protection
       documented ([sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md))?
+      A TEE used *as* the sandbox — untrusted code running with the TEE's secrets and
+      nothing protecting them from it — is High (R3.2, §3).
 - [ ] Are keys released only against successful attestation (no keys in images, no
       host-injected secrets)? Grep deployment code for cloud-init/user-data secret
       injection into "confidential" VMs.
 - [ ] If compliance-scope reduction is a driver, is there a written assessor/regulator
-      position confirming the treatment — not just vendor collateral?
+      position confirming the treatment — not just vendor collateral — obtained
+      before the design depends on it? An unvalidated scope-reduction assumption
+      driving the design is High (§5).
 - [ ] Have platform capability claims (SNP/TDX instance availability, GPU TEE support,
       Arm CCA status, provider feature limits like live migration/backup) been
       re-verified against current provider documentation rather than copied from
-      older docs?
+      older docs? (§1)
 - [ ] Is there any workload paying for CC whose threat model no one can state
       (anti-pattern §6) — or any workload whose stated threat model demands CC but
-      runs without it?
+      runs without it? A workload whose only stated adversary is external attackers
+      and its own bugs is the §5 counter-driver: rungs 0–1 cover it.

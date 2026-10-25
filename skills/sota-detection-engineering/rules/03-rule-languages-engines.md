@@ -256,23 +256,38 @@ Use when correlation, sequencing, joins, or statistics exceed Sigma's model:
 
 - [ ] Is each detection written in the right engine for its telemetry (Sigma for
       logs, YARA-X for files, network engine for the wire, Falco/Tetragon for
-      runtime, SIEM-native only for correlation)?
+      runtime, SIEM-native only for correlation)? (§1)
 - [ ] Are Sigma rules converted via pySigma/sigma-cli with a schema pipeline and
-      CI-validated (`sigma check`), or hand-written per SIEM and copy-pasted?
+      CI-validated (`sigma check`), or hand-written per SIEM and copy-pasted? Does each
+      Sigma rule carry a stable `id`, ATT&CK `tags`, a real `logsource`, explicit
+      `filter_*` allowlists in its `condition`, and honest `falsepositives` and
+      `level`? (§2)
 - [ ] Are new YARA rules targeting **YARA-X** (not legacy YARA), and structural/
-      behavioral rather than single-hash?
+      behavioral rather than single-hash, validated with `yr check`, with cheap
+      anchors (`$mz at 0`) ordered before expensive checks (entropy)? (§3)
 - [ ] Grep the ruleset for hash-only / single-broad-field detections — how many
       are pure IOC matches dressed as detections?
+- [ ] **Network rules (§4) — Medium:** do Suricata/Snort rules anchor on protocol or
+      behavioral logic (JA4, TLS/HTTP/DNS fields, beaconing thresholds) rather than raw
+      payload bytes, is the ruleset version-controlled with `sid`/`rev` treated like
+      code, and does every inline `drop`/`reject` carry the same FP discipline as
+      auto-containment? A non-zero count from
+      `grep -rhE '^[[:space:]]*(alert|drop|reject)[[:space:]]+(tcp|udp|ip|pkthdr)[[:space:]]' --include='*.rules' . | grep -E 'content:' | grep -vcE '(ja[34]|tls|http|dns)[._]|app-layer|flowbits|detection_filter|threshold'`
+      is the number of payload-bytes-only rules; review each inline-block line from
+      `grep -rhE '^[[:space:]]*(drop|reject)[[:space:]]' --include='*.rules' .` by hand.
 - [ ] Do Falco/Tetragon policies anchor on specific behaviors with exclusions,
-      or fire on "any exec / any connection"?
+      or fire on "any exec / any connection"? (§5)
 - [ ] If Tetragon enforcement (`Sigkill`/`Override`) is enabled, is it scoped by
-      selector and piloted in detect-only, with the same guardrails as IPS?
+      selector and piloted in detect-only, with the same guardrails as IPS? (§5)
 - [ ] Do Tetragon `file`/`path` `Equal` matches name a path that is a symlink (the
       projected service-account `token`)? The kernel reports the resolved path, so the
       rule never fires: `grep -rn -A4 'operator: "Equal"' --include='*.yaml' . | grep serviceaccount`.
 - [ ] Do SIEM-native queries bound their time windows and avoid unbounded
-      joins/regexes that cause noise or cluster load?
-- [ ] Is every rule evasion-aware (anchored on unavoidable behavior, not a
-      trivially mutated string)?
+      joins/regexes that cause noise or cluster load, and are they
+      version-controlled with the same review and test rigor as Sigma? (§6)
+- [ ] Is every rule specific (behavior plus context, never a single broad
+      field), with each baked-in allowlist commented and residual FPs documented in
+      the ADS, cheap predicates first, and evasion-aware (anchored on unavoidable
+      behavior, not a trivially mutated string)? (§7)
 - [ ] Does each rule carry ATT&CK tags, a stable ID, an owner, and test
-      fixtures?
+      fixtures? (§7)

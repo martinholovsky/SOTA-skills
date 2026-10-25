@@ -286,33 +286,46 @@ independent-layers principle in [sota-sandboxing rules/01](../../sota-sandboxing
 
 - [ ] Requirement triaged through §1 R5.2: is there a written rationale for why
       a TEE ([rules/01](01-threat-model-and-selection.md)) or DP ([sota-privacy-compliance rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md)) does not satisfy
-      the threat model before any FHE/MPC build?
+      the threat model before any FHE/MPC build? None recorded: Medium. Is the
+      chosen tool's trust residue (§6 table) accepted in writing, and in a hybrid
+      does each layer carry its own threat model?
 - [ ] FHE scheme family matches workload shape (BGV/BFV exact, CKKS approximate,
-      TFHE boolean/lookup) — no exact-arithmetic-on-CKKS or comparison-heavy BFV?
+      TFHE boolean/lookup) — no exact-arithmetic-on-CKKS or comparison-heavy BFV
+      (Medium, §2)?
 - [ ] All FHE parameters come from library standard/named parameter sets at
       ≥128-bit? (grep for custom `poly_modulus_degree`, `ring_dim`, modulus
-      chains diverging from presets)
+      chains diverging from presets) Hand-rolled parameters without a
+      cryptographer-signed lattice-estimator analysis: Critical (R5.5, §2).
 - [ ] Library actively maintained, latest stable, license/patent terms cleared
-      (e.g. BSD-3-Clause-Clear commercial restrictions)?
+      (e.g. BSD-3-Clause-Clear commercial restrictions)? No homemade scheme
+      implementation outside a research context (Critical, §2)?
 - [ ] If CKKS decryptions are ever shared: IND-CPA-D-hardened decryption
-      (worst-case noise flooding) enabled?
+      (worst-case noise flooding) enabled? Absent: High (R5.7, §2).
 - [ ] Result-integrity story explicit: ZKP/TEE/redundant evaluation, or a
-      documented honest-but-curious server assumption?
+      documented honest-but-curious server assumption? Omitted: High (R5.6, §2).
 - [ ] Measured (not estimated) latency and ciphertext expansion on production
-      data sizes before commitment?
+      data sizes before commitment (§2)?
 - [ ] MPC: adversary model (semi-honest vs malicious) stated in the design doc
-      and matched to counterparty trust?
+      and matched to counterparty trust? Unnamed model: High; semi-honest run
+      against untrusted counterparties while claimed private: Critical (R5.9, §3).
 - [ ] MPC: party operators enumerated with genuinely independent admin domains;
-      collusion analysis dated and revisited on org changes?
+      collusion analysis dated and revisited on org changes? Parties under one
+      operator, cluster or admin team: Critical (R5.10, §3).
 - [ ] ZKP: standard proof system via a maintained library — no hand-rolled
       crypto? Circuit independently audited? Test suite attempts to prove FALSE
-      statements?
+      statements? Missing audit: High; honest-path-only tests: Medium; hand-rolled
+      proof system: Critical (R5.14). SNARK-vs-STARK choice recorded against who
+      verifies, setup acceptability and post-quantum posture (R5.13, §4)?
 - [ ] SNARK trusted setup: multi-party ceremony documented, transcript
-      published, parameters verified to match the circuit in use?
+      published, parameters verified to match the circuit in use? Unceremonied or
+      undocumented setup: High (R5.15, §4).
 - [ ] PSI: leakage budget written (set sizes, match events); online endpoints
-      rate-limited against adaptive enumeration?
+      rate-limited against adaptive enumeration? A PSI variant (PSI-CA, unbalanced
+      PSI, ...) chosen against that budget where cardinality or match events are
+      sensitive; an unthrottled online endpoint is High (R5.17, §5).
 - [ ] Standards claims current: ISO/IEC 28033 stage, NIST PEC / IR 8214C
-      threshold-call status re-verified, not copied from stale docs?
+      threshold-call status re-verified, not copied from stale docs? Citing ISO/IEC
+      28033 as published without checking its stage: Low (§7).
 - [ ] DP, consent, and minimization questions routed to [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md);
       DP-SGD/federated learning to [sota-ml-engineering rules/07](../../sota-ml-engineering/rules/07-security-governance.md); classical
       crypto to [sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md)?

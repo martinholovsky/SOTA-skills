@@ -299,36 +299,53 @@ that gates nothing.
       end-to-end: named broker/KMS releases it only on a valid, fresh result
       (grep for the release policy; a dashboard/metrics sink is not a consumer).
 - [ ] Kill test documented: with attestation disabled or the verifier down, does
-      the workload provably fail to obtain production secrets (fail closed)?
+      the workload provably fail to obtain production secrets (fail closed)? A
+      workload that still runs on production data is Critical (R2.1, R2.4, §2).
 - [ ] Are secrets absent from the image, host env, and mounted volumes before
       attestation succeeds? (grep manifests for env/volume-injected prod secrets
-      alongside "attestation" — coexistence is the tell.)
+      alongside "attestation" — coexistence is the tell.) After release, is the key
+      kept off host-visible volumes and env vars (R2.3, §2)?
 - [ ] Is the released secret bound to the attested identity (encrypted to a key in
       report data, or delivered over an RA-bound channel), not sent over ordinary
-      TLS to whoever asked?
+      TLS to whoever asked (R2.2, §2)? Are the verified key and the delivery-channel
+      key the same identity — unrelated keys are High (R6.2) — and is any RA-TLS
+      treated as a project-specific profile, not assumed interoperable across
+      vendors (R6.3, §6)?
 - [ ] Every deployment box mapped to a RATS role (Attester / Verifier / Relying
       Party / Endorser / RVP), with topology (passport vs background-check) named
-      and result-token audience/expiry/replay handling stated?
+      and result-token audience/expiry/replay handling stated? Are Verifier identity
+      and Reference Values pinned by the workload owner, never selectable by the
+      Attester's host (R1.1, §1)?
 - [ ] Does verification policy explicitly reject debug-mode Evidence in prod?
       (grep policy for the platform's debug attribute; absence of any debug check
-      is the finding.)
+      is the finding: Critical, R3.1, §3.)
 - [ ] Fresh nonce or channel-key hash bound into report data and checked by the
-      Verifier (grep for report_data / REPORT_DATA / runtime-data handling)?
+      Verifier (grep for report_data / REPORT_DATA / runtime-data handling)? No
+      freshness mechanism at all is High (R3.2, §3).
 - [ ] Certificate chain verified to a pinned silicon-vendor root with revocation,
-      roots obtained out-of-band from the vendor (not from the attested host)?
+      roots obtained out-of-band from the vendor (not from the attested host)? A
+      chain checked only to a platform-supplied intermediate is Critical (R3.3, §3).
 - [ ] TCB status handled as graded policy (each grade → release/alert/deny with
-      deadlines), never a silent boolean accept?
+      deadlines), never a silent boolean accept? Silently accepting `OutOfDate` or
+      `Revoked` is Critical (R3.4, §3).
 - [ ] Measurements compared to reference values sourced from the build pipeline
       (reproducible builds / signed by CI), not fingerprinted from a running
       instance; SLSA provenance and runtime attestation both present and joined?
-- [ ] Verifier trust and placement justified: not operated by the party being
-      distrusted, HA-deployed, every verdict logged?
+      Reference-value strategy (golden-value pinning or policy-based) chosen per
+      workload (R5.1)? A policy that stops at "quote verifies" is High (R3.5, §3, §5).
+- [ ] Verifier trust and placement justified: not operated by — nor run on the
+      infrastructure of — the party being distrusted (High, R4.2); HA-deployed with
+      an outage rehearsed whose outcome is "cannot start new", never "start
+      unverified" (R4.3); every verdict logged (R4.1, §4)?
 - [ ] Written TCB-recovery runbook: fleet re-attestation path, dual-validity
-      reference-value rotation, time-boxed signed grace windows, expiry alerts?
+      reference-value rotation, time-boxed signed grace windows, expiry alerts? None
+      documented: High (R5.4, §5).
 - [ ] On a retired measurement or a platform marked `Revoked`, are the keys and secrets already
-      released to it rotated or revoked (R7.3), not only future releases denied? A deny-list that
+      released to it rotated or revoked (R7.3, §7), not only future releases denied? A deny-list that
       stops new releases while old ones stay valid = HIGH.
-- [ ] Re-attestation triggers defined (restart, lease renewal, policy change,
-      schedule) and secret releases leased rather than perpetual?
+- [ ] Re-attestation triggers defined (restart, lease renewal, policy or
+      reference-value change, TCB recovery events, schedule; for an attached GPU a
+      reset, reassignment or CC-mode change) and secret releases leased rather than
+      perpetual (R7.1, §7)?
 - [ ] Attestation failures, debug-flag sightings, and TCB downgrades alert into
-      the SOC as security signals, with appraisal transcripts retained?
+      the SOC as security signals, with appraisal transcripts retained (R7.2, §7)?

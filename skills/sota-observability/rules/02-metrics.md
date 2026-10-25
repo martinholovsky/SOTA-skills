@@ -300,22 +300,34 @@ Rules:
 - [ ] New scrape targets accepted on **series arriving**, not on discovery: per-target
       `health`/`lastError` read, endpoint probed for scheme (HTTP vs TLS) before the config
       was written, and any skipped certificate verification carries its reason inline (§7).
-- [ ] RED metrics exist per service and per route (rate, errors with a
-      defined error definition, duration as histogram).
+- [ ] RED metrics exist per service and per route (rate, errors defined as
+      5xx + timeouts and not 4xx, duration as histogram) (§1).
 - [ ] USE metrics exist for every owned bounded resource: DB/HTTP connection
-      pools, worker pools, internal queues (utilization AND saturation).
-- [ ] Queue consumers expose lag/oldest-message-age.
+      pools, worker pools, internal queues (utilization AND saturation) (§1).
+- [ ] Queue consumers expose lag/oldest-message-age (§1).
 - [ ] No gauges used for latency or event counts; counters are `_total`,
-      units in names, base units.
+      units in names, base units; no deltas hand-computed from raw counter
+      values (`rate()`/`increase()` handle resets); derived current-state
+      gauges are callbacks, not values remembered and set (§2).
 - [ ] Grep label usage: no user IDs, raw paths/URLs, error strings, or other
       unbounded values as labels; route templates used; series counts per
-      metric known and bounded; cardinality-growth alert exists.
+      metric known and bounded; cardinality-growth alert exists; a pipeline
+      relabel/drop rule backstops accidental unbounded labels (§3).
 - [ ] No dashboard or alert averages percentiles; quantiles computed from
-      bucket sums across instances; summaries not aggregated.
+      bucket sums across instances; summaries not aggregated (§4).
 - [ ] Histogram buckets chosen around SLO thresholds (or native/exponential
-      histograms in use); latency SLI computed from a bucket boundary.
+      histograms in use); latency SLI computed from a bucket boundary (§4).
 - [ ] Exemplars flow end-to-end (SDK → exposition → TSDB → dashboard), or
-      spanmetrics provides the metric↔trace bridge.
+      spanmetrics provides the metric↔trace bridge (§5).
+- [ ] (**Medium**) OTel metrics (§6): instruments carry semantic-convention
+      names and units (`http.server.request.duration` in seconds); one naming
+      scheme runs end-to-end (Prometheus's OTLP `translation_strategy` chosen,
+      not left at its default); each exporter sets the aggregation temporality
+      its backend expects (cumulative for Prometheus) instead of assuming it;
+      per-instance non-additive readings are Gauges, not UpDownCounters. Probe
+      for OTLP metric exporters with no temporality in the same file — each
+      file listed is a finding unless its config sets temporality elsewhere:
+      `grep -rlE 'OTLPMetricExporter|Otlp(Grpc|Http)MetricExporter|otlpmetric(grpc|http)' --include='*.py' --include='*.go' --include='*.js' --include='*.ts' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE '[Tt]emporality' "$f" || echo "$f"; done`
 - [ ] `service.version` and environment present on all series; deploys are
       correlatable with metric shifts.
 - [ ] Does any before/after claim from production telemetry rest on exactly two

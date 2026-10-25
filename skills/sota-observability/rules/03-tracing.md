@@ -266,23 +266,32 @@ services — and into every outbound header.
 
 - [ ] Application code depends on OTel API only; SDK configured in exactly
       one place per service; exporters point at a Collector, not hardcoded
-      vendors.
+      vendors; `service.name`, `service.version` and
+      `deployment.environment.name` set as resource attributes; any "tracing
+      is available" check imports the SDK, never the bare API (§1). Probe
+      for gates on the API package (each hit is the finding):
+      `grep -rnE '(importorskip|find_spec)\([[:space:]]*.opentelemetry.[[:space:]]*[,)]|^[[:space:]]*import[[:space:]]+opentelemetry[[:space:]]*$' --include='*.py' .`
 - [ ] Auto-instrumentation enabled for frameworks, DB, HTTP clients, queue
-      clients; semantic conventions used for names/attributes.
+      clients; semantic conventions used for names/attributes (§1).
 - [ ] Every outbound network call (HTTP, DB, cache, queue) produces a span;
-      retries visible; span names are low-cardinality templates.
+      retries visible; span names are low-cardinality templates; spans are
+      always ended (`with`/`defer`/`try-finally`); queue/pool wait time is
+      recorded as a span or an attribute (§2).
 - [ ] Span status ERROR only on real failures; exceptions recorded as span
       events or span-correlated logs (Span Event API deprecation planned); no
-      payloads/PII in attributes.
+      payloads/PII in attributes (§2).
 - [ ] Trace continuity verified end-to-end across HTTP → queue → worker →
-      cron paths (one trace or linked traces per user action).
-- [ ] Sampling is deliberate: documented policy; errors and slow traces are
-      retained (tail sampling or equivalent); ParentBased everywhere;
-      sampling rate adjustable during incidents.
+      cron paths (one trace or linked traces per user action); batch
+      consumers link every source message; inbound `traceparent` sampling
+      flags from the internet are not trusted blindly (stripped or
+      regenerated at the edge where clients could force sampling) (§3).
+- [ ] Sampling is deliberate: documented policy, effective config logged;
+      errors and slow traces are retained (tail sampling or equivalent);
+      ParentBased everywhere; sampling rate adjustable during incidents (§4).
 - [ ] trace_id present in logs (cross-link works both ways: log→trace,
       trace→logs, metric exemplar→trace).
 - [ ] Baggage usage reviewed: no PII/secrets, stripped or validated at trust
-      boundaries, not leaking to third-party APIs.
+      boundaries, not leaking to third-party APIs; count and size capped (§6).
 - [ ] Collector pipeline monitored (dropped spans, queue saturation, export
       failures); tail-sampling memory sized for peak.
 - [ ] SDK limits and shutdown (§5): no `SimpleSpanProcessor` in production config

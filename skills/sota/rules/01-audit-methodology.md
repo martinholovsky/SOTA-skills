@@ -440,8 +440,7 @@ one covers coverage, tooling and hygiene. Both run.
       dependents by symbol reference, not import name alone (relative and directory imports).
 - [ ] **Every dead-code / test-only downgrade passed its own bar** (§3), and no `assert`
       was treated as dismissing a finding without checking the release build's flags?
-- [ ] Scope agreed: repos, branch, pinned commit, environments,
-      static-vs-dynamic — and exclusions documented?
+- [ ] Scope agreed: repos, branch, pinned commit, environments, static-vs-dynamic — and exclusions documented?
 - [ ] Standards set named up front (ASVS level, OWASP Top 10 2025,
       API Top 10 2023, CWE, ATT&CK; LLM/Agentic Top 10, AISVS, ATLAS where applicable)?
 - [ ] Full inventory done: languages+versions, entry points, trust
@@ -487,6 +486,7 @@ one covers coverage, tooling and hygiene. Both run.
       commit**, with the quoted evidence byte-identical, diff-relative numbers
       converted, and the full path checked against its siblings — run *before*
       the adversarial pass, and watched to fail at least once (§4b)?
+- [ ] **Medium** — (§5) Did a change to the router's §AUDIT land in the same commit as its procedure in the file that owns the pass (running the audit: this file; rating or reporting a finding: the findings file), with `ROUTER_AUDIT_SHA` set only after both rules files were re-read and the commit saying which half, if either, was wrong? `git diff <base>...HEAD | grep -cE '^[+-].*ROUTER_AUDIT_SHA'` non-zero means that re-read is owed.
 
 **Hygiene**
 - [ ] Audit was read-only; nothing in the target mutated without explicit
