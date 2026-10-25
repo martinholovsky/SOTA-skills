@@ -221,17 +221,17 @@ rebuildability).
 
 ## Audit checklist
 
-- [ ] Do any two services deploy in lockstep or require synchronized PRs (distributed monolith)?
-- [ ] Does more than one service write — or read without a sanctioned contract — the same tables (shared database)?
-- [ ] Is there a god component (top of churn + dependency in-degree + size by a wide margin)?
-- [ ] Are there more services than the team can independently deploy, operate, and debug (premature microservices)? Could the system collapse to fewer deployables?
-- [ ] Do domain/use-case layers import ORM, transport, or vendor SDK types (leaky abstraction)? Are API DTOs the same classes as DB entities?
-- [ ] What is the maximum synchronous call depth on revenue-critical paths? Is it > 2?
-- [ ] Is there an event catalog? Are there event cycles or multi-hop cascades nobody documented?
-- [ ] Is any business data stored only in a cache? Would a cache flush cause wrong answers?
-- [ ] Does a shared `common` library contain domain types or force coordinated releases?
-- [ ] Is every heavyweight technology (broker, orchestrator, event sourcing) justified by an ADR with measured load, or by fashion?
-- [ ] Are there per-item remote calls in loops on hot paths (network N+1)?
-- [ ] Does every production component have an owning, on-call team?
-- [ ] Are there sedimented half-migrations (duplicate clients/ORMs/auth paths, `_v2`/`_legacy` older than a year) without kill dates?
-- [ ] Can every environment be rebuilt from git, or does production depend on hand-applied, unrecorded state (drift in IaC plans)?
+- [ ] Do any two services deploy in lockstep or require synchronized PRs (distributed monolith)? (§1)
+- [ ] Does more than one service write — or read without a sanctioned contract — the same tables (shared database)? (§2)
+- [ ] Is there a god component (top of churn + dependency in-degree + size by a wide margin)? (§3)
+- [ ] Are there more services than the team can independently deploy, operate, and debug (premature microservices)? Could the system collapse to fewer deployables? (§4)
+- [ ] Do domain/use-case layers import ORM, transport, or vendor SDK types (leaky abstraction)? Are API DTOs the same classes as DB entities? (§5)
+- [ ] What is the maximum synchronous call depth on revenue-critical paths? Is it > 2? (§6)
+- [ ] Is there an event catalog? Are there event cycles or multi-hop cascades nobody documented? (§7)
+- [ ] Is any business data stored only in a cache? Would a cache flush cause wrong answers? (§8)
+- [ ] Does a shared `common` library contain domain types or force coordinated releases? (§9)
+- [ ] Is every heavyweight technology (broker, orchestrator, event sourcing) justified by an ADR with measured load, or by fashion? (§10)
+- [ ] Are there per-item remote calls in loops on hot paths (network N+1)? Any chatty two-way coupling (A calls B and B calls A), entity CRUD services in place of capability boundaries, or a broker used as a long-retention store for operational reads? (§13)
+- [ ] Does every production component have an owning, on-call team? (§13)
+- [ ] Are there sedimented half-migrations (duplicate clients/ORMs/auth paths, `_v2`/`_legacy` older than a year) without kill dates? (§11)
+- [ ] Can every environment be rebuilt from git, or does production depend on hand-applied, unrecorded state (drift in IaC plans)? (§12)

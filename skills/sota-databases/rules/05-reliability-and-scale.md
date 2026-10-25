@@ -232,33 +232,37 @@ remains the right queue when jobs must commit atomically with data.
 
 - [ ] PITR-class backups, off-box/off-account, restore rehearsed on a
       schedule with recorded RTO; RPO/RTO stated; backups protected from DB
-      credentials; replication not counted as backup.
+      credentials; replication not counted as backup (§1).
 - [ ] Sync replication only with quorum; failover orchestrated and tested;
       replica routing respects read-your-own-writes; lag monitored in bytes
-      and seconds with alerts below routing assumptions.
+      and seconds with alerts below routing assumptions; auth/session checks
+      read from the primary; heavy analytics on a dedicated replica or
+      warehouse, not the hot standby (§2).
 - [ ] Retention-bearing big tables partitioned (or a plan exists before
       100GB); future partitions auto-created; partition key in hot predicates
-      and unique constraints; retention via partition drop, not mass DELETE.
+      and unique constraints; retention via partition drop, not mass DELETE;
+      a default partition exists and is monitored to stay empty (§3).
 - [ ] Autovacuum tuned per hot table; dead-tuple ratio, last_autovacuum,
       wraparound age monitored; no inactive replication slots, stale prepared
       xacts, or chronic long transactions pinning xmin; pg_repack (not VACUUM
-      FULL) for live de-bloat.
+      FULL) for live de-bloat; `age(datfrozenxid)` alerted before ~200M (§4).
 - [ ] The monitoring metric set above graphed + alerted, including
-      days-until-disk-full and pooler saturation.
+      days-until-disk-full and pooler saturation (§5).
 - [ ] Scaling proposals follow the order of operations; no sharding while
-      indexes/caching/replicas/vertical headroom remain unexploited.
+      indexes/caching/replicas/vertical headroom remain unexploited (§6).
 - [ ] Cache: TTLs with jitter everywhere, delete-after-commit invalidation,
       stampede protection on hot keys, correct-when-flushed property holds,
-      maxmemory+eviction policy explicit.
+      maxmemory+eviction policy explicit; negative caching (short TTL) where
+      absent-key lookups are common (§7).
 - [ ] Redis locks: NX + token + Lua release + TTL; fencing tokens wherever
       the lock guards correctness; no blind DEL releases; no unfenced Redlock
-      protecting correctness-critical resources.
+      protecting correctness-critical resources (§7).
 - [ ] Streams consumers: XACK + XAUTOCLAIM + MAXLEN + dead-letter +
-      idempotency; no Pub/Sub for must-process messages.
+      idempotency; no Pub/Sub for must-process messages (§7).
 - [ ] Redis holding non-cache state has AOF persistence, tested failover,
       noeviction, and is separated from the LRU cache instance; no
-      KEYS/unbounded-range commands in code.
+      KEYS/unbounded-range commands in code (§7).
 - [ ] Postgres major version supported (not EOL) and quarterly minor updates
       applied within a defined SLA (minors fix RCE-class bugs — e.g. pgcrypto
       CVE-2026-2005); logical/CDC slots monitored with max_slot_wal_keep_size
-      set.
+      set (§2).

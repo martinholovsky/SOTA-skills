@@ -442,28 +442,28 @@ weekly:
 - [ ] Do **events** get the durability/retention/backup budget rather than commands? A
       lost command is a retry; a lost event is unrecoverable state (§6).
 
-- Is the consistency model (linearizable vs eventual, staleness bound) written down per critical operation?
-- Is every message handler and retried endpoint provably idempotent? Is dedupe state committed atomically with the state change?
-- Do public write APIs accept idempotency keys?
-- Does anything depend on exactly-once *delivery*? Any naked dual-writes (DB write + publish without outbox/CDC)?
-- Does every multi-service workflow have defined, idempotent compensations and a timeout-to-terminal-failure path? Can you answer "where is workflow X stuck" from a dashboard?
-- Do multi-leg money/inventory/entitlement workflows take value from the source *before* granting it at the destination? Where a credit lands first, is that balance provably held out of the spendable one — enforced, not assumed?
-- Does every integration where an external party holds authoritative state have a periodic reconciliation against **their** extract (not your own event log), with breaks classified into auto-adjustable / manual / unclassified, aged, and alerted? Has that reconciliation ever been observed reporting a break, and does it print how many rows it compared on each side?
+- Is the consistency model (linearizable vs eventual, staleness bound) written down per critical operation? Does any flow assume read-your-writes across replicas or caches without sticky-primary, version-pinned reads or write-through, and is 2PC/XA used across heterogeneous systems? (§1)
+- Is every message handler and retried endpoint provably idempotent? Is dedupe state committed atomically with the state change? (§2)
+- Do public write APIs accept idempotency keys? Is retention documented? A payment-ish operation without one is Critical (§2)
+- Does anything depend on exactly-once *delivery*? Any naked dual-writes (DB write + publish without outbox/CDC)? Is every message acked only after the state change is durably committed, and is inbound consume-and-act atomic (inbox table)? (§3, §4)
+- Does every multi-service workflow have defined, idempotent compensations and a timeout-to-terminal-failure path? Can you answer "where is workflow X stuck" from a dashboard? Is any flow of 3+ steps choreographed rather than orchestrated? (§5)
+- Do multi-leg money/inventory/entitlement workflows take value from the source *before* granting it at the destination? Where a credit lands first, is that balance provably held out of the spendable one — enforced, not assumed? (§5)
+- Does every integration where an external party holds authoritative state have a periodic reconciliation against **their** extract (not your own event log), with breaks classified into auto-adjustable / manual / unclassified, aged, and alerted? Has that reconciliation ever been observed reporting a break, and does it print how many rows it compared on each side? Does it fail closed when either side reads zero? (§5b)
 - Are events past-tense facts with producer ownership, or commands in disguise?
 - Does every queue have bounded size, retry-with-backoff, DLQ, DLQ alerting, and a tested redrive runbook?
 - Are poison messages separated from transient failures, or retried identically?
 - [ ] Multi-tenant async work (§7): is every job type classified global / tenant-scoped / cross-tenant, are dedup and idempotency keys, retry state, per-tenant ordering and DLQ access scoped by tenant, and do global jobs run as an explicit system identity? HIGH (cross-tenant dedup drops or DLQ exposure). Probe for dedup/idempotency keys built without a tenant: `grep -rniE '(idempot|dedup)[a-z_]*_?key[[:space:]]*[:=]' . | grep -vi tenant`; for a fabricated tenant: `grep -rniE "tenant(_?id)?[\"']?[[:space:]]*(:=|[:=])[[:space:]]*[\"'](system|global|default|all|none|0)[\"']" .`
-- AMQP consumers: manual ack after durable commit (no auto-ack)? Requeue limited to transient failures, with poison messages rejected (`requeue=false`) to a DLX?
-- Is prefetch (`basic.qos`) set explicitly on every AMQP consumer, or is any consumer running with unlimited prefetch?
-- Durable RabbitMQ queues: quorum (not classic), delivery-limit dead-lettering configured (not silently dropping)? Messages carry references rather than blobs/secrets? Broker locked down (per-service users, vhosts, least privilege, TLS)?
-- Is ordering guaranteed only where a partition key provides it? Any logic assuming global order or wall-clock ordering?
-- Are message/API schemas versioned with CI compatibility checks or consumer-driven contract tests?
-- Are consumers tolerant readers (ignore unknown fields)?
-- Is trace/correlation context propagated across every async hop?
+- AMQP consumers: manual ack after durable commit (no auto-ack)? Requeue limited to transient failures, with poison messages rejected (`requeue=false`) to a DLX? (§7b)
+- Is prefetch (`basic.qos`) set explicitly on every AMQP consumer, or is any consumer running with unlimited prefetch? (§7b)
+- Durable RabbitMQ queues: quorum (not classic), delivery-limit dead-lettering configured (not silently dropping)? Messages carry references rather than blobs/secrets? Broker locked down (per-service users, vhosts, least privilege, TLS)? (§7b)
+- Is ordering guaranteed only where a partition key provides it? Any logic assuming global order or wall-clock ordering? Are wall-clock timestamps used for uniqueness across machines instead of version numbers and UUIDv7/ULID/KSUID ids? (§9)
+- Are message/API schemas versioned with CI compatibility checks or consumer-driven contract tests? Do breaking changes ship as a new version alongside the old with a deprecation window? (§8)
+- Are consumers tolerant readers (ignore unknown fields)? (§8)
+- Is trace/correlation context propagated across every async hop? (§9)
 - If event sourcing is used: are snapshotting, upcasting, and deletion (crypto-shredding) designed and tested?
-- Do async request/response flows use correlation IDs and a standard job-status pattern with defined no-reply timeouts?
-- Is consumer parallelism aligned with broker partitioning? Any head-of-line blocking from mixed-weight messages on one queue?
-- Are distributed locks lease-based with fencing tokens verified at the resource? Any bare `setnx`-style locks guarding critical sections?
-- Are singleton/scheduled jobs leader-elected and idempotent under overlapping elections?
+- Do async request/response flows use correlation IDs and a standard job-status pattern with defined no-reply timeouts? (§10)
+- Is consumer parallelism aligned with broker partitioning? Any head-of-line blocking from mixed-weight messages on one queue? Do consumers commit offsets only after processing, so a rebalance mid-stream is covered by idempotency? (§11)
+- Are distributed locks lease-based with fencing tokens verified at the resource? Any bare `setnx`-style locks guarding critical sections? (§12)
+- Are singleton/scheduled jobs leader-elected and idempotent under overlapping elections? (§12)
 - [ ] An in-house replication, consensus, lease or lock scheme, or an async workflow whose step orderings are not obviously safe, built with no checked model and no deterministic-simulation test (§12a) → Medium (High where it guards money or data durability). Where a model exists: does CI run it with a distinct-state floor, without `-deadlock`, with reach checks that must be violated under the main config, and with a liveness `PROPERTY` for a forever-running protocol, parsing the result line rather than trusting exit 0 (Alloy, FizzBee, Quint)? Each missing → Medium. Locate the jobs: `grep -rnE 'tla2tools|tlc2\.TLC|(^|[[:space:]])tlc[[:space:]]|apalache|quint[[:space:]]+(run|verify|test)|(^|[[:space:]/])p[[:space:]]+check|(^|/)fizz[[:space:]]|org\.alloytools' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.mk' --include=Makefile --include=justfile --include=Dockerfile --include='*.toml' --include='*.json' .` (calibrated: 9 of 9 invocations, 0 of 2 decoys; standalone `ugrep` skips `.github/` unless given `--hidden`), and print a denominator beside it: `find . -name '*.tla' -o -name '*.qnt' -o -name '*.p' -o -name '*.als' | wc -l` (models with no job are the finding).
-- Do any designs assume reliable network, ordered clocks, or stable topology (check failure branches on every remote call)?
+- Do any designs assume reliable network, ordered clocks, or stable topology (check failure branches on every remote call)? Any unbudgeted sequential cross-service calls, or full entity snapshots sent on every change? (§13)

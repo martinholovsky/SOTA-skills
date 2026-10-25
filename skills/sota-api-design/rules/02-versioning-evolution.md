@@ -6,6 +6,8 @@ enum and schema evolution.
 
 ## 1. The prime directive: evolve, don't version
 
+*(advisory)* Rationale only; the checkable rules it motivates are in §2 (breaking vs additive) and §4 (version placement).
+
 A new major version is a **failure mode**, not a tool. Every major version doubles
 maintenance, splits traffic and docs, and strands clients. Design v1 so that years
 of change stay additive. Teams that internalize this ship `v1` forever (Stripe runs
@@ -244,16 +246,18 @@ tests/contract/
 
 ## Audit checklist
 
-- [ ] Documented compatibility policy exists: what's additive vs breaking, unknown-field rules for both directions.
-- [ ] Clients-must-ignore-unknown-fields stated in docs; server is free to add response fields.
-- [ ] Server's unknown-request-field policy explicit (reject on writes recommended); typo'd field names cannot be silently dropped on money/critical writes.
-- [ ] CI runs spec diff (oasdiff / buf breaking / GraphQL schema check) and fails on breaking changes.
-- [ ] Version scheme is deliberate: URL major never bumped casually; header/date versioning has a safe documented default (never implicit "latest").
-- [ ] No business logic forked per version — version adapters at the edge only.
-- [ ] Deprecated surface marked in spec AND signaled at runtime (`Deprecation`, `Sunset`, `Link` headers).
-- [ ] Per-key usage metrics exist for deprecated endpoints/fields; sunset decisions are data-driven.
-- [ ] Published deprecation runway (≥6mo public) with migration guides; removed endpoints return `410` + pointer, not `404`.
-- [ ] Response enums documented as open; client SDKs you ship tolerate unknown enum values and unknown fields.
-- [ ] No repurposed fields in history (same name, changed semantics) — grep changelog/spec history.
-- [ ] State-like fields are string enums, not booleans; timestamps RFC 3339; no magic-int enums.
-- [ ] Old supported versions have golden contract tests, owners, and sunset dates.
+- [ ] Documented compatibility policy exists: what's additive vs breaking, unknown-field rules for both directions (§2).
+- [ ] Clients-must-ignore-unknown-fields stated in docs; server is free to add response fields (§3).
+- [ ] Server's unknown-request-field policy explicit (reject on writes recommended); typo'd field names cannot be silently dropped on money/critical writes (§3).
+- [ ] CI runs spec diff (oasdiff / buf breaking / GraphQL schema check) and fails on breaking changes (§2).
+- [ ] Version scheme is deliberate: URL major never bumped casually; header/date versioning has a safe documented default (never implicit "latest"); no version in a query parameter (`?v=2`); header-versioned responses carry `Vary` on the version header (§4).
+- [ ] **Date-pinned versioning, where used (§8) — MEDIUM**: a request without the version header from an account pinned to an older date gets the pinned shape, not the newest; upgrading the pin is an explicit, reversible action; the history of each released change module shows no edits after release, and each module has a changelog entry, a migration note and round-trip fixture tests.
+- [ ] No business logic forked per version — version adapters at the edge only (§7).
+- [ ] Deprecated surface marked in spec AND signaled at runtime (`Deprecation`, `Sunset`, `Link` headers) (§5).
+- [ ] Per-key usage metrics exist for deprecated endpoints/fields; sunset decisions are data-driven (§5).
+- [ ] Published deprecation runway (≥6mo public) with migration guides; removed endpoints return `410` + pointer, not `404` (§5).
+- [ ] **Client communication (§10) — LOW**: the changelog is machine-readable (per entry: date, surface, additive/deprecation/breaking, link); every API key/app has a registered owner contact; deprecation notices go to owners of keys that called the surface in the last 90 days; SDK releases follow each spec change; the sandbox serves both the account's pinned version and the newest.
+- [ ] Response enums documented as open, new values of high-impact enums such as `status` gated behind the version/date header (§6); client SDKs you ship tolerate unknown enum values and unknown fields, and do not depend on field order or on absence-vs-null distinctions the contract does not state (§3).
+- [ ] No repurposed fields in history (same name, changed semantics) — grep changelog/spec history (§6).
+- [ ] State-like fields are string enums, not booleans; timestamps RFC 3339; no magic-int enums (§6).
+- [ ] At most 2–3 versions supported at once, each with golden contract tests (replayed against every release, asserting shape and semantics rather than byte equality, one fixture set per supported version) (§9), an owner, a usage metric and a sunset date; new features land only in the newest version (§7).

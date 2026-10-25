@@ -184,6 +184,8 @@ The defects that survive code review because they need eyes, not grep:
 
 ## 12. Audit rubric (visual quality grading)
 
+*(advisory)* — a 1–5 grading rubric for when a holistic verdict is requested; each dimension is probed by the §1–§11 and §13 items.
+
 Score each dimension 1–5 when a holistic verdict is requested; below 3 on any dimension
 generates findings:
 
@@ -211,18 +213,18 @@ reuse/consistency, **Minor** when cosmetic.
 
 ## Audit checklist
 
-- [ ] Each screen has one identifiable primary action; squint/blur test preserves title + CTA; secondary content visibly de-emphasized
-- [ ] Text hierarchy levels differ by ≥ 2 cues; adjacent sizes ≥ ~20% apart; no 1px-difference pseudo-hierarchy
-- [ ] Grouping by proximity; ≤ 2 levels of bordered containment; all elements aligned to the grid (no mixed center/left in a region); table numerics right-aligned + tabular
-- [ ] One depth language applied consistently; shadows tokenized, two-layer, y > blur logic; dark mode re-tokenizes borders/elevation
-- [ ] One icon family/stroke/grid; icon-only buttons rare + tooltipped + labeled; radius scale ≤ 4 values, nested radii = outer − gap
-- [ ] No generic-template kill-list items (gradient hero default, glow shadows, glassmorphism content, emoji icons); ≥ 3 deliberate brand decisions identifiable (type, hue, signature element)
-- [ ] Distinctiveness spent on marketing/empty surfaces; product surfaces calm and consistent
-- [ ] Density tokenized and consistent per area; data tables meet row-height/alignment standards
-- [ ] Microcopy: verb+object buttons, sentence case, blame-free errors with next step, localized numbers, intentional truncation
-- [ ] Drift counts within budget: ≤ 8 font sizes, ≤ 4 radii, ≤ 3 shadows, grays from one ramp; worst-case content (long/empty/huge) renders correctly
-- [ ] Whitespace: section rhythm generous and tokenized; heading spacing asymmetric (closer to its content); padding scales with container
-- [ ] Screen archetypes follow their hierarchy recipes (hero: one CTA; dashboard: lead metrics sized by value; settings: task-grouped with visible save state)
-- [ ] Pixel pass clean: no 1px misalignments, `min-width: 0` on truncating flex children, focus rings unclipped, images `object-fit` correct, no dark-mode leftovers at 200% zoom
-- [ ] Charts/imagery: one photo/illustration treatment, OKLCH-interpolated gradients only, color-blind-safe series, bar charts zero-based, data has text alternatives
+- [ ] Each screen has one identifiable primary action; squint/blur test preserves title + CTA; secondary content visibly de-emphasized; compared numbers sized above their labels (§1)
+- [ ] Text hierarchy levels differ by ≥ 2 cues; adjacent sizes ≥ ~20% apart; no 1px-difference pseudo-hierarchy (§1)
+- [ ] Grouping by proximity; ≤ 2 levels of bordered containment; all elements aligned to the grid (no mixed center/left in a region); table numerics right-aligned + tabular; repeated elements share one radius, shadow and icon-stroke value (§2)
+- [ ] One depth language applied consistently; shadows tokenized, two-layer, y > blur logic; dark mode re-tokenizes borders/elevation; each shadow size matches its layer (menus above cards above page) (§4)
+- [ ] One icon family/stroke/grid; icon-only buttons rare + tooltipped + labeled; radius scale ≤ 4 values, nested radii = outer − gap; avatars use fixed `aspect-ratio` + `object-fit: cover` with a designed initials fallback (§5)
+- [ ] No generic-template kill-list items (gradient hero default, glow shadows, glassmorphism content, emoji icons); ≥ 3 deliberate brand decisions identifiable (type, hue, signature element) (§6)
+- [ ] Distinctiveness spent on marketing/empty surfaces; product surfaces calm and consistent (§6)
+- [ ] Density tokenized and consistent per area; data tables meet row-height/alignment standards (§7)
+- [ ] Microcopy: verb+object buttons, sentence case, blame-free errors with next step, localized numbers, intentional truncation; relative times expose the absolute time on hover/title (§8)
+- [ ] Drift counts within budget: ≤ 8 font sizes, ≤ 4 radii, ≤ 3 shadows, ≤ 10 grays from one ramp; worst-case content (long/empty/huge) renders correctly; global decisions (type, color ramps, space, radius, depth, density) exist as tokens (§13)
+- [ ] Whitespace: section rhythm generous and tokenized; heading spacing asymmetric (closer to its content); padding scales with container (§3)
+- [ ] Screen archetypes follow their hierarchy recipes (hero: one CTA; dashboard: lead metrics sized by value; settings: task-grouped with visible save state); pricing ≤ 4 tiers with one elevated tier and aligned feature rows; detail views pin title + status + primary action in the header (§9)
+- [ ] Pixel pass clean: no 1px misalignments, `min-width: 0` on truncating flex children, focus rings unclipped, images `object-fit` correct, no dark-mode leftovers at 200% zoom; sibling controls share `--control-h`; no `0.5px` borders or non-integer icon sizes (§11)
+- [ ] Charts/imagery: one photo/illustration treatment, OKLCH-interpolated gradients only, color-blind-safe series, bar charts zero-based, data has text alternatives; ≤ 6 chart series before grouping; illustrations recolored to system ramps (§10)
 - [ ] **No deceptive pattern (§10b) — Critical, Blocker when it gates consent or cancellation:** decline options neutrally worded; accept and reject/manage equally prominent; no resetting countdowns or unbacked scarcity; cancellation no harder than signup; nothing preselected or disguised as content. Copy and legal probes: [`sota-copywriting` rules/04](../../sota-copywriting/rules/04-claims-legal-trust.md) §4; consent banners: [`sota-privacy-compliance` rules/03](../../sota-privacy-compliance/rules/03-consent-and-user-rights.md) §2

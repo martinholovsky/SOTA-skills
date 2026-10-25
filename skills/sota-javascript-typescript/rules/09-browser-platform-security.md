@@ -146,22 +146,22 @@ and they sit on disk for anyone with the device.
 
 ## Audit checklist
 
-- [ ] **Service worker script or scope wider than intended (§"Service workers") — HIGH for a
+- [ ] **Service worker script or scope wider than intended (§1) — HIGH for a
       non-literal or cross-origin URL, MEDIUM for a root `Service-Worker-Allowed`** —
       ``grep -rnE "serviceWorker\.register\( *([^'\"\` ]|['\"\`](https?:|//|[^'\"\`]*\\$\{))|Service-Worker-Allowed['\"]? *[,:=] *['\"]/['\"]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --include='*.tsx' --include='*.conf' .``
       — a script URL taken from a variable, an absolute or templated URL, or the header set to `/`.
-      A scope wider than the feature needs is MEDIUM.
+      A scope wider than the feature needs is MEDIUM. A leftover `manifest=` attribute or `.appcache` file is LOW.
 - [ ] **No kill switch for a service worker (§"Service workers") — MEDIUM** —
       `grep -rlE 'serviceWorker\.register\(' --include='*.js' --include='*.ts' --include='*.tsx' . ; grep -rnE 'registration\.unregister\(|Clear-Site-Data' --include='*.js' --include='*.ts' --include='*.conf' .`
       — the first command lists apps with a worker, the second the recovery paths. A worker with no
       tested `unregister()` release or `Clear-Site-Data: "storage"` route is MEDIUM.
-- [ ] **DOM clobbering exposure (§"DOM clobbering") — HIGH when the global selects a script URL
+- [ ] **DOM clobbering exposure (§2) — HIGH when the global selects a script URL
       or an auth decision** —
       `grep -rnE '(window|document|globalThis|self)\.[[:alnum:]_$]+ *(\|\||\?\?)|SANITIZE_DOM: *false|blockAttributes|dropAttributes' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' .`
       — a global read with a fallback, DOMPurify's clobbering check turned off, or a Sanitizer
       config key that is silently ignored. Then read each `DOMPurify.sanitize(` whose output goes
       into the page: it needs `SANITIZE_NAMED_PROPS: true` (absent = MEDIUM).
-- [ ] **Extension: remote code, main-world scripts and message handlers (§"Browser extensions")
+- [ ] **Extension: remote code, main-world scripts and message handlers (§3)
       — CRITICAL for remote code, HIGH for a handler that acts without a sender check** —
       ``grep -rnE "\"world\": *\"MAIN\"|world: *['\"]MAIN|import\( *['\"\`]https?:|<script[^>]*src=['\"]https?:|onMessage(External)?\.addListener|onConnect(External)?\.addListener|externally_connectable" --include='*.js' --include='*.ts' --include='*.json' --include='*.html' .``
       — each listener hit must check `sender.id` and `sender.origin`/`sender.url` before any
@@ -172,7 +172,7 @@ and they sit on disk for anyone with the device.
       ``grep -rnE "\"(<all_urls>|\*://\*/\*|https?://\*/\*)\"|\"(cookies|debugger|webRequest|history|nativeMessaging)\"" --include='manifest.json' .``
       — read whether each hit is a required or an `optional_*` entry; a broad required grant needs a written reason.
       No `setAccessLevel` call while `storage.local` holds secrets is MEDIUM.
-- [ ] **Sensitive data or exportable keys in browser storage (§"Client-side storage") — MEDIUM, HIGH for
+- [ ] **Sensitive data or exportable keys in browser storage (§4) — MEDIUM, HIGH for
       credentials or payment data** —
       ``grep -rnEi "(localStorage|sessionStorage)\.setItem\( *['\"\`][^'\"\`]*(passw|ssn|card|birth|dob|email|phone|address|secret)|openDatabase\(|(generate|import)Key\([^)]*, *true *," --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' --include='*.jsx' .``
       — personal data in Web Storage, a Web SQL call left over (LOW), and a Web Crypto key made extractable.

@@ -70,19 +70,19 @@ scenarios — that mapping is the SDD↔BDD bridge.
 
 - [ ] Do the scenarios have a genuine non-developer audience (product/QA actually
       read them)? Gherkin with only engineers in the loop → Low/Medium; consider
-      plain tests.
+      plain tests. (§8.1, §8.4)
 - [ ] Are scenarios declarative (domain language), not imperative UI scripts?
       `grep -rinE 'click|type |visit |press |/login|button' features/` in step
-      text → High (brittle, UI-coupled).
+      text → High (brittle, UI-coupled). (§8.2, §8.4)
 - [ ] One action (When) per scenario, with an observable Then? Multi-When,
-      multi-outcome scenarios → Medium.
+      multi-outcome scenarios → Medium. (§8.2)
 - [ ] Are acceptance scenarios kept to critical paths (few, feature-level), with
       edge cases pushed to unit/property tests? Scenario count rivaling unit-test
-      count → Medium (slow, redundant).
+      count → Medium (slow, redundant). (§8.3, §8.4)
 - [ ] Are step definitions DRY and reviewed like production code? Duplicated or
-      giant glue files → Low.
+      giant glue files → Low. (§8.4)
 - [ ] Do scenarios trace to spec acceptance criteria ([`sota-docs-workflow`
       rules/05](../../sota-docs-workflow/rules/05-spec-driven-development.md)) and fail before the feature exists (seen red)? Scenarios written
-      after the fact, never observed failing → Medium.
+      after the fact, never observed failing → Medium. (§8.3, §8.5)
 - [ ] Any Gherkin wrapping pure algorithmic logic with no cross-role value? →
       Low; convert to example/property tests ([`rules/06`](06-property-fuzzing-mutation.md)).

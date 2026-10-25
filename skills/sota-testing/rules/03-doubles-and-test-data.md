@@ -228,30 +228,41 @@ pathological on large, with nothing in the output saying so — is
 
 - [ ] Are mocks confined to architectural boundaries? Sample 10 mock usages:
       each replaces I/O/time/external service? In-process owned collaborators
-      mocked → High.
+      mocked → High. (§3.2)
 - [ ] Mocked types you don't own? Grep for doubles of vendor types:
-      `grep -rniE "mock.*(stripe|s3|twilio|redis|session|httpclient)|jest\.mock\(['\"][^.]" .` (case-insensitive, so `mock.patch('stripe.Charge')` counts; mocking non-relative module paths; the first path character is not `.`. This was a `(?!\.)` lookahead until 2026-09-24, which exits 2 under `grep -E`, ugrep and `rg` alike, so it could never report anything) → High; fix = wrap + adapter test.
+      `grep -rniE "mock.*(stripe|s3|twilio|redis|session|httpclient)|jest\.mock\(['\"][^.]" .` (case-insensitive, so `mock.patch('stripe.Charge')` counts; mocking non-relative module paths; the first path character is not `.`. This was a `(?!\.)` lookahead until 2026-09-24, which exits 2 under `grep -E`, ugrep and `rg` alike, so it could never report anything) → High; fix = wrap + adapter test. (§3.3)
 - [ ] Interaction-asserting queries? Grep `verify\(|assert_called` on
       read/query methods (`get|find|fetch|load`) → Medium (convert to stub +
-      state assertion).
+      state assertion). On commands: argument-by-argument `called_once_with` over a
+      whole struct, or call-order assertions where order is not the contract → Medium (§3.1).
 - [ ] Fakes verified? For each hand-written fake (`Fake[A-Z]|InMemory[A-Z]`),
-      does a shared contract suite run against fake AND real? No → High.
+      does a shared contract suite run against fake AND real? No → High. (§3.4)
 - [ ] In-memory DB standing in for the real engine? Grep
       `sqlite::memory:|:memory:|H2|jdbc:h2` in integration config of a
-      Postgres/MySQL system → High.
+      Postgres/MySQL system → High. (§3.4)
 - [ ] Fixture-file gravity: any fixture/seed file referenced by >10 tests
       (`grep -rl 'fixtures/users' tests/ | wc -l`)? → Medium; migrate to
-      builders incrementally.
+      builders incrementally. (§3.5)
 - [ ] Mystery data: open 5 data-dependent tests — can you tell which arranged
       fields the assertion depends on without opening another file? No →
-      Medium (mystery guest).
+      Medium (mystery guest). (§3.5)
 - [ ] Builder defaults valid? Construct each builder's default and run it
-      through validation; invalid default → High (poisoned baseline).
+      through validation; invalid default → High (poisoned baseline). Faker-randomized
+      fields with no per-test logged seed, randomized fields the assertion depends on, or
+      a mother object grown into dozens of variants → Medium (§3.5).
 - [ ] FK checks disabled in test setup? Grep
-      `SET FOREIGN_KEY_CHECKS=0|PRAGMA foreign_keys=OFF|DISABLE TRIGGER|session_replication_role` in test/CI setup → High.
+      `SET FOREIGN_KEY_CHECKS=0|PRAGMA foreign_keys=OFF|DISABLE TRIGGER|session_replication_role` in test/CI setup → High. (§3.6)
 - [ ] Auto-increment/order assertions? Grep `assert.*id == [0-9]+\b|first\(\)\.id|\.id, 1\)` in DB tests → Medium.
+      Rows that tests mutate loaded by a suite-wide seed instead of created per test
+      under unique-per-test ids → Medium (§3.6).
 - [ ] Production data in the repo or CI path? Grep CI config and test setup
       for prod snapshot/dump references (`prod.*dump|snapshot.*restore|pg_restore`); personal data without documented anonymization → Critical (escalate
-      to security/privacy).
+      to security/privacy). (§3.7)
+- [ ] Size-gated branches executed? Lead list of UPPER_CASE size thresholds (CamelCase
+      constants need their own pattern):
+      `grep -rnE '(^|[^A-Za-z0-9_])[A-Z0-9_]*(CHUNK|BATCH|PAGE|SIZE|LIMIT|THRESHOLD)[A-Z0-9_]*[[:space:]]*(:[^=]*)?=[[:space:]]*[0-9]' --exclude-dir=.git --exclude-dir=node_modules .`
+      Per threshold: does a fixture cross it (`CHUNK_SIZE + 1`), or is the case tagged,
+      scheduled and recorded as untested in CI? Neither → Medium (§3.7a).
 - [ ] Unused stubbings / lenient mocks everywhere? Framework strictness off
-      globally (`lenient\(\)|RETURNS_DEFAULTS|mock.Anything` saturation) → Medium.
+      globally (`lenient\(\)|RETURNS_DEFAULTS|mock.Anything` saturation) → Medium. Doubles
+      of value objects/DTOs, or one boundary doubled in two styles across the suite → Medium (§3.8).

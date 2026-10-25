@@ -231,42 +231,43 @@ reconstruct PII).
 
 - [ ] Vector store choice justified: pgvector default; any dedicated vector
       DB tied to a measured trigger (scale/recall/isolation), with its sync
-      pipeline, authz duplication, and backup story accounted for.
+      pipeline, authz duplication, and backup story accounted for (§1).
 - [ ] HNSW (or justified IVFFlat) present — no exact-scan vector queries on
       large tables; operator matches opclass; query shape is index-eligible
-      (EXPLAIN-verified); ef_search tuned against measured recall@k.
+      (EXPLAIN-verified); ef_search tuned against measured recall@k (§1).
 - [ ] pgvector at or above the CVE-2026-3172 fix (0.8.2; prefer 0.8.4+ for
-      HNSW vacuum fixes; 0.8.6+ on 32-bit for CVE-2026-18022).
+      HNSW vacuum fixes; 0.8.6+ on 32-bit for CVE-2026-18022) (§1).
 - [ ] Filtered vector queries tested for recall under real filter selectivity;
       iterative scan / partial index / partition mitigation where needed;
-      tenant isolation applies to vector queries (RLS or per-tenant index).
+      tenant isolation applies to vector queries (RLS or per-tenant index) (§1).
 - [ ] Hybrid search (lexical + vector, RRF-fused) on user-facing retrieval;
       candidate counts sized for reranking; golden-set eval harness exists
-      and gates retrieval changes.
+      and gates retrieval changes; the lexical arm is a stored generated
+      `tsvector` + GIN index (or a BM25-class extension) (§3).
 - [ ] Every embedding tagged with pinned model+version; no mixed-model
-      search space; query encoder coupled to stored model by config.
+      search space; query encoder coupled to stored model by config (§4).
 - [ ] source_hash (or equivalent) staleness detection + reconciliation job;
-      embedding pipeline idempotent, outbox/queue-driven, with retries.
+      embedding pipeline idempotent, outbox/queue-driven, with retries (§4).
 - [ ] Model migrations are dual-index with eval-gated cutover and rollback;
-      old vectors dropped only after soak.
+      old vectors dropped only after soak (§4).
 - [ ] Quantization ladder (halfvec → binary+rescore) exploited before
-      sharding or engine migration; each step recall-validated.
+      sharding or engine migration; each step recall-validated (§1, §5).
 - [ ] Dedicated vector DB (if present): auth on, server-side tenant
       enforcement tested, snapshot/restore rehearsed, sync lag alerted,
-      collection rebuildable from Postgres source of truth.
+      collection rebuildable from Postgres source of truth (§1).
 - [ ] Vector DB not publicly reachable; TLS on; admin key in secret manager;
       read-only/scoped keys (or JWT RBAC) for query-only consumers; internal
-      cluster ports (e.g. Qdrant 6335) unreachable from outside the cluster.
+      cluster ports (e.g. Qdrant 6335) unreachable from outside the cluster (§2).
 - [ ] Payload fields classified in the PII inventory; no secrets in payloads;
       tenant isolation enforced server-side (mandatory filter/scoped token or
-      collection-per-tenant) with a cross-tenant leak test.
+      collection-per-tenant) with a cross-tenant leak test (§2).
 - [ ] HIGH: restricted content lives in its own collections/indexes, apart
       from lower classifications, with credentials scoped per collection — a
       metadata filter is not the only barrier. (Design check: list the
-      collections against the data-classification tiers.)
+      collections against the data-classification tiers.) (§2)
 - [ ] Client-supplied search params (limit, ef/hnsw_ef, with_payload,
       with_vectors) capped server-side; no raw search bodies proxied to the
-      vector DB.
+      vector DB (§2).
 - [ ] Source deletion cascades to all vector stores; vector data included in
-      PII inventory and RTBF flow; capacity plan covers vector growth and
-      index RAM.
+      PII inventory and RTBF flow (§4); capacity plan covers vector growth and
+      index RAM, and HNSW rebuilds are scheduled, not improvised (§5).

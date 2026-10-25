@@ -219,21 +219,21 @@ buffers, drop-and-count).
       versions run during a rollout, and contracting while the old path is still reachable is
       the version-skew outage that presents as "the rollback made it worse" (§6).
 
-- Is exactly one immutable, digest-pinned artifact built per commit and promoted across environments? Any `latest` tags or per-env rebuilds?
-- Is all environment-varying config injected at runtime, schema-validated at startup with fail-fast? Any `if env == "prod"` branches?
-- Are secrets sourced from a secret manager with rotation, absent from git/images/CI logs, with scanning enforced in CI?
-- Are deployment manifests/IaC in git with drift detection?
-- Do processes start in seconds, drain on SIGTERM, and survive sudden kill? Are web/workers/schedulers separate deployments?
-- Are scheduled jobs single-run-safe (leader election/locks) and idempotent?
-- Do logs go to stdout as structured events with trace and tenant context, scrubbed of secrets/PII?
-- Are RED metrics, OTel traces (propagated through queues), and burn-rate SLO alerts in place? Do pages fire on symptoms, not causes?
-- Does dev/CI use production-kind backing services (real DB/broker in containers)?
+- Is exactly one immutable, digest-pinned artifact built per commit and promoted across environments? Any `latest` tags or per-env rebuilds? Are all dependencies declared via lockfiles and built in clean environments, with nothing host-installed? (§1)
+- Is all environment-varying config injected at runtime, schema-validated at startup with fail-fast? Any `if env == "prod"` branches? (§2)
+- Are secrets sourced from a secret manager with rotation, absent from git/images/CI logs, with scanning enforced in CI? (§2)
+- Are deployment manifests/IaC in git with drift detection? (§2)
+- Do processes start in seconds, drain on SIGTERM, and survive sudden kill? Are web/workers/schedulers separate deployments? (§3)
+- Are scheduled jobs single-run-safe (leader election/locks) and idempotent? (§3)
+- Do logs go to stdout as structured events with trace and tenant context, scrubbed of secrets/PII? (§3, §4)
+- Are RED metrics, OTel traces (propagated through queues), and burn-rate SLO alerts in place? Do pages fire on symptoms, not causes? Can "what did request X do across services, and why was it slow?" be answered from telemetry alone? (§4)
+- Does dev/CI use production-kind backing services (real DB/broker in containers)? Can each backing service be swapped (another instance, a local container) by a config change alone? (§5)
 - [ ] Security-gating flags (§6): is each one inventoried, enforced server-side regardless of client flag state, fail-closed when the flag service is down, consistent across canary instances and rollbacks, and does disabling it stop downstream trust in the claim it used to set? HIGH where a client-held flag or a request field like `fraud_checked` decides enforcement. Probe (a lead list, read each hit): `grep -rniE "(flags?[.[]|is_?feature_?enabled|variation|kill_?switch)[^;]*(mfa|2fa|step_?up|auth|csrf|rate_?limit|fraud|captcha|admin|permission)|(req|request)[.](body|query|json|params|headers)[^;]*(flags|fraud_checked|mfa_verified|captcha_passed)" .`
 - Does every flag have an owner and expiry? Are stale flags (>100% rollout for months) present? Does flag evaluation have local defaults if the flag service dies?
-- Are releases progressive (canary + auto-rollback) and decoupled from deploys via flags?
-- Are all migrations expand/contract such that the previous code version still runs (rollback-safe)?
-- Do admin/backfill tasks run as reviewed, versioned jobs rather than console surgery?
-- Are resources cost-tagged per service/team with anomaly alerting?
-- Are base images digest-pinned and mirrored, SBOMs generated, image scans gating CI with expiring exceptions, and artifacts signed + verified at admission?
-- Can a full environment be recreated from code? Are preview/ephemeral environments available, and is shared backing state namespaced per environment?
-- Do metric labels avoid unbounded cardinality, is trace sampling tail-biased toward errors/slow requests, and can telemetry loss never block request serving?
+- Are releases progressive (canary + auto-rollback) and decoupled from deploys via flags? Does every merge produce an artifact that passed unit + contract tests, fitness functions, security/secret scans and migration lint, with no long-lived feature branches? (§7)
+- Are all migrations expand/contract such that the previous code version still runs (rollback-safe)? (§7)
+- Do admin/backfill tasks run as reviewed, versioned jobs rather than console surgery? Does every service expose health, build/version and runtime log-level endpoints, and have a runbook (dashboards, failure modes, DLQ redrive, scaling, rollback)? (§8)
+- Are resources cost-tagged per service/team with anomaly alerting? Are cost fitness functions (egress, storage growth, per-request compute) alerting on regressions? (§9)
+- Are base images digest-pinned and mirrored, SBOMs generated, image scans gating CI with expiring exceptions, and artifacts signed + verified at admission? Is dependency update automation (Renovate/Dependabot) gated by CI, and are Helm charts mirrored too? (§10)
+- Can a full environment be recreated from code? Are preview/ephemeral environments available, and is shared backing state namespaced per environment? Is staging the same kind of topology as production (real broker, DB engine, proxy chain), only scaled down? (§11)
+- Do metric labels avoid unbounded cardinality, is trace sampling tail-biased toward errors/slow requests, and can telemetry loss never block request serving? Is DEBUG logging off by default in prod? (§12)

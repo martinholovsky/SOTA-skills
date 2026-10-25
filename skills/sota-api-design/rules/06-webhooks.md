@@ -232,19 +232,20 @@ your cloud metadata, please"). Egress controls are non-negotiable:
 ## Audit checklist
 
 **Provider role:**
-- [ ] HMAC-SHA256 over `id.timestamp.raw_body` (message id included), versioned scheme, per-endpoint secrets, multi-signature rotation support (Standard Webhooks-compatible preferred).
-- [ ] Outbox/queue-backed dispatch (no inline sends, no events from rolled-back transactions); per-endpoint isolation so one dead consumer can't starve others.
-- [ ] Exponential backoff + jitter retries over days; 410 auto-disables; failing endpoints disabled with owner notification.
-- [ ] Delivery logs, manual redelivery, and an events reconciliation API exposed to consumers.
-- [ ] Event IDs unique and stable across retries; no ordering promised in docs.
-- [ ] SSRF defenses: private/metadata IP ranges blocked with resolve-pin-connect (no TOCTOU), redirects not followed, HTTPS-only, response size cap, isolated egress, URL ownership verification, per-tenant send rate limits.
-- [ ] No secrets/excess PII in payloads; thin payloads for sensitive domains; per-event-type subscriptions.
+- [ ] HMAC-SHA256 over `id.timestamp.raw_body` (message id included), versioned scheme, per-endpoint secrets, multi-signature rotation support (Standard Webhooks-compatible preferred); secrets shown once at creation and rotatable via API/dashboard (§2).
+- [ ] Outbox/queue-backed dispatch (no inline sends, no events from rolled-back transactions); per-endpoint isolation so one dead consumer can't starve others (§4).
+- [ ] Only a 2xx within a short (5–10s) timeout counts as delivered, redirects not followed; exponential backoff + jitter retries over days; 410 auto-disables; failing endpoints disabled with owner notification (§4).
+- [ ] Delivery logs, manual redelivery, and an events reconciliation API exposed to consumers; redelivery reads the stored event, never regenerates the payload from live data; per-endpoint success rate, P95 latency, retry depth and disabled-endpoint count are emitted (§4).
+- [ ] Event IDs unique and stable across retries; no ordering promised in docs (§5).
+- [ ] **Webhook fit (§7) — LOW**: consumers that need every event in order have a cursor-paginated events API (`GET /events?after=`); no webhook endpoint registered by one of your own services receives another of your services' events over the public internet (match registered endpoint hosts against your own domains); a consumer sustaining >~100 events/s gets batched deliveries or a queue/stream integration.
+- [ ] SSRF defenses (§8): destination validated at registration and again at every send; private/metadata IP ranges (IPv4, IPv6 and IPv4-mapped IPv6) blocked with resolve-pin-connect (no TOCTOU), redirects not followed, HTTPS-only, modest timeouts, response size cap, consumer response bodies never shown unsanitized, isolated egress, URL ownership verification, per-tenant send rate limits.
+- [ ] No secrets/excess PII in payloads; thin payloads for sensitive domains; per-event-type subscriptions; every event carries the `id`/`type`/`created_at`/`api_version`/`data` envelope and its type has a documented JSON schema (§1).
 
 **Consumer role:**
-- [ ] Signature verified on raw bytes before parsing; constant-time comparison; timestamp tolerance enforced (±5 min).
-- [ ] Dedupe on event ID with durable store (TTL ≥ retry horizon); handlers idempotent (unique constraints/upserts), out-of-order-safe.
+- [ ] Signature verified on raw bytes before parsing; constant-time comparison; timestamp tolerance enforced (±5 min); multiplexed deliveries checked for the right endpoint/tenant (§2).
+- [ ] Dedupe on event ID with durable store (TTL ≥ retry horizon); handlers idempotent (unique constraints/upserts), out-of-order-safe: stale updates dropped by `created_at`/sequence or state re-fetched by ID (§5).
 - [ ] **Negative signature tests (§3) — MEDIUM**: CI proves forged, stale, duplicate and cross-endpoint callbacks are rejected before any payload field is used. Webhook test files with none of those cases (a lead to read):
       `grep -rliE 'webhook' --include='*test*' --include='*spec*' . | while IFS= read -r f; do grep -qiE 'invalid[_ -]?sig|bad[_ -]?sig|forged|tamper|stale|expired|replay' "$f" || echo "$f"; done`
-- [ ] Ack-fast/process-async: 2xx only after durable enqueue, well under provider timeout.
+- [ ] Ack-fast/process-async: 2xx only after durable enqueue, well under provider timeout (§4).
 - [ ] State derived by fetching current object where staleness matters, not from fat payload alone.
-- [ ] Endpoint has body size limits, no cookie-auth dependency, full delivery logging; secrets in a manager with dual-secret rotation support.
+- [ ] Endpoint has body size limits, no cookie-auth dependency, full delivery logging; secrets in a manager with dual-secret rotation support; an unsigned or badly signed delivery gets `401` with no verification detail in the body, a non-JSON one `415`; a per-source rate limit backs it up (§6).

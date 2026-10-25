@@ -302,6 +302,8 @@ defer cc.Stop()
 
 ## 10. Anti-patterns (JetStream-specific)
 
+*(advisory)* — a recap: each entry restates a rule from §2–§9, and that section's checklist item probes it.
+
 - **Unbounded stream** — no `MaxBytes`/`MaxAge`: disk fills, RAFT peers degrade.
 - **No `MaxDeliver`** — a poison message redelivers forever ([rules/03](03-distributed-systems-and-events.md) §7).
 - **Ack before processing** / `AckNone` on durable work — silent loss on crash.
@@ -320,46 +322,49 @@ defer cc.Stop()
 
 - [ ] Is core NATS used for fire-and-forget/RPC and JetStream reserved for
       persistence/replay/dedup, rather than RPC pushed through streams?
-      (`nats stream ls`; look for streams capturing request-reply subjects.)
+      (`nats stream ls`; look for streams capturing request-reply subjects.) (§1)
+- [ ] **Subjects map to streams on paper (§2), Medium:** does any subject belong to more than one stream, is there one catch-all stream over `>`, and does any consumer filter on bare `>` at the top of a busy stream? (`nats stream info <s>` → Subjects for every stream in `nats stream ls`; `nats consumer info` → Filter Subject.) Are subject transforms used only to namespace aggregated streams, not to repair producers' subjects?
 - [ ] Does **every** stream set `MaxBytes` and `MaxAge` (and per-subject limits
       where relevant)? (`nats stream info <s>` → Limits; grep IaC/config for
-      stream definitions missing `max_bytes`/`max_age`.)
+      stream definitions missing `max_bytes`/`max_age`.) (§3)
 - [ ] Are durable production streams **R3+**? Any `--replicas 1` / `Replicas: 1`
-      outside dev? (`nats stream report` shows replica counts.)
+      outside dev? (`nats stream report` shows replica counts.) (§3)
 - [ ] Is retention policy correct for the access pattern (work queue vs limits vs
-      interest), and `DiscardNew` used where old-data loss is unacceptable?
+      interest), and `DiscardNew` used where old-data loss is unacceptable? Is `MemoryStorage`
+      used only for loss-tolerant, regenerable data? (§3)
 - [ ] Do publishers set **`Nats-Msg-Id`** and is the **duplicate window** sized to
       the retry horizon? (grep for `WithMsgID`/`Nats-Msg-Id`; `nats stream info`
-      → Duplicate Window.)
+      → Duplicate Window.) (§4)
 - [ ] Are publish acks checked — `js.Publish` sync, or `PublishAsync` with bounded
       pending and a drain/await? Any fire-and-forget publishes? (grep `PublishAsync`
-      without `PublishAsyncMaxPending`/await.)
+      without `PublishAsyncMaxPending`/await.) (§4)
 - [ ] Are consumers **durable pull** via the `jetstream` package, not ephemeral
       and not legacy `JetStreamContext`/`Subscribe` for durable work? (grep
-      `nc.JetStream(`, `.Subscribe(` in JS paths.)
+      `nc.JetStream(`, `.Subscribe(` in JS paths.) (§5)
 - [ ] Is `AckPolicy` **explicit**, with ack/DoubleAck **after** the commit, never
       before processing and never `AckNone` on durable work? (read the consume
-      callback; ack should be the last successful step.)
+      callback; ack should be the last successful step.) (§5)
 - [ ] Is `MaxAckPending` set (not `-1`) and sized to handler throughput?
-      (`nats consumer info` → Max Ack Pending.)
+      (`nats consumer info` → Max Ack Pending.) Is `AckWait` above worst-case processing time,
+      or does the handler send `InProgress()`? (§5)
 - [ ] Is `MaxDeliver` bounded with a `BackOff`, and poison `Term`ed (not `Nak`ed
-      to exhaustion)? (grep `MaxDeliver`; consumer config; advisory consumers.)
+      to exhaustion)? (grep `MaxDeliver`; consumer config; advisory consumers.) (§5, §6)
 - [ ] Is there a **DLQ stream** fed by `MAX_DELIVERIES` advisories or a final-attempt
       republish, with depth alerting and a redrive runbook? (`nats stream ls` for a
-      DLQ/dead-letter stream; subscriber on `$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>`.)
+      DLQ/dead-letter stream; subscriber on `$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>`.) (§6)
 - [ ] Are consumers idempotent under redelivery ([rules/03](03-distributed-systems-and-events.md) §2)?
 - [ ] KV: optimistic concurrency via revision CAS (`Update`), not blind `Put`,
       for contended keys (token revocation, locks)? Per-key TTL only relied on if
-      the server supports it? (`nats kv ls`; grep `kv.Update` vs `kv.Put`.)
+      the server supports it? (`nats kv ls`; grep `kv.Update` vs `kv.Put`.) (§7)
 - [ ] Large payloads via Object store claim-check, not inline in messages?
-      (`nats object ls`; check message sizes / `MaxMsgSize`.)
+      (`nats object ls`; check message sizes / `MaxMsgSize`.) (§7)
 - [ ] Multi-tenant isolation by **account** (with per-account JetStream quotas),
-      not subject-prefix convention in a shared account? (server/account config.)
+      not subject-prefix convention in a shared account? (server/account config.) (§8)
 - [ ] Designs that create many consumers per stream (per tenant/session) set
       `max_consumers` explicitly, so the 2.15+ default of 1000 does not start
       rejecting new consumers? (`nats stream info` → limits; stream config.)
 - [ ] Edge↔hub topologies use leafnodes + **JetStream domains**; TLS and
-      NKEY/JWT auth in place (defer to network-security / identity-access)?
+      NKEY/JWT auth in place (defer to network-security / identity-access)? (§8)
 - [ ] Monitoring on `num_pending`/`num_ack_pending`/`redelivered` with lag
       alerts; stream snapshots scheduled and restore-rehearsed; graceful
-      `Drain` on shutdown? (`nats consumer report`; check shutdown path.)
+      `Drain` on shutdown? (`nats consumer report`; check shutdown path.) Does any consume callback block on slow work instead of offloading it? (§9)

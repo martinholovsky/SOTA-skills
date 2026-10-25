@@ -257,24 +257,37 @@ ordering assumption with no enforcement.
 
 ## Audit checklist (meta — the whole catalog)
 
-- [ ] #1 fire-and-forget: every spawn owned, errors observed
-- [ ] #2 missing await: truthy-promise checks, forEach(async), return-in-try
+- [ ] #1 fire-and-forget: every spawn owned, errors observed; a truly
+      detached one has an error handler, shutdown registration and a comment
+      (§1)
+- [ ] #2 missing await: truthy-promise checks, forEach(async), return-in-try,
+      un-awaited async tests; `no-floating-promises`/`no-misused-promises`
+      enabled, Python "never awaited" warnings and Rust `#[must_use]`
+      warnings heeded (§2)
 - [ ] #3 shared mutable state: cross-request bleed, loop-var capture, Go maps
+      (§3)
 - [ ] #3 request-scoped context set but never reset — HIGH when it holds a
       tenant or user id: `grep -rnE '^[[:space:]]*[[:alnum:]_.]+\.set\([^)]|\.enterWith\(|ThreadLocal<' --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.kt' .`
       (a bare `x.set(v)` statement discards the token and cannot be reset; each
       `ThreadLocal` needs a `remove()` in `finally`; a `token = x.set(v)` or
       `with x.set(v):` does not match; a JS/Java `map.set(k, v)` hit is noise —
       keep only the context variables)
-- [ ] #4 locks across await; Rust std guards across `.await`
-- [ ] #5 blocking calls in async (rule 04 grep list); `block_on` in async
-- [ ] #6 retries: backoff+jitter+budget+classification+ctx
-- [ ] #7 herd: cache stampede single-flight; jittered periodics/reconnects
-- [ ] #8 unbounded fan-out: gather/Promise.all/go-in-loop over external input
+- [ ] #4 locks across await; Rust std guards across `.await` (Clippy
+      `await_holding_lock`); state re-validated after re-acquiring (§4)
+- [ ] #5 blocking calls in async (rule 04 grep list); `block_on` in async;
+      `.result()`/`run_until_complete` on the loop thread (§5)
+- [ ] #6 retries: backoff+jitter+budget+classification+ctx, at one layer
+      only, `Retry-After` honored (§6)
+- [ ] #7 herd: cache stampede single-flight; jittered periodics/reconnects;
+      `notify_all` waking N waiters for one item; jittered startup warmup (§7)
+- [ ] #8 unbounded fan-out: gather/Promise.all/go-in-loop over external input;
+      recursive spawns; per-event spawns in subscription handlers (§8)
 - [ ] #9 leaks: unsettleable promises, sentinel-less workers, listener/timer
-      teardown
+      teardown, channel ops without a cancellation branch (§9)
 - [ ] #10 duplicates & ordering: idempotency keys, per-key partitioning,
-      ack-after-commit
-- [ ] #11 generator/stream cleanup on early exit
-- [ ] #12 sleep-based synchronization anywhere
+      ack-after-commit, `task.result()` after a `done()` check without
+      exception handling (§10)
+- [ ] #11 generator/stream cleanup on early exit (`aclosing`, a `return()`
+      on hand-rolled JS iterators, Rust resources in `Drop`) (§11)
+- [ ] #12 sleep-based synchronization anywhere, tests and production (§12)
 - [ ] Shutdown path read end-to-end; hottest path timeout chain proven

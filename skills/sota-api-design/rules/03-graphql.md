@@ -160,6 +160,8 @@ GraphQL transports over HTTP 200; do not let that destroy observability.
 
 ## 8. Schema snippets — good/bad
 
+*(advisory)* Worked example of the §2 rules; probed through §2's checklist items.
+
 ```graphql
 # BAD
 type Query {
@@ -242,21 +244,21 @@ type CancelOrderPayload {
 
 ## Audit checklist
 
-- [ ] GraphQL is earning its keep (multiple clients/aggregation) — flag 1:1 REST-wrapper deployments.
-- [ ] Schema checks run in CI against real traffic; breaking changes blocked.
-- [ ] All list fields paginated (connections) with enforced max page size; no unbounded lists.
-- [ ] Non-null used deliberately; cross-service-backed fields nullable (error-bubbling blast radius understood).
-- [ ] Every data-fetching resolver goes through per-request DataLoaders; integration test asserts query counts (no N+1).
-- [ ] Depth limit, cost analysis (with list multipliers), and alias/root-field caps active in production — verify by sending a hostile query in staging over **both** the HTTP path and the WebSocket/SSE subscription path (cf. CVE-2026-30241: Mercurius enforced queryDepth on HTTP but not WS subscriptions; fixed in 16.8.0).
-- [ ] Operation batching capped or disabled; cost charged against rate limits.
-- [ ] Introspection + field suggestions disabled in production for private schemas; no GraphiQL exposed.
-- [ ] First-party clients use a persisted-query allowlist (trusted documents); APQ not mistaken for security.
-- [ ] Mutations use input objects + payload types with `userErrors`/result unions; domain errors are schema, not exceptions.
-- [ ] `errors[].extensions.code` machine-readable; raw exception messages masked; trace ID present.
-- [ ] Monitoring counts GraphQL-level errors (200-with-errors), not just HTTP status.
-- [ ] Object-level authorization in resolvers (incl. `node(id:)` and nested paths); tenant checks on every ID argument.
-- [ ] Public vs admin schema split; no internal fields on public schema.
-- [ ] Cookie-authenticated endpoint: a mutation over `GET` is refused (`405`) and a non-`application/json` body (`text/plain`, form, multipart) is rejected — send both in staging.
-- [ ] Deprecations carry reasons + removal dates; per-field usage metrics exist before removals.
-- [ ] Subscriptions use `graphql-ws`/`graphql-sse` (not legacy protocol), authz at subscribe + per-event filtering, small delta payloads, client snapshot-on-reconnect; concurrent subscriptions capped.
-- [ ] Response caches keyed by auth scope (no cross-principal cache hits); federation (if present) has CI composition checks and batched entity resolution.
+- [ ] GraphQL is earning its keep (multiple clients/aggregation) — flag 1:1 REST-wrapper deployments, server-to-server-only or single-client graphs, and file transfer done as multipart-over-GraphQL rather than signed URLs + REST (§1).
+- [ ] Schema checks run in CI against real traffic; breaking changes blocked (§2).
+- [ ] All list fields paginated (connections) with enforced max page size; no unbounded lists (§2).
+- [ ] Non-null used deliberately; cross-service-backed fields nullable (error-bubbling blast radius understood); no generic `JSON` scalar fields; dates, email and money use custom scalars, not `String`; mutually exclusive inputs use `@oneOf`; relationships are object fields, not bare foreign-key IDs; objects carry a globally unique `id: ID!` resolvable via `node(id:)` (§2).
+- [ ] Every data-fetching resolver goes through per-request DataLoaders; integration test asserts query counts (no N+1) (§3).
+- [ ] Depth limit, cost analysis (with list multipliers), and alias/root-field caps active in production (§4) — verify by sending a hostile query in staging over **both** the HTTP path and the WebSocket/SSE subscription path (cf. CVE-2026-30241: Mercurius enforced queryDepth on HTTP but not WS subscriptions; fixed in 16.8.0).
+- [ ] Operation batching capped or disabled; cost charged against rate limits; aliasing and batching disabled on auth operations (`login`, OTP, password reset) and those fields rate-limited per account — send one request with 20 aliased `login` attempts in staging; per-request and per-resolver timeouts set, with downstream work cancelled on abort (§4).
+- [ ] Introspection + field suggestions disabled in production for private schemas; no GraphiQL exposed (§4).
+- [ ] First-party clients use a persisted-query allowlist (trusted documents); APQ not mistaken for security; send an unregistered query text to the production endpoint and expect rejection (§5).
+- [ ] Mutations are named verb-first and use input objects + payload types with `userErrors`/result unions; domain errors are schema, not exceptions (§2, §6).
+- [ ] `errors[].extensions.code` machine-readable; raw exception messages masked; trace ID present (§6).
+- [ ] Monitoring counts GraphQL-level errors (200-with-errors), not just HTTP status; responses use `application/graphql-response+json` (§6).
+- [ ] Object-level authorization in resolvers (incl. `node(id:)` and nested paths); tenant checks on every ID argument (§7).
+- [ ] Public vs admin schema split; no internal fields on public schema (§7).
+- [ ] Cookie-authenticated endpoint: a mutation over `GET` is refused (`405`) and a non-`application/json` body (`text/plain`, form, multipart) is rejected — send both in staging (§7).
+- [ ] Deprecations carry reasons + removal dates; per-field usage metrics exist before removals; no field's type or nullability changed in place (schema history shows a new field + deprecation instead); enums documented open (§11).
+- [ ] Subscriptions use `graphql-ws`/`graphql-sse` (not legacy protocol), authz at subscribe + per-event filtering, small delta payloads, client snapshot-on-reconnect; concurrent subscriptions capped per connection and per principal; `connection_init` auth enforced with a timeout; subscription operations pass the same cost analysis as queries (§9).
+- [ ] Response caches keyed by document, variables and auth scope (no cross-principal cache hits); federation (if present) only where several teams own subgraphs, with CI composition checks and batched entity resolution (§10).

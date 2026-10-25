@@ -407,10 +407,10 @@ OWASP: WSTG-APIT-01; Django REST Framework cheat sheet.
 - [ ] Internal services mutually authenticated (mTLS/workload identity); no network-position trust.
 - [ ] Rate limiting keyed per principal, sliding-window/GCRA in shared store; 429 + `Retry-After` + RateLimit headers; limits visible on successes; unauth endpoints (login/token) IP-limited.
 - [ ] Quotas separate from rate limits with distinct errors; expensive ops cost-weighted; per-principal concurrency caps.
-- [ ] Body/header/URL/multipart size limits explicit per route (413); JSON depth/key caps; decompressed-size caps; uploads via pre-signed URLs.
-- [ ] Timeout hierarchy verified outer>inner end-to-end (client→LB→app→downstream→DB statement); long work is async 202, not long synchronous holds.
-- [ ] Retries idempotent-only, budget-bounded, jittered, circuit-broken.
-- [ ] CORS: explicit origin allowlist; no origin reflection with credentials; no `*`+credentials; cookie APIs have CSRF defenses; preflight cache set.
+- [ ] Body/header/URL/query-param/multipart size limits explicit per route (413); JSON depth/key caps; decompressed-size caps; uploads via pre-signed URLs with file type checked by magic bytes; every input schema-validated at the boundary, unknown fields rejected on writes (§3).
+- [ ] Timeout hierarchy verified outer>inner end-to-end (client→LB→app→downstream→DB statement); long work is async 202, not long synchronous holds; budgets set per route, not one global value; listener read/write/idle timeouts set (slowloris); a client disconnect cancels downstream work; load shedding answers `503` + `Retry-After` and upstream timeouts `504` (§4).
+- [ ] Retries idempotent-only, budget-bounded, jittered, circuit-broken (§4).
+- [ ] CORS (§5): explicit origin allowlist; no origin reflection with credentials (send `Origin: https://evil.example` to a credentialed endpoint and confirm it is not echoed in `Access-Control-Allow-Origin`); no `*`+credentials, `*` only on public unauthenticated read-only APIs; cookie APIs have CSRF defenses; preflight cache set; `Access-Control-Expose-Headers` limited to headers clients read; authz never depends on CORS.
 - [ ] Append-only audit trail covering authn, authz denials, sensitive writes, admin actions, exports — with actor/tenant/object/outcome/trace ID.
 - [ ] No secrets/tokens/PII in logs (verified by test, not policy); log output encoded against CRLF/log injection.
 - [ ] Trace/request ID on every response and propagated downstream (W3C Trace Context).

@@ -256,36 +256,43 @@ ran*; it read as the target not being exploitable.
 
 - [ ] Do integration tests run the real engine? Grep test config for
       lookalikes: `:memory:|sqlite|H2|fakeredis|embedded` standing in for a
-      different prod engine → High.
+      different prod engine → High. (§4.1)
 - [ ] Container images pinned to prod versions? Grep `latest` in
-      testcontainers setup / docker-compose.test → Medium.
+      testcontainers setup / docker-compose.test → Medium. (§4.1)
 - [ ] Hardcoded host/ports? Grep `localhost:(5432|3306|6379|9092|27017)` in
-      tests → High (machine-coupled, parallel-unsafe).
+      tests → High (machine-coupled, parallel-unsafe). (§4.1)
 - [ ] Readiness by sleep? Grep `sleep` between container start and first use
-      → High; replace with wait strategies.
+      → High; replace with wait strategies. (§4.1)
 - [ ] Does CI run migrations from empty and test against the migrated schema?
-      A separate drifting `schema.sql` loaded directly → High.
+      A separate drifting `schema.sql` loaded directly → High. Destructive/data
+      migrations with no rehearsal on masked representative data, or a rollback never
+      verified and not documented forward-only → Medium (§4.2).
 - [ ] Is per-test DB isolation centralized and matched to needs? Rollback
       strategy + tests asserting cross-connection visibility/commit hooks →
       those tests are lying (High). Copy-pasted cleanup SQL across files →
       Medium.
 - [ ] Auth coverage: for each protected route, is there a 401/403 test?
-      Spot-check 5 routes; missing on sensitive routes → High.
+      Spot-check 5 routes; missing on sensitive routes → High. (§4.4)
 - [ ] Whole-body equality on API responses? Grep
       `assertEquals.*responseBody|toEqual\(.*body\)|json\(\) == ` → Medium
-      (brittle to additive change).
+      (brittle to additive change). Error responses asserted on human-readable message
+      instead of code/type, or a published OpenAPI spec never validated against responses
+      in tests → Medium (§4.4).
 - [ ] Service edges: does every consumer–provider pair have a contract
       (pact/broker, schema-diff CI for gRPC/GraphQL, registry compatibility
       for events)? Uncovered edge between independently-deployed services →
-      High.
+      High. (§4.5)
 - [ ] Is deployment gated on contract compatibility (can-i-deploy or
       equivalent), or do contracts exist but gate nothing → Medium (theater).
+      Consumer contracts asserting exact values on fields the consumer never reads,
+      instead of type/shape matchers → Medium (§4.5).
 - [ ] Queue tests: is there a redelivery/idempotency test and a DLQ test for
-      each consumer? None → High for money/state-changing handlers.
+      each consumer? None → High for money/state-changing handlers. (§4.6)
 - [ ] Eventually-consistent assertions: polling helpers with timeout, or raw
-      sleeps? Grep `sleep` in queue/e2e test paths → High.
+      sleeps? Grep `sleep` in queue/e2e test paths → High. Messages without a
+      test-run id, so parallel runs read each other's traffic → Medium (§4.6).
 - [ ] Shared staging as the only integration venue, hand-maintained data →
-      Medium, recommend ephemeral envs or containerized deps.
+      Medium, recommend ephemeral envs or containerized deps. (§4.7)
 - [ ] **Does every out-of-process test assert liveness separately from its result?** (§4.8) A
       harness that could not start and one that ran and found nothing produce the same output,
       and only the second is a conclusion about the target. Empty artefacts are failed

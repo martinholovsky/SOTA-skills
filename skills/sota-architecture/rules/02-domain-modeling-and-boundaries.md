@@ -330,22 +330,23 @@ test discipline will reach it.
       nullable, second return value, `NULL`, omitted property, exception) — no
       `-1`/`0`/`""`/`9999-12-31` sentinels. Where one is forced: per-field domain
       documented, and the **comparison** sites audited first (§8a).
-- Can the team produce a context map? Are seam relationship types (ACL, conformist, published language) explicit?
-- Does any domain term ("customer", "order", "account") have different meanings sharing one class/table across contexts?
-- Are aggregates small, referenced by ID, and modified one-per-transaction? Search for transactions touching multiple aggregates.
-- Are business invariants enforced inside aggregate methods, or scattered across service classes (anemic model)?
-- Does domain code import frameworks, ORM types, vendor SDKs, or transport types (HTTP requests, Kafka records)?
-- Are ports defined by consumer need, or do they mirror vendor APIs one-to-one?
-- Is the dependency rule (adapters → application → domain) enforced by an automated architecture test?
-- Do external/legacy models cross into the domain without an anti-corruption layer?
-- Are cross-context events versioned, past-tense, schema-validated public contracts?
-- Is money a float anywhere? Are state machines stringly-typed with unguarded transitions?
-- Is modeling rigor proportional: full DDD on core domains, simple transaction scripts on CRUD subdomains — or uniform ceremony/uniform mud?
-- Do repositories use optimistic concurrency, or can concurrent writers silently lose updates?
-- Are entity lifecycles explicit state machines with guarded transitions and history, or free-form status strings?
-- Do `Helper`/`Manager`/`Util` classes in the domain hold logic that belongs on aggregates or value objects?
-- Do list/dashboard reads go through dedicated read models, or do they load aggregates in bulk?
-- Do any write decisions consume read-model/projection data instead of loading the aggregate?
-- Are services/modules named after capabilities or after entities (noun-services)?
-- Is the boundary between the testable core and the environment-bound shell (GUI, device, IO, process spawn) explicit in the build, or only in convention? Does business branching live in that shell?
-- Does the shell keep growing release over release (logic leaking outward), and do coverage/mutation/complexity tools measure the core or the whole tree?
+- [ ] **Code speaks the domain's language (§2), Medium:** take three verbs/nouns from the domain experts' own glossary or tickets and look for them in code, schema and event names; numeric status setters stand in for a named operation — `grep -rnE 'set_?[sS]tatus\([[:space:]]*[0-9]+[[:space:]]*\)' .` (calibrated: 3 of 3 bad, 0 of 4 good) — and boolean-flag pairs (`isReturn && isExchange`) stand in for a missing concept type. Each is a finding.
+- Can the team produce a context map? Are seam relationship types (ACL, conformist, published language) explicit? Does any service/module boundary split one bounded context or fuse two? (§1)
+- Does any domain term ("customer", "order", "account") have different meanings sharing one class/table across contexts? (§1)
+- Are aggregates small, referenced by ID, and modified one-per-transaction? Search for transactions touching multiple aggregates. (§3)
+- Are business invariants enforced inside aggregate methods, or scattered across service classes (anemic model)? Are identity-uniqueness invariants backed by a DB unique constraint rather than an aggregate check? (§3)
+- Does domain code import frameworks, ORM types, vendor SDKs, or transport types (HTTP requests, Kafka records)? (§4)
+- Are ports defined by consumer need, or do they mirror vendor APIs one-to-one? (§4)
+- Is the dependency rule (adapters → application → domain) enforced by an automated architecture test? Do use cases only orchestrate, or does any contain a business-policy `if` or build SQL? (§5)
+- Do external/legacy models cross into the domain without an anti-corruption layer? Do consumers store another context's event payload as their own domain state instead of translating it in the consumer adapter? (§6)
+- Are cross-context events versioned, past-tense, schema-validated public contracts? Are they published after commit via the outbox, never before? (§7)
+- Is money a float anywhere? Are state machines stringly-typed with unguarded transitions? Is raw input parsed into value types once at the boundary, or are identities passed as bare strings/ints through layers? (§8)
+- Is modeling rigor proportional: full DDD on core domains, simple transaction scripts on CRUD subdomains — or uniform ceremony/uniform mud? (§5)
+- Do repositories use optimistic concurrency, or can concurrent writers silently lose updates? Is there one repository per aggregate (not per table) returning whole aggregates, and does ORM lazy loading or a bidirectional mapping cross aggregate boundaries? (§9)
+- Are entity lifecycles explicit state machines with guarded transitions and history, or free-form status strings? Is the `state` column CHECK/enum-constrained, and does each transition emit a domain event? (§10)
+- Do `Helper`/`Manager`/`Util` classes in the domain hold logic that belongs on aggregates or value objects? Is complex aggregate creation done by a factory returning only valid instances, or by create-empty-then-set? (§11)
+- Do list/dashboard reads go through dedicated read models, or do they load aggregates in bulk? (§12)
+- Do any write decisions consume read-model/projection data instead of loading the aggregate? (§12)
+- Are services/modules named after capabilities or after entities (noun-services)? Can each bounded context be explained in one sentence naming its responsibility and key invariants, without "and"? (§13)
+- Is the boundary between the testable core and the environment-bound shell (GUI, device, IO, process spawn) explicit in the build, or only in convention? Does business branching live in that shell? (§14)
+- Does the shell keep growing release over release (logic leaking outward), and do coverage/mutation/complexity tools measure the core or the whole tree? Is the shell itself covered by a few end-to-end/smoke tests rather than unit metrics? (§14)

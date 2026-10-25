@@ -344,6 +344,8 @@ and an end state.
 
 ## 6.5 Chaos / fault-injection (pointer)
 
+*(audited in [sota-architecture rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md))* — the scheduled chaos-experiment probe lives there.
+
 Unit/integration layers should already inject failures at boundaries (timeouts,
 5xx, partial writes, broker redelivery — [`rules/03`](03-doubles-and-test-data.md), [`rules/04`](04-integration-contract-system.md)). Beyond
 that: chaos engineering (latency/fault injection in real environments,
@@ -423,9 +425,10 @@ label it as such.
       (the decision rests on an unmeasured distribution).
 - [ ] Anything parsing untrusted bytes WITHOUT a fuzz target? List parsers/
       deserializers reachable from user input; no fuzz target → High for
-      native/unsafe code, Medium elsewhere.
+      native/unsafe code, Medium elsewhere. (§6.2)
 - [ ] Crash corpus in the PR suite? Fuzz targets exist but past crashers
-      aren't replayed as tests → Medium.
+      aren't replayed as tests, native targets run without sanitizers, or long runs gate
+      PRs instead of running scheduled → Medium (§6.2).
 - [ ] Any mutation-testing signal on risk-critical modules (config present:
       `stryker.conf|pitest|mutmut|cargo-mutants|gremlins|infection.json|mull|mutant|muter|cosmic-ray`)?
       None anywhere + high coverage claims → Medium (run one probe during the audit if cheap).
@@ -449,7 +452,7 @@ label it as such.
       `git log -p` for manual edits) → High (live survivors marked dead).
 - [ ] Approval/golden suites: do they have an owner and a retirement plan, or
       are 3-year-old approvals still the only tests on refactored code →
-      Medium (frozen bugs).
+      Medium (frozen bugs). (§6.4)
 - [ ] jqwik ≥ 1.10.0 in the dependency tree? Ships prompt-injection
       protestware in test output → High where AI agents read build/test
       output (pin 1.9.x or migrate); more broadly, any pipeline feeding

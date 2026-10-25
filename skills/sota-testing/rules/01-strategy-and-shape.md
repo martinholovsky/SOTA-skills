@@ -216,27 +216,38 @@ If not doing strict TDD, keep the two load-bearing habits:
 
 - [ ] Is there a written statement of suite shape and unit/integration
       boundary? (Look in CONTRIBUTING.md, docs/testing.md, test READMEs.
-      Missing → Medium.)
+      Missing → Medium.) (§1.1, §1.2)
 - [ ] Does the actual distribution match the architecture? Count tests per
       layer (`find . -path '*e2e*' -name '*test*' | wc -l` vs unit dirs).
-      Microservices with a giant cross-service e2e suite → High.
+      Microservices with a giant cross-service e2e suite → High (§1.1). Inverted
+      (ice-cream cone)? New e2e frozen behind a justification, the e2e stage
+      wall-clock capped, and the per-layer ratio tracked monthly? None → Medium (§1.7).
 - [ ] Are "unit" tests actually units? Grep unit-test dirs for I/O:
       `grep -rE 'localhost|127\.0\.0\.1|Connect\(|connect\(|requests\.|http\.Client|fetch\(' test/unit/` → mislabeled
-      integration tests (Medium; High if they make the unit suite >seconds).
+      integration tests (Medium; High if they make the unit suite >seconds). (§1.2)
 - [ ] Solitary-by-reflex? Ratio of mock constructions to test files —
       `grep -rcE 'Mock\(|mock\.|jest\.mock|@Mock|mockk|gomock' tests/` ;
-      mocks of *in-process, owned* collaborators → High (refactor-hostile).
+      mocks of *in-process, owned* collaborators → High (refactor-hostile). (§1.2)
 - [ ] Framework/getter tests present? Grep for tests asserting trivial
       delegation or ORM basics (`assert.*getId\(\)|test.*getter|save.*find.*assert equal` patterns) → Low, delete.
+      Also sample for private functions tested directly, generated/vendored output asserted
+      line-by-line, third-party API behavior asserted in the main suite, and log wording or
+      error prose asserted where it is not the contract → Low (§1.3).
 - [ ] Do the riskiest modules (top churn × past incidents) have the deepest
       tests, including negative paths? Sample 3 critical modules; happy-path-only
-      on a money/auth path → High.
+      on a money/auth path → High. Low-impact, low-likelihood areas left untested
+      with no written decision → Low (§1.4).
 - [ ] Is any behavior tested at 3+ layers? Pick one business rule and grep for
-      its assertions across unit/integration/e2e → Medium (consolidate down).
+      its assertions across unit/integration/e2e → Medium (consolidate down). (§1.3)
 - [ ] Quadrant gaps: is there *anything* for performance/security/chaos (Q4)
-      and exploratory (Q3)? None for a system with SLOs → High.
+      and exploratory (Q3)? None for a system with SLOs → High. (§1.5)
 - [ ] Are bug fixes accompanied by a regression test? Sample 5 recent
       fix-commits (`git log --grep='fix' --oneline | head`) and check each
-      touched a test → missing pattern is Medium.
+      touched a test → missing pattern is Medium. Feature PRs whose tests land in
+      a follow-up PR → Medium (§1.8).
 - [ ] Any test that cannot fail? Spot-check: invert a core `assert` or stub
-      the SUT in 2–3 important tests and rerun — still green → Critical.
+      the SUT in 2–3 important tests and rerun — still green → Critical. (§1.8)
+- [ ] Do test deletions record why? Find commits that remove tests with the deleted-test
+      probe of [rules/07](07-suite-health-and-ci.md) §7.10 (run over `git show <sha>`) and read each message:
+      no rationale → Low; a test deleted in the commit that "fixes" its own failure →
+      High (§1.6).

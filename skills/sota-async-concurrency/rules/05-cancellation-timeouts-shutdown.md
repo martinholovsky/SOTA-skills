@@ -203,24 +203,27 @@ extend it.
 
 - [ ] Sweep external awaits (HTTP, DB, queue, lock acquire, recv, wait):
       timeout, inherited deadline, or justifying comment? Unbounded await on
-      a network peer is HIGH.
+      a network peer is HIGH (§1).
 - [ ] Timeouts: total-operation or just connect? Stacked timeouts that exceed
       the caller's deadline?
 - [ ] Timeout firing actually cancels the work (AbortSignal wired, asyncio
       timeout context, ctx honored by callee) — or does the loser keep running?
 - [ ] Grep Go for `context.Background()`/`context.TODO()` outside main/tests —
-      each one severs the cancellation chain.
+      each one severs the cancellation chain; in JS, a signal-accepting call
+      in a cancellable chain made without the caller's `signal` (§2).
 - [ ] Grep Python for `except BaseException`, bare `except:`, or
       `except Exception` in retry/cleanup loops around awaits — does
       CancelledError survive and re-raise?
 - [ ] Cleanup paths using the already-cancelled context/signal (rollback that
-      can never run)?
+      can never run)? Shared state mutated in steps across awaits instead of
+      at one commit point (cancel leaves it half-applied)? (§3)
 - [ ] `finally` blocks with unbounded awaits (cancellable cleanup hanging
       shutdown)? `shield` usage bounded?
 - [ ] Shutdown: readiness flipped before listener close? Drain deadline <
       orchestrator grace? Producers stopped before consumers? Sentinels/
       closure to wake blocked getters? Background daemons cancelled and
-      awaited?
+      awaited? Queue drained before it is closed? Tasks cancelled before the
+      pools they use close? Nonzero exit when the drain was forced? (§4)
 - [ ] Retry loops: ctx/signal checked per attempt? Backoff sleep cancellable?
-      Retries within the deadline budget?
+      Retries within the deadline budget? (§5)
 - [ ] Subprocesses/remote jobs killed on cancellation?

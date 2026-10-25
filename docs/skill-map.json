@@ -1371,6 +1371,15 @@
       ]
     },
     {
+      "from": "sota-testing",
+      "to": "sota-architecture",
+      "weight": 4,
+      "targets": [
+        "rules/02 \u00a714",
+        "rules/04"
+      ]
+    },
+    {
       "from": "sota-ux-writing",
       "to": "sota-code-security",
       "weight": 4,
@@ -1796,14 +1805,6 @@
       "targets": [
         "rules/04 \u00a73a",
         "rules/07 \u00a73"
-      ]
-    },
-    {
-      "from": "sota-testing",
-      "to": "sota-architecture",
-      "weight": 3,
-      "targets": [
-        "rules/02 \u00a714"
       ]
     },
     {
@@ -2844,6 +2845,14 @@
     },
     {
       "from": "sota-frontend-design",
+      "to": "sota-ux-writing",
+      "weight": 1,
+      "targets": [
+        "rules/04"
+      ]
+    },
+    {
+      "from": "sota-frontend-design",
       "to": "sota-code-security",
       "weight": 1,
       "targets": [
@@ -3716,14 +3725,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1634,
+    "md link, other skill": 1636,
     "md link, outside skills/": 3,
-    "md link, same skill": 2817,
+    "md link, same skill": 2818,
     "name (backticked)": 433,
     "name (bare)": 240,
-    "name+file (backticked)": 679,
-    "name+file (bare)": 161,
-    "own rules/NN": 3004
+    "name+file (backticked)": 680,
+    "name+file (bare)": 162,
+    "own rules/NN": 3006
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3733,9 +3742,9 @@
     "md link, same skill": 0,
     "name (backticked)": 418,
     "name (bare)": 197,
-    "name+file (backticked)": 677,
-    "name+file (bare)": 156,
-    "own rules/NN": 2912
+    "name+file (backticked)": 678,
+    "name+file (bare)": 157,
+    "own rules/NN": 2913
   },
   "rules_index_style": {
     "link": 42

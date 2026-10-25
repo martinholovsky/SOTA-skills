@@ -263,22 +263,44 @@ The expand/contract and lock-timeout doctrines are identical; mechanics differ:
 
 - [ ] No migration breaks the previously deployed app version; renames/type
       changes/drops follow expand → migrate code → backfill → contract across
-      separate deploys.
+      separate deploys; one logical change per migration (§1); every change
+      follows its zero-downtime cheat-sheet pattern, including partitioning an
+      existing table via a new partitioned table + dual-write + backfill + swap
+      (§4).
 - [ ] Every migration reversible or carries an explicit irreversibility note
-      with recovery plan; applied migrations never edited.
+      with recovery plan; applied migrations never edited; data-destroying
+      migrations name the backup/PITR point, and DROP/lossy changes ship only
+      after a release that no longer references the object (§1).
 - [ ] All DDL migrations set `lock_timeout` (and the runner retries); no
-      ACCESS EXCLUSIVE operation can queue behind long queries unbounded.
+      ACCESS EXCLUSIVE operation can queue behind long queries unbounded;
+      `statement_timeout` set for the DDL too (§2).
 - [ ] No table-rewrite DDL (type change, volatile default, naive SET NOT
-      NULL) on hot tables; NOT VALID → VALIDATE used for new constraints.
+      NULL) on hot tables; NOT VALID → VALIDATE used for new constraints; `int`
+      sequences alerted before exhaustion (`last_value / 2147483647`) (§2).
 - [ ] All index builds on live tables use CONCURRENTLY in non-transactional
-      migrations; no INVALID indexes present in the catalog.
+      migrations; no INVALID indexes present in the catalog, and a re-run drops
+      an invalid leftover before re-creating; unique constraints added via
+      `CREATE UNIQUE INDEX CONCURRENTLY` + `ADD CONSTRAINT … USING INDEX` (§2).
 - [ ] Backfills batched by keyset, idempotent, resumable, throttled against
-      replication lag; never inside the DDL migration's transaction.
+      replication lag; never inside the DDL migration's transaction; run as a
+      script/job with progress logging, not as a deploy-pipeline migration (§3).
 - [ ] One migration tool owns the schema; CI detects drift vs prod; migration
-      linter (squawk/strong_migrations) wired in.
+      linter (squawk/strong_migrations) wired in; no hand-applied DDL in prod (§5).
 - [ ] Migrations tested against prod-sized/prod-shaped data and timed; risky
-      rollbacks rehearsed; concurrent-migration lock enabled.
-- [ ] ORM-generated migrations reviewed as SQL, not as DSL.
+      rollbacks rehearsed; concurrent-migration lock enabled; CI applies all
+      migrations to a clean DB and a prod-shaped snapshot; each migration's notes
+      state its deploy ordering (expand before the code, contract after full
+      rollout); multi-tenant schemas run the catalog tenancy gate after
+      migrating (§5).
+- [ ] MEDIUM (MySQL/MariaDB): every online `ALTER TABLE` names its algorithm —
+      `ALGORITHM=INSTANT` (no `LOCK` clause) or `ALGORITHM=INPLACE, LOCK=NONE` —
+      so a would-be rewrite fails loudly; one DDL statement per migration file;
+      hot-table rewrites go through gh-ost/pt-online-schema-change (§6). Probe:
+      `grep -rniE --include='*.sql' 'ALTER[[:space:]]+TABLE' . | grep -viE 'ALGORITHM[[:space:]]*='`
+      (an ALTER whose ALGORITHM clause sits on a later line hits too — read it).
+- [ ] ORM-generated migrations reviewed as SQL, not as DSL; Rails projects run
+      `strong_migrations`; Django CONCURRENTLY migrations set `atomic = False`;
+      Alembic autogenerate output diffed against the real schema (§7).
 - [ ] Seed/reference-data changes ship as migrations and are idempotent (`INSERT … ON
       CONFLICT DO UPDATE` or equivalent): no empty-table assumption, no duplicate rows on
-      re-run (rule "Seed/reference data changes are migrations too").
+      re-run (rule "Seed/reference data changes are migrations too") (§5).

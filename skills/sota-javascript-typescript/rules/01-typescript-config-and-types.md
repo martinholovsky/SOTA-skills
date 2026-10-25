@@ -220,6 +220,8 @@ Same reasoning bans `namespace` and parameter properties in new code: prefer pla
 
 ## 10. When type gymnastics hurt
 
+*(advisory)* — judgment heuristics for when to stop adding type-level complexity; nothing here is a violation an auditor can probe for.
+
 Types serve the code. Stop when:
 - A conditional/mapped type takes longer to understand than the duplication it removes. Two similar interfaces are often cheaper than one clever generic.
 - Inference errors surface 5 layers from the cause. Recursive conditional types produce unreadable diagnostics for teammates.
@@ -252,19 +254,20 @@ Monorepos: TypeScript project references give incremental, dependency-ordered bu
 
 ## Audit checklist
 
-- [ ] `tsconfig.json`: `strict: true` present; `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `isolatedModules` enabled. Any of these missing in a 2026 codebase is a finding (HIGH for missing `strict`).
+- [ ] `tsconfig.json` (§1): `strict: true` present; `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `noPropertyAccessFromIndexSignature`, `verbatimModuleSyntax`, `isolatedModules` enabled. Any of these missing in a 2026 codebase is a finding (HIGH for missing `strict`). The `types`/`rootDir` defaults and the TS 7.0 typed-lint split are the next item.
 - [ ] **TypeScript ≥6.0 defaults (§"tsconfig", the 6.0/7.0 paragraph)** — on `typescript` ≥6 (or the `@typescript/typescript6` alias), a tsconfig with no `types` array loads no `@types/*`, and one that emits to `outDir` with no `rootDir` fails TS5011: run `npx tsc --noEmit` and read for TS2591/TS2304 on `process`/`Buffer`/`describe` (MEDIUM: a broken or bypassed typecheck). A `typescript` ≥7 dependency next to `typescript-eslint` without the documented `typescript6` alias means typed lint cannot run at all — confirm `npx eslint` exits 0 or 1, not 2 (HIGH: `no-floating-promises` is silently off).
-- [ ] `grep -rn ": any\|as any\|<any>\|any\[\]" --include="*.ts" --include="*.tsx" src/` — every hit needs justification; `as any` in production code is HIGH.
-- [ ] `grep -rn "@ts-ignore\|@ts-nocheck" src/` — should be `@ts-expect-error` with a reason comment; `@ts-nocheck` is HIGH.
-- [ ] `grep -rn "as [A-Z]" --include="*.ts" src/ | grep -v "as const\|as unknown"` — casts in business logic; check each masks no missing validation.
-- [ ] `grep -rn "JSON.parse\|req.body\|req.query\|process.env" src/` — confirm each flows through a schema parse before typed use; raw `as T` on external data is HIGH.
+- [ ] `grep -rn ": any\|as any\|<any>\|any\[\]" --include="*.ts" --include="*.tsx" src/` — every hit needs justification; `as any` in production code is HIGH. `catch (e: any)` is a hit too: catch variables stay `unknown` (§2).
+- [ ] `grep -rn "@ts-ignore\|@ts-nocheck" src/` — should be `@ts-expect-error` with a reason comment; `@ts-nocheck` is HIGH. (§2)
+- [ ] `grep -rn "as [A-Z]" --include="*.ts" src/ | grep -v "as const\|as unknown"` — casts in business logic; check each masks no missing validation. Then `grep -rn 'as unknown as' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules .` — `as unknown as T` is legitimate only quarantined in one adapter file with a comment; anywhere else it is a finding (MEDIUM) (§5).
+- [ ] `grep -rn "JSON.parse\|req.body\|req.query\|process.env" src/` — confirm each flows through a schema parse before typed use; raw `as T` on external data is HIGH. Webhook payloads, LLM output and rows from untyped DB clients are boundaries too: read their handlers for a parse (§6).
 - [ ] **Browser storage read back without a schema (§"Validate at the boundary") — MEDIUM, HIGH when the value reaches a sink or an auth decision** —
       ``grep -rnE "JSON\.parse\( *(localStorage|sessionStorage)\.getItem\(|(localStorage|sessionStorage)\.getItem\([^)]*\) *as " --include='*.js' --include='*.ts' --include='*.tsx' --include='*.jsx' --include='*.mjs' . | grep -vE "\.(safeParse|parse)\( *JSON\.parse\("``
       — a stored value parsed and cast, or cast directly. IndexedDB and Cache Storage reads need a read.
-- [ ] `grep -rn "loading: boolean" src/` plus adjacent optional `data`/`error` fields — boolean-soup state, recommend discriminated union (MEDIUM).
-- [ ] IDs typed as bare `string` passed across ≥2 entity types — recommend branding (LOW/MEDIUM by blast radius).
+- [ ] `grep -rn "loading: boolean" src/` plus adjacent optional `data`/`error` fields — boolean-soup state, recommend discriminated union (MEDIUM). A `switch` over a union's discriminant with neither a `never`-typed `default` nor `@typescript-eslint/switch-exhaustiveness-check` enabled is LOW (§3).
+- [ ] IDs typed as bare `string` passed across ≥2 entity types, and money or durations typed as bare `number` where units can be confused (cents vs dollars, ms vs s) — recommend branding at the validation boundary (LOW/MEDIUM by blast radius) (§4).
 - [ ] ESLint has `typescript-eslint` strict-type-checked config; `no-explicit-any`, `switch-exhaustiveness-check`, `no-unsafe-*` rules enabled.
-- [ ] Monorepo: cross-package relative imports (`grep -rn "from '\.\./\.\./.*/src/"`) — bypass project references (MEDIUM).
-- [ ] `grep -rn "^export enum\|^enum \|const enum" src/` — migrate to unions/const objects (LOW; const enum under isolatedModules is MEDIUM).
-- [ ] Exported functions without explicit return types in library/public API (`explicit-module-boundary-types` lint) — LOW.
-- [ ] Libraries: `exports` map present, `publint` + `attw` pass.
+- [ ] Monorepo: cross-package relative imports (`grep -rn "from '\.\./\.\./.*/src/"`) — bypass project references (MEDIUM). Each package sets `composite: true` + `declaration: true`, and the root builds with `tsc -b` (§11).
+- [ ] `grep -rn "^export enum\|^enum \|const enum" src/` — migrate to unions/const objects (LOW; const enum under isolatedModules is MEDIUM). Also `grep -rnE '^[[:space:]]*(export )?(declare )?namespace [A-Za-z]|constructor\([^)]*(public|private|protected|readonly) ' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules .` — `namespace` and constructor parameter properties are banned in new code for the same reason; on TS ≥5.8, `erasableSyntaxOnly` absent from tsconfig is LOW (§8).
+- [ ] Exported functions without explicit return types in library/public API (`explicit-module-boundary-types` lint) — LOW. In the same signatures (§9): a positional boolean or ≥3 positional parameters where an options object belongs, an overload set a union parameter would express, and a type parameter used once in the signature (LOW each).
+- [ ] Libraries: `exports` map present with the `types` condition first, `publint` + `attw` pass (§11). New code is ESM: `grep -rnE '(^|[^.[:alnum:]_$])require\(|module\.exports' --include='*.ts' --include='*.mts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .` hits in a `"type": "module"` package are findings (MEDIUM). Code Node runs as `.ts` must import `./x.ts` (a `./x.js` specifier there fails `ERR_MODULE_NOT_FOUND`) with `rewriteRelativeImportExtensions` or `allowImportingTsExtensions` + `noEmit` set (MEDIUM).
+- [ ] **Hand-duplicated or implementation-coupled types (§7) — LOW** — `grep -rn 'ReturnType<typeof' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules .` — `ReturnType<typeof fn>` in an exported or public API type couples consumers to the implementation. Then read for variant interfaces that restate a canonical type's fields instead of deriving them with `Omit`/`Pick`/`Partial`, and for `Omit` applied to a union without a distributive helper (`Omit` does not distribute over unions).

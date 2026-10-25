@@ -388,6 +388,7 @@ More precise *and* more sensitive, not a trade.
       Grep: `it\(.*async` bodies with un-awaited promises; Python `async def test` without awaited call → Critical.
 - [ ] Refactor-brittleness: do tests spy on internal/private methods?
       Grep: `spyOn\(.*(as any)|verify\(.*internal|assert_called.*_private|reflect` in tests → High.
+      Also assertions on private fields or call counts of internal helpers → High (§2.1).
 - [ ] Real time in tests/SUT under test? Grep:
       `datetime\.now|time\.Now\(\)|Date\.now|new Date\(\)|System\.currentTimeMillis|Instant\.now` in test paths and in modules with boundary-condition tests → High.
 - [ ] **Unit suite run with egress blocked** — any new failure is a test that
@@ -400,14 +401,27 @@ More precise *and* more sensitive, not a trade.
       `grep -rnE '(^|[^A-Za-z0-9_.~-])/(etc|var|mnt|opt|home|Users|srv)/|[A-Za-z]:\\' tests/`
 - [ ] Sleeps as sync? Grep: `time\.sleep|time\.Sleep|Thread\.sleep|setTimeout|waitForTimeout|page\.wait_for_timeout` in tests → High each.
 - [ ] Order/parallel safety: does CI run the suite shuffled and parallel?
-      Run shuffled once during audit; any new failure → High.
+      Run shuffled once during audit, plus a sampled test alone and the suite twice in
+      a row; any new failure → High (§2.5).
 - [ ] Shared mutable state? Grep tests for writes to globals/statics/env:
       `os\.environ\[|process\.env\.[A-Z_]+ *=|static .* =|var [A-Z]` (lang-adjust) without scoped teardown → High.
+      A `clearAll()`/`resetDatabase()` at the top of other tests is the mop for a leaker:
+      find the leaker (§2.5).
 - [ ] Conditional logic in tests? Grep: `^\s+(if|for|while|try)\b` inside test
       bodies (exclude table-test loops over cases) → Medium.
+- [ ] One behavior per test? A name that needs "and" is usually two tests. Lead list:
+      `grep -rnE "(def test_|fn test_)[A-Za-z0-9_]*_and_|func Test[A-Za-z0-9_]*And[A-Z_]|(^|[^A-Za-z0-9_.])(it|test)\([\"'][^\"']* and " --exclude-dir=.git --exclude-dir=node_modules .`
+      A hit that verifies several behaviors → Medium; split or parameterize (§2.3).
+- [ ] Arrange–Act–Assert visible? Sample 10 tests: more than one Act (act-assert-act-assert
+      in one body), or an expected value computed by re-running the SUT's own algorithm
+      instead of a literal or independent derivation → Medium each (§2.2).
 - [ ] Names as spec: sample 20 names; can you state the behavior from the name
-      alone? `test\d|_works|_ok\b|misc|stuff` patterns → Low–Medium.
+      alone? `test\d|_works|_ok\b|misc|stuff` patterns → Low–Medium. (§2.4)
 - [ ] Snapshots: any snapshot file >100 lines, auto-numbered, or updated in
       bulk commits (`git log --oneline -- '**/__snapshots__/**' | head`)?
-      Unreviewable snapshots → Medium; routine bulk updates → High.
+      Unreviewable snapshots, or volatile fields (timestamps, ids, hostnames, versions)
+      left un-normalized in them → Medium; routine bulk updates → High (§2.8).
+- [ ] Test structure: sample 5 tests. Understanding one needs more than one level of
+      builder/helper indirection, a magic value has no comment saying what it is, or a
+      regression test does not name the bug it pins → Low (§2.9).
 - [ ] Hidden retries: grep `@pytest.mark.flaky|retries:|jest.retryTimes|@Retry|FlakyTest` → High unless tied to a tracked quarantine ([`rules/07`](07-suite-health-and-ci.md)).

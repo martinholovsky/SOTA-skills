@@ -225,6 +225,8 @@ and voice control (Label-in-Name check) on critical flows.
 
 ## 7. Common audit failures, ranked
 
+*(advisory)* — a triage order over failure classes the §1–§5c items already probe; it states no rule of its own.
+
 By frequency × user impact (WebAIM Million + field experience) — use as triage order:
 
 1. **Low-contrast text** (~84% of home pages, WebAIM Million 2026 — worsening year-over-year) — Level AA 1.4.3. High impact, trivial fix.
@@ -240,6 +242,8 @@ By frequency × user impact (WebAIM Million + field experience) — use as triag
 
 ## 8. Severity mapping for findings
 
+*(advisory)* — the scale for rating a finding once found; it describes no product property to probe.
+
 Rank accessibility findings by **WCAG level × task impact**, not by effort:
 
 - **Blocker**: Level A failure that prevents task completion for an AT/keyboard user (keyboard trap, unlabeled required input, focus-invisible checkout button, SR-silent error). Ship-stopping.
@@ -252,16 +256,16 @@ user locked out, not the diff size.
 
 ## Audit checklist
 
-- [ ] Native elements used (button/a/input/select/dialog/details); zero click-handler divs; landmarks + single h1 + unbroken heading levels
-- [ ] All ARIA matches APG patterns completely (role + properties + keyboard); states actually update; no aria-hidden on focusables; icon controls named; visible label ⊆ accessible name
+- [ ] Native elements used (button/a/input/select/dialog/details); zero click-handler divs; landmarks + single h1 + unbroken heading levels; lists are `<ul>`/`<ol>`, data is a `<table>`; `<a href>` navigates, `<button>` mutates (§1)
+- [ ] All ARIA matches APG patterns completely (role + properties + keyboard); states actually update; no aria-hidden on focusables; icon controls named; visible label ⊆ accessible name; `aria-expanded` on the trigger; no `role` overriding native semantics (`<button role="link">`) and no broad `role="application"`/`aria-live` (§2)
 - [ ] Dialogs are `<dialog>`/showModal (or implement the full custom contract); disclosure and tabs follow the §2b recipes exactly
-- [ ] WCAG 2.2 delta verified: focus not obscured by sticky chrome, drag alternatives, 24px targets, consistent help placement, no redundant entry, paste-friendly auth
-- [ ] Link text self-describing; `lang` set (incl. inline switches); data tables have caption + scoped headers; unique titles; DOM order = reading order; no text-in-images
-- [ ] Full keyboard pass: everything reachable/operable, logical order, no traps, no `tabindex>0`, skip link present, Esc closes overlays
-- [ ] `:focus-visible` ring ≥ 2px at 3:1, never obscured by sticky chrome; `outline: none` only with replacement
-- [ ] Dialogs: focus moved in, trapped (inert/showModal), restored to trigger; SPA route changes move focus + update title; deletions relocate focus
-- [ ] Forms: labels, fieldsets, aria-invalid + describedby errors, focus-first-error, no cognitive-test logins, paste allowed
-- [ ] Live regions pre-mounted, polite by default, alert only for errors; async loads announce completion
-- [ ] Contrast verified both themes (text 4.5:1, UI 3:1); 320px/400% reflow clean; text-spacing survives; no user-scalable=no
-- [ ] Reduced motion honored; autoplay > 5s pausable; nothing flashes > 3/sec; captions/transcripts/alt complete
-- [ ] axe clean in CI AND manual pass: NVDA+Chrome, VoiceOver+Safari (incl. iOS), keyboard-only, 200% zoom, forced-colors — core task completable eyes-closed
+- [ ] WCAG 2.2 delta verified: focus not obscured by sticky chrome, drag alternatives, 24px targets, consistent help placement, no redundant entry, paste-friendly auth (§5b)
+- [ ] Link text self-describing; `lang` set (incl. inline switches); data tables have caption + scoped headers; unique titles; DOM order = reading order; no text-in-images; no sensory-only instructions (1.3.3); same link text → same destination (3.2.4); a contextual "learn more" is reported against the house rule or 2.4.9, not as a 2.4.4 failure (§5c)
+- [ ] Full keyboard pass: everything reachable/operable, logical order, no traps, no `tabindex>0`, skip link present, Esc closes overlays (§3)
+- [ ] `:focus-visible` ring ≥ 2px at 3:1, never obscured by sticky chrome; `outline: none` only with replacement (§3)
+- [ ] Dialogs: focus moved in, trapped (inert/showModal), restored to trigger; SPA route changes move focus + update title; deletions relocate focus (§3)
+- [ ] Forms: labels, fieldsets, aria-invalid + describedby errors, focus-first-error, no cognitive-test logins, paste allowed; required state in the label as well as `required`/`aria-required` (§4)
+- [ ] Live regions pre-mounted, polite by default, alert only for errors; async loads announce completion; `aria-busy="true"` on regions while they load (§4)
+- [ ] Contrast verified both themes (text 4.5:1, UI 3:1); 320px/400% reflow clean; text-spacing survives; no user-scalable=no; orientation not locked (1.3.4); `contrast-color()` output still ratio-checked (§5)
+- [ ] Reduced motion honored; autoplay > 5s pausable; nothing flashes > 3/sec; captions/transcripts/alt complete; audio > 3s has volume/stop (§5)
+- [ ] axe clean in CI AND manual pass: NVDA+Chrome, VoiceOver+Safari (incl. iOS), keyboard-only, 200% zoom, forced-colors — core task completable eyes-closed; TalkBack+Chrome on Android and a voice-control Label-in-Name check on critical flows; new axe violations fail the build against an explicit baseline (§6)

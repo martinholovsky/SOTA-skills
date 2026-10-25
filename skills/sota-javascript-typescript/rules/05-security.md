@@ -378,9 +378,9 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
 - [ ] **Uninitialized buffers and native addons — HIGH if the buffer can leave the process** —
       `grep -rnE 'Buffer\.allocUnsafe(Slow)?\(|new Buffer\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       ; `grep -rnE 'node-addon-api|node-gyp|"gypfile"|\.node([^a-zA-Z0-9]|$)|node:ffi|--allow-ffi' --include='package.json' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --include='Dockerfile*' --include='*.yml' --include='*.yaml' .`
-      — a `node:ffi` import or `--allow-ffi` grant is native code to audit as C (HIGH if its arguments are request-derived). A repo with its own `binding.gyp` where `grep -rlE 'fsanitize=(address|undefined)' --include='binding.gyp' --include='*.yml' --include='*.yaml' --exclude-dir=node_modules .` prints nothing has no sanitizer job (MEDIUM, §"Native addons").
+      — a `node:ffi` import or `--allow-ffi` grant is native code to audit as C (HIGH if its arguments are request-derived). A repo with its own `binding.gyp` where `grep -rlE 'fsanitize=(address|undefined)' --include='binding.gyp' --include='*.yml' --include='*.yaml' --exclude-dir=node_modules .` prints nothing has no sanitizer job (MEDIUM, §13).
 - [ ] `grep -rn "innerHTML\|outerHTML\|insertAdjacentHTML\|document.write" src/` — each with non-constant input is HIGH/CRITICAL; constant strings LOW.
-- [ ] `grep -rn "dangerouslySetInnerHTML\|v-html\|{@html}\|bypassSecurityTrust" src/` — sanitized with DOMPurify at render? Unsanitized user/db content = CRITICAL (stored XSS).
+- [ ] `grep -rn "dangerouslySetInnerHTML\|v-html\|{@html}\|bypassSecurityTrust" src/` — sanitized with DOMPurify at render? Unsanitized user/db content = CRITICAL (stored XSS). Server-embedded state: `grep -rnE '<script[^>]*>[^<]*\$\{ *JSON\.stringify\(' --include='*.ts' --include='*.js' --include='*.tsx' --exclude-dir=node_modules . | grep -v 'u003c'` — `JSON.stringify` inside a `<script>` without escaping `<` allows `</script>` breakout (HIGH) (§1).
 - [ ] ``grep -rn "eval(\|new Function(\|setTimeout(['\"\`]\|setInterval(['\"\`]" src/`` — CRITICAL with dynamic input.
 - [ ] **Dynamic code evaluation beyond `eval(` (§"XSS", the `node:vm` bullet) — CRITICAL
       when request data reaches it** —
@@ -395,17 +395,17 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       or a script element built in code (read what sets its text or `src`).
 - [ ] `grep -rn "href={" src/ --include="*.tsx"` — user-controlled hrefs without protocol allowlist (`javascript:`) = HIGH.
 - [ ] `grep -rn "localStorage.setItem\|sessionStorage.setItem" src/ | grep -i "token\|jwt\|session\|auth\|key"` — HIGH.
-- [ ] `grep -rn "postMessage" src/` — `'*'` target with sensitive data (HIGH); message listener without origin check (HIGH).
+- [ ] `grep -rn "postMessage" src/` — `'*'` target with sensitive data (HIGH); message listener without origin check (HIGH). `grep -rnE "target=[\"'{]*_blank" --include='*.tsx' --include='*.jsx' --include='*.html' --include='*.vue' --exclude-dir=node_modules . | grep -v noopener` — external links opened with `target="_blank"` and no `rel="noopener"` hand over `window.opener` (LOW) (§10).
 - [ ] **Worker script built from data (§"postMessage", the Web Workers paragraph) — HIGH with user input** —
       ``grep -rnE "new (Shared)?Worker\( *([^'\"\` ]|['\"\`](data|blob):|\`[^\`]*\\$\{)|importScripts\( *[^'\"\` )]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' . | grep -vE "Worker\( *new URL\( *['\"]"``
       — a worker URL from a variable, `Blob`, `data:` or template, or a non-literal `importScripts`. Read each worker's `onmessage` for a schema parse.
-- [ ] **Attacker-chosen key written to a global (§"Prototype pollution") — HIGH when the key is request- or URL-derived** —
+- [ ] **Attacker-chosen key written to a global (§4) — HIGH when the key is request- or URL-derived** —
       ``grep -rnE "(window|globalThis|self)\[ *[^]'\"\` ][^]]*\] *=[^=]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' .``
       — then read shared escapers and security config for a runtime `Object.freeze` (unfrozen and exported: MEDIUM).
 - [ ] Deep-merge of request data: `grep -rn "merge(\|deepmerge\|Object.assign" src/` near `req.body`/`json()` — prototype pollution exposure (HIGH); `grep -rn "__proto__" src/` in tests/guards is good signal of awareness.
 - [ ] `grep -rn "jwt.verify\|jwtVerify" src/` — algorithm pinned? `aud`/`iss` checked? `grep -rn "algorithms" src/` absent = HIGH.
 - [ ] Regex on user input: `grep -rn "new RegExp(" src/` (dynamic patterns = ReDoS + injection risk, HIGH); run `eslint-plugin-regexp`/recheck over static patterns.
-- [ ] **Regex escaping, anchoring and engine (§"ReDoS", the four control failures) — HIGH on a
+- [ ] **Regex escaping, anchoring and engine (§7, the four control failures) — HIGH on a
       validator or allowlist** —
       ``grep -rnE 'new RegExp\( *[[:alpha:]_$`]|/[dgimsuvy]*[gmy][dgimsuvy]*\.test\(|/\^[^(/|]*\|[^/]*\$/' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' . | grep -v 'RegExp\.escape('``
       — hits are a pattern built from a variable without `RegExp.escape`, a `.test()` on a
@@ -413,10 +413,10 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       in an unescaped pattern is HIGH (pattern injection plus ReDoS). An `m`/`g` validator or an
       ungrouped alternation is HIGH when it guards access. The probe sees inline literals only:
       a flagged regex held in a `const` needs a read, and so do JSON Schema `pattern`s without `^…$`.
-      Complex patterns on untrusted input should run on the linear-time `re2` engine, or it is MEDIUM.
-- [ ] CSP present? `grep -rn "Content-Security-Policy" src/` — absent on HTML-serving apps (MEDIUM); contains `unsafe-inline`/`unsafe-eval` in script-src (MEDIUM).
+      Complex patterns on untrusted input should run on the linear-time `re2` engine, or it is MEDIUM. So is a validator with no `input.length` cap before matching.
+- [ ] CSP present? `grep -rn "Content-Security-Policy" src/` — absent on HTML-serving apps (MEDIUM); contains `unsafe-inline`/`unsafe-eval` in script-src (MEDIUM). `grep -rnE "'nonce-[A-Za-z0-9+/=_-]{8,}'" --exclude-dir=node_modules .` — a nonce written into config is reused on every response, which makes the policy as weak as `unsafe-inline` (MEDIUM); missing `object-src 'none'`, `base-uri 'none'` or `frame-ancestors` is LOW (§2).
 - [ ] Lockfile in git; CI uses `npm ci`/frozen lockfile; install scripts blocked (`.npmrc` `ignore-scripts`, pnpm allowlist, or npm ≥12 defaults + committed `approve-scripts` allowlist); install cooldown active (each absent: MEDIUM) — npm ≥11.10 `min-release-age`, Yarn `npmMinimalAgeGate`, Renovate/Dependabot, or pnpm with `minimumReleaseAge` **written** in `pnpm-workspace.yaml` or `minimumReleaseAgeStrict: true` (the built-in default alone fails open), plus `minimumReleaseAgeIgnoreMissingTime: false` behind a private registry or mirror: `grep -nE 'minimumReleaseAge(Strict)?:|minimumReleaseAgeIgnoreMissingTime: *false|trustPolicy: *no-downgrade' pnpm-workspace.yaml` (no `trustPolicy` on a pnpm repo: LOW).
-- [ ] **Frozen install bypassed (§"npm supply chain", the lockfile bullet) — MEDIUM, HIGH in a job holding secrets** — with `P='(^|[^[:alnum:]_-])(npx|bunx|npm exec|pnpm dlx|yarn dlx)[[:space:]]+[^-[:space:]]|(^|[^[:alnum:]_-])npm (install|i)([[:space:]]|$)'`: `grep -rnE "$P" .github/workflows/ ; grep -rnE "$P" --include='Dockerfile*' --include='*.sh' --include='Makefile' --exclude-dir=node_modules .`
+- [ ] **Frozen install bypassed (§5, the lockfile bullet) — MEDIUM, HIGH in a job holding secrets** — with `P='(^|[^[:alnum:]_-])(npx|bunx|npm exec|pnpm dlx|yarn dlx)[[:space:]]+[^-[:space:]]|(^|[^[:alnum:]_-])npm (install|i)([[:space:]]|$)'`: `grep -rnE "$P" .github/workflows/ ; grep -rnE "$P" --include='Dockerfile*' --include='*.sh' --include='Makefile' --exclude-dir=node_modules .`
       — a `npx`/`dlx` of a tool that is not a devDependency runs whatever is current; `npm install` re-resolves the lock.
 - [ ] **Bundled or single-executable artifact with no build-time SBOM (§"npm supply chain", the bundle bullet) — MEDIUM** — `grep -nE '"(esbuild|webpack|rollup|postject)"|sea-config' package.json`: a hit on a shipped artifact needs an SBOM generated from the lockfile in CI; an image scan of the bundle does not stand in for it.
 - [ ] **Install-time code execution re-enabled or unreviewed (§"npm supply chain") — HIGH** —
@@ -437,25 +437,25 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       and the two differ by one word. Parameterized/bound form everywhere, or HIGH.
 - [ ] Webhook handlers: signature verification before parsing (absent = HIGH).
 - [ ] `grep -rn "Allow-Origin" src/` — `*` with credentials or unvalidated Origin reflection (HIGH).
-- [ ] Built client bundle: `grep -rE "sk_live|AKIA|ghp_|-----BEGIN" dist/` — leaked secrets (CRITICAL). Repo: gitleaks in CI (absent = MEDIUM).
+- [ ] Built client bundle: `grep -rE "sk_live|AKIA|ghp_|-----BEGIN" dist/` — leaked secrets (CRITICAL). Repo: gitleaks in CI (absent = MEDIUM). (§9)
 - [ ] `grep -rn "NEXT_PUBLIC_\|VITE_" src/ .env*` — server secrets under public prefixes (CRITICAL).
 - [ ] Production error handler leaks stacks/SQL to clients (`grep -rn "err.stack\|error.stack" src/` in response paths) — MEDIUM.
-- [ ] Cookies: `grep -rn "Set-Cookie\|res.cookie" src/` — missing HttpOnly/Secure/SameSite on session cookies (HIGH).
+- [ ] Cookies: `grep -rn "Set-Cookie\|res.cookie" src/` — missing HttpOnly/Secure/SameSite on session cookies (HIGH). Session IDs not rotated on login or privilege change, and cookie-authed state-changing routes with no CSRF token or custom-header check, are HIGH (§8).
 - [ ] **App-set cookie attribute defaults (§"Tokens and client-side auth") — MEDIUM, HIGH if
       the value authorizes anything** —
       `grep -rnE '(res|reply)\.(cookie|setCookie)\(|setCookie\(|cookies\(\)\.set\(|\.cookies\.set\(|document\.cookie *=' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --include='*.tsx' . | grep -vE 'httpOnly: *true.*secure: *true|secure: *true.*httpOnly: *true'`
       — a call without both `httpOnly` and `secure` inline gets Express/Hono/Next's `Path=/` only
       (Fastify adds `SameSite=Lax`). Read calls whose options are a variable.
 - [ ] `grep -rn "res.redirect\|window.location.*=\|location.href.*=" src/` with request-derived values — open redirect (MEDIUM/HIGH near auth flows).
-- [ ] Upload handlers: extension/MIME-only validation, client filename used in path (`grep -rn "originalname\|file.name" src/`) — HIGH.
-- [ ] **Template raw-output syntax (§"Server-rendered HTML")** — in template files:
+- [ ] Upload handlers: extension/MIME-only validation, client filename used in path (`grep -rn "originalname\|file.name" src/`) — HIGH. User uploads served inline without `Content-Disposition: attachment` + `nosniff`, or SVGs served unsanitized from the app origin, are HIGH; images not re-encoded is LOW (§11).
+- [ ] **Template raw-output syntax (§3)** — in template files:
       `grep -rnE '<%-|!\{|^[[:space:]]*[[:alnum:]._#-]*!=|&attributes|\{\{\{|\{\{&' --include='*.ejs' --include='*.pug' --include='*.jade' --include='*.hbs' --include='*.handlebars' --include='*.mustache' .`
       — each hit fed user or DB content is stored/reflected XSS (HIGH/CRITICAL).
 - [ ] **Template engines misused from code** —
       ``grep -rnE 'noEscape|Mustache\.escape *=|(ejs|pug|Handlebars|Mustache)\.(render|compile)\([^)]*req\.|res\.render\([^,)]*req\.|res\.(send|write|end)\( *`[^`]*<' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
       — a request value as EJS/Pug template *source* is CRITICAL (code execution). As a
       view *name* it is HIGH (renders templates outside `views/`). `noEscape`, a reassigned
-      `Mustache.escape`, or HTML built in a template literal is XSS (HIGH).
+      `Mustache.escape`, or HTML built in a template literal is XSS (HIGH). So is a hand escaper using `.replace('<', …)` with a string pattern: it replaces only the first match.
 - [ ] **Code chosen by the request, or a shell hidden in argv** —
       ``grep -rnE '(require|import)\( *([[:alpha:]_$]|`[^`]*\$\{)|[^[:alnum:]_](/bin/)?(ba|z|da)?sh[^[:alnum:]_] *, *\[ *[^[:alnum:]]-c[^[:alnum:]]|shelljs|shell\.exec\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
       — `require`/`import()` of a non-literal reached by request data is CRITICAL. So is
@@ -482,12 +482,12 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       `grep -rnE '(readFile|readFileSync|createReadStream|writeFile|writeFileSync|createWriteStream|unlink|rm|readdir|sendFile|download|join|resolve)\([^)]*req\.(params|query|body)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       — each hit needs the resolve + containment check (HIGH without it). The probe sees
       single-line calls only.
-- [ ] **Invisible or bidirectional characters in source (§"Invisible and bidirectional")** —
+- [ ] **Invisible or bidirectional characters in source (§6)** —
       `grep -rnE "$(printf '\342\200\213|\342\200\214|\342\200\215|\342\200\216|\342\200\217|\342\200\252|\342\200\253|\342\200\254|\342\200\255|\342\200\256|\342\201\240|\342\201\241|\342\201\242|\342\201\243|\342\201\244|\342\201\246|\342\201\247|\342\201\250|\342\201\251|\343\205\244|\357\276\240')" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       — U+200B–200F, U+202A–202E, U+2060–2064, U+2066–2069, U+3164 and U+FFA0, written as
       UTF-8 bytes so the probe works under BSD grep and ugrep alike. A BOM at the start of a
       file is deliberately excluded. Any hit in code is HIGH until explained.
-- [ ] `grep -rn "Math.random" src/` near token/id/code generation — HIGH; `grep -rn "=== .*signature\|signature ===" src/` — timing-unsafe compare (MEDIUM).
+- [ ] `grep -rn "Math.random" src/` near token/id/code generation — HIGH; `grep -rn "=== .*signature\|signature ===" src/` — timing-unsafe compare (MEDIUM). `grep -rnE 'subtle\.(encrypt|importKey)\(' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .` — each AES-GCM call needs a fresh random IV and a key from a KMS or secret manager, not a constant (HIGH) (§12).
 - [ ] **Publishing with a long-lived token instead of trusted publishing (npm supply chain) —
       HIGH for a published package** —
       `grep -rnE 'NODE_AUTH_TOKEN|NPM_TOKEN|_authToken' .github/workflows/ .npmrc` (a token

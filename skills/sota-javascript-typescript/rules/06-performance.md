@@ -197,20 +197,24 @@ setInterval(() => {
 
 ## 10. Micro-level idioms that matter at scale only
 
+*(advisory)* — hot-path micro-idioms that apply only where a profile shows the path is hot ("Outside hot paths, write the readable version"); no standalone probe.
+
 In hot paths (per-row in 100k iterations, per-frame): avoid spread-accumulator `reduce` (O(n²), [rules/02](02-language-idioms.md)), reuse compiled regexes, prefer `for...of` over chained array methods, avoid `try/catch`-free claims (modern engines made try cheap — don't contort code for it), and don't `delete obj.prop` in hot objects (deopts shapes; set to `undefined` or use Maps). Outside hot paths, write the readable version.
 
 ## Audit checklist
 
 - [ ] Bundle analyzer wired and a size budget enforced in CI (`size-limit`/bundlesize)? Absent on a frontend app = MEDIUM.
 - [ ] `grep -rn "from 'lodash'\|from \"lodash\"" src/` (non-`lodash-es`) and `from 'moment'` — heavy/cjs imports (MEDIUM). `grep -rn "import \* as" src/` — namespace imports of large libs.
-- [ ] `grep -rln "export \* from" src/` — barrel files on hot paths (LOW/MEDIUM).
+- [ ] `grep -rln "export \* from" src/` — barrel files on hot paths (LOW/MEDIUM). `grep -rL --include='package.json' --exclude-dir=node_modules '"sideEffects"' .` lists a `package.json` with no `"sideEffects"` field, which limits tree-shaking (LOW) (§1).
 - [ ] `grep -rn "key={index}\|key={i}\|key={idx}" src/ --include="*.tsx"` — index keys on mutable lists (MEDIUM); `key={Math.random()` (HIGH — remount storm).
 - [ ] `grep -rn "useEffect" src/ --include="*.tsx" | wc -l` high relative to components → review for derived-state effects and fetch waterfalls (MEDIUM).
-- [ ] `grep -rn "useMemo\|useCallback\|React.memo" src/` — blanket memoization with unstable deps (inline objects in props of memoized components) = dead weight (LOW); missing memo on expensive list rows that profile hot (MEDIUM).
+- [ ] `grep -rn "useMemo\|useCallback\|React.memo" src/` — blanket memoization with unstable deps (inline objects in props of memoized components) = dead weight (LOW); missing memo on expensive list rows that profile hot (MEDIUM). `grep -rnE 'Provider value=\{\{' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules .` — a context value rebuilt every render re-renders every consumer (MEDIUM) (§3).
 - [ ] `grep -rn "'use client'" app/ src/` — at layout/page top level wholesale = RSC benefits discarded (MEDIUM in App Router projects).
-- [ ] Long lists: components mapping >hundreds of rows without virtualization (`grep -rn "\.map(" src/ --include="*.tsx"` + check data sizes) — MEDIUM.
-- [ ] `grep -rn "addEventListener" src/` without matching remove/`{ signal }`; `grep -rn "setInterval" src/` without `clearInterval` — leaks (MEDIUM).
-- [ ] `grep -rn "new Map()\|new Map<" src/` at module scope in server code — unbounded cache check (MEDIUM if grows per-request/per-user key).
-- [ ] `grep -rn "onScroll\|onMouseMove\|onResize\|addEventListener('scroll'" src/` — unthrottled continuous handlers doing layout reads (MEDIUM); could be Intersection/ResizeObserver.
-- [ ] Node: event-loop delay metric exported? `grep -rn "monitorEventLoopDelay" src/` — absent in a latency-sensitive service (LOW/MEDIUM).
+- [ ] Long lists: components mapping >hundreds of rows without virtualization (`grep -rn "\.map(" src/ --include="*.tsx"` + check data sizes) — MEDIUM. (§4)
+- [ ] `grep -rn "addEventListener" src/` without matching remove/`{ signal }`; `grep -rn "setInterval" src/` without `clearInterval` — leaks (MEDIUM). Observers never `disconnect()`ed, and Node services with no heap/RSS metric exported, are the same class (LOW) (§7).
+- [ ] `grep -rn "new Map()\|new Map<" src/` at module scope in server code — unbounded cache check (MEDIUM if grows per-request/per-user key). Each memo cache needs a bound (`max`/`ttl`) and invalidation on the write path or a deliberate TTL (MEDIUM) (§6).
+- [ ] `grep -rn "onScroll\|onMouseMove\|onResize\|addEventListener('scroll'" src/` — unthrottled continuous handlers doing layout reads (MEDIUM); could be Intersection/ResizeObserver. `grep -rnE '(debounce|throttle)\(' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules . | grep -vE 'useMemo|useRef|useCallback|import '` — a debounced function created in the component body resets its timer every render (MEDIUM) (§5).
+- [ ] Node: event-loop delay metric exported? `grep -rn "monitorEventLoopDelay" src/` — absent in a latency-sensitive service (LOW/MEDIUM). (§8)
 - [ ] `grep -rn "JSON.stringify" src/` in logging/hot request paths over large objects (MEDIUM).
+- [ ] **Render-blocking and eager third-party scripts (§2) — MEDIUM** — `grep -rnE '<script[^>]*src=' --include='*.html' --exclude-dir=node_modules . | grep -vE 'defer|async|type="module"'` — a classic `<script src>` with no `defer`/`async` blocks parsing. Then check that analytics/chat scripts load after interactive, and that framework route prefetch has not been disabled.
+- [ ] **Main-thread scheduling (§9) — MEDIUM** — record the key interactions in the Chrome Performance panel: an app long task over 50ms (parsing, diffing, search indexing, image work) belongs in a Web Worker. `grep -rn 'requestIdleCallback' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules .` — no callback may do user-visible work. Animations of layout-triggering properties instead of `transform`/`opacity` are LOW.

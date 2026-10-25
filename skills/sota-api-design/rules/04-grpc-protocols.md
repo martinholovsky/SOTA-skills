@@ -245,22 +245,22 @@ LB / proxy idle timeout          > client keepalive_time AND > longest idle gap 
 
 ## Audit checklist
 
-- [ ] Protocol choice justified: gRPC internal / REST edge / GraphQL only for client diversity; no raw gRPC forced on unwilling partners.
-- [ ] `buf breaking` (or equivalent) gates proto changes in CI; protos versioned in a shared module; no hand-edited generated code.
-- [ ] No field number ever reused; removed fields have `reserved` numbers AND names (check git history of .proto files).
-- [ ] Enums have `*_UNSPECIFIED = 0`; consumer code handles unknown enum values with a default branch.
-- [ ] Field presence handled deliberately (proto3 `optional`/FieldMask) where unset≠zero matters — especially money and PATCH-style updates.
-- [ ] Every outbound RPC sets a deadline derived from the inbound context; grep for `context.Background()`/missing `withDeadline` at call sites.
-- [ ] Servers check cancellation in expensive paths and propagate aborts to DB/downstream calls.
-- [ ] Retry policy: idempotent-only, backoff+jitter, deadline-bounded, via service config/mesh — no naive retry loops.
-- [ ] Status codes used canonically; rich errors via `error_details.proto`; no app errors in `UNKNOWN`/message-string parsing; no internal leak in messages.
-- [ ] Max message sizes configured; large transfers use streaming chunks or signed URLs, not giant unary messages.
-- [ ] Streams: bounded buffering honoring flow control, app-level resume tokens, max stream age, keepalive config consistent with proxies.
-- [ ] Client-streaming and bidi handlers cap messages per stream and end over-cap streams with `RESOURCE_EXHAUSTED` — MEDIUM. Read each handler's receive loop (`Recv()`, `onNext`, `async for`) for a counter.
-- [ ] Metrics per client identity with alerts on authn/authz-failure spikes, `UNIMPLEMENTED` probing and `RESOURCE_EXHAUSTED` bursts — MEDIUM.
-- [ ] Per-RPC L7 load balancing (client-side/mesh/proxy) — not a bare L4 LB; `MAX_CONNECTION_AGE` set.
-- [ ] Standard health service wired to infra; reflection disabled or justified in prod.
-- [ ] TLS/mTLS on all links; per-call authn validated in server interceptors; authz not inferred from transport alone.
-- [ ] Browser/partner access goes through gRPC-Web/Connect/transcoding generated from the same protos.
-- [ ] AIP-style hygiene: per-RPC request/response messages (none shared, no bare scalar returns), `page_size`/`page_token` listing, `FieldMask` updates, LRO `Operation` for long work, `buf lint` in CI.
-- [ ] Create/mutating RPCs carry request IDs (idempotency) where retries are configured.
+- [ ] Protocol choice justified: gRPC internal / REST edge / GraphQL only for client diversity; no raw gRPC forced on unwilling partners; mixed estates transcode at the gateway from the protos rather than hand-maintaining parallel APIs (§1).
+- [ ] `buf breaking` (or equivalent) gates proto changes in CI; protos versioned in a shared module; no hand-edited generated code (§2).
+- [ ] No field number ever reused or retyped; removed fields have `reserved` numbers AND names (check git history of .proto files); superseded fields marked `[deprecated = true]` beside a new field, never repurposed; renames treated as breaking where protojson or generated-code consumers exist; packages carry a version suffix (`billing.v1`) (§2).
+- [ ] Enums have `*_UNSPECIFIED = 0`; consumer code handles unknown enum values with a default branch (§2).
+- [ ] Field presence handled deliberately (proto3 `optional`/FieldMask) where unset≠zero matters — especially money and PATCH-style updates (§2).
+- [ ] Every outbound RPC sets a deadline derived from the inbound context; grep for `context.Background()`/missing `withDeadline` at call sites; a service with less remaining budget than its P99 fails fast with `DEADLINE_EXCEEDED` (§3).
+- [ ] Servers check cancellation in expensive paths and propagate aborts to DB/downstream calls (§3).
+- [ ] Retry policy: idempotent-only, backoff+jitter, deadline-bounded, via service config/mesh — no naive retry loops; hedging only on read-only calls (§3).
+- [ ] Status codes used canonically; rich errors via `error_details.proto`; no app errors in `UNKNOWN`/message-string parsing; no internal leak in messages; trace IDs carried in metadata; auth, logging, metrics and panic-to-`INTERNAL` live in client/server interceptors, not per-method code (§6).
+- [ ] Max message sizes configured; large transfers use streaming chunks or signed URLs, not giant unary messages (§4).
+- [ ] Streams: bounded buffering honoring flow control, app-level resume tokens, max stream age, keepalive config consistent with proxies; each bidirectional stream has a written justification (§4).
+- [ ] Client-streaming and bidi handlers cap messages per stream and end over-cap streams with `RESOURCE_EXHAUSTED` — MEDIUM. Read each handler's receive loop (`Recv()`, `onNext`, `async for`) for a counter (§4).
+- [ ] Per-method RPC metrics (rate, error-by-code, latency histograms) with trace propagation and alerts on `DEADLINE_EXCEEDED`/`UNAVAILABLE` rates; metrics per client identity (a bounded label: service or tenant, not raw IP) with alerts on authn/authz-failure spikes, `UNIMPLEMENTED` probing and `RESOURCE_EXHAUSTED` bursts — MEDIUM (§8).
+- [ ] Per-RPC L7 load balancing (client-side/mesh/proxy) — not a bare L4 LB; `MAX_CONNECTION_AGE` set (§8).
+- [ ] Standard health service wired to infra; reflection disabled or justified in prod (§8).
+- [ ] TLS/mTLS on all links; per-call authn validated in server interceptors; authz not inferred from transport alone (§8).
+- [ ] Browser/partner access goes through gRPC-Web/Connect/transcoding generated from the same protos (§7).
+- [ ] AIP-style hygiene: per-RPC request/response messages (none shared, no bare scalar returns), `page_size`/`page_token` listing, `FieldMask` updates, LRO `Operation` for long work, `buf lint` in CI with one org-wide config (§5).
+- [ ] Create/mutating RPCs carry request IDs (idempotency) where retries are configured (§5).
