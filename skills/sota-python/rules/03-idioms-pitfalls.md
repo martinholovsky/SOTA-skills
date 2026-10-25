@@ -99,6 +99,9 @@ traversal; see [rules/05](05-security.md) §4.
 
 ## 6. EAFP vs LBYL
 
+*(audited in [`sota-async-concurrency` rules/02](../../sota-async-concurrency/rules/02-correctness.md): its check-then-act sweep;
+the dict double lookup is ruff SIM401, in this file's ruff item)*
+
 Default to EAFP — ask forgiveness — because LBYL check-then-act races:
 
 ```python
@@ -362,8 +365,10 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
 - [ ] **Text I/O without an explicit encoding (§5, below a 3.15 floor) — MEDIUM** —
       `grep -rnE '(open|read_text|write_text)\(' --include="*.py" src/ | grep -v 'encoding=' | grep -vE "['\"](rb|wb|ab|r\+b|w\+b)['\"]"`
       (each hit reads or writes text in the locale encoding: cp1252 on many Windows hosts)
-- [ ] **Ruff covers most of this file — run first** —
-      `uvx ruff check --select B006,B008,B023,B904,E722,BLE,G,T20,DTZ,PTH,SIM,A,C4 --statistics .`
+- [ ] **Ruff covers most of this file — run first (§3: C4)** —
+      `uvx ruff check --select B006,B008,B023,B904,E722,BLE,G,T20,DTZ,PTH,SIM,A,C4 --statistics .` ;
+      `grep -rnE '^[[:space:]]*\[[^]=]+ for [^]]+\][[:space:]]*$' --include='*.py' --exclude-dir=.venv .`
+      (a comprehension run for its side effects: use a `for` loop [LOW]; ruff B018 does not flag it, measured)
 - [ ] **Bare/broad excepts [HIGH if swallowing, MEDIUM otherwise]** —
       `grep -rn "except:$\|except: " --include="*.py" src/` ;
       `grep -rn -A1 "except Exception" --include="*.py" src/ | grep -B1 "pass$"`
@@ -375,7 +380,9 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       ≤ 3.11, deeper recursion before the error on any version) ;
       `grep -rnE 'json\.loads?\(' --include='*.py' src/` (for each request-reachable call,
       find the body-size cap before it, and a depth bound in any recursive walk after it)
-- [ ] **Mutable defaults & late binding** — `uvx ruff check --select B006,B023 .`
+- [ ] **Mutable defaults (§1) & late binding (§2)** — `uvx ruff check --select B006,B008,B023,RUF008,RUF009 .`
+      (B008: a call such as `datetime.now()` evaluated once as a default; RUF008/RUF009: a mutable
+      or call default on a dataclass field)
 - [ ] **Logging** —
       `grep -rn 'logger\.\(debug\|info\|warning\|error\)(f"' --include="*.py" src/` (f-strings
       in logs [LOW-MED]);
@@ -390,15 +397,29 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       `grep -rniE '^[[:space:]]+[a-z_]*(passw|secret|token|api_?key)[a-z_]*[[:space:]]*:[[:space:]]*(str|bytes)([^[:alnum:]_]|$)' --include="*.py" src/ | grep -v 'repr=False'`
       (a class field typed plain `str`: a dataclass `repr` prints it — measured,
       `Creds(user='bob', password='hunter2')` — so use `field(repr=False)` or `SecretStr`)
-- [ ] **Resource handling** — `grep -rn "= open(" --include="*.py" src/ | grep -v "with "`
+- [ ] **Resource handling (§4)** — `grep -rn "= open(" --include="*.py" src/ | grep -v "with "`
       (unmanaged file handles [MEDIUM]); `grep -rn "\.close()" --include="*.py" src/ | head`
-      (manual close → with-able?)
+      (manual close → with-able?) ; `grep -rnE '\.acquire\(\)' --include='*.py' --exclude-dir=.venv .`
+      (a lock taken by hand, not `with lock:` [MEDIUM])
 - [ ] **datetime & os.path modernization** — `uvx ruff check --select DTZ,PTH --statistics .` ;
       `grep -rn "utcnow()" --include="*.py" src/` (naive UTC [MEDIUM])
 - [ ] **Identity misuse & list.pop(0)** —
       `grep -rn 'is "" \|is "\| is [0-9]' --include="*.py" src/` ;
       `grep -rn "\.pop(0)" --include="*.py" src/` (O(n) dequeue [perf])
-- [ ] **groupby without sort (manual review)** — `grep -rn "groupby(" --include="*.py" src/`
+- [ ] **groupby without sort; hand-rolled itertools (§9) (manual review)** — `grep -rn "groupby(" --include="*.py" src/` ;
+      `grep -rnE 'def [a-z_]*(chunk|batch|flatten|window|pairwise)[a-z_]*\(' --include='*.py' --exclude-dir=.venv .`
+      (a utils helper that itertools/`batched`/`pairwise` replaces [LOW])
+- [ ] **Dataclasses that are not frozen and slotted (§7) [LOW]** —
+      `grep -rnE '^[[:space:]]*@(dataclasses\.)?dataclass' --include='*.py' --exclude-dir=.venv . | grep -vE 'frozen=True.*slots=True|slots=True.*frozen=True'`
+      (each opt-out needs a reason, such as `cached_property` needing `__dict__`) ; a boolean field, or
+      more than three fields, without `kw_only=True` is a read of the class
+- [ ] **Magic strings and enums compared to raw strings (§8) [LOW]** —
+      `grep -rnE '\.(value|name)[[:space:]]*(==|!=)[[:space:]]*["'"'"']' --include='*.py' --exclude-dir=.venv .`
+      (compare members by identity past the parse boundary) ;
+      `grep -rhoE '(==|!=)[[:space:]]*["'"'"'][A-Za-z_]+["'"'"']' --include='*.py' --exclude-dir=.venv . | sort | uniq -c | awk '$1>=3'`
+      (a string branched on three or more times: an enum) ;
+      `grep -rnE '^[A-Z_]+[[:space:]]*=[[:space:]]*1[[:space:]]*<<[[:space:]]*[0-9]+' --include='*.py' --exclude-dir=.venv .` (int
+      bitmask constants: `Flag`)
 - [ ] **--- Public API surface (§13) --- Package modules with no stated surface [MEDIUM for a
       library, INFO for an app]** —
       `find src -name '*.py' -not -name '__init__.py' -not -path '*/tests/*' -print0 |` ;

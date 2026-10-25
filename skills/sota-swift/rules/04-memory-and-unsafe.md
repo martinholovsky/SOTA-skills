@@ -71,9 +71,9 @@ task = Task { [weak self] in
 
 ## Audit checklist
 
-- [ ] Escaping closures and long-lived `Task`s stored by `self` capture `[weak self]`; delegates are `weak`; `unowned`/`[unowned` (grep) only with structurally bounded lifetime; no `unowned(unsafe)` without justification.
-- [ ] Resource lifecycle: every file handle, socket, connection pool and client is released on all paths — a `defer ` block right after acquisition, or explicit shutdown; unique resources use `~Copyable` or a single-owner wrapper.
-- [ ] Unsafe surface is small, concentrated and comment-justified — grep `Unsafe(Mutable)?(Raw)?(Buffer)?Pointer|unsafeBitCast|assumingMemoryBound|withMemoryRebound|Unmanaged|withUnsafe`; no pointer escapes its closure or C call.
-- [ ] Modules parsing untrusted bytes use `Span`/`InlineArray`, or enable `.strictMemorySafety()` (SE-0458) and acknowledge each `unsafe` use.
+- [ ] Retain cycles (§1): escaping closures and long-lived `Task`s stored by `self` capture `[weak self]`; delegates are `weak`; `unowned`/`[unowned` (grep) only with structurally bounded lifetime; no `unowned(unsafe)` without justification; notification/KVO tokens are removed, and `Timer` targets and stored cancellables do not capture `self` strongly.
+- [ ] Resource lifecycle (§2): every file handle, socket, connection pool and client is released on all paths — a `defer ` block right after acquisition, or explicit shutdown; unique resources use `~Copyable` or a single-owner wrapper.
+- [ ] Unsafe surface (§3) is small, concentrated and comment-justified — grep `Unsafe(Mutable)?(Raw)?(Buffer)?Pointer|unsafeBitCast|assumingMemoryBound|withMemoryRebound|Unmanaged|withUnsafe`; no pointer escapes its closure or C call; C interop documents who frees (`deallocate` vs C `free`) and adds nullability annotations to C headers instead of `!`.
+- [ ] Modules parsing untrusted bytes (§3) use `Span`/`InlineArray`, or enable `.strictMemorySafety()` (SE-0458) and acknowledge each `unsafe` use.
 - [ ] Strict memory safety gates (§4) (MEDIUM): a target with `strictMemorySafety` or `-strict-memory-safety` (grep `Package.swift` and CI) also builds with `-Werror StrictMemorySafety`, `-warnings-as-errors` or `.treatAllWarnings(as: .error)`; without that it exits 0 on every unacknowledged use.
-- [ ] Leak checks are empirical: `deinit`-fires tests for controller-like objects, RSS-under-load for servers.
+- [ ] Leak checks are empirical (§1): `deinit`-fires tests for controller-like objects, RSS-under-load for servers.

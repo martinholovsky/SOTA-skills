@@ -316,7 +316,10 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
 - [ ] Every DFD component mapped to its catalog; each item dispositioned
       (present/partial/absent/N-A) — no silent skips.
 - [ ] Frontend: XSS sinks audited, CSP effective, token storage justified,
-      CSRF covered, no secrets in bundles.
+      CSRF covered, no secrets in bundles; privileged actions re-checked
+      server-side, SRI on CDN assets, redirect destinations allowlisted,
+      `message` listeners check origin, `frame-ancestors` set, no PII in URL
+      params or analytics events (§1).
 - [ ] API: object-level authz verified on sampled by-ID endpoints; mass
       assignment, SSRF, deserialization, and rate limits checked with code
       evidence.
@@ -328,18 +331,40 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
 - [ ] Each public business flow has its OAT items dispositioned (§2); a
       value-dispensing or scarce-inventory flow with no disposition → Medium.
 - [ ] Database: per-service least-priv users, encryption + key custody,
-      backup/replica protections, retention enforcement.
+      backup/replica protections, retention enforcement; no reach beyond the
+      app subnet and TLS on connections, high-value tenancy not resting on
+      app WHERE clauses alone, DDL/DCL and bulk-read logging, raw-query
+      escape hatches (`.raw(`, `text(`) reviewed for injection (§3).
 - [ ] Queues: producer authn, schema validation at consumers, authz re-check
-      at consumption, idempotency, DLQ handling.
+      at consumption, idempotency, DLQ handling; actor derived from broker
+      auth or a signed envelope, never a producer-supplied field; payloads
+      minimized (IDs, not blobs); order-dependent logic checked for races;
+      message provenance traceable end to end (§4).
 - [ ] File pipeline: magic-byte validation, parser isolation, traversal-proof
-      naming, separate serving origin, download authz.
+      naming, separate serving origin, download authz; short-expiry signed
+      URLs and `nosniff`, malware scanning or a stated risk acceptance,
+      per-user size/count caps (§5).
 - [ ] CI/CD: fork-PR privilege, OIDC over static keys, lockfile enforcement,
-      artifact signing, workflow-file review protection, runner isolation.
+      artifact signing, workflow-file review protection, runner isolation
+      (§6). Cache sharing across trust levels, per-environment deploy
+      identity and deploy-time signature verification are probed in
+      `sota-devsecops` rules/01 §1.6, §1.2/§1.9 and rules/02.
 - [ ] Mobile: no embedded shared secrets, Keychain/Keystore usage, PKCE,
-      exported-component audit, WebView bridge audit.
+      exported-component audit, WebView bridge audit; TLS everywhere
+      (pinning with a rotation story for high-value apps), deep-link params
+      validated before authn actions, attestation where the business trusts
+      the client, OS backups excluded for tokens/PII, no cross-app device
+      identifiers, minimal permissions (§7).
 - [ ] LLM/agent: every content source treated as hostile, tool least-
       privilege + confirmation gates, output URL handling, RAG ACL
-      enforcement, step/spend caps.
+      enforcement, step/spend caps; tool arguments validated like an
+      internet-facing API, nothing secret in a system prompt assumed fully
+      disclosed, persisted memory treated as an injection carrier,
+      reasoning budgets capped, no PII in prompt logs or fine-tuning/eval
+      sets (§8). MCP tool-definition pinning and shadowing isolation are
+      probed in `sota-code-security` rules/23.
 - [ ] Cloud: IAM wildcards and escalation primitives, IMDSv2/metadata
       protection, public-access blocks, cross-account conditions, audit-log
-      immutability.
+      immutability; no secrets in task-wide env vars, IaC state, image
+      layers or function config; flow logs at the boundaries the model
+      claims; function invoke policies and concurrency limits set (§9).

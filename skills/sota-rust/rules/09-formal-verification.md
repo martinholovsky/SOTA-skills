@@ -255,9 +255,12 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
       not a finding.
       `rg -l '#\[kani::proof' -t rust . | while IFS= read -r f; do awk 'FNR==1{p=0;inb=0} /#\[kani::proof/{p=1} p&&!inb&&/fn [A-Za-z0-9_]+/{match($0,/fn [A-Za-z0-9_]+/);n=substr($0,RSTART+3,RLENGTH-3);l=FNR;inb=1;d=0;s=0;b=""} inb{b=b $0 "\n";o=gsub(/\{/,"{");c=gsub(/\}/,"}");if(o>0)s=1;d+=o-c;if(s&&d<=0){g=b;gsub(/[ \t\n]+/,"",g);if(g!~/kani::cover!\(\);?\}$/)print FILENAME":"l" "n;inb=0;p=0}}' "$f"; done`
       (a loop, not `awk … $(rg -l …)`: an empty file list would leave awk reading stdin)
-- [ ] **A bare `cargo kani` as the CI verdict** (§4): `rg -n 'cargo kani' .github/ .gitlab-ci.yml Makefile justfile scripts/ 2>&1`
+- [ ] **A bare `cargo kani` as the CI verdict** (§4, §9): `rg -n 'cargo kani' .github/ .gitlab-ci.yml Makefile justfile scripts/ 2>&1`
       — each hit not wrapped by a cover gate passes vacuous proofs = Medium where the proofs
-      back a security claim. Then confirm the gate's negative controls run.
+      back a security claim. Then confirm the gate's negative controls run. Harnesses no job
+      runs (§9 step 1):
+      `printf 'harness_files=%s ci_kani_lines=%s\n' "$(grep -rlE '#\[kani::proof' --include='*.rs' . | wc -l | tr -d ' ')" "$(git grep -n 'cargo kani' -- .github .gitlab-ci.yml Makefile justfile scripts | wc -l | tr -d ' ')"`
+      — harnesses with no CI line are documentation, rated as if no proof existed.
 - [ ] **Flags that change what is checked** (§2, §5):
       `rg -n --hidden -g '!.git' -e '--no-unwinding-checks' -e 'kani::should_panic' -e '--harness' .` (`--hidden`, or CI under `.github/` is never read) — `--no-unwinding-checks` anywhere = Medium;
       each `should_panic` outside a named negative control = Medium; `--harness` without
@@ -273,6 +276,13 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
 - [ ] **Postcondition with no recorded mutation run** (§6): for each harness or `ensures` cited
       as evidence, is there a record of it failing on a mutant? None = Medium for
       security-critical code.
+- [ ] **Contracts on `unsafe` code too weak to be assumed (§7)** —
+      `grep -rnE 'kani::(requires|ensures|modifies)|stub_verified' --include='*.rs' .` — for each
+      contract on a raw-pointer function: `requires` states aliasing and provenance (for an
+      allocator API, that the pointer came from that allocator), `modifies` names every write;
+      `MaybeUninit` code keeps its Miri job; a recursive function's termination is argued outside
+      the proof. A gap in a contract that `stub_verified` substitutes = Medium, High when a
+      caller's proof backs a security claim.
 - [ ] **Flux opt-outs** (§8): `rg -n -g '*.rs' -e '#\[(flux_rs::|flux::)?(trusted|opaque)\b' .` (the bare form is what `use flux_rs::attrs::*;` produces) — each without a
       reason and a covering harness or test = Low; a Flux job that excludes a crate after an ICE =
       Medium.

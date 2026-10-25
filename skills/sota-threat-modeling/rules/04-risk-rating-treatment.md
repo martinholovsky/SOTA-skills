@@ -283,21 +283,32 @@ Management cheat sheet, Code Review Guide v2.
       victim-mediated reach — and is the position where the code is actually reachable
       from, recorded beside (not instead of) the CVSS Attack Vector?
 - [ ] A single, anchored rating scheme is defined and used consistently;
-      anchors written down, not folklore.
+      anchors written down, not folklore; a matrix of at most 4×4 bands,
+      no multiplied 1–5 scores, anchors calibrated by raters scoring
+      threats independently (§3).
 - [ ] No raw DREAD means or unadjusted CVSS base scores used as priority;
-      CVSS vectors recorded where CVSS is used.
+      where DREAD is mandated, levels anchored with written exemplars,
+      max-of replacing the mean, and Discoverability fixed at 10 (§1);
+      CVSS vectors and their version prefix recorded where CVSS is used;
+      no CVSS on design-stage threats, no cross-version score comparison,
+      and exploitation likelihood taken from EPSS/KEV-class signals, not
+      the CVSS number (§2).
 - [ ] Threats rated as-mitigated, with likelihood reflecting the easiest
       path; Low×catastrophic escalated, not averaged away.
 - [ ] Every threat has exactly one disposition: mitigate/accept/transfer/
-      avoid; no "noted"/orphaned threats.
+      avoid; no "noted"/orphaned threats; a transfer cites its contract/SLA
+      and the residual kept, and each mitigation says whether it cuts
+      likelihood or impact (§4).
 - [ ] Acceptances have a named individual owner, rationale, and unexpired
       review date; acceptance authority matches severity.
 - [ ] "Avoid" considered (data/feature/privilege removal) before expensive
       mitigations — evidence in at least one disposition.
 - [ ] Threat→requirement→test ID chain intact for all High+ mitigations;
-      abuse-case tests exist and run in CI.
+      abuse-case tests exist and run in CI; requirements are testable MUSTs
+      naming where they hold, with a structural CI guard where possible
+      (§5).
 - [ ] Residual risks re-rated on the same scale and rolled into a ≤1-page
-      register with owners and review dates.
+      register with owners and review dates (§6).
 - [ ] Expired acceptances/reviews flagged as findings.
 - [ ] Each mitigation names an accountable owner and a responsible
       implementer with a due date and per-action status. A past-due action with

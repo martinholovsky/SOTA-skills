@@ -188,20 +188,38 @@ domain teams *already* have engineers who can own pipelines end-to-end.
 ## Audit checklist
 
 - [ ] Engine size vs data size: any distributed cluster processing < 50
-      GB/day without rationale?
-- [ ] Raw layer exists, is append-only/immutable, and is not queried by
-      consumers or BI tools?
+      GB/day without rationale? MEDIUM; quantify rows/bytes per run vs cluster
+      size (§1)
+- [ ] Raw layer exists, is append-only/immutable (partitioned by load time;
+      never "fixed" in place: fix the transform and rerun), and is not queried
+      by consumers or BI tools (§2, §4)? Any transform-before-load (ETL) is
+      justified by PII masking, a pathological source format or edge volume
+      reduction, and never skips raw retention (§2)?
 - [ ] Staging models: 1:1 with sources, columns enumerated (no `SELECT *`),
-      typed, deduped, no joins/business logic?
-- [ ] Layer discipline: no consumer reads below mart/core; no
-      layer-skipping or circular references?
-- [ ] Each fact table has a documented, single grain?
+      typed, deduped, no joins/business logic? Business logic in staging =
+      MEDIUM (§4)
+- [ ] Layer discipline: no consumer reads below mart/core; no layer reads
+      from a layer above itself; no model reads raw except its own staging
+      model; no layer-skipping or circular references? Dashboards on raw/bronze
+      = HIGH; layer-skipping/circular refs = MEDIUM (§4)
+- [ ] Each fact table has a documented, single grain? Mixed-grain facts =
+      MEDIUM (§5)
 - [ ] Dimensions conformed (one copy) and SCD strategy explicit per
-      dimension; point-in-time analyses backed by Type 2 or snapshots?
-- [ ] Surrogate keys stable under full rebuild?
-- [ ] Key metrics defined exactly once; no divergent copies in
-      dashboards/marts?
+      dimension; point-in-time analyses backed by Type 2 or snapshots (a Type 1
+      join for point-in-time = HIGH)? Hand-written SCD2 MERGEs checked for
+      delete and rerun handling (§5)?
+- [ ] Surrogate keys stable under full rebuild (deterministic hashes of the
+      natural key, not sequence-generated) (§5)?
+- [ ] Key metrics defined exactly once (one semantic layer, or one mart
+      model when there is a single consumer surface); no divergent copies in
+      dashboards/notebooks/marts, nor the same metric logic in two OBTs?
+      Grep dashboards/notebooks for re-implemented revenue/active-user
+      definitions; divergent definitions = HIGH (§7). Any One Big Table is a
+      mart flattened from a dimensional core, not the only model (MEDIUM) (§6)?
 - [ ] Single canonical table format; no unjustified duplicate storage of the
-      same dataset across lake and warehouse?
+      same dataset across lake and warehouse? Same dataset in both with two
+      transform stacks = HIGH; two table formats with no stated rationale =
+      MEDIUM (§3)
 - [ ] If "data mesh" is claimed: named domain owners, contracts, and
-      operational responsibility actually exist?
+      operational responsibility actually exist? If not, assess it as a
+      centralized platform (§8)

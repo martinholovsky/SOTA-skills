@@ -235,26 +235,54 @@ Tune in this order — most GC problems are application problems:
 ## Audit checklist
 
 - [ ] Grep for caches/maps/registries with insertion but no eviction, TTL, or
-      removal path → leak by construction (High if keyed by user/request data).
+      removal path → leak by construction (High if keyed by user/request data)
+      (§5).
 - [ ] Event listeners, subscriptions, timers: every registration paired with a
-      cleanup on the owner's lifecycle?
+      cleanup on the owner's lifecycle (§5)?
 - [ ] Go: every spawned goroutine has a guaranteed exit (context cancel,
-      channel close)? Tickers stopped?
+      channel close)? Tickers stopped? Small subslices of big buffers kept
+      without a copy? Maps that only grow (§5)?
 - [ ] JVM: `static` collections, `ThreadLocal` on pooled threads without
-      `remove()`, unclosed resources?
+      `remove()`, unclosed resources, ClassLoader leaks on redeploy (§5)?
 - [ ] JS: `setInterval` cleared? Listeners on global/long-lived objects
-      removed? Module-level Maps bounded?
-- [ ] Python: `lru_cache` on methods? Module-level accumulators?
+      removed? Module-level Maps bounded (§5)?
+- [ ] Python: `lru_cache` on methods? Module-level accumulators? Mutable
+      default args accumulating? Large objects held by a stored exception
+      traceback (§5)?
 - [ ] Hot paths: per-iteration allocation of buffers/objects that could be
-      pooled or hoisted? Containers pre-sized?
+      pooled or hoisted? Containers pre-sized? Hidden allocators in the loop
+      (boxing, `interface{}` conversions, string formatting/concat, copying
+      substring/slice APIs, reflect-based serialization per message)? Each
+      claimed fix backed by an allocation profile (§1)?
+- [ ] Serialization copies (§6): lead list
+      `grep -rnE '(Buffer\.from|\.(end|send|write))\(JSON\.stringify\(|\.write\(json\.dumps\(' --include='*.js' --include='*.ts' --include='*.py' .`
+      — a payload encoded to a string, then copied into a buffer or written,
+      where an encoder writing to the output stream (`json.NewEncoder(w)`,
+      Jackson streaming, `serde` to writer) fits. Also read for huge documents
+      parsed whole where a streaming parser would do, and `filter().map().map()`
+      chains materializing every stage of a big input. Hot path or unbounded
+      payload → flag (Medium). The JSON round-trip deep copy is probed in
+      [`sota-javascript-typescript` rules/02](../../sota-javascript-typescript/rules/02-language-idioms.md).
 - [ ] Any pooling of cheap objects (adds complexity, no win) or pools without
-      bounds/reset (bug factory)?
+      bounds/reset (bug factory)? One global locked pool where per-worker
+      (sharded) pools would do? A pool added with no before/after
+      measurement (§2)?
+- [ ] Arena/region allocation (§3): locate arenas with
+      `grep -rnE 'talloc|apr_pool|bumpalo|typed_arena|ArrayPool|arena' --include='*.c' --include='*.h' --include='*.cpp' --include='*.rs' --include='*.cs' .`
+      and for each: is anything allocated in it stored into a longer-lived
+      structure or used after the arena is reset? High in native code
+      (use-after-free), Medium in managed code (forced copies). No stated
+      lifetime boundary (request scope is the natural one) → flag.
 - [ ] Hot data structures: pointer-chasing collections where contiguous arrays
       would do? Hot loops touching few fields of fat structs (SoA candidate)?
+      2D data iterated against memory order (`a[j][i]`)? Hot structs padded by
+      field order, or 8-byte pointers where u32 indices would do (§4)?
 - [ ] Shared mutable counters/flags written by multiple threads without
-      cache-line padding (false sharing)?
-- [ ] Heap/RSS trend over days: does the floor after GC ratchet upward?
+      cache-line padding (false sharing) (§4)?
+- [ ] Heap/RSS trend over days: does the floor after GC ratchet upward (§5)?
 - [ ] Runtime knows its memory limit (`GOMEMLIMIT`, `MaxRAMPercentage`,
-      `--max-old-space-size` aligned with container limit)?
+      `--max-old-space-size` aligned with container limit) (§7)?
 - [ ] GC metrics exported (pause p99, GC CPU %, alloc rate)? Unexplained GC
-      flag soup in deploy configs?
+      flag soup in deploy configs? GC tuned by flags before allocation rate was
+      reduced, or a collector that does not fit the goal (throughput batch vs
+      low-pause service) (§7)?

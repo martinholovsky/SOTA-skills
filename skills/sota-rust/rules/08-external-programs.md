@@ -132,23 +132,26 @@ into an error that carries the code and stderr.
 
 ## Audit checklist
 
-- [ ] Subprocess: `rg 'Command::new\("(sh|bash|cmd|powershell)"' -t rust` and
+- [ ] Subprocess (§1): `rg 'Command::new\("(sh|bash|cmd|powershell)"' -t rust` and
       `rg '\.arg\("-c"\)' -t rust` — a shell with any interpolated value = Critical.
       `rg 'Command::new\(' -t rust` for non-absolute program names on
-      attacker-reachable paths = Medium (R9.1, R9.7).
-- [ ] Exit status read, not just the `Result` (R9.9) — Medium, High when the output is
+      attacker-reachable paths = Medium (R9.1, R9.7). Argument injection (R9.2):
+      `grep -rlE 'Command::new\(' --include='*.rs' . | while IFS= read -r f; do grep -q '"--"' "$f" || echo "$f"; done`
+      lists files that spawn programs and never pass `--`; an input-derived operand there that
+      can begin with `-` = Medium.
+- [ ] Exit status read, not just the `Result` (§1 R9.9) — Medium, High when the output is
       trusted: `rg -l '\.(output|status)\(\)' -t rust | while IFS= read -r f; do grep -q 'success()' "$f" || echo "$f"; done`
       (each file printed treats `Ok` as success; read it — a helper may check elsewhere).
 - [ ] Every spawned `Child` is killed **and** waited on every exit path, including
       `?` early-returns and cancellation — `rg 'spawn\(\)' -t rust` and read the
       error paths; a dropped `Child` keeps running and then becomes a zombie
-      (R9.4). Deployed code targeting Windows declares MSRV **≥ 1.81.0** (R9.3;
+      (§1 R9.4). Deployed code targeting Windows declares MSRV **≥ 1.81.0** (R9.3;
       1.77.2 fixed CVE-2024-24576 but not its bypass CVE-2024-43402).
 - [ ] Every subprocess wait has a deadline **and** a kill: a bare
       `wait()`/`wait_with_output()` = High on any attacker-influenced child, and a
       `tokio::time::timeout` without `.kill_on_drop(true)` (or an explicit kill)
-      leaves the child running when it fires (R9.5).
-- [ ] **Dynamic code evaluation from input (R9.8) — Critical if the text is
+      leaves the child running when it fires (§1 R9.5).
+- [ ] **Dynamic code evaluation from input (§1 R9.8) — Critical if the text is
       caller-influenced, else Medium** —
       `rg -n -t rust 'Lua::(new|new_with|unsafe_new)\(|rhai::|Engine::new(_raw)?\(|\.eval(_with_scope|_expression)?(::<[^>]*>)?\(|Library::new\(' .`
       — each hit: where the text or path comes from, which stdlib/limits are set, and why

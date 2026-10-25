@@ -149,25 +149,33 @@ resource "aws_vpc_endpoint" "s3" {
 ## Audit checklist
 
 - [ ] Billing export to a queryable store exists and is used (ask for the last
-      analysis it answered); dashboards per team.
+      analysis it answered); dashboards per team; showback reviewed with each team
+      monthly (§1, §7).
 - [ ] Cost-allocation tags activated; >90% of spend attributable to a team/service;
-      shared-cost split rule documented; K8s per-namespace allocation in place.
+      shared-cost split rule documented; K8s per-namespace allocation in place (§1).
 - [ ] Budgets + anomaly alerts on every account, routed to owners; sandbox has
-      hard caps/auto-reap.
+      hard caps/auto-reap; anomalies and cost incidents get lightweight postmortems
+      (§1, §5, §7).
 - [ ] Idle inventory near zero: unattached volumes/IPs, idle LBs/NAT, off-hours
-      schedules for non-prod (check a Tuesday-2am snapshot of dev spend).
+      schedules for non-prod (check a Tuesday-2am snapshot of dev spend); idle-sweep
+      report runs monthly (§2, §7).
 - [ ] Rightsizing recommender findings reviewed within last quarter; K8s
-      requests-vs-usage gap measured and bounded.
+      requests-vs-usage gap measured and bounded (§2, §7).
 - [ ] Commitment coverage 60–80% of stable baseline; utilization > 90%; coverage
-      reviewed quarterly; no commitments bought against un-rightsized baseline.
+      reviewed quarterly; no commitments bought against un-rightsized baseline (§2, §7).
 - [ ] Spot used for batch/CI/stateless where tolerable (with SIGTERM handling);
-      justification where it is not.
+      justification where it is not (§2).
 - [ ] No NAT-processing-dominated bills (gateway/private endpoints for high-volume
       service traffic); cross-AZ/region flows known and intentional; CDN hit
-      ratio tracked.
+      ratio tracked; per-request lines at volume (KMS calls, tiny-object PUT/GET, LB
+      LCUs, log ingestion) reviewed (§3).
 - [ ] Storage lifecycle rules on logs/backups/buckets ([rules/05](05-data-storage.md)); log ingestion
-      quotas/retention tiers set.
-- [ ] Unit-cost metrics defined and trended for the top services.
+      quotas/retention tiers set (§2).
+- [ ] Unit-cost metrics defined and trended for the top services; expensive dimensions
+      metered per tenant where the architecture allows (§4).
 - [ ] Autoscale maxes, concurrency caps, and quota ceilings set on elastic
-      resources (the bill cannot scale unbounded).
-- [ ] Infra PRs carry cost deltas (sample recent PRs for evidence).
+      resources (the bill cannot scale unbounded); recursive triggers (a function
+      writing to the bucket that triggers it, log processing that logs) reviewed (§5).
+- [ ] Infra PRs carry an automated cost-delta estimate (Infracost or equivalent) in
+      review (sample recent PRs for evidence); new resources ship with tags,
+      lifecycle/expiry, autoscale caps and an owner (§6).

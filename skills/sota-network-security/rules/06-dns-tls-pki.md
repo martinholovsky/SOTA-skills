@@ -295,56 +295,62 @@ reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, no
 ## Audit checklist
 
 - [ ] Are all public certs ACME/managed and auto-renewed, with expiry alerts as backstop? Any
-      manual renewal or cert older than the current CA/B cap (200d in 2026) → finding.
+      manual renewal or cert older than the current CA/B cap (200d in 2026) → finding (§1).
 - [ ] TLS 1.2 minimum (1.3 preferred), weak ciphers/protocols disabled across edge, ingress, mesh,
-      internal? (`nmap --script ssl-enum-ciphers`.)
-- [ ] **High — incomplete chain (R2.1).** Per endpoint, from a client with no AIA fetching:
+      internal (§2)? (`nmap --script ssl-enum-ciphers`.)
+- [ ] **High — incomplete chain (§2, R2.1).** Per endpoint, from a client with no AIA fetching:
       `openssl s_client -connect <host>:443 -servername <host> -verify_return_error -brief </dev/null`
       — a non-zero exit with `unable to get local issuer certificate` (error 20) while browsers
       load the site means an intermediate is missing; serve the full chain.
-- [ ] **Medium — certificate content (R1.1).** Per served certificate:
+- [ ] **Medium — certificate content (§1, R1.1).** Per served certificate:
       `openssl s_client -connect <host>:443 -servername <host> </dev/null 2>/dev/null | openssl x509 -noout -text | grep -E '(sha1|md5)With|DNS:[A-Za-z0-9-]+(,|$)|DNS:[^,]*\.(internal|local|lan|corp|home|localdomain)(,|$)|IP Address:(10\.|127\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)'`
       — any hit (weak signature, unqualified or internal name, private IP) is a finding; also
       read the SAN list for internal hosts under your public domain. Is there an inventory of
       every system sharing each certificate or key?
-- [ ] **Medium — TLS details (R3.2).** Group list explicit and hybrid-first:
+- [ ] **Medium — TLS details (§2, R3.2).** Group list explicit and hybrid-first:
       `grep -rnE '(ssl_ecdh_curve|^[[:space:]]*Groups[[:space:]]*=|SSLOpenSSLConfCmd[[:space:]]+(Curves|Groups))' . | grep -v MLKEM`
       — each hit is a list without a hybrid PQ group. ECH stance recorded; legacy clients on a
       separate endpoint rather than a weakened main one; `TLS_FALLBACK_SCSV` wherever 1.2 or
       older is still served?
 - [ ] HSTS on web origins? OCSP stapling only where the CA still runs OCSP (Let's Encrypt ended it
-      Aug 2025 — don't flag its absence on LE certs)?
-- [ ] CAA records on public zones restrict issuance to your CA(s)? **Low — unbound CAA (R4):**
+      Aug 2025 — don't flag its absence on LE certs)? Certificate keys ECDSA P-256 (preferred) or
+      RSA-2048+ (§2)?
+- [ ] CAA records on public zones restrict issuance to your CA(s) (§3)? **Low — unbound CAA (R4):**
       `dig +short CAA <domain>` — an `issue` value with no `accounturi=` lets any account at that
       CA issue; credit `accounturi`/`validationmethods` as a control only where the CA documents
-      support (mandatory for CAs from 2027-03-15).
-- [ ] Split-horizon: no internal hostnames in public DNS; zones scanned for dangling records?
-- [ ] **High — dangling or claimable targets (R4).** Triage every record aimed at a
+      support (mandatory for CAs from 2027-03-15). Registrar hygiene (corporate account, MFA,
+      transfer/registry lock) is probed by the registrar item of
+      [sota-cloud-infrastructure rules/03](../../sota-cloud-infrastructure/rules/03-networking.md).
+- [ ] Split-horizon: no internal hostnames in public DNS; zones scanned for dangling records (§3)?
+- [ ] **High — dangling or claimable targets (§3, R4).** Triage every record aimed at a
       reclaimable service; each hit needs a live target you own:
       `grep -rnE '(herokuapp\.com|azurewebsites\.net|trafficmanager\.net|azureedge\.net|elasticbeanstalk\.com|s3-website[.-][a-z0-9.-]*amazonaws\.com|github\.io|netlify\.app)' .`
       Also NS delegations and MX to retired services, SPF terms covering released hosts? New-CNAME
       and NXDOMAIN/404 alerts plus CT monitoring in place?
-- [ ] **Medium — wildcard DNS (R4.1).** `grep -rnE '^\*(\.[A-Za-z0-9-]+)*\.?[[:space:]]|name *= *"\*' .`
+- [ ] **Medium — wildcard DNS (§3, R4.1).** `grep -rnE '^\*(\.[A-Za-z0-9-]+)*\.?[[:space:]]|name *= *"\*' .`
       — each hit: required, narrowly scoped, fronted by a hostname allowlist that errors on unknown
       names?
-- [ ] Takeover response (R4.2) written down: record cut, CT search + revocation, impact
+- [ ] Takeover response (§3, R4.2) written down: record cut, CT search + revocation, impact
       assessment (parent-domain cookies, OAuth/CSP/CORS references, MX mail, phishing duration)?
-- [ ] DNSSEC stance decided (managed, on identity-anchor zones)?
+- [ ] DNSSEC stance decided (managed, on identity-anchor zones, §3)?
 - [ ] All DNS funneled through a policy-applying, logging resolver with RPZ/DNS-firewall blocking
-      malicious/newly-registered domains? Unauthorized external DoH blocked?
-- [ ] DNS-tunneling surface reduced (FQDN egress allowlist, resolver funnel) and resolver logs fed
-      to detection?
+      malicious/newly-registered domains? Unauthorized external DoH blocked (§3)?
+- [ ] DNS-tunneling surface reduced (FQDN egress allowlist, resolver funnel, query rate/length
+      limits) and resolver logs fed to detection (§3)?
 - [ ] Internal PKI (step-ca): short-lived certs + ACME automation; root distributed to trust stores
       (not worked around with `--insecure`); CA key HSM/KMS-protected; per-purpose intermediates?
+      Trust bundles shipped as immutable, version-controlled artifacts with drift alerted; the mesh
+      CA chaining to the internal CA, with no long-lived wildcard copied between services (§4)?
 - [ ] Cert pinning (if used) pins CA/intermediate with backup pins and a rotation story — not leaf,
-      not skipped verification? Hunt `InsecureSkipVerify|--insecure|sslmode=disable`.
+      not skipped verification (§4)? Hunt `InsecureSkipVerify|--insecure|sslmode=disable`.
 - [ ] Email: SPF (`-all`, under the 10-lookup limit), DKIM (>=2048-bit, rotated), and DMARC
       published — and is DMARC actually enforcing (`p=quarantine`/`p=reject`), not stuck at
       `p=none`? (`dig TXT _dmarc.<domain>`.) RUA reports monitored? A `t=y` left after rollout
       is the same finding as a stuck `p=none`; a `p=reject` domain signing nothing with DKIM, or a
       user-mail domain at `p=reject`, contradicts RFC 9989 Section 7.4; `np=` set (or inherited) to
-      `reject` for non-existent subdomains?
+      `reject` for non-existent subdomains (§5)?
 - [ ] Parked/non-sending domains and subdomains publish `v=spf1 -all` + `p=reject` so they can't be
       spoofed? Inbound transport hardened (MTA-STS enforce + TLS-RPT, or DANE on DNSSEC zones)?
+      ARC enabled where you forward mail (§5)?
 - [ ] Bulk senders (5,000+/day to Gmail/Yahoo): SPF+DKIM+aligned DMARC, RFC 8058 one-click
-      unsubscribe, spam rate <0.3%?
+      unsubscribe, spam rate <0.3% (§5)?

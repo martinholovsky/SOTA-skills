@@ -241,16 +241,22 @@ resource "aws_security_group_rule" "db_in" {
 ## Audit checklist
 
 - [ ] Subnet tiers exist (public/private/isolated); no compute or data stores in
-      public subnets; databases have no internet route.
-- [ ] ≥ 2 AZs per tier; NAT per AZ in prod.
+      public subnets; databases have no internet route; NACLs carry coarse tier intent
+      only, not copies of SG rules (§1).
+- [ ] ≥ 2 AZs per tier; NAT per AZ in prod (§1, §3).
 - [ ] No `0.0.0.0/0` or `::/0` ingress except 80/443 on edge LBs; no SSH/RDP from
-      internet; internal rules reference SGs/tags, not broad CIDRs.
-- [ ] CIDR plan documented/IPAM-tracked; no overlaps among connected networks.
+      internet; internal rules reference SGs/tags, not broad CIDRs (§1, §11).
+- [ ] CIDR plan documented/IPAM-tracked; no overlaps among connected networks; no
+      192.168.0.0/16 or common 10.0.0.0/24-style defaults on anything that may connect
+      to a partner/VPN; cluster subnets sized for pod IPs or given secondary ranges (§2).
 - [ ] Egress controlled: isolated tier has none; sensitive envs have domain-level
-      egress filtering; flow logs centralized.
+      egress filtering; flow logs centralized (§1, §3).
 - [ ] Private/gateway endpoints for storage, secrets, registries, logging in prod;
-      matching private DNS zones attached.
-- [ ] Topology: peering count sane or hub-spoke; prod/non-prod not mutually routable.
+      matching private DNS zones attached; endpoint policies carry org-ID
+      conditions (§4, §6).
+- [ ] Topology: peering count sane or hub-spoke; prod/non-prod not mutually routable;
+      no VPC shared across unrelated teams outside an IAM-governed Shared VPC with
+      per-team subnets (§5).
 - [ ] Registrar: corporate account, MFA, transfer locks, auto-renew, team contacts.
 - [ ] Split-horizon: no internal records in public zones; zones scanned for dangling
       records (sample-check CNAME targets exist and are yours).
@@ -274,11 +280,15 @@ resource "aws_security_group_rule" "db_in" {
       same finding.
 - [ ] CAA records present; DNSSEC stance decided and recorded.
 - [ ] All public certs auto-issued/renewed (ACM/ACME/managed); expiry alerts as
-      backstop; nothing renewed by hand or living past current CA/B lifetime caps.
-- [ ] LB health checks meaningful; draining configured; access logs on; WAF on
-      internet-facing L7.
+      backstop; nothing renewed by hand or living past current CA/B lifetime caps;
+      internal/mTLS certs come from a private CA with short lifetimes, no long-lived
+      wildcard copied between services (§7). TLS 1.2-minimum and HSTS probes:
+      [sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md).
+- [ ] LB health checks meaningful, readiness distinct from liveness; draining ≥ the
+      app's longest request; access logs on; WAF on internet-facing L7 (§8).
 - [ ] CDN origins not directly reachable (OAC/origin auth verified by hitting origin
       directly); cache keys reviewed for poisoning/varying headers; private content
-      uses signed URLs.
-- [ ] DDoS stance recorded; rate limiting on public APIs; autoscale caps set.
-- [ ] IPv6: stance recorded; if enabled, `::/0` rules audited.
+      uses short-expiry signed URLs; deploys use versioned asset names over purges;
+      origin shielding on for origin-cost-sensitive backends (§9).
+- [ ] DDoS stance recorded; rate limiting on public APIs; autoscale caps set (§10).
+- [ ] IPv6: stance recorded; if enabled, `::/0` rules audited (§11).

@@ -168,22 +168,29 @@ concurrency. Attack in this order:
 
 ## Audit checklist
 
-- [ ] Query layer is columnar (Parquet/native), not CSV/JSON?
+- [ ] Query layer is columnar (Parquet/native), not CSV/JSON (MEDIUM)
+      (§1)?
 - [ ] File sizes healthy (~128 MB–1 GB median); no small-files
-      accumulation on hot tables?
-- [ ] Partitioned on a coarse time column only; no high-cardinality or
-      deep multi-level partitioning?
+      accumulation on hot tables? `ls` a few partitions: median under ~10 MB
+      on a frequently-queried table = MEDIUM, HIGH at scale (§1)
+- [ ] Partitioned on a coarse time column only; no high-cardinality (HIGH)
+      or deep multi-level partitioning; small tables not partitioned (§2)?
 - [ ] Sort/cluster order defined matching top query predicates; pruning
-      verified via query profiles?
+      verified via query profiles (partitions scanned vs total), predicates
+      sargable (no function over the partition column) (§2, §5)?
 - [ ] Iceberg/Delta: compaction + snapshot expiry + orphan cleanup
-      scheduled on every table; CDC-fed merge-on-read tables compacted
-      aggressively?
-- [ ] Snapshot retention consciously chosen (forensics window vs storage)?
-- [ ] Concurrent-writer conflicts (backfill vs scheduled) coordinated?
-- [ ] zstd (or justified alternative) everywhere; no double compression?
+      scheduled on every table (none = MEDIUM, HIGH for streaming/CDC-fed);
+      CDC-fed merge-on-read tables get delete-file compaction; Iceberg v3
+      enabled only after every engine touching the table supports it (§3)?
+- [ ] Snapshot retention consciously chosen (forensics window vs storage),
+      never vacuumed to zero, and time travel not counted as the backup (§3)?
+- [ ] Concurrent-writer conflicts (backfill vs scheduled) coordinated (§3)?
+- [ ] zstd (or justified alternative) everywhere; no uncompressed Parquet,
+      no double compression, no `.csv.gz` query layer (§4)?
 - [ ] Hot dashboards served from pre-aggregated marts, not view chains over
-      raw facts?
+      raw facts; large sources built incrementally, not full-refresh (§5)?
 - [ ] Schedules match consumer freshness needs; no hourly builds of
-      daily-read data?
+      daily-read data (MEDIUM); no orphaned pipelines feeding dashboards nobody
+      opens (check BI view counts) (§5)?
 - [ ] Compute auto-suspends, pools separated by workload, cost attributed
-      per pipeline/team with trend alerts?
+      per pipeline/team with trend alerts (§5)?

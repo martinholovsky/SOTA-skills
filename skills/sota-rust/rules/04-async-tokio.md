@@ -288,17 +288,19 @@ tokio::select! {
 
 ## Audit checklist
 
-- [ ] Blocking in async: `rg -t rust 'async fn' -A30 | rg 'std::fs::|std::thread::sleep|reqwest::blocking|\.lock\(\)\s*$'`
+- [ ] Blocking in async (§1): `rg -t rust 'async fn' -A30 | rg 'std::fs::|std::thread::sleep|reqwest::blocking|\.lock\(\)\s*$'`
       — more reliably, grep each: `rg 'thread::sleep|std::fs::(read|write|File)|blocking::' -t rust`
       and check enclosing fn for `async`. High severity in request paths.
-- [ ] `rg 'block_on' -t rust` — any call reachable from async context =
+- [ ] `rg 'block_on' -t rust` (§1) — any call reachable from async context =
       Critical (deadlock/panic).
-- [ ] `rg 'unbounded_channel|UnboundedSender' -t rust` — each needs a written
-      backpressure argument; attacker-fed unbounded channel = High (DoS).
+- [ ] `rg 'unbounded_channel|UnboundedSender' -t rust` (§6) — each needs a written
+      backpressure argument; attacker-fed unbounded channel = High (DoS). `broadcast`
+      receivers that never handle `RecvError::Lagged` = Low:
+      `grep -rlE 'broadcast::' --include='*.rs' . | while IFS= read -r f; do grep -q 'Lagged' "$f" || echo "$f"; done`.
 - [ ] `rg 'tokio::spawn' -t rust` — orphaned handles (result never joined, no
       JoinSet/TaskTracker, no error logging in task) = Medium; panic
       observability gap.
-- [ ] `select!` loops: any branch future recreated per-iteration that buffers
+- [ ] `select!` loops (§3): any branch future recreated per-iteration that buffers
       internally (reads, `write_all`, custom combinators) → cancellation data
       loss = High. Check each `select!` arm against the cancel-safety table above —
       and **rate the two unsafe rows differently**: partial-I/O (`read_exact`,
@@ -307,10 +309,10 @@ tokio::select! {
       its place in the queue = starvation risk, **not** data loss, so reporting it
       as corruption is a false finding. `Notified` and `Mutex::lock` are the two most
       often assumed safe; both are on Tokio's unsafe list.
-- [ ] Locks: clippy `await_holding_lock`, `await_holding_refcell_ref`;
+- [ ] Locks (§5): clippy `await_holding_lock`, `await_holding_refcell_ref`;
       `rg 'tokio::sync::Mutex' -t rust` — verify each actually needs
       hold-across-await, else downgrade to std/parking_lot.
-- [ ] `rg '\.abort\(\)' -t rust` — aborted tasks: is every shared invariant
+- [ ] `rg '\.abort\(\)' -t rust` (§3) — aborted tasks: is every shared invariant
       abort-safe (drop guards present)?
 - [ ] Fan-out: `rg 'buffer_unordered|buffered\(' -t rust` — bound derived from
       config, not unbounded or request-controlled; loops spawning per item of
@@ -321,9 +323,13 @@ tokio::select! {
       Each hit set inside a handler or task leaks into the next request on that worker.
       Use `task_local!` + `.scope(..)` or an explicit argument. Check each
       `task_local!` read inside a `tokio::spawn` child, which sees none.
-- [ ] Shutdown path exists: signal handler, drain deadline, `tracker.close()`
-      before `wait()` (close-after-wait hangs forever).
-- [ ] `rg 'async fn' -t rust` + `clippy::unused_async`; public async traits:
-      dyn-compat and Send bounds checked for downstream spawnability.
+- [ ] Shutdown path exists (§8): signal handler, drain deadline, `tracker.close()`
+      before `wait()` (close-after-wait hangs forever); long-running handlers observe
+      `token.cancelled()` or are cancel-safe end to end; a test exercises shutdown under load.
+- [ ] `rg 'async fn' -t rust` + `clippy::unused_async` (§7); public async traits:
+      dyn-compat and Send bounds checked for downstream spawnability (§2): a library whose
+      futures have no `assert_send`-style compile test can lose `Send` silently = Low. Tokio
+      types in a non-tokio-specific library's public API (§7):
+      `grep -rnE 'pub (async )?fn [^{;]*tokio::' --include='*.rs' .` = Low.
 - [ ] CI lints: `clippy::await_holding_lock`, `clippy::unused_async`,
       `clippy::large_futures` (oversized futures → stack/box them).

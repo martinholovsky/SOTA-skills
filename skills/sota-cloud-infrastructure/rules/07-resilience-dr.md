@@ -158,26 +158,30 @@ An untested DR plan is a document, not a capability. Cadence by tier:
 ## Audit checklist
 
 - [ ] System inventory exists with declared RTO/RPO per system, business-owner
-      signed; tiers mapped to DR strategies.
+      signed; tiers mapped to DR strategies (§1, §2).
 - [ ] Prod workloads multi-AZ end to end: LB, compute groups/topology spread, DB
-      multi-AZ; no tier-1 singleton in one zone.
+      multi-AZ; no tier-1 singleton in one zone (§3).
 - [ ] Multi-region claims verified: standby actually serves traffic in tests;
       IaC region-parameterized; images, secrets, and KMS keys available in DR
-      region; DNS/traffic failover defined with low TTLs.
+      region; DNS/traffic failover defined with low TTLs; multi-region active-active
+      has a recorded justification; DR does not rely on creating resources
+      mid-incident (pre-provisioned, statically stable) (§2, §3).
 - [ ] Data layer numbers known: replica lag, promotion time, backup cadence —
-      consistent with declared RPO/RTO (do the math; flag fantasy numbers).
+      consistent with declared RPO/RTO (do the math; flag fantasy numbers) (§2).
 - [ ] Failover mode decided (auto vs manual) and exercised; declare-authority
       named; runbook accessible during an outage of the primary (not on the
-      affected wiki).
+      affected wiki) (§2, §4).
 - [ ] Backups cross-account/cross-region per tier with tested restores ([rules/05](05-data-storage.md));
       restore time measured against RTO.
 - [ ] Dependency map for tier-1 systems incl. third parties; each hard dependency
       has accept/degrade/dual-source decision; no hidden circulars (deploy, auth,
-      secrets, DNS).
-- [ ] Quota utilization monitored with alerts; DR-region quotas pre-raised for
-      tier-1 capacity; support plan adequate for incident-time escalation.
+      secrets, DNS) (§4).
+- [ ] Top consumed quotas monitored against limits with alerts (~70%); DR-region
+      quotas pre-raised for tier-1 capacity; support plan adequate for incident-time
+      escalation (§2, §5).
 - [ ] Degradation built: timeouts/retry budgets/circuit breakers/load shedding on
       critical paths; kill switches exist and were flipped in a test; degraded
-      modes product-approved.
+      modes product-approved; the flag system fails open to defaults (§6).
 - [ ] Last DR exercise within cadence for each tier; measured RTO/RPO recorded;
-      gap actions closed. Ask for evidence, not assurances.
+      gap actions closed; the exercise also covered the humans — paging, runbooks,
+      declare-authority, comms templates (§7). Ask for evidence, not assurances.

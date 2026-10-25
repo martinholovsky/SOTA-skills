@@ -467,6 +467,15 @@
       ]
     },
     {
+      "from": "sota-network-security",
+      "to": "sota-cloud-infrastructure",
+      "weight": 10,
+      "targets": [
+        "rules/03",
+        "rules/03 \u00a710"
+      ]
+    },
+    {
       "from": "sota-php",
       "to": "sota-code-security",
       "weight": 10,
@@ -565,15 +574,6 @@
         "rules/06 \u00a73",
         "rules/07 \u00a73",
         "rules/17"
-      ]
-    },
-    {
-      "from": "sota-network-security",
-      "to": "sota-cloud-infrastructure",
-      "weight": 9,
-      "targets": [
-        "rules/03",
-        "rules/03 \u00a710"
       ]
     },
     {
@@ -1020,6 +1020,17 @@
       ]
     },
     {
+      "from": "sota-threat-modeling",
+      "to": "sota-code-security",
+      "weight": 6,
+      "targets": [
+        "rules/03 \u00a73",
+        "rules/03 \u00a78",
+        "rules/23",
+        "rules/23 \u00a71"
+      ]
+    },
+    {
       "from": "sota-web-frameworks",
       "to": "sota-javascript-typescript",
       "weight": 6,
@@ -1185,16 +1196,6 @@
       ]
     },
     {
-      "from": "sota-threat-modeling",
-      "to": "sota-code-security",
-      "weight": 5,
-      "targets": [
-        "rules/03 \u00a73",
-        "rules/03 \u00a78",
-        "rules/23 \u00a71"
-      ]
-    },
-    {
       "from": "sota-ux-writing",
       "to": "sota-frontend-design",
       "weight": 5,
@@ -1343,6 +1344,17 @@
       "weight": 4,
       "targets": [
         "rules/06"
+      ]
+    },
+    {
+      "from": "sota-python",
+      "to": "sota-devsecops",
+      "weight": 4,
+      "targets": [
+        "rules/04",
+        "rules/05 \u00a75.1",
+        "rules/10",
+        "rules/14 \u00a714.6"
       ]
     },
     {
@@ -1703,16 +1715,6 @@
       "weight": 3,
       "targets": [
         "rules/06 \u00a76.6"
-      ]
-    },
-    {
-      "from": "sota-python",
-      "to": "sota-devsecops",
-      "weight": 3,
-      "targets": [
-        "rules/05 \u00a75.1",
-        "rules/10",
-        "rules/14 \u00a714.6"
       ]
     },
     {
@@ -2160,6 +2162,15 @@
       ]
     },
     {
+      "from": "sota-performance",
+      "to": "sota-javascript-typescript",
+      "weight": 2,
+      "targets": [
+        "rules/02",
+        "rules/06"
+      ]
+    },
+    {
       "from": "sota-php",
       "to": "sota-databases",
       "weight": 2,
@@ -2325,6 +2336,15 @@
       "weight": 2,
       "targets": [
         "rules/03 \u00a76"
+      ]
+    },
+    {
+      "from": "sota-threat-modeling",
+      "to": "sota-devsecops",
+      "weight": 2,
+      "targets": [
+        "rules/01",
+        "rules/01 \u00a71.6"
       ]
     },
     {
@@ -2505,6 +2525,14 @@
       "weight": 1,
       "targets": [
         "rules/09"
+      ]
+    },
+    {
+      "from": "sota-cloud-infrastructure",
+      "to": "sota-network-security",
+      "weight": 1,
+      "targets": [
+        "rules/06"
       ]
     },
     {
@@ -3232,14 +3260,6 @@
       ]
     },
     {
-      "from": "sota-performance",
-      "to": "sota-javascript-typescript",
-      "weight": 1,
-      "targets": [
-        "rules/06"
-      ]
-    },
-    {
       "from": "sota-php",
       "to": "sota-api-design",
       "weight": 1,
@@ -3315,6 +3335,14 @@
       "weight": 1,
       "targets": [
         "rules/01"
+      ]
+    },
+    {
+      "from": "sota-python",
+      "to": "sota-async-concurrency",
+      "weight": 1,
+      "targets": [
+        "rules/02"
       ]
     },
     {
@@ -3655,14 +3683,6 @@
     },
     {
       "from": "sota-threat-modeling",
-      "to": "sota-devsecops",
-      "weight": 1,
-      "targets": [
-        "rules/01"
-      ]
-    },
-    {
-      "from": "sota-threat-modeling",
       "to": "sota-docs-workflow",
       "weight": 1,
       "targets": [
@@ -3725,14 +3745,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1636,
+    "md link, other skill": 1641,
     "md link, outside skills/": 3,
-    "md link, same skill": 2818,
+    "md link, same skill": 2820,
     "name (backticked)": 433,
     "name (bare)": 240,
-    "name+file (backticked)": 680,
-    "name+file (bare)": 162,
-    "own rules/NN": 3006
+    "name+file (backticked)": 685,
+    "name+file (bare)": 164,
+    "own rules/NN": 3009
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -3742,9 +3762,9 @@
     "md link, same skill": 0,
     "name (backticked)": 418,
     "name (bare)": 197,
-    "name+file (backticked)": 678,
-    "name+file (bare)": 157,
-    "own rules/NN": 2913
+    "name+file (backticked)": 681,
+    "name+file (bare)": 159,
+    "own rules/NN": 2915
   },
   "rules_index_style": {
     "link": 42

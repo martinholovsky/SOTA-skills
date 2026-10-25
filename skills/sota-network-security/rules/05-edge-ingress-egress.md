@@ -288,30 +288,32 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
 ## Audit checklist
 
 - [ ] Are backends reachable only via the edge/ingress? Hit a backend pod IP / origin public IP
-      directly from outside — must be refused.
+      directly from outside — must be refused. Does the edge expose only 443 (plus an 80→443
+      redirect), with unused methods/modules off and no `Server`/`X-Powered-By` version detail or
+      internal hostnames in responses (§1)?
 - [ ] Is the WAF (CRS on Coraza/ModSecurity) in **blocking** mode at a tuned PL, current version —
       not detection-only-forever, not unpatched? A ruleset still on CRS 3.3.x (end of support
-      Q3 2026) is a finding.
-- [ ] **Medium — trace IDs and gateway diagnostics leak to clients (R2.0).** Per public host:
+      Q3 2026) is a finding (§2).
+- [ ] **Medium — trace IDs and gateway diagnostics leak to clients (§1, R2.0).** Per public host:
       `curl -sI https://<host>/ | grep -iE '^(x-b3-|b3:|x-datadog-|x-envoy-|x-kong-(upstream|proxy|response|admin)-latency|x-kong-upstream-status|traceparent:|tracestate:)'`
       — every hit is a finding; an opaque request-ID header is the one allowed. Repeat on an
       error path (4xx/5xx) and an echo endpoint, where reflected request headers show up.
-- [ ] **Medium — virtual patches without lifecycle (R4.1).** List local-range custom rule IDs:
+- [ ] **Medium — virtual patches without lifecycle (§2, R4.1).** List local-range custom rule IDs:
       `grep -rnE "id:[1-9][0-9]{0,4}[,\"']" --include='*.conf' .` — each needs a linked ticket,
       an owner, false-negative (evasion) test evidence, and a removal date tied to the code fix.
-- [ ] **Medium — virtual patches nobody watches (R4.2).** Firings per rule over the window:
+- [ ] **Medium — virtual patches nobody watches (§2, R4.2).** Firings per rule over the window:
       `grep -oE '\[id "[0-9]+"\]' <waf-error-log> | sort | uniq -c | sort -n` — every virtual patch
       has an alert on match; a patch with zero matches while its route saw traffic gets a
       test request that should match.
-- [ ] **High — WAF events not shipped (R4.3).** `grep -rnE '^[[:space:]]*SecAuditEngine[[:space:]]+Off' .`
+- [ ] **High — WAF events not shipped (§2, R4.3).** `grep -rnE '^[[:space:]]*SecAuditEngine[[:space:]]+Off' .`
       (or the directive absent — Coraza defaults to `Off`). Are block/match events in the SIEM with
       spike alerts, and scanner fingerprints (CRS 913xxx) raised as high-severity events?
-- [ ] **Medium — WAF coverage (R4.4).** Sensitive routes on a positive model (known routes,
+- [ ] **Medium — WAF coverage (§2, R4.4).** Sensitive routes on a positive model (known routes,
       methods, parameters)? WebSocket routes: does the WAF inspect frames, and if not, is message
       validation and logging server-side?
-- [ ] Is the ingress controller maintained? `kubernetes/ingress-nginx` is EOL (March 2026, no
+- [ ] Is the ingress controller maintained (§1)? `kubernetes/ingress-nginx` is EOL (March 2026, no
       security fixes) → High; migrate to a maintained Gateway API implementation.
-- [ ] **High — request smuggling / desync (R2.2).** Any lenient HTTP parser on a reachable hop:
+- [ ] **High — request smuggling / desync (§1, R2.2).** Any lenient HTTP parser on a reachable hop:
       `grep -rnE 'HttpProtocolOptions +Unsafe|accept-(invalid-http-request|unsafe-violations-in-http-request)|insecure-http-parser|insecureHTTPParser *: *true' .`
       Upgrade forwarded outside WebSocket routes (review each hit; h2c smuggling):
       `grep -rnE 'proxy_set_header +Upgrade +\$http_upgrade' .`
@@ -320,29 +322,29 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
       (TLS: `openssl s_client -quiet -connect <host>:443`). Also test h2 front-ends with a
       `transfer-encoding` header and a mismatched `content-length`: both must be refused.
 - [ ] Is the public cert terminated at the edge and traffic re-encrypted (not plaintext) to
-      backends across the cluster network?
+      backends across the cluster network (§3)?
 - [ ] Does the app trust `X-Forwarded-For`/`CF-Connecting-IP` **only** from known proxy ranges
       (not spoofable)? Is the origin locked to Cloudflare (IP allowlist or Tunnel — verify the
-      origin isn't directly reachable)?
-- [ ] Internal/admin surfaces behind an identity-aware proxy / tunnel, not a public origin?
+      origin isn't directly reachable) (§4)?
+- [ ] Internal/admin surfaces behind an identity-aware proxy / tunnel, not a public origin (§4)?
 - [ ] Is egress **default-deny** with an FQDN/IP allowlist for app tiers and none for data tiers?
-      Probe: a pod reaching an arbitrary internet host must fail.
-- [ ] Is `169.254.0.0/16` (metadata) blocked from workload egress? On cloud, is **IMDSv2**
-      enforced (hop limit, account-level)?
+      Probe: a pod reaching an arbitrary internet host must fail (§6).
+- [ ] Is `169.254.0.0/16` (and `fd00:ec2::254`) — the metadata endpoint — blocked from workload
+      egress? On cloud, is **IMDSv2** enforced (hop limit, account-level) (§6)?
 - [ ] Is egress funneled through an inspectable choke point and are egress/proxy logs exported to
-      detection?
-- [ ] DDoS stance recorded; per-identity rate limits and autoscale caps set?
-- [ ] Every tier terminating HTTP/2 patched and configured against stream-reset floods (Rapid
+      detection (§6)?
+- [ ] DDoS stance recorded; per-identity rate limits and autoscale caps set (§5)?
+- [ ] Every tier terminating HTTP/2 (§5) patched and configured against stream-reset floods (Rapid
       Reset, MadeYouReset) per **[sota-code-security** rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §5?
-- [ ] **Medium — Gateway API attachment (R2.1a).** `grep -rnE 'from:[[:space:]]*All' .` over
+- [ ] **Medium — Gateway API attachment (§1, R2.1a).** `grep -rnE 'from:[[:space:]]*All' .` over
       Gateway manifests — each hit lets any namespace attach routes; is every `ReferenceGrant`
       reviewed as an access grant, and is Gateway creation RBAC-restricted?
-- [ ] **Medium — byte caps disabled (R8.2).** `grep -rnE '(client_max_body_size|limit_rate)[[:space:]]+0[[:space:]]*;' .`
+- [ ] **Medium — byte caps disabled (§5, R8.2).** `grep -rnE '(client_max_body_size|limit_rate)[[:space:]]+0[[:space:]]*;' .`
       — each hit removes a cap. Per-client connection cap and an overall bandwidth ceiling set?
       Self-hosted uplink: ISP/transit absorption capacity, scrubbing and ingress diversity on
       record?
 - [ ] Self-hosted/bare-metal edge with no scrubbing provider in front: `tcp_syncookies` on,
       `rp_filter` enabled, `nf_conntrack_max` sized + drops alerted, synproxy on high-rate TCP
-      listeners? (`sysctl net.ipv4.tcp_syncookies net.ipv4.conf.all.rp_filter`)
+      listeners (§5)? (`sysctl net.ipv4.tcp_syncookies net.ipv4.conf.all.rp_filter`)
 - [ ] No open UDP reflector (recursive DNS, NTP monlist, memcached, SSDP, chargen) exposed to the
-      internet, and egress source-address filtering (BCP 38) in place?
+      internet, and egress source-address filtering (BCP 38) in place (§5)?

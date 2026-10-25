@@ -233,23 +233,47 @@ these on sight:
 ## Audit checklist
 
 - [ ] Grep loop bodies for I/O: `await`, `fetch`, `query`, `exec`, `.get(`,
-      `client.`, ORM relation access → N+1 candidates (High on hot paths).
+      `client.`, ORM relation access → N+1 candidates (High on hot paths) (§1).
 - [ ] Grep for `+=` on strings, `concat`, `unshift`, `insert(0,` inside
-      loops → accidental quadratic.
+      loops → accidental quadratic (§2).
 - [ ] Grep for `.includes(`, `.indexOf(`, ` in [`/`in list`, `.find(`,
-      `.contains(` inside loops/`.filter` → O(n·m); recommend Set/Map hoist.
+      `.contains(` inside loops/`.filter` → O(n·m); recommend Set/Map hoist (§2).
 - [ ] Any sort, dedupe, aggregate, deep copy, or serialization recomputed
-      per-iteration?
+      per-iteration (§2)?
+- [ ] Hidden complexity in library calls (§4): lead list
+      `grep -rnE 'sorted\(.*\)\[0\]|\.sort\(.*\)\[0\]|\[\.\.\.acc,|\{\.\.\.acc,' --include='*.py' --include='*.js' --include='*.ts' .`
+      — a full sort to take one element, or a spread accumulator copied per
+      element in `reduce`. Then read loop bodies for `list.remove`/`splice`,
+      a regex compiled or a string split per iteration, `LinkedList.get(i)`, and
+      a count or full materialization where `any`/`LIMIT 1` would short-circuit.
+      Inside a loop over growable n → flag (Medium): hoist loop invariants, use
+      `min`/a bounded heap, mutate the accumulator.
 - [ ] Regexes on user input with nested quantifiers/backreferences →
-      catastrophic backtracking risk.
+      catastrophic backtracking risk: a ReDoS finding (High) (§2).
 - [ ] Collections pre-sized where final size is known? Rehash/regrow in hot
-      loops?
+      loops? Structure matches the access pattern — hash for point lookups,
+      tree for range/ordered/floor-ceiling, heap for repeated min/max, deque or
+      ring buffer for FIFO (an array `shift()` in a loop → flag), bounded heap
+      for top-K? `LinkedList` on a hot path → flag (§3).
 - [ ] `fetchall()` / `findAll()` / `.ToList()` / reading whole files where the
-      result is unbounded → demand streaming or LIMIT.
-- [ ] Writes performed row-at-a-time where bulk APIs exist?
-- [ ] Batch jobs bounded by count, bytes, and time? Queues bounded with
-      backpressure?
-- [ ] DB: EXPLAIN available for hot queries? `SELECT *`, missing LIMIT,
-      OFFSET pagination, long transactions with app logic inside?
+      result is unbounded → demand streaming or LIMIT (§6).
+- [ ] Writes performed row-at-a-time where bulk APIs exist (§1, §5)?
+- [ ] Batch jobs bounded by count, bytes, and time (§5)? On a
+      latency-sensitive path, is the batch window small (1–10 ms) or
+      opportunistic, not a full interval added to p99? Queues bounded with
+      backpressure — blocking or shedding when full (§6)?
+- [ ] Work off the hot path (§7): does a request handler do work its response
+      does not need — email, analytics, thumbnail generation, fan-out — before
+      returning? Lead list:
+      `grep -rnE 'send_?mail\(|sendEmail\(|smtplib|\.track\(|thumbnail' --include='*.py' --include='*.js' --include='*.ts' --include='*.rb' --include='*.go' --include='*.java' .`
+      then confirm the call sits on the request path → flag (Medium): queue it.
+      Also flag an O(n) aggregate recomputed on every read of read-heavy data
+      (precompute on write, or update incrementally), and a combinatorial space
+      precomputed with no measured hit count.
+- [ ] DB: EXPLAIN available for hot queries — any `Seq Scan` on a big table?
+      `SELECT *`, missing LIMIT, OFFSET pagination, long transactions with app
+      logic or external calls inside? Pool size × instances > DB
+      `max_connections` (§8)?
 - [ ] For every flagged loop: what is realistic production n? Document the
-      math (n × per-op cost) in the finding.
+      math (n × per-op cost) in the finding; n ≤ 100 with no growth path →
+      leave the linear scan alone (§2).

@@ -154,23 +154,25 @@ allow-all NetworkPolicy still has a flat L3 underneath.
 ## Audit checklist
 
 - [ ] Hunt plaintext on internal hops: `grep -rEn 'ws://|http://[a-z].*\.svc|sslmode=disable|tls: *false'`
-      across manifests/config. Any credential/token/DB traffic in plaintext → Critical.
+      across manifests/config. Any credential/token/DB traffic in plaintext → Critical (§1).
 - [ ] If a mesh exists, is mTLS **STRICT** (not PERMISSIVE)? Prove by sending plaintext to a meshed
-      workload — it must be rejected.
+      workload — it must be rejected (§2).
 - [ ] Is there a default-deny **AuthorizationPolicy**, with allows keyed on workload identity
-      (SPIFFE principal / SA), not IP?
+      (SPIFFE principal / SA), not IP, with L7 attributes (method, path) where they tighten the
+      allow (§3, §4)?
 - [ ] **High — mTLS mode below STRICT in config, unalerted (§6).**
       `grep -rnE 'mode: *(PERMISSIVE|DISABLE)' .` — each hit needs a dated exception; is a
       mode-lowering change alerted?
-- [ ] **High — peer authorised by issuer or CN, not pinned identity (R4.1).** Cross-org/partner
+- [ ] **High — peer authorised by issuer or CN, not pinned identity (§3, R4.1).** Cross-org/partner
       mTLS pins a typed SAN or SPKI per peer; hunt subject-DN authorisation:
       `grep -rnE 'ssl_client_s_dn|Subject\.CommonName|getSubjectX500Principal|getSubjectDN\(' .`
-- [ ] **Medium — client certs from a public CA (R4.1).** Are mTLS client certificates issued by a
+- [ ] **Medium — client certs from a public CA (§3, R4.1).** Are mTLS client certificates issued by a
       private CA? Publicly issued ones lose the client-auth EKU at renewal (2026 PKI split).
-- [ ] Are there mesh-bypass paths (hostNetwork, direct-IP, out-of-mesh DB) reaching sensitive
+- [ ] Are there mesh-bypass paths (§6: hostNetwork, direct-IP, out-of-mesh DB) reaching sensitive
       services? Are those covered by CNI NetworkPolicy ([rules/03](03-k8s-network-policy.md))?
-- [ ] Is CNI L3/4 default-deny still in place *underneath* the mesh (mesh is not a CNI replacement)?
-- [ ] Are mesh/workload certs short-lived and auto-rotated (not hand-managed)?
+- [ ] Is CNI L3/4 default-deny still in place *underneath* the mesh (mesh is not a CNI replacement,
+      §5)?
+- [ ] Are mesh/workload certs short-lived and auto-rotated (not hand-managed, §6)?
 - [ ] Is the mesh choice justified for the service count (not a mesh for 2 services; not hand-rolled
-      mTLS at scale)? For Istio, is ambient considered to cut sidecar overhead?
+      mTLS at scale)? For Istio, is ambient considered to cut sidecar overhead (§5)?
 - [ ] Are mesh/CNI/SPIFFE versions pinned and verified against current project docs?

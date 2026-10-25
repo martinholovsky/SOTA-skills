@@ -237,28 +237,34 @@ blocks **every** in-flight request.
 ## Audit checklist
 
 - [ ] Connections/clients created per request anywhere? (`new Client`,
-      `connect(` in handlers.) Keep-alive verified on HTTP clients?
+      `connect(` in handlers.) Keep-alive verified on HTTP clients (§3)?
 - [ ] Pools bounded? Pool wait time and saturation measured? Total
-      connections fit upstream limits? Idle timeout < NAT/LB cutoff?
+      connections fit upstream limits? Idle timeout < NAT/LB cutoff, TCP
+      keepalive enabled (§3)?
 - [ ] Sequential awaits on independent operations? Fan-out concurrency
-      bounded?
+      bounded (§4)?
 - [ ] Every remote call has a timeout; retries have backoff + jitter +
-      budget; deadlines propagate?
+      budget; deadlines propagate (§4)?
 - [ ] Offset pagination on large tables / unbounded page sizes on APIs?
+      Deep offset paging of a large table on a hot path → Critical (§4).
 - [ ] Unbuffered writes to files/sockets in loops? Missing flushes? fsync per
-      record where group commit would do?
+      record where group commit would do (§1)?
 - [ ] Files read fully into memory only to be streamed out (sendfile/pipe
-      candidates)? Serializers writing to intermediate strings vs streams?
+      candidates)? Serializers writing to intermediate strings vs streams (§2)?
 - [ ] h2/h3 negotiated along the entire chain? gRPC/internal hops multiplexed
-      or per-request 1.1 connections?
+      or per-request 1.1 connections (§5)?
 - [ ] Compression: static precompressed (brotli)? Dynamic on gzip-only when
       zstd/brotli available? Compressing compressed media or < 1 KB bodies?
       Responses that carry a secret or CSRF token *and* reflect request input are left
       uncompressed, or the token is masked per response (§6, BREACH) — MEDIUM.
-- [ ] TLS 1.3? Resumption rate monitored? 0-RTT restricted to idempotent
-      requests?
+- [ ] TLS 1.3? Resumption rate monitored, session-ticket keys rotated? 0-RTT
+      restricted to idempotent requests, mutations rejected (`425`)?
+      Certificate chain minimal (§7)?
 - [ ] CDN: immutable hashed assets with long max-age? Cache key normalized?
       stale-while-revalidate / surrogate-key purge in place? Hit ratio known?
+      Origin shield / tiered caching in front of the origin (§8)?
 - [ ] Any sync/blocking calls reachable from the event loop? Event-loop lag
-      measured?
-- [ ] Singleflight/coalescing in front of expensive shared fetches?
+      measured? CPU-heavy work (hashing, compression, image resize, big
+      serialization) moved to workers? Blocking calls in a threaded runtime
+      confined to a pool sized and bounded for them (§9)?
+- [ ] Singleflight/coalescing in front of expensive shared fetches (§4)?

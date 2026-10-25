@@ -449,12 +449,12 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
 - [ ] **Does any gate load or run the artifact?** (§1a) `fmt`, `clippy` and lint passes
       all stop at the compiled object; a crate whose failures appear at load or verify
       time is ungated until one gate executes it on the real target.
-- [ ] `cargo fmt --check` green and in CI; `rustfmt.toml` deviations are
+- [ ] `cargo fmt --check` green and in CI (§2); `rustfmt.toml` deviations are
       deliberate and few.
 - [ ] Tests (§3): nextest in CI + separate doctest step; per-test timeout
       configured; `rg '#\[ignore\]' -t rust .` — ignored tests have reasons; a proptest that
       raises `max_global_rejects`/`max_local_rejects` or early-returns has no reach evidence = Low.
-- [ ] `rust-version` declared AND exercised by a CI job; binaries have
+- [ ] `rust-version` declared AND exercised by a CI job (§4); binaries have
       `rust-toolchain.toml`. `cargo msrv verify` passes.
 - [ ] **Profile overrides** (§4a): `find . \( -name Cargo.toml -o -path '*/.cargo/config' -o -path '*/.cargo/config.toml' \) -type f -not -path '*/target/*' -exec grep -nE '^[[:space:]]*(overflow-checks|debug-assertions)[[:space:]]*=[[:space:]]*false' /dev/null {} +`
       — a hit under `[profile.dev]`/`[profile.test]`, or a profile inheriting them, =
@@ -470,19 +470,19 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
 - [ ] Channel and target (§4a): `grep -rnE '#!\[feature\(' --include='*.rs' .` in a shipped
       crate = Medium (a nightly-only build); the release build's toolchain is stable; each
       deploy target triple is tier 1, or tier 2 by a recorded decision.
-- [ ] Features: `rg 'no[-_](std|default)' Cargo.toml` style negative features
+- [ ] Features (§5): `rg 'no[-_](std|default)' Cargo.toml` style negative features
       = Medium (non-additive); optional deps using `dep:`; feature matrix job
       (`cargo hack`) present; `--no-default-features` builds.
-- [ ] Docs: `missing_docs` on lib crates; `# Errors`/`# Panics`/`# Safety`
+- [ ] Docs (§6): `missing_docs` on lib crates; `# Errors`/`# Panics`/`# Safety`
       sections present (`clippy::missing_errors_doc`, `missing_panics_doc`,
       `missing_safety_doc`); docs.rs metadata for feature-gated crates;
       doc job with `-D warnings`.
-- [ ] Edition: new crates on 2024; pre-2024 crates have a migration note or
+- [ ] Edition (§7): new crates on 2024; pre-2024 crates have a migration note or
       reason; post-migration, re-audit `static mut` and RPIT capture changes,
       locks/borrows in `if let` vs `match` scrutinees, and every
       `unsafe { env::set_var | remove_var }` — `rg 'set_var|remove_var' -t rust`
       (each must run before any thread or runtime starts, with a SAFETY comment).
-- [ ] Published libraries: `cargo semver-checks` in release CI; publishing
+- [ ] Published libraries (§8): `cargo semver-checks` in release CI; publishing
       automated (`release-plz`/`cargo-release`) with `--locked`, not from
       laptops; publish job uses Trusted Publishing (`id-token: write`,
       `crates-io-auth-action`, environment-gated) or else a scoped token —
@@ -490,7 +490,8 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
       beside it = Low; on GitLab.com,
       `rg -q 'aud:[[:space:]]*crates\.io' .gitlab-ci.yml || rg -n 'CARGO_REGISTRY_TOKEN' .gitlab-ci.yml`
       printing anything (a stored token, no crates.io id-token) = Low; CHANGELOG maintained.
-- [ ] Reproducibility: `Cargo.lock` committed, toolchain pinned, CI action
-      SHAs pinned, `rust-cache` keyed correctly (not caching stale clippy).
+- [ ] Reproducibility and CI shape (§9): `Cargo.lock` committed, toolchain pinned, CI action
+      SHAs pinned, `rust-cache` keyed correctly (not caching stale clippy); each job of the §9
+      baseline present or deliberately absent, plus scheduled `cargo audit`, fuzz and bench jobs.
 - [ ] Quick greps: `rg 'dbg!|println!' -t rust -g '!*test*' -g '!*/bin/*'`
       (debug leftovers in libs); `rg 'FIXME|HACK|XXX' -t rust` triaged.

@@ -312,21 +312,49 @@ job, never compare absolute times across runner generations.
       subject, and it reads as a much better finding than the truth.
 - [ ] Is there any profiling/tracing data, or is all perf discussion folklore?
       No data on a "slow" system → first finding: add RED metrics + profiler.
+      Where data exists: was it taken with the instrument that fits the
+      question, under production or production-like conditions (§1)? A CPU
+      profile, or a flat CPU flamegraph, offered for a request that is slow in
+      wall time → flag: the time is off-CPU, use off-CPU analysis or tracing (§2).
 - [ ] Are SLOs/budgets defined in percentiles? Any dashboards showing averages
-      only → flag (Medium): averages hide the tail.
+      only → flag (Medium): averages hide the tail. Any percentile averaged
+      across hosts instead of computed from aggregated histograms → flag (§4).
 - [ ] Compute p99/p50 per hot endpoint; ratio > 10× → investigate queueing,
-      GC, locks, cache misses.
+      GC, locks, cache misses (§4).
 - [ ] High fan-out call graphs: is the per-dependency percentile budget set
-      accordingly (p999 for fan-out > 10)?
+      accordingly (p999 for fan-out > 10) (§4)?
 - [ ] Do benchmarks exist? Do they use a statistical harness, warmup,
-      realistic data, and report variance? Single-run timing → flag.
+      realistic data, and report variance? Single-run timing → flag. Results
+      consumed (blackhole/`black_box`) so dead-code elimination cannot delete
+      the work? Environment pinned, or comparisons ratio-based? Latency load
+      tests open-loop / constant-arrival-rate — a closed-loop tester measuring
+      latency under a target throughput hides the worst samples → flag (§3).
 - [ ] Does CI gate on any perf signal (query counts, alloc counts, bundle
       size, benchmark deltas)? None → flag (Medium): regressions ship blind.
+      Benchmark gates compare against the base commit with statistics, on the
+      same machine in the same job — a raw absolute threshold, or times compared
+      across runner generations → flag (§10).
 - [ ] For each proposed/past optimization: what fraction of total time was it?
-      (< 20% of profile and non-trivial → likely wasted effort — Amdahl.)
+      (< 20% of profile and non-trivial → likely wasted effort — Amdahl.) Cores
+      or parallelism added without first shrinking the measured serial section
+      (locks, single-threaded stages) → flag (§8).
 - [ ] Are USE metrics available for pools/queues (saturation especially)?
-      Pool wait time unmeasured → flag.
+      Pool wait time unmeasured → flag. RED (rate, errors, duration histogram)
+      per endpoint too? A service missing either is unauditable at runtime →
+      flag (Medium) (§6).
 - [ ] Were any "optimizations" added without before/after measurements?
       Treat them as suspect complexity; consider recommending removal.
+      Conversely, a known pathology (O(n²)+ on growable input, N+1, unbounded
+      memory, blocking on an event loop, per-request poolable resources, missing
+      timeouts/limits, sequential awaits on independent I/O) left waiting for a
+      profile → flag; so is an optimization that removed identity-keyed caching,
+      a constant-time comparison or a validation/size limit (§9).
 - [ ] Count network round trips on the critical user journey; verify each is
-      necessary, parallelized where independent, and inside the budget.
+      necessary, parallelized where independent, and inside the budget —
+      round trips dominate; count them first (§5).
+- [ ] Latency budget (§7): is the user-facing percentile SLO decomposed into
+      per-component budgets along the critical path, with ≥ 20% slack kept, and
+      enforced in CI and alerting per component, not just end to end? Does a
+      change that adds a sequential dependency fit the remaining slack or buy
+      budget elsewhere? No written budget → flag (Medium). Lead list:
+      `grep -rniE 'latency[ _-]?budget' --include='*.md' --include='*.yaml' --include='*.yml' .`

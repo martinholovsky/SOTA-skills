@@ -227,27 +227,34 @@ for a real cohort of users.
 ## Audit checklist
 
 - [ ] Field CWV (CrUX/RUM) at p75 per key page: LCP ≤ 2.5 s, INP ≤ 200 ms,
-      CLS ≤ 0.1? Which metric/phase dominates the failure?
+      CLS ≤ 0.1? Which metric/phase dominates the failure (§1)?
 - [ ] LCP element: discoverable in initial HTML? `fetchpriority="high"`?
-      Not lazy-loaded? TTFB ≤ 800 ms on that route?
+      Not lazy-loaded? TTFB ≤ 800 ms on that route (§1)?
 - [ ] Initial compressed JS per route ≤ ~200 KB? CI budget enforcement
-      (size-limit/Lighthouse CI) present and failing builds?
+      (size-limit/Lighthouse CI) present and failing builds (§2)?
 - [ ] Bundle analyzer output: moment/full-lodash/duplicate versions/eagerly
-      loaded heavy libs/barrel-file tree-shaking defeats?
+      loaded heavy libs/barrel-file tree-shaking defeats? Polyfills for
+      evergreen browsers, source maps/dev artifacts shipped to prod, a server
+      SDK imported into client code (§2)?
 - [ ] Route-level code splitting working (check chunk map)? Heavy widgets
       (editor/chart/map/modal) behind dynamic `import()`? Likely-next routes
-      prefetched?
+      prefetched? Over-split into hundreds of tiny chunks (§3)?
 - [ ] Images: AVIF/WebP negotiated? `srcset`/`sizes` present? Dimensions set
       (CLS)? Below-fold lazy, above-fold not? Any image > ~200 KB on the wire?
+      Below-fold video `preload="none"` with a poster image (§4)?
 - [ ] Fonts: WOFF2, subset, self-hosted, ≤ 2 preloaded, `font-display` +
-      metric-compatible fallback (or next/font/fontaine)?
+      metric-compatible fallback (or next/font/fontaine)? Families and weights
+      limited — a variable font once past 2–3 weights (§5)?
 - [ ] Long tasks > 50 ms during load and on interaction (trace)? Layout
-      thrash loops? Heavy work that belongs in a Worker?
+      thrash loops? Heavy work that belongs in a Worker (§1)?
 - [ ] Hydration: does static content ship client JS (RSC/islands candidate)?
-      Below-fold components hydrating eagerly? TBT after LCP?
+      Below-fold components hydrating eagerly? TBT after LCP? `hydration
+      mismatch` warnings (double render) (§6)?
 - [ ] Third-party scripts: inventoried, async/deferred, measured for
-      main-thread cost? Any sync `<head>` script?
+      main-thread cost? Any sync `<head>` script (§8)?
 - [ ] HTML caching strategy: static/ISR where possible? Edge SSR only where
-      data is edge-local? Early-flushed streaming where origin-rendered?
+      data is edge-local? Early-flushed streaming where origin-rendered (§7)?
 - [ ] RUM in place, segmented by device/geo — or is the team flying on
-      laptop Lighthouse runs only?
+      laptop Lighthouse runs only? Lab runs throttled? `preconnect` held to
+      2–3 critical origins and `preload` to provably late-discovered
+      resources (§8)?

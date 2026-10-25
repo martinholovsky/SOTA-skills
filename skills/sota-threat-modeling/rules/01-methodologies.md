@@ -239,18 +239,32 @@ system every sprint (re-derives known results, exhausts goodwill).
 ## Audit checklist
 
 - [ ] A documented methodology choice exists and matches the system's risk
-      profile (not "we ran a tool").
+      profile per the §1 decision table (not "we ran a tool", and not every
+      method run "to be thorough");
+      where business context must drive the model (exec-facing,
+      business-critical or regulated), full PASTA or a half-page PASTA-lite
+      business-impact preamble (stages 1–2) exists, never an uncapped
+      ceremony document (§4).
 - [ ] STRIDE applied per-interaction at every trust boundary crossing; flows
-      skipped only when source and destination share boundary AND privilege.
+      skipped only when source and destination share boundary AND privilege
+      and the flow carries no crown-jewel asset (§2).
 - [ ] LINDDUN (or equivalent privacy pass) performed wherever personal data is
       collected, stored, or shared; linkability, detectability, and
-      intervenability (subject can access/correct/erase) considered.
-- [ ] Crown-jewel assets have an attack tree or equivalent all-paths analysis.
+      intervenability (subject can access/correct/erase) considered, plus
+      identifying, non-repudiation, data disclosure and non-compliance
+      (retention, purpose, residency); run with STRIDE, never instead (§3).
+- [ ] Crown-jewel assets have an attack tree or equivalent all-paths analysis:
+      root a goal state, leaves annotated with cost/skill/detectability, at
+      most 3 levels deep (§5).
 - [ ] Detection/response coverage assessed (kill-chain or ATT&CK mapping) for
-      at least the top abuse scenario; logging gaps captured as requirements.
+      at least the top abuse scenario, naming the telemetry that would fire
+      per stage; logging gaps captured as requirements (§6).
 - [ ] Every threat is an actor→action→asset→impact sentence, not a category.
 - [ ] Re-model triggers are defined and observably enforced (PRs matching
-      triggers contain security notes; baseline model updated after them).
+      triggers contain security notes; baseline model updated after them);
+      each service's baseline model has one named owner (§8).
 - [ ] Enumeration volume matches triage capacity — no untriaged threat dumps.
 - [ ] Lightweight passes escalate to full models when triggers fire (evidence:
-      at least one escalation in history, or no trigger-matching changes).
+      at least one escalation in history, or no trigger-matching changes);
+      each four-questions pass leaves 3–10 threat sentences, each with a
+      disposition (§7).

@@ -152,21 +152,28 @@ OWASP: Zero Trust Architecture cheat sheet.
 
 - [ ] Is any service authenticating callers by source IP/subnet alone (location trust)? Grep configs
       for broad `allow`/`trusted` CIDRs: `grep -rEn '10\.0\.0\.0/8|0\.0\.0\.0/0|allow .*internal'`.
+      Does any internal (east-west) hop skip TLS or authz because "it's internal" (§1)?
 - [ ] Does every protected resource sit behind an identifiable PEP, or can something route straight
-      to it? List Services/Ingresses and ask "what enforces authz here?"
+      to it? List Services/Ingresses and ask "what enforces authz here?" Is that PEP at
+      the workload (service, mesh or CNI policy; each namespace its own segment), not only the edge
+      firewall (§2, §4)?
 - [ ] Do network/mesh policies reference *identity* (label/SA/SPIFFE) rather than bare CIDRs for
-      internal flows?
+      internal flows, and are users authenticated per request against the IdP (OIDC/SAML) rather
+      than by where they connect from (§3)?
 - [ ] For human access: is it ZTNA / identity-aware proxy, or flat VPN onto the LAN? If VPN, is it
-      per-user-keyed and scoped (not whole-network)?
+      per-user-keyed and scoped (not whole-network)? Are internal web apps fronted by the
+      identity-aware proxy rather than a network ACL (§5, §6)?
 - [ ] Are identity-aware-proxied backends reachable *only* through the proxy? Probe the backend
-      directly (`kubectl exec ... curl backend.svc`) — it must be refused.
+      directly (`kubectl exec ... curl backend.svc`) — it must be refused (§6).
 - [ ] Is access dynamic (re-evaluated, posture-aware) for crown-jewel systems, or a one-time static
-      allow?
-- [ ] Can you state, per CISA ZTMM pillar, your current maturity level and the next step?
-- [ ] **Medium — policy never pruned (R8.1).** Is there a recurring allowed-vs-observed review
+      allow (§2)?
+- [ ] Can you state, per CISA ZTMM pillar, your current maturity level and the next step (§7)?
+- [ ] **Medium — policy never pruned (§7, R8.1).** Is there a recurring allowed-vs-observed review
       (flows, proxy access logs, entitlement use) with a record of allows removed? A policy set
       that has only ever grown is the finding.
-- [ ] **High — devices pillar (R9).** Device inventory exists and covers shadow IT; each managed
+- [ ] **High — devices pillar (§8, R9).** Device inventory exists and covers shadow IT; each managed
       device has a unique, non-exportable certificate identity the access proxy checks; posture
-      loss revokes access automatically; unmanaged devices reach only an isolated browser or
-      workspace; EDR, disk encryption and remote wipe on every managed endpoint?
+      (patch level, disk encryption, EDR health, configuration drift) is assessed continuously and
+      its loss revokes access automatically; unmanaged devices reach only an isolated browser or
+      workspace with no direct network reach, no local download and recorded sessions; EDR, disk
+      encryption and remote wipe on every managed endpoint?
