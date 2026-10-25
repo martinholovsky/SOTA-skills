@@ -4,7 +4,7 @@ Split out of [rules/05](05-security.md) on 2026-09-25, when [rules/05](05-securi
 unchanged, so an older citation of [rules/05](05-security.md) §"Command injection via child_process" or
 §"SSRF and server-side validation" names the same text here.
 
-## Command injection via child_process
+## 1. Command injection via child_process
 
 ```ts
 // BAD — exec runs through a shell; filename = "x; rm -rf /" executes
@@ -55,7 +55,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
   decide explicitly what a timeout means for your caller rather than inferring it from
   `err`.
 
-## SSRF and server-side validation
+## 2. SSRF and server-side validation
 
 - Every inbound payload schema-parsed at the boundary ([rules/01](01-typescript-config-and-types.md)) — including webhooks (verify signatures: Stripe/GitHub HMAC) and headers you act on.
 - User-supplied URLs the server fetches (webhooks, importers, avatars): allowlist protocols (`new URL(u).protocol === 'https:'`, checked again on every redirect hop), block private ranges (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16 — cloud metadata `169.254.169.254`), handle redirects (below), pin timeouts and response-size caps. Library: `ssrf-req-filter` or equivalent egress proxy. The generic policy is [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §5; the Node idiom:

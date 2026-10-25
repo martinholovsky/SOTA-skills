@@ -7,7 +7,7 @@ overwrites globals) and browser extensions (script with privileges inside someon
 plus the browser's persistent storage, which every script in the origin can read.
 Added 2026-09-25.
 
-## Service workers: origin, scope and a kill switch
+## 1. Service workers: origin, scope and a kill switch
 
 A service worker sits between the page and the network for every URL in its scope, and it
 survives reloads and deploys. One attacker-controlled worker is therefore persistent XSS for the
@@ -44,7 +44,7 @@ whole scope until the browser drops it.
   `manifest=` attribute or `.appcache` file is dead code (LOW).
 - *OWASP: HTML5 Security cheat sheet.*
 
-## DOM clobbering: markup that overwrites globals
+## 2. DOM clobbering: markup that overwrites globals
 
 The browser exposes named elements as properties. An element with `id="x"` becomes `window.x`,
 and `<img name=...>` or `<form name=...>` becomes a property of `document`. That holds even when
@@ -75,7 +75,7 @@ all** can still change what your code reads. Measured in Chrome 151 after insert
   you passed took effect. `setHTMLUnsafe` keeps everything.
 - *OWASP: DOM Clobbering Prevention cheat sheet; ASVS 5.0 V3.2.3.*
 
-## Browser extensions
+## 3. Browser extensions
 
 An extension's code runs with privileges the page does not have (cross-origin requests, tabs,
 storage, sometimes cookies) while its content scripts read DOM the page controls. Treat every
@@ -122,7 +122,7 @@ edge between the two as a trust boundary.
   content scripts do not need it. Never put extension secrets in the page's `localStorage`.
 - *OWASP: Browser Extension Vulnerabilities cheat sheet.*
 
-## Client-side storage: Web Storage, IndexedDB and keys
+## 4. Client-side storage: Web Storage, IndexedDB and keys
 
 The token rule in [rules/05](05-security.md) §"Tokens" is one case of a wider one: every script in the origin
 reads `localStorage`, `sessionStorage`, IndexedDB and Cache Storage, so one XSS reads them all,

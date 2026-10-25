@@ -2,7 +2,7 @@
 
 Severity here maps to exploitability: attacker-controlled input reaching a sink = CRITICAL/HIGH; hardening gaps = MEDIUM; defense-in-depth = LOW.
 
-## XSS: know your sinks
+## 1. XSS: know your sinks
 
 XSS = untrusted data reaching an HTML/JS execution sink. Frameworks escape by default; every escape hatch is a sink.
 
@@ -62,7 +62,7 @@ const safeUrl = (u: string) => { try { const p = new URL(u); return ['https:', '
     Truly untrusted code runs in a separate process or isolate with its own resource limits
     ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)). *OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.*
 
-## CSP integration
+## 2. CSP integration
 
 Ship a Content-Security-Policy on every HTML response; it converts many XSS bugs from CRITICAL to mitigated.
 
@@ -78,7 +78,7 @@ Content-Security-Policy:
 - Roll out with `Content-Security-Policy-Report-Only` + a report endpoint, then enforce.
 - `frame-ancestors` replaces `X-Frame-Options`; `base-uri 'none'` blocks `<base>` hijack of relative script URLs.
 
-## Server-rendered HTML: template engines and hand-built strings
+## 3. Server-rendered HTML: template engines and hand-built strings
 
 The sink list above is the browser's. A Node server that renders HTML itself (Express
 views, email templates, HTML-to-PDF input) has its own, and each engine spells "raw" in a
@@ -110,7 +110,7 @@ different way. Measured on ejs 6, pug 3, handlebars 4.7 and mustache 4.2 with th
   `&lt;b><i>`. Render through an engine's escaped form. If you must escape by hand, use
   one function that handles `& < > " '` with `replaceAll` or a `/g` regex.
 
-## Prototype pollution
+## 4. Prototype pollution
 
 Writing to `__proto__`/`constructor.prototype` via attacker-controlled keys poisons every object — leading to auth bypass (`{}.isAdmin === true`), DoS, sometimes RCE via gadget chains.
 
@@ -153,7 +153,7 @@ const map = Object.create(null);          // no prototype to pollute
   *OWASP: DOM based XSS Prevention cheat sheet; DOM Clobbering Prevention cheat sheet;
   Nodejs Security cheat sheet.*
 
-## npm supply chain
+## 5. npm supply chain
 
 The dependency tree is your attack surface; install scripts run arbitrary code on `npm install` (developer machines and CI). Worm campaigns like the 2025 Shai-Hulud worm spread exactly this way; the March 2026 axios compromise published malicious versions with a stolen npm token, bypassing the project's trusted-publishing setup — caught within a day, which is exactly what install cooldowns absorb; and the 2026 Miasma campaign (a Shai-Hulud derivative, 32+ `@redhat-cloud-services` packages) came in two shapes: its initial wave ran code from `preinstall` scripts, and a later wave (disclosed June 4) ran it from a phantom `binding.gyp` — the implicit `node-gyp rebuild` needs no declared install script — published through a compromised OIDC trusted-publishing workflow with valid SLSA provenance. A control that inspects only `scripts` in `package.json` misses the second shape.
 
@@ -177,7 +177,7 @@ The dependency tree is your attack surface; install scripts run arbitrary code o
 - **Publishing**: trusted publishing (OIDC from CI — `npm trust` since CLI 11.10 configures it across packages in bulk) over long-lived tokens; npm's staged publishing adds a human 2FA approval gate before a version goes live — enable it for high-blast-radius packages (a stolen token alone then can't ship a release). `files` allowlist in package.json so secrets/configs never ship in the tarball.
 - **A bundle has no dependency list a scanner can read**: a bundler (esbuild, webpack, Rollup) or a Node single executable application drops every `package.json`, so an image scan of the output reports nothing; generate the SBOM at build time from the lockfile ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6). `vercel/pkg` is archived: do not adopt it.
 
-## Invisible and bidirectional characters in source
+## 6. Invisible and bidirectional characters in source
 
 Code review assumes the diff shows what the parser sees. Two JS facts break that
 assumption, both measured on Node 22:
@@ -201,7 +201,7 @@ U+FFA0) is on the project's main branch but was **not in a published release** w
 in the checklist. The ingest-side version of the same class, for
 text bound for an LLM or a UI, is [`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md) §4.
 
-## ReDoS
+## 7. ReDoS
 
 Backtracking regexes with nested/overlapping quantifiers go exponential on crafted input — one request pins a CPU (and on Node, the whole event loop: total DoS).
 
@@ -255,7 +255,7 @@ if (input.length > 256) reject();
 - *Sources, by name:* OWASP Input Validation cheat sheet; OWASP Proactive Controls 2024 C3;
   ASVS 5.0 V1.2.9; OWASP Go-SCP (validation, regular expressions).
 
-## Tokens and client-side auth
+## 8. Tokens and client-side auth
 
 - **Session/refresh tokens never in `localStorage`/`sessionStorage`** — any XSS exfiltrates them (other sensitive data in browser storage: [rules/09](09-browser-platform-security.md)). Use cookies: `HttpOnly; Secure; SameSite=Lax` (or `Strict`), `Path` scoped, `__Host-` prefix.
 - SameSite is CSRF defense-in-depth, not complete: keep CSRF tokens (or strictly enforce custom-header + CORS preflight) for state-changing routes if any non-SameSite path exists.
@@ -292,13 +292,13 @@ res.setHeader('Set-Cookie',
 - CSRF for cookie-authed JSON APIs: require a custom header (e.g. `X-Requested-With`) and strict CORS — preflight enforcement makes cross-origin forgery fail; forms still need synchronizer tokens.
 - CORS: never `Access-Control-Allow-Origin: *` with `Allow-Credentials: true` (browsers reject it; reflecting `Origin` unvalidated recreates the hole — allowlist exact origins).
 
-## Secrets in code and client bundles
+## 9. Secrets in code and client bundles
 
 - Anything in frontend code ships to the attacker: API keys in `VITE_*`/`NEXT_PUBLIC_*` vars are public by definition — only put genuinely-public keys there (analytics write keys, maps keys with referrer locks). Server-only secrets must never appear in client-reachable modules; Next.js server/client boundary violations leak env into the bundle.
 - `grep` the built bundle for key prefixes (`sk_live`, `AKIA`, `ghp_`, `AIza`) as a release gate; gitleaks/trufflehog pre-commit and in CI for the repo itself.
 - Error responses: never echo stack traces, SQL, or internal paths to clients in production — log them server-side with the request ID, return the ID in the error body for correlation.
 
-## postMessage and cross-origin
+## 10. postMessage and cross-origin
 
 ```ts
 // BAD — any window can send this; acting on it = universal XSS/state tampering
@@ -327,7 +327,7 @@ Restrict worker sources with the CSP `worker-src` directive. *OWASP: HTML5 Secur
 Command injection via `child_process` and SSRF moved to
 [rules/08](08-process-and-outbound.md) on 2026-09-25, section names unchanged.
 
-## Open redirects and file uploads
+## 11. Open redirects and file uploads
 
 Open redirect (`/login?next=https://evil.example`) launders phishing through your domain and chains into OAuth token theft.
 
@@ -345,14 +345,14 @@ File uploads:
 - Size-cap at the parser (multipart limits), store outside the web root / in object storage, serve with `Content-Disposition: attachment` + `X-Content-Type-Options: nosniff` for user content; SVGs are XSS vectors — sanitize or serve from a sandboxed origin.
 - Images: re-encode (sharp) to strip embedded payloads/EXIF.
 
-## Timing and crypto hygiene
+## 12. Timing and crypto hygiene
 
 - Compare secrets (HMAC signatures, API keys, tokens) with `crypto.timingSafeEqual` (equal-length buffers — hash both sides first if lengths vary), never `===` (timing oracle).
 - Randomness for anything security-relevant (tokens, IDs in URLs, reset codes): `crypto.randomUUID()` / `crypto.getRandomValues()` / `crypto.randomBytes` — never `Math.random()` (predictable, seedable state recovery is practical).
 - Password hashing: argon2id (or scrypt/bcrypt with sane cost), async variants only ([rules/04](04-node-backend.md)); never SHA-256-of-password, never homegrown (audit: [`sota-code-security` rules/02](../../sota-code-security/rules/02-authentication.md) §1).
 - Web Crypto (`crypto.subtle`) for in-app encryption/signing; AES-GCM with unique IVs per encryption (IV reuse with GCM is catastrophic); keys from KMS/secret manager, not constants.
 
-## Native addons and uninitialized buffers
+## 13. Native addons and uninitialized buffers
 
 Three ways Node leaves memory safety. **Native addons** (`.node` files, Node-API /
 `node-addon-api`, built with `node-gyp`) are C or C++ inside the process: audit them as such.

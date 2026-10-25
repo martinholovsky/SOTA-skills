@@ -2,7 +2,7 @@
 
 Measure before optimizing: bundle analyzer for size, React Profiler/DevTools for renders, Chrome Performance + heap snapshots for memory, `monitorEventLoopDelay` for Node. Optimizations without a measurement are style choices.
 
-## Bundle discipline
+## 1. Bundle discipline
 
 Every shipped KB is parse/compile/execute time on the median phone, not just transfer.
 
@@ -30,7 +30,7 @@ const ChartPanel = lazy(() => import('./ChartPanel'));   // + <Suspense fallback
 - Ship modern JS (`target: 'es2022'`-ish browserslist) — transpiling classes/async down for dead browsers costs 20-30% size.
 - Fonts/images dwarf JS in LCP terms — but that's outside this file's scope; don't let JS micro-opts distract from a 2MB hero image.
 
-## Startup: loading and hydration
+## 2. Startup: loading and hydration
 
 - `<script type="module">` defers by default; never blocking scripts in `<head>` without `defer`/`async`. `modulepreload` the critical graph; `rel=preconnect` to API/CDN origins.
 - Hydration cost scales with shipped component tree: RSC/islands architectures (Next App Router, Astro) exist to ship less of it — interactivity leaves only (`'use client'` discipline below).
@@ -49,7 +49,7 @@ const ChartPanel = lazy(() => import('./ChartPanel'));   // + <Suspense fallback
 | Is the Node loop blocked? | `monitorEventLoopDelay`, `node --cpu-prof` / `0x` flamegraphs under load (clinic.js: README says not actively maintained) |
 | Real-user numbers? | web-vitals → RUM (LCP, INP, CLS) — lab numbers lie about phones |
 
-## React rendering
+## 3. React rendering
 
 A render is a function call, not a DOM write — cheap-ish, but O(subtree) and they cascade. Hunt structural causes before memoizing.
 
@@ -98,7 +98,7 @@ const value = useMemo(() => ({ user, setUser }), [user]);
 
 Measure interaction health with INP (Interaction to Next Paint): long tasks >50ms between input and paint are the budget violations. `PerformanceObserver` with `{ type: 'event', durationThreshold: 40 }` or web-vitals library in RUM; break up long handlers with `await (globalThis.scheduler?.yield?.() ?? new Promise(r => setTimeout(r)))` between logical phases (`scheduler.yield()` is not Baseline — feature-detect as shown).
 
-## Long lists: virtualization
+## 4. Long lists: virtualization
 
 DOM nodes are the cost: 10k rows × 20 nodes kills layout/paint regardless of framework.
 
@@ -107,7 +107,7 @@ DOM nodes are the cost: 10k rows × 20 nodes kills layout/paint regardless of fr
 - Paginate/infinite-scroll at the data layer too — don't ship 50k records to the client to virtualize their DOM.
 - Virtualization breaks Ctrl-F and screen-reader sequence; for short lists just render them.
 
-## Debounce and throttle
+## 5. Debounce and throttle
 
 - **Debounce** (trailing): act after input settles — search-as-you-type (200-300ms), autosave, resize-end.
 - **Throttle**: act at most every N ms during continuous events — scroll position, drag, mousemove.
@@ -121,7 +121,7 @@ useEffect(() => () => debouncedSearch.cancel(), [debouncedSearch]);
 
 Recreating the debounced fn every render (inline `debounce(...)` in the component body without memo) resets the timer each keystroke — the #1 debounce bug. For data fetching, debounce + abort previous request ([rules/03](03-async-patterns.md)) together.
 
-## Caching and memoization (non-React)
+## 6. Caching and memoization (non-React)
 
 - Memoize pure-expensive functions with bounded caches; an unbounded memo on user-keyed input is a leak (below).
 
@@ -141,7 +141,7 @@ async function getReport(id: string): Promise<Report> {
 - Invalidate explicitly on write paths or accept TTL staleness deliberately — "cache + forgot invalidation" bugs masquerade as data corruption.
 - HTTP layer first: `Cache-Control`/`ETag` on API responses and CDN caching beat in-process caches for read-heavy public data.
 
-## Memory leaks
+## 7. Memory leaks
 
 Long-lived references are the leak; SPAs and Node servers never get the page-refresh absolution.
 
@@ -169,7 +169,7 @@ Detection workflow (browser and Node `--inspect` alike):
 3. Follow the retainer chain upward to the root holding the reference — that's the fix site, not the leaked object's class.
 4. Node services: export `process.memoryUsage().heapUsed`/RSS to metrics; alert on monotonic growth across hours; capture snapshots on signal (`v8.writeHeapSnapshot()` behind an admin endpoint) when it fires.
 
-## Node event-loop blocking
+## 8. Node event-loop blocking
 
 One blocked loop = every request stalled (full treatment in [rules/04](04-node-backend.md)). Performance-audit angle:
 - Instrument: `perf_hooks.monitorEventLoopDelay()` histogram exported to metrics; alert p99 > 100ms.
@@ -188,14 +188,14 @@ setInterval(() => {
 }, 10_000).unref();
 ```
 
-## Offloading and scheduling on the main thread
+## 9. Offloading and scheduling on the main thread
 
 - CPU work >50ms in the browser (parsing, diffing, search indexing, image manipulation): Web Worker ([rules/03](03-async-patterns.md)) — the main thread is for UI. Comlink removes the postMessage ceremony.
 - Truly-idle work (analytics aggregation, prefetch warmup): `requestIdleCallback` (with a timeout fallback) — never for anything user-visible.
 - Animation reads/writes: `requestAnimationFrame`; CSS transforms/opacity (compositor-only) over layout-triggering properties; `will-change` sparingly.
 - Chunked processing keeps input responsive: process N items → `await (globalThis.scheduler?.yield?.() ?? new Promise(r => setTimeout(r)))` → continue; combine with `AbortSignal` so navigation cancels the rest.
 
-## Micro-level idioms that matter at scale only
+## 10. Micro-level idioms that matter at scale only
 
 In hot paths (per-row in 100k iterations, per-frame): avoid spread-accumulator `reduce` (O(n²), [rules/02](02-language-idioms.md)), reuse compiled regexes, prefer `for...of` over chained array methods, avoid `try/catch`-free claims (modern engines made try cheap — don't contort code for it), and don't `delete obj.prop` in hot objects (deopts shapes; set to `undefined` or use Maps). Outside hot paths, write the readable version.
 

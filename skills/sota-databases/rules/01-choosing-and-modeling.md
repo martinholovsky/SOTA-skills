@@ -1,6 +1,6 @@
 # 01 — Choosing the Engine & Modeling the Data
 
-## Engine selection
+## 1. Engine selection
 
 ### Rule: Postgres is the default. Deviation requires a written justification.
 Postgres circa 2026 covers relational, document (JSONB), key-value (UNLOGGED
@@ -42,7 +42,7 @@ exceeds what Postgres does, not when a category label sounds appealing.
 "Postgres is slow" is almost always a missing index, a missing partition, an
 N+1, or bloat — audit those (files 03, 05) before proposing migration.
 
-## Normalization vs pragmatic denormalization
+## 2. Normalization vs pragmatic denormalization
 
 ### Rule: Model in 3NF first; denormalize only with a measured reason.
 Start normalized: every fact stored once, updates touch one row, constraints
@@ -72,7 +72,7 @@ CREATE TABLE orders (id ..., customer_id bigint NOT NULL REFERENCES customers(id
 If you ever need to query, join, constrain, or update an element individually,
 it is a child table, not an array column.
 
-## JSONB usage rules
+## 3. JSONB usage rules
 
 ### Rule: JSONB is for data whose shape you don't control or don't query relationally.
 Legitimate: external API payloads, webhook bodies, user-defined custom fields,
@@ -96,7 +96,7 @@ Hard rules:
   updates to large documents cause write amplification and bloat — split hot
   mutable fields out.
 
-## Primary key strategy
+## 4. Primary key strategy
 
 ### Rule: Surrogate keys only. Never natural keys.
 Emails change, SSNs are PII and get corrected, slugs get renamed, "unique"
@@ -134,7 +134,7 @@ CREATE TABLE users (
 for free in one direction (add the reverse-order index explicitly). Anything
 with its own lifecycle gets a surrogate key.
 
-## Soft delete
+## 5. Soft delete
 
 ### Rule: Don't default to soft delete. Choose per table, and pay the full cost if you do.
 Soft delete (`deleted_at timestamptz`) costs: every query must filter it
@@ -159,7 +159,7 @@ Alternatives that are usually better: hard delete + audit/history table
 (below); move rows to an `archived_*` table; status column when "deleted" is
 really a business state (`cancelled`, `disabled`) — don't conflate the two.
 
-## Audit & history tables (temporal patterns)
+## 6. Audit & history tables (temporal patterns)
 
 ### Rule: When "who changed what, when" is a requirement, use an append-only audit table written by trigger.
 Application-level audit logging misses ad hoc fixes, backfills, and other code
@@ -191,7 +191,7 @@ Use trigger-maintained history tables or a temporal extension; query with
 for domains that genuinely replay events — it is an architecture, not a table
 pattern.
 
-## Ledgers: money and consumable balances
+## 7. Ledgers: money and consumable balances
 
 ### Rule: The balance is derived from append-only entries, never a column you UPDATE.
 A mutable `accounts.balance` records the result of every past write and the
@@ -251,7 +251,7 @@ remembered it. Group by **currency**: a journal netting to zero across two
 currencies is two unbalanced journals: cross-currency movement posts through an
 explicit FX account so both sides balance in their own unit.
 
-## Multi-tenancy
+## 8. Multi-tenancy
 
 ### Rule: Default to shared tables with `tenant_id` + Row-Level Security.
 Scales to millions of tenants, one migration path, normal pooling.
@@ -304,7 +304,7 @@ Ship an automated test that sets tenant A's context and asserts zero rows
 from tenant B across every tenant-scoped table. Missing isolation tests on a
 multi-tenant system: HIGH.
 
-## Modeling hygiene (defaults unless justified)
+## 9. Modeling hygiene (defaults unless justified)
 
 - `timestamptz`, never `timestamp` (naive timestamps corrupt across zones).
   Store UTC; convert at the edge.

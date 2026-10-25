@@ -2,7 +2,7 @@
 
 Mobile networks fail constantly — elevators, subways, captive portals, congested stadium cells — and the OS suspends or kills your process whenever it likes. Apps that treat connectivity and foreground execution as defaults exhibit the classic failure modes: infinite spinners, lost user input, duplicate writes, and "works until you background it." This file covers the three disciplines that prevent them.
 
-## Offline-first
+## 1. Offline-first
 
 ### 3.1 Declare the offline posture; if offline-first, the local DB is the source of truth
 
@@ -93,7 +93,7 @@ Write the chosen strategy per entity in the repo (a table in the sync design doc
 - Sync work is: off the main thread, batched, compressed, cancellable, and resumable mid-batch (commit progress per page, not at the end).
 - Instrument it: sync success rate, drain latency, queue depth, and conflict rate are product health metrics, not nice-to-haves.
 
-## Background work
+## 2. Background work
 
 ### 3.6 iOS: background execution is a budgeted privilege, not a capability
 
@@ -134,7 +134,7 @@ WorkManager.getInstance(ctx)
 
 The universal contract both platforms converge on: background time can end mid-instruction. Therefore every job is written to be resumable from a checkpoint, idempotent on re-run (3.2 keys), and indifferent to running now versus in three hours. If the product genuinely demands real-time guarantees, that is a foreground feature or a server-side feature — not a background hack, because there is no reliable background on modern mobile OSes.
 
-## Push notifications
+## 3. Push notifications
 
 ### 3.9 Token lifecycle is server-side state with hygiene
 

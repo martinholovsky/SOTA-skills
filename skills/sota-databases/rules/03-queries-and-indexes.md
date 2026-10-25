@@ -1,6 +1,6 @@
 # 03 — Query & Index Craft
 
-## Reading EXPLAIN ANALYZE
+## 1. Reading EXPLAIN ANALYZE
 
 ### Rule: Tune from `EXPLAIN (ANALYZE, BUFFERS)`, never from the query text.
 Always include BUFFERS; `shared read` vs `shared hit` tells you whether you're
@@ -31,7 +31,7 @@ Use `auto_explain` (log_min_duration) in production to capture real slow plans
 `pg_stat_statements` is the entry point: optimize by total time, not by
 single-query latency.
 
-## Index types — pick by operator, not habit
+## 2. Index types — pick by operator, not habit
 
 | Type | Use for | Notes |
 |---|---|---|
@@ -54,7 +54,7 @@ CREATE UNIQUE INDEX users_email_lower ON users (lower(email));
 -- query MUST write: WHERE lower(email) = lower($1)
 ```
 
-## Composite index design
+## 3. Composite index design
 
 ### Rule: Column order = equality columns first, then the one range/sort column. ERS.
 **E**quality, **R**ange, **S**ort. A btree serves the leftmost prefix; after
@@ -89,7 +89,7 @@ churn). Symptoms of over-indexing: write latency, WAL volume, bloat.
   index on the rare value instead.
 - Bulk loads: drop/recreate non-constraint indexes around the load.
 
-## ORM pitfalls & N+1
+## 4. ORM pitfalls & N+1
 
 ### Rule: N+1 is the default ORM behavior; eradicate it explicitly.
 ```python
@@ -138,7 +138,7 @@ parameterized). An ORM loop of `save()` calls for a bulk update is a MEDIUM
 finding: one `UPDATE ... WHERE id = ANY(...)` or `INSERT ... ON CONFLICT`
 replaces thousands of round trips.
 
-## Geospatial: the three ways the index is lost
+## 5. Geospatial: the three ways the index is lost
 
 Geometry is one word in the GiST row above and three distinct traps in practice. All
 verified against the PostGIS documentation:
@@ -168,7 +168,7 @@ verified against the PostGIS documentation:
 **Audit it with `EXPLAIN`, not by reading the SQL** — every trap above produces correct
 results and a `Seq Scan`.
 
-## Pagination
+## 6. Pagination
 
 ### Rule: Keyset (seek) pagination for anything that scrolls deep; OFFSET only for shallow, bounded UIs.
 `OFFSET n` reads and discards n rows — page 1000 costs 1000× page 1, and rows
@@ -192,7 +192,7 @@ LIMIT 20;
   `SELECT count(*) FROM (... LIMIT 1001) t`) — exact counts on big tables are
   a seq scan per page view.
 
-## CTEs, window functions, set-based thinking
+## 7. CTEs, window functions, set-based thinking
 
 ### Rule: CTEs are not optimization fences anymore — but know when they materialize.
 Since PG12, single-referenced CTEs are inlined. A CTE referenced more than
@@ -220,7 +220,7 @@ SELECT DISTINCT ON (customer_id) * FROM orders ORDER BY customer_id, created_at 
 Same applies to running totals, gaps-and-islands, deduplication
 (`row_number()` + delete rn>1), and "previous row" (`lag()`).
 
-## Prepared statements & plan management
+## 8. Prepared statements & plan management
 
 ### Rule: Parameterized always (security, file 06); prepared with eyes open.
 - Drivers parameterize by default — never interpolate values, including
@@ -248,7 +248,7 @@ Same applies to running totals, gaps-and-islands, deduplication
   a test that a quote/backslash payload comes back as data. OWASP: Go-SCP
   (parameterized queries).
 
-## Workload hygiene
+## 9. Workload hygiene
 
 - Set `statement_timeout` per role (e.g. 5–30s app, longer for reporting role)
   so one runaway query can't occupy a connection forever.

@@ -2,7 +2,7 @@
 
 Mobile apps die from state bugs: stale screens, double-fired effects, races on rotation and backgrounding, and untestable god-objects. The cure is the same on every stack — unidirectional data flow, explicit state machines, injected dependencies, and enforced module boundaries. None of this is optional ceremony; each rule below pays for itself in a class of production bug it makes impossible.
 
-## Rules
+## 1. Rules
 
 ### 2.1 Unidirectional data flow, exactly one pattern per codebase
 

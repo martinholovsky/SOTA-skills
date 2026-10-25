@@ -1,6 +1,6 @@
 # 05 — Cancellation, Timeouts & Shutdown Sequencing
 
-## Every await needs a timeout policy
+## 1. Every await needs a timeout policy
 
 An await with no deadline is a promise to wait forever. Networks drop ACKs,
 peers hang half-open, pools exhaust, locks queue — and your task waits
@@ -46,7 +46,7 @@ Deadline design rules:
   use `asyncio.timeout` (which cancels the task); use ctx (the callee must
   honor it — verify it does).
 
-## Cancellation propagation — the mechanisms
+## 2. Cancellation propagation — the mechanisms
 
 | Runtime | Mechanism | Semantics |
 |---|---|---|
@@ -88,7 +88,7 @@ except asyncio.CancelledError:
     raise
 ```
 
-## Cleanup on cancel
+## 3. Cleanup on cancel
 
 Cancellation arrives at the worst time by definition. Guarantees you must
 preserve:
@@ -123,7 +123,7 @@ defer func() {
   requires a kill path wired to cancellation (`process.kill` on abort,
   `ctx`-aware job API).
 
-## Shutdown sequencing
+## 4. Shutdown sequencing
 
 Graceful shutdown is a protocol, not a `kill`. Canonical order:
 
@@ -176,7 +176,7 @@ Ordering pitfalls:
   consumer), closing the channel (Go: `for range` exits), or cancelling the
   getter task.
 
-## Retry interplay
+## 5. Retry interplay
 
 Cancellation and timeout must beat retry logic: a retry loop that ignores
 ctx turns one cancelled request into N background attempts.

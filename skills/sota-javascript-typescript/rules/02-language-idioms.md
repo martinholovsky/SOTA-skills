@@ -1,12 +1,12 @@
 # Language Idioms & Pitfalls
 
-## Equality and coercion
+## 1. Equality and coercion
 
 - Always `===`/`!==`. `==` coercion rules are unmemorizable (`[] == false`, `'' == 0`, `null == undefined` all true). Single allowed exception: `x == null` to test null-or-undefined at once — but `x === null || x === undefined` or `x ?? fallback` is clearer; just ban `==` entirely (`eslint eqeqeq: ["error", "always"]`).
 - `Object.is` only for `NaN`/`-0` distinction. `NaN === NaN` is false; use `Number.isNaN(x)` — never the global `isNaN`, which coerces (`isNaN('foo')` is true).
 - `Number.isInteger`, `Number.isFinite` over global counterparts for the same reason.
 
-## Nullish discipline: `??` and `?.`
+## 2. Nullish discipline: `??` and `?.`
 
 `||` treats `0`, `''`, `false` as missing. `??` only treats `null`/`undefined` as missing.
 
@@ -27,7 +27,7 @@ Optional chaining rules:
 - Don't combine `?.` with non-null assertion `!` — pick one truth. `!` is banned in app code except immediately after an explicit check the compiler can't see (document why); prefer restructuring so narrowing works.
 - Remember `a?.b.c` short-circuits the whole chain when `a` is nullish — `.c` is safe; but `(a?.b).c` is not.
 
-## Array method selection
+## 3. Array method selection
 
 Pick the method that states intent; reviewers read methods faster than loop bodies.
 
@@ -48,7 +48,7 @@ Pick the method that states intent; reviewers read methods faster than loop bodi
 - Early-exit needs: `some`/`every`/`find` short-circuit; `map`/`filter` don't — use `for...of` when you must break out of a transform.
 - Don't chain `filter().map()` over hot million-element arrays; one `for...of` or `flatMap` pass is fine. Below that scale, readability wins.
 
-## In-band sentinels: `-1`, and why `NaN` is the better-behaved one
+## 4. In-band sentinels: `-1`, and why `NaN` is the better-behaved one
 
 `indexOf`, `lastIndexOf` and `findIndex` all return `-1` when not found (verified,
 Node 24). The idiom is fine where you test it immediately — `.includes()` /
@@ -74,7 +74,7 @@ is `-1`, so `??` does **not** rescue a sentinel; only `null`/`undefined` trigger
   — the `=== -1` hits are usually correct (immediate tests); the `return -1` hits are
   the producers, and a stored `-1` is where it goes wrong.
 
-## Immutability patterns
+## 5. Immutability patterns
 
 Mutating shared data causes spooky action at a distance and breaks React/state-library change detection.
 
@@ -95,7 +95,7 @@ const updated = items.with(i, newItem);
 - Declare `readonly` arrays/properties in signatures; `as const` for fixed tables. For ordinary data `Object.freeze` is shallow and adds little that types don't already enforce. Security-critical objects (escapers, sanitizer wrappers, security config) are the exception: freeze them deeply at runtime ([rules/05](05-security.md) §"Prototype pollution").
 - `let` is a smell outside loops/accumulators; `const` everywhere (`prefer-const` lint).
 
-## Map/Set over object-as-map
+## 6. Map/Set over object-as-map
 
 Objects as dictionaries inherit `Object.prototype` (`'toString' in obj` is true!), stringify all keys, and are the prototype-pollution sink.
 
@@ -117,7 +117,7 @@ cache.get(name);
 - `Map.prototype.getOrInsert(key, default)` / `getOrInsertComputed(key, fn)` (ES2026 "Upsert"; per MDN browser-compat-data: Node 26.0, Chrome/Edge 145, Firefox 144, Safari 26.2) replace the check-then-set dance for cache/grouping maps — use where your runtime floor allows.
 - `Record<string, T>` indexing under `noUncheckedIndexedAccess` correctly yields `T | undefined` — Map's `.get` was always honest about this.
 
-## Error handling
+## 7. Error handling
 
 Never throw strings or plain objects — they lose stack traces and break `instanceof` routing.
 
@@ -163,7 +163,7 @@ use(r.value);
 
 Use Result (hand-rolled discriminated union, or neverthrow if the team wants combinators) for validation, parsing, business-rule failures. Don't Result-ify everything — infra errors (DB down) should still throw. ES2025 `try`-expression proposals aside, today the union is the idiom. `safeParse` from zod is exactly this pattern.
 
-## Iterators and generators
+## 8. Iterators and generators
 
 - Generators for lazy/infinite/paginated sequences — they avoid materializing intermediate arrays:
 
@@ -183,11 +183,11 @@ for await (const item of paginate(api)) { if (matches(item)) break; }  // stops 
 - Make domain collections iterable via `[Symbol.iterator]` rather than exposing internal arrays.
 - Caveat: generators are single-pass; spreading one consumes it. Don't iterate twice.
 
-## Proxy caution
+## 9. Proxy caution
 
 `Proxy` is for frameworks (Vue reactivity, immer), not application code. Costs: every property access pays a trap-call penalty; identity breaks (`proxy !== target`); `this`-binding bugs with private fields and built-ins (Map/Date methods throw through naive proxies); devtools/debugging opacity. If you reach for Proxy in app code, the answer is almost always an explicit function, a class, or a Map. `Reflect.*` belongs inside proxy handlers, rarely elsewhere.
 
-## Dates: Temporal, and surviving without it
+## 10. Dates: Temporal, and surviving without it
 
 `Date` is mutable, months are 0-indexed, parsing is implementation-defined, and it has no timezone besides local/UTC. Temporal (Stage 4 March 2026, part of ES2027; shipped in Chrome/Edge 144+, Firefox 139+, and enabled by default in Node 26) fixes all of it — immutable, explicit types:
 
@@ -203,7 +203,7 @@ Type selection: `Instant` for timestamps, `PlainDate` for calendar dates (birthd
 
 Until Temporal is available everywhere you ship (Node ≥26 backends: it is; browser code: polyfill until Safari ships): store/transmit UTC ISO-8601 strings or epoch ms; convert at display; use date-fns (tree-shakeable) over dayjs/moment (moment is dead — flag it). Never do arithmetic by adding `86400000` — DST days are 23/25h.
 
-## Number precision and money
+## 11. Number precision and money
 
 - All JS numbers are float64: `0.1 + 0.2 !== 0.3`; integers exact only to `Number.MAX_SAFE_INTEGER` (2^53−1). 64-bit DB IDs and Twitter snowflakes silently corrupt as numbers — keep them strings.
 - Money: integer minor units (cents) in a branded type, never floats.
@@ -223,7 +223,7 @@ const display = (c: Cents) => new Intl.NumberFormat('en-US', { style: 'currency'
 - **Overflow is silent, never an exception.** Integers past `2**53` lose precision; results past `Number.MAX_VALUE` become `Infinity`. For multi-term intermediates (`qty * unitCents * rateBps`) assert `Number.isSafeInteger` on the result, or compute in `BigInt`. The 32-bit zones wrap: `| 0`, `>>`, `Math.imul` and `Int32Array` turn `(-2147483648 / -1) | 0` and `-(-2147483648 | 0) | 0` back into `-2147483648` — keep bitwise tricks away from quantities and money. `BigInt` does not overflow, but `BigInt.asIntN(64, x)` / `asUintN` wrap without warning (e.g. when mirroring an int64 column): bound `x` before calling them.
 - **Unit conversions overflow first.** Seconds to nanoseconds as a `number` leaves the safe-integer range after about 104 days (`1e7 * 1e9` is not a safe integer): use `process.hrtime.bigint()` or `BigInt(s) * 1_000_000_000n`, or stay in milliseconds. Timer delays above `2**31 - 1` ms are not honoured — Node emits `TimeoutOverflowWarning` and fires after 1 ms — so clamp a computed `setTimeout` delay. (OWASP: Go Secure Coding Practices, general coding practices; OWASP SCSVS, arithmetic.)
 
-## Functions and modules over classes; classes where they earn it
+## 12. Functions and modules over classes; classes where they earn it
 
 Default unit of design: pure functions + plain data (typed objects), composed in modules. Classes earn their place for: stateful long-lived things with invariants (connection pools, caches), Error subclasses, when a framework expects them. Avoid:
 
@@ -246,7 +246,7 @@ export type UserService = ReturnType<typeof makeUserService>;
 
 Module hygiene: no side effects at import time (registrations, connections, reading env) outside the composition root — importing a module should be safe and free. Side-effectful imports break tree-shaking, tests, and tooling.
 
-## Designing a public surface — what consumers can reach, and what you can change
+## 13. Designing a public surface — what consumers can reach, and what you can change
 
 The shared design rules live in [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) and [`sota-api-design`](../../sota-api-design/SKILL.md). **This is
 the JS/TS mechanism**, where the surface has two halves that break independently: what is
@@ -288,7 +288,7 @@ consumer's build, and the direction is the opposite for arguments and returns:
 safe; adding it is breaking for any consumer that mutated. Exporting a mutable array or object
 literal hands consumers a shared mutable singleton — freeze it or return a copy.
 
-## Strings and Unicode
+## 14. Strings and Unicode
 
 - `str.length` counts UTF-16 code units, not characters: `'👨‍👩‍👧'.length === 8`. Iterate by code point (`[...str]`, `for...of`) for character-ish ops; grapheme-correct counting/truncation needs `Intl.Segmenter`:
 

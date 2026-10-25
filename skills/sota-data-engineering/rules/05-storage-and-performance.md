@@ -4,7 +4,7 @@ Analytical performance is mostly **scan avoidance**: read fewer files, fewer
 row groups, fewer columns, fewer bytes. Every rule here is a variation on
 that theme, and every one is also a cost lever.
 
-## Parquet internals that matter
+## 1. Parquet internals that matter
 
 - **Row groups are the pruning unit.** Each carries min/max stats per
   column; engines skip row groups whose stats exclude the predicate
@@ -29,7 +29,7 @@ that theme, and every one is also a cost lever.
   frequently-queried table = MEDIUM, HIGH at scale. CSV/JSON as the *query*
   layer (not just landing) = MEDIUM — convert to Parquet at staging.
 
-## Partitioning vs clustering/sorting
+## 2. Partitioning vs clustering/sorting
 
 - **Partitioning** (directory/metadata-level split, one value-set per
   partition): for the **coarse, always-filtered** dimension — almost always
@@ -61,7 +61,7 @@ PARTITIONED BY (days(event_ts), bucket(32, user_id));
 ALTER TABLE events WRITE ORDERED BY (user_id);
 ```
 
-## Table formats: Iceberg / Delta
+## 3. Table formats: Iceberg / Delta
 
 Open table formats add ACID commits, snapshots, and schema evolution on
 object storage. Status (verified mid-2026): **Iceberg format v3** is ratified
@@ -118,7 +118,7 @@ CALL catalog.system.remove_orphan_files(table => 'db.events');
   retry; partition-overlapping concurrent writes (e.g. backfill + scheduled
   run on the same partitions) need coordination, not hope.
 
-## Compression
+## 4. Compression
 
 - **zstd is the modern default** for Parquet (better ratio than snappy at
   similar read speed; level ~3 is the sweet spot — high levels buy little
@@ -128,7 +128,7 @@ CALL catalog.system.remove_orphan_files(table => 'db.events');
 - Don't double-compress (gzip-ing Parquet files) and don't ship
   `.csv.gz` as a query layer — gzip CSV isn't splittable.
 
-## Cost levers (warehouse credit burn & lake scan cost)
+## 5. Cost levers (warehouse credit burn & lake scan cost)
 
 Cost in modern platforms ≈ bytes scanned × frequency + compute time ×
 concurrency. Attack in this order:

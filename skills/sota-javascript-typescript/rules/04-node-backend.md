@@ -1,6 +1,6 @@
 # Node.js Backend
 
-## Runtime choice
+## 1. Runtime choice
 
 - **Node LTS** (run the line the release schedule marks Active LTS — check github.com/nodejs/Release rather than trusting a number written here; 26 is Current and is scheduled to become LTS on 2026-10-28 — it ships Temporal enabled by default and undici 8): default for production backends. Largest ecosystem compatibility, slowest-moving, best observability story. Pin the major in `package.json` `engines` and `.nvmrc`/`.node-version`; CI must run the pinned version. From Node 27 the release cycle is annual and every major reaches LTS after six months as Current.
 - **Bun**: fast installs/startup/test runner; fine for tooling, scripts, and apps you've load-tested on it. Verify native-addon and edge-case Node-API compat before betting production on it.
@@ -27,7 +27,7 @@
   attacker can create or relative symlinks. *OWASP: Nodejs Security cheat sheet.*
 - Decision rule: pick per-project, write runtime-neutral code (Web APIs: `fetch`, Web Streams, Web Crypto, `AbortController`) so the choice stays reversible. Avoid runtime-specific APIs in shared libraries.
 
-## Use the platform — drop unnecessary deps
+## 2. Use the platform — drop unnecessary deps
 
 Node now ships what used to require packages. Every dep removed is supply-chain and maintenance surface removed.
 
@@ -51,7 +51,7 @@ node --test --experimental-test-coverage
 
 Keep deps that earn their weight (pino, zod, drizzle/prisma, fastify). The bar: a dep must do something nontrivial that the platform doesn't.
 
-## Env and config: parse once, crash fast
+## 3. Env and config: parse once, crash fast
 
 Never sprinkle `process.env.X` through the codebase — env vars are `string | undefined`, typos are silent, and defaults scatter.
 
@@ -94,7 +94,7 @@ export const config = Object.freeze(parsed.data);
   production start command or `NODE_OPTIONS`, and reach a live process over an SSH tunnel.
   *OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.*
 
-## HTTP server hardening
+## 4. HTTP server hardening
 
 Defaults are unsafe: Node's http server has lenient timeouts; frameworks accept huge bodies.
 
@@ -115,7 +115,7 @@ server.maxRequestsPerSocket = 1000;
 - **Compression**: gate on response size; never compress encrypted/random content; beware BREACH when reflecting secrets in compressed responses.
 - Prefer Fastify over Express for new services: schema-first validation, structured logging built in (pino), 2-3× throughput, maintained.
 
-## Graceful shutdown
+## 5. Graceful shutdown
 
 Kubernetes/ECS send SIGTERM and wait (default 30s) before SIGKILL. Dropping in-flight requests on deploy is a self-inflicted incident.
 
@@ -136,7 +136,7 @@ process.on('SIGINT', () => void shutdown('SIGINT'));
 
 Order matters: (1) fail readiness probe / stop accepting, (2) drain in-flight with a deadline shorter than the orchestrator's, (3) close DB/queue/redis, (4) exit 0. `setTimeout(...).unref()` so the safety timer doesn't itself hold the process open. Long-lived connections (SSE/WebSocket) need explicit termination — `server.close` waits for them forever; track and end them.
 
-## Health checks and readiness
+## 6. Health checks and readiness
 
 Liveness ≠ readiness. Liveness: "is the process alive" — answer cheaply, no dependency checks (a DB blip must not get you killed and restarted in a loop). Readiness: "should I receive traffic" — checks pool health, returns 503 during shutdown drain.
 
@@ -152,7 +152,7 @@ app.get('/readyz', async (_req, res) => {
 
 Flip readiness to 503 at the start of shutdown, then wait one probe period before `server.close()` so the LB stops routing first — this is what makes zero-downtime deploys actually zero-downtime.
 
-## Request context: AsyncLocalStorage
+## 7. Request context: AsyncLocalStorage
 
 Propagate request ID / user / trace context without threading a `ctx` parameter through every signature.
 
@@ -188,7 +188,7 @@ execution environment is reused, and advise against global variables for per-inv
 
 It survives `await`, timers, and promise chains. Use it for logging context and tracing only — not as a grab-bag service locator (hidden dependencies become untestable). OpenTelemetry's Node SDK rides the same mechanism; adopt OTel for traces rather than hand-rolling.
 
-## Process-level error policy
+## 8. Process-level error policy
 
 ```ts
 process.on('unhandledRejection', (reason) => {
@@ -242,7 +242,7 @@ availability is wrong about the inputs an attacker picks:
 - `process.on('warning')` → log it (catches MaxListenersExceeded, deprecations).
 - Don't call `process.exit()` in normal flow — it skips pending I/O and `finally` blocks; let the loop drain or use exit codes from the shutdown path only.
 
-## Structured logging: pino
+## 9. Structured logging: pino
 
 `console.log` in services is unsearchable, unleveled, and synchronous-ish under load. pino writes newline-JSON, fast, with levels and redaction.
 
@@ -266,7 +266,7 @@ logger.error({ err }, 'payment failed');   // `err` key serializes stack + cause
 - Never log: tokens, passwords, full card numbers, raw request bodies on auth routes, PII beyond need.
 - `pino-pretty` is a dev dependency/CLI, not production config. Production emits raw JSON to stdout; the platform ships it.
 
-## Worker pools and not blocking the loop
+## 10. Worker pools and not blocking the loop
 
 One Node process = one JS thread. A 200ms synchronous task means every concurrent request waits 200ms.
 
@@ -276,7 +276,7 @@ One Node process = one JS thread. A 200ms synchronous task means every concurren
 - Detect blocking in production: monitor event-loop delay with `perf_hooks.monitorEventLoopDelay()` (alert at p99 > ~100ms), or `blocked-at` in staging to get stacks.
 - Multi-core: prefer N processes via the orchestrator (K8s replicas) over in-process `cluster`; keep processes single-purpose.
 
-## Background work in services
+## 11. Background work in services
 
 - In-process `setInterval` jobs are lost on restart, duplicated across replicas, and drift. Anything that must run exactly/at-least once per schedule belongs in a job queue (BullMQ on Redis, pg-boss on Postgres, or the platform's scheduler) with: idempotent handlers, explicit retry/backoff policy, dead-letter handling, and per-job timeouts.
 - If a lightweight in-process ticker is genuinely fine (cache refresh, metrics flush): wrap the callback in try/catch (a thrown error in a bare `setInterval` callback is an uncaught exception → process exit policy kicks in), `.unref()` it so it can't hold shutdown, and guard against overlap (skip if previous run still in flight).
@@ -293,7 +293,7 @@ timer.unref();
 
 - Long-running request work (report generation, imports): return `202 Accepted` + job ID + status endpoint; don't hold an HTTP request open for minutes against every timeout in the chain.
 
-## Outbound calls: pools, timeouts, retries
+## 12. Outbound calls: pools, timeouts, retries
 
 Your service is only as reliable as its slowest dependency. Every outbound call gets:
 - **Timeout**: `AbortSignal.timeout(ms)` on fetch; statement timeout on DB queries. No infinite waits — a hung upstream plus no timeout equals your own outage.
@@ -306,7 +306,7 @@ const res = await fetch(upstream, { signal: AbortSignal.timeout(3000) });
 if (res.status >= 500) throw new UpstreamError(res.status);   // retry layer decides
 ```
 
-## Native ESM in Node
+## 13. Native ESM in Node
 
 - `"type": "module"` in package.json. `__dirname`/`__filename` don't exist — use `import.meta.dirname` / `import.meta.filename` (Node ≥20.11), or `new URL('./file', import.meta.url)` for asset paths.
 - JSON imports: `import data from './data.json' with { type: 'json' }`.
@@ -314,7 +314,7 @@ if (res.status >= 500) throw new UpstreamError(res.status);   // retry layer dec
 - **`require(esm)` removes most of the reason to dual-publish.** CommonJS can `require()` an ES module with no flag since v20.19.0 / v22.12.0 / v23.0.0; the feature is Stability 2 since v24.15.0 / v25.4.0 (the history tables in the raw `doc/api/modules.md` and `cli.md`, PR #60959, which CHANGELOG_V24 lists under 24.15.0; read 2026-09-25). Detect it with `process.features.require_module`. On an `engines.node` floor at or above those lines, an ESM-only package also serves CJS consumers; an older floor, or a toolchain that needs a CJS build, is what still justifies dual output. **The catch is top-level `await`:** if the required module, *or any module it imports*, uses one, `require()` throws `ERR_REQUIRE_ASYNC_MODULE`. Measured on v22.22.1 and v26.7.0: a sync ESM package loaded, and one with `await` in its entry or in a file its entry imports threw that code. So a library's entry graph carries no top-level `await`: do async setup in an exported `init()` or on first use. The opt-out flag is `--no-require-module` from v24.15.0 / v25.4.0; on v22.22.1 that name is `bad option` and only the older `--no-experimental-require-module` works (measured).
 - Dynamic `import()` works in both module systems — it's the migration bridge and the lazy-loading tool.
 
-## `node:crypto` AEAD traps
+## 14. `node:crypto` AEAD traps
 
 Web Crypto's `decrypt` returns nothing until the tag verifies. `node:crypto`'s streaming
 `Decipher` does not work that way, and each trap below was measured on Node 22:
@@ -344,7 +344,7 @@ Web Crypto's `decrypt` returns nothing until the tag verifies. `node:crypto`'s s
 
 Source for all three deprecations: <https://github.com/nodejs/node/blob/main/doc/api/deprecations.md>.
 
-## Transport verification: the Node spellings
+## 15. Transport verification: the Node spellings
 
 Disabled certificate or host-key verification is **one class, stated once** in
 [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5. This skill carries only Node's detectors, each measured on
@@ -368,7 +368,7 @@ Node 22 against a self-signed server whose certificate names a different host:
   verifier that always returns `true`. Compare against a pinned key.
 
 
-## Server-side headless browsers and HTML-to-PDF
+## 16. Server-side headless browsers and HTML-to-PDF
 
 A browser driven from the server (Puppeteer, Playwright, anything wrapping Chrome) is an
 HTTP client with a file reader built in. It runs inside your network. Measured with

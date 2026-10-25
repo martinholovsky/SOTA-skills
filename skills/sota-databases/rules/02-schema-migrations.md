@@ -1,6 +1,6 @@
 # 02 — Schema Evolution & Migrations
 
-## Core invariants
+## 1. Core invariants
 
 ### Rule: A migration must never break the currently deployed application.
 During any deploy there is a window where old code runs against the new schema
@@ -52,7 +52,7 @@ but a million-row UPDATE inside that transaction holds locks and bloats for
 its whole duration. DDL migration files stay tiny; backfills are separate,
 batched, and non-transactional as a whole (see Backfills).
 
-## Lock-aware DDL on hot tables
+## 2. Lock-aware DDL on hot tables
 
 ### Rule: Know which DDL blocks, and never let it queue behind traffic.
 Postgres lock facts that decide everything:
@@ -150,7 +150,7 @@ inserted during the swap window. FKs referencing the column make this a
 multi-table project — schedule it before the int is 50% exhausted (alert on
 sequence exhaustion: `last_value / 2147483647`).
 
-## Backfills
+## 3. Backfills
 
 ### Rule: Backfills are batched, keyset-driven, throttled, and resumable.
 ```sql
@@ -171,7 +171,7 @@ WHERE events.user_id = u.id
 - Run as a script/job with progress logging — not as a "migration" that a
   deploy pipeline times out on.
 
-## Zero-downtime cheat sheet
+## 4. Zero-downtime cheat sheet
 
 | Change | Safe pattern |
 |---|---|
@@ -187,7 +187,7 @@ WHERE events.user_id = u.id
 | Partitioning an existing table | New partitioned table + dual-write + backfill + swap, or pg_partman/logical replication route |
 | New required column on insert-heavy table | Add nullable + app writes it → backfill → NOT NULL via check pattern |
 
-## Migration tooling & testing
+## 5. Migration tooling & testing
 
 ### Rule: Migrations live in version control, run automatically, and exactly one tool owns the schema.
 - One migration framework (Flyway, dbmate, Alembic, Rails/AR, Prisma, golang-
@@ -231,7 +231,7 @@ table; never duplicate rows on re-run.
   is wrong — split it until each step is independently safe.
 - Feature flags don't change this: schema must support both flag states.
 
-## MySQL differences (when the project is MySQL/MariaDB)
+## 6. MySQL differences (when the project is MySQL/MariaDB)
 
 The expand/contract and lock-timeout doctrines are identical; mechanics differ:
 - No transactional DDL: a failed multi-statement migration leaves a half-
@@ -246,7 +246,7 @@ The expand/contract and lock-timeout doctrines are identical; mechanics differ:
 - Adding an index is online (INPLACE) but still I/O-heavy — off-peak.
 - Foreign keys + gh-ost don't mix well; check tool constraints first.
 
-## ORM-specific traps
+## 7. ORM-specific traps
 
 - **Prisma/Django/Rails auto-generated migrations:** review the generated SQL,
   not the DSL. Auto-generated `ALTER COLUMN TYPE`, implicit index drops on

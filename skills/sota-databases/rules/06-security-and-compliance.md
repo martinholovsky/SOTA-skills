@@ -1,6 +1,6 @@
 # 06 — Security & Compliance
 
-## Roles & least privilege
+## 1. Roles & least privilege
 
 ### Rule: The application role can do exactly what the application does — nothing more.
 Separate roles with separate credentials:
@@ -71,7 +71,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE migrator IN SCHEMA app
 `connection limit` per role bound the blast radius of both bugs and abuse
 (a leaked reporting credential shouldn't be able to hold 500 connections).
 
-## Server baseline (install time)
+## 2. Server baseline (install time)
 
 ### Rule: No vendor default survives install — accounts, passwords, sample and test databases.
 The general rule (every deployed product, not only databases) is in
@@ -177,7 +177,7 @@ Dated examples (as of 2026-09-26 — re-read the feed, never copy the numbers):
   and 3.6 lines got no fix.
 PostgreSQL minors: file 05; SurrealDB: file 08.
 
-## Credentials & connection security
+## 3. Credentials & connection security
 
 ### Rule: Database credentials are short-lived, scoped, and never in code or images.
 - Connection strings come from a secret manager / workload identity (IAM
@@ -213,7 +213,7 @@ PostgreSQL minors: file 05; SurrealDB: file 08.
 - Audit for credentials in: `docker-compose.yml`, test fixtures, migration
   tool configs, ORM config defaults, and shell history of deploy scripts.
 
-## Audit logging (the security kind)
+## 4. Audit logging (the security kind)
 
 ### Rule: Privileged and write activity is logged in a way the app role can't erase.
 - `pgaudit` (or managed equivalent: RDS/Cloud SQL audit flags) for DDL,
@@ -228,7 +228,7 @@ PostgreSQL minors: file 05; SurrealDB: file 08.
   pgaudit covers out-of-band access (psql sessions, compromised creds) — you
   need both.
 
-## Row-Level Security
+## 5. Row-Level Security
 
 ### Rule: RLS for tenant/ownership isolation enforced in the database; FORCE it; test it.
 Full pattern in file 01 (multi-tenancy). Security-specific additions:
@@ -272,7 +272,7 @@ WHERE c.relkind IN ('r','p') AND n.nspname = 'app'
 ```
   OWASP: Multi Tenant Security cheat sheet.
 
-## Encryption
+## 6. Encryption
 
 ### Rule: In transit — TLS required and verified, both directions.
 - Server: `ssl = on`, certificates managed/rotated; `hostssl` rules in
@@ -319,7 +319,7 @@ SQLite 3.53.4, umask 022):
   service account can read.
 OWASP: C-Based Toolchain Hardening cheat sheet.
 
-## SQL injection
+## 7. SQL injection
 
 ### Rule: Parameterize everything; injection is structural, not a sanitization problem.
 Full injection doctrine lives in the **code-security skill** — defer there
@@ -345,7 +345,7 @@ for app-side review. Database-layer obligations:
   is a cross-tenant read if it can overwrite the server's tenant filter
   (server-enforced tenant filter is non-negotiable, [rules/07](07-vector-and-ai.md)).
 
-## PII handling
+## 8. PII handling
 
 ### Rule: Know where PII lives; minimize, mask, and control access to it.
 - Maintain a PII inventory: which tables/columns hold personal data, lawful
@@ -366,7 +366,7 @@ for app-side review. Database-layer obligations:
   vector stores — file 07) are all PII surfaces: retention and deletion must
   reach them too.
 
-## Retention & deletion (GDPR-style)
+## 9. Retention & deletion (GDPR-style)
 
 ### Rule: Deletion is a designed, tested data flow — not a DELETE statement someone runs.
 - Per-category retention schedule, enforced by automated jobs: partition

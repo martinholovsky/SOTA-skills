@@ -4,7 +4,7 @@ Decomposition quality caps threat-model quality: you cannot enumerate threats
 against elements you never drew. This file covers (A) building the model and
 (B) extracting it from an existing codebase.
 
-## A. Building the model
+## 1. A. Building the model
 
 ### 1. DFD element vocabulary
 
@@ -170,7 +170,7 @@ Boundary crossings → headline threats (full enumeration via `03` catalogs):
   response from C is untrusted input INTO F (T) — third-party responses cross
   a boundary inward too.
 
-## B. Extracting the model from an existing codebase (AUDIT mode)
+## 2. B. Extracting the model from an existing codebase (AUDIT mode)
 
 Reconstruct entry points, flows, stores, and boundaries from artifacts in this
 order — code lies less than docs.

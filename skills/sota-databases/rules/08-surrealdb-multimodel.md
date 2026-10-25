@@ -6,7 +6,7 @@ as primary store is a documented decision, not a default. The security
 baseline of file 06 (least privilege, TLS, credentials, PII, retention)
 applies in full; this file maps it onto SurrealDB's mechanisms.
 
-## Version & auth model
+## 1. Version & auth model
 
 ### Rule: Know which version line you run; the auth model changed at 2.0.
 - Run the latest stable release (verify at
@@ -35,7 +35,7 @@ applies in full; this file maps it onto SurrealDB's mechanisms.
   user — authorize on `$auth`/record state, not on client-controllable claims
   you don't verify.
 
-## Least-privilege system users
+## 2. Least-privilege system users
 
 ### Rule: The application never connects as root or OWNER — one scoped system user per service.
 SurrealDB system users (`DEFINE USER ... ON [ROOT | NAMESPACE | DATABASE]
@@ -54,7 +54,7 @@ ROLES OWNER | EDITOR | VIEWER`) are the analogue of file 06's roles:
   service, credentials from the secret manager (see **[sota-secrets-management](../../sota-secrets-management/SKILL.md)**),
   rotated without redeploy.
 
-## Parameterized SurrealQL
+## 3. Parameterized SurrealQL
 
 ### Rule: All SurrealQL goes through bound $parameters — never string-built queries.
 ```js
@@ -73,7 +73,7 @@ db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.i
   bound record id), and whitelist table names — identifiers can't be bound,
   same rule as dynamic SQL identifiers in file 06.
 
-## Schema enforcement
+## 4. Schema enforcement
 
 ### Rule: SCHEMAFULL + typed fields + ASSERT for anything integrity-critical.
 `SCHEMALESS` is acceptable for genuinely open-shaped data (ingest buffers,
@@ -101,7 +101,7 @@ DEFINE FIELD created_at ON order TYPE datetime DEFAULT time::now() READONLY;
 - `READONLY` for immutable fields (created_at, ledger amounts);
   `VALUE`/`DEFAULT` for server-computed fields so clients can't supply them.
 
-## Record-level permissions
+## 5. Record-level permissions
 
 ### Rule: Deny-by-default is the platform default — keep it that way and write explicit FOR clauses.
 - Tables without a `PERMISSIONS` clause default to `PERMISSIONS NONE` for
@@ -147,7 +147,7 @@ DEFINE FIELD created_at ON order TYPE datetime DEFAULT time::now() READONLY;
   Plan the 3.x move — `type::thing` became `type::record`, among other
   breaking changes.
 
-## Capabilities hardening
+## 6. Capabilities hardening
 
 ### Rule: Run the server deny-by-default; allow-list only the capabilities you use.
 SurrealDB has runtime capability flags; most are denied by default but
@@ -174,7 +174,7 @@ surreal start --deny-all \
   GHSA-cc8f-fcx3-gpjr. Leave the allowlist unset unless queries genuinely
   need files, then pin exact directories.
 
-## Network exposure & TLS
+## 7. Network exposure & TLS
 
 ### Rule: Never publicly reachable; TLS everywhere; credentials from the secret manager.
 - Bind to private interfaces only; reachable solely from app networks. A
@@ -187,7 +187,7 @@ surreal start --deny-all \
   rotatable — full doctrine in **[sota-secrets-management](../../sota-secrets-management/SKILL.md)**. No `--pass` values
   in compose files, shell history, or CI logs.
 
-## Indexes & query planner
+## 8. Indexes & query planner
 
 ### Rule: Same discipline as file 03 — every production query has a known index; EXPLAIN it.
 - `DEFINE INDEX` types: standard, `UNIQUE` (uniqueness is a constraint here,
@@ -201,7 +201,7 @@ surreal start --deny-all \
 - Verify usage with `EXPLAIN` / `EXPLAIN FULL` — look for `Iterate Index`
   rather than table scans on hot paths.
 
-## Multi-model modeling
+## 9. Multi-model modeling
 
 ### Rule: Embed what's read together; reference what's shared; use edges for relationships you query both ways.
 - **Embed** (nested objects/arrays on the record) data owned by and read with
@@ -218,7 +218,7 @@ surreal start --deny-all \
 - Don't model everything as a graph because the engine can: the file 01
   modeling questions (access patterns first) still decide the shape.
 
-## Backups
+## 10. Backups
 
 ### Rule: A SurrealDB you can't restore is file 05's "backup that isn't" — rehearse both layers.
 - Logical: `surreal export` produces a `.surql` script (scope what's included:
