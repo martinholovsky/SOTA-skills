@@ -117,10 +117,12 @@ Findings name the control they violate — not just "this looks wrong":
   tag manager governance, the JVM web layer, and audit reports that
   carry reproduction steps and a finding lifecycle. Where a rule is detectable in code or
   config it ships an audit probe tested on a known-bad and a known-good fixture
-- **Languages** — all 9 language skills (Rust → Ruby, below) get the same rigor;
+- **Languages** — all 10 language skills (Rust → Swift, below) get the same rigor;
   formal standards where they exist: SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust.
-  Each is also gap-checked against its ecosystem's own scanner registry
-  (all nine, by 2026-09-24 — [LANGUAGE-TIER](docs/LANGUAGE-TIER.md))
+  The nine that existed on 2026-09-24 were each gap-checked against their ecosystem's own
+  scanner registry ([LANGUAGE-TIER](docs/LANGUAGE-TIER.md)). Every language also says when an
+  unused suppression fails CI, which failures no catch/recover sees, and what silently
+  unfreezes a frozen install, each fact validated against a primary source (2026-10-25)
 - **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
 - **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
   OAuth 2.1, FAPI 2.0, passkeys, SPIFFE

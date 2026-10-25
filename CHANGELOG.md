@@ -5,6 +5,48 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.51.0] - 2026-10-25
+
+A MINOR: a new script (`scripts/reachability-graph.py`), a new `install.sh --print-routing-block` mode and verify-setup check, and a new rules file (`sota-rust` rules/09), alongside two new invariants and four intakes. Ten PRs since v1.50.4: #591–#600.
+
+**Front door checked:** reachability-graph.py · print-routing-block · Kani · unused suppression · §6.6 · §14.6
+
+- **Rules files are reachable, and the graph is checked in CI** (#593–#597).
+  - `scripts/reachability-graph.py` builds the rules-file reference graph. **Invariant 42** requires four things:
+    - every rules file has a path beyond its own index row;
+    - every domain AUDIT section covers all its files;
+    - every `rules/NN` reference resolves;
+    - for `sota-rust` and `sota-identity-access`, declared routing manifests (`scripts/skill-manifests/`) whose labelled cases reach their files.
+  - `--explain FILE` prints why a file is reachable.
+  - A library-wide review found 126 candidates. 27 were verified and fixed in #594, and 80 more of the remaining 91 in #596.
+- **Invariant 43: every numbered section is a BUILD rule that an AUDIT item cites.** It is a ratchet over a committed baseline (`scripts/section-sync-baseline.json`): new work must be exact, and the baseline only shrinks (1,246 → 1,217 uncited sections across this release).
+- **Formal verification for Rust**, the new `sota-rust` rules/09 (#592), measured on Kani 0.68.0:
+  - when to prove, and with which tool (Kani or Flux);
+  - harness and vacuity rules, with a cover gate that reads Kani's own output (an unsatisfiable cover still exits 0);
+  - the flags that silently change what is checked.
+  - In rules/07: lint hardening, with `clippy.toml` test keys, `#[expect]` over `#[allow]`, and the inner-attribute hole.
+- **Ten language skills, one validated standard** (#599). An external proposal carried the Rust findings across all ten languages.
+  - Six validators checked every claim against primary sources or by running it: 15 were refuted and many corrected, and only validated facts were written ([record](docs/cross-language-intake-2026-10-25/VALIDATION.md)).
+  - Added per language: an unused suppression fails CI; tests are exempted by path in config; failures that bypass catch/recover, with measured parser depth defaults; runtime checkers for the escape hatch; and what silently unfreezes a frozen install.
+  - Two universal concepts are pinned 10/10: `unused suppression reported in CI` and `failures that bypass catch / recover`.
+  - New sections:
+    - `sota-testing` rules/06 §6.6: a property or fuzz target must prove it reached anything;
+    - `sota-devsecops` rules/14 §14.6: a shipped binary may carry no dependency list, so generate the SBOM at build time and gate on a component count;
+    - `sota-c-cpp` rules/06 §4a: CBMC, with a two-pass gate tested on CBMC 6.11.0.
+  - Our own example configs failed their own CI examples (Go `.golangci.yml`, the JS/TS `eslint.config.js`); fixed.
+  - Python told readers to use `uv sync --frozen`, and Ruby's CI example installed `bundler-audit` unversioned; both fixed.
+- **Shell habits, for every user** (#598):
+  - The zsh hook also refuses `set -- $scalar`, which zsh does not word-split. Over 66,195 local agent Bash calls it matched 13, all intended splits.
+  - `sota-shell-scripting` rules/04 §1b: a newline is a `;`.
+  - The managed block that `install.sh` writes now carries three shell habits, worded by mechanism.
+  - verify-setup **2e** reports a managed block older than the checkout, compared against the new read-only `install.sh --print-routing-block`. Three new probes.
+- **Field-report intake rule** (#591): a report is claims, not findings. Each claim is labelled verified, corrected, refuted or not reproducible, and checked from the report's commit to `origin/main`. Also new: `rg` skips a tracked file under an ignored glob, and BSD `pgrep` excludes ancestors.
+- **Counts:** 43 invariants (from 41); 114 negative-control probes (`PASS: 114/114`, measured 2026-10-25), or 111 on a sweep-shaped branch, where invariant 11's three are skipped with a NOTE.
+- **Deferred, with revisit triggers in the ADOPTION-LOG:**
+  - probes that report an error as a clean absence by falling back to an echo, which invariant 32 does not catch;
+  - numbering the three js/ts rules files that invariant 43's per-file count cannot see;
+  - declared routing manifests for the other 41 skills.
+
 ## [1.50.4] - 2026-10-23
 
 A PATCH: rule text and a behaviour change inside an existing hook, with no new script, hook or
@@ -11645,6 +11687,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.51.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.51.0
 [1.50.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.4
 [1.50.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.3
 [1.50.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.2
