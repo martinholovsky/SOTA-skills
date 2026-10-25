@@ -378,7 +378,7 @@ rendered an internal-only response. A PDF or screenshot of that page is the exfi
 channel.
 
 - **Treat the URL passed to `page.goto()` as an SSRF sink**, under the same rule as any
-  user-supplied URL the server fetches ([rules/05](05-security.md), "SSRF and server-side validation").
+  user-supplied URL the server fetches ([rules/08](08-process-and-outbound.md) §2, "SSRF and server-side validation").
   Allowlist the scheme (`https:`) and the host, and re-check after redirects. Run the
   browser where the metadata endpoint and internal ranges are unreachable
   ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)).

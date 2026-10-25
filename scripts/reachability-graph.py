@@ -175,7 +175,16 @@ def routing_prose(sm_text, rules_file):
                 and b in l.split("|")[1]), "")
     build = [l for l in section(sm_text, "BUILD").splitlines()
              if b in l or re.search(r"rules/%s\b|[Ll]oad %s\b" % (n, n), l)]
-    return "\n".join([row] + build)
+    return pathless("\n".join([row] + build))
+
+
+def pathless(text):
+    """Routing prose minus link targets and file paths. Until 2026-10-25 a keyword that was part of a
+    file's own path (`constant-time` in `22-constant-time-comparison.md`) matched through the row's link and
+    could never fail; measured on that day, no tag in 5 manifests passed ONLY that way, but nothing stopped
+    one (probe 42f)."""
+    text = re.sub(r"\]\([^)]*\)", "]", text)
+    return re.sub(r"`?(?:\.\./)*(?:skills/[a-z-]+/)?(?:rules/)?\d{2}-[a-z0-9-]+\.md`?", " ", text)
 
 
 def manifest_check(edges):

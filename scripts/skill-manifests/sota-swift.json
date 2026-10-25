@@ -1,0 +1,52 @@
+{
+ "_note": "Declared BUILD routing for sota-swift (invariant 42 C4, ROADMAP 78 rollout). Every tag's keywords must appear in the routing prose of each file declared for it; every via hop must be a real link; every case must reach its must_load files. rules/04, 07 and 09 are named by no BUILD step and are reached through their index rows (and, for 04, through 05's parser line and 08's sanitizer line). The strict-memory-safety case is the 2026-10-25 cross-language intake (P5): the warnings gate nothing until 08 makes them errors.",
+ "skill": "sota-swift",
+ "tags": {
+  "idioms-errors": ["optionals", "throws", "value types"],
+  "numbers-time": ["integer overflow", "money", "dates and clocks"],
+  "api-design": ["protocols", "access control", "library evolution", "public surface"],
+  "concurrency": ["async", "actor", "Sendable", "cancellation"],
+  "memory-unsafe": ["unsafe pointers", "retain cycles", "C interop", "strict memory safety"],
+  "untrusted-input": ["input", "decoding", "SQL", "processes"],
+  "crypto-secrets": ["crypto", "secrets"],
+  "server": ["Vapor", "Hummingbird", "SwiftNIO", "server code"],
+  "performance": ["Profiling", "allocations", "ARC traffic"],
+  "ci-tooling": ["toolchain", "warnings-as-errors", "SwiftLint", "sanitizers"],
+  "testing": ["Swift Testing", "XCTest", "flaky tests"],
+  "dependency": ["Package.resolved", "plugins and macros", "SBOM", "adopting a package"]
+ },
+ "files": {
+  "01": {"build": ["idioms-errors", "numbers-time"]},
+  "02": {"build": ["api-design"]},
+  "03": {"build": ["concurrency"]},
+  "04": {"build": ["memory-unsafe"]},
+  "05": {"build": ["untrusted-input", "crypto-secrets"]},
+  "06": {"build": ["server"]},
+  "07": {"build": ["performance"]},
+  "08": {"build": ["ci-tooling", "testing"]},
+  "09": {"build": ["dependency"]}
+ },
+ "via": [
+  {"from": "05", "to": "04", "when": ["untrusted-bytes"]},
+  {"from": "05", "to": "08", "when": ["untrusted-bytes"]},
+  {"from": "05", "to": "06", "when": ["request-body"]},
+  {"from": "04", "to": "08", "when": ["gate-warnings"]},
+  {"from": "08", "to": "09", "when": ["pinned-resolution"]}
+ ],
+ "cases": [
+  {"task": "write a parser for an untrusted binary file format in Swift", "mode": "build",
+   "tags": ["untrusted-input", "untrusted-bytes"], "must_load": ["05", "04", "08"]},
+  {"task": "turn on strict memory safety for a parser module and make it gate CI", "mode": "build",
+   "tags": ["memory-unsafe", "gate-warnings"], "must_load": ["04", "08"]},
+  {"task": "add a Vapor JSON endpoint that writes user records through SQLKit", "mode": "build",
+   "tags": ["server", "untrusted-input", "request-body"], "must_load": ["06", "05"]},
+  {"task": "migrate a package to Swift 6 language mode and fix the Sendable errors", "mode": "build",
+   "tags": ["concurrency"], "must_load": ["03"]},
+  {"task": "set up CI for a Swift package with a pinned toolchain and reproducible resolution", "mode": "build",
+   "tags": ["ci-tooling", "pinned-resolution"], "must_load": ["08", "09"]},
+  {"task": "add a macro package as a dependency", "mode": "build",
+   "tags": ["dependency"], "must_load": ["09"]},
+  {"task": "audit a server-side Swift service", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08", "09"]}
+ ]
+}

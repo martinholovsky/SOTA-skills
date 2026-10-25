@@ -1,0 +1,48 @@
+{
+ "_note": "Declared BUILD routing for sota-dotnet (invariant 42 C4, ROADMAP item 78 rollout). BUILD step 1's 'needs `02`, `03`, `04`' names files by bare number, which routing_prose() does not read, so those three are reached here through their own index rows. Case 2 is the 2026-10-24 reachability review's MessagePack row (rules/04 -> rules/06 §3); case 4 is the 2026-10-25 cross-language intake's P2 (IsTestProject, test exemptions).",
+ "skill": "sota-dotnet",
+ "tags": {
+  "csharp-idioms": ["Writing/reviewing any C#", "nullable reference types", "pattern matching"],
+  "api-design": ["Designing types/APIs", "IDisposable", "options pattern"],
+  "http-limits": ["rate limiting", "request limits", "MaxRequestBodySize"],
+  "async": ["async", "CancellationToken", "Channel<T>"],
+  "untrusted-input": ["trust boundary"],
+  "data-access": ["EF Core/Dapper parameterization", "SqlQueryRaw"],
+  "deserialization": ["BinaryFormatter", "TypeNameHandling", "serializers"],
+  "authn-authz": ["ASP.NET Core authn/authz", "FallbackPolicy", "JWT"],
+  "outbound-http": ["SSRF", "SocketsHttpHandler"],
+  "crypto": ["crypto", "Data Protection"],
+  "native-interop": ["P/Invoke"],
+  "performance": ["Latency/throughput/memory", "BenchmarkDotNet", "Native AOT"],
+  "build-ci": ["build/CI", "Directory.Build.props", "Roslyn analyzers"],
+  "dependency": ["NuGet lockfiles", "vetting a new dependency", "insecure defaults of what you consume"],
+  "tests": ["xUnit/NUnit", "exempting tests"],
+  "fuzz": ["fuzz target"]
+ },
+ "files": {
+  "01": {"build": ["csharp-idioms"]},
+  "02": {"build": ["api-design", "http-limits"]},
+  "03": {"build": ["async"]},
+  "04": {"build": ["untrusted-input", "data-access", "deserialization", "authn-authz", "outbound-http", "crypto", "native-interop"]},
+  "05": {"build": ["performance"]},
+  "06": {"build": ["build-ci", "dependency", "tests", "fuzz", "native-interop"]}
+ },
+ "via": [
+  {"from": "04", "to": "02", "when": ["parses-untrusted-json"]},
+  {"from": "04", "to": "06", "when": ["third-party-deserializer"]}
+ ],
+ "cases": [
+  {"task": "add a minimal-API endpoint that takes a JSON body from clients and writes it through EF Core", "mode": "build",
+   "tags": ["untrusted-input", "data-access", "async", "parses-untrusted-json"], "must_load": ["02", "03", "04"]},
+  {"task": "deserialize MessagePack frames arriving on a public socket", "mode": "build",
+   "tags": ["untrusted-input", "deserialization", "third-party-deserializer"], "must_load": ["04", "06"]},
+  {"task": "P/Invoke into a native image decoder fed uploaded files", "mode": "build",
+   "tags": ["native-interop", "untrusted-input", "fuzz"], "must_load": ["04", "06"]},
+  {"task": "scaffold a new solution: analyzers, nullable, NuGet lock mode, xUnit test projects", "mode": "build",
+   "tags": ["build-ci", "dependency", "tests"], "must_load": ["06"]},
+  {"task": "cut allocations on a hot serialization path and prove it with a benchmark", "mode": "build",
+   "tags": ["performance"], "must_load": ["05"]},
+  {"task": "audit an ASP.NET Core service", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06"]}
+ ]
+}

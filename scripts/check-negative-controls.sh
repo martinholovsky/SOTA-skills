@@ -1334,6 +1334,19 @@ assert u != t, 'probe stale: no kani/proving in rust SKILL.md'
 p.write_text(u, encoding='utf-8')
 " )
 probe 42e "prose that no longer routes a file its manifest declares (rust 09)" "C4 sota-rust.json: rules/09 is declared for 'proof'"
+# 42f — a keyword that is part of the file's own PATH (2026-10-25). `routing_prose()` used to include the
+# row's link, so `unsafe-discipline` (only in `03-unsafe-discipline.md`) satisfied rust 03 and could never
+# fail; the prose is now stripped of link targets and paths. The keyword must occur only inside a path.
+( cd "$WT" && python3 -I -c "
+import json, pathlib, re
+s = pathlib.Path('skills/sota-rust/SKILL.md').read_text(encoding='utf-8')
+bare = re.sub(r'[\w./-]*unsafe-discipline[\w./-]*', '', s)
+assert 'unsafe-discipline' in s and 'unsafe-discipline' not in bare, 'probe stale: the keyword is no longer path-only'
+p = pathlib.Path('scripts/skill-manifests/sota-rust.json'); m = json.loads(p.read_text(encoding='utf-8'))
+m['tags']['unsafe'] = ['unsafe-discipline']; m['tags']['ffi'] = ['unsafe-discipline']
+p.write_text(json.dumps(m, indent=1) + '\n', encoding='utf-8')
+" )
+probe 42f "a declared keyword that matches only the file's own path (rust 03)" "C4 sota-rust.json: rules/03 is declared for 'unsafe'"
 
 # 43 — section <-> probe ratchet (reachability-graph.py --sync). 43: a new numbered section no
 # checklist item cites -> S1. 43b: a new checklist item citing nothing -> S2. 43c: an item that
