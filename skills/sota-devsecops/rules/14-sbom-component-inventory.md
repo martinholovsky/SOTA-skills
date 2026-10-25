@@ -138,11 +138,11 @@ clean**. Measured 2026-10-25 with Syft and Trivy unless marked:
 | Artifact | What a post-build scan sees |
 |---|---|
 | Go binary | modules, from the embedded buildinfo (`go version -m`), even with `-ldflags='-s -w'`. **C/C++ libraries linked through cgo are never recorded** |
-| Rust binary | nothing, unless built with `cargo auditable` (an embedded `.dep-v0` section both scanners read) |
+| Rust binary | nothing, unless built with `cargo auditable` (an embedded `.dep-v0` section both scanners document reading; docs, not run) |
 | .NET standard publish | packages, from `*.deps.json`. **Single-file publish:** embedded, and Syft read it while Trivy found 0. **Native AOT:** no `deps.json`, 0 packages in both |
 | Python wheel or virtualenv | packages, from `*.dist-info`. **PyInstaller** collects no metadata by default (`copy_metadata` adds it); `--onefile` gave 0. A **shiv** zip carried the metadata and Syft still found 0 |
 | JVM jar, including a Maven Shade jar | packages, from `META-INF/maven/**/pom.properties` (Shade keeps them by default; an explicit `<filters>` exclude drops them). **GraalVM native image:** Oracle GraalVM embeds an SBOM by default (`--enable-sbom`), which Syft reads; **GraalVM Community Edition has no SBOM feature** (docs) |
-| JS bundle or Node single-executable | no `node_modules/**/package.json`, so nothing |
+| JS bundle or Node single-executable | no `node_modules/**/package.json`, so nothing (docs: Node SEA and both scanners' input lists; not run) |
 | C/C++ binary | nothing by default; the opt-in ELF `.note.package` note is readable by Syft (docs) |
 
 - **Generate the SBOM at build time**, from the lockfile and the build graph, where the
