@@ -34,7 +34,8 @@ Per AMD's SEV-SNP whitepaper and SNP-attestation guide: SEV/SEV-ES attestation w
 attestation carrying measurement, guest policy, chip ID, and TCB version — the input
 [rules/03](03-remote-attestation.md) depends on.
 
-**R1.1 — "SEV" without "-SNP" is a finding (High).** Plain SEV and SEV-ES provide
+**R1.1 — "SEV" without "-SNP" is a finding (High; Critical behind a "protect from the
+host" claim, the mismatch §7 calls the domain's defining Critical).** Plain SEV and SEV-ES provide
 encryption without integrity or runtime attestation; published attacks (unencrypted
 VM state, ciphertext remapping) defeat their operator-exclusion claim. Require SEV-SNP
 (introduced with 3rd Gen AMD EPYC) and verify the platform actually enables it —

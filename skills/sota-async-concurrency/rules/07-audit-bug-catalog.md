@@ -237,7 +237,9 @@ deadline: flaky in CI, broken under load. Replace with explicit
 synchronization: events, joins, polling-with-timeout on the actual condition,
 fake clocks (`tokio::time::pause`, `looptime`, Go's `testing/synctest`
 bubbles — GA in 1.25, `synctest.Wait` replaces sleep-and-hope).
-Production code that
+In a test, a sleep used as synchronization is rated where the test smells are
+owned: High each ([`sota-testing` rules/02](../../sota-testing/rules/02-test-design-quality.md) §2.7, "Sleeping test"); this
+section's MEDIUM covers the other heisenbug smells. Production code that
 "sleeps to let X finish" is finding-worthy as written — it encodes an
 ordering assumption with no enforcement.
 

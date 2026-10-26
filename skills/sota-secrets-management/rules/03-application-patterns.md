@@ -147,7 +147,8 @@ and token prefixes; review breadcrumbs (HTTP breadcrumbs can capture auth header
 diagnostics will capture `Authorization` headers and secret fields. Allowlist what diagnostics
 capture; never snapshot full env or full headers. Disable verbose framework debug pages in prod
 (Django DEBUG, Flask debugger, Rails verbose errors, Spring Boot `/actuator/env` &
-`/actuator/heapdump` — all dump config/env to the caller; exposed actuator is High).
+`/actuator/heapdump` — all dump config/env to the caller; an internet-reachable `heapdump`, or
+`env` showing values, is Critical, other exposed actuator endpoints High — [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §3).
 
 ## 3. Never in URLs or CLI arguments
 

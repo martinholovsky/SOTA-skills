@@ -298,7 +298,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       ; the checker: `grep -rn 'Xcheck:jni' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' --include='*.sh' .`
       ; and the log check: `grep -rn 'WARNING in native method' --include='*.gradle*' --include='*.y*ml' --include='*.sh' .`
       (JNI with no checker hit is the finding; a checker with no log check lets a warning exit 0)
-- [ ] **Native image or bundled JAR shipped with no build-time SBOM (§2) — MEDIUM** —
+- [ ] **Native image or bundled JAR shipped with no build-time SBOM (§2) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6)** —
       `grep -rnE 'native-image|nativeCompile|graalvm' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' --include='Dockerfile*' .`
       ; for each hit: `grep -rniE 'cyclonedx|enable-sbom|sbom' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' .`
       (none, or a Community Edition builder: the image scan reads no dependency list)

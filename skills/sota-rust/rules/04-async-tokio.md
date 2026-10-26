@@ -37,8 +37,11 @@ async fn load(path: PathBuf) -> Result<Config> {
   `tokio_unstable` task dumps; in review, grep for sync APIs inside `async fn`
   (checklist below). A p99 latency cliff under load with idle CPU is the
   classic blocked-worker signature.
-- `block_on` inside an async context panics or deadlocks
-  (`Handle::block_on` on the current runtime, nested `Runtime::block_on`).
+- `block_on` inside an async context panics or deadlocks: tokio's
+  `Handle::block_on` and a nested `Runtime::block_on` panic ("Cannot start a
+  runtime from within a runtime", `tokio/src/runtime/context/runtime.rs`), while
+  `futures::executor::block_on` deadlocks a current-thread runtime and parks a
+  worker otherwise.
   Bridging sync→async from a blocking thread: `Handle::current().block_on`
   from `spawn_blocking` is legal; document why.
 
@@ -292,14 +295,15 @@ tokio::select! {
       — more reliably, grep each: `rg 'thread::sleep|std::fs::(read|write|File)|blocking::' -t rust`
       and check enclosing fn for `async`. High severity in request paths.
 - [ ] `rg 'block_on' -t rust` (§1) — any call reachable from async context =
-      Critical (deadlock/panic).
+      HIGH, CRITICAL when it waits on work scheduled on the same runtime
+      (self-deadlock) — the cross-runtime scale is [`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §5.
 - [ ] `rg 'unbounded_channel|UnboundedSender' -t rust` (§6) — each needs a written
       backpressure argument; attacker-fed unbounded channel = High (DoS). `broadcast`
       receivers that never handle `RecvError::Lagged` = Low:
       `grep -rlE 'broadcast::' --include='*.rs' . | while IFS= read -r f; do grep -q 'Lagged' "$f" || echo "$f"; done`.
 - [ ] `rg 'tokio::spawn' -t rust` — orphaned handles (result never joined, no
-      JoinSet/TaskTracker, no error logging in task) = Medium; panic
-      observability gap.
+      JoinSet/TaskTracker, no error logging in task) = HIGH: a panic or error in
+      the task is silently lost ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §1).
 - [ ] `select!` loops (§3): any branch future recreated per-iteration that buffers
       internally (reads, `write_all`, custom combinators) → cancellation data
       loss = High. Check each `select!` arm against the cancel-safety table above —
@@ -311,12 +315,13 @@ tokio::select! {
       often assumed safe; both are on Tokio's unsafe list.
 - [ ] Locks (§5): clippy `await_holding_lock`, `await_holding_refcell_ref`;
       `rg 'tokio::sync::Mutex' -t rust` — verify each actually needs
-      hold-across-await, else downgrade to std/parking_lot.
+      hold-across-await, else downgrade to std/parking_lot. A lock held across
+      `.await` = HIGH, CRITICAL when deadlock-capable ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §4).
 - [ ] `rg '\.abort\(\)' -t rust` (§3) — aborted tasks: is every shared invariant
       abort-safe (drop guards present)?
 - [ ] Fan-out: `rg 'buffer_unordered|buffered\(' -t rust` — bound derived from
       config, not unbounded or request-controlled; loops spawning per item of
-      untrusted-size collections.
+      untrusted-size collections = HIGH ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §8).
 - [ ] **Request-scoped state in a thread-local (§4). High if it holds a tenant, user
       or permission, else Low.** Run
       `rg -n -t rust 'thread_local!|\b[A-Z][A-Z0-9_]*\.(set|replace|with_borrow_mut)\(' .`.

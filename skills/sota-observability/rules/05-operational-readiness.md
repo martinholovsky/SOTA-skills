@@ -105,7 +105,12 @@ Rules:
   are admin APIs: authenticated, audited, rate-limited.
 - Audit move: enumerate every listening port and route table; diff against
   "intended public surface". Anything debug-shaped reachable without auth is
-  a CRITICAL finding.
+  a finding, rated by what it returns (the library's one scale; language skills
+  point here): **CRITICAL** when it returns process memory, environment or
+  configuration — a heap dump, an env page that shows values, an argv or vars
+  page holding a secret — because that is secrets exposure; **HIGH** when it returns profiles,
+  stack traces or internals, or lets a caller trigger CPU profiling (a cheap DoS);
+  one band lower when only the internal network reaches it.
 
 ## 4. Profiling in production
 

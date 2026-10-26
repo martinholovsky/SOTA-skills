@@ -47,8 +47,11 @@ not the code you shipped, and yesterday's green build can be today's compromised
 - Lockfile *diffs* are review surface: a 4000-line lockfile churn hiding one malicious
   resolution is the attack. Use dependency-review gates (§3.2) rather than asking humans
   to read lockfiles.
-- Audit: missing lockfile = High; lockfile present but unfrozen CI install = High (the
-  lockfile is decorative).
+- Audit: missing lockfile in an application = High; lockfile present but an install in
+  CI, an image build or a deploy that is unfrozen = High (the lockfile is decorative) —
+  Top-10 #6. Medium only on a developer-only path that nothing automated runs. This is the
+  one scale for the finding: each language skill's "frozen install bypassed" item names its
+  ecosystem's forms of it and rates them here, not on a scale of its own.
 
 ## 3.2 Dependency review gates
 

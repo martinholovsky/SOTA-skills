@@ -288,11 +288,11 @@ vendor/bin/phpunit                  # or: vendor/bin/pest
 Run from repo root; verify each hit manually.
 
 - [ ] **Lockfile discipline** —
-      `git ls-files composer.lock | grep -q . || echo "NO LOCKFILE COMMITTED (app = MEDIUM/HIGH)"`
+      `git ls-files composer.lock | grep -q . || echo "NO LOCKFILE COMMITTED (app = HIGH)"`
       ; `composer validate --strict` (flags json/lock drift);
       `grep -nE '"(php|ext-)' composer.json` (platform reqs declared?);
       `grep -n '"platform"' composer.json` (config.platform.php pinned?)
-- [ ] **Frozen install bypassed (§1) — MEDIUM, HIGH on a deploy or image build** — with
+- [ ] **Frozen install bypassed (§1) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** — with
       `P='composer[[:space:]]+(update|require|global)|--no-check-lock'`:
       `grep -rnE "$P" .github/workflows/ ; grep -rnE "$P" --include='Dockerfile*' --include='*.sh' --include='Makefile' --exclude-dir=vendor .`
       (each hit re-resolves or skips the lock check, except a library's `composer update --prefer-lowest`

@@ -367,7 +367,7 @@ Run from repo root. Severity guidance in brackets.
       `find . -path ./tests -prune -o -path ./.venv -prune -o \( -name 'test_*.py' -o -name '*_test.py' \) -print | head -3`
       (any hit while `per-file-ignores` keys only `"tests/**"` = those tests fail the lint, or
       someone widened the global ignore)
-- [ ] **Frozen install that is not checked (§1) [MEDIUM]** —
+- [ ] **Frozen install that is not checked (§1) [HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)]** —
       `grep -rnE 'uv[[:space:]]+(sync|run|export)[^#]*--frozen|UV_FROZEN' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' .`
       (each hit installs a lock nobody compared with `pyproject.toml`: use `--locked`) ;
       `grep -rlE 'poetry[[:space:]]+install' --include='*.y*ml' . | while IFS= read -r f; do grep -qE 'poetry[[:space:]]+check[[:space:]]+--lock' "$f" || echo "$f: poetry install with no poetry check --lock"; done`

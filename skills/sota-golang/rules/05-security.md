@@ -380,15 +380,15 @@ GODEBUG settings that still weaken TLS/x509). The main
 sins are *downgrades*:
 
 ```go
-// CRITICAL — disables all certificate verification
+// HIGH (CRITICAL on user networks or a code channel) — disables all certificate verification
 cfg := &tls.Config{InsecureSkipVerify: true}
 
 // GOOD — modern floor, otherwise stdlib defaults
 cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
 ```
 
-- `InsecureSkipVerify: true` is CRITICAL anywhere near production code paths,
-  including "temporary" test toggles compiled into the binary. Pinning or
+- `InsecureSkipVerify: true` near production paths, "temporary" test toggles compiled
+  in included, is HIGH, CRITICAL in a user-network client or a code channel ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5). Pinning or
   custom CA? Use `RootCAs` with the CA pool, or `VerifyPeerCertificate` with
   real verification — never blanket skip.
 - Don't set `CipherSuites`/`CurvePreferences` manually unless compliance

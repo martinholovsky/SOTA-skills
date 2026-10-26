@@ -68,7 +68,7 @@ playbook; sample real code paths, do not trust README claims.
 
 | Severity | Meaning | Examples |
 |----------|---------|----------|
-| CRITICAL | Blind during incidents, or telemetry is itself a hazard | Secrets/PII in logs; no error visibility at all; liveness check hits the database (restart storms); unauthenticated debug/pprof endpoints |
+| CRITICAL | Blind during incidents, or telemetry is itself a hazard | Secrets/PII in logs; no error visibility at all; liveness check hits the database (restart storms); unauthenticated debug endpoints that return memory, env or config (profiles alone: HIGH, rules/05 §3) |
 | HIGH | Materially slows MTTR or breaks at scale | No correlation/trace IDs; unbounded label cardinality; cause-based paging alerts with no runbooks; readiness == liveness; percentiles averaged across instances |
 | MEDIUM | Degrades signal quality or cost discipline | Wrong log levels (ERROR for expected events); no exemplars; head-only sampling losing all error traces; dashboards as vanity walls; no log sampling on hot paths |
 | LOW | Hygiene and polish | Inconsistent field names; missing OTel semantic conventions; unpinned dashboard queries; noisy Sentry grouping |

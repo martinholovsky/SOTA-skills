@@ -58,7 +58,7 @@ reporting (greps are recall-oriented, expect false positives).
 
 | Severity | Meaning | Examples |
 |---|---|---|
-| **CRITICAL** | Exploitable or guaranteed-incorrect in production | SQL built with `fmt.Sprintf`, command injection via `sh -c`, unbounded goroutine leak on hot path, `InsecureSkipVerify: true`, data race confirmed by `-race` |
+| **CRITICAL** | Exploitable or guaranteed-incorrect in production | SQL built with `fmt.Sprintf`, command injection via `sh -c`, unbounded goroutine leak on hot path, `InsecureSkipVerify: true` on a user-network client or code channel, data race confirmed by `-race` |
 | **HIGH** | Likely production incident or security weakness | Missing `http.Server` timeouts, no ctx cancellation on blocking goroutine, unchecked integer truncation on attacker input (G115), `resp.Body` never closed, panic for control flow in a server |
 | **MEDIUM** | Correctness/maintainability hazard, latent bug | Error strings compared with `strings.Contains`, context stored in struct, `time.After` in a loop, map writes without lock under suspected concurrency, missing `errors.Is/As` |
 | **LOW** | Idiom/perf debt, works but wrong shape | Returning interfaces, `util` package dumps, missing preallocation on hot path, non-table tests, no `t.Parallel` |

@@ -397,11 +397,11 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       ;
       `grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null`
       (verify pinning)
-- [ ] **Something unfreezes the pin (§5) — MEDIUM** —
+- [ ] **Something unfreezes the pin (§5) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** —
       `test -f vcpkg.json && ! find . -maxdepth 1 \( -name vcpkg.json -o -name vcpkg-configuration.json \) -exec grep -qE '"(builtin-)?baseline"' {} + && echo "vcpkg.json with no baseline: classic-mode resolution"` ;
       `find . \( -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name Jenkinsfile -o -name '*.sh' \) -type f -not -path './build/*' -exec grep -nE -e '--lockfile-partial|--lockfile=([[:space:]]|$|"")' /dev/null {} +`
       (a Conan step that accepts or ignores what the lock does not hold)
-- [ ] **Shipped binary scanned with no build-time SBOM (§5) — MEDIUM** — an image or binary
+- [ ] **Shipped binary scanned with no build-time SBOM (§5) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6)** — an image or binary
       scan step with no SBOM generated from the lock/manifest: the scanner finds no C/C++
       components and reports clean
 - [ ] **Fetched sources verified, and dependencies scanned (§5) — HIGH for a shipped

@@ -355,5 +355,6 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 Severity guide: interpolated SQL / shell string with external input,
 `Marshal.load`/`unsafe_load` on external data, string `eval` — CRITICAL.
 `^$` validation anchors, `rand` tokens, `send(params[...])`,
-non-constant-time secret compare — HIGH. Missing `Regexp.timeout` on an
+non-constant-time compare of a MAC, signature or API key a caller can submit
+repeatedly — HIGH (MEDIUM otherwise; [`sota-code-security` rules/22](../../sota-code-security/rules/22-constant-time-comparison.md)). Missing `Regexp.timeout` on an
 input-facing regex service, `aliases: true` on semi-trusted YAML — MEDIUM.

@@ -400,7 +400,7 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
       `grep -rnE 'XML_PARSE_HUGE|\b(inflate|uncompress|BZ2_bzDecompress|ZSTD_decompress)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.h' .`
       (every hit needs a visible output-size cap; `XML_PARSE_HUGE` on untrusted input is the
       finding) ; and read each recursive parser for its max depth
-- [ ] **TLS / transport verification (§4) — CRITICAL when a peer certificate is never checked** —
+- [ ] **TLS / transport verification (§4) — HIGH when a peer certificate is never checked, CRITICAL in a client on user networks or on a channel whose content runs ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5)** —
       `grep -rnE 'SSL_VERIFY_NONE|CURLOPT_SSL_VERIFY(PEER|HOST)[^;]*,[[:space:]]*0L?[[:space:]]*\)|SSL_get_verify_result' --include='*.c' --include='*.cpp' --include='*.h' .`
       (verification disabled, or a verify-result check that must be paired with a non-NULL
       `SSL_get1_peer_certificate()`, §4) ;

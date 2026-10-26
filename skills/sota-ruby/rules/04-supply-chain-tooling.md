@@ -298,14 +298,14 @@ read it) — never a hardcoded duplicate that can drift.
 Run from repo root; verify each hit manually.
 
 - [ ] **Lockfile discipline** —
-      `ls Gemfile.lock 2>/dev/null | grep -q . || echo "NO LOCKFILE (app = MEDIUM)"` ;
+      `ls Gemfile.lock 2>/dev/null | grep -q . || echo "NO LOCKFILE (app = HIGH)"` ;
       `grep -c "CHECKSUMS" Gemfile.lock || echo "no checksums section (LOW, easy win)"` (stderr
       kept: no file != no match);
       `grep -rnE 'BUNDLE_FROZEN|frozen[[:space:]]+true|frozen:[[:space:]]*"?true' .github/ .gitlab-ci.yml .bundle/config 2>/dev/null | head -3`
-      (no hit = installs are not frozen, MEDIUM) ;
+      (no hit = installs are not frozen: HIGH in CI or a deploy) ;
       `grep -rnE 'bundle[[:space:]]+install[^#]*--frozen' --exclude-dir=.git --exclude-dir=vendor --exclude-dir=node_modules .`
       (each hit is a removed flag: exit 15 on Bundler 4, deprecated on 2.x — not compliance)
-- [ ] **Installs outside the frozen lock (§1) — MEDIUM** — first command prints each
+- [ ] **Installs outside the frozen lock (§1) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** — first command prints each
       unversioned `gem install` in CI or images; second prints each `bundle update`
       (a finding where frozen is off) —
       `grep -rnE 'gem[[:space:]]+install[[:space:]]' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' . | grep -vE -e '(-v|--version)[[:space:]=]'` ;
@@ -387,7 +387,7 @@ Run from repo root; verify each hit manually.
       ; manual: a removed public method ships only in a major version. Publishing through OIDC
       trusted publishing or an MFA account is probed in [`sota-devsecops` rules/02](../../sota-devsecops/rules/02-provenance-signing.md) §2.6
 
-Severity guide: no lockfile / unfrozen production installs MEDIUM (HIGH if
-deploys resolve fresh); unpinned git gems, missing vulnerability gate MEDIUM;
+Severity guide: no lockfile / unfrozen CI or deploy installs HIGH (the devsecops
+rules/03 §3.1 scale); unpinned git gems, missing vulnerability gate MEDIUM;
 multiple unscoped sources HIGH (Bundler ≤ 2.x); missing checksums,
 in-order-only tests LOW.

@@ -27,8 +27,8 @@ Baseline assumptions (mid-2026): TypeScript ≥5.9 strict (6.0 = last JS-based c
 Scope first (frontend? Node service? library?), then read the matching rules files and run their audit checklists — each ends with grep/eslint hunt patterns. Validate findings: confirm attacker-controlled data actually reaches the sink, confirm the perf issue is on a hot path. No speculative findings.
 
 **Severity conventions:**
-- **CRITICAL** — remotely exploitable now: untrusted input reaching eval/innerHTML/exec/SQL, auth bypass, secrets exfiltratable via XSS.
-- **HIGH** — exploitable with conditions, or guaranteed-corruption bug class: missing boundary validation, prototype-pollution-prone merge of request data, floating promises dropping errors, tokens in localStorage, unbounded request bodies, float money math, sync crypto blocking the loop.
+- **CRITICAL** — remotely exploitable now: untrusted input reaching eval/exec/SQL, auth bypass, an XSS where script can read a session token or secret (one band up from HIGH, as [`sota-code-security`](../sota-code-security/SKILL.md) adjusts for context).
+- **HIGH** — exploitable with conditions, or guaranteed-corruption bug class: untrusted HTML reaching `innerHTML`/`dangerouslySetInnerHTML` (stored or reflected XSS, [`sota-code-security`](../sota-code-security/SKILL.md)'s High band), missing boundary validation, prototype-pollution-prone merge of request data, floating promises dropping errors, tokens in localStorage, unbounded request bodies, float money math, sync crypto blocking the loop.
 - **MEDIUM** — weakened posture or latent defect: missing strict tsconfig flags, no graceful shutdown, missing CSP/timeouts, `||` vs `??` on falsy-valid values, index keys on mutable lists, unbounded caches, missing supply-chain controls.
 - **LOW** — hygiene/debt: dead deps, `hasOwnProperty`, console.log in services, snapshot sprawl, missing memoization on profiled-hot paths.
 
