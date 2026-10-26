@@ -278,7 +278,9 @@ jobs:
         # selfcheck.sh is executed by CI and was linted by nothing.
         run: |
           set -euo pipefail
-          files=$(git ls-files '*.sh')
+          # scripts/probe-fixtures/ is test DATA for invariant 44: a bad/ tree is a defect on purpose,
+          # and linting it failed this job on 48 fixture scripts (#627). Every other tracked .sh is code.
+          files=$(git ls-files '*.sh' ':!scripts/probe-fixtures/')
           [ -n "$files" ] || { echo "no shell files matched — pathspec drift"; exit 1; }
           echo "$files" | tr ' ' '\n' | sed 's/^/  /'
           # check-unassigned-uppercase: by default SC2154 skips ALL-CAPS names, so a `set -u` typo
