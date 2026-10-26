@@ -2,41 +2,202 @@
  "_note": "Declared BUILD routing for sota-api-design (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Keywords are phrases from each file's own rules-index row or the BUILD line that links it. No routing gap found: every file a case needs is reached through a tag its prose supports. BUILD links 01, 02, 04, 05, 06 and 07; 03 (GraphQL) is reached only through its index row, whose 'Any GraphQL work' cell carries the graphql tag.",
  "skill": "sota-api-design",
  "tags": {
-  "protocol-choice": ["protocol selection", "Pick the protocol deliberately", "REST vs GraphQL vs gRPC decision table"],
-  "rest": ["REST endpoints", "resource modeling", "methods/status codes"],
-  "contract": ["OpenAPI-first", "RFC 9457 errors", "cursor pagination"],
-  "evolution": ["Changing an existing API", "adding/removing fields", "planning deprecation", "breaking-change"],
-  "graphql": ["GraphQL"],
-  "grpc": ["gRPC/protobuf", "field-number/reserved evolution", "deadlines and cancellation propagation"],
-  "realtime": ["WebSocket/SSE/realtime", "heartbeats", "reconnect backoff", "WebRTC"],
-  "webhooks": ["webhooks", "HMAC signing"],
-  "idempotency": ["idempotency keys", "idempotent consumers"],
-  "ssrf-egress": ["SSRF"],
-  "api-security": ["authn scheme", "multi-tenant isolation", "CORS", "audit logging", "request smuggling"],
-  "rate-limit": ["rate limiting", "429/Retry-After", "quotas"],
-  "limits-timeouts": ["request size limits", "timeout budgets"]
+  "protocol-choice": [
+   "protocol selection",
+   "Pick the protocol deliberately",
+   "REST vs GraphQL vs gRPC decision table"
+  ],
+  "rest": [
+   "REST endpoints",
+   "resource modeling",
+   "methods/status codes"
+  ],
+  "contract": [
+   "OpenAPI-first",
+   "RFC 9457 errors",
+   "cursor pagination"
+  ],
+  "evolution": [
+   "Changing an existing API",
+   "adding/removing fields",
+   "planning deprecation",
+   "breaking-change"
+  ],
+  "graphql": [
+   "GraphQL"
+  ],
+  "grpc": [
+   "gRPC/protobuf",
+   "field-number/reserved evolution",
+   "deadlines and cancellation propagation"
+  ],
+  "realtime": [
+   "WebSocket/SSE/realtime",
+   "heartbeats",
+   "reconnect backoff",
+   "WebRTC"
+  ],
+  "webhooks": [
+   "webhooks",
+   "HMAC signing"
+  ],
+  "idempotency": [
+   "idempotency keys",
+   "idempotent consumers"
+  ],
+  "ssrf-egress": [
+   "SSRF"
+  ],
+  "api-security": [
+   "authn scheme",
+   "multi-tenant isolation",
+   "CORS",
+   "audit logging",
+   "request smuggling"
+  ],
+  "rate-limit": [
+   "rate limiting",
+   "429/Retry-After",
+   "quotas"
+  ],
+  "limits-timeouts": [
+   "request size limits",
+   "timeout budgets"
+  ]
  },
  "files": {
-  "01": {"build": ["rest", "contract", "idempotency"]},
-  "02": {"build": ["evolution"]},
-  "03": {"build": ["graphql"]},
-  "04": {"build": ["protocol-choice", "grpc"]},
-  "05": {"build": ["realtime"]},
-  "06": {"build": ["webhooks", "idempotency", "ssrf-egress"]},
-  "07": {"build": ["api-security", "rate-limit", "limits-timeouts"]}
+  "01": {
+   "build": [
+    "rest",
+    "contract",
+    "idempotency"
+   ],
+   "index_row": "| [`rules/01-rest-http-design.md`](rules/01-rest-http-design.md) | Designing/auditing REST endpoints: resource modeling, methods/status codes, cursor pagination, filtering, partial responses, idempotency keys, ETags/conditional requests, HATEOAS pragmatism, RFC 9457 errors, OpenAPI-first, contract testing. |"
+  },
+  "02": {
+   "build": [
+    "evolution"
+   ],
+   "index_row": "| [`rules/02-versioning-evolution.md`](rules/02-versioning-evolution.md) | Changing an existing API, adding/removing fields, choosing URL vs header versioning, planning deprecation (Sunset/Deprecation headers), enum/schema evolution, tolerant readers, CI breaking-change gates. |"
+  },
+  "03": {
+   "build": [
+    "graphql"
+   ],
+   "index_row": "| [`rules/03-graphql.md`](rules/03-graphql.md) | Any GraphQL work: schema/nullability/connections design, N+1 and dataloaders, depth/cost/alias limits, persisted-query allowlists, error channels (userErrors vs errors), resolver authz, when GraphQL is the wrong choice. |"
+  },
+  "04": {
+   "build": [
+    "protocol-choice",
+    "grpc"
+   ],
+   "index_row": "| [`rules/04-grpc-protocols.md`](rules/04-grpc-protocols.md) | gRPC/protobuf work or protocol selection: field-number/reserved evolution rules, deadlines and cancellation propagation, streaming patterns, rich error details, gRPC-Web/Connect, L7 load balancing, REST vs GraphQL vs gRPC decision table. |"
+  },
+  "05": {
+   "build": [
+    "realtime"
+   ],
+   "index_row": "| [`rules/05-realtime-websockets-sse.md`](rules/05-realtime-websockets-sse.md) | WebSocket/SSE/realtime features: transport choice (WS vs SSE vs WebTransport), upgrade auth & CSWSH, heartbeats, reconnect backoff + resume tokens, ordering/delivery guarantees, backpressure, close codes, SSE replay, pub/sub fanout scaling, presence; WebRTC server hardening (TURN relay abuse, DTLS-SRTP, signaling) when self-hosted. |"
+  },
+  "06": {
+   "build": [
+    "webhooks",
+    "idempotency",
+    "ssrf-egress"
+   ],
+   "index_row": "| [`rules/06-webhooks.md`](rules/06-webhooks.md) | Sending or receiving webhooks: HMAC signing + timestamp + rotation, replay protection, retry/backoff design, ordering caveats, idempotent consumers, outbox dispatch, reconciliation APIs, SSRF defenses for user-supplied URLs. |"
+  },
+  "07": {
+   "build": [
+    "api-security",
+    "rate-limit",
+    "limits-timeouts"
+   ],
+   "index_row": "| [`rules/07-security-operations.md`](rules/07-security-operations.md) | Cross-cutting security/ops on any API: authn scheme selection (keys/OAuth2/mTLS), per-message request signing (RFC 9421 + Content-Digest), rate limiting + 429/Retry-After, layered bot management, quotas, request size limits, HTTP message framing / request smuggling, timeout budgets, CORS, audit logging, multi-tenant isolation, cross-tenant testing. |"
+  }
  },
  "cases": [
-  {"task": "design a public REST API for orders with cursor pagination and idempotent POST, contract first", "mode": "build",
-   "tags": ["rest", "contract", "idempotency", "evolution", "api-security", "rate-limit"], "must_load": ["01", "02", "07"]},
-  {"task": "build a webhook sender that delivers signed events to customer-supplied URLs with retries", "mode": "build",
-   "tags": ["webhooks", "ssrf-egress", "idempotency"], "must_load": ["06"]},
-  {"task": "add a WebSocket notifications channel beside an existing REST API", "mode": "build",
-   "tags": ["realtime", "api-security", "limits-timeouts"], "must_load": ["05", "07"]},
-  {"task": "remove a field from a gRPC service's protobuf message without breaking clients", "mode": "build",
-   "tags": ["grpc", "evolution"], "must_load": ["04", "02"]},
-  {"task": "choose GraphQL vs REST for a multi-client backend, then build the GraphQL schema with per-tenant authz", "mode": "build",
-   "tags": ["protocol-choice", "graphql", "api-security"], "must_load": ["04", "03", "07"]},
-  {"task": "audit an existing public API", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+  {
+   "task": "design a public REST API for orders with cursor pagination and idempotent POST, contract first",
+   "mode": "build",
+   "tags": [
+    "rest",
+    "contract",
+    "idempotency",
+    "evolution",
+    "api-security",
+    "rate-limit"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "07"
+   ]
+  },
+  {
+   "task": "build a webhook sender that delivers signed events to customer-supplied URLs with retries",
+   "mode": "build",
+   "tags": [
+    "webhooks",
+    "ssrf-egress",
+    "idempotency"
+   ],
+   "must_load": [
+    "06"
+   ]
+  },
+  {
+   "task": "add a WebSocket notifications channel beside an existing REST API",
+   "mode": "build",
+   "tags": [
+    "realtime",
+    "api-security",
+    "limits-timeouts"
+   ],
+   "must_load": [
+    "05",
+    "07"
+   ]
+  },
+  {
+   "task": "remove a field from a gRPC service's protobuf message without breaking clients",
+   "mode": "build",
+   "tags": [
+    "grpc",
+    "evolution"
+   ],
+   "must_load": [
+    "04",
+    "02"
+   ]
+  },
+  {
+   "task": "choose GraphQL vs REST for a multi-client backend, then build the GraphQL schema with per-tenant authz",
+   "mode": "build",
+   "tags": [
+    "protocol-choice",
+    "graphql",
+    "api-security"
+   ],
+   "must_load": [
+    "04",
+    "03",
+    "07"
+   ]
+  },
+  {
+   "task": "audit an existing public API",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  }
  ]
 }

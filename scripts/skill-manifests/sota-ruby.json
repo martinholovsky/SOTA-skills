@@ -2,50 +2,224 @@
  "_note": "Declared BUILD routing for sota-ruby (invariant 42 C4, ROADMAP item 78 rollout). BUILD step 1 says a web endpoint touching the DB plus a background job 'needs `02`, `03`, `05`' by bare number, which routing_prose() does not read, so rules/05 is reached only through its index row. Case 2 is the 2026-10-25 cross-language intake's P4 finding (a second deep JSON.parse! killed Ruby, rc 132), reached from rules/02's JSON bullet through its link to rules/01 §5.",
  "skill": "sota-ruby",
  "tags": {
-  "ruby-idioms": ["Ruby version baseline", "pattern matching", "general idioms"],
-  "error-handling": ["exception design", "JSON depth limits"],
-  "typing": ["RBS/Sorbet/Steep"],
-  "untrusted-input": ["trust boundary"],
-  "sql": ["SQL injection"],
-  "command-exec": ["command injection", "Open3"],
-  "deserialization": ["Marshal", "YAML/Psych", "deserialization"],
-  "xml": ["Nokogiri", "XXE"],
-  "secrets": ["master.key", "secrets"],
-  "web": ["web-facing", "ERB escaping", "CSRF"],
-  "uploads": ["file uploads"],
-  "outbound-http": ["SSRF", "outbound TLS verification"],
-  "admin-ui": ["mounted admin apps", "Sidekiq::Web"],
-  "dependency": ["Bundler", "Gemfile.lock", "alternative index or mirror"],
-  "ci-tooling": ["RuboCop/StandardRB", "Brakeman", "CI gates"],
-  "tests": ["RSpec/Minitest"],
-  "gem-publishing": ["gem authoring/publishing"],
-  "concurrency": ["Threads, fibers, Ractors", "GVL"],
-  "background-jobs": ["background-job idempotency"],
-  "performance": ["YJIT", "GC and memory", "N+1", "profiling"]
+  "ruby-idioms": [
+   "Ruby version baseline",
+   "pattern matching",
+   "general idioms"
+  ],
+  "error-handling": [
+   "exception design",
+   "JSON depth limits"
+  ],
+  "typing": [
+   "RBS/Sorbet/Steep"
+  ],
+  "untrusted-input": [
+   "trust boundary"
+  ],
+  "sql": [
+   "SQL injection"
+  ],
+  "command-exec": [
+   "command injection",
+   "Open3"
+  ],
+  "deserialization": [
+   "Marshal",
+   "YAML/Psych",
+   "deserialization"
+  ],
+  "xml": [
+   "Nokogiri",
+   "XXE"
+  ],
+  "secrets": [
+   "master.key",
+   "secrets"
+  ],
+  "web": [
+   "web-facing",
+   "ERB escaping",
+   "CSRF"
+  ],
+  "uploads": [
+   "file uploads"
+  ],
+  "outbound-http": [
+   "SSRF",
+   "outbound TLS verification"
+  ],
+  "admin-ui": [
+   "mounted admin apps",
+   "Sidekiq::Web"
+  ],
+  "dependency": [
+   "Bundler",
+   "Gemfile.lock",
+   "alternative index or mirror"
+  ],
+  "ci-tooling": [
+   "RuboCop/StandardRB",
+   "Brakeman",
+   "CI gates"
+  ],
+  "tests": [
+   "RSpec/Minitest"
+  ],
+  "gem-publishing": [
+   "gem authoring/publishing"
+  ],
+  "concurrency": [
+   "Threads, fibers, Ractors",
+   "GVL"
+  ],
+  "background-jobs": [
+   "background-job idempotency"
+  ],
+  "performance": [
+   "YJIT",
+   "GC and memory",
+   "N+1",
+   "profiling"
+  ]
  },
  "files": {
-  "01": {"build": ["ruby-idioms", "error-handling", "typing"]},
-  "02": {"build": ["untrusted-input", "sql", "command-exec", "deserialization", "xml", "secrets"]},
-  "03": {"build": ["web", "uploads", "outbound-http", "admin-ui"]},
-  "04": {"build": ["dependency", "ci-tooling", "tests", "gem-publishing"]},
-  "05": {"build": ["concurrency", "background-jobs", "performance"]}
+  "01": {
+   "build": [
+    "ruby-idioms",
+    "error-handling",
+    "typing"
+   ],
+   "index_row": "| [`rules/01-language-idioms.md`](rules/01-language-idioms.md) | Choosing/verifying the Ruby version baseline; frozen string literals; pattern matching; `Data` vs `Struct`; exception design, **what `rescue => e` misses (`SystemStackError`, `NoMemoryError`) and JSON depth limits**; **`nil` over a sentinel, and `to_i` silently returning `0` for garbage**; money as `Integer`/`BigDecimal`, NaN/Infinity, `Array#pack` width, `valid_encoding?` on untrusted bytes; typing with RBS/Sorbet/Steep; general idioms and pitfalls |"
+  },
+  "02": {
+   "build": [
+    "untrusted-input",
+    "sql",
+    "command-exec",
+    "deserialization",
+    "xml",
+    "secrets"
+   ],
+   "index_row": "| [`rules/02-security.md`](rules/02-security.md) | Any input crossing a trust boundary: SQL injection (ActiveRecord/Sequel), command injection (`system`/backticks/`Open3`), deserialization (`Marshal`, YAML/Psych), XML parser options (XXE/entity expansion in Nokogiri, REXML), ReDoS and regex anchors, `eval`/`send`/`constantize`, secrets and randomness, **password hashing** (bcrypt/argon2, never a fast digest), **the encrypted-credentials key** (`config/master.key`, `RAILS_MASTER_KEY`) kept out of git, path traversal; **escape hatches into raw memory**: Fiddle, the `ffi` gem and C extensions |"
+  },
+  "03": {
+   "build": [
+    "web",
+    "uploads",
+    "outbound-http",
+    "admin-ui"
+   ],
+   "index_row": "| [`rules/03-web-hardening.md`](rules/03-web-hardening.md) | Building or auditing anything web-facing: XSS/ERB escaping, mass assignment and strong params, CSRF (incl. HEAD→GET verb confusion and routes that widen verbs or actions), sessions and app-set cookie flags, security headers, debug mode left on in production, outbound TLS verification, open redirects, SSRF, file uploads and `render file:`, **mounted admin apps** (`Sidekiq::Web`) without authentication — framework-neutral |"
+  },
+  "04": {
+   "build": [
+    "dependency",
+    "ci-tooling",
+    "tests",
+    "gem-publishing"
+   ],
+   "index_row": "| [`rules/04-supply-chain-tooling.md`](rules/04-supply-chain-tooling.md) | Bundler and Gemfile.lock discipline, lockfile checksums, **choosing an alternative index or mirror** (gem.coop, `mirror.<url>`, `disable_checksum_validation`), bundler-audit, RuboCop/StandardRB, Brakeman, RSpec/Minitest mechanics, **`rubocop:disable` with a reason and the stale-directive cop, spec exclusions by path**, **`gem install` outside the frozen lock**, memory-checking C extensions, CI gates, gem authoring/publishing |"
+  },
+  "05": {
+   "build": [
+    "concurrency",
+    "background-jobs",
+    "performance"
+   ],
+   "index_row": "| [`rules/05-concurrency-performance.md`](rules/05-concurrency-performance.md) | Threads, fibers, Ractors, and the GVL; resetting request-scoped thread-local state; background-job idempotency; YJIT/ZJIT; GC and memory (allocator, RSS); N+1 detection; profiling workflow |"
+  }
  },
  "via": [
-  {"from": "02", "to": "01", "when": ["parses-untrusted-json"]},
-  {"from": "02", "to": "03", "when": ["serves-files"]}
+  {
+   "from": "02",
+   "to": "01",
+   "when": [
+    "parses-untrusted-json"
+   ]
+  },
+  {
+   "from": "02",
+   "to": "03",
+   "when": [
+    "serves-files"
+   ]
+  }
  ],
  "cases": [
-  {"task": "add a web endpoint that writes to the DB and enqueues a background job", "mode": "build",
-   "tags": ["web", "sql", "background-jobs"], "must_load": ["02", "03", "05"]},
-  {"task": "accept a JSON webhook payload from a third party", "mode": "build",
-   "tags": ["untrusted-input", "deserialization", "parses-untrusted-json"], "must_load": ["02", "01"]},
-  {"task": "let users download their own exported files by name", "mode": "build",
-   "tags": ["untrusted-input", "serves-files"], "must_load": ["02", "03"]},
-  {"task": "mount the Sidekiq dashboard in a Rails app", "mode": "build",
-   "tags": ["admin-ui"], "must_load": ["03"]},
-  {"task": "start a new gem: lockfile, RuboCop, RSpec and CI", "mode": "build",
-   "tags": ["dependency", "ci-tooling", "tests", "gem-publishing"], "must_load": ["04"]},
-  {"task": "audit a Rails application", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05"]}
+  {
+   "task": "add a web endpoint that writes to the DB and enqueues a background job",
+   "mode": "build",
+   "tags": [
+    "web",
+    "sql",
+    "background-jobs"
+   ],
+   "must_load": [
+    "02",
+    "03",
+    "05"
+   ]
+  },
+  {
+   "task": "accept a JSON webhook payload from a third party",
+   "mode": "build",
+   "tags": [
+    "untrusted-input",
+    "deserialization",
+    "parses-untrusted-json"
+   ],
+   "must_load": [
+    "02",
+    "01"
+   ]
+  },
+  {
+   "task": "let users download their own exported files by name",
+   "mode": "build",
+   "tags": [
+    "untrusted-input",
+    "serves-files"
+   ],
+   "must_load": [
+    "02",
+    "03"
+   ]
+  },
+  {
+   "task": "mount the Sidekiq dashboard in a Rails app",
+   "mode": "build",
+   "tags": [
+    "admin-ui"
+   ],
+   "must_load": [
+    "03"
+   ]
+  },
+  {
+   "task": "start a new gem: lockfile, RuboCop, RSpec and CI",
+   "mode": "build",
+   "tags": [
+    "dependency",
+    "ci-tooling",
+    "tests",
+    "gem-publishing"
+   ],
+   "must_load": [
+    "04"
+   ]
+  },
+  {
+   "task": "audit a Rails application",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05"
+   ]
+  }
  ]
 }

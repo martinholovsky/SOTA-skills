@@ -2,52 +2,236 @@
  "_note": "Declared BUILD routing for sota-php (invariant 42 C4, ROADMAP item 78 rollout). BUILD step 3 links rules/02 and rules/04 as a range ('rules/02–rules/04'), so rules/03 is reached only through its index row: routing_prose() reads a range as its two ends. Case 3 is the 2026-10-24 reachability review's 'FPM as root' row (rules/04 §5), reached from the deploy-shaped rules/06 through its 'distinct user per pool' link.",
  "skill": "sota-php",
  "tags": {
-  "php-baseline": ["writing any PHP", "strict_types", "PHP version floor"],
-  "error-handling": ["error handling", "json_decode"],
-  "sql": ["SQL", "PDO prepared statements"],
-  "shell": ["shell", "command execution"],
-  "html-output": ["HTML output", "XSS", "escaping"],
-  "wordpress": ["WordPress"],
-  "uploads": ["file uploads"],
-  "deserialization": ["unserialize", "Phar object injection"],
-  "outbound-http": ["SSRF", "server-side URL fetching", "TLS verification"],
-  "ffi": ["FFI"],
-  "auth-session": ["login/session/auth", "password_hash", "CSRF"],
-  "framework-key": ["framework application key", "APP_KEY"],
-  "deploy-hardening": ["php.ini hardening", "FPM handoff"],
-  "dependency": ["composer.lock", "vetting a new dependency"],
-  "ci-tooling": ["CI gates", "PHPStan/Psalm"],
-  "tests": ["PHPUnit/Pest"],
-  "raise-floor": ["raising the PHP floor"],
-  "performance": ["anything slow", "OPcache", "profiling"],
-  "deploy-runtime": ["deploy-shaped", "PHP-FPM pool sizing"],
-  "worker-mode": ["worker mode", "FrankenPHP", "RoadRunner"]
+  "php-baseline": [
+   "writing any PHP",
+   "strict_types",
+   "PHP version floor"
+  ],
+  "error-handling": [
+   "error handling",
+   "json_decode"
+  ],
+  "sql": [
+   "SQL",
+   "PDO prepared statements"
+  ],
+  "shell": [
+   "shell",
+   "command execution"
+  ],
+  "html-output": [
+   "HTML output",
+   "XSS",
+   "escaping"
+  ],
+  "wordpress": [
+   "WordPress"
+  ],
+  "uploads": [
+   "file uploads"
+  ],
+  "deserialization": [
+   "unserialize",
+   "Phar object injection"
+  ],
+  "outbound-http": [
+   "SSRF",
+   "server-side URL fetching",
+   "TLS verification"
+  ],
+  "ffi": [
+   "FFI"
+  ],
+  "auth-session": [
+   "login/session/auth",
+   "password_hash",
+   "CSRF"
+  ],
+  "framework-key": [
+   "framework application key",
+   "APP_KEY"
+  ],
+  "deploy-hardening": [
+   "php.ini hardening",
+   "FPM handoff"
+  ],
+  "dependency": [
+   "composer.lock",
+   "vetting a new dependency"
+  ],
+  "ci-tooling": [
+   "CI gates",
+   "PHPStan/Psalm"
+  ],
+  "tests": [
+   "PHPUnit/Pest"
+  ],
+  "raise-floor": [
+   "raising the PHP floor"
+  ],
+  "performance": [
+   "anything slow",
+   "OPcache",
+   "profiling"
+  ],
+  "deploy-runtime": [
+   "deploy-shaped",
+   "PHP-FPM pool sizing"
+  ],
+  "worker-mode": [
+   "worker mode",
+   "FrankenPHP",
+   "RoadRunner"
+  ]
  },
  "files": {
-  "01": {"build": ["php-baseline", "error-handling"]},
-  "02": {"build": ["sql", "shell", "html-output", "wordpress"]},
-  "03": {"build": ["uploads", "deserialization", "outbound-http", "ffi"]},
-  "04": {"build": ["auth-session", "framework-key", "deploy-hardening"]},
-  "05": {"build": ["dependency", "ci-tooling", "tests", "raise-floor"]},
-  "06": {"build": ["performance", "deploy-runtime", "worker-mode"]}
+  "01": {
+   "build": [
+    "php-baseline",
+    "error-handling"
+   ],
+   "index_row": "| [`rules/01-language-baseline.md`](rules/01-language-baseline.md) | choosing/verifying PHP version floor (support/EOL table); writing any PHP: strict_types, typed properties, enums, readonly, match, fibers, 8.4/8.5 features, comparison pitfalls incl. **`strpos` returning `false` where `0` is a real match**, error handling (**`memory_limit` fatals skip every `catch`; `zend.max_allowed_stack_size` and the `json_decode` depth**), deprecations |"
+  },
+  "02": {
+   "build": [
+    "sql",
+    "shell",
+    "html-output",
+    "wordpress"
+   ],
+   "index_row": "| [`rules/02-injection.md`](rules/02-injection.md) | code touching SQL, shell, or HTML output: PDO prepared statements, **WordPress** (`$wpdb->prepare`, `esc_*`, nonces with `current_user_can`, REST `permission_callback`), command execution, XSS and context-aware escaping, template engines, eval-family bans and **dynamic code evaluation** (templates compiled from strings, expression engines, why an in-process sandbox is no boundary); **request-chosen names** (`new $class`, `fetchObject`, `$_SESSION[$k]`, mass assignment); LDAP (`ldap_escape`, the empty-password bind) and XPath (`DOMXPath::quote`); **execution after `header('Location')`** (CWE-698); header and log injection; **`preg_*` patterns used as controls** (escape, anchor, ReDoS, check for `false`) |"
+  },
+  "03": {
+   "build": [
+    "uploads",
+    "deserialization",
+    "outbound-http",
+    "ffi"
+   ],
+   "index_row": "| [`rules/03-files-deserialization-ssrf.md`](rules/03-files-deserialization-ssrf.md) | file uploads, include/require paths, stream wrappers (LFI/RFI/`phar://`), `unserialize` and Phar object injection, XXE, server-side URL fetching (SSRF); **escape hatches into raw memory**: FFI and `ffi.enable`; every PHP spelling of disabled TLS verification; SSH host keys (phpseclib, ext-ssh2) |"
+  },
+  "04": {
+   "build": [
+    "auth-session",
+    "framework-key",
+    "deploy-hardening"
+   ],
+   "index_row": "| [`rules/04-sessions-auth-web-hardening.md`](rules/04-sessions-auth-web-hardening.md) | login/session/auth code: session cookie flags and fixation, password_hash/argon2id, sodium crypto, CSRF, security headers, production php.ini hardening; app cookies via `setcookie()`; `base_convert` tokens; secrets in stack traces (`#[\\SensitiveParameter]`) and `phpinfo()`; **debug mode and the dev server** (`APP_DEBUG`, `APP_ENV`, `php -S`); the **framework application key** (`APP_KEY`, `APP_SECRET`, `decrypt()` that unserializes); **the web server to FPM handoff** (docroot `public/`, `vendor/` outside it, `security.limit_extensions`, `cgi.fix_pathinfo`, nginx `try_files`) |"
+  },
+  "05": {
+   "build": [
+    "dependency",
+    "ci-tooling",
+    "tests",
+    "raise-floor"
+   ],
+   "index_row": "| [`rules/05-composer-tooling.md`](rules/05-composer-tooling.md) | dependencies and CI: composer.lock discipline, `composer audit`, Composer's resolve-time advisory blocking (`policy`, `--no-blocking`), platform reqs, **vetting a new dependency and the insecure defaults of libraries you consume** (Guzzle `timeout`, league/commonmark `html_input`, Parsedown safe mode), PHPStan/Psalm levels and baseline ratcheting, **suppressions that fail once stale** (`@phpstan-ignore <identifier>`, `reportIgnoresWithoutComments`, `findUnusedPsalmSuppress`), **a stale lock that `composer install` only warns about**, Valgrind for C extensions, PER-CS, PHPUnit/Pest, CI gates; **raising the PHP floor** (live branch state from php.net, Rector `withPhpSets()` as the conversion gate) |"
+  },
+  "06": {
+   "build": [
+    "performance",
+    "deploy-runtime",
+    "worker-mode"
+   ],
+   "index_row": "| [`rules/06-performance-runtime.md`](rules/06-performance-runtime.md) | anything slow or deploy-shaped: OPcache and preloading, JIT reality check, PHP-FPM pool sizing, N+1/caching, autoloader optimization, profiling; **worker mode** (Octane, FrankenPHP, RoadRunner, Swoole): request state that leaks into the next request. **Test *strategy* lives in [`sota-testing`](../sota-testing/SKILL.md); DB depth in [`sota-databases`](../sota-databases/SKILL.md).** |"
+  }
  },
  "via": [
-  {"from": "06", "to": "04", "when": ["multi-app-host"]},
-  {"from": "04", "to": "03", "when": ["decrypts-client-data"]},
-  {"from": "02", "to": "03", "when": ["redirect-or-fetch"]}
+  {
+   "from": "06",
+   "to": "04",
+   "when": [
+    "multi-app-host"
+   ]
+  },
+  {
+   "from": "04",
+   "to": "03",
+   "when": [
+    "decrypts-client-data"
+   ]
+  },
+  {
+   "from": "02",
+   "to": "03",
+   "when": [
+    "redirect-or-fetch"
+   ]
+  }
  ],
  "cases": [
-  {"task": "add a search page that queries MySQL and renders results as HTML", "mode": "build",
-   "tags": ["sql", "html-output"], "must_load": ["02"]},
-  {"task": "accept avatar uploads and fetch a remote image by URL", "mode": "build",
-   "tags": ["uploads", "outbound-http"], "must_load": ["03"]},
-  {"task": "deploy two PHP apps on one host behind nginx and php-fpm", "mode": "build",
-   "tags": ["deploy-runtime", "multi-app-host"], "must_load": ["06", "04"]},
-  {"task": "read an encrypted cookie the client sends back, using Laravel's decrypt() and APP_KEY", "mode": "build",
-   "tags": ["framework-key", "decrypts-client-data"], "must_load": ["04", "03"]},
-  {"task": "scaffold a new Composer project with PHPStan, CI gates and Pest tests", "mode": "build",
-   "tags": ["php-baseline", "dependency", "ci-tooling", "tests"], "must_load": ["01", "05"]},
-  {"task": "audit a Laravel application", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06"]}
+  {
+   "task": "add a search page that queries MySQL and renders results as HTML",
+   "mode": "build",
+   "tags": [
+    "sql",
+    "html-output"
+   ],
+   "must_load": [
+    "02"
+   ]
+  },
+  {
+   "task": "accept avatar uploads and fetch a remote image by URL",
+   "mode": "build",
+   "tags": [
+    "uploads",
+    "outbound-http"
+   ],
+   "must_load": [
+    "03"
+   ]
+  },
+  {
+   "task": "deploy two PHP apps on one host behind nginx and php-fpm",
+   "mode": "build",
+   "tags": [
+    "deploy-runtime",
+    "multi-app-host"
+   ],
+   "must_load": [
+    "06",
+    "04"
+   ]
+  },
+  {
+   "task": "read an encrypted cookie the client sends back, using Laravel's decrypt() and APP_KEY",
+   "mode": "build",
+   "tags": [
+    "framework-key",
+    "decrypts-client-data"
+   ],
+   "must_load": [
+    "04",
+    "03"
+   ]
+  },
+  {
+   "task": "scaffold a new Composer project with PHPStan, CI gates and Pest tests",
+   "mode": "build",
+   "tags": [
+    "php-baseline",
+    "dependency",
+    "ci-tooling",
+    "tests"
+   ],
+   "must_load": [
+    "01",
+    "05"
+   ]
+  },
+  {
+   "task": "audit a Laravel application",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+   ]
+  }
  ]
 }

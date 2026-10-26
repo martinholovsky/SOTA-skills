@@ -2,34 +2,167 @@
  "_note": "Declared BUILD routing for sota-confidential-computing (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD links every file (steps 1-7), so each build case carries the adversary tag (step 1 applies to every engagement and 01's row says 'Read first in every engagement'). 'secret-release' is declared on 03 (attest-then-release) and 04 (secrets via KBS); the BUILD step 5 phrase 'route secrets through attest-then-release (KBS)' sits on a line without the link and is not used. No routing gap found.",
  "skill": "sota-confidential-computing",
  "tags": {
-  "adversary": ["Name the adversary first", "deciding whether confidential computing is warranted", "escalation ladder", "lowest sufficient rung"],
-  "tee-choice": ["choosing or judging TEE hardware", "Choose the TEE technology", "workload-shape selection table"],
-  "gpu": ["NVIDIA confidential GPUs"],
-  "nitro": ["Nitro Enclaves"],
-  "attestation": ["Design attestation before deployment", "RATS (RFC 9334)", "attest-then-release", "RA-TLS", "TCB recovery"],
-  "secret-release": ["attest-then-release", "secrets via KBS"],
-  "k8s": ["confidential workloads on K8s", "On Kubernetes", "the CoCo stack"],
-  "supply-chain": ["image supply-chain interplay"],
-  "pets": ["computing on encrypted data without hardware trust", "hardware trust is unacceptable", "FHE", "PSI/OPRF", "MPC/threshold"],
-  "limits": ["Document the honest limits"]
+  "adversary": [
+   "Name the adversary first",
+   "deciding whether confidential computing is warranted",
+   "escalation ladder",
+   "lowest sufficient rung"
+  ],
+  "tee-choice": [
+   "choosing or judging TEE hardware",
+   "Choose the TEE technology",
+   "workload-shape selection table"
+  ],
+  "gpu": [
+   "NVIDIA confidential GPUs"
+  ],
+  "nitro": [
+   "Nitro Enclaves"
+  ],
+  "attestation": [
+   "Design attestation before deployment",
+   "RATS (RFC 9334)",
+   "attest-then-release",
+   "RA-TLS",
+   "TCB recovery"
+  ],
+  "secret-release": [
+   "attest-then-release",
+   "secrets via KBS"
+  ],
+  "k8s": [
+   "confidential workloads on K8s",
+   "On Kubernetes",
+   "the CoCo stack"
+  ],
+  "supply-chain": [
+   "image supply-chain interplay"
+  ],
+  "pets": [
+   "computing on encrypted data without hardware trust",
+   "hardware trust is unacceptable",
+   "FHE",
+   "PSI/OPRF",
+   "MPC/threshold"
+  ],
+  "limits": [
+   "Document the honest limits"
+  ]
  },
  "files": {
-  "01": {"build": ["adversary", "limits"]},
-  "02": {"build": ["tee-choice", "gpu", "nitro", "limits"]},
-  "03": {"build": ["attestation", "secret-release"]},
-  "04": {"build": ["k8s", "secret-release", "supply-chain", "limits"]},
-  "05": {"build": ["pets"]}
+  "01": {
+   "build": [
+    "adversary",
+    "limits"
+   ],
+   "index_row": "| [`rules/01-threat-model-and-selection.md`](rules/01-threat-model-and-selection.md) | deciding whether confidential computing is warranted at all: the CCC definition test (memory encryption alone ≠ CC), what CC does/never protects against, inverse-of-sandboxing framing, the five-rung escalation ladder, legitimate drivers, anti-patterns, adversary→mechanism decision table. Read first in every engagement. |"
+  },
+  "02": {
+   "build": [
+    "tee-choice",
+    "gpu",
+    "nitro",
+    "limits"
+   ],
+   "index_row": "| [`rules/02-tee-technologies.md`](rules/02-tee-technologies.md) | choosing or judging TEE hardware: SEV→SEV-ES→SEV-SNP insufficiency ladder, TDX on TME/TME-MK (encryption vs integrity vs attestation test), ARM CCA status, SGX enclaves + LibOS reality, Nitro Enclaves' different trust model, NVIDIA confidential GPUs for AI, Wasm-in-TEE, side-channel/physical-attack posture, workload-shape selection table. |"
+  },
+  "03": {
+   "build": [
+    "attestation",
+    "secret-release"
+   ],
+   "index_row": "| [`rules/03-remote-attestation.md`](rules/03-remote-attestation.md) | designing or auditing the trust mechanism: RATS (RFC 9334) roles mapped to real products, attest-then-release as the enforcement pattern, evidence hard rules (debug mode, cert chain, TCB status, nonce freshness), hosted vs self-hosted verifiers, reference-value management and TCB recovery, RA-TLS, re-attestation and monitoring. |"
+  },
+  "04": {
+   "build": [
+    "k8s",
+    "secret-release",
+    "supply-chain",
+    "limits"
+   ],
+   "index_row": "| [`rules/04-confidential-kubernetes.md`](rules/04-confidential-kubernetes.md) | running confidential workloads on K8s: confidential nodes vs confidential pods (two threat models), the CoCo stack (Kata, guest pull, Trustee KBS, peer-pods, agent policy), operational changes (secrets via KBS, degraded debugging, in-guest storage encryption), image supply-chain interplay, deployment-shape choice, honest limitations. |"
+  },
+  "05": {
+   "build": [
+    "pets"
+   ],
+   "index_row": "| [`rules/05-pets-coed.md`](rules/05-pets-coed.md) | computing on encrypted data without hardware trust: decision-first triage, FHE scheme families (BGV/BFV, CKKS, TFHE) + standardization anchors (ISO/IEC 28033, NIST PEC) + honest performance reality, MPC/threshold and collusion assumptions, ZKP engineering risks (circuits as security-critical code), PSI/OPRF workhorses, TEE-vs-PET-vs-DP selection table and hybrids. |"
+  }
  },
  "cases": [
-  {"task": "run an LLM inference service on confidential GPUs so the cloud operator cannot read prompts", "mode": "build",
-   "tags": ["adversary", "tee-choice", "gpu", "attestation", "secret-release"], "must_load": ["01", "02", "03"]},
-  {"task": "deploy a sensitive workload as confidential pods on Kubernetes with secrets from a KBS", "mode": "build",
-   "tags": ["adversary", "tee-choice", "k8s", "attestation", "secret-release", "supply-chain", "limits"], "must_load": ["01", "02", "03", "04"]},
-  {"task": "compute the intersection of two companies' customer lists without either revealing its list", "mode": "build",
-   "tags": ["adversary", "pets"], "must_load": ["01", "05"]},
-  {"task": "release a database key to an AWS Nitro Enclave only after attestation", "mode": "build",
-   "tags": ["adversary", "nitro", "attestation", "secret-release"], "must_load": ["01", "02", "03"]},
-  {"task": "audit a confidential-computing deployment", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05"]}
+  {
+   "task": "run an LLM inference service on confidential GPUs so the cloud operator cannot read prompts",
+   "mode": "build",
+   "tags": [
+    "adversary",
+    "tee-choice",
+    "gpu",
+    "attestation",
+    "secret-release"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03"
+   ]
+  },
+  {
+   "task": "deploy a sensitive workload as confidential pods on Kubernetes with secrets from a KBS",
+   "mode": "build",
+   "tags": [
+    "adversary",
+    "tee-choice",
+    "k8s",
+    "attestation",
+    "secret-release",
+    "supply-chain",
+    "limits"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04"
+   ]
+  },
+  {
+   "task": "compute the intersection of two companies' customer lists without either revealing its list",
+   "mode": "build",
+   "tags": [
+    "adversary",
+    "pets"
+   ],
+   "must_load": [
+    "01",
+    "05"
+   ]
+  },
+  {
+   "task": "release a database key to an AWS Nitro Enclave only after attestation",
+   "mode": "build",
+   "tags": [
+    "adversary",
+    "nitro",
+    "attestation",
+    "secret-release"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03"
+   ]
+  },
+  {
+   "task": "audit a confidential-computing deployment",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05"
+   ]
+  }
  ]
 }

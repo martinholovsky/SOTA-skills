@@ -8933,3 +8933,13 @@ stable?"), it also re-measured the one deferral that would have meant a public p
 | The remaining sites of that shape | **DEFERRED — the validator counted 16 `.`-rooted `err/rc/case` probes in skills/, exposed only when the working directory itself is unreadable, plus two `cat … 2>/dev/null \| grep -q … \|\| echo` CODEOWNERS probes (c-cpp rules/06, threat-modeling rules/04) of the row-8664 family; revisit trigger: the next edit of `sota-shell-scripting` rules/09 §5b, or a field report of a misread absence from one of them** | — |
 | Availability anchors for DoS severity (row 7554) | **adopted as the library's judgment, labelled so**: two inputs (CVSS v4 Availability Impact total/partial; Availability Requirement catastrophic/serious/limited recorded beside the §8 tier), mapped to §3's bands; no requirement recorded → state both readings and ask (`sota/rules/03` §1 rule 1). CVSS's "Not Defined = High" default is explicitly not adopted as a rating rule | `sota-threat-modeling` rules/04 §3 |
 
+## 2026-10-26 — stage 3's deferred half: rules-index rows generated from the manifests (invariant 42 C5), taken in 2026-10-26
+
+**Source:** the operator's request to finish the reachability plan's stages (A–C). Stage 3 as first written was "a declared per-skill manifest … with generated `SKILL.md` index and AUDIT lists"; the pilot and the rollout (#610, #620) built the manifests and checked them against hand-written prose, but never generated anything.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| Generate the rules-index rows from the manifests | **adopted**: each manifest file entry carries `index_row`; `--write-index` renders it into SKILL.md; **C5** fails when a SKILL.md row differs from its manifest (probe 42h). Migrated by `--index-init` (SKILL.md → manifest, never overwriting): 305 rows into 42 manifests, after which `--write-index` changed 0 SKILL.md files — the render is exact. Before the migration C5 failed on every row, so it can fail | `scripts/reachability-graph.py`, `scripts/skill-manifests/` |
+| Generate the AUDIT lists too | **not adopted, as decided 2026-10-25**: every domain AUDIT section carries the coverage line, so a generated list would say "all files" in every skill | — |
+| CONTRIBUTING still said manifests exist for `sota-rust` and `sota-identity-access` only | **fixed**: stale since #620 (all 42 skills); found while documenting C5 | `CONTRIBUTING.md` |
+

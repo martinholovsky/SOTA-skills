@@ -737,11 +737,13 @@ CI scans the full git history, the pre-commit hook scans each commit.
     where the task starts), on a domain AUDIT section that neither names every rules file nor
     carries the canonical coverage line, and on a `rules/NN` or "Load NN" naming a file that
     does not exist. `--explain <file>` lists what points at a file. It cannot tell whether a
-    trigger fires for the right task: ask that in review (`docs/SKILL-TEMPLATE.md`). **A skill with a
-    manifest** in `scripts/skill-manifests/` (C4; `sota-rust`, `sota-identity-access`) is checked
-    further: each file's declared tags must appear in its index row or the BUILD lines that name it,
-    each `via` hop must be a real link, and each labelled case must reach its files. Edit a pilot
-    skill's routing prose or pointers, and update its manifest in the same change.
+    trigger fires for the right task: ask that in review (`docs/SKILL-TEMPLATE.md`). **Every domain
+    skill has a manifest** in `scripts/skill-manifests/` (since 2026-10-26) and is checked further
+    (C4): each file's declared tags must appear in its index row or the BUILD list items that name it,
+    each `via` hop must be a real link, and each labelled case must reach its files. **A rules-index
+    row is written in the manifest, not in SKILL.md** (C5): edit `files.<NN>.index_row`, then run
+    `python3 scripts/reachability-graph.py --write-index`, which renders it into SKILL.md; a row
+    edited in SKILL.md alone fails C5. Update the manifest's tags in the same change.
 43. **A numbered section with no checklist item citing it, or a checklist item citing no section.**
     A ratchet over `scripts/section-sync-baseline.json` (1,246 uncited sections and 3,124 uncited
     items on 2026-10-24). A new `## N.` section is cited `(§N)` by an item in its own checklist, or
@@ -876,7 +878,8 @@ will catch a chart left stale — check them when you change a published number.
 - [ ] Stays generic — no personal/company stack, project names, or "you run X".
 - [ ] New fast-moving claims cite a primary source.
 - [ ] Every touched `rules/*.md` still ends with `## Audit checklist`.
-- [ ] Any **new** `rules/*.md` has a row in its skill's rules index (invariant 10).
+- [ ] Any **new** `rules/*.md` has a row in its skill's rules index (invariant 10), written as the
+      manifest's `index_row` and rendered with `--write-index` (invariant 42 C5).
 - [ ] All touched **skill** files (`skills/**`) are ≤ 500 lines (README/CHANGELOG/`docs/` are uncapped).
 - [ ] No secrets in examples (masked/placeholder only).
 - [ ] Touched an `assets/*.html`? **Re-render its `.png` in the same commit.**

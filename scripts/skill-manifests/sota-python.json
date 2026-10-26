@@ -2,44 +2,191 @@
  "_note": "Declared BUILD routing for sota-python (invariant 42 C4, ROADMAP item 78). No keyword matches the file's own link text. rules/02, 03, 05 and 08 are reached in BUILD only through their index rows: BUILD step 4 states the security posture without naming rules/05.",
  "skill": "sota-python",
  "tags": {
-  "project-setup": ["pyproject", "scaffolding a project", "uv lockfiles"],
-  "typing": ["annotating APIs", "TypedDict", "Protocol"],
-  "sentinel": ["in-band sentinels"],
-  "idioms": ["any general Python code", "designing exceptions", "public API surface"],
-  "async": ["async def", "TaskGroup"],
-  "untrusted-input": ["untrusted input", "subprocess/SQL/paths/archives"],
-  "deserialization": ["pickle"],
-  "native-extension": ["ctypes", "C extensions"],
-  "performance": ["anything slow", "profiling"],
-  "web-framework": ["FastAPI", "Django", "set_cookie"],
-  "testing": ["pytest", "hypothesis"],
-  "dependency": ["dependenc"]
+  "project-setup": [
+   "pyproject",
+   "scaffolding a project",
+   "uv lockfiles"
+  ],
+  "typing": [
+   "annotating APIs",
+   "TypedDict",
+   "Protocol"
+  ],
+  "sentinel": [
+   "in-band sentinels"
+  ],
+  "idioms": [
+   "any general Python code",
+   "designing exceptions",
+   "public API surface"
+  ],
+  "async": [
+   "async def",
+   "TaskGroup"
+  ],
+  "untrusted-input": [
+   "untrusted input",
+   "subprocess/SQL/paths/archives"
+  ],
+  "deserialization": [
+   "pickle"
+  ],
+  "native-extension": [
+   "ctypes",
+   "C extensions"
+  ],
+  "performance": [
+   "anything slow",
+   "profiling"
+  ],
+  "web-framework": [
+   "FastAPI",
+   "Django",
+   "set_cookie"
+  ],
+  "testing": [
+   "pytest",
+   "hypothesis"
+  ],
+  "dependency": [
+   "dependenc"
+  ]
  },
  "files": {
-  "01": {"build": ["project-setup"]},
-  "02": {"build": ["typing", "sentinel"]},
-  "03": {"build": ["idioms"]},
-  "04": {"build": ["async"]},
-  "05": {"build": ["untrusted-input", "deserialization", "native-extension"]},
-  "06": {"build": ["performance"]},
-  "07": {"build": ["web-framework", "testing"]},
-  "08": {"build": ["dependency"]}
+  "01": {
+   "build": [
+    "project-setup"
+   ],
+   "index_row": "| [`rules/01-tooling-project-setup.md`](rules/01-tooling-project-setup.md) | starting/scaffolding a project; reviewing pyproject/uv/ruff/CI setup; choosing type checker; questions about uv lockfiles, **`pylock.toml` (PEP 751) exports for non-uv tools**, PEP 723 scripts, src/ layout, 3.12–3.14 features, free-threading; **what 3.12/3.13 REMOVED (PEP 594, `distutils`, `imp`, `lib2to3`)** before a floor bump; **suppressions that expire** (`noqa`/`type: ignore` with a rule and a reason), test-path lint exemptions, `uv sync --frozen` vs `--locked` |"
+  },
+  "02": {
+   "build": [
+    "typing",
+    "sentinel"
+   ],
+   "index_row": "| [`rules/02-typing-correctness.md`](rules/02-typing-correctness.md) | annotating APIs; choosing TypedDict vs dataclass vs pydantic; Protocol vs ABC; generics/`Self`/`ParamSpec`; Any leaks; **in-band sentinels (`-1` for absent) — the defect `int \\| None` exists to prevent, invisible to the type checker**; `assert_never` exhaustiveness; where runtime validation belongs |"
+  },
+  "03": {
+   "build": [
+    "idioms"
+   ],
+   "index_row": "| [`rules/03-idioms-pitfalls.md`](rules/03-idioms-pitfalls.md) | any general Python code; mutable defaults, closures, comprehensions, context managers, pathlib, EAFP, dataclass/enum patterns, itertools/functools; designing exceptions; **what no `except` catches (C-extension crash, SIGKILL) and `json.loads` depth**; logging setup; **the public API surface** (`__all__`, keyword-only parameters, `__slots__`, deprecation) |"
+  },
+  "04": {
+   "build": [
+    "async"
+   ],
+   "index_row": "| [`rules/04-async.md`](rules/04-async.md) | any `async def` in sight: TaskGroup vs gather, blocking-the-loop, fire-and-forget, timeouts/cancellation, async generators, anyio, sync-ORM-in-async bugs; **per-request `ContextVar`/thread-local state reset in `finally`** |"
+  },
+  "05": {
+   "build": [
+    "untrusted-input",
+    "deserialization",
+    "native-extension"
+   ],
+   "index_row": "| [`rules/05-security.md`](rules/05-security.md) | auditing for vulnerabilities; handling untrusted input; subprocess/SQL/paths/archives/secrets; pickle/eval/yaml and reflection by name (`import_module`, `getattr`); SSRF/XML (dependency auditing, supply chain, adopting a new dependency and the insecure defaults of the libraries you call moved to [rules/08](rules/08-supply-chain.md)); temp-file and permission hygiene; where crypto is owned; remote-host trust; debug consoles, debug switches and dev servers (`runserver`, `flask run`, `--reload`) in production; **3.14 t-string (`Template`) consumers that render values raw; remote debugger attach (PEP 768) and its switches**; **escape hatches into raw memory**: `ctypes`/`cffi` and C extensions |"
+  },
+  "06": {
+   "build": [
+    "performance"
+   ],
+   "index_row": "| [`rules/06-performance.md`](rules/06-performance.md) | anything slow: profiling tool choice, hot-loop suspects, numpy/polars vectorization, functools caching caveats, threads vs processes vs asyncio, lazy imports/startup |"
+  },
+  "07": {
+   "build": [
+    "web-framework",
+    "testing"
+   ],
+   "index_row": "| [`rules/07-frameworks-testing.md`](rules/07-frameworks-testing.md) | FastAPI (DI, boundary models, sync-in-async), Django (N+1, select_related, migrations), **cookies the app sets (`set_cookie` defaults: Secure/HttpOnly off)**, pytest (fixtures, parametrize, independence, hypothesis, CrossHair), **`-X dev` in CI for `ctypes`/`cffi`/C-extension code**. **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in [`sota-testing`](../sota-testing/SKILL.md); load it for any build that writes logic. This file owns Python runner mechanics only.** |"
+  },
+  "08": {
+   "build": [
+    "dependency"
+   ],
+   "index_row": "| [`rules/08-supply-chain.md`](rules/08-supply-chain.md) | Adding or auditing dependencies: lockfiles and hashes (**pip-audit on a project with no dependencies exits 1 — the counted form**), typosquats and adoption checks, code that runs at install time, publishing credentials and provenance, static-analysis gates (formerly [rules/05](rules/05-security.md) sections 9–10, now §1–§2) |"
+  }
  },
  "via": [
-  {"from": "05", "to": "07", "when": ["native-extension"]}
+  {
+   "from": "05",
+   "to": "07",
+   "when": [
+    "native-extension"
+   ]
+  }
  ],
  "cases": [
-  {"task": "wrap a C library with ctypes", "mode": "build",
-   "tags": ["native-extension"], "must_load": ["05", "07"]},
-  {"task": "add an async FastAPI endpoint that calls a sync ORM", "mode": "build",
-   "tags": ["async", "web-framework"], "must_load": ["04", "07"]},
-  {"task": "accept uploaded archives and YAML config from users", "mode": "build",
-   "tags": ["untrusted-input", "deserialization"], "must_load": ["05"]},
-  {"task": "remove -1-for-absent returns from a library API (the in-band sentinel field report, 2026-08-20)", "mode": "build",
-   "tags": ["sentinel", "typing"], "must_load": ["02"]},
-  {"task": "scaffold a new uv project and add its first dependency", "mode": "build",
-   "tags": ["project-setup", "dependency"], "must_load": ["01", "08"]},
-  {"task": "audit a Django application", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08"]}
+  {
+   "task": "wrap a C library with ctypes",
+   "mode": "build",
+   "tags": [
+    "native-extension"
+   ],
+   "must_load": [
+    "05",
+    "07"
+   ]
+  },
+  {
+   "task": "add an async FastAPI endpoint that calls a sync ORM",
+   "mode": "build",
+   "tags": [
+    "async",
+    "web-framework"
+   ],
+   "must_load": [
+    "04",
+    "07"
+   ]
+  },
+  {
+   "task": "accept uploaded archives and YAML config from users",
+   "mode": "build",
+   "tags": [
+    "untrusted-input",
+    "deserialization"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "remove -1-for-absent returns from a library API (the in-band sentinel field report, 2026-08-20)",
+   "mode": "build",
+   "tags": [
+    "sentinel",
+    "typing"
+   ],
+   "must_load": [
+    "02"
+   ]
+  },
+  {
+   "task": "scaffold a new uv project and add its first dependency",
+   "mode": "build",
+   "tags": [
+    "project-setup",
+    "dependency"
+   ],
+   "must_load": [
+    "01",
+    "08"
+   ]
+  },
+  {
+   "task": "audit a Django application",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08"
+   ]
+  }
  ]
 }

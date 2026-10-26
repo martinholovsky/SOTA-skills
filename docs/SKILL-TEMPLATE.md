@@ -158,8 +158,9 @@ new probe is run against a known-bad and a known-good fixture (below).
 - [ ] New `rules/NN` indexed by its `SKILL.md` **and** by `skills/sota/rules/04` (invariants 10, 15),
       **and** pointed at from where its task starts — a BUILD step, or the rules file an agent
       would already have open (invariant 42; `python3 scripts/reachability-graph.py --explain <file>`).
-      If the skill has a manifest (`scripts/skill-manifests/<skill>.json`), declare the new file's
-      BUILD tags there and add a labelled case for the task it serves
+      In the skill's manifest (`scripts/skill-manifests/<skill>.json`), declare the new file's
+      `index_row` and BUILD tags, render the row with `python3 scripts/reachability-graph.py
+      --write-index`, and add a labelled case for the task it serves
 - [ ] **Reachability, the half no gate checks** (2026-10-24 review: 27 confirmed defects with every
       gate green). Name a task that does **not** mention this rule's subject but needs it — which
       file would an agent load, and does that file point here? For each **absence** probe ("no fuzz

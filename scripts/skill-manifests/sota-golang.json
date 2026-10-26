@@ -2,46 +2,202 @@
  "_note": "Declared BUILD routing for sota-golang (invariant 42 C4, ROADMAP item 78). No keyword matches the file's own link text, so stripping a row's description can always fail its tag. Known routing gap, recorded and NOT declared: BUILD step 4 still sends 'Each dependency must earn its place' to rules/05's supply chain section, which moved to rules/08 on 2026-09-25; the dependency tag is declared on 07 and 08 only.",
  "skill": "sota-golang",
  "tags": {
-  "errors": ["error path", "panic"],
-  "sentinel": ["in-band sentinels"],
-  "api-design": ["Designing packages or APIs", "interface placement", "functional options"],
-  "concurrency": ["goroutine", "errgroup", "worker pools"],
-  "http-service": ["HTTP servers", "graceful shutdown", "middleware"],
-  "untrusted-input": ["trust boundary", "SQL parameterization", "path traversal"],
-  "external-process": ["os/exec"],
-  "tls": ["TLS config"],
-  "performance": ["pprof", "Latency/memory", "allocation reduction"],
-  "testing": ["table tests", "fuzzing", "golden files"],
-  "ci-tooling": ["golangci-lint", "staticcheck"],
-  "dependency": ["dependenc"],
-  "build-time-code": ["build time", "go:generate"],
-  "godebug": ["GODEBUG"]
+  "errors": [
+   "error path",
+   "panic"
+  ],
+  "sentinel": [
+   "in-band sentinels"
+  ],
+  "api-design": [
+   "Designing packages or APIs",
+   "interface placement",
+   "functional options"
+  ],
+  "concurrency": [
+   "goroutine",
+   "errgroup",
+   "worker pools"
+  ],
+  "http-service": [
+   "HTTP servers",
+   "graceful shutdown",
+   "middleware"
+  ],
+  "untrusted-input": [
+   "trust boundary",
+   "SQL parameterization",
+   "path traversal"
+  ],
+  "external-process": [
+   "os/exec"
+  ],
+  "tls": [
+   "TLS config"
+  ],
+  "performance": [
+   "pprof",
+   "Latency/memory",
+   "allocation reduction"
+  ],
+  "testing": [
+   "table tests",
+   "fuzzing",
+   "golden files"
+  ],
+  "ci-tooling": [
+   "golangci-lint",
+   "staticcheck"
+  ],
+  "dependency": [
+   "dependenc"
+  ],
+  "build-time-code": [
+   "build time",
+   "go:generate"
+  ],
+  "godebug": [
+   "GODEBUG"
+  ]
  },
  "files": {
-  "01": {"build": ["errors", "sentinel"]},
-  "02": {"build": ["api-design"]},
-  "03": {"build": ["concurrency"]},
-  "04": {"build": ["http-service"]},
-  "05": {"build": ["untrusted-input", "external-process", "tls"]},
-  "06": {"build": ["performance"]},
-  "07": {"build": ["testing", "ci-tooling", "dependency"]},
-  "08": {"build": ["dependency", "build-time-code", "godebug"]}
+  "01": {
+   "build": [
+    "errors",
+    "sentinel"
+   ],
+   "index_row": "| [`rules/01-errors.md`](rules/01-errors.md) | Writing/reviewing any error path: wrapping with `%w`, `errors.Is/As`, sentinel vs typed errors, **in-band sentinels (absence encoded as `-1`/`0`/`\"\"`)** and comma-ok, panic/recover policy, error API design for libraries vs apps |"
+  },
+  "02": {
+   "build": [
+    "api-design"
+   ],
+   "index_row": "| [`rules/02-design.md`](rules/02-design.md) | Designing packages or APIs: interface placement and size, package layout and `internal/`, naming, zero values, generics restraint, embedding, functional options, `context.Context` discipline, numeric edges (NaN/Inf from `ParseFloat`, integer divide-by-zero, `MinInt` / -1) |"
+  },
+  "03": {
+   "build": [
+    "concurrency"
+   ],
+   "index_row": "| [`rules/03-concurrency.md`](rules/03-concurrency.md) | Anything with `go`, `chan`, `sync`, or `select`: goroutine lifecycle ownership, leak catalog, errgroup fan-out, channels-vs-mutex decision, race patterns, worker pools, semaphores, `time.After` traps |"
+  },
+  "04": {
+   "build": [
+    "http-service"
+   ],
+   "index_row": "| [`rules/04-http-services.md`](rules/04-http-services.md) | Building or auditing HTTP servers/clients: all five server timeouts, client timeouts and body hygiene, connection reuse, graceful shutdown, middleware, CSRF via `http.CrossOriginProtection` (and its bypass/trusted-origin exceptions), JSON duplicate-key probe, cookie attributes (framework helper defaults), debug mode and `/debug/*` endpoints in production, explicit Content-Type (no body sniffing), `slog` structured logging, request-scoped values |"
+  },
+  "05": {
+   "build": [
+    "untrusted-input",
+    "external-process",
+    "tls"
+   ],
+   "index_row": "| [`rules/05-security.md`](rules/05-security.md) | Any input crossing a trust boundary: SQL parameterization, `os/exec` safety, path traversal and `os.Root`, integer overflow (G115), output encoding (`html/template`), CSPRNG (`crypto/rand` vs `math/rand`), FIPS 140-3 mode (`GOFIPS140`, `GODEBUG=fips140`), TLS config, SSRF (dial-time IP check via `net.Dialer.ControlContext`, redirects, proxy), dynamic code evaluation (template text from input, embedded interpreters, `expr` env), `unsafe`/cgo policy (govulncheck, supply chain and go.sum moved to [rules/08](rules/08-supply-chain.md)) |"
+  },
+  "06": {
+   "build": [
+    "performance"
+   ],
+   "index_row": "| [`rules/06-performance.md`](rules/06-performance.md) | Latency/memory work: pprof workflow, `testing.B` + `b.Loop`, allocation reduction, `strings.Builder`, `sync.Pool` criteria, escape analysis, GOGC/GOMEMLIMIT, PGO |"
+  },
+  "07": {
+   "build": [
+    "testing",
+    "ci-tooling",
+    "dependency"
+   ],
+   "index_row": "| [`rules/07-tooling-ci.md`](rules/07-tooling-ci.md) | Setting up or auditing CI and tests: golangci-lint curated config, staticcheck/gofumpt/vet, table tests, `t.Parallel` correctness, testcontainers, golden files, fuzzing, go.mod hygiene and `tool` directives, dependency adoption (selection checks, insecure library defaults). **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in [`sota-testing`](../sota-testing/SKILL.md); load it for any build that writes logic. This file owns Go runner mechanics only.** |"
+  },
+  "08": {
+   "build": [
+    "dependency",
+    "build-time-code",
+    "godebug"
+   ],
+   "index_row": "| [`rules/08-supply-chain.md`](rules/08-supply-chain.md) | Adding or auditing dependencies and the module supply chain: the checksum database, `govulncheck`, code that runs at build time (`go:generate`, cgo flags, `-toolexec`, `GOTOOLCHAIN`), keeping the toolchain current (formerly [rules/05](rules/05-security.md) section 8, now §1); GODEBUG settings from the `go` line, `godebug` blocks, `//go:debug` and the environment that weaken TLS/x509/archive defaults (§2) |"
+  }
  },
  "via": [
-  {"from": "05", "to": "08", "when": ["tls"]}
+  {
+   "from": "05",
+   "to": "08",
+   "when": [
+    "tls"
+   ]
+  }
  ],
  "cases": [
-  {"task": "add a third-party module to a Go service", "mode": "build",
-   "tags": ["dependency"], "must_load": ["08", "07"]},
-  {"task": "shell out to git from a Go CLI with a caller-supplied ref (the cmd.WaitDelay incident, 2026-08-18)", "mode": "build",
-   "tags": ["external-process", "untrusted-input"], "must_load": ["05"]},
-  {"task": "terminate TLS in a Go HTTPS server", "mode": "build",
-   "tags": ["http-service", "tls"], "must_load": ["04", "05", "08"]},
-  {"task": "fan out backend calls with errgroup and bounded concurrency", "mode": "build",
-   "tags": ["concurrency"], "must_load": ["03"]},
-  {"task": "replace a -1-for-not-found return in a lookup function", "mode": "build",
-   "tags": ["sentinel", "api-design"], "must_load": ["01", "02"]},
-  {"task": "audit a Go microservice", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08"]}
+  {
+   "task": "add a third-party module to a Go service",
+   "mode": "build",
+   "tags": [
+    "dependency"
+   ],
+   "must_load": [
+    "08",
+    "07"
+   ]
+  },
+  {
+   "task": "shell out to git from a Go CLI with a caller-supplied ref (the cmd.WaitDelay incident, 2026-08-18)",
+   "mode": "build",
+   "tags": [
+    "external-process",
+    "untrusted-input"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "terminate TLS in a Go HTTPS server",
+   "mode": "build",
+   "tags": [
+    "http-service",
+    "tls"
+   ],
+   "must_load": [
+    "04",
+    "05",
+    "08"
+   ]
+  },
+  {
+   "task": "fan out backend calls with errgroup and bounded concurrency",
+   "mode": "build",
+   "tags": [
+    "concurrency"
+   ],
+   "must_load": [
+    "03"
+   ]
+  },
+  {
+   "task": "replace a -1-for-not-found return in a lookup function",
+   "mode": "build",
+   "tags": [
+    "sentinel",
+    "api-design"
+   ],
+   "must_load": [
+    "01",
+    "02"
+   ]
+  },
+  {
+   "task": "audit a Go microservice",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08"
+   ]
+  }
  ]
 }

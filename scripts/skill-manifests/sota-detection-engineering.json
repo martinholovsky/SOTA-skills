@@ -2,46 +2,231 @@
  "_note": "Declared BUILD routing for sota-detection-engineering (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD links 02-06; rules/01 is linked by no BUILD line even though BUILD steps 1, 3 and 7 (ADS, Pyramid of Pain, ATT&CK Navigator) teach its content, so 01 is reached only through its index row, whose phrases ('ADS docs', 'detection-as-code', 'ATT&CK + Navigator') do name that content. 07 is reached only through its index row. Observation, not a gap: 01 section 8 (provenance of a detection derived from a paper or vendor write-up) is not named in 01's row, but 01 is still reached by any production-detection task through 'ADS docs'. No routing gap found for the cases below.",
  "skill": "sota-detection-engineering",
  "tags": {
-  "detection-lifecycle": ["detection lifecycle", "ADS docs", "detection-as-code", "ATT&CK + Navigator", "Pyramid of Pain"],
-  "coverage-metrics": ["coverage/precision/MTTD", "maturity targets"],
-  "log-source": ["what to collect", "logging gap", "normalizing with OCSF/ECS"],
-  "siem-platform": ["choosing SIEM/data-lake", "sizing retention", "volume/cost"],
-  "app-detection": ["application & behavioural detections", "app-login spraying", "LLM/agent runtime", "exfiltration"],
-  "rule-writing": ["Sigma", "YARA", "Suricata", "Falco", "Tetragon", "KQL/SPL/EQL"],
-  "alert-tuning": ["alert fatigue", "tuning/suppression", "low FP", "severity assignment"],
-  "runbook": ["runbooks"],
-  "soar": ["SOAR", "auto-containment"],
-  "hunting": ["hunting", "hunt loop"],
-  "threat-intel": ["threat-intel", "STIX", "TAXII"],
-  "deception": ["deception", "honeytokens", "canaries"],
-  "incident-response": ["Running IR", "playbooks", "chain of custody", "containment/eradication", "tabletops"],
-  "detection-test": ["Atomic Red Team", "passing test", "purple teaming"],
-  "ad-detection": ["Active Directory", "Kerberoasting", "DCSync", "ADCS"]
+  "detection-lifecycle": [
+   "detection lifecycle",
+   "ADS docs",
+   "detection-as-code",
+   "ATT&CK + Navigator",
+   "Pyramid of Pain"
+  ],
+  "coverage-metrics": [
+   "coverage/precision/MTTD",
+   "maturity targets"
+  ],
+  "log-source": [
+   "what to collect",
+   "logging gap",
+   "normalizing with OCSF/ECS"
+  ],
+  "siem-platform": [
+   "choosing SIEM/data-lake",
+   "sizing retention",
+   "volume/cost"
+  ],
+  "app-detection": [
+   "application & behavioural detections",
+   "app-login spraying",
+   "LLM/agent runtime",
+   "exfiltration"
+  ],
+  "rule-writing": [
+   "Sigma",
+   "YARA",
+   "Suricata",
+   "Falco",
+   "Tetragon",
+   "KQL/SPL/EQL"
+  ],
+  "alert-tuning": [
+   "alert fatigue",
+   "tuning/suppression",
+   "low FP",
+   "severity assignment"
+  ],
+  "runbook": [
+   "runbooks"
+  ],
+  "soar": [
+   "SOAR",
+   "auto-containment"
+  ],
+  "hunting": [
+   "hunting",
+   "hunt loop"
+  ],
+  "threat-intel": [
+   "threat-intel",
+   "STIX",
+   "TAXII"
+  ],
+  "deception": [
+   "deception",
+   "honeytokens",
+   "canaries"
+  ],
+  "incident-response": [
+   "Running IR",
+   "playbooks",
+   "chain of custody",
+   "containment/eradication",
+   "tabletops"
+  ],
+  "detection-test": [
+   "Atomic Red Team",
+   "passing test",
+   "purple teaming"
+  ],
+  "ad-detection": [
+   "Active Directory",
+   "Kerberoasting",
+   "DCSync",
+   "ADCS"
+  ]
  },
  "files": {
-  "01": {"build": ["detection-lifecycle", "coverage-metrics"]},
-  "02": {"build": ["log-source", "siem-platform", "app-detection"]},
-  "03": {"build": ["rule-writing"]},
-  "04": {"build": ["alert-tuning", "runbook", "soar"]},
-  "05": {"build": ["hunting", "threat-intel", "deception"]},
-  "06": {"build": ["incident-response", "detection-test"]},
-  "07": {"build": ["ad-detection"]}
+  "01": {
+   "build": [
+    "detection-lifecycle",
+    "coverage-metrics"
+   ],
+   "index_row": "| [`rules/01-detection-engineering-discipline.md`](rules/01-detection-engineering-discipline.md) | Running the detection lifecycle, writing ADS docs, doing detection-as-code (CI/peer review/regression), mapping coverage to ATT&CK + Navigator, applying the Pyramid of Pain, picking maturity targets and metrics (coverage/precision/MTTD) |"
+  },
+  "02": {
+   "build": [
+    "log-source",
+    "siem-platform",
+    "app-detection"
+   ],
+   "index_row": "| [`rules/02-telemetry-siem-data-layer.md`](rules/02-telemetry-siem-data-layer.md) | Deciding what to collect (the #1 gap), choosing SIEM/data-lake, normalizing with OCSF/ECS, sizing retention for IR/hunting, controlling volume/cost, assessing data quality; application & behavioural detections (app-login spraying/stuffing/impossible travel, LLM/agent runtime and model-API-as-C2, data-access exfiltration and DB anomalies) |"
+  },
+  "03": {
+   "build": [
+    "rule-writing"
+   ],
+   "index_row": "| [`rules/03-rule-languages-engines.md`](rules/03-rule-languages-engines.md) | Choosing and writing detections in Sigma, YARA/YARA-X, Suricata, Falco, Tetragon, or SIEM-native (KQL/SPL/EQL); rule quality, specificity, FP-resistance, performance; good/bad examples |"
+  },
+  "04": {
+   "build": [
+    "alert-tuning",
+    "runbook",
+    "soar"
+   ],
+   "index_row": "| [`rules/04-alerting-triage-soc-soar.md`](rules/04-alerting-triage-soc-soar.md) | Fighting alert fatigue, tuning/suppression with expiry, severity assignment, enrichment, dedup/correlation, runbooks, SOAR + auto-containment guardrails, case management, FP lifecycle, SOC metrics |"
+  },
+  "05": {
+   "build": [
+    "hunting",
+    "threat-intel",
+    "deception"
+   ],
+   "index_row": "| [`rules/05-hunting-intel-deception.md`](rules/05-hunting-intel-deception.md) | Hypothesis-driven hunting + the hunt loop, IOC vs IOA/TTP hunting, threat-intel lifecycle + TIP, STIX 2.1/TAXII 2.1, diamond model/kill chain, deception (honeypots/honeytokens/canaries) |"
+  },
+  "06": {
+   "build": [
+    "incident-response",
+    "detection-test"
+   ],
+   "index_row": "| [`rules/06-incident-response-validation.md`](rules/06-incident-response-validation.md) | Running IR (NIST SP 800-61r3 / CSF 2.0, PICERL), playbooks, severity classification, containment/eradication/recovery, forensic readiness + chain of custody, blameless PIR, tabletops; validating detections via Atomic Red Team/Caldera/Stratus, purple teaming, regression testing |"
+  },
+  "07": {
+   "build": [
+    "ad-detection"
+   ],
+   "index_row": "| [`rules/07-ad-attack-detection.md`](rules/07-ad-attack-detection.md) | Detecting on-prem Active Directory attacks: DC audit-policy telemetry and the events that matter (4768/4769/4770, 4662, 4624/4625, 5136, 8004, 4886/4887), Kerberoasting (RC4 TGS spikes), AS-REP roasting, DCSync (replication GUIDs on 4662), golden/silver tickets, DCShadow, ADCS abuse (ESC1), NTLM relay, password spraying, RBCD writes (5136); ATT&CK mapping (T1558.x, T1003.006, T1207, T1649) + AD deception (honeytoken SPNs, canary objects). Hardening lives in [sota-identity-access rules/07](../sota-identity-access/rules/07-active-directory.md) |"
+  }
  },
  "via": [],
  "cases": [
-  {"task": "write a Sigma rule for PowerShell download cradles and ship it through detection-as-code", "mode": "build",
-   "tags": ["detection-lifecycle", "log-source", "rule-writing", "alert-tuning", "runbook", "detection-test"],
-   "must_load": ["01", "02", "03", "04", "06"]},
-  {"task": "detect Kerberoasting against the domain controllers", "mode": "build",
-   "tags": ["ad-detection", "detection-lifecycle", "rule-writing", "alert-tuning", "detection-test"],
-   "must_load": ["07", "01", "03", "04", "06"]},
-  {"task": "detect credential stuffing against the application login", "mode": "build",
-   "tags": ["app-detection", "rule-writing", "alert-tuning", "runbook"], "must_load": ["02", "03", "04"]},
-  {"task": "write a ransomware IR playbook with automated host isolation", "mode": "build",
-   "tags": ["incident-response", "soar"], "must_load": ["06", "04"]},
-  {"task": "plant honeytokens in cloud accounts and alert on their use", "mode": "build",
-   "tags": ["deception", "runbook", "alert-tuning"], "must_load": ["05", "04"]},
-  {"task": "audit a SOC's detection and IR posture", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+  {
+   "task": "write a Sigma rule for PowerShell download cradles and ship it through detection-as-code",
+   "mode": "build",
+   "tags": [
+    "detection-lifecycle",
+    "log-source",
+    "rule-writing",
+    "alert-tuning",
+    "runbook",
+    "detection-test"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "06"
+   ]
+  },
+  {
+   "task": "detect Kerberoasting against the domain controllers",
+   "mode": "build",
+   "tags": [
+    "ad-detection",
+    "detection-lifecycle",
+    "rule-writing",
+    "alert-tuning",
+    "detection-test"
+   ],
+   "must_load": [
+    "07",
+    "01",
+    "03",
+    "04",
+    "06"
+   ]
+  },
+  {
+   "task": "detect credential stuffing against the application login",
+   "mode": "build",
+   "tags": [
+    "app-detection",
+    "rule-writing",
+    "alert-tuning",
+    "runbook"
+   ],
+   "must_load": [
+    "02",
+    "03",
+    "04"
+   ]
+  },
+  {
+   "task": "write a ransomware IR playbook with automated host isolation",
+   "mode": "build",
+   "tags": [
+    "incident-response",
+    "soar"
+   ],
+   "must_load": [
+    "06",
+    "04"
+   ]
+  },
+  {
+   "task": "plant honeytokens in cloud accounts and alert on their use",
+   "mode": "build",
+   "tags": [
+    "deception",
+    "runbook",
+    "alert-tuning"
+   ],
+   "must_load": [
+    "05",
+    "04"
+   ]
+  },
+  {
+   "task": "audit a SOC's detection and IR posture",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  }
  ]
 }

@@ -2,43 +2,204 @@
  "_note": "Declared BUILD routing for sota-network-security (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. No keyword matches a file's own link text. BUILD names rules/01, 02 and 03; rules/04, 05 and 06 are reached only through their index rows. BUILD step 4 ('Encrypt every hop that crosses a trust boundary ... mTLS via mesh') links no rules file, so the mesh route is 04's row alone. No routing gap found for the cases below.",
  "skill": "sota-network-security",
  "tags": {
-  "zero-trust": ["never-trust-always-verify", "PDP/PEP", "identity-aware access"],
-  "remote-access": ["remote access (WireGuard", "ZTNA vs VPN", "identity-aware proxy"],
-  "device-posture": ["devices pillar", "posture-gated access"],
-  "segmentation": ["Segmentation", "zones and tiers", "microsegmentation", "lateral-movement containment"],
-  "firewall": ["firewall/SG default-deny"],
-  "k8s-netpol": ["NetworkPolicy", "namespaced default-deny"],
-  "egress": ["DNS-aware egress", "egress gateways", "egress as a first-class control", "FQDN allowlisting"],
-  "mtls": ["mTLS everywhere", "choosing/auditing a mesh", "SPIFFE identity"],
-  "edge": ["WAF", "ingress/API-gateway hardening", "request smuggling", "trusted-IP handling"],
-  "ddos": ["DDoS posture"],
-  "metadata-endpoint": ["blocking the metadata endpoint", "SSRF-meets-egress"],
-  "tls": ["TLS termination", "TLS posture"],
-  "pki": ["internal PKI", "ACME automation", "certificate issuance hygiene"],
-  "dns": ["DNS security", "DNSSEC", "subdomain takeover"],
-  "email-auth": ["SPF/DKIM/DMARC", "email authentication"]
+  "zero-trust": [
+   "never-trust-always-verify",
+   "PDP/PEP",
+   "identity-aware access"
+  ],
+  "remote-access": [
+   "remote access (WireGuard",
+   "ZTNA vs VPN",
+   "identity-aware proxy"
+  ],
+  "device-posture": [
+   "devices pillar",
+   "posture-gated access"
+  ],
+  "segmentation": [
+   "Segmentation",
+   "zones and tiers",
+   "microsegmentation",
+   "lateral-movement containment"
+  ],
+  "firewall": [
+   "firewall/SG default-deny"
+  ],
+  "k8s-netpol": [
+   "NetworkPolicy",
+   "namespaced default-deny"
+  ],
+  "egress": [
+   "DNS-aware egress",
+   "egress gateways",
+   "egress as a first-class control",
+   "FQDN allowlisting"
+  ],
+  "mtls": [
+   "mTLS everywhere",
+   "choosing/auditing a mesh",
+   "SPIFFE identity"
+  ],
+  "edge": [
+   "WAF",
+   "ingress/API-gateway hardening",
+   "request smuggling",
+   "trusted-IP handling"
+  ],
+  "ddos": [
+   "DDoS posture"
+  ],
+  "metadata-endpoint": [
+   "blocking the metadata endpoint",
+   "SSRF-meets-egress"
+  ],
+  "tls": [
+   "TLS termination",
+   "TLS posture"
+  ],
+  "pki": [
+   "internal PKI",
+   "ACME automation",
+   "certificate issuance hygiene"
+  ],
+  "dns": [
+   "DNS security",
+   "DNSSEC",
+   "subdomain takeover"
+  ],
+  "email-auth": [
+   "SPF/DKIM/DMARC",
+   "email authentication"
+  ]
  },
  "files": {
-  "01": {"build": ["zero-trust", "remote-access", "device-posture"]},
-  "02": {"build": ["segmentation", "firewall", "remote-access"]},
-  "03": {"build": ["k8s-netpol", "egress"]},
-  "04": {"build": ["mtls"]},
-  "05": {"build": ["edge", "ddos", "metadata-endpoint", "egress", "tls"]},
-  "06": {"build": ["tls", "pki", "dns", "email-auth"]}
+  "01": {
+   "build": [
+    "zero-trust",
+    "remote-access",
+    "device-posture"
+   ],
+   "index_row": "| [rules/01-zero-trust-architecture.md](rules/01-zero-trust-architecture.md) | Establishing/auditing the model: never-trust-always-verify, PDP/PEP, identity-aware access over network location, ZTNA vs VPN, de-perimeterization, identity-aware proxy (BeyondCorp), telemetry-to-policy pruning loop, devices pillar (inventory, device certificates, posture-gated access, unmanaged-device isolation) |"
+  },
+  "02": {
+   "build": [
+    "segmentation",
+    "firewall",
+    "remote-access"
+   ],
+   "index_row": "| [rules/02-segmentation-blast-radius.md](rules/02-segmentation-blast-radius.md) | Designing/auditing zones and tiers, north-south vs east-west, the flat-network and over-broad-rule (`any`/`0.0.0.0/0`/`world`) traps, microsegmentation, lateral-movement containment, firewall/SG default-deny, remote access (WireGuard, bastion vs IAP), zone refinements (outbound-only DMZ, directory/log segments, shared-L7-balancer caveat, human-readable policy), legacy/plaintext quarantine zone, external exposure discovery |"
+  },
+  "03": {
+   "build": [
+    "k8s-netpol",
+    "egress"
+   ],
+   "index_row": "| [rules/03-k8s-network-policy.md](rules/03-k8s-network-policy.md) | Writing/auditing Kubernetes NetworkPolicy, CiliumNetworkPolicy, the namespaced default-deny (ingress AND egress) pattern, the \"default-deny that isn't\" trap, ANP/BANP, L7/identity policy, DNS-aware egress, egress gateways, Hubble visibility, permitted-vs-observed policy pruning |"
+  },
+  "04": {
+   "build": [
+    "mtls"
+   ],
+   "index_row": "| [rules/04-service-mesh-mtls.md](rules/04-service-mesh-mtls.md) | The plaintext-internal-traffic problem, choosing/auditing a mesh (Istio sidecar vs ambient, Linkerd, Cilium mesh), mTLS everywhere, mesh authorization policy, SPIFFE identity, peer-identity pinning for cross-org mTLS (SAN/SPKI, never CN), mTLS-mode drift alerting, and deciding mesh vs plain TLS |"
+  },
+  "05": {
+   "build": [
+    "edge",
+    "ddos",
+    "metadata-endpoint",
+    "egress",
+    "tls"
+   ],
+   "index_row": "| [rules/05-edge-ingress-egress.md](rules/05-edge-ingress-egress.md) | WAF (CRS/Coraza) incl. virtual-patching lifecycle, rule-firing reports, WAF events to SIEM, positive model and WebSocket limits, ingress/API-gateway hardening, trace/diagnostic header scrubbing, request smuggling / proxy-chain desync (strict parsers, h2 downgrade, h2c), TLS termination + re-encryption, trusted-IP handling behind Cloudflare, DDoS posture (edge scrubbing + self-hosted kernel hardening: SYN cookies/synproxy, conntrack, rp_filter, no open UDP reflectors; byte caps and uplink capacity), egress as a first-class control, FQDN allowlisting, blocking the metadata endpoint, the SSRF-meets-egress chain |"
+  },
+  "06": {
+   "build": [
+    "tls",
+    "pki",
+    "dns",
+    "email-auth"
+   ],
+   "index_row": "| [rules/06-dns-tls-pki.md](rules/06-dns-tls-pki.md) | DNS security (DNSSEC, RPZ/DNS firewall, DoH/DoT, split-horizon, CAA, tunneling, subdomain takeover: dangling CNAME/NS/MX/SPF, wildcard records, takeover indicators + response), TLS posture (1.3, ciphers, HSTS, OCSP, full chain, explicit hybrid-PQ group list, ECH, legacy-client isolation), certificate issuance hygiene (SANs, no internal names, SHA-256, shared-cert inventory), shrinking cert lifetimes + ACME automation, internal PKI (step-ca), short-lived certs, pinning tradeoffs, email authentication & anti-spoofing (SPF/DKIM/DMARC, MTA-STS/DANE, bulk-sender rules) |"
+  }
  },
  "via": [],
  "cases": [
-  {"task": "write default-deny NetworkPolicies with DNS-aware egress for a namespace on Cilium", "mode": "build",
-   "tags": ["k8s-netpol", "egress", "segmentation"], "must_load": ["03", "02"]},
-  {"task": "roll out mesh mTLS between services, rooted in the internal CA", "mode": "build",
-   "tags": ["mtls", "pki"], "must_load": ["04", "06"]},
-  {"task": "put a CRS WAF ingress behind a CDN and block pod access to the cloud metadata endpoint", "mode": "build",
-   "tags": ["edge", "metadata-endpoint", "egress", "tls"], "must_load": ["05", "03"]},
-  {"task": "replace the admin VPN with WireGuard plus an identity-aware proxy", "mode": "build",
-   "tags": ["remote-access", "zero-trust", "device-posture"], "must_load": ["01", "02"]},
-  {"task": "automate internal certificates with step-ca over ACME and set DMARC for the mail domain", "mode": "build",
-   "tags": ["pki", "email-auth", "dns"], "must_load": ["06"]},
-  {"task": "audit a hybrid network's segmentation and exposure", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06"]}
+  {
+   "task": "write default-deny NetworkPolicies with DNS-aware egress for a namespace on Cilium",
+   "mode": "build",
+   "tags": [
+    "k8s-netpol",
+    "egress",
+    "segmentation"
+   ],
+   "must_load": [
+    "03",
+    "02"
+   ]
+  },
+  {
+   "task": "roll out mesh mTLS between services, rooted in the internal CA",
+   "mode": "build",
+   "tags": [
+    "mtls",
+    "pki"
+   ],
+   "must_load": [
+    "04",
+    "06"
+   ]
+  },
+  {
+   "task": "put a CRS WAF ingress behind a CDN and block pod access to the cloud metadata endpoint",
+   "mode": "build",
+   "tags": [
+    "edge",
+    "metadata-endpoint",
+    "egress",
+    "tls"
+   ],
+   "must_load": [
+    "05",
+    "03"
+   ]
+  },
+  {
+   "task": "replace the admin VPN with WireGuard plus an identity-aware proxy",
+   "mode": "build",
+   "tags": [
+    "remote-access",
+    "zero-trust",
+    "device-posture"
+   ],
+   "must_load": [
+    "01",
+    "02"
+   ]
+  },
+  {
+   "task": "automate internal certificates with step-ca over ACME and set DMARC for the mail domain",
+   "mode": "build",
+   "tags": [
+    "pki",
+    "email-auth",
+    "dns"
+   ],
+   "must_load": [
+    "06"
+   ]
+  },
+  {
+   "task": "audit a hybrid network's segmentation and exposure",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+   ]
+  }
  ]
 }
