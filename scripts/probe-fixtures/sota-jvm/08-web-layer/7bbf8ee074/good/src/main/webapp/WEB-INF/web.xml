@@ -1,0 +1,6 @@
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee" version="6.0">
+  <servlet>
+    <servlet-name>reports</servlet-name>
+    <servlet-class>com.example.ReportServlet</servlet-class>
+  </servlet>
+</web-app>

@@ -349,8 +349,8 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rnE 'Pathname.*(\+|\.join\()[^)]*params' --include='*.rb' .` (an absolute argument
       replaces the base; confirm an expand-then-prefix check follows) ;
       `grep -rnE '["'"'"']/tmp/[^"'"'"']*#\{' --include='*.rb' .` (a hand-built temp path: use
-      `Tempfile`/`Dir.mktmpdir`) ; `grep -rnE 'Zip::|TarReader|Minitar' --include='*.rb' .` (each entry name
-      goes through the same expand-and-prefix check; the zip-slip class and its probe are
+      `Tempfile`/`Dir.mktmpdir`) ; `grep -rlE 'Zip::|TarReader|Minitar' --include='*.rb' . | xargs -r grep -LE 'expand_path|start_with\?'` (lists archive-handling files with no `expand_path`/`start_with?` in them, a file-level
+      heuristic: each entry name goes through the same expand-and-prefix check; the zip-slip class and its probe are
       [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §4) ; manual: stored upload names pass `File.basename`
 
 Severity guide: interpolated SQL / shell string with external input,

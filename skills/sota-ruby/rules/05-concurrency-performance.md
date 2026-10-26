@@ -214,14 +214,15 @@ Run from repo root; verify each hit manually.
 - [ ] **Threads without exception handling / join (manual review)** (§2) —
       `grep -rn "Thread.new" --include='*.rb' . | grep -v join | head`
 - [ ] **Ractor use (§3) — verify experimental caveats & removed APIs (Ractor.yield/#take gone in
-      4.0)** — `grep -rnE "Ractor\.(new|yield)|\.take\b" --include='*.rb' . | head`
+      4.0)** — `grep -rnE 'Ractor\.yield|\.take[[:space:]]*$' --include='*.rb' . | head`
 - [ ] **Jobs: object args (GlobalID mitigates for AR models; raw objects = MEDIUM) (§4)** —
       `grep -rnE "perform_(async|later)\(" --include='*.rb' . | grep -vE "\(\s*[a-z_]*id|\(\s*\d|\(\s*\)" | head`
 - [ ] **Enqueue inside transactions — race, MEDIUM+ (§4)** —
       `grep -rn -B3 "perform_later\|perform_async" --include='*.rb' app/ lib/ 2>/dev/null | grep "transaction do" | head`
 - [ ] **Idempotency signals absent (manual: look for guards/upserts in job bodies) (§4)** —
-      `grep -rln "def perform" app/jobs/ 2>/dev/null | head`
-      (also manual: retries bounded with backoff, a dead-letter queue someone monitors, alerts on
+      `grep -rl "def perform" app/jobs/ | xargs -r grep -LE 'find_or_create_by|upsert|insert_all|unique_by|idempoten|with_lock|lock!'`
+      (lists job files with none of these idempotency keywords, a keyword heuristic; also manual:
+      retries bounded with backoff, a dead-letter queue someone monitors, alerts on
       queue depth and oldest-job age)
 - [ ] **JIT posture (§5) — INFO; confirm `RubyVM::YJIT.enabled?` is true in the production process** —
       `grep -rn "yjit\|YJIT" --include='Dockerfile*' --include='Procfile*' --include='*.rb' --include='*.y*ml' . | head -3` ;

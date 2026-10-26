@@ -1,0 +1,3 @@
+./src/Previews/PreviewClient.cs:8:            UseProxy = false,
+./src/Previews/PreviewClient.cs:9:            AllowAutoRedirect = false,
+./src/Previews/PreviewClient.cs:10:            ConnectCallback = PublicAddressOnly.ConnectAsync,

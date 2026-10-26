@@ -1,0 +1,4 @@
+<ruleset name="app">
+  <rule ref="category/java/bestpractices.xml"/>
+  <rule ref="category/java/bestpractices.xml/UnnecessaryWarningSuppression"/>
+</ruleset>

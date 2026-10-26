@@ -1,0 +1,3 @@
+#!/bin/bash
+m=$(date +%m)
+echo $(( ${m#0} + 1 ))

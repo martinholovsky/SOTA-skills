@@ -1,0 +1,4 @@
+cases:
+  - id: 1
+    input: hello
+    source: synthetic

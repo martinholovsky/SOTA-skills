@@ -369,7 +369,7 @@ Run from repo root; verify each hit manually.
 
 - [ ] **Session config — effective values, not file greps alone** (§1) —
       `php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
-      ; `grep -rn 'session_regenerate_id' --include='*.php' src/` (absent near login = HIGH);
+      ; `grep -rl 'password_verify' --include='*.php' src/ | xargs -r grep -L 'session_regenerate_id'` (lists files that call `password_verify` but never regenerate the ID: HIGH);
       `grep -rnE 'session_id\s*\(\s*\$' --include='*.php' src/` (attacker-settable ID)
 - [ ] **Session ini overrides (§1) — MEDIUM (HIGH for `use_trans_sid` on)** — each hit sets
       URL IDs, auto-start, the default name or a shared temp dir:
@@ -387,7 +387,7 @@ Run from repo root; verify each hit manually.
 - [ ] **Password handling** —
       `grep -rnE '\b(md5|sha1|crypt)\s*\(' --include='*.php' src/ | grep -iE 'pass|pwd'` ;
       `grep -rn 'password_hash' --include='*.php' src/` ;
-      `grep -rn 'password_needs_rehash' --include='*.php' src/` (absent = MEDIUM (stuck costs)) ;
+      `grep -rl 'password_verify' --include='*.php' src/ | xargs -r grep -L 'password_needs_rehash'` (lists files that verify passwords but never rehash: MEDIUM (stuck costs)) ;
       `grep -rnE 'PASSWORD_(DEFAULT|BCRYPT)' --include='*.php' src/` (bcrypt, §2: confirm the
       input is rejected above 72 bytes by `strlen`, else MEDIUM)
 - [ ] **Weak randomness / timing-unsafe compares — HIGH where security-relevant** —
@@ -409,8 +409,8 @@ Run from repo root; verify each hit manually.
       `grep -rnE '(^|[^_A-Za-z])decrypt[[:space:]]*\(|\$serialize[[:space:]]*=[[:space:]]*true' --include='*.php' --exclude-dir=vendor .`
       (a `decrypt(` with no second argument `false` unserializes; `decryptString(` is not matched)
 - [ ] **CSRF — token verified centrally? exclusions? (§4) — HIGH on a state change** —
-      `grep -rnE '(csrf|_token)' -il --include='*.php' src/ | head` ;
-      `grep -rn 'VerifyCsrfToken' -r app/ 2>/dev/null` (e.g. Laravel: check $except) ;
+      `grep -rqiE 'csrf' --include='*.php' src/ || echo "src/: NO CSRF TOKEN HANDLING FOUND"` ;
+      `grep -rnE -A5 'protected[[:space:]]+\$except' app/ | grep -E "['\"][^'\"]+['\"]"` (e.g. Laravel: prints the routes listed in a non-empty `$except`, each one exempt from CSRF) ;
       `grep -rniE "Route::get[[:space:]]*\([[:space:]]*['\"][^'\"]*(delete|remove|destroy|update|logout)" --include='*.php' --exclude-dir=vendor .`
       (a GET route that mutates state is a CSRF hole through `<img src>`)
 - [ ] **ini hardening + headers (§5, §6) — MEDIUM for a missing header, HIGH for a reflected
@@ -447,7 +447,7 @@ Run from repo root; verify each hit manually.
       . Values injected by the platform are not in the repo: read the running process's
       environment, and force an error on the live app to confirm the generic page
 - [ ] **Ignition in the lock (§5b) — CRITICAL if a vulnerable version is paired with debug on**
-      — `grep -A1 '"name": "facade/ignition"' composer.lock` (CVE-2021-3129 affects versions
+      — `grep -A1 '"name": "facade/ignition"' composer.lock | grep -E '"version": "v?(1\.([0-9]|1[0-5])\.|1\.16\.([0-9]|1[0-3])"|2\.[0-3]\.|2\.4\.[01]"|2\.5\.[01]")'` (CVE-2021-3129 affects versions
       below 1.16.14, 2.0.0–2.4.1 and 2.5.0–2.5.1; `composer audit --locked` also reports it)
 - [ ] **8.5 memory cap and a removed directive (§5)** — `disable_classes` still set = MEDIUM on
       8.5+ (it no longer restricts anything); no `max_memory_limit` on 8.5+ = LOW:

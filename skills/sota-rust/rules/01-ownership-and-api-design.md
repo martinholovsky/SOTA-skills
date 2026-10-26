@@ -336,9 +336,11 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       (`clippy::or_fun_call`).
 - [ ] Raw primitive IDs in public signatures (§3): `rg 'fn .*\b(id|user|key)\w*: (u32|u64|i64|String)'`.
 - [ ] **Typestate transition that leaves the old state usable (§4) — Low** —
-      `grep -rlE 'PhantomData<' --include='*.rs' .` lists files with state-parameterised types. In
-      each, a method returning the same type in another state must take `self` by value; one that
-      takes `&self`/`&mut self` leaves the previous state callable. A runtime `enum` is not a
+      `grep -rlw 'PhantomData' --include='*.rs' . | xargs -r grep -nE 'fn [a-z_][a-z0-9_]*\(&(mut )?self[^)]*\)[[:space:]]*->[^{;]*[A-Z][A-Za-z0-9_]*<[A-Z]'` lists, in files with state-parameterised types, methods that take
+      `&self`/`&mut self` and return a generic type (single-line signatures only; a getter such as
+      `-> Option<String>` prints too). A method returning
+      the same type in another state must take `self` by value; one that takes `&self`/`&mut self`
+      leaves the previous state callable. A runtime `enum` is not a
       finding where states are dynamic, numerous or serialized.
 - [ ] **Builders (§5) — Low** —
       `grep -rnE 'fn build\(&?(mut )?self\)' --include='*.rs' . | grep -v 'Result<'` lists

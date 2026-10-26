@@ -68,7 +68,7 @@ defend.
       `out=$(grep -rniE 'seed|random_state|set_seed|manual_seed|deterministic' --include='*.py' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no seeds set — runs not reproducible" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Config as code (§3) — MEDIUM** —
-      `grep -rniE 'hydra|omegaconf|pydantic|argparse|yaml.safe_load|config' --include='*.py' . | head`
+      `grep -rqiE 'hydra|omegaconf|pydantic|argparse|yaml.safe_load|config' --include='*.py' . || echo "no config-as-code"`
       ;
       `grep -rnE '= ?(0\.[0-9]+|[0-9]{2,})' --include='*.py' . | grep -iE 'lr|rate|epoch|batch|threshold' | head`
       (magic numbers)
@@ -78,7 +78,7 @@ defend.
 - [ ] **Notebook-only training (§2) — LOW/MEDIUM (debt)** — `find . -name '*.ipynb' | head` (is
       production training a notebook?)
 - [ ] **Checkpointing for long/distributed runs (§5) — MEDIUM** —
-      `grep -rniE 'checkpoint|save_model|state_dict|ModelCheckpoint' --include='*.py' . | head`
+      `grep -rqiE 'checkpoint|save_model|state_dict|ModelCheckpoint' --include='*.py' . || echo "no checkpointing in training code"`
       ; manual: does a failed run resume from its last checkpoint, is the effective batch size / LR
       scaling verified, and are GPU-hours tracked?
 - [ ] **Simplest model first (§6) — LOW (manual)** — did a simple model that beats the baseline run

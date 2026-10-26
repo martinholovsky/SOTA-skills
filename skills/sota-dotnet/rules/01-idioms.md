@@ -135,11 +135,11 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       `grep -rlE 'Process\.Start|new Process\(' --include='*.cs' . | while IFS= read -r f; do grep -q 'ExitCode' "$f" || echo "$f"; done`
 - [ ] **Culture-sensitive string comparison on identifiers (§7) — MEDIUM, HIGH on a security
       decision** — `grep -rnE '\.(StartsWith|EndsWith|IndexOf|LastIndexOf)\("[^"]*"\)|string\.Compare\([^,()]+,[^,()]+\)|\.To(Upper|Lower)\(\)' --include='*.cs' .`
-      ; `grep -rnE 'CA1307|CA1309|CA1310|CA1311' .editorconfig *.props 2>/dev/null` (none: the
+      ; `grep -rnE 'CA1307|CA1309|CA1310|CA1311' --include='.editorconfig' --include='*.globalconfig' --include='*.props' --include='*.csproj' . || echo "CA1307/CA1309/CA1310/CA1311 not configured: culture-sensitive comparisons go unflagged"` (none: the
       analyzers that flag these are off — they are not enabled by default)
 
 - [ ] **Null-forgiving overuse (§2) — MEDIUM (defeats NRT)** —
-      `grep -rnE '[A-Za-z0-9_)\]]\!\.' --include='*.cs' . | grep -v '!=' | head` (x!.Member)
+      `grep -rnE '[]A-Za-z0-9_)]!\.' --include='*.cs' . | grep -v '!=' | head` (x!.Member)
 - [ ] **Is NRT even enabled? (§2)** —
       `grep -rniE '<Nullable>\s*enable' . --include='*.csproj' --include='Directory.Build.props' || echo "NRT not enabled — HIGH"`
       ; `grep -rnE 'JsonSerializer\.Deserialize|ReadFromJsonAsync|GetFromJsonAsync' --include='*.cs' .`
@@ -164,7 +164,7 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       the value bounds money, a quota or a timeout** —
       `grep -rnE '(double|float|Double|Single)\.(Try)?Parse\(|Convert\.To(Double|Single)\(' --include='*.cs' . | grep -v 'IsFinite'`
       (a parsed float never tested with `double.IsFinite`: read the range check that follows) ;
-      `grep -rnE 'unchecked[[:space:]]*[({]' --include='*.cs' .` (each needs a stated bound or
+      `grep -rnE 'unchecked[[:space:]]*([({]|$)' --include='*.cs' .` (each needs a stated bound or
       an intended wrap) ;
       `grep -rlE '<CheckForOverflowUnderflow>[[:space:]]*true' --include='*.csproj' --include='Directory.Build.props' . || echo "overflow checking off project-wide — look for checked() on arithmetic over input"`
 - [ ] **Enum from input used without a defined-value check (§3) — MEDIUM, HIGH when it
@@ -174,7 +174,7 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       default arm before use; a cast hit that is not an enum is noise) ;
       `grep -rnE 'NoWarn[^<]*CS8524|CS8524[^/]*none|pragma warning disable CS8524' --include='*.cs' --include='*.csproj' --include='*.props' --include='.editorconfig' .`
 - [ ] **Legacy idioms (§1, §4) — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
-      should be records?); `grep -rnE 'namespace [A-Za-z0-9_.]+\s*\{' --include='*.cs' .`
+      should be records?); `grep -rnE '^[[:space:]]*namespace[[:space:]]+[A-Za-z0-9_.]+[[:space:]]*(\{|$)' --include='*.cs' .`
       (non-file-scoped namespaces)
 - [ ] **Multiple enumeration / LINQ on hot path (§5) — LOW (verify)** —
       `grep -rnE '\.Where\(|\.Select\(|\.Count\(\)' --include='*.cs' . | head`

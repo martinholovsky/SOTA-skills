@@ -308,7 +308,7 @@ feature without recorded risk acceptance: **High**.
       Is confidential-node attestation checked (attestation-gated scheduling where
       offered), or its absence recorded as a decision — unrecorded: Medium (R4.4, §2)?
 - [ ] Do confidential pods declare a TEE RuntimeClass, and does admission
-      policy enforce it for the sensitive namespaces? (`grep -rn runtimeClassName --include='*.yaml' --include='*.yml' --exclude-dir=.git .`;
+      policy enforce it for the sensitive namespaces? (Pod manifests with no RuntimeClass: `grep -rL runtimeClassName --include='*.yaml' --include='*.yml' --exclude-dir=.git . | xargs -r grep -l '^kind: *Pod'`;
       check Kyverno/VAP rules) Is an admission pass never cited as evidence that the
       workload is attested (R4.12, §5)?
 - [ ] Is a restrictive Kata agent policy attached to every confidential pod,

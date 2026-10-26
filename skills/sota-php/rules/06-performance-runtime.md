@@ -175,28 +175,30 @@ Run from repo root / against the runtime; verify each hit manually.
 - [ ] **validate_timestamps=1 on immutable deploys = LOW perf debt; cache-full/oom_restarts>0 =
       MEDIUM (§1)**
 - [ ] **FPM sizing (§4)** —
-      `grep -rnE '^(pm|pm\.max_children|pm\.max_requests|request_slowlog_timeout)' /etc/php*/fpm/pool.d/ 2>/dev/null`
+      `grep -rnE '^pm\.max_children[[:space:]]*=[[:space:]]*5[[:space:]]*$' --include='*.conf' .`
+      (the default 5 in a repo-shipped pool config; on a host, read `/etc/php*/fpm/pool.d/` for `pm`,
+      `pm.max_requests` and `request_slowlog_timeout` too)
 - [ ] **max_children default-ish (5) on a production box, or no slowlog = MEDIUM (§4)**
 - [ ] **N+1 / query-in-loop heuristics (§5) — confirm by reading the loop; MEDIUM on a hot path** —
-      `grep -rnE '(foreach|while)[^{]*\{[^}]*->(query|prepare|find|get)\(' --include='*.php' src/ | head`
+      `grep -rnE -A4 '(foreach|while)[[:space:]]*\(' --include='*.php' src/ | grep -E -e '->(query|prepare|find|get)\(' | head`
       ; `grep -rn 'fetchAll' --include='*.php' src/` (unbounded result sets?);
       `grep -rnE '(curl_exec|file_get_contents\s*\(\s*.http)' --include='*.php' src/` (HTTP in
       loops?) ;
       `grep -rnE -e '(apcu_(store|add)|->set)[[:space:]]*\([^,()]*,[^,()]*\)[[:space:]]*;' --include='*.php' --exclude-dir=vendor .`
       (a two-argument cache write: no TTL)
 - [ ] **Autoloader optimization in the deploy path (§5)** —
-      `grep -rn 'optimize-autoloader\|classmap-authoritative\|composer install.* -o\b' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' .`
+      `grep -rqE 'optimize-autoloader|classmap-authoritative|composer[[:space:]]+(install|dump-autoload)[^#]*[[:space:]]-[a-zA-Z]*o([[:space:]]|$)' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' . || echo "NO AUTOLOADER OPTIMIZATION IN THE DEPLOY PATH"`
 - [ ] **Xdebug in production (§6; HIGH if confirmed on prod hosts)** — `php -m | grep -i xdebug`
 - [ ] **Worker mode: request-scoped state reset (§4a) — HIGH where it carries a tenant, user
       or authorization, MEDIUM otherwise** — applies when the app runs under Octane, FrankenPHP
       worker mode, RoadRunner or Swoole (check `composer.json` and the container `CMD`). Each
       write to a static property, `$GLOBALS` or `$_ENV` must be cleared in a `finally` or a
       `kernel.reset` service:
-      `grep -rnE '(self|static|[A-Z][A-Za-z0-9_]*)::\$[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\[[^]]*\])?[[:space:]]*(\?\?)?=[^=>]|\$GLOBALS[[:space:]]*\[|\$_ENV[[:space:]]*\[[^]]*\][[:space:]]*=[^=]|putenv[[:space:]]*\(' --include='*.php' src/ | grep -vE '=[[:space:]]*(null|\[\])[[:space:]]*;'`
-      (the second filter drops the resets themselves). Singletons built from the request or
+      `grep -rlE '(self|static|[A-Z][A-Za-z0-9_]*)::\$[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\[[^]]*\])?[[:space:]]*(\?\?)?=[^=>]|\$GLOBALS[[:space:]]*\[|\$_ENV[[:space:]]*\[[^]]*\][[:space:]]*=[^=]|putenv[[:space:]]*\(' --include='*.php' src/ | xargs -r grep -L 'finally'`
+      (lists the files that write such state with no `finally`; a reset in a `kernel.reset` service needs reading). Singletons built from the request or
       container need reading
 - [ ] **Session lock hygiene on slow endpoints (§4)** —
-      `grep -rn 'session_write_close' --include='*.php' src/`
+      `grep -rl 'session_start' --include='*.php' src/ | xargs -r grep -L 'session_write_close'`
 - [ ] **Performance claims without measurements (§6) — check PR/commit rationale** —
       `git log --oneline --grep='perf\|optimi' -10`
 

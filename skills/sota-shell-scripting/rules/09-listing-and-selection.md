@@ -208,7 +208,7 @@ your ancestors, and anything whose command line is your own command. Then act on
       `pkill -f`, `pgrep -f`, `ps … | grep`, or a loop over `/proc/*/cmdline`. Each one
       matches the selecting shell, and in an agent harness or under `ssh host '…'` its parent
       too, whenever the plain pattern appears in their argv. Sweep for the shape with
-      `grep -nE '(pkill|pgrep) -f|/proc/\*/cmdline|ps [^|]*\| *grep'`, and act on PIDs taken
+      `grep -nE '(pkill|pgrep) -f|/proc/\*/cmdline|ps [^|]*\| *grep' <file>`, and act on PIDs taken
       from `$!`, a PID file or a port.
 
 - [ ] **A search filter next to a named file** (§5b): does any `grep` command combine

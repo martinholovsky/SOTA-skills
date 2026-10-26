@@ -97,7 +97,7 @@ such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the cla
 ## Audit checklist
 
 - [ ] **Optional misuse — LOW (field/param/collection)** (§1) —
-      `grep -rnE '(private|protected|public)\s+Optional<' --include='*.java' .` ;
+      `grep -rnE '(private|protected|public)([[:space:]]+(static|final|transient|volatile))*[[:space:]]+Optional<[^;(]*>[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' .` ;
       `grep -rnE '\(.*Optional<[^>]+>\s+\w+\)' --include='*.java' .`
 - [ ] **Mutable internal state handed out — MEDIUM** (§2) —
       `grep -rnE 'return [a-zA-Z_]+;\s*$' --include='*.java' . | grep -iE 'list|map|set|array'`

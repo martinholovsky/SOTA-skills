@@ -1,0 +1,9 @@
+{
+    "packages-dev": [
+        {
+            "name": "facade/ignition",
+            "version": "2.5.2",
+            "source": {"type": "git", "url": "https://github.com/facade/ignition.git"}
+        }
+    ]
+}

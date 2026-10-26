@@ -82,7 +82,7 @@ profiler before optimizing. Cross-reference [`sota-performance`](../../sota-perf
 ## Audit checklist
 
 - [ ] **Allocation/boxing on hot paths (§2) — LOW/MEDIUM (verify with profiler)** —
-      `grep -rnE '\+ ?"' --include='*.cs' . | grep -iE 'for ?\(|foreach|while'` (string concat
+      `grep -rnE -A4 '(for|foreach|while)[[:space:]]*\(' --include='*.cs' . | grep -E '\+=[[:space:]]*[^;]*"|\+ ?"'` (string concat
       in loops); `grep -rnE 'string\.Format|\$"' --include='*.cs' . | head` (hot-path
       formatting); `grep -rnE '\.ToList\(\)|\.ToArray\(\)' --include='*.cs' . | head` (needless
       materialization in loops) ; `grep -rnE '(^|[^[:alnum:]_])(ArrayList|Hashtable)([^[:alnum:]_]|$)' --include='*.cs' .`

@@ -440,7 +440,7 @@ published claim rested on that 0.00 for several hours.
       fixed failure promoted as a permanent case tagged with its taxonomy label
       and `source: incident` (§6).
 - [ ] **Production traffic sampled into the golden set (§7) — Medium** —
-      `grep -rnE 'source:[[:space:]]*(production|incident)' . || echo "no production-sourced eval cases"`
+      `grep -rqE 'source:[[:space:]]*(production|incident)' . || echo "no production-sourced eval cases"`
       ; manual: a random + stratified daily sample feeds a review queue; traces behind
       complaints, regenerations, escalations and incidents are auto-promoted; near-duplicates
       capped and every case date-stamped. PII redaction before promotion: the PII item in

@@ -1,0 +1,9 @@
+name: ci
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: dotnet format --verify-no-changes
+      - run: dotnet build -c Release -p:ContinuousIntegrationBuild=true

@@ -420,17 +420,17 @@ Supply chain and vulnerability management (formerly section 8) moved to
 ## Audit checklist
 
 - [ ] **SQL injection — CRITICAL** (§2) —
-      `grep -rnE '(Sprintf|fmt\.Sprint|\+ ?\w+ ?\+).*((?i)select|insert|update|delete|where)' --include='*.go' .`
+      `grep -rniE '(Sprintf|fmt\.Sprint|\+ ?\w+ ?\+).*(select|insert|update|delete|where)' --include='*.go' .`
       ; `grep -rnE '(Query|Exec|QueryRow)[^(]*\(("[^"]*"\s*\+|fmt\.Sprintf)' --include='*.go' .`
       ; `grep -rnE '\.(Raw|Where)\(fmt\.Sprintf' --include='*.go' .` (GORM-style)
 - [ ] **Command injection (§3) — CRITICAL** —
-      `grep -rnE 'exec\.Command(Context)?\(\s*"(sh|bash|cmd|powershell)"' --include='*.go' .` ;
-      `grep -rn 'exec.Command' --include='*.go' .` (verify argv per site: `--` before caller values, a minimal `cmd.Env`, `WaitDelay` set; constant-only `sh -c` is MEDIUM)
+      `grep -rnE 'exec\.Command(Context)?\(([^,"]+,[[:space:]]*)?"(sh|bash|cmd|powershell)"' --include='*.go' .` ;
+      `grep -rnE 'exec\.Command\(' --include='*.go' .` (ctx-less sites; for every `exec.Command*` site verify argv: `--` before caller values, a minimal `cmd.Env`, `WaitDelay` set; constant-only `sh -c` is MEDIUM)
 - [ ] **Path traversal — HIGH** (§4) —
       `grep -rnE 'filepath\.Join\([^)]*(r\.|req\.|input|name|param|id)' --include='*.go' .` ;
-      `grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .` (mitigations present?);
+      `grep -rnE 'os\.(Root|OpenRoot|OpenInRoot)|filepath\.IsLocal' --include='*.go' .` (mitigations present? no output means none);
       `go version` (os.Root containment needs >=1.26.5 on the 1.26 line — CVE-2026-39822 symlink escape);
-      `grep -rnE 'os\.(Open|Create|ReadFile|WriteFile|Remove)' --include='*.go' . # trace path provenance`
+      `grep -rnE 'os\.(Open|OpenFile|Create|ReadFile|WriteFile|Remove)\(' --include='*.go' . # trace path provenance`
 - [ ] **Directory listing from an unwrapped `FileServer` (§4) — MEDIUM** —
       `grep -rnE 'http\.FileServer(FS)?\((http\.(Dir|FS)|os\.DirFS)\(' --include='*.go' .`
 - [ ] **Unpinged pool; pool-level prepared statements (§2) — LOW, MEDIUM behind a
@@ -445,13 +445,13 @@ Supply chain and vulnerability management (formerly section 8) moved to
 - [ ] **Regex escaping, anchoring & engine (§1) — HIGH** —
       ``grep -rnE 'regexp2?\.(MustCompile|Compile|MatchString|Match)\((fmt\.Sprintf|.*["`] \+ [A-Za-z_]|.*[A-Za-z0-9_)] \+ ["`])' --include='*.go' . | grep -v QuoteMeta``
       (pattern built from data, not escaped) ; ``grep -rnE 'Compile\(`\^[^(`]*\|' --include='*.go' .``
-      (`^a|b$` — alternation escapes the anchors) ; `grep -rn 'regexp2\.' --include='*.go' .`
-      (backtracking engine: confirm `MatchTimeout` is set)
+      (`^a|b$` — alternation escapes the anchors) ; `grep -rl 'regexp2\.' --include='*.go' . | xargs -r grep -L 'MatchTimeout'`
+      (files on the backtracking engine that never set `MatchTimeout`)
 - [ ] **TLS (§6) — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
       `grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .` ;
       `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'` ; `grep -rnE 'CipherSuites|CurvePreferences' --include='*.go' .` (hand-picked lists only where compliance forces them)
 - [ ] **Integer conversion — gosec G115** (§5) —
-      `grep -rnE '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)'`
+      `grep -rnE -B4 '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)' | awk '/[<>]=?/ && /(Max|Min)(Int|Uint)/{g=1} /^--$/{g=0; next} $0 ~ /^[^ ]*:[0-9]+:/ && /(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(/ {if(!g)print; g=0}'`
       ; `gosec -include=G115,G118,G119,G120,G121,G124,G201,G202,G204,G304,G401,G402,G701,G702,G703,G704,G705,G706,G707,G708,G709,G710 ./...`
       (or plain `gosec ./...` for the full set)
 - [ ] **Money in binary floats (§5, §1) — MEDIUM, HIGH in money paths** —
@@ -473,7 +473,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
 - [ ] **Output encoding / XSS — HIGH** (§1) —
       `grep -rn 'text/template' --include='*.go' . | grep -iv _test` (HTML rendered via
       text/template?);
-      `grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . # escaping bypass — verify sanitized`
+      `grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . | grep -viE 'saniti[sz]e'` (escaping bypass with no sanitizer on the same line)
 - [ ] **Dynamic code evaluation from input (§4d) — CRITICAL when the text is caller-supplied,
       HIGH otherwise** —
       `grep -rnE '(template\.New\([^)]*\)|[Tt]mpl|[Tt]emplate)\.Parse\([A-Za-z_]|interp\.New\(|goja\.New\(|plugin\.Open\(|MethodByName\(|expr\.Eval\(' --include='*.go' .`

@@ -1,0 +1,2 @@
+./pom.xml:9:        <groupId>org.cyclonedx</groupId>
+./pom.xml:10:        <artifactId>cyclonedx-maven-plugin</artifactId>

@@ -1,0 +1,1 @@
+./.github/workflows/ci.yml:9:      - run: "! grep -q 'WARNING in native method' test.log"

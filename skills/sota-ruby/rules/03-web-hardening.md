@@ -315,7 +315,7 @@ Run from repo root; verify each hit manually. Rails apps: run `brakeman -q`
 first — it covers XSS/mass-assignment/redirect sinks mechanically.
 
 - [ ] **Escaping bypasses (§1) — CRITICAL if user-influenced** —
-      `grep -rnE '\.html_safe\b|raw\s*\(|<%==' --include='*.erb' --include='*.rb' app/ lib/ views/ 2>/dev/null` ;
+      `grep -rnE '\.html_safe\b|raw\s*\(|<%==' --include='*.erb' --include='*.rb' .` (a Rails app keeps its views in `app/views/`; naming a root `views/` made grep exit 2 on one) ;
       `grep -rnE '\.(gsub|sub)!?\([[:space:]]*/<' --include='*.rb' .` (tags stripped by regex: use an
       allowlist sanitizer) ; `grep -rlE 'content_security_policy|Content-Security-Policy' --include='*.rb' --include='config.ru' . || echo "no CSP configured"`
       (no CSP — MEDIUM per the severity guide; defence in depth, not a substitute for escaping) ;
@@ -373,8 +373,9 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
 - [ ] **Secrets reaching logs (§8) — HIGH** —
       `grep -rniE 'logger\.(debug|info|warn|error|fatal|unknown).*#\{[^}]*(passw|secret|token|api_?key|credential)' --include='*.rb' .`
       (a credential interpolated into a log line) ;
-      `grep -rniE '(Data\.define|Struct\.new)\([^)]*:[a-z_]*(passw|secret|token|api_?key)' --include='*.rb' .`
-      (a value object whose `inspect` prints the credential unless overridden) ;
+      `grep -rliE '(Data\.define|Struct\.new)\([^)]*:[a-z_]*(passw|secret|token|api_?key)' --include='*.rb' . | xargs -r grep -L 'def inspect'`
+      (files with a credential-carrying value object and no `def inspect` override: its
+      `inspect` prints the credential; a file-level heuristic) ;
       Rails apps: `grep -rn 'filter_parameters' config/` — exit 1 means no parameter is
       filtered from the logs (HIGH); exit 2 means there is no `config/` to read. A list
       narrower than the generated default needs a reason

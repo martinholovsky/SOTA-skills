@@ -1,0 +1,5 @@
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - run: swift build -Xswiftc -sanitize=fuzzer,address

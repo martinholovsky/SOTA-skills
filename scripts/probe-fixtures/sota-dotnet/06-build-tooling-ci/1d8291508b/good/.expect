@@ -1,0 +1,1 @@
+./tests/Shop.Parsing.Tests/Shop.Parsing.Tests.csproj:4:    <PackageReference Include="CsCheck" Version="4.2.1" />

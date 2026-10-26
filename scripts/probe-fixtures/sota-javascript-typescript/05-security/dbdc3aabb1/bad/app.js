@@ -1,0 +1,1 @@
+res.cookie('sid', id);

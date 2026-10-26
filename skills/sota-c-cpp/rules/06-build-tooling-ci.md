@@ -343,7 +343,7 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       `case $rc in 0) ;; 1) echo "cppcheck-suppress comments present but --inline-suppr never passed: every one is decoration" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
 - [ ] **compiler-level, which no lint grep finds** (§2) —
       `grep -rn '#pragma GCC diagnostic ignored\|#pragma clang diagnostic ignored\|#pragma warning(disable' --include='*.c' --include='*.cpp' --include='*.h' .`
-      ; `grep -rn 'suppressions' CMakeLists.txt *.cmake 2>/dev/null` (cppcheck
+      ; `grep -rn 'suppressions' --include='CMakeLists.txt' --include='*.cmake' .` (cppcheck
       --suppressions-list=)
 - [ ] **Warning silenced project-wide, or a pragma with no scope (§2) — MEDIUM** —
       `grep -rnE '(-Wno-[a-z]|/wd[[:space:]]*[0-9])' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' . | grep -v 'set_source_files_properties'`
@@ -363,7 +363,7 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
 - [ ] **Warnings-as-errors and standard pinned?** (§2, §1) —
       `err=$(grep -rE 'Werror|/WX' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no -Werror or /WX in any build file" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
-      ; `grep -rnE 'CXX_STANDARD|cxx_std_|std=c\+\+' CMakeLists.txt 2>/dev/null`
+      ; `grep -rqE 'CXX_STANDARD|cxx_std_|std=c\+\+' --include='CMakeLists.txt' --include='*.cmake' . || echo 'C++ standard not pinned'`
       ; `err=$(grep -E 'C_STANDARD|c_std_|std=(gnu|c)[0-9]' CMakeLists.txt 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "C dialect not pinned" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       (§1: the default moved to `gnu23` in GCC 15 and `gnu++20` in GCC 16)
@@ -392,16 +392,17 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       `case $rc in 0) ;; 1) echo "no sanitizer/fuzz job in CI config — HIGH for input-parsing code" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ; each fuzz target with an early-return guard has reach evidence (§4), not only `-print_final_stats`
 - [ ] **CBMC harnesses gated in two passes (§4a) — MEDIUM: a one-pass gate proves nothing** —
-      `grep -rlE '__CPROVER_(assume|assert|cover)' --include='*.c' --include='*.cpp' .` (the harnesses) ;
-      `grep -rnE 'cbmc[^|]*(--cover|--no-unwinding-assertions)' --include='*.yml' --include='*.yaml' --include='Makefile*' --include='*.sh' .`
-      — `--no-unwinding-assertions` anywhere = MEDIUM; a `--cover` run whose exit code is the
+      `grep -rlE '__CPROVER_(assume|assert)' --include='*.c' --include='*.cpp' . | xargs -r grep -L '__CPROVER_cover'` (harnesses with no `__CPROVER_cover`) ;
+      `grep -rnE 'cbmc[^|]*--no-unwinding-assertions' --include='*.yml' --include='*.yaml' --include='Makefile*' --include='*.sh' .`
+      — `--no-unwinding-assertions` anywhere = MEDIUM; a `--cover` run (read each one by hand:
+      the probe does not list them, since §4a's own script runs one) whose exit code is the
       verdict (outside a per-line parse like §4a's script) = MEDIUM, since it exits 0 at 0 covered; harnesses with no
       `__CPROVER_cover`, or with covers and no separate safety pass = MEDIUM
 - [ ] **Dependency manager + lockfile?** (§5) —
       `out=$(find . -maxdepth 1 \( -name vcpkg.json -o -name conan.lock -o -name 'conanfile.*' \) -print 2>&1); rc=$?` ;
       `case $rc in 0) [ -n "$out" ] || echo "no pinned dependency manifest/lockfile" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
       ;
-      `grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null`
+      `grep -rniE 'FetchContent|ExternalProject|submodule' --include='CMakeLists.txt' --include='*.cmake' --include='.gitmodules' .`
       (verify pinning)
 - [ ] **Something unfreezes the pin (§5) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** —
       `test -f vcpkg.json && ! find . -maxdepth 1 \( -name vcpkg.json -o -name vcpkg-configuration.json \) -exec grep -qE '"(builtin-)?baseline"' {} + && echo "vcpkg.json with no baseline: classic-mode resolution"` ;
@@ -412,14 +413,14 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       components and reports clean
 - [ ] **Fetched sources verified, and dependencies scanned (§5) — HIGH for a shipped
       binary** —
-      `grep -rnE 'URL[[:space:]]+[^[:space:]]*(https?|ftp)://' --include='CMakeLists.txt' --include='*.cmake' .`
-      against `grep -rn 'URL_HASH' --include='CMakeLists.txt' --include='*.cmake' .` (a `URL`
-      download with no `URL_HASH`: CMake's ExternalProject docs call the hash "strongly
+      `grep -rlE 'URL[[:space:]]+[^[:space:]]*(https?|ftp)://' --include='CMakeLists.txt' --include='*.cmake' . | xargs -r grep -L 'URL_HASH'`
+      (files with a `URL` download and no `URL_HASH` anywhere in them; a file with several
+      downloads needs each read: CMake's ExternalProject docs call the hash "strongly
       recommended ... as it ensures the integrity of the downloaded content") ;
       `grep -rnE 'GIT_TAG[[:space:]]+[^[:space:])]+' --include='CMakeLists.txt' --include='*.cmake' . | grep -vE 'GIT_TAG[[:space:]]+[0-9a-f]{40}'`
       (a branch or tag, not a commit: the same docs prefer the hash, and an omitted `GIT_TAG`
       defaults to `master`) ;
-      `grep -rniE 'osv-scanner|dependency-track|grype|trivy|cyclonedx|spdx' --include='*.yml' --include='*.yaml' .`
+      `grep -rqiE 'osv-scanner|dependency-track|grype|trivy|cyclonedx|spdx' --include='*.yml' --include='*.yaml' . || echo 'no CVE-scan or SBOM step in CI config'`
       (no CVE-scan or SBOM step at all leaves §5 unenforced. OSV-Scanner's own table lists
       `conan.lock` for C/C++, plus commit-level scanning of submoduled or vendored code, and
       no vcpkg lockfile)
@@ -441,7 +442,7 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       `conan install`, even with `--build=never`) ;
       `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -qE 'CMakeLists|\.cmake|conanfile|vcpkg' || echo "no CODEOWNERS entry for build-executing files"`
 - [ ] **Global (non-target) CMake anti-patterns — LOW/MEDIUM** (§1) —
-      `grep -rnE 'include_directories\(|link_libraries\(|^set\(CMAKE_CXX_FLAGS' CMakeLists.txt 2>/dev/null`
+      `grep -rnE '(^|[^_[:alnum:]])(include_directories|link_libraries)\(|^set\(CMAKE_CXX_FLAGS' --include='CMakeLists.txt' --include='*.cmake' .`
 - [ ] **Build paths and times reach the binary (§6) — LOW, MEDIUM where releases claim
       reproducibility** —
       `grep -rnE '__(DATE|TIME|TIMESTAMP)__' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' --include='*.hpp' .`

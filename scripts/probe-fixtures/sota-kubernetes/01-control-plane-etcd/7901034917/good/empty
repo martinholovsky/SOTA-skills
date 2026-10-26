@@ -1,0 +1,9 @@
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    - --anonymous-auth=false
+    - --authorization-mode=Node,RBAC
+    - --enable-admission-plugins=NodeRestriction
+    - --profiling=false
+    - --audit-policy-file=/etc/kubernetes/audit-policy.yaml

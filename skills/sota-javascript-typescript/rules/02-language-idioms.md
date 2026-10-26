@@ -306,9 +306,9 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
 
 ## Audit checklist
 
-- [ ] **Public surface** (§13): `grep -n '"exports"' package.json` —
-      absent means **every file is importable** and a refactor breaks consumers silently;
-      present means adding it later was (or will be) a major. Where present, check `"types"` is
+- [ ] **Public surface** (§13): `grep -q '"exports"' package.json || echo 'package.json: no "exports" map'` —
+      a printed line (no map) means **every file is importable** and a refactor breaks consumers silently;
+      a map present means adding it later was (or will be) a major. Where present, check `"types"` is
       the **first** key in each conditions object — conditions match in declaration order, so a
       later `"types"` is unreachable for a TS consumer.
 - [ ] **Spread-accumulator `reduce` — accidental O(n²)** (§3):

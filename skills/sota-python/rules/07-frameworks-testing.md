@@ -289,21 +289,21 @@ testpaths = ["tests"]
       `grep -rn "@\(app\|router\)\.\(get\|post\|put\|delete\)" --include="*.py" src/ -A3 | grep -L response_model | head`
       (ORM leak risk); `grep -rn "AsyncClient()" --include="*.py" src/ | grep -v lifespan`
       (per-request clients [MEDIUM]);
-      `grep -rn -B2 "livez\|/health\|healthz" --include="*.py" src/ | grep "^.*def "` (liveness:
-      `async def` , no deps (§1 exception));
+      `grep -rn -A2 'livez\|/health\|healthz' --include='*.py' src/ | grep -E '^[^:]+[-:][0-9]+[-:][[:space:]]*def '`
+      (a sync `def` health handler; liveness should be `async def`, no deps (§1 exception));
       `grep -rn "^[A-Z_]* = .*Session\|^engine = " --include="*.py" src/` (module-global state
       vs Depends)
 - [ ] **Django ORM** —
       `grep -rn "\.objects\.all()\|\.objects\.filter" --include="*.py" src/ | wc -l` ;
       `grep -rln "select_related\|prefetch_related" --include="*.py" src/ | wc -l` (ratio sanity
       check);
-      `grep -rn "for .* in .*\.objects\." --include="*.py" src/ -A2 | grep "\.\(name\|user\|customer\)" | head`
+      `grep -rnE 'for .* in .*\.objects\.' --include='*.py' src/ | grep -vE 'select_related|prefetch_related'`
       (N+1 candidates); `grep -rn "count() > 0\|len(.*objects" --include="*.py" src/` (exists()
       instead); `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` ([HIGH if
       interpolated]); `git log --oneline -- '**/migrations/*.py' | head` (edited-after-merge
-      migrations?); `grep -rn "makemigrations --check" .github/ .gitlab-ci.yml 2>/dev/null`
-      (drift gate present?); `grep -rn "check --deploy" .github/ .gitlab-ci.yml 2>/dev/null`
-      (empty → LOW, no deploy-settings gate, §2; read the output, as the status is 2 whenever either path is absent)
+      migrations?); `grep -rq "makemigrations --check" .github/ .gitlab-ci.yml || echo "no makemigrations --check gate"`
+      (the message = no drift gate); `grep -rq "check --deploy" .github/ .gitlab-ci.yml || echo "no check --deploy gate"`
+      (the message → LOW, no deploy-settings gate, §2)
 - [ ] **--- App-set cookies: Secure / HttpOnly / SameSite flags (§2 cookies) --- [HIGH for an
       auth or identity token; MEDIUM for a preference]** —
       `grep -rnE '\.set_(signed_)?cookie\(' --include='*.py' src/ | grep -vE 'secure[[:space:]]*=[[:space:]]*True.*httponly[[:space:]]*=[[:space:]]*True|httponly[[:space:]]*=[[:space:]]*True.*secure[[:space:]]*=[[:space:]]*True'`

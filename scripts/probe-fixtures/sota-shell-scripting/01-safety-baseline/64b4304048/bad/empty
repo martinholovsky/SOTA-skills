@@ -1,0 +1,1 @@
+make ci | tail -10 && git push

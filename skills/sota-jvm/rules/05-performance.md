@@ -139,7 +139,8 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
       `grep -rnE 'redact-(key|argument)=none' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' --include='*.gradle*' --include='pom.xml' .`
       (redaction switched off on JDK 27+)
 - [ ] **Startup-bound service without an AOT cache, or a cache it never uses — LOW** (§2) —
-      `grep -rnE 'AOTCache(Output)?=|AOTMode=|SharedArchiveFile|native-image' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' --include='*.gradle*' --include='pom.xml' .`
-      (no hit on a service with a startup SLO: try `-XX:AOTCacheOutput` first. A cache beside
-      `--illegal-native-access` or `--add-opens` in the same launch is skipped with only a
-      warning, so read the launch line)
+      `grep -rnE 'AOTCache=|SharedArchiveFile' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' --include='*.gradle*' --include='pom.xml' . | grep -E 'illegal-native-access|add-opens|add-reads|limit-modules|patch-module|upgrade-module-path|javaagent'`
+      (each line printed launches a cache beside a flag that makes the JVM skip it with only a
+      warning, so the cache is never used. A service with a startup SLO and no `AOTCache`,
+      `SharedArchiveFile` or `native-image` anywhere is the other finding: try
+      `-XX:AOTCacheOutput` first)

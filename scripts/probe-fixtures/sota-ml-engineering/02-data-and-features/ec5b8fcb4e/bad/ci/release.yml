@@ -1,0 +1,3 @@
+- uses: actions/attest-build-provenance@v2
+  with:
+    subject-name: ghcr.io/example/app

@@ -322,7 +322,7 @@ Run from repo root; verify each hit manually.
       not restate the callee)** —
       `grep -rnE 'fmt\.Errorf\([^)]*%v[^)]*err\s*\)' --include='*.go' .`
 - [ ] **Panics outside main/init/Must/tests — HIGH if reachable from input** (§5) —
-      `grep -rn 'panic(' --include='*.go' . | grep -vE '(_test\.go|Must|init\()'`
+      `grep -rl 'panic(' --include='*.go' . | grep -v '_test\.go$' | xargs -r awk '/^func /{f=$0} /panic\(/ && f !~ /(Must|^func init\()/ {print FILENAME":"FNR": "$0}'`
 - [ ] **Limits before allocation and recursion (§5) — HIGH when the input is untrusted** —
       `grep -rnE 'make\(\[\][^,]+,[[:space:]]*(int(32|64)?\()?[a-z][A-Za-z0-9_]*\.[A-Z][A-Za-z0-9_]*' --include='*.go' .`
       (a slice sized by a decoded field: read back for a cap against a constant) ;
@@ -353,7 +353,7 @@ Run from repo root; verify each hit manually.
       (exported sentinel without the `Err` prefix) ; manual: each exported sentinel or type has a
       caller that branches on it (exports are API forever); wrapper types are in the next item
 - [ ] **recover outside defer; missing Unwrap on wrapper types (§4, §5) (manual)** —
-      `grep -rn 'recover()' --include='*.go' .` ;
+      `grep -rl 'recover()' --include='*.go' . | xargs -r awk 'FNR==1{d=-99} /defer func/{d=FNR} /recover\(\)/ && FNR-d>3 {print FILENAME":"FNR": "$0}'` ;
       `grep -rln 'type .*Error struct' --include='*.go' . | xargs grep -L 'func (.*) Unwrap()'`
 - [ ] **Tooling** (§1, §2) — `go vet ./...` ;
       `golangci-lint run --enable-only errcheck,errorlint,err113,wrapcheck,nilerr ./...` ;

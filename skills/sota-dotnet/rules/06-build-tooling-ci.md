@@ -298,7 +298,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - [ ] **AOT or single-file artifact with no build-time SBOM (§3) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6)** —
       `grep -rnE 'PublishAot|PublishSingleFile' --include='*.csproj' --include='*.props' --include='*.pubxml' --include='*.yml' --include='*.yaml' .`
       ; for each hit, the release job must emit an SBOM before publish:
-      `grep -rniE 'cyclonedx|sbom|spdx' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.ps1' .`
+      `grep -rniE 'cyclonedx|sbom|spdx' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.ps1' . || echo "no SBOM step in CI or scripts"`
       (an image scan alone reads 0 packages from an AOT binary)
 - [ ] **Unsafe or P/Invoke code with no sanitized native test job, or a dead ASan property —
       MEDIUM, HIGH on input-derived lengths** (§4) —
@@ -324,9 +324,9 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       (≤ 2.3.0 = CVE-2025-55315, need 2.3.6); check container base-image tags; self-contained/AOT
       apps need a rebuild
 - [ ] **Formatting + deterministic build in CI?** (§2, §4) —
-      `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' --include='*.yml' --include='*.yaml' --include='*.csproj' --include='*.props' .`
+      `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' --include='*.yml' --include='*.yaml' --include='*.csproj' --include='*.props' . || echo "no format gate or deterministic CI build"`
 - [ ] **Test runner + coverage?** (§4) —
-      `grep -rniE 'xunit|nunit|mstest|coverlet|testcontainers' --include='*.csproj' --include='*.props' .`
+      `grep -rniE 'xunit|nunit|mstest|coverlet|testcontainers' --include='*.csproj' --include='*.props' . || echo "no test runner or coverage package referenced"`
 - [ ] **Package code that runs at build (`build*/…props`/`.targets` imported from packages) —
       HIGH if any is unreviewed** (§3) — after a restore, every hit is a package file MSBuild
       imports and runs:
@@ -349,7 +349,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rlE 'MessagePackSerializer[.]Deserialize' --include='*.cs' . | while IFS= read -r f; do grep -q 'UntrustedData' "$f" || echo "$f: MessagePack on TrustedData default"; done`
 - [ ] **Parsers of untrusted bytes have fuzz / property-based tests (§4) — LOW, MEDIUM for a
       parser of untrusted bytes; a OneFuzz hit is a dead control** —
-      `grep -rnE 'SharpFuzz|FsCheck|CsCheck|OneFuzz|onefuzz' --include='*.csproj' --include='*.cs' --include='*.yml' --include='*.yaml' .`
+      `grep -rnE 'SharpFuzz|FsCheck|CsCheck|OneFuzz|onefuzz' --include='*.csproj' --include='*.cs' --include='*.yml' --include='*.yaml' . || echo "no fuzz or property-based tests"`
 - [ ] **Restore/build job holds publish or signing credentials (§3) — HIGH** — read the CI job
       that runs `dotnet restore`/`build`/`test`: any `secrets.` beyond a read-only feed token,
       `id-token: write`, or a signing/publish key in its env or steps is HIGH, because a

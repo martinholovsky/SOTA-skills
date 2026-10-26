@@ -1,0 +1,6 @@
+spec:
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: db

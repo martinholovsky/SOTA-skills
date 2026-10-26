@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.25)
+project(mylib CXX)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+add_library(mylib SHARED src/api.cpp)

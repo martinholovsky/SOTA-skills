@@ -149,14 +149,16 @@ All Spring facts below were checked against Spring's own docs, advisories and so
       or a broad prefix is the same finding)
 - [ ] **Mass assignment — HIGH** (§1) — list binding targets and confirm none is an entity:
       `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` ;
-      `grep -rnE 'setAllowedFields|setDisallowedFields|@InitBinder' --include='*.java' --include='*.kt' .`
-      (property binding with no `setAllowedFields` on an entity is the finding; a
+      `grep -rlE '@ModelAttribute' --include='*.java' --include='*.kt' . | xargs -r grep -LE 'setAllowedFields'`
+      (each file printed binds a `@ModelAttribute` and never calls `setAllowedFields`: on an
+      entity, the finding; a
       disallow-list is weaker than an allow-list) ;
       `grep -rnE 'BeanUtils\.populate\(' --include='*.java' --include='*.kt' .`
       (the non-Spring spelling: every request parameter name becomes a setter call)
 - [ ] **Authorization rules — HIGH** (§1) —
-      `grep -rnE 'authorizeHttpRequests|requestMatchers|anyRequest|permitAll|ignoring\(' --include='*.java' --include='*.kt' .`
-      (read each chain top-down: first match wins; the chain must end in `anyRequest()`;
+      `grep -rlE 'authorizeHttpRequests' --include='*.java' --include='*.kt' . | xargs -r grep -L 'anyRequest'`
+      (each file printed has a chain that never reaches `anyRequest()`; still read each chain
+      top-down: first match wins;
       `web.ignoring()` on a non-static path is a finding)
 - [ ] **Descriptor, annotation and code roles disagree — HIGH** (§1) —
       `grep -rnE 'metadata-complete="true"|<externally-defined|<run-as>|<run-as-role-assignment>|@RunAs\(' --include='*.xml' --include='*.java' --include='*.kt' .`
@@ -184,12 +186,13 @@ All Spring facts below were checked against Spring's own docs, advisories and so
       `grep -rnE -A1 'sendRedirect\(|\.forward\(|setHeader\("Location"' --include='*.java' --include='*.kt' . | grep -E '^[^:]+-[0-9]+-' | grep -vE '^[^:]+-[0-9]+-[[:space:]]*(return|throw|\}|$)'`
       (prints the statement after each call; a status set after `Location` is expected)
 - [ ] **CORS: wildcard origin pattern with credentials — HIGH** (§1) —
-      `grep -rnE 'allowedOriginPatterns\([^)]*"\*"|addAllowedOriginPattern\("\*"\)|originPatterns[[:space:]]*=[[:space:]]*"\*"|allowCredentials[[:space:]]*(\(|=)[[:space:]]*"?true' --include='*.java' --include='*.kt' .`
+      `grep -rlE '[aA]llowedOriginPatterns\([^)]*"\*"|[aA]ddAllowedOriginPattern\("\*"\)|originPatterns[[:space:]]*=[[:space:]]*"\*"' --include='*.java' --include='*.kt' . | xargs -r grep -nHE '[aA]llowCredentials[[:space:]]*(\(|=)[[:space:]]*"?true'`
       (a `*` pattern and `allowCredentials` true on the same mapping reflect every origin;
       Spring's own `*` + credentials guard does not cover patterns)
 - [ ] **Session IDs in URLs; app-set cookies without Secure/HttpOnly/SameSite — MEDIUM** (§1) —
-      `grep -rnE 'new (jakarta\.servlet\.http\.|javax\.servlet\.http\.)?Cookie\(|encodeURL\(|encodeRedirectURL\(|tracking-modes|trackingModes|setSessionTrackingModes|<tracking-mode>' --include='*.java' --include='*.kt' --include='*.properties' --include='*.y*ml' --include='web.xml' .`
-      (no cookie-only tracking-mode setting means Tomcat's default still includes `URL`) ;
+      `grep -rliE 'tracking-modes[=:][[:space:]]*cookie[[:space:]]*$|[<]tracking-mode[>]COOKIE|setSessionTrackingModes\(' --include='*.java' --include='*.kt' --include='*.properties' --include='*.y*ml' --include='web.xml' . || echo "no cookie-only session tracking mode: the container also tracks by URL"`
+      (prints the files that set a cookie-only tracking mode, or a line when none does: Tomcat's
+      default then still includes `URL`) ;
       `grep -rlE 'new (jakarta\.servlet\.http\.|javax\.servlet\.http\.)?Cookie\(|ResponseCookie\.from\(' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qi 'samesite' "$f" || echo "$f"; done`
       (files creating a cookie that never set SameSite; at every creation site also confirm `setSecure(true)`/`setHttpOnly(true)` or `.secure(true).httpOnly(true)`)
 - [ ] **Servlet container configuration — HIGH for deployment, linking and limits, MEDIUM for
