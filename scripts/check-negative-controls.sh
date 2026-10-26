@@ -1282,14 +1282,21 @@ probe 41 "router §BUILD changed without the eval mirror's pin being re-read" "B
 
 # 42 — reachability graph (scripts/reachability-graph.py). One probe per property, each a
 # python edit that asserts its anchor first, so a stale literal fails as a PROBE.
-# 42: delete devsecops/rules/08's only pointer beyond its index row -> C1 (index-only).
+# 42: delete devsecops/rules/08's pointers beyond its index row -> C1 (index-only). There are two
+# since 2026-10-26 (rules/04, and kubernetes rules/07's digest-pinning hand-off): removing only the
+# first left a path, C1 stayed silent and the harness reported a FALSE PASS. Both are asserted.
 ( cd "$WT" && python3 -I -c "
-import pathlib
+import pathlib, re
 p = pathlib.Path('skills/sota-devsecops/rules/04-build-containers.md')
 t = p.read_text(encoding='utf-8')
 old = 'the registry itself as tier-0 infrastructure: [rules/08](08-registry-security.md).'
 assert t.count(old) == 1, 'probe stale: the rules/04 -> rules/08 pointer not found'
 p.write_text(t.replace(old, 'the registry itself as tier-0 infrastructure.', 1), encoding='utf-8')
+k = pathlib.Path('skills/sota-kubernetes/rules/07-supply-chain-audit.md')
+u = k.read_text(encoding='utf-8')
+v = re.sub(r' \(\[\`sota-devsecops\` rules/08\]\([^)]*\)[^)]*\)', '', u)
+assert v != u and 'sota-devsecops/rules/08' not in v, 'probe stale: the kubernetes 07 -> devsecops 08 pointer not found'
+k.write_text(v, encoding='utf-8')
 " )
 probe 42 "a rules file left with no path but its own index row" "C1 skills/sota-devsecops/rules/08"
 # 42b: drop one skill's coverage line -> C2 (its AUDIT names none of its files).
