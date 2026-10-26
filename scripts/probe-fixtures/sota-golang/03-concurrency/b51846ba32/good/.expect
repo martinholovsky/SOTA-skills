@@ -1,0 +1,1 @@
+./worker/main_test.go:4:	goleak.VerifyTestMain(m)

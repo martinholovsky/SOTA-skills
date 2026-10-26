@@ -1,0 +1,2 @@
+primary_method: passkey
+fallback_method: sms

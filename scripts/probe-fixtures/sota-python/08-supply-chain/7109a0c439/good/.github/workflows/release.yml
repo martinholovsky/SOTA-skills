@@ -1,0 +1,12 @@
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - run: uv build
+      - run: uv publish --trusted-publishing always

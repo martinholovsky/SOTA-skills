@@ -1,0 +1,3 @@
+{
+  "cart.summary": "{count, plural, one {# item} other {# items}} in {cartName}"
+}

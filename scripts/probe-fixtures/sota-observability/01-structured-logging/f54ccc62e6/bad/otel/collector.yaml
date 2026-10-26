@@ -1,0 +1,6 @@
+processors:
+  transform/time:
+    log_statements:
+      - context: log
+        statements:
+          - set(log.time, log.observed_time)

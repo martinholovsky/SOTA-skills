@@ -1,0 +1,1 @@
+.github/workflows/release.yml:13:      - run: syft scan dir:dist -o spdx-json=sbom.spdx.json

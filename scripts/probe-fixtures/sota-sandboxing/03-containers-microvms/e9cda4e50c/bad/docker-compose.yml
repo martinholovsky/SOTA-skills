@@ -1,0 +1,5 @@
+services:
+  app:
+    image: registry.example.com/app:5
+    volumes:
+      - ./config:/etc/app

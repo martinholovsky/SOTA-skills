@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.24)
+project(app C)
+add_compile_options(-Wall -Wextra)
+add_executable(app main.c parser.gen.c)
+set_source_files_properties(parser.gen.c PROPERTIES COMPILE_OPTIONS -Wno-sign-compare)

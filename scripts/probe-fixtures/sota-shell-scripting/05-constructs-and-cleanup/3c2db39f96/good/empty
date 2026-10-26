@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+git ls-files -z -- 'src/*.py' | xargs -0 ruff check

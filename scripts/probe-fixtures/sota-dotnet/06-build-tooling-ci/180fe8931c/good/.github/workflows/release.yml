@@ -1,0 +1,9 @@
+name: release
+on: [push]
+jobs:
+  pack:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: dotnet pack -c Release
+      - run: dotnet nuget verify --all artifacts/*.nupkg

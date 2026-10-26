@@ -1,0 +1,7 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {"name": "lodash", "purl": "pkg:npm/lodash@4.17.21",
+     "evidence": {"occurrences": [{"location": "/home/runner/work/app/app/package-lock.json"}]}}
+  ]
+}

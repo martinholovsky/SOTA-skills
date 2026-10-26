@@ -1,0 +1,2 @@
+authorization_code_lifetime: 3600
+access_token_lifetime: 300

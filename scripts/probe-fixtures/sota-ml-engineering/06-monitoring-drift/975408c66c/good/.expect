@@ -1,0 +1,3 @@
+./monitoring/drift.py:4:def embedding_drift(ref_emb, live_emb):
+./monitoring/drift.py:5:    # maximum mean discrepancy (MMD) on sentence embeddings
+./monitoring/drift.py:6:    return mmd_rbf(ref_emb, live_emb)

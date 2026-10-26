@@ -1,0 +1,3 @@
+* @example-org/developers
+/.github/workflows/ @example-org/platform
+/.semgrep/ @example-org/appsec

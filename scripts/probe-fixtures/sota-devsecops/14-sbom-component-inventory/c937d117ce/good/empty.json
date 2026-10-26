@@ -1,0 +1,7 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {"name": "lodash", "purl": "pkg:npm/lodash@4.17.21",
+     "externalReferences": [{"type": "vcs", "url": "https://github.com/lodash/lodash"}]}
+  ]
+}

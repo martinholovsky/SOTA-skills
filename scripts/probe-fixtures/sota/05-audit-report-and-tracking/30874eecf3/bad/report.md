@@ -1,0 +1,6 @@
+# Audit report
+
+## Scope & methodology
+
+**Author:** A. Auditor
+**Checklist:** sota-code-security v1.52.0

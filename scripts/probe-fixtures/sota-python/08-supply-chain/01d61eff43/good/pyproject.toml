@@ -1,0 +1,7 @@
+[project]
+name = "app"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "vendorlib @ git+https://github.com/example/vendorlib@8983acb92ee4b01924893632cf90af926fa608f0",
+]

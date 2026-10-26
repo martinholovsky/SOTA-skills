@@ -1,0 +1,1 @@
+./cmd/api/main.go:8:		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

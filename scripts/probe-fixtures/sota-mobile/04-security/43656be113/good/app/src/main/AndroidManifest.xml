@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app">
+  <application android:label="App">
+    <activity android:name=".ConfirmPaymentActivity" android:taskAffinity=""/>
+  </application>
+</manifest>

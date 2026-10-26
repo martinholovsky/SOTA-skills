@@ -1,0 +1,1 @@
+./upstream/client.go:9:		CheckRedirect: func(req *http.Request, via []*http.Request) error {

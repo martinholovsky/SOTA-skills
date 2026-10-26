@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "github-mcp-server",
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin",
+        "GITHUB_TOKEN": "literal-token-pasted-here"
+      }
+    }
+  }
+}

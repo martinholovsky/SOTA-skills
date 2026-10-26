@@ -1,0 +1,6 @@
+[Unit]
+Description=PostgreSQL
+
+[Service]
+User=postgres
+ExecStart=/usr/lib/postgresql/17/bin/postgres -D /var/lib/postgresql/17/main

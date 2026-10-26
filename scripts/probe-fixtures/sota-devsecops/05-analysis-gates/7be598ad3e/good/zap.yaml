@@ -1,0 +1,8 @@
+env:
+  contexts:
+    - name: app
+      urls: [https://staging.example.com]
+jobs:
+  - type: spider
+  - type: spiderAjax
+  - type: activeScan

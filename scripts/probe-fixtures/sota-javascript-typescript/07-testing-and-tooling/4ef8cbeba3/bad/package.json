@@ -1,0 +1,5 @@
+{
+  "name": "@acme/sdk",
+  "version": "1.2.0",
+  "main": "dist/index.js"
+}

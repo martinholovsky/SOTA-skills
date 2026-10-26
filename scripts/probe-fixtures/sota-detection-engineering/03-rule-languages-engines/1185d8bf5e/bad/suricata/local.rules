@@ -1,0 +1,1 @@
+drop tls any any -> $HOME_NET any (msg:"Known C2 JA4"; ja4.hash; content:"t13d1516h2_8daaf6152771_02713d6af862"; sid:1000001; rev:1;)

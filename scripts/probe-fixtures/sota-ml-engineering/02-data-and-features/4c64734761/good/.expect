@@ -1,0 +1,2 @@
+./training/cv.py:1:from sklearn.model_selection import TimeSeriesSplit, cross_val_score
+./training/cv.py:6:    return cross_val_score(model, X, y, cv=TimeSeriesSplit(n_splits=5))

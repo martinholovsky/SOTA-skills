@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    spec:
+      serviceAccountName: web
+      containers:
+        - name: web
+          image: example.registry/web@sha256:0000000000000000000000000000000000000000000000000000000000000000

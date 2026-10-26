@@ -1,0 +1,8 @@
+apiVersion: policies.kyverno.io/v1
+kind: ImageValidatingPolicy
+metadata:
+  name: approved-base
+spec:
+  validations:
+    - message: base image not approved
+      expression: image.labels['org.opencontainers.image.base.digest'] in params.approvedBases

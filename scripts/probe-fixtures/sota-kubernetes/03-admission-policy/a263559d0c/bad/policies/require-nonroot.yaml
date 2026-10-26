@@ -1,0 +1,6 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-nonroot
+spec:
+  validationActions: [Audit]

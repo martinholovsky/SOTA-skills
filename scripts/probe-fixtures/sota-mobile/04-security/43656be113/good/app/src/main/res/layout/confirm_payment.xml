@@ -1,0 +1,4 @@
+<Button xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/confirm"
+    android:filterTouchesWhenObscured="true"
+    android:text="@string/confirm"/>

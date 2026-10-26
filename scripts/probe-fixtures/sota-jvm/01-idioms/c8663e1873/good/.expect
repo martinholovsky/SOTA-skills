@@ -1,0 +1,1 @@
+./build.gradle.kts:7:        freeCompilerArgs.add("-Xconsistent-data-class-copy-visibility")

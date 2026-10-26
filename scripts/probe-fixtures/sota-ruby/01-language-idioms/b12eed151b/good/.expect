@@ -1,0 +1,1 @@
+./lib/frame.rb:5:  raise ArgumentError, "invalid UTF-8" unless text.valid_encoding?

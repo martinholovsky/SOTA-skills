@@ -1,0 +1,2 @@
+./src/main.ts
+./src/sw-killswitch.ts:2:  for (const registration of await navigator.serviceWorker.getRegistrations()) await registration.unregister();

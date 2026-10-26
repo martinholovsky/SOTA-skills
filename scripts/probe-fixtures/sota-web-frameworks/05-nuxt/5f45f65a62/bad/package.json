@@ -1,0 +1,14 @@
+{
+  "name": "shop-web",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "nuxt build",
+    "start": "node .output/server/index.mjs"
+  },
+  "dependencies": {
+    "nuxt": "3.17.7",
+    "h3": "1.15.1",
+    "devalue": "5.1.1"
+  }
+}

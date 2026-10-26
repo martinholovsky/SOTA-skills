@@ -1,0 +1,11 @@
+title: Security audit log cleared
+id: 6f1c2b8e-3d4a-4c1e-9b7a-1a2b3c4d5e6f
+status: stable
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 1102
+  condition: selection
+level: high

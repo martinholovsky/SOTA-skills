@@ -1,0 +1,1 @@
+./src/Shop.Api/Program.cs:2:builder.Services.AddDataProtection().PersistKeysToAzureBlobStorage(new Uri(builder.Configuration["Keys:BlobUri"]!), new DefaultAzureCredential()).ProtectKeysWithAzureKeyVault(new Uri(builder.Configuration["Keys:KeyId"]!), new DefaultAzureCredential());

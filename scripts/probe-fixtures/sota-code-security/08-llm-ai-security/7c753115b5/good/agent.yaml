@@ -1,0 +1,3 @@
+tools:
+  shell:
+    auto_approve: false

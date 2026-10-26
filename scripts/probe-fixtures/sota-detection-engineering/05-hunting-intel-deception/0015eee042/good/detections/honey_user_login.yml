@@ -1,0 +1,10 @@
+title: Honey user login attempt
+id: 6f1c2b8e-3d4a-4c1e-9b7a-1a2b3c4d5e6f
+status: stable
+logsource:
+  product: app-auth
+detection:
+  selection:
+    user.name: svc-backup-legacy  # honey user row
+  condition: selection
+level: high

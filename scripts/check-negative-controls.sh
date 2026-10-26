@@ -1521,6 +1521,22 @@ p.write_text(t[:i] + '\nAn external reference: see RFC 9110 §97 for the status 
 wt_commit "probe 18c: an RFC section cited in prose"
 probe_committed_green 18c "an RFC's own section number is not a local reference — the gate must stay green" \
   "section references resolved"
+# 44 — a checklist probe must ship proven (invariant 44, 2026-10-26). 44: a new runnable grep probe
+# with no fixtures and no baseline entry -> F1. 44b: a fixture directory whose probe no longer exists
+# (the probe was edited, so its hash moved) -> F4.
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
+t = p.read_text(encoding='utf-8')
+assert '\n## Audit checklist' in t, 'probe stale: no Audit checklist in golang rules/03'
+p.write_text(t.rstrip('\n') + '\n- [ ] A new unproven probe (§1): \`grep -rn \'probe-44-needle\' --include=\'*.go\' .\`\n', encoding='utf-8')
+" )
+probe 44 "a new checklist probe with no fixtures" "F1 03-concurrency#"
+( cd "$WT" && mkdir -p scripts/probe-fixtures/sota-golang/03-concurrency/0000000000/bad scripts/probe-fixtures/sota-golang/03-concurrency/0000000000/good \
+    && printf 'x\n' > scripts/probe-fixtures/sota-golang/03-concurrency/0000000000/bad/a.go \
+    && printf 'y\n' > scripts/probe-fixtures/sota-golang/03-concurrency/0000000000/good/a.go \
+    && git add -A ) || { echo "FATAL: probe 44b could not plant an orphaned fixture."; exit 1; }
+probe 44b "a fixture for a probe that no longer exists (an edited probe)" "F4 03-concurrency#0000000000"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -1983,7 +1999,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 (40 of 43)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44 (41 of 44)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."

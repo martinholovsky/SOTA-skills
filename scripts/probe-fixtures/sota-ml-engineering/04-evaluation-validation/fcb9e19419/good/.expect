@@ -1,0 +1,2 @@
+./eval/evaluate.py:6:    per_segment = df.groupby('region').apply(lambda g: roc_auc_score(g.y, g.p))
+./eval/evaluate.py:7:    return {'auc': overall, 'auc_by_region': per_segment.to_dict()}

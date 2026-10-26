@@ -1,0 +1,8 @@
+name: release
+on: push
+jobs:
+  publish:
+    uses: ./.github/workflows/publish.yml
+    # secrets: inherit  -- replaced by an explicit list
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

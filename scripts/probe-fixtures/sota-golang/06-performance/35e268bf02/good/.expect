@@ -1,0 +1,1 @@
+./cmd/api/debug.go:3:import _ "net/http/pprof" // registers on http.DefaultServeMux

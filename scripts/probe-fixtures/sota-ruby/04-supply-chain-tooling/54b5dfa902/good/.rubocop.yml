@@ -1,0 +1,6 @@
+AllCops:
+  NewCops: enable
+
+Style/DisableCopsWithinSourceCodeDirective:
+  Enabled: true
+  AllowWithReason: true

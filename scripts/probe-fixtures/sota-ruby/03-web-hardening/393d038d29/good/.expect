@@ -1,0 +1,1 @@
+./app.rb:7:  use Rack::Protection::AuthenticityToken

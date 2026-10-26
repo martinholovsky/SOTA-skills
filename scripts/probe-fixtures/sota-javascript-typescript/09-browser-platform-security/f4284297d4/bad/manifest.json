@@ -1,0 +1,5 @@
+{
+  "manifest_version": 3,
+  "name": "Clipper",
+  "content_scripts": [{ "matches": ["https://app.example.com/*"], "js": ["content.js"], "world": "MAIN" }]
+}

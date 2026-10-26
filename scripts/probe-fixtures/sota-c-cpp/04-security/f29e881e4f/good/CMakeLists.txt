@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.25)
+project(svc C)
+add_executable(svc main.c)
+if(MSVC)
+  target_compile_options(svc PRIVATE /O2 /GS /sdl /guard:cf)
+  target_link_options(svc PRIVATE /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT /CETCOMPAT /GUARD:CF)
+endif()

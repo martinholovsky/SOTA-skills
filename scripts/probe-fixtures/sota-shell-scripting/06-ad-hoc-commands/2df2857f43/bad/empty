@@ -1,0 +1,1 @@
+git show $rev:skills/sota/SKILL.md | head

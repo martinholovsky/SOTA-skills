@@ -1,0 +1,2 @@
+./benchmarks/ParserBenchmarks.cs:5:[MemoryDiagnoser]
+./benchmarks/ParserBenchmarks.cs:10:    [Benchmark]

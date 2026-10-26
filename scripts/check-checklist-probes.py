@@ -43,11 +43,34 @@ SPAN = re.compile(r"(`+)(?!`)(.+?)(?<!`)\1(?!`)", re.S)
 PLACEHOLDER = re.compile(r"<[A-Za-z][\w.-]*>")
 PROSE_PLACEHOLDER = re.compile(r"<[^<>]*\s[^<>]*>")
 DEVNULL_ERR = re.compile(r"\s*2>\s*/dev/null")
+LINE_BREAK = re.compile(r"[ \t]*\n[ \t]*")
 MISSING = re.compile(r"No such file or directory|cannot open|can't open")
 # each pipeline stage must start with one of these (read-only filters); `xargs` only before one
 SAFE = {"grep", "egrep", "fgrep", "sort", "uniq", "wc", "head", "tail", "cut", "awk", "tr", "cat",
         "echo", "printf", "find"}
 UNSAFE_TOKEN = re.compile(r"\brm\b|\bsed\s+-i|\s-delete\b|\s-exec\b|\s-fprint|\s-fls\b|\bmv\b|\bcurl\b|\bwget\b")
+
+
+def fill_placeholders(span):
+    """Replace each UNQUOTED `<name>` (a file-operand placeholder) with `empty`. A quoted one is
+    pattern text: `'<NoWarn>'`, `'List<Integer>'` and `"<all_urls>"` are what the probe searches
+    for, and rewriting them made seven JVM and several .NET probes search for `empty` instead."""
+    out, q, esc, last = [], None, False, 0
+    for m in PLACEHOLDER.finditer(span):
+        for ch in span[last:m.start()]:
+            if esc:
+                esc = False
+            elif ch == "\\" and q != "'":
+                esc = True
+            elif q is None and ch in "'\"":
+                q = ch
+            elif q == ch:
+                q = None
+        out.append(span[last:m.start()])
+        out.append("empty" if q is None and not esc else m.group())
+        last = m.end()  # a placeholder holds no quote or backslash, so the quote state carries over
+    out.append(span[last:])
+    return "".join(out)
 
 
 def probes_in(text):
@@ -56,7 +79,9 @@ def probes_in(text):
         return []
     out = []
     for m in SPAN.finditer(text[i:]):
-        span = " ".join(m.group(2).split())
+        # join a span that Markdown wrapped, but keep spaces inside a line: collapsing every run turned
+        # the ruby probe `'^    json \('` (four spaces, a Gemfile.lock dependency) into `'^ json \('`
+        span = LINE_BREAK.sub(" ", m.group(2)).strip()
         if span.startswith("grep "):
             out.append(span)
     return out
@@ -72,7 +97,7 @@ def _tokens(cmd):
 def skip_reason(span):
     if PROSE_PLACEHOLDER.search(span):
         return "prose placeholder"
-    cmd = PLACEHOLDER.sub("empty", span)
+    cmd = fill_placeholders(span)
     if UNSAFE_TOKEN.search(cmd):
         return "not read-only"
     try:
@@ -106,7 +131,7 @@ def skip_reason(span):
 
 
 def run_probe(span, workdir, env):
-    cmd = DEVNULL_ERR.sub("", PLACEHOLDER.sub("empty", span))
+    cmd = DEVNULL_ERR.sub("", fill_placeholders(span))
     r = subprocess.run(["bash", "-c", cmd], cwd=workdir, env=env, capture_output=True, text=True,
                        timeout=20, stdin=subprocess.DEVNULL, check=False)
     if r.returncode in (0, 1):

@@ -1,0 +1,2 @@
+./pom.xml:9:        <groupId>com.github.spotbugs</groupId>
+./pom.xml:10:        <artifactId>spotbugs-maven-plugin</artifactId>

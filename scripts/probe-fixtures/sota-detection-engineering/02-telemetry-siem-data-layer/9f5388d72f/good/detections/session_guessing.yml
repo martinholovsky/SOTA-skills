@@ -1,0 +1,10 @@
+title: Distinct invalid session IDs per source
+id: 6f1c2b8e-3d4a-4c1e-9b7a-1a2b3c4d5e6f
+status: stable
+logsource:
+  product: app-auth
+detection:
+  selection:
+    event.reason: invalid_session
+  condition: selection
+level: high

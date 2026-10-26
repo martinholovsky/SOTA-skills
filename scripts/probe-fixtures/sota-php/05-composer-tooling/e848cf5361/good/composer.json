@@ -1,0 +1,8 @@
+{
+    "name": "acme/shop",
+    "type": "project",
+    "repositories": [
+        {"type": "composer", "url": "https://repo.internal.example.com"}
+    ],
+    "require": {"php": "^8.3", "acme/internal-auth": "^2.0"}
+}

@@ -1,0 +1,2 @@
+./NuGet.Config:8:    <add key="signatureValidationMode" value="require" />
+./NuGet.Config:10:  <trustedSigners>

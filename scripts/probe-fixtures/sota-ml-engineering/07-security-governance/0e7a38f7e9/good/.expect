@@ -1,0 +1,2 @@
+./training/train_health.py:1:from opacus import PrivacyEngine
+./training/train_health.py:5:    model, optimizer, loader = PrivacyEngine().make_private(module=model, optimizer=optimizer, data_loader=loader, noise_multiplier=1.1, max_grad_norm=1.0)

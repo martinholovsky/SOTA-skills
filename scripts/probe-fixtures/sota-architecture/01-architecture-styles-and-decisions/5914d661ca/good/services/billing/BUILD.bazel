@@ -1,0 +1,6 @@
+package(default_visibility = ["//services/billing:__subpackages__"])
+
+go_library(
+    name = "billing",
+    srcs = ["billing.go"],
+)

@@ -1,0 +1,13 @@
+openapi: 3.1.0
+info:
+  title: Orders
+  version: 1.0.0
+paths:
+  /orders:
+    post:
+      operationId: createOrder
+      security:
+        - oauth2: [orders.write]
+      responses:
+        '201':
+          description: Created

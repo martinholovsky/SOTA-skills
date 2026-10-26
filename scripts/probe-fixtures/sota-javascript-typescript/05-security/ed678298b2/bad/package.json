@@ -1,0 +1,6 @@
+{
+  "name": "app",
+  "dependencies": {
+    "left-pad": "github:someuser/left-pad#main"
+  }
+}

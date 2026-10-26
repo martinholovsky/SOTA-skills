@@ -1,0 +1,6 @@
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "billing",
+    srcs = ["billing.go"],
+)

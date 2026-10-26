@@ -1,0 +1,1 @@
+./src/main/java/com/example/Inventory.java:9:    @GuardedBy("lock") private final Map<String, Integer> stock = new HashMap<>();

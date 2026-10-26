@@ -1,0 +1,7 @@
+{
+  "name": "app",
+  "devDependencies": {
+    "typescript": "^7.0.0",
+    "typescript-eslint": "^8.40.0"
+  }
+}
