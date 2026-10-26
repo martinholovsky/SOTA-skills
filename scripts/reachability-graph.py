@@ -309,7 +309,7 @@ MARKER = re.compile(r"\*\((?:advisory|audited in)\b", re.I)
 # A bare two-digit file number right before the `§` names ANOTHER file: `` `04` §8 ``, `(01 §5)`,
 # `code-security 01 §5`. Until 2026-10-26 these read as local cites (threat-modeling 05 credited its own
 # §8 with a cite of 04's §8) -- false credit, the one failure a coverage ratchet must not have.
-OTHER_FILE_SHORTHAND = re.compile(r"(?:`\d{2}`|(?<![\d.§])\b\d{2})\)?\s*$")
+OTHER_FILE_SHORTHAND = re.compile(r"(?:`\d{2}`|(?<![\d.§])\b\d{2}|\bRFC ?\d{3,5},?)\)?\s*$")  # and `RFC 9110 §15.6.4`
 
 
 def blank_fences(text):

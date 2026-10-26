@@ -1471,6 +1471,31 @@ t = t[:i] + '\n\n## 99. A brand-new rule\n\nDo the thing.\n' + t[i:]
 p.write_text(t.rstrip('\n') + '\n- [ ] Checks another file, in shorthand (\`04\` §99).\n', encoding='utf-8')
 " )
 probe 43h "a section credited only by another file's shorthand cite" "S1 skills/sota-golang/rules/03-concurrency.md :: 99. A brand-new rule"
+# 43i: an RFC's section is not this file's section either -- `RFC 9110 §99` credits nothing local.
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
+t = p.read_text(encoding='utf-8')
+i = t.find('\n## Audit checklist')
+assert i > 0, 'probe stale: no Audit checklist in golang rules/03'
+t = t[:i] + '\n\n## 99. A brand-new rule\n\nDo the thing.\n' + t[i:]
+p.write_text(t.rstrip('\n') + '\n- [ ] Checks an RFC, not this file (RFC 9110 §99).\n', encoding='utf-8')
+" )
+probe 43i "a section credited only by an RFC's section number" "S1 skills/sota-golang/rules/03-concurrency.md :: 99. A brand-new rule"
+# 18c: the other side of check 18's RFC exemption (2026-10-26). `RFC 9110 §97` names the RFC's
+# section; resolving it against the citing file failed correct prose, or -- worse -- passed it by
+# coincidence where the file had a §97. It must stay GREEN, and say it ran.
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
+t = p.read_text(encoding='utf-8')
+i = t.find('\n## Audit checklist')
+assert i > 0, 'probe stale: no Audit checklist in golang rules/03'
+p.write_text(t[:i] + '\nAn external reference: see RFC 9110 §97 for the status codes.\n' + t[i:], encoding='utf-8')
+" )
+wt_commit "probe 18c: an RFC section cited in prose"
+probe_committed_green 18c "an RFC's own section number is not a local reference — the gate must stay green" \
+  "section references resolved"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
