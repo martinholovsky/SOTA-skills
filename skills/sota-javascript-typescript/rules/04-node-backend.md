@@ -138,15 +138,15 @@ Order matters: (1) fail readiness probe / stop accepting, (2) drain in-flight wi
 
 ## 6. Health checks and readiness
 
-Liveness ≠ readiness. Liveness: "is the process alive" — answer cheaply, no dependency checks (a DB blip must not get you killed and restarted in a loop). Readiness: "should I receive traffic" — checks pool health, returns 503 during shutdown drain.
+Liveness ≠ readiness. Liveness: "is the process alive" — answer cheaply, no dependency checks (a DB blip must not get you killed and restarted in a loop). Readiness: "should *this instance* receive traffic" — initialised, not draining; returns 503 during shutdown drain. Prefer not to fail it on a shared dependency: every replica sees the same DB outage at once, so a `db.ping()` in readiness pulls the whole fleet out of the Service ("the EndpointSlice controller removes the Pod's IP address", Kubernetes docs) and handlers that could have served a degraded answer serve connection errors instead. Report the DB in the handlers (503 with a body) and in a verbose variant for humans; if a dependency must gate readiness, that is a per-dependency decision, written down ([`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §7, [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §1).
 
 ```ts
-let ready = true;                       // flipped false first thing in shutdown()
+let ready = false;                      // true once config, pool and caches are up
+let draining = false;                   // flipped first thing in shutdown()
 app.get('/healthz', (_req, res) => res.status(200).send('ok'));
-app.get('/readyz', async (_req, res) => {
-  if (!ready) return res.status(503).send('draining');
-  const dbOk = await db.ping().then(() => true, () => false);
-  res.status(dbOk ? 200 : 503).send(dbOk ? 'ok' : 'db');
+app.get('/readyz', (_req, res) => {
+  if (draining || !ready) return res.status(503).send(draining ? 'draining' : 'starting');
+  res.status(200).send('ok');           // no db.ping(): a shared outage would empty the Service
 });
 ```
 
@@ -439,7 +439,7 @@ channel.
 - [ ] `package.json`: `engines.node` pinned, matched by `.nvmrc`/`.node-version` and the Node version CI runs (§1); deps that duplicate platform built-ins (axios, dotenv, uuid, nodemon) — removable (LOW) (§2).
 - [ ] `grep -rn "bcrypt.hashSync\|scryptSync\|pbkdf2Sync" src/` — sync crypto in request path (HIGH).
 - [ ] `grep -rn "process.exit" src/ | grep -v "config\|shutdown"` — exits mid-flow skipping cleanup (MEDIUM).
-- [ ] Readiness vs liveness probes distinct; readiness flips during drain (`grep -rn "readyz\|readiness" src/`) — single do-everything healthcheck (LOW/MEDIUM). A liveness endpoint that checks the DB or other dependencies turns a blip into a restart loop (MEDIUM) (§6).
+- [ ] Readiness vs liveness probes distinct; readiness flips during drain (`grep -rn "readyz\|readiness" src/`) — single do-everything healthcheck (LOW/MEDIUM). A liveness endpoint that checks the DB or other dependencies turns a blip into a fleet-wide restart loop (CRITICAL, as [`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §7 rates it); a readiness endpoint that fails on a shared dependency (`db.ping()` in `/readyz`) with no recorded decision to do so is a finding — it empties the Service on every DB outage (§6).
 - [ ] Outbound fetch/DB calls without timeouts (`grep -rn "fetch(" src/ | grep -v signal`; DB client statement_timeout) — MEDIUM, HIGH for critical paths.
 - [ ] Retry logic on non-idempotent operations without idempotency keys (MEDIUM/HIGH if money). Retries without jittered backoff or ignoring `Retry-After`, and no circuit breaker on a flapping dependency, are LOW (§12).
 - [ ] DB pool size × replica count vs database max_connections — documented anywhere? (LOW).

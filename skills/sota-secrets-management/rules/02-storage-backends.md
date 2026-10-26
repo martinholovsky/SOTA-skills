@@ -265,6 +265,8 @@ trackers serializing objects, language-runtime introspection. Proportionate meas
   `sodium_mlock`). Don't `mlock` the whole heap.
 - **Disable heap-dump/debug endpoints in prod** (JMX heap dump, `/debug/pprof/heap` exposed
   publicly, py-spy on prod boxes by default). These are remote secret extraction tools.
+  Low-overhead profiling is still fine on production when the tool arrives for the session
+  and leaves with it ([`sota-python` rules/06](../../sota-python/rules/06-performance.md) §1 has the py-spy specifics).
 
 ## 8. Consumer-key (end-to-end) encryption of secrets
 

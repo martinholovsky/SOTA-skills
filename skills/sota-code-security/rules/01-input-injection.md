@@ -439,10 +439,10 @@ was impossible. OWASP: Injection Prevention, GraphQL cheat sheets.
   map cannot be walked. Off-site destinations go through an interstitial that shows the target
   with continue and cancel (ASVS 5.0 V3.7.3). OWASP: Unvalidated Redirects and Forwards cheat
   sheet, Code Review Guide v2.
-- **CSV/formula injection (CWE-1236)**: cells starting `= + - @`, tab or NUL execute in
-  spreadsheet apps on export; prefix with `'` when generating CSV/XLSX from user data, and quote
-  every field per RFC 4180 rules 6-7 (wrap in `"`, double inner `"`) so a comma or quote cannot
-  start a new cell. OWASP: ASVS 5.0 V1.2.10, WSTG-INJT-21.
+- **CSV/formula injection (CWE-1236)**: cells starting `= + - @`, tab, CR, LF, NUL or a full-width
+  `＝＋－＠` execute in spreadsheet apps; prefix with `'` when exporting user data, and quote every
+  field per RFC 4180 rules 6-7. The list unites ASVS 5.0 V1.2.10 (NUL) and OWASP's CSV Injection
+  page (CR, LF, full-width), read 2026-10-26; each omits part. OWASP: WSTG-INJT-21.
 - **LaTeX injection**: `\write18` runs commands, `\input`/`\include` read files. TeX Live's
   default `shell_escape = p` still runs an allowlist, so pass `-no-shell-escape`; `openin_any` is
   a no-op as of 2026 (texmf.cnf), so only a command allowlist plus a sandbox stops reads. OWASP: ASVS 5.0 V1.2.8.
@@ -495,6 +495,6 @@ was impossible. OWASP: Injection Prevention, GraphQL cheat sheets.
 - [ ] **Fallback escaping (§11)**: where no parameterised API exists, is a maintained context-specific encoder used and the reason recorded? MEDIUM, HIGH on an interpreter sink; each hit of `grep -rnE "\.replace\([^)]*\)\.replace\(" --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.php' --include='*.rb' .` is a hand-rolled escaper to replace
 - [ ] **Hand-built JSON (§11)**: is every JSON document produced by a serializer, with no concatenation or custom serializer? MEDIUM, HIGH when a field drives a decision; every hit of `grep -rnE "\{\\\\?\"[A-Za-z_]+\\\\?\"[[:space:]]*:[[:space:]]*\\\\?\"[\"'][[:space:]]*\+|\{\{\"[A-Za-z_]+\"[[:space:]]*:" --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.cs' .` is a finding
 - [ ] **Line protocols (§11)**: are CR, LF, NUL and delimiters rejected from input reaching SMTP, IMAP, FTP or memcached, or is each command framed by a client library? HIGH; each hit of `grep -rnE "(memcached?|mc|cache)\.(get|set|add|delete)\([^,)]*(req\.|request\.|params)|\.(send|sendall|write)\([fb]?[\"'][A-Z0-9 ]{3,}[^\"']*(\{|%s)" --include='*.py' --include='*.js' --include='*.ts' --include='*.php' .` needs its input traced
-- [ ] **CSV quoting (§11)**: is every exported field RFC 4180 quoted and each leading `= + - @`, tab or NUL neutralised? MEDIUM; each hit of `grep -rnE "[\"'],[\"']\.join\(|\.join\([\"'],[\"']\)" --include='*.py' --include='*.js' --include='*.ts' --include='*.rb' .` is hand-built CSV
+- [ ] **CSV quoting (§11)**: is every exported field RFC 4180 quoted and each leading `= + - @`, tab, CR, LF, NUL or full-width `＝＋－＠` neutralised? MEDIUM; each hit of `grep -rnE "[\"'],[\"']\.join\(|\.join\([\"'],[\"']\)" --include='*.py' --include='*.js' --include='*.ts' --include='*.rb' .` is hand-built CSV
 - [ ] **LaTeX (§11)**: does every TeX run on user content pass `-no-shell-escape`, allowlist commands and run sandboxed? HIGH; each hit of `grep -rnE "(pdf|xe|lua)?latex[\"' ]" --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.rb' --include='*.sh' . | grep -v 'no-shell-escape'` lacks `-no-shell-escape`
 - [ ] **Duplicate parameters (§11)**: is a repeated security-relevant parameter rejected rather than resolved first- or last-wins? MEDIUM; each hit of `grep -rnE "dict\(parse_qsl\(|searchParams\.get\(|parse_str\(" --include='*.py' --include='*.js' --include='*.ts' --include='*.php' .` silently picks one value

@@ -15,8 +15,12 @@ faster" without numbers is rejected.
 | Micro-benchmarks of one expression | `python -m timeit`, `pytest-benchmark`, `pyperf` (statistically sound) |
 
 Rules:
-- py-spy is safe on production (samples out-of-process; add `--native` for C extensions,
-  `--gil` to see GIL contention). cProfile distorts hot loops — fine for *finding* hotspots,
+- py-spy is safe on production *for the workload* (samples out-of-process; add `--native` for
+  C extensions, `--gil` to see GIL contention) — but it reads the target's memory
+  (`py-spy dump --locals` prints local variables, secrets included) and needs root or
+  `SYS_PTRACE`, which Kubernetes drops by default (py-spy README, read 2026-10-26). Bring it in
+  for the session — an ephemeral debug container, a just-in-time grant — never ship it in the
+  image or grant `SYS_PTRACE` standing ([`sota-secrets-management` rules/02](../../sota-secrets-management/rules/02-storage-backends.md) §7). cProfile distorts hot loops — fine for *finding* hotspots,
   not for before/after numbers; use pyperf/pytest-benchmark for comparisons.
 - Profile realistic data sizes. O(n²) is invisible at n=100.
 - Keep a benchmark in the repo for any code with a perf SLA (`pytest-benchmark` with
