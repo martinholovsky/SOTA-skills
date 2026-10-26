@@ -190,8 +190,25 @@ the SSRF pivot to cloud credentials. Default egress should not include `169.254.
 broad egress exists, explicitly deny the link-local range. This is the egress side of the SSRF chain
 ([sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) owns the app-side SSRF; [rules/05](05-edge-ingress-egress.md) here covers the edge/egress side).
 An on-prem cluster has no IMDS, but the habit prevents the finding if it
-ever bursts to cloud — and IMDSv2 (token-required, account-enforceable, default on new EC2 types)
-is the cloud-side mitigation ([sota-cloud-infrastructure](../../sota-cloud-infrastructure/SKILL.md)).
+ever bursts to cloud — and IMDSv2 (token-required; an account-level default for new launches since
+March 2024) is the cloud-side mitigation ([sota-cloud-infrastructure](../../sota-cloud-infrastructure/SKILL.md)).
+
+**R6a — Workload identity needs one link-local address, never the range.** Keep the block when pods
+use workload identity; open exactly the endpoint it uses, for exactly the service accounts that use it:
+
+| Mechanism | Pods must reach | Source |
+|---|---|---|
+| GKE Workload Identity Federation | `169.254.169.252/32` TCP 988; on GKE Dataplane V2 also `169.254.169.254/32` TCP 80 (the GKE metadata server, which answers in place of the node's) | GKE "About Workload Identity Federation for GKE" |
+| EKS Pod Identity | `169.254.170.23/32` and `fd00:ec2::23/128`, TCP 80 (the agent's URL, `http://169.254.170.23/v1/credentials`, names no port) | EKS "Set up the Amazon EKS Pod Identity Agent" |
+| EKS IRSA | none: the SDK exchanges a projected token with STS (`AssumeRoleWithWebIdentity`) over 443 | EKS "Understand how EKS Pod Identity works" |
+
+*(verified 2026-10-26 against those three pages.)* **Where the exception goes depends on the policy
+engine.** Standard NetworkPolicy has no deny and allows are additive, so a separate `/32` allow next
+to an `ipBlock` whose `except` lists `169.254.0.0/16` works. In Cilium, **"Deny policies take
+precedence over allow policies"** (Cilium docs, `deny.rst`), so an `egressDeny` of `169.254.0.0/16`
+plus an allow of the `/32` still drops it: write the carve-out into the deny's own `toCIDRSet`
+`except:` list instead. A rule that blocks the whole range with no carve-out breaks credential
+fetches on every workload-identity pod — and the usual "fix" is to delete the block.
 
 **R7 — Egress gateways for stable, inspectable egress.** When external partners allowlist your
 source IP, or you want all egress through one inspected choke point, use a **Cilium egress gateway**
@@ -281,7 +298,8 @@ audit cross-cluster policies for `world`/wildcard exactly as single-cluster.
       allowlist your source IP, or egress must pass one inspected point, does it leave through an
       egress gateway (§5)?
 - [ ] Is `169.254.0.0/16` (and `fd00:ec2::254`) — the metadata endpoint — blocked from pod
-      egress (§5)?
+      egress, with workload identity opened only at its own `/32` for its own service accounts,
+      and in Cilium carved out of the deny's `except:` rather than allowed beside it (§5)?
 - [ ] Every `ipBlock` justified: `grep -n 'ipBlock' -r policies/` and for each hit ask which side
       of §3's R3a it is on — an **in-cluster** peer written as a CIDR is a finding (recycled pod
       IPs re-point it silently), and an external one needs the destination, the reason, and a

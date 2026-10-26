@@ -83,7 +83,7 @@ STRIDE-per-interaction on flow 1 (crosses TB1→TB2):
   + request hash; `SR-103`.
 - **I**: order IDs sequential → enumeration of others' orders via GET.
   Mitigation: object-level authz check (unguessable IDs are defence in depth
-  only — RFC 9562 §8: never a security capability; prefer UUIDv4 there, not
+  only — RFC 9562 Section 8: never a security capability; prefer UUIDv4 there, not
   time-ordered UUIDv7); `SR-104`.
 - **D**: unbounded order payload / no rate limit. Mitigation: body size cap +
   per-user rate limit; `SR-105`.
@@ -186,8 +186,8 @@ trigger, codify it in the team's definition of ready.
    - T4: unbounded concurrent exports exhaust DB/worker (D).
 3. *What are we going to do?* T1 → reuse tenant-scoped repo + abuse test
    (mitigate); T2 → 15-min expiry + require login to download (mitigate);
-   T3 → prefix `'` on cells starting `=+-@`, Tab, CR, LF or a
-   full-width `＝＋－＠` (OWASP CSV Injection) (mitigate); T4 → 1
+   T3 → prefix `'` on cells starting any formula-initiating character
+   (the full list: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11) (mitigate); T4 → 1
    concurrent export/user (mitigate). No accepts needed.
 4. *Did we do a good job?* Four threats, four requirements, three tests;
    re-check at next data-class change. Elapsed: ~15 minutes. T3 is the kind

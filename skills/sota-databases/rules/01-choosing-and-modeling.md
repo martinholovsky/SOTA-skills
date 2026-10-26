@@ -120,14 +120,22 @@ CREATE TABLE users (
   Never `serial` (legacy, weaker permissions semantics); never `int` (you will
   hit 2^31 at the worst time).
 - **UUIDv7** when: IDs are generated client-side/offline, exposed in URLs or
-  APIs (avoids enumeration and count leakage), or rows merge across regions.
+  APIs (no sequence to walk, no row count to read off), or rows merge across regions.
   UUIDv7 is time-ordered — it avoids UUIDv4's random-insert btree thrashing
   and WAL bloat. Postgres 18+: native `uuidv7()`; earlier: generate in app or
   via extension. **Never UUIDv4 as PK on a high-insert table.**
 - Hybrid pattern is fine: bigint PK internally + `public_id uuid NOT NULL
   UNIQUE DEFAULT uuidv7()` for the API surface.
-- Note: UUIDv7 encodes creation time — if creation time is sensitive, that is
-  an information leak; use opaque random external IDs in that rare case.
+- Note: UUIDv7 encodes creation time and creation order — if either is sensitive,
+  that is an information leak; use UUIDv4 external IDs in that case.
+- **An ID's shape is never the access control.** Object-level authz is the fix
+  for enumeration; a hard-to-guess ID is defence in depth only. RFC 9562 Section 8:
+  "Implementations SHOULD NOT assume that UUIDs are hard to guess", UUIDs "MUST
+  NOT be used as security capabilities", and where a UUID takes part in any
+  security operation "UUIDv4 … SHOULD be utilized" (read 2026-10-26). So a
+  share link or unlisted-resource URL carries a CSPRNG token, never a UUID, and
+  an ID you *rely on* to be unguessable is v4, not v7 ([`sota-threat-modeling`
+  rules/01](../../sota-threat-modeling/rules/01-methodologies.md) §2 applies the same rule to the IDOR case).
 
 ### Rule: Composite PKs only on pure join/child tables.
 `(parent_id, child_id)` on a join table is correct and gives you the FK index
@@ -351,7 +359,8 @@ multi-tenant system: HIGH.
       OLTP on a columnar store, no Redis/Valkey as a system of record (§1).
 - [ ] No natural primary keys; no UUIDv4 PKs on high-insert tables; no `int`
       PKs on growing tables; no `serial`; exposed IDs are non-enumerable
-      (UUIDv7/public_id); composite PKs only on pure join tables, with the
+      (UUIDv7/public_id), with authz — not the ID — deciding access and v4 where
+      unguessability is relied on; composite PKs only on pure join tables, with the
       reverse-order index added (§4).
 - [ ] No mutable business facts duplicated without a documented sync mechanism
       and a drift-detecting audit query; cached aggregates keep their source rows;

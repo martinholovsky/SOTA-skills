@@ -268,7 +268,10 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   tampering.
 - Verify on the consumer side in install docs/scripts: download → verify signature →
   verify checksum → install. An install script that does `curl | bash` from your own
-  release defeats all of the above (flag it in your own repos too).
+  release defeats all of the above (flag it in your own repos too): in CI, Dockerfiles and
+  provisioning it is CRITICAL ([`sota-shell-scripting` rules/03](../../sota-shell-scripting/rules/03-security.md) §5). A convenience
+  installer offered to humans is a separate channel with its own discipline
+  ([`sota-cli-ux` rules/04](../../sota-cli-ux/rules/04-distribution-docs.md) §2), never what your own automation runs.
 - Git tags themselves: sign release tags (`git tag -s` / gitsign); CI release workflow
   verifies tag signature before building when your threat model includes repo-write
   compromise.

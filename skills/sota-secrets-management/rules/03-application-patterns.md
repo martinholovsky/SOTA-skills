@@ -172,9 +172,11 @@ curl -H @/run/secrets/auth_header https://api...
 PGPASSWORD unset; use ~/.pgpass (0600) or peer/IAM auth
 ```
 
-When *writing* CLIs: accept secrets via env var, `--token-file`, or stdin prompt — never as a
-positional/flag value; if you must accept a flag, document the `ps` exposure and prefer
-`--token-file`. When *invoking* subprocesses from code, pass secrets via env (explicitly
+When *writing* CLIs: accept secrets via `--token-file`, stdin (`--token-stdin`) or a no-echo
+prompt, and an env var only as the documented last resort (every child process inherits it) —
+never as a positional/flag value. A flag kept for backward compatibility warns on use and is
+documented as visible in `ps`; the full input contract is [`sota-cli-ux`
+rules/01](../../sota-cli-ux/rules/01-commands-flags-config.md) §3. When *invoking* subprocesses from code, pass secrets via env (explicitly
 constructed, not inherited wholesale) or files — never interpolated into the command string
 (also an injection risk).
 
