@@ -743,7 +743,12 @@ CI scans the full git history, the pre-commit hook scans each commit.
     each `via` hop must be a real link, and each labelled case must reach its files. **A rules-index
     row is written in the manifest, not in SKILL.md** (C5): edit `files.<NN>.index_row`, then run
     `python3 scripts/reachability-graph.py --write-index`, which renders it into SKILL.md; a row
-    edited in SKILL.md alone fails C5. Update the manifest's tags in the same change.
+    edited in SKILL.md alone fails C5. Update the manifest's tags in the same change. **A
+    cross-cutting skill and the language skills point at each other** (C6): a manifest's
+    `per_language` names the one file per language skill that carries its language half; the
+    cross-cutting SKILL.md's "Per-language detail" table links each, and each links back to the
+    cross-cutting skill. Declared for `sota-performance`, `sota-async-concurrency` and
+    `sota-testing`; adding a language skill means a row in each of their tables.
 43. **A numbered section with no checklist item citing it, or a checklist item citing no section.**
     A ratchet over `scripts/section-sync-baseline.json` (1,246 uncited sections and 3,124 uncited
     items on 2026-10-24). A new `## N.` section is cited `(§N)` by an item in its own checklist, or

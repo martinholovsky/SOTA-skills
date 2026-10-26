@@ -78,7 +78,8 @@ you're actually running.
   release tag), where it must land back (main, always — a fix that exists only
   on a release branch regresses in the next release).
 - Default branch is protected: required reviews + checks, no direct pushes, no
-  force push ([rules/03](03-code-review-pr-workflow.md) §6).
+  force push ([rules/03](03-code-review-pr-workflow.md) §6). The approver is neither the author nor the last pusher, enforced
+  as a ruleset setting ([`sota-devsecops` rules/12](../../sota-devsecops/rules/12-scm-ci-platform-governance.md) §12.5).
 - **Derive a branch-cleanup list from fresh state, never from what you did.** After a
   squash merge, git cannot tell the branch landed. `branch -d` refuses it once its
   upstream is gone, and accepts it with a warning while the upstream still exists (both

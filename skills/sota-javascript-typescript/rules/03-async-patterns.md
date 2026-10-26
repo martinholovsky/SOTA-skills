@@ -1,5 +1,7 @@
 # Async JavaScript
 
+The cross-runtime model — structured concurrency, cancellation and timeouts, backpressure, the race and deadlock catalogue — is [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md); this file is the JavaScript and TypeScript half.
+
 ## 1. Promise combinators: pick deliberately
 
 | Combinator | Resolves when | Rejects when | Use for |

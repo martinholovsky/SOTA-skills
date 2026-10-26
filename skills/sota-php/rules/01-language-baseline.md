@@ -222,6 +222,8 @@ if (strpos($h, $n) === false) { /* not found */ }   // === is mandatory, not sty
 
 ## 6. Fibers and concurrency (8.1+)
 
+The cross-runtime model — structured concurrency, cancellation and timeouts, backpressure, the race and deadlock catalogue — is [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md); this file is the PHP half.
+
 `Fiber` is a *low-level* cooperative-concurrency primitive: full-stack
 interruptible functions (`Fiber::suspend()`/`resume()`). It does **not** make
 code parallel and does not schedule anything by itself.

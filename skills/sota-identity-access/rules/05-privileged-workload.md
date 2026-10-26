@@ -99,7 +99,9 @@ API key or service-account key file baked into config). Replace it:
   in a repo/config/env is a defect — push it up the hierarchy to federation or SVIDs.
 - **One identity per workload**, scoped least-privilege through the authorization model
   ([rules/03](03-authorization-models.md)). Shared service accounts used by many services destroy attribution and blast-
-  radius control.
+  radius control. On Kubernetes that means one ServiceAccount per workload, token automount
+  off unless it calls the API, and RBAC free of the escalation verbs
+  ([`sota-kubernetes` rules/02](../../sota-kubernetes/rules/02-rbac-serviceaccounts.md) §2, §3).
 - Workload identities are in the JML/dormancy scope too ([rules/04](04-lifecycle-provisioning.md)): a decommissioned
   service's identity must be retired, and dormant service credentials detected.
 

@@ -2,6 +2,8 @@
 
 Measure before optimizing: bundle analyzer for size, React Profiler/DevTools for renders, Chrome Performance + heap snapshots for memory, `monitorEventLoopDelay` for Node. Optimizations without a measurement are style choices.
 
+The language-neutral method — latency budgets, profiling discipline, regression gates — is [`sota-performance`](../../sota-performance/SKILL.md); this file is the JavaScript and TypeScript toolchain half.
+
 ## 1. Bundle discipline
 
 Every shipped KB is parse/compile/execute time on the median phone, not just transfer.

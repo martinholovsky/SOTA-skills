@@ -155,6 +155,8 @@ CMD ["dist/server.js"]
   ignored until the 10-second SIGKILL (exit 137). Exec the runtime directly, as above, or
   add a small init (`--init` in Docker and Podman). `yarn start` and `pnpm start` are the
   same shape. (OWASP: NodeJS Docker cheat sheet)
+  An entrypoint script that does setup first must end in `exec "$@"`, or the shell stays
+  PID 1 ([`sota-shell-scripting` rules/04](../../sota-shell-scripting/rules/04-ci-and-operational.md) §2).
 
 Python: builder installs into a venv (`pip install --require-hashes -r requirements.txt
 --prefix /opt/venv` or `uv sync --locked`), final stage is

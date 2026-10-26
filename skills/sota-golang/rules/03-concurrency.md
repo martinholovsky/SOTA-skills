@@ -5,6 +5,8 @@ pass tests, and corrupt data or leak memory in production. The discipline is
 ownership: every goroutine, channel, and shared variable has exactly one
 defined owner and lifecycle.
 
+The cross-runtime model — structured concurrency, cancellation and timeouts, backpressure, the race and deadlock catalogue — is [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md); this file is the Go half.
+
 ## 1. Goroutine lifecycle ownership
 
 **Before writing `go`, answer three questions in code, not in your head:**

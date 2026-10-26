@@ -3,6 +3,8 @@
 Moved from the former Swift-language file in [`sota-mobile`](../../sota-mobile/SKILL.md) on 2026-10-07 and extended. Applies to every target:
 a server under load turns a latent race into a statistical certainty.
 
+The cross-runtime model — structured concurrency, cancellation and timeouts, backpressure, the race and deadlock catalogue — is [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md); this file is the Swift half.
+
 ## 1. Build in Swift 6 language mode; migrate module by module
 
 - Swift 6 mode enforces data-race safety at compile time (the migration guide: *"By default,

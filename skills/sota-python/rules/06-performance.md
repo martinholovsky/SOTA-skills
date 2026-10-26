@@ -4,6 +4,8 @@ Order of operations: **measure, fix the algorithm, fix the data structure, vecto
 to native, only then micro-optimize.** Every optimization PR cites a profile; "should be
 faster" without numbers is rejected.
 
+The language-neutral method — latency budgets, profiling discipline, regression gates — is [`sota-performance`](../../sota-performance/SKILL.md); this file is the Python toolchain half.
+
 ## 1. Profile first — tool selection
 
 | Question | Tool |

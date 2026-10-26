@@ -97,6 +97,8 @@ The engineering contract that makes translation possible:
   are all locale data, not copy.
 - RTL: user-generated content gets `dir="auto"`; avoid strings that assume
   left/right ("see the panel on the right" → name the panel).
+  The layout half of RTL (logical properties, mirrored direction icons) is
+  [`sota-frontend-design` rules/02](../../sota-frontend-design/rules/02-layout-spacing-responsive.md) §5.
 - Name fields accept the world's names: no Latin-only (alphabetical-only)
   validation on a name field — it rejects most of the world's names (shared
   with [`sota-frontend-design` rules/04](../../sota-frontend-design/rules/04-ux-patterns.md) §2a, whose i18n audit lives here).

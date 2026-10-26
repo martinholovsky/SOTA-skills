@@ -259,6 +259,23 @@ def manifest_check(edges):
                 elif not any(k.lower() in prose for k in kws):
                     bad.append("C4 %s: rules/%s is declared for %r, but none of %s appears in its index row or "
                                "the BUILD lines that reference it" % (mf, n, tag, kws))
+        # C6 (2026-10-26): a cross-cutting skill and each language skill point at each other. The
+        # graph found sota-code-security linked with all ten language skills both ways while
+        # sota-performance reached 2 of their performance files and sota-testing none, so a builder
+        # routed to the cross-cutting skill never learned the language file existed. `per_language`
+        # names the one file per language; the owner's SKILL.md must link it, and it must link back
+        # to the owner (its SKILL.md or any of its rules files).
+        sm_links = link_targets(text, os.path.dirname(sm))
+        for lsk, n in sorted(m.get("per_language", {}).items()):
+            lf = {os.path.basename(f)[:2]: f for f in git_files("skills/%s/rules/*.md" % lsk)}.get(n)
+            if not lf:
+                bad.append("C6 %s: per_language names %s rules/%s, which does not exist" % (mf, lsk, n))
+                continue
+            if lf not in sm_links:
+                bad.append("C6 %s: %s does not link %s (the %s half of this skill)" % (mf, sm, lf, lsk))
+            back = link_targets(strip_code(open(lf, encoding="utf-8").read()), os.path.dirname(lf))
+            if not any(x == sm or x.startswith("skills/%s/rules/" % sk) for x in back):
+                bad.append("C6 %s: %s does not link back to %s" % (mf, lf, sk))
         for v in m.get("via", []):
             src, dst = have.get(v["from"]), have.get(v["to"])
             if not (src and dst and (src, "same-skill", dst) in edges):

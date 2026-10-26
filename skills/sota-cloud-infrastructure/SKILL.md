@@ -44,7 +44,8 @@ modules, landing zones, network plans, DR plans).
    infrastructure.
 5. State the cost and the failure mode of what you propose. "Three NAT gateways at
    per-hour + per-GB rates" and "this is single-region; region loss means restore
-   from backup" belong in the design, not in the postmortem.
+   from backup" belong in the design, not in the postmortem. The cost traps and levers are in
+   [rules/06](rules/06-cost-finops.md).
 6. Produce infrastructure as code (Terraform/OpenTofu/Pulumi fragments), never
    console-click instructions, except for one-time org bootstrap steps which must be
    documented as such.

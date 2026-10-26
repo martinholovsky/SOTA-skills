@@ -87,7 +87,7 @@ if not p.is_relative_to(BASE_DIR): raise Forbidden()
   Never pass a request object as the filter (`find(req.body)`); build it from typed fields
   through the driver's or ODM's builder (`eq("email", email)`, Mongoose, Spring Data). A string
   that still reaches a JavaScript-evaluated query must not contain `' " \ ; { } $`.
-  OWASP: NoSQL Security cheat sheet, Java Security cheat sheet.
+  OWASP: NoSQL Security cheat sheet, Java Security cheat sheet. SurrealQL binding: [`sota-databases` rules/08](../../sota-databases/rules/08-surrealdb-multimodel.md) §3.
 - **Optional filters: choose a whole statement, never assemble a WHERE.** `WHERE 1=1` plus
   appended `" AND ..."` fragments is concatenation with extra steps, and a branch that drops its
   condition turns a scoped read, UPDATE or DELETE into one over the whole table. Select among

@@ -139,6 +139,23 @@ RTT = ~200 ms added per page view" beats "this is slow".
 | [`rules/05-caching.md`](rules/05-caching.md) | Designing or auditing any cache: hierarchy placement, key design, invalidation, stampede protection (singleflight, jitter, soft TTL), negative caching, when caching is the wrong fix, and the security floor (declared global/tenant/user key scope, authorize before a cache hit, invalidate on role/tenancy change). |
 | [`rules/06-frontend-web.md`](rules/06-frontend-web.md) | Web performance: Core Web Vitals thresholds, bundle budgets, code splitting, image formats (AVIF/WebP), font loading, hydration cost, edge rendering. |
 
+## Per-language detail
+
+This skill is language-neutral. The toolchain half — profilers, allocation and GC behaviour, runtime and build flags — lives in one file per language skill. Read it beside this one whenever the code is in that language:
+
+| Language | File |
+|---|---|
+| Python | [`sota-python` rules/06](../sota-python/rules/06-performance.md) |
+| Go | [`sota-golang` rules/06](../sota-golang/rules/06-performance.md) |
+| Rust | [`sota-rust` rules/06](../sota-rust/rules/06-performance.md) |
+| C / C++ | [`sota-c-cpp` rules/07](../sota-c-cpp/rules/07-performance.md) |
+| Java / Kotlin | [`sota-jvm` rules/05](../sota-jvm/rules/05-performance.md) |
+| C# / .NET | [`sota-dotnet` rules/05](../sota-dotnet/rules/05-performance.md) |
+| JavaScript / TypeScript | [`sota-javascript-typescript` rules/06](../sota-javascript-typescript/rules/06-performance.md) |
+| PHP | [`sota-php` rules/06](../sota-php/rules/06-performance-runtime.md) |
+| Ruby | [`sota-ruby` rules/05](../sota-ruby/rules/05-concurrency-performance.md) |
+| Swift | [`sota-swift` rules/07](../sota-swift/rules/07-performance.md) |
+
 ## Top-10 non-negotiables
 
 1. **Measure before optimizing; fix pathologies on sight.** Profile before

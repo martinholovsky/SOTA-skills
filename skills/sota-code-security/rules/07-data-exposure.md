@@ -352,6 +352,8 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
 - Production must have: debug modes off (framework debug pages, GraphQL
   playgrounds, Swagger UIs gated or auth'd), actuator/metrics/health endpoints
   restricted (`/actuator/env`, `/debug/pprof`, `/metrics` leak secrets/topology),
+  on Spring Boot via the exposure property, with `heapdump` the worst endpoint
+  ([`sota-jvm` rules/08](../../sota-jvm/rules/08-web-layer.md) §1),
   profilers and REPL endpoints absent.
 - Test/seed accounts, magic bypass headers (`X-Debug-User`), and feature-flag
   backdoors must never ship — grep for them in audits.

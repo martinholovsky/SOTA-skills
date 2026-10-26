@@ -80,7 +80,8 @@ Rules:
 - `failurePolicy: Fail` on the webhook for prod admission — `Ignore` means "enforce
   unless the enforcer is down", which is the first thing an attacker or an outage takes
   out. Accept the availability tradeoff consciously (HA the controller; exempt
-  kube-system to avoid bricking the cluster).
+  kube-system to avoid bricking the cluster). Selectors that exclude the webhook's own namespace, a short
+  `timeoutSeconds` and `caBundle` rotation: [`sota-kubernetes` rules/05](../../sota-kubernetes/rules/05-operators-crds-webhooks.md) §3.
 - Cover all Pod-producing paths (Kyverno/policy-controller handle Pod via workload
   controllers; verify your policy matches Deployments/CronJobs creation too, or relies on
   Pod-level matching that can't be skipped).

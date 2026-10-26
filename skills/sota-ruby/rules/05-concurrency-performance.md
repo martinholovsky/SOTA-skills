@@ -5,6 +5,8 @@ GC, the allocator, and (increasingly) the JITs. Rules of engagement: know
 which resource you're bound on, design jobs for at-least-once delivery, and
 profile before optimizing.
 
+The cross-language halves are [`sota-performance`](../../sota-performance/SKILL.md) (latency budgets, profiling discipline, regression gates) and [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md) (structured concurrency, cancellation, backpressure); this file is the Ruby half of both.
+
 ## 1. The GVL and the concurrency decision table
 
 *(advisory)* A decision table for choosing the tool: which workload is CPU-bound is a design

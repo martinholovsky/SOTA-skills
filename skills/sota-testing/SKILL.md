@@ -111,6 +111,23 @@ End every audit with: findings table, top-3 risks, and a prioritized fix list
 | [`rules/08-bdd-spec-by-example.md`](rules/08-bdd-spec-by-example.md) | BDD / specification by example: Given-When-Then done declaratively, the three-amigos value (and when there's no cross-role audience), outside-in double loop with TDD, scenario-explosion and UI-script anti-patterns, Gherkin tooling, and tracing scenarios to spec acceptance criteria ([`sota-docs-workflow` rules/05](../sota-docs-workflow/rules/05-spec-driven-development.md)) |
 | [`rules/09-security-testing.md`](rules/09-security-testing.md) | security testing as a test type: WSTG as the verification map, the security-regression set (IDOR/BOLA, BFLA, authn/session, injection, mass-assignment, rate-limit, SSRF, tenant isolation run as the production DB role and pooler, cross-identity cache tests), **a role × method × path authz matrix, OpenAPI-derived auth negatives and a test that the enforcer is still wired**, independent authorship of security tests, business-logic/abuse-case tests from threat models, where SAST/DAST/fuzz fit and their ceiling, security-critical coverage floor, stack fingerprinting and external recon, WebSocket and message-size tests, the penetration-testing process and manual REST technique, security stress runs, logging kept on during security runs. Pairs with [`sota-code-security`](../sota-code-security/SKILL.md), [`sota-threat-modeling`](../sota-threat-modeling/SKILL.md), [`sota-devsecops` rules/05](../sota-devsecops/rules/05-analysis-gates.md) |
 
+## Per-language detail
+
+This skill holds test strategy and design. Each language skill carries the mechanics — its runner, fixtures, coverage, fuzzing and CI flags — in one file. Read it beside this one whenever the suite is in that language:
+
+| Language | File |
+|---|---|
+| Python | [`sota-python` rules/07](../sota-python/rules/07-frameworks-testing.md) |
+| Go | [`sota-golang` rules/07](../sota-golang/rules/07-tooling-ci.md) |
+| Rust | [`sota-rust` rules/07](../sota-rust/rules/07-tooling-ci.md) |
+| C / C++ | [`sota-c-cpp` rules/06](../sota-c-cpp/rules/06-build-tooling-ci.md) |
+| Java / Kotlin | [`sota-jvm` rules/06](../sota-jvm/rules/06-build-tooling-ci.md) |
+| C# / .NET | [`sota-dotnet` rules/06](../sota-dotnet/rules/06-build-tooling-ci.md) |
+| JavaScript / TypeScript | [`sota-javascript-typescript` rules/07](../sota-javascript-typescript/rules/07-testing-and-tooling.md) |
+| PHP | [`sota-php` rules/05](../sota-php/rules/05-composer-tooling.md) |
+| Ruby | [`sota-ruby` rules/04](../sota-ruby/rules/04-supply-chain-tooling.md) |
+| Swift | [`sota-swift` rules/08](../sota-swift/rules/08-tooling-ci-testing.md) |
+
 ## Top-10 non-negotiables
 
 1. **Every test must be able to fail.** A test that passes when the code under

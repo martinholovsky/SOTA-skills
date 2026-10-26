@@ -65,7 +65,9 @@ convenience is not a risk acceptance.
 - **Digest-pin images at the manifest layer.** Deploy manifests reference
   `image@sha256:<digest>` (or a signed tag your admission policy mutates to a verified
   digest), never `:latest` or a floating tag — build-once-promote-many
-  ([`sota-devsecops` rules/06](../../sota-devsecops/rules/06-iac-deployment.md)). Mutable tags admit a different artifact than you reviewed.
+  ([`sota-devsecops` rules/06](../../sota-devsecops/rules/06-iac-deployment.md)). Mutable tags admit a different artifact than you reviewed. The registry behind
+  those digests is tier-0: no anonymous push, tag immutability, a pull-through cache for
+  upstream images ([`sota-devsecops` rules/08](../../sota-devsecops/rules/08-registry-security.md) §8.3).
 - **Kustomize**: pin `images:` with `digest:`; review `patches`/`patchesStrategicMerge`
   for privilege escalation the same way (a patch can add `privileged: true` or a hostPath);
   beware remote bases (`resources:` pointing at a URL) — pin and review them like remote

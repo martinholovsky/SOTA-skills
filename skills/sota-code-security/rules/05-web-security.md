@@ -121,6 +121,7 @@ Content-Security-Policy:
   in `style-src`; move inline `on*=` handlers to `addEventListener` (a nonce
   cannot cover an attribute). Check each policy with a CSP evaluator. CSP does
   not stop DOM clobbering or reuse of script gadgets that are allowed to run.
+  Clobbering defences: [`sota-javascript-typescript` rules/09](../../sota-javascript-typescript/rules/09-browser-platform-security.md) §2.
   OWASP: CSP, DOM Clobbering Prevention cheat sheets; Proactive Controls 2024 C8.
 - User files and API responses a browser may open directly get the header
   `Content-Security-Policy: sandbox` (opaque origin, no scripts; ignored in

@@ -1282,14 +1282,21 @@ probe 41 "router §BUILD changed without the eval mirror's pin being re-read" "B
 
 # 42 — reachability graph (scripts/reachability-graph.py). One probe per property, each a
 # python edit that asserts its anchor first, so a stale literal fails as a PROBE.
-# 42: delete devsecops/rules/08's only pointer beyond its index row -> C1 (index-only).
+# 42: delete devsecops/rules/08's pointers beyond its index row -> C1 (index-only). There are two
+# since 2026-10-26 (rules/04, and kubernetes rules/07's digest-pinning hand-off): removing only the
+# first left a path, C1 stayed silent and the harness reported a FALSE PASS. Both are asserted.
 ( cd "$WT" && python3 -I -c "
-import pathlib
+import pathlib, re
 p = pathlib.Path('skills/sota-devsecops/rules/04-build-containers.md')
 t = p.read_text(encoding='utf-8')
 old = 'the registry itself as tier-0 infrastructure: [rules/08](08-registry-security.md).'
 assert t.count(old) == 1, 'probe stale: the rules/04 -> rules/08 pointer not found'
 p.write_text(t.replace(old, 'the registry itself as tier-0 infrastructure.', 1), encoding='utf-8')
+k = pathlib.Path('skills/sota-kubernetes/rules/07-supply-chain-audit.md')
+u = k.read_text(encoding='utf-8')
+v = re.sub(r' \(\[\`sota-devsecops\` rules/08\]\([^)]*\)[^)]*\)', '', u)
+assert v != u and 'sota-devsecops/rules/08' not in v, 'probe stale: the kubernetes 07 -> devsecops 08 pointer not found'
+k.write_text(v, encoding='utf-8')
 " )
 probe 42 "a rules file left with no path but its own index row" "C1 skills/sota-devsecops/rules/08"
 # 42b: drop one skill's coverage line -> C2 (its AUDIT names none of its files).
@@ -1357,6 +1364,25 @@ assert m, 'probe stale: no rules/01 index row in sota-rust'
 p.write_text(t[:m.end()] + ' (hand edit)' + t[m.end():], encoding='utf-8')
 " )
 probe 42h "an index row edited in SKILL.md but not in its manifest" "C5 sota-rust.json: rules/01 index row"
+# 42i/42j: a cross-cutting skill and a language skill stop pointing at each other -> C6 (2026-10-26).
+# Both directions, each its own probe: the owner's per-language table loses a row (42i), and a
+# language file loses its link back to the owner (42j).
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-testing/SKILL.md'); t = p.read_text(encoding='utf-8')
+row = '| Rust | [\`sota-rust\` rules/07](../sota-rust/rules/07-tooling-ci.md) |\n'
+assert t.count(row) == 1, 'probe stale: no Rust row in the sota-testing per-language table'
+p.write_text(t.replace(row, ''), encoding='utf-8')
+" )
+probe 42i "a cross-cutting skill's per-language table loses a language" "C6 sota-testing.json: skills/sota-testing/SKILL.md does not link skills/sota-rust/rules/07"
+( cd "$WT" && python3 -I -c "
+import pathlib, re
+p = pathlib.Path('skills/sota-swift/rules/03-concurrency.md'); t = p.read_text(encoding='utf-8')
+u = re.sub(r'\[\`sota-async-concurrency\`\]\([^)]*\)', 'sota-async-concurrency', t)
+assert u != t and '../../sota-async-concurrency/' not in u, 'probe stale: swift 03 has no link to sota-async-concurrency'
+p.write_text(u, encoding='utf-8')
+" )
+probe 42j "a language file stops linking back to its cross-cutting skill" "C6 sota-async-concurrency.json: skills/sota-swift/rules/03-concurrency.md does not link back"
 # 42g: C4 reads a BUILD list ITEM, not a physical line (2026-10-26). kubernetes BUILD step 6 wraps:
 # "CVE-response runbook," sits on the line above its rules/01 link. A tag whose only keyword is that
 # phrase is backed by the prose; the old per-line reading rejected it. Must stay GREEN, and say it ran.
