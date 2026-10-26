@@ -356,5 +356,5 @@ job, never compare absolute times across runner generations.
       per-component budgets along the critical path, with ≥ 20% slack kept, and
       enforced in CI and alerting per component, not just end to end? Does a
       change that adds a sequential dependency fit the remaining slack or buy
-      budget elsewhere? No written budget → flag (Medium). Lead list:
-      `grep -rniE 'latency[ _-]?budget' --include='*.md' --include='*.yaml' --include='*.yml' .`
+      budget elsewhere? No written budget → flag (Medium); this prints when none exists:
+      `grep -rqiE 'latency[ _-]?budget' --include='*.md' --include='*.yaml' --include='*.yml' . || echo 'no written latency budget'`

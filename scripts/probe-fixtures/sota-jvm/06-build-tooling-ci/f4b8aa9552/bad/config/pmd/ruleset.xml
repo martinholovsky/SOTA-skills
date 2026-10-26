@@ -1,0 +1,3 @@
+<ruleset name="app">
+  <rule ref="category/java/bestpractices.xml"/>
+</ruleset>

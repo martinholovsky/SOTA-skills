@@ -1,0 +1,6 @@
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    - --authorization-mode=AlwaysAllow
+    - --enable-admission-plugins=NamespaceLifecycle

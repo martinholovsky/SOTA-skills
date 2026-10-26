@@ -114,11 +114,11 @@ rubric (data / model / infra / monitoring tests) is the backbone.
       evaluated count beside its verdicts, and is the population an explicit list?
       Name-shape filters to read: `grep -rnE '\.(endswith|startswith)\(|rpartition\(' --include='*.py' .`
 - [ ] **Pipeline/model tests (ML Test Score infra) (§5) — HIGH** —
-      `grep -rniE 'def test_|pytest|golden|integration' --include='*.py' . | grep -iE 'model|pipeline|predict|feature' | head`
+      `grep -rniE 'def test_|pytest|golden|integration' --include='*.py' . | grep -qiE 'model|pipeline|predict|feature' || echo "no model/pipeline tests"`
       ; manual: NaN/inf and schema-conformance tests, a golden-prediction regression test on a
       canonical input, an integration test of the full pipeline, and a tested rollback
 - [ ] **Online experiment before full rollout (§6) — MEDIUM/HIGH** —
-      `grep -rniE 'a/?b.?test|experiment|interleav|shadow|canary|holdout' . | head`
+      `grep -rqiE 'a/?b.?test|experiment|interleav|shadow|canary|holdout' . || echo "no online experiment before rollout"`
       ; manual: the business metric, sample size and guardrail metrics fixed before the experiment
 - [ ] **Compressed artifact re-validated (§4) — HIGH** — files that quantise, prune or
       distil: `grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .`

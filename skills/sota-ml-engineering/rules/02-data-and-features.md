@@ -155,7 +155,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       by CV on train and no tuning on the test set?
 - [ ] **Train/serve skew (§2) — CRITICAL Diff training feature code vs serving feature code; are
       served features logged for training?** —
-      `grep -rniE 'feature.?store|feast|log.*feature|skew' --include='*.py' . | head`
+      `grep -rqiE 'feature.?store|feast|log.*feature|skew' --include='*.py' . || echo "no feature store or served-feature logging"`
 - [ ] **Data/feature versioning — HIGH** (§5) —
       `out=$(grep -rniE 'dvc|lakefs|dataset.*hash|snapshot|data.?version' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no data versioning found" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
@@ -164,13 +164,13 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 - [ ] **PII in features (§6) — HIGH (cross-ref [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md))** —
       `grep -rniE 'email|ssn|phone|dob|address|name|ip_addr' --include='*.py' . | grep -i feature | head`
 - [ ] **Signed dataset attestations and stage-to-stage verification (§5) — HIGH** —
-      `grep -rniE 'in-toto|dsse|attest' . | grep -iE 'dataset|manifest|chunk|annotation|stage' || echo "no signed dataset attestation"`
+      `grep -rniE 'in-toto|dsse|attest' . | grep -qiE 'dataset|manifest|chunk|annotation|stage' || echo "no signed dataset attestation"`
       ; manual: does each pipeline stage verify the previous stage's output before use?
 - [ ] **Purpose-bound fields and settlement data separated (§6) — MEDIUM** —
       `grep -rniE 'settlement|payout|invoice|billing' --include='*.py' --include='*.sql' . | grep -iE 'label|train|feature'`
       (each hit is a label or feature reading the ledger directly)
 - [ ] **Per-row consent/lawful-basis code on training rows (§6) — HIGH** —
-      `grep -rniE 'lawful_?basis|legal_?basis|consent_?(code|reason|basis)|tc_?string' . || echo "no per-row consent or lawful-basis code"`
+      `grep -rqiE 'lawful_?basis|legal_?basis|consent_?(code|reason|basis)|tc_?string' . || echo "no per-row consent or lawful-basis code"`
 - [ ] **Auto-label QA and labeling roles (§7) — MEDIUM** — auto-labels with no threshold on
       the same line:
       `grep -rniE '(pseudo|weak|auto)_?label' --include='*.py' . | grep -viE 'confidence|threshold|min_score'`

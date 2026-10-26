@@ -370,7 +370,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       `grep -rnE '^[[:space:]]*\[[^]=]+ for [^]]+\][[:space:]]*$' --include='*.py' --exclude-dir=.venv .`
       (a comprehension run for its side effects: use a `for` loop [LOW]; ruff B018 does not flag it, measured)
 - [ ] **Bare/broad excepts [HIGH if swallowing, MEDIUM otherwise]** (§10) —
-      `grep -rn "except:$\|except: " --include="*.py" src/` ;
+      `grep -rnE 'except:([[:space:]]|$)' --include="*.py" src/` ;
       `grep -rn -A1 "except Exception" --include="*.py" src/ | grep -B1 "pass$"`
 - [ ] **Exception chaining lost** (§10) — `uvx ruff check --select B904 .` (raise-without-from in
       except)
@@ -406,7 +406,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
 - [ ] **Identity misuse & list.pop(0)** (§12, §9) —
       `grep -rn 'is "" \|is "\| is [0-9]' --include="*.py" src/` ;
       `grep -rn "\.pop(0)" --include="*.py" src/` (O(n) dequeue [perf])
-- [ ] **groupby without sort; hand-rolled itertools (§9) (manual review)** — `grep -rn "groupby(" --include="*.py" src/` ;
+- [ ] **groupby without sort; hand-rolled itertools (§9) (manual review)** — `grep -rn "groupby(" --include="*.py" src/ | grep -v "sorted("` ;
       `grep -rnE 'def [a-z_]*(chunk|batch|flatten|window|pairwise)[a-z_]*\(' --include='*.py' --exclude-dir=.venv .`
       (a utils helper that itertools/`batched`/`pairwise` replaces [LOW])
 - [ ] **Dataclasses that are not frozen and slotted (§7) [LOW]** —
@@ -422,15 +422,14 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       bitmask constants: `Flag`)
 - [ ] **--- Public API surface (§13) --- Package modules with no stated surface [MEDIUM for a
       library, INFO for an app]** —
-      `find src -name '*.py' -not -name '__init__.py' -not -path '*/tests/*' -print0 |` ;
-      `while IFS= read -r -d '' f; do` ; `grep -q '__all__' "$f" || echo "no __all__: $f"` ;
-      `done`
+      `grep -rL '__all__' --include='*.py' --exclude='__init__.py' --exclude-dir=tests src/`
+      (each file listed is a module with no `__all__`)
 - [ ] **Boolean/optional parameters frozen positionally — no `*` in the signature [MEDIUM]** (§13) —
       `grep -rnE 'def [a-z_]+\([^*)]*(flag|force|strict|verbose|dry_run)[^)]*\)' --include="*.py" src/`
 - [ ] **Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]** (§13) —
-      `grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning'`
+      `grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning' | grep -vE 'import[^#]*deprecated'`
 - [ ] **Does the suite fail on warnings? [MEDIUM if absent]** (§13) —
-      `grep -rnE 'filterwarnings|-W ?error' pyproject.toml setup.cfg pytest.ini tox.ini 2>/dev/null`;
+      `grep -qE 'filterwarnings|-W ?error' pyproject.toml setup.cfg pytest.ini tox.ini || echo "suite does not fail on warnings"`;
       a category-scoped `error::DeprecationWarning` with no blanket `"error"` misses `UserWarning`s
 - [ ] **__slots__ added to a class that subclasses something unslotted — no saving [INFO]** (§13) —
       `grep -rn -B3 '__slots__' --include="*.py" src/ | grep 'class .*('`

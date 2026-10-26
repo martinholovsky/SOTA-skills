@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.24)
+project(app CXX)
+add_subdirectory(third_party/fmt)
+add_executable(app main.cpp)
+target_link_libraries(app PRIVATE fmt::fmt)

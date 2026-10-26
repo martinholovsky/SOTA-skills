@@ -352,19 +352,20 @@ Run from repo root. Severity guidance in brackets.
 - [ ] **Competing lint/format config [MEDIUM — consolidate to ruff]** (§3) —
       `ls .flake8 .isort.cfg .pylintrc 2>/dev/null; grep -n "\[tool.black\]\|\[tool.isort\]" pyproject.toml`
 - [ ] **Type checking actually enforced?** (§4) —
-      `grep -n "mypy\|pyright\|basedpyright\| ty " .github/workflows/*.yml .gitlab-ci.yml 2>/dev/null`
-      ; `grep -rn "type: ignore$\|type: ignore " --include="*.py" src/ | grep -v "ignore\["`
+      `grep -qE 'mypy|pyright|basedpyright| ty ' .github/workflows/*.yml .gitlab-ci.yml || echo "no type checker in CI"`
+      ; `grep -rnE 'type: ignore([[:space:]]|$)' --include="*.py" src/ | grep -v "ignore\["`
       (bare ignores [LOW])
 - [ ] **Suppressions that never expire (§3, §4) [LOW each, MEDIUM in aggregate or where they silence `S` rules]** —
       `uvx ruff check --extend-select PGH003,PGH004,RUF100 --statistics .` (bare and stale
       `noqa`/`type: ignore`; `--extend-select` keeps the project's rules, §3) ;
-      `grep -nE 'reportUnnecessaryTypeIgnoreComment|warn_unused_ignores|strict[[:space:]]*=' pyproject.toml pyrightconfig.json 2>/dev/null`
-      (no hit for the gating checker = an unused ignore never fails) ;
+      `grep -qE 'reportUnnecessaryTypeIgnoreComment|warn_unused_ignores|strict[[:space:]]*=' pyproject.toml pyrightconfig.json || echo "no unused-ignore gate configured"`
+      (the message = an unused ignore never fails; silence still needs the setting to belong to
+      the checker that gates CI, not the other one) ;
       `grep -rnE '#[[:space:]]*(noqa(:[[:space:]]*[A-Z]+[0-9]+([[:space:]]*,[[:space:]]*[A-Z]+[0-9]+)*)?|type:[[:space:]]*ignore(\[[^]]*\])?|pyright:[[:space:]]*ignore(\[[^]]*\])?)[[:space:]]*$' --include='*.py' .`
       (each hit is a suppression with no reason after it)
 - [ ] **Test-only rules disabled globally, or co-located tests not exempted (§3) [MEDIUM for
       `S101`/`S105`/`S106` in the global ignore]** —
-      `grep -nE '^[[:space:]]*(extend-)?ignore[[:space:]]*=.*"(S101|S105|S106)"' pyproject.toml ruff.toml .ruff.toml 2>/dev/null`
+      `grep -HnE '^[[:space:]]*(extend-)?ignore[[:space:]]*=.*"(S101|S105|S106)"' /dev/null $(ls pyproject.toml ruff.toml .ruff.toml 2>/dev/null)`
       (each hit turns the rule off for production code) ;
       `find . -path ./tests -prune -o -path ./.venv -prune -o \( -name 'test_*.py' -o -name '*_test.py' \) -print | head -3`
       (any hit while `per-file-ignores` keys only `"tests/**"` = those tests fail the lint, or
@@ -388,7 +389,8 @@ Run from repo root. Severity guidance in brackets.
       [MEDIUM]) ; `find . -path ./.venv -prune -o -path ./tests -prune -o \( -name 'test_*.py' -o -name '*_test.py' -o -name conftest.py \) -print | head -3`
       (tests inside the package ship with it [LOW])
 - [ ] **Ruff coverage** (§3) — `uvx ruff check --statistics .` (what's currently violated);
-      `grep -n "select" pyproject.toml` (B/S/ASYNC missing from select [LOW]) ;
+      `grep -nE '^[[:space:]]*(extend-)?select[[:space:]]*=' pyproject.toml | awk '!/"ALL"/ && !(/"B"/ && /"S"/ && /"ASYNC"/)'`
+      (a select line missing one of B/S/ASYNC [LOW]; a multi-line array prints its opening line: read it) ;
       `uvx ruff check --select PERF,C4,SIM --statistics .` (the perf rules)
 - [ ] **Hygiene (§10)** — `git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"` (committed artifacts
       [LOW]) ; `git ls-files .python-version | grep -q . || echo "no .python-version committed"` [LOW] ;
@@ -428,7 +430,7 @@ Run from repo root. Severity guidance in brackets.
       on a shared dict or set: a finding only where a thread reaches it with no `threading.Lock`
       held)
 - [ ] **GIL silently re-enabled on a free-threaded target (§8) [MEDIUM where a `t` build is
-      the deployment target]** — `grep -rn '_is_gil_enabled' --include='*.py' .` (no hit = nothing
-      notices an undeclared extension turning the GIL back on) ;
+      the deployment target]** — `grep -rq '_is_gil_enabled' --include='*.py' . || echo "no _is_gil_enabled() check"`
+      (the message = nothing notices an undeclared extension turning the GIL back on) ;
       `grep -rnE 'PYTHON_GIL=0|-X ?gil=0' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' .`
       (the testing override shipped to production)

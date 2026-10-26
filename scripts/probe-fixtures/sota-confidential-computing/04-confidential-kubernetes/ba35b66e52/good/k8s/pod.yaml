@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: payments
+spec:
+  runtimeClassName: kata-qemu-snp
+  containers:
+    - name: app
+      image: example/app:1

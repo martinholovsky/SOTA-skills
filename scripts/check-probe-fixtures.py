@@ -270,6 +270,11 @@ def self_test():
     # a span keeps the spaces inside a line: Gemfile.lock indents a locked gem by exactly four
     if ccp.probes_in("x\n## Audit checklist\n- `grep -nE '^    json \\(' Gemfile.lock`\n") != ["grep -nE '^    json \\(' Gemfile.lock"]:
         fails += 1; print("FAIL probes_in() collapsed the spaces inside a probe")
+    # a <…> with spaces is a prose placeholder only when unquoted; quoted it is the pattern itself
+    if ccp.skip_reason("grep -rnE 'Record<string, *[^>]+> *= *' --include='*.ts' .") is not None:
+        fails += 1; print("FAIL a quoted <… …> in a pattern was skipped as a prose placeholder")
+    if ccp.skip_reason("grep -c x <managed settings.json>") != "prose placeholder":
+        fails += 1; print("FAIL an unquoted prose placeholder was treated as runnable")
     print("self-test:", "ok" if not fails else "FAILED %d" % fails)
     return 1 if fails else 0
 

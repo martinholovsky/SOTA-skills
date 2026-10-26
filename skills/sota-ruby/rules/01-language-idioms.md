@@ -310,13 +310,13 @@ failed to hide, not what you exported:
 - [ ] ** `private` does NOT apply to `def self.` (§8) -- measured on 4.0.6, the class method stayed
       callable while the instance method raised NoMethodError. A private that applies to nothing
       looks identical to one that works.** —
-      `grep -rn -B3 'def self\.' lib/ | grep -A3 '^\s*private\s*$'` ;
+      `grep -rn -B3 'def self\.' lib/ | grep -A3 -E '^[^:]+[-:][0-9]+[-:][[:space:]]*private[[:space:]]*$'` ;
       `grep -rn 'private_class_method\|class << self' lib/` (the forms that actually work)
-- [ ] ** `private` does NOT apply to constants either (§8): a bare CONST is reachable as Mod::CONST A
-      LOCATOR, NOT A VERDICT: `grep -v` is line-scoped, so a constant privatised on the NEXT
-      line still appears here (verified against a fixture that does exactly that). Compare the
-      two counts below instead of trusting the filtered list.** —
-      `grep -rnE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ | grep -v 'private_constant'` ;
+- [ ] ** `private` does NOT apply to constants either (§8): a bare CONST is reachable as Mod::CONST.
+      The first probe prints `file:line: NAME` for each constant with no `private_constant :NAME`
+      anywhere in its file — file-scoped, so a same-named constant privatised in another class of
+      that file reads as private; the counts below are a cross-check.** —
+      `grep -rlE '^[[:space:]]*[A-Z][A-Z0-9_]+ *=' lib/ | xargs -r awk '/private_constant/ { s = $0; while (match(s, /:[A-Z][A-Z0-9_]*/)) { p[FILENAME, substr(s, RSTART + 1, RLENGTH - 1)] = 1; s = substr(s, RSTART + RLENGTH) } } /^[ \t]*[A-Z][A-Z0-9_]+ *=/ { n = $0; sub(/^[ \t]*/, "", n); sub(/[ \t]*=.*/, "", n); c[FILENAME, n] = FILENAME ":" FNR ": " n } END { for (k in c) if (!(k in p)) print c[k] }'` ;
       `grep -rncE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ ; grep -rnc 'private_constant' lib/` ;
       `grep -rn 'private_constant' lib/` (the mechanism, if used at all)
 - [ ] **Handles opened without the block form (§7) — MEDIUM, HIGH in a long-lived process** —
@@ -386,7 +386,7 @@ conversion and from hand-rolled returns:
 - [ ] **method_missing without respond_to_missing?** (§7) —
       `grep -rln "def method_missing" --include='*.rb' . | xargs grep -L "respond_to_missing?" 2>/dev/null`
 - [ ] **Wall-clock durations — LOW** (§7) —
-      `grep -rnE "Time\.now.*-.*Time\.now|=\s*Time\.now\b.*# .*(elapsed|duration)" --include='*.rb' . | head`
+      `grep -rnE 'Time\.now[[:space:]]*-[[:space:]]*[A-Za-z_@(]|(elapsed|duration)[a-z_]*[[:space:]]*=[[:space:]]*Time\.now' --include='*.rb' . | head`
 - [ ] **Typing posture (§6) — INFO** —
       `ls sig/ sorbet/ 2>/dev/null; grep -rn "# typed:" --include='*.rb' . | head -3`
       (both `sig/` and `sorbet/` = two half-adopted checkers; confirm CI gates the one picked) ;

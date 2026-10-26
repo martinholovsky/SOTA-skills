@@ -1,0 +1,4 @@
+5:    - nolintlint
+7:    nolintlint:
+8:      require-specific: true
+9:      require-explanation: true

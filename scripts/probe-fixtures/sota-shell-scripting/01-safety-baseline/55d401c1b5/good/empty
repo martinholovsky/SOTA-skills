@@ -1,0 +1,4 @@
+check() {
+  local f=$1
+  if [ -f "$f" ]; then echo found; fi
+}

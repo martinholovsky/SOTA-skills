@@ -1,0 +1,5 @@
+version = 1
+
+[[package]]
+name = "torch"
+version = "2.5.1"

@@ -390,7 +390,7 @@ is good for security but plan checkpointing/image capture for incident response
       accounts with no `cluster-admin` or wildcard verbs; RBAC reviewed for
       escalation verbs (`pods/exec`, secrets, create pods, escalate/bind/impersonate) (§3).
 - [ ] Every IN-cluster egress peer selected by identity (§3) (`podSelector`/`namespaceSelector`),
-      not by a pod CIDR — `grep -n 'ipBlock' policies/` and, for each hit, require either an
+      not by a pod CIDR — `grep -rn 'ipBlock' policies/` and, for each hit, require either an
       out-of-cluster destination or a rewrite; a recycled pod IP re-points the allow silently
 - [ ] Default-deny NetworkPolicy ingress+egress in every namespace (§3); DNS and
       metadata-endpoint egress explicitly constrained; FQDN egress allowlists for

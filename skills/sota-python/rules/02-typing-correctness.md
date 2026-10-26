@@ -329,7 +329,7 @@ Keep overload sets small (2–4); a 10-overload function wants a redesign. Typed
 - [ ] **In-band sentinels standing in for None (§2a) [HIGH where the value is compared]** —
       `grep -rnE "return -1|return 0[^.0-9]|= *-1 *(#|$)" --include="*.py" src/` (producer: same
       constant from two branches?);
-      `grep -rnB2 -- "-> int:" --include="*.py" src/ | grep -c "except"` (int-returning fn with
+      `grep -rn -A6 -- '-> int:' --include='*.py' src/ | grep 'except'` (int-returning fn with
       an except arm); `grep -rnE "if [a-z_]+ (and|>) 0.*<|> 0.*if" --include="*.py" src/`
       (asymmetric guard: one operand filtered);
       `grep -rnE "^\s*if [a-z_]*(num|idx|index|count|offset|line|col)[a-z_]*:" --include="*.py" src/`
@@ -339,8 +339,9 @@ Keep overload sets small (2–4); a 10-overload function wants a redesign. Typed
       `grep -rn "or \[\]\|or {}\|or ''" --include="*.py" src/` (falsy-default smell [LOW,
       verify])
 - [ ] **Exhaustiveness (§7)** —
-      `grep -rn "match " --include="*.py" src/ -A1 | grep -B1 "case _" | head` (then check
-      assert_never use);
+      `grep -rn -A1 -E '^[[:space:]]*case _[[:space:]]*:' --include='*.py' src/ | grep -E '^[^:]+-[0-9]+-' | grep -vE 'assert_never|raise'`
+      (the body of a `case _:` that neither raises nor calls `assert_never`: a wildcard that
+      silently absorbs a new member);
       `grep -rln "assert_never" --include="*.py" src/ || echo "no exhaustiveness guards"`
 - [ ] **Validation layering (§5)** — `grep -rn "model_validate\|TypeAdapter" --include="*.py" src/`
       (should cluster at edges); `grep -rn "model_construct" --include="*.py" src/` (smell:

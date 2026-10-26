@@ -381,7 +381,7 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
 
 - [ ] Is the implicit flow (`response_type=token`/`id_token token`) disabled at the IdP for every client? (§1)
 - [ ] Is ROPC / `grant_type=password` disabled? (§1)
-- [ ] Is PKCE (S256) required — not merely supported — for all authorization-code clients? `grep -ri "require_pkce\|code_challenge_method"` (§1, §5)
+- [ ] Is PKCE (S256) required — not merely supported — for all authorization-code clients? `grep -rniE '(require_?pkce|pkce_?required)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(false|off|no)|code_challenge_method[a-z_]*["'\'']?[[:space:]]*[:=].*plain' . ; grep -rqiE 'require_?pkce|pkce_?required' . || echo 'no PKCE requirement configured anywhere'` prints a disabled requirement, an allowed `plain` method, or a line when no requirement is configured at all (§1, §5)
 - [ ] Are all `redirect_uri`s exact, absolute, HTTPS, with no wildcards? Hunt config for `redirect_uri.*\*` or `://\*`. (§4)
 - [ ] Does every RP validate `iss`, `aud` (and `azp` when present), `exp`, and `nonce` on the ID token? Grep RP code for `verify_aud`, `audience`, `nonce`. (§3)
 - [ ] Are token-verification algorithms pinned, with `alg:none` and asymmetric→symmetric confusion rejected? (§3)

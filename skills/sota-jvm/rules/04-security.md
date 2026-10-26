@@ -379,12 +379,13 @@ with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-perfo
       `grep -rnE 'Runtime\.getRuntime\(\)\.exec\(\s*"' --include='*.java' --include='*.kt' .`
 - [ ] **waitFor(t,unit) reaps nothing (§2): a destroy() with no descendants() sweep orphans
       grandchildren** —
-      `grep -rn 'waitFor(' --include='*.java' --include='*.kt' . | grep -v 'descendants'` ;
+      `grep -rlE 'waitFor\(' --include='*.java' --include='*.kt' . | xargs -r grep -L 'descendants'`
+      (each file printed calls `waitFor(` and never `descendants()`) ;
       `grep -rnE 'ctx\.lookup|InitialContext|new InitialDirContext' --include='*.java' --include='*.kt' .`
       (JNDI/Log4Shell-class);
       `grep -rnE 'SpelExpressionParser|Ognl|ScriptEngineManager|getEngineByName' --include='*.java' --include='*.kt' .`
 - [ ] **The eval sinks the line above does not name — CRITICAL on input** (§2) —
-      `grep -rnE 'ELProcessor|createValueExpression|createMethodExpression|GroovyShell|Eval\.me\(|Velocity\.evaluate|VelocityEngine|freemarker\.template\.Template|PebbleEngine' --include='*.java' --include='*.kt' .`
+      `grep -rnE 'ELProcessor|createValueExpression|createMethodExpression|GroovyShell|Eval\.me\(|Velocity\.evaluate|\.evaluate\(([^,;]*,){3}|(^|[^A-Za-z0-9_.])new Template\(|StringTemplateLoader|new StringLoader\(' --include='*.java' --include='*.kt' .`
       (a template or expression built from a request string is the finding; a template
       loaded by name from the classpath is not)
 - [ ] **Dynamic code evaluation by name: reflection, SpEL parsed from a variable or a `StandardEvaluationContext` — CRITICAL on input** (§2) — `grep -rnE '(Class\.forName|\.getMethod|\.getDeclaredMethod|parseExpression)\([[:space:]]*[^"[:space:])]|StandardEvaluationContext' --include='*.java' --include='*.kt' .` (a literal first argument does not match; trace each hit to a request value)
@@ -426,7 +427,8 @@ with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-perfo
       path must be resolved against the target dir and re-checked with startsWith.** —
       `grep -rnE 'new File\(|Paths\.get\(|Path\.of\(' --include='*.java' --include='*.kt' . | grep -vE 'normalize|toRealPath'`
       ;
-      `grep -rnE 'getName\(\)|getEntry\(|ZipEntry|TarArchiveEntry' --include='*.java' --include='*.kt' .`
+      `grep -rlE 'ZipEntry|TarArchiveEntry|JarEntry|ArchiveEntry|getNextEntry\(' --include='*.java' --include='*.kt' . | xargs -r grep -LE 'startsWith\('`
+      (each file printed handles archive entries and never calls `startsWith(`)
 - [ ] **Client-supplied upload filenames — HIGH if they reach a path** (§5) —
       `grep -rnE 'getSubmittedFileName\(|getOriginalFilename\(' --include='*.java' --include='*.kt' .`
       (each hit must feed a display field or be discarded, never `resolve()`/`new File`)

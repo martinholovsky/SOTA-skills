@@ -1,0 +1,7 @@
+<settings>
+  <profiles><profile><id>corp</id><repositories><repository>
+    <id>corp</id>
+    <url>https://repo.example.com/maven2</url>
+    <releases><checksumPolicy>fail</checksumPolicy></releases>
+  </repository></repositories></profile></profiles>
+</settings>

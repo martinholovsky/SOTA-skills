@@ -235,13 +235,13 @@ rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-e
 - [ ] **Governance docs (§4) — MEDIUM/LOW** —
       `out=$(grep -rniE 'model.?card|MODEL_CARD|datasheet|intended.use|limitation' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no model card" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
-      ; `grep -rniE 'nist|ai.?rmf|risk.?assessment|fairness|bias' . | head`
+      ; `grep -rqiE 'nist|ai.?rmf|risk.?assessment|fairness|bias' . || echo "no risk/fairness governance docs"`
       ; manual: does each production model's card carry intended use, per-slice metrics,
       limitations and an owner, and are fairness findings and mitigations documented?
 - [ ] **EU AI Act / regulatory tier considered (§5) — HIGH for high-risk domains (manual)** —
-      `grep -rniE 'ai.?act|high.?risk|gdpr|differential.privacy|anonymiz' . | head`
+      `grep -rqiE 'ai.?act|high.?risk|gdpr|differential.privacy|anonymiz' . || echo "no regulatory tier recorded"`
 - [ ] **Model signing verified at admission and load (§2) — HIGH** —
-      `grep -rnE 'model_signing[ .](verify|verifying)|from model_signing import .*verifying|verifying\.Config\(' . || echo "no model signature verification at admission/load"` ;
+      `grep -rqE 'model_signing[ .](verify|verifying)|from model_signing import .*verifying|verifying\.Config\(' . || echo "no model signature verification at admission/load"` ;
       unsigned files waved through:
       `grep -rnE 'ignore[-_]unsigned[-_]files' . | grep -vE 'no-ignore[-_]unsigned|unsigned_files\((False|0)\)'`
       (every hit is a finding). Manual: are tokenizers, adapters and guard models in the signed set?
@@ -257,16 +257,16 @@ rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-e
       ; manual: limits sized per principal and globally, alerts carry principal/window/count,
       and a revoke/IR path exists
 - [ ] **ML-BOM, signed, per model (§2) — HIGH** —
-      `grep -rniE 'cyclonedx|ml[-_]?bom|ai[-_]?bom|machine-learning-model' . || echo "no ML-BOM for model artifacts"`
+      `grep -rqiE 'cyclonedx|ml[-_]?bom|ai[-_]?bom|machine-learning-model' . || echo "no ML-BOM for model artifacts"`
       ; adapter load sites, each needing a signature check bound to its BOM entry:
       `grep -rnE 'load_adapter\(|PeftModel\.from_pretrained\(' --include='*.py' .`
       ; manual: is the BOM itself signed and verified at deploy and load?
 - [ ] **Pickle scanned before load where pickle is unavoidable (§2) — MEDIUM** — if the
       unsafe-deserialization probe above hits:
-      `grep -rniE 'picklescan|modelscan|fickling' . || echo "pickle models loaded with no pre-load scan"`
+      `grep -rqiE 'picklescan|modelscan|fickling' . || echo "pickle models loaded with no pre-load scan"`
       (a scan is an extra layer; a hit does not clear the CRITICAL item)
 - [ ] **Deployed prompt/guardrail drift check (§2) — MEDIUM** —
-      `grep -rniE '(system_?prompt|guardrail).*(sha256|hash|digest)' . || echo "no drift check on deployed prompts or guardrail configs"`
+      `grep -rqiE '(system_?prompt|guardrail).*(sha256|hash|digest)' . || echo "no drift check on deployed prompts or guardrail configs"`
       ; manual: scheduled, normalised, and a mismatch opens an incident
 - [ ] **On-device models signed and verified at load (§2) — HIGH** — list bundled models:
       `find . \( -name '*.tflite' -o -name '*.mlmodel' -o -name '*.mlpackage' -o -name '*.onnx' \) -not -path './.git/*'`

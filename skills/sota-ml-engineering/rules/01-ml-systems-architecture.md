@@ -116,7 +116,7 @@ Audit for these (Sculley et al.) — each is real ML debt:
 
 - [ ] **Reproducibility (§5) — HIGH if a prod model can't be rebuilt Is there a versioned link model
       → (data hash, code commit, config, env, seeds)?** —
-      `grep -rniE 'mlflow|wandb|model.?registry|model.?card|lineage' . | head` ;
+      `grep -rqiE 'mlflow|wandb|model.?registry|model.?card|lineage' . || echo "no model registry or lineage tracking"` ;
       `ls -R | grep -iE 'requirements|environment.ya?ml|poetry.lock|uv.lock|Dockerfile|conda'`
       (env pinned?)
 - [ ] **Train/serve consistency (§2, §3) — CRITICAL if features computed two ways** —

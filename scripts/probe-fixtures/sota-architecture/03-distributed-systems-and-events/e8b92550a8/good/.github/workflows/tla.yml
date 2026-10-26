@@ -1,0 +1,7 @@
+on: push
+jobs:
+  tlc:
+    runs-on: ubuntu-latest
+    steps:
+      - run: java -cp tla2tools.jar tlc2.TLC -workers auto -config MC.cfg Spec.tla | tee tlc.out
+      - run: grep -q 'No error has been found' tlc.out

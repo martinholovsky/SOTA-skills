@@ -308,13 +308,13 @@ never. Generate views from the threat table instead.
 - [ ] Every mitigated High+ threat has an automated abuse-case test (§3) citing
       its threat ID; tests assert observable effects and run in CI.
 - [ ] Baseline requirements cite a verification catalog (§2). Probe:
-      `grep -rn -E "ASVS[ -]?(5\.0[ -])?V?[0-9]+\.[0-9]+\.[0-9]+|MASVS-[A-Z]+-[0-9]+" docs/`;
-      zero hits in a model's requirements section → Low (Medium for a
+      `grep -rqE "ASVS[ -]?(5\.0[ -])?V?[0-9]+\.[0-9]+\.[0-9]+|MASVS-[A-Z]+-[0-9]+" docs/ || echo 'no ASVS/MASVS requirement ids in docs/'`;
+      its message (or a requirements section with no cited id) → Low (Medium for a
       High-tier system, `04` §8).
 - [ ] Business access rules and per-user/global limits (§2) are documented as
       requirements, and limit tests exist. Probe:
-      `grep -rn -i -E "(def |it\(|test\(|func Test)[^(]*(limit|quota|exceed|too_?many|max_)" .`;
-      zero hits where limits are documented → Medium.
+      `grep -rqiE "(def |it\(|test\(|func Test)[^(]*(limit|quota|exceed|too_?many|max_)" . || echo 'no limit/quota tests'`;
+      its message where limits are documented → Medium.
 - [ ] Pentest scope and report reference the model's assets and abuse cases (§3),
       with a verdict per mitigated abuse case; a pentest with no link to the
       model → Low (process).
@@ -348,6 +348,6 @@ never. Generate views from the threat table instead.
       unmitigated Critical/High exploit path.
 - [ ] Abuse stories are written at story intake for features that move value,
       ownership or state, and the business-logic questions (§3) are answered.
-      List workflow-abuse tests with `grep -rn -i -E "(def |it\(|test\(|func Test)[^(]*(skip|replay|repeat|reorder|out.?of.?order|concurren|twice|double)" .`;
-      zero hits in a codebase with multi-step or value-dispensing flows →
+      Check for workflow-abuse tests with `grep -rqiE "(def |it\(|test\(|func Test)[^(]*(skip|replay|repeat|reorder|out.?of.?order|concurren|twice|double)" . || echo 'no workflow-abuse tests'`;
+      its message in a codebase with multi-step or value-dispensing flows →
       Medium.

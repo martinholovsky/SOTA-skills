@@ -1,0 +1,5 @@
+jobs:
+  test:
+    steps:
+      - run: uv run python manage.py makemigrations --check --dry-run
+      - run: uv run pytest

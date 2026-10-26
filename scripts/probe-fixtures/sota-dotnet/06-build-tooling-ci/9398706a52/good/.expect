@@ -1,0 +1,1 @@
+./.github/workflows/release.yml:8:      - run: dotnet CycloneDX src/Shop.Cli/Shop.Cli.csproj -o sbom

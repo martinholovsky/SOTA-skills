@@ -282,7 +282,7 @@ err := g.Wait()
       `grep -rn 'go func' --include='*.go' . | grep -v _test.go` ;
       `grep -rnE '^\s*go [a-zA-Z]' --include='*.go' .`
 - [ ] **Goroutines without ctx plumbed (manual: does the func take/select on ctx?)** (§2) —
-      `grep -rn -A3 'go func()' --include='*.go' . | grep -L 'ctx'`
+      `grep -rn -A3 'go func()' --include='*.go' . | awk '/go func\(\)/{if(h!=""&&!c)print h; h=$0; c=0; next} /^--$/{next} /ctx/{c=1} END{if(h!=""&&!c)print h}'`
 - [ ] **time.After in a hot select loop — MEDIUM (HIGH when the `go.mod` `go` line < 1.23)** (§2) —
       `grep -rn -B5 'time.After' --include='*.go' . | grep -E 'for |select'`
 - [ ] **Unbounded fan-out: go inside range — HIGH if input is external** (§6) —
@@ -298,7 +298,7 @@ err := g.Wait()
       retryable init needs a mutex + done flag)
 - [ ] **Consumer-side close, double close candidates; channel sizing (§3)** — `grep -rn 'close(' --include='*.go' .`
       (verify producer owns each) ;
-      `grep -rnE 'make\(chan [^,]+,[[:space:]]*([2-9]|[1-9][0-9]+)\)|make\(chan struct\{\},[[:space:]]*1\)' --include='*.go' .`
+      `grep -rnE 'make\(chan [^,]+,[[:space:]]*([2-9]|[1-9][0-9]+)\)|make\(chan struct\{\},[[:space:]]*1\)' --include='*.go' . | grep -v '//'`
       (a literal buffer other than 0 or 1 needs a comment — MEDIUM; a 1-slot `struct{}` channel used
       as a lock needs a commented ctx-aware reason)
 - [ ] **Sleep-based synchronization — MEDIUM (flaky + racy)** (§1) —

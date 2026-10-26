@@ -389,14 +389,14 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
 ## Audit checklist
 
 - [ ] **`ctypes` / `cffi` — HIGH where a size or pointer comes from input** (§11) —
-      `grep -rnE '^[[:space:]]*(import|from)[[:space:]]+(ctypes|cffi)|ctypes\.(CDLL|cdll|string_at|memmove|cast|create_string_buffer)' --include='*.py' .`
-      (each foreign function declares `argtypes`/`restype`; lengths validated before the call)
+      `grep -rlE '^[[:space:]]*(import|from)[[:space:]]+(ctypes|cffi)' --include='*.py' . | xargs -r grep -L 'argtypes'`
+      (a file listed declares no `argtypes`, or is `cffi`: read its `cdef`; each foreign function declares `argtypes`/`restype`; lengths validated before the call)
 - [ ] **Code execution / deserialization [CRITICAL on untrusted data]** (§1) —
       `grep -rn "pickle.loads\|pickle.load\|read_pickle\|joblib.load\|marshal.loads\|dill" --include="*.py" src/`
       ; `grep -rnE 'jsonpickle\.(decode|loads|Unpickler)|from[[:space:]]+jsonpickle[[:space:]]+import' --include='*.py' src/`
       ; `grep -rn "torch.load" --include="*.py" src/ | grep -v "weights_only=True"` (and every
       `weights_only=True` hit is still RCE if the lock resolves torch ≤ 2.5.1:
-      `grep -A1 '^name = "torch"' uv.lock`) ;
+      `grep -A1 '^name = "torch"' uv.lock | grep -E '^version = "(0\.|1\.|2\.[0-5]\.)'`, a hit) ;
       `grep -rn "yaml.load(" --include="*.py" src/ | grep -v "SafeLoader\|safe_load"` ;
       `grep -rn "\beval(\|\bexec(" --include="*.py" src/ | grep -v "literal_eval\|model.eval()"`
       ; `grep -rn "\.format(.*request\|f\".*{.*request" --include="*.py" src/ | head`
@@ -428,7 +428,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
 - [ ] **Path traversal & archives (§4, §5) [HIGH]** —
       `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ; `grep -rlE 'zipfile' --include='*.py' --exclude-dir=.venv . | xargs -r grep -LE 'file_size'` (no uncompressed-size budget) ;
       `grep -rn "request.*filename\|\.filename" --include="*.py" src/` (then check containment);
-      `grep -rn "is_relative_to\|realpath" --include="*.py" src/` (mitigations present?)
+      `grep -rqE 'is_relative_to|realpath' --include='*.py' src/ || echo "no path-containment check in src/"` (no mitigation anywhere)
 - [ ] **Randomness & secrets (§6) [HIGH]** —
       `grep -rn "random\.\(choice\|choices\|randint\|random\)" --include="*.py" src/ # security context?`
       ; `grep -rn "== .*token\|token.* ==" --include="*.py" src/ | head` (timing-unsafe
@@ -460,7 +460,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       needs `re.fullmatch` or a `\Z`; a MULTILINE validator accepts any one good line)
 - [ ] **--- Temp files and permissions (§4a) ---** — `grep -rn "mktemp(" --include="*.py" src/`
       (TOCTOU [HIGH]); `grep -rnE '"/tmp/|'"'"'/tmp/' --include="*.py" src/` (predictable path
-      [MEDIUM]); `grep -rnE 'chmod\(.*0o(6|7)[0-7][0-7]|umask\(0\)' --include="*.py" src/`
+      [MEDIUM]); `grep -rnE 'chmod\(.*0o[0-7]([1-7][0-7]|[0-7][1-7])|umask\(0\)' --include="*.py" src/`
       (widened perms [HIGH if secrets])
 - [ ] **--- Crypto (§6a) — choice itself is [sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md) ---** —
       `grep -rnE '\bmd5\(|\bsha1\(' --include="*.py" src/ | grep -v usedforsecurity` ([MEDIUM]);
@@ -485,7 +485,8 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       `grep -rnE 'disable_remote_debug' --include='Dockerfile*' --include='*.y*ml' --include='*.sh' --include='*.service' --include='*.toml' --include='Procfile' .`
       (the underscore spelling, which 3.14.8 and 3.15.0 ignore)
 - [ ] **--- Template autoescape (§1) --- [HIGH where user data renders into HTML]** —
-      `grep -rnE 'Environment\(|Template\(' --include='*.py' src/` (read each for `autoescape=`:
+      `grep -rnE 'Environment\(|Template\(' --include='*.py' src/ | grep -v 'autoescape'` (each
+      hit sets no `autoescape=` on its line; a call wrapped over lines prints too, so read it:
       measured with Jinja2 3.1.6, `Environment().autoescape` is `False` and `{{ x }}` rendered
       `<script>` verbatim, while `select_autoescape()` escaped it) ;
       `grep -rnE 'autoescape[[:space:]]*=[[:space:]]*False|Markup\(|mark_safe\(|\|[[:space:]]*safe' --include='*.py' --include='*.html' --include='*.j2' .`

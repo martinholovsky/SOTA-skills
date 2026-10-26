@@ -51,26 +51,36 @@ SAFE = {"grep", "egrep", "fgrep", "sort", "uniq", "wc", "head", "tail", "cut", "
 UNSAFE_TOKEN = re.compile(r"\brm\b|\bsed\s+-i|\s-delete\b|\s-exec\b|\s-fprint|\s-fls\b|\bmv\b|\bcurl\b|\bwget\b")
 
 
+def _unquoted(span):
+    """For each character of span, whether it sits outside quotes (and is not backslash-escaped)."""
+    out, q, esc = [], None, False
+    for ch in span:
+        out.append(q is None and not esc)
+        if esc:
+            esc = False
+        elif ch == "\\" and q != "'":
+            esc = True
+        elif q is None and ch in "'\"":
+            q = ch
+        elif q == ch:
+            q = None
+    return out
+
+
+def prose_placeholder(span):
+    """An UNQUOTED `<words with spaces>` operand: prose standing in for a path, so not runnable.
+    A quoted one is pattern text: `static_cast<[a-z0-9_ ]+>`, `Record<string, *[^>]+>` and `<%==`
+    inside a quoted regex were matched here and six real probes were skipped."""
+    uq = _unquoted(span)
+    return any(uq[m.start()] for m in PROSE_PLACEHOLDER.finditer(span))
+
+
 def fill_placeholders(span):
     """Replace each UNQUOTED `<name>` (a file-operand placeholder) with `empty`. A quoted one is
     pattern text: `'<NoWarn>'`, `'List<Integer>'` and `"<all_urls>"` are what the probe searches
     for, and rewriting them made seven JVM and several .NET probes search for `empty` instead."""
-    out, q, esc, last = [], None, False, 0
-    for m in PLACEHOLDER.finditer(span):
-        for ch in span[last:m.start()]:
-            if esc:
-                esc = False
-            elif ch == "\\" and q != "'":
-                esc = True
-            elif q is None and ch in "'\"":
-                q = ch
-            elif q == ch:
-                q = None
-        out.append(span[last:m.start()])
-        out.append("empty" if q is None and not esc else m.group())
-        last = m.end()  # a placeholder holds no quote or backslash, so the quote state carries over
-    out.append(span[last:])
-    return "".join(out)
+    uq = _unquoted(span)
+    return PLACEHOLDER.sub(lambda m: "empty" if uq[m.start()] else m.group(), span)
 
 
 def probes_in(text):
@@ -95,7 +105,7 @@ def _tokens(cmd):
 
 
 def skip_reason(span):
-    if PROSE_PLACEHOLDER.search(span):
+    if prose_placeholder(span):
         return "prose placeholder"
     cmd = fill_placeholders(span)
     if UNSAFE_TOKEN.search(cmd):

@@ -1,0 +1,5 @@
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee" version="6.0">
+  <session-config>
+    <tracking-mode>COOKIE</tracking-mode>
+  </session-config>
+</web-app>

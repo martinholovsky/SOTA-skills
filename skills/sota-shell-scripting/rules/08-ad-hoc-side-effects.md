@@ -206,7 +206,7 @@ agent shells may give a closed stdin instead, so check `ls -l /dev/fd/0` rather 
       a teammate's: a shared one is reused by mtime and goes stale.
 - [ ] **Backgrounded wait loops** (§4): does any `&`-ed loop lack a bound on its
       iterations, and does anything make it stop other than a `pgrep` that matches the
-      loop's own argv? Grep for the shape — `grep -nE '(while|until).*(true|pgrep|ps ).*&\s*$'`
+      loop's own argv? Grep for the shape — `grep -nE '(while|until).*(true|pgrep|ps ).*&\s*$' <file>`
       — and for polling of work a harness already reports. Headroom for the resource
       being spent is checked (`ps -A | wc -l` vs `ulimit -u`), not just `df -h`. If the
       table is already full, **establish parentage before assigning blame** — a

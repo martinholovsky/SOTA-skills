@@ -413,7 +413,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       later argument discards the root: for each call fed by a request, is the result passed
       through `GetFullPath` and prefix-checked against root + separator?)
 - [ ] **Regex without a timeout on untrusted input — MEDIUM (ReDoS)** (§3) —
-      `grep -rnE 'new Regex\(|Regex\.(IsMatch|Match|Matches|Replace|Split)\(|\[GeneratedRegex\(' --include='*.cs' . | grep -vE 'TimeSpan|matchTimeout|NonBacktracking'` ; `grep -rn 'REGEX_DEFAULT_MATCH_TIMEOUT' .` (a hit sets a process-wide default and
+      `grep -rnE 'new Regex\(|Regex\.(IsMatch|Match|Matches|Replace|Split)\(|\[GeneratedRegex\(' --include='*.cs' . | grep -vE 'TimeSpan|matchTimeout|NonBacktracking'` ; `grep -rn 'REGEX_DEFAULT_MATCH_TIMEOUT' . || echo "no REGEX_DEFAULT_MATCH_TIMEOUT: every Regex on input needs its own timeout"` (a hit sets a process-wide default and
       covers the rest); a pattern built from input without `Regex.Escape` is HIGH
 - [ ] **Validation regex with a `$` anchor instead of `\z` — MEDIUM** (§3) —
       `grep -rnE '[^@(,[:space:]$]\$"' --include='*.cs' . | grep -v 'RegularExpression('`
@@ -455,7 +455,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `grep -rnE '\.(Get|GetString|GetStream|GetByteArray|GetFromJson|Post|PostAsJson|Put|PutAsJson|Patch|Delete)Async(<[^>]*>)?\([[:space:]]*([^"$)[:space:]]|\$"[^/])|new HttpRequestMessage\([^,]+,[[:space:]]*([^"$)[:space:]]|\$"[^/])|WebRequest\.Create\(' --include='*.cs' .`
       (a non-literal, non-relative destination; trace each one to its source, since a cache's
       `GetAsync(key)` also matches). For every hit fed by a request, check three things.
-      `grep -rnE 'ConnectCallback|UseProxy|AllowAutoRedirect' --include='*.cs' .` has to show
+      `grep -rnE 'ConnectCallback|UseProxy|AllowAutoRedirect' --include='*.cs' . || echo "no ConnectCallback/UseProxy/AllowAutoRedirect: no connect-time address check, no DNS-rebinding defence"` has to show
       a connect-time address check. The handler must not route through a proxy. Redirects must be
       disabled or seen by that check. No hits means there is no DNS-rebinding defence.
 - [ ] **Dynamic code evaluation from input — CRITICAL (runtime code generation, dynamic LINQ,

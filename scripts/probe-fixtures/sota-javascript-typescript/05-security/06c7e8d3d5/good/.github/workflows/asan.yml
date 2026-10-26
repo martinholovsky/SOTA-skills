@@ -1,0 +1,4 @@
+jobs:
+  asan:
+    env:
+      CFLAGS: -fsanitize=address

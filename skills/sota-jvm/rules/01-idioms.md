@@ -158,7 +158,7 @@ the type system, and expression-oriented code**. References:
 - [ ] **Byte↔text conversion with no charset, or silent replacement where rejection is needed
       (§6) — LOW on a 18+ floor, MEDIUM below it or on a signed/stored value** —
       `grep -rnE 'new String\([^,()]+\)|\.getBytes\(\)|new (InputStreamReader|OutputStreamWriter)\([^,()]+\)' --include='*.java' --include='*.kt' .`
-      ; `grep -rn 'newDecoder()' --include='*.java' --include='*.kt' .` (none: every decode replaces
+      ; `grep -rn 'newDecoder()' --include='*.java' --include='*.kt' . || echo "no newDecoder(): every decode replaces invalid bytes with U+FFFD"` (none: every decode replaces
       invalid bytes with U+FFFD)
 - [ ] **Kotlin !! (non-null assertion) — MEDIUM (latent NPE)** (§2) —
       `grep -rnE '!!' --include='*.kt' . | grep -v '!!='`

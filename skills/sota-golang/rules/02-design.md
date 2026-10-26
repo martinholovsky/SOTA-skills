@@ -316,11 +316,11 @@ func UserFrom(ctx context.Context) (*User, bool) {
       `grep -rnE '\[[^]:]*[a-z]+\.[A-Z][A-Za-z0-9]*[^]:]*:|\[[^]]*:[^]]*[a-z]+\.[A-Z][A-Za-z0-9]*[^]]*\]|\[[a-z]+\.(Index|Idx|Pos|Offset|N)\]' --include='*.go' .`
       (a field of a struct as the bound; read back for the check)
 - [ ] **Context violations (§8)** —
-      `grep -rnE 'ctx\s+context\.Context' --include='*.go' . | grep -E 'struct|^\s+[A-Za-z]+ +context\.Context'`
+      `grep -rnE '^[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+context\.Context[[:space:]]*(//.*)?$|struct[[:space:]]*\{.*[[:space:]]context\.Context' --include='*.go' .`
       (ctx in struct — MEDIUM);
       `grep -rnE 'func [^(]*\([^)]*\bctx context\.Context' --include='*.go' . | grep -vE '\(ctx context\.Context'`
-      (ctx not first param); `grep -rn 'context.WithValue' --include='*.go' .` (check key types
-      & payloads); `grep -rn 'context.TODO()' --include='*.go' .` (LOW, should be tracked);
+      (ctx not first param); `grep -rnE 'context\.WithValue\([^,]+,[[:space:]]*("|[0-9]|(string|int)\()' --include='*.go' .` (a string, number or
+      built-in-typed key; payloads stay manual); `grep -rn 'context.TODO()' --include='*.go' .` (LOW, should be tracked);
       `grep -rnE 'context\.Background\(\)' --include='*.go' . | grep -v 'main\|_test'`
       (suspicious mid-stack) ; manual: work that outlives a request uses
       `context.WithoutCancel(ctx)` with its own timeout, never the request ctx or `Background()`

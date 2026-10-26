@@ -169,7 +169,7 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
       ; `grep -rnE '#pragma[[:space:]]+clang[[:space:]]+unsafe_buffer_usage[[:space:]]+begin' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
       (each opt-out region needs a stated reason and should be small)
 - [ ] **Sanitizer/hardening presence in the build (§5, §2) — HIGH if a network binary lacks them** —
-      `grep -rn 'fsanitize' . ; grep -rn '_GLIBCXX_ASSERTIONS\|_LIBCPP_HARDENING\|_FORTIFY_SOURCE' .`
+      `grep -rqE 'fsanitize|_GLIBCXX_ASSERTIONS|_LIBCPP_HARDENING|_FORTIFY_SOURCE' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . || echo 'no sanitizer or hardening flags in the build'`
 - [ ] **A check that is on by default, switched off (§2, §5) — MEDIUM (HIGH for a shipped `OBSERVE` or
       `IGNORE`, which continues past a failed check into UB)** —
       `grep -rnE -e '-fno-sanitize-address-use-after-scope|_LIBCPP_ASSERTION_SEMANTIC_(OBSERVE|IGNORE)|_LIBCPP_HARDENING_MODE_NONE' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='*.h' --include='*.hpp' .`

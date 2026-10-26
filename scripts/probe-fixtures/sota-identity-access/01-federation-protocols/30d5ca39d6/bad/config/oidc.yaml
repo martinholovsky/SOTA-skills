@@ -1,0 +1,4 @@
+clients:
+  - client_id: web
+    require_pkce: false
+    code_challenge_methods_supported: [S256, plain]

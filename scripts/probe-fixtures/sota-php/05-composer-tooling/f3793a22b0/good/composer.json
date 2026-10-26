@@ -1,0 +1,5 @@
+{
+    "name": "acme/shop",
+    "type": "project",
+    "require": {"php": "^8.3", "ext-sodium": "*", "monolog/monolog": "^3.7"}
+}

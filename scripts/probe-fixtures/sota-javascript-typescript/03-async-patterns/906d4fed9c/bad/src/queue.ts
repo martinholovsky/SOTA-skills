@@ -1,0 +1,1 @@
+queue = queue.then(() => task());

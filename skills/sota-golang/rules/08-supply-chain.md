@@ -120,4 +120,4 @@ prints it for a main package — empty means current defaults.
       `grep -rnE '^godebug|^//go:debug|GODEBUG|(tlssha1|tlsmlkem|tlssecpmlkem|x509[a-z0-9]+|httpmuxgo121|(tar|zip)insecurepath)=' --include='go.mod' --include='go.work' --include='*.go' --include='Dockerfile*' --include='*.y*ml' --include='*.env' --include='*.service' --include='Makefile' .`
       ; `grep -E '^go ' go.mod` (below the toolchain's minor = older GODEBUG defaults)
 - [ ] **Secrets in repo (§1)** —
-      `grep -rnE '(api[_-]?key|secret|password|token)\s*[:=]\s*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .`
+      `grep -rniE '(api[_-]?key|secret|password|token)[a-z0-9_]*"?[[:space:]]*(:=|=|:)[[:space:]]*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .`

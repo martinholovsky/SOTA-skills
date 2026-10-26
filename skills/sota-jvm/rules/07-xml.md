@@ -175,8 +175,8 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
 ## Audit checklist
 
 - [ ] **XXE — CRITICAL (verify DTDs disabled)** —
-      `grep -rnE 'DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|TransformerFactory|SAXReader' --include='*.java' --include='*.kt' .`
-      ;
+      `grep -rlE 'DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|TransformerFactory|SAXReader' --include='*.java' --include='*.kt' . | xargs -r grep -LE 'disallow-doctype-decl|SUPPORT_DTD|ACCESS_EXTERNAL_|setEntityResolver|FEATURE_SECURE_PROCESSING'`
+      (each file printed builds a parser factory and sets none of these) ;
       `grep -rn 'disallow-doctype-decl\|SUPPORT_DTD\|setEntityResolver\|SafeConstructor' --include='*.java' --include='*.kt' . || echo "verify XXE hardening"`
       (`setExpandEntityReferences` is deliberately absent: it is not hardening, §1)
 - [ ] **`setExpandEntityReferences(false)` counted as XXE hardening — HIGH when it is the only
@@ -202,8 +202,9 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
       measured: `Validator` echoed a local file in its error, `SchemaFactory` read an
       `xs:include`, `XPath` over an `InputSource` returned the file) —
       `grep -rnE 'SchemaFactory|newValidator\(|getXMLReader\(|XMLReaderFactory|\.evaluate\([^;]*new InputSource' --include='*.java' --include='*.kt' .`
-      ; then `grep -rnE 'ACCESS_EXTERNAL_(DTD|SCHEMA|STYLESHEET)' --include='*.java' --include='*.kt' .`
-      (a `SchemaFactory`/`Validator` with no matching `setProperty(..., "")` is the finding;
+      ; then `grep -rlE 'SchemaFactory|newValidator\(' --include='*.java' --include='*.kt' . | xargs -r grep -LE 'ACCESS_EXTERNAL_(DTD|SCHEMA)'`
+      (each file printed builds a `SchemaFactory`/`Validator` with no `ACCESS_EXTERNAL_*`
+      `setProperty(..., "")`: the finding;
       the JDK strict config template did NOT stop the `xs:include`)
 - [ ] **Caller-supplied XSLT — CRITICAL** (§1: extension functions ran by default on JDK
       21.0.12) — `grep -rnE 'newTransformer\([^)]|newTemplates\(|enableExtensionFunctions' --include='*.java' --include='*.kt' --include='*.properties' .`

@@ -1,0 +1,4 @@
+jobs:
+  test:
+    steps:
+      - run: uv run pytest

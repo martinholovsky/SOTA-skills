@@ -1,0 +1,4 @@
+./.editorconfig:4:dotnet_diagnostic.CA1307.severity = warning
+./.editorconfig:5:dotnet_diagnostic.CA1309.severity = warning
+./.editorconfig:6:dotnet_diagnostic.CA1310.severity = warning
+./.editorconfig:7:dotnet_diagnostic.CA1311.severity = warning

@@ -1,0 +1,7 @@
+jobs:
+  test:
+    steps:
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true

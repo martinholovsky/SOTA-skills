@@ -1,0 +1,12 @@
+name: ci
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: composer install --no-progress
+      - run: composer audit --locked
+      - run: vendor/bin/phpstan analyse
+      - run: vendor/bin/phpunit
+      - run: vendor/bin/php-cs-fixer fix --dry-run

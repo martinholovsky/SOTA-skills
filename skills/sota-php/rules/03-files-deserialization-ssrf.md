@@ -246,8 +246,8 @@ Run from repo root; verify each hit manually.
       `grep -rnE '\\?FFI::(cdef|load|scope|new)' --include='*.php' .`
 - [ ] **Uploads — client-trusted name/type, executable destinations (§1) — HIGH** —
       `grep -rnE "\\\$_FILES\[[^]]+\]\['(name|type)'\]" --include='*.php' src/` ;
-      `grep -rn 'move_uploaded_file' --include='*.php' src/` (trace dest: webroot? renamed?);
-      `grep -rn 'is_uploaded_file' --include='*.php' src/` (absent near move_* = MEDIUM) ;
+      `grep -rnE 'move_uploaded_file[[:space:]]*\([^;]*(\[.name.\]|/public/|/web/|/htdocs/|DOCUMENT_ROOT)' --include='*.php' src/` (flags a client-supplied name or a webroot-looking destination; trace the rest: webroot? renamed?);
+      `grep -rlE 'move_uploaded_file|\$_FILES' --include='*.php' src/ | xargs -r grep -L 'is_uploaded_file'` (lists upload-handling files with no `is_uploaded_file`: MEDIUM) ;
       `grep -rnE -e '->extractTo[[:space:]]*\(|new[[:space:]]+\\?(ZipArchive|PharData)' --include='*.php' --exclude-dir=vendor .`
       (archive extraction, §1: each entry name checked against the target directory, entry count
       and sizes capped; the generic checks are the archive item in
@@ -262,7 +262,7 @@ Run from repo root; verify each hit manually.
 - [ ] **Deserialization (§3) — CRITICAL on external data** —
       `grep -rn 'unserialize(' --include='*.php' src/ | grep -v 'allowed_classes'` ;
       `grep -rnE 'unserialize\s*\(\s*\$_(GET|POST|COOKIE|REQUEST)' --include='*.php' src/` ;
-      `grep -rn 'getMetadata' --include='*.php' src/` ;
+      `grep -rn 'getMetadata(' --include='*.php' src/ | grep -v 'allowed_classes'` ;
       `grep -rnE '__(destruct|wakeup|toString)' --include='*.php' src/` (gadget surface
       inventory) ; a `serialize()`d blob from a cache or queue is verified with `hash_equals()`
       against a `hash_hmac()` before it is deserialized
@@ -273,8 +273,8 @@ Run from repo root; verify each hit manually.
       (each untrusted parse: `LIBXML_NONET`, and the document rejected when `doctype` is not null)
 - [ ] **SSRF — user URLs fetched server-side** (§5) —
       `grep -rnE '(curl_init|file_get_contents|fopen|getimagesize|get_headers|get_meta_tags|->request|->get)[[:space:]]*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`
-      ; `grep -rn 'CURLOPT_SSL_VERIFYPEER' --include='*.php' src/` (false = HIGH);
-      `grep -rn 'CURLOPT_FOLLOWLOCATION' --include='*.php' src/` (check REDIR_PROTOCOLS nearby)
+      ; `grep -rnE 'CURLOPT_SSL_VERIFYPEER[[:space:]]*(,|=>)[[:space:]]*(false|0)' --include='*.php' src/` (false = HIGH);
+      `grep -rlE 'CURLOPT_FOLLOWLOCATION[^;]*(true|1)' --include='*.php' src/ | xargs -r grep -L 'CURLOPT_REDIR_PROTOCOLS'` (lists files that follow redirects with no `CURLOPT_REDIR_PROTOCOLS`)
 - [ ] **SSRF — no connect-time check of the dialled address (DNS rebinding) / redirects
       unchecked — HIGH (§5)** — prints each file that makes outbound requests with no
       connect-time IP check, then its redirect-following lines:
