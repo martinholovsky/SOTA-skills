@@ -149,7 +149,7 @@ await readable
 
 ## 8. Retries with backoff, abort-aware
 
-Retry only transient failures (network errors, 429/503), only idempotent operations, bounded attempts, exponential backoff with full jitter, and propagate the caller's signal so cancellation stops the retry loop too.
+Retry only transient failures (network errors, timeouts, `408`/`429`/`502`/`503`/`504` — the list and the `Retry-After` rule are [`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §2), only idempotent operations, bounded attempts, exponential backoff with full jitter, and propagate the caller's signal so cancellation stops the retry loop too.
 
 ```ts
 import { setTimeout as sleep } from 'node:timers/promises';   // Node has no global `scheduler`
