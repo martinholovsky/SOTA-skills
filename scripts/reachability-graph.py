@@ -19,12 +19,16 @@ This script makes the graph explicit and checks three exact properties (invarian
       to a rules file that exists.
 
 What it cannot check is whether a trigger fires for the RIGHT task: that is semantic (ROADMAP 16).
-For the skills that DECLARE their routing it checks the declaration instead (C4, the stage-3 pilot):
+Every domain skill DECLARES its routing (since 2026-10-26), so it checks the declaration too (C4):
 a manifest in MANIFEST_DIR names, per rules file, the task tags that should route a builder there;
 every tag's keywords must appear in that file's own routing prose (its index row and the BUILD lines
 that reference it), every declared `via` hop (05 -> 09 when the parser is security-critical) must be
 a real edge in this graph, and every labelled case must reach the files it names. A BUILD trigger
 that is removed from the prose, or a pointer that is deleted, then fails a named case.
+C5: a rules-index row is written in the manifest (`index_row`) and rendered into SKILL.md by
+`--write-index`; a row edited in SKILL.md alone fails. C6: a manifest's `per_language` names the one
+file per language skill that carries a cross-cutting skill's language half; the cross-cutting
+SKILL.md must link each, and each must link back.
 
 `--sync` checks the other half, BUILD rule <-> AUDIT probe, at section level (invariant 43). A
 numbered section (`## N.`, `## Na.`, `## §N`, and since 2026-10-25 dotted `## N.M`) is a BUILD rule; a checklist item citing `(§N)` in the
