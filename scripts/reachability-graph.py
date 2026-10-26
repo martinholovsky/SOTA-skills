@@ -168,14 +168,35 @@ MANIFEST_DIR = "scripts/skill-manifests"
 def routing_prose(sm_text, rules_file):
     """The prose that routes a builder to one rules file: its own rules-index row (the row whose FIRST
     cell links it -- another row may mention it, as rust's 05 row mentions 08's move) and every BUILD
-    line that references it by link, `rules/NN` or "Load NN"."""
+    list ITEM that references it by link, `rules/NN` or "Load NN". An item is a marker line plus its
+    continuation lines: until 2026-10-26 this read physical lines, so a wrapped step whose routing words
+    sat on the line above its link ("Plan the upgrade: version skew, EOL date, CVE runbook,\n tested
+    etcd restore ([rules/01](...))") routed nothing -- five manifest authors hit it in one session."""
     b, n = os.path.basename(rules_file), os.path.basename(rules_file)[:2]
     idx = section(sm_text, r"Rules? index")
     row = next((l for l in idx.splitlines() if re.match(r"^\|\s*\[`?rules/%s" % re.escape(b[:2]), l)
                 and b in l.split("|")[1]), "")
-    build = [l for l in section(sm_text, "BUILD").splitlines()
-             if b in l or re.search(r"rules/%s\b|[Ll]oad %s\b" % (n, n), l)]
+    build = [it for it in build_items(section(sm_text, "BUILD"))
+             if b in it or re.search(r"rules/%s\b|[Ll]oad %s\b" % (n, n), it)]
     return pathless("\n".join([row] + build))
+
+
+def build_items(text):
+    """Split a BUILD section into list items: a line opening with a list marker (`1.`, `1)`, `-`, `*`,
+    `+`) starts one, a blank line ends it, and any other line continues the current one. Every physical
+    line lands in exactly one item, so reading items can only add matches to the old per-line reading."""
+    items, cur = [], []
+    for l in text.splitlines():
+        if not l.strip():
+            if cur: items.append("\n".join(cur)); cur = []
+        elif re.match(r"^\s*(\d+[.)]|[-*+])\s", l):
+            if cur: items.append("\n".join(cur))
+            cur = [l]
+        else:
+            cur.append(l)
+    if cur:
+        items.append("\n".join(cur))
+    return items
 
 
 def pathless(text):

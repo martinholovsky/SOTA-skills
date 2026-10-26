@@ -746,7 +746,10 @@ CI scans the full git history, the pre-commit hook scans each commit.
     A ratchet over `scripts/section-sync-baseline.json` (1,246 uncited sections and 3,124 uncited
     items on 2026-10-24). A new `## N.` section is cited `(§N)` by an item in its own checklist, or
     marked `*(advisory)*` / `*(audited in …)*` in its first lines; a new item cites the section it
-    checks; a new rules file numbers its sections. Fixing an old entry makes it stale: run
+    checks; a new rules file numbers its sections. **Put the item's own `(§N)` on its first line,
+    before any link:** a `§` with `](`, `rules/NN`, `sota-x` or `SKILL.md` in the 60 characters
+    before it, or right after a bare two-digit or `RFC nnnn` number, is read as *that* file's section,
+    so the item silently stops counting (broken four times by 2026-10-26, caught by S1/S2 each time). Fixing an old entry makes it stale: run
     `python3 scripts/reachability-graph.py --sync-tighten` (it only removes) and commit the smaller
     baseline. The baseline may not grow against the merge base, except by **conversion**: numbering
     a file the baseline lists as unnumbered surfaces its sections, and

@@ -1347,6 +1347,21 @@ m['tags']['unsafe'] = ['unsafe-discipline']; m['tags']['ffi'] = ['unsafe-discipl
 p.write_text(json.dumps(m, indent=1) + '\n', encoding='utf-8')
 " )
 probe 42f "a declared keyword that matches only the file's own path (rust 03)" "C4 sota-rust.json: rules/03 is declared for 'unsafe'"
+# 42g: C4 reads a BUILD list ITEM, not a physical line (2026-10-26). kubernetes BUILD step 6 wraps:
+# "CVE-response runbook," sits on the line above its rules/01 link. A tag whose only keyword is that
+# phrase is backed by the prose; the old per-line reading rejected it. Must stay GREEN, and say it ran.
+( cd "$WT" && python3 -I -c "
+import json, pathlib
+sm = pathlib.Path('skills/sota-kubernetes/SKILL.md').read_text(encoding='utf-8')
+line = next(l for l in sm.splitlines() if 'CVE-response runbook' in l)
+assert 'rules/01' not in line, 'probe stale: the keyword now shares the link line'
+p = pathlib.Path('scripts/skill-manifests/sota-kubernetes.json'); m = json.loads(p.read_text(encoding='utf-8'))
+m['tags']['wrapped-step'] = ['CVE-response runbook']; m['files']['01']['build'].append('wrapped-step')
+p.write_text(json.dumps(m, indent=1) + '\n', encoding='utf-8')
+" ) || { echo "FATAL: probe 42g could not declare the wrapped-step tag."; exit 1; }
+wt_commit "probe 42g: a tag backed only by the first line of a wrapped BUILD step"
+probe_committed_green 42g "a keyword on a wrapped BUILD step's first line routes its file — the gate must stay green" \
+  "declared manifests"
 
 # 43 — section <-> probe ratchet (reachability-graph.py --sync). 43: a new numbered section no
 # checklist item cites -> S1. 43b: a new checklist item citing nothing -> S2. 43c: an item that
