@@ -122,7 +122,13 @@ Findings name the control they violate — not just "this looks wrong":
   The nine that existed on 2026-09-24 were each gap-checked against their ecosystem's own
   scanner registry ([LANGUAGE-TIER](docs/LANGUAGE-TIER.md)). Every language also says when an
   unused suppression fails CI, which failures no catch/recover sees, and what silently
-  unfreezes a frozen install, each fact validated against a primary source (2026-10-25)
+  unfreezes a frozen install, each fact validated against a primary source (2026-10-25).
+  Each also says when formal verification applies and which mutation-testing tools fail the build;
+  protocol designs are model-checked before they are built (`sota-architecture` rules/03 §12a)
+- **One rule, one place** — 81 places where duplicated guidance had drifted between skills
+  were reconciled against primary sources (retry policy, severities, workload identity);
+  every numbered rule section and checklist item now cite each other, and every skill has
+  declared routing, so a rule cannot sit where no audit or task reaches it
 - **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
 - **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
   OAuth 2.1, FAPI 2.0, passkeys, SPIFFE
