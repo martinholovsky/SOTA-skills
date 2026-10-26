@@ -184,10 +184,16 @@ resource "aws_security_group_rule" "db_in" {
 - **L7 (ALB / GCP HTTP(S) LB / Azure App Gateway or Front Door)** for HTTP: routing,
   WAF attachment, OIDC auth offload, gRPC. **L4 (NLB / GCP passthrough / Azure LB)**
   for raw TCP/UDP, extreme connection rates, static IPs, PrivateLink targets.
-- Health checks must hit a **meaningful endpoint** (checks downstream dependency
-  readiness, not just "200 on /"), with sane thresholds; a health check on `/` that
-  always 200s converts partial outages into full ones by keeping dead nodes in
-  rotation. Distinguish liveness (process up) from readiness (can serve).
+- Health checks must hit a **meaningful endpoint** (this instance can serve: config
+  loaded, warm, not draining — not just "200 on /"), with sane thresholds; a health check
+  on `/` that always 200s converts partial outages into full ones by keeping dead nodes in
+  rotation. Distinguish liveness (process up) from readiness (can serve). **Prefer not to fail
+  it on a shared downstream dependency** (a dependency that must gate it is a documented,
+  per-dependency decision): every target fails together, and AWS's own guidance
+  is to "restrict their fast-acting load balancer health checks to local health checks",
+  since when all fail at once "the load balancer fails open" and the check gates nothing
+  (AWS Builders' Library, "Implementing health checks", read 2026-10-26). Dependency
+  health belongs in alerting ([`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §7).
 - Enable cross-zone/multi-AZ distribution deliberately (know the cross-AZ data cost),
   connection draining/deregistration delay ≥ app's longest request, and LB access
   logs to central storage.

@@ -29,7 +29,10 @@ from a single source of truth, man pages, README quickstart, CI pinning.
   scoop/winget, or language registry) for humans, and (b) **direct versioned
   binary downloads** for CI (§4). GitHub Releases as the canonical artifact
   store is the de facto norm.
-- `curl | sh` installers are popular and acceptable **only** with discipline:
+- `curl | sh` installers are popular and acceptable **only** as a human's convenience channel —
+  never the path CI or production installs by, which downloads the versioned artifact and verifies
+  it first (piping a script to a shell there is CRITICAL: [`sota-shell-scripting`
+  rules/03](../../sota-shell-scripting/rules/03-security.md) §5) — and **only** with discipline:
   - the script is short, readable, and pipes-safe (works when partially
     downloaded — guard by wrapping everything in a function called at EOF);
   - supports `TOOL_VERSION=1.4.2` pinning and a target-dir override; never
