@@ -337,7 +337,8 @@ never. Generate views from the threat table instead.
       compliance, model freshness, verification coverage, acceptance
       hygiene) tracked quarterly per service, none of them a count of
       threats found (§7).
-- [ ] Risk register ≤ 1 page, current owners, no expired review dates.
+- [ ] Risk register ≤ 1 page, current owners, no expired review dates; views
+      generated from the threat table, never one 40-page monolith (§8).
 - [ ] Model confidentiality matches its location: find in-tree models with
       `git ls-files | grep -i -E "threat[-_ ]?model|risk[-_ ]?register"` and the
       repo's visibility (`gh repo view --json visibility`). A public repo

@@ -26,9 +26,9 @@ Pointer pattern: owners cited by 10/10 stayed consistent; devsecops 03 (2/10), 0
  D14 [RECONCILED 2026-10-26] OWASP MCP03:2025 scope: threat-modeling 03:251-252 vs code-security 23:77-78 (verify).
  D15 re-model triggers inside threat-modeling: 05:177-190 canonical 10; PR template 05:230-232 has 7; 01:217-220 has 7; SKILL:158-159 4 examples.
 PARSER DEFECTS (invariant 43, reachability-graph.py sync_state/local_cites) — fix in a dedicated PR after the paydown:
- P1 headings inside fenced code counted as sections (threat-modeling 05 template: 6 false entries)
- P2 backtick file shorthand "`04` §8" counted as a local cite (false credit; threat-modeling 05:307)
- P3 '### N.' subsections colliding with '## N.' numbering (threat-modeling 02)
+ P1 [FIXED 2026-10-26, probe 43g] headings inside fenced code counted as sections (threat-modeling 05 template: 6 false entries)
+ P2 [FIXED 2026-10-26, probe 43h] backtick file shorthand "`04` §8" counted as a local cite (false credit; threat-modeling 05:307)
+ P3 [FIXED 2026-10-26, content] '### N.' subsections colliding with '## N.' numbering (threat-modeling 02)
  D16 standing admin: cloud 02:24 "~0-2", 02:185 ">2 Medium" vs identity 05:32 "No standing admin", 05:120 JIT.
  D17 [RECONCILED 2026-10-26] LB health checks: cloud 03:187-188 (+07:49) "checks downstream dependency readiness" vs architecture 04:177-181 "readiness reflects this instance, not shared deps".
  D18 k8s support window: cloud 04:40,:185 "~14-month" vs kubernetes 01:256-257 "~1 year" (verify kubernetes.io); and lag threshold inside cloud: 04:40 ">2 behind" vs 04:186/:223 "<=1 behind".
@@ -96,7 +96,7 @@ PARSER DEFECTS (invariant 43, reachability-graph.py sync_state/local_cites) — 
  D74 lock files: shell 02:360 never pidfile vs cli-ux 03:112-114 allowed with PID/start/staleness.
  shell 05:310-314 checklist item inside body (not counted); shell 04:258,:260 name .github/workflows/ (exit 2 if absent).
  FIXED in wave-4 paydown: shell 02 §7 curl probe filter bug; 02 §10 chmod -- contradiction w/ 02 §5.
- D75 RETRY (the T-retry unification target, now with drift): attempt cap llm 05:79 "3-5" vs architecture 04:34 "2-3", data-eng 02:157 "2-3"; retryable errors: llm 05:77-79 (429 only w/ retry-after; 408; 409 after resolve) vs async 07:148 ("503/timeout, never 4xx except 429") vs architecture 04:33 (no 429) vs js 03:152 (429/503); retry budget missing in llm 05:76-80, SKILL:153 (present: architecture 04:34,:286, async 07:145-146, cloud 07:128, performance 04:125). -> canonical home: architecture rules/04 §2, all others point.
+ D75 [RECONCILED 2026-10-26] RETRY (the T-retry unification target, now with drift): attempt cap llm 05:79 "3-5" vs architecture 04:34 "2-3", data-eng 02:157 "2-3"; retryable errors: llm 05:77-79 (429 only w/ retry-after; 408; 409 after resolve) vs async 07:148 ("503/timeout, never 4xx except 429") vs architecture 04:33 (no 429) vs js 03:152 (429/503); retry budget missing in llm 05:76-80, SKILL:153 (present: architecture 04:34,:286, async 07:145-146, cloud 07:128, performance 04:125). -> canonical home: architecture rules/04 §2, all others point.
  EU AI Act: ml 07:238 HIGH vs privacy 04:306 (no severity, newer dates).
  D76 bulk-sender threshold (verify vs Google/Yahoo docs): network-sec 06:286,:349 "Gmail and Yahoo require 5,000+/day" vs copywriting 04:168 "Yahoo publishes no volume number"; dup items copywriting 04:241 & network-sec :349.
  D77 copywriting internal: superlative greps 01:144 vs 04:212 two word lists.  D78 button labels: frontend 07:100 absolute vs ux 02:12-16 conditional.

@@ -4,9 +4,9 @@ Decomposition quality caps threat-model quality: you cannot enumerate threats
 against elements you never drew. This file covers (A) building the model and
 (B) extracting it from an existing codebase.
 
-## 1. A. Building the model
+## A. Building the model
 
-### 1. DFD element vocabulary
+## 1. DFD element vocabulary
 
 Use exactly four element types plus boundaries — more notation adds cost, not
 threats:
@@ -32,7 +32,7 @@ Rules:
   service. Stop decomposing when every flow within an element is same-trust;
   decompose further when a single box contains a privilege change.
 
-### 2. Trust boundaries — the load-bearing concept
+## 2. Trust boundaries — the load-bearing concept
 
 A trust boundary is any line across which the level of trust in data or
 identity changes. Draw one wherever ANY of these change:
@@ -53,7 +53,7 @@ Heuristic: if compromising X gives the attacker nothing they didn't already
 have at Y, then X and Y share a boundary. If you "aren't sure" whether two
 elements share a boundary, they don't — model the crossing.
 
-### 3. Entry points, assets, actors, privilege levels
+## 3. Entry points, assets, actors, privilege levels
 
 Produce these tables for every model; they are the enumeration substrate.
 
@@ -142,7 +142,8 @@ recorded in the model instead of found in code review. Each row gets a catalog
 pass (`03` §2: injection, SSRF, deserialization) and is where extra isolation earns its cost ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)).
 OWASP: ASVS 5.0 V13.1.1, V15.1.5.
 
-### 4. Worked mini-example — 10-line DFD with threats
+## 4. Worked mini-example — 10-line DFD with threats
+*(advisory)* — an illustration of §1–§3; the checklist audits those sections.
 
 ```mermaid
 flowchart LR
@@ -170,12 +171,12 @@ Boundary crossings → headline threats (full enumeration via `03` catalogs):
   response from C is untrusted input INTO F (T) — third-party responses cross
   a boundary inward too.
 
-## 2. B. Extracting the model from an existing codebase (AUDIT mode)
+## B. Extracting the model from an existing codebase (AUDIT mode)
 
 Reconstruct entry points, flows, stores, and boundaries from artifacts in this
 order — code lies less than docs.
 
-### 5. Entry-point extraction by mechanism
+## 5. Entry-point extraction by mechanism
 
 Search patterns (adapt to stack; run broad, then verify by reading):
 
@@ -229,7 +230,7 @@ between releases with no model revision is drift (`05` §4), and a bucket
 growing faster than the rest is where the next review goes. OWASP: Attack
 Surface Analysis cheat sheet.
 
-### 6. Stores, flows, and assets from code
+## 6. Stores, flows, and assets from code
 
 - **Stores:** DB connection strings/ORM configs, S3/GCS client instantiations,
   Redis/memcached, message broker (it stores messages), log/metric sinks,
@@ -242,7 +243,7 @@ Surface Analysis cheat sheet.
   codebases, trace only flows from entry points that touch top-3 assets —
   depth over breadth.
 
-### 7. Inferring trust boundaries from an existing system
+## 7. Inferring trust boundaries from an existing system
 
 - **Network:** VPC/subnet/security-group/k8s NetworkPolicy in IaC; ingress vs.
   ClusterIP services; "0.0.0.0/0" rules mark the internet boundary precisely.
@@ -260,7 +261,7 @@ Then DIFF inferred boundaries against any documented architecture: each
 mismatch (documented boundary absent in code, or real flow absent from docs)
 is itself a finding — drift is how systems rot.
 
-### 8. Privilege-reach map (what a compromise buys)
+## 8. Privilege-reach map (what a compromise buys)
 
 For each process and machine actor, answer: "if THIS is compromised, what can
 the attacker now reach?" One table, built from creds in env/IAM/DB grants:
@@ -278,7 +279,7 @@ control collapses multiple attack-tree branches. In audit mode it is derived
 purely from IAM policies, DB grants, and network policy — no interviews
 needed, and it rarely matches what the team believes.
 
-### 8a. Cross-entry-point consistency for sensitive operations
+## 8a. Cross-entry-point consistency for sensitive operations
 
 The entry-point table is organised by *door*; attackers shop by *operation*. For
 each sensitive business operation (refund, transfer, role grant, email change,
@@ -301,7 +302,7 @@ by routing every path through one guarded service function, not by copying the
 checks; the per-path controls for jobs and webhooks are [`sota-code-security`
 rules/03](../../sota-code-security/rules/03-authorization.md) §8. OWASP: Business Logic Security cheat sheet.
 
-### 9. Decomposition outputs
+## 9. Decomposition outputs
 
 A decomposition is done when you have: L0+L1 mermaid DFDs with boundaries; the
 tables (entry points, assets, actors/privileges, stores, dangerous functionality
@@ -314,10 +315,10 @@ scope must be written down — silent exclusions are where breaches live.
 - [ ] DFD exists, uses the 4-element vocabulary, every flow labeled with data
       + channel; logs/backups/caches drawn as stores (§1).
 - [ ] Trust boundaries explicit and justified by network/identity/privilege/
-      org/validation/time changes — not just "internal vs external".
+      org/validation/time changes — not just "internal vs external" (§2).
 - [ ] Entry-point table covers HTTP, gRPC, queues, cron, webhooks, callbacks,
       file ingestion, admin/CLI, and third-party responses; each row has authn
-      mechanism and downstream reach.
+      mechanism and downstream reach (§3).
 - [ ] Every entry point in code appears in the table (grep sweep performed);
       authn-less entry points flagged.
 - [ ] Non-HTTP input sources (§5: cookies, environment/config, child-process
@@ -329,17 +330,17 @@ scope must be written down — silent exclusions are where breaches live.
       per-release total (§5); count routes with `grep -rn -E "@app\.route\(|@bp\.route\(|router\.(get|post|put|patch|delete)\(|@(Get|Post|Put|Patch|Delete|Request)Mapping|http\.HandleFunc\(" . | wc -l`.
       A total that grew with no model revision → Medium.
 - [ ] Asset table ranks concrete and abstract assets; data classes derived
-      from schemas, not memory.
+      from schemas, not memory (§3, §6).
 - [ ] Shared infrastructure services (authn, authz, discovery, gateway,
       logging, monitoring) listed with docs links, and every process has a
       one-line function; a service the model assumes but never lists → Medium.
 - [ ] Actors carry trust-level IDs, assets name the levels allowed, entry
       points the levels reaching them; the join shows no level reaching an
-      asset it is not allowed (a mismatch → High when TL1 is the level).
+      asset it is not allowed (a mismatch → High when TL1 is the level) (§3).
 - [ ] Actor table includes machine actors (CI, service accounts, cron) and an
       insider; privilege per actor stated; malicious, abusive and unknowing
       user personas listed. Missing abusive persona on a feature that
-      dispenses value (credits, refunds, coupons) → Medium.
+      dispenses value (credits, refunds, coupons) → Medium (§3).
 - [ ] Dangerous-functionality and user-chosen-destination table exists and
       matches code. Sweep sinks with `grep -rn -E "pickle\.loads?\(|yaml\.(unsafe_)?load\(|ObjectInputStream|unserialize\(|Marshal\.load|(^|[^.A-Za-z_])(eval|exec)\(|new Function\(|os\.system\(|shell=True|\.raw\(|execute\(f[\"']" .`
       and user-supplied URL fields with `grep -rn -i -E "(webhook|callback|import|feed|avatar|remote|source|target)_?url" .`;
@@ -350,9 +351,9 @@ scope must be written down — silent exclusions are where breaches live.
       and add cron/consumer/webhook callers by reading. A path enforcing fewer
       checks than its sibling → High (Critical if reachable pre-auth).
 - [ ] Boundaries inferred from IaC/middleware/IAM match documented
-      architecture; drift recorded as findings (§2).
+      architecture; drift recorded as findings (§2, §7).
 - [ ] Time-shifted crossings (queues, caches, stored content, scheduled jobs)
-      modeled as boundary crossings.
+      modeled as boundary crossings (§2).
 - [ ] Privilege-reach map built from actual grants (IAM/DB/network), and
-      over-privilege deltas vs. need recorded.
-- [ ] Scope exclusions written down with reasons.
+      over-privilege deltas vs. need recorded (§8).
+- [ ] Scope exclusions written down with reasons (§9).

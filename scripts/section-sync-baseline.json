@@ -187,7 +187,7 @@
   "skills/sota-testing/rules/08-bdd-spec-by-example.md": 1,
   "skills/sota-testing/rules/09-security-testing.md": 12,
   "skills/sota-threat-modeling/rules/01-methodologies.md": 2,
-  "skills/sota-threat-modeling/rules/02-decomposition.md": 11,
+  "skills/sota-threat-modeling/rules/02-decomposition.md": 3,
   "skills/sota-threat-modeling/rules/03-threat-catalogs.md": 2,
   "skills/sota-threat-modeling/rules/04-risk-rating-treatment.md": 6,
   "skills/sota-threat-modeling/rules/05-outputs-operationalization.md": 8,

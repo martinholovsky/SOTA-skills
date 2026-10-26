@@ -154,8 +154,9 @@ mart_dag   = DAG("marts",  schedule=[orders_stg])   # consumer triggered by prod
 - **Tasks are stateless and idempotent**; orchestrator metadata is not a data
   store. No XCom-ing dataframes; pass references (paths, table names,
   intervals).
-- **Retries: limited and meaningful.** 2–3 retries with exponential backoff
-  for transient failures. Retrying a deterministic transform error 10 times
+- **Retries: limited and meaningful.** 2–3 task retries with exponential backoff
+  for transient failures — at the task layer only: calls inside the task follow
+  [`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §2 and must not multiply with them. Retrying a deterministic transform error 10 times
   is noise; retrying forever masks outages. Alert on final failure, always.
 - **Timeouts on every task** sized from observed duration; a hung extraction
   blocking the daily run for 12 silent hours is an availability incident.

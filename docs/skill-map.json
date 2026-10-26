@@ -1157,6 +1157,17 @@
       ]
     },
     {
+      "from": "sota-javascript-typescript",
+      "to": "sota-architecture",
+      "weight": 5,
+      "targets": [
+        "rules/02",
+        "rules/02 \u00a78a",
+        "rules/04 \u00a72",
+        "rules/04 \u00a77"
+      ]
+    },
+    {
       "from": "sota-kubernetes",
       "to": "sota-identity-access",
       "weight": 5,
@@ -1399,16 +1410,6 @@
     },
     {
       "from": "sota-javascript-typescript",
-      "to": "sota-architecture",
-      "weight": 4,
-      "targets": [
-        "rules/02",
-        "rules/02 \u00a78a",
-        "rules/04 \u00a77"
-      ]
-    },
-    {
-      "from": "sota-javascript-typescript",
       "to": "sota-devsecops",
       "weight": 4,
       "targets": [
@@ -1493,6 +1494,16 @@
       "targets": [
         "rules/03 \u00a78",
         "rules/11 \u00a72.2"
+      ]
+    },
+    {
+      "from": "sota-architecture",
+      "to": "sota-api-design",
+      "weight": 3,
+      "targets": [
+        "rules/02 \u00a75",
+        "rules/06",
+        "rules/06 \u00a74"
       ]
     },
     {
@@ -1600,6 +1611,14 @@
       "targets": [
         "rules/01 \u00a72",
         "rules/03 \u00a77"
+      ]
+    },
+    {
+      "from": "sota-data-engineering",
+      "to": "sota-architecture",
+      "weight": 3,
+      "targets": [
+        "rules/04 \u00a72"
       ]
     },
     {
@@ -1932,15 +1951,6 @@
     },
     {
       "from": "sota-architecture",
-      "to": "sota-api-design",
-      "weight": 2,
-      "targets": [
-        "rules/02 \u00a75",
-        "rules/06"
-      ]
-    },
-    {
-      "from": "sota-architecture",
       "to": "sota-testing",
       "weight": 2,
       "targets": [
@@ -1953,6 +1963,15 @@
       "to": "sota-network-security",
       "weight": 2,
       "targets": []
+    },
+    {
+      "from": "sota-async-concurrency",
+      "to": "sota-architecture",
+      "weight": 2,
+      "targets": [
+        "rules/03 \u00a77b",
+        "rules/04 \u00a72"
+      ]
     },
     {
       "from": "sota-c-cpp",
@@ -2095,12 +2114,6 @@
     {
       "from": "sota-copywriting",
       "to": "sota-frontend-design",
-      "weight": 2,
-      "targets": []
-    },
-    {
-      "from": "sota-data-engineering",
-      "to": "sota-architecture",
       "weight": 2,
       "targets": []
     },
@@ -2531,6 +2544,14 @@
       ]
     },
     {
+      "from": "sota-architecture",
+      "to": "sota-llm-engineering",
+      "weight": 1,
+      "targets": [
+        "rules/05 \u00a72"
+      ]
+    },
+    {
       "from": "sota-async-concurrency",
       "to": "sota-performance",
       "weight": 1,
@@ -2542,14 +2563,6 @@
       "weight": 1,
       "targets": [
         "rules/04"
-      ]
-    },
-    {
-      "from": "sota-async-concurrency",
-      "to": "sota-architecture",
-      "weight": 1,
-      "targets": [
-        "rules/03 \u00a77b"
       ]
     },
     {
@@ -3199,6 +3212,14 @@
       "to": "sota-secrets-management",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-llm-engineering",
+      "to": "sota-architecture",
+      "weight": 1,
+      "targets": [
+        "rules/04 \u00a72"
+      ]
     },
     {
       "from": "sota-llm-engineering",
@@ -3872,12 +3893,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1701,
+    "md link, other skill": 1707,
     "md link, outside skills/": 3,
     "md link, same skill": 2833,
     "name (backticked)": 437,
     "name (bare)": 240,
-    "name+file (backticked)": 741,
+    "name+file (backticked)": 747,
     "name+file (bare)": 165,
     "own rules/NN": 3027
   },
@@ -3889,7 +3910,7 @@
     "md link, same skill": 0,
     "name (backticked)": 422,
     "name (bare)": 197,
-    "name+file (backticked)": 737,
+    "name+file (backticked)": 743,
     "name+file (bare)": 159,
     "own rules/NN": 2928
   },

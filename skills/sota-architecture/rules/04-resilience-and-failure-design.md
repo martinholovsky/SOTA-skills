@@ -30,9 +30,26 @@ BAD: A and B each configured 5000ms while the edge gives up at 1000ms.
 ## 2. Retries: bounded, jittered, idempotent-only
 
 **Rule:** Retry only idempotent operations ([rules/03](03-distributed-systems-and-events.md) §2), only on retryable
-errors (timeouts, 503, connection reset — never 400/401/422), with **bounded
-attempts** (2–3), **exponential backoff + full jitter**, and a **retry budget**
-(e.g., retries ≤ 10% of requests) so retries can't melt a struggling dependency.
+errors, with **bounded attempts** (at most 3 in total — 2 retries — by default),
+**exponential backoff + full jitter**, and a **retry budget** (e.g., retries ≤ 10%
+of requests) so retries can't melt a struggling dependency. This section is the
+library's one retry policy; other skills point here and add only what their
+platform changes.
+
+**Rule:** Classify before retrying. Retryable: connection errors and timeouts,
+`408`, `429`, `502`, `503`, `504`. On `429` and `503` honour `Retry-After` when
+present (RFC 6585 Section 4, RFC 9110 Section 15.6.4): wait at least that long, whatever the
+computed backoff says. A `429` with no `Retry-After` may be a quota rather than a
+burst — one provider documents exactly that for its spend cap, which "keeps
+failing until access resumes" — so it gets the budget, never an open loop. Every
+other `4xx` is final (`400`, `401`, `403`, `404`, `422`: the request fails the
+same way again), and `500` is retryable only where the API documents it as
+transient. Providers document their own lists and their SDKs differ from this
+default ([`sota-llm-engineering` rules/05](../../sota-llm-engineering/rules/05-production-engineering.md) §2) — follow the provider's
+documented list for its API. Webhook *delivery* is a different policy, not an
+exception to this one: a sender retries a receiver's `4xx` (except `410`) over
+days, because the receiver's state changes while the event waits
+([`sota-api-design` rules/06](../../sota-api-design/rules/06-webhooks.md) §4).
 
 ```text
 delay = random(0, min(cap, base * 2^attempt))   # full jitter
