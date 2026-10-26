@@ -5,6 +5,24 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.52.0] - 2026-10-26
+
+A MINOR: `reachability-graph.py` gained `--sync-convert`, and invariant 43 now holds every rules file to **zero** uncited sections and checklist items, alongside routing manifests for every skill and a library-wide reconciliation of guidance that had drifted. Twenty PRs since v1.51.0: #602–#621.
+
+**Front door checked:** model-checked · mutation-testing tools · declared routing · drifted
+
+- **Section ↔ checklist sync, paid down to zero** (#607–#614, #617, #620, #621). Invariant 43 reads dotted ids (`## 6.1`), every rules file is numbered (38 files, 260 headings), and `--sync-convert` moves an unnumbered file's debt to section level. Uncited sections 1,565 → 0; uncited checklist items 3,114 → 0, each cite carrying a verbatim quote of the section it names. The last 84 items were re-homed rather than force-cited (moved to the file stating their rule, folded, or cited after a preamble was numbered).
+  - Parser fixes: a `## N.` inside a fenced block is not a section; another file's shorthand (`` `04` §8 ``) or an RFC's section (`RFC 9110 §15.6.4`) is not a local cite. Probes 43g, 43h, 43i and 18c.
+- **Duplicated guidance that had drifted, reconciled** (#615, #616, #618, #619, #620): 81 leads from a cross-skill sweep, each re-checked against its primary source before either side was edited.
+  - Security facts: a blanket `169.254.0.0/16` block breaks workload identity — open only the platform's `/32`, and in Cilium inside the deny's `except:` (deny outranks allow); CSV formula characters are the union of ASVS V1.2.10 and OWASP's page; an ID's shape is never the access control (RFC 9562 Section 8).
+  - One retry policy (`sota-architecture` rules/04 §2), with the LLM attempt cap corrected to the measured SDK default; one severity per finding, stated by its owner (frozen installs, session fixation, open redirect, TLS verification off, debug endpoints, Rust async, suppressions).
+  - Operator decisions: zero standing admin as the target; open app-tier egress is a finding everywhere and every internet-facing app sits behind a scrubbing edge; quarterly diff reviews plus full recertification; PSA `enforce-version` pinned, `warn`/`audit` latest.
+  - 55 probes that named an absent path (exit 2, read as clean) now search `.`; 44 skill files gained their final newline.
+- **Declared routing for every skill** (#610, #620): 42 manifests, 295 labelled cases, checked by invariant 42 C4. Writing them found 20 routing gaps — a task whose covering section no routing prose named — each fixed in the index row and declared.
+- **Design before code:** protocol designs are model-checked before they are built — `sota-architecture` rules/03 §12a (#606). **Formal verification stated per language** (#603). **Mutation-testing tools** per language, with what actually fails the build (#605).
+- **Deferral triggers may name a tracked path** (#604, probe 39d); field-report intake (#602).
+- **Counts:** 43 invariants; 123 negative-control probes, 121 live (`PASS: 121/121`, measured 2026-10-26 in CI), or 118 on a sweep-shaped branch with a NOTE for invariant 11. ROADMAP items 76, 78 and 79 closed.
+
 ## [1.51.0] - 2026-10-25
 
 A MINOR: a new script (`scripts/reachability-graph.py`), a new `install.sh --print-routing-block` mode and verify-setup check, and a new rules file (`sota-rust` rules/09), alongside two new invariants and four intakes. Ten PRs since v1.50.4: #591–#600.
@@ -11687,6 +11705,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.52.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.52.0
 [1.51.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.51.0
 [1.50.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.4
 [1.50.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.3
