@@ -1,0 +1,5 @@
+spec:
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.244.1.17/32

@@ -216,14 +216,14 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `find . -name 'spotbugs-exclude*.xml' -o -name 'checkstyle-suppressions.xml' 2>/dev/null`
 - [ ] **Suppressions with no reason, blanket forms, and the stale-suppression report switched
       off (§3) — MEDIUM** —
-      `grep -rn 'SuppressFBWarnings' --include='*.java' --include='*.kt' . | grep -v 'justification'`
+      `grep -rn '@SuppressFBWarnings' --include='*.java' --include='*.kt' . | grep -v 'justification'`
       (no reason; a multi-line annotation needs a read) ;
       `grep -rnE '//[[:space:]]*NOPMD[[:space:]]*$' --include='*.java' --include='*.kt' .` (whole line
       ignored, no reason) ;
       `grep -rnE '@(SuppressWarnings|Suppress)\(' --include='*.java' --include='*.kt' . | grep -v '//'`
       (javac and Kotlin report no stale suppression, so each needs a reason; one on the line above
       needs a read) ; with PMD configured,
-      `grep -rln 'UnnecessaryWarningSuppression' --include='*.xml' .` (none: stale PMD
+      `grep -rln 'UnnecessaryWarningSuppression' --include='*.xml' . || echo "no UnnecessaryWarningSuppression: stale PMD suppressions are never reported"` (none: stale PMD
       suppressions are never reported) ; and what drops SpotBugs' report:
       `grep -rnE 'category="STYLE"|<threshold>High|reportLevel|omitVisitors' --include='*.xml' --include='*.gradle*' .`
 - [ ] **A check relaxed for tests in every task (§3) — MEDIUM, HIGH for a security detector** —
@@ -236,9 +236,9 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - [ ] **Wrapper pinned? LTS targeted?** (§1) —
       `ls mvnw gradlew 2>/dev/null | grep -q . || echo "no build wrapper (version not pinned)"`
       ;
-      `grep -rnE --include='pom.xml' --include='build.gradle*' 'release|sourceCompatibility|targetCompatibility|languageVersion' .`
-      (`sourceCompatibility`/`targetCompatibility` or `-source`/`-target` with no `release` or
-      toolchain: newer APIs compile against an older bytecode target)
+      `grep -rlE 'sourceCompatibility|targetCompatibility|[<]source[>]|[<]target[>]|maven\.compiler\.(source|target)' --include='pom.xml' --include='build.gradle*' . | xargs -r grep -LE '[<]release[>]|maven\.compiler\.release|options\.release|release\.set|toolchain|languageVersion'`
+      (each file printed sets `sourceCompatibility`/`targetCompatibility` or a source/target with no
+      `release` or toolchain: newer APIs compile against an older bytecode target)
 - [ ] **Dependency CVE scan + locking in CI?** (§2) —
       `err=$(grep -rniE 'dependency-check|osv-scanner|dependabot|snyk|cyclonedx' --include='*.yml' --include='*.yaml' --include='pom.xml' --include='build.gradle*' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no dependency CVE scan — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
@@ -248,24 +248,25 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       (unpinned ranges)
 - [ ] **Lock that leaves something unlocked (§2) — HIGH for the plugin classpath, MEDIUM
       otherwise** — with project locking on, is the buildscript locked and the mode strict?
-      `grep -rnE 'lockAllConfigurations|activateDependencyLocking|LockMode\.STRICT' --include='*.gradle' --include='*.gradle.kts' .`
+      `grep -rlE 'lockAllConfigurations|activateDependencyLocking' --include='*.gradle' --include='*.gradle.kts' . | xargs -r grep -LE 'LockMode\.STRICT'`
+      (each file printed turns locking on and never sets `LockMode.STRICT`)
       ; `ls buildscript-gradle.lockfile */buildscript-gradle.lockfile 2>/dev/null` (none: plugins
       float) ; CI commands that regenerate the lock:
       `grep -rnE -e '--(write|update)-locks' --include='*.y*ml' --include='*.sh' --include='Dockerfile*' .`
-      ; Maven: `grep -rln 'banDynamicVersions' --include='pom.xml' .` (none: dynamic versions
+      ; Maven: `grep -rln 'banDynamicVersions' --include='pom.xml' . || echo "no banDynamicVersions: dynamic versions allowed"` (none: dynamic versions
       allowed) ; `grep -rnE '<allow(Snapshots|Release|Latest|Ranges)>true' --include='pom.xml' .`
       (banned, then re-admitted)
 - [ ] **Artifact checksums verified, not just downloaded? (the provenance half of §2)** —
       `if test -f gradle/verification-metadata.xml; then echo "ok: gradle/verification-metadata.xml present"; else echo "FINDING: no gradle/verification-metadata.xml, so artifact checksums are not verified (Gradle builds)"; fi`
-      ; `grep -rn 'checksumPolicy' --include='pom.xml' --include='settings.xml' .`
-      (Maven: no hit leaves the policy to the Maven version's default, and `warn`/`ignore`
-      let a bad checksum through; only `fail` blocks it)
+      ; `grep -rn 'checksumPolicy' --include='pom.xml' --include='settings.xml' . | awk '!/checksumPolicy>fail</ {print} {n++} END {if (!n) print "no checksumPolicy: the Maven default decides"}'`
+      (Maven: prints each policy that is not `fail`, since `warn`/`ignore` let a bad checksum
+      through, or a line when none is set and the Maven version's default decides)
 - [ ] **Code that runs at build time: inventoried, pinned, owned? (§2, HIGH when a hit has
       no pinned version, the wrapper has no SHA-256 pin, or CODEOWNERS does not cover it)**
       — every hit is third-party or repo code the build executes; diff it on each bump:
       `grep -rnE '<extensions>true</extensions>|<extension>|exec-maven-plugin|maven-antrun-plugin|annotationProcessorPaths|-proc:full|annotationProcessor[ (]|ksp[ (]|--init-script|initscript' --include='pom.xml' --include='extensions.xml' --include='*.gradle' --include='*.gradle.kts' .`
       ; `find . -path '*/buildSrc/*' -name '*.gradle*' -o -name '*.init.gradle*'` ;
-      `grep -L 'distributionSha256Sum' gradle/wrapper/gradle-wrapper.properties .mvn/wrapper/maven-wrapper.properties 2>/dev/null`
+      `grep -rL 'distributionSha256Sum' --include='*wrapper.properties' .`
       (each file printed lacks a pin; the Maven one also needs `wrapperSha256Sum`) ;
       `grep -nE 'pom\.xml|build\.gradle|settings\.gradle|buildSrc|\.mvn|gradle/|\*' $(ls CODEOWNERS .github/CODEOWNERS docs/CODEOWNERS 2>/dev/null) /dev/null || echo "FINDING: no CODEOWNERS entry covers the build files"`
 - [ ] **New dependency: selection evidence recorded, insecure defaults overridden? (§2; HIGH for
@@ -287,22 +288,22 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       detekt + ktlint on Kotlin, SpotBugs + Find-Sec-Bugs) —
       `grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"`
 - [ ] **Coverage gate + JUnit Jupiter/Testcontainers?** (§4) —
-      `grep -rniE --include='pom.xml' --include='build.gradle*' 'jacoco|junit-jupiter|testcontainers' .`
+      `grep -rniE --include='pom.xml' --include='build.gradle*' 'jacoco|junit-jupiter|testcontainers' . || echo "no JaCoCo, JUnit Jupiter or Testcontainers in the build"`
 - [ ] **Repository over HTTPS, trusted only** (§2) —
-      `grep -rnE --include='pom.xml' --include='build.gradle*' --include='settings.*' 'http://|maven \{|repositories' . | grep -i 'http://'`
+      `grep -rnE --include='pom.xml' --include='build.gradle*' --include='settings.*' 'http://' . | grep -vE 'xmlns|schemaLocation|maven\.apache\.org/(POM|xsd)|www\.w3\.org/2001'`
 - [ ] **Fuzz / property-based tests on the parsers (§4) — LOW, MEDIUM for a parser of untrusted
-      bytes** — `grep -rnE '@FuzzTest|com\.code_intelligence\.jazzer|net\.jqwik|io\.kotest[:.]property' --include='*.java' --include='*.kt' --include='pom.xml' --include='build.gradle*' .`
+      bytes** — `grep -rnE '@FuzzTest|com\.code_intelligence\.jazzer|net\.jqwik|io\.kotest[:.]property' --include='*.java' --include='*.kt' --include='pom.xml' --include='build.gradle*' . || echo "no fuzz or property-based tests"`
       (none: no parser in the repo is fuzzed; a `net.jqwik` hit at ≥ 1.10.0 is HIGH where agents
       read test output — [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md))
 - [ ] **JNI with no `-Xcheck:jni` test job, or one whose warnings pass (§4) — MEDIUM, HIGH on
       untrusted lengths** — JNI present:
       `grep -rlE '(^|[^[:alnum:]_])native[[:space:]][^;]*\(|(^|[^[:alnum:]_])external fun[[:space:]]|System\.load(Library)?\(' --include='*.java' --include='*.kt' .`
-      ; the checker: `grep -rn 'Xcheck:jni' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' --include='*.sh' .`
-      ; and the log check: `grep -rn 'WARNING in native method' --include='*.gradle*' --include='*.y*ml' --include='*.sh' .`
+      ; the checker: `grep -rn 'Xcheck:jni' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' --include='*.sh' . || echo "no -Xcheck:jni test run"`
+      ; and the log check: `grep -rn 'WARNING in native method' --include='*.gradle*' --include='*.y*ml' --include='*.sh' . || echo "no 'WARNING in native method' log check: a -Xcheck:jni warning exits 0"`
       (JNI with no checker hit is the finding; a checker with no log check lets a warning exit 0)
 - [ ] **Native image or bundled JAR shipped with no build-time SBOM (§2) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6)** —
       `grep -rnE 'native-image|nativeCompile|graalvm' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' --include='Dockerfile*' .`
-      ; for each hit: `grep -rniE 'cyclonedx|enable-sbom|sbom' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' .`
+      ; for each hit: `grep -rniE 'cyclonedx|enable-sbom|sbom' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' . || echo "no build-time SBOM configured (cyclonedx / --enable-sbom)"`
       (none, or a Community Edition builder: the image scan reads no dependency list)
 - [ ] **No XXE-specific SAST gate — HIGH** (§3) (the greps in [`rules/07`](07-xml.md)'s checklist are for a
       review; CI needs a rule set that fails the build). Find-Sec-Bugs (1.14.0) reports `XXE_DOCUMENT`, `XXE_SAXPARSER`,

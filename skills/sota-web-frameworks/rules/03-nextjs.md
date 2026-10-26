@@ -200,8 +200,8 @@ protocols, and paths ([`rules/07`](07-security.md)).
       list the env reads, then exclude the public prefix with a second pass). **NB this is a
       CANDIDATE list, not an absence proof**: it greps text, not the Client Component module
       graph; a server module imported by a client one is invisible to it —
-      `grep -rn "import 'server-only'\|import \"server-only\"" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next .` (want: present in data
-      layer)
+      `grep -rL "import 'server-only'\|import \"server-only\"" --include='*.ts' --exclude-dir=node_modules lib` lists data-layer modules (here `lib/`; point it at yours) that lack the
+      guard (want: none)
 - [ ] **next/image SSRF precondition** (§5) —
       `find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "hostname:[[:space:]]*['\"][*]{1,2}['\"]|domains:" {} +`
       (matches a multi-line `remotePatterns` entry; a subdomain wildcard such as `'*.example.com'` is read by eye)

@@ -132,7 +132,7 @@ The engineering contract that makes translation possible:
 - [ ] Every icon-only control has an accessible name; names contain the
       visible label (2.5.3) and are nouns or verb phrases, not instructions;
       repeated row actions announce their object —
-      `grep -rniE 'aria-label=.[^"]*(click|\bhere\b)' --include='*.html' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --exclude-dir=node_modules .`
+      `grep -rniE 'aria-label=("[^"]*|\{[^}]*)(click|\bhere\b)' --include='*.html' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --exclude-dir=node_modules .`
       is empty; status updates that appear visually are announced in
       self-sufficient wording ("Saving… Saved") (§2)
 - [ ] Headings/labels descriptive (2.4.6); required-input instructions

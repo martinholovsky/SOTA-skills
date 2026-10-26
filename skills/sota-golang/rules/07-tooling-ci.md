@@ -344,23 +344,23 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       `ls .golangci.yml .golangci.yaml 2>/dev/null` ;
       `grep -n 'enable-all\|disable-all' .golangci.y*ml 2>/dev/null`
 - [ ] **Suppressions that expire (§2) — LOW, MEDIUM when the suppressed linter is gosec** —
-      `grep -nE 'nolintlint|require-(specific|explanation)|allow-unused' .golangci.yml .golangci.yaml 2>/dev/null`
+      `grep -nE 'nolintlint|require-(specific|explanation)|allow-unused' .golangci.y*ml 2>/dev/null`
       (no `nolintlint` with both `require-*: true`, or `allow-unused: true`, means
       suppressions never expire)
 - [ ] **Test-code exemptions in config, not global (§2) — MEDIUM** —
-      `grep -nE '^[[:space:]]*(exclude-rules|exclude-dirs|exclude-files):|^[[:space:]]*tests:[[:space:]]*false' .golangci.yml .golangci.yaml 2>/dev/null`
+      `grep -nE '^[[:space:]]*(exclude-rules|exclude-dirs|exclude-files):|^[[:space:]]*tests:[[:space:]]*false' .golangci.y*ml 2>/dev/null`
       (v1 keys a v2 binary rejects, or tests not linted at all) ; `golangci-lint config verify` ;
       read every `exclusions.rules` entry: no `path:` means it applies to production code too
 - [ ] **Escape hatch without its runtime checker (§1) — HIGH** —
-      `grep -rlE 'unsafe\.Pointer|^import "C"' --include='*.go' .` ; then
-      `grep -rnE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null`
-      (files use unsafe or cgo and no hit means nothing checks it)
-- [ ] **Suppression hygiene** (§2) — `grep -rn 'nolint' --include='*.go' . | grep -v '//' | head`
+      `grep -rqE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null || grep -rlE 'unsafe\.Pointer|^import "C"' --include='*.go' .`
+      (lists the unsafe/cgo files only when no CI line runs a checker: nothing checks them) ; the checker
+      lines themselves: `grep -rnE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null`
+- [ ] **Suppression hygiene** (§2) — `grep -rnE '//[[:space:]]+nolint' --include='*.go' .`
       (malformed); `grep -rnE '//nolint(:\w+)?$' --include='*.go' .` (no justification — LOW);
-      `grep -rn '#nosec' --include='*.go' .` (justify each)
+      `grep -rnE '#nosec([[:space:]]+G[0-9]+)*[[:space:]]*$' --include='*.go' .` (a bare `#nosec` with no `-- reason`: justify each)
 - [ ] **go.mod hygiene** — `grep -E '^(go|toolchain) ' go.mod` (version current? toolchain
       pinned?); `grep -A5 '^tool' go.mod` (1.24 tool directives in use?);
-      `grep -rn 'tools.go' . 2>/dev/null` (legacy pattern — migrate (LOW));
+      `grep -rlE '^//go:build tools' --include='*.go' .` (legacy pattern — migrate (LOW));
       `grep -rn 'go install .*@latest' .github/ Makefile* 2>/dev/null` (floating tools —
       MEDIUM); `git ls-files | grep 'go.work$' && echo 'go.work committed — check intent'` ;
       `grep -E '^replace' go.mod` ; `go list -m <module>` (the SELECTED version — `require` is a
@@ -384,7 +384,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       `grep -rn 'time.Sleep' --include='*_test.go' .` (flaky sync — MEDIUM);
       `grep -rln 'func Fuzz' --include='*_test.go' .` (parsers fuzzed?);
       `ls testdata/fuzz 2>/dev/null` (crash corpus committed?);
-      `grep -rn 'testcontainers' go.mod` ; `go test -shuffle=on ./...` (ordering deps?);
+      `grep -n 'testcontainers' go.mod` ; `go test -shuffle=on ./...` (ordering deps?);
       `go test -race -count=3 ./...`
 - [ ] **Reproducible builds (§5) — LOW** —
       `git grep -nE 'go build' -- '*Makefile*' '*Dockerfile*' '*.sh' '*.y*ml' | grep -v -- '-trimpath'`

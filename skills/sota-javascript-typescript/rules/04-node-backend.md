@@ -416,9 +416,9 @@ channel.
       `enterWith` is a scope that never exits. A `getStore()` falling back to a default is
       fail-open. Read the hits: a module `let` assigned only at boot is fine. A `Worker` that calls `getStore()` gets `undefined`: pass the value in `workerData`.
 - [ ] `grep -rn "Sync(" src/ | grep -v "test\|script"` — `*Sync` calls in server code (HIGH in request paths). Known CPU work (hashing, image resize, PDF generation, compression) run inline in a handler instead of a worker pool is MEDIUM (§10).
-- [ ] Server timeouts (§4): `grep -rn "headersTimeout\|requestTimeout\|keepAliveTimeout" src/` — absent = slowloris-exposed defaults (MEDIUM).
-- [ ] Body limits configured (`grep -rn "bodyLimit\|limit:" src/`) — unbounded body parsing (HIGH, DoS). Security headers: `grep -rniE 'helmet|x-powered-by' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .` printing nothing means no `helmet` and `X-Powered-By` still sent (LOW) (§4).
-- [ ] `grep -rn "SIGTERM" src/` — no graceful shutdown handler = dropped requests on every deploy (MEDIUM). Where one exists: readiness flips first, the forced-exit timer is `.unref()`ed and shorter than the orchestrator's grace period, pools close after in-flight requests drain, and SSE/WebSocket connections are tracked and ended (`server.close` waits for them forever) (MEDIUM) (§5).
+- [ ] Server timeouts (§4): `grep -rq "headersTimeout\|requestTimeout\|keepAliveTimeout" src/ || echo 'src/: server timeouts left at defaults'` — a printed line = slowloris-exposed defaults (MEDIUM).
+- [ ] Body limits configured (`grep -rq "bodyLimit\|limit:" src/ || echo 'src/: no body size limit configured'` prints when none is) — unbounded body parsing (HIGH, DoS). Security headers: `grep -rqiE 'helmet|x-powered-by' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules . || echo 'no helmet and no x-powered-by handling'` printing a line means no `helmet` and `X-Powered-By` still sent (LOW) (§4).
+- [ ] `grep -rq "SIGTERM" src/ || echo 'src/: no SIGTERM handler'` — prints when there is no graceful shutdown handler = dropped requests on every deploy (MEDIUM). Where one exists: readiness flips first, the forced-exit timer is `.unref()`ed and shorter than the orchestrator's grace period, pools close after in-flight requests drain, and SSE/WebSocket connections are tracked and ended (`server.close` waits for them forever) (MEDIUM) (§5).
 - [ ] **Error paths that crash or hang the process (§8) — HIGH on
       a long-lived client or a request path** —
       `grep -rlE "createClient\(|new (EventEmitter|WebSocket|net\.Socket)\(|net\.connect\(|createConnection\(|\.pipe\(" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | while IFS= read -r f; do grep -qE "on\(['\"]error['\"]|pipeline\(" "$f" || echo "$f"; done`
@@ -426,20 +426,20 @@ channel.
       anywhere (read the rest). Then, if `grep -nE '"express": *"[~^]?4\.' package.json` hits:
       `grep -rnE "\.(get|post|put|patch|delete|all|use)\([^)]*async *(\(|function|[[:alnum:]_]+ *=>)" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -vE "[Hh]andler\(|wrap\(|catch\(next"`
       — an unwrapped async handler on Express 4 hangs the request on a rejection (HIGH).
-- [ ] `grep -rn "uncaughtException" src/` — handler that doesn't exit (HIGH) (§8); no `unhandledRejection` policy at all (MEDIUM).
+- [ ] `grep -rl "uncaughtException" src/ | xargs -r grep -L "process\.exit"` — lists files with an `uncaughtException` handler and no `process.exit`: a handler that doesn't exit (HIGH) (§8); no `unhandledRejection` policy at all (MEDIUM).
 - [ ] **Allocation or recursion sized by the request (§"Process-level error policy", failures no handler sees) (§8) — HIGH on a request path: one request kills the process** —
       `grep -rnE '(Array|Buffer\.(alloc|allocUnsafe)|\.repeat)\( *([^)]*[^[:alnum:]_])?(req\.|body|query|params|headers|length|size|count)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules .`
       — each hit needs a maximum checked before the call. Then read each recursive function that walks parsed request data (validators, deep merge, sanitizers) for a depth limit.
 - [ ] `grep -rn "console.log\|console.error" src/ | grep -v test` — in services, replace with pino (§9) (LOW; MEDIUM if logging objects with secrets).
-- [ ] Logger redaction configured? `grep -rn "redact" src/` — logging auth headers/bodies without redaction (HIGH). `grep -rn 'pino-pretty' --include='*.ts' --include='*.js' --include='*.mjs' --include='Dockerfile*' --exclude-dir=node_modules .` — `pino-pretty` reaching production config instead of staying a dev tool (LOW) (§9).
-- [ ] `grep -rn "trust proxy" src/` and rate-limiter keying — spoofable client IP (§4) (MEDIUM).
+- [ ] Logger redaction configured? `grep -rq "redact" src/ || echo 'src/: no logger redact config'` — logging auth headers/bodies without redaction (HIGH). `grep -rn 'pino-pretty' --include='*.ts' --include='*.js' --include='*.mjs' --include='Dockerfile*' --exclude-dir=node_modules .` — `pino-pretty` reaching production config instead of staying a dev tool (LOW) (§9).
+- [ ] `grep -rnE "trust proxy['\"], *true" src/` (trusts every hop) and rate-limiter keying — spoofable client IP (§4) (MEDIUM).
 - [ ] **Top-level `await` in a published library's entry graph (§13) — MEDIUM: every `require()` of the package throws `ERR_REQUIRE_ASYNC_MODULE`** —
       `grep -rnE '^(await[[:space:]]|for[[:space:]]+await|(export[[:space:]]+)?(const|let|var)[[:space:]][^=]*=[[:space:]]*await[[:space:]])' --include='*.js' --include='*.mjs' --include='*.ts' --include='*.mts' src/`
       — an unindented `await` is module scope. Only files reachable from `exports`/`main` count; an app's own entry point may use it. Then `grep -rnE '__dirname|__filename|(^|[^.[:alnum:]_$])require\(' --include='*.js' --include='*.mjs' --include='*.ts' --include='*.mts' --exclude-dir=node_modules .` in a `"type": "module"` package — `__dirname`/`__filename` do not exist there and a stray `require(` throws (MEDIUM).
 - [ ] `package.json`: `engines.node` pinned, matched by `.nvmrc`/`.node-version` and the Node version CI runs (§1); deps that duplicate platform built-ins (axios, dotenv, uuid, nodemon) — removable (LOW) (§2).
 - [ ] `grep -rn "bcrypt.hashSync\|scryptSync\|pbkdf2Sync" src/` — sync crypto in request path (§10) (HIGH).
 - [ ] `grep -rn "process.exit" src/ | grep -v "config\|shutdown"` — exits mid-flow skipping cleanup (§8) (MEDIUM).
-- [ ] Readiness vs liveness probes distinct; readiness flips during drain (`grep -rn "readyz\|readiness" src/`) — single do-everything healthcheck (LOW/MEDIUM). A liveness endpoint that checks the DB or other dependencies turns a blip into a fleet-wide restart loop (CRITICAL, as [`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §7 rates it); a readiness endpoint that fails on a shared dependency (`db.ping()` in `/readyz`) with no recorded decision to do so is a finding — it empties the Service on every DB outage (§6).
+- [ ] Readiness vs liveness probes distinct; readiness flips during drain (`grep -rq "readyz\|readiness" src/ || echo 'src/: no readiness endpoint'`) — single do-everything healthcheck (LOW/MEDIUM). A liveness endpoint that checks the DB or other dependencies turns a blip into a fleet-wide restart loop (CRITICAL, as [`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §7 rates it); a readiness endpoint that fails on a shared dependency (`db.ping()` in `/readyz`) with no recorded decision to do so is a finding — it empties the Service on every DB outage (§6).
 - [ ] Outbound fetch/DB calls without timeouts (§12) (`grep -rn "fetch(" src/ | grep -v signal`; DB client statement_timeout) — MEDIUM, HIGH for critical paths.
 - [ ] Retry logic on non-idempotent operations without idempotency keys (MEDIUM/HIGH if money). Retries without jittered backoff or ignoring `Retry-After`, and no circuit breaker on a flapping dependency, are LOW (§12).
 - [ ] DB pool size × replica count vs database max_connections (§12) — documented anywhere? (LOW).
@@ -453,13 +453,14 @@ channel.
       reaches production** — `grep -rnE 'rejectUnauthorized: *false|NODE_TLS_REJECT_UNAUTHORIZED|checkServerIdentity|createInsecure\(|hostVerifier: *(\([^)]*\)|[[:alnum:]_]+) *=> *true' .`
       (no `--include`: env files, Dockerfiles and CI YAML carry the variable). Read the
       value on each `NODE_TLS_REJECT_UNAUTHORIZED` hit, and read what each
-      `checkServerIdentity` returns. Then list the `ssh2` users:
-      `grep -rlE 'require\(.ssh2.\)|from .ssh2.' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
-      Every `connect({...})` in those files **without** a `hostVerifier` accepts any host key.
-      The finding there is the absence, so no pattern can print it.
+      `checkServerIdentity` returns. Then list the `ssh2` users that never name a `hostVerifier`:
+      `grep -rlE 'require\(.ssh2.\)|from .ssh2.' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' . | xargs -r grep -L 'hostVerifier'`
+      Every `connect({...})` in a listed file accepts any host key. A file that names it once can
+      still hold a second `connect` without it, so read the other `ssh2` users' calls too.
 - [ ] **Server-side headless browser inputs (§16)** —
-      `grep -rnE '\.(goto|setContent|evaluate|evaluateOnNewDocument|addInitScript)\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
-      Skip the e2e suite. In server code, a request-derived URL reaching `goto` with no
+      `grep -rnE '\.(goto|setContent|evaluate|evaluateOnNewDocument|addInitScript)\([^)]*(req\.|body|query|params)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      It lists calls whose arguments name a request field; a value passed through a variable
+      needs a read. Skip the e2e suite. In server code, a request-derived URL reaching `goto` with no
       scheme and host allowlist is HIGH (SSRF, `file://` read). A request-derived string
       reaching `evaluate`, `evaluateOnNewDocument` or `addInitScript` is CRITICAL. Request-derived HTML reaching `setContent` with no sanitizer, on a renderer with network egress, is HIGH.
 - [ ] **In-process schedulers (§11) — MEDIUM** — `grep -rn 'setInterval(' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .` — work that must run once per schedule belongs in a job queue with idempotent handlers, retry policy and dead-lettering. A ticker that stays in-process needs a `try/catch` (a throw is an uncaught exception), `.unref()` and an overlap guard. Request work that runs for minutes should return `202` with a job ID.

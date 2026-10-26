@@ -185,7 +185,7 @@ mutex. Build threaded code under TSan.
 - [ ] **Signed-overflow-prone arithmetic feeding sizes/indices — HIGH** (§2) —
       `grep -rnE '(malloc|calloc|alloca|new)[^;]*[*+][^;]*' --include='*.c' --include='*.cpp' .`
       (size math → check overflow);
-      `grep -rn '__builtin_.*_overflow\|ckd_add\|ckd_mul' . || echo "no checked-arithmetic helpers found"`
+      `grep -rqE '__builtin_[a-z]+_overflow|ckd_(add|sub|mul)' --include='*.c' --include='*.h' --include='*.cc' --include='*.cpp' --include='*.hpp' . || echo 'no checked-arithmetic helpers found'`
 - [ ] **Overflow tested after the addition (§2) — HIGH where the sum is a size or index** —
       `grep -rnE 'if[[:space:]]*\([[:space:]]*[a-z_][a-z_0-9]*[[:space:]]*\+[[:space:]]*[a-z_0-9]+[[:space:]]*<[[:space:]]*[a-z_][a-z_0-9]*[[:space:]]*\)' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' .`
       (read each: when the right side is one of the addends and the type is signed, the check is
@@ -229,7 +229,8 @@ mutex. Build threaded code under TSan.
       comes from input and the build can select `ignore` or `observe`** —
       `grep -rnE '\)[^;{]*[[:space:]](pre|post)[[:space:]]*\(|contract_assert[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
       (read each: is there an explicit check on the input path before it?) ;
-      `grep -rnE -e '-fcontract-evaluation-semantic=[a-z_]+' . || echo "contract semantic not pinned"`
+      `grep -rnE -e '-fcontract-evaluation-semantic=[a-z_]+' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . | grep -vE 'semantic=(quick_)?enforce' ; grep -rqE -e '-fcontract-evaluation-semantic=' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . || echo 'contract semantic not pinned'`
+      (prints a pinned semantic other than `enforce`/`quick_enforce`, or that none is pinned)
 - [ ] **Ground truth (§6): run under UBSan, aborting on first diagnostic (Clang only: `integer` is a
       Clang sanitizer group; with GCC drop it) cmake -DCMAKE_CXX_COMPILER=clang++
       -DCMAKE_CXX_FLAGS="-fsanitize=undefined,integer -fno-sanitize-recover=all" ctest # any

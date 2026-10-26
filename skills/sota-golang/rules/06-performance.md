@@ -222,8 +222,8 @@ profiler) so the incident carries its own evidence.
 
 - [ ] **Profiling wired up? (§1) (absence in a latency-sensitive service = LOW gap)** —
       `grep -rn 'net/http/pprof' --include='*.go' .` ;
-      `grep -rn 'pprof' --include='*.go' . | grep -i 'listen\|mux\|handle'` (exposed publicly? —
-      MEDIUM)
+      `grep -rl 'net/http/pprof' --include='*.go' . | xargs -r grep -nHE 'ListenAndServe(TLS)?\([[:space:]]*"(0\.0\.0\.0)?:[0-9]+",[[:space:]]*nil\)'` (pprof on a DefaultServeMux served
+      publicly — MEDIUM; a pprof handler on a custom mux needs reading)
 - [ ] **Benchmarks exist for hot packages; b.Loop adoption (§2)** —
       `grep -rln 'func Benchmark' --include='*_test.go' .` ;
       `grep -rn 'b.N' --include='*_test.go' .` (candidates to migrate to b.Loop (1.24+));
@@ -237,7 +237,7 @@ profiler) so the incident carries its own evidence.
 - [ ] **fmt on hot paths (handler/loop proximity — manual confirm) (§3)** —
       `grep -rnE 'fmt\.Sprintf' --include='*.go' . | wc -l`
 - [ ] **sync.Pool correctness: Reset on reuse? cap check? aliasing? (§3)** —
-      `grep -rn -A5 'sync.Pool' --include='*.go' .`
+      `grep -rl 'sync\.Pool' --include='*.go' . | xargs -r grep -LE '\.Reset\(\)'`
 - [ ] **io.ReadAll on large/unbounded inputs — MEDIUM (§3)** —
       `grep -rn 'io.ReadAll\|ioutil.ReadAll' --include='*.go' .`
 - [ ] **GC knobs & ballast (§5)** —

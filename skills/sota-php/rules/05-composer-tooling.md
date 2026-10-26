@@ -290,15 +290,14 @@ Run from repo root; verify each hit manually.
 - [ ] **Lockfile discipline** (§1) —
       `git ls-files composer.lock | grep -q . || echo "NO LOCKFILE COMMITTED (app = HIGH)"`
       ; `composer validate --strict` (flags json/lock drift);
-      `grep -nE '"(php|ext-)' composer.json` (platform reqs declared?);
-      `grep -n '"platform"' composer.json` (config.platform.php pinned?)
-- [ ] **Frozen install bypassed (§1) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** — with
-      `P='composer[[:space:]]+(update|require|global)|--no-check-lock'`:
-      `grep -rnE "$P" .github/workflows/ ; grep -rnE "$P" --include='Dockerfile*' --include='*.sh' --include='Makefile' --exclude-dir=vendor .`
+      `grep -qE '"php"[[:space:]]*:' composer.json || echo "composer.json: NO require.php PLATFORM REQUIREMENT"` (prints when no `require.php` platform requirement is declared);
+      `grep -q '"platform"' composer.json || echo "composer.json: NO config.platform PIN"` (prints when `config.platform.php` is not pinned)
+- [ ] **Frozen install bypassed (§1) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** —
+      `grep -rnE 'composer[[:space:]]+(update|require|global)|--no-check-lock' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='*.sh' --include='Makefile' --exclude-dir=vendor .`
       (each hit re-resolves or skips the lock check, except a library's `composer update --prefer-lowest`
       matrix job (§1), which re-resolves on purpose) ;
-      `grep -rnE 'composer[[:space:]]+validate[^#]*--strict' --include='*.yml' --include='*.yaml' --exclude-dir=vendor .`
-      (no hit: a stale lock installs with exit 0)
+      `grep -rqE 'composer[[:space:]]+validate[^#]*--strict' --include='*.yml' --include='*.yaml' --exclude-dir=vendor . || echo "CI: NO composer validate --strict (a stale lock installs with exit 0)"`
+      (a printed line: a stale lock installs with exit 0)
 - [ ] **Advisory + abandonment status right now** (§2) — `composer audit --locked --abandoned=report`
 - [ ] **Advisory blocking switched off (§2) — HIGH in CI or a shared `composer.json`** —
       `grep -rnE -e '--no(-security)?-blocking|COMPOSER_NO(_SECURITY)?_BLOCKING|COMPOSER_POLICY_(ADVISORIES|MALWARE)_BLOCK[=:"[:space:]]+"?0' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='Makefile' --include='*.sh' --include='.env*' --exclude-dir=vendor --exclude-dir=node_modules .`
@@ -306,7 +305,7 @@ Run from repo root; verify each hit manually.
       (a `"block": false` under `policy.abandoned` is the default, not a finding: read the hit)
 - [ ] **Risky constraints and install-time code** (§1) —
       `grep -nE '"[^"]+"\s*:\s*"(\*|dev-)' composer.json` ; `grep -n '"scripts"' composer.json`
-      (review script contents); `grep -n 'allow-plugins' composer.json` (explicit allowlist?)
+      (review script contents); `grep -qE '"allow-plugins"[[:space:]]*:[[:space:]]*\{' composer.json || echo "composer.json: NO EXPLICIT allow-plugins ALLOWLIST"` (prints when there is no explicit allowlist object; a blanket `true` counts as none)
 - [ ] **Code that runs at install time is contained (§1) — HIGH if the install job holds
       secrets, else MEDIUM** —
       `grep -rnE 'composer[[:space:]]+(install|update|create-project)' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | grep -v -- --no-scripts`
@@ -332,20 +331,20 @@ Run from repo root; verify each hit manually.
       extend both halves for every other library whose defaults you have checked)
 - [ ] **Static analysis presence + ratchet health (§3) — MEDIUM** —
       `ls phpstan*.neon* psalm*.xml* 2>/dev/null | grep -q . || echo "NO STATIC ANALYSIS CONFIG (MEDIUM)"`
-      ; `grep -n 'level' phpstan*.neon* 2>/dev/null` ; `wc -l phpstan-baseline.neon 2>/dev/null`
-      (compare against last audit: shrinking?);
+      ; `grep -nE '^[[:space:]]*level:[[:space:]]*[0-9]([^0-9]|$)' phpstan*.neon*` ; `wc -l phpstan-baseline.neon 2>/dev/null`
+      (the level grep prints a numeric level below the max; compare the baseline against the last audit: shrinking?);
       `git log --oneline -5 -- phpstan-baseline.neon 2>/dev/null`
 - [ ] **Suppressions that never expire, and tests exempted globally (§5) — MEDIUM, HIGH for
       blanket ignores on security code** —
       `grep -rnE '@phpstan-ignore-(next-)?line' --include='*.php' --exclude-dir=vendor .`
       (each blanket ignore hides every later error on its line) ;
-      `grep -nE 'reportUnmatchedIgnoredErrors:[[:space:]]*false|reportIgnoresWithoutComments:[[:space:]]*true' phpstan*.neon*`
-      (the first is the finding; no second means a reasonless or blanket ignore passes) ;
-      `grep -n 'findUnusedPsalmSuppress="true"' psalm*.xml*` (absent on a Psalm project: stale
+      `grep -nE 'reportUnmatchedIgnoredErrors:[[:space:]]*false' phpstan*.neon* ; grep -L 'reportIgnoresWithoutComments:[[:space:]]*true' phpstan*.neon*`
+      (the first half prints the finding; the second lists configs without `reportIgnoresWithoutComments: true`, where a reasonless or blanket ignore passes) ;
+      `grep -L 'findUnusedPsalmSuppress="true"' psalm*.xml*` (lists Psalm configs without it: stale
       suppressions pass). Then read `level`, `paths` and each `ignoreErrors` entry without a
       `path`: a level lowered or `tests` dropped to get the suite green is the finding.
 - [ ] **CI gates actually wired (adjust path to CI system)** (§5) —
-      `grep -rnE '(composer audit|phpstan|psalm|php-cs-fixer|phpcs|phpunit|pest)' .github/workflows/ .gitlab-ci.yml 2>/dev/null`
+      `grep -rqsE 'composer[[:space:]]+audit' .github/workflows/ .gitlab-ci.yml || echo "CI: NO composer audit GATE" ; grep -rqsE 'phpstan|psalm' .github/workflows/ .gitlab-ci.yml || echo "CI: NO STATIC ANALYSIS GATE" ; grep -rqsE 'phpunit|pest' .github/workflows/ .gitlab-ci.yml || echo "CI: NO TEST GATE" ; grep -rqsE 'php-cs-fixer|phpcs' .github/workflows/ .gitlab-ci.yml || echo "CI: NO STYLE GATE"`
 - [ ] **PHP floor out of support, or no Rector gate to move it (§5) — HIGH when the floor
       branch is `eol`, LOW when it is security-only; MEDIUM for no gate once a bump is due** —
       live lookup of the lowest `X.Y` in `require.php` against php.net (prints the floor's
@@ -361,14 +360,14 @@ Run from repo root; verify each hit manually.
       `grep -rn 'composer install' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' . | grep -v -- --no-dev`
 
 - [ ] **Property-based / fuzz tests on the parsers (§4) — LOW, MEDIUM for a parser of
-      untrusted input** — `grep -nE '"(giorgiosironi/eris|nikic/php-fuzzer)"' composer.json`
-      (none: no generated-input test exists; a parser of request data is the first target)
+      untrusted input** — `grep -qE '"(giorgiosironi/eris|nikic/php-fuzzer)"' composer.json || echo "composer.json: NO PROPERTY-BASED OR FUZZ DEPENDENCY"`
+      (a printed line: no generated-input test exists; a parser of request data is the first target)
 - [ ] **C extension or FFI with no memory-checker job (§4) — MEDIUM, HIGH when it parses
       request data** — applies when `config.m4`/`config.w32` exists or
       `grep -rlE '\\?FFI::(cdef|load)' --include='*.php' --exclude-dir=vendor .` lists files;
-      then `grep -rlE 'valgrind|USE_ZEND_ALLOC=0|fsanitize=address' --include='*.yml' --include='*.yaml' --exclude-dir=vendor .`
-      (no hit: the escape hatch's tests never run under a checker; a `valgrind` line without
-      `--error-exitcode` cannot fail)
+      then `grep -rqE 'valgrind[^#]*--error-exitcode|USE_ZEND_ALLOC=0|fsanitize=address' --include='*.yml' --include='*.yaml' --exclude-dir=vendor . || echo "NO MEMORY-CHECKER CI JOB"`
+      (a printed line: the escape hatch's tests never run under a checker; a `valgrind` line without
+      `--error-exitcode` cannot fail, so it does not count)
 
 Severity guide: app with no committed lock or CI running `composer update`
 MEDIUM (HIGH once envs drift); no advisory gate MEDIUM; known-vulnerable dep

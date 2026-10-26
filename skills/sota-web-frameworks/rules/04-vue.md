@@ -102,7 +102,7 @@ core `escapeHtml` escapes `" ' & < >`). The sinks are where you leave that prote
       (destructuring reactive => lost reactivity);
       `grep -rnE 'watch(Effect)?\(' --include='*.vue' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output . | head` (verify async-created ones are
       scoped);
-      `grep -rn 'ref(' --include='*.ts' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output . | grep '/composables/' # module-level refs? (rules/06 SSR leak)`
+      `grep -rnE '^(export )?(const|let) [A-Za-z_$][A-Za-z0-9_$]*[[:space:]]*=[[:space:]]*(ref|reactive|shallowRef)(<[^>]*>)?\(' --include='*.ts' --exclude-dir=node_modules composables` (module-level refs in composables: an SSR state leak, rules/06)
 - [ ] **`<script setup>` default; no Vapor mode in production (§1)** — Vapor SFCs (MEDIUM while
       Vue 3.6 is not stable):
       `grep -rnE '<script[^>]*[[:space:]]vapor([[:space:]>=]|$)' --include='*.vue' --exclude-dir=node_modules .`

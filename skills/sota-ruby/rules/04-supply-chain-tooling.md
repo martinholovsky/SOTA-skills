@@ -313,7 +313,7 @@ Run from repo root; verify each hit manually.
 - [ ] **Code that runs at install time (Bundler plugins, extconf builds) without an
       owner — MEDIUM (HIGH if the install step holds secrets)** (§1.1) — each hit is a Bundler
       plugin; the second part prints when no CODEOWNERS entry covers the build files —
-      `grep -nE '^[[:space:]]*plugin[[:space:]]+["'"'"']' Gemfile gems.rb 2>/dev/null` ;
+      `grep -rnE '^[[:space:]]*plugin[[:space:]]+["'"'"']' --include=Gemfile --include=gems.rb .` ;
       `[ -n "$(grep -lsE '(Gemfile|gemspec|Rakefile|ext/)' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS)" ] || echo "NO CODEOWNERS entry for build-executing files"`
 - [ ] **Mutable git sources — MEDIUM** (§1) — `grep -nE "git:|github:" Gemfile | grep -v "ref:"`
 - [ ] **Multiple top-level sources (dependency confusion) (§1) — HIGH on Bundler ≤ 2.x** —
@@ -360,7 +360,7 @@ Run from repo root; verify each hit manually.
       `rubocop:disable Security` hits in the lint-posture item. Secret scanning on every push and
       once over full history is probed in [`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §2
 - [ ] **CI gates incomplete, or CI Ruby version drift (§7) — MEDIUM for a missing audit gate** —
-      `grep -rn "ruby-version\|ruby:" .github/workflows/ 2>/dev/null | grep -v ".ruby-version" | head` ;
+      `grep -rn "ruby-version\|ruby:" .github/workflows/ 2>/dev/null | grep -v -F ".ruby-version" | head` ;
       `grep -rhoE 'BUNDLE_FROZEN|frozen true|rubocop|standardrb|bundle(-| )audit|brakeman|rspec|rails test|rake test|srb tc|steep check' --include='*.yml' --include='*.yaml' . | sort -u`
       (which of the five gates CI runs: frozen install, lint, `bundle audit`/Brakeman, tests, and
       `srb tc`/`steep check` on typed projects; a missing one is the finding)

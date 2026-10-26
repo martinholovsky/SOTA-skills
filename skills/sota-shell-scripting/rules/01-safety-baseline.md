@@ -421,7 +421,7 @@ curl -H $auth_header ...     # header with space splits into garbage args
 ## Audit checklist
 
 - [ ] **Does a function or piped loop end in `[ … ] && …`?** (§2) Its false case is the
-      body's status, so the caller dies silently. `grep -nE '\] && [^|]*$'` lists candidates
+      body's status, so the caller dies silently. `grep -nE '\] && [^|]*$' <file>` lists candidates
       (top-level hits are safe); for each, check whether it is the last statement of the body.
 
 - [ ] **Is anything chained onto a pipeline with `&&`?** (§3) The chain runs on the
@@ -429,7 +429,7 @@ curl -H $auth_header ...     # header with space splits into garbage args
       while the gate is red. Audit the scaffolding, not just the payload: `| tail`, `| head`,
       `| grep -q`, wait loops and cleanup are typed to manage the work, so the
       "am I about to believe this?" reflex never fires on them. Grep the shape:
-      `grep -nE '\|[^|]+&&' ` over scripts and CI run blocks.
+      `grep -nE '\|[^|]+&&' <file>` over scripts and CI run blocks.
 - [ ] **Does any `pgrep -f` waiter match the watcher's own argv?** (§3) It never exits — **on
       Linux**. Measured as a differential: procps-ng never exits, BSD/macOS exits immediately,
       so a green local test on macOS proves nothing about the Linux CI that will run it.

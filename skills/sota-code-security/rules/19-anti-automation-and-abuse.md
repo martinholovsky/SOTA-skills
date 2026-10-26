@@ -187,7 +187,7 @@ Probes print a lead list; read each hit before reporting it.
       `grep -rnE "split\(['\"][+]['\"]\)|[\\][+][^'\"]*@|indexOf\(['\"][+]['\"]\)" .`
 - [ ] **Disposable-domain list refreshed and used as a signal (§2)** — LOW. Is any
       throwaway-domain list pulled on a schedule, and does a hit raise risk rather than
-      silently reject? Where it lives: `grep -rniE 'disposable|throwaway|burner' .`
+      silently reject? A hit that rejects outright: `grep -rniE '(disposable|throwaway|burner)[^;]*(raise|reject|abort|deny|forbidden|40[03])' .` (the refresh schedule needs a separate look)
 - [ ] **Signup velocity keyed beyond IP (§2)** — MEDIUM. Signup files that rate-limit
       but never mention an ASN, device or fingerprint key:
       `grep -rliE 'signup|sign_up|register' . | while IFS= read -r f; do grep -qiE 'rate.?limit|limiter|throttle' "$f" && ! grep -qiE 'asn|device|fingerprint' "$f" && echo "$f"; done`

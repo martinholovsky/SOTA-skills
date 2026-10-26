@@ -497,4 +497,4 @@ where they coexist. Rate it with the chain named leg by leg ([`sota/rules/03`](.
       detections per session, high-risk-action share, and human approval drift
       (rubber-stamping, repeated bypass attempts), each mapped to an R4.5 step (R4.4).
 - [ ] **High** — Sandbox package installs use a pre-baked image or allowlisted mirror (§2, R2.4):
-      no hit from `grep -rnE '(^|[[:space:]])(--)?index-url|PIP_INDEX_URL|^[[:space:]]*registry[[:space:]]*=|NPM_CONFIG_REGISTRY' .` where `pip`/`npm install` runs means the public index; each `grep -rnE 'extra-index-url|PIP_EXTRA_INDEX_URL' .` hit adds one — a finding; confirm the netns reaches only the mirror.
+      `grep -rqE '(^|[[:space:]])(--)?index-url|PIP_INDEX_URL|^[[:space:]]*registry[[:space:]]*=|NPM_CONFIG_REGISTRY' . || grep -rnE '(pip3?|npm) (install|ci)' .` prints each `pip`/`npm install` when no private index or registry is set anywhere — each one uses the public index; each `grep -rnE 'extra-index-url|PIP_EXTRA_INDEX_URL' .` hit adds one — a finding; confirm the netns reaches only the mirror.

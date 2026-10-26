@@ -272,8 +272,9 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
       `grep -rn "^[a-zA-Z_]* = asyncio.\(Queue\|Lock\|Event\)" --include="*.py" src/` ;
       `grep -rn "get_event_loop" --include="*.py" src/` (legacy API [LOW-MEDIUM])
 - [ ] **Async generators holding resources without aclosing (§5)** —
-      `grep -rln "async def.*->.*AsyncIterator\|AsyncGenerator" --include="*.py" src/` ;
-      `grep -rn "aclosing" --include="*.py" src/` (compare counts)
+      `grep -rlE 'AsyncIterator|AsyncGenerator' --include='*.py' src/ | xargs -r grep -L 'aclosing'`
+      (each file listed declares an async generator and never uses `aclosing`; a consumer in
+      another file may still close it, so read the call sites)
 - [ ] **Forgotten awaits — runtime + type checker; async test setup (§10)** —
       `grep -rn "asyncio_mode" pyproject.toml setup.cfg 2>/dev/null` ;
       `grep -rnE 'await[[:space:]]+asyncio\.sleep\([[:space:]]*([1-9]|0?\.[0-9]*[1-9])' --include='test_*.py' --include='*_test.py' --include='conftest.py' --exclude-dir=.venv .`
@@ -287,9 +288,9 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
       `grep -rnE 'asyncio\.Queue(\[[^]]*\])?\((maxsize[[:space:]]*=[[:space:]]*0)?\)' --include='*.py' src/`
       (measured on 3.14: `asyncio.Queue().maxsize` is `0`, and 10,000 `put_nowait` calls never
       made it `full()`) ;
-      `grep -rlE 'create_task\(|TaskGroup\(' --include='*.py' src/` against
-      `grep -rlE 'Semaphore\(' --include='*.py' src/` (a file that spawns tasks and holds no
-      semaphore: read each loop that spawns one task per item)
+      `grep -rlE 'create_task\(|TaskGroup\(' --include='*.py' src/ | xargs -r grep -LE 'Semaphore\('`
+      (each file listed spawns tasks and holds no semaphore: read each loop that spawns one task
+      per item)
 - [ ] **--- Request-scoped ambient state: ContextVar / thread-local not reset (§6) --- [HIGH
       where it carries a tenant or user id; MEDIUM for log context]** —
       `grep -rnE 'threading\.local\(|^[[:space:]]*[[:alnum:]_.]+\.set\([^)]|bind_contextvars\(' --include='*.py' src/`

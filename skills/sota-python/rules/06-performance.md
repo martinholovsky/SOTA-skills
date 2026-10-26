@@ -230,18 +230,20 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
       `grep -rn "iterrows\|itertuples\|\.apply(lambda" --include="*.py" src/` ;
       `grep -rn "for .* in df\[" --include="*.py" src/` ; `grep -rnE '(np|numpy)\.vectorize\(' --include='*.py' --exclude-dir=.venv .`
       (not faster than a loop, §3)
-- [ ] **Cache hygiene (§4)** — `grep -rn "@cache$\|@functools.cache" --include="*.py" src/`
+- [ ] **Cache hygiene (§4)** — `grep -rnE '@(functools\.)?cache[[:space:]]*$' --include="*.py" src/`
       (unbounded — user-controlled args? on methods?);
       `grep -rn "@lru_cache" --include="*.py" src/ -A2 | grep "def .*(self"` (instance leak
-      [MEDIUM]); `grep -rn "cache_clear" --include="*.py" tests/ src/` (invalidation/test
-      isolation present?)
+      [MEDIUM]); `grep -rq "cache_clear" --include="*.py" tests/ src/ || echo "no cache_clear in tests/ or src/"`
+      (the message = no invalidation or test isolation anywhere)
 - [ ] **Concurrency model sanity (§5)** — `grep -rn "ThreadPoolExecutor" --include="*.py" src/` (used
       for CPU-bound work? [MEDIUM]);
       `grep -rn "multiprocessing\|ProcessPoolExecutor" --include="*.py" src/ | head` ;
-      `grep -rln "if __name__" $(grep -rln ProcessPoolExecutor --include="*.py" src/ 2>/dev/null)`
+      `grep -rl ProcessPoolExecutor --include='*.py' src/ | xargs -r grep -L '__name__'`
+      (each file listed starts worker processes with no `__main__` guard)
 - [ ] **Import-time cost (CLIs/lambdas) (§6)** —
       `python -X importtime -c "import mypkg" 2>&1 | sort -t'|' -k2 -rn | head -15` ;
-      `grep -rn "^import pandas\|^import numpy\|^import torch" --include="*.py" src/*cli* src/*/cli* 2>/dev/null`
+      `grep -rnE '^import (pandas|numpy|torch)' --include='*.py' src/ | grep -E '^[^:]*cli[^:]*:'`
+      (a module-level heavy import in a file or directory named for the CLI)
 - [ ] **Memory: whole inputs materialized, caches retaining frames (§7) [LOW; MEDIUM where
       inputs reach GBs]** —
       `grep -rnE '\.read\(\)\.splitlines\(\)|\.readlines\(\)' --include='*.py' --exclude-dir=.venv .` (iterate
@@ -254,6 +256,6 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
       `grep -rnE '^[[:space:]]*(import gzip|from gzip import)' --include='*.py' --exclude-dir=.venv .`
       (gzip on service-to-service payloads where zstd would do [LOW])
 - [ ] **Benchmarks exist for perf-critical code? (§1, §9)** —
-      `grep -rln "pytest-benchmark\|pyperf" pyproject.toml tests/ 2>/dev/null` ;
+      `grep -rqE 'pytest-benchmark|pyperf' pyproject.toml tests/ || echo "no benchmark harness"` ;
       `grep -rnE 'time\.time\(\)[[:space:]]*-[[:space:]]*[A-Za-z_]' --include='*.py' --exclude-dir=.venv .`
       (a wall-clock delta used as a timer: `time.perf_counter()` [LOW])

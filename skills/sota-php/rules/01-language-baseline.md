@@ -310,7 +310,7 @@ Run from repo root; verify each hit manually.
 
 - [ ] **Byte functions on user text (§7a) — MEDIUM, HIGH when the cut value is stored or
       signed** — `grep -rnE '(^|[^_a-z])(substr|strlen|strtoupper|strtolower|ucfirst|str_split|wordwrap)\(' --include='*.php' src/ | grep -iE 'name|title|text|comment|message|body|bio|label'`
-      ; `grep -rn 'mb_check_encoding' --include='*.php' src/` (none: nothing validates UTF-8 at the boundary)
+      ; `grep -rq 'mb_check_encoding' --include='*.php' src/ || echo "src/: NO mb_check_encoding (UTF-8 never validated at the boundary)"` (prints a line when nothing validates UTF-8 at the boundary)
 - [ ] **Public surface / BC (§6a) -- PHP fails most of these at LOAD time, in the consumer every
       method here is frozen: adding one is FATAL for existing implementers ("must therefore be
       declared abstract"). If the contract must grow, use an abstract class with defaults, or
@@ -322,11 +322,11 @@ Run from repo root; verify each hit manually.
       `grep -rn 'interface ' --include='*.php' src/` ;
       `git diff <last-release-tag>..HEAD -- '*.php' | grep -nE '^\+.*(function |final |readonly )'`
       ; `grep -rnE '^\s*(class|abstract class) [A-Z]' --include='*.php' src/ | grep -v 'final'`
-      ; `grep -rn 'public readonly\|public function __construct(' --include='*.php' src/`
+      ; `grep -rn 'public readonly' --include='*.php' src/`
 - [ ] **Missing strict_types (§2) — LOW per file, MEDIUM if project-wide** —
       `grep -rL --include='*.php' 'declare(strict_types=1)' src/ | head -50`
 - [ ] **EOL / lapsing PHP floor — check require.php against the table in §1** —
-      `grep -n '"php"' composer.json` ; `php -v` (a branch past its php.net end date is EOL
+      `grep -nE '"php"[[:space:]]*:[[:space:]]*"([^"]*[^0-9.])?(5\.|7\.|8\.0|8\.1)' composer.json` ; `php -v` (a branch past its php.net end date is EOL
       even when the package comes from a vendor that still patches it, §1) ;
       `grep -rnE '"php"[[:space:]]*:[[:space:]]*"([^"]*[^0-9.])?(5\.|7\.|8\.0|8\.1)' --include='composer.json' .`
       (a floor that still admits an EOL branch; the list is fixed text and misses 8.2 from
@@ -360,9 +360,9 @@ Run from repo root; verify each hit manually.
       ; on the runtime, `php -r 'var_dump(ini_get("zend.max_allowed_stack_size"));'` (`"-1"`:
       deep recursion segfaults the worker instead of throwing)
 - [ ] **strpos truthiness bug and other in-band sentinels (§4a) — MEDIUM, HIGH on a security
-      decision** — `grep -rnE 'if\s*\(\s*!?\s*strpos\(' --include='*.php' src/`
-      ; `grep -rnE '(strpos|stripos|strrpos|array_search)[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -v '==='`
-      (every hit without `===` is a finding) ;
+      decision** — `grep -rnE 'if[[:space:]]*\([[:space:]]*!?[[:space:]]*strpos\([^()]*\)[[:space:]]*\)' --include='*.php' src/`
+      ; `grep -rnE '(strpos|stripos|strrpos|array_search)[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -vE '(===|!==)'`
+      (every hit without `===` or `!==` is a finding) ;
       `grep -rnE '(intval\(|\(int\)[[:space:]]*)\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' --exclude-dir=vendor .`
       (`0` for garbage and for `"0"` alike: `FILTER_VALIDATE_INT`, tested with `===`)
 - [ ] **Error suppression and silent JSON** (§5) —
@@ -393,9 +393,9 @@ Run from repo root; verify each hit manually.
       (request input parsed unvalidated; `strtotime` returns `false` on garbage)
 - [ ] **Blocking I/O on an event loop (§6) — HIGH in a long-running async runtime, not a
       finding in classic FPM** — `grep -rlE 'Revolt\\EventLoop|React\\EventLoop|Amp\\|new Fiber\(' --include='*.php' src/`
-      lists the files that run on a loop; in each,
-      `grep -nE 'new \\?PDO\(|mysqli_|file_get_contents\(|fopen\(|curl_exec\(|[^a-z_]sleep\(' "$f"`
-      (each hit stalls every request the loop is serving: use the runtime's async client or
+      lists the files that run on a loop;
+      `grep -rlE 'Revolt\\EventLoop|React\\EventLoop|Amp\\|new Fiber\(' --include='*.php' src/ | xargs grep -nHE 'new \\?PDO\(|mysqli_|file_get_contents\(|fopen\(|curl_exec\(|[^a-z_]sleep\('`
+      greps each of them (each hit stalls every request the loop is serving: use the runtime's async client or
       move the call to a worker; zero files from the first command means no loop, so stop)
 
 Severity guide: EOL PHP in production HIGH; missing strict_types project-wide

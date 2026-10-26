@@ -98,7 +98,7 @@ register(email)
 
 ## Audit checklist
 
-- [ ] Encoding, unicode & text (§6): `grep -rnE 'String\(data:[^)]*\)!' --include='*.swift' .` (a force-unwrapped decode crashes on invalid bytes) ; `grep -rnE '\.count[[:space:]]*[<>]=?' --include='*.swift' . | grep -iE 'byte|header|column|limit|max'` (a byte limit checked on grapheme count — it must be `.utf8.count`).
+- [ ] Encoding, unicode & text (§6): `grep -rnE 'String\(data:[^)]*\)!' --include='*.swift' .` (a force-unwrapped decode crashes on invalid bytes) ; `grep -rnE '\.count[[:space:]]*[<>]=?' --include='*.swift' . | grep -vE '\.utf(8|16)\.count' | grep -iE 'byte|header|column|limit|max'` (a byte limit checked on grapheme count — it must be `.utf8.count`).
 
 - [ ] Value types and enums (§1): types default to `struct`/`let`; state shared across concurrency domains is an `actor`, not a class; classes are `final` unless designed for subclassing; a custom value type wrapping a reference buffer copies on write via `isKnownUniquelyReferenced`; owned-enum `switch`es are exhaustive without `default`, and `@unknown default` appears only on non-frozen enums from other modules.
 - [ ] Absence / null handling (§2): no force unwraps on input-derived optionals — grep `[A-Za-z0-9_)\]]!(\.|\s|\)|$)`, `as!`, `try!`; a remaining `!`/`try!`/`as!` (a bundled resource) carries a comment stating the invariant or is `preconditionFailure("why")`; nested `if let` pyramids become a `guard let` early exit; IUO `T!` only in two-phase init; no in-band sentinel (`-1`, `""`) where an optional or enum belongs.

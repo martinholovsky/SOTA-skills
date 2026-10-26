@@ -90,7 +90,7 @@ progressive rollout validated on live traffic.
       the SAME feature transform code/store as training, [rules/02](02-data-and-features.md))
 - [ ] **Safe model format & reproducible env (§2) — HIGH** —
       `grep -rniE 'pickle|joblib|torch.load|cloudpickle' --include='*.py' . | head` (unsafe
-      load? ([rules/07](07-security-governance.md))); `grep -rniE 'safetensors|onnx|torchscript' --include='*.py' . | head` ;
+      load? ([rules/07](07-security-governance.md))); `grep -rqiE 'safetensors|onnx|torchscript' --include='*.py' . || echo "no safe model format"` ;
       `grep -rniE 'torchserve|torch-model-archiver' . | head` (EOL runtime (archived Aug 2025,
       no security patches) — HIGH);
       `find . -maxdepth 3 -not -path '*/node_modules/*' \( -name 'Dockerfile*' -o -name 'requirements*.txt' -o -name poetry.lock -o -name uv.lock -o -name 'conda*.yml' \)` (serving env
@@ -105,12 +105,12 @@ progressive rollout validated on live traffic.
       `out=$(grep -rniE 'shadow|canary|a/?b|traffic.*split|gradual|ramp' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no progressive rollout" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Serving input validation and operability (§5) — MEDIUM** —
-      `grep -rniE 'validate|schema|pydantic|unseen|unknown.*categor|fillna|missing' --include='*.py' . | head`
+      `grep -rqiE 'validate|schema|pydantic|unseen|unknown.*categor|fillna|missing' --include='*.py' . || echo "no serving input validation"`
       ; manual: load-tested against the latency budget before launch, and a versioned,
       backward-compatible serving API
 - [ ] **Full-state rollback and isolated caches (§4) — MEDIUM/HIGH** — cache keys with no
-      model version: `grep -rniE 'cache_?key' --include='*.py' . | grep -viE 'model_?(version|id)'`
+      model version: `grep -rniE 'cache_?key\s*=' --include='*.py' . | grep -viE 'model_?(version|id)'`
       ; manual: does the rollback bundle pin tokenizer, config, features, prompts and index?
 - [ ] **Model decommissioning (§6) — MEDIUM** —
-      `grep -rniE 'decommission|retire|delete_model_version|delete_registered_model' . || echo "no model retirement path"`
+      `grep -rqiE 'decommission|retire|delete_model_version|delete_registered_model' . || echo "no model retirement path"`
       ; manual: endpoints revoked before artifacts erased, and the erasure recorded

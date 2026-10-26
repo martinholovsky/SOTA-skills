@@ -1,0 +1,5 @@
+jobs:
+  test:
+    steps:
+      - run: uv run mypy --strict src/
+      - run: uv run pytest

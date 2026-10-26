@@ -1,0 +1,7 @@
+cases:
+  - id: 1
+    input: hello
+    source: synthetic
+  - id: 2
+    input: refund please
+    source: production

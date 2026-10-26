@@ -1,0 +1,2 @@
+./src/test/java/com/example/ParserFuzzTest.java:3:import com.code_intelligence.jazzer.junit.FuzzTest;
+./src/test/java/com/example/ParserFuzzTest.java:6:    @FuzzTest

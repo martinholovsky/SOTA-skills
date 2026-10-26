@@ -1,0 +1,2 @@
+./.github/workflows/ci.yml:8:      - run: dotnet format --verify-no-changes
+./.github/workflows/ci.yml:9:      - run: dotnet build -c Release -p:ContinuousIntegrationBuild=true

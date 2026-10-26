@@ -355,21 +355,23 @@ existing parameter means.
       → constexpr/inline)
 - [ ] **Error handling (§7) — the section had no probe at all until 2026-08-21** —
       `grep -rnE 'catch[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*\}' --include='*.cpp' .`
-      (empty catch — HIGH); `grep -rn 'catch (...)' --include='*.cpp' .` (swallow-all: needs a
-      rethrow or a logged reason);
+      (empty catch — HIGH); `grep -rn -A3 'catch (\.\.\.)' --include='*.cpp' . | awk '/catch \(\.\.\.\)/ { if (p != "") print p; p = $0; next } /^--$/ { if (p != "") print p; p = ""; next } /throw;|terminate|abort/ { p = "" } END { if (p != "") print p }'` (a swallow-all with no
+      `throw;`, `terminate` or `abort` in the next three lines: needs a rethrow or a logged reason);
       `clang-tidy --checks='bugprone-empty-catch,bugprone-exception-escape,misc-throw-by-value-catch-by-reference' <files>`
 - [ ] **Process-fatal failures a `catch (...)` cannot stop (§7) — HIGH on input-facing code** —
       `clang-tidy --checks='misc-no-recursion,bugprone-exception-escape' <files>` (each recursive
       cycle over input needs a depth bound) ;
-      `grep -rnE 'json::parse[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.hpp' .`
-      (each nlohmann parse of untrusted bytes: input size capped first, depth bounded by callback)
+      `grep -rlE 'json::parse[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.hpp' . | xargs -r grep -LE 'parser_callback_t'`
+      (files with an nlohmann parse and no `parser_callback_t`: depth unbounded; for every parse
+      of untrusted bytes also confirm the input size is capped first)
 - [ ] **Ignored error returns — the C half of §7, and the one nobody greps then ask the §7
       question a grep cannot: is ONE error model used across a given boundary, or do exceptions,
       codes and expected<> meet at an ABI seam? Mixed models at a boundary is the finding, not
       any one of them.** —
       `clang-tidy --checks='bugprone-unused-return-value,cert-err33-c' <files>` (cert-err33-c
       aliases the former);
-      `grep -rn 'std::expected\|absl::Status\|tl::expected' --include='*.cpp' --include='*.hpp' . | head`
+      `grep -rlE 'std::expected|absl::Status|tl::expected' --include='*.cpp' --include='*.hpp' . | xargs -r grep -lwE 'throw'`
+      (files where expected<>/Status and `throw` meet: read whether the two models cross a boundary)
 - [ ] **In-band sentinels (§7/§7a/§8) — absence encoded as a value — MEDIUM** —
       `grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*(getchar|fgetc|getc)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' .`
       (`EOF` stored in a `char`: the loop never ends where `char` is unsigned) ;
@@ -389,14 +391,14 @@ existing parameter means.
       section was written, and then rejected this very comment for spelling the pattern out
       literally: refer to it by name, never by its characters, in prose that shares a file with
       the check.** —
-      `grep -rnE 'assert\(' --include='*.cpp' --include='*.c' --include='*.h' . | grep -E '\+\+|--|=[^=]|\('`
+      `grep -rnE '(^|[^_A-Za-z])assert\(' --include='*.cpp' --include='*.c' --include='*.h' . | grep -E 'assert\(.*(\+\+|--|[^=!<>]=[^=]|[A-Za-z_][A-Za-z0-9_]*\()'`
       ; `err=$(grep -rn 'NDEBUG' CMakeLists.txt *.cmake 2>&1 >/dev/null); rc=$?` ; `case $rc in`
       ; `0) ;;` (found: asserts are compiled out in that build);
       `1) echo "NDEBUG not set here: release builds may still run asserts" ;;` ;
       `*) echo "SWEEP FAILED, not a finding about their code: $err" ;;` ; `esac`
 - [ ] **Members init in DECLARATION order, not list order (§8a) -- -Wreorder catches it, so verify the
       build does not silence it** —
-      `grep -rnE '\-Wall|\-Wreorder|\-Wno-reorder' CMakeLists.txt *.cmake 2>/dev/null`
+      `grep -rnE -e '-Wno-(error=)?reorder' --include='CMakeLists.txt' --include='*.cmake' . ; grep -rqE -e '-Wall|-Wreorder' --include='CMakeLists.txt' --include='*.cmake' . || echo "no -Wall/-Wreorder in the CMake build: member-init order is unchecked"`
 - [ ] **Virtual call from a ctor/dtor dispatches to the BASE (measured) (§8a), and a pure one is UB:
       each hand-written operator= must be self-assignment safe (copy-and-swap, or a guard)** —
       `grep -rnE '^\s*(virtual |[A-Z][A-Za-z0-9_]*::)?~?[A-Z][A-Za-z0-9_]*\s*\([^)]*\)\s*(:|\{)' --include='*.cpp' . | head`
@@ -420,4 +422,4 @@ existing parameter means.
       ; `grep -rn 'using namespace' --include='*.h' --include='*.hpp' .` (inherited by every
       includer); `grep -rL  '#pragma once\|#ifndef' --include='*.h' --include='*.hpp' .` (-L =
       files NOT matching);
-      `grep -rn 'fvisibility' --include='CMakeLists.txt' --include='*.cmake' . || echo "no -fvisibility=hidden: everything is exported by default — a larger ABI surface than intended"`
+      `grep -rqE 'fvisibility=hidden|VISIBILITY_PRESET[[:space:]]+hidden' --include='CMakeLists.txt' --include='*.cmake' . || echo "no -fvisibility=hidden / VISIBILITY_PRESET hidden: everything is exported by default"`

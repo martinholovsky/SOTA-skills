@@ -137,9 +137,9 @@ coroutines. References:
 
 - [ ] **Data-race smells — MEDIUM/HIGH (verify happens-before)** (§1) —
       `grep -rnE '^[[:space:]]*((public|private|protected)[[:space:]]+)?static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[a-z][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' . | grep -vwE 'final|class|interface|enum|record'` (mutable shared
-      static; the old `(?!final)` form exited 2, POSIX ERE has no lookahead); `grep -rnE 'volatile |@Volatile' --include='*.java' --include='*.kt' . | grep -E '\+\+|--|\+='` (compound op
+      static; the old `(?!final)` form exited 2, POSIX ERE has no lookahead); `grep -rlE 'volatile[[:space:]]|@Volatile' --include='*.java' --include='*.kt' . | xargs -r awk 'FNR==1{split("",v)} /volatile[[:space:]]|@Volatile/ {if (match($0,/(volatile[[:space:]]+[A-Za-z_][A-Za-z0-9_<>]*|var)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*/)) {n=split(substr($0,RSTART,RLENGTH),a,/[[:space:]]+/); v[a[n]]=1}; next} {for (k in v) if ($0 ~ ("(^|[^A-Za-z0-9_])" k "[[:space:]]*([+][+]|--|[-+*/]=)") || $0 ~ ("([+][+]|--)" k "([^A-Za-z0-9_]|$)")) print FILENAME ":" FNR ":" $0}'` (compound op
       on volatile = race);
-      `grep -rnE 'HashMap|ArrayList|mutable(Map|List|Set)Of' --include='*.java' --include='*.kt' . | grep -iE 'static|shared|object|companion'`
+      `grep -rnE '(^|[^A-Za-z0-9_])(HashMap|ArrayList)|mutable(Map|List|Set)Of' --include='*.java' --include='*.kt' . | grep -iE 'static|shared|object|companion'`
       (non-concurrent shared coll) ;
       `grep -rnE '^(private |internal |public )?(@Volatile )?var[[:space:]]' --include='*.kt' .`
       (Kotlin has no `static`: a top-level `var` is the same process-wide mutable state; also
@@ -153,7 +153,7 @@ coroutines. References:
       `grep -rnE 'enable-preview|StructuredTaskScope' --include='*.java' --include='*.kt' --include='pom.xml' --include='*.gradle*' .`
       (structured concurrency is preview in 25)
 - [ ] **CompletableFuture without executor/exception handling — MEDIUM** (§2) —
-      `grep -rnE 'CompletableFuture\.(supplyAsync|runAsync)\([^,)]*\)' --include='*.java' --include='*.kt' .` (no
+      `grep -rnE 'CompletableFuture\.(supplyAsync|runAsync)\(' --include='*.java' --include='*.kt' . | grep -vE ',[[:space:]]*[A-Za-z_][A-Za-z0-9_.]*(\(\))?[[:space:]]*\)[;[:space:]]*$'` (no
       explicit executor)
 - [ ] **Kotlin coroutine hazards — MEDIUM/HIGH** (§4) — `grep -rn 'GlobalScope' --include='*.kt' .`
       (unstructured leak); `grep -rnE 'catch *\([^)]*CancellationException' --include='*.kt' .`

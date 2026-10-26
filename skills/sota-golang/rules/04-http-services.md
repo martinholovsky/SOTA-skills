@@ -380,14 +380,14 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       (`utf8.ValidString(string([]byte{0x63, 0xff}))` is `false`, measured on go1.27.1)
 - [ ] **Naked servers — HIGH** (§1) —
       `grep -rn 'http.ListenAndServe\|http.ListenAndServeTLS' --include='*.go' .` ;
-      `grep -rn -A8 'http.Server{' --include='*.go' .` (verify all four timeouts present)
+      `grep -rn -A8 'http.Server{' --include='*.go' . | awk 'function f(){if(h!=""&&!(a&&b&&c&&d))print h} /http\.Server\{/{f(); h=$0; a=b=c=d=0} /^--$/{f(); h=""} /ReadHeaderTimeout/{a=1} /ReadTimeout/{b=1} /WriteTimeout/{c=1} /IdleTimeout/{d=1} END{f()}'` (prints each literal missing any of the four timeouts in its first 8 lines)
 - [ ] **Default client / package-level helpers (§2) — HIGH** —
       `grep -rnE 'http\.(Get|Post|PostForm|Head)\(' --include='*.go' .` ;
       `grep -rn 'http.DefaultClient' --include='*.go' .` ;
-      `grep -rn -A6 'http.Client{' --include='*.go' .` (Timeout set? Transport tuned?);
+      `grep -rn -A6 'http.Client{' --include='*.go' . | awk '/http\.Client\{/{if(h!=""&&!t)print h; h=$0; t=($0 ~ /Timeout/); next} /^--$/{if(h!=""&&!t)print h; h=""; next} /Timeout/{t=1} END{if(h!=""&&!t)print h}'` (prints each literal with no `Timeout` in its first 6 lines; Transport tuning stays manual);
       `grep -rn 'MaxIdleConnsPerHost' --include='*.go' .` (absent + high fan-out = bottleneck)
-- [ ] **Body hygiene (§2)** — `grep -rn 'client.Do\|\.Get(\|\.Post(' --include='*.go' .` (then verify
-      defer Close + drain near each); `grep -rn 'resp.Body.Close' --include='*.go' .` ;
+- [ ] **Body hygiene (§2)** — `grep -rnE -A4 '(\.Do|http\.(Get|Post|Head|PostForm))\(' --include='*.go' . | awk '/(\.Do|http\.(Get|Post|Head|PostForm))\(/{if(h!=""&&!c)print h; h=$0; c=0; next} /^--$/{next} /Body\.Close/{c=1} END{if(h!=""&&!c)print h}'` (prints each call with no
+      `Body.Close` in the next 4 lines; drain stays manual); `grep -rn 'resp.Body.Close' --include='*.go' .` ;
       `grep -rn 'io.ReadAll(r.Body\|io.ReadAll(req.Body' --include='*.go' .` (MaxBytesReader
       present? — HIGH); `grep -rn 'MaxBytesReader' --include='*.go' .` ; manual: `resp.StatusCode`
       checked after each `Do` (`err == nil` on 4xx/5xx)
@@ -397,7 +397,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       below the orchestrator's kill grace period, `srv.Close()` runs when `Shutdown` errors,
       `RegisterOnShutdown` signals hijacked conns, dependencies close after the drain
 - [ ] **Per-request client/transport construction (§2) — MEDIUM perf** —
-      `grep -rn -B3 'http.Client{' --include='*.go' . | grep -E 'func.*\(w http|Handler'`
+      `grep -rn -B3 'http.Client{' --include='*.go' . | grep -E 'func.*\(w http\.ResponseWriter|ServeHTTP\(|HandlerFunc\(func'`
 - [ ] **Logging (§5)** —
       `grep -rnE '\b(fmt\.Print|log\.Print)' --include='*.go' . | grep -v _test.go` (LOW);
       `grep -rn 'slog.' --include='*.go' . | grep -v Context` (request paths should use
@@ -406,7 +406,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       (PII in logs — HIGH) ; manual: client mistakes (4xx) logged at Info/Warn, not Error;
       sensitive types implement `slog.LogValuer`
 - [ ] **Middleware ResponseWriter wrappers missing Flush/Hijack passthrough** (§4) —
-      `grep -rn -A4 'http.ResponseWriter$' --include='*.go' . | grep 'struct'`
+      `grep -rlE '^[[:space:]]*http\.ResponseWriter$' --include='*.go' . | xargs -r grep -LE 'func \([^)]*\) (Unwrap\(\) http\.ResponseWriter|Flush\(\))'`
 - [ ] **Path-based authorization on the raw request path (§4) — HIGH when the router behind
       it is not `http.ServeMux`** —
       `grep -rnE 'strings\.(HasPrefix|HasSuffix|Contains)\([A-Za-z_]+\.URL\.(Path|RawPath)|\.URL\.EscapedPath\(\)' --include='*.go' .`
@@ -426,14 +426,14 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       `encoding/json/v2`, which errors on duplicates)
 - [ ] **Tooling; request-scoped values (§6)** — `golangci-lint run --enable-only bodyclose,noctx,gosec ./...` (noctx:
       requests without ctx, so ctx never reaches the downstream call); `go vet ./...` ;
-      `grep -rnF 'Header.Get("Authorization")' --include='*.go' .` (a hit outside the auth
-      middleware is a handler re-parsing the token) ; ctx keys and payloads: the design-file context item
+      `grep -rnF 'Header.Get("Authorization")' --include='*.go' . | grep -viE '/(auth|middleware)[^/]*\.go:|/(auth|middleware)/'` (auth and middleware paths are
+      filtered out, so a hit is a handler re-parsing the token; a middleware living elsewhere needs reading) ; ctx keys and payloads: the design-file context item
 - [ ] **--- Cookies and redirects (§4a, §4b) ---** —
-      `grep -rn 'SetCookie' --include='*.go' . | grep -v _test` (then read each for
-      Secure/HttpOnly/SameSite [HIGH]);
-      `grep -rnE 'http\.Cookie\{' -A6 --include='*.go' . | grep -L 'HttpOnly' 2>/dev/null` ;
-      `grep -rnE 'Redirect\(|Location.*r\.(URL|Form|Header)' --include='*.go' .` (open redirect
-      [HIGH]); `grep -rn 'CheckRedirect' --include='*.go' .` (absent while a client sets a custom
+      `grep -rn -A8 'http.Cookie{' --include='*.go' . | grep -v '_test\.go' | awk 'function f(){if(h!=""&&!(s&&o&&m))print h} /http\.Cookie\{/{f(); h=$0; s=o=m=0} /^--$/{f(); h=""} /Secure:[[:space:]]*true/{s=1} /HttpOnly:[[:space:]]*true/{o=1} /SameSite:/{m=1} END{f()}'` (each `net/http` cookie literal missing
+      Secure, HttpOnly or SameSite in its first 8 lines [HIGH]);
+      `grep -rnE -A6 'http\.Cookie\{' --include='*.go' . | awk 'function f(){if(h!=""&&!o)print h} /http\.Cookie\{/{f(); h=$0; o=0} /^--$/{f(); h=""} /HttpOnly/{o=1} END{f()}'` ;
+      `grep -rnE 'Redirect\([^,]+,[^,]+,[[:space:]]*r\.(URL|Form|FormValue|PostFormValue|Header|Referer)|Header\(\)\.Set\("Location",[[:space:]]*r\.' --include='*.go' .` (open redirect: a request-derived target passed inline
+      [HIGH]; a target laundered through a variable needs reading); `grep -rn 'CheckRedirect' --include='*.go' .` (absent while a client sets a custom
       credential header = that header crosses origins [MEDIUM]) ; `gosec -include=G119 ./...` ;
       `grep -rniE 'Header\.(Set|Add)\("x-[a-z-]*(key|token|auth|secret)' --include='*.go' .`
       (custom credential headers the default redirect policy forwards to any host)
@@ -455,8 +455,8 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       `grep -rlE 'w\.Write\(|io\.Copy\(w,|fmt\.Fprint[a-z]*\(w,' --include='*.go' . | xargs -r grep -L 'Content-Type'`
       (file-level: writes a body and never names `Content-Type`; a file that sets it on one
       path only still needs reading) ;
-      `grep -rnE 'http\.Serve(File|Content)\(' --include='*.go' .` (is the served name
-      user-chosen, so its extension picks `text/html`/`image/svg+xml`?)
+      `grep -rnE 'http\.Serve(File|Content)\([^)]*r\.(URL|PathValue|FormValue|Form|PostFormValue)' --include='*.go' .` (a request-derived served name
+      picks `text/html`/`image/svg+xml` by its extension; a name passed through a variable needs reading)
 
 Severity guide: no server timeouts internet-facing HIGH; default client in
 service HIGH; unbounded body read HIGH; missing graceful shutdown MEDIUM;

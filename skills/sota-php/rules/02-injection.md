@@ -355,8 +355,8 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       ;
       `grep -rniE '(SELECT|INSERT|UPDATE|DELETE)[^;]*(\{\$|["'"'"'][[:space:]]*\.[[:space:]]*\$)' --include='*.php' src/`
       ;
-      `grep -rnE '(whereRaw|selectRaw|orderByRaw|havingRaw|DB::raw|->raw\()' --include='*.php' src/`
-      ; `grep -rn 'EMULATE_PREPARES' --include='*.php' src/` (want: false);
+      `grep -rnE '(whereRaw|selectRaw|orderByRaw|havingRaw|DB::raw|->raw)[[:space:]]*\([[:space:]]*("[^"]*\$|[^,;]*\.[[:space:]]*\$)' --include='*.php' src/`
+      ; `grep -rnE 'ATTR_EMULATE_PREPARES[[:space:]]*(=>|,)[[:space:]]*(true|1)' --include='*.php' src/` (an explicit true is the finding; when it is absent the driver default applies, so confirm it is set false);
       `grep -rn 'real_escape_string' --include='*.php' src/` (HIGH if primary defense)
 - [ ] **Request input in a database validation rule (§1) — HIGH, CRITICAL when it names the
       table or column** — request data in `Rule::unique`/`Rule::exists`/`->ignore()`, or a
@@ -364,7 +364,7 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE '(Rule::(unique|exists)\(|->ignore\()[^;]*(\$request|request\(|input\(|\$_(GET|POST|REQUEST))|["'"'"'][^"'"'"']*(unique|exists):[^"'"'"']*["'"'"'][[:space:]]*\.|"[^"]*(unique|exists):[^"]*\$' --include='*.php' src/`
 - [ ] **Shell — CRITICAL with tainted input** —
       `grep -rnE '\b(exec|shell_exec|system|passthru|popen|pcntl_exec)\s*\(' --include='*.php' src/`
-      ; `grep -rn 'proc_open' --include='*.php' src/` (array command = good sign);
+      ; `grep -rnE 'proc_open[[:space:]]*\([[:space:]]*[^[:space:][]' --include='*.php' src/` (prints a `proc_open` whose command is not an array literal: a shell string);
       `grep -rnE '(^|[^A-Za-z0-9_>:$])shell_exec[[:space:]]*\(|(^|[^A-Za-z0-9_>:$])exec[[:space:]]*\([^,()]*(,[^,()]*)?\)' --include='*.php' src/`
       (exit status unobservable: `shell_exec`, or `exec` without `$output, $result_code` — §2);
       ``grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'`` ;
@@ -375,7 +375,7 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       (a method named `eval`, e.g. a Redis client's, is excluded). Trace each string to a
       literal; `disable_functions` does not cover `eval`
 - [ ] **XSS — echo/print of request data, raw template sinks (§3) — HIGH** —
-      `grep -rnE '(echo|print|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' .`
+      `grep -rnE '(echo|print|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' . | grep -vE '(htmlspecialchars|htmlentities|esc_(html|attr|url|js))[[:space:]]*\([[:space:]]*\$_'`
       ; `grep -rnE '<\?=[[:space:]]*\$' --include='*.php' templates/ | grep -vE '<\?=[[:space:]]*\$this'`
       (a `(?!this)` lookahead here exited 2 with its stderr discarded, so it reported nothing) ;
       `grep -rn '{!!' --include='*.blade.php' resources/ 2>/dev/null` ;
@@ -386,14 +386,14 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE 'href=["'"'"']?<\?(=|php[[:space:]]+echo)[[:space:]]*\$' --include='*.php' --exclude-dir=vendor .`
       (a user URL in `href` needs the `https?` scheme allowlist)
 - [ ] **Header/redirect injection** (§4) —
-      `grep -rnE 'header\s*\(\s*["'"'"']Location:.*\$' --include='*.php' src/`
+      `grep -rnE 'header[[:space:]]*\([[:space:]]*["'"'"']Location:[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' src/`
 - [ ] **Execution after redirect (§4a) — HIGH on an authz path** — each hit is a `Location`
       header whose next non-blank line is not `exit`/`die`/`return`/`throw`:
       `find src/ -name '*.php' -exec awk 'FNR==1 && p {print pf":"pl": "ph} FNR==1 {p=0} p && /[^[:space:]]/ {if ($0 !~ /(exit|die|return|throw)/) print FILENAME":"pl": "ph; p=0} tolower($0) ~ /header[[:space:]]*\([[:space:]]*.location:/ && $0 !~ /(exit|die|return|throw)/ {p=1; pl=FNR; ph=$0; pf=FILENAME} END {if (p) print pf":"pl": "ph}' {} +`
       ; a framework redirect that is built and not returned:
       `grep -rnE '^[[:space:]]*(\$this->)?redirect(ToRoute)?[[:space:]]*\(' --include='*.php' src/ app/ 2>/dev/null`
 - [ ] **Log injection (§4) — MEDIUM** —
-      `grep -rnE '(error_log|syslog|->(emergency|alert|critical|error|warning|notice|info|debug|log))[[:space:]]*\([^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' src/`
+      `grep -rnE '(error_log|syslog|->(emergency|alert|critical|error|warning|notice|info|debug|log))[[:space:]]*\([^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' src/ | grep -vE '\([[:space:]]*["'"'"'][^"'"'"'$]*["'"'"'][[:space:]]*,[[:space:]]*\['`
       (request data written straight into a log line; measured on PHP 8.5, `error_log()` to a
       file wrote an embedded `\n` through, so one call produced two log lines). Strip CR/LF or
       log it as a structured field. Values that reach the call via a variable need tracing

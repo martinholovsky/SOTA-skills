@@ -378,7 +378,7 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
 
 - [ ] **Banned functions (§1) — HIGH/CRITICAL** —
       `grep -rnwE '(gets|strcpy|strcat|sprintf|vsprintf|stpcpy|scanf|system|popen|strtok|atoi|atol)' --include='*.c' --include='*.cpp' --include='*.h' .`
-      ; `grep -rnE '\balloca\b|\[[^]]*\] *= *\{?' --include='*.c' .` (VLA/alloca on dynamic
+      ; `grep -rnE '\balloca[[:space:]]*\(|^[[:space:]]*((const|unsigned|signed|struct)[[:space:]]+)*(char|short|int|long|float|double|bool|[A-Za-z_][A-Za-z0-9_]*_t)[[:space:]]+\**[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\[[^]]*[a-z][^]]*\][[:space:]]*;' --include='*.c' .` (VLA/alloca on dynamic
       size)
 - [ ] **Validation at the boundary (§2) — HIGH where the value is a length, count or offset
       from input** —
@@ -458,8 +458,8 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
       `grep -rnE '(setuid|setgid|setgroups|initgroups)[[:space:]]*\(' --include='*.c' --include='*.cpp' .`
       (then read the order: groups, gid, uid, and a `setuid(0)` that must fail)
 - [ ] **Insecure randomness for security — HIGH** (§4) —
-      `grep -rnE '\b(rand|random|srand|mt19937|random_device)\b' --include='*.cpp' --include='*.c' .`
-      ; `grep -rn 'memcmp' --include='*.cpp' . | grep -iE 'mac|hmac|token|secret|sig|digest'`
+      `grep -rnE '(^|[^A-Za-z0-9_])(rand|random|srand|srandom)[[:space:]]*\(|\b(mt19937(_64)?|random_device)\b' --include='*.cpp' --include='*.c' .`
+      ; `grep -rnE '(^|[^A-Za-z0-9_])memcmp[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.c' . | grep -iE 'mac|hmac|token|secret|sig|digest'`
       (timing leak)
 - [ ] **Hardening flags present? — HIGH if missing on network/setuid binary** —
       `grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"`; production row and flex arrays (§5), each `missing` → MEDIUM, HIGH on a network-facing binary: `for f in -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero -fstrict-flex-arrays=3; do grep -rqF --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' -e "$f" . || echo "missing $f"; done`

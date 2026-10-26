@@ -88,13 +88,13 @@ retraining.
       `out=$(grep -rniE 'evidently|nannyml|whylogs|drift|psi|kolmogorov|ks_2samp|monitor' --include='*.py' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no drift/perf monitoring found — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Drift detection method present?** (§2) —
-      `grep -rniE 'population_stability|psi|ks_2samp|chi2|js_diverg|wasserstein' --include='*.py' . | head`
+      `grep -rqiE 'population_stability|psi|ks_2samp|chi2|js_diverg|wasserstein' --include='*.py' . || echo "no drift detection method"`
 - [ ] **Live performance tracking + label lag handling (§3) — HIGH** —
-      `grep -rniE 'ground.?truth|label.*lag|actual|delayed|backfill.*label|live.*metric' --include='*.py' . | head`
+      `grep -rqiE 'ground.?truth|label.*lag|actual|delayed|backfill.*label|live.*metric' --include='*.py' . || echo "no live performance tracking"`
       ; manual: is ground-truth collection designed, and are performance estimates confirmed with
       labels once they land?
 - [ ] **Data-quality/freshness monitoring at serving (§4) — MEDIUM/HIGH** —
-      `grep -rniE 'freshness|stale|null.*rate|schema.*serv|nan|range.*check' --include='*.py' . | head`
+      `grep -rqiE 'freshness|stale|null.*rate|schema.*serv|nan|range.*check' --include='*.py' . || echo "no serving data-quality monitoring"`
       ; manual: served features compared to training continuously, the served-feature log masks or
       drops PII before logging, and the OOD-flag rate is trended
 - [ ] **Retraining trigger defined? — MEDIUM/HIGH** —

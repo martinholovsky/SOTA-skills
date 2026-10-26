@@ -293,7 +293,7 @@ fn main() -> ExitCode {
 - [ ] `?` chains with no `.context(...)` anywhere between syscall and `main` (§3) —
       undebuggable errors. Eager context on the success path:
       `grep -rnE '\.context\(format!' --include='*.rs' .` — want `with_context(|| format!(..))` = Low.
-- [ ] FFI (§5): `grep -rnE 'extern "C(-unwind)?" fn' --include='*.rs' .` — a body that
+- [ ] FFI (§5): `grep -rlE 'extern "C(-unwind)?" fn' --include='*.rs' . | xargs -r grep -L 'catch_unwind' | xargs -r grep -nE 'extern "C(-unwind)?" fn'` lists them in files with no `catch_unwind` (file-level: one call hides the rest) — a body that
       can panic without an inner `catch_unwind` aborts the process (since 1.81) =
       High (DoS); with a declared MSRV below 1.81 it is UB = Critical.
 - [ ] `grep -rnE '(debug_)?assert(_eq|_ne)?!\(' --include='*.rs' --exclude-dir=tests --exclude-dir=benches --exclude-dir=examples .`

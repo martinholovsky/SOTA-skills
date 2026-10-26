@@ -160,7 +160,7 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
       ;
       `find . -maxdepth 2 -path ./node_modules -prune -o -name 'nuxt.config.*' -type f -exec grep -HnA8 'runtimeConfig' {} + | grep -iE 'public' -A6 | grep -iE 'secret|key|token|password'`
 - [ ] **Server->client exposure & the server-only guard** (§1) —
-      `grep -rn "import 'server-only'\|server/" app lib server | head` ;
+      `grep -rL "import 'server-only'\|import \"server-only\"" --include='*.ts' --exclude-dir=node_modules lib` (data-layer modules lacking the guard; point it at yours) ;
       `grep -rnE 'process\.env\.' --include='*.tsx' --include='*.vue' app components pages | grep -iv 'NEXT_PUBLIC\|NODE_ENV'`
 - [ ] **Authz only at the edge? enumerate actions/handlers and check each** (§2) —
       `grep -rn "'use server'" app lib; find app src/app server/api server/routes -type f \( -name 'route.[jt]s' -o -path 'server/*' -name '*.[jt]s' \) 2>/dev/null`

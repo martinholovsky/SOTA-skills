@@ -155,7 +155,8 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
 - [ ] **Caching / CSP** (§4, §5) —
       `grep -rn 'Cache-Control\|s-maxage\|Vary' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
       ;
-      `grep -rn "Content-Security-Policy\|nonce\|strict-dynamic\|nuxt-security" --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
+      `grep -rnE "script-src[^;]*'unsafe-(inline|eval)'" --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
+      (an `unsafe-inline`/`unsafe-eval` script policy; a MISSING CSP prints nothing, so confirm one is set)
 
 - [ ] Render deterministic — no `Date`/random/`window`/locale branching outside effects/`onMounted`; stable `useId` (§1)?
 - [ ] Mismatch suppression scoped to individual unavoidable nodes, never blanket, never patched with injected user HTML (§1)?
