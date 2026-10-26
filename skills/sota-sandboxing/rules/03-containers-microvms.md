@@ -278,8 +278,10 @@ sheets.
 unless the pod calls the API; per-workload service accounts with minimal RBAC (no
 `cluster-admin`, no wildcard verbs, beware `pods/exec`, `secrets get/list`,
 `create pods` — each is an escalation path). Block cloud metadata
-(169.254.169.254) from pods via NetworkPolicy/iptables unless using bound,
-audience-scoped identities (IRSA/Workload Identity).
+(169.254.169.254) from pods via NetworkPolicy/iptables, and keep the block when
+pods use bound, audience-scoped identities: IRSA needs no link-local address, GKE
+Workload Identity and EKS Pod Identity need one `/32` each ([`sota-network-security`
+rules/03](../../sota-network-security/rules/03-k8s-network-policy.md) §5 R6a).
 
 **R3.4 — NetworkPolicy: default-deny both directions, then allowlist.**
 

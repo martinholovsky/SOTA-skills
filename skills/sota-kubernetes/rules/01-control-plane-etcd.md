@@ -197,7 +197,8 @@ providers:
   **[`sota-sandboxing`](../../sota-sandboxing/SKILL.md)** ([rules/03](../../sota-sandboxing/rules/03-containers-microvms.md)) — enforce it via admission ([`rules/03`](03-admission-policy.md)), don't re-spec
   it here.
 - Protect node metadata endpoints: block pod access to the cloud metadata service
-  (169.254.169.254) unless via workload identity — see [`sota-cloud-infrastructure`
+  (169.254.169.254); workload identity opens one `/32`, never the range ([`sota-network-security`
+  rules/03](../../sota-network-security/rules/03-k8s-network-policy.md) §5 R6a) — see [`sota-cloud-infrastructure`
   rules/02](../../sota-cloud-infrastructure/rules/02-iam-design.md) and [`sota-network-security`](../../sota-network-security/SKILL.md).
 
 ## 6. Immutable distros (e.g. Talos, including on ARM)

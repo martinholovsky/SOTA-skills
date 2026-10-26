@@ -21,20 +21,20 @@ Pointer pattern: owners cited by 10/10 stayed consistent; devsecops 03 (2/10), 0
  D11 (data-eng agent): Iceberg v3/Trino support stated twice in data-eng: 01:56-57 undated ("as of writing") vs 05:67-70 dated 2026-09-26 -> make 01 point at 05.
  dup probes in data-eng: cost trend alerts 05:188-189 & 06:180; CI builds models 02:216-218 & 04:234-235; freshness 02:215 & 06:178-179. Replication slot probe in data-eng 03:202-205 & databases 05:243,:263-264 (data-eng stronger).
  outbox: databases 04:135-137 "poller" narrower than architecture 03:69-70 "poller or CDC" (not contradictory).
- D12 CSV formula injection chars (SECURITY; verify vs OWASP): threat-modeling 01:189-190 "=+-@, Tab, CR, LF, full-width ＝＋－＠" vs code-security 01:442,:498 "= + - @, tab or NUL".
- D13 UUIDv7 for exposed IDs (verify vs RFC 9562 §8): threat-modeling 01:86-87, 06:196-197 prefer v4 not v7; databases 01:117 "UUIDv7 when IDs leave the system", :352 "non-enumerable (UUIDv7/public_id)"; api-design 01:24 "ULID/UUIDv7"; databases 01:129 notes v7 leaks creation time.
- D14 OWASP MCP03:2025 scope: threat-modeling 03:251-252 vs code-security 23:77-78 (verify).
+ D12 [RECONCILED 2026-10-26] CSV formula injection chars (SECURITY; verify vs OWASP): threat-modeling 01:189-190 "=+-@, Tab, CR, LF, full-width ＝＋－＠" vs code-security 01:442,:498 "= + - @, tab or NUL".
+ D13 [RECONCILED 2026-10-26] UUIDv7 for exposed IDs (verify vs RFC 9562 §8): threat-modeling 01:86-87, 06:196-197 prefer v4 not v7; databases 01:117 "UUIDv7 when IDs leave the system", :352 "non-enumerable (UUIDv7/public_id)"; api-design 01:24 "ULID/UUIDv7"; databases 01:129 notes v7 leaks creation time.
+ D14 [RECONCILED 2026-10-26] OWASP MCP03:2025 scope: threat-modeling 03:251-252 vs code-security 23:77-78 (verify).
  D15 re-model triggers inside threat-modeling: 05:177-190 canonical 10; PR template 05:230-232 has 7; 01:217-220 has 7; SKILL:158-159 4 examples.
 PARSER DEFECTS (invariant 43, reachability-graph.py sync_state/local_cites) — fix in a dedicated PR after the paydown:
  P1 [FIXED 2026-10-26, probe 43g] headings inside fenced code counted as sections (threat-modeling 05 template: 6 false entries)
  P2 [FIXED 2026-10-26, probe 43h] backtick file shorthand "`04` §8" counted as a local cite (false credit; threat-modeling 05:307)
  P3 [FIXED 2026-10-26, content] '### N.' subsections colliding with '## N.' numbering (threat-modeling 02)
  D16 standing admin: cloud 02:24 "~0-2", 02:185 ">2 Medium" vs identity 05:32 "No standing admin", 05:120 JIT.
- D17 LB health checks: cloud 03:187-188 (+07:49) "checks downstream dependency readiness" vs architecture 04:177-181 "readiness reflects this instance, not shared deps".
+ D17 [RECONCILED 2026-10-26] LB health checks: cloud 03:187-188 (+07:49) "checks downstream dependency readiness" vs architecture 04:177-181 "readiness reflects this instance, not shared deps".
  D18 k8s support window: cloud 04:40,:185 "~14-month" vs kubernetes 01:256-257 "~1 year" (verify kubernetes.io); and lag threshold inside cloud: 04:40 ">2 behind" vs 04:186/:223 "<=1 behind".
  D19 presigned URL lifetime: secrets 03:156 "<=1h" vs cloud 05:237-238 flags only >=10000s.
  D20 registrar lock scope (minor): cloud 03:104-105 vs network-sec 06:131.  D21 PDB scope (minor): cloud 04:171 vs kubernetes 06:38.
- D22 metadata block (SECURITY; verify GKE WI / EKS Pod Identity docs): network-sec 03:188-191, 05:267-274 (+05:280 ::ffff:169.254.0.0/112) block 169.254.0.0/16 + fd00:ec2::254 no exception; sandboxing 03:280-282 and kubernetes 01:199-200 "unless workload identity". Agent (unverified): GKE WI uses 169.254.169.254, EKS Pod Identity agent 169.254.170.23.
+ D22 [RECONCILED 2026-10-26] metadata block (SECURITY; verify GKE WI / EKS Pod Identity docs): network-sec 03:188-191, 05:267-274 (+05:280 ::ffff:169.254.0.0/112) block 169.254.0.0/16 + fd00:ec2::254 no exception; sandboxing 03:280-282 and kubernetes 01:199-200 "unless workload identity". Agent (unverified): GKE WI uses 169.254.169.254, EKS Pod Identity agent 169.254.170.23.
  D23 egress 0.0.0.0/0 scope: network-sec 05:259-260 app+data tiers vs cloud 03:65-67 data tiers only; private tier NAT+L7 filter vs allowlist.
  minor: cert lifetime hedge "~100 days" vs "100 days"; IMDSv2 "default on new EC2 types" net-sec 03:193 unverified.
  intra-skill dup: network-sec 03 R5/R6 restate 05 R9/R10; metadata items 03:281 & 05:330.
@@ -49,7 +49,7 @@ PARSER DEFECTS (invariant 43, reachability-graph.py sync_state/local_cites) — 
  FIXED in paydown: rust 01:323 wildcard_enum_match_arm is restriction not pedantic (measured clippy 1.97.1).
  D32 detached task acceptability: python 04:36-50 (strong ref + done-callback) vs async 01:69-72 (handler + shutdown registration + comment).
  D33 digest-pinned base images: python 01:323-324 conditional "in regulated environments" vs devsecops 04:356, sandboxing 03:132,:369, architecture 06:169 unconditional; python 08:87-88 omits.
- D34 py-spy in prod (SECURITY): python 06:18 "safe on production" vs secrets 02:266-267 "disable py-spy on prod boxes by default ... remote secret extraction tools".
+ D34 [RECONCILED 2026-10-26] py-spy in prod (SECURITY): python 06:18 "safe on production" vs secrets 02:266-267 "disable py-spy on prod boxes by default ... remote secret extraction tools".
  D35 sleep-sync test severity: async 07:232 MEDIUM vs testing 02:401 "High each".
  D36 python internal: 01 §3 (138-141,153-155) lint exemptions for in-package tests vs 01 §5 (260) "tests live outside the package"; paydown P2 probe flags in-package tests -> needs a decision.
  D37 GDPR erasure deadline: databases 06:379 "30 days GDPR" vs privacy 03:5 "one month, extensible".
@@ -71,14 +71,14 @@ PARSER DEFECTS (invariant 43, reachability-graph.py sync_state/local_cites) — 
  CC named-path probes: rules/04 checklist items 3,5,7 grep `manifests` (may be absent).
  D53 public pprof/debug endpoint: observability 05:106-108, SKILL:71, 06:147 CRITICAL vs golang 06:10,:222-223,:249 MEDIUM, golang 04:438-439 HIGH/MEDIUM.
  D54 exposed Actuator env/heapdump: observability CRITICAL vs jvm 08:18,:138 HIGH, secrets 03:149-150 High.
- D55 liveness checking deps: observability/architecture CRITICAL vs js 04:443 LOW/MEDIUM.
- D56 readiness on shared dep down (GUIDANCE CONFLICT): observability 05:50-52 + architecture 04:177-181 degrade vs js 04:141,:148-149 503 on db.ping() fail; (also cloud 03:187-188 D17).
+ D55 [RECONCILED 2026-10-26] liveness checking deps: observability/architecture CRITICAL vs js 04:443 LOW/MEDIUM.
+ D56 [RECONCILED 2026-10-26] readiness on shared dep down (GUIDANCE CONFLICT): observability 05:50-52 + architecture 04:177-181 degrade vs js 04:141,:148-149 503 on db.ping() fail; (also cloud 03:187-188 D17).
  D57 averaged percentiles: observability SKILL:72 HIGH vs 06:110-111 MEDIUM-HIGH.
  D58 inbound traceparent: api 07:277-280 omits observability 03:160-163 caveat (don't trust sampling flags at edge).
  named-path probes: observability 06 §2 (src/, src/ k8s/ deploy/ charts/).
  D59 WRONG (measured, security): secrets 03:166 says curl -H "Authorization: Bearer $TOKEN" is "OK-ish: env expansion not in ps" — FALSE: ps -o args= shows the expanded token (reproduced). Fix in wave-3 PR: -H @file (0600) or -H @- (curl >= 7.55.0, man page).
- D60 secrets in a CLI: secrets 03:174-176 flag allowed if documented, env ok vs cli-ux 01:97-101 never argv, env last resort; shell-scripting SKILL:67, 03:396-398 CRITICAL.
- D61 curl|sh: cli-ux 04:32 acceptable with discipline vs devsecops 02:270-271 flag it vs shell 03:241,:408 CRITICAL unattended.
+ D60 [RECONCILED 2026-10-26] secrets in a CLI: secrets 03:174-176 flag allowed if documented, env ok vs cli-ux 01:97-101 never argv, env last resort; shell-scripting SKILL:67, 03:396-398 CRITICAL.
+ D61 [RECONCILED 2026-10-26] curl|sh: cli-ux 04:32 acceptable with discipline vs devsecops 02:270-271 flag it vs shell 03:241,:408 CRITICAL unattended.
  D62 CLI error text: cli-ux 02:159 full path/URL, :168 "invalid…" vs ux-writing 03:74-76 bans paths/hostnames, :39-41 bans "Invalid input" (scope: ux-writing hands CLI to cli-ux but its greps have no CLI exception).
  D63 jvm internal: 01:200 mutable returns LOW vs 02:102 MEDIUM.  D64 ThreadLocal: performance 03:26 GOOD vs jvm 05:70-71, 03:59 avoid.
  zsh trap: jvm 06 probe `grep … pom.xml build.gradle*` aborts on unmatched glob in zsh.
