@@ -88,7 +88,7 @@ Usually irreplaceable by federation — manage the static secret well:
   When a wildcard is justified, **confine its key to one tier**: terminate TLS for it at a
   single reverse proxy / edge layer so the private key sits on one system, and backends get
   their own per-host certs. **Issue it one level down** (`*.svc.example.org`, not
-  `*.example.org`): a wildcard matches exactly one left-most label (RFC 9525 §6.3), so a
+  `*.example.org`): a wildcard matches exactly one left-most label (RFC 9525 Section 6.3), so a
   narrow parent bounds which names a stolen key can impersonate. OWASP: Transport Layer
   Security cheat sheet.
 - **Permissions `0400`,** owner = the terminating process's user; key files outside web roots

@@ -268,7 +268,9 @@ egress. Treat broad outbound (`0.0.0.0/0` from app/data tiers) as a finding. Tie
 ([sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) owns finding/fixing it) becomes credential theft only if the workload
 can actually *reach* `169.254.169.254`. Close the egress side: deny `169.254.0.0/16` (and
 `fd00:ec2::254`) from workload egress at the CNI/firewall, and on cloud use **IMDSv2** (token
-required, hop-limit 1, account-level enforcement so v1 can't be used). Defense in depth: the app
+required, hop-limit 1, account-level enforcement so v1 can't be used). Workload identity is the one
+exception and it is a `/32`, not the range: the endpoints per platform, and where the carve-out must
+sit when deny rules outrank allows, are [rules/03](03-k8s-network-policy.md) §5 R6a. Defense in depth: the app
 should also not be SSRF-able, but egress denial is the backstop that turns "credential theft" into
 "connection refused." An on-prem cluster has no IMDS, but keep the egress default-deny so a future
 cloud burst is safe by default.
@@ -277,7 +279,8 @@ cloud burst is safe by default.
 # Egress allowlisting, layered:
 #  - CNI FQDN policy (rules/03 §5) for in-cluster app egress
 #  - forward proxy w/ domain allowlist for L7 inspection + logging (the choke point)
-#  - DENY 169.254.0.0/16, ::ffff:169.254.0.0/112 and fd00:ec2::254/128 everywhere
+#  - DENY 169.254.0.0/16, ::ffff:169.254.0.0/112 and fd00:ec2::254/128 everywhere,
+#    except the workload-identity /32 for the pods that use it (rules/03 §5 R6a)
 #  - egress flow logs -> detection (sota-detection-engineering: C2/DNS-exfil detection)
 ```
 

@@ -249,7 +249,8 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
   are org-boundary crossings; tool descriptions themselves can carry
   injections; pin/verify tool definitions.
 - **Named MCP attack classes (T/S/E)** — enumerate per attached server; use
-  these names in findings (OWASP MCP Top 10 MCP03:2025; MITRE ATLAS
+  these names in findings (OWASP MCP Top 10 MCP03:2025 Tool Poisoning, whose page
+  names schema poisoning but no rug pull or shadowing — read 2026-10-26; MITRE ATLAS
   AML.T0110 AI Agent Tool Poisoning and AML.T0115.002 Publish Poisoned AI
   Artifacts: AI Agent Tools, which replaced AML.T0104 in the ATLAS 2026.07
   data release); mitigations detailed in [sota-code-security rules/23](../../sota-code-security/rules/23-llm-platform-supply-chain.md) §1:
