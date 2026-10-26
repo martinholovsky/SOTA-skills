@@ -292,7 +292,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `err=$(grep -rn 'RestoreLockedMode' --include='*.props' --include='*.targets' --include='*.csproj' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?; case $rc in 0) ;; 1) grep -rnE 'dotnet[[:space:]]+(build|test|publish|pack|run)' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.ps1' --include='Dockerfile*' . | grep -v -- '--no-restore' ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ; projects with no lock beside them (locked mode creates one and passes):
       `find . -name '*.csproj' -not -path '*/obj/*' | while IFS= read -r p; do test -f "$(dirname "$p")/packages.lock.json" || echo "$p: no packages.lock.json"; done`
-- [ ] **AOT or single-file artifact with no build-time SBOM — MEDIUM** (§3) —
+- [ ] **AOT or single-file artifact with no build-time SBOM (§3) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6)** —
       `grep -rnE 'PublishAot|PublishSingleFile' --include='*.csproj' --include='*.props' --include='*.pubxml' --include='*.yml' --include='*.yaml' .`
       ; for each hit, the release job must emit an SBOM before publish:
       `grep -rniE 'cyclonedx|sbom|spdx' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.ps1' .`

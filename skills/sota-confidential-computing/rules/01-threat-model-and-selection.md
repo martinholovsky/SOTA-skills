@@ -181,7 +181,8 @@ attackers and our own bugs," CC adds cost without adding a defense — rungs 0�
   paying for encrypted RAM while trusting the operator exactly as before. (Critical)
 - **Attest-nothing "confidential" deployments.** Marketing "confidential" on plain
   memory encryption (TME-only hosts, SEV without SNP) or on TEEs whose evidence is
-  never consumed by any relying party. (High)
+  never consumed by any relying party. (Critical — attestation that gates nothing,
+  [rules/03](03-remote-attestation.md) R2.1)
 - **Secrets delivered before/independent of attestation.** Keys baked into the
   image, injected by the (untrusted!) host at boot, or released on network identity
   alone — the TEE protects data from the host while the key arrived *through* the

@@ -5,13 +5,13 @@ Recorded at the end of the section-coverage paydown (ROADMAP item 76) for ROADMA
 Method: 20,024 units / 348 files; token Jaccard, cross-skill pairs 160,369,560; thresholds 0.3/0.4/0.5; + anchored family pass.
 Classes (38): CONCEPT-DUPLICATE 6, MECHANISM-ALIKE 12, TEMPLATE-SHAPED 14, not-instruction 6.
 DRIFT (fix first):
- D1 frozen install severities: devsecops SKILL:101,115 (Top-10 >= High), rules/03 §3.1 High; languages: c-cpp 06:400, python 01:370, ruby 04:308, rust 05:485 MEDIUM; js 05:419, php 05:295, go 08:106, swift 09:81, jvm 06:246 MEDIUM w/ different HIGH triggers; dotnet 06:288 HIGH.
- D2 session-ID regeneration: code-sec 17:15 full trigger list; php 04:54, ruby 03:141, js 05:291 shortened; php HIGH (04:372,:471) vs ruby MEDIUM (03:341,:393); ruby never cites code-sec 17.
+ D1 [RECONCILED 2026-10-26] frozen install severities: devsecops SKILL:101,115 (Top-10 >= High), rules/03 §3.1 High; languages: c-cpp 06:400, python 01:370, ruby 04:308, rust 05:485 MEDIUM; js 05:419, php 05:295, go 08:106, swift 09:81, jvm 06:246 MEDIUM w/ different HIGH triggers; dotnet 06:288 HIGH.
+ D2 [RECONCILED 2026-10-26] session-ID regeneration: code-sec 17:15 full trigger list; php 04:54, ruby 03:141, js 05:291 shortened; php HIGH (04:372,:471) vs ruby MEDIUM (03:341,:393); ruby never cites code-sec 17.
  D3 finding format: canonical only php :88, ruby :81, swift :58; 6 multi-line blocks; rust Where/What/Why; 3 report-close contracts; swift SKILL:59 link points at rules/03-concurrency.md (should be ../sota/rules/03-audit-findings.md) BROKEN.
  D4 mutation testing: python 07:270-271 mutmut w/o gate warning; php 05:211-212 "not a per-PR gate" vs §6.3; rust/jvm/js/dotnet no line (my #605 only covered go/c-cpp/ruby/swift).
  D5 archive extraction: code-sec 01:153 rejects symlink entries; go 05:171, php 03:42, ruby 02:247 omit link entries.
  D6 code-sec 06 §3 escape hatches: no Swift; JVM stops at JDK 23 (jvm 04 §7 has JEP 472/498).
- D7 build-time SBOM severity: devsecops 14:164 "Medium (High deployed)"; python matches; c-cpp/dotnet/go/js/jvm flat MEDIUM.
+ D7 [RECONCILED 2026-10-26] build-time SBOM severity: devsecops 14:164 "Medium (High deployed)"; python matches; c-cpp/dotnet/go/js/jvm flat MEDIUM.
  D8 Poetry framing: devsecops 03:23 vs python 01:31 (needs a Poetry run).
  side: golang 01:222-224 "recoverable panic" vs checklist :319-324 "fatal errors".
 TOP CANDIDATES: T1 finding format (adopt canonical row + pointer to sota rules/03 §2,§5; fix swift link); T2 frozen install scaffolding+severity in devsecops §3.1, all 10 cite; T3 suppression contract -> widen devsecops 05 "Suppression discipline" to linters/type checkers, 10 cite; T4 test-path exemption -> new devsecops 05 §5.x; T5 process-fatal failures paragraph + parser-depth table into code-sec 06 §5 (one-line restatement kept per language); T6 "No proof tool" shared tail -> sota-testing 06 §6.7; T7 extend §6.3 pointer to python/php/rust/jvm/js/dotnet; T8 code-sec 06 §3 per-language one-liners + Swift; T9 session regen pointer to code-sec 17 + align php/ruby; T10 archive link entries; T11 sample-code-is-a-demo -> devsecops 15 pointer (low); T12/T13 keep.
@@ -42,48 +42,48 @@ PARSER DEFECTS (invariant 43, reachability-graph.py sync_state/local_cites) — 
  D25 DB pool start: performance 04:83-84 "2-4x CPU cores of DB" vs js 04:301 "~10 per instance".
  D26 TTL jitter: performance 05:132-133 "±10%" vs databases 05:174 "±10-20%".
  D27 fonts (soft): performance 06:140 Latin subset 15-30KB vs frontend 01:55 30-80KB; preload 1-2 vs primary face only.
- D28 orphaned tokio::spawn severity: rust 04:298-300 Medium vs async 07:8,:11 HIGH.
- D29 block_on in async: rust 04:294-295 Critical vs async 07:119,:126-128 HIGH (CRITICAL only self-deadlock); mechanism prose: rust 04:40-41 vs async 04:146-151 (futures::executor::block_on deadlocks; tokio's panic).
+ D28 [RECONCILED 2026-10-26] orphaned tokio::spawn severity: rust 04:298-300 Medium vs async 07:8,:11 HIGH.
+ D29 [RECONCILED 2026-10-26] block_on in async: rust 04:294-295 Critical vs async 07:119,:126-128 HIGH (CRITICAL only self-deadlock); mechanism prose: rust 04:40-41 vs async 04:146-151 (futures::executor::block_on deadlocks; tokio's panic).
  D30 rust 05:492-494 claims "R9.x now live in rules/08; its checklist is the full set" — FALSE: R9.6 output cap and R9.7 pre_exec probed only in 05.
- D31 severity gaps: rust 04:315-317 unbounded fan-out and 04:310-312 lock across await have none; async 07:178, :89 HIGH.
+ D31 [RECONCILED 2026-10-26] severity gaps: rust 04:315-317 unbounded fan-out and 04:310-312 lock across await have none; async 07:178, :89 HIGH.
  FIXED in paydown: rust 01:323 wildcard_enum_match_arm is restriction not pedantic (measured clippy 1.97.1).
  D32 detached task acceptability: python 04:36-50 (strong ref + done-callback) vs async 01:69-72 (handler + shutdown registration + comment).
  D33 digest-pinned base images: python 01:323-324 conditional "in regulated environments" vs devsecops 04:356, sandboxing 03:132,:369, architecture 06:169 unconditional; python 08:87-88 omits.
  D34 [RECONCILED 2026-10-26] py-spy in prod (SECURITY): python 06:18 "safe on production" vs secrets 02:266-267 "disable py-spy on prod boxes by default ... remote secret extraction tools".
- D35 sleep-sync test severity: async 07:232 MEDIUM vs testing 02:401 "High each".
+ D35 [RECONCILED 2026-10-26] sleep-sync test severity: async 07:232 MEDIUM vs testing 02:401 "High each".
  D36 python internal: 01 §3 (138-141,153-155) lint exemptions for in-package tests vs 01 §5 (260) "tests live outside the package"; paydown P2 probe flags in-package tests -> needs a decision.
  D37 GDPR erasure deadline: databases 06:379 "30 days GDPR" vs privacy 03:5 "one month, extensible".
  D38 access review method: identity 04:98-111 full recertification vs privacy 05:80-99 diff-based quarterly.
  D39 hashing as anonymization: databases 06:384-386 vs privacy 02:114 (hashed id IS pseudonymous).
  D40 identifiers in logs: code-sec 07:68-70 mask emails vs privacy 06:98-99 never emails.
  D41 retention severity only in data-eng 06:121-123 (HIGH); privacy 03 §6 none.
- D42 tabletop cadence: detection 06:121 "regularly" vs privacy 06:148,:210 annually.  D43 alerts w/o runbooks: observability 06:127 HIGH vs detection 04 §6 none.
- D44 HTML-injection sink severity: web-fw 02:88, 04:72, code-sec SKILL:124 HIGH vs js 05:383 CRITICAL.
+ D42 tabletop cadence: detection 06:121 "regularly" vs privacy 06:148,:210 annually.  D43 [RECONCILED 2026-10-26] alerts w/o runbooks: observability 06:127 HIGH vs detection 04 §6 none.
+ D44 [RECONCILED 2026-10-26] HTML-injection sink severity: web-fw 02:88, 04:72, code-sec SKILL:124 HIGH vs js 05:383 CRITICAL.
  D45 React Compiler memo: web-fw 02:67-68 "don't rip out blindly" vs js 06:68 "delete manual memo noise".
  D46 runtimeConfig secret grep: web-fw 05:130 includes password; 07:159 misses it.
  D47 k8s support window confirmed (k8s 01:256 ~1y vs cloud 04:40 ~14mo); cloud self-conflict >2 vs <=1 behind.
  D48 PDB scope confirmed (k8s 06:38 critical vs cloud 04:171 all multi-replica).
  D49 PSA enforce-version: k8s 03:37 "latest" vs devsecops 07:118 pin minor (+checklist :391 not latest).
- D50 Audit-only admission severity: k8s 03:126,:185 High vs devsecops 07:90 Medium.
+ D50 [RECONCILED 2026-10-26] Audit-only admission severity: k8s 03:126,:185 High vs devsecops 07:90 Medium.
  D51 etcd encryption probe strength: sandboxing 03:385-386 weaker than k8s 01:285 (KMS v2, identity not first).
  named-path probes that exit 2 if absent: web-fw 02 (src app components), 03 (app lib), 04 (src); js 05:441 (src/); ux-writing (src/).
- D52 confidential-computing SKILL.md vs its rules (severity): confidential nodes vs cluster admin SKILL:94-95 High / rules/04:34-36 Critical; K8s Secrets into CoCo SKILL:89-90 Critical / 04:182-183 High; no break-glass SKILL:99 Low / 04:202 Medium; unaudited ZKP SKILL:147-148 Critical / 05:204,:276 High; attest-nothing 01:182-184 High / 01:179-181, 03:97-99, SKILL:88-89 Critical; plain SEV 02:37, SKILL:92 High / 02:289-291 Critical.
+ D52 [RECONCILED 2026-10-26] confidential-computing SKILL.md vs its rules (severity): confidential nodes vs cluster admin SKILL:94-95 High / rules/04:34-36 Critical; K8s Secrets into CoCo SKILL:89-90 Critical / 04:182-183 High; no break-glass SKILL:99 Low / 04:202 Medium; unaudited ZKP SKILL:147-148 Critical / 05:204,:276 High; attest-nothing 01:182-184 High / 01:179-181, 03:97-99, SKILL:88-89 Critical; plain SEV 02:37, SKILL:92 High / 02:289-291 Critical.
  CC named-path probes: rules/04 checklist items 3,5,7 grep `manifests` (may be absent).
- D53 public pprof/debug endpoint: observability 05:106-108, SKILL:71, 06:147 CRITICAL vs golang 06:10,:222-223,:249 MEDIUM, golang 04:438-439 HIGH/MEDIUM.
- D54 exposed Actuator env/heapdump: observability CRITICAL vs jvm 08:18,:138 HIGH, secrets 03:149-150 High.
+ D53 [RECONCILED 2026-10-26] public pprof/debug endpoint: observability 05:106-108, SKILL:71, 06:147 CRITICAL vs golang 06:10,:222-223,:249 MEDIUM, golang 04:438-439 HIGH/MEDIUM.
+ D54 [RECONCILED 2026-10-26] exposed Actuator env/heapdump: observability CRITICAL vs jvm 08:18,:138 HIGH, secrets 03:149-150 High.
  D55 [RECONCILED 2026-10-26] liveness checking deps: observability/architecture CRITICAL vs js 04:443 LOW/MEDIUM.
  D56 [RECONCILED 2026-10-26] readiness on shared dep down (GUIDANCE CONFLICT): observability 05:50-52 + architecture 04:177-181 degrade vs js 04:141,:148-149 503 on db.ping() fail; (also cloud 03:187-188 D17).
- D57 averaged percentiles: observability SKILL:72 HIGH vs 06:110-111 MEDIUM-HIGH.
+ D57 [RECONCILED 2026-10-26] averaged percentiles: observability SKILL:72 HIGH vs 06:110-111 MEDIUM-HIGH.
  D58 inbound traceparent: api 07:277-280 omits observability 03:160-163 caveat (don't trust sampling flags at edge).
  named-path probes: observability 06 §2 (src/, src/ k8s/ deploy/ charts/).
  D59 WRONG (measured, security): secrets 03:166 says curl -H "Authorization: Bearer $TOKEN" is "OK-ish: env expansion not in ps" — FALSE: ps -o args= shows the expanded token (reproduced). Fix in wave-3 PR: -H @file (0600) or -H @- (curl >= 7.55.0, man page).
  D60 [RECONCILED 2026-10-26] secrets in a CLI: secrets 03:174-176 flag allowed if documented, env ok vs cli-ux 01:97-101 never argv, env last resort; shell-scripting SKILL:67, 03:396-398 CRITICAL.
  D61 [RECONCILED 2026-10-26] curl|sh: cli-ux 04:32 acceptable with discipline vs devsecops 02:270-271 flag it vs shell 03:241,:408 CRITICAL unattended.
  D62 CLI error text: cli-ux 02:159 full path/URL, :168 "invalid…" vs ux-writing 03:74-76 bans paths/hostnames, :39-41 bans "Invalid input" (scope: ux-writing hands CLI to cli-ux but its greps have no CLI exception).
- D63 jvm internal: 01:200 mutable returns LOW vs 02:102 MEDIUM.  D64 ThreadLocal: performance 03:26 GOOD vs jvm 05:70-71, 03:59 avoid.
+ D63 [NOT REPRODUCED 2026-10-26] jvm internal: 01:200 mutable returns LOW vs 02:102 MEDIUM.  D64 ThreadLocal: performance 03:26 GOOD vs jvm 05:70-71, 03:59 avoid.
  zsh trap: jvm 06 probe `grep … pom.xml build.gradle*` aborts on unmatched glob in zsh.
  D65 GOMEMLIMIT (fact): golang 06:151-153, sandboxing 02:290-291 "soft limit" vs performance 03:219 "hard cap"; sizing golang ~90% vs observability 03:236 ~80% (collector).
- D66 InsecureSkipVerify severity: golang 05:384,:390,:496 CRITICAL vs devsecops 15:133 High on trust boundary vs code-sec 04:263-267, network-sec 06:229-234 none.
+ D66 [RECONCILED 2026-10-26] InsecureSkipVerify severity: golang 05:384,:390,:496 CRITICAL vs devsecops 15:133 High on trust boundary vs code-sec 04:263-267, network-sec 06:229-234 none.
  D67 time.After in loop: golang 03:87-116,:282 MEDIUM (NewTimer+Reset) vs async 05:191 shows it as GOOD in a retry loop.
  FIX in wave-3 PR: golang 01:323-324 checklist ("they are fatal errors") vs section 01:223-224 (out-of-range = recoverable panic; measured go1.27.1).
  D68 DORA clock: security-compliance SKILL:183-184 "24h/72h (CRA, NIS2, DORA)" vs rules/04:138 "DORA 4h/24h/72h", privacy 04:239-241, 06:50 (4h). Summary understates.
@@ -102,13 +102,13 @@ PARSER DEFECTS (invariant 43, reachability-graph.py sync_state/local_cites) — 
  D77 copywriting internal: superlative greps 01:144 vs 04:212 two word lists.  D78 button labels: frontend 07:100 absolute vs ux 02:12-16 conditional.
  D62 confirmed: no usable CLI scope boundary in ux-writing (SKILL:33 vs :9-10).
  D9+ mobile Task.detached: also contradicts mobile 02:120 (rule 2.4 "never GlobalScope/detached") and :229.
- D79 open-redirect severity: ruby 03:201,:392 HIGH vs dotnet 04:431 MEDIUM vs js 05:449 MEDIUM/HIGH near auth.
- D80 non-constant-time compare severity: ruby 02:345 HIGH vs dotnet 04:395 MEDIUM (HIGH webhook/HMAC).
+ D79 [RECONCILED 2026-10-26] open-redirect severity: ruby 03:201,:392 HIGH vs dotnet 04:431 MEDIUM vs js 05:449 MEDIUM/HIGH near auth.
+ D80 [RECONCILED 2026-10-26] non-constant-time compare severity: ruby 02:345 HIGH vs dotnet 04:395 MEDIUM (HIGH webhook/HMAC).
  mobile store baselines dup items 01:135-136 & 06; rules/06 adds iOS 13 min target (rules/01 table lacks it).
  ruby 02:246 "rules/03 §uploads" non-numeric ref (target §7). dotnet 01 "Broad analyzer pass" no probe. 7 files lack final newline. session grep honours .gitignore.
  D2 confirmed + php internal: php 04:372 "absent near login = HIGH" vs php guide 04:471 HIGH only for fixation.
- D81 libxml2 entity substitution: c-cpp 04:390 "HIGH, CRITICAL for XXE on reachable input" vs php 03:125-126,:290-291 HIGH.
- D82 TLS peer verification off: c-cpp 04:403 CRITICAL vs php 03:196,:197,:268,:291 HIGH (code-sec 04 none) [see also D66 InsecureSkipVerify].
+ D81 [RECONCILED 2026-10-26] libxml2 entity substitution: c-cpp 04:390 "HIGH, CRITICAL for XXE on reachable input" vs php 03:125-126,:290-291 HIGH.
+ D82 [RECONCILED 2026-10-26] TLS peer verification off: c-cpp 04:403 CRITICAL vs php 03:196,:197,:268,:291 HIGH (code-sec 04 none) [see also D66 InsecureSkipVerify].
  c-cpp 01 §9 ABI item carries a duplicate EOF-in-char grep (now in §7a); c-cpp 04 last item unclosed parenthesis.
 
 ## Per-skill candidate notes from the paydown validators

@@ -87,17 +87,21 @@ loaded rules file's audit checklist.
 **Severity conventions**
 - **Critical** — "confidential" claim with no attestation or attestation that
   gates nothing; debug-mode TEE accepted in prod; secrets delivered via a
-  channel the excluded party controls (e.g. K8s Secrets to a CoCo pod);
-  hand-rolled FHE/ZKP parameters or circuits.
+  channel the excluded party controls (e.g. K8s Secrets to a CoCo pod whose
+  threat model excludes the cluster admin); confidential nodes sold as
+  protection against the cluster admin; plain SEV/SEV-ES behind a "protect from
+  the host" claim.
 - **High** — plain SEV/SEV-ES where SNP-class integrity is required; evidence
   verified without chain-to-vendor-root or TCB check; no re-attestation or
-  reference-value rotation plan (TCB recovery will break prod); confidential
-  nodes sold as protection against the cluster admin.
+  reference-value rotation plan (TCB recovery will break prod); hand-rolled
+  FHE/ZKP parameters or circuits, or a ZK circuit in production without an
+  independent audit (`05`).
 - **Medium** — stale/undocumented side-channel posture (SMT, ciphertext side
   channels); attestation results not monitored as security signals; missing
-  in-guest storage encryption for confidential pods.
-- **Low** — hygiene: undocumented residual risks, missing break-glass debug
-  policy, PET performance assumptions unbenchmarked.
+  in-guest storage encryption for confidential pods; no documented break-glass
+  debug plan for a production estate (`04`).
+- **Low** — hygiene: undocumented residual risks, PET performance assumptions
+  unbenchmarked.
 
 **Finding format**: `file:line | rule | severity | effort | fix` (canonical
 cross-domain format from the router).
@@ -145,5 +149,5 @@ cross-domain format from the router).
    instead of assuming them away (`01`,`02`,`04`).
 10. **PETs use vetted libraries (latest stable) and standard parameter sets
     only**; hand-rolled FHE parameters or ZKP circuits without audit are
-    Critical findings, and FHE alone gives confidentiality, not result
+    High findings (the library's rating for hand-rolled crypto), and FHE alone gives confidentiality, not result
     integrity (`05`).

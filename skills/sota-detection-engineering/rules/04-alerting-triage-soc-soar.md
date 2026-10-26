@@ -195,7 +195,8 @@ correctly and fast.
 - [ ] Pick 5 paging detections: how many have a linked, concrete, executed-at-
       least-once runbook, linked from the alert payload and covering meaning,
       blast radius, TP-vs-FP confirmation, first containment steps and
-      escalation? (§6)
+      escalation? (§6) A paging detection with none is HIGH, the rating
+      [`sota-observability`](../../sota-observability/SKILL.md) gives any page with no runbook.
 - [ ] Does any auto-containment exist? If so: confidence gate, blast-radius
       allowlist of untouchables, reversibility, audit logging, and human-in-loop
       above a threshold?

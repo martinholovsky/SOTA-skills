@@ -194,7 +194,7 @@ curl_setopt_array($ch, [
   7.85+) limited to HTTP(S) — redirects can bounce to `gopher://`/`file://`; a
   `CURLOPT_MAXREDIRS` cap is **not** re-validation; set timeouts; **never**
   `CURLOPT_SSL_VERIFYPEER => false` (HIGH).
-- **Every PHP spelling of disabled TLS verification is HIGH, not only that one.** The rule is
+- **Every PHP spelling of disabled TLS verification is HIGH, not only that one** (CRITICAL in a client on user networks or on a channel whose content runs: [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5). The rule is
   [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md). Measured on PHP 8.5.9 against a local server:
   - cURL: `CURLOPT_SSL_VERIFYPEER` `false`/`0` accepted an untrusted chain, and
     `CURLOPT_SSL_VERIFYHOST` `0`/`false` accepted a certificate issued for another name. The
@@ -295,5 +295,6 @@ Run from repo root; verify each hit manually.
 Severity guide: `unserialize`/`include` of external data CRITICAL; uploads
 executable or client-named HIGH; user-URL fetch with no allowlist/IP validation
 HIGH (CRITICAL when cloud metadata is reachable); `LIBXML_NOENT` on untrusted
-XML HIGH; missing `is_uploaded_file` MEDIUM; any disabled TLS check or an SSH session with
+XML HIGH, CRITICAL on input an outsider reaches (XXE reads local files and
+reaches internal hosts — the rating c-cpp, jvm and dotnet give it); missing `is_uploaded_file` MEDIUM; any disabled TLS check or an SSH session with
 no host-key comparison HIGH.

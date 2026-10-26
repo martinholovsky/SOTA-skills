@@ -482,7 +482,7 @@ Running external programs (formerly section 9) moved to
       `printf 'fuzz_targets=%s kani_harness_files=%s\n' "$(rg -l 'fuzz_target!' -g '*.rs' . | wc -l | tr -d ' ')" "$(rg -l '#\[kani::proof' -g '*.rs' . | wc -l | tr -d ' ')"`
       — both 0 on a security-critical crate parsing untrusted input = Medium (§6); harnesses
       present: load [rules/09](09-formal-verification.md) and audit them, a vacuous proof is not evidence.
-- [ ] **Unlocked tool installs (§1) — Medium** —
+- [ ] **Unlocked tool installs (§1) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** —
       `find . \( -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name justfile -o -name Dockerfile \) -type f -not -path '*/target/*' -exec grep -nE 'cargo[[:space:]]+install' /dev/null {} + | grep -v -e '--locked'`
 - [ ] Release CI uses `--locked` (§8); binaries built from tags in CI;
       `cargo auditable` (or SBOM) for deployed artifacts = recommended.

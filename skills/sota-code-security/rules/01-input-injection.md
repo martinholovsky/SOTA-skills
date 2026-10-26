@@ -429,8 +429,8 @@ was impossible. OWASP: Injection Prevention, GraphQL cheat sheets.
   OWASP: ASVS 5.0 V1.3.9, V1.3.11; Injection Prevention cheat sheet; WSTG-INJT-10.
 - **Open redirect (CWE-601)**: `?next=` targets must be relative-path-only
   (reject `//evil.com`, `https:`, `\\`, scheme-relative) or exact-match against
-  an allowlist. Open redirects chain into OAuth token theft and SSRF-filter
-  bypass — not "low severity" in those contexts. The same rule covers **every** redirect
+  an allowlist. They chain into OAuth token theft and SSRF-filter bypass: MEDIUM,
+  HIGH in a login/OAuth flow or on an SSRF-trusted host (the one rating). The same rule covers **every** redirect
   sink, not only a 30x `Location`: the `Refresh` response header, `<meta http-equiv="refresh">`,
   client-side `location`/`location.href` assignment and `location.assign`/`replace`, and
   server-side forwards whose target comes from input (servlet `getRequestDispatcher(...)

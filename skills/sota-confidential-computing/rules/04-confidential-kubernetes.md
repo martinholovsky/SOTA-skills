@@ -180,7 +180,9 @@ your threat model just excluded. Patterns that work:
 BAD: `envFrom: secretRef` on a confidential pod (control plane and host see
 plaintext; on AKS, env vars from Secrets are additionally frozen into the
 policy at deploy time). GOOD: sealed secret or in-guest KBS fetch. Plaintext K8s
-Secret feeding a confidential pod's sensitive data: **High**.
+Secret feeding a confidential pod's sensitive data: **Critical** when the threat
+model excludes the cluster admin — the reason CoCo is there, and the admin reads
+every Secret — **High** otherwise.
 
 ### Observability and debugging
 

@@ -103,11 +103,11 @@ prints it for a main package — empty means current defaults.
       `direct`/`off` for public modules, any `GOINSECURE`, a wildcard `GONOSUMDB`, `GOSUMDB=off`,
       `GOFLAGS=-mod=mod` in CI — the §1 list) ; `go mod verify` ;
       `govulncheck ./...` ; `go mod tidy && git diff --exit-code go.mod go.sum`
-- [ ] **Frozen install thawed in CI (§1) — MEDIUM, HIGH when verification is off** —
+- [ ] **Frozen install thawed in CI (§1) — HIGH (it is in CI: [`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1); a thawed install with checksum verification also off (`GOSUMDB=off`, a wildcard `GONOSUMDB`) is the same HIGH with no backstop** —
       `grep -rnE -- '-mod=mod|go get |go mod tidy|go (install|run) [^[:space:]]+@' .github/workflows/ Makefile Dockerfile 2>/dev/null | grep -v 'git diff --exit-code'`
       (every hit is a step that may rewrite or bypass go.mod/go.sum) ; `ls -d vendor 2>/dev/null`
       (present: CI needs `go mod vendor` then `git diff --exit-code vendor/`)
-- [ ] **cgo binary without a build-time SBOM (§1) — MEDIUM** —
+- [ ] **cgo binary without a build-time SBOM (§1) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6)** —
       `grep -rlE '^import "C"' --include='*.go' .` ; any hit and the SBOM is only scanned from the
       binary (`go version -m`) means the linked C libraries are missing from it
 - [ ] **Build-time code execution (§1) — MEDIUM, HIGH if CI secrets are in scope** —

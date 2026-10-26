@@ -393,7 +393,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `grep -rnE 'PersistKeysTo|ProtectKeysWith' --include='*.cs' . || echo "key ring not shared or protected (§5) — MEDIUM with >1 instance"`
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'` ; `grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .` ;
-      `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head` ; non-constant-time MAC/token compare (§5, MEDIUM; HIGH on webhook/HMAC verification): `grep -rniE '(hmac|signature|digest|token|mac)[A-Za-z0-9_]*([[:space:]]*[!=]=|\.(SequenceEqual|Equals)\()|([!=]=[[:space:]]*|(SequenceEqual|Equals)\([^;]*)[A-Za-z0-9_.]*(hmac|signature|digest|token|mac)' --include='*.cs' . | grep -viE '[!=]=[[:space:]]*null|null[[:space:]]*[!=]=|FixedTimeEquals'`
+      `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head` ; non-constant-time MAC/token compare (§5, MEDIUM; HIGH on webhook/HMAC verification or an API key a caller can submit repeatedly — [`sota-code-security` rules/22](../../sota-code-security/rules/22-constant-time-comparison.md)): `grep -rniE '(hmac|signature|digest|token|mac)[A-Za-z0-9_]*([[:space:]]*[!=]=|\.(SequenceEqual|Equals)\()|([!=]=[[:space:]]*|(SequenceEqual|Equals)\([^;]*)[A-Za-z0-9_.]*(hmac|signature|digest|token|mac)' --include='*.cs' . | grep -viE '[!=]=[[:space:]]*null|null[[:space:]]*[!=]=|FixedTimeEquals'`
 - [ ] **Secrets in config/source — HIGH** —
       `grep -rniE '"?(password|pwd|secret|apikey|api_key|connectionstrings?)"?[[:space:]]*[=:]' --include='appsettings*.json' --include='*.cs' .` (a `"ConnectionStrings":` hit: read the section for `Password=`/`Pwd=`)
 - [ ] **Data Protection package patch level — HIGH** (§5) —
@@ -429,7 +429,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `grep -rnE 'Cookies\.Append\([^,]+,[^,]+\)|(Secure|HttpOnly)[[:space:]]*=[[:space:]]*false|CookieSecurePolicy\.(None|SameAsRequest)|SameSiteMode\.None' --include='*.cs' .`
       (two-argument `Append` emits no Secure/HttpOnly/SameSite; a value containing a comma
       escapes the first pattern, so read every `Cookies.Append` on an auth path)
-- [ ] **Open redirect — MEDIUM** (§7) —
+- [ ] **Open redirect — MEDIUM, HIGH in a login/OAuth flow or on an SSRF-trusted host** (§7; [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11) —
       `grep -rnE '(^|[^[:alnum:]_])(Redirect|RedirectPermanent|RedirectPreserveMethod|RedirectPermanentPreserveMethod)\([[:space:]]*[^")[:space:]]' --include='*.cs' .` (non-literal target: want `LocalRedirect` or a preceding `Url.IsLocalUrl`)
 - [ ] **Raw HTML output — HIGH on user data (stored XSS)** (§7) —
       `grep -rnE 'Html\.Raw\(|(new |\()(HtmlString|MarkupString)[()]' --include='*.cs' --include='*.cshtml' --include='*.razor' .`

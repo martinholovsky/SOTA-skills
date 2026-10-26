@@ -75,7 +75,10 @@ reasoning governs every other constant-time construct, where it is far less wide
       architectures and optimisation levels actually shipped — including `-Os`/`-Oz` — rather
       than read off the source? Any secret-dependent `/` or `%` located, and a hand-written
       multiply-shift replacement verified over the whole input domain rather than samples?
-- [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time? Lead list, not verdicts
+- [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time? A short-circuit compare is
+      MEDIUM, HIGH where it verifies a MAC or signature, or a bearer secret, that an
+      unauthenticated caller can submit repeatedly (webhook HMACs, API keys) — the library's one
+      rating; language skills point here. Lead list, not verdicts
       (operand names only; each hit needs reading):
       `grep -rniE -e '(^|[^A-Za-z])(mac|signature|sig|digest|token|otp|api_?key|secret|tag)[^=!]{0,40}(===?|!==?)[[:space:]]*[A-Za-z_]|(===?|!==?)[[:space:]]*[A-Za-z_.]*(mac|signature|sig|digest|token|otp|key|secret)|(^|[^_A-Za-z])(memcmp|bytes\.Equal|Arrays\.equals)\(|(key|secret|token|mac|sig|digest)[A-Za-z]*\.equals\(' . | grep -viE -e 'compare_digest|timingSafeEqual|ConstantTimeCompare|MessageDigest\.isEqual|(===?|!==?)[[:space:]]*(null|None|nil|undefined|"")|len\(|\.length|_type|_count'`
       Built on a labelled set (10/10 bad caught across Python, JS, Go, Java and C; 0/11 good

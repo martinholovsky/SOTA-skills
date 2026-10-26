@@ -139,8 +139,10 @@ All Spring facts below were checked against Spring's own docs, advisories and so
       `grep -rnE 'management\.endpoints\.web\.exposure\.include|management\.server\.port|show-values' --include='*.properties' .`
       ; `grep -rnE '^[[:space:]]*(exposure|include|show-values):|heapdump' --include='*.yml' --include='*.yaml' .`
       (YAML nests the key, so the dotted pattern alone misses `include: "*"`, the commonest
-      form. Anything beyond `health` needs auth or a firewall; `heapdump` exposed is HIGH on
-      sight)
+      form. Anything beyond `health` needs auth or a firewall; an internet-reachable `heapdump`
+      (process memory), or `env` with `show-values` other than `never`, is CRITICAL on sight —
+      current Spring Boot restricts `heapdump` and masks `env` values by default, so look for
+      the property that undid it: [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §3)
 - [ ] **Request-body polymorphism — CRITICAL on a type reachable from `@RequestBody`** —
       `grep -rnE 'JsonTypeInfo\.Id\.(CLASS|MINIMAL_CLASS)|use *= *(JsonTypeInfo\.)?Id\.(CLASS|MINIMAL_CLASS)|activateDefaultTyping|enableDefaultTyping|polymorphicTypeValidator\(|LaissezFaireSubTypeValidator|allowIfBaseType\((Object\.class|Any::class)' --include='*.java' --include='*.kt' .`
       (Jackson 2 and 3 spellings. Then read the `PolymorphicTypeValidator`: allowing `Object`

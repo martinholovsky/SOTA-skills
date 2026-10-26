@@ -87,7 +87,8 @@ Rules:
 - **Rollout pattern**: `Audit` → triage violations to zero → flip to enforce (`Deny` for
   the CEL policy types). Shipping
   straight to Enforce breaks workloads and gets the policy deleted; staying in Audit
-  forever is the Medium finding "decorative admission".
+  forever is "decorative admission", High — the rating [`sota-kubernetes`
+  rules/03](../../sota-kubernetes/rules/03-admission-policy.md) §3 owns, since the org believes it is protected and is not.
 - Alternatives: Sigstore `policy-controller` (`ClusterImagePolicy`) if you want
   verification-only; OPA Gatekeeper + external-data cosign provider works but is more
   moving parts. Cloud-native equivalents (Binary Authorization on GKE) are fine — same

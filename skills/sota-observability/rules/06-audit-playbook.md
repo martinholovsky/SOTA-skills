@@ -110,7 +110,8 @@ fix. Severity per SKILL.md conventions.
 - G9. Unbounded labels (IDs, raw paths, error strings). [HIGH; CRITICAL if
   user-mintable]
 - G10. Latency as gauge/average; p99s averaged across instances; buckets
-  never tuned to SLO thresholds. [MEDIUM–HIGH]
+  never tuned to SLO thresholds. [HIGH when an SLO or a page reads the
+  averaged number — the SKILL.md table's case; MEDIUM on a dashboard only]
 - G11. No exemplars / no metric→trace path. [MEDIUM]
 
 **Tracing ([rules/03](03-tracing.md)):**
@@ -147,7 +148,8 @@ fix. Severity per SKILL.md conventions.
 - G22. Liveness probe checks dependencies (restart-storm primitive); or
   readiness == liveness == "return 200". [CRITICAL/HIGH]
 - G23. Debug/profiling/metrics endpoints reachable without auth from
-  outside the internal network. [CRITICAL]
+  outside the internal network. [CRITICAL when they return memory, env or
+  config; HIGH for profiles and stack traces — rules/05 §3]
 - G24. Silent fallbacks: degradation with no metric/log/alert. [HIGH]
 - G25. No error tracker, or tracker is a landfill (thousands untriaged, no
   release tags, no sourcemaps). [HIGH/MEDIUM]

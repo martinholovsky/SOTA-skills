@@ -139,7 +139,9 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   `path=/` and no `domain`. OWASP: Session Management and Cookie Theft
   Mitigation cheat sheets; ASVS 5.0 V3.3.
 - **Rotate the session on privilege change** (`reset_session` at login /
-  logout / role elevation) — session fixation otherwise.
+  logout / role elevation) — session fixation otherwise. The full trigger list
+  (login, logout, role elevation, step-up, scheme change) is [`sota-code-security`
+  rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md) §2.
 - The cookie-signing/encryption secret (`secret_key_base` in Rails; the Rack
   session secret elsewhere) is a production secret: ≥64 random bytes, never
   committed, rotated via the framework's rotation mechanism, distinct per
@@ -198,7 +200,7 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
 
 ## 6. Redirects and SSRF
 
-- **Open redirects**: `redirect_to params[:return_to]` is HIGH. Rails 7.0+
+- **Open redirects**: `redirect_to params[:return_to]` is MEDIUM, HIGH in a login/OAuth flow or on an SSRF-trusted host ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11). Rails 7.0+
   raises on cross-host redirects unless `allow_other_host: true` — audit
   every `allow_other_host: true`. Neutral fix: allowlist paths
   (`redirect_to URI(raw).path`) or map named targets.
@@ -346,7 +348,7 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rnE '(^|[^_[:alnum:]])(secret|legacy_hmac_secret|coder):[[:space:]]|enable[[:space:]]+:sessions' --include='*.rb' --include='config.ru' .`
       (`secret:` on an unrelated client is a false hit; then confirm each `Rack::Session::Cookie`
       call sets `serialize_json: true`) ;
-      `grep -rn "reset_session" --include='*.rb' . | head -1` (absent around login = MEDIUM);
+      `grep -rn "reset_session" --include='*.rb' . | head -1` (absent around login = HIGH: session fixation, rated as [`sota-code-security`](../../sota-code-security/SKILL.md) rates it);
       `grep -rn "secret_key_base\|SESSION_SECRET" --include='*.rb' --include='*.yml' . | grep -vE "ENV|credentials"`
 - [ ] **App-set cookie without HttpOnly (§4) — MEDIUM; HIGH when it carries a token or
       identity** — `grep -rnE 'cookies(\.[a-z]+)*\[[^]]+\]\s*=[^=~]|set_cookie\(' --include='*.rb' . | grep -v 'httponly'`
@@ -391,14 +393,14 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rnE 'consider_all_requests_local\s*=\s*true|development_only\s*=\s*false|:show_exceptions,\s*true|(RAILS|RACK|APP)_ENV[=: ]+"?development' --include='*.rb' --include='*.ru' --include='*.yml' --include='Dockerfile*' --include='Procfile*' . | grep -vE 'environments/(development|test)\.rb'`
       (and confirm the deploy manifest sets the env at all — unset means development)
 - [ ] **Transport** — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1` ;
-      `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH) ;
+      `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH, CRITICAL on user networks or a code channel: [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5) ;
       `grep -rnE 'verify_host_key:\s*(:never|:accept_new|false|true)|paranoid:\s*(false|true)' --include='*.rb' .`
       (SSH host key not verified — HIGH) ;
       `grep -rnE 'Net::(SSH|SCP|SFTP)\.start' --include='*.rb' . | grep -v 'verify_host_key'`
       (the default is not `:always` — confirm the options hash sets it)
 
-Severity guide: `html_safe`/`raw` on user input, `send_file params` —
-CRITICAL. `permit!`, missing CSRF on cookie-auth state changes, unescaped
-template layer, open redirect, unguarded SSRF fetch — HIGH. Missing
-`reset_session` on login, absent CSP/HSTS, client-trusted content type —
-MEDIUM.
+Severity guide: `send_file params` — CRITICAL. `html_safe`/`raw` on user input
+(stored XSS; CRITICAL where script can read a session token or secret), `permit!`, missing CSRF on cookie-auth state changes, unescaped
+template layer, open redirect in a login/OAuth flow, unguarded SSRF fetch, missing `reset_session`
+on login (session fixation) — HIGH. Absent CSP/HSTS, client-trusted content
+type — MEDIUM.

@@ -264,7 +264,11 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
   `InsecureSkipVerify: true`, `rejectUnauthorized: false`, trust-all
   TrustManagers, hostname-check disabling — all findings, including in tests
   that can leak into prod paths (CWE-295). Internal services get a private CA,
-  not disabled verification.
+  not disabled verification. **Rating (the library's one scale; language skills
+  point here):** HIGH — exploiting it needs a network position, this skill's High
+  band; CRITICAL where that position comes free or the payoff is code execution:
+  a client that runs on user networks (mobile, desktop, CLI on public Wi-Fi), or a
+  channel whose content runs (an update, a plugin, a script, a package).
 - **Verification can also be absent without any flag**, which a skip-verify grep misses:
   - Raw sockets: Java's `SSLSocket`/`SSLEngine` do not check the hostname unless
     `SSLParameters.setEndpointIdentificationAlgorithm("HTTPS")` is set (JSSE

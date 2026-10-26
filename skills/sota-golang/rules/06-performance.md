@@ -7,7 +7,8 @@ in audits, same as obvious waste on a measured hot path.
 ## 1. pprof workflow
 
 Wire profiling into every service (auth-gated or bound to localhost/admin
-port — exposing pprof publicly is a MEDIUM info-leak/DoS finding):
+port — exposing pprof publicly is HIGH: profiles, goroutine stacks, `/cmdline`'s argv, and
+a CPU profile any caller can trigger; CRITICAL if argv holds a secret ([`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §3):
 
 ```go
 import _ "net/http/pprof" // registers on http.DefaultServeMux
@@ -258,5 +259,5 @@ profiler) so the incident carries its own evidence.
 
 Severity guide: pool aliasing/missing reset HIGH (corruption); unbounded
 ReadAll MEDIUM; missing prealloc/Builder on measured hot path LOW–MEDIUM;
-publicly exposed pprof MEDIUM; cargo-cult optimizations without benchmarks
+publicly exposed pprof HIGH (CRITICAL if argv holds a secret); cargo-cult optimizations without benchmarks
 LOW.
