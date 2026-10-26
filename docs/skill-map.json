@@ -3403,6 +3403,14 @@
     },
     {
       "from": "sota-mobile",
+      "to": "sota-privacy-compliance",
+      "weight": 1,
+      "targets": [
+        "rules/04 \u00a72b"
+      ]
+    },
+    {
+      "from": "sota-mobile",
       "to": "sota-c-cpp",
       "weight": 1,
       "targets": [
@@ -4035,14 +4043,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1763,
+    "md link, other skill": 1765,
     "md link, outside skills/": 3,
     "md link, same skill": 2821,
     "name (backticked)": 436,
-    "name (bare)": 241,
+    "name (bare)": 242,
     "name+file (backticked)": 783,
     "name+file (bare)": 175,
-    "own rules/NN": 3034
+    "own rules/NN": 3036
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4051,10 +4059,10 @@
     "md link, outside skills/": 0,
     "md link, same skill": 0,
     "name (backticked)": 421,
-    "name (bare)": 197,
+    "name (bare)": 198,
     "name+file (backticked)": 779,
     "name+file (bare)": 163,
-    "own rules/NN": 2934
+    "own rules/NN": 2935
   },
   "rules_index_style": {
     "link": 42

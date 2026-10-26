@@ -73,10 +73,14 @@ Policy deny assignments):
 4. **Region restriction** — deny resource creation outside approved regions (data
    residency + reduces unwatched attack surface).
 5. **Deny public object storage** at org level (S3 BPA account config protected by SCP;
-   GCP `storage.publicAccessPrevention` enforced; Azure deny blob public access).
+   GCP `storage.publicAccessPrevention` enforced, plus `storage.uniformBucketLevelAccess` so no
+   bucket grants access through per-object ACLs; Azure deny blob public access).
 6. **Deny creation of IAM users / access keys** (AWS) except a tagged break-glass path;
-   GCP: `iam.disableServiceAccountKeyCreation` enforced org-wide with per-project
-   exceptions only via documented process.
+   GCP: `iam.managed.disableServiceAccountKeyCreation` (managed form of the legacy
+   `iam.disableServiceAccountKeyCreation`) enforced org-wide with per-project
+   exceptions only via documented process. Google enforces it and uniform bucket-level
+   access by default only on organizations created on or after May 3, 2024 (read
+   2026-10-26); an older org has them only if someone set them, so list its policies.
 7. **Deny unencrypted storage creation** (EBS/RDS/disks without encryption).
 8. **Deny default-VPC usage or auto-creation** where the provider supports it (GCP:
    `compute.skipDefaultNetworkCreation`).
@@ -237,7 +241,8 @@ contacts.
 - [ ] SCPs/org policies enforce all eight §3 guardrails: no audit-log tampering, no public
       buckets, region restriction, no new IAM users/SA keys, no leaving org, no root actions
       in member accounts, no unencrypted storage creation, no default VPC where the provider
-      supports it (§3).
+      supports it (§3). GCP orgs created before May 3, 2024 lack the secure-by-default
+      baseline: confirm the key-creation and uniform-bucket-level-access constraints are set.
 - [ ] Detective baseline (AWS Config / Security Hub, GCP SCC, Azure Defender for Cloud /
       Policy compliance) deployed org-wide from the security account, findings centralised (§3).
 - [ ] AWS: RCPs enforce the org-wide data perimeter on supported services (§3) (deny

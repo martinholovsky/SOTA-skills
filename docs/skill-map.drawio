@@ -323,7 +323,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;458 distinct skill-to-skill edges / 1502 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;459 distinct skill-to-skill edges / 1503 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="720" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="f_Security_core" value="Security core&lt;br&gt;11 skills · 301 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
@@ -392,7 +392,7 @@
         <mxCell id="fe22" value="37" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Quality" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="fe23" value="49" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Product_surface" target="f_Security_core">
+        <mxCell id="fe23" value="50" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Product_surface" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fe24" value="56" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Languages" target="f_Quality">
@@ -413,7 +413,7 @@
         <mxCell id="fe29" value="171" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=5;" edge="1" parent="1" source="f_Languages" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="panel_h" value="MOST REFERENCED (inbound weight)&lt;br&gt;&lt;br&gt;code-security              347&lt;br&gt;devsecops                  147&lt;br&gt;secrets-management         92&lt;br&gt;sandboxing                 88&lt;br&gt;testing                    87&lt;br&gt;observability              64&lt;br&gt;network-security           59&lt;br&gt;detection-engineering      51&lt;br&gt;privacy-compliance         48&lt;br&gt;identity-access            42" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="panel_h" value="MOST REFERENCED (inbound weight)&lt;br&gt;&lt;br&gt;code-security              347&lt;br&gt;devsecops                  147&lt;br&gt;secrets-management         92&lt;br&gt;sandboxing                 88&lt;br&gt;testing                    87&lt;br&gt;observability              64&lt;br&gt;network-security           59&lt;br&gt;detection-engineering      51&lt;br&gt;privacy-compliance         49&lt;br&gt;identity-access            42" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1180" y="200" width="330" height="240" as="geometry"/>
         </mxCell>
         <mxCell id="panel_e" value="STRONGEST SINGLE LINKS&lt;br&gt;&lt;br&gt;llm-engineering        -&gt; code-security          29&lt;br&gt;devsecops              -&gt; code-security          26&lt;br&gt;shell-scripting        -&gt; code-security          22&lt;br&gt;testing                -&gt; code-security          21&lt;br&gt;code-security          -&gt; testing                18&lt;br&gt;jvm                    -&gt; code-security          18&lt;br&gt;security-compliance    -&gt; devsecops              17&lt;br&gt;identity-access        -&gt; code-security          15&lt;br&gt;ruby                   -&gt; code-security          15&lt;br&gt;confidential-computing -&gt; sandboxing             14&lt;br&gt;devsecops              -&gt; kubernetes             14&lt;br&gt;network-security       -&gt; code-security          14" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;" vertex="1" parent="1">
@@ -907,13 +907,13 @@
         <mxCell id="mtlines1" value="2787" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="538" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines2" value="2034" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines2" value="2039" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="646" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines3" value="1926" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="754" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines4" value="2771" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines4" value="2773" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="862" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines5" value="2692" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
@@ -964,7 +964,7 @@
         <mxCell id="mtfiles9" value="9" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1402" y="682" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m_sh" value="sota-shell-scripting (bash + zsh + PowerShell) — covered, and deliberately NOT a column: its spine is different, so a shared grid would imply comparisons that do not hold.&lt;br&gt;9 files, 3291 lines — larger than several language skills. zsh is treated as its own dialect throughout, not as a bash footnote." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fffbe6;strokeColor=#d6b656;align=left;spacingLeft=10;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="m_sh" value="sota-shell-scripting (bash + zsh + PowerShell) — covered, and deliberately NOT a column: its spine is different, so a shared grid would imply comparisons that do not hold.&lt;br&gt;9 files, 3296 lines — larger than several language skills. zsh is treated as its own dialect throughout, not as a bash footnote." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fffbe6;strokeColor=#d6b656;align=left;spacingLeft=10;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="728" width="1346" height="46" as="geometry"/>
         </mxCell>
         <mxCell id="msh0" value="01&lt;br&gt;Safety Baseline" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
@@ -2607,7 +2607,7 @@
         <mxCell id="cc2_1_1" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="550" y="1436" width="84" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="cc2_1_2" value="11" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="cc2_1_2" value="12" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="640" y="1436" width="84" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="cc2_1_3" value="8" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -3064,7 +3064,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 8 — how skill files point at each other, by FORM.&lt;br&gt;&lt;br&gt;Since ROADMAP 73 (n), 2026-10-12, a pointer is a relative Markdown link whose visible text is the old name form: 4494 of 4669 skill-name and rules/NN pointers are links (3876 of the 3992 that name a rules file). The unlinked rest are mostly bare prose mentions of a skill. 1635 mentions of another skill&#x27;s name across 348 skill files; 3 @path tokens, all in sota-docs-workflow/rules/01-documentation-architecture.md, which DESCRIBES the CLAUDE.md feature.&lt;br&gt;&lt;br&gt;Why links: with names only, an agent had to turn the name into a directory and the number into a file, and every failed rules-file read in sota-agent-evals v6-v11 was a guessed filename. Measured in v12: links ended the guessing (failed reads 2 -&gt; 0) but did NOT raise how often the cited rules file was reached (5/20 names, 6/20 links): agents follow the links where they sit, not to the file the task needs. A hook naming the file for the code being written reached 18/20 (v9)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 8 — how skill files point at each other, by FORM.&lt;br&gt;&lt;br&gt;Since ROADMAP 73 (n), 2026-10-12, a pointer is a relative Markdown link whose visible text is the old name form: 4496 of 4672 skill-name and rules/NN pointers are links (3877 of the 3994 that name a rules file). The unlinked rest are mostly bare prose mentions of a skill. 1636 mentions of another skill&#x27;s name across 348 skill files; 3 @path tokens, all in sota-docs-workflow/rules/01-documentation-architecture.md, which DESCRIBES the CLAUDE.md feature.&lt;br&gt;&lt;br&gt;Why links: with names only, an agent had to turn the name into a directory and the number into a file, and every failed rules-file read in sota-agent-evals v6-v11 was a guessed filename. Measured in v12: links ended the guessing (failed reads 2 -&gt; 0) but did NOT raise how often the cited rules file was reached (5/20 names, 6/20 links): agents follow the links where they sit, not to the file the task needs. A hook naming the file for the code being written reached 18/20 (v9)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="1100" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="lh0" value="form" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;align=left;spacingLeft=8;" vertex="1" parent="1">
@@ -3118,7 +3118,7 @@
         <mxCell id="lk3" value="name (bare)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="338" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln3" value="241 (197)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln3" value="242 (198)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="338" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le3" value="use sota-web-frameworks" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
@@ -3130,7 +3130,7 @@
         <mxCell id="lk4" value="own rules/NN" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="370" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln4" value="3034 (2934)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln4" value="3036 (2935)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="370" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le4" value="[rules/04](04-library-map.md) §1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
@@ -3154,7 +3154,7 @@
         <mxCell id="lk6" value="md link, other skill" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="434" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln6" value="1763" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln6" value="1765" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="434" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le6" value="[...](../../sota-x/rules/NN-....md)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
@@ -3241,7 +3241,7 @@
         <mxCell id="cre" value="lookup" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#000000;dashed=1;fontSize=10;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="cr" target="c3">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="mt" value="Every skill-to-skill reference: 1502 mentions over 458 pairs (the forms above that carry a NAME; the router&#x27;s own are on pages 1-2). Row = the citing skill, column = the cited one, number = mentions. Ordered by family; red = within a family, blue = across families." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=none;align=left;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="mt" value="Every skill-to-skill reference: 1503 mentions over 459 pairs (the forms above that carry a NAME; the router&#x27;s own are on pages 1-2). Row = the citing skill, column = the cited one, number = mentions. Ordered by family; red = within a family, blue = across families." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=none;align=left;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="854" width="1174" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="mc0" value="code-security" style="text;html=1;rotation=-90;align=left;verticalAlign=middle;fontSize=9;fillColor=#d5e8d4;" vertex="1" parent="1">
@@ -4290,6 +4290,9 @@
         </mxCell>
         <mxCell id="m_26_0" value="3" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#c6c6ff;" vertex="1" parent="1">
           <mxGeometry x="230" y="1674" width="23" height="23" as="geometry"/>
+        </mxCell>
+        <mxCell id="m_26_10" value="1" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#dedeff;" vertex="1" parent="1">
+          <mxGeometry x="470" y="1674" width="23" height="23" as="geometry"/>
         </mxCell>
         <mxCell id="m_26_33" value="1" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#dedeff;" vertex="1" parent="1">
           <mxGeometry x="1022" y="1674" width="23" height="23" as="geometry"/>

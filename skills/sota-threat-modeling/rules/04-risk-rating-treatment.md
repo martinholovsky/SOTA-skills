@@ -75,6 +75,28 @@ from `01` §4 feeds this):
 | Medium | Single-account compromise; partial data exposure; sustained outage of a paid feature |
 | Low | Cosmetic, single-user self-inflicted, info of negligible value |
 
+**Availability (DoS) impact takes two inputs: how much is lost, and how much the
+service matters.** How much is lost uses CVSS v4's Availability Impact (§2): *total*, an
+attacker able to "fully deny access to resources", sustained or persistent; or *partial*,
+where "Performance is reduced or there are interruptions in resource availability". How
+much it matters uses CVSS v4's Availability Requirement: loss "is likely to have a
+catastrophic", "a serious", or "only a limited adverse effect" on the organization or the
+people it serves. Record that requirement per service beside its §8 tier, because §8
+tiers modeling *depth*: an internal, Low-tier job can still be one whose loss is serious.
+
+| Service's availability requirement | Total loss | Partial loss |
+|---|---|---|
+| Catastrophic (safety-relevant; the revenue path, e.g. checkout) | High | Medium |
+| Serious (a paid feature; a job with a hard downstream deadline) | Medium | Low |
+| Limited (internal batch the next run makes up) | Low | Low |
+
+The cells are this library's judgment, not CVSS output. *Serious × total* is the
+existing Medium anchor ("sustained outage of a paid feature"). A partial loss sits one
+band lower because CVSS defines its Low value by the absence of a "direct, serious
+consequence". With no requirement recorded, state both readings and ask, per the
+router's floor ([`sota` rules/03](../../sota/rules/03-audit-findings.md) §1 rule 1);
+CVSS scoring an undefined requirement as High is a scoring default, not a rating.
+
 **Matrix → priority:**
 
 | | Impact Low | Impact Med | Impact High |
@@ -295,6 +317,9 @@ Management cheat sheet, Code Review Guide v2.
       the CVSS number (§2).
 - [ ] Threats rated as-mitigated (§3), with likelihood reflecting the easiest
       path; Low×catastrophic escalated, not averaged away.
+- [ ] Each DoS/availability threat rated on both inputs (§3): total vs partial loss, and
+      the service's recorded availability requirement. One rated from "it goes down"
+      alone, or with no requirement and no stated assumption → Medium (the rating is unreproducible).
 - [ ] Every threat has exactly one disposition: mitigate/accept/transfer/
       avoid; no "noted"/orphaned threats; a transfer cites its contract/SLA
       and the residual kept, and each mitigation says whether it cuts
