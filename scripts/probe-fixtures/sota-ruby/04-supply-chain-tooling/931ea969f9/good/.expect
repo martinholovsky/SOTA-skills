@@ -1,0 +1,3 @@
+Gemfile:4:gem "prop_check", group: :test
+Gemfile.lock:5:    prop_check (1.0.2)
+Gemfile.lock:12:  prop_check

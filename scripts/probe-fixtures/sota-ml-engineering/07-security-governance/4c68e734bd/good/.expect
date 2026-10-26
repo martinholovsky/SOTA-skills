@@ -1,0 +1,1 @@
+./serving/api.py:2:    EXTRACTION_MONITOR.record(request.principal, request.features)  # query-pattern extraction detector

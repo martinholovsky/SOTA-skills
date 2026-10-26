@@ -1,0 +1,2 @@
+$ORIGIN example.com.
+promo  300 IN CNAME example-promo.herokuapp.com.

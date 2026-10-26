@@ -1,0 +1,5 @@
+services:
+  admin:
+    image: registry.example.com/admin:2.1
+    ports:
+      - "8080:80"

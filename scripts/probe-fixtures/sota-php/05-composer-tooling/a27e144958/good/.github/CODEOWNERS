@@ -1,0 +1,4 @@
+/src/ @acme/backend
+/.github/ @acme/platform
+/composer.json @acme/security
+/composer.lock @acme/security

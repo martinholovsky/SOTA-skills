@@ -1,0 +1,16 @@
+{
+  "version": 3,
+  "targets": {
+    "net10.0": {
+      "Newtonsoft.Json/13.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net6.0/Newtonsoft.Json.dll": {}
+        }
+      }
+    }
+  }
+}

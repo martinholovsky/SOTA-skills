@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: legacy-invoicer
+spec:
+  type: service
+  lifecycle: deprecated
+  owner: team-billing

@@ -1,0 +1,12 @@
+name: ci
+on: push
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-go@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: ./.github/actions/lint
+      - run: make test

@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.25)
+project(svc C)
+add_executable(svc main.c)
+if(MSVC)
+  target_compile_definitions(svc PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()

@@ -1,0 +1,10 @@
+services:
+  trainer:
+    image: registry.example.com/trainer:1.4
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

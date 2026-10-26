@@ -1,0 +1,13 @@
+name: ci
+on: 
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: make dist
+      - uses: actions/upload-artifact@11bd71901bbe5b1630ceea73d27597364c9af683

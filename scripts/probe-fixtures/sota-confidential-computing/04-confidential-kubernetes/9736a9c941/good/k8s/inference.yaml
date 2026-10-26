@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: inference
+  namespace: confidential
+spec:
+  runtimeClassName: kata-qemu-snp
+  containers:
+    - name: model
+      image: registry.example.com/model:7
+      volumeMounts:
+        - name: scratch
+          mountPath: /scratch
+  volumes:
+    - name: scratch
+      emptyDir:
+        medium: Memory

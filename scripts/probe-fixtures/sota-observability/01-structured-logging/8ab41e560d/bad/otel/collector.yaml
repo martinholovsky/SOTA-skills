@@ -1,0 +1,6 @@
+processors:
+  filter/security:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'IsMatch(attributes["user_agent.original"], ".*kube-probe.*")'

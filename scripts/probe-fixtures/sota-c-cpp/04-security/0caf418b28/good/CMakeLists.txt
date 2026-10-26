@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.25)
+project(svc C)
+add_executable(svc main.c)
+if(MSVC)
+  target_compile_options(svc PRIVATE /W4 /sdl /guard:cf)
+endif()

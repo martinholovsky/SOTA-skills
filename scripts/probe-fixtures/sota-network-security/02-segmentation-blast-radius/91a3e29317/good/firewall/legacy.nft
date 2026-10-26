@@ -1,0 +1,6 @@
+table inet filter {
+  chain input {
+    type filter hook input priority 0; policy drop;
+    ip saddr 10.30.0.0/24 tcp dport 22 accept
+  }
+}

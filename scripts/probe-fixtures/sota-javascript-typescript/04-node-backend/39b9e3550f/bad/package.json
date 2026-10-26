@@ -1,0 +1,6 @@
+{
+  "name": "api",
+  "scripts": {
+    "start": "node --permission --allow-fs-read=* --allow-net dist/server.js"
+  }
+}

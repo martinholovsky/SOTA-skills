@@ -1,0 +1,7 @@
+{
+  "name": "imgproc",
+  "gypfile": true,
+  "dependencies": {
+    "node-addon-api": "^8.0.0"
+  }
+}

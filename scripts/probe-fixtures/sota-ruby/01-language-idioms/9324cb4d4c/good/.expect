@@ -1,0 +1,1 @@
+lib/billing/config.rb:5:  private_constant :SIGNING_SALT

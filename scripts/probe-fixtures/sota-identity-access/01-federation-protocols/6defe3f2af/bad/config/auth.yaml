@@ -1,0 +1,4 @@
+api:
+  allow_basic_auth: true
+  oidc:
+    issuer: https://idp.example.com

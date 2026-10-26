@@ -1,0 +1,5 @@
+<FindBugsFilter>
+  <Match>
+    <Bug pattern="XXE_DOCUMENT"/>
+  </Match>
+</FindBugsFilter>

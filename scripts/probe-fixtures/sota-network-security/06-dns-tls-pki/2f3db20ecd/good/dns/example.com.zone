@@ -1,0 +1,3 @@
+$ORIGIN example.com.
+www    300 IN CNAME lb.example.com.
+api    300 IN CNAME lb.example.com.

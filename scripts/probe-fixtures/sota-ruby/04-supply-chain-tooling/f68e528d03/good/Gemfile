@@ -1,0 +1,7 @@
+source "https://rubygems.org"
+
+gem "rack"
+
+source "https://gems.internal.example.com" do
+  gem "billing-client"
+end

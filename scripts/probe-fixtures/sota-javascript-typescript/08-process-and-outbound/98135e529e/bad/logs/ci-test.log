@@ -1,0 +1,2 @@
+> app@1.0.0 test
+(node:4121) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.

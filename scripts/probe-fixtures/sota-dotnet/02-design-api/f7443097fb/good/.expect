@@ -1,0 +1,1 @@
+./src/Shop.Api/Program.cs:2:builder.WebHost.ConfigureKestrel(o => o.Limits.MaxConcurrentConnections = 2000);

@@ -1,0 +1,2 @@
+./serving/load.py:1:from safetensors.torch import load_file
+./serving/load.py:3:state = load_file('model.safetensors')

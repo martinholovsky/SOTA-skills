@@ -1,0 +1,1 @@
+no FallbackPolicy: an endpoint without [Authorize] is public

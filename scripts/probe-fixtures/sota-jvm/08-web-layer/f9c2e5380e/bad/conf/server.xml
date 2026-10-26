@@ -1,0 +1,7 @@
+<Server port="-1" shutdown="SHUTDOWN">
+  <Service name="Catalina">
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps" deployXML="false" />
+    </Engine>
+  </Service>
+</Server>

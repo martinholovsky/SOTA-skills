@@ -1,0 +1,9 @@
+apiVersion: policies.kyverno.io/v1
+kind: ImageValidatingPolicy
+metadata:
+  name: approved-base
+spec:
+  validations:
+    - message: base image not approved
+      # provenance, not the self-declared base label
+      expression: attestations.slsa.predicate.buildDefinition.resolvedDependencies.filter(d, d.uri.startsWith('pkg:docker/')).all(d, d.digest.sha256 in params.approvedBases)

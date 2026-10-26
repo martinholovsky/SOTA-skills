@@ -1,0 +1,6 @@
+{
+  "security": {
+    "wantAssertionsEncrypted": false,
+    "wantAssertionsSigned": true
+  }
+}

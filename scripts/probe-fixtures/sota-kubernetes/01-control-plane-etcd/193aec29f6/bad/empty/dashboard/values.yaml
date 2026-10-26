@@ -1,0 +1,3 @@
+image:
+  repository: kubernetesui/dashboard
+  tag: v2.7.0

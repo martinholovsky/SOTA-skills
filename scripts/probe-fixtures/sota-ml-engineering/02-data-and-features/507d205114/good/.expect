@@ -1,0 +1,2 @@
+./ingest/load.py:2:import pandera as pa
+./ingest/load.py:9:    return SCHEMA.validate(df)

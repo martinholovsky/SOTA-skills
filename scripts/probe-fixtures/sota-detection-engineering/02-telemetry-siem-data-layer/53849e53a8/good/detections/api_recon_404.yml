@@ -1,0 +1,10 @@
+title: Distinct 404 paths per source
+id: 6f1c2b8e-3d4a-4c1e-9b7a-1a2b3c4d5e6f
+status: stable
+logsource:
+  category: webserver
+detection:
+  selection:
+    status_code: 404
+  condition: selection
+level: high

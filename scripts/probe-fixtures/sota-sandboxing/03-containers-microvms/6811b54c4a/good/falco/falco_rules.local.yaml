@@ -1,0 +1,5 @@
+- rule: Contact cloud metadata service from container
+  enabled: true
+
+- rule: Terminal shell in container
+  enabled: false

@@ -1,0 +1,4 @@
+tiers:
+  critical:
+    approvers: 2
+    on_timeout: approve

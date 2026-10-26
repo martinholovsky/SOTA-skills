@@ -2942,7 +2942,7 @@
         <mxCell id="h_reach" value="Agent reach" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="1000" y="110" width="420" height="36" as="geometry"/>
         </mxCell>
-        <mxCell id="h_gate" value="Gates  (43 invariants)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="h_gate" value="Gates  (44 invariants)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="1480" y="110" width="420" height="36" as="geometry"/>
         </mxCell>
         <mxCell id="cmd_sota_audit" value="/sota-audit&lt;br&gt;Audit this codebase against the library&lt;br&gt;names: /sota-close, /sota-deep-audit, /sota-report, /sota-resume" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=6;" vertex="1" parent="1">
@@ -3053,7 +3053,7 @@
         <mxCell id="gc_4" value="Secret scan (gitleaks)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="gc">
           <mxGeometry x="10" y="150" width="400" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="gi" value="scripts/check-invariants.sh — 43 checks, each with a known-bad probe or a pinned reason it has none; scripts/check-negative-controls.sh proves they still fail. Run the harness for its live total; a static count of probes under-reads." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="gi" value="scripts/check-invariants.sh — 44 checks, each with a known-bad probe or a pinned reason it has none; scripts/check-negative-controls.sh proves they still fail. Run the harness for its live total; a static count of probes under-reads." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="1480" y="384" width="420" height="110" as="geometry"/>
         </mxCell>
       </root>

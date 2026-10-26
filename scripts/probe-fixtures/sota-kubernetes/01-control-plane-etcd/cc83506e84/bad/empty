@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  containers:
+    - name: kube-apiserver
+      command:
+        - kube-apiserver
+        - --authorization-mode=Node,RBAC
+        - --enable-admission-plugins=NodeRestriction
+        - --anonymous-auth=false
+        - --token-auth-file=/etc/kubernetes/known_tokens.csv
+        - --tls-min-version=VersionTLS12

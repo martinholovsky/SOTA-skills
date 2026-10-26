@@ -1,0 +1,3 @@
+dynamic_client_registration:
+  anonymous_registration: false
+  initial_access_token_required: true

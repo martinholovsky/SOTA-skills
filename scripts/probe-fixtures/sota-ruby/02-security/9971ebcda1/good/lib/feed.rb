@@ -1,0 +1,5 @@
+# frozen_string_literal: true
+
+def parse(xml)
+  Nokogiri::XML(xml) { |config| config.strict.nonet }
+end

@@ -1,0 +1,13 @@
+{
+  "name": "shop-web",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "nuxt build",
+    "start": "nuxt start"
+  },
+  "dependencies": {
+    "vue": "2.7.16",
+    "nuxt": "2.18.1"
+  }
+}

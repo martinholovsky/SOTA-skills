@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+for f in src/**/*.py; do ruff check "$f"; done

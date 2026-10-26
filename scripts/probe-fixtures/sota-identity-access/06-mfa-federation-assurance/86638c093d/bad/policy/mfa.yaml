@@ -1,0 +1,2 @@
+sms_otp_enabled: true
+totp_enabled: true

@@ -1,0 +1,2 @@
+lib/report.rb:3:using StringBlank
+lib/core_ext/string.rb:4:  refine String do

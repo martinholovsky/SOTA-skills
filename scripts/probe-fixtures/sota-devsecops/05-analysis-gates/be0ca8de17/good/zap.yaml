@@ -1,0 +1,8 @@
+jobs:
+  - type: activeScan
+    policyDefinition:
+      defaultStrength: high
+      defaultThreshold: medium
+      rules:
+        - id: 40018
+          threshold: off  # covered by the SQLi unit suite, see ADR-12

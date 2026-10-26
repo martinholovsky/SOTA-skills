@@ -1,0 +1,9 @@
+{
+    "name": "acme/shop",
+    "type": "project",
+    "require": {
+        "php": "^8.3",
+        "acme/payments-sdk": "^2.4",
+        "monolog/monolog": "^3.7"
+    }
+}

@@ -1,0 +1,1 @@
+./cmd/api/main.go:4:	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

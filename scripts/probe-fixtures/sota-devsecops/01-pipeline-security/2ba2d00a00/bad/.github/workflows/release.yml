@@ -1,0 +1,6 @@
+name: release
+on: push
+jobs:
+  publish:
+    uses: ./.github/workflows/publish.yml
+    secrets: inherit

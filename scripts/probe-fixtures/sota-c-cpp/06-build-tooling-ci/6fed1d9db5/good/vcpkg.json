@@ -1,0 +1,6 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "builtin-baseline": "c82f74667287d3dc386bce81e44964370c91a289",
+  "dependencies": ["nlohmann-json"]
+}

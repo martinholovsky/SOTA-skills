@@ -585,7 +585,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 — 40 of 43; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44 — 41 of 44; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -757,6 +757,18 @@ CI scans the full git history, the pre-commit hook scans each commit.
     a file the baseline lists as unnumbered surfaces its sections, and
     `python3 scripts/reachability-graph.py --sync-convert` moves its debt to section level (dotted
     `## N.M` headings count since 2026-10-25).
+44. **A checklist probe nobody proved detects anything.** Every runnable `grep` probe in an Audit
+    checklist has a known-bad and a known-good tree in `scripts/probe-fixtures/<skill>/<file>/<hash>/`
+    (`bad/` must make it print, `good/` must not; an optional `.expect` holds an exact stdout), or
+    sits in `scripts/probe-fixture-baseline.json`, which may only shrink. The id hashes the probe
+    text, so editing a probe orphans its fixture and the edit must be re-proven. `--list SKILL` prints
+    the unproven probes and the directory each needs; `--tighten` shrinks the baseline. The invariant
+    checks the structure; CI executes the fixtures on BSD and GNU grep. The probe runs in a copy of
+    the case without `.expect`/`.keep`, with `HOME` set to that copy, so a fixture may hold `~/…`
+    files; an `.expect` is compared as a set of lines, because `grep -r` order differs by platform. A
+    quoted `<Tag>` in a probe is pattern text and runs as written; only an unquoted `<name>` operand
+    is replaced with a file called `empty`. Git keeps no empty directory: give a case with no files a
+    `.keep`. The unproven ones each have a defect record in `docs/probe-defects-2026-10-26.json`.
 
 ## Local setup
 

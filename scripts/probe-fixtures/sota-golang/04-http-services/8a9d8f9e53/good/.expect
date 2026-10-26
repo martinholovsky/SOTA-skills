@@ -1,0 +1,1 @@
+./upstream/client.go:5:	t.MaxIdleConnsPerHost = 64

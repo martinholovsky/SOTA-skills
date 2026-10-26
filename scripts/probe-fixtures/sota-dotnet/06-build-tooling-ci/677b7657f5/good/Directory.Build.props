@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <AnalysisModeSecurity>All</AnalysisModeSecurity>
+  </PropertyGroup>
+</Project>

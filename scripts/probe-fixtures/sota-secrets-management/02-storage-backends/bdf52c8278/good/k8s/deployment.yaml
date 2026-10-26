@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          image: registry.example.com/api:4
+          volumeMounts:
+            - name: db-creds
+              mountPath: /run/secrets/db
+              readOnly: true
+      volumes:
+        - name: db-creds
+          secret:
+            secretName: db-creds

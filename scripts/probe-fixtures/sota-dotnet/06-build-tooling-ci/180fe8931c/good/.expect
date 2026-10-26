@@ -1,0 +1,1 @@
+./.github/workflows/release.yml:9:      - run: dotnet nuget verify --all artifacts/*.nupkg

@@ -1,0 +1,5 @@
+services:
+  tests:
+    build: .
+    environment:
+      DATABASE_URL: postgres://app_user:app_user@db:5432/app

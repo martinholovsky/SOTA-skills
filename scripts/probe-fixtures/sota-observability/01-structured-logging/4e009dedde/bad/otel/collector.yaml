@@ -1,0 +1,10 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:4317
+exporters:
+  otlp:
+    endpoint: collector.example.internal:4317
+    tls:
+      insecure: true

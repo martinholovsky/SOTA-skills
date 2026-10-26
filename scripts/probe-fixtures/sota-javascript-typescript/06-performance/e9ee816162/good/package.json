@@ -1,0 +1,6 @@
+{
+  "name": "@acme/ui",
+  "type": "module",
+  "sideEffects": false,
+  "exports": "./dist/index.js"
+}

@@ -1,0 +1,1 @@
+empty/approved-base.yaml:9:      expression: attestations.slsa.predicate.buildDefinition.resolvedDependencies.filter(d, d.uri.startsWith('pkg:docker/')).all(d, d.digest.sha256 in params.approvedBases)

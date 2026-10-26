@@ -1,0 +1,13 @@
+{
+  "name": "shop-web",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "vite build",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "preact": "10.24.3",
+    "express": "4.21.2"
+  }
+}

@@ -1,0 +1,6 @@
+<FindBugsFilter>
+  <Match>
+    <Class name="com.example.generated.Proto"/>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+</FindBugsFilter>

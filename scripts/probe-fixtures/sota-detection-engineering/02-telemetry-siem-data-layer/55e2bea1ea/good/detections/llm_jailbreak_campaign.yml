@@ -1,0 +1,10 @@
+title: LLM jailbreak campaign per user
+id: 6f1c2b8e-3d4a-4c1e-9b7a-1a2b3c4d5e6f
+status: stable
+logsource:
+  product: llm-gateway
+detection:
+  selection:
+    guard.category: jailbreak
+  condition: selection
+level: high

@@ -1,0 +1,6 @@
+{
+  "manifest_version": 3,
+  "name": "Clipper",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["https://api.example.com/*"]
+}

@@ -1,0 +1,4 @@
+.video-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+}

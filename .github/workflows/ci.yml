@@ -247,6 +247,12 @@ jobs:
         # anything, which under 2>/dev/null reads as a clean codebase. On both runners because BSD
         # and GNU grep reject different regexes. 2026-10-21: two probes had been dead 4 weeks.
         run: python3 scripts/check-checklist-probes.py --self-test && python3 scripts/check-checklist-probes.py
+      - name: Every proven checklist probe still catches its known-bad and passes its known-good
+        # scripts/check-probe-fixtures.py (invariant 44's executing half): each fixture's bad/ tree
+        # must make the probe print, its good/ tree must not, and rc 2 fails. On both runners for
+        # the same reason as the step above: BSD and GNU grep disagree (measured 2026-10-26: BSD
+        # grep with --include exits 1, silent, on a missing directory, where GNU and ugrep exit 2).
+        run: python3 scripts/check-probe-fixtures.py --self-test && python3 scripts/check-probe-fixtures.py
 
   shellcheck:
     name: Shell lint (shellcheck)

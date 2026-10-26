@@ -1,0 +1,4 @@
+base-url = "http://localhost:8080"
+
+[checks.ignored_auth]
+enabled = false

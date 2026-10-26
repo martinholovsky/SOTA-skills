@@ -71,7 +71,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced — invariants 1–43
+### Enforced — invariants 1–44
 
 <!-- count-check: · +1 -->
 **40 conventions** are gated, one per invariant, in the order the checks run:

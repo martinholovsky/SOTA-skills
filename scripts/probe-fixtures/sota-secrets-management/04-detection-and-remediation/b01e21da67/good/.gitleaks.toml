@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "acme-api-key"
+description = "ACME internal API key"
+regex = '''acme_live_[0-9a-zA-Z]{32}'''

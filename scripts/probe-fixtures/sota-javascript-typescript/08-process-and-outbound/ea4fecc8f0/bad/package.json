@@ -1,0 +1,6 @@
+{
+  "name": "app",
+  "dependencies": {
+    "js-yaml": "^3.14.1"
+  }
+}

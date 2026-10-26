@@ -1,0 +1,2 @@
+p, role:readonly, applications, get, */*, allow
+g, example-org:developers, role:readonly

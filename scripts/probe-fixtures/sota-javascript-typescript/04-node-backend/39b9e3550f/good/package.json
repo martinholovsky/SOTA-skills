@@ -1,0 +1,6 @@
+{
+  "name": "api",
+  "scripts": {
+    "start": "node --permission --allow-fs-read=/app/dist --allow-fs-write=/app/tmp dist/server.js"
+  }
+}
