@@ -249,7 +249,7 @@ attackers and our own bugs," CC adds cost without adding a defense — rungs 0�
       documented ([sota-sandboxing rules/01](../../sota-sandboxing/rules/01-isolation-boundaries.md))?
       A TEE used *as* the sandbox — untrusted code running with the TEE's secrets and
       nothing protecting them from it — is High (R3.2, §3).
-- [ ] Are keys released only against successful attestation (no keys in images, no
+- [ ] Are keys released only against successful attestation (§6) (no keys in images, no
       host-injected secrets)? Grep deployment code for cloud-init/user-data secret
       injection into "confidential" VMs.
 - [ ] If compliance-scope reduction is a driver, is there a written assessor/regulator

@@ -441,8 +441,8 @@ Deliver in exactly this order:
       hypothesis, not corroboration.
 - [ ] Every finding has title, severity+justification, file:line@commit,
       minimal evidence, standard mapping, concrete impact, diff-level
-      remediation, and effort estimate?
-- [ ] Borderline severities state the deciding assumption explicitly?
+      remediation, and effort estimate (§2)?
+- [ ] Borderline severities state the deciding assumption explicitly (§1)?
 - [ ] Every recorded verdict — ledger entry, refutation, triage dismissal — is
       **self-contained and decision-enabling**, restating the evidence rather than
       saying "unchanged" / "superseded" / "already covered" (§3)?
@@ -479,18 +479,18 @@ Deliver in exactly this order:
       the same pattern before it was dropped, with the sweep and its denominator
       recorded beside the refutation (§4)?
 - [ ] Every **absence claim** ("no X found", "enforced everywhere") backed by a
-      widened search plus a second independent method, with the search stated?
+      widened search plus a second independent method, with the search stated (§2)?
 - [ ] Positive observations evidenced by **effect** (a rejection, a log, a test
-      that fails when disabled), not by the control's mere presence?
+      that fails when disabled), not by the control's mere presence (§2)?
 
 **Report**
-- [ ] Executive summary in plain language with severity counts and top
+- [ ] Executive summary in plain language (§5) with severity counts and top
       3–5 risks?
-- [ ] Scope/methodology section sufficient to reproduce the audit?
-- [ ] Findings grouped by severity, ordered by exploitability within?
-- [ ] Remediation roadmap sequenced by risk-reduction-per-effort, related
+- [ ] Scope/methodology section sufficient to reproduce the audit (§5)?
+- [ ] Findings grouped by severity, ordered by exploitability within (§5)?
+- [ ] Remediation roadmap sequenced by risk-reduction-per-effort (§5), related
       fixes grouped — actionable without re-reading every finding?
-- [ ] Positive observations included?
+- [ ] Positive observations included (§5)?
 - [ ] No secret values anywhere in the report; leaks redacted and referenced
       by location only?
 

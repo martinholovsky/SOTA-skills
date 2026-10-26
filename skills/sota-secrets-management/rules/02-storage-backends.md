@@ -294,20 +294,20 @@ between handle only ciphertext and plaintext exists solely inside the consumer.
 
 - [ ] Backend matches the decision table (§1); no custom/homegrown secret stores; no secrets in
       Consul/Redis/plain DB columns.
-- [ ] Terraform/Pulumi state not in VCS; state backend encrypted and access-controlled;
+- [ ] Terraform/Pulumi state not in VCS (§1); state backend encrypted and access-controlled;
       write-only/ephemeral used for new secret-bearing resources.
 - [ ] Vault/OpenBao: platform-identity auth (no static tokens), deny-by-default path-scoped
       policies, short TTLs, audit devices on, KMS auto-unseal, dynamic engines preferred to KV;
       run HA (≥3 Raft nodes), with scheduled off-box encrypted snapshots, a dated restore drill, and
       an offline break-glass path that alerts on use (§2; restore scope: [`sota-devsecops` rules/07](../../sota-devsecops/rules/07-runtime-ops.md) §7.4.1).
-- [ ] Cloud secret managers: per-secret per-principal IAM (no wildcard access), native or
+- [ ] Cloud secret managers (§3): per-secret per-principal IAM (no wildcard access), native or
       scheduled rotation, audit/data-access logs enabled and alerted.
 - [ ] SOPS (§4): per-env keys in `.sops.yaml`, encrypted_regex for k8s, age/KMS private keys never in
       repo; decryption happens in controller, not CI artifacts.
 - [ ] Kubernetes (§5): etcd encryption at rest, secrets RBAC tightened, no real `Secret` manifests in
       git; ESO/CSI/Vault-agent used; secret volumes `0400`, read-only, and no `subPath` mounts
       on rotating secrets.
-- [ ] No secrets in Dockerfile ENV/ARG, image layers, compose files, systemd `Environment=`, or
+- [ ] No secrets in Dockerfile ENV/ARG (§6), image layers, compose files, systemd `Environment=`, or
       pod-spec literals; build-time secrets via BuildKit secret mounts.
 - [ ] File mounts preferred over env vars where the platform supports them; env-var usage has
       child-process and error-handler scrubbing mitigations. Env-delivered secrets on a

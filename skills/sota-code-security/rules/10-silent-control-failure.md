@@ -229,7 +229,7 @@ what will that caller do instead*. Both answers belong in the commit that adds t
       than from its own success counters — its log reports the update it decided
       to make, not the write landing ([`sota-kubernetes` rules/04](../../sota-kubernetes/rules/04-gitops-controllers.md) §7)?
 
-- [ ] For each security control in scope: if it were a no-op, would any log,
+- [ ] For each security control in scope (§1): if it were a no-op, would any log,
       metric, response, or test differ? No → finding, regardless of current
       correctness.
 - [ ] Presence/enablement decided by real loaded artifacts (non-zero rule count,

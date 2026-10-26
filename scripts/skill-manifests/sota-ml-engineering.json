@@ -1,0 +1,44 @@
+{
+ "_note": "Declared BUILD routing for sota-ml-engineering (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. No keyword matches a file's own link text. BUILD step 1 says a new model service 'needs `01`, `02`, `04`, `05`, `06`, `07`' by bare number, which routing_prose() does not read, and no BUILD step links any rules file, so every route here is an index row. No routing gap found for the cases below.",
+ "skill": "sota-ml-engineering",
+ "tags": {
+  "architecture": ["Designing/reviewing an ML system", "training vs serving paths", "Hidden-Technical-Debt"],
+  "feature-store": ["feature store"],
+  "registry": ["model registry"],
+  "reproducibility": ["reproducibility", "reproducible"],
+  "data": ["training data", "data leakage", "splits (temporal/group)", "feature/data versioning"],
+  "skew": ["train/serve skew", "training vs serving paths"],
+  "training": ["Training and iterating", "hyperparameter search", "distributed training", "experiment tracking"],
+  "evaluation": ["Deciding if a model is good enough", "sliced", "ML Test Score", "validation gates"],
+  "serving": ["Shipping a model", "batch vs online vs streaming serving", "canary/shadow"],
+  "monitoring": ["Operating a model", "data drift", "retraining triggers", "prediction & feature monitoring"],
+  "ml-security": ["training-data poisoning", "model extraction", "model artifacts", "model signing"],
+  "dataset-integrity": ["signed dataset attestations", "dataset provenance", "training-data admission"],
+  "privacy": ["PII minimization", "per-row consent codes", "DP training"],
+  "governance": ["model cards", "EU AI Act", "NIST AI RMF"]
+ },
+ "files": {
+  "01": {"build": ["architecture", "feature-store", "registry", "reproducibility", "skew"]},
+  "02": {"build": ["data", "skew", "dataset-integrity", "privacy"]},
+  "03": {"build": ["training", "reproducibility"]},
+  "04": {"build": ["evaluation"]},
+  "05": {"build": ["serving", "registry", "reproducibility"]},
+  "06": {"build": ["monitoring"]},
+  "07": {"build": ["ml-security", "dataset-integrity", "privacy", "governance"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "ship a new fraud-scoring model service", "mode": "build",
+   "tags": ["architecture", "data", "evaluation", "serving", "monitoring", "ml-security"], "must_load": ["01", "02", "04", "05", "06", "07"]},
+  {"task": "fine-tune a pretrained model downloaded from a public hub", "mode": "build",
+   "tags": ["ml-security", "training", "reproducibility"], "must_load": ["07", "03", "01"]},
+  {"task": "add drift monitoring that triggers retraining and gated re-promotion", "mode": "build",
+   "tags": ["monitoring", "evaluation", "registry"], "must_load": ["06", "04", "05", "01"]},
+  {"task": "build a churn model's feature pipeline with time-based splits and shared train/serve transforms", "mode": "build",
+   "tags": ["data", "skew", "feature-store"], "must_load": ["02", "01"]},
+  {"task": "train a credit model on customer data under the EU AI Act", "mode": "build",
+   "tags": ["privacy", "governance", "evaluation"], "must_load": ["02", "07", "04"]},
+  {"task": "audit a production ML pipeline", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+ ]
+}

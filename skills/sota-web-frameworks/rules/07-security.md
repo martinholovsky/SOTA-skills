@@ -141,7 +141,7 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
 
 ## Audit checklist
 
-- [ ] **Start with an inventory generated from the tree, not recalled (sets scope; an
+- [ ] **Start with an inventory generated from the tree, not recalled (§2) (sets scope; an
       unlisted surface is an unaudited one)** — list every file that declares a server
       action, route handler, Nitro handler, draft-mode entry, cache directive/tag,
       invalidation call or proxy rewrite, then the config lines for matchers, rewrites,
@@ -153,27 +153,27 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
       stacks (Next `productionBrowserSourceMaps`, Nuxt `sourcemap.client`), so `true` is
       the item to read; then check the deployed site for `*.js.map` it serves. OWASP:
       Nextjs Security cheat sheet
-- [ ] **Public-env secret leak (CRITICAL)** —
+- [ ] **Public-env secret leak (CRITICAL)** (§1) —
       `grep -rnE '(NEXT_PUBLIC_|VITE_)[A-Z_]*(SECRET|KEY|TOKEN|PASSWORD|PRIVATE)' --include='*.ts' --include='*.tsx' --include='*.vue' .`
       ;
-      `find . -maxdepth 2 -path ./node_modules -prune -o -name 'nuxt.config.*' -type f -exec grep -HnA8 'runtimeConfig' {} + | grep -iE 'public' -A6 | grep -iE 'secret|key|token'`
-- [ ] **Server->client exposure & the server-only guard** —
+      `find . -maxdepth 2 -path ./node_modules -prune -o -name 'nuxt.config.*' -type f -exec grep -HnA8 'runtimeConfig' {} + | grep -iE 'public' -A6 | grep -iE 'secret|key|token|password'`
+- [ ] **Server->client exposure & the server-only guard** (§1) —
       `grep -rn "import 'server-only'\|server/" app lib server | head` ;
       `grep -rnE 'process\.env\.' --include='*.tsx' --include='*.vue' app components pages | grep -iv 'NEXT_PUBLIC\|NODE_ENV'`
-- [ ] **Authz only at the edge? enumerate actions/handlers and check each** —
+- [ ] **Authz only at the edge? enumerate actions/handlers and check each** (§2) —
       `grep -rn "'use server'" app lib; find app src/app server/api server/routes -type f \( -name 'route.[jt]s' -o -path 'server/*' -name '*.[jt]s' \) 2>/dev/null`
-- [ ] **SSRF surfaces** —
+- [ ] **SSRF surfaces** (§3) —
       `find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'next.config.*' -o -name 'nuxt.config.*' \) -type f -exec grep -HnE "hostname:[[:space:]]*['\"][*]{1,2}['\"]|domains:" {} +`
       (multi-line safe; read subdomain wildcards and any IPX/`@nuxt/image` host list by eye)
       ;
       `grep -rnE '\$?fetch\(|ofetch\(|axios\.|got\(' --include='*.ts' server app | grep -iE 'req\.|query|params|headers|host'`
       ;
       `grep -rnE 'X-Forwarded-Host|req\.headers\.host|getRequestHost' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
-- [ ] **Rewrite/proxy destination built from the request (HIGH)** —
+- [ ] **Rewrite/proxy destination built from the request (HIGH)** (§3) —
       `` grep -rnE "destination:[[:space:]]*['\"\`]https?://:|NextResponse\.rewrite\(.*(headers\.get|searchParams\.get|cookies\.get)|proxyRequest\(.*(getHeader|getQuery|getRouterParam|getCookie)" --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules . ``
       (single-line candidates; also read every absolute `destination:` and `proxy:` target
       and confirm its host is a literal or allowlisted)
-- [ ] **Runtime: does the data layer refuse when the edge check is skipped? (HIGH if data
+- [ ] **Runtime: does the data layer refuse when the edge check is skipped? (§2) (HIGH if data
       comes back)** — a grep proves where a check is written, not that it runs. Against a
       running non-production build, with no session (then with a low-privilege one), request a
       protected resource by a path the `proxy.ts`/middleware `matcher` or `routeRules` does
@@ -182,7 +182,7 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
       Functions are POSTs to the page route that uses them, so a matcher that excludes a path
       skips them too (Next.js proxy docs, read 2026-09-25): replay a captured action POST
       (it carries a `Next-Action` header) without the cookie and expect a refusal
-- [ ] **Runtime: what the browser actually receives (HIGH on a secret, MEDIUM on an
+- [ ] **Runtime: what the browser actually receives (§1) (HIGH on a secret, MEDIUM on an
       internal field)** — capture every channel as a low-privilege user and search it, since
       source grep cannot see what serialization emits: HTML (Next `self.__next_f.push`, Nuxt
       `__NUXT_DATA__`), the Next flight payload (`curl -s -H 'RSC: 1' -b "$COOKIE" "https://APP/page"`,
@@ -191,7 +191,7 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
       from the browser's network panel. Save each to a file, then
       `grep -inE 'secret|passw|api[_-]?key|private[_-]?key|(access|refresh|id)[_-]?token|sk_live_|BEGIN [A-Z ]*PRIVATE KEY' captured/*`
       and read the hits for fields the UI never shows. OWASP: Nextjs Security cheat sheet
-- [ ] **CVE fingerprint** —
+- [ ] **CVE fingerprint** (§4) —
       `grep -E '"(react|react-dom|react-server-dom-webpack|next|nuxt|nitropack|h3|ipx|devalue|serialize-javascript)"' package.json`
 
 - [ ] No secret in `NEXT_PUBLIC_`/`VITE_`/`runtimeConfig.public`; server secrets behind `server-only`/`server/` (§1)?
@@ -200,6 +200,6 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
 - [ ] `next/image`/IPX `remotePatterns` allowlisted to explicit hosts (no `**`); user-URL fetchers block private ranges + metadata IP + redirects (§3)?
 - [ ] Absolute URLs/redirects built from config, not reflected `Host`/`X-Forwarded-Host`; redirect targets allowlisted (§3)?
 - [ ] External rewrite/proxy targets (`rewrites()`, `NextResponse.rewrite`, `routeRules` `proxy`, `proxyRequest`) have a fixed or allowlisted scheme/host/port, never one taken from the request (§3)?
-- [ ] The boundary was checked against the RUNNING app — an unmatched-path request refused by the data layer, and captured HTML/flight/payload/action responses free of server-only fields?
+- [ ] The boundary was checked against the RUNNING app (§1, §2) — an unmatched-path request refused by the data layer, and captured HTML/flight/payload/action responses free of server-only fields?
 - [ ] All framework + loader deps (react-server-dom, next, nuxt, h3, ipx, devalue, serialize-javascript) patched against §4; automated updates on?
 - [ ] Nonce/hash CSP + standard security headers; rate limiting on public endpoints; production errors not leaked as HTML, nor stack traces/internal paths sent to the client; lockfile committed and `npm audit`/`osv-scanner` in CI (§5)?

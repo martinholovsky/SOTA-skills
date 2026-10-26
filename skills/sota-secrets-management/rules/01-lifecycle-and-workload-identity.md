@@ -320,14 +320,14 @@ Operational rules for dynamic/leased credentials:
 
 - [ ] All token/key generation uses a CSPRNG with ≥256-bit entropy (§1); no UUIDs, timestamps, or
       hashes-of-predictables used as secrets.
-- [ ] Internally minted tokens carry a scannable prefix.
-- [ ] Asymmetric keys are Ed25519/P-256 (RSA ≥3072 only for interop) and generated where they
+- [ ] Internally minted tokens carry a scannable prefix (§1).
+- [ ] Asymmetric keys (§1) are Ed25519/P-256 (RSA ≥3072 only for interop) and generated where they
       live; no private key ever moved through chat/email/tickets.
-- [ ] No secret distributed outside the secret store; bootstrap uses platform identity, not a
+- [ ] No secret distributed outside the secret store (§2); bootstrap uses platform identity, not a
       static "secret zero."
 - [ ] Every secret has owner, rotation interval, zero-downtime rotation runbook, and a tested
       revocation path; intervals meet the table in §3.
-- [ ] Rotation uses overlap (dual-secret / versioned), not in-place swap.
+- [ ] Rotation uses overlap (dual-secret / versioned), not in-place swap (§3).
 - [ ] **Rotation tests the pending credential before promoting it (§3)** — High for a rotation
       function that promotes without a test step. Handlers with a finish step but no test step:
       `grep -rlE 'finish_?[Ss]ecret' . | xargs -r grep -LE 'test_?[Ss]ecret'`
@@ -347,14 +347,14 @@ Operational rules for dynamic/leased credentials:
       `grep -rLiE 'offboard|leaver|leaves|departure' runbooks/`
 - [ ] No long-lived cloud keys (§4) where IAM roles / managed identity / workload identity
       federation are available (in-cloud workloads, CI jobs, cross-cloud calls).
-- [ ] CI→cloud auth uses OIDC with `aud` + pinned `sub` trust conditions; one least-privilege
+- [ ] CI→cloud auth uses OIDC with `aud` + pinned `sub` trust conditions (§5); one least-privilege
       role per repo/purpose; prod roles gated by reviewed environments.
-- [ ] Package publishing from CI uses trusted publishing (registry OIDC) where the registry
+- [ ] Package publishing from CI uses trusted publishing (§5) (registry OIDC) where the registry
       supports it; no long-lived publish tokens stored in CI.
 - [ ] Database access uses dynamic creds or IAM DB auth where the engine supports it; (§6) an alert on lease-creation rate per role exists; leased
       credentials renew at ~2/3 TTL and recover from revocation; revocation drills performed.
-- [ ] Third-party CI actions/orbs pinned by SHA in secret-bearing jobs; CI secrets scoped to
+- [ ] Third-party CI actions/orbs pinned by SHA in secret-bearing jobs (§5); CI secrets scoped to
       environment level, masked, and absent from fork-triggered workflows.
-- [ ] Secret reads are audit-logged in production with alerting on anomalous principals.
+- [ ] Secret reads are audit-logged in production with alerting on anomalous principals (§7).
 - [ ] A secret inventory exists (store listing + owner/age/last-read), reviewed quarterly (§7); each secret lives in one store (replicated by the store's own sync, never copied by hand) and is versioned;
       unused and orphaned secrets deleted; retired services' secrets revoked promptly.

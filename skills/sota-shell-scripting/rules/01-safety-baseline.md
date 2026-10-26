@@ -438,7 +438,7 @@ curl -H $auth_header ...     # header with space splits into garbage args
       so `[ -n "$var" ]` passes on a failed producer. Test the producer separately — and check each
       site's actual form before sweeping, because the no-pipe spelling is correct as written (§3).
 
-- [ ] **Composed multi-line records**: `grep -rn '="\$(' --include='*.sh'` where the
+- [ ] **Composed multi-line records** (§2): `grep -rn '="\$(' --include='*.sh'` where the
       result is concatenated with more lines — `$( )` dropped the trailing newline and
       the boundary is gone. High where the bytes are hashed, signed or field-parsed;
       confirm a known-answer vector exists and that writer and verifier agree byte-for-byte.
@@ -488,13 +488,13 @@ splitting/joining class** — no widely-adopted static analyser catches
       notification said, **read the code out of the artefact before quoting an outcome**.
 - [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
       `${var//`, and an unprobed `pipefail` (§1) → bashism-in-sh (SC3xxx series).
-- [ ] **`set -e` believed inside a suspended context**: `set -e`/`set -o errexit`
+- [ ] **`set -e` believed inside a suspended context** (§2): `set -e`/`set -o errexit`
       re-armed inside a function called from a condition, or `$-` inspected to prove
       errexit is live — both are inert there. Probe: `f() ( set -e; false; echo RAN )`
       called from an `if`; if RAN prints, that whole call tree is unprotected.
-- [ ] Missing preamble: `grep -rLn 'set -euo pipefail\|set -eu' --include='*.sh' .`
-- [ ] SC2086 (unquoted expansion) — treat every instance in a destructive command
+- [ ] Missing preamble (§2): `grep -rLn 'set -euo pipefail\|set -eu' --include='*.sh' .`
+- [ ] SC2086 (unquoted expansion) (§3) — treat every instance in a destructive command
       (`rm`, `mv`, `cp`, `chmod`, `chown`, `ssh`, `kill`) as HIGH.
-- [ ] SC2155 — `grep -rn 'local [a-zA-Z_]*=\$(' --include='*.sh'` (masked exit status).
-- [ ] `set -e` false confidence: grep for `if .*&&\|if [a-z_]*;` over functions with
+- [ ] SC2155 (§2) — `grep -rn 'local [a-zA-Z_]*=\$(' --include='*.sh'` (masked exit status).
+- [ ] `set -e` false confidence (§2): grep for `if .*&&\|if [a-z_]*;` over functions with
       critical side effects; check `$(...)` in assignments without `inherit_errexit`.

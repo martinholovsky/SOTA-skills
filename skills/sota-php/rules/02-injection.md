@@ -350,7 +350,7 @@ Security; Code Reference). The rules are the same; these are the names to look f
 
 Run from repo root; verify each hit manually (greps are recall-oriented).
 
-- [ ] **SQL built from strings — CRITICAL if user data reaches it** —
+- [ ] **SQL built from strings — CRITICAL if user data reaches it** (§1) —
       `grep -rnE '(->query|->exec|_query)\s*\(\s*["'"'"'].*(\$|\bsprintf|\. )' --include='*.php' src/`
       ;
       `grep -rniE '(SELECT|INSERT|UPDATE|DELETE)[^;]*(\{\$|["'"'"'][[:space:]]*\.[[:space:]]*\$)' --include='*.php' src/`
@@ -385,7 +385,7 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       (single-quoted attributes left open) ;
       `grep -rnE 'href=["'"'"']?<\?(=|php[[:space:]]+echo)[[:space:]]*\$' --include='*.php' --exclude-dir=vendor .`
       (a user URL in `href` needs the `https?` scheme allowlist)
-- [ ] **Header/redirect injection** —
+- [ ] **Header/redirect injection** (§4) —
       `grep -rnE 'header\s*\(\s*["'"'"']Location:.*\$' --include='*.php' src/`
 - [ ] **Execution after redirect (§4a) — HIGH on an authz path** — each hit is a `Location`
       header whose next non-blank line is not `exit`/`die`/`return`/`throw`:

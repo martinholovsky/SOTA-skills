@@ -1,0 +1,42 @@
+{
+ "_note": "Declared BUILD routing for sota-ux-writing (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD steps 1-5 each link one file, but C4 reads only the line carrying the link, so most of each step's wording (e.g. step 1's 'errors, empty states, and confirmations') sits outside the prose; every tag below is carried by the files' rules-index rows. Step 1 sends empty states and confirmations to 03, while their rules live in 02 (sections 3 and 5); 02's own row names both, so the builder still reaches it. No routing gap found.",
+ "skill": "sota-ux-writing",
+ "tags": {
+  "voice-tone": ["voice vs tone", "stress-aware tone shifts"],
+  "plain-language": ["plain-language rules", "readability", "common words"],
+  "terminology": ["terminology/glossary discipline"],
+  "mechanics": ["capitalization and punctuation"],
+  "buttons-dialogs": ["buttons/CTAs", "confirmation dialogs", "dialog states the specific consequence"],
+  "form-fields": ["labels vs placeholders vs hints", "validation wording"],
+  "empty-onboarding": ["empty states", "onboarding and tooltips"],
+  "notifications": ["notifications/toasts/badges", "success confirmations"],
+  "counts-plurals": ["counts and plurals", "ICU plurals"],
+  "errors": ["error-message anatomy", "no-blame framing", "warnings vs errors"],
+  "security-errors": ["security-sensitive errors"],
+  "permission-upsell": ["permission prompts", "upsell moments"],
+  "accessibility": ["WCAG 2.2 language criteria", "alt text", "accessible names", "screen-reader-facing strings"],
+  "localization": ["string externalization", "translator context", "text expansion", "RTL"],
+  "inclusive": ["inclusive language"]
+ },
+ "files": {
+  "01": {"build": ["voice-tone", "plain-language", "terminology", "mechanics"]},
+  "02": {"build": ["buttons-dialogs", "form-fields", "empty-onboarding", "notifications", "counts-plurals"]},
+  "03": {"build": ["form-fields", "errors", "security-errors", "notifications", "permission-upsell"]},
+  "04": {"build": ["accessibility", "localization", "counts-plurals", "inclusive"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "write the copy for a sign-up form: labels, hints, inline validation errors and the submit button", "mode": "build",
+   "tags": ["form-fields", "buttons-dialogs", "errors", "plain-language", "accessibility"], "must_load": ["01", "02", "03", "04"]},
+  {"task": "write the 'delete project' confirmation dialog and the success toast that follows", "mode": "build",
+   "tags": ["buttons-dialogs", "notifications"], "must_load": ["02", "03"]},
+  {"task": "write login-failure and password-reset messages", "mode": "build",
+   "tags": ["security-errors", "errors"], "must_load": ["03"]},
+  {"task": "externalize an app's strings for translation, including item counts like '3 files selected'", "mode": "build",
+   "tags": ["localization", "counts-plurals"], "must_load": ["02", "04"]},
+  {"task": "write the empty state and first-run onboarding tooltips for a new dashboard, following the product glossary", "mode": "build",
+   "tags": ["empty-onboarding", "terminology", "voice-tone"], "must_load": ["01", "02"]},
+  {"task": "audit a product's interface copy", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04"]}
+ ]
+}

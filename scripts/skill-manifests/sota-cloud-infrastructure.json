@@ -1,0 +1,230 @@
+{
+ "_note": "Declared BUILD routing for sota-cloud-infrastructure (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD links only 01 and 04 (step 2); 02, 03, 05, 06 and 07 are reached through their index rows. 'egress' is declared on both 03 (egress control) and 06 (egress/NAT traps) because a builder adding egress needs the cost trap as well as the control. Known routing gap, recorded and NOT declared: rules/05 section 5 (data placement hygiene: residency via data-class tags and region restrictions, cross-region replication of regulated data, minimising copies, public snapshot sharing) is not in 05's row - no 'residency', 'data placement', 'region' or 'snapshot' phrase - so a data-residency task reaches 01 (org policies) but not 05. Routing gap for rules/05 (data placement and residency) FIXED 2026-10-26: the index row now names it, and tag 'data-residency' declares it.",
+ "skill": "sota-cloud-infrastructure",
+ "tags": {
+  "org": [
+   "org structure",
+   "landing zones",
+   "account/project strategy",
+   "SCPs/org policies",
+   "account structure"
+  ],
+  "tagging": [
+   "tagging standards"
+  ],
+  "logging-billing": [
+   "centralized logging/billing"
+  ],
+  "iam-human": [
+   "human access (SSO)",
+   "break-glass",
+   "permission boundaries"
+  ],
+  "workload-identity": [
+   "workload identity",
+   "OIDC federation"
+  ],
+  "cross-account": [
+   "cross-account access"
+  ],
+  "network": [
+   "VPCs/VNets",
+   "subnets",
+   "private endpoints",
+   "hub-spoke"
+  ],
+  "egress": [
+   "egress"
+  ],
+  "edge": [
+   "DNS",
+   "TLS certs",
+   "load balancers",
+   "CDN",
+   "DDoS"
+  ],
+  "compute": [
+   "serverless vs containers vs Kubernetes vs VMs",
+   "serverless patterns"
+  ],
+  "kubernetes": [
+   "Kubernetes architecture"
+  ],
+  "storage": [
+   "object storage",
+   "lifecycle policies",
+   "block/file/object choice"
+  ],
+  "backup": [
+   "backup architecture"
+  ],
+  "encryption": [
+   "KMS key strategy"
+  ],
+  "cost": [
+   "Cost visibility",
+   "rightsizing",
+   "commitment discounts",
+   "unit economics",
+   "anomaly detection"
+  ],
+  "dr": [
+   "RTO/RPO",
+   "multi-AZ vs multi-region",
+   "DR strategies",
+   "game days"
+  ],
+  "quotas": [
+   "quotas"
+  ],
+  "data-residency": [
+   "data placement and residency"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "org",
+    "tagging",
+    "logging-billing"
+   ]
+  },
+  "02": {
+   "build": [
+    "iam-human",
+    "workload-identity",
+    "cross-account"
+   ]
+  },
+  "03": {
+   "build": [
+    "network",
+    "egress",
+    "edge"
+   ]
+  },
+  "04": {
+   "build": [
+    "compute",
+    "kubernetes"
+   ]
+  },
+  "05": {
+   "build": [
+    "storage",
+    "backup",
+    "encryption",
+    "data-residency"
+   ]
+  },
+  "06": {
+   "build": [
+    "cost",
+    "egress"
+   ]
+  },
+  "07": {
+   "build": [
+    "dr",
+    "quotas"
+   ]
+  }
+ },
+ "cases": [
+  {
+   "task": "set up a new AWS organization and landing zone with prod and staging accounts",
+   "mode": "build",
+   "tags": [
+    "org",
+    "tagging",
+    "logging-billing",
+    "iam-human",
+    "network",
+    "cost"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "06"
+   ]
+  },
+  {
+   "task": "deploy a containerized API on Cloud Run behind a global load balancer and CDN",
+   "mode": "build",
+   "tags": [
+    "compute",
+    "edge",
+    "workload-identity"
+   ],
+   "must_load": [
+    "04",
+    "03",
+    "02"
+   ]
+  },
+  {
+   "task": "design multi-region disaster recovery for a payments database with a 5-minute RPO",
+   "mode": "build",
+   "tags": [
+    "dr",
+    "backup",
+    "encryption"
+   ],
+   "must_load": [
+    "07",
+    "05"
+   ]
+  },
+  {
+   "task": "let private-subnet workloads reach the internet and an object storage bucket",
+   "mode": "build",
+   "tags": [
+    "network",
+    "egress"
+   ],
+   "must_load": [
+    "03",
+    "06"
+   ]
+  },
+  {
+   "task": "give a Kubernetes workload access to a storage bucket without static keys",
+   "mode": "build",
+   "tags": [
+    "kubernetes",
+    "workload-identity",
+    "storage"
+   ],
+   "must_load": [
+    "04",
+    "02",
+    "05"
+   ]
+  },
+  {
+   "task": "audit an existing cloud estate",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  },
+  {
+   "task": "keep EU customers' data in EU regions",
+   "mode": "build",
+   "tags": [
+    "data-residency"
+   ],
+   "must_load": [
+    "05"
+   ]
+  }
+ ]
+}

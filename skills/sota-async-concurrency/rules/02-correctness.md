@@ -235,12 +235,12 @@ do real work in a raw handler.
       invariant temporarily broken across an await? (§1)
 - [ ] Multi-lock code: is there a documented order? Build the lock graph from
       the call sites; any cycle is CRITICAL (§5).
-- [ ] Callbacks/virtual calls/logging/awaits inside lock regions?
+- [ ] Callbacks/virtual calls/logging/awaits inside lock regions (§5)?
 - [ ] Lock reachable by outside code (§5 rule 5; HIGH where untrusted or
       plugin code can reach the object, else MEDIUM):
       `grep -rnE '(^|[^A-Za-z0-9_])(lock|synchronized) *\( *((this|getClass\(\)|[A-Za-z_][A-Za-z0-9_]*\.class) *\)|"|typeof *\()|(public|protected)( [a-z]+)* synchronized |synchronized( [a-z]+)* (public|protected) |^[[:space:]]+\*?sync\.(RW)?Mutex[[:space:]]*(//.*)?$' --include='*.cs' --include='*.java' --include='*.kt' --include='*.go' .`
       — a Go hit is an embedded mutex; confirm the enclosing type escapes.
-- [ ] Wait-for cycles without locks: tasks awaiting each other, self-feeding
+- [ ] Wait-for cycles without locks (§5): tasks awaiting each other, self-feeding
       queues, pool-within-pool acquisition.
 - [ ] RwLocks under write-heavy or reader-storm load: starvation analysis
       (§6). Also: try-lock/retry loops without jitter or asymmetry

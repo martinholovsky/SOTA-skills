@@ -171,7 +171,7 @@ An untested DR plan is a document, not a capability. Cadence by tier:
 - [ ] Failover mode decided (auto vs manual) and exercised; declare-authority
       named; runbook accessible during an outage of the primary (not on the
       affected wiki) (§2, §4).
-- [ ] Backups cross-account/cross-region per tier with tested restores ([rules/05](05-data-storage.md));
+- [ ] Backups cross-account/cross-region per tier with tested restores (§2, §7) ([rules/05](05-data-storage.md));
       restore time measured against RTO.
 - [ ] Dependency map for tier-1 systems incl. third parties; each hard dependency
       has accept/degrade/dual-source decision; no hidden circulars (deploy, auth,

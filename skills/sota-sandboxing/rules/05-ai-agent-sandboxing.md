@@ -452,27 +452,27 @@ where they coexist. Rate it with the chain named leg by leg ([`sota/rules/03`](.
 - [ ] Tool/sandbox outputs and cross-agent messages are untrusted on re-entry (size caps, schema
       validation, injection-aware prompting); browser agents get credential-free profiles in their
       own sandbox, downloads untrusted; no process or filesystem shared with the orchestrator (§6).
-- [ ] Append-only action log outside the sandbox with denied-action alerting;
+- [ ] Append-only action log outside the sandbox with denied-action alerting (§4, §3);
       MCP/third-party tool servers inventoried, pinned, and scope-reviewed.
-- [ ] **High** — Locally launched MCP servers run in their own sandbox, not bare on
+- [ ] **High** — Locally launched MCP servers run in their own sandbox (§3), not bare on
       the host (R3.4). JSON (`*mcp*.json`, Gemini `settings.json`, Claude Desktop) and
       Codex TOML entries; run at the repo root, then over `~/.gemini ~/.codex` in place
       of `.` (raw `ugrep` needs `--hidden` to enter `.cursor/`, `.gemini/`, `.codex/`):
       `grep -rnE --include='*mcp*.json' --include='settings.json' --include='claude_desktop_config.json' --include='config.toml' '"command"[[:space:]]*:[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"|^[[:space:]]*command[[:space:]]*=[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"' .`
       — each hit is a server started directly as the developer; want a container or
       OS-sandbox wrapper with scoped mounts and no default network.
-- [ ] **High** — No agent bypass mode in shared scripts, aliases or settings (R3.5):
+- [ ] **High** — No agent bypass mode in shared scripts, aliases or settings (§3) (R3.5):
       `grep -rnE -- '--dangerously-skip-permissions|--dangerously-bypass-approvals-and-sandbox|--yolo|--approval-mode[= ]yolo|"defaultMode"[[:space:]]*:[[:space:]]*"bypassPermissions"|danger-full-access|gemini[^|;&]*[[:space:]]-y([^[:alnum:]-]|$)' .`
       (raw `ugrep` needs `--hidden`) — acceptable only inside an external sandbox; a managed
       baseline disables bypass and turns the harness OS sandbox on fail-closed
       (R3.5), hooks sit outside the agent's write reach, agent
       pushes need review, and standing allow-rules were re-audited this quarter.
-- [ ] **High** — Fleet-wide halt exists, travels out of band (control plane or
+- [ ] **High** — Fleet-wide halt exists (§4), travels out of band (control plane or
       broker, never the agent's context or workspace), and has a measured
       time-to-last-instance-stopped from a recent drill; users can stop a run
       mid-action and roll it back from a side-effect log kept outside the sandbox
       (R4.3).
-- [ ] **Medium** — Every agent detection class maps to an automatic, graduated,
+- [ ] **Medium** — Every agent detection class (§4) maps to an automatic, graduated,
       reversible containment step, drilled with a canary, with a reviewed
       reintegration step (R4.5).
 - [ ] For any tool that **ingests repositories or archives it did not author**:
@@ -485,14 +485,14 @@ where they coexist. Rate it with the chain named leg by leg ([`sota/rules/03`](.
       `none` or FQDN-allowlisted. Flag the module where all four coexist (§7).
 - [ ] **High** — An audit of a repository you did not write ran none of its tests, builds
       or install scripts unasked or unstaged (§7, first paragraph); `--collect-only` counts.
-- [ ] **High** — Each running agent instance holds its own short-lived
+- [ ] **High** — Each running agent instance (§3) holds its own short-lived
       cryptographic identity (SPIFFE-style SVID or equivalent) and authenticates
       downstream as itself; one instance can be revoked without stopping the fleet
       (R3.2). Manual: a credential shared by every replica is the finding.
-- [ ] **Medium** — High-risk action records carry the action class or risk score,
+- [ ] **Medium** — High-risk action records carry the action class or risk score (§4),
       the approval ID (or auto-approve rule) and the policy version (R4.4).
       Manual: pick one past high-risk action and reconstruct why it was allowed.
-- [ ] **Medium** — Named agent detections with written thresholds exist: new tool
+- [ ] **Medium** — Named agent detections with written thresholds exist (§4): new tool
       or target, admin-level calls, call rate, failed-call bursts, injection
       detections per session, high-risk-action share, and human approval drift
       (rubber-stamping, repeated bypass attempts), each mapped to an R4.5 step (R4.4).

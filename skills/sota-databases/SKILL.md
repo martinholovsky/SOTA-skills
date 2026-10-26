@@ -99,7 +99,7 @@ the top 3 fixes by risk-reduction-per-effort.
 | [`rules/03-queries-and-indexes.md`](rules/03-queries-and-indexes.md) | Writing/reviewing queries or ORM code; reading EXPLAIN ANALYZE; choosing index types or composite column order; pagination; N+1 suspicion; CTEs and window functions. |
 | [`rules/04-transactions-concurrency.md`](rules/04-transactions-concurrency.md) | Anything with concurrent writes: isolation levels, locking (FOR UPDATE, SKIP LOCKED, advisory), job queues, idempotency, deadlocks, long transactions, connection pooling. |
 | [`rules/05-reliability-and-scale.md`](rules/05-reliability-and-scale.md) | Backups/PITR, replication and read replicas, partitioning, vacuum/bloat, monitoring, capacity planning, sharding decisions, Redis caching patterns and distributed locks. |
-| [`rules/06-security-and-compliance.md`](rules/06-security-and-compliance.md) | DB roles and grants, RLS, encryption at rest/in transit, SQL injection surface, PII columns, data retention and GDPR-style deletion. |
+| [`rules/06-security-and-compliance.md`](rules/06-security-and-compliance.md) | DB roles and grants, RLS, encryption at rest/in transit, SQL injection surface, security audit logging (pgaudit), PII columns, data retention and GDPR-style deletion. |
 | [`rules/07-vector-and-ai.md`](rules/07-vector-and-ai.md) | Embeddings, semantic/hybrid search, pgvector vs dedicated vector DBs (incl. Qdrant exposure hardening), embedding model versioning and re-indexing. |
 | [`rules/08-surrealdb-multimodel.md`](rules/08-surrealdb-multimodel.md) | Building on or auditing SurrealDB: DEFINE ACCESS auth, system users and least privilege, parameterized SurrealQL, SCHEMAFULL + PERMISSIONS, capability flags, indexes, multi-model (embed/reference/graph edges), backups. |
 

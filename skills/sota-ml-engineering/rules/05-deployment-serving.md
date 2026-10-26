@@ -101,7 +101,7 @@ progressive rollout validated on live traffic.
       ; manual: is the deployed artifact immutable and traceable to its lineage, and the previous
       production model kept deployable? Signature at admission and load: the model-signing item
       in [rules/07](07-security-governance.md)
-- [ ] **Progressive rollout — MEDIUM/HIGH** —
+- [ ] **Progressive rollout — MEDIUM/HIGH** (§4) —
       `out=$(grep -rniE 'shadow|canary|a/?b|traffic.*split|gradual|ramp' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no progressive rollout" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Serving input validation and operability (§5) — MEDIUM** —

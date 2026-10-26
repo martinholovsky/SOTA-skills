@@ -160,7 +160,7 @@ the type system, and expression-oriented code**. References:
       `grep -rnE 'new String\([^,()]+\)|\.getBytes\(\)|new (InputStreamReader|OutputStreamWriter)\([^,()]+\)' --include='*.java' --include='*.kt' .`
       ; `grep -rn 'newDecoder()' --include='*.java' --include='*.kt' .` (none: every decode replaces
       invalid bytes with U+FFFD)
-- [ ] **Kotlin !! (non-null assertion) — MEDIUM (latent NPE)** —
+- [ ] **Kotlin !! (non-null assertion) — MEDIUM (latent NPE)** (§2) —
       `grep -rnE '!!' --include='*.kt' . | grep -v '!!='`
 - [ ] **Java↔Kotlin boundary with unchecked platform types (§3) — MEDIUM (the #1 interop NPE
       source)** — in a module with Kotlin sources, each Java package with no `@NullMarked`
@@ -176,7 +176,7 @@ the type system, and expression-oriented code**. References:
       `grep -rnE -B1 'data[[:space:]]+class[[:space:]]+[A-Za-z0-9_]+[[:space:]]*(<[^>]*>)?[[:space:]]*(@[A-Za-z]+[[:space:]]+)*(private|internal)[[:space:]]+constructor' --include='*.kt' . | awk '/data[[:space:]]+class/ && /(private|internal)[[:space:]]+constructor/ {if(p !~ /ConsistentCopyVisibility/ && $0 !~ /ConsistentCopyVisibility/) print; p=""; next} {p=$0}'`
       ; `grep -rn 'consistent-data-class-copy-visibility' --include='*.gradle*' --include='pom.xml' . || echo "flag not set: every hit above is live"`
       (a hit is clean if its `init {}` enforces the factory's rule; read it)
-- [ ] **Swallowed exceptions — MEDIUM/HIGH** —
+- [ ] **Swallowed exceptions — MEDIUM/HIGH** (§4) —
       `grep -rnzoE 'catch *\([^)]*\) *\{\s*\}' --include='*.java' --include='*.kt' .` ;
       `grep -rnE 'catch *\((Exception|Throwable)|catch *\([^)]*:[[:space:]]*(Exception|Throwable)[[:space:]]*\)' --include='*.java' --include='*.kt' .`
       (the second form is Kotlin's `catch (e: Exception)`, which the Java form never matched)
@@ -193,7 +193,7 @@ the type system, and expression-oriented code**. References:
       ; `grep -rnE 'max(NestingDepth|StringLength|NumberLength|DocumentLength|TokenCount)\([[:space:]]*(-1|Integer\.MAX_VALUE|Long\.MAX_VALUE)' --include='*.java' --include='*.kt' .`
       ; non-literal buffer sizes, each traced to its source:
       `grep -rnE 'new (byte|char)\[[^]0-9]|ByteBuffer\.allocate(Direct)?\([^0-9)]' --include='*.java' --include='*.kt' .`
-- [ ] **Legacy idioms — LOW** —
+- [ ] **Legacy idioms — LOW** (§1) —
       `grep -rnE 'new (ArrayList|HashMap|HashSet)<>\(\)' --include='*.java' .` (consider List.of
       / records); `grep -rnE '\braw\b|new Vector|new Hashtable' --include='*.java' .` ;
       `grep -rn 'Optional<' --include='*.java' . | grep -iE 'private .*Optional|(Optional<[^>]+>) [a-z]+\)'`

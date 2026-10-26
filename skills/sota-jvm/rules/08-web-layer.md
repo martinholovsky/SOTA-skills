@@ -135,7 +135,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
 
 ## Audit checklist
 
-- [ ] **Actuator exposure — HIGH if internet-facing** —
+- [ ] **Actuator exposure — HIGH if internet-facing** (§1) —
       `grep -rnE 'management\.endpoints\.web\.exposure\.include|management\.server\.port|show-values' --include='*.properties' .`
       ; `grep -rnE '^[[:space:]]*(exposure|include|show-values):|heapdump' --include='*.yml' --include='*.yaml' .`
       (YAML nests the key, so the dotted pattern alone misses `include: "*"`, the commonest
@@ -143,18 +143,18 @@ All Spring facts below were checked against Spring's own docs, advisories and so
       (process memory), or `env` with `show-values` other than `never`, is CRITICAL on sight —
       current Spring Boot restricts `heapdump` and masks `env` values by default, so look for
       the property that undid it: [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §3)
-- [ ] **Request-body polymorphism — CRITICAL on a type reachable from `@RequestBody`** —
+- [ ] **Request-body polymorphism — CRITICAL on a type reachable from `@RequestBody`** (§1) —
       `grep -rnE 'JsonTypeInfo\.Id\.(CLASS|MINIMAL_CLASS)|use *= *(JsonTypeInfo\.)?Id\.(CLASS|MINIMAL_CLASS)|activateDefaultTyping|enableDefaultTyping|polymorphicTypeValidator\(|LaissezFaireSubTypeValidator|allowIfBaseType\((Object\.class|Any::class)' --include='*.java' --include='*.kt' .`
       (Jackson 2 and 3 spellings. Then read the `PolymorphicTypeValidator`: allowing `Object`
       or a broad prefix is the same finding)
-- [ ] **Mass assignment — HIGH** — list binding targets and confirm none is an entity:
+- [ ] **Mass assignment — HIGH** (§1) — list binding targets and confirm none is an entity:
       `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` ;
       `grep -rnE 'setAllowedFields|setDisallowedFields|@InitBinder' --include='*.java' --include='*.kt' .`
       (property binding with no `setAllowedFields` on an entity is the finding; a
       disallow-list is weaker than an allow-list) ;
       `grep -rnE 'BeanUtils\.populate\(' --include='*.java' --include='*.kt' .`
       (the non-Spring spelling: every request parameter name becomes a setter call)
-- [ ] **Authorization rules — HIGH** —
+- [ ] **Authorization rules — HIGH** (§1) —
       `grep -rnE 'authorizeHttpRequests|requestMatchers|anyRequest|permitAll|ignoring\(' --include='*.java' --include='*.kt' .`
       (read each chain top-down: first match wins; the chain must end in `anyRequest()`;
       `web.ignoring()` on a non-static path is a finding)
@@ -166,7 +166,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
       (a role named in code but declared nowhere in the app; then compare each
       `security-constraint` URL pattern with the `@ServletSecurity`/`@RolesAllowed` on the same
       target)
-- [ ] **Filter order — MEDIUM, HIGH if the filter enforces tenancy or reads identity** —
+- [ ] **Filter order — MEDIUM, HIGH if the filter enforces tenancy or reads identity** (§1) —
       `grep -rnE 'implements (jakarta|javax)\.servlet\.Filter|extends OncePerRequestFilter|FilterRegistrationBean|@Order' --include='*.java' --include='*.kt' .`
       (confirm on the running app that each identity-reading filter runs after the security
       chain; an annotation is not evidence of the effective order)

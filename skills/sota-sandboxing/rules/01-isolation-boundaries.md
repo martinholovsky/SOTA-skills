@@ -251,15 +251,15 @@ finding (Medium).
 - [ ] Sandbox setup fails closed (workload aborts if any layer can't be applied);
       no design doc waives the sandbox because input is validated, or waives
       validation because a sandbox exists (§1).
-- [ ] Sandboxes are per-trust-domain and ephemeral; no reuse across users/tenants.
-- [ ] No secrets, cloud credentials, or metadata service reachable from inside.
-- [ ] Untrusted workloads scheduled away from control-plane/secrets workloads.
+- [ ] Sandboxes are per-trust-domain and ephemeral (§3); no reuse across users/tenants.
+- [ ] No secrets, cloud credentials, or metadata service reachable from inside (§3, §6).
+- [ ] Untrusted workloads scheduled away from control-plane/secrets workloads (§3).
 - [ ] No anti-pattern from §6 present; any boundary downgrade has a written,
       dated risk acceptance.
 - [ ] In-sandbox denial probe exists and runs in CI; fail-closed behavior
       chaos-tested within the last year; runtime state matches the spec
       (CapEff/Seccomp/NoNewPrivs inspected, not assumed) (§5).
-- [ ] The probe has an **allow arm** as well as its denial arms — the real
+- [ ] The probe has an **allow arm** (§5) as well as its denial arms — the real
       workload completes inside the real policy, so a sandbox that denies
       everything cannot pass CI (R5.1b).
 - [ ] Side-channel posture documented for cross-tenant confidentiality (SMT,

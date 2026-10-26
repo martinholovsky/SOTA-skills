@@ -409,16 +409,16 @@ The Node row lists *files*, because `.bind(` is also `Function.prototype.bind`: 
 
 ## Audit checklist
 
-- [ ] Are passwords hashed with argon2id (or scrypt/bcrypt) at current-policy parameters, with rehash-on-login?
+- [ ] Are passwords hashed with argon2id (or scrypt/bcrypt) at current-policy parameters, with rehash-on-login (§1)?
 - [ ] Are login, registration, and reset endpoints rate-limited with uniform errors/timing across "user exists" states, including each step of a multi-step login (§1)?
-- [ ] Do all OAuth flows use Authorization Code + PKCE(S256), with `state`/`nonce` verified and exact-match redirect URIs?
+- [ ] Do all OAuth flows use Authorization Code + PKCE(S256), with `state`/`nonce` verified and exact-match redirect URIs (§4)?
 - [ ] Is account recovery MFA-equivalent strength, with single-use hashed short-lived reset tokens, and a lost-factor route no caller can talk around (§5)?
 - [ ] Is TOTP (RFC 6238, server clock) rate-limited and code reuse blocked; are out-of-band codes single-use, bound to their request, hashed, and voided on resend (§5)?
 - [ ] Do WebAuthn ceremonies verify a random, single-use, server-stored challenge, exact origin, rpId hash, and UV flags via a maintained library (no hand-parsed CBOR or attestation), check and update the signature counter with a regression logged or stepped up, store several credentials per user (ID, public key, counter, transports) bound atomically at registration, and enforce an attestation allowlist only where certified hardware is required (§6)?
-- [ ] Are SAML responses signature-validated structurally (wrapping-resistant), with audience/recipient/replay checks?
-- [ ] Are API keys hashed at rest, scoped, expiring, revocable, and verified constant-time; webhooks HMAC-verified over the raw body with replay windows?
-- [ ] Does social-login linking require verified email on both sides (or explicit re-auth), with session revocation and notification on link?
-- [ ] Does email change require step-up auth plus confirmation via old and new addresses?
+- [ ] Are SAML responses signature-validated structurally (wrapping-resistant), with audience/recipient/replay checks (§4)?
+- [ ] Are API keys hashed at rest, scoped, expiring, revocable, and verified constant-time; webhooks HMAC-verified over the raw body with replay windows (§8)?
+- [ ] Does social-login linking require verified email on both sides (or explicit re-auth), with session revocation and notification on link (§7)?
+- [ ] Does email change require step-up auth plus confirmation via old and new addresses (§7)?
 - [ ] Are there zero hand-rolled token schemes, password hashes, or login protocols?
 - [ ] **Are legacy fast password hashes wrapped now and expired by a deadline (§1)? HIGH** —
       `grep -rniE '(md5|sha1|sha256|sha512|messagedigest|createhash)[^;]{0,40}(passw|pwd)' .`

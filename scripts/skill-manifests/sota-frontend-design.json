@@ -1,0 +1,257 @@
+{
+ "_note": "Declared BUILD routing for sota-frontend-design (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD links 01, 03, 04, 05, 06 and names 07 by section; rules/02 is linked by no BUILD step (step 2's 'Default stack' teaches its content without a link) and is reached only through its index row. Known routing gaps, recorded and NOT declared: (1) rules/04 section 7c 'Dialogs, drawers & disclosure surfaces' (the escalation ladder, never-stack-modals, unsaved-changes guard) is named in neither 04's index row nor any BUILD line that references 04; a task such as 'add a slide-out filter drawer' reaches 05 ('dialogs/focus traps') and 06 (animation) but not 04. (2) rules/04 section 2a 'Internationalization-aware UX' (text-expansion room, Intl formatting, name/address fields) is likewise unnamed; a task such as 'make the nav, tabs and buttons survive German and Arabic translation' reaches 02 ('logical properties/RTL') but not 04. Observation, not a gap: 04 section 7b 'Lists, tables & data sets' is unnamed in the row too, but a data-table task still reaches 04 through BUILD step 3's data-view states line. Routing gap for rules/04 (dialogs/drawers) FIXED 2026-10-26: the index row now names it, and tag 'dialogs' declares it. Routing gap for rules/04 (internationalization-aware UX) FIXED 2026-10-26: the index row now names it, and tag 'i18n-ux' declares it.",
+ "skill": "sota-frontend-design",
+ "tags": {
+  "new-ui": [
+   "first stylesheet"
+  ],
+  "typography": [
+   "type scales",
+   "fluid type",
+   "variable fonts"
+  ],
+  "color": [
+   "OKLCH palettes",
+   "contrast math",
+   "semantic color tokens",
+   "dark mode"
+  ],
+  "layout": [
+   "CSS grid/subgrid",
+   "container queries",
+   "breakpoints",
+   "Spacing systems"
+  ],
+  "rtl": [
+   "logical properties/RTL"
+  ],
+  "tokens": [
+   "Design tokens",
+   "theming"
+  ],
+  "component-api": [
+   "component API design",
+   "9-state completeness",
+   "headless UI",
+   "Storybook"
+  ],
+  "data-view-states": [
+   "loading/error/empty/partial/ideal"
+  ],
+  "forms": [
+   "Forms",
+   "validation timing"
+  ],
+  "loading": [
+   "loading strategy",
+   "skeletons",
+   "optimistic UI"
+  ],
+  "destructive": [
+   "destructive actions"
+  ],
+  "navigation": [
+   "navigation"
+  ],
+  "a11y": [
+   "a11y",
+   "keyboard/focus management",
+   "WCAG 2.2",
+   "screen-reader"
+  ],
+  "dialog": [
+   "dialogs/focus traps"
+  ],
+  "animation": [
+   "animation/transition",
+   "View Transitions",
+   "scroll-driven"
+  ],
+  "reduced-motion": [
+   "first animation",
+   "prefers-reduced-motion"
+  ],
+  "visual-craft": [
+   "Visual hierarchy",
+   "AI slop",
+   "depth languages",
+   "marketing/empty surfaces"
+  ],
+  "deceptive": [
+   "deceptive patterns",
+   "consent banners"
+  ],
+  "dialogs": [
+   "dialogs/drawers"
+  ],
+  "i18n-ux": [
+   "internationalization-aware UX"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "new-ui",
+    "typography",
+    "color"
+   ]
+  },
+  "02": {
+   "build": [
+    "layout",
+    "rtl"
+   ]
+  },
+  "03": {
+   "build": [
+    "new-ui",
+    "tokens",
+    "component-api",
+    "data-view-states"
+   ]
+  },
+  "04": {
+   "build": [
+    "data-view-states",
+    "forms",
+    "loading",
+    "destructive",
+    "navigation",
+    "dialogs",
+    "i18n-ux"
+   ]
+  },
+  "05": {
+   "build": [
+    "a11y",
+    "dialog",
+    "reduced-motion"
+   ]
+  },
+  "06": {
+   "build": [
+    "animation",
+    "reduced-motion"
+   ]
+  },
+  "07": {
+   "build": [
+    "visual-craft",
+    "deceptive"
+   ]
+  }
+ },
+ "via": [],
+ "cases": [
+  {
+   "task": "build a signup form component in a new design system",
+   "mode": "build",
+   "tags": [
+    "new-ui",
+    "tokens",
+    "component-api",
+    "forms",
+    "a11y"
+   ],
+   "must_load": [
+    "01",
+    "03",
+    "04",
+    "05"
+   ]
+  },
+  {
+   "task": "build a responsive analytics dashboard page with loading and empty states",
+   "mode": "build",
+   "tags": [
+    "layout",
+    "data-view-states",
+    "loading",
+    "visual-craft",
+    "a11y"
+   ],
+   "must_load": [
+    "02",
+    "03",
+    "04",
+    "05",
+    "07"
+   ]
+  },
+  {
+   "task": "add an animated confirm-delete dialog to a list row",
+   "mode": "build",
+   "tags": [
+    "dialog",
+    "animation",
+    "reduced-motion",
+    "destructive"
+   ],
+   "must_load": [
+    "05",
+    "06",
+    "04"
+   ]
+  },
+  {
+   "task": "add dark mode to an existing app",
+   "mode": "build",
+   "tags": [
+    "color",
+    "tokens"
+   ],
+   "must_load": [
+    "01",
+    "03"
+   ]
+  },
+  {
+   "task": "build a cookie-consent banner",
+   "mode": "build",
+   "tags": [
+    "deceptive",
+    "a11y",
+    "layout"
+   ],
+   "must_load": [
+    "07",
+    "05",
+    "02"
+   ]
+  },
+  {
+   "task": "audit a web app's UI",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  },
+  {
+   "task": "add a slide-out filter drawer",
+   "mode": "build",
+   "tags": [
+    "dialogs"
+   ],
+   "must_load": [
+    "04"
+   ]
+  },
+  {
+   "task": "make the nav and buttons survive German and Arabic translation",
+   "mode": "build",
+   "tags": [
+    "i18n-ux"
+   ],
+   "must_load": [
+    "04"
+   ]
+  }
+ ]
+}

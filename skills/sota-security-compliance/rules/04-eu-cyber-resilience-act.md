@@ -67,9 +67,9 @@ vulnerability-handling process**. Both are engineering.
   **security-relevant logging** ([`sota-observability`](../../sota-observability/SKILL.md)).
 
 **Part II — vulnerability handling (for the whole support period):**
-- **SBOM** covering at least the top-level dependencies → **generate in CI/CD**
-  (SPDX or CycloneDX), keep it current per release, and be able to produce it
-  ([`sota-devsecops`](../../sota-devsecops/SKILL.md)). Pair with **VEX** to communicate which listed components are
+- **SBOM** covering at least the top-level dependencies (the legal floor) → **generate in
+  CI/CD** (SPDX or CycloneDX), keep it current per release, and be able to produce it; build the
+  full per-build SBOM anyway ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.5). Pair with **VEX** to communicate which listed components are
   actually exploitable.
 - **Coordinated Vulnerability Disclosure (CVD) policy** → a published intake
   (`security.txt`, a disclosure address/portal) and a documented handling process.
@@ -269,17 +269,17 @@ teeth and deadlines. Reuse, don't rebuild:
 ## Audit checklist
 
 - [ ] CRA applicability determined (§1): is it a PDE placed on the EU market? tier (default / important Class I–II / critical) identified; OSS-steward status if relevant, and commercial productization of OSS treated as full manufacturer obligations; internet-connected radio equipment assessed against the Radio Equipment Directive cybersecurity requirements (Delegated Regulation (EU) 2022/30) until 11 Dec 2027
-- [ ] Release gate blocks **known exploitable vulnerabilities** at ship; component CVE status known via SBOM + scanning
-- [ ] **SBOM generated in CI/CD** (SPDX/CycloneDX), current per release, producible on request; VEX used to scope exploitability
-- [ ] Secure-by-default config verified: no default credentials, hardened defaults, minimal attack surface, authenticated/encrypted comms and updates
-- [ ] **Coordinated Vulnerability Disclosure** intake published (security.txt / portal) with a documented handling process
+- [ ] Release gate blocks **known exploitable vulnerabilities** at ship (§2); component CVE status known via SBOM + scanning
+- [ ] **SBOM generated in CI/CD** (§2) (SPDX/CycloneDX), current per release, producible on request; VEX used to scope exploitability
+- [ ] Secure-by-default config verified (§2): no default credentials, hardened defaults, minimal attack surface, authenticated/encrypted comms and updates
+- [ ] **Coordinated Vulnerability Disclosure** (§2) intake published (security.txt / portal) with a documented handling process
 - [ ] The handling process is **written and ordered** (§3a), not just claimed: acknowledge SLA → reproduce → confirm the cited code exists → scope (ours / dependency-VEX / documented behaviour) → rate on [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §1 → clock decision → reporter closed out (ISO/IEC 30111:2019 is the standard for this half; 29147:2018 for the interface)
 - [ ] **When awareness begins is defined in writing** and a clock decision is recorded for every report **including the rejects**, with a timestamp — an unrecorded "not reportable" is indistinguishable from never having looked, and Article 14's 24h runs from awareness (§3a)
 - [ ] Triage capacity is budgeted and the queue's age is visible: an unread backlog is indistinguishable from having no reports, and pausing intake does not pause the clock (§3a)
 - [ ] The intake page states what a usable report must contain (human-written summary, self-contained reproducer, affected + earliest versions, ideally a patch) — the only lever on inbound quality, and the rubric triage then applies, plus the evidence that makes the reproducer checkable (request/response, log excerpt or screenshot), the reporter's statement of impact and any references such as a CWE (§3a)
 - [ ] **`security.txt` is complete and in date (§2) — MEDIUM:** RFC 9116's required `Contact` and `Expires` are present, `Expires` is in the future, and more than one `Contact` route is listed; the policy page names the confidential channel, an encryption key and safe-harbour terms. Probe: `find . -name security.txt -exec sh -c 'grep -qi "^Contact:" "$1" && grep -qi "^Expires:" "$1" || echo "missing Contact or Expires: $1"' _ {} \;` prints each file missing a required field; then read each `Expires:` date against today. No `security.txt` anywhere on a web-facing product is a lead to ask where researchers report
 - [ ] **Own advisories are complete and machine-readable (§3b) — MEDIUM** (HIGH when users rely on scanner alerts to learn about fixes): each published advisory carries a CVE ID, a vulnerable range and a fixed version, or says no fix exists yet and gives a workaround. On GitHub: `gh api --paginate 'repos/OWNER/REPO/security-advisories?state=published' | jq -r '.[] | select(.cve_id == null or ((.vulnerabilities // []) | length == 0) or any(.vulnerabilities[]; (.vulnerable_version_range // "") == "" or (.patched_versions // "") == "")) | .ghsa_id'` prints each advisory missing one of them; a printed one whose only gap is an empty fixed version passes only if its text says no fix exists yet and gives a workaround
-- [ ] **Signed update channel** and a maintained branch covering the support period (default ≥ 5 years / expected use time); security updates delivered without delay, free, separable
+- [ ] **Signed update channel** (§2) and a maintained branch covering the support period (default ≥ 5 years / expected use time); security updates delivered without delay, free, separable
 - [ ] **Device update integrity beyond the signature (§2) — HIGH** where the product takes firmware/OTA updates: an older signed image is refused by a counter in trusted storage, the update server is authenticated, the signature covers the plaintext of any encrypted package. Probe for switches that turn these off: `grep -rnE '^CONFIG_(ESP_HTTPS_OTA_ALLOW_HTTP|BOOT_SIGNATURE_TYPE_NONE)=y|skip_cert_common_name_check[[:space:]]*=[[:space:]]*true' .` — any hit is a finding; then `grep -rlE '^CONFIG_(MCUBOOT_HW_DOWNGRADE_PREVENTION|BOOTLOADER_APP_ANTI_ROLLBACK)=y' .` printing nothing on a signed-update build is a lead to ask how rollback is refused
 - [ ] Article 14 reporting pipeline built and rehearsed (§3): detection → 24h early warning / 72h notification to CSIRT + ENISA; final reports (14 days / 1 month) covered; unified with NIS2/DORA clocks where applicable; covers products placed on the market before 11 Dec 2027 (Art. 69(3))
 - [ ] Conformity route chosen for the tier (self-assessment vs notified body / certification scheme); CE-marking obligations understood; a class I important product on Module A has fully applied harmonised standards, common specifications or a qualifying certification scheme (Art. 32(2)), otherwise module B+C or H (§4)

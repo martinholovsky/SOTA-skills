@@ -262,12 +262,12 @@ For SLO target T over window W, with budget B = 1 − T:
       table — fast burn, a critical journey down and the telemetry pipeline
       down page; slow burn, a degraded dependency with the SLI fine and a
       tracker spike ticket; a self-replaced single pod OOM pages no one (§7).
-- [ ] Inhibition/grouping configured; silences expire and carry reasons.
-- [ ] Dead-man's-switch on the alerting pipeline; monitoring-down pages via
+- [ ] Inhibition/grouping configured (§5); silences expire and carry reasons.
+- [ ] Dead-man's-switch on the alerting pipeline (§5); monitoring-down pages via
       an independent channel.
 - [ ] Every scheduled job alerts on the age of its last success (and on
       the gauge's absence), so a job that never ran pages (§5).
-- [ ] Low-traffic journeys covered by synthetic probes feeding SLIs.
+- [ ] Low-traffic journeys covered by synthetic probes feeding SLIs (§1, §3).
 - [ ] Alert definitions in version control, code-reviewed, deployed like
       code (no hand-edited live alerts); each SLO is a versioned spec beside
       its alert code; SLI ratios are recording rules shared by alerts and

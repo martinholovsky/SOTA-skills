@@ -141,18 +141,18 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
 
 ## Audit checklist
 
-- [ ] **Non-determinism in render (hydration bugs)** —
+- [ ] **Non-determinism in render (hydration bugs)** (§1) —
       `grep -rnE '(Date\.now|new Date|Math\.random|crypto\.randomUUID)\(' --include='*.tsx' --include='*.vue' src app components pages | grep -v useEffect`
       ;
       `grep -rnE 'typeof window|localStorage|matchMedia|navigator\.' --include='*.tsx' --include='*.vue' src app pages`
-- [ ] **Blanket mismatch suppression (smell if widespread)** —
+- [ ] **Blanket mismatch suppression (smell if widespread)** (§1) —
       `grep -rn 'suppressHydrationWarning\|data-allow-mismatch' --include='*.tsx' --include='*.vue' src app pages`
-- [ ] **Hand-rolled state serialization into <script>** —
+- [ ] **Hand-rolled state serialization into <script>** (§2) —
       `grep -rnE 'JSON\.stringify' --include='*.ts' --include='*.tsx' server app | grep -i 'script\|__DATA__\|innerHTML'`
       ; `grep -E '"serialize-javascript"' package.json` (verify >=7.0.5)
-- [ ] **Cross-request state pollution: module-level mutable state in server code** —
+- [ ] **Cross-request state pollution: module-level mutable state in server code** (§3) —
       `grep -rnE '^(export )?(let|const) \w+\s*=\s*(reactive|ref|new |\[\]|\{\})' --include='*.ts' server lib composables utils 2>/dev/null`
-- [ ] **Caching / CSP** —
+- [ ] **Caching / CSP** (§4, §5) —
       `grep -rn 'Cache-Control\|s-maxage\|Vary' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
       ;
       `grep -rn "Content-Security-Policy\|nonce\|strict-dynamic\|nuxt-security" --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`

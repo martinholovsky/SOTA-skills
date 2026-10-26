@@ -74,6 +74,8 @@ rules/02](../../sota-code-security/rules/02-authentication.md) (authn) and [rule
 - **No internals ever reach the user**: stack traces, SQL fragments, file
   paths, hostnames, dependency names, "NullPointerException". The user-facing
   string and the logged diagnostic are two different strings by design.
+  CLI exception: naming the user's *own* file, URL or offending value is the
+  fix, not a leak ([`sota-cli-ux` rules/02](../../sota-cli-ux/rules/02-output-interaction.md) §7 owns CLI error text).
 - Permission denials name the *rule*, not the resource's existence when the
   user shouldn't know it exists: prefer 404-equivalent copy for unauthorized
   IDs (IDOR hygiene).

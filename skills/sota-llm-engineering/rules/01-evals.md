@@ -397,16 +397,16 @@ published claim rested on that 0.00 for several hours.
       (the runner's source names the path) — a null from an arm blind to the treatment is
       structural, not a result (§8).
 
-- [ ] Every shipped LLM feature has an eval suite in the repo, runnable by one
+- [ ] Every shipped LLM feature has an eval suite in the repo (§1), runnable by one
       documented command. (Absent → High; absent on consequential output with
       no human gate → Critical.)
-- [ ] Golden set ≥20 cases, includes hard/edge/refusal cases, provenance
+- [ ] Golden set ≥20 cases (§1), includes hard/edge/refusal cases, provenance
       tagged, not majority-synthetic after months in production.
-- [ ] Each case set states **how its cases were chosen**, and that rule cites
+- [ ] Each case set states **how its cases were chosen** (§8), and that rule cites
       properties of the case rather than any model's score on it. (A set whose
       cases were kept because a model failed them reports its own selection —
       treat a missing or outcome-referencing rule as High.)
-- [ ] **Regression cases are separated from measurement cases** — different file or an
+- [ ] **Regression cases are separated from measurement cases** (§8) — different file or an
       explicit tag — and no reported lift averages the two. A regression case may be
       added because something failed; a measurement case may not.
 - [ ] Cheapest-grader rule followed: assertions where assertable; judges only
@@ -428,10 +428,10 @@ published claim rested on that 0.00 for several hours.
       harness executes anything) and reproducible, with reasoning effort and
       tool availability pinned alongside the model, and each case set's authoring date
       recorded (§4).
-- [ ] Each suite declares what is **live** vs **replayed**, and the quality
+- [ ] Each suite declares what is **live** vs **replayed** (§5), and the quality
       gate fails with the model endpoint unreachable — a replay-only gate
       measures the harness, not the model.
-- [ ] Online signal exists (sampled judging and/or user feedback) and is
+- [ ] Online signal exists (sampled judging and/or user feedback) (§4) and is
       distinct from — not a substitute for — offline gates.
 - [ ] Offline eval inputs are built by the application's own rendering code (template, role
       prefixes, normalisation), not a re-implementation or the bare payload (§4).
@@ -445,7 +445,7 @@ published claim rested on that 0.00 for several hours.
       complaints, regenerations, escalations and incidents are auto-promoted; near-duplicates
       capped and every case date-stamped. PII redaction before promotion: the PII item in
       [rules/06](06-data-lifecycle.md).
-- [ ] Dev set ≠ gating set; no prompt tuning against the held-out set; no
+- [ ] Dev set ≠ gating set (§8); no prompt tuning against the held-out set; no
       model selection justified by public benchmarks alone.
 - [ ] Injection and content classifiers evaluated per language, including
       unsupported and low-resource languages and translated attacks, with a

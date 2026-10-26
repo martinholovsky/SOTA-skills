@@ -488,7 +488,7 @@ thing** — index it by what it is *for*.
       alone is a fact about the subject; `LINES:0` beside `MEMBERS:0 BYTES:39802880`
       localises it to the reader. Required wherever a positive control is unavailable
       because nothing is known to be present in the target yet.
-- [ ] **zsh joining bugs** (the inverse of SC2086, and unlinted): in any zsh script or
+- [ ] **zsh joining bugs** (§1) (the inverse of SC2086, and unlinted): in any zsh script or
       snippet, `grep -nE -e '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$' <file>` for
       `${var:+--flag $var}` and bare `cmd $args`. Each passes **one** argument in zsh
       where bash passes several. Confirm by running it: `printf "[%s]" $args` prints one

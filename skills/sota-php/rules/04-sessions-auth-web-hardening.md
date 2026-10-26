@@ -367,7 +367,7 @@ Set centrally (middleware or webserver), not per-page:
 
 Run from repo root; verify each hit manually.
 
-- [ ] **Session config — effective values, not file greps alone** —
+- [ ] **Session config — effective values, not file greps alone** (§1) —
       `php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
       ; `grep -rn 'session_regenerate_id' --include='*.php' src/` (absent near login = HIGH);
       `grep -rnE 'session_id\s*\(\s*\$' --include='*.php' src/` (attacker-settable ID)
@@ -395,7 +395,7 @@ Run from repo root; verify each hit manually.
       `grep -rnE '(===?)\s*\$.*(token|signature|hmac|hash)' -i --include='*.php' src/` ;
       `grep -rn 'hash_equals' --include='*.php' src/` ;
       `grep -rn 'base_convert' --include='*.php' src/` (on a token, key or ID = HIGH, §3)
-- [ ] **Crypto** — `grep -rn 'mcrypt' --include='*.php' src/` (removed 7.2 — abandoned code);
+- [ ] **Crypto** (§3) — `grep -rn 'mcrypt' --include='*.php' src/` (removed 7.2 — abandoned code);
       `grep -rnE "openssl_encrypt\([^)]*(cbc|ecb)" -i --include='*.php' src/` ;
       `grep -rn 'sodium_crypto' --include='*.php' src/`
 - [ ] **Framework application key committed or hard-coded (§3) — CRITICAL for a production

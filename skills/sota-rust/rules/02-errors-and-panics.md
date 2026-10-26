@@ -259,10 +259,10 @@ fn main() -> ExitCode {
       on numeric `Option`s, and `#[serde(default)]` on numeric fields — each discards the
       absence the type system was carrying.
 
-- [ ] `rg '\.unwrap\(\)' -t rust -g '!*test*' -g '!benches/*' -g '!examples/*'`
+- [ ] `rg '\.unwrap\(\)' -t rust -g '!*test*' -g '!benches/*' -g '!examples/*'` (§4)
       — every hit in production paths is a finding; severity scales with input
       reachability (attacker-reachable unwrap = High).
-- [ ] `rg '\.expect\("' -t rust` — messages must state invariants ("valid
+- [ ] `rg '\.expect\("' -t rust` (§4) — messages must state invariants ("valid
       static regex"), not restate the failure ("failed to parse").
 - [ ] **Intervals timed on the wall clock (§4)** —
       `grep -rnE '\.(elapsed|duration_since)\([^)]*\)[[:space:]]*\.(unwrap|expect)\(' --include='*.rs' .`
@@ -273,10 +273,10 @@ fn main() -> ExitCode {
 - [ ] `rg '\.unwrap_or_default\(\)|filter_map\(Result::ok\)|\.ok\(\)[;)]' -t rust`
       — silently swallowed errors; require a comment justifying each (§6). Re-wrapping
       `match`es that are `.map(f)` or `?`: `clippy::manual_map`, `question_mark`, `needless_match`.
-- [ ] `rg 'panic!|unreachable!|todo!|unimplemented!' -t rust -g '!*test*'` —
+- [ ] `rg 'panic!|unreachable!|todo!|unimplemented!' -t rust -g '!*test*'` (§5) —
       `todo!`/`unimplemented!` in shipped code = High; `panic!` on
       input-derived conditions = High (DoS).
-- [ ] Indexing on untrusted data: `rg '\[[a-z_]+\]' -t rust` near
+- [ ] Indexing on untrusted data (§4): `rg '\[[a-z_]+\]' -t rust` near
       parse/decode code; string slicing `&s[`, plus `clippy::indexing_slicing`
       (restriction lint) on parser crates.
 - [ ] Library crates exporting `anyhow::Error`/`Box<dyn Error>` in public
@@ -315,7 +315,7 @@ fn main() -> ExitCode {
       `grep -rnE '#\[should_panic\]|assert!\(.*\.is_err\(\)\)' --include='*.rs' .` — a bare
       `should_panic` with no `expected =`, or an `is_err()` assert a wrong variant passes = Low;
       user-facing `Display` output has a snapshot test.
-- [ ] Lints to enforce in CI: `clippy::unwrap_used`, `clippy::panic` (servers),
+- [ ] Lints to enforce in CI (§4, §2): `clippy::unwrap_used`, `clippy::panic` (servers),
       `clippy::result_large_err`, `clippy::or_fun_call`,
       `clippy::manual_let_else`; consider `#![deny(clippy::unwrap_used)]` at
       crate roots of network-facing crates.

@@ -475,7 +475,7 @@ durable verdict everywhere ([`rules/11`](11-after-the-gate-fails.md) §4), not j
       secret? `gh secret list` and `gh secret list --app dependabot` are different stores —
       an empty bot store with a populated repository store is the tell. A gate exempted for
       `dependabot[bot]` is a finding, not a fix (High). Where the scanner can run reduced, the gate asserts its secret is present and fails naming what it would skip (§1.10a).
-- [ ] **No workflow condition treats "same-repo branch" as "has secrets."** Bot branches
+- [ ] **No workflow condition treats "same-repo branch" as "has secrets."** (§1.10a) Bot branches
       satisfy `head.repo.full_name == github.repository` and still receive nothing.
 
 - [ ] **Has this pipeline ever executed?** Count non-skipped, non-refused runs. A
@@ -484,13 +484,13 @@ durable verdict everywhere ([`rules/11`](11-after-the-gate-fails.md) §4), not j
       execute the jobs locally against a fresh clone (committed state, not the working tree) before trusting any gate it claims; a local harness that skips a step for missing tooling counts that step as not run (§1.11).
 - [ ] Every workflow has a top-level `permissions:` block; no `write-all`; `id-token: write` only in federating jobs; the repo/org default token is read-only (`gh api repos/O/R/actions/permissions/workflow --jq .default_workflow_permissions` prints `read`) and no `repo`/`api`-scoped PAT sits in CI secrets where a GitHub App installation token suffices (§1.1)
 - [ ] No long-lived cloud keys in secrets; OIDC trust policies pin `aud` and an exact `sub` (repo + ref/environment, no wildcards; the numeric `@id` form where the repo carries immutable subject claims); one cloud role per repo × purpose, a shared role spanning prod write = Critical (§1.2)
-- [ ] All third-party actions pinned to full commit SHAs with version comments; pins maintained by Renovate/Dependabot; org actions-allowlist enabled
-- [ ] No `pull_request_target`/`workflow_run` job checks out or executes PR head content while secrets/write token are present; label gates (if any) re-applied per push and SHA-pinned at approval
-- [ ] No untrusted context (`title`, `body`, `head_ref`, commit message, comment) interpolated into `run:`/`github-script`/shell-reaching inputs — all via `env:`; zizmor/actionlint run in CI
+- [ ] All third-party actions pinned to full commit SHAs with version comments (§1.3); pins maintained by Renovate/Dependabot; org actions-allowlist enabled
+- [ ] No `pull_request_target`/`workflow_run` job checks out or executes PR head content while secrets/write token are present (§1.4); label gates (if any) re-applied per push and SHA-pinned at approval
+- [ ] No untrusted context (`title`, `body`, `head_ref`, commit message, comment) interpolated into `run:`/`github-script`/shell-reaching inputs — all via `env:` (§1.5); zizmor/actionlint run in CI
 - [ ] Self-hosted runners: none on public repos; ephemeral; egress monitored; caches not shared across trust boundaries; release/publish/signing jobs restore no build cache (`cache-mode: none`, or no cache step) (§1.6)
 - [ ] Default branch ruleset: PR + review required, stale-approval dismissal, exact required checks, no force-push, applies to admins; release tags protected; signed commits required on protected branches, or their absence (and whether GitHub-signed web-UI commits count) recorded as a threat-model decision (§1.7)
 - [ ] Deploy jobs use `environment:` with required reviewers and branch policy; prod secrets live at environment scope; every deploy/apply workflow sets `concurrency:` with `cancel-in-progress: false` (§1.9, Medium — interleaved applies corrupt state, a cancelled deploy can kill a half-finished migration)
-- [ ] CODEOWNERS covers `.github/workflows/`; reusable workflows pinned by SHA
+- [ ] CODEOWNERS covers `.github/workflows/` (§1.8); reusable workflows pinned by SHA
 - [ ] **Build-executing files owned and owner review enforced (§1.8), High if missing:** list them with `git ls-files | grep -E '(^|/)(package\.json|Dockerfile[^/]*|docker-compose[^/]*\.ya?ml|compose\.ya?ml|Makefile|setup\.py|pyproject\.toml|\.npmrc|AGENTS\.md|CLAUDE\.md)$|^\.github/'` plus `grep -rln '//go:generate' .` and match each against CODEOWNERS; `gh api repos/O/R/rules/branches/main --jq '[.[]|select(.type=="pull_request")|.parameters.require_code_owner_review]|any'` (or classic protection `.required_pull_request_reviews.require_code_owner_reviews`) must print `true`
 - [ ] **Privileged jobs check out by SHA (§1.4), High:** `grep -rn -E 'ref:[[:space:]]*\$\{\{[[:space:]]*github\.(head_ref|event\.pull_request\.head\.ref|event\.workflow_run\.head_branch)|refs/pull/' .github/workflows` has no hit in a `pull_request_target`/`workflow_run`/`issue_comment` job
 - [ ] **No interactive debug path into production runners (§1.10), High:** `grep -rn -E 'tmate|upterm|debugger-action|pods/exec|pods/attach' .github/workflows <runner-RBAC-dir>` is empty; `gh variable list` and `gh secret list` show no `ACTIONS_STEP_DEBUG`/`ACTIONS_RUNNER_DEBUG`

@@ -179,7 +179,8 @@ sprinkled through the call graph. Crossings mid-stack are findings.
   inspects a live process's task tree (`pstree` also reports await-graph
   cycles, i.e. async deadlocks); `asyncio.print_call_graph()` in-process.
 - **Node:** monitor event-loop lag/utilization (`perf_hooks.monitorEventLoopDelay`,
-  `performance.eventLoopUtilization()`); alert at p99 lag >100ms.
+  `performance.eventLoopUtilization()`); alert at p99 lag >100ms — the library's one
+  loop-lag threshold, a judgment that matches asyncio debug mode's 100 ms slow-callback default.
   `blocked-at` pinpoints offenders in dev.
 - **Rust:** `tokio-console` shows tasks with long poll times; a single poll
   >100ms is a blocking bug.
@@ -214,13 +215,13 @@ sprinkled through the call graph. Crossings mid-stack are findings.
       `.result()`/`.Result` reachable from loop threads (deadlock-capable:
       CRITICAL); `nest_asyncio` anywhere; offloaded functions calling
       `fut.result()` back into the loop (§6).
-- [ ] Password hashing / crypto in request handlers: offloaded? (HIGH if not.)
-- [ ] Large JSON/template/compression work on the loop thread?
+- [ ] Password hashing / crypto in request handlers (§2): offloaded? (HIGH if not.)
+- [ ] Large JSON/template/compression work on the loop thread (§2)?
 - [ ] Offload pools: bounded? Sized deliberately? Semaphore in front of
       `spawn_blocking`/executor for expensive ops? Large payloads shipped to a
       process pool (serialization cost)? Calls whose p99 can exceed 10ms left
       on the loop? (§3)
-- [ ] Worker results applied to shared state via loop-safe mechanism
+- [ ] Worker results applied to shared state via loop-safe mechanism (§3)
       (`call_soon_threadsafe`, channels, `postMessage`) — not direct mutation
       from the worker thread?
 - [ ] Long loops over unbounded input without a yield point (and is the
@@ -228,7 +229,7 @@ sprinkled through the call graph. Crossings mid-stack are findings.
       per chunk? (§4)
 - [ ] JS: recursive microtask/`nextTick` patterns; `await Promise.resolve()`
       used as a "yield" (it isn't) (§5).
-- [ ] Node `dns.lookup` on hot paths / `UV_THREADPOOL_SIZE` left at 4 with
+- [ ] Node `dns.lookup` on hot paths (§2) / `UV_THREADPOOL_SIZE` left at 4 with
       heavy fs+crypto+dns use?
 - [ ] Sneaky blockers (§8), MEDIUM: imports inside handlers —
       `grep -rnE '^[[:space:]]+(import [A-Za-z_]|from [A-Za-z_.]+ import )' --include='*.py' .`

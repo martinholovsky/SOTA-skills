@@ -214,25 +214,25 @@ async with asyncio.TaskGroup() as tg:
       rayon work run on tokio runtime threads; JVM virtual threads pinned by
       `synchronized` around blocking calls on JDK ≤23; CPU thread pools on
       free-threaded Python whose C extensions have not declared support.
-- [ ] Grep for orphan spawns: `create_task(`/`ensure_future(` with unused
+- [ ] Grep for orphan spawns (§2): `create_task(`/`ensure_future(` with unused
       result, bare `go func(`, `tokio::spawn` with dropped handle, async calls
       and `.then(` chains with no await/`.catch`.
 - [ ] For every spawn: who joins it? Who sees its exception? Who cancels it on
       shutdown? Three answers or it's a finding (HIGH if it does I/O or holds
       resources); a deliberately detached spawn also needs a comment saying
       why (§2).
-- [ ] `asyncio.create_task` results stored in a strong reference (or
+- [ ] `asyncio.create_task` results stored in a strong reference (§2) (or
       TaskGroup)? Weak-ref GC of running tasks is a real CPython footgun.
-- [ ] Fan-out loops bounded by semaphore/errgroup limit/pool size?
+- [ ] Fan-out loops bounded by semaphore/errgroup limit/pool size (§3)?
 - [ ] `gather`/`Promise.all` failure mode considered — does first failure
       strand or leak the siblings? (Plain `asyncio.gather` does not cancel
       siblings on error unless they're in a TaskGroup.) Collect-all results
       (`allSettled`, `return_exceptions=True`) actually inspected for
       failures (§2)?
-- [ ] Background daemons registered for shutdown cancellation?
+- [ ] Background daemons registered for shutdown cancellation (§2)?
 - [ ] Pools sized with a stated rationale, not defaults-by-accident (§3)? CPU
       pools ≈ cores; blocking-I/O pools capped with a semaphore in front, never
       an unbounded cached pool; async fan-out never `gather` over all items.
-- [ ] Shared mutable state: could it be owned by one task + mailbox instead of
+- [ ] Shared mutable state (§2): could it be owned by one task + mailbox instead of
       a lock? (Not mandatory, but flag invariant-spanning state guarded by
       multiple separate locks.)

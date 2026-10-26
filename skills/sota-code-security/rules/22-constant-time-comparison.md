@@ -75,7 +75,7 @@ reasoning governs every other constant-time construct, where it is far less wide
       architectures and optimisation levels actually shipped — including `-Os`/`-Oz` — rather
       than read off the source? Any secret-dependent `/` or `%` located, and a hand-written
       multiply-shift replacement verified over the whole input domain rather than samples?
-- [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time? A short-circuit compare is
+- [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time (§1)? A short-circuit compare is
       MEDIUM, HIGH where it verifies a MAC or signature, or a bearer secret, that an
       unauthenticated caller can submit repeatedly (webhook HMACs, API keys) — the library's one
       rating; language skills point here. Lead list, not verdicts

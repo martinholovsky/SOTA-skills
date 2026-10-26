@@ -223,7 +223,7 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
       `grep -rn "+= .*str(\|+= f\"\|+= \"" --include="*.py" src/` (concat in loops? check
       context); `grep -rn "\.pop(0)\|insert(0," --include="*.py" src/` (O(n) deque ops);
       `grep -rn "in \[" --include="*.py" src/ | head` (list membership in conditions)
-- [ ] **re.compile / invariant work inside loops [manual: confirm loop context]** —
+- [ ] **re.compile / invariant work inside loops [manual: confirm loop context]** (§2) —
       `grep -rn "re.compile\|re.match\|re.search" --include="*.py" src/ | head -30`
 - [ ] **DataFrame antipatterns [MEDIUM in data code]** —
       `grep -rn "iterrows\|itertuples\|\.apply(lambda" --include="*.py" src/` ;

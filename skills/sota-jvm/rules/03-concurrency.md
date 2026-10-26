@@ -56,7 +56,8 @@ coroutines. References:
   resolving and loading a class, blocking inside a class initializer, and waiting for a class
   that another thread is still initializing. So slow I/O in a `static {}` block or a Kotlin
   `companion object` initializer still pins. Keep the `ReentrantLock` advice only for code
-  that must support 21 LTS. Avoid heavy `ThreadLocal` use.
+  that must support 21 LTS. Avoid heavy `ThreadLocal` use (JEP 444: *"do not use thread locals to pool costly resources
+  among multiple tasks sharing the same thread"*).
 - **Request-scoped ambient state is reset in `finally`, or it leaks to the next tenant.** A
   tenant id, user or locale in a `ThreadLocal`, or a logging `MDC` entry, rides the pooled
   platform thread into the next request. Measured on Temurin 25.0.4: a 1-thread pool task set
@@ -151,10 +152,10 @@ coroutines. References:
       cases in §3);
       `grep -rnE 'enable-preview|StructuredTaskScope' --include='*.java' --include='*.kt' --include='pom.xml' --include='*.gradle*' .`
       (structured concurrency is preview in 25)
-- [ ] **CompletableFuture without executor/exception handling — MEDIUM** —
+- [ ] **CompletableFuture without executor/exception handling — MEDIUM** (§2) —
       `grep -rnE 'CompletableFuture\.(supplyAsync|runAsync)\([^,)]*\)' --include='*.java' --include='*.kt' .` (no
       explicit executor)
-- [ ] **Kotlin coroutine hazards — MEDIUM/HIGH** — `grep -rn 'GlobalScope' --include='*.kt' .`
+- [ ] **Kotlin coroutine hazards — MEDIUM/HIGH** (§4) — `grep -rn 'GlobalScope' --include='*.kt' .`
       (unstructured leak); `grep -rnE 'catch *\([^)]*CancellationException' --include='*.kt' .`
       (must rethrow); `grep -rnE 'runBlocking|Thread.sleep' --include='*.kt' .` (blocking in
       coroutine context)
@@ -188,7 +189,7 @@ coroutines. References:
       `grep -rlE 'ThreadLocal<|MDC\.put\(' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE '\.remove\(\)|MDC\.(clear|remove)\(' "$f" || echo "$f"; done`
       (each printed file sets ambient state with no reset in it; a reset elsewhere must be in a
       `finally` on every request path)
-- [ ] **Bare lock without finally — MEDIUM** —
+- [ ] **Bare lock without finally — MEDIUM** (§2) —
       `grep -rnE '\.lock\(\)' --include='*.java' --include='*.kt' .` (verify unlock in finally)
 - [ ] **Shared mutable state with no concurrency tooling (§5) — LOW, MEDIUM when the data-race
       item above has hits** —

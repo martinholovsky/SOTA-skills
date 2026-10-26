@@ -156,3 +156,6 @@ into an error that carries the code and stderr.
       `rg -n -t rust 'Lua::(new|new_with|unsafe_new)\(|rhai::|Engine::new(_raw)?\(|\.eval(_with_scope|_expression)?(::<[^>]*>)?\(|Library::new\(' .`
       — each hit: where the text or path comes from, which stdlib/limits are set, and why
       a dispatch table would not do. An in-process engine counts as no sandbox.
+- [ ] Child output bounded (§1 R9.6): `rg 'output\(\)|wait_with_output' -t rust` where the
+      child's output size is not bounded by the caller = Medium. `pre_exec` (§1 R9.7):
+      `rg 'pre_exec' -t rust` — the closure must be async-signal-safe.

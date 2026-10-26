@@ -113,13 +113,13 @@ The hard tradeoffs and traps:
 ## Audit checklist
 
 - [ ] Every installed operator's RBAC reviewed; no unjustified wildcard verbs, cluster-wide `secrets:*`, RBAC-write, or `pods` create with arbitrary SA? (`kubectl get clusterrole -o yaml` for each operator SA; trace its ClusterRoleBinding) (§1)
-- [ ] Operators run namespaced-scoped where supported, not cluster-wide by default?
-- [ ] RBAC to create/edit operator CRDs is restricted (treated as an escalation primitive when the CRD drives pods/RBAC/secrets)?
+- [ ] Operators run namespaced-scoped where supported (§1), not cluster-wide by default?
+- [ ] RBAC to create/edit operator CRDs is restricted (§1) (treated as an escalation primitive when the CRD drives pods/RBAC/secrets)?
 - [ ] CRDs have structural schemas with validation (`x-kubernetes-validations`), no needless `preserve-unknown-fields`; privileged-becoming fields constrained; namespaced scope unless the resource is genuinely global; conversion webhooks hardened like admission webhooks (§3); CRD removals or replacements reviewed for cascade deletion before GitOps applies them? (`kubectl get crd -o json | jq -r '.items[] | select(([.. | objects | select(.["x-kubernetes-preserve-unknown-fields"] == true)] | length > 0) or .spec.conversion.strategy == "Webhook" or .spec.scope == "Cluster") | "\(.metadata.name) scope=\(.spec.scope) conversion=\(.spec.conversion.strategy // "None")"'` — each line is a CRD to justify) (§2)
-- [ ] Trusted controllers (ESO, cert-manager) scoped — SecretStore/Issuer usage and served namespaces limited, backend creds tight?
-- [ ] Operators pinned by digest and on a tracked CVE/patch cadence?
+- [ ] Trusted controllers (ESO, cert-manager) scoped (§1) — SecretStore/Issuer usage and served namespaces limited, backend creds tight?
+- [ ] Operators pinned by digest and on a tracked CVE/patch cadence (§1)?
 - [ ] Security webhooks `failurePolicy: Fail` BUT with `namespaceSelector` excluding kube-system and the webhook's own ns; webhook runs HA + PDB? (§3)
-- [ ] Webhook `timeoutSeconds` small; webhook scope (`rules`/selectors) minimal, not `*`?
-- [ ] Webhook TLS `caBundle` valid, managed by cert-manager, rotated before expiry, expiry-alerted?
-- [ ] Writes to `admissionregistration.k8s.io` (WebhookConfigurations) guarded like RBAC writes? (`kubectl auth can-i create validatingwebhookconfigurations --as=<subject>` per subject; reverse index via krane — [`rules/02`](02-rbac-serviceaccounts.md) §4)
-- [ ] Logic that fits CEL moved to ValidatingAdmissionPolicy instead of a webhook where practical?
+- [ ] Webhook `timeoutSeconds` small (§3); webhook scope (`rules`/selectors) minimal, not `*`?
+- [ ] Webhook TLS `caBundle` valid (§3), managed by cert-manager, rotated before expiry, expiry-alerted?
+- [ ] Writes to `admissionregistration.k8s.io` (WebhookConfigurations) guarded like RBAC writes (§3)? (`kubectl auth can-i create validatingwebhookconfigurations --as=<subject>` per subject; reverse index via krane — [`rules/02`](02-rbac-serviceaccounts.md) §4)
+- [ ] Logic that fits CEL moved to ValidatingAdmissionPolicy (§3) instead of a webhook where practical?

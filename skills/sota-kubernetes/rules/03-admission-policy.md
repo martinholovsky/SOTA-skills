@@ -34,9 +34,11 @@ metadata:
   name: payments
   labels:
     pod-security.kubernetes.io/enforce: restricted
-    pod-security.kubernetes.io/enforce-version: latest   # or pin to your minor
+    pod-security.kubernetes.io/enforce-version: v<cluster-minor>   # pinned: no surprise rejections on upgrade; bump it in the upgrade runbook
     pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest   # new restrictions surface here before they enforce
     pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
 ```
 
 **Enforce `restricted` on workload namespaces.** `baseline` is a transitional floor, not a
@@ -251,13 +253,13 @@ discipline these become permanent holes:
 ## Audit checklist
 
 - [ ] PSA `enforce: restricted` (or justified `baseline`) on every workload namespace, not just `warn`/`audit`? (`kubectl get ns -L pod-security.kubernetes.io/enforce`) (§1)
-- [ ] No workloads parked in privileged/exempt namespaces (kube-system, operator ns) to dodge PSA?
-- [ ] A policy engine covers what PSA can't (registry allowlist, no `:latest`, required limits, non-default SA, host-path/host-namespace bans)?
+- [ ] No workloads parked in privileged/exempt namespaces (kube-system, operator ns) to dodge PSA (§1)?
+- [ ] A policy engine covers what PSA can't (§2) (registry allowlist, no `:latest`, required limits, non-default SA, host-path/host-namespace bans)?
 - [ ] Engine choice sane (VAP for simple validation; Kyverno/Gatekeeper for the rest; not three overlapping)? Version current/supported? Kyverno policies on the `policies.kyverno.io` CEL types, not legacy `kyverno.io/v1` `ClusterPolicy`/`Policy` (deprecated; 1.20 rejects new or changed ones — `grep -rnE '^apiVersion:[[:space:]]*kyverno\.io/' policies/`, each hit except a `GlobalContextEntry` is a legacy policy or exception to migrate)? (§2)
-- [ ] Policy CRD writes (incl. Kyverno namespaced policies) never delegated to tenants; policy-engine pods behind an egress NetworkPolicy (metadata endpoint blocked); running line carries the fix for every published Kyverno advisory (>= 1.19.1 as of 2026-09-26)?
+- [ ] Policy CRD writes (incl. Kyverno namespaced policies) never delegated to tenants (§2); policy-engine pods behind an egress NetworkPolicy (metadata endpoint blocked); running line carries the fix for every published Kyverno advisory (>= 1.19.1 as of 2026-09-26)?
 - [ ] All security policies in `Enforce`, not parked in `Audit`/`dryrun` indefinitely? (the §3 hunt — a bare `grep -rE 'Audit|dryrun'` misses Gatekeeper `warn` and a `[Warn]`-only binding) Each Audit-mode policy has a flip-date + owner?
 - [ ] Image verification ENFORCED for controlled registries (§4): exact signer issuer+subject, provenance required, tag→digest mutation, `failurePolicy: Fail` so a verification error rejects, full image inventory covered before enforce, images outside the controlled registries allowlisted explicitly with an expiry rather than enforcement disabled? (not Audit-only — High)
-- [ ] Where an approved base set exists: admission requires signed provenance whose `pkg:docker/` dependencies are all approved digests (empty list rejected), and a scheduled job re-checks every running image's base? **Medium** if base approval rests only on a signature or on the self-declared base annotation. (`grep -rnE 'org\.opencontainers\.image\.base\.(name|digest)' <policies>` — each hit is a policy trusting a build-typed label; `grep -rnE 'resolvedDependencies' <policies>` — no hit means provenance bases are never checked)
-- [ ] Policies in git, GitOps-deployed, with CI-tested deny cases (`kyverno test` / gatekeeper tests / VAP units)?
+- [ ] Where an approved base set exists (§4): admission requires signed provenance whose `pkg:docker/` dependencies are all approved digests (empty list rejected), and a scheduled job re-checks every running image's base? **Medium** if base approval rests only on a signature or on the self-declared base annotation. (`grep -rnE 'org\.opencontainers\.image\.base\.(name|digest)' <policies>` — each hit is a policy trusting a build-typed label; `grep -rnE 'resolvedDependencies' <policies>` — no hit means provenance bases are never checked)
+- [ ] Policies in git, GitOps-deployed, with CI-tested deny cases (§2) (`kyverno test` / gatekeeper tests / VAP units)?
 - [ ] Exceptions scoped, owned, time-bound, PR-reviewed, inventoried, expiry-alerted? (`kubectl get policyexceptions.policies.kyverno.io -A` for the CEL types; `polex` is the short name of the legacy `kyverno.io` kind only; list Gatekeeper excludedNamespaces; a cluster-wide "skip this policy" exception is a finding) (§5)
 - [ ] Mutating policies/webhooks reviewed for what they inject (a hostile mutation adds a sidecar/hostPath) — see [`rules/05`](05-operators-crds-webhooks.md)?

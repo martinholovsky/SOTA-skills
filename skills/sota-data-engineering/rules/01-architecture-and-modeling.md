@@ -53,8 +53,8 @@ duckdb.sql("""
 ## 3. Warehouse vs lakehouse
 
 Decide by ownership and access patterns, not fashion. Both converge: every
-major warehouse reads/writes Iceberg (v3 is GA on Snowflake/Databricks and
-Spark 4.0; verify your engine — Trino v3 support still lagged as of writing),
+major warehouse reads/writes Iceberg (format v3 support is uneven across engines — the
+dated status is in [rules/05](05-storage-and-performance.md) §3; verify your engine),
 and lakehouse engines speak SQL.
 
 - **Choose a managed warehouse (Snowflake/BigQuery/Redshift-class) when:**

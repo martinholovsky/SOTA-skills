@@ -376,15 +376,17 @@ for app-side review. Database-layer obligations:
 - **Erasure requests (RTBF):** a single entry point that enumerates every
   location for a subject's data — primary tables, audit/history tables,
   outbox/queue payloads, caches (delete keys), search/vector indexes, logs,
-  backups. Track request → completion with a deadline (30 days GDPR).
+  backups. Track request → completion with a deadline (GDPR Art. 12(3): one month,
+  extensible by two more — [privacy rules/03](../../sota-privacy-compliance/rules/03-consent-and-user-rights.md)).
 - Backups: industry-accepted approach is documented backup-expiry windows
   (deleted data ages out of backups within N days) plus re-deletion on
   restore; **crypto-shredding** (per-user encryption keys; destroy the key to
   erase the data everywhere at once, including backups) where strict
   erasure-from-backups is required.
-- **Anonymization beats deletion** when aggregates must survive: nulling/
-  hashing identifying columns while keeping the row is acceptable only if
-  genuinely irreversible (no quasi-identifier re-identification).
+- **Anonymization beats deletion** when aggregates must survive: nulling
+  identifying columns while keeping the row is acceptable only if genuinely
+  irreversible (no quasi-identifier re-identification). Hashing is not:
+  a hashed identifier is a pseudonym, still personal data ([privacy rules/02](../../sota-privacy-compliance/rules/02-privacy-by-design.md) §3).
 - Soft delete is not erasure (file 01): `deleted_at` rows still hold the PII.
   The purge job is the compliance control; verify it exists and runs.
 - Audit-log immutability vs erasure tension: keep identity out of audit

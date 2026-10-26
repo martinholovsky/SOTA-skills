@@ -1,0 +1,202 @@
+{
+ "_note": "Declared BUILD routing for sota-observability (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. No keyword matches a file's own link text. No BUILD step links any rules file, so every route here is an index row. rules/06 is the audit playbook; its BUILD tag exists because C4 requires one, and routes only a task that is itself a posture assessment. Known routing gaps, recorded and NOT declared: (1) adding synthetic monitoring (probes of critical journeys, cert/DNS/domain-expiry checks) needs rules/05 §8 'Synthetic monitoring', but 05's index row never says synthetic, probe or blackbox, and BUILD step 8 ('Verify by simulation') links nothing; (2) making graceful shutdown and crashes observable (flush exporters on SIGTERM, last-gasp line) needs rules/05 §6 'Shutdown, crashes, and the last 10 seconds', but 05's row never says shutdown, SIGTERM or crash. No synthetic or shutdown tag is declared and no case for either is written. Routing gap for rules/05 (synthetic monitoring) FIXED 2026-10-26: the index row now names it, and tag 'synthetic' declares it. Routing gap for rules/05 (shutdown and crash telemetry) FIXED 2026-10-26: the index row now names it, and tag 'shutdown-telemetry' declares it.",
+ "skill": "sota-observability",
+ "tags": {
+  "logging": [
+   "log statements",
+   "wide events",
+   "canonical log lines",
+   "choosing levels"
+  ],
+  "redaction": [
+   "configuring redaction"
+  ],
+  "telemetry-sampling": [
+   "controlling log spend",
+   "sampling"
+  ],
+  "metrics": [
+   "Prometheus/OTel metrics",
+   "counter vs gauge vs histogram",
+   "RED/USE"
+  ],
+  "cardinality": [
+   "designing labels"
+  ],
+  "tracing": [
+   "Instrumenting with OpenTelemetry",
+   "what gets a span"
+  ],
+  "context-propagation": [
+   "propagating context across HTTP/queues/jobs"
+  ],
+  "slo": [
+   "SLIs/SLOs",
+   "error budgets"
+  ],
+  "alerting": [
+   "burn-rate alerts",
+   "alert quality",
+   "page vs ticket",
+   "alert fatigue"
+  ],
+  "health": [
+   "health endpoints"
+  ],
+  "error-tracking": [
+   "Sentry-style error tracking"
+  ],
+  "dashboards": [
+   "building dashboards"
+  ],
+  "profiling": [
+   "continuous profiling"
+  ],
+  "debug-endpoints": [
+   "securing debug endpoints"
+  ],
+  "posture-assessment": [
+   "observability posture end-to-end",
+   "common gaps catalog"
+  ],
+  "synthetic": [
+   "synthetic monitoring"
+  ],
+  "shutdown-telemetry": [
+   "shutdown and crash telemetry"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "logging",
+    "redaction",
+    "telemetry-sampling"
+   ]
+  },
+  "02": {
+   "build": [
+    "metrics",
+    "cardinality"
+   ]
+  },
+  "03": {
+   "build": [
+    "tracing",
+    "context-propagation",
+    "telemetry-sampling"
+   ]
+  },
+  "04": {
+   "build": [
+    "slo",
+    "alerting"
+   ]
+  },
+  "05": {
+   "build": [
+    "health",
+    "error-tracking",
+    "dashboards",
+    "profiling",
+    "debug-endpoints",
+    "synthetic",
+    "shutdown-telemetry"
+   ]
+  },
+  "06": {
+   "build": [
+    "posture-assessment"
+   ]
+  }
+ },
+ "via": [],
+ "cases": [
+  {
+   "task": "instrument a new HTTP endpoint that publishes to a queue consumed by a worker",
+   "mode": "build",
+   "tags": [
+    "logging",
+    "tracing",
+    "context-propagation",
+    "metrics",
+    "cardinality"
+   ],
+   "must_load": [
+    "01",
+    "03",
+    "02"
+   ]
+  },
+  {
+   "task": "define an SLO and multi-window burn-rate alerts for the checkout API",
+   "mode": "build",
+   "tags": [
+    "slo",
+    "alerting",
+    "metrics"
+   ],
+   "must_load": [
+    "04",
+    "02"
+   ]
+  },
+  {
+   "task": "add liveness/readiness endpoints, error tracking and a service dashboard",
+   "mode": "build",
+   "tags": [
+    "health",
+    "error-tracking",
+    "dashboards"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "redact PII and secrets from application logs and cut log volume",
+   "mode": "build",
+   "tags": [
+    "redaction",
+    "logging",
+    "telemetry-sampling"
+   ],
+   "must_load": [
+    "01"
+   ]
+  },
+  {
+   "task": "audit a codebase's observability posture",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+   ]
+  },
+  {
+   "task": "add synthetic probes of the checkout journey and cert-expiry checks",
+   "mode": "build",
+   "tags": [
+    "synthetic"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "make graceful shutdown observable: flush exporters on SIGTERM, last-gasp log on crash",
+   "mode": "build",
+   "tags": [
+    "shutdown-telemetry"
+   ],
+   "must_load": [
+    "05"
+   ]
+  }
+ ]
+}

@@ -228,7 +228,7 @@ have passed every test, because the test corpus is the demo.
 - [ ] Is there an ADS (or equivalent) doc per detection, including a blind-spots
       / assumptions section, false positives and a validation procedure? A
       detection with no ADS doc is a Medium finding. (§3)
-- [ ] Pick 5 detections: how many are validated against the real technique vs.
+- [ ] Pick 5 detections (§1, §3): how many are validated against the real technique vs.
       "written and hoped"? (`grep -rLiE '^#+ *validation' docs/ads/` lists specs with
       no validation heading.)
 - [ ] Is the portfolio TTP-weighted, or dominated by hash/IP/domain IOC feeds?
@@ -247,7 +247,7 @@ have passed every test, because the test corpus is the demo.
       technique, the actor capability and the telemetry that witnesses it (no
       hypothesis, no detection), and was it tested to fire on the technique and
       stay quiet on a benign baseline, both kept as regression fixtures? (§1)
-- [ ] Hunt query for stale detections: in the rule repo, list detections whose
+- [ ] Hunt query for stale detections (§1, §5): in the rule repo, list detections whose
       last meaningful edit predates the last ATT&CK version bump and that target
       systems still in the asset inventory.
 - [ ] **Does every derived detection record its source, and separate the attack's mechanism

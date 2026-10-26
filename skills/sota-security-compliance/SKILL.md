@@ -181,7 +181,7 @@ and sponsors read them.
    that fail the build. A signed attestation whose practices aren't enforced is
    the finding assessors hunt.
 9. **Reporting clocks are wired into on-call, not lawyers.** Where a regime imposes
-   a 24h/72h reporting clock (CRA, NIS2, DORA), detection and the reporting
+   a reporting clock (CRA, NIS2: 24h/72h; DORA: 4h after classifying as major), detection and the reporting
    workflow are engineered and rehearsed; a clock that depends on someone noticing
    is already breached.
 10. **Separate engineering findings from organizational ones.** Every control lands

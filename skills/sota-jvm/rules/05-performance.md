@@ -116,7 +116,7 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
       `grep -rnE 'List<Integer>|Map<Integer,|Map<.*,Integer>' --include='*.java' . # boxing-heavy collections`
       ; `grep -rnE '(void|fun)[[:space:]]+finalize[[:space:]]*\([[:space:]]*\)' --include='*.java' --include='*.kt' .`
       (finalizers)
-- [ ] **GC/heap flags sane and container-aware?** —
+- [ ] **GC/heap flags sane and container-aware?** (§1) —
       `grep -rnE 'Xmx|Xms|MaxRAMPercentage|UseZGC|UseG1GC|UseParallelGC' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' .`
       ; `grep -rn 'ZGenerational' --include='Dockerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' .` (obsolete since JDK
       24 (JEP 490)); `grep -rn 'UseContainerSupport' . 2>/dev/null`
@@ -124,13 +124,13 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
       `grep -rLE 'Use(G1|Z|Parallel|Serial|Shenandoah)GC' --include='Dockerfile*' --include='Containerfile*' .`
       (each printed file launches a JVM with no explicit collector. With a 1-CPU or
       under-1792 MB limit, a pre-27 JVM runs Serial)
-- [ ] **Benchmark hygiene — verify JMH, not nanoTime loops** —
+- [ ] **Benchmark hygiene — verify JMH, not nanoTime loops** (§4) —
       `grep -rn 'System.nanoTime\|currentTimeMillis' --include='*.java' --include='*.kt' . | grep -i bench` ;
       `grep -rln '@Benchmark' --include='*.java' --include='*.kt' . || echo "no JMH benchmarks"`
 - [ ] **Native image config present if used, and the native binary tested?** (§5) —
       `grep -rn 'native-image\|GraalVM\|reflect-config\|reachability-metadata' . 2>/dev/null`
       ; manual: a CI job runs the tests against the native binary, not only in JVM mode
-- [ ] **Profile first: JFR (-XX:StartFlightRecording) or async-profiler — no static grep**
+- [ ] **Profile first (§4): JFR (-XX:StartFlightRecording) or async-profiler — no static grep**
 - [ ] **JFR recordings and heap dumps: where they land, who can pull them, redaction off — HIGH
       when a recording leaves the host** (§4) —
       `grep -rnE 'StartFlightRecording|FlightRecorderOptions|HeapDumpOnOutOfMemoryError|HeapDumpPath|jmxremote|RemoteRecordingStream|FlightRecorderMXBean' --include='*.java' --include='*.kt' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' --include='*.gradle*' --include='pom.xml' .`

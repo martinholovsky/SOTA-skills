@@ -77,6 +77,9 @@ manually. Check the dependency tree against known-CVE databases.
 
 ### Finding format
 
+Expands the router's canonical row (`file:line | rule | severity | effort | fix`, which wins on a
+cross-domain roll-up); evidence block and report order: [`sota` rules/03](../sota/rules/03-audit-findings.md) §2 and §5.
+
 ```
 [SEVERITY] File.cs:LINE — short title
   Rule: rules/NN-name.md § section

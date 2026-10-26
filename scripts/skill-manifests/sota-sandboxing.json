@@ -1,0 +1,213 @@
+{
+ "_note": "Declared BUILD routing for sota-sandboxing (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Every build case carries threat-classification because BUILD step 1 makes classifying the threat against rules/01 §3 mandatory before any mechanism. Known routing gap, recorded and NOT declared: BUILD step 6 'Verify from inside: ship a probe ... and run it in CI' and the Deliverables line 'the inside-the-sandbox verification probe' link no rules file, and neither rules/01's index row (§5 'Verifying a boundary') nor rules/05's (§5 'Verification probe for agent sandboxes') says verify, verification or probe, so a builder writing the verification probe is routed to neither; no verification tag and no case for that task are declared. Routing gap for rules/01 (verifying a boundary) FIXED 2026-10-26: the index row now names it, and tag 'boundary-verification' declares it. Routing gap for rules/05 (verification probe) FIXED 2026-10-26: the index row now names it, and tag 'agent-probe' declares it.",
+ "skill": "sota-sandboxing",
+ "tags": {
+  "threat-classification": [
+   "Classify the threat",
+   "threat classification"
+  ],
+  "boundary-choice": [
+   "boundary floor",
+   "boundary strength ranking"
+  ],
+  "linux-primitives": [
+   "seccomp",
+   "Landlock",
+   "namespaces",
+   "kernel primitives"
+  ],
+  "container": [
+   "Docker/OCI",
+   "container/orchestrator hardening",
+   "gVisor vs Kata vs Firecracker"
+  ],
+  "kubernetes": [
+   "Kubernetes pod security",
+   "securityContext"
+  ],
+  "risky-parser": [
+   "sandboxed parser workers",
+   "isolating risky code inside your own app"
+  ],
+  "privsep": [
+   "broker/privilege-separation",
+   "in-app separation"
+  ],
+  "subprocess": [
+   "subprocess hygiene"
+  ],
+  "wasm": [
+   "WASM",
+   "V8 isolates"
+  ],
+  "agent": [
+   "LLM/agent workload",
+   "agent-specific controls",
+   "model-generated code execution"
+  ],
+  "mcp": [
+   "MCP server"
+  ],
+  "egress": [
+   "FQDN egress allowlists"
+  ],
+  "boundary-verification": [
+   "verifying a boundary"
+  ],
+  "agent-probe": [
+   "verification probe"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "threat-classification",
+    "boundary-choice",
+    "boundary-verification"
+   ]
+  },
+  "02": {
+   "build": [
+    "linux-primitives"
+   ]
+  },
+  "03": {
+   "build": [
+    "container",
+    "kubernetes"
+   ]
+  },
+  "04": {
+   "build": [
+    "risky-parser",
+    "privsep",
+    "subprocess",
+    "wasm"
+   ]
+  },
+  "05": {
+   "build": [
+    "agent",
+    "mcp",
+    "egress",
+    "agent-probe"
+   ]
+  }
+ },
+ "cases": [
+  {
+   "task": "run user-submitted Python snippets in a public code-execution service",
+   "mode": "build",
+   "tags": [
+    "threat-classification",
+    "boundary-choice",
+    "container",
+    "linux-primitives"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03"
+   ]
+  },
+  {
+   "task": "isolate the image/PDF thumbnailer that parses uploads inside a trusted web service",
+   "mode": "build",
+   "tags": [
+    "threat-classification",
+    "risky-parser",
+    "privsep",
+    "linux-primitives"
+   ],
+   "must_load": [
+    "01",
+    "04",
+    "02"
+   ]
+  },
+  {
+   "task": "let a coding agent run shell commands with network access on a developer laptop",
+   "mode": "build",
+   "tags": [
+    "threat-classification",
+    "agent",
+    "egress"
+   ],
+   "must_load": [
+    "01",
+    "05"
+   ]
+  },
+  {
+   "task": "harden pod specs for tenant workloads on a shared Kubernetes cluster",
+   "mode": "build",
+   "tags": [
+    "threat-classification",
+    "boundary-choice",
+    "kubernetes"
+   ],
+   "must_load": [
+    "01",
+    "03"
+   ]
+  },
+  {
+   "task": "sandbox a locally installed MCP server",
+   "mode": "build",
+   "tags": [
+    "threat-classification",
+    "agent",
+    "mcp"
+   ],
+   "must_load": [
+    "01",
+    "05"
+   ]
+  },
+  {
+   "task": "shell out to an image converter with a user-supplied filename",
+   "mode": "build",
+   "tags": [
+    "threat-classification",
+    "subprocess",
+    "risky-parser"
+   ],
+   "must_load": [
+    "01",
+    "04"
+   ]
+  },
+  {
+   "task": "audit a multi-tenant platform for isolation gaps",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05"
+   ]
+  },
+  {
+   "task": "prove the container sandbox actually denies host access",
+   "mode": "build",
+   "tags": [
+    "boundary-verification"
+   ],
+   "must_load": [
+    "01"
+   ]
+  },
+  {
+   "task": "ship an in-sandbox verification probe for an agent runtime",
+   "mode": "build",
+   "tags": [
+    "agent-probe"
+   ],
+   "must_load": [
+    "05"
+   ]
+  }
+ ]
+}

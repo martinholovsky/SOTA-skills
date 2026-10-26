@@ -302,14 +302,14 @@ Don't back into it via "we just added a second region for latency".
 - [ ] Are retries bounded, jittered, restricted to idempotent operations and retryable errors, and owned by exactly one layer per edge? Is the user's synchronous critical path retried at most once? (§2)
 - [ ] Is there a retry budget or equivalent guard against retry storms? (§2)
 - [ ] Are circuit breakers per-dependency, with alerting on state change and a defined fallback per open circuit? (§3)
-- [ ] Are connection/thread pools bulkheaded per dependency and per workload class, or is there one shared pool?
+- [ ] Are connection/thread pools bulkheaded per dependency and per workload class (§4), or is there one shared pool?
 - [ ] Where a workload-wide failure is unaffordable: is the system split into cells behind a router with no business logic, is each cell capped at a tested size, and do deploys roll out cell by cell with automatic halt? A single shared stack serving every tenant, or a router that calls business services, is a finding (§4).
-- [ ] Is each dependency of each critical flow classified required/optional, with degradation behavior implemented and tested?
-- [ ] Do security- and money-touching paths fail closed?
+- [ ] Is each dependency of each critical flow classified required/optional (§5), with degradation behavior implemented and tested?
+- [ ] Do security- and money-touching paths fail closed (§5)?
 - [ ] **Fail-closed checkers are watched and time-bounded (§5), High:** each external control dependency (screening, policy engine, deny list) has an error-rate alert, a circuit-break of the protected action for long outages, a maximum reference-data age that is enforced, and a version/as-of field in every decision record. Probe: find the decision records with `grep -rnE -i '(screen|sanction|policy|fraud)[a-z_]*(result|decision|record|receipt)' .` and check that each one stores a list version or as-of time. A record with neither cannot show the data was fresh.
 - [ ] **Connection ceilings are documented per backing service (§4), Medium:** list the pool settings with `grep -rnE -i '(maximumPoolSize|SetMaxOpenConns|max_?pool_?size|pool_?size|max_?connections)' .` and, for each, find the doc that states pool × max replicas against the server limit and the at-limit behaviour. A pool with no such doc is a finding. It is High if pool × max replicas is already above the server's limit.
 - [ ] **Limited drops use randomised, identity-bound admission (§6), Medium:** a waiting room admits at random and its tokens are bound to session and identity. Probe for FIFO ticketing: `grep -rnE -i '(queue|waiting|wait)[_-]?(position|pos|ticket|number)([^=]*=[^=]*(incr|nextval|[+][+])|[[:space:]]*([+]=[[:space:]]*1|[+][+]))' .` Any hit on a scarce-inventory flow is a finding.
-- [ ] Is there admission control / load shedding with priority ordering, bounded queues, and deadline-aware dropping?
+- [ ] Is there admission control / load shedding (§6) with priority ordering, bounded queues, and deadline-aware dropping?
 - [ ] Do liveness probes avoid dependency checks? Does readiness avoid mass-unready on shared-dependency failure? Are health endpoints cheap (<10 ms, no fan-out), unauthenticated only on internal interfaces, and exempt from load shedding? (§7)
 - [ ] Are SLOs defined per user journey, and are chaos experiments (latency, errors, instance/AZ kill) run on a schedule with results tracked? Has each incident's failure mode become a permanent chaos experiment? (§8)
 - [ ] Can every service roll back in minutes, shut down gracefully, and start while its dependencies are down? Are schema changes expand/contract so a code rollback never needs a schema rollback, and are startup migrations idempotent and lock-guarded? (§9)

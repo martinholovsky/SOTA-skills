@@ -110,7 +110,8 @@ result of a bad path, an empty glob, an over-narrow filter, or a missing toolcha
     `tool sync` after an interrupt resumes — or at minimum re-runs safely
     (§2). Partial downloads: `.partial` suffix + resume or restart cleanly.
   - Locks: prefer OS-released mechanisms (`flock`) over PID/lock files; if a
-    lock file is unavoidable, store PID + start time and detect staleness —
+    lock file is unavoidable, create it atomically (`O_EXCL`, `mkdir`; never test-then-create),
+    store PID + start time and detect staleness —
     "delete .tool.lock and retry" instructions mean the design failed.
   - On detected leftover state: say what was found, what you did:
     `note: resuming interrupted sync from step 3/7 (state: .tool/journal)`.

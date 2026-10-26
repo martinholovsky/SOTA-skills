@@ -381,7 +381,7 @@ existing parameter means.
 - [ ] **Construction/destruction traps (§8a) — legal code, silent compiler, wrong behaviour All
       four are cppcheck ids, so the cheapest probe is to RUN it with these enabled** —
       `cppcheck --enable=warning,style --inline-suppr <src>` (virtualCallInConstructor,)
-- [ ] **pureVirtualCall, initializerList, assertWithSideEffect, operatorEqToSelf Without
+- [ ] **pureVirtualCall, initializerList, assertWithSideEffect, operatorEqToSelf (§8a) Without
       cppcheck, by hand: a side effect inside assert() VANISHES under -DNDEBUG. Measured:
       assert(++n == 1) left n==1 normally and n==0 with -DNDEBUG. Check the build actually
       defines NDEBUG. written this way on purpose. The one-line form -- a grep with stderr
@@ -396,10 +396,10 @@ existing parameter means.
       ; `0) ;;` (found: asserts are compiled out in that build);
       `1) echo "NDEBUG not set here: release builds may still run asserts" ;;` ;
       `*) echo "SWEEP FAILED, not a finding about their code: $err" ;;` ; `esac`
-- [ ] **Members init in DECLARATION order, not list order -- -Wreorder catches it, so verify the
+- [ ] **Members init in DECLARATION order, not list order (§8a) -- -Wreorder catches it, so verify the
       build does not silence it** —
       `grep -rnE '\-Wall|\-Wreorder|\-Wno-reorder' CMakeLists.txt *.cmake 2>/dev/null`
-- [ ] **Virtual call from a ctor/dtor dispatches to the BASE (measured), and a pure one is UB:
+- [ ] **Virtual call from a ctor/dtor dispatches to the BASE (measured) (§8a), and a pure one is UB:
       each hand-written operator= must be self-assignment safe (copy-and-swap, or a guard)** —
       `grep -rnE '^\s*(virtual |[A-Z][A-Za-z0-9_]*::)?~?[A-Z][A-Za-z0-9_]*\s*\([^)]*\)\s*(:|\{)' --include='*.cpp' . | head`
       (then read each ctor/dtor body for a virtual call);
@@ -423,5 +423,3 @@ existing parameter means.
       includer); `grep -rL  '#pragma once\|#ifndef' --include='*.h' --include='*.hpp' .` (-L =
       files NOT matching);
       `grep -rn 'fvisibility' --include='CMakeLists.txt' --include='*.cmake' . || echo "no -fvisibility=hidden: everything is exported by default — a larger ABI surface than intended"`
-      ; `grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*getchar' --include='*.c' .`
-      (EOF in a char: breaks only where char is UNSIGNED)

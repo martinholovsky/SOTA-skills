@@ -88,6 +88,9 @@ When reviewing existing PHP code:
 file:line | rule violated (rules/NN §S) | severity | effort | fix
 ```
 
+This is the router's canonical row; each finding carries the [`sota` rules/03](../sota/rules/03-audit-findings.md)
+§2 evidence block, and the report follows its §5 order.
+
 Effort: trivial · small · medium · large. Group by severity, CRITICAL first. Borderline
 severities state the deciding assumption; unconfirmed findings are marked "needs
 verification", never asserted. End with counts per severity, the sweep commands run, and

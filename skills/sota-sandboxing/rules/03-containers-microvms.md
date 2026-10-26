@@ -382,56 +382,56 @@ is good for security but plan checkpointing/image capture for incident response
       (RuntimeClass), on tainted dedicated node pools; `hostUsers: false` set
       where nodes support user namespaces (GA in v1.36); any GPU or device
       passthrough into them is recorded as a boundary weakening (§2).
-- [ ] PSA `restricted` enforced (+ audit/warn) on all non-system namespaces;
+- [ ] PSA `restricted` enforced (+ audit/warn) on all non-system namespaces (§3);
       exceptions enumerated with owners; kubelet `--anonymous-auth=false` with
-      webhook authorization, and etcd encrypted at rest (kube-apiserver
-      `--encryption-provider-config` set) (§3).
+      webhook authorization, and etcd encrypted at rest — `--encryption-provider-config`
+      set is not enough (`identity` first = no encryption); probe: [sota-kubernetes rules/01](../../sota-kubernetes/rules/01-control-plane-etcd.md) §4.
 - [ ] `automountServiceAccountToken: false` by default; per-workload service
       accounts with no `cluster-admin` or wildcard verbs; RBAC reviewed for
       escalation verbs (`pods/exec`, secrets, create pods, escalate/bind/impersonate) (§3).
-- [ ] Every IN-cluster egress peer selected by identity (`podSelector`/`namespaceSelector`),
+- [ ] Every IN-cluster egress peer selected by identity (§3) (`podSelector`/`namespaceSelector`),
       not by a pod CIDR — `grep -n 'ipBlock' policies/` and, for each hit, require either an
       out-of-cluster destination or a rewrite; a recycled pod IP re-points the allow silently
-- [ ] Default-deny NetworkPolicy ingress+egress in every namespace; DNS and
+- [ ] Default-deny NetworkPolicy ingress+egress in every namespace (§3); DNS and
       metadata-endpoint egress explicitly constrained; FQDN egress allowlists for
       external calls where CNI supports it.
-- [ ] Secrets short-lived and file-mounted; no long-lived cloud keys in pods;
+- [ ] Secrets short-lived and file-mounted (§3); no long-lived cloud keys in pods;
       metadata service unreachable or audience-bound.
 - [ ] Runtime detection deployed on all nodes with the R4.1 minimum rule set,
       routed to on-call, and canary-tested within the last quarter; container logs
       shipped off-node and an incident capture path (runtime checkpoint or
       `kubectl debug` node profile) documented (§4).
-- [ ] Rootless/userns-remapped engine on hosts where dev containers run; Docker
+- [ ] Rootless/userns-remapped engine on hosts where dev containers run (§1, §2); Docker
       API never on unauthenticated TCP; runc ≥ 1.2.8/1.3.3 (November 2025
       escape trio, R1.4), ≥ 1.3.6/1.4.3 under podman/containerd (CVE-2026-41579);
       GPU nodes run NVIDIA Container Toolkit ≥ 1.17.8 / GPU Operator ≥ 25.3.2 (R2.4).
-- [ ] **High** — Published ports bound to loopback unless deliberately public,
+- [ ] **High** — Published ports bound to loopback unless deliberately public (§1),
       host filtering in `DOCKER-USER`, exposure checked from another host, and no
       service on the default bridge with `icc` on (R1.6):
       `grep -rnE -- '(-p|--publish)[ =]"?[0-9]+:[0-9]+|^[[:space:]]*-[[:space:]]*"?[0-9]+:[0-9]+' .`
       — each hit publishes on all interfaces; want `127.0.0.1:` or a documented
       reason.
-- [ ] **High** — No GPU shared between mutually untrusted tenants by
+- [ ] **High** — No GPU shared between mutually untrusted tenants (§2) by
       time-slicing; co-tenancy only with MIG-class partitioning; device memory
       reset or VM destroyed between tenants' jobs (R2.4):
       `grep -rnE 'timeSlicing:|nvidia\.com/gpu\.shared' .` on a multi-tenant
       cluster is a finding unless the sharing pods are one tenant.
-- [ ] **Medium** — Mounts the workload only reads are read-only, and a read-only
+- [ ] **Medium** — Mounts the workload only reads are read-only (§1), and a read-only
       mount with filesystems below it is recursively read-only (R1.2):
       `grep -rnE -e '(-v|--volume)[ =][^ ]+:/[^ :]*(:[^ ]*)?([[:space:]]|$)' -e '^[[:space:]]*- +[^ :#]+:/[^ :]*(:[^ ]*)?[[:space:]]*$' . | grep -vE '[:,]ro([^[:alnum:]]|$)'`
       — each hit is a writable `-v` or Compose short-syntax mount; confirm the
       workload writes there. `--mount` and Kubernetes `volumeMounts` need a
       manual read for `readonly` / `readOnly: true`.
-- [ ] **Medium** — GPUs granted by explicit count or ID, never "all", and
+- [ ] **Medium** — GPUs granted by explicit count or ID, never "all" (§1), and
       network bandwidth shaped per workload where tenants share an uplink (R1.2):
       `grep -rnE -- '--gpus[ =]"?all|NVIDIA_VISIBLE_DEVICES[=:[:space:]]+"?all|^[[:space:]]*count:[[:space:]]*"?all' .`
       — each hit exposes every host GPU; a Compose GPU reservation with no
       `count` and no `device_ids` does too, and a base CUDA image defaults to all.
-- [ ] **Medium** — Pod template sets `appArmorProfile` (on AppArmor nodes) and
+- [ ] **Medium** — Pod template sets `appArmorProfile` (on AppArmor nodes) (§3) and
       never unmasks `/proc` or runs unconfined (R3.2):
       `grep -rnE 'procMount:[[:space:]]*"?Unmasked|type:[[:space:]]*"?Unconfined|apparmor\.security\.beta\.kubernetes\.io/[^:]*:[[:space:]]*"?unconfined' .`
       — each hit is a finding (covers seccomp `Unconfined` too).
-- [ ] **Medium** — Runtime sensor alerts on device-node opens and metadata-endpoint
+- [ ] **Medium** — Runtime sensor alerts on device-node opens and metadata-endpoint (§4)
       attempts (R4.1). For Falco, find configs that load only the default ruleset,
       and overrides that switch the stock rules off:
       `grep -rlE 'falco_rules\.yaml' . | xargs -r grep -LE 'falco-(incubating|sandbox)_rules'`

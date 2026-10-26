@@ -66,7 +66,8 @@ def handle(e):
   numbers/CVV, private keys, OTPs, password-reset links, `Authorization`/
   `Cookie` headers, full request bodies of auth endpoints.
 - PII (emails, names, addresses, government IDs, precise geo, health data):
-  log only with purpose; prefer pseudonymous user IDs; mask
+  log only with purpose; prefer pseudonymous user IDs (in security/audit
+  telemetry, IDs only, never emails — [privacy rules/06](../../sota-privacy-compliance/rules/06-incident-breach-readiness.md) §3); mask
   (`j***@example.com`) or tokenize when the value is needed for support.
   Retention limits and deletion-on-request must reach logs and backups
   (GDPR/CCPA exposure is a security finding too).
@@ -400,12 +401,12 @@ resources :x without only:/except: | spring-boot-starter-data-rest | @Repository
 
 ## Audit checklist
 
-- [ ] Does a global boundary handler convert all unhandled errors to generic client messages with correlation IDs, full detail server-side only?
-- [ ] Are stack traces, paths, SQL, versions, and framework debug pages unreachable in prod responses?
-- [ ] Are existence/secret oracles avoided (uniform messages, codes, and timing for auth and object-access failures)?
-- [ ] Is there a logger-level redaction filter for credentials/tokens/PII, plus masked-`repr` secret types?
-- [ ] Are user-controlled values sanitized for CR/LF before logging, and format strings never built from input?
-- [ ] Are security events (logins, denials, role changes, admin actions) logged with actor/action/target to an append-only store with alerting?
+- [ ] Does a global boundary handler convert all unhandled errors to generic client messages with correlation IDs, full detail server-side only (§1)?
+- [ ] Are stack traces, paths, SQL, versions, and framework debug pages unreachable in prod responses (§1)?
+- [ ] Are existence/secret oracles avoided (uniform messages, codes, and timing for auth and object-access failures) (§1)?
+- [ ] Is there a logger-level redaction filter for credentials/tokens/PII, plus masked-`repr` secret types (§2)?
+- [ ] Are user-controlled values sanitized for CR/LF before logging, and format strings never built from input (§2)?
+- [ ] Are security events (logins, denials, role changes, admin actions) logged with actor/action/target to an append-only store with alerting (§2)?
 - [ ] **Does every authentication, session and authorization outcome emit a named event
       from one vocabulary (§2.1)** — success-after-failures with a count, threshold with the
       limit, lock with a reason, failed password change at high severity, session
@@ -432,15 +433,15 @@ resources :x without only:/except: | spring-boot-starter-data-rest | @Repository
 - [ ] **Has the generated route table been dumped and trimmed to what the product uses
       (§6)?** MEDIUM:
       `grep -rnE '^[[:space:]]*resources?[[:space:]]+:[a-z_]+|spring-boot-starter-data-rest|@RepositoryRestResource' . | grep -vE 'only:|except:|exported[[:space:]]*=[[:space:]]*false'`
-- [ ] Are query strings free of secrets and PII?
+- [ ] Are query strings free of secrets and PII (§2)?
 - [ ] Does every write endpoint bind through an explicit allowlist DTO (`extra="forbid"`) — no direct body-to-model assignment — with separate create, update and admin schemas (§3)? HIGH when a privileged field is reachable; each hit of `grep -rnE "\*\*request\.(json|form|POST|data)|Object\.assign\([^,]+,[[:space:]]*req\.body|\.update\(req\.body|permit[!]|fields[[:space:]]*=[[:space:]]*[\"']__all__[\"']" --include='*.py' --include='*.js' --include='*.ts' --include='*.rb' .` binds a request body wholesale
 - [ ] Are privileged fields (role, verified, tenant_id, price) unwritable via any public schema, and are prices, subtotals, taxes, totals, discounts, balances and quotas recomputed server-side from identifiers and quantities, never accepted from the client (§3)?
-- [ ] Do responses use explicit output DTOs (no raw entity serialization), with field-level authz on GraphQL?
+- [ ] Do responses use explicit output DTOs (no raw entity serialization), with field-level authz on GraphQL (§4)?
 - [ ] Are client-controlled field/include/expand/sort params allowlist-resolved (§3)?
-- [ ] Are debug endpoints, playgrounds, actuators, source maps, `.git`/`.env`, and magic test bypasses absent from prod, and staging data masked or staging prod-hardened?
-- [ ] Are error trackers, session replay, analytics, warehouses, caches, and backups covered by the same scrubbing/retention/access rules as the primary DB?
-- [ ] Do deletion flows reach secondary stores, and do exports carry full authz, audit, and short-TTL signed links?
-- [ ] Is data classified at the schema level with retention enforced by automated deletion jobs?
+- [ ] Are debug endpoints, playgrounds, actuators, source maps, `.git`/`.env`, and magic test bypasses absent from prod, and staging data masked or staging prod-hardened (§6, §4)?
+- [ ] Are error trackers, session replay, analytics, warehouses, caches, and backups covered by the same scrubbing/retention/access rules as the primary DB (§5)?
+- [ ] Do deletion flows reach secondary stores, and do exports carry full authz, audit, and short-TTL signed links (§5)?
+- [ ] Is data classified at the schema level with retention enforced by automated deletion jobs (§5)?
 - [ ] **Does every non-allow exit of a security decision deny (§1)** — `default`, trailing
       `else`, `finally`, recovered panics, and Java `Error`s that `catch (Exception)` misses?
       HIGH: `grep -rnE '(finally|default|else)[^a-zA-Z]*[:{>-][^}]*return[[:space:]]+(true|True|ALLOW|Allow|PERMIT)|default[[:space:]]*->[[:space:]]*(true|ALLOW|PERMIT)' .`

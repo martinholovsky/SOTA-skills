@@ -192,13 +192,13 @@ deliver **at least once**: crashes and retries re-run jobs. Design contract:
 
 Run from repo root; verify each hit manually.
 
-- [ ] **Timeout.timeout around stateful work — MEDIUM+ (HIGH around transactions)** —
+- [ ] **Timeout.timeout around stateful work — MEDIUM+ (HIGH around transactions)** (§2) —
       `grep -rn "Timeout.timeout\|Timeout::timeout" --include='*.rb' .`
-- [ ] **Unsynchronized shared mutable state (class-level accumulators) — manual review** —
+- [ ] **Unsynchronized shared mutable state (class-level accumulators) — manual review** (§2) —
       `grep -rnE "@@\w+|class << self" --include='*.rb' app/ lib/ 2>/dev/null | head` ;
       `grep -rnE "\|\|=" --include='*.rb' . | grep -viE "spec|test" | head` (memoization under
       threads?)
-- [ ] **Fiber-local mistaken for thread-local** —
+- [ ] **Fiber-local mistaken for thread-local** (§2) —
       `grep -rnE "Thread\.current\[" --include='*.rb' . | head`
 - [ ] **Blocking the fiber-scheduler loop (§3) — HIGH on a fiber-per-request server** —
       `grep -rnE 'Fiber\.set_scheduler|Async[[:space:]]*(do|\{)|falcon' --include='*.rb' --include='Gemfile' .`
@@ -211,9 +211,9 @@ Run from repo root; verify each hit manually.
       reset (§2) — HIGH in multi-tenant code** —
       `grep -rnE '(Thread\.current|Fiber)\[:[a-z_]*(tenant|user|account|locale|org)[a-z_]*\]\s*=[^=]|thread_variable_set\(:[a-z_]*(tenant|user|account|locale|org)|RequestStore\.(store\[|write)' --include='*.rb' . | grep -vE '\]\s*=\s*(nil|prev|previous|old|saved)\b'`
       (each hit needs a restore in `ensure`, or it should move to `CurrentAttributes`)
-- [ ] **Threads without exception handling / join (manual review)** —
+- [ ] **Threads without exception handling / join (manual review)** (§2) —
       `grep -rn "Thread.new" --include='*.rb' . | grep -v join | head`
-- [ ] **Ractor use — verify experimental caveats & removed APIs (Ractor.yield/#take gone in
+- [ ] **Ractor use (§3) — verify experimental caveats & removed APIs (Ractor.yield/#take gone in
       4.0)** — `grep -rnE "Ractor\.(new|yield)|\.take\b" --include='*.rb' . | head`
 - [ ] **Jobs: object args (GlobalID mitigates for AR models; raw objects = MEDIUM) (§4)** —
       `grep -rnE "perform_(async|later)\(" --include='*.rb' . | grep -vE "\(\s*[a-z_]*id|\(\s*\d|\(\s*\)" | head`

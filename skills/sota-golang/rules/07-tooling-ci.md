@@ -81,7 +81,7 @@ formatters:
 
 Add per-repo: `prealloc`/`perfsprint` (perf-sensitive), `revive` (style
 depth), `exhaustive` (enum switches), `gomodguard` (dependency policy).
-Inline suppressions require a reason:
+Inline suppressions require a reason: General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1.
 `//nolint:gosec // G304: path validated by os.Root above` — bare `//nolint`
 is itself a LOW finding. **`nolintlint` makes that a gate, not a convention**: with the settings
 above `golangci-lint run` exits 1 on a bare `//nolint`, on one with no `// reason`, and on one
@@ -336,11 +336,11 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
 
 ## Audit checklist
 
-- [ ] **CI gates present? Inspect workflow files** —
+- [ ] **CI gates present? Inspect workflow files** (§1) —
       `grep -rnE '(go test|race|govulncheck|golangci-lint|staticcheck|gofumpt)' .github/workflows/ Makefile* 2>/dev/null`
       ;
       `grep -rn 'test -race' . --include='*.yml' --include='*.yaml' --include='Makefile*' || echo 'NO RACE IN CI — HIGH'`
-- [ ] **Lint config exists and is curated (not empty, not enable-all)** —
+- [ ] **Lint config exists and is curated (not empty, not enable-all)** (§2) —
       `ls .golangci.yml .golangci.yaml 2>/dev/null` ;
       `grep -n 'enable-all\|disable-all' .golangci.y*ml 2>/dev/null`
 - [ ] **Suppressions that expire (§2) — LOW, MEDIUM when the suppressed linter is gosec** —
@@ -355,7 +355,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       `grep -rlE 'unsafe\.Pointer|^import "C"' --include='*.go' .` ; then
       `grep -rnE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null`
       (files use unsafe or cgo and no hit means nothing checks it)
-- [ ] **Suppression hygiene** — `grep -rn 'nolint' --include='*.go' . | grep -v '//' | head`
+- [ ] **Suppression hygiene** (§2) — `grep -rn 'nolint' --include='*.go' . | grep -v '//' | head`
       (malformed); `grep -rnE '//nolint(:\w+)?$' --include='*.go' .` (no justification — LOW);
       `grep -rn '#nosec' --include='*.go' .` (justify each)
 - [ ] **go.mod hygiene** — `grep -E '^(go|toolchain) ' go.mod` (version current? toolchain
@@ -379,7 +379,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       `func Fuzz` with an early `return` on error has an ordinary `TestXxx` asserting that
       seeds got past the parse, and its round-trip compares values instead of discarding them
       (`grep -rnA8 'f\.Fuzz(func' --include='*_test.go' . | grep -E '_ = '`)
-- [ ] **Test quality** — `grep -rln 'func Test' --include='*_test.go' . | wc -l` ;
+- [ ] **Test quality** (§3) — `grep -rln 'func Test' --include='*_test.go' . | wc -l` ;
       `grep -rn 't.Parallel' --include='*_test.go' . | wc -l` ;
       `grep -rn 'time.Sleep' --include='*_test.go' .` (flaky sync — MEDIUM);
       `grep -rln 'func Fuzz' --include='*_test.go' .` (parsers fuzzed?);
@@ -390,7 +390,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       `git grep -nE 'go build' -- '*Makefile*' '*Dockerfile*' '*.sh' '*.y*ml' | grep -v -- '-trimpath'`
       (a build line without `-trimpath`; `git grep` reaches `.github/`, which standalone ugrep skips) ;
       `go version -m <binary>` on every artifact you did not build (module versions, build settings)
-- [ ] **Formatting drift** — `gofumpt -l . | head` ; `goimports -l . | head`
+- [ ] **Formatting drift** (§1, §2) — `gofumpt -l . | head` ; `goimports -l . | head`
 - [ ] **Toolchain & vuln state** — `go version; go env GOTOOLCHAIN` ; `govulncheck ./...`
 
 Severity guide: no `-race`/govulncheck in CI HIGH; library shipping `replace`

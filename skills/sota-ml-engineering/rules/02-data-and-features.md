@@ -129,7 +129,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 
 ## Audit checklist
 
-- [ ] **Train/serve skew**: is the transformation that produces a training feature the
+- [ ] **Train/serve skew** (§2): is the transformation that produces a training feature the
       *same code path* as the one serving it — a shared library or a feature store — or
       two implementations that must be kept in step by hand? Two implementations is the
       finding, whether or not they currently agree.
@@ -137,10 +137,10 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       label's timestamp, and is no feature a proxy for, or derived after, the label? A join that picks up feature values computed after the event
       leaks the future into training and inflates offline metrics — it will not reproduce
       in serving, which is how it is usually discovered.
-- [ ] If a **feature store** is in use: are offline and online stores written from one
+- [ ] If a **feature store** is in use (§2): are offline and online stores written from one
       pipeline, is freshness monitored per feature, and is a feature's serving default
       (on a store miss) the same value training saw for a missing feature?
-- [ ] If one is **not** in use: what enforces the two answers above instead? "We are
+- [ ] If one is **not** in use (§2): what enforces the two answers above instead? "We are
       careful" is not a mechanism ([`rules/01`](01-ml-systems-architecture.md) §3).
 
 - [ ] **Preprocessing leakage (§1) — CRITICAL** —
@@ -156,12 +156,12 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 - [ ] **Train/serve skew (§2) — CRITICAL Diff training feature code vs serving feature code; are
       served features logged for training?** —
       `grep -rniE 'feature.?store|feast|log.*feature|skew' --include='*.py' . | head`
-- [ ] **Data/feature versioning — HIGH** —
+- [ ] **Data/feature versioning — HIGH** (§5) —
       `out=$(grep -rniE 'dvc|lakefs|dataset.*hash|snapshot|data.?version' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no data versioning found" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
-- [ ] **Data validation at entry — HIGH** —
+- [ ] **Data validation at entry — HIGH** (§5) —
       `grep -rniE 'great_expectations|pandera|tfdv|schema.*valid|expect_' --include='*.py' . || echo "no data validation"`
-- [ ] **PII in features — HIGH (cross-ref [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md))** —
+- [ ] **PII in features (§6) — HIGH (cross-ref [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md))** —
       `grep -rniE 'email|ssn|phone|dob|address|name|ip_addr' --include='*.py' . | grep -i feature | head`
 - [ ] **Signed dataset attestations and stage-to-stage verification (§5) — HIGH** —
       `grep -rniE 'in-toto|dsse|attest' . | grep -iE 'dataset|manifest|chunk|annotation|stage' || echo "no signed dataset attestation"`

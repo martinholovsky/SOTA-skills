@@ -1,0 +1,49 @@
+{
+ "_note": "Declared BUILD routing for sota-llm-engineering (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. No keyword matches a file's own link text. rules/06 and 07 are named by no BUILD step and are reached through their index rows, whose 'Load when' cells carry most keywords here. BUILD step 3 wraps so that 'retries with jittered backoff, model IDs in config' sits on the line holding the rules/04 link, not rules/05's; the retry keywords are therefore taken from 05's own row ('429/529 + jittered backoff'), never from that line. No routing gap found for the cases below.",
+ "skill": "sota-llm-engineering",
+ "tags": {
+  "evals": ["golden set", "Eval-first", "LLM-as-judge", "CI regression gates"],
+  "prompt": ["System prompt structure", "writing or editing prompts", "few-shot"],
+  "structured-output": ["structured output", "parses model output", "extraction or classification"],
+  "context-budget": ["context budget management", "caching-aware prefix", "cache misses"],
+  "untrusted-in-prompt": ["injection-safe template interpolation"],
+  "rag": ["RAG", "hybrid retrieval", "chunking", "grounding & citation"],
+  "embeddings": ["embedding selection & versioning", "embedding/index migration", "migrating embedding models"],
+  "agents": ["tool calls", "tool design", "MCP", "multi-agent"],
+  "loop-budgets": ["stop conditions", "stopping conditions & budgets"],
+  "production": ["shipping to production", "jittered backoff", "retry/fallback design", "kill switch"],
+  "model-selection": ["Model selection & routing", "picking models", "rollout of a new model"],
+  "llm-observability": ["LLM observability", "per-call tracing"],
+  "cost": ["cost engineering", "cost/latency complaints", "cost spikes"],
+  "fine-tuning": ["fine-tuning", "Fine-tune vs prompt"],
+  "feedback": ["feedback capture", "feedback loops", "production sampling into eval sets"],
+  "pii-logging": ["PII in prompts/logs", "logging/retention"],
+  "code-eval": ["scores code from a model", "coding tasks", "pass@k"]
+ },
+ "files": {
+  "01": {"build": ["evals", "feedback"]},
+  "02": {"build": ["prompt", "structured-output", "context-budget", "untrusted-in-prompt", "cost"]},
+  "03": {"build": ["rag", "embeddings", "fine-tuning"]},
+  "04": {"build": ["agents", "loop-budgets"]},
+  "05": {"build": ["production", "model-selection", "llm-observability", "cost"]},
+  "06": {"build": ["fine-tuning", "feedback", "embeddings", "pii-logging"]},
+  "07": {"build": ["code-eval"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "add a support-ticket classifier that returns JSON labels and ship it", "mode": "build",
+   "tags": ["evals", "structured-output", "prompt", "production", "llm-observability"], "must_load": ["01", "02", "05"]},
+  {"task": "build Q&A over internal docs with a vector DB, quoting retrieved chunks into the prompt", "mode": "build",
+   "tags": ["rag", "evals", "embeddings", "untrusted-in-prompt"], "must_load": ["03", "01", "02"]},
+  {"task": "build an agent that files tickets through MCP tools", "mode": "build",
+   "tags": ["agents", "loop-budgets", "evals", "production"], "must_load": ["04", "01", "05"]},
+  {"task": "migrate a RAG index to a new embedding model", "mode": "build",
+   "tags": ["embeddings", "rag", "evals"], "must_load": ["06", "03", "01"]},
+  {"task": "build a harness that compares models on coding tasks", "mode": "build",
+   "tags": ["code-eval", "evals"], "must_load": ["07", "01"]},
+  {"task": "capture thumbs-down feedback and chat logs without leaking PII", "mode": "build",
+   "tags": ["feedback", "pii-logging"], "must_load": ["06", "01"]},
+  {"task": "audit an LLM-powered feature end to end", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+ ]
+}

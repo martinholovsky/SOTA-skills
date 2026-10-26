@@ -96,10 +96,11 @@ die() { err "$@"; exit 1; }
   that prints errors to stdout corrupts downstream consumers.
 - Messages carry context: what was attempted, on what object, what the underlying error
   was. `die "failed to upload $artifact to $bucket: $curl_err"` not `die "error"`.
-- Exit codes: 0 success only; 1 generic failure; 2 reserved-ish (bash builtin misuse);
-  64–78 BSD sysexits if you want granularity (64 usage, 69 unavailable, 77 permission);
-  126/127 (not executable / not found) and 128+N (signal) are shell-reserved — don't
-  emit them yourself. Document non-trivial codes in `--help`.
+- Exit codes: 0 success only; 1 generic failure; usage error 2 (what bash builtins and argparse
+  return) or sysexits 64 — one per tool, documented ([`sota-cli-ux` rules/02](../../sota-cli-ux/rules/02-output-interaction.md) §3 owns
+  the table); 64–78 for more granularity (69 unavailable, 77 permission); 126/127 (not executable /
+  not found) are shell-reserved — don't emit them; 128+N means death by signal N, so after a trapped
+  signal re-raise it ([rules/05](05-constructs-and-cleanup.md) §3), never `exit 128+N`. Document non-trivial codes in `--help`.
 - Never `exit` from inside a function where the caller might want to continue — `return`
   a status and let the top level decide; `exit` in sourced files kills the caller's shell.
 
@@ -358,7 +359,9 @@ flock -n 9 || die "another instance is running"
 ```
 
   Never the `[ -f pidfile ]` dance — it races and leaks stale locks. macOS lacks `flock(1)`;
-  use `mkdir`-as-lock (atomic) with trap cleanup if portable locking is needed.
+  use `mkdir`-as-lock (atomic) with trap cleanup if portable locking is needed, and write PID +
+  start time into it: no trap runs on SIGKILL, so the directory outlives a killed run (measured
+  2026-10-26) and needs the staleness check of [`sota-cli-ux` rules/03](../../sota-cli-ux/rules/03-behavior-lifecycle.md) §4.
 - Background jobs: every `&` is owned — record the PID, `wait` on it, check its status.
 
 ```bash
@@ -461,11 +464,11 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
       diagnostic `echo`, and **`local rc; rc=$?`**, where the declaration itself resets `$?`
       (measured 0 vs 7 on bash/zsh/dash/sh — and it is the SC2155 "declare separately" habit
       applied where it does not belong). Silent, and the variable is still named `rc`.
-- [ ] **Process substitution with a fallible producer**: `grep -rn '< <(' --include='*.sh'`
+- [ ] **Process substitution with a fallible producer** (§4): `grep -rn '< <(' --include='*.sh'`
       — for each, can the producer fail? If yes and the status is not captured, a failure
       is indistinguishable from an empty result. High when the loop's emptiness decides a
       pass/fail verdict.
-- [ ] **Arbitrary selection**: `grep -rnE '\|\s*head -1|\| head -n ?1' --include='*.sh'`
+- [ ] **Arbitrary selection** (§4): `grep -rnE '\|\s*head -1|\| head -n ?1' --include='*.sh'`
       over set-emitting commands with no `--sort`/`sort`. Confirm a two-element fixture
       exists; a one-element test cannot fail.
 - [ ] **Second-run safety** (§9): re-run the script on unchanged inputs and diff the store.
@@ -480,10 +483,10 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
 - [ ] Bare curl/wget (§7): no timeout, `grep -rn 'curl ' --include='*.sh' . | grep -v -e '--max-time'`; no `--fail`,
       `grep -rn 'curl ' --include='*.sh' . | grep -v -e '--fail' -e ' -[a-zA-Z]*f'` → MEDIUM (no timeout) / HIGH if output is piped to a shell or parsed as data. One `grep -v` of both flags passes a line holding either. Non-curl network commands not under `timeout`.
 - [ ] Retries on non-idempotent operations (`--retry` + POST) → HIGH (§7).
-- [ ] SC2031/SC2030 — `| while read` subshell variable loss.
-- [ ] Pipeline status ignored where producer matters and no `pipefail`/PIPESTATUS check.
+- [ ] SC2031/SC2030 (§4) — `| while read` subshell variable loss.
+- [ ] Pipeline status ignored where producer matters (§4) and no `pipefail`/PIPESTATUS check.
 - [ ] Lock discipline (§8): cron-invoked or deploy scripts without `flock`/lock dir → MEDIUM;
-      pidfile-based locks → MEDIUM (racy).
+      test-then-create pidfile locks (`[ -f … ]`) → MEDIUM (racy).
 - [ ] Unmanaged `&` (§8): `grep -rn ' &$' --include='*.sh'` without matching `wait` on PID; a bare `wait` with no PID where job status matters: `grep -rnE '(^|[;&|])[[:space:]]*wait[[:space:]]*($|[;&|#])' --include='*.sh' .` (4/4 bad, 0/5 good, BSD grep and ugrep).
 - [ ] In-place writes of consumed files: `grep -rn '> */etc/\|> *.*\.conf' --include='*.sh'`
       without mktemp+mv → HIGH for configs read by daemons (§9); a `mktemp`+`mv` that publishes without `chmod` ships a 0600 file; a download moved into place before it is verified.

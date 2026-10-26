@@ -101,9 +101,9 @@ rubric (data / model / infra / monitoring tests) is the backbone.
       the metric fit the objective (not accuracy alone on imbalanced data), is the offline metric's
       relation to the online business metric stated, and does each added feature survive an
       ablation on held-out data?
-- [ ] **Sliced / fairness evaluation — HIGH if absent on a high-stakes model** —
+- [ ] **Sliced / fairness evaluation — HIGH if absent on a high-stakes model** (§3) —
       `grep -rniE 'group_?by|slice|segment|subgroup|fairness|by_cohort|disaggregat' --include='*.py' . || echo "no sliced evaluation — aggregate metrics only"`
-- [ ] **Validation gate before promotion — HIGH if missing** —
+- [ ] **Validation gate before promotion — HIGH if missing** (§4) —
       `err=$(grep -rniE 'threshold|gate|promote|regression|assert.*metric|validate_model' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no automated promotion gate in CI config" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       (the previous form piped through `head`, which exits 0, so its fallback could never fire)

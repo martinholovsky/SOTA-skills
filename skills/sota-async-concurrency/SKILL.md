@@ -112,9 +112,9 @@ Fix: concrete minimal change (primitive, bound, timeout value, scope).
 | [`rules/02-correctness.md`](rules/02-correctness.md) | Reasoning about data races vs race conditions, atomicity, memory ordering/visibility, TOCTOU, deadlock prevention, livelock, starvation, idempotency under retries |
 | [`rules/03-primitives.md`](rules/03-primitives.md) | Picking or reviewing mutexes, RwLocks, semaphores, condition variables, channels (bounded vs unbounded), select/race, once/lazy init |
 | [`rules/04-event-loop-hygiene.md`](rules/04-event-loop-hygiene.md) | Anything runs on an event loop: blocking calls, CPU work, offloading to pools, long-task chunking, microtask vs macrotask |
-| [`rules/05-cancellation-timeouts-shutdown.md`](rules/05-cancellation-timeouts-shutdown.md) | Timeout policy, propagating cancellation (context/AbortSignal/CancelledError), cleanup on cancel, graceful shutdown sequencing |
+| [`rules/05-cancellation-timeouts-shutdown.md`](rules/05-cancellation-timeouts-shutdown.md) | Timeout policy, propagating cancellation (context/AbortSignal/CancelledError), cleanup on cancel, graceful shutdown sequencing, retry interplay (cancellable backoff) |
 | [`rules/06-backpressure-flow-control.md`](rules/06-backpressure-flow-control.md) | Queues between components, producer/consumer rate mismatch, load shedding, token buckets, pull-based streaming |
-| [`rules/07-audit-bug-catalog.md`](rules/07-audit-bug-catalog.md) | AUDIT mode: the signature, severity, and fix for every common async bug — fire-and-forget, missing await, lock-across-await, retry storms, thundering herd, unbounded spawns |
+| [`rules/07-audit-bug-catalog.md`](rules/07-audit-bug-catalog.md) | AUDIT mode: the signature, severity, and fix for every common async bug — fire-and-forget, missing await, lock-across-await, retry storms, thundering herd, unbounded spawns, ambient per-request context (tenant, user) not reset |
 
 ## Top 10 non-negotiables
 

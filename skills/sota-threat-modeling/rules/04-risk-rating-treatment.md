@@ -293,15 +293,15 @@ Management cheat sheet, Code Review Guide v2.
       no CVSS on design-stage threats, no cross-version score comparison,
       and exploitation likelihood taken from EPSS/KEV-class signals, not
       the CVSS number (§2).
-- [ ] Threats rated as-mitigated, with likelihood reflecting the easiest
+- [ ] Threats rated as-mitigated (§3), with likelihood reflecting the easiest
       path; Low×catastrophic escalated, not averaged away.
 - [ ] Every threat has exactly one disposition: mitigate/accept/transfer/
       avoid; no "noted"/orphaned threats; a transfer cites its contract/SLA
       and the residual kept, and each mitigation says whether it cuts
       likelihood or impact (§4).
-- [ ] Acceptances have a named individual owner, rationale, and unexpired
+- [ ] Acceptances have a named individual owner (§4), rationale, and unexpired
       review date; acceptance authority matches severity.
-- [ ] "Avoid" considered (data/feature/privilege removal) before expensive
+- [ ] "Avoid" considered (§4) (data/feature/privilege removal) before expensive
       mitigations — evidence in at least one disposition.
 - [ ] Threat→requirement→test ID chain intact for all High+ mitigations;
       abuse-case tests exist and run in CI; requirements are testable MUSTs
@@ -309,15 +309,15 @@ Management cheat sheet, Code Review Guide v2.
       (§5).
 - [ ] Residual risks re-rated on the same scale and rolled into a ≤1-page
       register with owners and review dates (§6).
-- [ ] Expired acceptances/reviews flagged as findings.
-- [ ] Each mitigation names an accountable owner and a responsible
+- [ ] Expired acceptances/reviews flagged as findings (§6).
+- [ ] Each mitigation names an accountable owner and a responsible (§4)
       implementer with a due date and per-action status. A past-due action with
       no escalation, re-rating or time-boxed acceptance → Medium (High when
       the threat is High+).
 - [ ] A cross-application inventory tiers every system and names its
       modeling depth and ASVS target (§8). A High-tier system with only a
       four-questions pass, or no tier at all → High.
-- [ ] High-tier modules (auth, crypto, payment, tenancy) have heightened
+- [ ] High-tier modules (auth, crypto, payment, tenancy) (§8) have heightened
       review. Probe: `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -v '^#' | grep -c -i -E 'auth|session|crypto|payment|billing|tenant'`;
       0 in a codebase that has such modules → Medium. The `2>/dev/null` also
       prints 0 when NO CODEOWNERS file exists — run `ls -1 .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS`

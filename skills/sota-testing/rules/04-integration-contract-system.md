@@ -267,7 +267,7 @@ ran*; it read as the target not being exploitable.
       A separate drifting `schema.sql` loaded directly → High. Destructive/data
       migrations with no rehearsal on masked representative data, or a rollback never
       verified and not documented forward-only → Medium (§4.2).
-- [ ] Is per-test DB isolation centralized and matched to needs? Rollback
+- [ ] Is per-test DB isolation centralized and matched to needs (§4.2)? Rollback
       strategy + tests asserting cross-connection visibility/commit hooks →
       those tests are lying (High). Copy-pasted cleanup SQL across files →
       Medium.

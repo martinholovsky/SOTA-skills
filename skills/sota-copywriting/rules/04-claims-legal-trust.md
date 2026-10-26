@@ -210,7 +210,7 @@ Two regimes cover most senders; apply the stricter when audiences mix:
       mapped to evidence, owner, and re-verify date — evidence on file before
       publication, not assembled after a challenge (§1, §6)
 - [ ] Superlative/absolute sweep clean or substantiated:
-      `grep -rniwE '#1|best|only|first|fastest|guaranteed|never|100%' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .` (§1)
+      `grep -rniwE '#1|best|leading|only|first|fastest|world-class|revolutionary|guaranteed|never|100%' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .` (§1)
 - [ ] Security/uptime claims state real, currently-true controls and
       measured numbers — no "bank-level/military-grade" filler; uptime figures
       match the contractual SLA and state the measurement window; comparative
@@ -244,7 +244,7 @@ Two regimes cover most senders; apply the stricter when audiences mix:
       ≤ 10 business days;
       physical address present; EU sends have consent or soft-opt-in records;
       subjects truthful; no promotions disguised as transactional mail (§5)
-- [ ] Bulk sends (5,000+/day): SPF + DKIM + DMARC aligned, RFC 8058
+- [ ] Bulk sends (Gmail: 5,000+/day; Yahoo: no published number): SPF + DKIM + DMARC aligned, RFC 8058
       one-click-unsubscribe headers present, reported spam rate < 0.3% (§5)
 - [ ] Legal pages consistent with marketing promises; badges current and
       verifiable (§6)

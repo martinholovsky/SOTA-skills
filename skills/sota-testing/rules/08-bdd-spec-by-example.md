@@ -84,5 +84,5 @@ scenarios — that mapping is the SDD↔BDD bridge.
 - [ ] Do scenarios trace to spec acceptance criteria ([`sota-docs-workflow`
       rules/05](../../sota-docs-workflow/rules/05-spec-driven-development.md)) and fail before the feature exists (seen red)? Scenarios written
       after the fact, never observed failing → Medium. (§8.3, §8.5)
-- [ ] Any Gherkin wrapping pure algorithmic logic with no cross-role value? →
+- [ ] Any Gherkin wrapping pure algorithmic logic with no cross-role value (§8.1)? →
       Low; convert to example/property tests ([`rules/06`](06-property-fuzzing-mutation.md)).

@@ -95,17 +95,17 @@ per route, so match each route to its data:
 
 ## Audit checklist
 
-- [ ] **Framework majors in use — compare against the support table above** —
+- [ ] **Framework majors in use — compare against the support table above** (§1) —
       `grep -E '"(react|react-dom|next|vue|nuxt|nitropack|pinia)"' package.json` ;
       `cat package.json | grep -A2 '"dependencies"'` (then read lockfile for exact patch)
-- [ ] **EOL / unsupported runtimes (findings)** —
+- [ ] **EOL / unsupported runtimes (findings)** (§1) —
       `node -e "const p=require('./package.json');const d={...p.dependencies,...p.devDependencies};for(const k of ['vue','nuxt','next'])if(d[k])console.log(k,d[k])"`
       (vue ^2 -> EOL; nuxt ^2 or ^3 -> EOL (Nuxt 3 since 2026-07-31); next <15 -> unsupported, and next <16 after 2026-10-21)
-- [ ] **Render-mode inventory** —
+- [ ] **Render-mode inventory** (§3) —
       `grep -rnE 'ssr:[[:space:]]*false|routeRules|prerender|export const dynamic|cacheComponents' app pages 2>/dev/null; find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'next.config.*' -o -name 'nuxt.config.*' \) -type f -exec grep -HnE 'ssr:[[:space:]]*false|routeRules|prerender|cacheComponents' {} +`
-- [ ] **Hooks/vue lint present?** —
+- [ ] **Hooks/vue lint present?** (§4) —
       `find . -maxdepth 2 -path ./node_modules -prune -o \( -name '.eslintrc*' -o -name 'eslint.config.*' -o -name package.json \) -type f -exec grep -HnE 'react-hooks|eslint-plugin-vue|next/core-web-vitals|@nuxt/eslint' {} +`
-- [ ] **Dev server as the production start command (HIGH on an internet-facing host)** —
+- [ ] **Dev server as the production start command (HIGH on an internet-facing host)** (§4) —
       `grep -rnE '"start":[[:space:]]*"[^"]*((next|nuxt|nuxi) dev|next"|vite( |")|vite preview)|(CMD|ENTRYPOINT).*((next|nuxt|nuxi)"?,?[[:space:]]*"?dev|run"?,?[[:space:]]*"?dev)' --include=package.json --include='Dockerfile*' --include='Containerfile*' --exclude-dir=node_modules .`
       (also read Procfiles, unit files and platform start settings, which it does not scan)
 

@@ -43,7 +43,8 @@ Semgrep registry entry name; **vendor or `git+`-clone the community rulesets you
 rather than resolving a registry you do not control** — that registry is operated by the
 vendor whose licence change caused the fork.
 
-Suppression discipline (applies to every tool in this file):
+Suppression discipline (applies to every tool in this file, and to linters and type checkers;
+each language skill's tooling file carries its tool's syntax and whether it reports a stale suppression):
 - Inline suppressions (`# nosem`, `# nosemgrep`, `# noopengrep`, `lgtm[...]`, `#nosec`)
   require a reason on the same line: `# nosemgrep: rule-id -- input is enum-validated
   above`. Bare suppressions fail the build (`--disable-nosem` audits them; a grep-based
@@ -263,11 +264,11 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 
 ## Audit checklist
 
-- [ ] SAST: diff-aware Opengrep (org rules included) required on PRs; CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
-- [ ] All inline suppressions (`nosemgrep`/`#nosec`/checkov skips) carry justifications; suppression inventory reviewed; baseline only shrinks
+- [ ] SAST: diff-aware Opengrep (org rules included) required on PRs (§5.1); CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
+- [ ] All inline suppressions (`nosemgrep`/`#nosec`/checkov skips) carry justifications (§5.1); suppression inventory reviewed; baseline only shrinks
 - [ ] Secret scanning (§5.2): pre-commit hook plus push protection org-wide, PR diff scan, history scanned at onboarding; committed secrets trigger rotation, not just removal, with a per-credential-type rotation runbook written in advance; bypass events reviewed; allowlists name exact files, never directory wildcards; `find . -name '.gitleaks.toml' -not -path './.git/*' -exec grep -L -E '^[[:space:]]*(useDefault[[:space:]]*=[[:space:]]*true|\[\[rules\]\])' {} +` prints nothing (an allowlist-only config loads zero rules and reports no leaks), High
 - [ ] IaC scanning on PRs as a required check (plan-aware where possible) with the high-signal defaults non-exceptable; custom org policies versioned + tested (§5.3)
-- [ ] DAST baseline on staging per merge, authenticated scans scheduled, OpenAPI-fed; baseline file changes reviewed
+- [ ] DAST baseline on staging per merge (§5.4), authenticated scans scheduled, OpenAPI-fed; baseline file changes reviewed
 - [ ] **DAST covers every role and client-rendered routes (§5.4), Medium:** in the ZAP plan `grep -c -E 'type:[[:space:]]*(spiderAjax|spiderClient)' zap.yaml` and `grep -c -E '^[[:space:]]*users:' zap.yaml` are not `0`, with one user per role
 - [ ] **SAST rules have an owner and a tuning loop (§5.1), Low:** `grep -n -E '^/?(\.semgrep|\.opengrep|\.github/codeql)/' .github/CODEOWNERS` (or the repo's CODEOWNERS path) is non-empty; dismissed false positives are routed to the owner and the per-rule FP rate is tracked
 - [ ] **Deep DAST scan not throttled; disabled checks justified (§5.4), Medium:** `grep -n -i -E 'defaultStrength:[[:space:]]*low|defaultThreshold:[[:space:]]*high|threshold:[[:space:]]*off[[:space:]]*$' zap.yaml` over the deep-scan plan is empty (an `Off` with a trailing reason comment does not match)

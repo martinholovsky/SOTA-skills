@@ -300,7 +300,7 @@ Run from repo root; verify each hit manually.
 **In-band sentinels — a value standing in for absence** (§4a). Go's own `-1` from
 `strings.Index` is documented and fine when tested immediately; yours is not:
 
-- [ ] `grep -rnE 'return -1$|return -1,' --include='*.go' .` (producer — prefer (T, bool)
+- [ ] `grep -rnE 'return -1$|return -1,' --include='*.go' .` (§3) (producer — prefer (T, bool)
       comma-ok); `grep -rnE ':?= .*strconv\.Atoi\(' --include='*.go' . | grep -v 'err'` (the 0
       is in-band if err is dropped)
 
@@ -321,7 +321,7 @@ Run from repo root; verify each hit manually.
       chain is deliberate; each wrap names what this layer was doing, with identifiers, and does
       not restate the callee)** —
       `grep -rnE 'fmt\.Errorf\([^)]*%v[^)]*err\s*\)' --include='*.go' .`
-- [ ] **Panics outside main/init/Must/tests — HIGH if reachable from input** —
+- [ ] **Panics outside main/init/Must/tests — HIGH if reachable from input** (§5) —
       `grep -rn 'panic(' --include='*.go' . | grep -vE '(_test\.go|Must|init\()'`
 - [ ] **Limits before allocation and recursion (§5) — HIGH when the input is untrusted** —
       `grep -rnE 'make\(\[\][^,]+,[[:space:]]*(int(32|64)?\()?[a-z][A-Za-z0-9_]*\.[A-Z][A-Za-z0-9_]*' --include='*.go' .`
@@ -355,7 +355,7 @@ Run from repo root; verify each hit manually.
 - [ ] **recover outside defer; missing Unwrap on wrapper types (§4, §5) (manual)** —
       `grep -rn 'recover()' --include='*.go' .` ;
       `grep -rln 'type .*Error struct' --include='*.go' . | xargs grep -L 'func (.*) Unwrap()'`
-- [ ] **Tooling** — `go vet ./...` ;
+- [ ] **Tooling** (§1, §2) — `go vet ./...` ;
       `golangci-lint run --enable-only errcheck,errorlint,err113,wrapcheck,nilerr ./...` ;
       `staticcheck ./...` (ST1005 error strings, SA4006 unused err, SA1019)
 

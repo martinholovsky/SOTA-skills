@@ -350,14 +350,14 @@ of the supply chain, and its IDE extensions run with the developer's full access
 
 ## Audit checklist
 
-- [ ] No unpinned/unverified network fetches in builds (no `curl | sh`); toolchain versions pinned; builds run from clean CI checkouts only
-- [ ] Multi-stage Dockerfiles; final stage minimal (distroless/Chainguard-class), non-root `USER`, exec-form ENTRYPOINT
-- [ ] No secrets in ARG/ENV/COPY'd files/layers — BuildKit secret mounts only; `.dockerignore` excludes `.git` and env/secret files
-- [ ] Every `FROM` digest-pinned with Renovate-managed updates; org-blessed base images rebuilt on schedule from an internal mirror
-- [ ] Image scans per build on the built digest + scheduled scans of deployed digests; gates fail closed; ignores carry owner + expiry; hadolint/dockerfile misconfig checks on PRs
+- [ ] No unpinned/unverified network fetches in builds (no `curl | sh`) (§4.1); toolchain versions pinned; builds run from clean CI checkouts only
+- [ ] Multi-stage Dockerfiles (§4.2); final stage minimal (distroless/Chainguard-class), non-root `USER`, exec-form ENTRYPOINT
+- [ ] No secrets in ARG/ENV/COPY'd files/layers (§4.2) — BuildKit secret mounts only; `.dockerignore` excludes `.git` and env/secret files
+- [ ] Every `FROM` digest-pinned with Renovate-managed updates (§4.3); org-blessed base images rebuilt on schedule from an internal mirror
+- [ ] Image scans per build on the built digest + scheduled scans of deployed digests (§4.4); gates fail closed; ignores carry owner + expiry; hadolint/dockerfile misconfig checks on PRs
 - [ ] Registry (§4.5): immutable tags on; deploys reference digests (no `:latest`); CI is the sole writer to release repos via OIDC and humans hold no push rights there; runtime pulls use read-only per-cluster/namespace identities; dev/staging/prod repos are separate and prod pulls only from the prod registry (admission allowlist); promotion copies verified digests, never rebuilds
 - [ ] Retention preserves digests referenced by running workloads plus released digests + attestations (§4.5); pull-through cache for upstream bases
-- [ ] Build infra isolated from runtime; no docker.sock mounts; ephemeral or rootless builders; caches scoped by trust boundary
+- [ ] Build infra isolated from runtime (§4.6); no docker.sock mounts; ephemeral or rootless builders; caches scoped by trust boundary
 - [ ] **Runner hosts hardened (§4.6.1), High:** `grep -rn -E 'RUNNER_ALLOW_RUNASROOT|runAsUser:[[:space:]]*0[[:space:]]*$' <runner provisioning: Dockerfiles, IaC, Helm values>` is empty; hosts/images on a patch schedule with a CIS/STIG baseline; no credentials left between jobs
 - [ ] **Maximum image age enforced; no in-place patching (§4.3), Medium:** running digests (`kubectl get pods -A -o jsonpath='{..imageID}'`) checked against their build date from provenance/SBOM store, none past the limit; `grep -rn -E '(kubectl|docker|podman) exec[^|;]*(apt-get|apt|apk|yum|dnf|microdnf|pip|npm) +(install|upgrade|update|add)' <runbooks, scripts>` is empty
 - [ ] **No remote code execution or committed binaries in the build (§4.1), High:** `grep -rn -E '(curl|wget)[^|;]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh([[:space:]]|$)|eval[[:space:]]+"?\$\((curl|wget)|(ba|z)?sh[[:space:]]+<\((curl|wget)' .github/workflows` is empty (extend the path list to Dockerfiles and scripts); `git ls-files | grep -E '\.(exe|dll|so|dylib|jar|war|bin)$'` hits are each justified; local, tarball and cache installs are hash-checked

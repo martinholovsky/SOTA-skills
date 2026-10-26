@@ -81,6 +81,9 @@ mechanical sweeps: `bundle exec rubocop`, `bundler-audit check --update`,
 file:line | rule violated (rules/NN §section) | severity | effort | fix
 ```
 
+This is the router's canonical row; each finding carries the [`sota` rules/03](../sota/rules/03-audit-findings.md)
+§2 evidence block, and the report follows its §5 order.
+
 Severity: Critical / High / Medium / Low / Info. Effort: trivial / small /
 medium / large. Borderline severities state the deciding assumption;
 unconfirmed findings are marked "needs verification", never asserted. Group

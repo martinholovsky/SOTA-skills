@@ -268,7 +268,8 @@ testpaths = ["tests"]
 - Async tests: `asyncio_mode = "auto"` ([rules/04](04-async.md) §10). Time: `freezegun`/`time-machine`,
   never `sleep`.
 - Coverage gate (`--cov --cov-fail-under=N`) measures *executed*, not *asserted* — treat as
-  floor, not target; mutation testing (`mutmut`) where correctness is critical.
+  floor, not target; mutation testing (`mutmut`) where correctness is critical — `mutmut run`
+  exits 0 whatever survives, so gate on its exported stats ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
 - **Code with an escape hatch (`ctypes`, `cffi`, a C extension: [rules/05](05-security.md) §11) runs its
   suite under `python -X dev` in CI.** Dev mode enables `faulthandler` and the debug hooks
   on the memory allocators. Measured on 3.14.8: writing 10 bytes past a 1000-byte
@@ -308,7 +309,7 @@ testpaths = ["tests"]
       `grep -rnE '\.set_(signed_)?cookie\(' --include='*.py' src/ | grep -vE 'secure[[:space:]]*=[[:space:]]*True.*httponly[[:space:]]*=[[:space:]]*True|httponly[[:space:]]*=[[:space:]]*True.*secure[[:space:]]*=[[:space:]]*True'`
       (every hit relies on a framework default that is off; a multi-line call is listed too —
       read it; `samesite` is checked by hand)
-- [ ] **pytest** — `grep -rn "def setUp\|TestCase" --include="*.py" tests/` (legacy style
+- [ ] **pytest** (§3) — `grep -rn "def setUp\|TestCase" --include="*.py" tests/` (legacy style
       [LOW]); `grep -rn "pytest.raises(Exception)" --include="*.py" tests/` (too-broad
       [MEDIUM]); `grep -rn "time.sleep" --include="*.py" tests/` (flaky timing [MEDIUM]);
       `grep -rn "scope=\"session\"\|scope=\"module\"" --include="*.py" tests/ conftest.py 2>/dev/null`

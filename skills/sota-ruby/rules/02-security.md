@@ -243,9 +243,10 @@ raise SecurityError unless path.start_with?(base + File::SEPARATOR)
 ```
 
 - `File.basename(user_name)` before storing uploads; never trust
-  client-supplied filenames or content types (see [`rules/03`](03-web-hardening.md) §uploads).
+  client-supplied filenames or content types (see [`rules/03`](03-web-hardening.md) §7).
 - Archive extraction (zip/tar gems): validate each entry name against the
-  same expand-and-prefix check — zip-slip.
+  same expand-and-prefix check — zip-slip — and reject link entries
+  ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §4).
 - Temp files: `Tempfile`/`Dir.mktmpdir`, not hand-built `/tmp/#{name}`.
 - **`Pathname#+` and `Pathname#join` discard the base when the argument is
   absolute.** Measured on Ruby 3.4.10:
@@ -302,7 +303,7 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       call goes through the shell) ; `grep -rnE 'Shellwords|shellescape|shelljoin' --include='*.rb' .`
       (a legacy shell-string call site: convert it to argv form) ; manual: an argv that carries a
       user value puts `--` before it
-- [ ] **Deserialization — CRITICAL on external data** —
+- [ ] **Deserialization — CRITICAL on external data** (§3) —
       `grep -rn "Marshal.load\|Marshal.restore" --include='*.rb' .` ;
       `grep -rnE 'unsafe_load(_file)?|\.to_ruby\b|permitted_classes:' --include='*.rb' .`
       (`to_ruby` after `Psych.parse*` revives objects; review each widened class list) ;

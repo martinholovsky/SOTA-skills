@@ -255,9 +255,8 @@ corrupts the next run.
       the mutation is usually irreversible.
 
 - [ ] **Gate-then-act joined by `;`** (§1b): `grep -rnE '\.(sh|py)[^&|]*; *(git (push|tag|commit)|kubectl|terraform apply|rm )' --include='*.sh' .` — a check whose exit status the next command ignores. Also flag `check | tail`/`| head` before an action: the pipe hides the producer's status. In a multi-line command, an asserting line not ending in `&&` gates nothing: a newline is a `;`.
-- [ ] Workflows (§1): `grep -rn '\${{' .github/workflows/ | grep -i 'head_ref\|pull_request\.\(title\|body\)\|commits\|issue\.\(title\|body\)\|comment\.body'`
-      inside `run:` → CRITICAL (injection); fix via `env:` indirection.
-- [ ] `grep -rL --include='*.yml' --include='*.yaml' -e 'shell: bash' -e 'pipefail' .github/workflows/`
+- [ ] Workflows (§1): `grep -rnE '[$][{][{][^}]*github\.[][A-Za-z0-9_.*]*(body|default_branch|email|head_ref|label|message|name|page_name|ref|title|commits)([^A-Za-z0-9_]|$)' .github/` (GitHub's untrusted suffixes, plus `commits`) inside `run:` → injection: CRITICAL from a fork PR/issue into a secrets-bearing job, MEDIUM in a no-secret read-only job ([`sota-devsecops` rules/01](../../sota-devsecops/rules/01-pipeline-security.md) §1.5); fix via `env:` indirection.
+- [ ] `ls .github/workflows/ >/dev/null && grep -rL --include='*.yml' --include='*.yaml' -e 'shell: bash' -e 'pipefail' .github/workflows/`
       — steps relying on default shell semantics → MEDIUM (§1). (Not `.github/workflows/*.yml`:
       that misses `*.yaml` and, unmatched, aborts zsh with `no matches found`.)
 - [ ] `>> "$GITHUB_OUTPUT"` / `$GITHUB_ENV` writes of non-constant values without heredoc
@@ -268,8 +267,8 @@ corrupts the next run.
 - [ ] Entrypoints (§2): `grep -rn --include='*entrypoint*' -e '"\$@"' -e 'exec ' .` — final command lacking
       `exec` → HIGH (signal loss); `su -c`/`sudo` for privilege drop instead of
       gosu/su-exec/USER → HIGH. A resident entrypoint with no `trap … TERM` forwarding and re-`wait`; a forking app with no init (`--init`, tini).
-- [ ] `#!/usr/bin/env bash` entrypoint with alpine/busybox base image in Dockerfile → HIGH.
-- [ ] `git ls-files --eol -- '*.sh'` showing `w/crlf` → HIGH for any image-bound script;
+- [ ] `#!/usr/bin/env bash` entrypoint with alpine/busybox base image in Dockerfile (§2) → HIGH.
+- [ ] `git ls-files --eol -- '*.sh'` showing `w/crlf` (§2) → HIGH for any image-bound script;
       missing `*.sh text eol=lf` in `.gitattributes` → LOW.
 - [ ] Makefiles (§3): missing `.SHELLFLAGS`/`SHELL := bash` where recipes use bashisms;
       `grep -n '\$[a-zA-Z{(]' Makefile` inside recipes for single-`$` shell vars

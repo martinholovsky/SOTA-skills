@@ -303,7 +303,7 @@ TME-MK-only silicon.
       with SKU, region and TDX-module version verified at the provider (R1.4). Every
       offering called confidential passes all three legs — confidentiality against
       the host, tamper/replay/remap detection, remote attestation (R1.2, §1).
-- [ ] Any ARM CCA dependency carries a dated availability verification for the
+- [ ] Any ARM CCA dependency carries a dated availability verification (§1) for the
       actual target platform, not an assumption.
 - [ ] SGX designs: target is Xeon (not client CPUs); EPC sizing checked against the
       actual SKU; the LibOS's maintenance status verified within the last quarter

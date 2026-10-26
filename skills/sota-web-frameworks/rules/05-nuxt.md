@@ -123,19 +123,19 @@ Floors as of 2026-09-26 ("fixed in", not "current"): **Nuxt ≥ 4.5.1**, **h3 �
 
 ## Audit checklist
 
-- [ ] **Exact versions vs the CVE table** —
+- [ ] **Exact versions vs the CVE table** (§6) —
       `node -e "const p=require('./package.json');console.log(p.dependencies?.nuxt||p.devDependencies?.nuxt)"`
       ; `grep -E '"(nuxt|nitropack|h3|ipx|@nuxt/image|devalue|pinia)"' package.json`
-- [ ] **Secret under public runtimeConfig (CRITICAL)** —
+- [ ] **Secret under public runtimeConfig (CRITICAL)** (§3) —
       `find . -maxdepth 2 -path ./node_modules -prune -o -name 'nuxt.config.*' -type f -exec grep -HnA8 'runtimeConfig' {} + | grep -iE 'public' -A6 | grep -iE 'secret|key|token|password'`
-- [ ] **Module-level refs / state outside setup (cross-request leak)** —
+- [ ] **Module-level refs / state outside setup (cross-request leak)** (§2) —
       `grep -rnE '^(export )?const \w+\s*=\s*(ref|reactive)\(' --include='*.ts' composables server utils 2>/dev/null`
-- [ ] **$fetch in setup (double fetch), server routes without validation** —
+- [ ] **$fetch in setup (double fetch), server routes without validation** (§1, §4) —
       `grep -rn '\$fetch(' --include='*.vue' pages components | grep -v useFetch` ;
       `grep -rLn 'getValidated\|readValidatedBody\|requireUserSession\|\.parse(' server/api server/routes 2>/dev/null`
-- [ ] **routeRules that cache — must not be personalized** —
+- [ ] **routeRules that cache — must not be personalized** (§5) —
       `find . -maxdepth 2 -path ./node_modules -prune -o -name 'nuxt.config.*' -type f -exec grep -HnE 'swr|isr|prerender|ssr:[[:space:]]*false' {} +`
-- [ ] **NuxtLink / URL sinks** —
+- [ ] **NuxtLink / URL sinks** (§6) —
       `grep -rn ':to=\|:href=' --include='*.vue' pages components | grep -iv 'sanitiz'`
 
 - [ ] Nuxt/Nitro/h3/IPX/devalue versions patched against the table (Nuxt ≥ 4.5.1 for CVE-2026-71315/-71320/-71316; h3 ≥ 1.15.9; nitropack ≥ 2.13.4; devalue ≥ 5.9.2) and not on EOL Nuxt 3 (§6)?

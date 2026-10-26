@@ -1,0 +1,42 @@
+{
+ "_note": "Declared BUILD routing for sota-api-design (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Keywords are phrases from each file's own rules-index row or the BUILD line that links it. No routing gap found: every file a case needs is reached through a tag its prose supports. BUILD links 01, 02, 04, 05, 06 and 07; 03 (GraphQL) is reached only through its index row, whose 'Any GraphQL work' cell carries the graphql tag.",
+ "skill": "sota-api-design",
+ "tags": {
+  "protocol-choice": ["protocol selection", "Pick the protocol deliberately", "REST vs GraphQL vs gRPC decision table"],
+  "rest": ["REST endpoints", "resource modeling", "methods/status codes"],
+  "contract": ["OpenAPI-first", "RFC 9457 errors", "cursor pagination"],
+  "evolution": ["Changing an existing API", "adding/removing fields", "planning deprecation", "breaking-change"],
+  "graphql": ["GraphQL"],
+  "grpc": ["gRPC/protobuf", "field-number/reserved evolution", "deadlines and cancellation propagation"],
+  "realtime": ["WebSocket/SSE/realtime", "heartbeats", "reconnect backoff", "WebRTC"],
+  "webhooks": ["webhooks", "HMAC signing"],
+  "idempotency": ["idempotency keys", "idempotent consumers"],
+  "ssrf-egress": ["SSRF"],
+  "api-security": ["authn scheme", "multi-tenant isolation", "CORS", "audit logging", "request smuggling"],
+  "rate-limit": ["rate limiting", "429/Retry-After", "quotas"],
+  "limits-timeouts": ["request size limits", "timeout budgets"]
+ },
+ "files": {
+  "01": {"build": ["rest", "contract", "idempotency"]},
+  "02": {"build": ["evolution"]},
+  "03": {"build": ["graphql"]},
+  "04": {"build": ["protocol-choice", "grpc"]},
+  "05": {"build": ["realtime"]},
+  "06": {"build": ["webhooks", "idempotency", "ssrf-egress"]},
+  "07": {"build": ["api-security", "rate-limit", "limits-timeouts"]}
+ },
+ "cases": [
+  {"task": "design a public REST API for orders with cursor pagination and idempotent POST, contract first", "mode": "build",
+   "tags": ["rest", "contract", "idempotency", "evolution", "api-security", "rate-limit"], "must_load": ["01", "02", "07"]},
+  {"task": "build a webhook sender that delivers signed events to customer-supplied URLs with retries", "mode": "build",
+   "tags": ["webhooks", "ssrf-egress", "idempotency"], "must_load": ["06"]},
+  {"task": "add a WebSocket notifications channel beside an existing REST API", "mode": "build",
+   "tags": ["realtime", "api-security", "limits-timeouts"], "must_load": ["05", "07"]},
+  {"task": "remove a field from a gRPC service's protobuf message without breaking clients", "mode": "build",
+   "tags": ["grpc", "evolution"], "must_load": ["04", "02"]},
+  {"task": "choose GraphQL vs REST for a multi-client backend, then build the GraphQL schema with per-tenant authz", "mode": "build",
+   "tags": ["protocol-choice", "graphql", "api-security"], "must_load": ["04", "03", "07"]},
+  {"task": "audit an existing public API", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+ ]
+}

@@ -1,0 +1,233 @@
+{
+ "_note": "Declared BUILD routing for sota-kubernetes (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. No keyword matches a file's own link text. rules/02, 05, 06 and 07 are named by no BUILD step and are reached through their index rows. Known routing gap, recorded and NOT declared: a cluster upgrade / version-skew / CVE-response task needs rules/01 §7 ('Version skew, EOL & CVE response'), but 01's index row never says upgrade, version skew, EOL or CVE, and BUILD step 6 ('Plan the upgrade before you build: version skew, EOL date, CVE-response runbook,') carries those words on the line ABOVE the one holding the rules/01 link, so routing_prose() sees only 'tested etcd restore'. No upgrade tag is declared and no upgrade case is written. Routing gap for rules/01 (version skew, EOL) FIXED 2026-10-26: the index row now names it, and tag 'cluster-upgrade' declares it.",
+ "skill": "sota-kubernetes",
+ "tags": {
+  "control-plane": [
+   "HA control plane",
+   "API server flags",
+   "kubelet hardening"
+  ],
+  "node-hardening": [
+   "immutable-distro hardening",
+   "Talos",
+   "k3s/k0s",
+   "CIS benchmark"
+  ],
+  "etcd-backup": [
+   "backup/defrag/restore",
+   "tested etcd restore"
+  ],
+  "secrets": [
+   "etcd encryption",
+   "Secrets are base64",
+   "Secrets in K8s"
+  ],
+  "rbac": [
+   "Roles/ClusterRoles least-privilege",
+   "ServiceAccount hygiene",
+   "operator RBAC",
+   "RBAC-in-charts"
+  ],
+  "admission": [
+   "Pod Security Admission",
+   "Kyverno",
+   "ValidatingAdmissionPolicy",
+   "AUDIT→ENFORCE"
+  ],
+  "image-verification": [
+   "image verification at admission",
+   "only-signed-images",
+   "digest pinning"
+  ],
+  "gitops": [
+   "Argo CD",
+   "AppProject scoping",
+   "promotion/rollback as git ops"
+  ],
+  "operator": [
+   "operator privilege problem",
+   "CRD validation",
+   "trusted controllers"
+  ],
+  "admission-webhook": [
+   "admission webhooks"
+  ],
+  "availability": [
+   "requests/limits",
+   "PodDisruptionBudget",
+   "topology spread"
+  ],
+  "multi-tenancy": [
+   "multi-tenancy",
+   "namespace-as-SOFT-boundary"
+  ],
+  "helm-chart": [
+   "Helm/Kustomize review",
+   "helm template",
+   "chart signing"
+  ],
+  "audit-logging": [
+   "audit policy",
+   "shipping audit logs",
+   "authz modes, audit"
+  ],
+  "cluster-upgrade": [
+   "version skew, EOL"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "control-plane",
+    "node-hardening",
+    "etcd-backup",
+    "secrets",
+    "audit-logging",
+    "cluster-upgrade"
+   ]
+  },
+  "02": {
+   "build": [
+    "rbac"
+   ]
+  },
+  "03": {
+   "build": [
+    "admission",
+    "image-verification"
+   ]
+  },
+  "04": {
+   "build": [
+    "gitops"
+   ]
+  },
+  "05": {
+   "build": [
+    "operator",
+    "admission-webhook",
+    "rbac"
+   ]
+  },
+  "06": {
+   "build": [
+    "availability",
+    "multi-tenancy",
+    "secrets"
+   ]
+  },
+  "07": {
+   "build": [
+    "helm-chart",
+    "image-verification",
+    "audit-logging",
+    "rbac"
+   ]
+  }
+ },
+ "via": [],
+ "cases": [
+  {
+   "task": "install a third-party operator from its Helm chart",
+   "mode": "build",
+   "tags": [
+    "operator",
+    "helm-chart",
+    "rbac"
+   ],
+   "must_load": [
+    "05",
+    "07",
+    "02"
+   ]
+  },
+  {
+   "task": "provision a self-hosted k3s cluster with etcd encrypted at rest and a tested restore",
+   "mode": "build",
+   "tags": [
+    "control-plane",
+    "node-hardening",
+    "secrets",
+    "etcd-backup"
+   ],
+   "must_load": [
+    "01",
+    "06"
+   ]
+  },
+  {
+   "task": "set up Argo CD so each tenant team deploys only into its own namespaces",
+   "mode": "build",
+   "tags": [
+    "gitops",
+    "multi-tenancy",
+    "rbac"
+   ],
+   "must_load": [
+    "04",
+    "06",
+    "02"
+   ]
+  },
+  {
+   "task": "enforce PSA restricted and signed-images-only across all namespaces",
+   "mode": "build",
+   "tags": [
+    "admission",
+    "image-verification"
+   ],
+   "must_load": [
+    "03",
+    "07"
+   ]
+  },
+  {
+   "task": "turn on Kubernetes API audit logging and ship it off-cluster",
+   "mode": "build",
+   "tags": [
+    "audit-logging"
+   ],
+   "must_load": [
+    "07",
+    "01"
+   ]
+  },
+  {
+   "task": "write a validating admission webhook for a CRD",
+   "mode": "build",
+   "tags": [
+    "admission-webhook",
+    "operator",
+    "admission"
+   ],
+   "must_load": [
+    "05",
+    "03"
+   ]
+  },
+  {
+   "task": "audit a production cluster's platform layer",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  },
+  {
+   "task": "plan a cluster minor-version upgrade and its CVE-response runbook",
+   "mode": "build",
+   "tags": [
+    "cluster-upgrade"
+   ],
+   "must_load": [
+    "01"
+   ]
+  }
+ ]
+}

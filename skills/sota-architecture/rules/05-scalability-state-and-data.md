@@ -262,15 +262,15 @@ OWASP: Multi Tenant Security cheat sheet.
 - [ ] Do cache keys include user/tenant scope everywhere responses differ by user/tenant? Are authorization decisions or flag evaluations cached beyond their tolerated staleness (seconds, not hours)? (§4)
 - [ ] If sharded: was the partition key chosen from access patterns (ADR)? Are logical→physical partitions resharding-friendly? Any cross-shard transactions or joins? Is there hot-partition monitoring with a relocation plan? (§5)
 - [ ] Does every large table/topic have retention, archival, and erasure paths? Does time-series/append-mostly data (events, logs, audit) live outside the hot transactional tables (dedicated store or time partitions)? (§6)
-- [ ] Is the multi-tenancy model explicit per tenant tier? Is tenant isolation enforced below application code (RLS or mandatory scoped layer) with cross-tenant access tests?
+- [ ] Is the multi-tenancy model explicit per tenant tier (§7)? Is tenant isolation enforced below application code (RLS or mandatory scoped layer) with cross-tenant access tests?
 - [ ] **Isolated tiers have their own cache (§7), High:** for each silo or high-isolation tenant, its cache endpoint differs from the pooled one. List the endpoints with `grep -rnE -i '(redis|valkey|memcached?|cache)[_.-]?(url|uri|host|endpoint)' .`. A silo tenant that resolves to the shared endpoint is a finding.
-- [ ] Is tenant context derived from identity (not request params) and present in queries, cache keys, messages, logs, metrics?
-- [ ] Are per-tenant rate/concurrency/queue quotas in place in pooled tiers?
+- [ ] Is tenant context derived from identity (§7) (not request params) and present in queries, cache keys, messages, logs, metrics?
+- [ ] Are per-tenant rate/concurrency/queue quotas in place in pooled tiers (§7)?
 - [ ] Is all user-triggered heavy work async with job handles, and are background jobs on dedicated workers? (§8)
 - [ ] Is steady-state utilization of latency-sensitive tiers planned with headroom (~50–70%), and does capacity cover peak with an AZ down? (§9)
 - [ ] Are load tests production-shaped (key skew, payload sizes), and is hot-key detection (top-K metrics) with a mitigation playbook in place? (§9, §10)
 - [ ] Are high-contention counters sharded or queue-buffered rather than single-row hot spots? (§10)
 - [ ] Is every projection/search index/denormalized table rebuildable via a tested backfill, with lag monitored and staleness contracts known to consumers? Is the write model kept normalized, with denormalization only on the read side? (§11)
-- [ ] Are blobs in object storage with presigned direct transfer, orphan reconciliation, and tenant-scoped prefixes?
+- [ ] Are blobs in object storage with presigned direct transfer (§12), orphan reconciliation, and tenant-scoped prefixes?
 - [ ] Does tenant offboarding refuse new operations and revoke every session and API key **before** deletion is scheduled, and does a failed provision clean up what it half-created, with each step audited (§7)? HIGH where a deprovisioned tenant's key still authenticates. Probe for offboarding code that never revokes: `grep -rliE '(offboard|deprovision)[_a-z]*[[:space:]]*\(' . | while read -r f; do grep -qi revoke "$f" || echo "$f"; done` — a listed file is a lead, read its order of operations.
 - [ ] Does every tenant storage prefix end in the delimiter, is the boundary enforced by storage policy and not only app code, and do shared assets live in a named global namespace (§12)? HIGH: prefix `acme` matches `acme-west`, so a list leaks and an offboarding delete erases another tenant. Probe for a prefix built from a tenant id with no `/` after it: `grep -rniE 'prefix[[:space:]]*[:=].*tenant[^/]*$' .`

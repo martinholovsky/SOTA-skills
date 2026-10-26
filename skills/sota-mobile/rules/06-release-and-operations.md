@@ -131,7 +131,7 @@ enum OrderStatus: RawRepresentable, Decodable {
 
 - [ ] (§1: 6.1) iOS privacy manifest present; required-reason API declarations match actual code and SDK usage; Nutrition Label consistent with observed traffic.
 - [ ] (§1: 6.2) Android Data safety form matches observed behavior; Play App Signing on; upload-key reset process documented; developer verification completed for every market the app ships to (on or off Play).
-- [ ] (§1: 6.1, 6.2) Built against currently mandated SDKs/targets (iOS 26 SDK since Apr 2026; Play target API per current deadline); a named owner exists for the annual ratchets and quarterly policy review.
+- [ ] (§1: 6.1, 6.2) Built against currently mandated SDKs/targets (the dated deadlines are [rules/01](01-platform-and-stack.md)'s §1 items — audit them there); a named owner exists for the annual ratchets and quarterly policy review.
 - [ ] (§2: 6.3) Forced-update mechanism: implemented on owned infrastructure, fail-open, localized, blocking path exercised in the RC ritual; Play In-App Updates integrated on Android.
 - [ ] (§2: 6.4) Server-dependent/risky features behind remote flags with safe hardcoded defaults; kill switches exist for pinning, sync, and each third-party SDK init; kill paths actually tested; flag-removal tickets created with experiment flags.
 - [ ] (§2: 6.5) Staged rollout ladder with written promotion gates (crash-free, no new signatures, ANR/p95/business metrics flat); gate checks automated; hotfix fast-track rehearsed for both stores' mechanics (Play halt-strands-users; iOS phased-release limits).

@@ -97,7 +97,7 @@ the skin over the same non-negotiable skeleton.
 
 ## 8. Content design (microcopy is UI)
 
-- Buttons say what they do: "Save changes", "Create project" — never "Submit", "OK", "Yes". Verb + object.
+- Buttons say what they do: "Save changes", "Create project" — never "Submit", and never "Yes/No" or "OK/Cancel" on a destructive or ambiguous choice. Verb + object; wording owned by [sota-ux-writing rules/02](../../sota-ux-writing/rules/02-microcopy-components.md) §1.
 - Sentence case for UI text (Title Case Is Harder To Read And Looks Shouty); no ALL CAPS except short eyebrow labels with letter-spacing ([rules/01](01-typography-and-color.md) §2).
 - Error/empty/confirmation copy: plain language, no blame ("Couldn't save — check your connection", not "Error 500: request failed"), and the next step always stated ([rules/04](04-ux-patterns.md) §5–6).
 - Numbers: localize formats, tabular figures in columns, units stated, relative time ("2h ago") with absolute on hover/title.

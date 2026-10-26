@@ -407,14 +407,14 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
       `grep -rlE 'SSL_get_verify_result[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -r grep -LE 'SSL_get1?_peer_certificate[[:space:]]*\('`
       (a file that reads the verify result and never fetches the peer certificate: a peer
       that sent none passes as `X509_V_OK`)
-- [ ] **Format string — CRITICAL (user-controlled fmt)** —
+- [ ] **Format string — CRITICAL (user-controlled fmt)** (§3) —
       `grep -rnE '(printf|fprintf|snprintf|syslog|err|warn)\s*\([^,"]*\)' --include='*.c' --include='*.cpp' .`
-- [ ] **build with: -Wformat=2 -Werror=format-security**
+- [ ] **build with: -Wformat=2 -Werror=format-security (§3)**
 - [ ] **Secrets reaching logs, or unneutralised CR/LF in them (§3) — HIGH for a credential, LOW/MEDIUM for raw input** —
       `grep -rniE '(syslog|fprintf[[:space:]]*\([[:space:]]*stderr|spdlog::[a-z]+|LOG\([A-Z]+\))[^;]*(passw|secret|token|api_?key|private_?key|credential)' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
       (read the arguments: a credential passed to the call is the finding, while message text
       that only names one also matches)
-- [ ] **Command/path injection, TOCTOU — HIGH/CRITICAL** —
+- [ ] **Command/path injection, TOCTOU — HIGH/CRITICAL** (§3, §1) —
       `grep -rnE 'system\(|popen\(|exec[lv]p?\(' --include='*.c' --include='*.cpp' .` ;
       `grep -rnE 'fopen|open\(|realpath|access\(' --include='*.c' --include='*.cpp' .`
       (check-then-use races)
@@ -457,7 +457,7 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
       a continuation line of a multi-line `if` out);
       `grep -rnE '(setuid|setgid|setgroups|initgroups)[[:space:]]*\(' --include='*.c' --include='*.cpp' .`
       (then read the order: groups, gid, uid, and a `setuid(0)` that must fail)
-- [ ] **Insecure randomness for security — HIGH** —
+- [ ] **Insecure randomness for security — HIGH** (§4) —
       `grep -rnE '\b(rand|random|srand|mt19937|random_device)\b' --include='*.cpp' --include='*.c' .`
       ; `grep -rn 'memcmp' --include='*.cpp' . | grep -iE 'mac|hmac|token|secret|sig|digest'`
       (timing leak)

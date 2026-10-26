@@ -115,8 +115,8 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
 
 ## Audit checklist
 
-- [ ] Are model artifacts checksum-pinned (safetensors, no pickle) and prompts/tool manifests version-controlled with adversarial regression tests?
-- [ ] Are MCP tool definitions hash-pinned at approval with re-approval forced on any change (rug pull), and is the *full* description shown to the approver (tool poisoning)?
-- [ ] Are high-privilege tools isolated from third-party servers in separate sessions/agents (tool shadowing), with tool listings treated as untrusted input before any invocation (line jumping)?
+- [ ] Are model artifacts checksum-pinned (safetensors, no pickle) and prompts/tool manifests version-controlled with adversarial regression tests (§1)?
+- [ ] Are MCP tool definitions hash-pinned at approval with re-approval forced on any change (rug pull), and is the *full* description shown to the approver (tool poisoning) (§1)?
+- [ ] Are high-privilege tools isolated from third-party servers in separate sessions/agents (tool shadowing), with tool listings treated as untrusted input before any invocation (line jumping) (§1)?
 - [ ] Are MCP server packages signature/checksum-verified at install with a cancellable consent prompt, tool definitions re-hashed canonically before each call, tools namespaced per server with collisions flagged, an MCP scanner run, and the AI-component inventory matched against advisories (§1)? MEDIUM, HIGH for a server holding credentials. Probe for an unpinned server package: `grep -rnE '"args"[[:space:]]*:[[:space:]]*\[[[:space:]]*("-y",[[:space:]]*)?"(@[a-z0-9-]+/)?[a-z0-9_][a-z0-9._-]*(@latest)?"' .`
 - [ ] **Does the adversarial suite cover obfuscated variants (scored with a false-refusal denominator), cross-tenant, stale-permission, cache and deletion cases, and does a tool-policy, approval or credential-scope change without tests block release, with evidence retained (§1)?** MEDIUM, HIGH for an agent holding write or payment tools. Injection test files with no obfuscated variant: `grep -rliE 'prompt.?injection|jailbreak|ignore (all )?previous instructions' --include='*test*' . | while IFS= read -r f; do grep -qiE 'base64|b64|typoglyc|best.of.n|thought:' "$f" || echo "$f"; done`

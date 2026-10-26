@@ -371,12 +371,12 @@ claim that turns out to be false still burns the credibility.
 - [ ] Median merged-PR size is small (≲400 substantive lines); large PRs are exceptions with stated justification or a reviewing map; generated code, lockfiles and mechanical renames are called out so reviewers can skip them (§1).
 - [ ] PRs are one logical change; refactors land separately from behavior changes (§1).
 - [ ] PR template exists (§2); sampled recent PRs have what/why/how-tested, linked issues, screenshots for UI changes, and risk/rollout notes and stated out-of-scope items where relevant.
-- [ ] Review first-response time is ~1 business day or better; no PRs silently aging past the SLA.
-- [ ] Blocking vs non-blocking comments are distinguishable (prefixes/labels); approve-with-nits happens in practice.
+- [ ] Review first-response time is ~1 business day or better (§3); no PRs silently aging past the SLA.
+- [ ] Blocking vs non-blocking comments are distinguishable (prefixes/labels) (§3); approve-with-nits happens in practice.
 - [ ] Authors self-review (look for author-annotated diffs), respond to every comment (fix, reasoned push-back or a follow-up issue — never resolved without action), don't force-push mid-review, and don't request review on red CI (§4).
 - [ ] Draft PRs used for early direction (§5); oversized features arrive as stacks of independently green PRs, each with a coherent description and no forward references, and stacks without tooling stay ≤3 deep.
 - [ ] CI owns lint/format/type/coverage, secret scanning and license checks (§6); sampled reviews contain zero human style comments; bot comments collapse or update in place; required checks gate merge and no `--no-verify` culture bypasses them.
-- [ ] Review depth on AI-heavy PRs matches human-written ones: comments engage with logic, tests proven to fail without the change, no volume rubber-stamps.
+- [ ] Review depth on AI-heavy PRs matches human-written ones (§7): comments engage with logic, tests proven to fail without the change, no volume rubber-stamps.
 - [ ] **(Medium) Agent PRs reviewed per file, with a provenance trail** (§7): sampled
       agent PRs show every changed file was reviewed, not only the ones the description
       names. Any deleted, skipped or loosened security test was signed off by a code owner.

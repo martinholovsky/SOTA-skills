@@ -1,0 +1,43 @@
+{
+ "_note": "Declared BUILD routing for sota-cli-ux (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Every file is linked from BUILD and its index row is broad, so keywords come from the rows. Several BUILD sentences wrap so that the subject ('Ctrl-C cleanup', 'completions and man page generated') sits on a line without the link; the rows carry those phrases instead ('SIGINT/SIGTERM handling', 'shell completions', 'man pages'). No routing gap found.",
+ "skill": "sota-cli-ux",
+ "tags": {
+  "command-grammar": ["subcommand grammar", "command surface", "help text quality", "the grammar is wrong"],
+  "flags": ["flag conventions", "short/long forms", "zero flags"],
+  "config": ["config precedence chain", "env var naming", "XDG base directories"],
+  "output": ["stdout vs stderr", "--json", "TTY detection", "pipes"],
+  "exit-codes": ["exit codes as API"],
+  "prompts": ["prompts and `--yes`/CI behavior"],
+  "errors": ["error message anatomy", "--debug"],
+  "agent-facing": ["agent-facing design"],
+  "dangerous-op": ["dangerous-op flags"],
+  "mutating": ["--dry-run", "idempotent re-runnable commands", "crash-only resumable design"],
+  "signals": ["SIGINT/SIGTERM handling"],
+  "network": ["network-op responsiveness", "offline behavior", "self-update caution"],
+  "telemetry": ["telemetry consent"],
+  "completions": ["shell completions"],
+  "public-contract": ["semantic versioning of the CLI surface", "frozen output contracts"],
+  "verdict-tool": ["--self-test"],
+  "distribution": ["single-binary packaging", "install channels", "checksums + signatures", "man pages", "README quickstart"]
+ },
+ "files": {
+  "01": {"build": ["command-grammar", "flags", "config", "dangerous-op"]},
+  "02": {"build": ["output", "exit-codes", "prompts", "errors", "agent-facing", "public-contract"]},
+  "03": {"build": ["config", "mutating", "signals", "network", "telemetry", "completions", "public-contract", "verdict-tool"]},
+  "04": {"build": ["distribution"]}
+ },
+ "cases": [
+  {"task": "build a new deploy CLI with subcommands from scratch", "mode": "build",
+   "tags": ["command-grammar", "flags", "output", "exit-codes", "errors", "mutating", "signals", "public-contract", "distribution"], "must_load": ["01", "02", "03", "04"]},
+  {"task": "add a delete-project command that destroys remote resources", "mode": "build",
+   "tags": ["dangerous-op", "prompts", "mutating"], "must_load": ["01", "02", "03"]},
+  {"task": "add --json output to the list command for scripts and agents", "mode": "build",
+   "tags": ["output", "agent-facing", "public-contract"], "must_load": ["02", "03"]},
+  {"task": "add a config file with environment-variable overrides", "mode": "build",
+   "tags": ["config"], "must_load": ["01", "03"]},
+  {"task": "publish release binaries through Homebrew and a curl installer", "mode": "build",
+   "tags": ["distribution"], "must_load": ["04"]},
+  {"task": "audit an existing CLI for scriptability", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04"]}
+ ]
+}

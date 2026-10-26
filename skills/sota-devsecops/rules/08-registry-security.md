@@ -280,7 +280,7 @@ Hunt patterns in brackets.
   verifier exists ([rules/02](02-provenance-signing.md) + [sota-kubernetes](../../sota-kubernetes/SKILL.md)) [signing present, zero verification]
 - [ ] **Scan-on-push + continuous re-scan** (§8.4); failing images quarantined/unpullable for prod, not
   just dashboarded [scanner enabled but no block/quarantine policy]
-- [ ] Upstream pulls go through a **pull-through cache**; internal image names cannot fall through
+- [ ] Upstream pulls go through a **pull-through cache** (§8.5); internal image names cannot fall through
   to public (image-layer dependency confusion); allowed-registries enforced ([sota-kubernetes](../../sota-kubernetes/SKILL.md))
   [direct `docker.io/...` pulls in manifests; proxy fall-through for internal namespaces]
 - [ ] **Proxy contents verified; malicious versions purged (§8.5), High:** clients verify hashes/signatures from sources other than the proxy (no `GOSUMDB=off`); for each cached package version, `curl -s -d '{"package":{"name":"<pkg>","ecosystem":"npm"},"version":"<ver>"}' https://api.osv.dev/v1/query | jq -r '.vulns[]?.id | select(startswith("MAL-"))'` prints nothing, and any hit is deleted and blocked at the proxy

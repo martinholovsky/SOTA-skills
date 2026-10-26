@@ -37,7 +37,8 @@ staff.
    real requirement (not a vibe), or workload shapes managed runners can't express
    (DaemonSets, stateful sets with custom topology, GPU bin-packing). **And** you have
    ≥ 1 FTE-equivalent of platform capacity for upgrades (3 minor releases/year,
-   ~14-month support window — being > 2 versions behind is an audit finding).
+   ~14-month support window, [sota-kubernetes rules/01](../../sota-kubernetes/rules/01-control-plane-etcd.md) §7 —
+   outside provider standard support is an audit finding; target ≤ 1 behind default, §3).
 5. **VMs** for: lift-and-shift, licensed/legacy software, kernel/hardware control,
    stateful systems not yet on managed equivalents. VMs demand the patching, AMI
    pipeline, and autoscaling-group discipline everything above gives you for free.
@@ -182,7 +183,7 @@ spec:
 ### Cluster operations
 
 - **Upgrade cadence is a standing commitment:** upstream ships 3 minors/year with a
-  ~14-month support window; managed providers add extended-support fees for
+  ~14-month support window (owner: sota-kubernetes rules/01 §7); managed providers add extended-support fees for
   laggards. Track ≤ 1 version behind your provider's default; test upgrades in
   non-prod with the same add-ons.
 - Add-on sprawl is the hidden K8s cost: every controller (mesh, ingress, cert
@@ -204,9 +205,9 @@ spec:
 
 - [ ] Compute choice per workload has a justification; K8s clusters have a written
       reason + named platform owner; no orchestrator running 3 trivial services (§1).
-- [ ] Serverless: every async consumer has DLQ + alert + redrive runbook; handlers
+- [ ] Serverless: every async consumer has DLQ + alert + redrive runbook (§2); handlers
       idempotent (check for idempotency keys on at-least-once triggers).
-- [ ] Function timeouts/memory tuned vs p99; reserved concurrency caps on
+- [ ] Function timeouts/memory tuned vs p99 (§2); reserved concurrency caps on
       unbounded-trigger functions; provisioned concurrency justified by latency data.
 - [ ] **High** — functions handling sensitive data are VPC-attached with restricted
       egress (§2). Probe (lists `.tf` files declaring a Lambda with no `vpc_config`):
@@ -218,7 +219,7 @@ spec:
       that write under `/tmp` and never delete anything):
       `grep -rl --null -E "[\"']/tmp/" --include='*.py' --include='*.js' --include='*.ts' . | xargs -0 -r grep -L -E 'os\.remove|os\.unlink|shutil\.rmtree|TemporaryDirectory|unlinkSync|rmSync|fs\.rm'`
       — then read module-level assignments in each handler file for request data.
-- [ ] Multi-step workflows in a workflow engine (or durable functions), not
+- [ ] Multi-step workflows in a workflow engine (or durable functions) (§2), not
       sleep/retry loops in handler code.
 - [ ] K8s version within provider standard support, ≤ 1 behind default; upgrade
       runbook exists and was exercised (§1, §3).

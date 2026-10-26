@@ -187,16 +187,16 @@ Behavior change: POSTs are no longer retried by default — opt in per call.
 
 ## Audit checklist
 
-- [ ] Reference docs generated from source (OpenAPI/docstrings/rustdoc/godoc); generation runs in CI with warnings-as-errors.
-- [ ] Docstring/spec lint gates exist: undocumented public symbols fail the build, OpenAPI is linted and contract-checked against the implementation.
+- [ ] Reference docs generated from source (§1) (OpenAPI/docstrings/rustdoc/godoc); generation runs in CI with warnings-as-errors.
+- [ ] Docstring/spec lint gates exist (§1): undocumented public symbols fail the build, OpenAPI is linted and contract-checked against the implementation.
 - [ ] Doc comments carry contract/failure/why/surprises — sample 10 public symbols; name-restating docstrings are a finding. Module/package docs state what the package is for, its entry-point types and what it deliberately doesn't do (§2).
 - [ ] Doc examples compile/run in CI (doctests/Example funcs/extracted blocks); every non-trivial public entry point has at least one example, the first per page showing the intended call pattern with realistic values and error handling; quickstarts and tutorials run in CI too, on a schedule if per-PR execution is too slow (§3).
 - [ ] OpenAPI examples validate against their schemas in CI (§3).
 - [ ] No unescaped `|` inside a table cell's code span (§1) — GFM drops the overflow cell silently. A regex cannot pair backticks (adjacent spans `` `a` | `b` `` false-positive); walk the spans: ``perl -ne 'if (/^\|/) { while (/`([^`]*)`/g) { if ($1 =~ /(?<!\\)\|/) { print "$ARGV:$.\n"; last } } } close ARGV if eof' *.md``
-- [ ] Every operation documents its failure modes and the caller's correct reaction; HTTP error responses enumerated with body schema.
+- [ ] Every operation documents its failure modes and the caller's correct reaction (§4); HTTP error responses enumerated with body schema.
 - [ ] **(Medium) Rate limits, CORS and redirects documented** (§4): the reference states quota and scope, the throttled response, allowed origins and credentials, and redirecting operations. Probe: locate the specs with `git ls-files '*openapi*' '*swagger*'` (zero files is itself a finding, not a pass), then `grep -L -E "[\"']?429[\"']?:|Retry-After" <each spec>` prints a spec that documents no throttled response at all.
 - [ ] Published docs are versioned to match releases; default view is latest stable; pages state the version they describe; changed or removed behavior is marked inline with its version ("Since v2.3", "Removed in v3.0 — use X") (§5).
-- [ ] CHANGELOG follows Keep a Changelog with an Unreleased section maintained in PRs; entries are user-impact language with issue/PR links, not commit subjects.
-- [ ] Release notes derive from the changelog (no divergent second history).
+- [ ] CHANGELOG follows Keep a Changelog with an Unreleased section maintained in PRs (§6); entries are user-impact language with issue/PR links, not commit subjects.
+- [ ] Release notes derive from the changelog (§6) (no divergent second history).
 - [ ] **(Medium) Each security fix links its advisory, and advisories have one home with a subscription path** (§6). Probe: `awk '/^## /{s=0} /^### /{s=/^### Security/} s && /^[-*] / && !/GHSA-|CVE-[0-9]|[Aa]dvisor/' CHANGELOG.md` prints `Security` entries that link no advisory.
 - [ ] Breaking releases ship a migration guide: every break listed with what broke, a one-line why, before→after and mechanical steps, ordered by what users hit first; deprecation warnings pointing at the guide shipped for ≥1 minor release before removal (§7).

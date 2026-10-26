@@ -239,8 +239,8 @@ Security cheat sheet.
 - **DORA** (EU financial entities + their critical ICT providers): applicable
   since **17 Jan 2025**, first enforcement cycle underway in 2026. Engineering
   surface: ICT risk management, **major-incident reporting (initial notification
-  within 4h of classifying as major / max 24h from awareness; intermediate 72h;
-  final ≤ 1 month)**, digital operational resilience testing (TLPT for
+  within 4h of classifying as major / max 24h from awareness; intermediate ≤ 72h
+  after it; final ≤ 1 month after the last intermediate — Delegated Reg. (EU) 2025/301 Art. 5)**, digital operational resilience testing (TLPT for
   significant entities), ICT third-party register and contract clauses. If you
   sell to EU banks/insurers, expect DORA clauses in contracts even as a vendor.
 - **NIS2** (EU essential/important entities — energy, transport, health, digital
@@ -299,13 +299,13 @@ deny contains msg if {
 - [ ] Every cataloged purpose has a recorded lawful basis; legitimate-interest purposes have an LIA and a working objection path (§1)
 - [ ] Cross-border flows enumerated with transfer mechanism per processor (incl. support/admin access paths); DPF certifications verified where relied on (§1)
 - [ ] DPIA trigger checklist embedded in design-review process; existing high-risk processing has DPIAs on file (§1)
-- [ ] Breach capability meets 72h GDPR clock today ([rules/06](06-incident-breach-readiness.md)); pending Digital Omnibus changes tracked, not assumed
+- [ ] Breach capability meets 72h GDPR clock today (§1) ([rules/06](06-incident-breach-readiness.md)); pending Digital Omnibus changes tracked, not assumed
 - [ ] US: single rights pipeline covers strictest state requirements; GPC honored; sensitive-data opt-in implemented; state-tracker re-checked this quarter; California risk-assessment/ADMT/cyber-audit deadlines (2026–2030 phase-in) tracked; a data broker runs the Delete Act DROP pull-and-delete job at least every 45 days with a suppression list (§2)
-- [ ] Minors: age signal modeled and gating where service could reach under-18s; no targeted ads to known minors; parental-consent flow where required
+- [ ] Minors (§2b): age signal modeled and gating where service could reach under-18s; no targeted ads to known minors; parental-consent flow where required
 - [ ] Child-directed decision comes from a platform-controlled classification and fails closed when absent; a sender flag such as `regs.coppa` only raises the bar (§2b). HIGH where an omitted flag lets profiling run. Probe for the sender flag used as the boundary: `grep -rnE "coppa[\"']?\]?\)?[[:space:]]*(==|===|!=|!==)[[:space:]]*[01]|[\"']coppa[\"'][[:space:]]*,[[:space:]]*0\)" .`
 - [ ] HIPAA (if applicable): §164.312 safeguards mapped to controls; encryption + MFA universal (NPRM-proof); BAAs precede every PHI vendor flow (§3)
 - [ ] PCI: scope minimized (hosted fields/tokenization); no CVV or track data at rest anywhere (grep + scanner); stored PAN only with a documented business need, encrypted; CDE segmented; payment-page script integrity controls live (§4)
-- [ ] AI Act: systems classified (prohibited/high-risk/transparency/GPAI); for high-risk candidates, logging + data-governance + documentation designed now against the post-omnibus dates
+- [ ] AI Act (§5): systems classified (prohibited/high-risk/transparency/GPAI); for high-risk candidates, logging + data-governance + documentation designed now against the post-omnibus dates — HIGH for a high-risk system
 - [ ] AI Act Art. 50 marking: generated media leaves the generator with a hard-bound, signed C2PA manifest; each rendition or transcode is re-signed with the prior manifest as ingredient; soft binding is used only for recovery (§5) — MEDIUM; judgment, no generic probe (see [sota-llm-engineering rules/05](../../sota-llm-engineering/rules/05-production-engineering.md) for the generation-call probe)
 - [ ] DORA/NIS2 (if in sector/supply chain): incident-reporting clocks wired into IR runbooks; third-party register current; DORA resilience testing (TLPT for significant entities) scheduled (§6)
 - [ ] Residency requirements per tenant/market recorded; region pinning enforced by policy-as-code; key residency where required; compute, queues, caches, telemetry and support access stay in-region, and cross-region admin reads are gated (§7)

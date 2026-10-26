@@ -23,7 +23,8 @@ func handle(w io.Writer, r *Req) {
     process(buf, r, w)
 }
 
-// GOOD — reuse via sync.Pool (Go), ThreadLocal/ringbuffer (JVM), or
+// GOOD — reuse via sync.Pool (Go), a ringbuffer (JVM; ThreadLocal only on platform-
+// thread pools, never under virtual threads: sota-jvm rules/03 §3), or
 // preallocated per-worker buffers. Pool a *pointer*: Put([]byte) boxes the
 // slice header and allocates every call (staticcheck SA6002); measured
 // 2026-09-26: 1 vs 0 allocs/op. Pool criteria in sota-golang rules/06.
@@ -216,7 +217,8 @@ Tune in this order — most GC problems are application problems:
    collector (Parallel); latency-sensitive services → low-pause concurrent
    collectors (G1 default, ZGC/Shenandoah for < 1 ms pauses on big heaps;
    modern ZGC is generational). Go: one GC, tune `GOGC` (collection frequency
-   vs heap growth) and `GOMEMLIMIT` (hard cap). The Green Tea collector is the
+   vs heap growth) and `GOMEMLIMIT` (a *soft* limit,
+   [`sota-golang` rules/06](../../sota-golang/rules/06-performance.md) §5). The Green Tea collector is the
    default since Go 1.26, so re-baseline GC metrics after that upgrade before
    re-tuning ([`sota-golang` rules/06](../../sota-golang/rules/06-performance.md) §5); container-aware GOMAXPROCS needs a
    `go` line ≥ 1.25 and is disabled by any `runtime.GOMAXPROCS(n)` call, which

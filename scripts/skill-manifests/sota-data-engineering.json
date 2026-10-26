@@ -1,0 +1,46 @@
+{
+ "_note": "Declared BUILD routing for sota-data-engineering (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Every BUILD step links one file by path, but the routing words of steps 2-6 sit on the line BEFORE the link, so for 02-06 the gate reads essentially the index row only; all keywords below are index-row phrases (plus 'Size the problem' from step 1's own line). BUILD step 4 says every new model gets quality checks, so a new-model case carries data-quality and loads 04. No routing gap found for the cases below.",
+ "skill": "sota-data-engineering",
+ "tags": {
+  "architecture": ["Size the problem", "Choosing engines", "warehouse vs lakehouse"],
+  "modeling": ["dimensional modeling", "SCDs", "staging/core/mart", "One Big Table"],
+  "batch-pipeline": ["batch pipeline", "incremental loads", "idempotency", "watermarks"],
+  "backfill": ["backfills"],
+  "orchestration": ["Airflow", "DAG design", "dbt project discipline"],
+  "streaming": ["Kafka", "CDC", "Debezium", "streaming vs micro-batch"],
+  "data-quality": ["expectation tests", "data contracts", "testing transforms in CI"],
+  "lineage": ["lineage"],
+  "data-incident": ["data incident"],
+  "table-layout": ["Creating tables", "partitioning vs clustering", "Parquet tuning"],
+  "table-maintenance": ["compaction", "Iceberg/Delta features and maintenance"],
+  "cost": ["scan cost", "warehouse spend"],
+  "deployment": ["deployment of pipeline changes", "write-audit-publish", "blue-green tables"],
+  "gdpr": ["GDPR deletion"],
+  "access-control": ["access control"],
+  "pipeline-ops": ["pipeline observability", "runbooks"]
+ },
+ "files": {
+  "01": {"build": ["architecture", "modeling"]},
+  "02": {"build": ["batch-pipeline", "backfill", "orchestration"]},
+  "03": {"build": ["streaming"]},
+  "04": {"build": ["data-quality", "lineage", "data-incident"]},
+  "05": {"build": ["table-layout", "table-maintenance", "cost"]},
+  "06": {"build": ["deployment", "gdpr", "access-control", "pipeline-ops"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "build an incremental daily dbt model loading orders into a star-schema mart", "mode": "build",
+   "tags": ["modeling", "batch-pipeline", "orchestration", "data-quality", "table-layout", "pipeline-ops"],
+   "must_load": ["01", "02", "04", "05", "06"]},
+  {"task": "stream Postgres changes into Iceberg tables with Debezium", "mode": "build",
+   "tags": ["streaming", "table-layout", "table-maintenance", "data-quality"], "must_load": ["03", "05", "04"]},
+  {"task": "backfill two years of a fact table after a logic fix", "mode": "build",
+   "tags": ["backfill", "deployment", "data-quality"], "must_load": ["02", "06", "04"]},
+  {"task": "implement GDPR erasure across raw, mart and snapshot layers of a lakehouse", "mode": "build",
+   "tags": ["gdpr", "lineage", "table-maintenance"], "must_load": ["06", "04", "05"]},
+  {"task": "choose an engine for a 3 GB/day analytics workload", "mode": "build",
+   "tags": ["architecture", "cost"], "must_load": ["01", "05"]},
+  {"task": "audit a team's Airflow + warehouse data platform", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06"]}
+ ]
+}

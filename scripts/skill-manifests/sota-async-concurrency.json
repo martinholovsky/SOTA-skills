@@ -1,0 +1,207 @@
+{
+ "_note": "Declared BUILD routing for sota-async-concurrency (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. 06 has no BUILD line (step 3 'Bound everything' links nothing) and is reached through its index row. 07 is the AUDIT catalogue but is declared for task-leaks and retries because its row names fire-and-forget, unbounded spawns and retry storms, and BUILD step 6 sends builders to its section 3. Known routing gap, recorded and NOT declared: (1) rules/07 section 3 (ambient per-request context - ContextVar/AsyncLocalStorage/ThreadLocal - must be reset when the request ends) is routed by BUILD step 6, but the sentence wraps: the phrase 'Ambient per-request context (tenant, user)' sits on the line that links rules/03, and the line that links rules/07 says only 'with it: ... section 3', while 07's row names no context/tenant phrase; a task that sets per-request tenant context in a pooled worker therefore does not reach 07, and declaring the phrase on 03 would be false (03 is primitives). (2) rules/05 section 5 (retry interplay: a retry loop must honour cancellation and a cancellable backoff) is not in 05's row or BUILD lines - no 'retry' phrase - so a retry-only task reaches 02 and 07 but not 05; the retry case below carries a timeout tag because the task names a timeout, not to hide this. Routing gap for rules/07 (ambient per-request context) FIXED 2026-10-26: the index row now names it, and tag 'ambient-context' declares it. Routing gap for rules/05 (retry interplay) FIXED 2026-10-26: the index row now names it, and tag 'retry-interplay' declares it.",
+ "skill": "sota-async-concurrency",
+ "tags": {
+  "model-choice": [
+   "event loop vs threads vs processes",
+   "CPU/I-O decision tree",
+   "structured concurrency",
+   "task groups"
+  ],
+  "event-loop": [
+   "Anything runs on an event loop",
+   "blocking calls",
+   "offloading to pools",
+   "keep blocking and CPU work off it"
+  ],
+  "shared-state": [
+   "race conditions",
+   "atomicity",
+   "TOCTOU",
+   "deadlock prevention"
+  ],
+  "primitives": [
+   "mutexes",
+   "semaphores",
+   "channels (bounded vs unbounded)",
+   "choosing the primitive"
+  ],
+  "timeouts": [
+   "Timeout policy",
+   "timeout policy"
+  ],
+  "cancellation-shutdown": [
+   "propagating cancellation",
+   "graceful shutdown",
+   "shutdown order"
+  ],
+  "backpressure": [
+   "Queues between components",
+   "producer/consumer rate mismatch",
+   "load shedding",
+   "token buckets"
+  ],
+  "retries": [
+   "idempotency under retries",
+   "retry storms"
+  ],
+  "task-leaks": [
+   "no orphaned tasks",
+   "fire-and-forget",
+   "unbounded spawns",
+   "missing await"
+  ],
+  "ambient-context": [
+   "ambient per-request context"
+  ],
+  "retry-interplay": [
+   "retry interplay"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "model-choice",
+    "task-leaks"
+   ]
+  },
+  "02": {
+   "build": [
+    "shared-state",
+    "retries"
+   ]
+  },
+  "03": {
+   "build": [
+    "primitives"
+   ]
+  },
+  "04": {
+   "build": [
+    "event-loop"
+   ]
+  },
+  "05": {
+   "build": [
+    "timeouts",
+    "cancellation-shutdown",
+    "retry-interplay"
+   ]
+  },
+  "06": {
+   "build": [
+    "backpressure"
+   ]
+  },
+  "07": {
+   "build": [
+    "task-leaks",
+    "retries",
+    "ambient-context"
+   ]
+  }
+ },
+ "cases": [
+  {
+   "task": "build an asyncio crawler that fetches 10k URLs with bounded concurrency",
+   "mode": "build",
+   "tags": [
+    "model-choice",
+    "event-loop",
+    "primitives",
+    "backpressure",
+    "timeouts"
+   ],
+   "must_load": [
+    "01",
+    "03",
+    "04",
+    "05",
+    "06"
+   ]
+  },
+  {
+   "task": "add graceful shutdown to a Go worker consuming from a queue",
+   "mode": "build",
+   "tags": [
+    "cancellation-shutdown",
+    "backpressure"
+   ],
+   "must_load": [
+    "05",
+    "06"
+   ]
+  },
+  {
+   "task": "add retries with a per-attempt timeout to an async outbound HTTP client",
+   "mode": "build",
+   "tags": [
+    "retries",
+    "timeouts"
+   ],
+   "must_load": [
+    "02",
+    "05",
+    "07"
+   ]
+  },
+  {
+   "task": "protect an in-memory map shared by concurrent request handlers",
+   "mode": "build",
+   "tags": [
+    "shared-state",
+    "primitives"
+   ],
+   "must_load": [
+    "02",
+    "03"
+   ]
+  },
+  {
+   "task": "spawn a background task per request in a Node service",
+   "mode": "build",
+   "tags": [
+    "model-choice",
+    "task-leaks"
+   ],
+   "must_load": [
+    "01",
+    "07"
+   ]
+  },
+  {
+   "task": "audit a service's async code for races, leaks and blocked loops",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  },
+  {
+   "task": "set per-request tenant context in a pooled async worker",
+   "mode": "build",
+   "tags": [
+    "ambient-context"
+   ],
+   "must_load": [
+    "07"
+   ]
+  },
+  {
+   "task": "add retries to an async HTTP client",
+   "mode": "build",
+   "tags": [
+    "retry-interplay"
+   ],
+   "must_load": [
+    "05"
+   ]
+  }
+ ]
+}

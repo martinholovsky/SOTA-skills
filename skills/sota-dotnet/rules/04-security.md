@@ -380,9 +380,9 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       ; `grep -rnE '\.(Query|Execute)[A-Za-z]*(<[^>]*>)?\([[:space:]]*(\$@?|@\$)?"[^"]*\{' --include='*.cs' .`
       (Dapper `Query*`/`Execute*` with interpolated SQL; a raw `"""` literal or SQL built earlier escapes all three)
       ; `grep -rnE '(ORDER|GROUP)[[:space:]]+BY[^"]*(\{|"[[:space:]]*\+)' --include='*.cs' .` (an identifier or `ORDER BY` from input: allowlist it)
-- [ ] **Deserialization — CRITICAL** —
+- [ ] **Deserialization — CRITICAL** (§2) —
       `grep -rnE 'BinaryFormatter|NetDataContractSerializer|LosFormatter|SoapFormatter|ObjectStateFormatter' --include='*.cs' .` ; `grep -rnE 'TypeNameHandling\.(Auto|All|Objects|Arrays)' --include='*.cs' .`
-- [ ] **XXE / command / path — HIGH/CRITICAL** —
+- [ ] **XXE / command / path — HIGH/CRITICAL** (§2, §3) —
       `grep -rnE 'DtdProcessing|XmlResolver|new XmlDocument|XmlReader|XmlTextReader|new XPathDocument\(|XslCompiledTransform' --include='*.cs' . | head` ; `grep -rnE 'Process\.Start|ProcessStartInfo|UseShellExecute' --include='*.cs' . | head`
 - [ ] **Auth / CORS / antiforgery — HIGH** (§4) —
       `grep -rnE 'AllowAnyOrigin|AllowAnyHeader|AllowAnyMethod' --include='*.cs' .` ;
@@ -394,7 +394,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'` ; `grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .` ;
       `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head` ; non-constant-time MAC/token compare (§5, MEDIUM; HIGH on webhook/HMAC verification or an API key a caller can submit repeatedly — [`sota-code-security` rules/22](../../sota-code-security/rules/22-constant-time-comparison.md)): `grep -rniE '(hmac|signature|digest|token|mac)[A-Za-z0-9_]*([[:space:]]*[!=]=|\.(SequenceEqual|Equals)\()|([!=]=[[:space:]]*|(SequenceEqual|Equals)\([^;]*)[A-Za-z0-9_.]*(hmac|signature|digest|token|mac)' --include='*.cs' . | grep -viE '[!=]=[[:space:]]*null|null[[:space:]]*[!=]=|FixedTimeEquals'`
-- [ ] **Secrets in config/source — HIGH** —
+- [ ] **Secrets in config/source — HIGH** (§4) —
       `grep -rniE '"?(password|pwd|secret|apikey|api_key|connectionstrings?)"?[[:space:]]*[=:]' --include='appsettings*.json' --include='*.cs' .` (a `"ConnectionStrings":` hit: read the section for `Password=`/`Pwd=`)
 - [ ] **Data Protection package patch level — HIGH** (§5) —
       `grep -rn 'Microsoft\.AspNetCore\.DataProtection' --include='*.csproj' --include='packages.lock.json' --include='Directory.Packages.props' .`

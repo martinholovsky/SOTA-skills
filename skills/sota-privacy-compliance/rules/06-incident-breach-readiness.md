@@ -47,7 +47,8 @@ first hours, producing a written record even when the answer is "not reportable.
 | HIPAA | HHS + individuals (+ media) | Individuals ≤ **60 days** from discovery; media when >500 residents of one State/jurisdiction (45 CFR 164.406); HHS contemporaneously for ≥500 individuals, else annual log ≤ 60 days after year end (164.408) |
 | US state breach laws (all 50 states, separate from privacy acts) | State AGs + residents | Varies: "most expedient time" to fixed 30/45/60-day windows per state — maintain a per-state matrix via counsel |
 | NIS2 (in-scope entities) | National CSIRT/authority | Early warning **24h**, notification **72h**, final report ≤ 1 month |
-| DORA (EU financial) | Competent authority | Initial ≤ **4h from classifying as major** (≤ 24h from awareness), intermediate 72h, final ≤ 1 month |
+| CRA (product manufacturers; Art. 14, applies from 11 Sep 2026) | Coordinator CSIRT + ENISA, via the single reporting platform | Exploited vulnerability or severe incident: early warning **24h**, notification **72h**; final ≤ 14 days after a fix (vuln) / ≤ 1 month after the notification (incident) — [sota-security-compliance rules/04](../../sota-security-compliance/rules/04-eu-cyber-resilience-act.md) §3 |
+| DORA (EU financial) | Competent authority | Initial ≤ **4h from classifying as major** (≤ 24h from awareness), intermediate ≤ 72h after the initial, final ≤ 1 month after the last intermediate |
 | PCI DSS / card brands | Acquirer/brands | Per contract — "immediately"/24h customary; PFI investigation likely |
 | Contracts (B2B DPAs) | Your customers (you as processor) | Whatever you signed — inventory these clauses; they're often your shortest clock |
 
@@ -200,12 +201,12 @@ incident. Reconcile explicitly in the IR runbook:
 
 - [ ] Breach triage decision flow documented; first-hours questions (§1) answerable — test: pick a datastore, demand "what personal data, whose, which regimes" in under 30 minutes
 - [ ] Clock table with regulator submission paths and DPA notice clauses embedded in IR runbook; incident tracker auto-computes deadlines from awareness time (§2)
-- [ ] Processor-role obligations mapped: every customer DPA's breach-notice clause inventoried with its clock
-- [ ] Data-access audit logging enabled on all special-category/financial/regulated stores; write-once, clock-synced, retention ≥ regime minimum and cataloged as a justified exception
-- [ ] Security telemetry pseudonymized; no secrets/tokens/bodies in logs (sample); log stores classified and access-controlled accordingly
+- [ ] Processor-role obligations mapped (§1, §2): every customer DPA's breach-notice clause inventoried with its clock
+- [ ] Data-access audit logging enabled on all special-category/financial/regulated stores (§3); write-once, clock-synced, retention ≥ regime minimum and cataloged as a justified exception
+- [ ] Security telemetry pseudonymized (§3); no secrets/tokens/bodies in logs (sample); log stores classified and access-controlled accordingly
 - [ ] Analytics/telemetry emitters that carry personal data consult current consent, opt-out (incl. GPC) and jurisdiction state before emitting; security-log event classes have a recorded lawful basis (§3) — MEDIUM. Probe for direct emitter calls to review for a consent guard: `grep -rnE "(analytics|telemetry|posthog|mixpanel|segment)\.(identify|track|capture)\(" .`
-- [ ] Affected-subject enumeration capability demonstrated (query from access logs + store snapshot), not asserted
-- [ ] Encryption/tokenization state per store recorded so "data was protected" claims are provable in a notification decision
+- [ ] Affected-subject enumeration capability demonstrated (§1) (query from access logs + store snapshot), not asserted
+- [ ] Encryption/tokenization state per store recorded (§1) so "data was protected" claims are provable in a notification decision
 - [ ] Communication templates (regulator, individual, customer, public) exist, counsel-reviewed, version-controlled; decision-rights matrix current (§4)
 - [ ] Tabletop exercised within 12 months with real clocks and template drafting; record retained (§4)
 - [ ] Breach register includes non-reportable incidents with documented rationale (§5)

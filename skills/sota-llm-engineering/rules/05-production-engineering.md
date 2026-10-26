@@ -317,12 +317,12 @@ them follows the same pipeline:
       split by its structured field: a transient in-flight-budget `402` with
       `Retry-After` is retried, an exhausted balance pages (§2); prepaid
       headroom sized for concurrency × `max_tokens` (§4).
-- [ ] Streaming on user-facing and long-running generations; TTFT and idle
+- [ ] Streaming on user-facing and long-running generations (§3); TTFT and idle
       timeouts; no >1-minute non-streaming calls.
 - [ ] Latency levers applied in order (stream, cache, parallelize,
       right-size, bound output) before exotic ones; hedged calls budgeted;
       semantic/response cache keys scoped per user (§3).
-- [ ] Cost: per-route budget + alerting; caching hit-rate verified; offline
+- [ ] Cost (§4): per-route budget + alerting; caching hit-rate verified; offline
       workloads on batch API (−50%); cost attribution to
       feature/tenant/prompt-version queryable.
 - [ ] Every call traced with the §5 minimum fields; agent steps share a
@@ -334,7 +334,7 @@ them follows the same pipeline:
       a failed stage raises and names itself (§5). **High** for a silent
       empty-context fallback. Probe — exception handlers that swallow into
       an empty result: `grep -rn -A1 -E '^[[:space:]]*except' . | grep -E 'return \[\]|(docs|chunks|context|hits|results) = \[\]'`
-- [ ] Per-route degradation ladder defined and tested (fallback model →
+- [ ] Per-route degradation ladder defined and tested (§6) (fallback model →
       cache → non-LLM → honest unavailability); circuit breakers on
       providers; refusals handled as product paths.
 - [ ] Rollouts: eval gate → shadow/canary → expand; instant config rollback;

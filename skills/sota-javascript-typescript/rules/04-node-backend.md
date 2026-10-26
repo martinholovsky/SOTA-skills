@@ -298,7 +298,7 @@ timer.unref();
 Your service is only as reliable as its slowest dependency. Every outbound call gets:
 - **Timeout**: `AbortSignal.timeout(ms)` on fetch; statement timeout on DB queries. No infinite waits — a hung upstream plus no timeout equals your own outage.
 - **Bounded retries with jittered backoff**, idempotent operations only; honor `Retry-After`. Retrying non-idempotent POSTs duplicates orders — use idempotency keys.
-- **Connection pooling**: undici `Agent`/`Pool` for high-volume HTTP to fixed origins; DB pool sized deliberately (start ~10 per instance; pool_size × instances must stay under the DB's max_connections — the default-100 Postgres ceiling is hit by autoscaling, not load).
+- **Connection pooling**: undici `Agent`/`Pool` for high-volume HTTP to fixed origins; DB pool sized deliberately (start ~10 per instance, node-postgres's own `max` default; pool_size × instances must stay under the DB's max_connections — the default-100 Postgres ceiling is hit by autoscaling, not load — and near the server-side total in [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5).
 - **Circuit breaking** on flapping dependencies (opossum) so you fail fast instead of queueing doomed work.
 
 ```ts
@@ -397,7 +397,7 @@ channel.
 ## Audit checklist
 
 - [ ] `grep -rn "process.env" src/ --include="*.ts" | grep -v "config\|env.ts"` — env access outside the config module (MEDIUM); no schema validation of env at boot (HIGH). `git ls-files | grep -E '(^|/)\.env(\.(local|production|prod))?$'` lists a committed `.env` (HIGH if it holds secrets); `grep -rnE 'NODE_ENV *[!=]==' --include='*.ts' --include='*.js' --exclude-dir=node_modules . | grep -vE '(^|/)(config|env)\.[jt]s:'` lists `NODE_ENV` branches outside config, which belong in named config flags (LOW) (§3).
-- [ ] **Dev server, debug mode or inspector in production (§"Env and config") — HIGH for a
+- [ ] **Dev server, debug mode or inspector in production (§"Env and config") (§3) — HIGH for a
       public `--inspect`, MEDIUM otherwise** —
       `grep -rnE -e '--inspect(-brk|-port)?([^[:alnum:]-]|$)|NODE_ENV[=:] *"?(development|dev)|"start": *"[^"]*(next dev|vite|webpack serve|nodemon|tsx watch|ts-node)' --include='package.json' --include='Dockerfile*' --include='Procfile' --include='*.yml' --include='*.yaml' --include='.env*' --include='*.service' .`
       — a production start command running a dev server or an inspector is the finding.
@@ -416,7 +416,7 @@ channel.
       `enterWith` is a scope that never exits. A `getStore()` falling back to a default is
       fail-open. Read the hits: a module `let` assigned only at boot is fine. A `Worker` that calls `getStore()` gets `undefined`: pass the value in `workerData`.
 - [ ] `grep -rn "Sync(" src/ | grep -v "test\|script"` — `*Sync` calls in server code (HIGH in request paths). Known CPU work (hashing, image resize, PDF generation, compression) run inline in a handler instead of a worker pool is MEDIUM (§10).
-- [ ] Server timeouts: `grep -rn "headersTimeout\|requestTimeout\|keepAliveTimeout" src/` — absent = slowloris-exposed defaults (MEDIUM).
+- [ ] Server timeouts (§4): `grep -rn "headersTimeout\|requestTimeout\|keepAliveTimeout" src/` — absent = slowloris-exposed defaults (MEDIUM).
 - [ ] Body limits configured (`grep -rn "bodyLimit\|limit:" src/`) — unbounded body parsing (HIGH, DoS). Security headers: `grep -rniE 'helmet|x-powered-by' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .` printing nothing means no `helmet` and `X-Powered-By` still sent (LOW) (§4).
 - [ ] `grep -rn "SIGTERM" src/` — no graceful shutdown handler = dropped requests on every deploy (MEDIUM). Where one exists: readiness flips first, the forced-exit timer is `.unref()`ed and shorter than the orchestrator's grace period, pools close after in-flight requests drain, and SSE/WebSocket connections are tracked and ended (`server.close` waits for them forever) (MEDIUM) (§5).
 - [ ] **Error paths that crash or hang the process (§8) — HIGH on
@@ -426,23 +426,23 @@ channel.
       anywhere (read the rest). Then, if `grep -nE '"express": *"[~^]?4\.' package.json` hits:
       `grep -rnE "\.(get|post|put|patch|delete|all|use)\([^)]*async *(\(|function|[[:alnum:]_]+ *=>)" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -vE "[Hh]andler\(|wrap\(|catch\(next"`
       — an unwrapped async handler on Express 4 hangs the request on a rejection (HIGH).
-- [ ] `grep -rn "uncaughtException" src/` — handler that doesn't exit (HIGH); no `unhandledRejection` policy at all (MEDIUM).
-- [ ] **Allocation or recursion sized by the request (§"Process-level error policy", failures no handler sees) — HIGH on a request path: one request kills the process** —
+- [ ] `grep -rn "uncaughtException" src/` — handler that doesn't exit (HIGH) (§8); no `unhandledRejection` policy at all (MEDIUM).
+- [ ] **Allocation or recursion sized by the request (§"Process-level error policy", failures no handler sees) (§8) — HIGH on a request path: one request kills the process** —
       `grep -rnE '(Array|Buffer\.(alloc|allocUnsafe)|\.repeat)\( *([^)]*[^[:alnum:]_])?(req\.|body|query|params|headers|length|size|count)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules .`
       — each hit needs a maximum checked before the call. Then read each recursive function that walks parsed request data (validators, deep merge, sanitizers) for a depth limit.
-- [ ] `grep -rn "console.log\|console.error" src/ | grep -v test` — in services, replace with pino (LOW; MEDIUM if logging objects with secrets).
+- [ ] `grep -rn "console.log\|console.error" src/ | grep -v test` — in services, replace with pino (§9) (LOW; MEDIUM if logging objects with secrets).
 - [ ] Logger redaction configured? `grep -rn "redact" src/` — logging auth headers/bodies without redaction (HIGH). `grep -rn 'pino-pretty' --include='*.ts' --include='*.js' --include='*.mjs' --include='Dockerfile*' --exclude-dir=node_modules .` — `pino-pretty` reaching production config instead of staying a dev tool (LOW) (§9).
-- [ ] `grep -rn "trust proxy" src/` and rate-limiter keying — spoofable client IP (MEDIUM).
+- [ ] `grep -rn "trust proxy" src/` and rate-limiter keying — spoofable client IP (§4) (MEDIUM).
 - [ ] **Top-level `await` in a published library's entry graph (§13) — MEDIUM: every `require()` of the package throws `ERR_REQUIRE_ASYNC_MODULE`** —
       `grep -rnE '^(await[[:space:]]|for[[:space:]]+await|(export[[:space:]]+)?(const|let|var)[[:space:]][^=]*=[[:space:]]*await[[:space:]])' --include='*.js' --include='*.mjs' --include='*.ts' --include='*.mts' src/`
       — an unindented `await` is module scope. Only files reachable from `exports`/`main` count; an app's own entry point may use it. Then `grep -rnE '__dirname|__filename|(^|[^.[:alnum:]_$])require\(' --include='*.js' --include='*.mjs' --include='*.ts' --include='*.mts' --exclude-dir=node_modules .` in a `"type": "module"` package — `__dirname`/`__filename` do not exist there and a stray `require(` throws (MEDIUM).
 - [ ] `package.json`: `engines.node` pinned, matched by `.nvmrc`/`.node-version` and the Node version CI runs (§1); deps that duplicate platform built-ins (axios, dotenv, uuid, nodemon) — removable (LOW) (§2).
-- [ ] `grep -rn "bcrypt.hashSync\|scryptSync\|pbkdf2Sync" src/` — sync crypto in request path (HIGH).
-- [ ] `grep -rn "process.exit" src/ | grep -v "config\|shutdown"` — exits mid-flow skipping cleanup (MEDIUM).
+- [ ] `grep -rn "bcrypt.hashSync\|scryptSync\|pbkdf2Sync" src/` — sync crypto in request path (§10) (HIGH).
+- [ ] `grep -rn "process.exit" src/ | grep -v "config\|shutdown"` — exits mid-flow skipping cleanup (§8) (MEDIUM).
 - [ ] Readiness vs liveness probes distinct; readiness flips during drain (`grep -rn "readyz\|readiness" src/`) — single do-everything healthcheck (LOW/MEDIUM). A liveness endpoint that checks the DB or other dependencies turns a blip into a fleet-wide restart loop (CRITICAL, as [`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §7 rates it); a readiness endpoint that fails on a shared dependency (`db.ping()` in `/readyz`) with no recorded decision to do so is a finding — it empties the Service on every DB outage (§6).
-- [ ] Outbound fetch/DB calls without timeouts (`grep -rn "fetch(" src/ | grep -v signal`; DB client statement_timeout) — MEDIUM, HIGH for critical paths.
+- [ ] Outbound fetch/DB calls without timeouts (§12) (`grep -rn "fetch(" src/ | grep -v signal`; DB client statement_timeout) — MEDIUM, HIGH for critical paths.
 - [ ] Retry logic on non-idempotent operations without idempotency keys (MEDIUM/HIGH if money). Retries without jittered backoff or ignoring `Retry-After`, and no circuit breaker on a flapping dependency, are LOW (§12).
-- [ ] DB pool size × replica count vs database max_connections — documented anywhere? (LOW).
+- [ ] DB pool size × replica count vs database max_connections (§12) — documented anywhere? (LOW).
 - [ ] **`node:crypto` AEAD use (§14)** —
       `grep -rnE 'createDecipheriv\(|createCipher\(|createDecipher\(|setAuthTag\(|pseudoRandomBytes|crypto\.(prng|rng)\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       — for each GCM `createDecipheriv`: is `authTagLength` passed (absent: MEDIUM), and is

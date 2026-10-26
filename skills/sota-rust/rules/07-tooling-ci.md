@@ -76,7 +76,7 @@ scopes test code with `#![cfg_attr(test, allow(clippy::arithmetic_side_effects, 
   Hardcoding `#![deny(warnings)]` in source breaks builds on every new rustc
   lint — don't.
 - Per-site `#[expect(clippy::xyz, reason = "...")]` over module-level allows; a
-  suppression without a reason is a finding. **`#[expect]`, not `#[allow]`**: when the code it
+  suppression without a reason is a finding. General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1. **`#[expect]`, not `#[allow]`**: when the code it
   covers is refactored away it raises `unfulfilled_lint_expectations` (warn by default, so
   `-D warnings` fails), so a stale exception surfaces instead of accumulating. Two traps,
   both measured 2026-10-24 on clippy 1.99.0:
@@ -201,7 +201,8 @@ a commit message as fact. The verifier's own numbers before and after were **ide
   fuzz for untrusted-input parsers ([rules/05](05-security-supply-chain.md)). A constrained
   property test must show it reached its target ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6): proptest
   aborts past `max_global_rejects` (default 1024) for `prop_assume!`, `max_local_rejects` (65536) for `prop_filter`.
-- Coverage: `cargo llvm-cov nextest` — track trend, don't worship the number.
+- Coverage: `cargo llvm-cov nextest` — track trend, don't worship the number. Mutation testing
+  (`cargo-mutants`): its gate and its missing boundary mutant are in [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3.
 
 ## 4. MSRV policy
 
@@ -434,7 +435,7 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
 - [ ] **Suppression convention** (§1): `rg -c '#\[allow\(' -t rust .` beside `rg -c '#\[expect\(' -t rust .`
       — `#[allow]` with no `allow_attributes` floor = Low (stale exceptions accumulate); `unfulfilled_lint_expectations` not `deny` in `[lints.rust]` (`rg -n 'unfulfilled_lint_expectations' Cargo.toml`) = Low — an unused `#[expect]` is then only a warning that CI ignores;
       `forbid` on `unused_must_use`/`unsafe_op_in_unsafe_fn` breaks on macro-emitted allows.
-- [ ] CI runs clippy with `-D warnings` on `--all-targets --all-features`;
+- [ ] CI runs clippy with `-D warnings` (§1) on `--all-targets --all-features`;
       source does NOT hardcode `#![deny(warnings)]`.
 - [ ] **Constrained crates (eBPF, `no_std`, embedded, WASM, kernel) — is any lint
       suggestion taken on a false premise?** (§1a) For each accepted style fix in such a
@@ -493,5 +494,5 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
 - [ ] Reproducibility and CI shape (§9): `Cargo.lock` committed, toolchain pinned, CI action
       SHAs pinned, `rust-cache` keyed correctly (not caching stale clippy); each job of the §9
       baseline present or deliberately absent, plus scheduled `cargo audit`, fuzz and bench jobs.
-- [ ] Quick greps: `rg 'dbg!|println!' -t rust -g '!*test*' -g '!*/bin/*'`
+- [ ] Quick greps: `rg 'dbg!|println!' -t rust -g '!*test*' -g '!*/bin/*'` (§1)
       (debug leftovers in libs); `rg 'FIXME|HACK|XXX' -t rust` triaged.

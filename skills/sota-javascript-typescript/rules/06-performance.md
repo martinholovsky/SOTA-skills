@@ -65,7 +65,7 @@ function Page() { return <div><Clock /><ExpensiveTree /></div>; }
 ```
 
 3. **Subscribe narrowly**: context splits (state vs dispatch), or selector-based stores (zustand/jotai) so components re-render on their slice only. A single fat context is the classic whole-app re-render.
-4. **Then memoize, judiciously**: `React.memo` on expensive leaf/list components; `useMemo` for expensive computations; `useCallback` only to stabilize props of memoized children or effect deps. Memoizing everything adds comparison cost + complexity for nothing — and one unstable prop (inline object/array) silently voids `memo`. React Compiler 1.0 (stable since Oct 2025) auto-memoizes — when it's enabled, delete manual memo noise rather than adding more.
+4. **Then memoize, judiciously**: `React.memo` on expensive leaf/list components; `useMemo` for expensive computations; `useCallback` only to stabilize props of memoized children or effect deps. Memoizing everything adds comparison cost + complexity for nothing — and one unstable prop (inline object/array) silently voids `memo`. React Compiler 1.0 (stable since Oct 2025) auto-memoizes — when it's enabled, stop adding manual memo; leave existing memo in place or test before removing it (react.dev: removing it "can change compilation output"; [`sota-web-frameworks` rules/02](../../sota-web-frameworks/rules/02-react.md) §4).
 5. **Verify with the Profiler** (record → interact → check "why did this render") before and after.
 
 Other React essentials:
@@ -203,18 +203,18 @@ In hot paths (per-row in 100k iterations, per-frame): avoid spread-accumulator `
 
 ## Audit checklist
 
-- [ ] Bundle analyzer wired and a size budget enforced in CI (`size-limit`/bundlesize)? Absent on a frontend app = MEDIUM.
-- [ ] `grep -rn "from 'lodash'\|from \"lodash\"" src/` (non-`lodash-es`) and `from 'moment'` — heavy/cjs imports (MEDIUM). `grep -rn "import \* as" src/` — namespace imports of large libs.
+- [ ] Bundle analyzer wired and a size budget enforced in CI (`size-limit`/bundlesize)? (§1) Absent on a frontend app = MEDIUM.
+- [ ] `grep -rn "from 'lodash'\|from \"lodash\"" src/` (non-`lodash-es`) and `from 'moment'` — heavy/cjs imports (§1) (MEDIUM). `grep -rn "import \* as" src/` — namespace imports of large libs.
 - [ ] `grep -rln "export \* from" src/` — barrel files on hot paths (LOW/MEDIUM). `grep -rL --include='package.json' --exclude-dir=node_modules '"sideEffects"' .` lists a `package.json` with no `"sideEffects"` field, which limits tree-shaking (LOW) (§1).
-- [ ] `grep -rn "key={index}\|key={i}\|key={idx}" src/ --include="*.tsx"` — index keys on mutable lists (MEDIUM); `key={Math.random()` (HIGH — remount storm).
-- [ ] `grep -rn "useEffect" src/ --include="*.tsx" | wc -l` high relative to components → review for derived-state effects and fetch waterfalls (MEDIUM).
+- [ ] `grep -rn "key={index}\|key={i}\|key={idx}" src/ --include="*.tsx"` — index keys on mutable lists (§3) (MEDIUM); `key={Math.random()` (HIGH — remount storm).
+- [ ] `grep -rn "useEffect" src/ --include="*.tsx" | wc -l` high relative to components → review for derived-state effects and fetch waterfalls (§3) (MEDIUM).
 - [ ] `grep -rn "useMemo\|useCallback\|React.memo" src/` — blanket memoization with unstable deps (inline objects in props of memoized components) = dead weight (LOW); missing memo on expensive list rows that profile hot (MEDIUM). `grep -rnE 'Provider value=\{\{' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules .` — a context value rebuilt every render re-renders every consumer (MEDIUM) (§3).
-- [ ] `grep -rn "'use client'" app/ src/` — at layout/page top level wholesale = RSC benefits discarded (MEDIUM in App Router projects).
+- [ ] `grep -rn "'use client'" app/ src/` — at layout/page top level wholesale = RSC benefits discarded (§3) (MEDIUM in App Router projects).
 - [ ] Long lists: components mapping >hundreds of rows without virtualization (`grep -rn "\.map(" src/ --include="*.tsx"` + check data sizes) — MEDIUM. (§4)
 - [ ] `grep -rn "addEventListener" src/` without matching remove/`{ signal }`; `grep -rn "setInterval" src/` without `clearInterval` — leaks (MEDIUM). Observers never `disconnect()`ed, and Node services with no heap/RSS metric exported, are the same class (LOW) (§7).
 - [ ] `grep -rn "new Map()\|new Map<" src/` at module scope in server code — unbounded cache check (MEDIUM if grows per-request/per-user key). Each memo cache needs a bound (`max`/`ttl`) and invalidation on the write path or a deliberate TTL (MEDIUM) (§6).
 - [ ] `grep -rn "onScroll\|onMouseMove\|onResize\|addEventListener('scroll'" src/` — unthrottled continuous handlers doing layout reads (MEDIUM); could be Intersection/ResizeObserver. `grep -rnE '(debounce|throttle)\(' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules . | grep -vE 'useMemo|useRef|useCallback|import '` — a debounced function created in the component body resets its timer every render (MEDIUM) (§5).
 - [ ] Node: event-loop delay metric exported? `grep -rn "monitorEventLoopDelay" src/` — absent in a latency-sensitive service (LOW/MEDIUM). (§8)
-- [ ] `grep -rn "JSON.stringify" src/` in logging/hot request paths over large objects (MEDIUM).
+- [ ] `grep -rn "JSON.stringify" src/` in logging/hot request paths over large objects (§8) (MEDIUM).
 - [ ] **Render-blocking and eager third-party scripts (§2) — MEDIUM** — `grep -rnE '<script[^>]*src=' --include='*.html' --exclude-dir=node_modules . | grep -vE 'defer|async|type="module"'` — a classic `<script src>` with no `defer`/`async` blocks parsing. Then check that analytics/chat scripts load after interactive, and that framework route prefetch has not been disabled.
 - [ ] **Main-thread scheduling (§9) — MEDIUM** — record the key interactions in the Chrome Performance panel: an app long task over 50ms (parsing, diffing, search indexing, image work) belongs in a Web Worker. `grep -rn 'requestIdleCallback' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules .` — no callback may do user-visible work. Animations of layout-triggering properties instead of `transform`/`opacity` are LOW.

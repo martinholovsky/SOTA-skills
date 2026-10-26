@@ -168,9 +168,9 @@ func securePath(baseDir, userPath string) (string, error) {
   symlinks and `base`-sibling prefixes (`/srv/app` vs `/srv/app-secrets`) —
   if you must, compare against `filepath.Separator`-terminated resolved
   (`filepath.EvalSymlinks`) paths.
-- Zip/tar extraction: validate every entry name with `filepath.IsLocal` +
-  reject absolute/`..` (zip-slip); bound total size and file count
-  (decompression bomb).
+- Zip/tar extraction: validate every entry name with `filepath.IsLocal` + reject absolute/`..`
+  (zip-slip) and link entries (`tar.TypeSymlink`/`TypeLink`, zip `fs.ModeSymlink`; [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §4);
+  bound total size and file count (decompression bomb).
 - Serving files: `http.ServeFile` rejects `..` but build the path with
   `http.FileServer`/`http.FS` over a rooted FS rather than manual joins;
   `os.DirFS` + `fs.Sub`, or `os.Root.FS()` on 1.24+. Containment does not stop listing:
@@ -418,14 +418,14 @@ Supply chain and vulnerability management (formerly section 8) moved to
 
 ## Audit checklist
 
-- [ ] **SQL injection — CRITICAL** —
+- [ ] **SQL injection — CRITICAL** (§2) —
       `grep -rnE '(Sprintf|fmt\.Sprint|\+ ?\w+ ?\+).*((?i)select|insert|update|delete|where)' --include='*.go' .`
       ; `grep -rnE '(Query|Exec|QueryRow)[^(]*\(("[^"]*"\s*\+|fmt\.Sprintf)' --include='*.go' .`
       ; `grep -rnE '\.(Raw|Where)\(fmt\.Sprintf' --include='*.go' .` (GORM-style)
 - [ ] **Command injection (§3) — CRITICAL** —
       `grep -rnE 'exec\.Command(Context)?\(\s*"(sh|bash|cmd|powershell)"' --include='*.go' .` ;
       `grep -rn 'exec.Command' --include='*.go' .` (verify argv per site: `--` before caller values, a minimal `cmd.Env`, `WaitDelay` set; constant-only `sh -c` is MEDIUM)
-- [ ] **Path traversal — HIGH** —
+- [ ] **Path traversal — HIGH** (§4) —
       `grep -rnE 'filepath\.Join\([^)]*(r\.|req\.|input|name|param|id)' --include='*.go' .` ;
       `grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .` (mitigations present?);
       `go version` (os.Root containment needs >=1.26.5 on the 1.26 line — CVE-2026-39822 symlink escape);
@@ -449,7 +449,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
 - [ ] **TLS (§6) — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
       `grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .` ;
       `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'` ; `grep -rnE 'CipherSuites|CurvePreferences' --include='*.go' .` (hand-picked lists only where compliance forces them)
-- [ ] **Integer conversion — gosec G115** —
+- [ ] **Integer conversion — gosec G115** (§5) —
       `grep -rnE '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)'`
       ; `gosec -include=G115,G118,G119,G120,G121,G124,G201,G202,G204,G304,G401,G402,G701,G702,G703,G704,G705,G706,G707,G708,G709,G710 ./...`
       (or plain `gosec ./...` for the full set)
@@ -469,7 +469,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rn 'math/rand' --include='*.go' .` (any import: verify each call site is
       non-secret);
       `grep -rnE '\brand\.(Int|Intn|Int31|Int63|Uint|Float|Perm|Shuffle|N)\b' --include='*.go' . # PRNG calls — crypto context?`
-- [ ] **Output encoding / XSS — HIGH** —
+- [ ] **Output encoding / XSS — HIGH** (§1) —
       `grep -rn 'text/template' --include='*.go' . | grep -iv _test` (HTML rendered via
       text/template?);
       `grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . # escaping bypass — verify sanitized`
@@ -485,7 +485,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
 - [ ] **--- Temp files and permissions (§4a) ---** —
       `grep -rnE 'os\.TempDir\(\)|"/tmp/' --include='*.go' . | grep -v _test` (predictable path
       [HIGH])
-- [ ] **mode where either the group or other digit is non-zero (0600/0700 pass, 0644/0755/0640
+- [ ] **mode where either the group or other digit is non-zero (§4a) (0600/0700 pass, 0644/0755/0640
       flag)** —
       `grep -rnE '(WriteFile|MkdirAll|Mkdir|Chmod)\(.*0o?[0-7]([1-7][0-7]|[0-7][1-7])\)' --include='*.go' .`
 - [ ] **--- Host keys and deserialization (§4b) ---** —

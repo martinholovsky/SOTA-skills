@@ -96,6 +96,9 @@ build-time) and **blast radius** (process death > request failure > slow).
 
 ### Finding format
 
+Expands the router's canonical row (`file:line | rule | severity | effort | fix`, which wins on a
+cross-domain roll-up); evidence block and report order: [`sota` rules/03](../sota/rules/03-audit-findings.md) §2 and §5.
+
 ```
 [SEVERITY] short title
   Where: path/to/file.rs:123 (fn name / module)

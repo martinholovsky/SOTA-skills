@@ -205,14 +205,14 @@ the wrong place"**, and the next hour goes into re-applying something that alrea
       name prefixes, labels and images are transformer-owned — render (`kustomize build`,
       `helm template`) and grep the render before treating an empty namespaced lookup as
       "not applied"; `kubectl get <kind> -A` before any absence claim.
-- [ ] GitOps is the only write path to prod (no routine human `kubectl apply`); GitOps repos have branch protection + required review + signed commits?
+- [ ] GitOps is the only write path to prod (§1) (no routine human `kubectl apply`); GitOps repos have branch protection + required review + signed commits?
 - [ ] Controller runs in its own namespace and least-privilege where possible (§1); RBAC *to* Argo CD/Flux resources (Applications/AppProjects/Kustomizations) is restricted; self-management/bootstrap under extra review?
-- [ ] No AppProject with `clusterResourceWhitelist: [{group:'*',kind:'*'}]` (or it's justified + tightly access-controlled)? (`kubectl get appprojects -A -o yaml | grep -A3 clusterResourceWhitelist`)
+- [ ] No AppProject with `clusterResourceWhitelist: [{group:'*',kind:'*'}]` (§2) (or it's justified + tightly access-controlled)? (`kubectl get appprojects -A -o yaml | grep -A3 clusterResourceWhitelist`)
 - [ ] AppProjects pin `sourceRepos` and `destinations` (no `*`); `default` project locked down; RBAC-creating kinds blacklisted where not needed? (§2)
 - [ ] Argo CD SSO wired, built-in admin disabled/break-glass, RBAC `policy.csv` scoped per project (no blanket `role:admin`), default policy `role:''` (no access), built-in admin secret rotated? (`grep -nE '^[[:space:]]*g[[:space:]]*,.*,[[:space:]]*role:admin[[:space:]]*$' <policy.csv>` — each hit is a cluster-admin-equivalent group binding to justify) (§3)
-- [ ] Repo/cluster credentials scoped (read-only deploy keys, per-repo), stored as secrets/ESO, rotated — no org-write creds in the controller?
+- [ ] Repo/cluster credentials scoped (§3) (read-only deploy keys, per-repo), stored as secrets/ESO, rotated — no org-write creds in the controller?
 - [ ] ApplicationSet generators restricted to trusted repos/branches; no untrusted input templated into `project`/`destination`/`source`? (§4)
 - [ ] Prod sync gated (approval/sync windows), not blind auto-sync; `prune`/`selfHeal` reviewed; drift alerted and triaged as a security signal? (§5)
-- [ ] Promotion = move verified digest through git; rollback = git revert (not hand-edits)?
+- [ ] Promotion = move verified digest through git (§5); rollback = git revert (not hand-edits)?
 - [ ] Argo CD/Flux on a supported version, CVE feed tracked, recent Critical advisories (Secret-extraction, cred-exposure) patched — the Secret-extraction follow-up fixes need 3.2.12 / 3.3.10 / 3.4.2, and an EOL 2.x gets no fix? (`argocd version`) (§6)
 - [ ] Any controller that writes **outward** (image updater, PR bot, config sync committing back) is verified **at the remote** — `git ls-remote` / the file on `origin` / a rendered-manifest diff — not from its own `updated=N errors=0`; freshness of the last remote change is alerted, and a controller managing N objects asserts on all N rather than an aggregate? (§7)

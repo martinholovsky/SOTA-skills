@@ -99,6 +99,9 @@ undefined` and run the test suite — a sanitizer abort is ground truth.
 
 ### Finding format
 
+Expands the router's canonical row (`file:line | rule | severity | effort | fix`, which wins on a
+cross-domain roll-up); evidence block and report order: [`sota` rules/03](../sota/rules/03-audit-findings.md) §2 and §5.
+
 ```
 [SEVERITY] file.cpp:LINE — short title
   Rule: rules/NN-name.md § section

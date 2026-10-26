@@ -393,13 +393,13 @@ Running external programs (formerly section 9) moved to
 
 ## Audit checklist
 
-- [ ] CI has `cargo deny check` (or `cargo audit`) on PRs **and** a scheduled
+- [ ] CI has `cargo deny check` (or `cargo audit`) on PRs **and** a scheduled (§1)
       run; every `deny.toml` ignore entry has a reason naming a review date,
       and a scheduled job fails once that date passes (no `expire` key — cargo-deny
       rejects it and the config fails to load). Missing = High for deployed services.
-- [ ] `Cargo.lock` committed; `rg 'git = "' Cargo.toml */Cargo.toml` — git
+- [ ] `Cargo.lock` committed (§1); `rg 'git = "' Cargo.toml */Cargo.toml` — git
       deps without `rev =` pin = Medium; wildcard versions = Medium.
-- [ ] `cargo vet` (or documented dep-review process) for new dependencies;
+- [ ] `cargo vet` (or documented dep-review process) for new dependencies (§2);
       build.rs / proc-macro deps enumerated and reviewed.
 - [ ] **Build-time code (build.rs / proc-macro) is inventoried, owned and isolated (§2) —
       High** — `RUSTC="$(rustup which rustc)" RUSTC_WRAPPER= cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(any(.targets[]; any(.kind[]; . == "custom-build" or . == "proc-macro"))) | "\(.name) \(.version)"'`
@@ -460,7 +460,7 @@ Running external programs (formerly section 9) moved to
 - [ ] `rg 'bincode' -g 'Cargo.toml' -g 'Cargo.lock' .` — unmaintained (RUSTSEC-2025-0141):
       new use = Low (pick a maintained format); decoding untrusted bytes without
       `.with_limit` = High (§2, §6).
-- [ ] `rg 'untagged' -t rust` on network-facing types = review for DoS;
+- [ ] `rg 'untagged' -t rust` (§6) on network-facing types = review for DoS;
       `rg 'deny_unknown_fields'` absent on auth/config types = Low-Medium;
       body-size limits present at every ingest (axum `DefaultBodyLimit`,
       manual caps) — absent = High.
@@ -474,7 +474,7 @@ Running external programs (formerly section 9) moved to
       (`QueryBuilder::push` of a non-literal — must be `push_bind`, or an allowlisted
       identifier; `Vec::push` in the same file is noise to read past). Macros
       (`query!`) and `.query(` (e.g. reqwest's URL query) are excluded by design.
-- [ ] `rg 'format!\(.*(SELECT|INSERT|UPDATE|DELETE|WHERE)' -t rust -i` = High;
+- [ ] `rg 'format!\(.*(SELECT|INSERT|UPDATE|DELETE|WHERE)' -t rust -i` (§7) = High;
       `rg '\.join\(' -t rust` on user-supplied path segments without
       canonicalize+prefix check = High.
 - [ ] Fuzz targets exist for each untrusted-input parser; absent on a
@@ -489,10 +489,9 @@ Running external programs (formerly section 9) moved to
 - [ ] Logs: `rg 'info!|warn!|error!|debug!' -t rust` near auth/headers — no
       `Authorization`/`Cookie`/body logging; user strings as structured
       fields, not message interpolation; no `error!` on client 4xx (§8).
-- [ ] `rg 'output\(\)|wait_with_output' -t rust` where the child's output size is
-      not bounded by the caller = Medium (R9.6); `rg 'pre_exec' -t rust` — the
-      closure must be async-signal-safe (R9.7). R9.x now live in [rules/08](08-external-programs.md); its checklist is the full set.
-- [ ] Severity calibration: RCE/memory corruption = Critical; authn/authz
+- [ ] External programs (R9.x, the output cap R9.6 and `pre_exec` R9.7 included): run
+      [rules/08](08-external-programs.md)'s Audit checklist, which is the full set.
+- [ ] Severity calibration (§1, §4, §6, §7): RCE/memory corruption = Critical; authn/authz
       bypass, SQLi, traversal = Critical/High; attacker-reachable panic or
       unbounded allocation = High; missing CI audit gates = Medium-High;
       hygiene (locks, lints) = Low-Medium.

@@ -109,10 +109,10 @@ are mechanical — follow them. Reference:
 - [ ] **Cancellation not flowed (§4) — MEDIUM** —
       `grep -rnE 'async Task[<A-Za-z, >]* [A-Za-z]+\([^)]*\)' --include='*.cs' . | grep -v 'CancellationToken' | head`
 - [ ] **await inside lock — HIGH (won't compile for lock, but SemaphoreSlim misuse /
-      sync-over-async)** — `grep -rnE 'lock\s*\(' --include='*.cs' . | head` ;
+      sync-over-async)** (§5) — `grep -rnE 'lock\s*\(' --include='*.cs' . | head` ;
       `grep -rnE 'new (Dictionary|List)<' --include='*.cs' . | grep -i 'static\|shared'`
       (non-concurrent shared)
-- [ ] **Unbounded parallelism — MEDIUM (verify bounding)** —
+- [ ] **Unbounded parallelism — MEDIUM (verify bounding)** (§5) —
       `grep -rnE 'Task\.WhenAll|Parallel\.(For|ForEach)' --include='*.cs' . | head`
 - [ ] **Request-scoped state in thread-local or `AsyncLocal` storage — HIGH in a multi-tenant
       service (cross-tenant leak)** (§5) —

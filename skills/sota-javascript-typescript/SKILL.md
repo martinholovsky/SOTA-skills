@@ -33,13 +33,17 @@ Scope first (frontend? Node service? library?), then read the matching rules fil
 - **LOW** — hygiene/debt: dead deps, `hasOwnProperty`, console.log in services, snapshot sprawl, missing memoization on profiled-hot paths.
 
 **Finding format:**
+Expands the router's canonical row (`file:line | rule | severity | effort | fix`, which wins on a
+cross-domain roll-up); evidence block and report order: [`sota` rules/03](../sota/rules/03-audit-findings.md) §2 and §5.
 ```
 [SEVERITY] Title (CWE-xxx if security)
 File: path/to/file.ts:42
+Rule: rules/NN-name.md § section
 Issue: what is wrong, in one or two sentences
 Evidence: the offending snippet
 Impact: what an attacker/user/operator experiences
 Fix: concrete change (code if short)
+Effort: trivial | small | medium | large
 ```
 
 Order the report CRITICAL→LOW, deduplicate repeated patterns into one finding with a file list, and end with the top 3 systemic recommendations (e.g., "enable noUncheckedIndexedAccess", "adopt MSW", "add zod to route boundaries").

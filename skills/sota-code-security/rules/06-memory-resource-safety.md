@@ -153,7 +153,10 @@ memcpy(buf, pkt->data, n); buf[n] = '\0';
   - **JVM:** JNI (`native` / Kotlin `external`, `System.loadLibrary`); the FFM API
     (final in JDK 22, JEP 454), whose restricted methods only *warn* unless
     `--enable-native-access` names the module; `sun.misc.Unsafe` memory access
-    (deprecated for removal in JDK 23, JEP 471).
+    (deprecated for removal in JDK 23, JEP 471). JDK 24 makes loading a JNI library restricted
+    (JEP 472) and warns on `Unsafe` memory access (JEP 498); both only warn by default, and
+    `--illegal-native-access=deny` / `--sun-misc-unsafe-memory-access=deny` make them throw
+    ([`sota-jvm` rules/04](../../sota-jvm/rules/04-security.md) §7).
   - **.NET:** `unsafe` blocks, pointers and `fixed`, which need `AllowUnsafeBlocks`
     (default `false`); P/Invoke through `[DllImport]` or `[LibraryImport]` (.NET 7+, which
     also requires `AllowUnsafeBlocks`); `Marshal.*` on raw pointers.
@@ -166,6 +169,9 @@ memcpy(buf, pkt->data, n); buf[n] = '\0';
   - **PHP:** the FFI extension; `ffi.enable` defaults to `"preload"` (CLI and preloaded files
     only), and `"true"` opens it to every request.
   - **Ruby:** Fiddle (a libffi wrapper), the `ffi` gem, and C extensions.
+  - **Swift:** `Unsafe*Pointer` and the `withUnsafe…` closures, `unsafeBitCast`, `Unmanaged`, and
+    C interop; `UnsafeBufferPointer` is unchecked in release builds, and opt-in strict memory
+    safety (SE-0458) only warns ([`sota-swift` rules/04](../../sota-swift/rules/04-memory-and-unsafe.md) §3 and §4).
 
   **A `.csproj` with `AllowUnsafeBlocks`, a Python import of `ctypes`, or a PHP
   `ffi.enable=true` is the one-line signal** that a codebase crosses into unmanaged memory.
@@ -464,21 +470,21 @@ DllImportSearchPath.(AssemblyDirectory|ApplicationDirectory|LegacyBehavior) | lo
 
 ## Audit checklist
 
-- [ ] Is all arithmetic on input-derived sizes/counts/offsets/amounts overflow-checked (checked intrinsics or pre-condition form) before use?
-- [ ] Are allocation sizes guarded against multiplication overflow and capped against a memory budget?
-- [ ] Are signed/unsigned conversions and 64→32 truncations on lengths eliminated or explicitly range-checked?
-- [ ] Do money/quantity fields enforce positive, bounded, integer/decimal semantics?
+- [ ] Is all arithmetic on input-derived sizes/counts/offsets/amounts overflow-checked (checked intrinsics or pre-condition form) before use (§1)?
+- [ ] Are allocation sizes guarded against multiplication overflow and capped against a memory budget (§1, §4)?
+- [ ] Are signed/unsigned conversions and 64→32 truncations on lengths eliminated or explicitly range-checked (§1)?
+- [ ] Do money/quantity fields enforce positive, bounded, integer/decimal semantics (§1)?
 - [ ] Does money and share arithmetic multiply before it divides, round in the system's favour (issued/paid out down, owed up), and reject amounts below a minimum meaningful unit (§1)? MEDIUM, HIGH on value-moving paths. Probe for divide-then-multiply, reading each hit (money and share maths first): `grep -rnE '[[:alnum:]_)][[:space:]]*/[[:space:]]*[[:alnum:]_.]+[[:space:]]*\)?[[:space:]]*\*[[:space:]]*[[:alnum:]_(]' .`
 - [ ] Are NaN/±Infinity rejected from parsed floats, divisors guarded against zero, unit conversions and multi-term intermediates bounded, MIN/MAX extremes handled, and every unchecked region's bound written down (§1)? MEDIUM, HIGH where the value sizes, prices or authorizes something. Probe listing files that parse floats and never test finiteness: `grep -rlE '(float|parseFloat|ParseFloat|parseDouble|strto[dfl]|atof)[[:space:]]*\(' . | while IFS= read -r f; do grep -qiE 'is_?finite|is_?nan|isinf' "$f" || echo "$f"; done` — file-level, so one check hides the rest of that file; then run the language skill's own probe.
 - [ ] Are banned C string functions absent (with `snprintf`/`strlcpy` truncation returns checked), raw pointer arithmetic and manual ownership confined to small reviewed modules (RAII/single owner, freed pointers nulled in legacy code), binaries built with PIE, stack protectors, `_FORTIFY_SOURCE=3` and CFI where available (confirm with `checksec --file=<binary>` or `readelf -d`), new parsers of untrusted input written in a memory-safe language or isolated in a least-privilege process, and parsers of untrusted bytes fuzzed with sanitizers in CI (§2)?
-- [ ] Is `unsafe`/FFI code confined to designated modules with SAFETY comments, safe wrappers, and Miri/ASan coverage?
+- [ ] Is `unsafe`/FFI code confined to designated modules with SAFETY comments, safe wrappers, and Miri/ASan coverage (§3)?
 - [ ] In a GC language, does any code use its escape hatch into raw memory (§3's per-language list)? Each use is audited with the C rules, and a project-wide opt-in (`AllowUnsafeBlocks`, `ffi.enable=true`, `--enable-native-access=ALL-UNNAMED`) is justified in writing.
 - [ ] Is every native library loaded by absolute path, or through a search restricted to directories only the owner can write (§3.1)? Run §3.1's detector row for the platform and language, `readelf -d`/`otool -l` the shipped binaries for relative or `$ORIGIN` run paths, and on .NET enable CA5392, CA5393 and CA3011, which are off by default. HIGH when the process runs with more privilege than whoever can write the CWD, the application folder, or an `LD_LIBRARY_PATH` entry.
 - [ ] Does every declared length/offset get validated against a protocol maximum and bytes-actually-available (offsets after an overflow-safe add) before allocation, read or seek, with redundant size fields (header total vs section sums vs file size) cross-checked and a mismatch rejected rather than repaired, through length-aware cursors that error on underrun (§4)?
 - [ ] Are decompression ratio caps, image pixel limits, and JSON/GraphQL depth+complexity limits enforced (§4)?
-- [ ] Do all inbound listeners and outbound calls have timeouts, with cancellation propagation?
+- [ ] Do all inbound listeners and outbound calls have timeouts, with cancellation propagation (§5)?
 - [ ] Is rate limiting per-principal with bounded queues and load shedding (no unbounded buffering), and does no unauthenticated path trigger metered work — SMS/OTP sends limited per number AND per requester, and a per-tenant budget cap with an alert on every usage-billed API (§5)? MEDIUM, HIGH on an unauthenticated SMS-send endpoint.
-- [ ] Are check-then-act sequences (files, balances, redemptions) made atomic at the storage layer?
+- [ ] Are check-then-act sequences (files, balances, redemptions) made atomic at the storage layer (§6)?
 - [ ] Is any race accepted because its window is "too small" (§6)? HIGH on balances, redemptions and limits: single-packet and last-byte-sync attacks reach millisecond windows. Probe for the rationalisation in comments and tickets: `grep -rniE 'race.{0,40}(unlikely|rare|tiny|small|negligible|acceptable)|(unlikely|rare|tiny|small|negligible).{0,40}race' .` (also matches `trace`; read each hit).
 - [ ] Is every temp file created atomically, owner-only, under a name not chosen in advance (§6.1)? Run §6.1's detector row for the language, and read each hit: a predictable name in a shared temp directory is HIGH when the file holds secrets or is later read back as trusted.
 - [ ] Is request-scoped data verified never to live in shared/global state across requests, including across warm serverless invocations, with `/tmp` files deleted before the handler returns (§6)? HIGH when the state holds another user's data. Python probe for a handler writing a module global: `grep -rnE '^[[:space:]]+global[[:space:]]+[[:alpha:]_]' --include='*.py' .` (read each hit).

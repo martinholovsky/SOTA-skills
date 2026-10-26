@@ -190,14 +190,14 @@ correctly and fast.
       high-confidence, high-impact signals? (§3)
 - [ ] Do alerts arrive enriched (asset/identity/TI/related signals), or must
       analysts do manual lookups per alert? (§4)
-- [ ] Are alerts deduplicated and correlated into incidents, or does the analyst
+- [ ] Are alerts deduplicated and correlated into incidents (§5), or does the analyst
       face a firehose of atomic events?
 - [ ] Pick 5 paging detections: how many have a linked, concrete, executed-at-
       least-once runbook, linked from the alert payload and covering meaning,
       blast radius, TP-vs-FP confirmation, first containment steps and
       escalation? (§6) A paging detection with none is HIGH, the rating
       [`sota-observability`](../../sota-observability/SKILL.md) gives any page with no runbook.
-- [ ] Does any auto-containment exist? If so: confidence gate, blast-radius
+- [ ] Does any auto-containment exist? (§7) If so: confidence gate, blast-radius
       allowlist of untouchables, reversibility, audit logging, and human-in-loop
       above a threshold?
 - [ ] **Cross-layer identity and device trust (§5, §7) — Medium:** are user,

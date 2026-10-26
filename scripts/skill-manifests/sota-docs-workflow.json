@@ -1,0 +1,45 @@
+{
+ "_note": "Declared BUILD routing for sota-docs-workflow (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD links 01-04; rules/05 (spec-driven development) is linked by no BUILD step and is reached only through its index row. For 02, 03 and 04 the BUILD routing words mostly sit on the line before the link (e.g. 'Changelog from day one'), so their keywords come from the index rows. No routing gap found for the cases below.",
+ "skill": "sota-docs-workflow",
+ "tags": {
+  "doc-structure": ["Diátaxis", "docs-as-code", "Writing/structuring"],
+  "readme": ["README"],
+  "runbook": ["runbooks", "command-exact"],
+  "onboarding": ["onboarding docs"],
+  "agent-docs": ["AGENTS.md/CLAUDE.md", "llms.txt"],
+  "repo-baseline": ["documentation baseline", "community-health files", "new repo"],
+  "reference-docs": ["reference docs", "docstring content", "doctests"],
+  "changelog": ["Keep a Changelog"],
+  "breaking-change": ["migration guides", "breaking-change pipeline"],
+  "pr-workflow": ["PR and review process", "PR sizing", "description discipline", "stacked PRs"],
+  "code-review": ["reviewer/author conduct", "blocking vs non-blocking comments", "reviewing AI-generated code"],
+  "commits": ["atomic/bisectable commits", "Conventional Commits", "message discipline"],
+  "branching": ["trunk-based vs gitflow"],
+  "release": ["SemVer semantics", "release automation", "tag immutability", "release notes"],
+  "spec": ["living spec", "acceptance criteria", "steering/constitution"]
+ },
+ "files": {
+  "01": {"build": ["doc-structure", "readme", "runbook", "onboarding", "agent-docs", "repo-baseline"]},
+  "02": {"build": ["reference-docs", "changelog", "breaking-change"]},
+  "03": {"build": ["pr-workflow", "code-review"]},
+  "04": {"build": ["commits", "branching", "release", "breaking-change"]},
+  "05": {"build": ["spec"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "set up docs for a new open-source library: README, LICENSE, CONTRIBUTING, CHANGELOG and generated API reference", "mode": "build",
+   "tags": ["readme", "repo-baseline", "reference-docs", "changelog"], "must_load": ["01", "02"]},
+  {"task": "cut v2.0.0 of a library that removes a deprecated function", "mode": "build",
+   "tags": ["release", "breaking-change", "changelog"], "must_load": ["04", "02"]},
+  {"task": "open a PR for a feature with a clear description and a clean commit history", "mode": "build",
+   "tags": ["pr-workflow", "commits"], "must_load": ["03", "04"]},
+  {"task": "write a runbook for a paging database-saturation alert", "mode": "build",
+   "tags": ["runbook", "doc-structure"], "must_load": ["01"]},
+  {"task": "drive an agent-built feature from a spec with testable acceptance criteria", "mode": "build",
+   "tags": ["spec"], "must_load": ["05"]},
+  {"task": "write an AGENTS.md for an existing repository", "mode": "build",
+   "tags": ["agent-docs"], "must_load": ["01"]},
+  {"task": "audit a repository's docs and collaboration workflow", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05"]}
+ ]
+}

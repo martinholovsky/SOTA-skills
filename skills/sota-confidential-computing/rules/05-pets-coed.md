@@ -326,6 +326,6 @@ independent-layers principle in [sota-sandboxing rules/01](../../sota-sandboxing
 - [ ] Standards claims current: ISO/IEC 28033 stage, NIST PEC / IR 8214C
       threshold-call status re-verified, not copied from stale docs? Citing ISO/IEC
       28033 as published without checking its stage: Low (§7).
-- [ ] DP, consent, and minimization questions routed to [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md);
+- [ ] DP, consent, and minimization questions (§1) routed to [sota-privacy-compliance](../../sota-privacy-compliance/SKILL.md);
       DP-SGD/federated learning to [sota-ml-engineering rules/07](../../sota-ml-engineering/rules/07-security-governance.md); classical
       crypto to [sota-code-security rules/04](../../sota-code-security/rules/04-cryptography.md)?

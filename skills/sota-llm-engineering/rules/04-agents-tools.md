@@ -424,7 +424,7 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
 - [ ] Escalation ladder respected: no agent where a workflow's eval scores
       match; no multi-agent without measured single-agent failure; the four
       §1 gates documented for every agent in the system.
-- [ ] Every tool: when-to-call description, strict schema
+- [ ] Every tool (§2): when-to-call description, strict schema
       (`additionalProperties: false`, enums), bounded output size,
       structured actionable errors, explicit empty-result semantics.
 - [ ] Every **required** tool call enforced in the harness, not asserted in the
@@ -461,14 +461,14 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
 - [ ] Per-agent and per-tool circuit breakers trip on anomaly (rate spike,
       first-seen tool or host, denial burst), pause the agent and return a
       structured "unavailable" to its caller (§7). **Medium**.
-- [ ] Mutating tools idempotent or idempotency-keyed; no non-idempotent
+- [ ] Mutating tools idempotent or idempotency-keyed (§2); no non-idempotent
       side effects inside a retrying loop.
 - [ ] Harness enforces ALL budget dimensions (iterations, tokens, cost,
       wall-clock, consecutive-error, repeat-call) with loud, state-
       preserving failure; a detected loop gets one change-approach turn, then aborts (§3) — grep every loop for its bound.
 - [ ] `stop_reason` exhaustively handled, context-window and pause/continue stops included;
       truncated output never parsed as complete (§3).
-- [ ] Consequential actions behind per-action human/policy gates that
+- [ ] Consequential actions behind per-action human/policy gates (§4) that
       suspend durably and feed deny-reasons back; authorization additionally
       code-enforced ([sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md)).
 - [ ] Actions tiered by risk and reversibility; only the lowest tier
@@ -484,14 +484,14 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
       revision (§6). **Critical** for a literal credential in a server
       definition. Probe (`PAT` only as a whole `_`-delimited word, so `PATH`,
       `PYTHONPATH` and `CLASSPATH` stay quiet): `grep -rnE '"([A-Z0-9_]*(TOKEN|KEY|SECRET|PASSWORD)[A-Z0-9_]*|([A-Z0-9]+_)*PAT(_[A-Z0-9]+)*)"[[:space:]]*:[[:space:]]*"[^"$]{8,}"' .`
-- [ ] Context management present for long sessions: pruning/compaction with
+- [ ] Context management present for long sessions (§5): pruning/compaction with
       eval coverage, memory with limits/expiry/erasability, artifacts by
       reference not by paste.
-- [ ] MCP: protocol revision pinned (2025-11-25 servers have a tracked migration
+- [ ] MCP: protocol revision pinned (§6) (2025-11-25 servers have a tracked migration
       to 2026-07-28), official SDKs used (or a recorded dependency-free exception tested against a real client per revision), third-party servers version-pinned with
       reviewed descriptions and an own gating layer; MCP credentials in a
       vault.
-- [ ] Multi-agent: pattern is context-isolation/parallelism or fresh-context
+- [ ] Multi-agent (§7): pattern is context-isolation/parallelism or fresh-context
       verification — not role-play; token multiplication estimated and
       accepted; per-tree budgets; subagent output validated; traces
       reconstructable per agent.

@@ -1,0 +1,252 @@
+{
+ "_note": "Declared BUILD routing for sota-architecture (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. The BUILD section links no rules file; its 'minimum: 01 for any new system/service, 03 for anything crossing a network, 07 always' names files by bare number, which C4's routing prose does not read, so every file here is routed by its index row alone (07 by its 'in BUILD mode as the \"never do this\" list' cell, which is why every build case carries the anti-patterns tag). Known routing gap, recorded and NOT declared: (1) rules/01 section 12a (retire a service completely) is named nowhere in 01's index row - no 'retire', 'decommission' or 'sunset' phrase - so a decommissioning task does not reach 01; (2) rules/05 section 12 (large objects and blob handling: object storage, presigned direct uploads, orphan sweeps) is not in 05's row - no 'blob', 'large object', 'upload' or 'object storage' phrase - so a file-upload or export feature does not reach 05; (3) rules/04 section 13 (disaster recovery is resilience at the largest blast radius: RTO/RPO per datastore, tested restores, cross-region posture) is not in 04's row - no 'disaster recovery', 'DR', 'RTO' or 'backup' phrase. No tag is declared for these three and no case hides them. Routing gap for rules/01 (retiring a service) FIXED 2026-10-26: the index row now names it, and tag 'retire-service' declares it. Routing gap for rules/05 (large objects and blobs) FIXED 2026-10-26: the index row now names it, and tag 'large-objects' declares it. Routing gap for rules/04 (disaster recovery) FIXED 2026-10-26: the index row now names it, and tag 'disaster-recovery' declares it.",
+ "skill": "sota-architecture",
+ "tags": {
+  "new-system": [
+   "Starting a system",
+   "Modular monolith vs microservices vs serverless",
+   "setting up ADRs"
+  ],
+  "service-split": [
+   "service split or merge",
+   "strangler fig",
+   "extraction forces"
+  ],
+  "monorepo": [
+   "monorepos"
+  ],
+  "domain-model": [
+   "Modeling a domain",
+   "Bounded contexts",
+   "aggregates & invariants",
+   "hexagonal ports/adapters"
+  ],
+  "absence": [
+   "in-band-sentinel"
+  ],
+  "distributed": [
+   "crosses a network or a queue",
+   "designing/reviewing messaging",
+   "outbox/inbox",
+   "sagas"
+  ],
+  "third-party-state": [
+   "reconciliation against an external system of record",
+   "third party that holds authoritative state"
+  ],
+  "resilience": [
+   "Timeouts & deadline budgets",
+   "retries with jitter",
+   "circuit breakers",
+   "any integration point"
+  ],
+  "scaling": [
+   "Scaling questions",
+   "autoscaling signals",
+   "partitioning/sharding keys"
+  ],
+  "caching": [
+   "caching tiers & invalidation",
+   "cache design/review"
+  ],
+  "multi-tenant": [
+   "multi-tenancy models",
+   "multi-tenant systems"
+  ],
+  "operational-skeleton": [
+   "operational skeleton",
+   "12-factor",
+   "feature-flag discipline",
+   "progressive delivery",
+   "expand/contract migrations"
+  ],
+  "anti-patterns": [
+   "never do this"
+  ],
+  "nats": [
+   "NATS JetStream"
+  ],
+  "retire-service": [
+   "retiring a service"
+  ],
+  "large-objects": [
+   "large objects and blobs"
+  ],
+  "disaster-recovery": [
+   "disaster recovery"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "new-system",
+    "service-split",
+    "monorepo",
+    "retire-service"
+   ]
+  },
+  "02": {
+   "build": [
+    "domain-model",
+    "absence"
+   ]
+  },
+  "03": {
+   "build": [
+    "distributed",
+    "third-party-state"
+   ]
+  },
+  "04": {
+   "build": [
+    "resilience",
+    "disaster-recovery"
+   ]
+  },
+  "05": {
+   "build": [
+    "scaling",
+    "caching",
+    "multi-tenant",
+    "large-objects"
+   ]
+  },
+  "06": {
+   "build": [
+    "operational-skeleton"
+   ]
+  },
+  "07": {
+   "build": [
+    "anti-patterns"
+   ]
+  },
+  "08": {
+   "build": [
+    "nats"
+   ]
+  }
+ },
+ "cases": [
+  {
+   "task": "start a new multi-tenant B2B SaaS backend from scratch",
+   "mode": "build",
+   "tags": [
+    "new-system",
+    "domain-model",
+    "multi-tenant",
+    "operational-skeleton",
+    "anti-patterns"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "05",
+    "06",
+    "07"
+   ]
+  },
+  {
+   "task": "build an order-to-payment workflow across two services and an external payment provider",
+   "mode": "build",
+   "tags": [
+    "distributed",
+    "third-party-state",
+    "resilience",
+    "anti-patterns"
+   ],
+   "must_load": [
+    "03",
+    "04",
+    "07"
+   ]
+  },
+  {
+   "task": "add a JetStream pull consumer that processes order events idempotently",
+   "mode": "build",
+   "tags": [
+    "nats",
+    "distributed",
+    "anti-patterns"
+   ],
+   "must_load": [
+    "08",
+    "03",
+    "07"
+   ]
+  },
+  {
+   "task": "add a read-through cache in front of the product catalog",
+   "mode": "build",
+   "tags": [
+    "caching",
+    "anti-patterns"
+   ],
+   "must_load": [
+    "05",
+    "07"
+   ]
+  },
+  {
+   "task": "extract the billing module from the monolith into its own service",
+   "mode": "build",
+   "tags": [
+    "service-split",
+    "distributed",
+    "resilience",
+    "anti-patterns"
+   ],
+   "must_load": [
+    "01",
+    "03",
+    "04",
+    "07"
+   ]
+  },
+  {
+   "task": "audit a microservices system's architecture",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08"
+   ]
+  },
+  {
+   "task": "decommission a service completely",
+   "mode": "build",
+   "tags": [
+    "retire-service"
+   ],
+   "must_load": [
+    "01"
+   ]
+  },
+  {
+   "task": "build a file upload and export feature",
+   "mode": "build",
+   "tags": [
+    "large-objects"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "design region-failure disaster recovery for the order service",
+   "mode": "build",
+   "tags": [
+    "disaster-recovery"
+   ],
+   "must_load": [
+    "04"
+   ]
+  }
+ ]
+}

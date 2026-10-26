@@ -94,7 +94,7 @@ rules) into one finding with a count and a listing.
 | [rules/02-iam-design.md](rules/02-iam-design.md) | Designing or auditing human access (SSO), workload identity, OIDC federation, permission boundaries, cross-account access, break-glass |
 | [rules/03-networking.md](rules/03-networking.md) | Designing or auditing VPCs/VNets, subnets, egress control, private endpoints, hub-spoke, DNS, TLS certs, load balancers, CDN, DDoS, IPv6 |
 | [rules/04-compute-selection.md](rules/04-compute-selection.md) | Choosing serverless vs containers vs Kubernetes vs VMs; serverless patterns; Kubernetes architecture (autoscaling, requests/limits, PDBs) |
-| [rules/05-data-storage.md](rules/05-data-storage.md) | Designing or auditing object storage, lifecycle policies, block/file/object choice, backup architecture, encryption and KMS key strategy |
+| [rules/05-data-storage.md](rules/05-data-storage.md) | Designing or auditing object storage, lifecycle policies, block/file/object choice, backup architecture, encryption and KMS key strategy, data placement and residency |
 | [rules/06-cost-finops.md](rules/06-cost-finops.md) | Cost visibility, rightsizing, commitment discounts, spot, egress/NAT traps, unit economics, anomaly detection, cost review in PRs |
 | [rules/07-resilience-dr.md](rules/07-resilience-dr.md) | RTO/RPO tiers, multi-AZ vs multi-region decisions, DR strategies, game days, dependency mapping, quotas, graceful degradation |
 

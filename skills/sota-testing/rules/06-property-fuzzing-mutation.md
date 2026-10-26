@@ -408,18 +408,18 @@ label it as such.
       (§6.1)? List crypto test files with no concurrency:
       `grep -rliE '(en|de)crypt' tests | xargs -r grep -LE 'ThreadPool|concurrent\.futures|asyncio\.gather|go func|t\.Parallel|Promise\.all|parallelStream|Executors|thread::(spawn|scope)|rayon'`
       A listed file for a wrapper that manages its own nonces → Medium.
-- [ ] Are properties real or tautological? Read each: does the expected side
+- [ ] Are properties real or tautological (§6.1)? Read each: does the expected side
       re-derive via the SUT's own logic → Critical (verifies nothing).
-- [ ] Over-filtered generators? Grep `assume\(|\.filter\(|suchThat|prop_assume`
+- [ ] Over-filtered generators (§6.1)? Grep `assume\(|\.filter\(|suchThat|prop_assume`
       density; heavy filtering → Medium (space not actually explored).
 - [ ] **Reach is enforced, not printed** (§6.6)? For each property with `assume`/`filter`/`pre`
       or an early `return`, and each fuzz target that returns on a parse error, look for a
       failing reach gate: a lowered rejection cap, an asserted counter, jqwik `Statistics.coverage`,
       or a Kani cover-count parse. Statistics output alone, or none → Medium (High where the
       property guards untrusted input).
-- [ ] Are shrunk counterexamples pinned as example tests / failure DB
+- [ ] Are shrunk counterexamples pinned as example tests / failure DB (§6.1)
       committed or cached in CI? No → Low–Medium (regressions can resurface).
-- [ ] Was any **green** acted on from a single seed — a property promoted to
+- [ ] Was any **green** acted on from a single seed (§6.1) — a property promoted to
       blocking, a defect closed, an `xfail` removed — with no record of a
       multi-seed run behind it? One seed is a sample of size one → Medium
       (the decision rests on an unmeasured distribution).
@@ -429,7 +429,7 @@ label it as such.
 - [ ] Crash corpus in the PR suite? Fuzz targets exist but past crashers
       aren't replayed as tests, native targets run without sanitizers, or long runs gate
       PRs instead of running scheduled → Medium (§6.2).
-- [ ] Any mutation-testing signal on risk-critical modules (config present:
+- [ ] Any mutation-testing signal on risk-critical modules (§6.3) (config present:
       `stryker.conf|pitest|mutmut|cargo-mutants|gremlins|infection.json|mull|mutant|muter|cosmic-ray`)?
       None anywhere + high coverage claims → Medium (run one probe during the audit if cheap).
 - [ ] A mutation job that cannot fail (§6.3 table): `mutmut run`, `muter` or
@@ -437,25 +437,25 @@ label it as such.
       `thresholds.break`; gremlins given `--threshold-efficacy` on the command
       line instead of `.gremlins.yaml`. Read the job's exit status on a run with
       a known survivor → Medium (it reports a score nobody is held to).
-- [ ] Mutation score gamed? Tests asserting incidental internals near
+- [ ] Mutation score gamed (§6.3)? Tests asserting incidental internals near
       mutation-config thresholds, blanket mutant suppressions without reasons
       → High.
 - [ ] **Assertions that check *what* was found probed by mutating the EXPECTATION**
       to a plausible wrong value (§6.3)? One that still passes is keyed to something
       true-but-not-evidence → High; check the producer for **fan-out** (a value emitted
       for a whole category rather than the matched member) before weakening the test.
-- [ ] If a survivor baseline/manifest gates CI: is it asserted **non-empty and loaded**
+- [ ] If a survivor baseline/manifest gates CI (§6.3): is it asserted **non-empty and loaded**
       ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2a) → an empty baseline passes on every input.
-- [ ] If a survivor baseline/manifest gates CI: is the mutation engine version
+- [ ] If a survivor baseline/manifest gates CI (§6.3): is the mutation engine version
       pinned beside it, and is the file tool-generated? Unpinned engine → Low
       (diff attributes tool churn to code); hand-edited entries (check
       `git log -p` for manual edits) → High (live survivors marked dead).
 - [ ] Approval/golden suites: do they have an owner and a retirement plan, or
       are 3-year-old approvals still the only tests on refactored code →
       Medium (frozen bugs). (§6.4)
-- [ ] jqwik ≥ 1.10.0 in the dependency tree? Ships prompt-injection
+- [ ] jqwik ≥ 1.10.0 in the dependency tree (§6.1)? Ships prompt-injection
       protestware in test output → High where AI agents read build/test
       output (pin 1.9.x or migrate); more broadly, any pipeline feeding
       tool output to an agent as trusted instructions → Medium.
-- [ ] PBT runtime in PR suite: properties with cranked iteration counts
+- [ ] PBT runtime in PR suite (§6.1): properties with cranked iteration counts
       (`max_examples=10000`) in the blocking path → Low (move to nightly).
