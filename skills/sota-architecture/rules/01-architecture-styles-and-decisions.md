@@ -261,7 +261,8 @@ disguised as a weekend project.
 
 **Rule:** Adopted dependencies still get an ADR (lock-in is a consequence) and
 a fitness function (e.g., "all calls to vendor X go through adapter Y" —
-architecture test).
+architecture test). Before the manifest line lands, run the pre-adoption checks (release maturity,
+point of origin, source review, insecure defaults): [`sota-devsecops` rules/15](../../sota-devsecops/rules/15-dependency-adoption.md) §15.1.
 
 ## 10. Edge composition: gateways and BFFs
 

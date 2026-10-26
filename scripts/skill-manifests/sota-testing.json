@@ -1,5 +1,5 @@
 {
- "_note": "Declared BUILD routing for sota-testing (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD names only 01 (step 3) and 04 (step 6) by link; step 1 names 01-04 as bare backticked numbers, which C4 does not read, so every file is routed by its rules-index row. Each row is a dense 'Read this when' list, and every task below found its files there; no routing gap found.",
+ "_note": "Declared BUILD routing for sota-testing (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD names only 01 (step 3) and 04 (step 6) by link; step 1 names 01-04 as bare backticked numbers, which C4 does not read, so every file is routed by its rules-index row. Each row is a dense 'Read this when' list, and every task below found its files there; no routing gap found. `per_language` (invariant 42 C6, 2026-10-26): the one file per language skill that carries this skill's language half; SKILL.md links each, and each links back.",
  "skill": "sota-testing",
  "tags": {
   "strategy": [
@@ -253,5 +253,17 @@
     "09"
    ]
   }
- ]
+ ],
+ "per_language": {
+  "sota-python": "07",
+  "sota-golang": "07",
+  "sota-rust": "07",
+  "sota-c-cpp": "06",
+  "sota-jvm": "06",
+  "sota-dotnet": "06",
+  "sota-javascript-typescript": "07",
+  "sota-php": "05",
+  "sota-ruby": "04",
+  "sota-swift": "08"
+ }
 }

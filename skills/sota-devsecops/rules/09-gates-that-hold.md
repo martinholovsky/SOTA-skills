@@ -123,7 +123,9 @@ failFast: false                # fine for matrices; check what consumes the resu
 if: always()                   # on steps that should be conditional on success
 ```
 
-Each hit needs a justification or a finding. Also diff the branch-protection/ruleset
+Each hit needs a justification or a finding. PowerShell steps match none of these greps: a custom `shell:`
+string drops GitHub's fail-fast prepend and exit-code append, and a failing native command
+does not stop the step ([`sota-shell-scripting` rules/07](../../sota-shell-scripting/rules/07-powershell.md) §4). Also diff the branch-protection/ruleset
 required-checks list against the actual workflow job names — orphaned required checks
 (job renamed/deleted) either block everything (visible, gets fixed) or, with
 "required check expected but not run" semantics misconfigured, silently stop gating.

@@ -63,6 +63,8 @@ is backed by a mechanism ([rules/01](01-control-frameworks-as-code.md) §4):
   OWASP: SAMM
 - **RV.1 (identify vulns continuously)** → scheduled dependency/container/runtime
   scanning with SLA-tracked tickets; **RV.2** remediation; **RV.3** root-cause.
+  RV.2 in practice (vulnerable transitives, suppression discipline, interim mitigation when
+  the fix is blocked): [`sota-devsecops` rules/13](../../sota-devsecops/rules/13-vulnerability-remediation.md).
 
 The crosswalk row for each practice cites the gate and its evidence — the CI log
 *is* the operating evidence ([rules/01](01-control-frameworks-as-code.md) §6).

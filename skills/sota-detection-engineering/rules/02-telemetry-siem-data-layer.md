@@ -30,7 +30,8 @@ non-negotiable categories:
 Map each to its **enabled** state, not its *available* state. CloudTrail data
 events (S3/Lambda object-level) are off by default and are exactly where exfil
 shows up. K8s audit logging requires an explicit policy file — many clusters ship
-with it effectively disabled. The audit finding is "data event logging not
+with it effectively disabled. The policy levels and shipping the stream off-cluster:
+[`sota-kubernetes` rules/07](../../sota-kubernetes/rules/07-supply-chain-audit.md) §4–§5. The audit finding is "data event logging not
 enabled," not "no S3 detection."
 
 Coverage assessment, concretely: take your top 5 attack scenarios (from threat

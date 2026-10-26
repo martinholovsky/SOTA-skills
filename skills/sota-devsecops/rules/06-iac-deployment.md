@@ -228,7 +228,7 @@ blast-radius limitation for compromised code.
 - **Feature flags decouple deploy from release**: dark-launch code, kill-switch risky
   features (a flag flip is your fastest "rollback"). Flag hygiene: flags have owners and
   expiry; stale flags are dead branches in prod with untested OFF paths. Flag service
-  access is a prod control plane — RBAC + audit its changes.
+  access is a prod control plane — RBAC + audit its changes. Flag discipline in code (one choke point, enforcing default when the flag service is down, security-control flags, flag-vs-migration ordering): [`sota-architecture` rules/06](../../sota-architecture/rules/06-cloud-native-config-and-delivery.md) §6.
 - **Rollback readiness, tested**:
   - Previous artifact digest is retained and deployable ([rules/04](04-build-containers.md) §4.5 retention) and the
     rollback is a pipeline action (re-point to previous digest / `git revert` the GitOps

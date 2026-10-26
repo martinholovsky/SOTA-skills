@@ -130,6 +130,8 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
 - **CSP** nonce/hash-based, not `'unsafe-inline'` ([`rules/06`](06-ssr-hydration.md)); `nuxt-security` or a
   Next `proxy.ts` header layer. Plus the standard headers (HSTS, `nosniff`,
   `frame-ancestors`) — [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md).
+  Emit them on error and redirect responses too, not only on pages that render
+  ([`sota-code-security` rules/20](../../sota-code-security/rules/20-browser-response-hardening.md) §2).
 - **Supply chain:** these apps have deep dependency trees (a framework pulls hundreds of
   transitive packages). Lockfile committed, `npm audit`/`osv-scanner` in CI, provenance
   where available ([`sota-devsecops`](../../sota-devsecops/SKILL.md)). Client-shipped dependencies are also an XSS

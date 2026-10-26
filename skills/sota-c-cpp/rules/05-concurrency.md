@@ -7,6 +7,8 @@ race-freedom, so a race can corrupt unrelated state. Synchronize all shared
 mutable state, or make it `atomic`. Build threaded code under ThreadSanitizer.
 Reference: [cppreference memory model](https://en.cppreference.com/w/cpp/language/memory_model).
 
+The cross-runtime model — structured concurrency, cancellation and timeouts, backpressure, the race and deadlock catalogue — is [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md); this file is the C and C++ half.
+
 ## 1. Default: don't share mutable state
 
 - Prefer message passing, ownership transfer (move a `unique_ptr` to the

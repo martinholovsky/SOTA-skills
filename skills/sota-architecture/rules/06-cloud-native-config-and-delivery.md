@@ -158,6 +158,8 @@ redrive, scaling levers, and rollback.
 review cost per service monthly. Cost anomalies are architecture smells: an
 unexpectedly expensive service usually has a chatty integration, a missing
 cache, unbounded retention ([rules/05](05-scalability-state-and-data.md) §6), or over-provisioned idle capacity.
+Allocation mechanics (cost-allocation tags, billing export, Kubernetes cost allocation) and the
+egress/NAT traps: [`sota-cloud-infrastructure` rules/06](../../sota-cloud-infrastructure/rules/06-cost-finops.md) §1, §3.
 
 **Rule:** Set cost fitness functions for the big levers (egress, storage growth,
 per-request compute) with alerts — treat a 2x cost regression like a 2x latency

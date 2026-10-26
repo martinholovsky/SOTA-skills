@@ -33,7 +33,8 @@ Use when designing or implementing: new schemas, migrations, queries, ORM
 layers, caching, job queues, or database infrastructure.
 
 1. **Engine and model first.** Read [`rules/01-choosing-and-modeling.md`](rules/01-choosing-and-modeling.md) before
-   writing any DDL. Default to Postgres unless a rule there says otherwise.
+   writing any DDL. Default to Postgres unless a rule there says otherwise. On
+   SurrealDB, also read [`rules/08-surrealdb-multimodel.md`](rules/08-surrealdb-multimodel.md) before the first `DEFINE`.
 2. **Every schema change is a migration.** Never hand the user raw DDL to run
    ad hoc; produce migration files following [`rules/02-schema-migrations.md`](rules/02-schema-migrations.md)
    (expand/contract, lock-aware, reversible-or-documented).

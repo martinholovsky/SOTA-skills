@@ -4,6 +4,8 @@ Rule zero: **measure before and after; optimize only what profiles indict.**
 Clarity-destroying micro-optimizations without a benchmark are LOW findings
 in audits, same as obvious waste on a measured hot path.
 
+The language-neutral method — latency budgets, profiling discipline, regression gates — is [`sota-performance`](../../sota-performance/SKILL.md); this file is the Go toolchain half.
+
 ## 1. pprof workflow
 
 Wire profiling into every service (auth-gated or bound to localhost/admin

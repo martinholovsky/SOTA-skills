@@ -5,6 +5,8 @@ micro-optimization: OPcache on, FPM sized to memory, queries not multiplied by
 loops. Measure before optimizing; a profile is the entry ticket for any
 optimization PR.
 
+The language-neutral method — latency budgets, profiling discipline, regression gates — is [`sota-performance`](../../sota-performance/SKILL.md); this file is the PHP toolchain half.
+
 ## 1. OPcache: non-negotiable in production
 
 Without OPcache every request re-lexes and re-compiles every file. Verified

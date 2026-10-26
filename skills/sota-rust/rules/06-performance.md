@@ -5,6 +5,8 @@ builds, or architecture — not missing micro-tricks. The discipline: measure,
 fix the proven bottleneck, re-measure. Never trade soundness or clarity for an
 unmeasured win (see [rules/03](03-unsafe-discipline.md) §1 on unsafe "optimizations").
 
+The language-neutral method — latency budgets, profiling discipline, regression gates — is [`sota-performance`](../../sota-performance/SKILL.md); this file is the Rust toolchain half.
+
 ## 1. Measure first — profiling toolbox
 
 - **Always profile release builds** with debug symbols:

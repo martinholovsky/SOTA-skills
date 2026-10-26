@@ -79,7 +79,7 @@ grep -rEn 'TLSv1\.0|TLSv1\.1|SSLv3|min_version.*1\.0' ./config
 
 **R3 — HSTS on web origins, short lifetimes as the revocation story, modern key types.**
 `Strict-Transport-Security` with a sensible max-age (and `includeSubDomains` once you're sure) so
-browsers refuse plaintext. Short-lived certs (R1) are now the primary revocation mechanism — a
+browsers refuse plaintext. Roll max-age out in stages and preload last ([`sota-code-security` rules/20](../../sota-code-security/rules/20-browser-response-hardening.md) §3). Short-lived certs (R1) are now the primary revocation mechanism — a
 47-day compromised cert expires fast. **Let's Encrypt ended OCSP** (URLs dropped from certs May
 2025, responders off Aug 2025; revocation is CRL-only), so OCSP stapling is impossible on LE certs;
 enable stapling only where the CA still operates OCSP. Prefer ECDSA (P-256) certs for performance;

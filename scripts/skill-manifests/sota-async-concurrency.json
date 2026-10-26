@@ -1,5 +1,5 @@
 {
- "_note": "Declared BUILD routing for sota-async-concurrency (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. 06 has no BUILD line (step 3 'Bound everything' links nothing) and is reached through its index row. 07 is the AUDIT catalogue but is declared for task-leaks and retries because its row names fire-and-forget, unbounded spawns and retry storms, and BUILD step 6 sends builders to its section 3. Known routing gap, recorded and NOT declared: (1) rules/07 section 3 (ambient per-request context - ContextVar/AsyncLocalStorage/ThreadLocal - must be reset when the request ends) is routed by BUILD step 6, but the sentence wraps: the phrase 'Ambient per-request context (tenant, user)' sits on the line that links rules/03, and the line that links rules/07 says only 'with it: ... section 3', while 07's row names no context/tenant phrase; a task that sets per-request tenant context in a pooled worker therefore does not reach 07, and declaring the phrase on 03 would be false (03 is primitives). (2) rules/05 section 5 (retry interplay: a retry loop must honour cancellation and a cancellable backoff) is not in 05's row or BUILD lines - no 'retry' phrase - so a retry-only task reaches 02 and 07 but not 05; the retry case below carries a timeout tag because the task names a timeout, not to hide this. Routing gap for rules/07 (ambient per-request context) FIXED 2026-10-26: the index row now names it, and tag 'ambient-context' declares it. Routing gap for rules/05 (retry interplay) FIXED 2026-10-26: the index row now names it, and tag 'retry-interplay' declares it.",
+ "_note": "Declared BUILD routing for sota-async-concurrency (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. 06 has no BUILD line (step 3 'Bound everything' links nothing) and is reached through its index row. 07 is the AUDIT catalogue but is declared for task-leaks and retries because its row names fire-and-forget, unbounded spawns and retry storms, and BUILD step 6 sends builders to its section 3. Known routing gap, recorded and NOT declared: (1) rules/07 section 3 (ambient per-request context - ContextVar/AsyncLocalStorage/ThreadLocal - must be reset when the request ends) is routed by BUILD step 6, but the sentence wraps: the phrase 'Ambient per-request context (tenant, user)' sits on the line that links rules/03, and the line that links rules/07 says only 'with it: ... section 3', while 07's row names no context/tenant phrase; a task that sets per-request tenant context in a pooled worker therefore does not reach 07, and declaring the phrase on 03 would be false (03 is primitives). (2) rules/05 section 5 (retry interplay: a retry loop must honour cancellation and a cancellable backoff) is not in 05's row or BUILD lines - no 'retry' phrase - so a retry-only task reaches 02 and 07 but not 05; the retry case below carries a timeout tag because the task names a timeout, not to hide this. Routing gap for rules/07 (ambient per-request context) FIXED 2026-10-26: the index row now names it, and tag 'ambient-context' declares it. Routing gap for rules/05 (retry interplay) FIXED 2026-10-26: the index row now names it, and tag 'retry-interplay' declares it. `per_language` (invariant 42 C6, 2026-10-26): the one file per language skill that carries this skill's language half; SKILL.md links each, and each links back.",
  "skill": "sota-async-concurrency",
  "tags": {
   "model-choice": [
@@ -210,5 +210,17 @@
     "05"
    ]
   }
- ]
+ ],
+ "per_language": {
+  "sota-python": "04",
+  "sota-golang": "03",
+  "sota-rust": "04",
+  "sota-c-cpp": "05",
+  "sota-jvm": "03",
+  "sota-dotnet": "03",
+  "sota-javascript-typescript": "03",
+  "sota-php": "01",
+  "sota-ruby": "05",
+  "sota-swift": "03"
+ }
 }

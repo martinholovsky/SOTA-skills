@@ -6,6 +6,8 @@ context) and **thread-pool starvation** (sync-over-async at scale). The rules
 are mechanical — follow them. Reference:
 [async guidance](https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/).
 
+The cross-runtime model — structured concurrency, cancellation and timeouts, backpressure, the race and deadlock catalogue — is [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md); this file is the .NET half.
+
 ## 1. Async all the way; never block on async
 
 - Once a call chain is async, keep it async to the entry point. **Never** block:

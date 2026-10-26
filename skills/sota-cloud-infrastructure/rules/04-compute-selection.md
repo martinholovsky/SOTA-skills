@@ -127,7 +127,8 @@ kubernetes.io/releases, and your managed provider's version offerings, at design
   dedicated platform team and a reason.
 - **Cluster topology:** separate prod and non-prod clusters (cheaper than perfect
   multi-tenancy isolation); within a cluster, namespace-per-team/service with
-  ResourceQuotas + LimitRanges. Regional/multi-AZ control plane and node placement
+  ResourceQuotas + LimitRanges. A namespace is a soft boundary: fine for trusted teams, not for
+  customers ([`sota-kubernetes` rules/06](../../sota-kubernetes/rules/06-workloads-tenancy.md) §3). Regional/multi-AZ control plane and node placement
   for prod.
 - **Node pools by workload shape:** general on-demand pool for baseline,
   spot/preemptible pools for interruption-tolerant work (taint them; workloads

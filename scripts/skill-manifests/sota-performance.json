@@ -1,5 +1,5 @@
 {
- "_note": "Declared BUILD routing for sota-performance (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Keywords are phrases from each file's own rules-index row or the BUILD line that links it. Known routing gap, recorded and NOT declared: rules/04 §9 'Async runtimes: never block the loop' is needed by a builder keeping a Node/asyncio service responsive while it hashes, compresses or reads files, but neither 04's index row nor its BUILD line (step 5) says 'event loop', 'async' or 'blocking'; the phrase appears only in AUDIT step 'Sync file/crypto/compression calls on async event loops' and non-negotiable 7, which C4 does not read. No event-loop tag and no case for that task are declared. Routing gap for rules/04 (async event loop) FIXED 2026-10-26: the index row now names it, and tag 'event-loop' declares it.",
+ "_note": "Declared BUILD routing for sota-performance (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Keywords are phrases from each file's own rules-index row or the BUILD line that links it. Known routing gap, recorded and NOT declared: rules/04 §9 'Async runtimes: never block the loop' is needed by a builder keeping a Node/asyncio service responsive while it hashes, compresses or reads files, but neither 04's index row nor its BUILD line (step 5) says 'event loop', 'async' or 'blocking'; the phrase appears only in AUDIT step 'Sync file/crypto/compression calls on async event loops' and non-negotiable 7, which C4 does not read. No event-loop tag and no case for that task are declared. Routing gap for rules/04 (async event loop) FIXED 2026-10-26: the index row now names it, and tag 'event-loop' declares it. `per_language` (invariant 42 C6, 2026-10-26): the one file per language skill that carries this skill's language half; SKILL.md links each, and each links back.",
  "skill": "sota-performance",
  "tags": {
   "latency-budget": [
@@ -190,5 +190,17 @@
     "04"
    ]
   }
- ]
+ ],
+ "per_language": {
+  "sota-python": "06",
+  "sota-golang": "06",
+  "sota-rust": "06",
+  "sota-c-cpp": "07",
+  "sota-jvm": "05",
+  "sota-dotnet": "05",
+  "sota-javascript-typescript": "06",
+  "sota-php": "06",
+  "sota-ruby": "05",
+  "sota-swift": "07"
+ }
 }

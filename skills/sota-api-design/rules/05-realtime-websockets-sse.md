@@ -269,6 +269,8 @@ which transport is active.
 - **One process is a lie at scale**: users on node A must receive events published
   on node B. Standard architecture: stateless-ish WS/SSE edge nodes + **pub/sub
   backplane** (Redis Pub/Sub or Streams, NATS, Kafka for replayable channels).
+  On NATS, core subjects are at-most-once and only JetStream persists and replays
+  ([`sota-architecture` rules/08](../../sota-architecture/rules/08-nats-jetstream.md) §1).
   Edge node subscribes to channels its sockets need, fans out locally.
 - **Sticky sessions** (LB affinity) only pin the TCP connection to a node — fine
   and often needed; they do **not** solve cross-node fanout and must not be used

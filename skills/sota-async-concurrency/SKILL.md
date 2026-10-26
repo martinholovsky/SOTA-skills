@@ -116,6 +116,23 @@ Fix: concrete minimal change (primitive, bound, timeout value, scope).
 | [`rules/06-backpressure-flow-control.md`](rules/06-backpressure-flow-control.md) | Queues between components, producer/consumer rate mismatch, load shedding, token buckets, pull-based streaming |
 | [`rules/07-audit-bug-catalog.md`](rules/07-audit-bug-catalog.md) | AUDIT mode: the signature, severity, and fix for every common async bug — fire-and-forget, missing await, lock-across-await, retry storms, thundering herd, unbounded spawns, ambient per-request context (tenant, user) not reset |
 
+## Per-language detail
+
+This skill holds the cross-runtime model. Each language skill carries its runtime's half — its primitives, its executor, its leak and deadlock shapes — in one file. Read it beside this one whenever the code is in that language:
+
+| Language | File |
+|---|---|
+| Python | [`sota-python` rules/04](../sota-python/rules/04-async.md) |
+| Go | [`sota-golang` rules/03](../sota-golang/rules/03-concurrency.md) |
+| Rust | [`sota-rust` rules/04](../sota-rust/rules/04-async-tokio.md) |
+| C / C++ | [`sota-c-cpp` rules/05](../sota-c-cpp/rules/05-concurrency.md) |
+| Java / Kotlin | [`sota-jvm` rules/03](../sota-jvm/rules/03-concurrency.md) |
+| C# / .NET | [`sota-dotnet` rules/03](../sota-dotnet/rules/03-async-concurrency.md) |
+| JavaScript / TypeScript | [`sota-javascript-typescript` rules/03](../sota-javascript-typescript/rules/03-async-patterns.md) |
+| PHP | [`sota-php` rules/01](../sota-php/rules/01-language-baseline.md) §6 (fibers; worker mode is [rules/06](../sota-php/rules/06-performance-runtime.md) §4a) |
+| Ruby | [`sota-ruby` rules/05](../sota-ruby/rules/05-concurrency-performance.md) |
+| Swift | [`sota-swift` rules/03](../sota-swift/rules/03-concurrency.md) |
+
 ## Top 10 non-negotiables
 
 1. **No orphaned tasks.** Every spawned task has an owner that awaits/joins it
