@@ -1,0 +1,44 @@
+{
+ "_note": "Declared BUILD routing for sota-network-security (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. No keyword matches a file's own link text. BUILD names rules/01, 02 and 03; rules/04, 05 and 06 are reached only through their index rows. BUILD step 4 ('Encrypt every hop that crosses a trust boundary ... mTLS via mesh') links no rules file, so the mesh route is 04's row alone. No routing gap found for the cases below.",
+ "skill": "sota-network-security",
+ "tags": {
+  "zero-trust": ["never-trust-always-verify", "PDP/PEP", "identity-aware access"],
+  "remote-access": ["remote access (WireGuard", "ZTNA vs VPN", "identity-aware proxy"],
+  "device-posture": ["devices pillar", "posture-gated access"],
+  "segmentation": ["Segmentation", "zones and tiers", "microsegmentation", "lateral-movement containment"],
+  "firewall": ["firewall/SG default-deny"],
+  "k8s-netpol": ["NetworkPolicy", "namespaced default-deny"],
+  "egress": ["DNS-aware egress", "egress gateways", "egress as a first-class control", "FQDN allowlisting"],
+  "mtls": ["mTLS everywhere", "choosing/auditing a mesh", "SPIFFE identity"],
+  "edge": ["WAF", "ingress/API-gateway hardening", "request smuggling", "trusted-IP handling"],
+  "ddos": ["DDoS posture"],
+  "metadata-endpoint": ["blocking the metadata endpoint", "SSRF-meets-egress"],
+  "tls": ["TLS termination", "TLS posture"],
+  "pki": ["internal PKI", "ACME automation", "certificate issuance hygiene"],
+  "dns": ["DNS security", "DNSSEC", "subdomain takeover"],
+  "email-auth": ["SPF/DKIM/DMARC", "email authentication"]
+ },
+ "files": {
+  "01": {"build": ["zero-trust", "remote-access", "device-posture"]},
+  "02": {"build": ["segmentation", "firewall", "remote-access"]},
+  "03": {"build": ["k8s-netpol", "egress"]},
+  "04": {"build": ["mtls"]},
+  "05": {"build": ["edge", "ddos", "metadata-endpoint", "egress", "tls"]},
+  "06": {"build": ["tls", "pki", "dns", "email-auth"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "write default-deny NetworkPolicies with DNS-aware egress for a namespace on Cilium", "mode": "build",
+   "tags": ["k8s-netpol", "egress", "segmentation"], "must_load": ["03", "02"]},
+  {"task": "roll out mesh mTLS between services, rooted in the internal CA", "mode": "build",
+   "tags": ["mtls", "pki"], "must_load": ["04", "06"]},
+  {"task": "put a CRS WAF ingress behind a CDN and block pod access to the cloud metadata endpoint", "mode": "build",
+   "tags": ["edge", "metadata-endpoint", "egress", "tls"], "must_load": ["05", "03"]},
+  {"task": "replace the admin VPN with WireGuard plus an identity-aware proxy", "mode": "build",
+   "tags": ["remote-access", "zero-trust", "device-posture"], "must_load": ["01", "02"]},
+  {"task": "automate internal certificates with step-ca over ACME and set DMARC for the mail domain", "mode": "build",
+   "tags": ["pki", "email-auth", "dns"], "must_load": ["06"]},
+  {"task": "audit a hybrid network's segmentation and exposure", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06"]}
+ ]
+}

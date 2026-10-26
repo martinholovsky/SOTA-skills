@@ -345,7 +345,7 @@ func UserFrom(ctx context.Context) (*User, bool) {
 - [ ] **Naming drift (§3) — INFO** — `grep -rnE 'func.*Get[A-Z]\w*\(\) ' --include='*.go' .`
       (Get-prefixed getters); `grep -rnE '\b(Id|Url|Http|Api)\b' --include='*.go' .` (acronym
       casing) ; `grep -rnE 'func \((this|self) ' --include='*.go' .` (receiver named `this`/`self`)
-- [ ] **Tooling** — `go vet ./...` (lostcancel, composites);
+- [ ] **Tooling** (§8) — `go vet ./...` (lostcancel, composites);
       `golangci-lint run --enable-only revive,ireturn,containedctx,contextcheck,fatcontext ./...`
       ; `staticcheck ./...` (ST1003 naming, S1021, SA1029 ctx keys)
 

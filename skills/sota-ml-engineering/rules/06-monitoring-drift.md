@@ -84,10 +84,10 @@ retraining.
 
 ## Audit checklist
 
-- [ ] **Any production monitoring at all? — HIGH if none** —
+- [ ] **Any production monitoring at all? — HIGH if none** (§2, §3) —
       `out=$(grep -rniE 'evidently|nannyml|whylogs|drift|psi|kolmogorov|ks_2samp|monitor' --include='*.py' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no drift/perf monitoring found — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
-- [ ] **Drift detection method present?** —
+- [ ] **Drift detection method present?** (§2) —
       `grep -rniE 'population_stability|psi|ks_2samp|chi2|js_diverg|wasserstein' --include='*.py' . | head`
 - [ ] **Live performance tracking + label lag handling (§3) — HIGH** —
       `grep -rniE 'ground.?truth|label.*lag|actual|delayed|backfill.*label|live.*metric' --include='*.py' . | head`

@@ -1,0 +1,53 @@
+{
+ "_note": "Declared BUILD routing for sota-testing (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD names only 01 (step 3) and 04 (step 6) by link; step 1 names 01-04 as bare backticked numbers, which C4 does not read, so every file is routed by its rules-index row. Each row is a dense 'Read this when' list, and every task below found its files there; no routing gap found.",
+ "skill": "sota-testing",
+ "tags": {
+  "strategy": ["pyramid/trophy/honeycomb", "unit vs integration boundaries", "risk-based prioritization", "suite shape"],
+  "test-writing": ["writing or reviewing any test", "AAA", "one logical assertion"],
+  "determinism": ["determinism (clock/random/network", "hermeticity"],
+  "snapshot": ["snapshot discipline"],
+  "doubles": ["mock vs fake vs stub", "over-mocked"],
+  "test-data": ["building test data", "builders/factories", "seeding test DBs", "production data"],
+  "real-deps": ["real DBs/brokers", "Testcontainers", "I/O semantics you don't own"],
+  "contract": ["contract testing between services"],
+  "api-test": ["API testing"],
+  "queue-or-migration": ["message/queue tests", "migrations"],
+  "e2e": ["e2e suite", "selector strategy", "auto-waiting", "visual regression"],
+  "property-fuzz": ["property-based testing", "fuzzing parsers"],
+  "mutation": ["mutation testing"],
+  "legacy": ["approval testing for legacy code"],
+  "flaky": ["flaky-test policy", "quarantine"],
+  "coverage-gate": ["coverage philosophy", "ratchets not targets"],
+  "ci": ["CI sharding", "speed budgets", "parallelization correctness"],
+  "bdd": ["BDD", "Given-When-Then", "acceptance criteria", "Gherkin"],
+  "security": ["security testing", "IDOR/BOLA", "authz matrix", "abuse-case tests", "tenant isolation"]
+ },
+ "files": {
+  "01": {"build": ["strategy"]},
+  "02": {"build": ["test-writing", "determinism", "snapshot"]},
+  "03": {"build": ["doubles", "test-data"]},
+  "04": {"build": ["real-deps", "contract", "api-test", "queue-or-migration"]},
+  "05": {"build": ["e2e"]},
+  "06": {"build": ["property-fuzz", "mutation", "legacy"]},
+  "07": {"build": ["flaky", "coverage-gate", "ci"]},
+  "08": {"build": ["bdd"]},
+  "09": {"build": ["security"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "write the test suite for a new order service that touches HTTP, Postgres and a message queue", "mode": "build",
+   "tags": ["strategy", "test-writing", "doubles", "test-data", "real-deps", "queue-or-migration"], "must_load": ["01", "02", "03", "04"]},
+  {"task": "add Playwright end-to-end tests for the checkout flow", "mode": "build",
+   "tags": ["e2e", "test-writing"], "must_load": ["05", "02"]},
+  {"task": "add cross-tenant IDOR and role-based authorization tests for a multi-tenant REST API", "mode": "build",
+   "tags": ["security", "api-test", "test-writing"], "must_load": ["09", "04", "02"]},
+  {"task": "add property-based tests and a fuzz target for a date-range parser", "mode": "build",
+   "tags": ["property-fuzz", "test-writing", "determinism"], "must_load": ["06", "02"]},
+  {"task": "set up the CI test job with a coverage ratchet, sharding and a flaky-test quarantine", "mode": "build",
+   "tags": ["ci", "coverage-gate", "flaky"], "must_load": ["07"]},
+  {"task": "write Given-When-Then scenarios from a story's acceptance criteria", "mode": "build",
+   "tags": ["bdd", "test-writing"], "must_load": ["08", "02"]},
+  {"task": "audit a repository's test suite", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08", "09"]}
+ ]
+}

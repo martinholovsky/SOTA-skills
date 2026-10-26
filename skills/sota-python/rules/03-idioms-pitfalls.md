@@ -369,10 +369,10 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       `uvx ruff check --select B006,B008,B023,B904,E722,BLE,G,T20,DTZ,PTH,SIM,A,C4 --statistics .` ;
       `grep -rnE '^[[:space:]]*\[[^]=]+ for [^]]+\][[:space:]]*$' --include='*.py' --exclude-dir=.venv .`
       (a comprehension run for its side effects: use a `for` loop [LOW]; ruff B018 does not flag it, measured)
-- [ ] **Bare/broad excepts [HIGH if swallowing, MEDIUM otherwise]** —
+- [ ] **Bare/broad excepts [HIGH if swallowing, MEDIUM otherwise]** (§10) —
       `grep -rn "except:$\|except: " --include="*.py" src/` ;
       `grep -rn -A1 "except Exception" --include="*.py" src/ | grep -B1 "pass$"`
-- [ ] **Exception chaining lost** — `uvx ruff check --select B904 .` (raise-without-from in
+- [ ] **Exception chaining lost** (§10) — `uvx ruff check --select B904 .` (raise-without-from in
       except)
 - [ ] **Depth and size unbounded before parse or recursion (§10) [HIGH where a request body
       reaches it; MEDIUM otherwise]** —
@@ -383,7 +383,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
 - [ ] **Mutable defaults (§1) & late binding (§2)** — `uvx ruff check --select B006,B008,B023,RUF008,RUF009 .`
       (B008: a call such as `datetime.now()` evaluated once as a default; RUF008/RUF009: a mutable
       or call default on a dataclass field)
-- [ ] **Logging** —
+- [ ] **Logging** (§11) —
       `grep -rn 'logger\.\(debug\|info\|warning\|error\)(f"' --include="*.py" src/` (f-strings
       in logs [LOW-MED]);
       `grep -rn "basicConfig" --include="*.py" src/ | grep -v "main\|__main__\|cli"` (library
@@ -401,9 +401,9 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       (unmanaged file handles [MEDIUM]); `grep -rn "\.close()" --include="*.py" src/ | head`
       (manual close → with-able?) ; `grep -rnE '\.acquire\(\)' --include='*.py' --exclude-dir=.venv .`
       (a lock taken by hand, not `with lock:` [MEDIUM])
-- [ ] **datetime & os.path modernization** — `uvx ruff check --select DTZ,PTH --statistics .` ;
+- [ ] **datetime & os.path modernization** (§5, §12) — `uvx ruff check --select DTZ,PTH --statistics .` ;
       `grep -rn "utcnow()" --include="*.py" src/` (naive UTC [MEDIUM])
-- [ ] **Identity misuse & list.pop(0)** —
+- [ ] **Identity misuse & list.pop(0)** (§12, §9) —
       `grep -rn 'is "" \|is "\| is [0-9]' --include="*.py" src/` ;
       `grep -rn "\.pop(0)" --include="*.py" src/` (O(n) dequeue [perf])
 - [ ] **groupby without sort; hand-rolled itertools (§9) (manual review)** — `grep -rn "groupby(" --include="*.py" src/` ;
@@ -425,14 +425,14 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       `find src -name '*.py' -not -name '__init__.py' -not -path '*/tests/*' -print0 |` ;
       `while IFS= read -r -d '' f; do` ; `grep -q '__all__' "$f" || echo "no __all__: $f"` ;
       `done`
-- [ ] **Boolean/optional parameters frozen positionally — no `*` in the signature [MEDIUM]** —
+- [ ] **Boolean/optional parameters frozen positionally — no `*` in the signature [MEDIUM]** (§13) —
       `grep -rnE 'def [a-z_]+\([^*)]*(flag|force|strict|verbose|dry_run)[^)]*\)' --include="*.py" src/`
-- [ ] **Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]** —
+- [ ] **Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]** (§13) —
       `grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning'`
-- [ ] **Does the suite fail on warnings? [MEDIUM if absent]** —
+- [ ] **Does the suite fail on warnings? [MEDIUM if absent]** (§13) —
       `grep -rnE 'filterwarnings|-W ?error' pyproject.toml setup.cfg pytest.ini tox.ini 2>/dev/null`;
       a category-scoped `error::DeprecationWarning` with no blanket `"error"` misses `UserWarning`s
-- [ ] **__slots__ added to a class that subclasses something unslotted — no saving [INFO]** —
+- [ ] **__slots__ added to a class that subclasses something unslotted — no saving [INFO]** (§13) —
       `grep -rn -B3 '__slots__' --include="*.py" src/ | grep 'class .*('`
 - [ ] **Money in binary floats (§12) — MEDIUM, HIGH in billing** —
       `grep -rnE 'Decimal\([[:space:]]*-?[0-9]+\.[0-9]' --include='*.py' src/` (built from a

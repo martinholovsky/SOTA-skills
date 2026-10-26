@@ -154,12 +154,12 @@ the decoy from the real thing).
 - [ ] Is intel converted into *TTP detections*, or only imported as IOC matches? (§3)
 - [ ] Does the TIP speak **STIX 2.1 / TAXII 2.1** for interoperability with
       sharing communities? (§3)
-- [ ] Are honeytokens/canaries/honeypots deployed along *real attack paths*
+- [ ] Are honeytokens/canaries/honeypots deployed along *real attack paths* (§4)
       (credential stores, lateral-movement targets), not in unused corners?
-- [ ] Does every deception asset alert at max severity with context and route
+- [ ] Does every deception asset alert at max severity with context and route (§4)
       straight to IR? Hunt: enumerate planted canaries vs. those wired to an
       alert — any unwired decoy is a wasted tripwire.
-- [ ] Are honeytoken mechanics coordinated with [sota-secrets-management rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md)?
+- [ ] Are honeytoken mechanics coordinated (§4) with [sota-secrets-management rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md)?
 - [ ] **Application placements (§4) — Medium:** are there honey user rows
       checked at login, a robots.txt bait path, canary records in public
       listings, and honeytokens in agent workspaces, each wired to a response?

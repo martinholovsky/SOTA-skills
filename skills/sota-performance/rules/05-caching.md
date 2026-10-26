@@ -276,10 +276,10 @@ still "works", just for the wrong user:
 
 ## Audit checklist
 
-- [ ] Inventory every cache (in-process maps, memoizers, Redis, CDN, HTTP
+- [ ] Inventory every cache (§3, §4, §7) (in-process maps, memoizers, Redis, CDN, HTTP
       headers). For each: key schema, TTL, bound/eviction, invalidation path,
       stampede defense, metrics. Any blank cell is a finding.
-- [ ] Unbounded in-process caches (plain `Map`/dict with no LRU/TTL) → memory
+- [ ] Unbounded in-process caches (plain `Map`/dict with no LRU/TTL) (§1) → memory
       leak ([rules/03](03-memory.md)), High.
 - [ ] TTLs constant (no jitter)? Mass-populated keys expiring in sync
       (deploy/cron) (§4)?
@@ -315,7 +315,7 @@ still "works", just for the wrong user:
       with no distinct purpose (§8)?
 - [ ] Authz/financial data cached? TTL and invalidation justified in writing
       (§8)?
-- [ ] Shared-cache keys for per-user/per-tenant responses include the
+- [ ] Shared-cache keys for per-user/per-tenant responses (§9) include the
       identity/tenant (and role where it varies)? Any personalized response
       cacheable by URL alone (cache deception / key bypass —
       [sota-code-security rules/05](../../sota-code-security/rules/05-web-security.md))?
@@ -333,5 +333,5 @@ still "works", just for the wrong user:
       bump a permission version in the key (§3)? High where authz-derived data
       is cached. Lists change functions with no invalidation call:
       `find . -type f \( -name '*.py' -o -name '*.[jt]s' -o -name '*.go' -o -name '*.rb' -o -name '*.java' \) -exec awk 'function fl(){if(t&&!ok)print fn":"ln": "hd; t=0} FNR==1{fl()} /(def |function |func )/{fl(); if(tolower($0)~/(set|update|assign|grant|revoke|remove|change)_?(user_?)?(role|member|permission|tenant)/){t=1;ok=0;fn=FILENAME;ln=FNR;hd=$0}} t&&/(invalidat|purge|revalidate|perm_?version|cache[[:alnum:]_]*\.(delete|del|unlink))/{ok=1} END{fl()}' {} +`
-- [ ] Any optimization that replaced a constant-time compare or relaxed
+- [ ] Any optimization (§9) that replaced a constant-time compare or relaxed
       validation/size limits for throughput? Treat as Critical, not perf win.

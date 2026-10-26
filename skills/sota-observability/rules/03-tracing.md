@@ -233,7 +233,8 @@ Tracing must never take down the service it observes.
   `otelcol_processor_incoming_items` vs `_outgoing_items` gap
   (`otelcol_processor_dropped_spans` was deprecated in Collector v0.110.0).
 - **Collector hardening**: `memory_limiter` is the **first** processor in
-  every pipeline (with `GOMEMLIMIT` at ~80% of the hard limit) so overload
+  every pipeline (with `GOMEMLIMIT` at 80% of the hard limit — the collector README's own figure; other Go
+  services: [`sota-golang` rules/06](../../sota-golang/rules/06-performance.md) §5) so overload
   backpressures receivers instead of OOM-killing the gateway; receivers
   bind a specific interface — the default host is `localhost` since
   v0.104.0 (gate stable in v0.110.0), so a `0.0.0.0` in Kubernetes is an explicit choice that needs
@@ -292,7 +293,7 @@ services — and into every outbound header.
       trace→logs, metric exemplar→trace).
 - [ ] Baggage usage reviewed: no PII/secrets, stripped or validated at trust
       boundaries, not leaking to third-party APIs; count and size capped (§6).
-- [ ] Collector pipeline monitored (dropped spans, queue saturation, export
+- [ ] Collector pipeline monitored (§5) (dropped spans, queue saturation, export
       failures); tail-sampling memory sized for peak.
 - [ ] SDK limits and shutdown (§5): no `SimpleSpanProcessor` in production config
       (`grep -rn 'SimpleSpanProcessor' .`), attribute value-length limit set explicitly,

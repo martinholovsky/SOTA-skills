@@ -151,7 +151,7 @@ execFile("convert", ["--", file, "out.png"]);
 - Reject NUL bytes, and on Windows also reserved names (`CON`, `NUL`), alternate
   data streams (`:`), and both slash types.
 - Treat archive extraction as path traversal (Zip Slip, CWE-22): validate every
-  entry name post-join; reject absolute paths and symlink entries; cap total
+  entry name post-join; reject absolute paths and link entries (symbolic and hard); cap total
   decompressed size and entry count (zip bombs).
 - Best: don't use user input as a path at all — store files under a server-generated
   UUID, keep the user filename only as display metadata in the DB.
@@ -460,20 +460,20 @@ was impossible. OWASP: Injection Prevention, GraphQL cheat sheets.
 
 ## Audit checklist
 
-- [ ] Is every SQL/NoSQL query parameterized, with raw/`whereRaw`/`$where` escape hatches audited and identifiers allowlist-mapped?
+- [ ] Is every SQL/NoSQL query parameterized, with raw/`whereRaw`/`$where` escape hatches audited and identifiers allowlist-mapped (§2)?
 - [ ] Are all process invocations argv-array based (no `shell=True`/`exec(string)`), with `--` separators and leading-dash rejection for user args, shell-outs replaced by a native library where one exists, and every token interpolated into an unavoidable shell allowlist-validated against `^[A-Za-z0-9._-]+$` (§3)?
-- [ ] Are file paths canonicalized (`realpath`) then containment-checked with a path-aware comparison before any filesystem access?
-- [ ] Does archive extraction validate entry paths, reject symlinks/absolute entries, and cap decompressed size?
-- [ ] Do URL fetchers enforce scheme allowlist, block private/link-local/metadata IPs *post-DNS-resolution*, pin the connection IP, and re-check on redirects?
-- [ ] Are DTDs/external entities explicitly disabled on every XML/SVG/Office-doc parser?
+- [ ] Are file paths canonicalized (`realpath`) then containment-checked with a path-aware comparison before any filesystem access (§4)?
+- [ ] Does archive extraction validate entry paths, reject link (symbolic and hard) and absolute entries, and cap decompressed size (§4)?
+- [ ] Do URL fetchers enforce scheme allowlist, block private/link-local/metadata IPs *post-DNS-resolution*, pin the connection IP, and re-check on redirects (§5)?
+- [ ] Are DTDs/external entities explicitly disabled on every XML/SVG/Office-doc parser (§6)?
 - [ ] Is user input confined to template variables (never concatenated into template strings), and do user-authored templates (email editors, CMS) render only in a logic-less or sandboxed engine (Mustache/Liquid strict mode, Jinja2 `SandboxedEnvironment`) (§7)?
-- [ ] Is all untrusted deserialization via data-only formats with schema validation (no pickle/ObjectInputStream/unserialize/Marshal/yaml.load)?
+- [ ] Is all untrusted deserialization via data-only formats with schema validation (no pickle/ObjectInputStream/unserialize/Marshal/yaml.load) (§8)?
 - [ ] Do JS deep-merge/set utilities fed by request data (lodash `merge`/`set`/`defaultsDeep`, bracket-syntax query-string parsers such as `?a[__proto__][x]=1`) block `__proto__`/`constructor`/`prototype` keys, or hold attacker-keyed dictionaries in `Object.create(null)`/`Map`, with `--frozen-intrinsics` or a frozen `Object.prototype` considered as defence in depth (§9)?
-- [ ] Are regexes on untrusted input linear-time or length-capped, with no nested quantifiers?
-- [ ] Is validation allowlist-based, server-side, performed after canonicalization, with length limits on every field?
-- [ ] Are CR/LF rejected from header/email-field values, and absolute URLs (reset links) built from configured origins, never the Host header?
-- [ ] Are redirect targets allowlisted or relative-only, and CSV exports formula-escaped?
-- [ ] Are LDAP/XPath filters built with library escapers or parameterization?
+- [ ] Are regexes on untrusted input linear-time or length-capped, with no nested quantifiers (§10)?
+- [ ] Is validation allowlist-based, server-side, performed after canonicalization, with length limits on every field (§1)?
+- [ ] Are CR/LF rejected from header/email-field values, and absolute URLs (reset links) built from configured origins, never the Host header (§11)?
+- [ ] Are redirect targets allowlisted or relative-only, and CSV exports formula-escaped (§11)?
+- [ ] Are LDAP/XPath filters built with library escapers or parameterization (§11)?
 - [ ] Is every XML document or SOAP/XML body that carries untrusted data built through an escaping API, with no string concatenation, interpolation or CDATA wrapping (§11, XML built from strings)? Run the §11 detector row for the language, and read each hit. HIGH when an injected element or attribute changes a security decision (role, price, recipient).
 - [ ] **SSRF allowlist mode (§5)**: does each fetch with known destinations take a host or key, match it against an allowlist and rebuild the request with its own scheme, port and path, relaying extracted fields rather than the upstream body? HIGH when a request field is the URL; read each hit of `grep -rnE "(requests\.(get|post|head)|urlopen|fetch|axios\.(get|post)|http\.(Get|Post|Head)|GetAsync|getForObject)\([[:space:]]*(req(uest)?\.(args|form|query|body|params|json|GET|POST)|r\.URL\.Query|params\[)" --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.cs' --include='*.java' .`
 - [ ] **SSRF host parsing (§5)**: are IP literals parsed strictly and the parser's output compared (never `inet_aton`/`inet_addr` or the raw string), domain syntax validated without DNS in allowlist mode, and URLs rejected when two parsers read different hosts? HIGH where the check guards an internal destination; read each hit of `grep -rnE 'inet_aton|inet_addr[[:space:]]*\(|IPAddress\.(Try)?Parse|gethostbyname|InetAddress\.getByName' --include='*.c' --include='*.cpp' --include='*.py' --include='*.cs' --include='*.java' --include='*.kt' .`

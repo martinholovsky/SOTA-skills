@@ -286,13 +286,13 @@ order (highest risk-reduction per effort first):
 
 ## Audit checklist
 
-- [ ] Every collected field traces to a named feature/purpose; sample 10 fields and demand the consumer code path
-- [ ] Precision minimized where full precision is unused (GPS, full DOB, full IP)
-- [ ] Internal APIs return minimal projections; no whole-user-object passing or `SELECT *` across trust boundaries
+- [ ] Every collected field traces to a named feature/purpose (§1); sample 10 fields and demand the consumer code path
+- [ ] Precision minimized (§1) where full precision is unused (GPS, full DOB, full IP)
+- [ ] Internal APIs return minimal projections (§1); no whole-user-object passing or `SELECT *` across trust boundaries
 - [ ] Purpose tags exist and are enforced by at least code review; access roles segmented by purpose for high tiers; access to purpose-tagged data outside a declared purpose is denied or at minimum audited (§2)
 - [ ] New-purpose reuse of existing data triggers a documented review (check git history of purpose tags) (§2)
 - [ ] No "anonymized" claim rests on hashing identifiers or removing direct identifiers only; quasi-identifier risk assessed, k-threshold on aggregate releases; a linkable pseudonym is keyed per context (HMAC with a managed key), never a bare hash (§3)
-- [ ] Cardholder/SSN-class data is tokenized or vaulted; verify no raw values in app DB, logs, or backups
+- [ ] Cardholder/SSN-class data is tokenized or vaulted (§3); verify no raw values in app DB, logs, or backups
 - [ ] Public/partner-facing aggregates use DP or k ≥ threshold with documented rationale; a k-threshold is enforced in the view or endpoint itself with query auditing, and DP comes from a maintained library, not hand-rolled noise (§4)
 - [ ] All privacy-affecting settings default private/off, discoverability is opt-in, and new fields stay out of existing exports/shares until reviewed; check the three most recent features (§5)
 - [ ] Session replay / heatmap tooling absent or mask-allowlisted and consent-gated (§4)

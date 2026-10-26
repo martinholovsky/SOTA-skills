@@ -302,23 +302,23 @@ SET LOCAL app.tenant_id = '...';
 
 ## Audit checklist
 
-- [ ] Is there a single default-deny enforcement layer covering REST, GraphQL resolvers, WebSocket, gRPC, and admin routes?
-- [ ] Does every object lookup by client-supplied ID include an ownership/tenant predicate in the query itself?
-- [ ] Are nested IDs, batch arrays, exports, downloads, and background-job parameters object-level checked too?
-- [ ] Are operation-level (function-level) checks distinct from visibility checks?
-- [ ] Do roles/privileges come exclusively from server-side state — never request bodies or client headers?
-- [ ] Can no user grant themselves elevated roles, group memberships, or modify their own tenant binding?
-- [ ] Is tenant filtering enforced structurally (RLS or mandatory ORM scopes) with tenant_id sourced from the session only?
-- [ ] Are caches, search indexes, signed URLs, and uniqueness errors tenant-scoped?
-- [ ] Do internal services require both service identity (mTLS) and propagated end-user authorization?
-- [ ] Do policy-engine failures and exceptions deny (fail closed)?
-- [ ] Is there an automated cross-tenant / cross-user access test suite asserting the deny matrix?
-- [ ] Are 404 (not 403) returned for objects the caller cannot see, consistently?
-- [ ] Do admin tools have tiered roles, MFA/step-up, and immutable audit trails for every mutation?
-- [ ] Is impersonation time-boxed, logged, visible, and blocked from sensitive account changes?
-- [ ] Is RLS `FORCE`d with a non-bypass app role where Postgres tenancy is used?
+- [ ] Is there a single default-deny enforcement layer covering REST, GraphQL resolvers, WebSocket, gRPC, and admin routes (§1)?
+- [ ] Does every object lookup by client-supplied ID include an ownership/tenant predicate in the query itself (§2)?
+- [ ] Are nested IDs, batch arrays, exports, downloads, and background-job parameters object-level checked too (§2)?
+- [ ] Are operation-level (function-level) checks distinct from visibility checks (§3)?
+- [ ] Do roles/privileges come exclusively from server-side state — never request bodies or client headers (§3)?
+- [ ] Can no user grant themselves elevated roles, group memberships, or modify their own tenant binding (§4)?
+- [ ] Is tenant filtering enforced structurally (RLS or mandatory ORM scopes) with tenant_id sourced from the session only (§5)?
+- [ ] Are caches, search indexes, signed URLs, and uniqueness errors tenant-scoped (§5)?
+- [ ] Do internal services require both service identity (mTLS) and propagated end-user authorization (§6)?
+- [ ] Do policy-engine failures and exceptions deny (fail closed) (§9)?
+- [ ] Is there an automated cross-tenant / cross-user access test suite asserting the deny matrix (§4, §5)?
+- [ ] Are 404 (not 403) returned for objects the caller cannot see, consistently (§2)?
+- [ ] Do admin tools have tiered roles, MFA/step-up, and immutable audit trails for every mutation (§7)?
+- [ ] Is impersonation time-boxed, logged, visible, and blocked from sensitive account changes (§7)?
+- [ ] Is RLS `FORCE`d with a non-bypass app role where Postgres tenancy is used (§5)?
 - [ ] Do background workers re-authorize the carried principal at execution time and validate job arguments like request input, do scheduled jobs touching tenant data set the tenant scope (RLS context) per tenant inside the loop, do webhook handlers authenticate the sender and then map external subjects to internally-owned rows, and do scheduler- or mesh-triggered internal endpoints require service identity rather than trusting a port (§8)?
-- [ ] Are hard policy ceilings encoded as forbids/deny rules that override grants?
+- [ ] Are hard policy ceilings encoded as forbids/deny rules that override grants (§4)?
 - [ ] **Denial halts (§1, §9)**: does every failed authentication or authorization check end the handler (`return`/`exit` after the redirect or 401/403), and do checks run before the body is processed? HIGH when code after the denial reads or changes data. Read each hit of `grep -rnE '(^|[;{)])[[:space:]]*res\.(redirect|sendStatus|status\(40[13]\))' --include='*.js' --include='*.ts' .` and of `grep -rnE "header\([[:space:]]*['\"]Location:" --include='*.php' . | grep -vE 'exit|die|return'`
 - [ ] **Stale session privilege (§3)**: are roles or permissions cached in the session re-read or re-validated for sensitive actions, and flushed with their privileged data when privilege drops? MEDIUM, HIGH on admin paths; each hit of `grep -rnE "session(\[['\"]|\.get\(['\"]|\.)(role|roles|is_?[aA]dmin|permissions|privileges|scopes)" --include='*.py' --include='*.js' --include='*.ts' --include='*.php' --include='*.rb' .` is a decision on a snapshot
 - [ ] **Transaction authorization (§3)**: is each step-up/OTP/approval bound to the exact transaction data, voided by any change, re-compared at execution, single-use, and is a second approver available for high-value flows? HIGH on money movement; design review, no reliable grep

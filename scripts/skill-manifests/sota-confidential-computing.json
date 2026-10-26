@@ -1,0 +1,35 @@
+{
+ "_note": "Declared BUILD routing for sota-confidential-computing (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD links every file (steps 1-7), so each build case carries the adversary tag (step 1 applies to every engagement and 01's row says 'Read first in every engagement'). 'secret-release' is declared on 03 (attest-then-release) and 04 (secrets via KBS); the BUILD step 5 phrase 'route secrets through attest-then-release (KBS)' sits on a line without the link and is not used. No routing gap found.",
+ "skill": "sota-confidential-computing",
+ "tags": {
+  "adversary": ["Name the adversary first", "deciding whether confidential computing is warranted", "escalation ladder", "lowest sufficient rung"],
+  "tee-choice": ["choosing or judging TEE hardware", "Choose the TEE technology", "workload-shape selection table"],
+  "gpu": ["NVIDIA confidential GPUs"],
+  "nitro": ["Nitro Enclaves"],
+  "attestation": ["Design attestation before deployment", "RATS (RFC 9334)", "attest-then-release", "RA-TLS", "TCB recovery"],
+  "secret-release": ["attest-then-release", "secrets via KBS"],
+  "k8s": ["confidential workloads on K8s", "On Kubernetes", "the CoCo stack"],
+  "supply-chain": ["image supply-chain interplay"],
+  "pets": ["computing on encrypted data without hardware trust", "hardware trust is unacceptable", "FHE", "PSI/OPRF", "MPC/threshold"],
+  "limits": ["Document the honest limits"]
+ },
+ "files": {
+  "01": {"build": ["adversary", "limits"]},
+  "02": {"build": ["tee-choice", "gpu", "nitro", "limits"]},
+  "03": {"build": ["attestation", "secret-release"]},
+  "04": {"build": ["k8s", "secret-release", "supply-chain", "limits"]},
+  "05": {"build": ["pets"]}
+ },
+ "cases": [
+  {"task": "run an LLM inference service on confidential GPUs so the cloud operator cannot read prompts", "mode": "build",
+   "tags": ["adversary", "tee-choice", "gpu", "attestation", "secret-release"], "must_load": ["01", "02", "03"]},
+  {"task": "deploy a sensitive workload as confidential pods on Kubernetes with secrets from a KBS", "mode": "build",
+   "tags": ["adversary", "tee-choice", "k8s", "attestation", "secret-release", "supply-chain", "limits"], "must_load": ["01", "02", "03", "04"]},
+  {"task": "compute the intersection of two companies' customer lists without either revealing its list", "mode": "build",
+   "tags": ["adversary", "pets"], "must_load": ["01", "05"]},
+  {"task": "release a database key to an AWS Nitro Enclave only after attestation", "mode": "build",
+   "tags": ["adversary", "nitro", "attestation", "secret-release"], "must_load": ["01", "02", "03"]},
+  {"task": "audit a confidential-computing deployment", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05"]}
+ ]
+}

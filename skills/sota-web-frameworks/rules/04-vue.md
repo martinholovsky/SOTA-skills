@@ -90,19 +90,19 @@ core `escapeHtml` escapes `" ' & < >`). The sinks are where you leave that prote
 
 ## Audit checklist
 
-- [ ] **HTML-injection sink — each hit needs a sanitizer on the source** —
-      `grep -rn 'v-html' --include='*.vue' src components pages`
-- [ ] **Dynamic templates / runtime compilation from input (arbitrary JS)** —
-      `grep -rnE "template:[[:space:]]*[^'\"]*([\$]|props|user|input)" --include='*.vue' --include='*.ts' src`
-      ; `grep -rn 'compile(' --include='*.ts' src`
-- [ ] **URL / style / handler injection** —
-      `grep -rnE ':href=|:src=|:style=' --include='*.vue' src | grep -iv 'sanitiz\|allow'`
-- [ ] **Reactivity leak/loss patterns** —
-      `grep -rnE 'const \{[^}]+\}\s*=\s*reactive\(' --include='*.vue' --include='*.ts' src`
+- [ ] **HTML-injection sink — each hit needs a sanitizer on the source** (§4) —
+      `grep -rn 'v-html' --include='*.vue' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output .`
+- [ ] **Dynamic templates / runtime compilation from input (arbitrary JS)** (§4) —
+      `grep -rnE "template:[[:space:]]*[^'\"]*([\$]|props|user|input)" --include='*.vue' --include='*.ts' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output .`
+      ; `grep -rn 'compile(' --include='*.ts' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output .`
+- [ ] **URL / style / handler injection** (§4) —
+      `grep -rnE ':href=|:src=|:style=' --include='*.vue' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output . | grep -iv 'sanitiz\|allow'`
+- [ ] **Reactivity leak/loss patterns** (§2) —
+      `grep -rnE 'const \{[^}]+\}\s*=\s*reactive\(' --include='*.vue' --include='*.ts' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output .`
       (destructuring reactive => lost reactivity);
-      `grep -rnE 'watch(Effect)?\(' --include='*.vue' src | head` (verify async-created ones are
+      `grep -rnE 'watch(Effect)?\(' --include='*.vue' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output . | head` (verify async-created ones are
       scoped);
-      `grep -rn 'ref(' --include='*.ts' src/composables 2>/dev/null # module-level refs? (rules/06 SSR leak)`
+      `grep -rn 'ref(' --include='*.ts' --exclude-dir=node_modules --exclude-dir=.nuxt --exclude-dir=.output . | grep '/composables/' # module-level refs? (rules/06 SSR leak)`
 - [ ] **`<script setup>` default; no Vapor mode in production (§1)** — Vapor SFCs (MEDIUM while
       Vue 3.6 is not stable):
       `grep -rnE '<script[^>]*[[:space:]]vapor([[:space:]>=]|$)' --include='*.vue' --exclude-dir=node_modules .`

@@ -21,7 +21,8 @@ that dominate real audits. Secret storage/rotation mechanics: see
 - Tier the permission sets: `read-only` (default for everyone), `developer`
   (env-scoped write), `admin` (per-account, time-bound). Prefer just-in-time
   elevation (PIM in Entra, temporary elevated access tooling elsewhere) over standing
-  admin: standing admin count per prod account should be ~0–2.
+  admin: the target is zero standing admin per prod account ([`sota-identity-access`
+  rules/05](../../sota-identity-access/rules/05-privileged-workload.md) §2); where no JIT tooling exists, at most 2 named humans, each a recorded exception.
 - Offboarding = disable in IdP only. If that doesn't kill all access (because a local
   user or shared credential exists), that's the finding.
 

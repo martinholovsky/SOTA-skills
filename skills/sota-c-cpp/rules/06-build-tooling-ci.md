@@ -94,7 +94,7 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - **clang-tidy** with a curated set is the primary linter:
   `bugprone-*, cppcoreguidelines-*, cert-*, performance-*, modernize-*,
   clang-analyzer-*, misc-*` (tune noisy checks). Commit a `.clang-tidy`.
-- **A clang-tidy suppression names its checks and carries a reason, and nothing expires it.**
+- **A clang-tidy suppression names its checks and carries a reason, and nothing expires it.** General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1.
   Write `// NOLINT(check-name)` or `// NOLINTNEXTLINE(check-name)` with the reason in an adjacent
   comment. A bare `NOLINT`, `NOLINTNEXTLINE` or `NOLINTBEGIN` silences every check there, and the
   check list takes globs (the docs' own `NOLINT(google*)` silences a whole module), so `NOLINT(*)`
@@ -340,7 +340,7 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       `grep -rn 'cppcheck-suppress' --include='*.c' --include='*.cpp' --include='*.h' .` ;
       `err=$(grep -rn 'inline-suppr' --include='CMakeLists.txt' --include='*.cmake' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "cppcheck-suppress comments present but --inline-suppr never passed: every one is decoration" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
-- [ ] **compiler-level, which no lint grep finds** —
+- [ ] **compiler-level, which no lint grep finds** (§2) —
       `grep -rn '#pragma GCC diagnostic ignored\|#pragma clang diagnostic ignored\|#pragma warning(disable' --include='*.c' --include='*.cpp' --include='*.h' .`
       ; `grep -rn 'suppressions' CMakeLists.txt *.cmake 2>/dev/null` (cppcheck
       --suppressions-list=)
@@ -373,7 +373,7 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       (prints every line whose `-fsanitize=` list names a runtime sanitizer — even beside a
       trap flag, which covers only UBSan — plus any UBSan line with neither trap nor minimal
       runtime. Each line left: is it the release configuration? then it ships a sanitizer runtime)
-- [ ] **clang-tidy / clang-format / cppcheck configs present?** —
+- [ ] **clang-tidy / clang-format / cppcheck configs present?** (§2, §1) —
       `ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"`
       ; `test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt`
 - [ ] **Test code linted to a different standard, scoped in config (§2) — LOW, MEDIUM when the
@@ -392,7 +392,7 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       — `--no-unwinding-assertions` anywhere = MEDIUM; a `--cover` run whose exit code is the
       verdict (outside a per-line parse like §4a's script) = MEDIUM, since it exits 0 at 0 covered; harnesses with no
       `__CPROVER_cover`, or with covers and no separate safety pass = MEDIUM
-- [ ] **Dependency manager + lockfile?** —
+- [ ] **Dependency manager + lockfile?** (§5) —
       `ls vcpkg.json conan.lock conanfile.* 2>/dev/null | grep -q . || echo "no pinned dependency manifest/lockfile"`
       ;
       `grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null`
@@ -434,7 +434,7 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       `find . -name conanfile.py -not -path './build/*'` (Python that runs on every
       `conan install`, even with `--build=never`) ;
       `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -qE 'CMakeLists|\.cmake|conanfile|vcpkg' || echo "no CODEOWNERS entry for build-executing files"`
-- [ ] **Global (non-target) CMake anti-patterns — LOW/MEDIUM** —
+- [ ] **Global (non-target) CMake anti-patterns — LOW/MEDIUM** (§1) —
       `grep -rnE 'include_directories\(|link_libraries\(|^set\(CMAKE_CXX_FLAGS' CMakeLists.txt 2>/dev/null`
 - [ ] **Build paths and times reach the binary (§6) — LOW, MEDIUM where releases claim
       reproducibility** —

@@ -378,20 +378,20 @@ mcpServers|\.mcp\.json|claude_desktop_config entries without version pin or defi
 
 ## Audit checklist
 
-- [ ] Is there any path where third-party content (web, docs, email, RAG, tool results) reaches a model that holds tools or sensitive context — and if so, is it quarantined (no-tool call, taint-gated capabilities)?
-- [ ] Does the architecture avoid the lethal trifecta (private data + untrusted content + exfiltration channel) per agent, or gate one leg?
-- [ ] Are there zero secrets, credentials, or authorization rules living only in prompts?
-- [ ] Is every tool call authorized in code against the human principal's permissions, with session-bound scoping (tenant/user IDs never model-supplied)?
-- [ ] Are tool arguments schema-validated and passed through the full [rules/01](01-input-injection.md) input defenses (SSRF, path, SQL, command)?
-- [ ] Do irreversible/high-impact actions require human confirmation displaying actual parameters, with per-session call/spend/iteration budgets?
-- [ ] Is model output sanitized per sink — HTML-encoded/sanitized for UI, external markdown images blocked/proxied, never eval'd in-process, parameterized into queries?
-- [ ] Is structured model output strictly schema-parsed with rejection (no lenient repair)?
-- [ ] Does RAG retrieval enforce the caller's document ACLs/tenant in the store query, with provenance on chunks?
-- [ ] Are prompt/completion logs redacted, and semantic caches principal-scoped?
-- [ ] Is every tool invocation audit-logged with principal, arguments, and taint state?
-- [ ] Are agent memory writes gated, provenance-tagged, and strictly user-scoped (no cross-user persistence)?
-- [ ] In multi-agent chains, do taint and the human principal propagate across every hop?
-- [ ] Is model-generated code executed only in network-isolated, resource-capped, ephemeral sandboxes?
+- [ ] Is there any path where third-party content (web, docs, email, RAG, tool results) reaches a model that holds tools or sensitive context — and if so, is it quarantined (no-tool call, taint-gated capabilities) (§1)?
+- [ ] Does the architecture avoid the lethal trifecta (private data + untrusted content + exfiltration channel) per agent, or gate one leg (§1)?
+- [ ] Are there zero secrets, credentials, or authorization rules living only in prompts (§1)?
+- [ ] Is every tool call authorized in code against the human principal's permissions, with session-bound scoping (tenant/user IDs never model-supplied) (§2)?
+- [ ] Are tool arguments schema-validated (§2) and passed through the full [rules/01](01-input-injection.md) input defenses (SSRF, path, SQL, command)?
+- [ ] Do irreversible/high-impact actions require human confirmation displaying actual parameters, with per-session call/spend/iteration budgets (§2)?
+- [ ] Is model output sanitized per sink — HTML-encoded/sanitized for UI, external markdown images blocked/proxied, never eval'd in-process, parameterized into queries (§3)?
+- [ ] Is structured model output strictly schema-parsed with rejection (no lenient repair) (§3)?
+- [ ] Does RAG retrieval enforce the caller's document ACLs/tenant in the store query, with provenance on chunks (§4)?
+- [ ] Are prompt/completion logs redacted, and semantic caches principal-scoped (§4)?
+- [ ] Is every tool invocation audit-logged with principal, arguments, and taint state (§2)?
+- [ ] Are agent memory writes gated, provenance-tagged, and strictly user-scoped (no cross-user persistence) (§1)?
+- [ ] In multi-agent chains, do taint and the human principal propagate across every hop (§1)?
+- [ ] Is model-generated code executed only in network-isolated, resource-capped, ephemeral sandboxes (§3)?
 - [ ] Are reasoning-token budgets capped per request with consumption-anomaly alerting (OverThink-class), and is untrusted content kept out of reasoning scaffolds (H-CoT/CoT hijacking)?
 - [ ] Does every LLM endpoint build the system prompt and full prompt server-side, taking only the user turn from the client, and do anonymous/trial/preview paths carry auth or their own tighter quota (§1)? HIGH when a client-supplied `system` or `messages` reaches the model. Probe, reading each hit: `grep -rnE '(messages|system_?prompt|system)[[:space:]]*=[[:space:]]*(request|req|body|payload|params|data)[.[]' .`
 - [ ] Is text extracted from images, audio, video and document metadata (OCR, captions, transcripts, EXIF) framed and taint-gated like retrieved content, and are inputs screened jointly as well as singly (§1)? HIGH when the model holds tools. Probe for extracted text interpolated straight into a prompt: `grep -rniE '(\{|\+[[:space:]]*)[[:alnum:]_.]*(ocr|caption|transcript|exif|alt_?text)' .`
@@ -401,4 +401,4 @@ mcpServers|\.mcp\.json|claude_desktop_config entries without version pin or defi
 - [ ] Is each approval bound (signed/MAC'd) to actor, requester, tool, target, normalised arguments, nonce and expiry and re-verified by the executor, with the impact class from trusted metadata, the chain's highest class governing, and approval/policy/audit errors failing closed (§2)? HIGH. Probe for blanket approval switches: `grep -rniE '(auto_?approve|always_?allow|approve_?all|skip_?(confirm|confirmation|approval))[[:space:]]*[:=][[:space:]]*(true|yes|1)' .`
 - [ ] Are KV/prefix caches, plan caches, adapter pools and vector IDs tenant-scoped, is restricted/PII output kept out of shared caches, and do cache hits pass the same ACL check and audit as fresh retrievals (§4)? HIGH on a cross-tenant cache. Probe for cache keys built from the prompt alone: `grep -rnE 'cache_?key[[:space:]]*=[[:space:]]*[[:alnum:]_.]*\((prompt|query|messages)[^,]*$' .`
 - [ ] Is streamed model output sanitized and image/link-proxied while it streams, with incomplete constructs held back or the whole buffer re-sanitized per chunk (§3)? HIGH when the chat UI renders markdown. Probe for raw chunks appended to the DOM: `grep -rnE 'innerHTML[[:space:]]*\+=|insertAdjacentHTML[[:space:]]*\(' --include='*.js' --include='*.ts' --include='*.jsx' --include='*.tsx' --include='*.vue' .` (read each hit; it is a finding when the appended value is a model chunk).
-- [ ] Is any classifier/judge/"second opinion" tier counted as a defence layer in the threat model **from the same model family** as the system it guards — without a measured marginal recall on the hard class (the inputs the primary gets wrong)? Common-cause failure; an escalate-only tier is bounded by the primary's uncertainty coverage and cannot see a confidently-wrong score.
+- [ ] Is any classifier/judge/"second opinion" tier counted as a defence layer in the threat model (§1) **from the same model family** as the system it guards — without a measured marginal recall on the hard class (the inputs the primary gets wrong)? Common-cause failure; an escalate-only tier is bounded by the primary's uncertainty coverage and cannot see a confidently-wrong score.

@@ -333,7 +333,7 @@ Run from repo root; verify each hit manually.
       — run on the production image:
       `v=$(php -r 'echo PHP_MAJOR_VERSION, ".", PHP_MINOR_VERSION;'); latest=$(curl -sSf "https://www.php.net/releases/?json&version=$v" | php -r 'echo json_decode(stream_get_contents(STDIN))->version ?? "";'); php -r 'if ($argv[1] === "") { echo "LOOKUP FAILED\n"; exit(2); } if (version_compare(PHP_VERSION, $argv[1], "<")) { echo "BEHIND: ", PHP_VERSION, " < ", $argv[1], "\n"; exit(1); }' "$latest"`
       (a distro build: read its advisories before reporting, §1)
-- [ ] **Loose comparison on suspicious values — MEDIUM+, verify context** —
+- [ ] **Loose comparison on suspicious values — MEDIUM+, verify context** (§4) —
       `grep -rnE '[^=!<>]==[^=]' --include='*.php' src/ | grep -iE 'token|password|hash|hmac|secret|sig'`
       ; `grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -v 'true'`
 - [ ] **Money in binary floats (§4) — MEDIUM, HIGH in money paths** —
@@ -363,7 +363,7 @@ Run from repo root; verify each hit manually.
       (every hit without `===` is a finding) ;
       `grep -rnE '(intval\(|\(int\)[[:space:]]*)\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' --exclude-dir=vendor .`
       (`0` for garbage and for `"0"` alike: `FILTER_VALIDATE_INT`, tested with `===`)
-- [ ] **Error suppression and silent JSON** —
+- [ ] **Error suppression and silent JSON** (§5) —
       `grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'` ;
       `grep -rn 'json_decode' --include='*.php' src/ | grep -v 'JSON_THROW_ON_ERROR'`
 - [ ] **Removed/deprecated constructs (§7)** —

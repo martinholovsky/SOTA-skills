@@ -269,7 +269,7 @@ ordering assumption with no enforcement.
       warnings heeded (§2)
 - [ ] #3 shared mutable state: cross-request bleed, loop-var capture, Go maps
       (§3)
-- [ ] #3 request-scoped context set but never reset — HIGH when it holds a
+- [ ] #3 request-scoped context set but never reset (§3) — HIGH when it holds a
       tenant or user id: `grep -rnE '^[[:space:]]*[[:alnum:]_.]+\.set\([^)]|\.enterWith\(|ThreadLocal<' --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.kt' .`
       (a bare `x.set(v)` statement discards the token and cannot be reset; each
       `ThreadLocal` needs a `remove()` in `finally`; a `token = x.set(v)` or

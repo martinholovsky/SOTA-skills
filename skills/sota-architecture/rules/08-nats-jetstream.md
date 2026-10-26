@@ -352,7 +352,7 @@ defer cc.Stop()
 - [ ] Is there a **DLQ stream** fed by `MAX_DELIVERIES` advisories or a final-attempt
       republish, with depth alerting and a redrive runbook? (`nats stream ls` for a
       DLQ/dead-letter stream; subscriber on `$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>`.) (§6)
-- [ ] Are consumers idempotent under redelivery ([rules/03](03-distributed-systems-and-events.md) §2)?
+- [ ] Are consumers idempotent under redelivery (§6) ([rules/03](03-distributed-systems-and-events.md) §2)?
 - [ ] KV: optimistic concurrency via revision CAS (`Update`), not blind `Put`,
       for contended keys (token revocation, locks)? Per-key TTL only relied on if
       the server supports it? (`nats kv ls`; grep `kv.Update` vs `kv.Put`.) (§7)

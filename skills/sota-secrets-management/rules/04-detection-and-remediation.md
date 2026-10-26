@@ -344,14 +344,14 @@ inventory that does not name the transcript path = **Medium**.
 
 ## Audit checklist
 
-- [ ] gitleaks (or equivalent) pre-commit hook in `.pre-commit-config.yaml` and documented in
+- [ ] gitleaks (or equivalent) pre-commit hook in `.pre-commit-config.yaml` (§1) and documented in
       dev setup; custom rules cover internal token prefixes.
 - [ ] Blocking CI secret-scan on every PR; (§2) scheduled full-history scan; built images scanned;
       scanner output redacted.
 - [ ] **Every gate described as a working-tree scan really reads uncommitted files** — it is
       `gitleaks dir` or `--no-git`, not `gitleaks git` / `detect --source .`, which scan commits
       only and print a healthy byte count while missing the file you just wrote (§1).
-- [ ] **A red working-tree scan against a clean history pass was triaged by file, not by
+- [ ] **A red working-tree scan against a clean history pass (§1) was triaged by file, not by
       diff.** Directory scanners do not honour `.gitignore`, so an untracked artifact
       `git status` never shows is still in scope — confirm whether the finding is even in a
       file the repo owns before treating it as a leak, and before treating it as noise.
@@ -360,15 +360,15 @@ inventory that does not name the transcript path = **Medium**.
       treated as a secret-processing tool ([`rules/03`](03-application-patterns.md) §2.1). Severity calibrated on the
       values, not on a scanner's rule names: owner-only to owner-only on one machine is an
       expanded surface, not a disclosure.
-- [ ] GitHub push protection / server-side pre-receive scanning enabled org-wide.
-- [ ] Allowlists narrow (path/fingerprint), justified, and reviewed; all inline
+- [ ] GitHub push protection / server-side pre-receive scanning enabled org-wide (§2).
+- [ ] Allowlists narrow (path/fingerprint), justified, and reviewed (§1); all inline
       `gitleaks:allow` suppressions audited.
-- [ ] `.gitignore` covers `.env*`, key/cert files, tfstate, kubeconfig, `.netrc`; no such files
+- [ ] `.gitignore` covers (§2) `.env*`, key/cert files, tfstate, kubeconfig, `.netrc`; no such files
       tracked (`git ls-files` check).
-- [ ] Fork PRs receive no secrets; `pull_request_target` does not execute fork code.
-- [ ] CI installs run with lifecycle scripts disabled (or in token-free steps); alerts exist
+- [ ] Fork PRs receive no secrets (§2); `pull_request_target` does not execute fork code.
+- [ ] CI installs run with lifecycle scripts disabled (§2) (or in token-free steps); alerts exist
       for sudden public-repo creation and self-hosted-runner registration under org identities.
-- [ ] Leak runbook exists, is current, and orders rotate → assess (logs since leak time) →
+- [ ] Leak runbook exists (§3), is current, and orders rotate → assess (logs since leak time) →
       purge → harden → record; revocation paths tested per credential class.
 - [ ] **A key/CA-compromise plan exists (§3)** — contacts, re-key method, linked key/cert
       inventory, enforced revocation, re-key completion monitoring, and triage of what the
@@ -379,11 +379,11 @@ inventory that does not name the transcript path = **Medium**.
       `grep -q '^\[\[rules\]\]' .gitleaks.toml || echo 'no custom [[rules]] (or no .gitleaks.toml)'`
 - [ ] Past incidents: (§4) history actually rewritten (filter-repo + force-push + re-clone), forks/
       PR quotes/CI logs scrubbed, full-history rescan clean, and the leaked values rotated.
-- [ ] Legacy-repo adoption used a triaged baseline (live findings rotated first); baseline file
+- [ ] Legacy-repo adoption used a triaged baseline (§1) (live findings rotated first); baseline file
       reviewed like code and shrinking over time.
-- [ ] Non-git leak surfaces (CI logs, chat, issue/error trackers) covered by the runbook with
+- [ ] Non-git leak surfaces (CI logs, chat, issue/error trackers) covered by the runbook (§3) with
       retention/scrub procedures.
 - [ ] Honeytokens (§5) planted in at least repos + CI + one backup surface; register maintained
       out-of-band; alerts route to incident response and have been test-fired.
-- [ ] No audit practice involves invoking discovered credentials against providers without
+- [ ] No audit practice involves invoking discovered credentials against providers (§5) without
       explicit owner permission.

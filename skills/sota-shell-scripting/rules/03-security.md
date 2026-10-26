@@ -362,7 +362,7 @@ substitution in help text** rather than literal characters. `--severity=error` s
       helper runs without it and the command still exits 0. Export in a subshell or use a
       pipe; never `env VAR=… cmd`, which returns the value to argv.
 
-- [ ] **Linters invoked the way the gate invokes them** — flags and file selection read out
+- [ ] **Linters invoked the way the gate invokes them** (§7) — flags and file selection read out
       of the hook/CI config ([`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §5, which owns this); a mismatched
       `shfmt -i` is a false failure at best and, with `-w` nearby, a whole-tree reformat
 - [ ] **ShellCheck run at `--severity=style`**, not `error` (§7): SC2006 is *style* and catches
@@ -378,17 +378,17 @@ substitution in help text** rather than literal characters. `--severity=error` s
 - [ ] **Interceptor recursion** (§3a): does any wrapper, shim, alias or shell-function
       override invoke a command name that its **own namespace shadows**? For each wrapper,
       list the commands it calls and check each against the wrapper's own directory.
-- [ ] If a wrapper must call out, does it use an **absolute path** resolved at generation
+- [ ] If a wrapper must call out (§3), does it use an **absolute path** resolved at generation
       time, a `PATH` with the shim directory removed, or `command`/`builtin` in a function —
       never a bare name? Note the function form is bounded (bash `FUNCNEST`, **unset by
       default** → SIGSEGV; zsh 700) while the `PATH`-shim form is **not bounded at all**.
-- [ ] For scripts generated from templates: does the outer templating layer treat **comments**
+- [ ] For scripts generated from templates (§3): does the outer templating layer treat **comments**
       as literal text? A `${a#@}` inside a `#` comment still raises `KeyError` under Python
       `str.format`.
 
 - [ ] `grep -rn 'eval ' --include='*.sh'` → every hit CRITICAL until proven constant-input
       (SC2294 hints at array-eval misuse) (§1).
-- [ ] `grep -rn 'bash -c\|sh -c' --include='*.sh' --include='Makefile*' --include='Dockerfile*' --include='*.mk' .` with `$` inside
+- [ ] `grep -rn 'bash -c\|sh -c' --include='*.sh' --include='Makefile*' --include='Dockerfile*' --include='*.mk' .` with `$` inside (§1)
       the string → CRITICAL/HIGH.
 - [ ] `ssh .*\$` and `su -c .*\$` — remote re-parsing injection; check for `printf '%q'` (§1). A variable inside a double-quoted
       `awk`/`sed`/`jq` program instead of `awk -v`/`jq --arg`: `grep -rnE '(awk|jq|sed)([[:space:]]+-[a-zA-Z]+)*[[:space:]]+"' --include='*.sh' .`
@@ -404,7 +404,7 @@ substitution in help text** rather than literal characters. `--severity=error` s
 - [ ] Privileged scripts (cron files, `sudo` callers, Docker root entrypoints) missing
       explicit `PATH=` and `umask` → HIGH; `CDPATH` not unset → MEDIUM (§3). Also: `IFS`, `ENV`, `BASH_ENV`, `LD_PRELOAD`
       and the rest of §3's list not unset; an unchecked `cd` (SC2164); `source` of a file a less-privileged user can write.
-- [ ] `grep -rn 'sudo ' --include='*.sh'` — variable after sudo, `sudo -S`, blanket sudo,
+- [ ] `grep -rn 'sudo ' --include='*.sh'` (§4) — variable after sudo, `sudo -S`, blanket sudo,
       `sudo .* >` redirects.
 - [ ] Documented or shipped sudoers entries: any `*` in a command's **arguments** → HIGH
       (it matches `/` and spaces — §4); an argument `^…$` regex over a caller-writable path → HIGH.
@@ -419,6 +419,6 @@ substitution in help text** rather than literal characters. `--severity=error` s
       without mktemp → HIGH (CRITICAL if script runs as root) (§6).
 - [ ] `chmod .*60[0]\|chmod .*7[07][07]` *after* content written to sensitive files (§6); no explicit `umask` where created files' permissions
       matter; work done in pre-existing `/tmp` paths rather than inside a fresh `mktemp -d`.
-- [ ] No shellcheck/shfmt in CI config (`.github/workflows`, `.gitlab-ci.yml`,
+- [ ] No shellcheck/shfmt in CI config (§7) (`.github/workflows`, `.gitlab-ci.yml`,
       `Jenkinsfile`) for a repo containing `*.sh` → HIGH (process gap).
-- [ ] `.shellcheckrc` blanket-disabling SC2086/SC2046/SC2155/SC2064 → finding.
+- [ ] `.shellcheckrc` blanket-disabling (§7) SC2086/SC2046/SC2155/SC2064 → finding.

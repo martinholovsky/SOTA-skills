@@ -289,5 +289,5 @@ an untested Kerberoasting rule is a hope, not a detection.
 - [ ] Is there a **5136 detection on writes to `msDS-AllowedToActOnBehalfOfOtherIdentity`** (RBCD) and SPN-added-to-user, alerting on non-tier-0 writers? (§2)
 - [ ] Where **Windows Server 2025 DCs** exist, is **dMSA abuse (BadSuccessor, CVE-2025-53779)** covered — dMSA creation (5137) by non-tier-0 principals or in unusual OUs, **5136 writes to `msDS-ManagedAccountPrecededByLink` / `msDS-DelegatedMSAState`**, and repeated dMSA TGTs (2946)? (§2)
 - [ ] Are **honeytoken SPN accounts / canary objects** deployed (any 4769/4662 against them = high-fidelity alert) and **wired to IR at max severity**? (§2)
-- [ ] Is each detection **ATT&CK-mapped, FP-documented, and validated against the real technique** ([rules/06](06-incident-response-validation.md)) before it is trusted?
-- [ ] Does each detection carry known **false positives and an owner** ([rules/01](01-detection-engineering-discipline.md)/04), with suppressions expiring rather than permanent?
+- [ ] Is each detection **ATT&CK-mapped, FP-documented, and validated against the real technique** (§2) ([rules/06](06-incident-response-validation.md)) before it is trusted?
+- [ ] Does each detection carry known **false positives and an owner** (§2) ([rules/01](01-detection-engineering-discipline.md)/04), with suppressions expiring rather than permanent?

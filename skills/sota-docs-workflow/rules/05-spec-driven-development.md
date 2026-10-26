@@ -143,7 +143,7 @@ The library's audience runs these specs through coding agents, so:
 - [ ] Is the spec updated in the same PR as the behavior (no drift) (§3)? Sample a
       recent feature; a spec older than the code it describes → High (it misleads),
       and it is updated or deleted rather than left in place.
-- [ ] Are durable house rules in a steering/constitution/AGENTS file, not
+- [ ] Are durable house rules in a steering/constitution/AGENTS file (§4), not
       copy-pasted into each spec? Duplication → Low.
 - [ ] Are decisions/contracts **linked** (ADRs, OpenAPI/SDL) rather than copied
       into the spec (§5)? A copied contract drifting from its source → Medium.

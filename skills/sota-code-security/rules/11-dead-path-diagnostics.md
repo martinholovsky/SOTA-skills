@@ -474,7 +474,7 @@ unvalidated instrument is not yet a finding.
       `grep -rnE '\.parts|os\.environ|gethostname' .` near a comprehension. Run the suite from a `mktemp -d` clone, not
       the working tree; on macOS that path resolves under `/private`, which is exactly
       the component such filters tend to exclude.
-- [ ] **Every collection a suite iterates has a non-empty assertion** — without one an
+- [ ] **Every collection a suite iterates has a non-empty assertion** (§2) — without one an
       empty parameter set reports SKIPPED and the suite passes vacuously.
 - [ ] The tools that produced these findings held to the same standard (§7) —
       mutation probe (**[rules/12](12-verifying-the-verifier.md)**), instrument bar and guard recursion (**[rules/15](15-instruments-and-guards.md)**), with no finding quoted from an instrument not yet validated?

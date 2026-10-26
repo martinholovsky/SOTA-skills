@@ -342,7 +342,7 @@ with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-perfo
       value, or a JDK 24+ launch with no `=deny` for both flags, is MEDIUM) ;
       `grep -rlE 'illegal-native-access=deny' --include='*.gradle*' --include='pom.xml' --include='jvm.config' --include='Dockerfile*' --include='*.sh' --include='*.y*ml' . || echo "no --illegal-native-access=deny anywhere"`
       (repeat with `sun-misc-unsafe-memory-access=deny`)
-- [ ] **Deserialization — CRITICAL** —
+- [ ] **Deserialization — CRITICAL** (§1) —
       `grep -rnE 'readObject\(|ObjectInputStream|XMLDecoder' --include='*.java' --include='*.kt' .` ;
       `grep -rnE 'enableDefaultTyping|@JsonTypeInfo|activateDefaultTyping|polymorphicTypeValidator\(|LaissezFaireSubTypeValidator' --include='*.java' --include='*.kt' .`
       (Jackson polymorphic, 2.x and 3.x spellings; `activateDefaultTyping` also matches
@@ -357,7 +357,7 @@ with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-perfo
       `grep -rnE 'readUnshared\(|readObjectNoData\(|readResolve\(|readExternal\(|\.fromXML\(|(implements|:)[^{;]*(Serializable|Externalizable)' --include='*.java' --include='*.kt' .`
       (each `Serializable` hit: credential fields `transient`, and a class never meant to be
       read back has a `readObject` that throws; each read call: trace its bytes)
-- [ ] **Injection — CRITICAL/HIGH** —
+- [ ] **Injection — CRITICAL/HIGH** (§2) —
       `grep -rnE '(createQuery|createNativeQuery|prepareStatement|executeQuery|executeUpdate)\([^?)]*\+' --include='*.java' --include='*.kt' .`
       ;
       `grep -rnE '\.(query|queryForObject|queryForList|queryForMap|queryForRowSet|update|batchUpdate|execute|executeLargeUpdate|addBatch)\([[:space:]]*"[^"]*"[[:space:]]*\+' --include='*.java' --include='*.kt' .`
@@ -374,10 +374,10 @@ with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-perfo
 - [ ] **Child exit status never read (§2) — MEDIUM, HIGH when the output is trusted** — files
       that start a process and never compare its exit value:
       `grep -rlE 'new ProcessBuilder|Runtime\.getRuntime\(\)\.exec' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE 'exitValue\(\)|=[[:space:]]*[A-Za-z_.()]*\.waitFor\(\)|\.waitFor\(\)[[:space:]]*[!=<>]' "$f" || echo "$f"; done`
-- [ ] **The String-taking exec overloads TOKENIZE on whitespace and are @Deprecated(since=18): a
+- [ ] **The String-taking exec overloads TOKENIZE on whitespace (§2) and are @Deprecated(since=18): a
       hit here is a finding on the deprecation alone, before any taint analysis.** —
       `grep -rnE 'Runtime\.getRuntime\(\)\.exec\(\s*"' --include='*.java' --include='*.kt' .`
-- [ ] **waitFor(t,unit) reaps nothing: a destroy() with no descendants() sweep orphans
+- [ ] **waitFor(t,unit) reaps nothing (§2): a destroy() with no descendants() sweep orphans
       grandchildren** —
       `grep -rn 'waitFor(' --include='*.java' --include='*.kt' . | grep -v 'descendants'` ;
       `grep -rnE 'ctx\.lookup|InitialContext|new InitialDirContext' --include='*.java' --include='*.kt' .`
@@ -417,7 +417,7 @@ with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-perfo
       `grep -rnE '\.(find|lookingAt)\(\)|containsMatchIn\(|\.find\([^)]*\)[[:space:]]*[!=]=[[:space:]]*null|MULTILINE|\(\?[a-z]*m[a-z]*\)' --include='*.java' --include='*.kt' .`
       (a hit that decides accept/reject is the finding: use `matches()`/`matchEntire` or
       `\A`…`\z`; user data in a replacement string needs `Matcher.quoteReplacement`)
-- [ ] **Path traversal / zip slip — HIGH (the rule is stated at 5 above; this is its probe)
+- [ ] **Path traversal / zip slip — HIGH (§5) (the rule is stated at 5 above; this is its probe)
       Found 2026-09-22: the BUILD half existed ("canonicalize and verify the result stays under
       an allowed root") with no audit probe anywhere in the skill -- the dominant gap shape. a
       path built from request data and never normalize()d. Then confirm the check is
@@ -441,7 +441,7 @@ with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-perfo
       `.dns(` filter used as the guard is itself the finding, because IP literals skip it.
       For each client that reaches a caller-chosen host, confirm a `socketFactory` or
       `DnsResolver` guard exists, or an enforcing egress proxy)
-- [ ] **Crypto misuse — HIGH** —
+- [ ] **Crypto misuse — HIGH** (§4) —
       `grep -rnE '(^|[^[:alnum:]_.])Random\(|Math\.random|ThreadLocalRandom|Random\.(Default|next)' --include='*.java' --include='*.kt' . | grep -iE 'key|token|iv|salt|nonce|secret'`
       (Java `new Random(`, Kotlin `Random()` and `kotlin.random.Random.nextX`; `SecureRandom(` does not match)
       ;

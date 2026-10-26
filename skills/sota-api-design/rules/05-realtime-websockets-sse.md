@@ -319,8 +319,8 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
 - [ ] Transport choice justified (§1): server-push-only features use SSE, not a WS with one direction unused; occasional client→server messages go over plain POSTs beside SSE; long-polling only as a fallback; WebTransport keeps a WS fallback; a self-hosted realtime server is confirmed maintained before adoption.
 - [ ] **Long-polling fallback, if present (§4) — LOW**: an idle poll returns `204` before ~25s (`curl -s -o /dev/null -w '%{http_code} %{time_total}\n' '<poll-url>?last_seq=<n>'`), resumes from `last_seq` with the same sequence semantics as WS, and product code reaches it only through the shared transport abstraction with automatic downgrade.
 - [ ] WebRTC (self-hosted only) (§6): TURN relay allowlists non-special IPs (v4+v6) and caps per-user allocations; media server uses approved DTLS-SRTP + SRTP auth, survives malformed/flooded SRTP, not ClientHello-race vulnerable, checks DTLS cert vs SDP fingerprint; DTLS cert key held under the key-management policy; signaling rate-limited + malformed-input-safe and authenticated/authorized like any API channel. (CPaaS-only consumers: provider-owned — N/A.)
-- [ ] WS auth: Origin checked server-side (CSWSH), or one-time short-lived tickets, or first-message auth with timeout; no long-lived tokens in query strings; nothing smuggled via `Sec-WebSocket-Protocol`.
-- [ ] Per-channel/per-action authorization after connect, not handshake-only; token expiry mid-connection handled (close code or refresh frame).
+- [ ] WS auth (§2): Origin checked server-side (CSWSH), or one-time short-lived tickets, or first-message auth with timeout; no long-lived tokens in query strings; nothing smuggled via `Sec-WebSocket-Protocol`.
+- [ ] Per-channel/per-action authorization after connect, not handshake-only (§2); token expiry mid-connection handled (close code or refresh frame).
 - [ ] **Revocation closes live sockets (§2.1) — HIGH**: logout/revoke/disable paths close that session's WS/SSE connections on every node. Locator for revocation code that never touches a connection registry (a hit is a file to read, not yet a finding):
       `grep -rliE 'logout|revoke|invalidate_?session' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' --include='*.kt' --include='*.rb' --include='*.cs' --include='*.php' . | xargs -r grep -LiE 'socket|connection|sse|disconnect'`
 - [ ] **`wss://` only, and compression off where secrets meet attacker data (§2.1)** — `printf 'plain_ws=%s compression_on=%s\n' "$(grep -rnE "[\"']ws://" --include='*.js' --include='*.ts' --include='*.tsx' --include='*.py' --include='*.go' --include='*.java' --include='*.kt' . | wc -l | tr -d ' ')" "$(grep -rniE 'perMessageDeflate:[[:space:]]*true|EnableCompression:[[:space:]]*true|compression=.deflate' --include='*.js' --include='*.ts' --include='*.py' --include='*.go' . | wc -l | tr -d ' ')"`
@@ -328,22 +328,22 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
       socket (and rules/07's plaintext-listener item); `compression_on` on a socket mixing secrets
       with attacker-influenced data = MEDIUM. Defaults differ by library, so a 0 is not proof: read
       `Sec-WebSocket-Extensions` in the server's 101 response for `permessage-deflate`.
-- [ ] Server pings with pong timeout; intervals < LB idle timeout; half-open detection on client.
-- [ ] Client reconnect: exponential backoff with jitter, cap, backoff reset only after stable connection, close codes honored (no reconnect loop on auth failure).
-- [ ] Resume protocol exists: sequence IDs, bounded replay buffer, explicit `resume_failed` → snapshot path; no silent gaps.
-- [ ] Ordering/delivery guarantees documented; per-channel sequencing enforced; at-least-once paths have acks + idempotent dedupe.
-- [ ] Per-connection send queues bounded with a defined overflow policy (coalesce or disconnect); no blind unbounded sends.
-- [ ] Inbound limits: max message size (1009), frame rate limit, max subscriptions per connection, pre-auth resource caps.
+- [ ] Server pings with pong timeout (§2); intervals < LB idle timeout; half-open detection on client.
+- [ ] Client reconnect (§2): exponential backoff with jitter, cap, backoff reset only after stable connection, close codes honored (no reconnect loop on auth failure).
+- [ ] Resume protocol exists (§2): sequence IDs, bounded replay buffer, explicit `resume_failed` → snapshot path; no silent gaps.
+- [ ] Ordering/delivery guarantees documented (§2); per-channel sequencing enforced; at-least-once paths have acks + idempotent dedupe.
+- [ ] Per-connection send queues bounded (§2) with a defined overflow policy (coalesce or disconnect); no blind unbounded sends.
+- [ ] Inbound limits (§2): max message size (1009), frame rate limit, max subscriptions per connection, pre-auth resource caps.
 - [ ] Concurrent-connection caps per user (per IP pre-auth) and per node, enforced at the upgrade with a clean refusal (§2.5) — MEDIUM.
 - [ ] State-changing client commands carry a nonce/timestamp and replays or stale ones are rejected; each frame's parse/validate/dispatch is isolated so one bad message cannot crash the worker (§2.7) — MEDIUM.
 - [ ] **Raw TCP tunnelled over WebSocket (§2.1) — HIGH if browser-reachable**: the tunnelled service keeps its own authn/authz. Locator for bridges:
       `grep -rniE 'websockify|novnc|ttyd' .`
 - [ ] **SSE client URL (§3) — MEDIUM**: `EventSource` URLs come from config, `event.origin` checked where the stream can be cross-origin or redirected. Constructors fed from the location, query or params:
       `grep -rnE 'new[[:space:]]+EventSource\([^)]*(location|[pP]arams|query|\.search|\.hash|input)' --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' --include='*.vue' --include='*.svelte' .`
-- [ ] Close codes documented incl. app-range (4xxx); deploys drain gracefully (1001/1012) instead of mass-killing.
-- [ ] SSE: `id:` on every event with `Last-Event-ID` replay, comment heartbeats, proxy buffering disabled, terminal `done` event on finite streams.
+- [ ] Close codes documented (§2) incl. app-range (4xxx); deploys drain gracefully (1001/1012) instead of mass-killing.
+- [ ] SSE (§3): `id:` on every event with `Last-Event-ID` replay, comment heartbeats, proxy buffering disabled, terminal `done` event on finite streams.
 - [ ] Cross-node fanout via pub/sub backplane; sticky sessions not abused as state storage; node death recoverable from client-held resume state (§5).
 - [ ] Presence uses TTL + heartbeat with flap debouncing; roster sync on join + deltas (§5).
 - [ ] Hot-channel throttling/coalescing exists; reconnect-stampede tested (kill a node in staging, watch the herd); autoscaling keys on connection count and send-queue depth, not CPU alone (§5).
-- [ ] Frames are enveloped (type/seq/channel), unknown frame types ignored, commands correlated by ID with ack/nack and client-side timeouts; protocol versioned.
-- [ ] Realtime errors machine-readable (code + retry hints), mirroring the HTTP error discipline.
+- [ ] Frames are enveloped (type/seq/channel) (§2), unknown frame types ignored, commands correlated by ID with ack/nack and client-side timeouts; protocol versioned.
+- [ ] Realtime errors machine-readable (code + retry hints) (§2), mirroring the HTTP error discipline.

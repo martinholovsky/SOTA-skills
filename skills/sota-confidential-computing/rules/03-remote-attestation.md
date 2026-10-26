@@ -295,7 +295,7 @@ be rotated/revoked too. This is why leases (R7.1) beat one-shot release.
 The first four questions catch the failure that voids everything else: attestation
 that gates nothing.
 
-- [ ] Does anything actually *consume* the Attestation Result? Trace one secret
+- [ ] Does anything actually *consume* the Attestation Result (§2)? Trace one secret
       end-to-end: named broker/KMS releases it only on a valid, fresh result
       (grep for the release policy; a dashboard/metrics sink is not a consumer).
 - [ ] Kill test documented: with attestation disabled or the verifier down, does

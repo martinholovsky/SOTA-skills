@@ -440,14 +440,14 @@ one covers coverage, tooling and hygiene. Both run.
       dependents by symbol reference, not import name alone (relative and directory imports).
 - [ ] **Every dead-code / test-only downgrade passed its own bar** (§3), and no `assert`
       was treated as dismissing a finding without checking the release build's flags?
-- [ ] Scope agreed: repos, branch, pinned commit, environments, static-vs-dynamic — and exclusions documented?
-- [ ] Standards set named up front (ASVS level, OWASP Top 10 2025,
+- [ ] Scope agreed (§1): repos, branch, pinned commit, environments, static-vs-dynamic — and exclusions documented?
+- [ ] Standards set named up front (§1) (ASVS level, OWASP Top 10 2025,
       API Top 10 2023, CWE, ATT&CK; LLM/Agentic Top 10, AISVS, ATLAS where applicable)?
-- [ ] Full inventory done: languages+versions, entry points, trust
+- [ ] Full inventory done (§2): languages+versions, entry points, trust
       boundaries/DFD, secrets surface, dependencies, deploy configs?
-- [ ] Every inventory item mapped to a skill via the routing table, and each
+- [ ] Every inventory item mapped to a skill via the routing table (§2), and each
       applicable skill's AUDIT mode executed (skips recorded with reasons)?
-- [ ] Crown-jewel paths (auth, secrets, money/data flows, internet-facing,
+- [ ] Crown-jewel paths (§1) (auth, secrets, money/data flows, internet-facing,
       untrusted-LLM-input) audited in depth, first?
 - [ ] **Medium** — Baseline-or-diff choice stated against the §1 triggers, and every
       serious diff-review concern escalated to a baseline of that component (§1)?
@@ -455,22 +455,22 @@ one covers coverage, tooling and hygiene. Both run.
       reviewer competence gaps named in scope, and files ordered by complexity × churn (§2)?
 
 **Tooling & triage**
-- [ ] Tool names/versions verified current before running (renames/forks
+- [ ] Tool names/versions verified current before running (§3) (renames/forks
       checked), versions and commands recorded?
-- [ ] Matrix coverage run per detected language plus secrets-history, SCA,
+- [ ] Matrix coverage run per detected language (§3) plus secrets-history, SCA,
       containers, IaC/K8s, CI workflows, signing as applicable?
-- [ ] Every reported finding human-confirmed — no raw scanner dumps,
+- [ ] Every reported finding human-confirmed (§3) — no raw scanner dumps,
       false positives filtered, duplicates merged?
-- [ ] Exploitability re-rated in context (tool severity treated as input)?
-- [ ] Existing suppression comments reviewed?
+- [ ] Exploitability re-rated in context (§3) (tool severity treated as input)?
+- [ ] Existing suppression comments reviewed (§3)?
 - [ ] **Medium** — Deprecated-API use reported, CI fails on deprecation warnings, and each
       silenced one justified (§3): `grep -rnE 'Suppress(Warnings)?\(.*"(deprecation|removal|DEPRECATION)"|(allow|expect)\(deprecated\)|-Wno-deprecated|ignored "-Wdeprecated|ignore::DeprecationWarning|"ignore"[^)]*DeprecationWarning|SA1019|(disable|NoWarn>[^<]*)[ ;]*(CS0618|618\b|SYSLIB0)|no-deprecated|deprecation/deprecation' .`
-- [ ] Manual passes done for logic, authz/BOLA, boundary crossings, races,
+- [ ] Manual passes done (§3) for logic, authz/BOLA, boundary crossings, races,
       crypto misuse, prompt-injection paths?
-- [ ] **Silent-control pass run** over the controls confirmed to exist — inert
+- [ ] **Silent-control pass run** (§3) over the controls confirmed to exist — inert
       safeguards, fail-open catches, degradation nothing logs, tests that pass
       against a no-op'd body ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md))?
-- [ ] **Census, not spot-check**, for every mitigation the audit confirms exists:
+- [ ] **Census, not spot-check** (§3), for every mitigation the audit confirms exists:
       the protected operation enumerated and each call site marked guarded or
       unguarded, with the ratio reported ([`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §6)?
 - [ ] **Universal claims in the security prose falsified by counting** — threat

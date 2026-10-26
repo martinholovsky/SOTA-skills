@@ -151,7 +151,7 @@ and they sit on disk for anyone with the device.
       ``grep -rnE "serviceWorker\.register\( *([^'\"\` ]|['\"\`](https?:|//|[^'\"\`]*\\$\{))|Service-Worker-Allowed['\"]? *[,:=] *['\"]/['\"]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --include='*.tsx' --include='*.conf' .``
       — a script URL taken from a variable, an absolute or templated URL, or the header set to `/`.
       A scope wider than the feature needs is MEDIUM. A leftover `manifest=` attribute or `.appcache` file is LOW.
-- [ ] **No kill switch for a service worker (§"Service workers") — MEDIUM** —
+- [ ] **No kill switch for a service worker (§"Service workers") (§1) — MEDIUM** —
       `grep -rlE 'serviceWorker\.register\(' --include='*.js' --include='*.ts' --include='*.tsx' . ; grep -rnE 'registration\.unregister\(|Clear-Site-Data' --include='*.js' --include='*.ts' --include='*.conf' .`
       — the first command lists apps with a worker, the second the recovery paths. A worker with no
       tested `unregister()` release or `Clear-Site-Data: "storage"` route is MEDIUM.
@@ -167,7 +167,7 @@ and they sit on disk for anyone with the device.
       — each listener hit must check `sender.id` and `sender.origin`/`sender.url` before any
       privileged call. Each `MAIN` hit needs a reason, and remote script loading is CRITICAL.
       Secret-bearing UI injected into the page (read the content scripts) is HIGH.
-- [ ] **Extension permissions wider than the feature (§"Browser extensions", least privilege) — MEDIUM, HIGH for
+- [ ] **Extension permissions wider than the feature (§"Browser extensions", least privilege) (§3) — MEDIUM, HIGH for
       `<all_urls>` with `cookies`/`debugger`/`webRequest`** —
       ``grep -rnE "\"(<all_urls>|\*://\*/\*|https?://\*/\*)\"|\"(cookies|debugger|webRequest|history|nativeMessaging)\"" --include='manifest.json' .``
       — read whether each hit is a required or an `optional_*` entry; a broad required grant needs a written reason.

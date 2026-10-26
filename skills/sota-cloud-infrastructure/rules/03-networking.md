@@ -63,13 +63,13 @@ resource "aws_security_group_rule" "db_in" {
 ## 3. Egress control
 
 - **Egress is a control point, not a default-open pipe.** Data exfiltration and
-  C2 traffic leave through egress; treat `0.0.0.0/0` outbound from data tiers as a
-  finding.
+  C2 traffic leave through egress; treat `0.0.0.0/0` outbound from app or data tiers
+  as a finding — [`sota-network-security` rules/05](../../sota-network-security/rules/05-edge-ingress-egress.md) §6 R9 owns the egress floor.
 - Tiered approach:
   1. Isolated tier: no egress at all; private endpoints for needed cloud services.
   2. Private tier: egress via NAT gateway; restrict with L7 egress filtering
      (AWS Network Firewall / GCP Secure Web Proxy / Azure Firewall FQDN rules, or a
-     self-managed proxy) allowing named domains for high-sensitivity environments.
+     self-managed proxy) allowing named domains only, in every environment (R9).
   3. Public tier: only LBs/NAT; they originate nothing themselves.
 - NAT gateways: one per AZ for prod (cross-AZ NAT = paid cross-AZ hop + AZ
   coupling); they bill per-hour AND per-GB processed — high-volume flows to cloud
@@ -102,7 +102,7 @@ resource "aws_security_group_rule" "db_in" {
 ## 6. DNS architecture
 
 - **Registrar hygiene:** domains in a corporate registrar account (not an
-  employee's), registrar MFA + transfer lock + registry lock for crown-jewel
+  employee's), registrar MFA + transfer lock on every domain + registry lock for crown-jewel
   domains, auto-renew with monitored payment, contact = team alias. Expired domains
   and dangling delegations are takeover vectors.
 - **Split-horizon:** public zones contain only public entry points; internal records
@@ -203,8 +203,9 @@ resource "aws_security_group_rule" "db_in" {
 ## 9. CDN and edge
 
 - Put a CDN (CloudFront / Cloud CDN or Media CDN / Azure Front Door) in front of any
-  public static or cacheable content, and in front of dynamic apps when you want
-  edge TLS, DDoS absorption, and WAF at the edge.
+  public static or cacheable content. Every internet-facing app sits behind a
+  scrubbing edge — a CDN or scrubbing provider, or the cloud's native DDoS protection
+  (§10); an app origin reachable from the internet with neither is a finding.
 - **Lock the origin:** origin accepts traffic only from the CDN — S3 via Origin
   Access Control (no public bucket behind CloudFront, ever), custom origins via
   origin-auth headers/managed prefix lists/private connectivity. An origin reachable
@@ -263,8 +264,8 @@ resource "aws_security_group_rule" "db_in" {
 - [ ] Topology: peering count sane or hub-spoke; prod/non-prod not mutually routable;
       no VPC shared across unrelated teams outside an IAM-governed Shared VPC with
       per-team subnets (§5).
-- [ ] Registrar: corporate account, MFA, transfer locks, auto-renew, team contacts.
-- [ ] Split-horizon: no internal records in public zones; zones scanned for dangling
+- [ ] Registrar (§6): corporate account, MFA, transfer locks, auto-renew, team contacts.
+- [ ] Split-horizon (§6): no internal records in public zones; zones scanned for dangling
       records (sample-check CNAME targets exist and are yours).
 - [ ] **Medium** — DNS records coupled to resource lifecycle (§6): a record whose
       target is a hard-coded provider hostname outlives the resource on teardown.
@@ -284,7 +285,7 @@ resource "aws_security_group_rule" "db_in" {
       — file-level, so confirm per record; a teardown plan that destroys a
       CloudFront distribution or its `aliases` while a CNAME still targets it is the
       same finding.
-- [ ] CAA records present; DNSSEC stance decided and recorded.
+- [ ] CAA records present; DNSSEC stance decided and recorded (§6).
 - [ ] All public certs auto-issued/renewed (ACM/ACME/managed); expiry alerts as
       backstop; nothing renewed by hand or living past current CA/B lifetime caps;
       internal/mTLS certs come from a private CA with short lifetimes, no long-lived

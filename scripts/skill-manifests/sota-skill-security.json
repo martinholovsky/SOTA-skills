@@ -1,0 +1,38 @@
+{
+ "_note": "Declared BUILD routing for sota-skill-security (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Keywords come from each file's rules-index row and the tail lines of BUILD steps 1-7 (C4 reads only the line that carries the rules/NN link, so most of each step's wording is outside the prose). Every file's routing for the tasks below was found sufficient; no routing gap found. The update/revoke content of 02 section 4 is reached by the 'revocation' phrase in its row; an update-only task is served by 01 section 2, which 02 section 4 itself points back to.",
+ "skill": "sota-skill-security",
+ "tags": {
+  "provenance": ["identity and licence of the publisher", "installable-and-modifiable"],
+  "install-review": ["review-before-install", "*closure*", "not the file you were shown"],
+  "pinning-update": ["pinning vs tracking a branch", "diffing an update"],
+  "inventory": ["inventory of everything that actually loads"],
+  "capability": ["capability minimisation", "scripts or fetched resources", "install point"],
+  "untrusted-repo": ["repos you only meant to read", "repository under review", "instruction trust boundary"],
+  "shadowing": ["precedence and shadowing"],
+  "revocation": ["revocation"],
+  "authoring": ["Writing a skill others will install"],
+  "description": ["honest descriptions", "a description that classifies honestly", "listing budget"],
+  "limits": ["stating your own limits", "its own limits"],
+  "guidance-correctness": ["confidently wrong", "a skill is a control"]
+ },
+ "files": {
+  "01": {"build": ["provenance", "install-review", "pinning-update", "inventory"]},
+  "02": {"build": ["capability", "untrusted-repo", "shadowing", "revocation"]},
+  "03": {"build": ["authoring", "description", "limits", "guidance-correctness"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "install a third-party skill plugin from a marketplace that ships a helper script", "mode": "build",
+   "tags": ["provenance", "install-review", "pinning-update", "capability"], "must_load": ["01", "02"]},
+  {"task": "clone an unfamiliar repository that carries AGENTS.md and .cursorrules in order to review its code", "mode": "build",
+   "tags": ["untrusted-repo"], "must_load": ["02"]},
+  {"task": "author a guidance skill for public release, including its frontmatter description and a script it runs", "mode": "build",
+   "tags": ["authoring", "description", "limits", "capability"], "must_load": ["03", "02"]},
+  {"task": "stop trusting an installed skill and make sure it no longer loads anywhere", "mode": "build",
+   "tags": ["revocation", "inventory"], "must_load": ["01", "02"]},
+  {"task": "a second installed skill claims the same trigger as an existing one; decide which wins", "mode": "build",
+   "tags": ["shadowing"], "must_load": ["02"]},
+  {"task": "audit a team's installed skill set and agent files", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03"]}
+ ]
+}

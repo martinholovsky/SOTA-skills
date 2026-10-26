@@ -31,7 +31,8 @@ Rules:
 - **What else unfreezes a frozen install.** A later `pip install <tool>` / `uv pip install` /
   unversioned `uvx <tool>` step in the same job resolves whatever is newest, outside the lock:
   put tools in a dependency group, or pin them (`uvx ruff@<version>`). On Poetry,
-  `poetry install --no-root` is not a freeze check; gate it with `poetry check --lock` first.
+  `poetry install --no-root` fails on a stale lock but with no lock resolves fresh and exits 0;
+  gate it with `poetry check --lock` first ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1).
 - **A tool that is not uv gets `pylock.toml`, not a requirements file.** PEP 751 (Final,
   March 2025) is the standard, tool-neutral lock: every package with its artifact URLs, sizes
   and hashes, installable with no resolution at install time.
@@ -126,7 +127,7 @@ ignore = ["E501"]      # formatter owns line length
 "**/conftest.py" = ["S101", "S105", "S106"]
 ```
 
-- **Suppressions name a rule, carry a reason, and expire.** `# noqa: S603  # argv list, no
+- **Suppressions name a rule, carry a reason, and expire.** General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1. `# noqa: S603  # argv list, no
   shell` and `# type: ignore[assignment]  # legacy fixture`: `PGH004`/`PGH003` reject the bare
   forms, and `RUF100` (in `RUF`) reports a `noqa` whose rule no longer fires, so a stale one
   fails `ruff check`. No tool requires the reason; that is a review rule with a grep probe
@@ -186,7 +187,8 @@ mypkg/
 Why: with flat layout, `import mypkg` silently picks up the working-copy directory instead of
 the installed package — tests pass against uninstalled code, broken wheels ship. `src/` forces
 an editable install (`uv sync` handles it) and catches packaging bugs. Tests live **outside**
-the package; they aren't shipped.
+the package by default, so they aren't shipped; pytest also supports in-package tests, and a
+repo that co-locates them needs §3's test-path lint exemptions.
 
 Ship `py.typed` in any annotated library, or downstream checkers see your package as `Any`.
 
@@ -302,7 +304,7 @@ suffix (`uv python install 3.14t`). Implications:
 ## 9. Docker packaging with uv
 
 ```dockerfile
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS builder
+FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim@sha256:<digest> AS builder
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 # Layer-cache deps separately from source: lockfile changes rarely, code changes often
@@ -311,7 +313,7 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-ins
 COPY src/ src/
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev
 
-FROM python:3.14-slim-trixie
+FROM python:3.14-slim-trixie@sha256:<digest>
 RUN useradd --create-home app
 USER app
 COPY --from=builder --chown=app /app /app
@@ -320,8 +322,8 @@ CMD ["python", "-m", "mypkg"]
 ```
 
 Key points: deps installed from the lockfile *before* copying source (cache hit on code-only
-changes), `--no-dev` in images, non-root user, no uv/compilers in the final stage. Pin base
-images by digest for reproducible rebuilds in regulated environments.
+changes), `--no-dev` in images, non-root user, no uv/compilers in the final stage. Pin every base
+image by digest ([`sota-devsecops` rules/04](../../sota-devsecops/rules/04-build-containers.md) §4.3), not only in regulated environments.
 
 ## 10. Repo hygiene quick list
 
@@ -347,9 +349,9 @@ Run from repo root. Severity guidance in brackets.
       `grep -rn "pip install" --include="*.yml" --include="*.yaml" --include="Dockerfile*" . | grep -v "uv pip"`
       (unlocked installs in CI/images [MEDIUM]); `grep -n "sudo pip" -r .` (system-interpreter
       installs [HIGH])
-- [ ] **Competing lint/format config [MEDIUM — consolidate to ruff]** —
+- [ ] **Competing lint/format config [MEDIUM — consolidate to ruff]** (§3) —
       `ls .flake8 .isort.cfg .pylintrc 2>/dev/null; grep -n "\[tool.black\]\|\[tool.isort\]" pyproject.toml`
-- [ ] **Type checking actually enforced?** —
+- [ ] **Type checking actually enforced?** (§4) —
       `grep -n "mypy\|pyright\|basedpyright\| ty " .github/workflows/*.yml .gitlab-ci.yml 2>/dev/null`
       ; `grep -rn "type: ignore$\|type: ignore " --include="*.py" src/ | grep -v "ignore\["`
       (bare ignores [LOW])
@@ -385,7 +387,7 @@ Run from repo root. Severity guidance in brackets.
       library [LOW]); `find src -name py.typed | head -1` (annotated lib without py.typed
       [MEDIUM]) ; `find . -path ./.venv -prune -o -path ./tests -prune -o \( -name 'test_*.py' -o -name '*_test.py' -o -name conftest.py \) -print | head -3`
       (tests inside the package ship with it [LOW])
-- [ ] **Ruff coverage** — `uvx ruff check --statistics .` (what's currently violated);
+- [ ] **Ruff coverage** (§3) — `uvx ruff check --statistics .` (what's currently violated);
       `grep -n "select" pyproject.toml` (B/S/ASYNC missing from select [LOW])
 - [ ] **Hygiene (§10)** — `git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"` (committed artifacts
       [LOW]) ; `git ls-files .python-version | grep -q . || echo "no .python-version committed"` [LOW] ;

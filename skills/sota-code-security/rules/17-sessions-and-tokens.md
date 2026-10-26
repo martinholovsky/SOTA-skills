@@ -196,12 +196,12 @@ jwt.verify(token, publicKey, { algorithms: ["ES256"], issuer: ISS,
 
 ## Audit checklist
 
-- [ ] Is the session ID regenerated at login and every privilege change, and invalidated server-side at logout/password change?
-- [ ] Do sessions have both idle and absolute timeouts, with a registry enabling "revoke all"?
-- [ ] Does every JWT verification pin an algorithm allowlist and check `exp`, `iss`, `aud`?
-- [ ] Are access tokens short-lived with rotating, reuse-detecting refresh tokens?
-- [ ] Are tokens kept out of localStorage and URLs?
-- [ ] Are "remember me" tokens selector/validator-hashed, single-use, and non-fresh (step-up required for sensitive ops)?
+- [ ] Is the session ID regenerated at login and every privilege change, and invalidated server-side at logout/password change (§2)?
+- [ ] Do sessions have both idle and absolute timeouts, with a registry enabling "revoke all" (§2)?
+- [ ] Does every JWT verification pin an algorithm allowlist and check `exp`, `iss`, `aud` (§3)?
+- [ ] Are access tokens short-lived with rotating, reuse-detecting refresh tokens (§3)?
+- [ ] Are tokens kept out of localStorage and URLs (§2, §3)?
+- [ ] Are "remember me" tokens selector/validator-hashed, single-use, and non-fresh (step-up required for sensitive ops) (§2)?
 - [ ] **Is the session store strict and cookie-only (§2)? HIGH** — every hit is permissive
       mode, a disabled cookie-only switch, or URL tracking:
       `grep -rniE 'use_(strict_mode|only_cookies).{0,3}[=,][[:space:]]*.?(0|off|false)|use_trans_sid.{0,3}[=,][[:space:]]*.?(1|on|true)|tracking-mode>url|trackingmode\.url|tracking-modes[[:space:]]*[=:].*url' .`

@@ -242,24 +242,24 @@ Meta-findings — the audit also rates the team's PROCESS:
 - [ ] **One "safe" component swept** (§1.4), chosen by rule and inside the rules of engagement?
 - [ ] **Chains** (§3.4): preconditions stated, and *needs verification* until run end to end?
 - [ ] **No code dropped on a call graph alone** (§5): a second method, config and routes included?
-- [ ] Artifact inventory recorded, including what was NOT provided; nothing
+- [ ] Artifact inventory recorded, including what was NOT provided (§1); nothing
       silently skipped — unverifiable surface reported as such.
-- [ ] Reconstructed DFD + entry-point sweep completed per 02 §B before any
+- [ ] Reconstructed DFD + entry-point sweep (§1) completed per 02 §B before any
       catalog work; sweep commands/searches reproducible.
-- [ ] Outside-in host list (passive DNS, CT logs) reconciled against the
+- [ ] Outside-in host list (passive DNS, CT logs) (§1) reconciled against the
       hostnames the IaC declares; list those with
       `grep -rn -E "aws_route53_record|google_dns_record_set|azurerm_dns_[a-z]+_record|kind: *Ingress|server_name " .`.
       A live host serving an application but absent from every repo → High
       (Medium when it serves only static content).
-- [ ] Implied assumptions written down and each tested against code/config;
+- [ ] Implied assumptions written down and each tested against code/config (§1, §4);
       broken assumptions rated by what relied on them.
 - [ ] Control-presence matrix complete for in-scope components; every cell
       Present/Partial/Absent/N-A/Unverifiable with evidence or search trail
       (§2).
-- [ ] Sampling rules stated; all top-asset paths examined, not sampled.
-- [ ] Negative space checked: exclusion lists, skip-auth decorators, disabled
+- [ ] Sampling rules stated (§2); all top-asset paths examined, not sampled.
+- [ ] Negative space checked (§2): exclusion lists, skip-auth decorators, disabled
       tests, commented-out IaC.
-- [ ] Reachability walked for every finding; hygiene vs. primary-control vs.
+- [ ] Reachability walked for every finding (§3); hygiene vs. primary-control vs.
       defense-in-depth gaps distinguished and rated accordingly.
 - [ ] Exploit chains assembled and rated as chains; no severity-by-volume
       (one thematic finding instead); an unverifiable control on a Critical
@@ -276,5 +276,5 @@ Meta-findings — the audit also rates the team's PROCESS:
       meta-findings (no model → Medium, drifted model with its missed
       triggers listed, expired acceptances, deleted or skipped abuse-case
       tests) included.
-- [ ] Baseline model delivered, pinned to the audited SHA, ready for living
+- [ ] Baseline model delivered, pinned to the audited SHA (§7), ready for living
       maintenance per 05.

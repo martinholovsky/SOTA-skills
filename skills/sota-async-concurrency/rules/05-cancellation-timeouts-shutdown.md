@@ -188,7 +188,7 @@ for attempt := 0; attempt < max; attempt++ {
         return err
     }
     select {
-    case <-time.After(backoff(attempt)):   // jittered
+    case <-time.After(backoff(attempt)):   // jittered; a bounded loop, not a hot one (sota-golang rules/03 §2)
     case <-ctx.Done():
         return ctx.Err()
     }
@@ -204,20 +204,20 @@ extend it.
 - [ ] Sweep external awaits (HTTP, DB, queue, lock acquire, recv, wait):
       timeout, inherited deadline, or justifying comment? Unbounded await on
       a network peer is HIGH (§1).
-- [ ] Timeouts: total-operation or just connect? Stacked timeouts that exceed
+- [ ] Timeouts (§1): total-operation or just connect? Stacked timeouts that exceed
       the caller's deadline?
-- [ ] Timeout firing actually cancels the work (AbortSignal wired, asyncio
+- [ ] Timeout firing actually cancels the work (§1) (AbortSignal wired, asyncio
       timeout context, ctx honored by callee) — or does the loser keep running?
 - [ ] Grep Go for `context.Background()`/`context.TODO()` outside main/tests —
       each one severs the cancellation chain; in JS, a signal-accepting call
       in a cancellable chain made without the caller's `signal` (§2).
 - [ ] Grep Python for `except BaseException`, bare `except:`, or
       `except Exception` in retry/cleanup loops around awaits — does
-      CancelledError survive and re-raise?
+      CancelledError survive and re-raise (§2)?
 - [ ] Cleanup paths using the already-cancelled context/signal (rollback that
       can never run)? Shared state mutated in steps across awaits instead of
       at one commit point (cancel leaves it half-applied)? (§3)
-- [ ] `finally` blocks with unbounded awaits (cancellable cleanup hanging
+- [ ] `finally` blocks with unbounded awaits (§3) (cancellable cleanup hanging
       shutdown)? `shield` usage bounded?
 - [ ] Shutdown: readiness flipped before listener close? Drain deadline <
       orchestrator grace? Producers stopped before consumers? Sentinels/
@@ -226,4 +226,4 @@ extend it.
       pools they use close? Nonzero exit when the drain was forced? (§4)
 - [ ] Retry loops: ctx/signal checked per attempt? Backoff sleep cancellable?
       Retries within the deadline budget? (§5)
-- [ ] Subprocesses/remote jobs killed on cancellation?
+- [ ] Subprocesses/remote jobs killed on cancellation (§3)?

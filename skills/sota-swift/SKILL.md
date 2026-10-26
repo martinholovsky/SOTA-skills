@@ -56,7 +56,7 @@ Feature notes below name the release that introduced each feature.
 ### Finding format
 
 `file:line | rule | severity | effort | fix` — the router's canonical row; expand each
-surviving finding to the router's [`rules/03`](rules/03-concurrency.md) §2 evidence block.
+surviving finding to the router's [`rules/03`](../sota/rules/03-audit-findings.md) §2 evidence block.
 
 ## Rules index
 

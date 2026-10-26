@@ -184,7 +184,8 @@ up front; retrofitting is brutal.
       symptom-based, owned, runbook-linked, low-noise (unrouted or >daily noise
       = MEDIUM, HIGH for critical marts); freshness SLO documented and measured
       per critical mart (§5)?
-- [ ] Per-pipeline cost visible with trend alerts (§5)?
+- [ ] Per-pipeline cost visible with trend alerts (§5)? Same probe as the cost-attribution item in
+      [rules/05](05-storage-and-performance.md)'s checklist — answer it once, there.
 - [ ] Runbooks current, co-located with code, linked from every alert,
       executable by a newcomer (rerun/backfill command, failure modes,
       contacts, escalation)? A pipeline only one person can operate = HIGH (§6)

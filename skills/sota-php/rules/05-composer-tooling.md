@@ -208,8 +208,8 @@ parameters:
   lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - Coverage needs a driver: pcov (fast, coverage-only) or Xdebug in coverage
   mode — CI-only; never on prod ([`rules/06`](06-performance-runtime.md) §6).
-- Mutation testing (e.g. Infection) as a periodic quality probe on core
-  domains, not a per-PR gate.
+- Mutation testing (e.g. Infection) on core domains, scoped to the PR diff or run
+  periodically, gated with `--min-msi` ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
 - **Property-test and fuzz the parsers.** Eris (maintained, PHPUnit 10–13) generates inputs
   for invariant-bearing code; nikic/PHP-Fuzzer is a coverage-guided fuzzer for PHP libraries
   that describes itself as *experimental* — useful on a parser, not a CI gate to depend on.
@@ -239,7 +239,7 @@ vendor/bin/phpstan analyse --no-progress
 vendor/bin/phpunit                  # or: vendor/bin/pest
 ```
 
-- **Suppressions name the error, carry a reason, and fail once stale.** Write
+- **Suppressions name the error, carry a reason, and fail once stale.** General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1. Write
   `// @phpstan-ignore argument.type (legacy caller passes a string)`: the identifier form
   exists since PHPStan 1.11, and a bare `@phpstan-ignore` with no identifier is already a parse
   error. The trap is the blanket forms, `@phpstan-ignore-next-line` and `@phpstan-ignore-line`.
@@ -287,7 +287,7 @@ vendor/bin/phpunit                  # or: vendor/bin/pest
 
 Run from repo root; verify each hit manually.
 
-- [ ] **Lockfile discipline** —
+- [ ] **Lockfile discipline** (§1) —
       `git ls-files composer.lock | grep -q . || echo "NO LOCKFILE COMMITTED (app = HIGH)"`
       ; `composer validate --strict` (flags json/lock drift);
       `grep -nE '"(php|ext-)' composer.json` (platform reqs declared?);
@@ -299,12 +299,12 @@ Run from repo root; verify each hit manually.
       matrix job (§1), which re-resolves on purpose) ;
       `grep -rnE 'composer[[:space:]]+validate[^#]*--strict' --include='*.yml' --include='*.yaml' --exclude-dir=vendor .`
       (no hit: a stale lock installs with exit 0)
-- [ ] **Advisory + abandonment status right now** — `composer audit --locked --abandoned=report`
+- [ ] **Advisory + abandonment status right now** (§2) — `composer audit --locked --abandoned=report`
 - [ ] **Advisory blocking switched off (§2) — HIGH in CI or a shared `composer.json`** —
       `grep -rnE -e '--no(-security)?-blocking|COMPOSER_NO(_SECURITY)?_BLOCKING|COMPOSER_POLICY_(ADVISORIES|MALWARE)_BLOCK[=:"[:space:]]+"?0' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='Makefile' --include='*.sh' --include='.env*' --exclude-dir=vendor --exclude-dir=node_modules .`
       ; `grep -nE '"(policy|block|block-insecure)"[[:space:]]*:[[:space:]]*false' composer.json`
       (a `"block": false` under `policy.abandoned` is the default, not a finding: read the hit)
-- [ ] **Risky constraints and install-time code** —
+- [ ] **Risky constraints and install-time code** (§1) —
       `grep -nE '"[^"]+"\s*:\s*"(\*|dev-)' composer.json` ; `grep -n '"scripts"' composer.json`
       (review script contents); `grep -n 'allow-plugins' composer.json` (explicit allowlist?)
 - [ ] **Code that runs at install time is contained (§1) — HIGH if the install job holds
@@ -344,7 +344,7 @@ Run from repo root; verify each hit manually.
       `grep -n 'findUnusedPsalmSuppress="true"' psalm*.xml*` (absent on a Psalm project: stale
       suppressions pass). Then read `level`, `paths` and each `ignoreErrors` entry without a
       `path`: a level lowered or `tests` dropped to get the suite green is the finding.
-- [ ] **CI gates actually wired (adjust path to CI system)** —
+- [ ] **CI gates actually wired (adjust path to CI system)** (§5) —
       `grep -rnE '(composer audit|phpstan|psalm|php-cs-fixer|phpcs|phpunit|pest)' .github/workflows/ .gitlab-ci.yml 2>/dev/null`
 - [ ] **PHP floor out of support, or no Rector gate to move it (§5) — HIGH when the floor
       branch is `eol`, LOW when it is security-only; MEDIUM for no gate once a bump is due** —
@@ -357,7 +357,7 @@ Run from repo root; verify each hit manually.
       ; `grep -n 'withPhpVersion' rector.php 2>/dev/null` (an override: confirm it is not
       above `require.php`) ; `git log --date=short --format='%h %ad %s' -G'"php"[[:space:]]*:' -- composer.json | head -5`
       (each floor change: did the same PR carry Rector's diff and a matrix change?)
-- [ ] **Dev deps leaking into prod artifacts** —
+- [ ] **Dev deps leaking into prod artifacts** (§1) —
       `grep -rn 'composer install' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' . | grep -v -- --no-dev`
 
 - [ ] **Property-based / fuzz tests on the parsers (§4) — LOW, MEDIUM for a parser of

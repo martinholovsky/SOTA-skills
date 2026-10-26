@@ -134,7 +134,7 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
 
 ## Audit checklist
 
-- [ ] **Banned/dangerous buffer ops — HIGH/CRITICAL (also [rules/04](04-security.md))** —
+- [ ] **Banned/dangerous buffer ops (§2) — HIGH/CRITICAL (also [rules/04](04-security.md))** —
       `grep -rnE '\b(strcpy|strcat|sprintf|gets|stpcpy|vsprintf)\b' --include='*.c' --include='*.cpp' .`
       ; `grep -rnE '\b(memcpy|memmove|memset|strncpy)\b' --include='*.c' --include='*.cpp' .`
       (verify size provenance)
@@ -168,7 +168,7 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
       `grep -rn -e 'unsafe-buffer-usage' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . || echo "Safe Buffers not enabled"`
       ; `grep -rnE '#pragma[[:space:]]+clang[[:space:]]+unsafe_buffer_usage[[:space:]]+begin' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
       (each opt-out region needs a stated reason and should be small)
-- [ ] **Sanitizer/hardening presence in the build — HIGH if a network binary lacks them** —
+- [ ] **Sanitizer/hardening presence in the build (§5, §2) — HIGH if a network binary lacks them** —
       `grep -rn 'fsanitize' . ; grep -rn '_GLIBCXX_ASSERTIONS\|_LIBCPP_HARDENING\|_FORTIFY_SOURCE' .`
 - [ ] **A check that is on by default, switched off (§2, §5) — MEDIUM (HIGH for a shipped `OBSERVE` or
       `IGNORE`, which continues past a failed check into UB)** —

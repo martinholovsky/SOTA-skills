@@ -1,0 +1,243 @@
+{
+ "_note": "Declared BUILD routing for sota-threat-modeling (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD steps 2-6 route 01-05 by link; 06 (audit reconstruction) is reached in BUILD only through its index row, used when a design extends a system that has no model yet. The rules files cross-reference each other only by bare numbers (`05` section living, `06`), which the link graph does not read, so no via hop is declared. Known routing gap, recorded and NOT declared: setting up the repo's PR template with a 'Security notes' section needs rules/05 section 5 (the PR security-notes template), but neither 05's index row nor the BUILD line that links it (step 6, 'Emit artifacts') says PR or security notes; the BUILD 'Continuous / incremental' bullet that asks for a 'Security notes' section in PR descriptions links no rules file, and rules/01 section 8 (reached by 'continuous/PR-level') cites 05 only as a bare `05`. No case for that task is written, so the gap is not hidden behind a case that omits 05. Routing gap for rules/05 (PR security-notes template) FIXED 2026-10-26: the index row now names it, and tag 'pr-security-notes' declares it.",
+ "skill": "sota-threat-modeling",
+ "tags": {
+  "method-choice": [
+   "STRIDE",
+   "lightweight vs. heavyweight",
+   "Pick the methodology"
+  ],
+  "privacy": [
+   "LINDDUN"
+  ],
+  "attack-tree": [
+   "attack trees"
+  ],
+  "pr-level": [
+   "continuous/PR-level"
+  ],
+  "decomposition": [
+   "Drawing DFDs",
+   "trust boundaries",
+   "entry points/assets/actors/privilege levels",
+   "Draw the DFD"
+  ],
+  "existing-system": [
+   "from an existing codebase",
+   "reconstructing the model from code",
+   "control-presence matrix"
+  ],
+  "enumerate": [
+   "Enumerating threats",
+   "catalogs"
+  ],
+  "web-api": [
+   "web frontend, API"
+  ],
+  "llm-agent": [
+   "LLM agent/tool-use"
+  ],
+  "data-stores": [
+   "database, message queue, file storage"
+  ],
+  "ci-cd": [
+   "CI/CD"
+  ],
+  "cloud": [
+   "cloud/IAM"
+  ],
+  "rating": [
+   "Rating threats",
+   "Rate and treat",
+   "CVSS usage",
+   "likelihood × impact"
+  ],
+  "treatment": [
+   "accept/mitigate/transfer/avoid",
+   "residual risk"
+  ],
+  "tiering": [
+   "tiering applications and modules",
+   "the system's tier"
+  ],
+  "requirements": [
+   "security requirements",
+   "mapping mitigations to requirements"
+  ],
+  "abuse-cases": [
+   "abuse cases"
+  ],
+  "document": [
+   "threat model document",
+   "threat model doc"
+  ],
+  "remodel": [
+   "re-model triggers",
+   "re-modeling triggers"
+  ],
+  "pr-security-notes": [
+   "PR security-notes template"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "method-choice",
+    "privacy",
+    "attack-tree",
+    "pr-level"
+   ]
+  },
+  "02": {
+   "build": [
+    "decomposition",
+    "existing-system"
+   ]
+  },
+  "03": {
+   "build": [
+    "enumerate",
+    "web-api",
+    "llm-agent",
+    "data-stores",
+    "ci-cd",
+    "cloud"
+   ]
+  },
+  "04": {
+   "build": [
+    "rating",
+    "treatment",
+    "tiering",
+    "requirements"
+   ]
+  },
+  "05": {
+   "build": [
+    "requirements",
+    "abuse-cases",
+    "document",
+    "remodel",
+    "pr-security-notes"
+   ]
+  },
+  "06": {
+   "build": [
+    "existing-system"
+   ]
+  }
+ },
+ "via": [],
+ "cases": [
+  {
+   "task": "threat model a new public webhook-receiving endpoint that writes to the orders database",
+   "mode": "build",
+   "tags": [
+    "method-choice",
+    "decomposition",
+    "enumerate",
+    "web-api",
+    "data-stores",
+    "rating",
+    "treatment",
+    "requirements",
+    "document"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05"
+   ]
+  },
+  {
+   "task": "design an LLM agent with tool calling that reads customer email (personal data)",
+   "mode": "build",
+   "tags": [
+    "method-choice",
+    "privacy",
+    "decomposition",
+    "llm-agent",
+    "rating",
+    "treatment",
+    "abuse-cases",
+    "document"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05"
+   ]
+  },
+  {
+   "task": "quick four-questions pass on a small feature adding CSV export of user records, in a High-tier system",
+   "mode": "build",
+   "tags": [
+    "method-choice",
+    "privacy",
+    "tiering",
+    "decomposition"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "04"
+   ]
+  },
+  {
+   "task": "extend an existing service that has no threat model: reconstruct its model before adding a file-upload feature",
+   "mode": "build",
+   "tags": [
+    "existing-system",
+    "decomposition",
+    "enumerate",
+    "data-stores",
+    "rating"
+   ],
+   "must_load": [
+    "02",
+    "06",
+    "03",
+    "04"
+   ]
+  },
+  {
+   "task": "turn the mitigations of an approved threat model into a requirements backlog and abuse-case tests",
+   "mode": "build",
+   "tags": [
+    "requirements",
+    "abuse-cases"
+   ],
+   "must_load": [
+    "04",
+    "05"
+   ]
+  },
+  {
+   "task": "audit an existing system's threat model and controls",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+   ]
+  },
+  {
+   "task": "add a Security notes section to the repo's PR template",
+   "mode": "build",
+   "tags": [
+    "pr-security-notes"
+   ],
+   "must_load": [
+    "05"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,235 @@
+{
+ "_note": "Declared BUILD routing for sota-mobile (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. No keyword matches a file's own link text. Every rules file is named by a BUILD step. BUILD step 1 holds both rules/01 and rules/07, so 'Native iOS in Swift' is in 01's prose too; the swift-app tag is declared on 07 only. Weak route, recorded: a first store submission also needs rules/04 §4.10 (permissions and entitlements match the code, SDK privacy manifests) and §4.9 (non-debuggable release), but 04's index row never says privacy, permissions or entitlements and BUILD step 7 links only rules/01 and rules/06; 04 is reached for that case only through the real link in rules/06 §6.9 to rules/04 §4.9 (declared as the via below). Routing gap for rules/04 (privacy manifests) FIXED 2026-10-26: the index row now names it, and tag 'store-privacy' declares it.",
+ "skill": "sota-mobile",
+ "tags": {
+  "platform": [
+   "Native vs cross-platform",
+   "React Native",
+   "Flutter",
+   "minimum OS floor",
+   "target SDK"
+  ],
+  "store-submission": [
+   "store requirements",
+   "Store submission requirements",
+   "privacy manifest",
+   "Data safety form"
+  ],
+  "architecture": [
+   "Unidirectional data flow",
+   "dependency injection",
+   "state modeling",
+   "DI seams"
+  ],
+  "navigation": [
+   "navigation patterns",
+   "navigation pattern"
+  ],
+  "offline": [
+   "Offline-first",
+   "sync engines",
+   "conflict resolution",
+   "mutation queues"
+  ],
+  "background": [
+   "iOS background modes",
+   "WorkManager/Doze"
+  ],
+  "push": [
+   "APNs/FCM",
+   "token lifecycle",
+   "permission timing UX"
+  ],
+  "secure-storage": [
+   "Keychain/Keystore",
+   "biometrics gating keys",
+   "token handling"
+  ],
+  "network-trust": [
+   "certificate pinning",
+   "TLS everywhere",
+   "App Attest/Play Integrity"
+  ],
+  "deep-links": [
+   "deep link validation",
+   "deep links validated"
+  ],
+  "webview": [
+   "WebView hardening",
+   "WebView locked down"
+  ],
+  "performance": [
+   "Startup budgets",
+   "jank",
+   "app size",
+   "cold start",
+   "ANR avoidance"
+  ],
+  "release": [
+   "phased rollouts",
+   "feature flags/kill switches",
+   "forced updates",
+   "crash reporting",
+   "OTA updates"
+  ],
+  "api-versioning": [
+   "API versioning for old clients",
+   "API version header"
+  ],
+  "swift-app": [
+   "main-actor isolation",
+   "SwiftUI task lifetimes",
+   "Native iOS in Swift"
+  ],
+  "store-privacy": [
+   "privacy manifests"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "platform",
+    "store-submission"
+   ]
+  },
+  "02": {
+   "build": [
+    "architecture",
+    "navigation"
+   ]
+  },
+  "03": {
+   "build": [
+    "offline",
+    "background",
+    "push"
+   ]
+  },
+  "04": {
+   "build": [
+    "secure-storage",
+    "network-trust",
+    "deep-links",
+    "webview",
+    "store-privacy"
+   ]
+  },
+  "05": {
+   "build": [
+    "performance"
+   ]
+  },
+  "06": {
+   "build": [
+    "store-submission",
+    "release",
+    "api-versioning"
+   ]
+  },
+  "07": {
+   "build": [
+    "swift-app"
+   ]
+  }
+ },
+ "via": [
+  {
+   "from": "06",
+   "to": "04",
+   "when": [
+    "store-submission"
+   ]
+  }
+ ],
+ "cases": [
+  {
+   "task": "add offline-first note sync with push-triggered refresh to a React Native app",
+   "mode": "build",
+   "tags": [
+    "offline",
+    "push",
+    "background",
+    "architecture"
+   ],
+   "must_load": [
+    "03",
+    "02"
+   ]
+  },
+  {
+   "task": "implement login that keeps the refresh token behind biometric unlock",
+   "mode": "build",
+   "tags": [
+    "secure-storage",
+    "network-trust"
+   ],
+   "must_load": [
+    "04"
+   ]
+  },
+  {
+   "task": "handle universal links that open a payment screen",
+   "mode": "build",
+   "tags": [
+    "deep-links",
+    "navigation"
+   ],
+   "must_load": [
+    "04",
+    "02"
+   ]
+  },
+  {
+   "task": "prepare the first App Store and Play submission with crash reporting and a forced-update path",
+   "mode": "build",
+   "tags": [
+    "store-submission",
+    "release",
+    "api-versioning"
+   ],
+   "must_load": [
+    "01",
+    "06",
+    "04"
+   ]
+  },
+  {
+   "task": "build a SwiftUI feed screen that loads data in a view task",
+   "mode": "build",
+   "tags": [
+    "swift-app",
+    "architecture",
+    "performance"
+   ],
+   "must_load": [
+    "07",
+    "02",
+    "05"
+   ]
+  },
+  {
+   "task": "audit an iOS and Android app before release",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  },
+  {
+   "task": "prepare a first App Store submission's permissions and privacy manifest",
+   "mode": "build",
+   "tags": [
+    "store-privacy"
+   ],
+   "must_load": [
+    "04"
+   ]
+  }
+ ]
+}

@@ -389,11 +389,11 @@ OWASP: Logging cheat sheet, ASVS 5.0 V16.4.2 and V16.4.3.
 
 ## Audit checklist
 
-- [ ] All services emit JSON (or otherwise structured) logs; no printf prose
+- [ ] All services emit JSON (or otherwise structured) logs (§1); no printf prose
       on production paths.
-- [ ] Field names consistent across services; a field dictionary or OTel
+- [ ] Field names consistent across services (§1); a field dictionary or OTel
       semantic conventions are followed.
-- [ ] Sample 20 ERROR lines from production: every one represents something
+- [ ] Sample 20 ERROR lines from production (§2): every one represents something
       a human should act on. No expected 4xx/no-rows/retry noise at ERROR.
 - [ ] Every production log line carries trace_id (or correlation ID); IDs
       flow into async/queue/cron work. The ID is the active OTel trace_id

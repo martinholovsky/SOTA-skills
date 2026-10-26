@@ -200,7 +200,7 @@ Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)
   permanent mute — flag todo files older than ~6 months.
 - **Never silence Security/* cops** to get green; each `rubocop:disable
   Security/...` needs a justification comment.
-- **Every disable names a cop, carries a reason, and expires.** Write
+- **Every disable names a cop, carries a reason, and expires.** General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1. Write
   `# rubocop:disable Security/Eval -- fixed literal, reviewed`.
   `Lint/RedundantCopDisableDirective` is on by default and reports a directive
   whose cop no longer fires, so keep it enabled and the stale directive fails
@@ -297,7 +297,7 @@ read it) — never a hardcoded duplicate that can drift.
 
 Run from repo root; verify each hit manually.
 
-- [ ] **Lockfile discipline** —
+- [ ] **Lockfile discipline** (§1, §2) —
       `ls Gemfile.lock 2>/dev/null | grep -q . || echo "NO LOCKFILE (app = HIGH)"` ;
       `grep -c "CHECKSUMS" Gemfile.lock || echo "no checksums section (LOW, easy win)"` (stderr
       kept: no file != no match);
@@ -315,8 +315,8 @@ Run from repo root; verify each hit manually.
       plugin; the second part prints when no CODEOWNERS entry covers the build files —
       `grep -nE '^[[:space:]]*plugin[[:space:]]+["'"'"']' Gemfile gems.rb 2>/dev/null` ;
       `[ -n "$(grep -lsE '(Gemfile|gemspec|Rakefile|ext/)' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS)" ] || echo "NO CODEOWNERS entry for build-executing files"`
-- [ ] **Mutable git sources — MEDIUM** — `grep -nE "git:|github:" Gemfile | grep -v "ref:"`
-- [ ] **Multiple top-level sources (dependency confusion) — HIGH on Bundler ≤ 2.x** —
+- [ ] **Mutable git sources — MEDIUM** (§1) — `grep -nE "git:|github:" Gemfile | grep -v "ref:"`
+- [ ] **Multiple top-level sources (dependency confusion) (§1) — HIGH on Bundler ≤ 2.x** —
       `grep -E '^source[[:space:]]' Gemfile | grep -cvE '[[:space:]]do[[:space:]]*$'` (global sources;
       >1 = investigate) ; `grep -A1 'BUNDLED WITH' Gemfile.lock`
       (Bundler 4 refuses to resolve such a Gemfile, so on 4.x a hit is a broken build,
@@ -331,10 +331,10 @@ Run from repo root; verify each hit manually.
       `grep -rnE 'disable_checksum_validation|DISABLE_CHECKSUM_VALIDATION|BUNDLE_MIRROR__|mirror\.https?:' --exclude-dir=.git --exclude-dir=vendor --exclude-dir=node_modules .` ;
       `bundle config list 2>/dev/null | grep -iE -A2 'mirror|checksum'` ;
       `git diff origin/main -- Gemfile.lock | awk '/^-  [^ ]+ \(.*\) sha256=/ { o[$2 " " $3] = $4 } /^\+  [^ ]+ \(/ { n[$2 " " $3] = $4 } END { for (k in o) if ((k in n) && o[k] != n[k]) print (n[k] == "" ? "HASH DROPPED" : "HASH CHANGED") ", SAME VERSION: " k }'`
-- [ ] **Vulnerability gates present?** —
+- [ ] **Vulnerability gates present?** (§3, §5) —
       `grep -rn "bundler-audit\|bundle audit" .github/ Gemfile* Rakefile 2>/dev/null | head -2`
       ; `grep -rn "brakeman" .github/ Gemfile* 2>/dev/null | head -2` (Rails apps only)
-- [ ] **Advisory scan (live)** — `bundle audit check --update 2>/dev/null | tail -5`
+- [ ] **Advisory scan (live)** (§3) — `bundle audit check --update 2>/dev/null | tail -5`
 - [ ] **New dependency not vetted, or its insecure default kept — MEDIUM (HIGH if
       `Oj.load` in `:object` mode reads request data)** (§3.1) — first command prints each
       gem added to the Gemfile since `origin/main` (each needs the §3.1 record); second
@@ -342,7 +342,7 @@ Run from repo root; verify each hit manually.
       boot-time `Oj.default_options = { mode: :strict }` exists) —
       `comm -13 <(git show origin/main:Gemfile | sed -nE "s/^[[:space:]]*gem[[:space:]]+['\"]([^'\"]+)['\"].*/\1/p" | sort -u) <(sed -nE "s/^[[:space:]]*gem[[:space:]]+['\"]([^'\"]+)['\"].*/\1/p" Gemfile | sort -u)` ;
       `grep -rnE 'Oj\.load[[:space:](]|Erubi::Engine\.new' --include='*.rb' . | grep -vE 'mode:[[:space:]]*:strict|escape:[[:space:]]*true'`
-- [ ] **Lint posture** — `ls .rubocop.yml .standard.yml 2>/dev/null` ;
+- [ ] **Lint posture** (§4) — `ls .rubocop.yml .standard.yml 2>/dev/null` ;
       `grep -rn "rubocop:disable Security" --include='*.rb' .` ;
       `find . -name .rubocop_todo.yml -newermt "6 months ago" 2>/dev/null | head -1`
 - [ ] **Disables with no reason, stale-directive check off, cops switched off globally (§4) —
@@ -364,7 +364,7 @@ Run from repo root; verify each hit manually.
       `grep -rhoE 'BUNDLE_FROZEN|frozen true|rubocop|standardrb|bundle(-| )audit|brakeman|rspec|rails test|rake test|srb tc|steep check' --include='*.yml' --include='*.yaml' . | sort -u`
       (which of the five gates CI runs: frozen install, lint, `bundle audit`/Brakeman, tests, and
       `srb tc`/`steep check` on typed projects; a missing one is the finding)
-- [ ] **Test determinism** —
+- [ ] **Test determinism** (§6) —
       `grep -rn "order = :random\|--seed" .rspec spec/spec_helper.rb 2>/dev/null | head -2` ;
       `grep -rn "disable_net_connect" spec/ test/ 2>/dev/null | head -1`
 

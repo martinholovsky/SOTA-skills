@@ -319,7 +319,7 @@ scope must be written down — silent exclusions are where breaches live.
 - [ ] Entry-point table covers HTTP, gRPC, queues, cron, webhooks, callbacks,
       file ingestion, admin/CLI, and third-party responses; each row has authn
       mechanism and downstream reach (§3).
-- [ ] Every entry point in code appears in the table (grep sweep performed);
+- [ ] Every entry point in code appears in the table (§5) (grep sweep performed);
       authn-less entry points flagged.
 - [ ] Non-HTTP input sources (§5: cookies, environment/config, child-process
       output, late-bound code) are in the table. Sweep late binding with
@@ -332,7 +332,7 @@ scope must be written down — silent exclusions are where breaches live.
 - [ ] Asset table ranks concrete and abstract assets; data classes derived
       from schemas, not memory (§3, §6).
 - [ ] Shared infrastructure services (authn, authz, discovery, gateway,
-      logging, monitoring) listed with docs links, and every process has a
+      logging, monitoring) listed with docs links (§3), and every process has a
       one-line function; a service the model assumes but never lists → Medium.
 - [ ] Actors carry trust-level IDs, assets name the levels allowed, entry
       points the levels reaching them; the join shows no level reaching an
@@ -341,7 +341,7 @@ scope must be written down — silent exclusions are where breaches live.
       insider; privilege per actor stated; malicious, abusive and unknowing
       user personas listed. Missing abusive persona on a feature that
       dispenses value (credits, refunds, coupons) → Medium (§3).
-- [ ] Dangerous-functionality and user-chosen-destination table exists and
+- [ ] Dangerous-functionality and user-chosen-destination table exists (§3) and
       matches code. Sweep sinks with `grep -rn -E "pickle\.loads?\(|yaml\.(unsafe_)?load\(|ObjectInputStream|unserialize\(|Marshal\.load|(^|[^.A-Za-z_])(eval|exec)\(|new Function\(|os\.system\(|shell=True|\.raw\(|execute\(f[\"']" .`
       and user-supplied URL fields with `grep -rn -i -E "(webhook|callback|import|feed|avatar|remote|source|target)_?url" .`;
       a hit absent from the table → Medium, and High when it reaches untrusted

@@ -359,12 +359,12 @@ Secure Coding with AI cheat sheet.
       coverage where the tool offers branch coverage → Low (§7.2).
 - [ ] Is generated/vendored code excluded from coverage? Check coverage
       config excludes vs `*_pb2.py|.pb.go|generated|vendor` → Low. (§7.2)
-- [ ] Does the measured scope match the testable core, or does an
+- [ ] Does the measured scope match the testable core (§7.2), or does an
       environment-bound shell (UI, device, process-spawn adapters) sit in the
       denominator? Whole-tree measurement with an untestable region →
       Low–Medium (the number is noise; fix the boundary, [`sota-architecture`
       rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §14).
-- [ ] Are coverage gaps prioritized against complexity (branch-dense +
+- [ ] Are coverage gaps prioritized against complexity (§7.2) (branch-dense +
       thinly-covered first), or is the backlog being worked by whatever moves
       the percentage fastest (trivial modules) → Medium (effort aimed at the
       metric, not the risk).
@@ -372,10 +372,10 @@ Secure Coding with AI cheat sheet.
       min and growing with no sharding/selection plan → Medium. (§7.3)
 - [ ] Slowest tests known? Runner timing reports enabled and reviewed? No
       timing visibility → Low; top test >60s in the unit lane → Medium. (§7.3)
-- [ ] Parallel + shuffled in CI? Config shows `-shuffle|--randomize|-p auto|
+- [ ] Parallel + shuffled in CI (§7.4)? Config shows `-shuffle|--randomize|-p auto|
       --parallel|maxWorkers` in the blocking lane; serial-only suite for
       speed reasons → Medium (isolation debt).
-- [ ] Fixed ports/paths blocking parallelism? Grep
+- [ ] Fixed ports/paths blocking parallelism (§7.4)? Grep
       `:8080|:5432|/tmp/test|port = [0-9]{4}` literals in tests → High.
 - [ ] Shards balanced by timing? One shard consistently 3× the others in CI
       history → Low–Medium (rebalance). E2E staged before unit, heuristic test

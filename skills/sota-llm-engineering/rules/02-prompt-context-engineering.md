@@ -304,21 +304,21 @@ category = data.get("category", "other")                    # silently launders 
 
 ## Audit checklist
 
-- [ ] System prompts sectioned and stable; no timestamps/IDs/flags
+- [ ] System prompts sectioned and stable (§1); no timestamps/IDs/flags
       interpolated into the prefix; per-request content injected late.
-- [ ] Critical instructions placed at the edges of long contexts; no
+- [ ] Critical instructions placed at the edges of long contexts (§1); no
       contradictions across system prompt / few-shots / templates.
 - [ ] Briefs to other agents (subagent, research, review prompts) state each factual
       premise from the artifact it came from, not from a summary of it (§1).
-- [ ] Prompt is self-contained: every schema/format/enum/rule it depends on is
+- [ ] Prompt is self-contained (§1): every schema/format/enum/rule it depends on is
       inlined or code-assembled, not referenced by pointing at a file that may
       not be in context (which degrades silently to fabrication).
-- [ ] Context assembled under explicit per-category token budgets; provider
+- [ ] Context assembled under explicit per-category token budgets (§2); provider
       token counter used; truncation explicit, boundary-aware, surfaced.
 - [ ] Few-shots consistent with current instructions, demonstrate boundary
       cases, count justified by evals; dynamic few-shots placed after the cached
       prefix with a versioned selector (§3).
-- [ ] Untrusted content enters via typed, delimited, trust-labeled slots
+- [ ] Untrusted content enters via typed, delimited, trust-labeled slots (§4)
       with delimiter escaping — no f-string concatenation into instructions
       (cross-check [sota-code-security rules/08](../../sota-code-security/rules/08-llm-ai-security.md)).
 - [ ] Untrusted text never tokenizes into control tokens; instruction
@@ -333,7 +333,7 @@ category = data.get("category", "other")                    # silently launders 
 - [ ] Cache-aware ordering verified: frozen prefix, deterministic
       serialization, volatile content last, no tool-set or model swap
       mid-conversation, cache-hit rate monitored (§5).
-- [ ] All machine-consumed output schema-constrained (structured output API
+- [ ] All machine-consumed output schema-constrained (§6) (structured output API
       or strict tool schema), client-validated, bounded repair then explicit
       reject; no regex/substring JSON harvesting.
 - [ ] Whole-document rejection over one bad field is treated as a **recall**
@@ -341,10 +341,10 @@ category = data.get("category", "other")                    # silently launders 
       model-authored documents, and never relaxed at a trust boundary (§6);
       no field read out of a model response with a default that is
       indistinguishable from absence ([`sota-code-security` rules/13](../../sota-code-security/rules/13-context-dependent-silence.md) §4a).
-- [ ] `stop_reason`/refusal/truncation handled before parsing; no
+- [ ] `stop_reason`/refusal/truncation handled before parsing (§6); no
       unconditional `content[0]` access; `max_tokens` set explicitly at every
       structured-output call site, and `output_tokens < max_tokens` asserted.
-- [ ] Schemas: descriptions on fields, enums for closed sets, escape-hatch
+- [ ] Schemas (§6): descriptions on fields, enums for closed sets, escape-hatch
       field present, provider-unsupported constraints validated client-side.
 - [ ] No prompt rot: every rule traceable to an eval case; legacy
       model-specific scaffolding removed on model migration (§7).

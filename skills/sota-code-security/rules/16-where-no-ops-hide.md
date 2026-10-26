@@ -294,7 +294,7 @@ half.
       placeholder data treated as real (§2.3), swallowed exceptions on the enforcement path
       (§2.4), overloaded flags (§2.5), early returns that skip it (§2.6), truncation into an
       inspector (§2.7), config keys in the wrong section (§2.8), doc/code drift (§2.9)
-- [ ] **The control that is not in force** (the 2.10–2.14 group) — installed, configured, and not
+- [ ] **The control that is not in force** (§2) (the 2.10–2.14 group) — installed, configured, and not
       actually applied to the path it is credited with
 - [ ] **A flag that parses is not a feature that works** (§2.15) — the parser accepting it
       proves the parser, not the behaviour; and a chain of green availability checks proves

@@ -224,7 +224,7 @@ contacts.
 
 ## Audit checklist
 
-- [ ] Org exists; all accounts/projects/subscriptions are members; none standalone.
+- [ ] Org exists; all accounts/projects/subscriptions are members; none standalone (§3, §7).
 - [ ] Management account/root project has no workloads, no daily-use identities (§1, §7).
 - [ ] Prod and non-prod are separate accounts/projects (not tags in one); sandbox
       accounts carry hard budget caps and auto-cleanup (§1, §7).
@@ -232,7 +232,7 @@ contacts.
       cannot delete/modify logs (bucket policy / object lock / sink permissions);
       control-plane audit, DNS query, VPC flow, sensitive-bucket access and LB access
       logs are centralized there too (§1, §4).
-- [ ] Root/owner credentials: MFA enforced, no access keys, usage alarmed (any root
+- [ ] Root/owner credentials (§3, §6): MFA enforced, no access keys, usage alarmed (any root
       login pages someone).
 - [ ] SCPs/org policies enforce all eight §3 guardrails: no audit-log tampering, no public
       buckets, region restriction, no new IAM users/SA keys, no leaving org, no root actions
@@ -240,7 +240,7 @@ contacts.
       supports it (§3).
 - [ ] Detective baseline (AWS Config / Security Hub, GCP SCC, Azure Defender for Cloud /
       Policy compliance) deployed org-wide from the security account, findings centralised (§3).
-- [ ] AWS: RCPs enforce the org-wide data perimeter on supported services (deny
+- [ ] AWS: RCPs enforce the org-wide data perimeter on supported services (§3) (deny
       principals outside the org, require TLS) — not left to per-resource policies.
 - [ ] AWS: an EC2 declarative policy pins the baseline org-wide (§3) — IMDSv2
       required, snapshot block public access `block_all_sharing`, AMI and VPC block

@@ -454,10 +454,10 @@ condition being false.
       evidence about the instrument first. Two rows re-derived **by hand** before the result
       is quoted — a denominator does not catch this one
 
-- [ ] **Every probe states the path it traverses**, and that statement is narrower than
+- [ ] **Every probe states the path it traverses** (§2), and that statement is narrower than
       the gate's reputation. For each green gate, name one code path it does *not*
       exercise; if you cannot, the probe's scope has not been established.
-- [ ] **Probes on artifact-producing controls corrupt the produced artifact**, not a
+- [ ] **Probes on artifact-producing controls corrupt the produced artifact** (§2), not a
       committed fixture of it. A fixture-only probe survives a writer that has stopped
       writing what the validator expects.
 

@@ -1,0 +1,188 @@
+{
+ "_note": "Declared BUILD routing for sota-performance (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Keywords are phrases from each file's own rules-index row or the BUILD line that links it. Known routing gap, recorded and NOT declared: rules/04 §9 'Async runtimes: never block the loop' is needed by a builder keeping a Node/asyncio service responsive while it hashes, compresses or reads files, but neither 04's index row nor its BUILD line (step 5) says 'event loop', 'async' or 'blocking'; the phrase appears only in AUDIT step 'Sync file/crypto/compression calls on async event loops' and non-negotiable 7, which C4 does not read. No event-loop tag and no case for that task are declared. Routing gap for rules/04 (async event loop) FIXED 2026-10-26: the index row now names it, and tag 'event-loop' declares it.",
+ "skill": "sota-performance",
+ "tags": {
+  "latency-budget": [
+   "latency budgets",
+   "headroom"
+  ],
+  "profiling": [
+   "profile",
+   "benchmark"
+  ],
+  "regression-gate": [
+   "CI perf regression gates"
+  ],
+  "n-plus-one": [
+   "N+1",
+   "accidental quadratics",
+   "repeated scans"
+  ],
+  "batching-streaming": [
+   "batching",
+   "streaming vs materializing"
+  ],
+  "db-access": [
+   "indexes",
+   "SELECT *",
+   "chatty transactions"
+  ],
+  "allocation-gc": [
+   "allocation pressure",
+   "GC pauses",
+   "memory leaks"
+  ],
+  "io-network": [
+   "connection pooling",
+   "buffering",
+   "compression"
+  ],
+  "caching": [
+   "cache"
+  ],
+  "cache-security": [
+   "tenant",
+   "authorize before a cache hit"
+  ],
+  "web-vitals": [
+   "Core Web Vitals",
+   "bundle budgets",
+   "image formats"
+  ],
+  "event-loop": [
+   "async event loop"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "latency-budget",
+    "profiling",
+    "regression-gate"
+   ]
+  },
+  "02": {
+   "build": [
+    "n-plus-one",
+    "batching-streaming",
+    "db-access"
+   ]
+  },
+  "03": {
+   "build": [
+    "allocation-gc"
+   ]
+  },
+  "04": {
+   "build": [
+    "io-network",
+    "event-loop"
+   ]
+  },
+  "05": {
+   "build": [
+    "caching",
+    "cache-security"
+   ]
+  },
+  "06": {
+   "build": [
+    "web-vitals"
+   ]
+  }
+ },
+ "cases": [
+  {
+   "task": "put a read-through cache in front of a per-tenant product-catalog endpoint with a 200 ms p99 budget",
+   "mode": "build",
+   "tags": [
+    "caching",
+    "cache-security",
+    "latency-budget"
+   ],
+   "must_load": [
+    "05",
+    "01"
+   ]
+  },
+  {
+   "task": "fix an orders endpoint that issues one SQL query per line item",
+   "mode": "build",
+   "tags": [
+    "n-plus-one",
+    "db-access"
+   ],
+   "must_load": [
+    "02"
+   ]
+  },
+  {
+   "task": "stream a multi-GB CSV export over HTTP without materializing it in memory",
+   "mode": "build",
+   "tags": [
+    "batching-streaming",
+    "io-network"
+   ],
+   "must_load": [
+    "02",
+    "04"
+   ]
+  },
+  {
+   "task": "add a CI benchmark regression gate for a hot JSON parser",
+   "mode": "build",
+   "tags": [
+    "profiling",
+    "regression-gate"
+   ],
+   "must_load": [
+    "01"
+   ]
+  },
+  {
+   "task": "cut GC pauses in a high-throughput message consumer",
+   "mode": "build",
+   "tags": [
+    "allocation-gc",
+    "profiling"
+   ],
+   "must_load": [
+    "03",
+    "01"
+   ]
+  },
+  {
+   "task": "bring a marketing page's LCP and INP within Core Web Vitals thresholds",
+   "mode": "build",
+   "tags": [
+    "web-vitals"
+   ],
+   "must_load": [
+    "06"
+   ]
+  },
+  {
+   "task": "audit a web service for performance bottlenecks",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+   ]
+  },
+  {
+   "task": "keep a Node service responsive while it hashes and compresses",
+   "mode": "build",
+   "tags": [
+    "event-loop"
+   ],
+   "must_load": [
+    "04"
+   ]
+  }
+ ]
+}

@@ -122,7 +122,7 @@ Residual risk if accepted: one sentence.
 | [`rules/02-decomposition.md`](rules/02-decomposition.md) | Drawing DFDs in mermaid, defining trust boundaries, listing entry points/assets/actors/privilege levels; extracting all of these from an existing codebase. |
 | [`rules/03-threat-catalogs.md`](rules/03-threat-catalogs.md) | Enumerating threats for a specific component: web frontend, API, database, message queue, file storage, CI/CD, mobile, LLM agent/tool-use, cloud/IAM. |
 | [`rules/04-risk-rating-treatment.md`](rules/04-risk-rating-treatment.md) | Rating threats (DREAD pitfalls, CVSS usage, L×I matrices), choosing accept/mitigate/transfer/avoid, mapping mitigations to requirements and tests, documenting residual risk, tiering applications and modules to set modeling and review depth. |
-| [`rules/05-outputs-operationalization.md`](rules/05-outputs-operationalization.md) | Writing the threat model document, building the security requirements backlog, turning abuse cases into tests, keeping the model alive (re-model triggers). |
+| [`rules/05-outputs-operationalization.md`](rules/05-outputs-operationalization.md) | Writing the threat model document, building the security requirements backlog, turning abuse cases into tests, keeping the model alive (re-model triggers), the PR security-notes template. |
 | [`rules/06-audit-reconstruction.md`](rules/06-audit-reconstruction.md) | Auditing an existing system: reconstructing the model from code, control-presence matrix, gap analysis, severity calibration, reporting. |
 
 Load only the files you need; [`rules/02`](rules/02-decomposition.md) + [`rules/03`](rules/03-threat-catalogs.md) cover 80% of day-to-day work.
@@ -155,6 +155,6 @@ Load only the files you need; [`rules/02`](rules/02-decomposition.md) + [`rules/
 9. **LLM/agent components are first-class attack surface.** Model prompt
    injection, tool-call abuse, excessive agency, and data exfil via outputs
    for any system invoking an LLM with tools or retrieved content.
-10. **Models expire.** Define re-model triggers (new dependency, new trust
-    boundary, new data class, auth change) in the document itself; an undated,
+10. **Models expire.** Define re-model triggers in the document itself — at least the canonical
+    list in [`rules/05`](rules/05-outputs-operationalization.md) §4 (e.g. new dependency, trust boundary, data class, auth change); an undated,
     trigger-less threat model is treated as absent in audits.

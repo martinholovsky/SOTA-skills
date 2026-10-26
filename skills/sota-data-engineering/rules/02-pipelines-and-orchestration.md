@@ -231,6 +231,6 @@ docs.getdbt.com.)
       every core/mart model, relationship tests on critical FKs, no
       cross-model `SELECT *`, mart models documented (description + columns),
       exposures declared, no 1,500-line mega-models, CI builds changed models
-      and their downstream against a non-prod target before merge, package and
+      and their downstream before merge (audited by [rules/04](04-data-quality-and-contracts.md)'s §7 CI item), package and
       adapter versions pinned; before a dbt v2 upgrade, no deprecation warnings
       left (§6)?

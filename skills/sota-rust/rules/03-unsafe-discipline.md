@@ -322,7 +322,7 @@ For each `unsafe` block, in order:
       — a hit reached per request or connection = High (unbounded memory); an `into_raw`
       without `from_raw` on every path = Medium; `mem::forget` of a secret-bearing value =
       High (erasure skipped).
-- [ ] `grep -rnE 'mem::(uninitialized|zeroed)(::<[^>]*>)?\(' --include='*.rs' .` —
+- [ ] `grep -rnE 'mem::(uninitialized|zeroed)(::<[^>]*>)?\(' --include='*.rs' .` (§3) —
       `uninitialized` = Critical for almost every type; `zeroed` is UB wherever all-zero is
       invalid (references, `NonNull`, fn pointers, most enums). rustc's `invalid_value`
       lint flagged both on concrete types and said nothing for a generic `T` (measured).
@@ -352,6 +352,6 @@ For each `unsafe` block, in order:
       (pub fields, safe methods, trait impls, `Deref`, `Drop`, a panic from user closures,
       `T: Clone` or comparators mid-modification, reentrant callbacks); a written per-field
       argument on any manual `unsafe impl Send/Sync`; Miri runs this path in CI.
-- [ ] Severity calibration: reachable UB = Critical; unsound public API (safe
+- [ ] Severity calibration (§1, §2, §4): reachable UB = Critical; unsound public API (safe
       code can trigger UB) = Critical even if unexercised; missing SAFETY
       comment = Medium; missing Miri CI on unsafe crate = Medium.

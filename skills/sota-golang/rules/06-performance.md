@@ -150,7 +150,7 @@ for removal — still accepted by go1.27.1 (measured), so verify per release
 before relying on it.
 
 - **`GOMEMLIMIT`** (1.19+) is the main knob in containers: set to ~90% of the
-  container memory limit (`GOMEMLIMIT=900MiB` for a 1Gi pod). It's a soft
+  container memory limit (`GOMEMLIMIT=900MiB` for a 1Gi pod; the GC guide: leave "5-10% of headroom"). It's a soft
   limit — GC runs harder as you approach it instead of OOM-killing. Leave
   headroom for non-heap memory (stacks, cgo, mmap).
 - **`GOGC`** trades memory for CPU: `GOGC=200` halves GC frequency

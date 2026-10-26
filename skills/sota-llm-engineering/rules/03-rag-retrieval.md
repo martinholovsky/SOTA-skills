@@ -263,12 +263,12 @@ queries needing tool choice (search vs SQL vs API).
       provably identical; task prefixes used where required; index distance
       metric matches the model's training metric; quantization only with
       retrieval-eval evidence of acceptable recall loss (§3).
-- [ ] Embedding migrations are reindex-and-cutover with eval-gated flips —
+- [ ] Embedding migrations are reindex-and-cutover with eval-gated flips (§3) —
       never mixed vector spaces in one queried index.
-- [ ] Hybrid retrieval in place (dense + lexical + fusion) or its absence
+- [ ] Hybrid retrieval in place (§4) (dense + lexical + fusion) or its absence
       justified by eval; reranker before the prompt where k-precision
       matters; stage-by-stage recall measured.
-- [ ] Tenant/ACL/date filters enforced inside the retrieval engine, never
+- [ ] Tenant/ACL/date filters enforced inside the retrieval engine (§4), never
       post-hoc client-side.
 - [ ] Conversational queries rewritten to standalone before retrieval;
       query-transform LLM calls on a cheap/fast tier, traced and evaluated;
@@ -277,10 +277,10 @@ queries needing tool choice (search vs SQL vs API).
       corpus"); recall@k at prompt-k tracked; retrieval evaluated separately
       from generation; retrieval eval gates chunking/embedding/fusion-weight/
       reranker/k changes in CI (§6).
-- [ ] Faithfulness judged with quoted evidence; refusal-on-missing-context
+- [ ] Faithfulness judged with quoted evidence (§6, §7); refusal-on-missing-context
       behavior present and eval-covered.
-- [ ] Citations structurally validated in code against supplied context IDs.
-- [ ] Freshness: event-driven (or scheduled) reindex with reconciliation;
+- [ ] Citations structurally validated in code against supplied context IDs (§7).
+- [ ] Freshness (§7): event-driven (or scheduled) reindex with reconciliation;
       deletes/ACL revocations propagate to the index; index lag monitored.
 - [ ] Each answer carries a runtime confidence score (calibrated groundedness,
       multi-sample agreement, or logprobs) with a withhold/fallback/human

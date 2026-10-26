@@ -118,7 +118,7 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
       documented global order)
 - [ ] **volatile used for threading (§3) — HIGH (not a sync primitive)** —
       `grep -rn 'volatile' --include='*.cpp' --include='*.c' . | grep -iE 'flag|ready|done|count|shared'`
-- [ ] **Unjoined std::thread / detached without lifetime reasoning — MEDIUM** —
+- [ ] **Unjoined std::thread / detached without lifetime reasoning — MEDIUM** (§4) —
       `grep -rn 'std::thread' --include='*.cpp' . | grep -v jthread` (verify join/detach + arg
       lifetimes); `grep -rn '\.detach()' --include='*.cpp' .`
 - [ ] **Clocks and time conversion (§4) — MEDIUM** —

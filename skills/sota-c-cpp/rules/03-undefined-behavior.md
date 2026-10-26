@@ -182,7 +182,7 @@ mutex. Build threaded code under TSan.
 
 ## Audit checklist
 
-- [ ] **Signed-overflow-prone arithmetic feeding sizes/indices — HIGH** —
+- [ ] **Signed-overflow-prone arithmetic feeding sizes/indices — HIGH** (§2) —
       `grep -rnE '(malloc|calloc|alloca|new)[^;]*[*+][^;]*' --include='*.c' --include='*.cpp' .`
       (size math → check overflow);
       `grep -rn '__builtin_.*_overflow\|ckd_add\|ckd_mul' . || echo "no checked-arithmetic helpers found"`
@@ -201,7 +201,7 @@ mutex. Build threaded code under TSan.
       (placement new: find the explicit destructor call that ends each lifetime before the
       storage is reused) ; build with `-Wcast-align` and run the suite under UBSan, which traps
       misalignment
-- [ ] **Bad shifts / conversions — MEDIUM/HIGH** —
+- [ ] **Bad shifts / conversions — MEDIUM/HIGH** (§1, §2) —
       `grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '(cout|cerr|<<=|stream)'`
       (verify shift amounts)
 - [ ] **Money in binary floats, truncating float-to-int (§2) — MEDIUM, HIGH in money paths** —

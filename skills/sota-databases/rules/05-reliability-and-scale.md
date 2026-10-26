@@ -171,7 +171,7 @@ read:  GET key → hit? return : load from DB → SET key val EX ttl → return
 write: write DB (txn commits) → DEL key      -- delete, don't update-in-place
 ```
 - **Always a TTL**, even with explicit invalidation — TTL is the bound on how
-  wrong you can be. Jitter TTLs (±10–20%) to avoid synchronized expiry.
+  wrong you can be. Jitter TTLs (±10%, [`sota-performance` rules/05](../../sota-performance/rules/05-caching.md) §4) to avoid synchronized expiry.
 - Invalidate by **delete after commit** (update-in-place races with
   concurrent writers; delete is idempotent and converges). Accept the brief
   stale window of read-modify race, or use versioned keys when you can't.

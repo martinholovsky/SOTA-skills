@@ -28,11 +28,13 @@ The main thread renders frames and dispatches input — nothing else. JSON parsi
 let msgs = try JSONDecoder().decode([Message].self, from: data)
 self.messages = msgs
 
-// GOOD: decode off-main, hop back for the state write
-let msgs = try await Task.detached(priority: .userInitiated) {
+// GOOD: a @concurrent function (SE-0461, Swift 6.2) always runs off the caller's actor;
+// the caller stays on the main actor for the state write. Not Task.detached: it drops
+// priority and task-locals (sota-swift rules/03 §4; rules/02 2.4)
+@concurrent func decodeMessages(_ data: Data) async throws -> [Message] {
     try JSONDecoder().decode([Message].self, from: data)
-}.value
-await MainActor.run { self.messages = msgs }
+}
+self.messages = try await decodeMessages(data)
 ```
 
 ```kotlin

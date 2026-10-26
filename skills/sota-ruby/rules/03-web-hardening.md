@@ -337,7 +337,7 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       bare Rack app that also lacks `Rack::Protection` = HIGH) —
       `grep -rnE 'AuthenticityToken|:authenticity_token' --include='*.rb' --include='config.ru' .` ;
       the boot-time `TypeError` form — `grep -rnE 'use[[:space:]]+Rack::Protection,[[:space:]]*:' --include='*.rb' --include='config.ru' .`
-- [ ] **Verb confusion and widened routes — HIGH on a state-changing action** —
+- [ ] **Verb confusion and widened routes — HIGH on a state-changing action** (§3) —
       `grep -rnE 'if\s+request\.get\?|unless\s+request\.get\?|request\.get\?\s*\?' --include='*.rb' app/ lib/ 2>/dev/null`
       (the else branch runs on HEAD, unchecked by CSRF) ;
       `grep -rnE 'via:\s*(:all|\[[^]]*:get[^]]*:(post|put|patch|delete))|:controller\(|/:action' config/routes.rb config/routes/ 2>/dev/null`
@@ -354,7 +354,7 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       identity** — `grep -rnE 'cookies(\.[a-z]+)*\[[^]]+\]\s*=[^=~]|set_cookie\(' --include='*.rb' . | grep -v 'httponly'`
       (a hash split across lines is a false hit; then confirm `secure:`/`same_site:` are
       set, or `force_ssl` is on)
-- [ ] **Redirects / SSRF** — `grep -rnE 'redirect(_to)?\s*\(?\s*params' --include='*.rb' .` ;
+- [ ] **Redirects / SSRF** (§6) — `grep -rnE 'redirect(_to)?\s*\(?\s*params' --include='*.rb' .` ;
       `grep -rn "allow_other_host: true" --include='*.rb' .` ;
       `grep -rnE '(Net::HTTP|URI\.open|Faraday|HTTParty)[^#]*params' --include='*.rb' .`
 - [ ] **SSRF: outbound request not pinned to a vetted address (§6) — HIGH when the
@@ -392,7 +392,7 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
 - [ ] **Debug mode / development server settings reaching production (§5) — HIGH** —
       `grep -rnE 'consider_all_requests_local\s*=\s*true|development_only\s*=\s*false|:show_exceptions,\s*true|(RAILS|RACK|APP)_ENV[=: ]+"?development' --include='*.rb' --include='*.ru' --include='*.yml' --include='Dockerfile*' --include='Procfile*' . | grep -vE 'environments/(development|test)\.rb'`
       (and confirm the deploy manifest sets the env at all — unset means development)
-- [ ] **Transport** — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1` ;
+- [ ] **Transport** (§5) — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1` ;
       `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH, CRITICAL on user networks or a code channel: [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5) ;
       `grep -rnE 'verify_host_key:\s*(:never|:accept_new|false|true)|paranoid:\s*(false|true)' --include='*.rb' .`
       (SSH host key not verified — HIGH) ;

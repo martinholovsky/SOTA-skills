@@ -43,29 +43,29 @@ Adapt to language/stack; these locate the load-bearing code fast.
 
 ```bash
 # Logging reality: structured vs printf
-grep -rEn 'print\(|console\.log|System\.out|fmt\.Print' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' src/ | head
-grep -rEn 'logger\.|log\.|slog\.|zap\.|structlog|pino|winston' src/ | head
+grep -rEn 'print\(|console\.log|System\.out|fmt\.Print' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' --exclude-dir=node_modules --exclude-dir=.git . | head
+grep -rEn 'logger\.|log\.|slog\.|zap\.|structlog|pino|winston' --exclude-dir=node_modules --exclude-dir=.git . | head
 
 # Level abuse: expected events at error level
-grep -rEn 'log(ger)?\.(error|Error)' src/ | grep -iE 'not found|retry|invalid input|missing param'
+grep -rEn 'log(ger)?\.(error|Error)' --exclude-dir=node_modules --exclude-dir=.git . | grep -iE 'not found|retry|invalid input|missing param'
 
 # Secrets/PII risk at call sites
-grep -rEn 'log.*\b(password|token|secret|authorization|api_key|ssn|card)' -i src/
-grep -rEn 'log.*(req\.(headers|body)|request\.(headers|json)|to_dict\(\)|JSON\.stringify\(req)' src/
+grep -rEn 'log.*\b(password|token|secret|authorization|api_key|ssn|card)' -i --exclude-dir=node_modules --exclude-dir=.git .
+grep -rEn 'log.*(req\.(headers|body)|request\.(headers|json)|to_dict\(\)|JSON\.stringify\(req)' --exclude-dir=node_modules --exclude-dir=.git .
 
 # Correlation: who binds trace/request IDs, and is it middleware or hand-passed
-grep -rEn 'trace_id|traceId|correlation|request_id|traceparent' src/ | head -30
+grep -rEn 'trace_id|traceId|correlation|request_id|traceparent' --exclude-dir=node_modules --exclude-dir=.git . | head -30
 
 # OTel posture: API vs SDK, where configured, propagators
 grep -rn 'opentelemetry' --include='*' -l | head
-grep -rEn 'TracerProvider|set_tracer_provider|NodeSDK|sdktrace' src/   # should hit ~1 file/service
-grep -rEn 'inject|extract' src/ | grep -i propagat                      # queue propagation exists?
+grep -rEn 'TracerProvider|set_tracer_provider|NodeSDK|sdktrace' --exclude-dir=node_modules --exclude-dir=.git .   # should hit ~1 file/service
+grep -rEn 'inject|extract' --exclude-dir=node_modules --exclude-dir=.git . | grep -i propagat                      # queue propagation exists?
 
 # Metrics cardinality: label values from variables = suspect
-grep -rEn '\.labels\(|With\(prometheus\.Labels|attributes=' src/ | grep -vE '"(GET|POST|2xx|4xx|5xx)"'
+grep -rEn '\.labels\(|With\(prometheus\.Labels|attributes=' --exclude-dir=node_modules --exclude-dir=.git . | grep -vE '"(GET|POST|2xx|4xx|5xx)"'
 
 # Health endpoints: what do they actually check
-grep -rEn '(livez|healthz|readyz|/health|/ready|liveness|readiness)' src/ k8s/ deploy/ charts/
+grep -rEn '(livez|healthz|readyz|/health|/ready|liveness|readiness)' --exclude-dir=node_modules --exclude-dir=.git .
 
 # Debug surface exposure
 grep -rEn --exclude-dir=node_modules --exclude-dir=.git 'pprof|actuator|debug|heapdump|/metrics' . | grep -ivE 'test|_test'
@@ -75,7 +75,7 @@ find . -path ./node_modules -prune -o -name '*.y*ml' -print | xargs grep -lE 'al
 find . -name '*.json' | xargs grep -l '"panels"' 2>/dev/null | head
 
 # Error tracking
-grep -rEn 'sentry|rollbar|bugsnag|crashlytics|captureException' src/ | head
+grep -rEn 'sentry|rollbar|bugsnag|crashlytics|captureException' --exclude-dir=node_modules --exclude-dir=.git . | head
 ```
 
 Then read the hits in full context — a grep match is a lead, not a finding.
@@ -249,19 +249,19 @@ Rules for findings:
 - [ ] All five pillars scored 0–3 against the rubric, the profile reported
       rather than only a total (§5); gaps mapped to catalog IDs and rules
       files, at the catalog's severities (§3).
-- [ ] Secrets/PII telemetry scan performed (logs, span attributes, baggage,
+- [ ] Secrets/PII telemetry scan performed (§3, §4) (logs, span attributes, baggage,
       error tracker payloads).
-- [ ] Probe configs (liveness/readiness) read from deploy manifests, not
+- [ ] Probe configs (liveness/readiness) read from deploy manifests (§4), not
       assumed; debug surface enumerated from route/port truth.
-- [ ] Alert inventory reviewed against actionability/runbook/owner bar;
+- [ ] Alert inventory reviewed against actionability/runbook/owner bar (§4);
       on-call interviewed or page history sampled if accessible.
-- [ ] Telemetry pipeline itself assessed (sampling config, export loss,
+- [ ] Telemetry pipeline itself assessed (§3) (sampling config, export loss,
       collector SPOF, dead-man's-switch).
 - [ ] Findings carry file:line evidence, severity, concrete fix, effort (no
       evidence, no finding); "absent" is kept apart from "present but
       broken", what is good is noted, and the "shortest path to YES" list
       is delivered (§6).
-- [ ] Logging inventory requested and compared with the code (G29): pick
+- [ ] Logging inventory requested and compared with the code (§3) (G29): pick
       three events it lists (e.g. a failed login, an authorization denial, an
       admin change), trigger each in a test or sandbox, and confirm the record
       arrives in the named sink with the documented name, fields and severity.

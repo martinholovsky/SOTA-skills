@@ -328,11 +328,11 @@ Rules:
       for OTLP metric exporters with no temporality in the same file — each
       file listed is a finding unless its config sets temporality elsewhere:
       `grep -rlE 'OTLPMetricExporter|Otlp(Grpc|Http)MetricExporter|otlpmetric(grpc|http)' --include='*.py' --include='*.go' --include='*.js' --include='*.ts' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE '[Tt]emporality' "$f" || echo "$f"; done`
-- [ ] `service.version` and environment present on all series; deploys are
+- [ ] `service.version` and environment present on all series (§7); deploys are
       correlatable with metric shifts.
 - [ ] Does any before/after claim from production telemetry rest on exactly two
       points (`now` vs `offset X`)? The intervening window must be sampled, and
       "is it still happening" answered with a load-invariant absolute count
       rather than a percentile, whose denominator moves on its own (§4a).
-- [ ] Metrics pipeline self-monitored (scrape/export failures alerted);
+- [ ] Metrics pipeline self-monitored (§7) (scrape/export failures alerted);
       unused metrics pruned.

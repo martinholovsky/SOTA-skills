@@ -1,0 +1,223 @@
+{
+ "_note": "Declared BUILD routing for sota-privacy-compliance (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Keywords are phrases from each file's own rules-index row or the BUILD lines that link it. Known routing gap, recorded and NOT declared: rules/04 §2b 'Children's & minors' data — strictest tier everywhere' (COPPA, GDPR Art. 8, age signal, separate parental consent) is needed by a builder of a child-directed or teen-facing service, but SKILL.md mentions children, minors, COPPA or age nowhere — not in 04's index row, not in BUILD step 6 — so no minors tag and no case for that task are declared. Routing gap for rules/04 (minors' data) FIXED 2026-10-26: the index row now names it, and tag 'minors-data' declares it.",
+ "skill": "sota-privacy-compliance",
+ "tags": {
+  "inventory": [
+   "data map",
+   "classification tiers",
+   "every field you intend to collect"
+  ],
+  "minimization": [
+   "minimization",
+   "purpose limitation"
+  ],
+  "pseudonymization": [
+   "pseudonymization",
+   "re-identification risk"
+  ],
+  "consent": [
+   "consent management",
+   "cookie/tracker governance"
+  ],
+  "user-rights": [
+   "DSAR export",
+   "deletion"
+  ],
+  "retention": [
+   "retention automation",
+   "seven-year-old PII"
+  ],
+  "regime": [
+   "which regimes apply",
+   "which regulations the system triggers",
+   "lawful basis"
+  ],
+  "residency": [
+   "data residency"
+  ],
+  "breach-clock": [
+   "notification clocks",
+   "72h"
+  ],
+  "audit-evidence": [
+   "SOC 2",
+   "automating evidence",
+   "audits are queries"
+  ],
+  "policy-as-code": [
+   "policy-as-code"
+  ],
+  "vendor": [
+   "vendor/subprocessor",
+   "mapping flows to processors"
+  ],
+  "breach-response": [
+   "breach response",
+   "is it reportable"
+  ],
+  "incident-logging": [
+   "forensics-friendly logging"
+  ],
+  "ai-act": [
+   "EU AI Act"
+  ],
+  "minors-data": [
+   "minors' data"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "inventory",
+    "vendor"
+   ]
+  },
+  "02": {
+   "build": [
+    "minimization",
+    "pseudonymization"
+   ]
+  },
+  "03": {
+   "build": [
+    "consent",
+    "user-rights",
+    "retention"
+   ]
+  },
+  "04": {
+   "build": [
+    "regime",
+    "residency",
+    "breach-clock",
+    "ai-act",
+    "minors-data"
+   ]
+  },
+  "05": {
+   "build": [
+    "audit-evidence",
+    "policy-as-code",
+    "vendor"
+   ]
+  },
+  "06": {
+   "build": [
+    "breach-response",
+    "breach-clock",
+    "incident-logging"
+   ]
+  }
+ },
+ "cases": [
+  {
+   "task": "build account deletion that propagates to replicas, analytics copies and backups",
+   "mode": "build",
+   "tags": [
+    "user-rights",
+    "inventory"
+   ],
+   "must_load": [
+    "03",
+    "01"
+   ]
+  },
+  {
+   "task": "design the schema for a customer-profile service storing email, phone and date of birth",
+   "mode": "build",
+   "tags": [
+    "inventory",
+    "minimization",
+    "pseudonymization",
+    "retention"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03"
+   ]
+  },
+  {
+   "task": "add a cookie consent banner that gates analytics trackers for EU visitors",
+   "mode": "build",
+   "tags": [
+    "consent",
+    "regime"
+   ],
+   "must_load": [
+    "03",
+    "04"
+   ]
+  },
+  {
+   "task": "keep EU customers' data in EU regions and enforce it in CI",
+   "mode": "build",
+   "tags": [
+    "residency",
+    "policy-as-code"
+   ],
+   "must_load": [
+    "04",
+    "05"
+   ]
+  },
+  {
+   "task": "build the breach-notification workflow with per-regime deadlines",
+   "mode": "build",
+   "tags": [
+    "breach-response",
+    "breach-clock",
+    "incident-logging"
+   ],
+   "must_load": [
+    "06",
+    "04"
+   ]
+  },
+  {
+   "task": "integrate a third-party email vendor that receives user email addresses",
+   "mode": "build",
+   "tags": [
+    "vendor",
+    "inventory"
+   ],
+   "must_load": [
+    "05",
+    "01"
+   ]
+  },
+  {
+   "task": "automate SOC 2 evidence collection from IaC and IdP logs",
+   "mode": "build",
+   "tags": [
+    "audit-evidence"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "audit a SaaS codebase for GDPR gaps",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+   ]
+  },
+  {
+   "task": "build a service aimed at teenagers",
+   "mode": "build",
+   "tags": [
+    "minors-data"
+   ],
+   "must_load": [
+    "04"
+   ]
+  }
+ ]
+}

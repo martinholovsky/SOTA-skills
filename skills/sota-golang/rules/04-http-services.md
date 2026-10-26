@@ -376,7 +376,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       another parser** — files that turn a body into a string and never validate it:
       `grep -rlE 'string\((body|b|buf|data|raw)\)|io\.ReadAll' --include='*.go' . | while IFS= read -r f; do grep -qE 'utf8\.(Valid|ValidString)' "$f" || echo "$f"; done`
       (`utf8.ValidString(string([]byte{0x63, 0xff}))` is `false`, measured on go1.27.1)
-- [ ] **Naked servers — HIGH** —
+- [ ] **Naked servers — HIGH** (§1) —
       `grep -rn 'http.ListenAndServe\|http.ListenAndServeTLS' --include='*.go' .` ;
       `grep -rn -A8 'http.Server{' --include='*.go' .` (verify all four timeouts present)
 - [ ] **Default client / package-level helpers (§2) — HIGH** —
@@ -403,7 +403,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       `grep -rnE '(password|token|secret|authorization|api_?key)' --include='*.go' . | grep -i 'slog\|log\.'`
       (PII in logs — HIGH) ; manual: client mistakes (4xx) logged at Info/Warn, not Error;
       sensitive types implement `slog.LogValuer`
-- [ ] **Middleware ResponseWriter wrappers missing Flush/Hijack passthrough** —
+- [ ] **Middleware ResponseWriter wrappers missing Flush/Hijack passthrough** (§4) —
       `grep -rn -A4 'http.ResponseWriter$' --include='*.go' . | grep 'struct'`
 - [ ] **Path-based authorization on the raw request path (§4) — HIGH when the router behind
       it is not `http.ServeMux`** —

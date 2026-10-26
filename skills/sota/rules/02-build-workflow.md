@@ -153,10 +153,10 @@ was measured against a workflow that no longer shipped).
 
 - [ ] A change to §BUILD in the router is reflected in this file's reasoning, in
       `BUILD_WORKFLOW`, and in `ROUTER_BUILD_SHA` — all four, same commit (§5).
-- [ ] `ROUTER_BUILD_SHA` was updated only **after** the mirror was re-read against the
+- [ ] `ROUTER_BUILD_SHA` was updated only **after** the mirror was re-read (§5) against the
       new §BUILD, and the commit says whether an imperative changed or only prose moved.
       Run the guard once and confirm it passes rather than assuming it.
-- [ ] The router's §BUILD still states every imperative; only reasoning lives here. An
+- [ ] The router's §BUILD still states every imperative (§5); only reasoning lives here. An
       agent that never opens this file must still build correctly.
 - [ ] Any new step is checkable at step 4 — it states an outcome, not an intention.
       Did the build's plan meet the same bar: every item an outcome with a number or

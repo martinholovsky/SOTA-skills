@@ -137,12 +137,13 @@ Web fonts block or shift text rendering.
 
 - **WOFF2 only** (≈ 30% smaller than WOFF; universal support).
 - **Subset** to used scripts/characters (`pyftsubset`, `glyphhanger`):
-  a full font with CJK + symbols can be 1 MB+; a Latin subset ~15–30 KB.
+  a full font with CJK + symbols can be 1 MB+; a static single-weight Latin
+  subset ~15–30 KB, a variable one more ([`sota-frontend-design` rules/01](../../sota-frontend-design/rules/01-typography-and-color.md) §3).
 - **Self-host** with `Cache-Control: immutable`; third-party font CSS adds a
   connection + CSS round trip on the critical path (and cache partitioning
   killed the shared-cache benefit years ago).
 - `<link rel="preload" as="font" type="font/woff2" crossorigin>` for the 1–2
-  critical fonts only.
+  critical above-the-fold faces only (one variable file usually covers it).
 - `font-display: swap` (text visible immediately) or `optional` (no swap
   flash; best CLS). Tame swap-induced CLS with metric-compatible fallbacks:
   `size-adjust`/`ascent-override` on a fallback `@font-face` (tooling:

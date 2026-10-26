@@ -119,7 +119,8 @@ You cannot collect in the moment what you didn't prepare to collect.
   incident. Tabletops find the broken phone tree, the missing authority-to-
   contain, the playbook nobody can locate — cheaply.
 - Exercise the *decisions* (who can isolate prod? who calls legal? when do we
-  notify?) and the *contacts* (are they current?). Run them regularly; rotate
+  notify?) and the *contacts* (are they current?). Run them at least annually
+  (the floor [privacy rules/06](../../sota-privacy-compliance/rules/06-incident-breach-readiness.md) §4 sets for the breach path); rotate
   scenarios to match your top threats (threat modeling) and recent intel
   ([rules/05](05-hunting-intel-deception.md)).
 
@@ -173,7 +174,7 @@ agents and confirm runtime detections fire.
 - [ ] Is there a written IR plan mapped to a maintained standard (e.g., NIST SP
       800-61r3 / CSF 2.0; check csrc.nist.gov for a newer revision), with roles, severity tiers, and authority-to-contain defined
       *before* an incident? (§1)
-- [ ] Are there incident-type playbooks (account compromise, ransomware, cloud-
+- [ ] Are there incident-type playbooks (§2) (account compromise, ransomware, cloud-
       key abuse, data exfil, container, LLM/agent abuse) — concrete and current?
 - [ ] **LLM/agent playbook (§2) — High where an agent ships:** does it disable
       the tool, halt the fleet, rotate reachable credentials, purge memory and

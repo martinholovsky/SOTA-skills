@@ -229,7 +229,7 @@ stores: [sota-code-security rules/07](../../sota-code-security/rules/07-data-exp
       queryable; re-embedding cost planned via batch; recall@k delta quantified
       before the flip; chunker changes run as migrations, with stable source-doc
       IDs plus offsets in anything user-facing (§4).
-- [ ] PII minimized at the model boundary (projection, pseudonymization);
+- [ ] PII minimized at the model boundary (§5) (projection, pseudonymization);
       redaction layer in front of trace logging, eval promotion, and dataset
       storage; traces have distinct retention + access control.
 - [ ] Sensitive fields masked, tokenised or dropped before embedding and
@@ -241,7 +241,7 @@ stores: [sota-code-security rules/07](../../sota-code-security/rules/07-data-exp
       proxied; regulated code only on self-hosted/air-gapped models with an
       approval gate (§5). **High**. Probe — provider hosts hard-coded outside
       the gateway module: `grep -rnE 'api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com' .`
-- [ ] Deletion requests propagate to traces, eval sets, memory, semantic
+- [ ] Deletion requests propagate (§5) to traces, eval sets, memory, semantic
       caches, and vector indexes.
 - [ ] Provider data-retention/training-use settings explicitly configured,
       documented in-repo, and re-verified on provider/platform/model change

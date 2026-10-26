@@ -288,7 +288,7 @@ token; [rules/01](01-lifecycle-and-workload-identity.md) §4) and treat any resi
       replay-protected.
 - [ ] Signing keys (§3) non-exportable in KMS/HSM (or Sigstore keyless); one key per purpose;
       verification material published/versioned; signing operations audit-logged.
-- [ ] TLS: ACME automation, ≤90d certs, keys generated in place, `0400`, no key files in
+- [ ] TLS (§4): ACME automation, ≤90d certs, keys generated in place, `0400`, no key files in
       repos/images/build contexts; internal mTLS via private CA; no disabled cert verification.
 - [ ] SSH (§5): Ed25519 per-person per-device or SSH CA certs; `authorized_keys` inventoried and
       pruned on offboarding; no private keys in repos/images; no unrestricted CI SSH keys;
@@ -296,7 +296,7 @@ token; [rules/01](01-lifecycle-and-workload-identity.md) §4) and treat any resi
 - [ ] JWT (§6): asymmetric alg for multi-verifier setups, algorithm pinned, no `none`/confusion
       paths, `kid`-based JWKS rotation with refresh-on-unknown-`kid`, ≤15m access-token TTL,
       no JWT secrets with defaults, no real JWTs in fixtures.
-- [ ] Field/object encryption uses KMS envelope (wrapped DEKs, encryption context, maintained
+- [ ] Field/object encryption uses KMS envelope (§7) (wrapped DEKs, encryption context, maintained
       SDK); no raw keys in config; per-tenant keys where deletion guarantees are needed.
 - [ ] **Wrapped/stored keys are integrity-protected (§7)** — KMS wrap, RFC 3394 key wrap or an
       AEAD; a DEK wrapped with unauthenticated CBC/CTR/ECB = **High**:
@@ -307,7 +307,7 @@ token; [rules/01](01-lifecycle-and-workload-identity.md) §4) and treat any resi
 - [ ] **Wildcard TLS keys confined (§4)** to one terminating tier and issued below the apex —
       Medium when the same wildcard key is referenced by more than one host's config:
       `grep -rniE '(ssl_certificate_key|SSLCertificateKeyFile|secretName|key_?file|private_key)[^#]*wildcard' .`
-- [ ] `.env*` untracked (HEAD and history) with `0600`; `.env.example` fake-valued; dotenv
+- [ ] `.env*` untracked (§8) (HEAD and history) with `0600`; `.env.example` fake-valued; dotenv
       dev-only and non-overriding; `.dockerignore` excludes `.env*`; no prod values in local
       env files; rc files (`.npmrc`, `.pypirc`, `.netrc`) use env interpolation, never literal
       tokens; registry publishing uses trusted publishing (OIDC), not stored long-lived tokens.

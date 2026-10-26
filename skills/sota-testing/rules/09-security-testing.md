@@ -365,34 +365,34 @@ Management cheat sheets.
       ([`sota-code-security` rules/16](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.16) — a result type that mixes derived inputs
       with findings stays non-empty while detection is zero.
 
-- [ ] Do security-critical paths (authn/authz, crypto, input parsing, money/quota,
+- [ ] Do security-critical paths (§1) (authn/authz, crypto, input parsing, money/quota,
       tenancy, untrusted data) have negative security tests, at a higher coverage
       bar (~90%) than the suite norm? Gaps treated as findings?
-- [ ] Is there a **cross-tenant / IDOR** test for every resource fetched by id
+- [ ] Is there a **cross-tenant / IDOR** test (§3) for every resource fetched by id
       (incl. nested/batch/export/`include` ids), asserting 404 for a foreign
       principal — ideally generated from the route table?
-- [ ] Function-level authz tested per method (privileged op from low-priv principal
+- [ ] Function-level authz tested per method (§3) (privileged op from low-priv principal
       → refused), not just per path?
-- [ ] Mass-assignment over-post tests on every write endpoint with protected fields?
-- [ ] Rate-limit/anti-automation tests assert **per-account/object**, not per-IP?
-- [ ] Injection: per-parameter hostile-input cases + a fuzz target for each
+- [ ] Mass-assignment over-post tests on every write endpoint (§3) with protected fields?
+- [ ] Rate-limit/anti-automation tests assert **per-account/object** (§3), not per-IP?
+- [ ] Injection: per-parameter hostile-input cases (§3) + a fuzz target for each
       untrusted-bytes parser ([`rules/06`](06-property-fuzzing-mutation.md))?
-- [ ] SSRF tests on every user-supplied-URL/webhook surface (blocked ranges +
+- [ ] SSRF tests on every user-supplied-URL/webhook surface (§3) (blocked ranges +
       redirect re-validation)?
 - [ ] Business-logic/abuse cases derived from the threat model
       ([`sota-threat-modeling`](../../sota-threat-modeling/SKILL.md)), testing observable effect not implementation:
       workflow order, value re-derivation, one-time replay, quantity/limit abuse
       (negative, zero, overflow, fractional), TOCTOU races, with a representative set run
       in CI? (§4)
-- [ ] Every fixed vuln/CVE has a regression test that fails on the vulnerable code?
+- [ ] Every fixed vuln/CVE has a regression test (§1) that fails on the vulnerable code?
 - [ ] SAST + SCA in the PR gate; authenticated DAST baseline + fuzzing out-of-band;
       DAST/SAST baselines reviewed in PRs (no silent ignore-list growth)? DAST runs
       authenticated and OpenAPI-fed, its findings confirmed exploitable before filing (§5)?
-- [ ] Security tests deterministic (injected clock for expiry, seeded principals,
+- [ ] Security tests deterministic (§6) (injected clock for expiry, seeded principals,
       no shared state) and able to fail (verified against the vulnerable version)?
-- [ ] WSTG categories relevant to the surface walked as a coverage check — any
+- [ ] WSTG categories relevant to the surface walked as a coverage check (§2) — any
       exposed category with zero tests is a gap?
-- [ ] Each enforcement control (cap, quota, rate limit, filter, allowlist, policy)
+- [ ] Each enforcement control (cap, quota, rate limit, filter, allowlist, policy) (§1)
       has an **allow case** beside its refusal cases, so a control that blocks
       legitimate traffic cannot pass the suite ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a)?
 - [ ] **Authz suite generated from a role × method × path matrix** (§3a), with

@@ -230,9 +230,9 @@ Same applies to running totals, gaps-and-islands, deduplication
   for skewed data (e.g. one tenant with 90% of rows). Symptoms: query fast in
   psql, slow in app. Fix: `SET plan_cache_mode = force_custom_plan` for that
   statement/role, or restructure.
-- PgBouncer transaction mode breaks session-level prepared statements unless
-  PgBouncer ≥1.21 with `max_prepared_statements` non-zero (the default
-  is 200 since 1.24; an explicit 0 turns it off) — verify (file 04).
+- PgBouncer transaction mode breaks session-level prepared statements unless the pooler
+  is configured for them; the version floor, the `max_prepared_statements` default and what
+  it never rescues (SQL-level `PREPARE`) live in [rules/04](04-transactions-concurrency.md) §5.
 - **Confirm that binding really happens on the server.** When a pooler, a
   proxy, or an engine that only speaks a compatible wire protocol cannot run
   server-side prepared statements, drivers are switched to (or silently fall

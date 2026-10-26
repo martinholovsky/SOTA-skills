@@ -1,0 +1,50 @@
+{
+ "_note": "Declared BUILD routing for sota-web-frameworks (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. C4 reads only the BUILD line that carries the links, which is the last line of each step: step 3's 'route), never only in middleware or a layout' and step 6's 'dynamic rendering in Next' are those tails, so the authz and CSP keywords for 07 use them alongside 07's index row. The CSP keyword 'dynamic rendering in Next' is the tail of the sentence 'wire CSP (nonce or hash) knowing it forces dynamic rendering in Next', and 07 section 5 does carry the CSP rule; the word 'CSP' itself is on the line above, outside the prose. The 'CVE tables' tail of step 1 also lands in 01's prose; no CVE tag is declared on 01, which holds the support/EOL matrix, not the CVE ranges. No routing gap found.",
+ "skill": "sota-web-frameworks",
+ "tags": {
+  "stack-setup": ["version floor", "support+EOL matrix", "project setup"],
+  "render-mode": ["render mode", "CSR/SSR/SSG/ISR/PPR", "hybrid rendering", "Cache Components/PPR/ISR"],
+  "react": ["writing React components", "hooks rules"],
+  "react-actions": ["useActionState"],
+  "vue": ["writing Vue", "Composition API"],
+  "next": ["Next.js App Router", "Server vs Client Components"],
+  "nuxt": ["Nuxt 4"],
+  "server-endpoint": ["Server Actions", "Nitro server routes", "authorization placement", "never only in middleware or a layout", "never imported"],
+  "data-fetching": ["data fetching", "the caching model"],
+  "cve": ["Next CVEs", "Nuxt/Nitro/h3/IPX CVEs", "framework CVE reference"],
+  "hydration": ["hydration mismatches", "determinism"],
+  "shared-ssr-state": ["cross-request state pollution", "per-request instances", "`useState`"],
+  "ssr-serialization": ["state-serialization XSS"],
+  "personalized-cache": ["caching personalized pages"],
+  "csp": ["CSP with streaming SSR", "dynamic rendering in Next"],
+  "secrets-boundary": ["secret boundary", "runtimeConfig"],
+  "ssrf": ["SSRF surfaces"],
+  "html-sinks": ["dangerouslySetInnerHTML", "v-html"]
+ },
+ "files": {
+  "01": {"build": ["stack-setup", "render-mode"]},
+  "02": {"build": ["react", "react-actions", "html-sinks"]},
+  "03": {"build": ["next", "server-endpoint", "data-fetching", "render-mode", "cve"]},
+  "04": {"build": ["vue", "html-sinks"]},
+  "05": {"build": ["nuxt", "server-endpoint", "data-fetching", "render-mode", "shared-ssr-state", "secrets-boundary", "cve"]},
+  "06": {"build": ["hydration", "shared-ssr-state", "ssr-serialization", "personalized-cache", "csp"]},
+  "07": {"build": ["server-endpoint", "secrets-boundary", "ssrf", "csp", "cve"]}
+ },
+ "via": [],
+ "cases": [
+  {"task": "add a Server Action with a form (useActionState) that updates the signed-in user's profile in a Next.js App Router app", "mode": "build",
+   "tags": ["next", "server-endpoint", "react", "react-actions"], "must_load": ["02", "03", "07"]},
+  {"task": "build a Nuxt server route that fetches an image from a user-supplied URL", "mode": "build",
+   "tags": ["nuxt", "server-endpoint", "ssrf"], "must_load": ["05", "07"]},
+  {"task": "fix a hydration mismatch caused by rendering the current time in a server-rendered component", "mode": "build",
+   "tags": ["hydration"], "must_load": ["06"]},
+  {"task": "move an API key into Nuxt runtimeConfig while exposing a public API base URL to the client", "mode": "build",
+   "tags": ["nuxt", "secrets-boundary"], "must_load": ["05", "07"]},
+  {"task": "start a new Next.js app: pick the version and render mode per route and wire a nonce-based CSP", "mode": "build",
+   "tags": ["stack-setup", "render-mode", "next", "csp"], "must_load": ["01", "03", "06", "07"]},
+  {"task": "render user-supplied rich text in a Vue component", "mode": "build",
+   "tags": ["vue", "html-sinks"], "must_load": ["04"]},
+  {"task": "audit a Next.js or Nuxt application", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+ ]
+}

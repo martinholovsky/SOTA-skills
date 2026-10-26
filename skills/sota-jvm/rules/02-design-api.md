@@ -110,7 +110,7 @@ such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the cla
 - [ ] **Bare close()/no try-with-resources — MEDIUM** (§5) —
       `grep -rnE '\.close\(\)' --include='*.java' --include='*.kt' .` (verify
       try-with-resources/use); `grep -rn 'finally' --include='*.java' --include='*.kt' . | grep -i close`
-- [ ] **Mutable static state — MEDIUM** —
+- [ ] **Mutable static state — MEDIUM** (§6) —
       `grep -rnE '^[[:space:]]*((public|private|protected)[[:space:]]+)?static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[a-z][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' . | grep -vwE 'final|class|interface|enum|record'`
       (a `(?!final)` lookahead stood here until 2026-09-24: POSIX ERE has none, and it
       exited 2 under BSD grep and ugrep)

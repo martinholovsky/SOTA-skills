@@ -80,9 +80,10 @@ const getUser = (id) => pool.query("SELECT ...", [id]).then(r => r.rows[0]);
   `keepAlive: true` pre-v19 defaults; Python `requests.Session` vs bare
   `requests.get`).
 - **Bound pools and measure wait time.** Pool too small = invisible queueing
-  (saturation); too large = overload the upstream. DB pools: start ~2–4× CPU
-  cores of the DB-bound work, verify with pool-wait metrics. Total across all
-  instances must fit DB max_connections (use a server-side pooler like
+  (saturation); too large = overload the upstream. DB pools: the total across
+  all instances starts near `cores × 2 + effective spindles` of the DB server
+  ([`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5),
+  is verified with pool-wait metrics, and must fit DB max_connections (use a server-side pooler like
   PgBouncer beyond that).
 - Set idle timeouts below any NAT/LB idle cutoff (~350 s on some clouds) and
   enable TCP keepalive, or you'll pay for silently dead connections (first
@@ -229,7 +230,8 @@ blocks **every** in-flight request.
 - CPU-heavy work (hashing, compression, image resize, big serialization) →
   worker threads / process pool / dedicated service.
 - Measure event-loop lag (Node `monitorEventLoopDelay`, asyncio debug slow
-  callbacks); p99 loop delay > ~20 ms = something is blocking.
+  callbacks); p99 loop delay > 100 ms = something is blocking (threshold and basis:
+  [`sota-async-concurrency` rules/04](../../sota-async-concurrency/rules/04-event-loop-hygiene.md) §7).
 - Sync I/O in threaded runtimes is fine **if** the thread pool is sized for
   the blocking (and bounded); mixing blocking calls into a small shared pool
   (e.g. seda-style executors) causes whole-service stalls.

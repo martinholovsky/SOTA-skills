@@ -128,7 +128,7 @@ OWASP: Transport Layer Security cheat sheet, Zero Trust Architecture cheat sheet
     restrictions are effective without that indication. They also do nothing about *other* CAs
     (RFC 8657 Section 5.1), so keep the `issue` list itself tight. Labels come from the IANA ACME validation-method
     registry (`dns-01`, `http-01`, …) or the BRs' `ca-tbr-<n>` form.
-- Registrar in a corporate account with MFA + transfer/registry lock for crown-jewel domains.
+- Registrar in a corporate account with MFA, transfer lock on every domain, registry lock for crown-jewel domains ([cloud-infra rules/03](../../sota-cloud-infrastructure/rules/03-networking.md) §6).
 - **Dangling records** (pointing at deprovisioned resources) = subdomain-takeover vector;
   lifecycle-couple DNS to resources in IaC and scan zones for danglers. Not only CNAME/A:
   - **NS** delegating a subdomain to a provider zone that was deleted — whoever re-creates that
@@ -283,8 +283,8 @@ consent) is [sota-copywriting rules/04](../../sota-copywriting/rules/04-claims-l
 - **ARC** (RFC 8617) preserves authentication results across legitimate forwarders/mailing lists
   that would otherwise break SPF/DKIM — enable it if you forward mail.
 
-**R14 — Bulk-sender rules are now table stakes.** Since Feb 2024, Gmail and Yahoo require senders of
-**5,000+ messages/day** to their users to authenticate with SPF *and* DKIM, publish DMARC (at least
+**R14 — Bulk-sender rules are now table stakes.** Since Feb 2024, Gmail (senders of **5,000+ messages/day**
+to Gmail accounts) and Yahoo (its "bulk senders"; Yahoo publishes no volume number) require them to authenticate with SPF *and* DKIM, publish DMARC (at least
 `p=none`), keep the From domain aligned, offer **one-click unsubscribe** (List-Unsubscribe with
 RFC 8058) on bulk mail, and hold the spam-complaint rate **below 0.3%** (aim <0.1%); Microsoft added
 equivalent requirements (enforcement from 2025). Treat these as the minimum for any transactional or
@@ -352,5 +352,5 @@ reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, no
 - [ ] Parked/non-sending domains and subdomains publish `v=spf1 -all` + `p=reject` so they can't be
       spoofed? Inbound transport hardened (MTA-STS enforce + TLS-RPT, or DANE on DNSSEC zones)?
       ARC enabled where you forward mail (§5)?
-- [ ] Bulk senders (5,000+/day to Gmail/Yahoo): SPF+DKIM+aligned DMARC, RFC 8058 one-click
+- [ ] Bulk senders (Gmail: 5,000+/day; Yahoo: no published number): SPF+DKIM+aligned DMARC, RFC 8058 one-click
       unsubscribe, spam rate <0.3% (§5)?

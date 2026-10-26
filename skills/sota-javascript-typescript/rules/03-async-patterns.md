@@ -239,18 +239,18 @@ return promise;
 
 - [ ] `@typescript-eslint/no-floating-promises` + `no-misused-promises` enabled and passing — if not, HIGH; floating promises are silent data loss. Also `@typescript-eslint/return-await` (`in-try-catch`): a bare `return fn()` inside `try` skips the `catch` (MEDIUM) (§2).
 - [ ] `grep -rn "Promise.all(" src/` — for each: are the ops independent? Should be `allSettled`? Is parallelism unbounded over user-controlled set sizes (HIGH — self-DoS)? Where the losers keep doing work after a rejection, is a shared `AbortSignal` aborted (§1)?
-- [ ] `grep -rn "await" src/ | grep -n "for (\|for(" -B0` → review loops: `grep -rn -A3 "for (const .* of" src/ | grep "await"` — sequential awaits that should be parallel (MEDIUM perf).
+- [ ] `grep -rn "await" src/ | grep -n "for (\|for(" -B0` → review loops: `grep -rn -A3 "for (const .* of" src/ | grep "await"` — sequential awaits that should be parallel (§1) (MEDIUM perf).
 - [ ] `grep -rn "fetch(" src/ | grep -v "signal"` — fetches without abort/timeout (MEDIUM; HIGH server-side where a hung upstream pins resources). Exported long-running async functions doing network, FS or timers with no `signal` option are unkillable (MEDIUM) (§3).
-- [ ] `grep -rn "addEventListener" src/` — paired removal or `{ signal }`? Unremoved listeners on long-lived targets = memory leak (MEDIUM).
-- [ ] `grep -rn "new Promise(async" src/` — lost rejections (HIGH).
+- [ ] `grep -rn "addEventListener" src/` — paired removal or `{ signal }`? (§3) Unremoved listeners on long-lived targets = memory leak (MEDIUM).
+- [ ] `grep -rn "new Promise(async" src/` — lost rejections (§2) (HIGH).
 - [ ] **Resources released on every exit path** (§10): `grep -rnE '(const|let|var)[[:space:]]+[A-Za-z_$][A-Za-z0-9_$]*[[:space:]]*=[[:space:]]*await[[:space:]]+[A-Za-z_$.]*(\.open|openCursor|\.connect|\.acquire|getConnection)\(' src/`
       — each hit binds a file handle, cursor, pooled client or lock to a plain variable; confirm a
       `finally` releases it (`close()`/`release()`), or that it is `await using`. A release on
       the happy path only leaks on the first throw (MEDIUM; a pooled client never released is
       lost to the pool, so repeated throws drain it). `await using` needs runtime or compiler support: Node 22.22.1 rejected
       it with a SyntaxError. A browser `unhandledrejection` handler that calls `preventDefault()` without reporting `e.reason` hides failures (LOW).
-- [ ] `grep -rn "setInterval\|setTimeout" src/` — cleared on teardown? Async callbacks with try/catch?
-- [ ] `grep -rn "forEach(async\|map(async" src/` — `map(async` without surrounding `Promise.all` = floating (HIGH); `forEach(async` always wrong.
+- [ ] `grep -rn "setInterval\|setTimeout" src/` — cleared on teardown? Async callbacks with try/catch? (§2)
+- [ ] `grep -rn "forEach(async\|map(async" src/` — `map(async` without surrounding `Promise.all` = floating (HIGH) (§2); `forEach(async` always wrong.
 - [ ] `grep -rn "process.nextTick" src/` — app-code use is a smell (LOW). Read the same modules for Zalgo APIs (sometimes sync, sometimes a Promise: declare them `async`) and for long loops that yield only with `await Promise.resolve()`, which never lets timers, I/O or rendering run (MEDIUM) (§4).
 - [ ] `grep -rn "\.pipe(" src/` — Node pipes without `pipeline()` error handling (MEDIUM). Whole bodies or files buffered (`await res.json()`/`.text()`, `readFile`) where the input is unbounded and the output is a stream risk OOM (MEDIUM) (§7).
 - [ ] Check-then-act across `await` on shared resources (manual review around `await` + `if` patterns) — TOCTOU (HIGH where it guards uniqueness/money). Also stale-response races (an older request's result overwriting a newer one, with no abort of the previous request) and caches that memoize the value instead of the in-flight promise (stampede) (MEDIUM) (§9).

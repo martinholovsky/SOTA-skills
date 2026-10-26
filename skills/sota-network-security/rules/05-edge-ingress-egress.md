@@ -204,7 +204,8 @@ authenticated proxy.
 
 ## 5. DDoS posture
 
-**R8 — Absorb at the edge, rate-limit per-identity, cap autoscaling.** A scrubbing edge (e.g.
+**R8 — Absorb at the edge, rate-limit per-identity, cap autoscaling.** Every internet-facing app sits
+behind one; an exposed origin with none is a finding. A scrubbing edge (e.g.
 Cloudflare, a cloud provider's DDoS tier, or an Anycast scrubbing provider) absorbs L3/4 and much
 L7; add WAF rate-limiting rules and per-route/per-identity limits (design owned by
 [sota-api-design rules/07](../../sota-api-design/rules/07-security-operations.md)). Cap autoscaling so a flood can't scale your bill or cluster infinitely

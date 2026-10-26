@@ -210,25 +210,26 @@ rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-e
   risk management, data governance, technical documentation, logging,
   transparency, human oversight, and accuracy/robustness/cybersecurity. Determine
   your system's tier early — it shapes the whole lifecycle. Verify current
-  obligations and timelines against the official text (they phase in over time).
+  obligations and timelines against the official text (they phase in over time;
+  the dated timeline is [privacy rules/04](../../sota-privacy-compliance/rules/04-regulatory-landscape.md) §5).
 - Sector rules may also apply (credit, health, insurance). Cross-ref
   [`sota-privacy-compliance`](../../sota-privacy-compliance/SKILL.md).
 
 ## Audit checklist
 
-- [ ] **Unsafe model deserialization — CRITICAL** —
+- [ ] **Unsafe model deserialization — CRITICAL** (§2) —
       `grep -rnE '\b(pickle\.loads?|joblib\.load|cloudpickle|dill\.loads?|torch\.load|read_pickle)\b|allow_pickle\s*=\s*True|safe_mode\s*=\s*False' --include='*.py' .` ;
       `grep -rnE 'weights_only\s*=\s*False' --include='*.py' .` (arbitrary code execution on
       load);
       `grep -rnE 'torch\s*((==|~=|<=)\s*(0\.|1\.|2\.[0-5]\b)|<\s*(0\.|1\.|2\.[0-6]\b))' --include='requirements*.txt' --include=pyproject.toml .`
       (<2.6: CVE-2025-32434 weights_only bypass);
       `grep -rniE 'safetensors|onnx' --include='*.py' . || echo "consider safetensors/ONNX over pickle"`
-- [ ] **Model/data provenance & integrity — HIGH** —
+- [ ] **Model/data provenance & integrity — HIGH** (§2) —
       `out=$(grep -rniE 'hash|sha256|sign|verify|provenance|checksum' . | grep -iE 'model|dataset|weight'); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; *) echo "no model/dataset integrity verification (rc=$rc; if the first grep failed, rerun it alone)" ;; esac`
-- [ ] **Training-data write access / poisoning surface — HIGH (manual) Who can write to training
+- [ ] **Training-data write access / poisoning surface (§1) — HIGH (manual) Who can write to training
       data sources? Is training data validated ([rules/02](02-data-and-features.md))?**
-- [ ] **Extraction/inference exposure — MEDIUM** —
+- [ ] **Extraction/inference exposure — MEDIUM** (§1) —
       `grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head`
       (raw scores exposed? rate-limited?)
 - [ ] **Governance docs (§4) — MEDIUM/LOW** —

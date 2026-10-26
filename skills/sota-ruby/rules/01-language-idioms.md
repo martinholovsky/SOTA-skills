@@ -307,12 +307,12 @@ failed to hide, not what you exported:
 - [ ] **Encoding tagged but never validated (§9) — MEDIUM, HIGH when the text is stored or
       signed** — `grep -rnE 'force_encoding\(' --include='*.rb' .` ; `grep -rnE 'valid_encoding\?|\.scrub|invalid: *:replace' --include='*.rb' .`
       (a `force_encoding` with no validation in the same flow is the finding)
-- [ ] ** `private` does NOT apply to `def self.` -- measured on 4.0.6, the class method stayed
+- [ ] ** `private` does NOT apply to `def self.` (§8) -- measured on 4.0.6, the class method stayed
       callable while the instance method raised NoMethodError. A private that applies to nothing
       looks identical to one that works.** —
       `grep -rn -B3 'def self\.' lib/ | grep -A3 '^\s*private\s*$'` ;
       `grep -rn 'private_class_method\|class << self' lib/` (the forms that actually work)
-- [ ] ** `private` does NOT apply to constants either: a bare CONST is reachable as Mod::CONST A
+- [ ] ** `private` does NOT apply to constants either (§8): a bare CONST is reachable as Mod::CONST A
       LOCATOR, NOT A VERDICT: `grep -v` is line-scoped, so a constant privatised on the NEXT
       line still appears here (verified against a fixture that does exactly that). Compare the
       two counts below instead of trusting the filtered list.** —
@@ -346,7 +346,7 @@ failed to hide, not what you exported:
 **In-band sentinels** (§5a) — Ruby's search API returns `nil`, so these arrive from
 conversion and from hand-rolled returns:
 
-- [ ] `grep -rnE '\.to_i\b|\.to_f\b' --include='*.rb' app/ lib/` (0 on garbage, 12 on "12abc" —
+- [ ] `grep -rnE '\.to_i\b|\.to_f\b' --include='*.rb' app/ lib/` (§5a) (0 on garbage, 12 on "12abc" —
       use Integer(s)); `grep -rnE 'return (-1|0)$' --include='*.rb' app/ lib/` (prefer nil,
       which is falsy and pattern-matchable)
 
@@ -361,16 +361,16 @@ conversion and from hand-rolled returns:
       `grep -rL "frozen_string_literal: true" --include='*.rb' app/ lib/ 2>/dev/null | head` ;
       `grep -rnE '\+=[[:space:]]*["'"'"']' --include='*.rb' .` (a string literal appended with `+=`:
       in a loop each pass allocates a new string; build into a `+""` buffer with `<<`)
-- [ ] **rescue Exception — MEDIUM (HIGH if it wraps a main loop)** —
+- [ ] **rescue Exception — MEDIUM (HIGH if it wraps a main loop)** (§5) —
       `grep -rn "rescue Exception" --include='*.rb' .`
-- [ ] **Silenced errors — MEDIUM+** — `grep -rn "rescue nil" --include='*.rb' .` ;
+- [ ] **Silenced errors — MEDIUM+** (§5) — `grep -rn "rescue nil" --include='*.rb' .` ;
       `grep -rnE "rescue(\s+StandardError)?\s*(=>\s*_?e?)?\s*$" --include='*.rb' . | head`
 - [ ] **Parse or recursion with no depth limit (§5) — HIGH where request data
       reaches it** — `grep -rnE 'JSON\.(parse!|unsafe_load)|max_nesting:[[:space:]]*(false|nil|0)([^0-9]|$)' --include='*.rb' .`
       (each hit parses to `SystemStackError`, which `rescue => e` misses) ;
       `grep -nE '^    json \(' Gemfile.lock` (below 2.8.0, every `JSON.load` is unlimited too;
       no hit = the default gem of the running Ruby: `ruby -rjson -e 'puts JSON::VERSION'`)
-- [ ] **raise losing the original class/cause** —
+- [ ] **raise losing the original class/cause** (§5) —
       `grep -rnE "raise\s+e\.message" --include='*.rb' .`
 - [ ] **OpenStruct in new code (§4) — LOW** — `grep -rn "OpenStruct" --include='*.rb' .`
 - [ ] **Struct built positionally (silent-nil / member-order hazard) (§4) — INFO/LOW** —
@@ -381,11 +381,11 @@ conversion and from hand-rolled returns:
       `grep -rnE "in \{[^}]*: [a-z_]+ *\}" --include='*.rb' . | head`
       (while reading each `case/in`, also confirm it has an `else` or is meant to raise
       `NoMatchingPatternError`, and that no pattern nests three or more levels deep)
-- [ ] **Monkey patches on core classes — MEDIUM in app code** —
+- [ ] **Monkey patches on core classes — MEDIUM in app code** (§7) —
       `grep -rnE "^\s*class (String|Array|Hash|Integer|Symbol|Object)\b" --include='*.rb' app/ lib/ 2>/dev/null`
-- [ ] **method_missing without respond_to_missing?** —
+- [ ] **method_missing without respond_to_missing?** (§7) —
       `grep -rln "def method_missing" --include='*.rb' . | xargs grep -L "respond_to_missing?" 2>/dev/null`
-- [ ] **Wall-clock durations — LOW** —
+- [ ] **Wall-clock durations — LOW** (§7) —
       `grep -rnE "Time\.now.*-.*Time\.now|=\s*Time\.now\b.*# .*(elapsed|duration)" --include='*.rb' . | head`
 - [ ] **Typing posture (§6) — INFO** —
       `ls sig/ sorbet/ 2>/dev/null; grep -rn "# typed:" --include='*.rb' . | head -3`

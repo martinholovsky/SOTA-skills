@@ -185,49 +185,49 @@ protocols, and paths ([`rules/07`](07-security.md)).
 
 ## Audit checklist
 
-- [ ] **Exact version — compare to the CVE table** —
+- [ ] **Exact version — compare to the CVE table** (§5) —
       `node -e "console.log(require('./node_modules/next/package.json').version)"` ;
       `grep -E '"(react|react-dom|react-server-dom-webpack|next)"' package.json`
-- [ ] **Server Actions / Route Handlers — each must authn+authz+validate** —
-      `grep -rn "'use server'" --include='*.ts' --include='*.tsx' app lib` ;
-      `grep -rlnE 'export async function (GET|POST|PUT|DELETE|PATCH)' app` (-E: without it the
+- [ ] **Server Actions / Route Handlers — each must authn+authz+validate** (§2) —
+      `grep -rn "'use server'" --include='*.ts' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next .` ;
+      `grep -rlnE 'export async function (GET|POST|PUT|DELETE|PATCH)' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next .` (-E: without it the
       parens are LITERAL in BRE and this silently finds 0)
-- [ ] **Authz only in middleware/layout? (finding)** —
-      `find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'middleware.*' -o -name 'proxy.*' \) -type f -print; grep -rnE 'getServerSession|auth\(\)|requireUser' app | head`
-- [ ] **Server->client data exposure: whole objects as props, env on client** —
-      `grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' app components | grep -v 'NEXT_PUBLIC_'`
+- [ ] **Authz only in middleware/layout? (finding)** (§3) —
+      `find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'middleware.*' -o -name 'proxy.*' \) -type f -print; grep -rnE 'getServerSession|auth\(\)|requireUser' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next . | head`
+- [ ] **Server->client data exposure: whole objects as props, env on client** (§1) —
+      `grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next . | grep -v 'NEXT_PUBLIC_'`
       (no negative lookahead: POSIX ERE has none, so `(?!...)` is a syntax error or a literal —
       list the env reads, then exclude the public prefix with a second pass). **NB this is a
       CANDIDATE list, not an absence proof**: it greps text, not the Client Component module
       graph; a server module imported by a client one is invisible to it —
-      `grep -rn "import 'server-only'\|import \"server-only\"" app lib` (want: present in data
+      `grep -rn "import 'server-only'\|import \"server-only\"" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next .` (want: present in data
       layer)
-- [ ] **next/image SSRF precondition** —
+- [ ] **next/image SSRF precondition** (§5) —
       `find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "hostname:[[:space:]]*['\"][*]{1,2}['\"]|domains:" {} +`
       (matches a multi-line `remotePatterns` entry; a subdomain wildcard such as `'*.example.com'` is read by eye)
-- [ ] **Caching of personalized routes** —
-      `grep -rnE "use cache|cacheComponents|force-cache|revalidate|Cache-Control" app; find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "use cache|cacheComponents|force-cache|revalidate|Cache-Control" {} +`
-- [ ] **Credential used as a `use cache` key (HIGH)** — list files with the directive, then
+- [ ] **Caching of personalized routes** (§4) —
+      `grep -rnE "use cache|cacheComponents|force-cache|revalidate|Cache-Control" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next .; find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "use cache|cacheComponents|force-cache|revalidate|Cache-Control" {} +`
+- [ ] **Credential used as a `use cache` key (HIGH)** (§4) — list files with the directive, then
       cached-function signatures that take a credential:
-      `grep -rlE "[\"']use cache" app lib src | xargs grep -HniE 'async[^(]*\([^)]*(token|session|cookie|authorization|bearer|jwt)'`
+      `grep -rlE "[\"']use cache" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next . | xargs grep -HniE 'async[^(]*\([^)]*(token|session|cookie|authorization|bearer|jwt)'`
       (single-line signatures only; a hit is a candidate — confirm the argument is the raw
       credential, not an id derived from it)
-- [ ] **Draft Mode enable handler: plain `!=` secret check or redirect to a request value
+- [ ] **Draft Mode enable handler: plain `!=` secret check or redirect to a request value (§3)
       (MEDIUM; HIGH if the secret check is missing)** — find it with
-      `grep -rln 'draftMode' app src`, then
+      `grep -rln 'draftMode' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next .`, then
       `grep -rnE "secret[[:space:]]*!=|!=[=]?[[:space:]]*secret|redirect\((slug|path|target|url|searchParams|request|req)[.)!]|redirect\(new URL\((slug|path|target|url|searchParams)" --include='*.ts' --include='*.js' --exclude-dir=node_modules .`
       (want: constant-time compare, an unknown slug refused, `redirect(record.slug)`)
-- [ ] **Cache invalidation from a request value (MEDIUM)** — calls whose first argument
+- [ ] **Cache invalidation from a request value (MEDIUM)** (§4) — calls whose first argument
       is not a literal:
       `` grep -rnE "(revalidateTag|revalidatePath|updateTag)\([^'\"\`)]" --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules . ``
       — a hit is a candidate; confirm the value comes from an allowlist and the caller is
       authenticated (a webhook: signature-verified) and rate-limited
-- [ ] **Wildcard `allowedOrigins` (HIGH over a shared suffix)** —
+- [ ] **Wildcard `allowedOrigins` (HIGH over a shared suffix)** (§2) —
       `find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "allowedOrigins.*['\"][*]" {} +` (single-line arrays; read a
       multi-line one by eye) — each `*`/`**` entry must be a zone only you can create hosts in
-- [ ] **Route Handlers that only feed your own Server Components (LOW, surface)** — server
+- [ ] **Route Handlers that only feed your own Server Components (LOW, surface)** (§3) — server
       files fetching the app's own `/api/`:
-      `grep -rLE "^.use client" --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' app src 2>/dev/null | xargs grep -HnE 'fetch\(.(https?://(localhost|127\.0\.0\.1)[^/]*|\$\{[^}]*\})/api/'`
+      `grep -rLE "^.use client" --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.next . | xargs grep -HnE 'fetch\(.(https?://(localhost|127\.0\.0\.1)[^/]*|\$\{[^}]*\})/api/'`
       — if no browser or third party calls that handler, replace it with a DAL call
 
 - [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182 (Next: GHSA-9qr9-h5gf-34mp), CVE-2025-29927 and the 2026-09-08 RCEs (Next ≥ 15.5.24 / ≥ 16.3.3) (§5)?

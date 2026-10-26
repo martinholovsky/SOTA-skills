@@ -1,0 +1,45 @@
+{
+ "_note": "Declared BUILD routing for sota-security-compliance (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Keywords are phrases from each file's own rules-index row or the BUILD lines that link it. BUILD step 6 writes its range as '[rules/02]–05', which C4 reads as a reference to 02 only (03, 04 and 05 are reached through other BUILD lines), so nothing here leans on that range. No routing gap found: every case's needed file is reachable through a phrase that means the task.",
+ "skill": "sota-security-compliance",
+ "tags": {
+  "crosswalk": ["crosswalk", "NIST CSF 2.0"],
+  "controls-as-gates": ["policy-as-code", "CI checks that fail the build"],
+  "evidence": ["control → mechanism → evidence", "evidence queries"],
+  "cui": ["CUI enclave", "Handling CUI"],
+  "fips": ["FIPS-validated crypto"],
+  "fedramp": ["FedRAMP", "800-53 baseline"],
+  "boundary": ["authorization boundary", "zones & conduits", "drags the whole estate into scope"],
+  "ssdf": ["SSDF", "secure SDLC"],
+  "supplier": ["supplier and outsourced-development contracts"],
+  "ai-dev": ["800-218A"],
+  "cra": ["EU market", "CRA timeline"],
+  "sbom": ["SBOM"],
+  "cvd": ["CVD policy", "triaging an inbound report", "publishing your own advisory"],
+  "signed-update": ["signed update channel"],
+  "ot": ["OT/ICS", "Security Levels"],
+  "embedded": ["embedded device", "secure boot"]
+ },
+ "files": {
+  "01": {"build": ["crosswalk", "controls-as-gates", "evidence"]},
+  "02": {"build": ["cui", "fips", "fedramp", "boundary"]},
+  "03": {"build": ["ssdf", "supplier", "ai-dev", "controls-as-gates"]},
+  "04": {"build": ["cra", "sbom", "cvd", "signed-update"]},
+  "05": {"build": ["ot", "embedded", "boundary"]}
+ },
+ "cases": [
+  {"task": "stand up a CUI enclave for a defense subcontract and map its controls to mechanisms", "mode": "build",
+   "tags": ["boundary", "cui", "fips", "crosswalk", "evidence"], "must_load": ["02", "01"]},
+  {"task": "ship a connected device on the EU market with an SBOM, a CVD intake and signed updates", "mode": "build",
+   "tags": ["cra", "sbom", "cvd", "signed-update", "embedded"], "must_load": ["04", "05"]},
+  {"task": "map our CI pipeline to SSDF practices as failing gates and prepare the federal self-attestation", "mode": "build",
+   "tags": ["ssdf", "controls-as-gates"], "must_load": ["03", "01"]},
+  {"task": "segment a plant-floor network into 62443 zones and conduits at a target security level", "mode": "build",
+   "tags": ["ot", "boundary"], "must_load": ["05"]},
+  {"task": "move a SaaS to FedRAMP Moderate with FIPS-validated crypto", "mode": "build",
+   "tags": ["fedramp", "fips", "boundary", "crosswalk"], "must_load": ["02", "01"]},
+  {"task": "publish a CVE advisory for a vulnerability in our own product", "mode": "build",
+   "tags": ["cvd"], "must_load": ["04"]},
+  {"task": "audit a product's readiness for the Cyber Resilience Act and NIST 800-53", "mode": "audit",
+   "tags": [], "must_load": ["01", "02", "03", "04", "05"]}
+ ]
+}

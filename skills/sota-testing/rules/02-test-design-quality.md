@@ -380,16 +380,16 @@ More precise *and* more sensitive, not a trade.
       negative (§2.10).
 - [ ] Any test whose **name quantifies universally** (`every`, `all`, `no_`) looping a
       one- or two-element literal → High (§2.7): it passes, so it reads as enforcement.
-- [ ] Assertion-free tests? Mechanical sweep: list test functions lacking any
+- [ ] Assertion-free tests (§2.7)? Mechanical sweep: list test functions lacking any
       assert/expect/require/verify token → Critical each.
-- [ ] Can flagship tests fail? Invert one assertion or `return` early in the
+- [ ] Can flagship tests fail (§2.7)? Invert one assertion or `return` early in the
       SUT for 2–3 core tests; still green → Critical (the liar).
-- [ ] Async tests missing await on the asserted action?
+- [ ] Async tests missing await on the asserted action (§2.7)?
       Grep: `it\(.*async` bodies with un-awaited promises; Python `async def test` without awaited call → Critical.
 - [ ] Refactor-brittleness: do tests spy on internal/private methods?
       Grep: `spyOn\(.*(as any)|verify\(.*internal|assert_called.*_private|reflect` in tests → High.
       Also assertions on private fields or call counts of internal helpers → High (§2.1).
-- [ ] Real time in tests/SUT under test? Grep:
+- [ ] Real time in tests/SUT under test (§2.6)? Grep:
       `datetime\.now|time\.Now\(\)|Date\.now|new Date\(\)|System\.currentTimeMillis|Instant\.now` in test paths and in modules with boundary-condition tests → High.
 - [ ] **Unit suite run with egress blocked** — any new failure is a test that
       was passing because a real call succeeded → High each; then re-read those
@@ -399,7 +399,7 @@ More precise *and* more sensitive, not a trade.
       mounts without creating them or skipping with a host-derived reason → High each.
       Lead list (lang-adjust the test path):
       `grep -rnE '(^|[^A-Za-z0-9_.~-])/(etc|var|mnt|opt|home|Users|srv)/|[A-Za-z]:\\' tests/`
-- [ ] Sleeps as sync? Grep: `time\.sleep|time\.Sleep|Thread\.sleep|setTimeout|waitForTimeout|page\.wait_for_timeout` in tests → High each.
+- [ ] Sleeps as sync (§2.7)? Grep: `time\.sleep|time\.Sleep|Thread\.sleep|setTimeout|waitForTimeout|page\.wait_for_timeout` in tests → High each.
 - [ ] Order/parallel safety: does CI run the suite shuffled and parallel?
       Run shuffled once during audit, plus a sampled test alone and the suite twice in
       a row; any new failure → High (§2.5).
@@ -407,7 +407,7 @@ More precise *and* more sensitive, not a trade.
       `os\.environ\[|process\.env\.[A-Z_]+ *=|static .* =|var [A-Z]` (lang-adjust) without scoped teardown → High.
       A `clearAll()`/`resetDatabase()` at the top of other tests is the mop for a leaker:
       find the leaker (§2.5).
-- [ ] Conditional logic in tests? Grep: `^\s+(if|for|while|try)\b` inside test
+- [ ] Conditional logic in tests (§2.7)? Grep: `^\s+(if|for|while|try)\b` inside test
       bodies (exclude table-test loops over cases) → Medium.
 - [ ] One behavior per test? A name that needs "and" is usually two tests. Lead list:
       `grep -rnE "(def test_|fn test_)[A-Za-z0-9_]*_and_|func Test[A-Za-z0-9_]*And[A-Z_]|(^|[^A-Za-z0-9_.])(it|test)\([\"'][^\"']* and " --exclude-dir=.git --exclude-dir=node_modules .`
@@ -424,4 +424,4 @@ More precise *and* more sensitive, not a trade.
 - [ ] Test structure: sample 5 tests. Understanding one needs more than one level of
       builder/helper indirection, a magic value has no comment saying what it is, or a
       regression test does not name the bug it pins → Low (§2.9).
-- [ ] Hidden retries: grep `@pytest.mark.flaky|retries:|jest.retryTimes|@Retry|FlakyTest` → High unless tied to a tracked quarantine ([`rules/07`](07-suite-health-and-ci.md)).
+- [ ] Hidden retries (§2.7): grep `@pytest.mark.flaky|retries:|jest.retryTimes|@Retry|FlakyTest` → High unless tied to a tracked quarantine ([`rules/07`](07-suite-health-and-ci.md)).

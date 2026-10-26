@@ -237,6 +237,8 @@ At 1000× volume / 100MB payload: ...
 Threat model updated? <link/version or "no triggers">
 ```
 
+The boxes are a subset of the canonical trigger list in §4 (*Keeping the model living*); add boxes
+for the rest (new actor class, incident or pentest finding, expired acceptance) where a PR can hit them.
 A filled template takes 3 minutes for "none" and ~10 when triggers fire; it
 gives reviewers a fixed place to look and auditors (`06`) a drift signal.
 Reject "N/A" without the checkbox rationale — the box list IS the rationale.
@@ -297,30 +299,30 @@ never. Generate views from the threat table instead.
 - [ ] The threat table has L/I/rating/disposition/requirement-ID columns
       filled for every row; no prose-only threats; a row closed as
       "already handled" names the file or control that handles it (§6).
-- [ ] Assumptions are explicit, numbered, and individually testable; spot-
+- [ ] Assumptions are explicit, numbered, and individually testable (§1); spot-
       check 2–3 against reality (network reachability, contract terms).
 - [ ] Security requirements live in the team's actual backlog with threat-ID
       links and rating-derived priority — not a side spreadsheet; a security
       story closes only when its abuse-case test passes and its structural
       guard is in CI (§2).
-- [ ] Every mitigated High+ threat has an automated abuse-case test citing
+- [ ] Every mitigated High+ threat has an automated abuse-case test (§3) citing
       its threat ID; tests assert observable effects and run in CI.
-- [ ] Baseline requirements cite a verification catalog. Probe:
+- [ ] Baseline requirements cite a verification catalog (§2). Probe:
       `grep -rn -E "ASVS[ -]?(5\.0[ -])?V?[0-9]+\.[0-9]+\.[0-9]+|MASVS-[A-Z]+-[0-9]+" docs/`;
       zero hits in a model's requirements section → Low (Medium for a
       High-tier system, `04` §8).
-- [ ] Business access rules and per-user/global limits are documented as
+- [ ] Business access rules and per-user/global limits (§2) are documented as
       requirements, and limit tests exist. Probe:
       `grep -rn -i -E "(def |it\(|test\(|func Test)[^(]*(limit|quota|exceed|too_?many|max_)" .`;
       zero hits where limits are documented → Medium.
-- [ ] Pentest scope and report reference the model's assets and abuse cases,
+- [ ] Pentest scope and report reference the model's assets and abuse cases (§3),
       with a verdict per mitigated abuse case; a pentest with no link to the
       model → Low (process).
-- [ ] Machine-readable register present where the model is large enough to
+- [ ] Machine-readable register present (§4) where the model is large enough to
       drift. Find it with `git ls-files | grep -i -E '(threat[-_]?model|threagile)[^/]*\.(ya?ml|json|py)$|(^|/)tm\.py$'`;
       for a High-tier system with prose only and no CI link between threat IDs
       and tests → Low.
-- [ ] Posture controls (headers, IaC, IAM) covered by policy-as-code checks,
+- [ ] Posture controls (headers, IaC, IAM) covered by policy-as-code checks (§3),
       not manual review notes.
 - [ ] Re-model trigger list documented for this system, no shorter than the
       canonical table, with at least two enforcement mechanics (§4); PR
@@ -339,7 +341,7 @@ never. Generate views from the threat table instead.
       threats found (§7).
 - [ ] Risk register ≤ 1 page, current owners, no expired review dates; views
       generated from the threat table, never one 40-page monolith (§8).
-- [ ] Model confidentiality matches its location: find in-tree models with
+- [ ] Model confidentiality matches its location (§1): find in-tree models with
       `git ls-files | grep -i -E "threat[-_ ]?model|risk[-_ ]?register"` and the
       repo's visibility (`gh repo view --json visibility`). A public repo
       carrying open or accepted threats → Medium, or High when a row gives an

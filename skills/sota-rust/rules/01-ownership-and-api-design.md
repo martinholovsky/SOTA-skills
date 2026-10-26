@@ -331,7 +331,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 - [ ] `rg 'for i in 0\.\.' -t rust` (§8) — index loops; check `clippy::needless_range_loop`.
 - [ ] `rg 'unwrap_or\([a-zA-Z_]+\(' -t rust` (§8) — eager argument evaluation
       (`clippy::or_fun_call`).
-- [ ] Raw primitive IDs in public signatures: `rg 'fn .*\b(id|user|key)\w*: (u32|u64|i64|String)'`.
+- [ ] Raw primitive IDs in public signatures (§3): `rg 'fn .*\b(id|user|key)\w*: (u32|u64|i64|String)'`.
 - [ ] **Typestate transition that leaves the old state usable (§4) — Low** —
       `grep -rlE 'PhantomData<' --include='*.rs' .` lists files with state-parameterised types. In
       each, a method returning the same type in another state must take `self` by value; one that
@@ -356,7 +356,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       at file level, so a file with one `is_finite` hides the rest: read each parse site. Then
       look by hand for `/`, `%` or unary `-` on a caller-supplied integer that has no
       `checked_div`/`checked_neg`.
-- [ ] Public trait intended to be closed but unsealed — can a downstream crate
+- [ ] Public trait intended to be closed but unsealed (§6) — can a downstream crate
       impl it? If yes and that's unintended, seal it.
 - [ ] Hand-written comparison impls: `rg 'impl (PartialEq|Eq|PartialOrd|Ord)' -t rust`
       — verify invariants (total order, consistency with `Eq`, symmetry); a
@@ -372,7 +372,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       invariant is security-relevant, or when `unsafe` code relies on it — [rules/03](03-unsafe-discipline.md) §1).
       rustc's `unreachable_pub` (allow-by-default) lists `pub` items that should be
       `pub(crate)`.
-- [ ] Multi-crate repo without `[workspace.dependencies]` → version drift;
+- [ ] Multi-crate repo without `[workspace.dependencies]` (§9) → version drift;
       `cargo tree -d` to find duplicate dependency versions.
 - [ ] Clippy gates for this file's concerns: `clippy::needless_pass_by_value`,
       `clippy::trivially_copy_pass_by_ref`, `clippy::large_enum_variant`,

@@ -342,16 +342,16 @@ cheat sheet.
 
 ## Audit checklist
 
-- [ ] Is there a log-source inventory mapped to attack paths, with *enabled*
+- [ ] Is there a log-source inventory mapped to attack paths (§1), with *enabled*
       (not merely *available*) status per source?
-- [ ] For the top 5 attack scenarios, can you name and confirm the collected log
+- [ ] For the top 5 attack scenarios (§1), can you name and confirm the collected log
       for every technique in the chain?
-- [ ] Are cloud data events (e.g. CloudTrail S3/Lambda object-level) and K8s
+- [ ] Are cloud data events (§1) (e.g. CloudTrail S3/Lambda object-level) and K8s
       audit logging explicitly *enabled*, not left at insecure defaults?
-- [ ] Is there alerting when a log source goes silent (dead sensor / T1685
+- [ ] Is there alerting when a log source goes silent (§2) (dead sensor / T1685
       logging tamper, formerly T1562)? Hunt: per source, compare current ingest
       rate to a 7-day baseline and flag drops >50%.
-- [ ] Do events carry the fields detections need (full command lines, user,
+- [ ] Do events carry the fields detections need (§2) (full command lines, user,
       process ancestry), or are they truncated/empty?
 - [ ] Are detections written against a normalized schema (OCSF/ECS), or against
       raw per-vendor formats that won't port? (§3)
@@ -366,7 +366,7 @@ cheat sheet.
       sampled purely for cost without documenting the resulting blind spot in the
       affected detections' ADS? Is noise filtered at the edge by event type, and
       high-volume/low-value sources routed to the cheap tier, instead?
-- [ ] Are logs shipped off-host promptly so a compromised host can't erase its
+- [ ] Are logs shipped off-host promptly (§2) so a compromised host can't erase its
       own evidence?
 - [ ] **App-login attacks (§7) — High:** do application/IdP login logs feed a
       distinct-accounts-per-source spray rule, per-account and per-source

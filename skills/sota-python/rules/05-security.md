@@ -391,7 +391,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
 - [ ] **`ctypes` / `cffi` — HIGH where a size or pointer comes from input** (§11) —
       `grep -rnE '^[[:space:]]*(import|from)[[:space:]]+(ctypes|cffi)|ctypes\.(CDLL|cdll|string_at|memmove|cast|create_string_buffer)' --include='*.py' .`
       (each foreign function declares `argtypes`/`restype`; lengths validated before the call)
-- [ ] **Code execution / deserialization [CRITICAL on untrusted data]** —
+- [ ] **Code execution / deserialization [CRITICAL on untrusted data]** (§1) —
       `grep -rn "pickle.loads\|pickle.load\|read_pickle\|joblib.load\|marshal.loads\|dill" --include="*.py" src/`
       ; `grep -rnE 'jsonpickle\.(decode|loads|Unpickler)|from[[:space:]]+jsonpickle[[:space:]]+import' --include='*.py' src/`
       ; `grep -rn "torch.load" --include="*.py" src/ | grep -v "weights_only=True"` (and every
@@ -406,7 +406,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       `grep -rnE '(^|[^.[:alnum:]_])(compile|__import__)\(|import_module\(|pydoc\.locate\(|getattr\([^,)]+,[[:space:]]*[^"'"'"'[:space:]]' --include='*.py' src/`
       (a `getattr` whose name is not a literal, or an import by computed name, is reachable
       code the author did not list; replace with a fixed dict of handlers)
-- [ ] **Subprocess [HIGH]** — `grep -rn "shell=True" --include="*.py" src/` ;
+- [ ] **Subprocess [HIGH]** (§2) — `grep -rn "shell=True" --include="*.py" src/` ;
       `grep -rn "os.system\|os.popen" --include="*.py" src/`
 - [ ] **Memory cap via `RLIMIT_AS` (§2) [HIGH when it gates an inspection]** —
       `grep -rn "RLIMIT_AS" --include="*.py" src/` (use `RLIMIT_DATA` or a cgroup on Linux; on macOS
@@ -435,7 +435,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       compare); `grep -rn "verify=False\|_create_unverified" --include="*.py" src/` ;
       `grep -rnE "(api_key|secret|password|token) *= *['\"][A-Za-z0-9_\-]{12,}" --include="*.py" .`
       (hardcoded); `grep -rn "md5(\|sha1(" --include="*.py" src/ | grep -v usedforsecurity` ; `grep -rniE '(md5|sha1|sha256|sha512)\([^)]*passw' --include='*.py' --exclude-dir=.venv .` (a password through a bare digest: argon2/bcrypt)
-- [ ] **XML / SSRF** —
+- [ ] **XML / SSRF** (§7) —
       `grep -rn "lxml.etree\|xml.etree\|xml.dom\|xml.sax" --include="*.py" src/` (defused?
       entities off?); `grep -rn "get(url\|get(request\.\|urlopen(" --include="*.py" src/ | head`
       (user-controlled URL fetch?)
@@ -445,7 +445,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       (module-level helpers have no connect-time hook, and redirects-on re-opens every
       check; for each hit, and each `requests.Session`, find where the dialled IP is vetted
       after DNS resolution — a hostname check before the call is not it)
-- [ ] **ReDoS / DoS surfaces** —
+- [ ] **ReDoS / DoS surfaces** (§8) —
       `grep -rnE "re\.(match|search|fullmatch|findall|sub)\(" --include="*.py" src/ | head -30`
       (user-controlled subject?);
       `grep -rnE "\((\.\*|\\\\w\+|\[\^?[^]]*\]\+)\)[\*\+]" --include="*.py" src/` (nested

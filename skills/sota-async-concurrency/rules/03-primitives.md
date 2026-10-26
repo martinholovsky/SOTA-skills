@@ -223,7 +223,7 @@ function getConn() {
 
 ## Audit checklist
 
-- [ ] Unbounded anything: `Queue()` no maxsize, `unbounded_channel`,
+- [ ] Unbounded anything (§5): `Queue()` no maxsize, `unbounded_channel`,
       `make(chan T, huge)`, arrays used as queues, channels with
       goroutine-per-send. Each is MEDIUM minimum; HIGH on network-fed paths.
 - [ ] Condvar waits: `if` instead of `while` around `wait()` (HIGH);
@@ -251,7 +251,7 @@ function getConn() {
       a shared list + lock + sleep-poll used as a queue, a polling loop
       waiting for a state change, a spin-checked counter bounding access, or
       two atomics guarding one invariant; replace with the table's "Use".
-- [ ] Critical sections containing I/O, awaits, callbacks, or logging.
+- [ ] Critical sections containing I/O, awaits, callbacks, or logging (§8).
 - [ ] Reentrant locks or `fooLocked` conventions violated (double-acquire);
       critical sections doing more than lock, mutate, unlock (see the item
       above); lock not named after and declared next to the data it guards

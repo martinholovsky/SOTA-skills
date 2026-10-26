@@ -144,7 +144,7 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       `grep -rniE '<Nullable>\s*enable' . --include='*.csproj' --include='Directory.Build.props' || echo "NRT not enabled — HIGH"`
       ; `grep -rnE 'JsonSerializer\.Deserialize|ReadFromJsonAsync|GetFromJsonAsync' --include='*.cs' .`
       (a deserialized value can be null whatever its annotation: confirm a guard at the boundary)
-- [ ] **Swallowed exceptions / throw ex — MEDIUM** —
+- [ ] **Swallowed exceptions / throw ex — MEDIUM** (§6) —
       `grep -rnzoE 'catch\s*\([^)]*\)\s*\{\s*\}' --include='*.cs' .` ;
       `grep -rnE 'throw ex;' --include='*.cs' .` (loses stack trace);
       `grep -rnE 'catch \(Exception' --include='*.cs' . | head`

@@ -7,7 +7,7 @@ Stack choice is a one-way door: migrating a shipped app between stacks is a rewr
 | Item | State |
 |---|---|
 | iOS | Verify the latest release at developer.apple.com/news/releases. Apple uses year-based naming (jumped 18 → 26 in 2025). |
-| iOS SDK requirement | Since **April 28, 2026**, App Store uploads must be built with Xcode 26 / iOS 26 SDK. Building with the 26 SDK applies the Liquid Glass appearance to system controls by default — re-test UI on SDK bump. |
+| iOS SDK requirement | Since **April 28, 2026**, App Store uploads must be built with Xcode 26 / iOS 26 SDK; since **September 9, 2026**, iOS/iPadOS uploads must target **iOS 13 or later** (verified 2026-10-26). Building with the 26 SDK applies the Liquid Glass appearance to system controls by default — re-test UI on SDK bump. |
 | Android | Android 17 (API 37) stable since June 16, 2026 (Pixels first, OEM rollouts ongoing); Play target-API mandate remains API 36 (next row). |
 | Play target API | New apps and updates must target **API 36 by Aug 31, 2026** (Wear OS and Android Automotive OS: API 35 by the same date; Android TV: API 34 since Aug 31, 2025). Stale targets make the app invisible to new users on newer devices. |
 | Play 16 KB pages | Apps targeting Android 15+ must support 16 KB page sizes on 64-bit devices; from **Feb 1, 2027** Play blocks releasing updates that don't (developer.android.com page-sizes guide, checked 2026-09-26). Pure-JVM/Kotlin apps comply automatically; anything with native `.so` libraries (including most RN/Flutter plugins) must use compatible builds. Verify in Play Console app bundle explorer. |

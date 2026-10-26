@@ -86,6 +86,9 @@ Confidence accompanies severity: **confirmed** (you traced the data flow) vs **s
 
 ### Finding format
 
+Expands the router's canonical row (`file:line | rule | severity | effort | fix`, which wins on a
+cross-domain roll-up); evidence block and report order: [`sota` rules/03](../sota/rules/03-audit-findings.md) §2 and §5.
+
 ```
 [SEVERITY/confidence] short title
   File: src/pkg/module.py:42 (absolute path in final report)

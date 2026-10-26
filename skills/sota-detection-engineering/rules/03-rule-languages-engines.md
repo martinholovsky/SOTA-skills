@@ -265,7 +265,7 @@ Use when correlation, sequencing, joins, or statistics exceed Sigma's model:
 - [ ] Are new YARA rules targeting **YARA-X** (not legacy YARA), and structural/
       behavioral rather than single-hash, validated with `yr check`, with cheap
       anchors (`$mz at 0`) ordered before expensive checks (entropy)? (§3)
-- [ ] Grep the ruleset for hash-only / single-broad-field detections — how many
+- [ ] Grep the ruleset for hash-only / single-broad-field detections (§3, §7) — how many
       are pure IOC matches dressed as detections?
 - [ ] **Network rules (§4) — Medium:** do Suricata/Snort rules anchor on protocol or
       behavioral logic (JA4, TLS/HTTP/DNS fields, beaconing thresholds) rather than raw
@@ -279,7 +279,7 @@ Use when correlation, sequencing, joins, or statistics exceed Sigma's model:
       or fire on "any exec / any connection"? (§5)
 - [ ] If Tetragon enforcement (`Sigkill`/`Override`) is enabled, is it scoped by
       selector and piloted in detect-only, with the same guardrails as IPS? (§5)
-- [ ] Do Tetragon `file`/`path` `Equal` matches name a path that is a symlink (the
+- [ ] Do Tetragon `file`/`path` `Equal` matches (§5) name a path that is a symlink (the
       projected service-account `token`)? The kernel reports the resolved path, so the
       rule never fires: `grep -rn -A4 'operator: "Equal"' --include='*.yaml' . | grep serviceaccount`.
 - [ ] Do SIEM-native queries bound their time windows and avoid unbounded

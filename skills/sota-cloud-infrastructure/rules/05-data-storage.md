@@ -76,7 +76,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "b" {
   say anyone holding it can use it repeatedly until it expires, and SDK/CLI-issued
   ones can live up to 7 days (less if the signing credentials expire first). Keep
   presigned URLs for low-sensitivity objects; issue them only after the same
-  per-object authorization, with the shortest workable expiry, for one object and
+  per-object authorization, with the shortest workable expiry (≤ 1 h: [sota-secrets-management rules/03](../../sota-secrets-management/rules/03-application-patterns.md) §3), for one object and
   one method, and build the key from server-side values rather than concatenating
   request input into it. A bucket policy can cap signature age on top
   (`s3:signatureAge`). CDN signed URLs: [rules/03](03-networking.md) §9. (OWASP: Secure Cloud
@@ -219,10 +219,10 @@ The real design decisions are about **key control and blast radius**:
 
 ## Audit checklist
 
-- [ ] Account/org-level public-access prevention enforced (not just per-bucket);
+- [ ] Account/org-level public-access prevention enforced (not just per-bucket) (§1);
       zero public buckets/containers outside an approved, documented list.
-- [ ] ACLs disabled (bucket-owner-enforced) on all buckets; legacy ACL grants gone.
-- [ ] Every bucket has: versioning decision, lifecycle rules (incl. multipart
+- [ ] ACLs disabled (bucket-owner-enforced) on all buckets (§1); legacy ACL grants gone.
+- [ ] Every bucket has: versioning decision, lifecycle rules (incl. multipart (§1)
       abort + noncurrent expiry), TLS-required policy; sensitive buckets have
       access logging and endpoint/org conditions.
 - [ ] **High** — noncurrent versions hold no data the business thinks it deleted
@@ -231,11 +231,11 @@ The real design decisions are about **key control and blast radius**:
       probe `grep -rn -E '"s3:((Get|List)[A-Za-z]*)?\*[A-Za-z*]*"|"s3:(GetObjectVersion|ListBucketVersions)"' --include='*.tf' --include='*.json' .`
       (catches `s3:Get*`, `s3:List*`, `s3:*Object*` as well as the exact actions)
       and justify each hit.
-- [ ] No `Principal:"*"` in bucket/queue/key resource policies without strong
+- [ ] No `Principal:"*"` in bucket/queue/key resource policies without strong (§1)
       conditions.
 - [ ] **High** — sensitive objects are not handed out as presigned URLs, and none
-      is long-lived (§1). Probe: `grep -rn -E '(ExpiresIn|expiresIn|expires_in|Expires) *[:=] *[0-9]{5,}' --include='*.py' --include='*.ts' --include='*.js' --include='*.go' --include='*.java' .`
-      (≥ 10000 s, about 2.8 h; literal seconds only — a computed expiry such as
+      is long-lived (§1). Probe: `grep -rn -E '(ExpiresIn|expiresIn|expires_in|Expires) *[:=] *[0-9]{4,}' --include='*.py' --include='*.ts' --include='*.js' --include='*.go' --include='*.java' .`
+      (≥ 1000 s; a hit above 3600 s breaks the ≤ 1 h bound; literal seconds only — a computed expiry such as
       `7 * 24 * 3600`, `Duration.ofDays(7)` or Go's `WithPresignExpires(...)` is
       missed, so the call-site read is the real check); then read each presign call
       site for a per-object authorization check before it and for request input in
@@ -263,5 +263,5 @@ The real design decisions are about **key control and blast radius**:
 - [ ] Key-per-domain segmentation (no single god key); key admins ≠ data readers in
       key policies; rotation on; ScheduleKeyDeletion alarmed; external key stores
       (XKS/EKM/HYOK) only under a recorded regulatory mandate (§4).
-- [ ] Regulated data regions match residency policy; exports/temp copies of
+- [ ] Regulated data regions match residency policy (§5); exports/temp copies of
       sensitive data inventoried and governed.

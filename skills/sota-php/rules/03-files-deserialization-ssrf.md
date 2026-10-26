@@ -40,7 +40,8 @@ move_uploaded_file($f['tmp_name'], '/srv/app/storage/uploads/' . $name);
   but keep Imagick patched (historic RCEs) and consider it a trade-off, not
   free.
 - Archives: extraction is a traversal vector ("zip slip") — validate each entry
-  name against the target dir before writing; cap entry count/size ratios
+  name against the target dir before writing, and reject link entries
+  ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §4); cap entry count/size ratios
   (zip bombs).
 - ini caps (`upload_max_filesize`, `post_max_size`, `max_file_uploads`) are the
   outer DoS guard (OWASP PHP Configuration Cheat Sheet), not validation.
@@ -270,7 +271,7 @@ Run from repo root; verify each hit manually.
       paths) ;
       `grep -rnE -e '->loadXML[[:space:]]*\(|simplexml_load_(string|file)[[:space:]]*\(|XMLReader::(open|XML)' --include='*.php' --exclude-dir=vendor . | grep -v 'LIBXML_NONET'`
       (each untrusted parse: `LIBXML_NONET`, and the document rejected when `doctype` is not null)
-- [ ] **SSRF — user URLs fetched server-side** —
+- [ ] **SSRF — user URLs fetched server-side** (§5) —
       `grep -rnE '(curl_init|file_get_contents|fopen|getimagesize|get_headers|get_meta_tags|->request|->get)[[:space:]]*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`
       ; `grep -rn 'CURLOPT_SSL_VERIFYPEER' --include='*.php' src/` (false = HIGH);
       `grep -rn 'CURLOPT_FOLLOWLOCATION' --include='*.php' src/` (check REDIR_PROTOCOLS nearby)

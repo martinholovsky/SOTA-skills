@@ -57,7 +57,8 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
 - Differentiate at minimum:
   - `0` success
   - `1` operational failure (the thing failed)
-  - `2` usage error (bad flags/args — matches widespread Unix convention)
+  - `2` usage error (bad flags/args — what bash builtins and Python's argparse return); sysexits
+    `64` (`EX_USAGE`) is the documented alternative — pick one per tool, never both
   - further codes for failure classes scripts must distinguish
     (e.g. `3` = check found violations, like `grep`'s "no match" `1` vs error `2`)
 - `130` after SIGINT (128+signal, the shell convention) — most runtimes do this
@@ -224,7 +225,7 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
 - [ ] Untrusted strings (filenames, remote fields, commit text) printed to a TTY have control characters and `ESC` escaped — try a name containing `\x1b[2J` (CWE-150) (§4).
 - [ ] `--json` (or `-o json`) on every list/read command; NDJSON for streams; JSON-mode errors are JSON with `code`/`message` fields and a nonzero exit; fields treated as versioned API (§2).
 - [ ] Human tables: no borders; `--plain`/`--no-header` or auto-plain when piped (§2).
-- [ ] Exit codes: 0 only on full success; usage errors = 2; distinct documented codes for failure classes; partial failure ≠ 0; no `exit 0` in catch-all handlers (§3).
+- [ ] Exit codes: 0 only on full success; usage errors = 2 (or a documented `64`, consistently); distinct documented codes for failure classes; partial failure ≠ 0; no `exit 0` in catch-all handlers (§3).
 - [ ] SIGINT exits 130; `tool list | head` causes no EPIPE traceback (§3, §4).
 - [ ] Pager never engages when stdout is not a TTY: `out=$(PAGER=false tool <long-output command>); echo "rc=$? bytes=${#out}"`
       — `bytes=0` with a nonzero rc means it paged with no TTY. No pipe: after `| cat`, `$?` is

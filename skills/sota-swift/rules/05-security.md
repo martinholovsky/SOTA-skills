@@ -26,6 +26,9 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
   cause other I/O operations, either network-based or disk-based"*) — XXE. Keep it `false`.
   Needs verification: whether swift-corelibs-foundation's `XMLParser` on Linux expands *internal*
   entities regardless (entity-expansion DoS); cap XML input size either way.
+- `XMLDocument` loads external entities unless told not to: Apple's loads the non-network ones,
+  and swift-corelibs-foundation (Linux) sets libxml2 `XML_PARSE_NOENT`, which loads them all.
+  Always pass `.nodeLoadExternalEntitiesNever` ([`sota-mobile` rules/04](../../sota-mobile/rules/04-security.md) §4, 4.12).
 - `PropertyListDecoder`/`PropertyListSerialization` on untrusted data: decode into concrete
   `Codable` types, never into `NSObject` graphs.
 - A parser of untrusted bytes: bounds-checked `Span` over `Unsafe*Pointer`, `.strictMemorySafety()`
@@ -99,7 +102,7 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
 
 - [ ] Input validation (§1): untrusted input becomes typed values at the boundary; request bodies are size-capped before decoding (no unlimited `maxSize`).
 - [ ] Regex escaping, anchoring & engine (§1): input is validated with the anchored `wholeMatch` (not `firstMatch`); no user-supplied pattern is compiled (grep `try +Regex\(`); interpolated text goes through `escapedPattern(for:)`; input length is capped because the engine backtracks and is not linear-time; patterns run on input bound backtracking with `Local { }` or possessive quantifiers.
-- [ ] Deserialization (§2): no `unarchiveObject(with:`, `NSUnarchiver` or `requiresSecureCoding = false` on untrusted data; `shouldResolveExternalEntities` never `true`; XML input size-capped; `PropertyListDecoder`/`PropertyListSerialization` on untrusted data decode into concrete `Codable` types, never `NSObject` graphs.
+- [ ] Deserialization (§2): no `unarchiveObject(with:`, `NSUnarchiver` or `requiresSecureCoding = false` on untrusted data; `shouldResolveExternalEntities` never `true`; `XMLDocument` always given `.nodeLoadExternalEntitiesNever`; XML input size-capped; `PropertyListDecoder`/`PropertyListSerialization` on untrusted data decode into concrete `Codable` types, never `NSObject` graphs.
 - [ ] Cryptography & randomness (§3): CryptoKit/swift-crypto only; no `Insecure.MD5`/`Insecure.SHA1`/`CC_MD5` for security; secrets from `SymmetricKey`/`SystemRandomNumberGenerator`, never `arc4random`/`srand`/`drand48`; MACs and tokens compared with `isValidAuthenticationCode`, never `==`.
 - [ ] Secrets handling (§4): no credentials in source, `Package.swift` or committed `.env` files; `.env*` git-ignored.
 - [ ] Logging hygiene (§4): no logging secrets, tokens, passwords, `Authorization` headers or PII in messages or metadata (swift-log does not redact) (grep `logger\.\w+\(.*(token|password|secret|apiKey|authorization)`); no `privacy: .public` on secrets; credentials never in query strings.

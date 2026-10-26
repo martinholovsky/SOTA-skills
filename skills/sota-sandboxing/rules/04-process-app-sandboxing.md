@@ -297,7 +297,7 @@ building block, not a per-process sandbox API.
       cwd, process-group kill on timeout, bounded stdout/stderr; files reach
       children as FDs (or paths re-validated beneath a root), and no child can
       write a directory it also executes from (§5).
-- [ ] The timeout is a real deadline in *this* language — pipes held by a
+- [ ] The timeout is a real deadline in *this* language (§5) — pipes held by a
       grandchild cannot extend it past the limit (Go: `cmd.WaitDelay` set) — and
       memory is capped with `RLIMIT_DATA`/cgroup, never `RLIMIT_AS` (R5.3a, `02`
       R7.2a); on macOS no memory rlimit applies, so a container or an RSS watchdog

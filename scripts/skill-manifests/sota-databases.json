@@ -1,0 +1,267 @@
+{
+ "_note": "Declared BUILD routing for sota-databases (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD links 01-06; 07 and 08 are reached only through their index rows. BUILD step 5's routing words ('Pooling, backups, monitoring hooks, and retention') wrap onto the lines before the 05/06 link, so the gate reads only the index rows for 05 and 06; note that connection pooling is taught in 04 section 5 (named in 04's row), not in 05 or 06 where step 5 points. Known routing gap, recorded and NOT declared: rules/06 section 4 'Audit logging (the security kind)' (pgaudit, off-host logs, out-of-band psql access) is not named anywhere in 06's index row or BUILD lines; the only 'audit' phrase in this skill's routing prose is 01's 'audit/history tables', so a task such as 'record who changed what in the orders table, including out-of-band access' reaches 01 section 6 but not 06 section 4, although 06 section 4 says 'you need both'. No case declares it. Routing gap for rules/06 (security audit logging) FIXED 2026-10-26: the index row now names it, and tag 'db-audit-logging' declares it.",
+ "skill": "sota-databases",
+ "tags": {
+  "engine-choice": [
+   "Picking an engine",
+   "Engine and model first"
+  ],
+  "schema-design": [
+   "designing tables",
+   "primary keys",
+   "normalization",
+   "soft deletes"
+  ],
+  "multi-tenancy": [
+   "multi-tenancy"
+  ],
+  "ledger": [
+   "ledgers and account balances"
+  ],
+  "history-table": [
+   "audit/history tables"
+  ],
+  "migration": [
+   "migration",
+   "zero-downtime schema changes",
+   "altering hot tables"
+  ],
+  "query": [
+   "queries",
+   "ORM code",
+   "pagination",
+   "EXPLAIN ANALYZE"
+  ],
+  "index": [
+   "index types",
+   "composite column order"
+  ],
+  "concurrency": [
+   "concurrent writes",
+   "isolation levels",
+   "locking",
+   "deadlocks"
+  ],
+  "job-queue": [
+   "job queues",
+   "SKIP LOCKED"
+  ],
+  "idempotency": [
+   "idempotency"
+  ],
+  "pooling": [
+   "connection pooling"
+  ],
+  "ops": [
+   "Backups/PITR",
+   "replication",
+   "monitoring",
+   "vacuum/bloat"
+  ],
+  "partitioning": [
+   "partitioning"
+  ],
+  "caching": [
+   "Redis caching"
+  ],
+  "db-security": [
+   "roles and grants",
+   "RLS",
+   "encryption at rest/in transit",
+   "SQL injection surface"
+  ],
+  "pii-retention": [
+   "PII columns",
+   "data retention",
+   "GDPR-style deletion"
+  ],
+  "vector": [
+   "Embeddings",
+   "semantic/hybrid search",
+   "pgvector"
+  ],
+  "surrealdb": [
+   "SurrealDB",
+   "SurrealQL"
+  ],
+  "db-audit-logging": [
+   "security audit logging"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "engine-choice",
+    "schema-design",
+    "multi-tenancy",
+    "ledger",
+    "history-table"
+   ]
+  },
+  "02": {
+   "build": [
+    "migration"
+   ]
+  },
+  "03": {
+   "build": [
+    "query",
+    "index"
+   ]
+  },
+  "04": {
+   "build": [
+    "concurrency",
+    "job-queue",
+    "idempotency",
+    "pooling"
+   ]
+  },
+  "05": {
+   "build": [
+    "ops",
+    "partitioning",
+    "caching"
+   ]
+  },
+  "06": {
+   "build": [
+    "db-security",
+    "pii-retention",
+    "db-audit-logging"
+   ]
+  },
+  "07": {
+   "build": [
+    "vector"
+   ]
+  },
+  "08": {
+   "build": [
+    "surrealdb"
+   ]
+  }
+ },
+ "via": [],
+ "cases": [
+  {
+   "task": "design a multi-tenant SaaS schema in Postgres with RLS and write its first migration",
+   "mode": "build",
+   "tags": [
+    "engine-choice",
+    "schema-design",
+    "multi-tenancy",
+    "migration",
+    "db-security"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "06"
+   ]
+  },
+  {
+   "task": "build a wallet balance ledger with concurrent debit endpoints",
+   "mode": "build",
+   "tags": [
+    "ledger",
+    "schema-design",
+    "concurrency",
+    "idempotency",
+    "migration"
+   ],
+   "must_load": [
+    "01",
+    "04",
+    "02"
+   ]
+  },
+  {
+   "task": "add a Postgres-backed job queue with competing workers",
+   "mode": "build",
+   "tags": [
+    "job-queue",
+    "concurrency",
+    "query",
+    "index",
+    "ops"
+   ],
+   "must_load": [
+    "04",
+    "03",
+    "05"
+   ]
+  },
+  {
+   "task": "add semantic search over documents with pgvector",
+   "mode": "build",
+   "tags": [
+    "vector",
+    "index",
+    "migration"
+   ],
+   "must_load": [
+    "07",
+    "02"
+   ]
+  },
+  {
+   "task": "add a paginated, filtered list query behind an API endpoint",
+   "mode": "build",
+   "tags": [
+    "query",
+    "index"
+   ],
+   "must_load": [
+    "03"
+   ]
+  },
+  {
+   "task": "implement account deletion for GDPR erasure requests",
+   "mode": "build",
+   "tags": [
+    "pii-retention",
+    "schema-design"
+   ],
+   "must_load": [
+    "06",
+    "01"
+   ]
+  },
+  {
+   "task": "build a SurrealDB-backed app with record-level permissions",
+   "mode": "build",
+   "tags": [
+    "surrealdb"
+   ],
+   "must_load": [
+    "08"
+   ]
+  },
+  {
+   "task": "audit a production Postgres data layer",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08"
+   ]
+  },
+  {
+   "task": "record who changed the orders table, including out-of-band psql access",
+   "mode": "build",
+   "tags": [
+    "db-audit-logging"
+   ],
+   "must_load": [
+    "06"
+   ]
+  }
+ ]
+}

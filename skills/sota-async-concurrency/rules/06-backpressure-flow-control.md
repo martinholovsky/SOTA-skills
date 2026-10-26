@@ -220,13 +220,13 @@ state-update streams: the queue can't exceed the keyspace.
       spawns per item, promise arrays, stream internal buffers, per-subscriber
       send queues). Each has: a bound? a full-policy? a stated size rationale
       (§1, §2)?
-- [ ] Unbounded queue reachable from network input = HIGH (CRITICAL if
+- [ ] Unbounded queue reachable from network input (§2) = HIGH (CRITICAL if
       multiplied per-connection/per-tenant).
 - [ ] Trace pressure source→sink: where does it stop propagating? Any
       fire-and-forget or eager-read-into-buffer that defeats TCP/pull
       semantics? (§3)
-- [ ] Bounded-blocking queues inside cycles (deadlock) — wait-for graph check.
-- [ ] Admission control on servers: in-flight cap, early shedding before
+- [ ] Bounded-blocking queues inside cycles (deadlock) (§2) — wait-for graph check.
+- [ ] Admission control on servers (§3, §4): in-flight cap, early shedding before
       expensive work, deadline-aware drops, correct 429/503 + Retry-After?
 - [ ] Health/readiness behavior under overload: liveness must pass, readiness
       should shed; batch/analytics shed before interactive traffic (§4).
@@ -236,13 +236,13 @@ state-update streams: the queue can't exceed the keyspace.
       counted as failures, bounded half-open probes, per-endpoint scope?
       Breaker-open error distinguishable and non-retryable? Breaker state read
       without a hot-path mutex? (§7)
-- [ ] Node: `write()` return value honored or `pipeline()` used? Custom
+- [ ] Node: `write()` return value honored or `pipeline()` used (§6)? Custom
       `on('data')` handlers without pause/resume?
 - [ ] Push→pull adapters (callback to async-iterator bridges): internal queue
       bounded? Reactive chains with unbounded `onBackpressureBuffer()`?
       gRPC/HTTP2 handlers spooling a whole stream into memory? (§6)
-- [ ] AMQP consumers: prefetch count set explicitly (no unlimited prefetch),
+- [ ] AMQP consumers (§3): prefetch count set explicitly (no unlimited prefetch),
       sized to handler speed?
-- [ ] Fan-out endpoints: slow-consumer policy defined (drop, lag-kick), or
+- [ ] Fan-out endpoints: slow-consumer policy defined (§6) (drop, lag-kick), or
       can one dead-slow WebSocket OOM the broadcaster?
 - [ ] Batchers: size+time flush, bounded pending, shutdown flush? (§8)

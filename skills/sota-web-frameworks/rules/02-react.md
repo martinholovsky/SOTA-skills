@@ -64,7 +64,8 @@ pending/error/optimistic state.
 - **Prefer the React Compiler over manual memoization.** Compiler 1.0 (stable,
   2025-10) auto-memoizes components and values, making most `useMemo`, `useCallback`,
   and `React.memo` unnecessary — *if* your code follows the Rules of Hooks and treats
-  props/state as immutable. Don't rip out existing memoization blindly, but stop
+  props/state as immutable. Don't rip out existing memoization blindly (react.dev: removing it "can change compilation
+  output" — leave it or test before removing), but stop
   hand-writing new memo wrappers as a reflex.
 - **Where you still memoize by hand** (no compiler, or a proven hot path): memoize the
   *expensive* computation or a referentially-stable callback passed to a memoized
@@ -106,27 +107,27 @@ import DOMPurify from 'dompurify';
 
 ## Audit checklist
 
-- [ ] **HTML injection sink — every hit needs a sanitizer on the source** —
-      `grep -rn 'dangerouslySetInnerHTML' --include='*.tsx' --include='*.jsx' src app components`
-- [ ] **javascript:/data: URL sinks** —
-      `grep -rnE 'href=\{|src=\{|formAction=\{' --include='*.tsx' src app | grep -iv 'sanitiz'`
-- [ ] **Effect smells: fetch-in-effect, setState-only effects, missing deps** —
-      `grep -rnE 'useEffect\(' --include='*.tsx' src app | head` ;
-      `grep -rn 'Math.random()\|Date.now()' --include='*.tsx' src app` (in render => hydration
+- [ ] **HTML injection sink — every hit needs a sanitizer on the source** (§5) —
+      `grep -rn 'dangerouslySetInnerHTML' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next .`
+- [ ] **javascript:/data: URL sinks** (§5) —
+      `grep -rnE 'href=\{|src=\{|formAction=\{' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next . | grep -iv 'sanitiz'`
+- [ ] **Effect smells: fetch-in-effect, setState-only effects, missing deps** (§1) —
+      `grep -rnE 'useEffect\(' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next . | head` ;
+      `grep -rn 'Math.random()\|Date.now()' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next .` (in render => hydration
       bug ([rules/06](06-ssr-hydration.md)))
-- [ ] **Rules of Hooks / compiler-blocking violations rely on lint** —
+- [ ] **Rules of Hooks / compiler-blocking violations rely on lint** (§1) —
       `find . -maxdepth 2 -path ./node_modules -prune -o \( -name '.eslintrc*' -o -name 'eslint.config.*' -o -name package.json \) -type f -exec grep -Hn 'react-hooks' {} +`
 - [ ] **Legacy patterns** —
-      `grep -rn 'forwardRef\|class .* extends .*Component' --include='*.tsx' src app`
-      (class components: no new ones (§1); forwardRef unneeded in 19 (§3)); `grep -rnE 'key=\{.*index' --include='*.tsx' src app`
+      `grep -rn 'forwardRef\|class .* extends .*Component' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next .`
+      (class components: no new ones (§1); forwardRef unneeded in 19 (§3)); `grep -rnE 'key=\{.*index' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next .`
       (index-as-key on dynamic lists (§4))
 - [ ] **`use()` fed a promise created during render (MEDIUM) (§3)** —
       `grep -rnE '(^|[^A-Za-z0-9_.$])use\((fetch\(|new Promise|[A-Za-z_$][A-Za-z0-9_$.]*\()' --include='*.tsx' --include='*.jsx' --include='*.ts' --include='*.js' --exclude-dir=node_modules .`
       — a hit is a candidate: fine when the call returns a cached/stable promise (from an RSC or a
       cache); a promise made inline is new every render and never resolves
 
-- [ ] Every `dangerouslySetInnerHTML` fed sanitizer output (allowlist), not raw user/CMS HTML?
-- [ ] `href`/`src`/URL props validated against a scheme allowlist (no `javascript:`/`data:`)?
+- [ ] Every `dangerouslySetInnerHTML` fed sanitizer output (allowlist), not raw user/CMS HTML? (§5)
+- [ ] `href`/`src`/URL props validated against a scheme allowlist (§5) (no `javascript:`/`data:`)?
 - [ ] No `Math.random()`/`Date.now()`/`window` used *during render* (hydration determinism); element IDs from `useId`, never a random value or a module counter (§1)?
 - [ ] Effects only for external synchronization, each with cleanup; no fetch-in-bare-effect racing; no `ref.current` read or written during render (§1)?
 - [ ] Stable domain IDs as list keys (not array index) for insertable/reorderable lists; state and props never mutated in place (immutable updates) (§4)?

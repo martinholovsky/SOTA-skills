@@ -117,7 +117,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 ## Audit checklist
 
 - [ ] `grep -rn "exec(\|execSync(" src/` — template/concat input = CRITICAL; migrate to execFile array form. Array-form args taken from input still need a character allowlist or a `--` separator (MEDIUM); a `timeout:` on a child that may fork needs `detached: true` and a process-group kill (MEDIUM); `grep -rn 'DEP0190' --exclude-dir=node_modules .` hits in Node ≥24 logs or CI output mark a live `shell: true` sink (HIGH) (§1).
-- [ ] `grep -rn "child_process" src/ | grep "shell"` — `shell: true` (HIGH).
+- [ ] `grep -rn "child_process" src/ | grep "shell"` — `shell: true` (HIGH) (§1).
 - [ ] **Child exit status never read — MEDIUM, HIGH when the output is trusted** — `execFileSync`
       and `execSync` throw on a non-zero exit and the `exec`/`execFile` callback receives an
       error, but `spawnSync` returns `{status, signal, error}` without throwing and `spawn`
@@ -130,12 +130,12 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
       `redirect: 'error'`/`'manual'`, or it is HIGH (internal address / metadata endpoint
       reachable). A pre-fetch `dns.lookup` as the only check is HIGH (DNS rebinding). The probe
       sees single-line calls with the request value first; a URL held in a variable needs a read. Also `grep -rnE '\.(update|create|insert|save|findByIdAndUpdate)[A-Za-z]*\( *([^,()]+, *)?req\.body *\)' --include='*.ts' --include='*.js' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules .` — a request body passed whole to a model write is mass assignment (HIGH).
-- [ ] **Credentials re-added on a redirect (§"SSRF", the credentials sub-bullet) — HIGH** —
+- [ ] **Credentials re-added on a redirect (§"SSRF", the credentials sub-bullet) (§2) — HIGH** —
       `grep -rnE 'beforeRedirect.*([Aa]uthorization|[Cc]ookie|headers)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       — a redirect hook that touches headers can send the token to the redirect target. A hook
       whose body spans lines needs a read. A credentialed call that follows redirects through
       follow-redirects (subdomains keep the headers) or got (`https:`→`http:` keeps them) is MEDIUM.
-- [ ] **Client-side request to a URL taken from the page (§"SSRF", the browser-counterpart bullet) — HIGH when the
+- [ ] **Client-side request to a URL taken from the page (§"SSRF", the browser-counterpart bullet) (§2) — HIGH when the
       request carries credentials or its response is rendered** —
       ``grep -rnE "(fetch\(|new EventSource\(|\.open\( *['\"][A-Za-z]+['\"] *,)[^;]*(location\.(search|hash|href)|[sS]earchParams\.get\(|params\.get\(|\.data[.)[]|localStorage\.getItem\()" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' --include='*.jsx' .``
       — each hit needs an origin allowlist check before the call. Single-line calls only; a URL held in a variable needs a read.

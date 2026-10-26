@@ -247,5 +247,5 @@ your cloud metadata, please"). Egress controls are non-negotiable:
 - [ ] **Negative signature tests (§3) — MEDIUM**: CI proves forged, stale, duplicate and cross-endpoint callbacks are rejected before any payload field is used. Webhook test files with none of those cases (a lead to read):
       `grep -rliE 'webhook' --include='*test*' --include='*spec*' . | while IFS= read -r f; do grep -qiE 'invalid[_ -]?sig|bad[_ -]?sig|forged|tamper|stale|expired|replay' "$f" || echo "$f"; done`
 - [ ] Ack-fast/process-async: 2xx only after durable enqueue, well under provider timeout (§4).
-- [ ] State derived by fetching current object where staleness matters, not from fat payload alone.
+- [ ] State derived by fetching current object where staleness matters (§5), not from fat payload alone.
 - [ ] Endpoint has body size limits, no cookie-auth dependency, full delivery logging; secrets in a manager with dual-secret rotation support; an unsigned or badly signed delivery gets `401` with no verification detail in the body, a non-JSON one `415`; a per-source rate limit backs it up (§6).

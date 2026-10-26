@@ -321,7 +321,7 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
       server-side, SRI on CDN assets, redirect destinations allowlisted,
       `message` listeners check origin, `frame-ancestors` set, no PII in URL
       params or analytics events (§1).
-- [ ] API: object-level authz verified on sampled by-ID endpoints; mass
+- [ ] API (§2): object-level authz verified on sampled by-ID endpoints; mass
       assignment, SSRF, deserialization, and rate limits checked with code
       evidence.
 - [ ] Every app-originated message and page carrying attacker-chosen text is

@@ -73,8 +73,10 @@ trap 'trap - TERM; kill -TERM -- -$$' INT TERM   # forward to process group, the
   `kill: (-PID) - No such process`, status 1, and the background children survive
   (measured 2026-09-26, bash 5.3 on macOS and Debian bookworm's bash).
   Either start it with `setsid` so it leads its group, or signal your own jobs instead —
-  `trap 'trap - TERM; kill -TERM $(jobs -p) 2>/dev/null; exit 143' INT TERM` — which killed
-  the child in the same nested run. Check: `ps -o pgid= -p $$` equals `$$`.
+  `on_sig() { kill -TERM $(jobs -p) 2>/dev/null; trap - "$1"; kill -"$1" $$; }; trap 'on_sig INT' INT; trap 'on_sig TERM' TERM`
+  — which killed the child in the same nested run. Re-raise, never `exit 143`: a fixed exit reports
+  TERM for a Ctrl-C, and a script that *exits* on SIGINT instead of dying of it lets its calling
+  script carry on (measured 2026-10-26, bash 5.3.15: caller continued after `exit 143`, stopped after the re-raise). Check: `ps -o pgid= -p $$` equals `$$`.
 
 - Cleanup must be **idempotent** (EXIT can follow INT) and must not assume variables are
   set (it can run before initialization completes — hence `tmpdir=""` first, guards inside).
@@ -307,11 +309,11 @@ count=$(find /data -mindepth 1 -maxdepth 1 -printf '.' | wc -c)   # GNU; or a gl
 files=(/data/*); count=${#files[@]}                               # with nullglob
 ```
 
-- [ ] Any command **pasted into an interactive shell** that passes a glob as a flag value
-      (`--include`, `--exclude`, `-name`) has it **quoted** — unquoted, zsh's `NOMATCH`
-      aborts the command, and its stdout and exit status are indistinguishable from a
-      genuine no-match ([`rules/06`](06-ad-hoc-commands.md) §1; only stderr carries the error). Every sweep read as an *absence* has been positive-controlled
-      against a pattern known to be present.
+**Quote a glob passed as a flag value** (`--include`, `--exclude`, `-name`) in any command pasted
+into an interactive shell — unquoted, zsh's `NOMATCH` aborts the command, and its stdout and exit
+status are indistinguishable from a genuine no-match ([`rules/06`](06-ad-hoc-commands.md) §1; only
+stderr carries the error). Positive-control every sweep read as an *absence* against a pattern
+known to be present.
 
 ## 5a. zsh habits that break silently in bash, and in `sh`
 
@@ -370,9 +372,9 @@ reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces da
 - [ ] SC2162 (§2) — `grep -rn 'read [^-]' --include='*.sh'` (missing `-r`); `IFS` set globally rather than scoped to one command:
       `grep -rnE '^[[:space:]]*(export[[:space:]]+)?IFS=[^[:space:]]*[[:space:]]*(;|#|$)' --include='*.sh' .` (4/4 bad, 0/5 good, BSD grep and ugrep;
       it misses a value holding a literal space).
-- [ ] Temp files: `grep -rn '/tmp/[a-zA-Z]\|\$\$' --include='*.sh'` — predictable names,
+- [ ] Temp files (§3): `grep -rn '/tmp/[a-zA-Z]\|\$\$' --include='*.sh'` — predictable names,
       `$$`-suffixed paths → HIGH (race), must be `mktemp`.
-- [ ] Cleanup: every `mktemp` has a reachable `trap ... EXIT`; cleanup function is
+- [ ] Cleanup (§3): every `mktemp` has a reachable `trap ... EXIT`; cleanup function is
       idempotent and preserves `$?`.
 - [ ] ERR trap without errtrace (§3): `grep -rlE "trap .*ERR" --include='*.sh' . | xargs grep -LE
       'set -[a-zA-Z]*E|set -o errtrace'` lists files whose ERR trap misses function failures
@@ -382,5 +384,6 @@ reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces da
       `grep -rnE '(^|[^$])\(\([[:space:]]*[A-Za-z_][A-Za-z0-9_]*(\+\+|--)[[:space:]]*\)\)' --include='*.sh' .` (3/3 bad, 0/5 good, BSD grep and
       ugrep); function variables not declared `local`.
 - [ ] Glob loops without nullglob/failglob or `[[ -e $f ]]` guard (§5); `for f in *` without the `./` prefix, so a file named `-rf` becomes an option.
+- [ ] A pasteable command with an unquoted glob as a flag value (`--include=*.sh`, `-name *.py`), or an absence never positive-controlled (§5) — zsh `NOMATCH` aborts it and it reads as no-match.
 - [ ] **A bare `**` in a bash script or a pasteable command** (§5a): `grep -nE "(^|[[:space:]=])[^[:space:]'\"]*[*][*](/|\$|[[:space:]])" <file>` — bash matches one level unless `shopt -s globstar` (bash ≥ 4.0) is set; use `find`, `git ls-files` or `grep -r --include`.
 - [ ] **Zero-padded numbers in arithmetic** (§5a): `grep -nE 'date \+%[mdHMSj]' <file>` and check each value reaching `$(( ))` is stripped (`${v#0}`) or based (`10#$v`); it fails only on `08` and `09`.

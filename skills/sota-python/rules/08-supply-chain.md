@@ -85,7 +85,7 @@ Split out of [rules/05](05-security.md) (formerly sections 9 and 10) on 2026-09-
 - Each project in its own venv (uv default); never share one env across trust levels, never
   install into the interpreter that runs your OS tooling.
 - Containers: multi-stage build, `uv sync --locked --no-dev`, run as non-root, no compiler
-  toolchain in the final image.
+  toolchain in the final image, digest-pinned `FROM` ([rules/01](01-tooling-project-setup.md) §9).
 - **A bundled artifact may carry no scanner-readable dependency list.** PyInstaller drops each
   package's `*.dist-info` unless the spec calls `copy_metadata()`, and a `--onefile` build
   scanned as 0 packages; a shiv zipapp keeps the metadata, but Syft does not read it. Generate

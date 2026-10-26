@@ -1,0 +1,309 @@
+{
+ "_note": "Declared BUILD routing for sota-shell-scripting (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. Only BUILD step 2 links a file (rules/01); steps 3-7 link nothing, so every other file is routed by its rules-index row alone. Known routing gaps, recorded and NOT declared: (1) rules/05 §3b-§3c (in-place edit replaces a symlink on GNU sed/perl -pi; a hard link keeps stale content) is needed by a builder writing a script that edits a config file in place, but 05's index row never says in-place, sed -i, symlink or hard link, and no BUILD line routes it; (2) rules/04 §1a-§1b (never batch a state-changing command with exploratory reads; join a gate to what it gates with && not ;) is needed by a builder writing a local release script that runs a check and then pushes or publishes, but 04's index row names only GitHub Actions, entrypoints, Makefiles and long-running logging and no BUILD line routes it. No in-place-edit or gate-chaining tag and no case for those tasks are declared. Routing gap for rules/05 (in-place edits) FIXED 2026-10-26: the index row now names it, and tag 'in-place-edit' declares it. Routing gap for rules/04 (gating a push or publish) FIXED 2026-10-26: the index row now names it, and tag 'gate-then-act' declares it.",
+ "skill": "sota-shell-scripting",
+ "tags": {
+  "preamble": [
+   "safety preamble",
+   "set -euo pipefail"
+  ],
+  "quoting": [
+   "quoting & word-splitting"
+  ],
+  "background-job": [
+   "background job"
+  ],
+  "arg-parsing": [
+   "Argument parsing",
+   "--help/--version"
+  ],
+  "error-handling": [
+   "stderr/exit-code discipline",
+   "PIPESTATUS"
+  ],
+  "network-retry": [
+   "network timeouts & retries"
+  ],
+  "idempotency": [
+   "idempotency & atomic writes",
+   "flock"
+  ],
+  "filenames": [
+   "safe filename handling"
+  ],
+  "injection": [
+   "eval/injection"
+  ],
+  "secrets": [
+   "secrets discipline"
+  ],
+  "privileged": [
+   "sudo discipline",
+   "PATH hygiene"
+  ],
+  "download-exec": [
+   "curl\\|bash"
+  ],
+  "temp-files": [
+   "temp-file races",
+   "trap-based cleanup",
+   "mktemp"
+  ],
+  "lint": [
+   "ShellCheck+shfmt in CI"
+  ],
+  "command-arrays": [
+   "arrays for command building"
+  ],
+  "ci": [
+   "GitHub Actions shell pitfalls",
+   "Makefile shell gotchas"
+  ],
+  "entrypoint": [
+   "container entrypoints"
+  ],
+  "long-running": [
+   "long-running script logging",
+   "Killing a backgrounded build"
+  ],
+  "ad-hoc-sweep": [
+   "a sweep, a probe, a one-liner",
+   "what your searcher silently excludes"
+  ],
+  "powershell": [
+   "PowerShell"
+  ],
+  "ad-hoc-side-effects": [
+   "side effects",
+   "no memory ceiling",
+   "crash on purpose"
+  ],
+  "listing": [
+   "lister's default cap",
+   "enumerate"
+  ],
+  "process-selection": [
+   "selecting processes by command-line substring"
+  ],
+  "in-place-edit": [
+   "in-place edits"
+  ],
+  "gate-then-act": [
+   "gating a push or publish"
+  ]
+ },
+ "files": {
+  "01": {
+   "build": [
+    "preamble",
+    "quoting",
+    "background-job"
+   ]
+  },
+  "02": {
+   "build": [
+    "arg-parsing",
+    "error-handling",
+    "network-retry",
+    "idempotency",
+    "filenames",
+    "background-job"
+   ]
+  },
+  "03": {
+   "build": [
+    "injection",
+    "secrets",
+    "privileged",
+    "download-exec",
+    "temp-files",
+    "lint"
+   ]
+  },
+  "04": {
+   "build": [
+    "ci",
+    "entrypoint",
+    "long-running",
+    "gate-then-act"
+   ]
+  },
+  "05": {
+   "build": [
+    "command-arrays",
+    "temp-files",
+    "in-place-edit"
+   ]
+  },
+  "06": {
+   "build": [
+    "ad-hoc-sweep"
+   ]
+  },
+  "07": {
+   "build": [
+    "powershell"
+   ]
+  },
+  "08": {
+   "build": [
+    "ad-hoc-side-effects"
+   ]
+  },
+  "09": {
+   "build": [
+    "listing",
+    "process-selection"
+   ]
+  }
+ },
+ "cases": [
+  {
+   "task": "write an install script that downloads a release tarball, verifies its checksum and installs it atomically",
+   "mode": "build",
+   "tags": [
+    "preamble",
+    "quoting",
+    "network-retry",
+    "idempotency",
+    "temp-files",
+    "download-exec"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "05"
+   ]
+  },
+  {
+   "task": "write a container entrypoint that drops privileges and execs the server",
+   "mode": "build",
+   "tags": [
+    "preamble",
+    "entrypoint",
+    "privileged"
+   ],
+   "must_load": [
+    "01",
+    "04",
+    "03"
+   ]
+  },
+  {
+   "task": "add a GitHub Actions run step that uses the pull request title",
+   "mode": "build",
+   "tags": [
+    "ci",
+    "injection"
+   ],
+   "must_load": [
+    "04",
+    "03"
+   ]
+  },
+  {
+   "task": "write a wrapper script that builds a command from caller-supplied filenames",
+   "mode": "build",
+   "tags": [
+    "preamble",
+    "quoting",
+    "command-arrays",
+    "filenames",
+    "arg-parsing"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "05"
+   ]
+  },
+  {
+   "task": "write a PowerShell deploy step for Windows CI that fails fast",
+   "mode": "build",
+   "tags": [
+    "powershell"
+   ],
+   "must_load": [
+    "07"
+   ]
+  },
+  {
+   "task": "sweep the repo with grep/rg for remaining callers before reporting there are none",
+   "mode": "build",
+   "tags": [
+    "ad-hoc-sweep"
+   ],
+   "must_load": [
+    "06"
+   ]
+  },
+  {
+   "task": "count open pull requests with gh to report the review backlog",
+   "mode": "build",
+   "tags": [
+    "listing"
+   ],
+   "must_load": [
+    "09"
+   ]
+  },
+  {
+   "task": "stop the background helper process a script started",
+   "mode": "build",
+   "tags": [
+    "background-job",
+    "process-selection"
+   ],
+   "must_load": [
+    "02",
+    "09"
+   ]
+  },
+  {
+   "task": "reproduce a crash on purpose to test a signal handler",
+   "mode": "build",
+   "tags": [
+    "ad-hoc-side-effects"
+   ],
+   "must_load": [
+    "08"
+   ]
+  },
+  {
+   "task": "audit a repository's CI and deploy scripts",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09"
+   ]
+  },
+  {
+   "task": "write a script that edits a config file in place",
+   "mode": "build",
+   "tags": [
+    "in-place-edit"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "write a release script that runs the checks and then pushes",
+   "mode": "build",
+   "tags": [
+    "gate-then-act"
+   ],
+   "must_load": [
+    "04"
+   ]
+  }
+ ]
+}

@@ -301,7 +301,7 @@ tokio::select! {
       backpressure argument; attacker-fed unbounded channel = High (DoS). `broadcast`
       receivers that never handle `RecvError::Lagged` = Low:
       `grep -rlE 'broadcast::' --include='*.rs' . | while IFS= read -r f; do grep -q 'Lagged' "$f" || echo "$f"; done`.
-- [ ] `rg 'tokio::spawn' -t rust` — orphaned handles (result never joined, no
+- [ ] `rg 'tokio::spawn' -t rust` (§4) — orphaned handles (result never joined, no
       JoinSet/TaskTracker, no error logging in task) = HIGH: a panic or error in
       the task is silently lost ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §1).
 - [ ] `select!` loops (§3): any branch future recreated per-iteration that buffers
@@ -319,7 +319,7 @@ tokio::select! {
       `.await` = HIGH, CRITICAL when deadlock-capable ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §4).
 - [ ] `rg '\.abort\(\)' -t rust` (§3) — aborted tasks: is every shared invariant
       abort-safe (drop guards present)?
-- [ ] Fan-out: `rg 'buffer_unordered|buffered\(' -t rust` — bound derived from
+- [ ] Fan-out (§4): `rg 'buffer_unordered|buffered\(' -t rust` — bound derived from
       config, not unbounded or request-controlled; loops spawning per item of
       untrusted-size collections = HIGH ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §8).
 - [ ] **Request-scoped state in a thread-local (§4). High if it holds a tenant, user
@@ -336,5 +336,5 @@ tokio::select! {
       futures have no `assert_send`-style compile test can lose `Send` silently = Low. Tokio
       types in a non-tokio-specific library's public API (§7):
       `grep -rnE 'pub (async )?fn [^{;]*tokio::' --include='*.rs' .` = Low.
-- [ ] CI lints: `clippy::await_holding_lock`, `clippy::unused_async`,
+- [ ] CI lints (§5, §7): `clippy::await_holding_lock`, `clippy::unused_async`,
       `clippy::large_futures` (oversized futures → stack/box them).

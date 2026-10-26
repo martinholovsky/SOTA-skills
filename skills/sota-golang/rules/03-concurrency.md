@@ -86,9 +86,11 @@ include the done channel.
 
 **`time.After` in a loop** — pre-1.23, each call allocates a timer not
 collected until it fires; in a hot select loop this is unbounded memory.
-Since Go 1.23 unreferenced timers are collectable, so it's no longer a leak —
-but it still allocates per iteration; `time.NewTimer` + `Reset` or
-`time.Tick`/`time.NewTicker` remains correct for loops:
+Since Go 1.23 (a `go.mod` `go` line ≥ 1.23; an older line keeps the old behaviour)
+unreferenced timers are collectable, so it's no longer a leak — but it still
+allocates per iteration, which matters in a hot select loop: there `time.NewTimer` +
+`Reset` or `time.Tick`/`time.NewTicker` is correct. A bounded retry/backoff loop may
+use `time.After` (its doc: *"There is no reason to prefer NewTimer when After will do"*):
 
 ```go
 // BAD (pre-1.23 leak; ≥1.23 still allocates per iteration)
@@ -279,11 +281,11 @@ err := g.Wait()
       it?** —
       `grep -rn 'go func' --include='*.go' . | grep -v _test.go` ;
       `grep -rnE '^\s*go [a-zA-Z]' --include='*.go' .`
-- [ ] **Goroutines without ctx plumbed (manual: does the func take/select on ctx?)** —
+- [ ] **Goroutines without ctx plumbed (manual: does the func take/select on ctx?)** (§2) —
       `grep -rn -A3 'go func()' --include='*.go' . | grep -L 'ctx'`
-- [ ] **time.After in loops — MEDIUM (HIGH pre-1.23)** —
+- [ ] **time.After in a hot select loop — MEDIUM (HIGH when the `go.mod` `go` line < 1.23)** (§2) —
       `grep -rn -B5 'time.After' --include='*.go' . | grep -E 'for |select'`
-- [ ] **Unbounded fan-out: go inside range — HIGH if input is external** —
+- [ ] **Unbounded fan-out: go inside range — HIGH if input is external** (§6) —
       `grep -rn -B2 'go func' --include='*.go' . | grep 'for .*range'`
 - [ ] **WaitGroup misuse: Add inside goroutine, copied WG (§4)** —
       `grep -rn -A2 'go func' --include='*.go' . | grep 'wg.Add'` ; `go vet ./...` (copylocks,
@@ -299,14 +301,14 @@ err := g.Wait()
       `grep -rnE 'make\(chan [^,]+,[[:space:]]*([2-9]|[1-9][0-9]+)\)|make\(chan struct\{\},[[:space:]]*1\)' --include='*.go' .`
       (a literal buffer other than 0 or 1 needs a comment — MEDIUM; a 1-slot `struct{}` channel used
       as a lock needs a commented ctx-aware reason)
-- [ ] **Sleep-based synchronization — MEDIUM (flaky + racy)** —
+- [ ] **Sleep-based synchronization — MEDIUM (flaky + racy)** (§1) —
       `grep -rn 'time.Sleep' --include='*.go' . | grep _test.go`
 - [ ] **Race detector + leak detection — non-negotiable (§5)** — `go test -race ./...` ;
       `go test -race -count=5 ./...` (shake out flaky interleavings);
       `grep -rn 'goleak' --include='*_test.go' .` (present in goroutine-spawning pkgs?) ; manual:
       every map, counter, lazy-init or flag that a handler or spawned goroutine touches is
       mutex-guarded or atomic (a confirmed race is CRITICAL)
-- [ ] **Runtime evidence (live systems)** —
+- [ ] **Runtime evidence (live systems)** (§2) —
       `curl -s localhost:6060/debug/pprof/goroutine?debug=2 | head -100` ;
       `curl -s localhost:6060/debug/pprof/goroutineleak?debug=1 | head -50` (1.27+)
 - [ ] **Stale leak-profile flag or automaxprocs (§2, §6) — LOW** —
@@ -314,5 +316,5 @@ err := g.Wait()
       (the flag breaks a 1.27 build; automaxprocs pins GOMAXPROCS and stops quota tracking)
 
 Severity guide: confirmed race CRITICAL; goroutine leak / unbounded fan-out
-on request path HIGH; missing `-race` in CI HIGH; `time.After` loop MEDIUM;
+on request path HIGH; missing `-race` in CI HIGH; hot-loop `time.After` MEDIUM;
 hand-rolled errgroup-equivalent LOW.

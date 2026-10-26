@@ -33,7 +33,8 @@ The event loop holds only **weak** references to tasks:
 # Bad — task may be garbage-collected mid-flight; exceptions vanish
 asyncio.create_task(send_email(user))
 
-# Acceptable when truly detached work is required — keep a strong ref + done callback
+# Acceptable only when truly detached (say why in a comment): strong ref + done callback,
+# and cancel + await `_background` at shutdown (sota-async-concurrency rules/01 §2)
 _background: set[asyncio.Task[None]] = set()
 
 def _reap(t: asyncio.Task[None]) -> None:
@@ -241,7 +242,7 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
 
 ## Audit checklist
 
-- [ ] **Ruff async rules first — blocking calls, sync sleep, etc.** —
+- [ ] **Ruff async rules first — blocking calls, sync sleep, etc.** (§3) —
       `uvx ruff check --select ASYNC --statistics .`
 - [ ] **Blocking calls inside async defs (§3) [HIGH in servers]** —
       `grep -rn "time\.sleep" --include="*.py" src/` (cross-check: inside async def?);
@@ -262,10 +263,10 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
 - [ ] **Swallowed cancellation (§4) [HIGH]** —
       `grep -rn -A3 "except asyncio.CancelledError" --include="*.py" src/ | grep -L raise` ;
       `grep -rn "except BaseException" --include="*.py" src/`
-- [ ] **Timeouts** — `grep -rn "asyncio.timeout\|wait_for" --include="*.py" src/ | wc -l` (zero
+- [ ] **Timeouts** (§4, §6) — `grep -rn "asyncio.timeout\|wait_for" --include="*.py" src/ | wc -l` (zero
       in a network service = finding); `grep -rn "AsyncClient()" --include="*.py" src/`
       (per-request client construction? [MEDIUM])
-- [ ] **Loop-bound objects at import time [MEDIUM]** —
+- [ ] **Loop-bound objects at import time [MEDIUM]** (§6) —
       `grep -rn "^[a-zA-Z_]* = asyncio.\(Queue\|Lock\|Event\)" --include="*.py" src/` ;
       `grep -rn "get_event_loop" --include="*.py" src/` (legacy API [LOW-MEDIUM])
 - [ ] **Async generators holding resources without aclosing (§5)** —

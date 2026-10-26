@@ -213,9 +213,9 @@ trigger, codify it in the team's definition of ready.
 Rules:
 
 1. **Baseline once, then delta forever.** Maintain one living baseline model
-   per service (`05` §living). Sprint work models only the diff against it.
-2. **Re-model triggers gate stories.** A story matching any trigger — new
-   dependency, new entry point (route/queue/cron/webhook/callback), new trust
+   per service ([`rules/05`](05-outputs-operationalization.md) §4, *Keeping the model living*). Sprint work models only the diff against it.
+2. **Re-model triggers gate stories.** A story matching any trigger in the canonical
+   list ([`rules/05`](05-outputs-operationalization.md) §4; this is a subset) — new dependency, new entry point (route/queue/cron/webhook/callback), new trust
    boundary, new data class, authn/authz change, crypto change, file or
    deserialization handling — requires a threat-model note before merge.
 3. **PR micro-STRIDE (5 minutes, on the diff only):**
@@ -259,11 +259,11 @@ system every sprint (re-derives known results, exhausts goodwill).
 - [ ] Detection/response coverage assessed (kill-chain or ATT&CK mapping) for
       at least the top abuse scenario, naming the telemetry that would fire
       per stage; logging gaps captured as requirements (§6).
-- [ ] Every threat is an actor→action→asset→impact sentence, not a category.
+- [ ] Every threat is an actor→action→asset→impact sentence, not a category (§2).
 - [ ] Re-model triggers are defined and observably enforced (PRs matching
       triggers contain security notes; baseline model updated after them);
       each service's baseline model has one named owner (§8).
-- [ ] Enumeration volume matches triage capacity — no untriaged threat dumps.
+- [ ] Enumeration volume matches triage capacity (§8) — no untriaged threat dumps.
 - [ ] Lightweight passes escalate to full models when triggers fire (evidence:
       at least one escalation in history, or no trigger-matching changes);
       each four-questions pass leaves 3–10 threat sentences, each with a

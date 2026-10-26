@@ -45,7 +45,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   `IDbCommand.CommandText` assignment, and `CA3075` fired on none of three DTD-enabled XML
   readers in a `net10.0` project (not investigated further). Keep the grep checklists
   ([`rules/04`](04-security.md)) as the second instrument.
-- **A suppression names one rule and says why, and no CLI gate reports a stale one.** Write
+- **A suppression names one rule and says why, and no CLI gate reports a stale one.** General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1. Write
   `[SuppressMessage("Category", "CA1234", Justification = "why")]`, or `#pragma warning disable
   CA1234 // why` with a matching `restore`. With no list, `disable` "disables all warnings" (C#
   preprocessor-directive docs). The unused-suppression rule, **IDE0079, is IDE-only**: even with
@@ -207,6 +207,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   control. Target code that parses untrusted bytes or holds an invariant. A green run must also
   prove it reached anything ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). FsCheck has no `Prop.cover`; its
   gate is `MaxRejected` on the `Config`, run with `QuickThrowOnFailure`, and it counts rejections only.
+  Mutation testing (Stryker.NET, gated by `--break-at`): [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3.
 - **No proof tool is expected here.** No bounded model checker or refinement checker is in mainstream use for C#. A parser or invariant that must hold for
   every input gets a property test and a fuzz target whose reach is gated (above): that is the
   bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
@@ -223,7 +224,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 
 ## Audit checklist
 
-- [ ] **What has been SILENCED? -- the analyser's escape hatch (ROADMAP 60) Five mechanisms,
+- [ ] **What has been SILENCED? (§2) -- the analyser's escape hatch (ROADMAP 60) Five mechanisms,
       verified against Microsoft's in-source-suppression docs. A grep for only the first finds a
       codebase that looks clean while whole rules are off globally.** —
       `grep -rn '#pragma warning disable' --include='*.cs' --include='*.vb' .` (want: a matching
@@ -273,14 +274,14 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rnE 'dotnet_analyzer_diagnostic\.(category-Security\.)?severity' --include='.editorconfig' --include='*.globalconfig' .`
       (a hit raises only the 24 enabled-by-default rules — the same 4 warnings as `Recommended`
       in the measurement)
-- [ ] **Target framework past end of support? HIGH** —
+- [ ] **Target framework past end of support? HIGH** (§1) —
       `grep -rhoE '<TargetFrameworks?>[^<]+' --include='*.csproj' --include='*.props' .` ;
       compare each `netX.Y` with
       `curl -fsS https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json | grep -oE '"(channel-version|support-phase|eol-date)": *"[^"]*"' | awk '/channel-version/{if(l)print l; l=$0; next}{l=l" "$0} END{print l}'`
       (one line per channel; `eol` = no security patches, and a near `eol-date` is the migration
       deadline; a preview channel has no `eol-date` yet; read it at audit time, never from memory. `net4x` targets
       are .NET Framework, which this index does not list — check its lifecycle separately)
-- [ ] **NuGet locking + source mapping + CVE scan?** —
+- [ ] **NuGet locking + source mapping + CVE scan?** (§3) —
       `find . -name packages.lock.json -not -path '*/obj/*' | head -1` (empty = no lockfile) ;
       `err=$(grep -rn 'RestorePackagesWithLockFile' --include='*.csproj' --include='Directory.Build.props' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "lockfile not enforced (RestorePackagesWithLockFile unset) — supply-chain risk" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
@@ -320,9 +321,9 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rn 'Microsoft\.AspNetCore\.Server\.Kestrel\.Core' --include='*.csproj' --include='packages.lock.json' --include='packages.config' --include='Directory.Packages.props' .`
       (≤ 2.3.0 = CVE-2025-55315, need 2.3.6); check container base-image tags; self-contained/AOT
       apps need a rebuild
-- [ ] **Formatting + deterministic build in CI?** —
+- [ ] **Formatting + deterministic build in CI?** (§2, §4) —
       `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' --include='*.yml' --include='*.yaml' --include='*.csproj' --include='*.props' .`
-- [ ] **Test runner + coverage?** —
+- [ ] **Test runner + coverage?** (§4) —
       `grep -rniE 'xunit|nunit|mstest|coverlet|testcontainers' --include='*.csproj' --include='*.props' .`
 - [ ] **Package code that runs at build (`build*/…props`/`.targets` imported from packages) —
       HIGH if any is unreviewed** (§3) — after a restore, every hit is a package file MSBuild

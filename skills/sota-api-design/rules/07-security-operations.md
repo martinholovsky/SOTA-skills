@@ -274,7 +274,7 @@ Access-Control-Max-Age: 7200
   it (send a fake secret, grep the logs in CI/staging).
 - Logs are an injection target: encode/escape user-controlled strings (CRLF/log
   forging); treat log viewers as XSS sinks.
-- Request IDs: accept inbound `traceparent` (W3C Trace Context), generate if
+- Request IDs: accept inbound `traceparent` (W3C Trace Context) but not its sampled flag from the internet ([sota-observability rules/03](../../sota-observability/rules/03-tracing.md) §3), generate if
   absent, return an ID header on every response (incl. errors — [rules/01](01-rest-http-design.md) §9), and
   propagate downstream.
 
@@ -400,25 +400,25 @@ OWASP: WSTG-APIT-01; Django REST Framework cheat sheet.
 
 ## Audit checklist
 
-- [ ] Auth scheme appropriate per consumer type; no credentials in query strings anywhere (grep logs/gateway config).
-- [ ] API keys hashed at rest, prefixed, scoped, dual-key rotation supported, `last_used_at` tracked.
-- [ ] JWT validation complete (iss/aud/exp/alg allowlist); access tokens short-lived; revocation story exists.
-- [ ] Object-level (BOLA) and function-level authz on every handler, deny-by-default middleware/policy — sample 5 endpoints incl. one obscure one.
-- [ ] Internal services mutually authenticated (mTLS/workload identity); no network-position trust.
-- [ ] Rate limiting keyed per principal, sliding-window/GCRA in shared store; 429 + `Retry-After` + RateLimit headers; limits visible on successes; unauth endpoints (login/token) IP-limited.
-- [ ] Quotas separate from rate limits with distinct errors; expensive ops cost-weighted; per-principal concurrency caps.
+- [ ] Auth scheme appropriate per consumer type (§1); no credentials in query strings anywhere (grep logs/gateway config).
+- [ ] API keys hashed at rest (§1), prefixed, scoped, dual-key rotation supported, `last_used_at` tracked.
+- [ ] JWT validation complete (§1) (iss/aud/exp/alg allowlist); access tokens short-lived; revocation story exists.
+- [ ] Object-level (BOLA) and function-level authz on every handler (§1), deny-by-default middleware/policy — sample 5 endpoints incl. one obscure one.
+- [ ] Internal services mutually authenticated (§1) (mTLS/workload identity); no network-position trust.
+- [ ] Rate limiting keyed per principal (§2), sliding-window/GCRA in shared store; 429 + `Retry-After` + RateLimit headers; limits visible on successes; unauth endpoints (login/token) IP-limited.
+- [ ] Quotas separate from rate limits with distinct errors (§2); expensive ops cost-weighted; per-principal concurrency caps.
 - [ ] Body/header/URL/query-param/multipart size limits explicit per route (413); JSON depth/key caps; decompressed-size caps; uploads via pre-signed URLs with file type checked by magic bytes; every input schema-validated at the boundary, unknown fields rejected on writes (§3).
 - [ ] Timeout hierarchy verified outer>inner end-to-end (client→LB→app→downstream→DB statement); long work is async 202, not long synchronous holds; budgets set per route, not one global value; listener read/write/idle timeouts set (slowloris); a client disconnect cancels downstream work; load shedding answers `503` + `Retry-After` and upstream timeouts `504` (§4).
 - [ ] Retries idempotent-only, budget-bounded, jittered, circuit-broken (§4).
 - [ ] CORS (§5): explicit origin allowlist; no origin reflection with credentials (send `Origin: https://evil.example` to a credentialed endpoint and confirm it is not echoed in `Access-Control-Allow-Origin`); no `*`+credentials, `*` only on public unauthenticated read-only APIs; cookie APIs have CSRF defenses; preflight cache set; `Access-Control-Expose-Headers` limited to headers clients read; authz never depends on CORS.
-- [ ] Append-only audit trail covering authn, authz denials, sensitive writes, admin actions, exports — with actor/tenant/object/outcome/trace ID.
-- [ ] No secrets/tokens/PII in logs (verified by test, not policy); log output encoded against CRLF/log injection.
-- [ ] Trace/request ID on every response and propagated downstream (W3C Trace Context).
-- [ ] Tenant derived from credential only; structural scoping (repo layer or RLS) — not per-handler WHERE clauses; cross-tenant probes return consistent 404.
-- [ ] Tenant isolation covers search, exports, counts, webhooks, realtime channels, idempotency keys, and cache keys.
-- [ ] Automated cross-tenant access test suite exists and runs in CI.
-- [ ] Services reject direct (gateway-bypassing) traffic; identity headers from the gateway are mTLS-bound and stripped from external requests at the edge.
-- [ ] TLS 1.2+ everywhere, HSTS on API hosts; no plaintext listeners beyond loopback health checks.
+- [ ] Append-only audit trail covering authn (§6), authz denials, sensitive writes, admin actions, exports — with actor/tenant/object/outcome/trace ID.
+- [ ] No secrets/tokens/PII in logs (§6) (verified by test, not policy); log output encoded against CRLF/log injection.
+- [ ] Trace/request ID on every response and propagated downstream (§6) (W3C Trace Context).
+- [ ] Tenant derived from credential only (§7); structural scoping (repo layer or RLS) — not per-handler WHERE clauses; cross-tenant probes return consistent 404.
+- [ ] Tenant isolation covers search, exports (§7), counts, webhooks, realtime channels, idempotency keys, and cache keys.
+- [ ] Automated cross-tenant access test suite exists (§7) and runs in CI.
+- [ ] Services reject direct (gateway-bypassing) traffic (§8); identity headers from the gateway are mTLS-bound and stripped from external requests at the edge.
+- [ ] TLS 1.2+ everywhere, HSTS on API hosts (§8); no plaintext listeners beyond loopback health checks.
 - [ ] **Framing (§3a) — HIGH**: every hop strict; a relaxed HTTP parser anywhere on the path is a finding:
       `grep -rnE 'insecureHTTPParser[[:space:]]*:[[:space:]]*true|--insecure-http-parser|accept-(invalid-http|unsafe-violations-in-http)-request' .`
       — then walk the hop chain for an h2-front/h1-back downgrade and for hand-set `Content-Length` on streamed bodies.
@@ -430,14 +430,14 @@ OWASP: WSTG-APIT-01; Django REST Framework cheat sheet.
       `grep -rniE 'remaining[_ -]?attempts|attempts[_ -]?(left|remaining)' .`
 - [ ] **Throttle overrides (§2) — HIGH on auth or expensive routes**: a global default is configured and no view disables it:
       `grep -rnE 'throttle_classes[[:space:]]*=[[:space:]]*(\[[[:space:]]*\]|\([[:space:]]*\)|None)|@throttle_classes\([[:space:]]*(\[[[:space:]]*\]|\([[:space:]]*\))[[:space:]]*\)' --include='*.py' .`
-- [ ] Rate-limit keys include session and ASN/geo where relevant; login uses separate per-account and per-source buckets; anomalous clients auto-downgraded; new identities cost a verified operator. Bot defence layered (edge, app, business), with minimum-realistic-interval checks on business flows and reputation plus delayed publishing for UGC — MEDIUM.
+- [ ] Rate-limit keys include session and ASN/geo where relevant (§2); login uses separate per-account and per-source buckets; anomalous clients auto-downgraded; new identities cost a verified operator. Bot defence layered (edge, app, business), with minimum-realistic-interval checks on business flows and reputation plus delayed publishing for UGC — MEDIUM.
 - [ ] Audit events (§6) include token issuance with scopes, logout (hashed session ref), file deletion, imports, system-object create/delete, UGC processing, sequence and fraud signals, and WebSocket open/close, decisions and violations; high-risk operations log intent before and outcome after — MEDIUM.
-- [ ] Log records carry app ID, hostname, protocol/port, method/URI, region and client port; nodes time-synced with drift alerting; anti-bot decisions logged with their signals and hashed fingerprints — MEDIUM.
+- [ ] Log records carry app ID, hostname, protocol/port, method/URI, region and client port (§6); nodes time-synced with drift alerting; anti-bot decisions logged with their signals and hashed fingerprints — MEDIUM.
 - [ ] **Shared audit store (§7) — HIGH**: reads tenant-filtered, cross-tenant reads need a platform-auditor permission no tenant admin has, and writes cannot target another tenant's stream. Audit-table reads with no tenant term on the line (a lead to read):
       `grep -rniE 'from[[:space:]]+audit_?(log|events?|trail)' . | grep -viE 'tenant'`
 - [ ] Gateway does coarse route/scope authz as a first layer only; service-level and object checks still present (§8) — MEDIUM.
 - [ ] **Plaintext on API hosts (§8) — MEDIUM**: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://<api-host>/<path>` returns an error or refuses the connection; a 301/302/307/308 to `https://` is the finding.
-- [ ] JSON responses a browser can reach carry `default-src 'none'; frame-ancestors 'none'`, empty-allowlist `Permissions-Policy`, `Referrer-Policy: no-referrer`, `nosniff` (check with `curl -sI`) — LOW.
+- [ ] JSON responses a browser can reach (§8) carry `default-src 'none'; frame-ancestors 'none'`, empty-allowlist `Permissions-Policy`, `Referrer-Policy: no-referrer`, `nosniff` (check with `curl -sI`) — LOW.
 - [ ] **Inventory (§9) — MEDIUM**: every host has version, environment and audience; routed vs spec vs client-bundle endpoint lists reconciled; no stray published server URL:
       `grep -rnE 'url"?[[:space:]]*:[[:space:]]*"?https?://[^"[:space:]]*(staging|localhost|127\.0\.0\.1|internal|\.local[:/"]|10\.[0-9]+\.|192\.168\.)' --include='*.yaml' --include='*.yml' --include='*.json' .`
 - [ ] **Forwarded client certificate (§8) — HIGH**: every read of a forwarded cert header is honoured only from the terminating proxy, stripped at the edge, and not the sole basis of an identity-authorised write. Locator:

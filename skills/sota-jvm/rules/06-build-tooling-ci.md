@@ -127,7 +127,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   Java XXE rules are a second opinion at source level. OWASP: XML External Entity Prevention
   cheat sheet.
 - **A suppression names one check and a reason, and is reported once it suppresses nothing,
-  where a tool can do that.** SpotBugs: `@SuppressFBWarnings(value = "PATTERN", justification =
+  where a tool can do that.** General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1. SpotBugs: `@SuppressFBWarnings(value = "PATTERN", justification =
   "why")`. `justification` defaults to `""`, and `value` takes a category, kind or pattern matched
   **by prefix** unless `matchType = SuppressMatchType.EXACT` (annotation source), so a short value hides more
   than it names. Since 4.9.2 SpotBugs reports a suppression that suppressed nothing as
@@ -168,7 +168,8 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   Target code that parses untrusted bytes or holds an invariant (encode/decode round-trip).
   A green run must also prove it reached anything ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). On a pinned 1.9.x
   jqwik that is `@Property(maxDiscardRatio = …)` plus `Statistics.coverage(...)` checking a label
-  that a matching `Statistics.collect(...)` records (both are in the 1.9.0 source).
+  that a matching `Statistics.collect(...)` records (both are in the 1.9.0 source). Mutation testing
+  (PIT, and its Kotlin caveat): [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3.
 - **No proof tool is expected here.** JBMC, OpenJML and ESBMC's Kotlin/Java frontend exist, but none is in mainstream
   use. A parser or invariant that must hold for
   every input gets a property test and a fuzz target whose reach is gated (above): that is the
@@ -199,19 +200,19 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 
 ## Audit checklist
 
-- [ ] **What has been SILENCED? -- the analyser's escape hatch (ROADMAP 60) javac:
+- [ ] **What has been SILENCED? (§3) -- the analyser's escape hatch (ROADMAP 60) javac:
       @SuppressWarnings is CATEGORY-SCOPED. Measured on JDK 21.0.12: a method annotated
       @SuppressWarnings("unchecked") still emitted BOTH [rawtypes] warnings while the unchecked
       one vanished. So read the ARGUMENT, never just the annotation.** —
       `grep -rn '@SuppressWarnings' --include='*.java' --include='*.kt' src/` ;
       `grep -rn '@SuppressWarnings("all")\|@SuppressWarnings({"all"' --include='*.java' src/`
       (HIGH: silences every category)
-- [ ] **SpotBugs: edu.umd.cs.findbugs.annotations.SuppressFBWarnings (needs the
+- [ ] **SpotBugs: edu.umd.cs.findbugs.annotations.SuppressFBWarnings (§3) (needs the
       spotbugs-annotations artifact on the classpath, so its presence is also a dependency
       fact)** — `grep -rn 'SuppressFBWarnings' --include='*.java' --include='*.kt' src/` ;
       `grep -rn 'NOSONAR\|CHECKSTYLE:OFF\|noinspection' --include='*.java' --include='*.kt' src/`
-- [ ] **...and the BULK forms, which no per-site grep above will find** —
-      `grep -rn 'excludeFilterFile\|<exclude>\|baseline' pom.xml build.gradle* 2>/dev/null` ;
+- [ ] **...and the BULK forms (§3), which no per-site grep above will find** —
+      `grep -rn --include='pom.xml' --include='build.gradle*' 'excludeFilterFile\|<exclude>\|baseline' .` ;
       `find . -name 'spotbugs-exclude*.xml' -o -name 'checkstyle-suppressions.xml' 2>/dev/null`
 - [ ] **Suppressions with no reason, blanket forms, and the stale-suppression report switched
       off (§3) — MEDIUM** —
@@ -229,21 +230,21 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rnE 'ignoreFailures[[:space:]]*=[[:space:]]*true|disableAllChecks|errorprone\.enabled[[:space:]]*=[[:space:]]*false|errorprone\.disable\(|<failOnError>false|<skip>true' --include='*.gradle' --include='*.gradle.kts' --include='pom.xml' .`
       (read the enclosing block: inside `compileTestJava`/`spotbugsTest` it is scoped; at the
       top level or in `withType<…>` it disables the check for production code too)
-- [ ] **Each hit needs a written reason. A suppression with no justification is the finding, not
+- [ ] **Each hit needs a written reason (§3). A suppression with no justification is the finding, not
       the warning it hides -- a silenced analyser is how a green gate stops meaning anything (
       [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).**
 - [ ] **Wrapper pinned? LTS targeted?** (§1) —
       `ls mvnw gradlew 2>/dev/null | grep -q . || echo "no build wrapper (version not pinned)"`
       ;
-      `grep -rnE 'release|sourceCompatibility|targetCompatibility|languageVersion' pom.xml build.gradle* 2>/dev/null`
+      `grep -rnE --include='pom.xml' --include='build.gradle*' 'release|sourceCompatibility|targetCompatibility|languageVersion' .`
       (`sourceCompatibility`/`targetCompatibility` or `-source`/`-target` with no `release` or
       toolchain: newer APIs compile against an older bytecode target)
-- [ ] **Dependency CVE scan + locking in CI?** —
+- [ ] **Dependency CVE scan + locking in CI?** (§2) —
       `err=$(grep -rniE 'dependency-check|osv-scanner|dependabot|snyk|cyclonedx' --include='*.yml' --include='*.yaml' --include='pom.xml' --include='build.gradle*' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no dependency CVE scan — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ;
-      `ls gradle.lockfile gradle/dependency-locks 2>/dev/null; grep -rn 'dependencyLocking' build.gradle* 2>/dev/null`
-      ; `grep -rnE 'version ranges|\[.*,.*\)|latest\.release|\+' build.gradle* 2>/dev/null`
+      `ls gradle.lockfile gradle/dependency-locks 2>/dev/null; grep -rn --include='build.gradle*' 'dependencyLocking' .`
+      ; `grep -rnE --include='build.gradle*' 'version ranges|\[.*,.*\)|latest\.release|\+' .`
       (unpinned ranges)
 - [ ] **Lock that leaves something unlocked (§2) — HIGH for the plugin classpath, MEDIUM
       otherwise** — with project locking on, is the buildscript locked and the mode strict?
@@ -282,12 +283,12 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rniE 'spring\.devtools\.remote\.secret|jdwp|include-(stacktrace|message|binding-errors)[=:][[:space:]]*"?(always|on[-_]param)|excludeDevtools>false|(implementation|runtimeOnly|api)[ (]+.org\.springframework\.boot:spring-boot-devtools' --include='*.properties' --include='*.y*ml' --include='pom.xml' --include='*.gradle*' --include='Dockerfile*' --include='*.sh' .`
       (a hit in a dev-only profile file such as `application-dev.yml` is fine; confirm which
       profile the production deploy activates)
-- [ ] **Static analysis configured?** —
+- [ ] **Static analysis configured?** (§3) —
       `grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"`
-- [ ] **Coverage gate + JUnit Jupiter/Testcontainers?** —
-      `grep -rniE 'jacoco|junit-jupiter|testcontainers' pom.xml build.gradle* 2>/dev/null`
-- [ ] **Repository over HTTPS, trusted only** —
-      `grep -rnE 'http://|maven \{|repositories' pom.xml build.gradle* settings.* 2>/dev/null | grep -i 'http://'`
+- [ ] **Coverage gate + JUnit Jupiter/Testcontainers?** (§4) —
+      `grep -rniE --include='pom.xml' --include='build.gradle*' 'jacoco|junit-jupiter|testcontainers' .`
+- [ ] **Repository over HTTPS, trusted only** (§2) —
+      `grep -rnE --include='pom.xml' --include='build.gradle*' --include='settings.*' 'http://|maven \{|repositories' . | grep -i 'http://'`
 - [ ] **Fuzz / property-based tests on the parsers (§4) — LOW, MEDIUM for a parser of untrusted
       bytes** — `grep -rnE '@FuzzTest|com\.code_intelligence\.jazzer|net\.jqwik|io\.kotest[:.]property' --include='*.java' --include='*.kt' --include='pom.xml' --include='build.gradle*' .`
       (none: no parser in the repo is fuzzed; a `net.jqwik` hit at ≥ 1.10.0 is HIGH where agents

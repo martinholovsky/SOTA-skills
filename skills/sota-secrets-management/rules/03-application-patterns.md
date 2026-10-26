@@ -326,9 +326,9 @@ Every credential answers: who uses it, for which actions, on which resources, un
 - [ ] Single config loader with explicit precedence; (§1) `*_FILE` indirection supported; secrets only via secret layer; references
       not values in committed config; startup fails fast (redacted) on missing secrets; no
       default/fallback secret values in code.
-- [ ] No literal secrets in source, tests, fixtures, comments, examples, or git history
+- [ ] No literal secrets in source, tests, fixtures, comments, examples, or git history (§2)
       (history scan done — [rules/04](04-detection-and-remediation.md)).
-- [ ] Redacting wrapper types in use; logger-level scrubbing for secret key names and token
+- [ ] Redacting wrapper types in use (§2); logger-level scrubbing for secret key names and token
       shapes; connection strings/URLs logged without userinfo; no full-header, full-env, or
       full-config logging.
 - [ ] **Text whose producer you do not control is never persisted raw (§2.1)** — a swept
@@ -336,23 +336,23 @@ Every credential answers: who uses it, for which actions, on which resources, un
       digest plus a structural skeleton, with the shape channel's disclosure stated and
       stdout covered by the same rule; shape/prefix redaction alone is not accepted as the
       control, because it is an enumeration
-- [ ] Exceptions and error-tracker payloads carry no secret values; PII/data scrubbers
+- [ ] Exceptions and error-tracker payloads carry no secret values (§2); PII/data scrubbers
       configured; debug pages and Spring actuator env/heapdump endpoints disabled or
       authenticated in prod.
 - [ ] No secrets in URLs/query strings (except short-lived signed URLs); (§3) none passed as CLI
       arguments (in code, scripts, CI, and docs); subprocesses get explicit env/files, not
       inherited environments or interpolated command strings.
-- [ ] No build-time secret injection (`--build-arg`, Dockerfile ENV); runtime injection only.
+- [ ] No build-time secret injection (§4) (`--build-arg`, Dockerfile ENV); runtime injection only.
 - [ ] No secrets in client-shipped code: (§5) bundles, source maps, and mobile binaries scanned;
       `NEXT_PUBLIC_`/`VITE_`/`REACT_APP_` vars contain only public values; designed-public keys
       vendor-restricted; third-party APIs proxied server-side.
-- [ ] Secret-manager fetches cached with TTL, stale-on-error with alerting, forced refresh on
+- [ ] Secret-manager fetches cached with TTL (§4), stale-on-error with alerting, forced refresh on
       auth failure; rotation verified end-to-end without restarts.
 - [ ] Per-environment secrets fully separated (accounts/paths + IAM); (§6) prod unreadable from
       non-prod; vendor test keys in non-prod; fork PRs receive no secrets; prod deploys gated.
 - [ ] Tokens scoped least-privilege (actions, resources, expiry); (§7) one credential per consumer;
       read-only creds on read paths; no wildcard IAM/superuser DB users on app credentials.
-- [ ] Backend access logs enabled, shipped, and alerted; app logs usage events by name only;
+- [ ] Backend access logs enabled, shipped, and alerted (§8); app logs usage events by name only;
       rotation completion verifiable from logs.
 - [ ] **Secret audit trail complete (§8)** — requester, target and role, approval/rejection,
       use, expiry, updates, authn/authz errors and store admin actions recorded; detections
