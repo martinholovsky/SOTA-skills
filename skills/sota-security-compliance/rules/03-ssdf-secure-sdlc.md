@@ -7,6 +7,8 @@ as the thing US federal buyers make you **attest to**. Almost none of it is new
 engineering if you already apply [`sota-devsecops`](../../sota-devsecops/SKILL.md), [`sota-testing`](../../sota-testing/SKILL.md), and
 [`sota-secrets-management`](../../sota-secrets-management/SKILL.md) — the work is mapping and closing gaps.
 
+## 0. Status of the SSDF revisions
+
 > **Status (verified July 2026; CSRC re-read 2026-09-26):** the final is **SSDF
 > v1.1, SP 800-218, published 3 Feb 2022** (csrc.nist.gov/pubs/sp/800/218/final). A **Rev 1
 > (SSDF v1.2)** initial public draft appeared **Dec 2025** — *draft, not a
@@ -128,5 +130,5 @@ pipeline guidance. When a PW/PS/RV practice needs implementing, jump to:
 - [ ] If federal self-attestation applies: the attested practices are demonstrably enforced *before* signing; SBOM/provenance/scan artifacts produced from the pipeline; obligation read from the agency contract (M-26-05 rescinded the government-wide M-22-18/M-23-16 mandate), not assumed (§3)
 - [ ] If developing/fine-tuning AI: SP 800-218A additions applied — training-data provenance/integrity, model weights protected & signed as high-value assets, eval/misuse testing before release (§4)
 - [ ] Attestation, if any, backed by mechanisms not prose — no signed claim without an enforcing gate (False Claims exposure) (§3)
-- [ ] SSDF version referenced is a final revision with no finalized successor (SP 800-218 is v1.1; check csrc.nist.gov); drafts not cited as baseline
+- [ ] (§0) SSDF version referenced is a final revision with no finalized successor (SP 800-218 is v1.1; check csrc.nist.gov); drafts not cited as baseline
 - [ ] No pipeline guidance duplicated here (§5) — implementation deferred to [`sota-devsecops`](../../sota-devsecops/SKILL.md) / [`sota-testing`](../../sota-testing/SKILL.md) / [`sota-code-security`](../../sota-code-security/SKILL.md)

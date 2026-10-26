@@ -491,8 +491,6 @@ Deliver in exactly this order:
 - [ ] Remediation roadmap sequenced by risk-reduction-per-effort (§5), related
       fixes grouped — actionable without re-reading every finding?
 - [ ] Positive observations included (§5)?
-- [ ] No secret values anywhere in the report; leaks redacted and referenced
-      by location only?
 
 A report that ships unverified findings, raw tool dumps, or no prioritized
 roadmap is itself a failed deliverable — treat missing evidence or missing

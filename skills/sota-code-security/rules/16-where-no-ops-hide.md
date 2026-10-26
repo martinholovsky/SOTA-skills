@@ -298,7 +298,29 @@ half.
       actually applied to the path it is credited with
 - [ ] **A flag that parses is not a feature that works** (§2.15) — the parser accepting it
       proves the parser, not the behaviour; and a chain of green availability checks proves
-      the preconditions, not the operation. Was the real call run once before designing on it?
+      the preconditions, not the operation. Was the real call run once before designing on it,
+      and its output kept? Build-tag-gated flags parse and stub out. High when the capability is
+      the load-bearing half of a security control.
 - [ ] **No aggregate masking a detection** (§2.16) — an "it produced something" assertion that
       sums or counts a result mixing derived inputs with findings proves only that the input stage
       ran: name the field that would be empty if the detector were deleted, and assert on that
+- [ ] Presence/enablement decided by real loaded artifacts (non-zero rule count,
+      required files present), not by `exists()`/`is_dir()`/truthiness (§2.1)?
+- [ ] No `except ImportError` (or equivalent) silently disabling a control (§2.2); every
+      optional dependency backing a control present in the **shipped** artifact?
+- [ ] Does a loader that yields zero rules/policies fail closed and loudly (§2.3)? Do
+      shipped example/reference configs load to a non-empty, safe state?
+- [ ] Broad `except` on an enforcement path returning the permissive value (§2.4)?
+      Grep: `except Exception`/`catch (...)`/`rescue =>`/`recover()` near authz,
+      verify, validate, scan → each is fail-open, silent, or both.
+- [ ] Any flag used more broadly than its own definition claims (§2.5) (debug/dev_mode
+      also disabling a security check)?
+- [ ] Early-return guards on empty/oversized/unparseable input that an attacker
+      can deliberately trigger to skip inspection (§2.6)?
+- [ ] Any truncation (`[:N]`, byte caps, `LIMIT`) on the path *into* a scan (§2.7),
+      validation, or signature check — or a cap on a **generator's output**
+      (unset `max_tokens`, `--max-results`) whose fragment is then parsed?
+- [ ] Config/policy schemas reject unknown keys (§2.8), and every key in the reference
+      config resolves to a real field of its section (tested structurally)?
+- [ ] Security/privacy/cost-relevant defaults verified in **both** docs and code (§2.9),
+      with a test pinning the documented default to the parsed one?

@@ -123,3 +123,4 @@ The hard tradeoffs and traps:
 - [ ] Webhook TLS `caBundle` valid (§3), managed by cert-manager, rotated before expiry, expiry-alerted?
 - [ ] Writes to `admissionregistration.k8s.io` (WebhookConfigurations) guarded like RBAC writes (§3)? (`kubectl auth can-i create validatingwebhookconfigurations --as=<subject>` per subject; reverse index via krane — [`rules/02`](02-rbac-serviceaccounts.md) §4)
 - [ ] Logic that fits CEL moved to ValidatingAdmissionPolicy (§3) instead of a webhook where practical?
+- [ ] Mutating policies/webhooks reviewed for what they inject (§3) (a hostile mutation adds a sidecar/hostPath; an operator that rewrites pod specs counts, §1)?

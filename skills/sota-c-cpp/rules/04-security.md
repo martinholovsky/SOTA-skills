@@ -493,8 +493,3 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
 - [ ] **Secret wiped with plain `memset` (§4) — MEDIUM** —
       `grep -rniE 'memset[[:space:]]*\([[:space:]]*&?[A-Za-z_.>-]*(key|secret|passw|pwd|token|priv)' --include='*.c' --include='*.cc' --include='*.cpp' .`
       (the store may be elided: use `memset_explicit` or a platform wipe)
-- [ ] **Static + safety-standard analysis** —
-      `clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>` ;
-      `cppcheck --enable=warning,portability <src>` (cppcheck 2.21 ships no `cert` addon:
-      `--addon=cert` prints "Did not find addon cert.py" and exits 1 without analysing, measured.
-      CERT coverage comes from clang-tidy's `cert-*` checks or a commercial analyser)

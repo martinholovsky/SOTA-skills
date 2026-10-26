@@ -430,12 +430,6 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       — each hit is a default or README sample left in place (open CORS, no timeout, unsanitized Markdown, the demo session secret).
       For each name the PR adds to `package.json`, run `npm view <name> time.created maintainers repository.url`: E404 or a days-old package is HIGH until explained.
 - [ ] `grep -n "git+\|git://\|github:\|https://.*\.tgz" package.json` — git-URL or remote-tarball dependencies (§5): unauditable, refused by npm ≥12 unless `allow-git`/`allow-remote` is `root` or `all` (MEDIUM).
-- [ ] SQL built by interpolation (the rule is the "Same family" bullet in [rules/08](08-process-and-outbound.md) §"Command injection via child_process"; this is its
-      probe, absent until 2026-09-22): ``grep -rnE '(query|execute|raw)\( *`' --exclude-dir=node_modules .`` — a
-      template literal reaching a driver is CRITICAL. Also `grep -rn "knex.raw\\|sequelize.query\\|\\$queryRawUnsafe\\|createQueryBuilder" --exclude-dir=node_modules .`
-      — Prisma's `$queryRaw` tagged template is parameterized while `$queryRawUnsafe` is not,
-      and the two differ by one word. Parameterized/bound form everywhere, or HIGH.
-- [ ] Webhook handlers: signature verification before parsing (absent = HIGH).
 - [ ] `grep -rn "Allow-Origin" --exclude-dir=node_modules .` — `*` with credentials or unvalidated Origin reflection (§8) (HIGH).
 - [ ] Built client bundle: `grep -rE "sk_live|AKIA|ghp_|-----BEGIN" dist/` — leaked secrets (CRITICAL). Repo: gitleaks in CI (absent = MEDIUM). (§9)
 - [ ] `grep -rn "NEXT_PUBLIC_\|VITE_" --exclude-dir=node_modules .` — server secrets under public prefixes (§9) (CRITICAL).
@@ -456,32 +450,11 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       — a request value as EJS/Pug template *source* is CRITICAL (code execution). As a
       view *name* it is HIGH (renders templates outside `views/`). `noEscape`, a reassigned
       `Mustache.escape`, or HTML built in a template literal is XSS (HIGH). So is a hand escaper using `.replace('<', …)` with a string pattern: it replaces only the first match.
-- [ ] **Code chosen by the request, or a shell hidden in argv** —
-      ``grep -rnE '(require|import)\( *([[:alpha:]_$]|`[^`]*\$\{)|[^[:alnum:]_](/bin/)?(ba|z|da)?sh[^[:alnum:]_] *, *\[ *[^[:alnum:]]-c[^[:alnum:]]|shelljs|shell\.exec\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
-      — `require`/`import()` of a non-literal reached by request data is CRITICAL. So is
-      `spawn('sh', ['-c', …])` or `shell.exec` with interpolated input. The `shell: true`
-      probe above misses both.
-- [ ] **YAML loader version** — `grep -rnE '"js-yaml": *"[~^]?[0-3]\.|safeLoad' --include='package.json' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
-      — js-yaml below 4 with `load` on untrusted input is HIGH. A `safeLoad` call on js-yaml
-      4 or later throws, so those hits are dead code.
-- [ ] **NoSQL operator injection** —
-      `grep -rnE '\.(find|findOne|findOneAndUpdate|findOneAndDelete|updateOne|updateMany|deleteOne|deleteMany|countDocuments|aggregate)\([^)]*req\.(body|query|params)|query parser.*extended' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
-      — a request field in a filter without a scalar schema parse is HIGH (auth bypass via
-      `{"$ne": null}`). The probe sees single-line calls only. Also check the Express major,
-      because v4 defaults to the nesting `qs` parser.
-- [ ] **Ajv configuration** — `grep -rnE 'allErrors: *true|\.compile\([^)]*req\.' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
-      — `allErrors: true` on a request-validation path is MEDIUM (DoS). Compiling a
-      request-supplied schema is HIGH.
 - [ ] **CORS via the `cors` middleware** (§8) — `grep -rnE 'origin: *(true|/)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       — `origin: true` reflects every origin: HIGH with `credentials: true`. A regex origin
       must be anchored at both ends with the dot escaped, or it is HIGH.
 - [ ] **JWT decoded but never verified** (§8) — `grep -rnE '(jwt|jsonwebtoken)\.decode\(|decodeJwt\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       — on the server, a decoded claim that gates access is CRITICAL.
-- [ ] **Path traversal: request data reaching the filesystem** (the rule is in §"Same family";
-      this is its probe) —
-      `grep -rnE '(readFile|readFileSync|createReadStream|writeFile|writeFileSync|createWriteStream|unlink|rm|readdir|sendFile|download|join|resolve)\([^)]*req\.(params|query|body)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
-      — each hit needs the resolve + containment check (HIGH without it). The probe sees
-      single-line calls only.
 - [ ] **Invisible or bidirectional characters in source (§6)** —
       `grep -rnE "$(printf '\342\200\213|\342\200\214|\342\200\215|\342\200\216|\342\200\217|\342\200\252|\342\200\253|\342\200\254|\342\200\255|\342\200\256|\342\201\240|\342\201\241|\342\201\242|\342\201\243|\342\201\244|\342\201\246|\342\201\247|\342\201\250|\342\201\251|\343\205\244|\357\276\240')" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
       — U+200B–200F, U+202A–202E, U+2060–2064, U+2066–2069, U+3164 and U+FFA0, written as

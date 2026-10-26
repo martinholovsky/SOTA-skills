@@ -478,5 +478,3 @@ with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-perfo
       `grep -rniE '(record|data class)[[:space:]]+[a-z0-9_]+[[:space:]]*(<[^>]*>)?[[:space:]]*\([^)]*(passw|secret|token|api_?key|credential)' --include='*.java' --include='*.kt' .`
       (a record or data class holding a credential: the generated `toString` prints it
       unless overridden)
-- [ ] **Static security analysis SpotBugs + Find-Sec-Bugs; OWASP dependency-check / OSV-Scanner
-      ([rules/06](06-build-tooling-ci.md))**

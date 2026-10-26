@@ -289,8 +289,6 @@ services — and into every outbound header.
 - [ ] Sampling is deliberate: documented policy, effective config logged;
       errors and slow traces are retained (tail sampling or equivalent);
       ParentBased everywhere; sampling rate adjustable during incidents (§4).
-- [ ] trace_id present in logs (cross-link works both ways: log→trace,
-      trace→logs, metric exemplar→trace).
 - [ ] Baggage usage reviewed: no PII/secrets, stripped or validated at trust
       boundaries, not leaking to third-party APIs; count and size capped (§6).
 - [ ] Collector pipeline monitored (§5) (dropped spans, queue saturation, export

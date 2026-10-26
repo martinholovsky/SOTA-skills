@@ -43,6 +43,8 @@ What each guards:
   timeouts protect the transport; ctx protects the business logic.
 - Body limits: `http.MaxBytesReader(w, r.Body, maxSize)` on every endpoint
   that reads a body — unbounded `io.ReadAll(r.Body)` is a memory DoS (HIGH).
+- A body kept as text is validated UTF-8 (`utf8.Valid`) before it is stored or forwarded, and
+  privilege-bearing JSON is decoded so duplicate keys are rejected: [rules/05](05-security.md) §1 has why.
 - Routing: stdlib `http.ServeMux` (1.22+) supports methods and wildcards —
   `mux.HandleFunc("GET /users/{id}", h)`, `r.PathValue("id")`. Default to it;
   reach for chi/echo only for needed extras (route-scoped middleware trees).
@@ -372,7 +374,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
 
 ## Audit checklist
 
-- [ ] **Invalid UTF-8 stored or forwarded ([rules/05](05-security.md) §1) — MEDIUM, HIGH when the text feeds
+- [ ] **Invalid UTF-8 stored or forwarded (§1; [rules/05](05-security.md) §1) — MEDIUM, HIGH when the text feeds
       another parser** — files that turn a body into a string and never validate it:
       `grep -rlE 'string\((body|b|buf|data|raw)\)|io\.ReadAll' --include='*.go' . | while IFS= read -r f; do grep -qE 'utf8\.(Valid|ValidString)' "$f" || echo "$f"; done`
       (`utf8.ValidString(string([]byte{0x63, 0xff}))` is `false`, measured on go1.27.1)
@@ -416,7 +418,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       mutating route is behind its `Handler`) ;
       `grep -rnE 'AddInsecureBypassPattern|AddTrustedOrigin' --include='*.go' .` (every hit is
       a widened exception — MEDIUM unless justified) ; `gosec -include=G121 ./...`
-- [ ] **JSON duplicate keys on privilege-bearing input ([`rules/05`](05-security.md) §1) — HIGH when a proxy,
+- [ ] **JSON duplicate keys on privilege-bearing input (§1; [`rules/05`](05-security.md) §1) — HIGH when a proxy,
       validator or signer parses the same body first** —
       `grep -rlE '"encoding/json"' --include='*.go' . | xargs -r grep -lE 'json\.(Unmarshal|NewDecoder)\(' | xargs -r grep -nHE '^[[:space:]]*(Role|Roles|Admin|IsAdmin|Scopes?|Permissions?|Tenant(ID)?|Owner(ID)?|UserID|Price|Amount)[[:space:]].*json:"'`
       (v1 decoder in a file declaring a privilege field; v1 keeps the last duplicate and

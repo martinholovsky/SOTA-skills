@@ -7,6 +7,8 @@ DoD program that *assesses* 800-171 implementation; **FedRAMP** applies 800-53
 baselines to cloud services sold to the government. Learn the catalog once; the
 rest are scopes and assessment wrappers over it.
 
+## 0. Status and re-verification
+
 > Statuses verified July 2026 against csrc.nist.gov, fedramp.gov, and the Federal
 > Register. Re-verify dates before relying on them; route scoping/level decisions
 > to your assessor or sponsor (engineering guidance, not assessment advice).
@@ -162,4 +164,4 @@ read 2026-09-26). *Future-phase dates are FedRAMP plans — re-verify there.*
 - [ ] AC/IA controls: least privilege, separation of duties, MFA for privileged/network access (§2) — enforced by the IdP, not policy prose ([`sota-identity-access`](../../sota-identity-access/SKILL.md))
 - [ ] FedRAMP (if applicable): authorization boundary drawn and enforced; asset inventory reconciled continuously; ConMon (scans/POA&M/change control) operating monthly; CRM published (§5)
 - [ ] Where FedRAMP 20x applies, control evidence emitted as machine-readable KSIs from the enforcing system; OSCAL used for SSP/SAP/SAR interchange (§5)
-- [ ] All statuses/dates in this file re-verified against primary sources (CSRC, fedramp.gov, Federal Register) within the last 6 months
+- [ ] (§0) All statuses/dates in this file re-verified against primary sources (CSRC, fedramp.gov, Federal Register) within the last 6 months

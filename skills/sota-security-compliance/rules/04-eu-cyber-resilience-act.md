@@ -7,6 +7,8 @@ with CE-marking, penalties, and hard reporting clocks — and its obligations ar
 overwhelmingly *engineering* obligations (SBOM, vulnerability handling, secure-by-
 default, a maintained update channel). Retrofitting them is brutal; design them in.
 
+## 0. Status and phased application dates
+
 > **Status (verified July 2026 against EUR-Lex and the European Commission):**
 > Regulation **(EU) 2024/2847**, in force **10 Dec 2024**. Phased application:
 > **conformity-assessment/notified-body provisions from 11 Jun 2026**;
@@ -284,4 +286,4 @@ teeth and deadlines. Reuse, don't rebuild:
 - [ ] Article 14 reporting pipeline built and rehearsed (§3): detection → 24h early warning / 72h notification to CSIRT + ENISA; final reports (14 days / 1 month) covered; unified with NIS2/DORA clocks where applicable; covers products placed on the market before 11 Dec 2027 (Art. 69(3))
 - [ ] Conformity route chosen for the tier (self-assessment vs notified body / certification scheme); CE-marking obligations understood; a class I important product on Module A has fully applied harmonised standards, common specifications or a qualifying certification scheme (Art. 32(2)), otherwise module B+C or H (§4)
 - [ ] Harmonized-standard reliance (incl. 62443 for OT) confirmed against the current OJ-published hEN list, not assumed (§4)
-- [ ] All CRA dates/Article references re-verified against EUR-Lex / the Commission within the last 6 months (timeline is live: reporting from 11 Sep 2026 — for legacy products too, Art. 69(3) — main obligations from 11 Dec 2027)
+- [ ] (§0) All CRA dates/Article references re-verified against EUR-Lex / the Commission within the last 6 months (timeline is live: reporting from 11 Sep 2026 — for legacy products too, Art. 69(3) — main obligations from 11 Dec 2027)

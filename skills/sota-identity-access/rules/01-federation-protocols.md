@@ -388,7 +388,6 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
 - [ ] Does the RP fetch keys from `jwks_uri` and rotate by `kid` (re-fetch on unknown kid), with a sane JWKS cache TTL? (§3)
 - [ ] Are high-value/regulated clients on PAR + DPoP/mTLS (FAPI 2.0) rather than bare bearer tokens? (§5, §6)
 - [ ] For SAML RPs: is a signature required and validated over the consumed assertion, with XSW and comment-injection defenses, audience restriction, replay cache, and extra-assertion rejection? (§7)
-- [ ] Does the RP send a `state` parameter, bind it to the session, and verify it on the callback **before** exchanging the code? CSRF on the authorization response is not covered by PKCE; the rule lives in [`sota-code-security` rules/02](../../sota-code-security/rules/02-authentication.md) §4, and this checklist is where an SSO audit looks for it.
 - [ ] Is the IdP's token-signing key non-exportable (HSM/TPM), the federation server Tier 0, and is there a **rotate-twice** runbook for suspected key compromise (Golden SAML, T1606.002)? (§7)
 - [ ] Is IdP-initiated SAML avoided or hardened (single-use IDs, tight NotOnOrAfter, RelayState validation)? (§7)
 - [ ] Is the SCIM endpoint authenticated/authorized per-tenant, with DELETE/`active=false` actually terminating authentication? (§8)

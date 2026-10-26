@@ -354,3 +354,4 @@ reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, no
       ARC enabled where you forward mail (§5)?
 - [ ] Bulk senders (Gmail: 5,000+/day; Yahoo: no published number): SPF+DKIM+aligned DMARC, RFC 8058 one-click
       unsubscribe, spam rate <0.3% (§5)?
+- [ ] **Retired subdomain still trusted — HIGH** (§3, R4; [sota-identity-access rules/01](../../sota-identity-access/rules/01-federation-protocols.md)): `grep -rnEi -- "(redirect_?uris?|allowed_?origins|cors_?origins|-src[[:space:]])[^#]*[a-z0-9-]\.[a-z]{2,}" .` — every host listed resolves to a live, owned service; a name gone from DNS is purged from redirect-URI, CSP and CORS lists in the same change.

@@ -476,7 +476,6 @@ So require a second value that **cannot** be produced from plausibility:
 - [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`) (§3.7), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned
 - [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream) (§3.8)
-- [ ] **Inert-dependency sweep run** — declared-but-not-reached dependencies, modules and plugins, proven by deletion rather than by a tool's silence: [rules/10](10-inert-dependencies.md), a full pass with its own checklist
 - [ ] **Does any support-matrix row infer a capability from a version number? (§3.9)** That
       holds only where the distro tracks upstream and is **false for backporting enterprise
       distributions** — measured: an AlmaLinux 8 `4.18` header declares BPF features from

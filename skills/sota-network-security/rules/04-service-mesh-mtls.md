@@ -10,6 +10,8 @@ trust domain; this skill consumes those identities for network authorization. [r
 policy; this file owns the L7/identity/encryption layer that complements it. [sota-secrets-management](../../sota-secrets-management/SKILL.md)
 owns TLS private-key handling.
 
+## 0. Version status (pin and re-verify)
+
 Verified (2026-07): **Istio ambient mode (ztunnel + waypoints)** reached **GA in Istio 1.24 (Nov
 2024)** — sidecar and ambient are both production data planes today. **Linkerd** (CNCF Graduated)
 added **SPIFFE identities and mesh expansion in 2.15** (Feb 2024). **SPIFFE/SPIRE** are CNCF
@@ -175,4 +177,4 @@ allow-all NetworkPolicy still has a flat L3 underneath.
 - [ ] Are mesh/workload certs short-lived and auto-rotated (not hand-managed, §6)?
 - [ ] Is the mesh choice justified for the service count (not a mesh for 2 services; not hand-rolled
       mTLS at scale)? For Istio, is ambient considered to cut sidecar overhead (§5)?
-- [ ] Are mesh/CNI/SPIFFE versions pinned and verified against current project docs?
+- [ ] Are mesh/CNI/SPIFFE versions pinned and verified against current project docs? (§0)

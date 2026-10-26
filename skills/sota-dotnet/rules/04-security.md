@@ -400,7 +400,6 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `grep -rn 'Microsoft\.AspNetCore\.DataProtection' --include='*.csproj' --include='packages.lock.json' --include='Directory.Packages.props' .`
       (10.0.0–10.0.6 = CVE-2026-40372, need 10.0.7+; if exposed while vulnerable: key ring revoked
       and tokens rotated?). Runtime and Kestrel patch levels are in the [`rules/06`](06-build-tooling-ci.md) checklist
-- [ ] **Static security analysis: enable security CA rules + a SAST ([rules/06](06-build-tooling-ci.md))**
 - [ ] **BinaryFormatter re-armed on .NET 9+ — CRITICAL until justified** (§2) — either half of
       the opt-back-in:
       `grep -rnE 'EnableUnsafeBinaryFormatterSerialization|System\.Runtime\.Serialization\.Formatters"' --include='*.csproj' --include='*.props' --include='*.json' --include='*.cs' .`

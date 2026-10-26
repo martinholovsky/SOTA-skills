@@ -246,7 +246,8 @@ defer os.Remove(f.Name())
   first connection is the one worth intercepting, so trust-on-first-use with no pinning is a
   standing MITM window. Use `knownhosts.New()` and fail closed. `ssh.PublicKeyCallback`
   misuse has its own analyzer (G408) because a callback that returns a permission set built
-  from mutable state can be walked into an auth bypass.
+  from mutable state can be walked into an auth bypass. gosec keeps analyzers in a second registry
+  (`analyzers/analyzerslist.go`, beside `rules/rulelist.go`): count a run's checks from both.
 - **`encoding/gob` on untrusted input is not safe** (G709). It constructs arbitrary
   registered types and is a decode-side attack surface; it is a wire format for services that
   already trust each other. Use JSON with a fixed struct for anything crossing a trust
@@ -461,7 +462,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rnE 'map\[string\](any|interface[{][}])' --include='*.go' .` then
       `grep -rn 'UseNumber' --include='*.go' .` (JSON decoded into `any` turns every number
       into a `float64`; an amount or 64-bit ID there loses precision)
-- [ ] **G113/G115/G118/G408 are ANALYZERS, not rules: gosec keeps two registries
+- [ ] **G113/G115/G118/G408 are ANALYZERS, not rules (§4b): gosec keeps two registries
       (rules/rulelist.go = 39, analyzers/analyzerslist.go = 22, 61 total at v2.29.0). A
       denominator taken from rulelist.go alone silently omits every taint-analysis check
       (G701-G710) and the modern HTTP ones (G119-G124).**
@@ -480,8 +481,6 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rn 'expr\.Compile(' --include='*.go' . | grep -v 'expr\.Env('` (no declared env)
 - [ ] **unsafe / cgo (§7) — HIGH for new `unsafe.Pointer` arithmetic** — `grep -rn 'unsafe.Pointer\|go:linkname\|reflect.SliceHeader\|reflect.StringHeader' --include='*.go' .` ;
       `grep -rln 'import "C"' --include='*.go' .` ; `git grep -n 'CGO_ENABLED=1'` (each cgo use justified, in one package)
-- [ ] **Secrets in repo** —
-      `grep -rnE '(api[_-]?key|secret|password|token)\s*[:=]\s*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .`
 - [ ] **--- Temp files and permissions (§4a) ---** —
       `grep -rnE 'os\.TempDir\(\)|"/tmp/' --include='*.go' . | grep -v _test` (predictable path
       [HIGH])

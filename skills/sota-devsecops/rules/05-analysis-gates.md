@@ -55,6 +55,10 @@ each language skill's tooling file carries its tool's syntax and whether it repo
   `#nosec` is a finding in itself).
 - New-code-only baselining is acceptable to get started (don't block on legacy debt), but
   the baseline must shrink: track it, never add to it.
+- Severity, the one scale (each language skill rates its tool's forms on it): a suppression
+  with no reason, owner or expiry is LOW; MEDIUM when it silences a security rule (SAST,
+  `#nosec`, a security lint); HIGH when the silenced finding sits on a reachable injection,
+  authz or crypto path.
 
 ```yaml
 # CodeQL — default branch + PRs, extended queries, per-language matrix
@@ -275,5 +279,4 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 - [ ] **Agent PR gates (§5.6), High:** `git diff --name-only origin/main...HEAD | grep -E '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum|Cargo\.lock|poetry\.lock|uv\.lock)$|^\.github/|^\.gitlab-ci\.yml$|(^|/)tests?/|_test\.go$'` hits force a required reviewer; `git diff --name-only --diff-filter=d -z origin/main...HEAD | xargs -0 -r rg -H -n -- '[\x{202A}-\x{202E}\x{2066}-\x{2069}\x{200B}-\x{200D}\x{FEFF}]'` fails the check when its **stdout is non-empty** — never on its exit status (a deleted path makes `xargs` exit non-zero, and `rg` exits 1 on a clean diff)
 - [ ] License gate covers transitive deps (SBOM-based) and license *changes* on upgrades; unknown licenses block (§5.5)
 - [ ] All gates are required checks by exact name, each layer of the PR gate stack (lint+unit, SAST diff, dependency review + license, secret diff scan, IaC, build + image scan) its own check (§5.8); no `continue-on-error`/`|| true`/soft-fail on gate steps; path-filtered required checks have no-op fallbacks; rulesets apply to admins; merge queue (or equivalent) re-validates merge results
-- [ ] Gate workflows protected from modification by the gated change (CODEOWNERS/required workflows)
 - [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recorded (a blanket `retry: 3` is a finding); skipped tests linked to issues; PR gate latency within budget (§5.7)

@@ -10,6 +10,8 @@ and backpressure mechanics live in **[sota-async-concurrency](../../sota-async-c
 transport security in **[sota-network-security](../../sota-network-security/SKILL.md)**; NKEY/JWT/account auth in
 **[sota-identity-access](../../sota-identity-access/SKILL.md)** and **[sota-secrets-management](../../sota-secrets-management/SKILL.md)**.
 
+## 0. Provenance and upgrade notes
+
 Provenance: first written against NATS Server 2.11/2.12; upgrade notes
 re-checked against the 2.14/2.15 release notes on 2026-09-26. Run the latest
 stable release (verify at https://github.com/nats-io/nats-server/releases at
@@ -360,7 +362,7 @@ defer cc.Stop()
       (`nats object ls`; check message sizes / `MaxMsgSize`.) (§7)
 - [ ] Multi-tenant isolation by **account** (with per-account JetStream quotas),
       not subject-prefix convention in a shared account? (server/account config.) (§8)
-- [ ] Designs that create many consumers per stream (per tenant/session) set
+- [ ] Designs that create many consumers per stream (per tenant/session) set (§0)
       `max_consumers` explicitly, so the 2.15+ default of 1000 does not start
       rejecting new consumers? (`nats stream info` → limits; stream config.)
 - [ ] Edge↔hub topologies use leafnodes + **JetStream domains**; TLS and

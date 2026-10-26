@@ -360,11 +360,6 @@ Management cheat sheets.
 
 ## Audit checklist
 
-- [ ] **Every positive control in the suite asserts on the field that carries the
-      detection**, not an aggregate over the whole result object
-      ([`sota-code-security` rules/16](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.16) — a result type that mixes derived inputs
-      with findings stays non-empty while detection is zero.
-
 - [ ] Do security-critical paths (§1) (authn/authz, crypto, input parsing, money/quota,
       tenancy, untrusted data) have negative security tests, at a higher coverage
       bar (~90%) than the suite norm? Gaps treated as findings?

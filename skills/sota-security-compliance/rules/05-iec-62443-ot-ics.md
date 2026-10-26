@@ -7,6 +7,8 @@ industrial products. Its models — **zones and conduits**, **Security Levels**,
 physical-process context that general IT frameworks don't. If your code runs a
 turbine, a PLC, a medical device, or a factory line, this is your frame.
 
+## 0. Scope honestly, and status
+
 > **Scope honestly.** 62443 is **not** the right frame for general IT / SaaS / web
 > apps — those fit ISO 27001, OWASP/ASVS, and NIST CSF/SSDF ([rules/01](01-control-frameworks-as-code.md)–03). Reach
 > for 62443 when the system is OT/ICS/IACS/embedded/industrial. Statuses below
@@ -40,6 +42,8 @@ Both cover secure development. The difference is prescription:
 most of 62443-4-1; the gap is the *measurable process artifacts* and end-of-
 life/patch-management rigor that a 4-1 audit expects. Crosswalk them ([rules/01](01-control-frameworks-as-code.md)) —
 one secure-SDLC, two framings.
+4-1's patch management must fit OT: ship security fixes for the whole support period in a form the
+asset owner can apply inside a maintenance window without trading away availability (FR7).
 
 ## 3. Zones and conduits — the segmentation model
 
@@ -170,7 +174,7 @@ OWASP: Drone Security cheat sheet
 
 ## Audit checklist
 
-- [ ] 62443 is the *appropriate* frame — system is OT/ICS/IACS/embedded/industrial (not general IT/SaaS, which routes to ISO 27001 / CSF / SSDF)
+- [ ] (§0) 62443 is the *appropriate* frame — system is OT/ICS/IACS/embedded/industrial (not general IT/SaaS, which routes to ISO 27001 / CSF / SSDF)
 - [ ] Zones and conduits defined: assets grouped into zones by risk/function; all inter-zone traffic forced through controlled, monitored conduits; no flat OT network (§3)
 - [ ] Each zone has a **target Security Level (SL-T)** derived from a documented risk assessment (62443-3-2), not asserted (§3, §4)
 - [ ] Components/systems meet the target: **SL-C and SL-A ≥ SL-T** per zone, per FR; components selected/configured to their required capability level (§4)
@@ -180,6 +184,6 @@ OWASP: Drone Security cheat sheet
 - [ ] **Embedded device root of trust and debug lock (§6) — HIGH** (CRITICAL where secure boot is the only barrier to code execution): ROM/eFuse-anchored secure boot, each stage verifying the next; JTAG/SWD/UART and ROM download mode disabled or authenticated on production units; fuse state recorded per batch. Probe the production build config: `grep -rnE '^CONFIG_(SECURE_BOOT_INSECURE|SECURE_BOOT_ALLOW_JTAG|SECURE_BOOT_ALLOW_ROM_BASIC|SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT|BOOT_SIGNATURE_TYPE_NONE)=y' .` — any hit in a release config is a finding; `grep -rlE '^CONFIG_SECURE_BOOT=y' .` printing nothing on a device build is a lead to ask where secure boot is enabled
 - [ ] **Hardware supply chain vetted (§6) — MEDIUM** (HIGH where the part holds the root of trust): security-relevant components bought from the manufacturer or authorised distributors, traceability (part number, lot/date code, source) kept per batch, incoming inspection for counterfeits, mapped to 800-53 SR-4/SR-5/SR-11 in the crosswalk
 - [ ] **Unit decommissioning defined and enforced (§6) — HIGH:** stored secrets and data sanitised (cryptographic erase of a per-device key, the storage's sanitize command, or destruction), device certificate and tokens revoked at the back end, serial marked retired, and enrolment refuses a retired serial. Test the last step: re-enrol a retired test unit and expect a refusal
-- [ ] Patch/update strategy fits OT constraints (availability, maintenance windows, legacy) while still delivering security fixes over the support period
+- [ ] Patch/update strategy fits OT constraints (§2) (availability, maintenance windows, legacy) while still delivering security fixes over the support period
 - [ ] If EU-market (§5): 62443 harmonization path to CRA conformity tracked against the current OJ hEN list ([rules/04](04-eu-cyber-resilience-act.md)); certification (ISASecure SDLA/CSA/SSA) pursued where required
-- [ ] 62443 part versions, certification-scheme scope, and CRA-harmonization status re-verified against primary sources within the last 6 months
+- [ ] (§0) 62443 part versions, certification-scheme scope, and CRA-harmonization status re-verified against primary sources within the last 6 months

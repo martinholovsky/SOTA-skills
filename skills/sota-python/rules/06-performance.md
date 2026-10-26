@@ -218,7 +218,6 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
 
 ## Audit checklist
 
-- [ ] **Ruff perf rules** — `uvx ruff check --select PERF,C4,SIM --statistics .`
 - [ ] **String building & containers (§2) [hot-loop suspects]** —
       `grep -rn "+= .*str(\|+= f\"\|+= \"" --include="*.py" src/` (concat in loops? check
       context); `grep -rn "\.pop(0)\|insert(0," --include="*.py" src/` (O(n) deque ops);

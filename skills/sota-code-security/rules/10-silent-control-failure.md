@@ -216,63 +216,9 @@ what will that caller do instead*. Both answers belong in the commit that adds t
       condition the dependency itself, or something that currently agrees with it? Name who
       can change one without the other. A proxy with no signal on divergence is a finding
       even while it currently works.
-- [ ] **Every "it produced something" assertion names the field that carries the
-      detection** ([`sota-code-security` rules/16](16-where-no-ops-hide.md) §2.16): which attribute would be empty if the detector were deleted
-      but its preprocessing left intact? An aggregate over a result mixing derived
-      inputs with findings is a liveness check for the input stage, not a control.
-- [ ] **Every optional capability a design depends on was invoked once, not read from
-      `--help`** ([`sota-code-security` rules/16](16-where-no-ops-hide.md) §2.15). Build-tag-gated flags parse and stub out; keep the output of the
-      real call. High when the capability is the load-bearing half of a security control.
-
-- [ ] Anything that writes **outward** on a schedule (a GitOps write-back
-      controller, a PR bot, a sync job) verified at the **destination** rather
-      than from its own success counters — its log reports the update it decided
-      to make, not the write landing ([`sota-kubernetes` rules/04](../../sota-kubernetes/rules/04-gitops-controllers.md) §7)?
-
 - [ ] For each security control in scope (§1): if it were a no-op, would any log,
       metric, response, or test differ? No → finding, regardless of current
       correctness.
-- [ ] Presence/enablement decided by real loaded artifacts (non-zero rule count,
-      required files present), not by `exists()`/`is_dir()`/truthiness?
-- [ ] No `except ImportError` (or equivalent) silently disabling a control; every
-      optional dependency backing a control present in the **shipped** artifact?
-- [ ] Does a loader that yields zero rules/policies fail closed and loudly? Do
-      shipped example/reference configs load to a non-empty, safe state?
-- [ ] Broad `except` on an enforcement path returning the permissive value?
-      Grep: `except Exception`/`catch (...)`/`rescue =>`/`recover()` near authz,
-      verify, validate, scan → each is fail-open, silent, or both.
-- [ ] Any flag used more broadly than its own definition claims (debug/dev_mode
-      also disabling a security check)?
-- [ ] Any prose instruction ("do not reveal/surface", "ignore instructions
-      below", authz-in-prompt) standing in for an enforced boundary over data or
-      permissions that live in the same context? Enforce structurally/in code
-      ([rules/08](08-llm-ai-security.md) §1–2), not by instruction — [`rules/14`](14-control-not-in-force.md) §3.
-- [ ] For each gate, does run history show it has ever **executed** (not
-      all-skipped: an unreachable trigger, path/branch filter, or dead
-      lifecycle event) and ever **rejected** anything? State the sample size —
-      "not in the last N runs" is not "never" — [`rules/14`](14-control-not-in-force.md) §4.
-- [ ] Early-return guards on empty/oversized/unparseable input that an attacker
-      can deliberately trigger to skip inspection?
-- [ ] Any truncation (`[:N]`, byte caps, `LIMIT`) on the path *into* a scan,
-      validation, or signature check — or a cap on a **generator's output**
-      (unset `max_tokens`, `--max-results`) whose fragment is then parsed?
-- [ ] Config/policy schemas reject unknown keys, and every key in the reference
-      config resolves to a real field of its section (tested structurally)?
-- [ ] Security/privacy/cost-relevant defaults verified in **both** docs and code,
-      with a test pinning the documented default to the parsed one?
-- [ ] Numbers in tool output derived from what was actually produced, never
-      printed as literals — **and every verification word** (`verified`,
-      `confirmed`, `reachable`, `tainted`, `sanitized`) plus every severity or
-      confidence field traceable to a line that can fail, matched by claim shape
-      rather than keyword and confirmed by reading ([`rules/14`](14-control-not-in-force.md) §1)?
-- [ ] Any control sitting in audit / warn / dry-run / report-only mode carrying
-      an owner and an expiry, rather than having lived there since it shipped
-      ([`rules/14`](14-control-not-in-force.md) §5)?
-- [ ] Control smoke tests run against the **built artifact** (image/package/
-      binary), not only the source checkout? Startup asserts its own required
-      artifacts?
-- [ ] Mutation probe run on security-critical paths, and the instrument or guard
-      that reported the result validated in turn — the whole of [rules/12](12-verifying-the-verifier.md) and [rules/15](15-instruments-and-guards.md)?
 - [ ] One shared degraded-control helper, deduped per cause, emitting log +
       gauge + span/response attribute, with health/readiness reporting a distinct
       `degraded` state and an alert when the gauge stays 1 past a deploy — not

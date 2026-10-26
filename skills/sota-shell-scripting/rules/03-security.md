@@ -32,6 +32,8 @@ ssh "$host" -- rm -rf -- "$(printf '%q' "$dir")"   # %q-escape anything entering
   `jq --arg`, `sed` with validated patterns.
 - Anything matching `$(...)` or backticks inside user-controlled strings that later get
   expanded in double quotes by `eval`/`envsubst`-like flows is the same bug.
+- `trap` re-parses its string when it fires, so a double-quoted body expands at definition and
+  then runs that text as code: stale values, or injection. Single-quote it (ShellCheck SC2064).
 
 ## 2. Secrets discipline
 
@@ -393,7 +395,7 @@ substitution in help text** rather than literal characters. `--severity=error` s
 - [ ] `ssh .*\$` and `su -c .*\$` — remote re-parsing injection; check for `printf '%q'` (§1). A variable inside a double-quoted
       `awk`/`sed`/`jq` program instead of `awk -v`/`jq --arg`: `grep -rnE '(awk|jq|sed)([[:space:]]+-[a-zA-Z]+)*[[:space:]]+"' --include='*.sh' .`
       (a locator: a constant double-quoted program is a false positive; 4/4 bad, 0/4 good, BSD grep and ugrep).
-- [ ] SC2064 — `trap "$cmd" ...` with double quotes (expands now, runs later — often
+- [ ] SC2064 — `trap "$cmd" ...` with double quotes (§1) (expands now, runs later — often
       stale/injected values).
 - [ ] Secrets in argv (§2): `grep -rni 'password\|token\|secret\|api[_-]key' --include='*.sh'`
       then trace each into argv (`-p"$X"`, `-H "Auth.* $X"`, URL userinfo `https://user:$X@`)

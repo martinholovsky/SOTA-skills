@@ -120,7 +120,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   injection, deserialization sinks from [`rules/04`](04-security.md)); **PMD** for additional
   rules. **Make its XXE detectors a failing gate**, not a report: Find-Sec-Bugs has one
   `XXE_*` pattern per parser factory (`DocumentBuilderFactory`, SAX, `XMLReader`, StAX, XPath,
-  `SchemaFactory`, `Validator`, `TransformerFactory`; the list is in [`rules/07`](07-xml.md)'s checklist).
+  `SchemaFactory`, `Validator`, `TransformerFactory`; the list is in this file's checklist).
   Maven's `spotbugs:check` fails the build on a finding while `failOnError` keeps its default
   of `true` (spotbugs-maven-plugin `check` goal docs); Gradle needs `ignoreFailures = false`.
   An exclude filter naming an `XXE_` pattern is a suppression to justify. The Semgrep/Opengrep
@@ -283,7 +283,8 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rniE 'spring\.devtools\.remote\.secret|jdwp|include-(stacktrace|message|binding-errors)[=:][[:space:]]*"?(always|on[-_]param)|excludeDevtools>false|(implementation|runtimeOnly|api)[ (]+.org\.springframework\.boot:spring-boot-devtools' --include='*.properties' --include='*.y*ml' --include='pom.xml' --include='*.gradle*' --include='Dockerfile*' --include='*.sh' .`
       (a hit in a dev-only profile file such as `application-dev.yml` is fine; confirm which
       profile the production deploy activates)
-- [ ] **Static analysis configured?** (§3) —
+- [ ] **Static analysis configured, and failing the build?** (§3) (Error Prone + NullAway on Java,
+      detekt + ktlint on Kotlin, SpotBugs + Find-Sec-Bugs) —
       `grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"`
 - [ ] **Coverage gate + JUnit Jupiter/Testcontainers?** (§4) —
       `grep -rniE --include='pom.xml' --include='build.gradle*' 'jacoco|junit-jupiter|testcontainers' .`
@@ -303,3 +304,14 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rnE 'native-image|nativeCompile|graalvm' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' --include='Dockerfile*' .`
       ; for each hit: `grep -rniE 'cyclonedx|enable-sbom|sbom' --include='pom.xml' --include='*.gradle*' --include='*.y*ml' .`
       (none, or a Community Edition builder: the image scan reads no dependency list)
+- [ ] **No XXE-specific SAST gate — HIGH** (§3) (the greps in [`rules/07`](07-xml.md)'s checklist are for a
+      review; CI needs a rule set that fails the build). Find-Sec-Bugs (1.14.0) reports `XXE_DOCUMENT`, `XXE_SAXPARSER`,
+      `XXE_XMLREADER`, `XXE_XMLSTREAMREADER`, `XXE_XPATH`, `XXE_SCHEMA_FACTORY`, `XXE_VALIDATOR`,
+      `XXE_DTD_TRANSFORM_FACTORY` and `XXE_XSLT_TRANSFORM_FACTORY`. The Semgrep/Opengrep rule
+      repositories carry `documentbuilderfactory-disallow-doctype-decl-missing`,
+      `saxparserfactory-disallow-doctype-decl-missing`, `transformerfactory-dtds-not-disabled`
+      (under `java/lang/security/audit/xxe/`) and `xmlinputfactory-possible-xxe` —
+      `grep -rlE 'findsecbugs|java[./]lang[./]security[./]audit[./]xxe|xmlinputfactory-possible-xxe' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.yml' --include='*.yaml' . || echo "FINDING: no XXE-capable SAST rule set configured"`
+      ; a gate that cannot fail, or XXE patterns excluded:
+      `grep -rnE 'pattern="[^"]*XXE_|failOnError>false|spotbugs\.failOnError=false|ignoreFailures[[:space:]]*=[[:space:]]*true' --include='*exclude*.xml' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.properties' .`
+      (an exclude filter under another file name needs a separate read)

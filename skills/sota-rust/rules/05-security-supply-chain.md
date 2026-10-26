@@ -389,7 +389,7 @@ network:
   operator-actionable events.
 
 Running external programs (formerly section 9) moved to
-[rules/08](08-external-programs.md) §1 on 2026-09-25.
+[rules/08](08-external-programs.md) §1 on 2026-09-25; its Audit checklist (R9.6 and R9.7 included) is the full set.
 
 ## Audit checklist
 
@@ -489,8 +489,6 @@ Running external programs (formerly section 9) moved to
 - [ ] Logs: `rg 'info!|warn!|error!|debug!' -t rust` near auth/headers — no
       `Authorization`/`Cookie`/body logging; user strings as structured
       fields, not message interpolation; no `error!` on client 4xx (§8).
-- [ ] External programs (R9.x, the output cap R9.6 and `pre_exec` R9.7 included): run
-      [rules/08](08-external-programs.md)'s Audit checklist, which is the full set.
 - [ ] Severity calibration (§1, §4, §6, §7): RCE/memory corruption = Critical; authn/authz
       bypass, SQLi, traversal = Critical/High; attacker-reachable panic or
       unbounded allocation = High; missing CI audit gates = Medium-High;

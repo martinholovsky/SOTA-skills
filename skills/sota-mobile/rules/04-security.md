@@ -1,5 +1,7 @@
 # 04 — Mobile Security
 
+## 0. Threat model and audit anchor
+
 Threat model first: the attacker **owns the device**. They can decompile your binary (jadx, Hopper), hook your functions at runtime (Frida, objection), proxy and strip your TLS, and read any file your app writes. Two consequences drive every rule here:
 
 1. Client-side mechanisms raise attacker *cost* — they are deterrents. Only the server *enforces*.
@@ -272,4 +274,4 @@ Screen-level leakage (app-switcher snapshots, `FLAG_SECURE`, keyboard learning) 
 - [ ] **MEDIUM** (§4: 4.13) Sensitive values are masked by default; `SurfaceView`s showing sensitive content call `setSecure(true)`; no Compose dialog or popup showing secrets uses `SecureOff`. Probe (SurfaceView hits are review items): `grep -rnE 'SecureFlagPolicy\.SecureOff|clearFlags\([^)]*FLAG_SECURE' --include='*.kt' --include='*.java' . ; grep -rlE 'SurfaceView' --include='*.kt' --include='*.java' . | while IFS= read -r f; do grep -q 'setSecure' "$f" || echo "$f: SurfaceView without setSecure"; done`
 - [ ] **MEDIUM** (§4: 4.14) Apps handling credentials or payments refuse custom keyboards; bundled keyboards don't request Full Access without a user-enabled feature; share sheets exclude unsuitable activity types. Probe: `grep -rqE 'shouldAllowExtensionPointIdentifier' --include='*.swift' --include='*.m' . || echo 'custom keyboards allowed app-wide'; grep -rn -A1 'RequestsOpenAccess' --include='*.plist' . | grep -E '<true */>'`
 - [ ] **HIGH** (§4: 4.14) Sensitive App Intents set an authentication policy other than `.alwaysAllowed`; widgets showing account data mark it `.privacySensitive()` or leave it out. Probe: `grep -rlE '[:,][[:space:]]*AppIntent([^[:alnum:]_]|$)' --include='*.swift' . | while IFS= read -r f; do grep -q 'authenticationPolicy' "$f" || echo "$f: AppIntent on the default .alwaysAllowed policy"; done; grep -rlE 'TimelineProvider' --include='*.swift' . | while IFS= read -r f; do grep -qE 'privacySensitive|redacted\(reason: *\.privacy' "$f" || echo "$f: widget without privacy redaction"; done`
-- [ ] Findings mapped to MASVS v2.1 groups; every group either has findings or an explicit "examined, clean."
+- [ ] Findings mapped to MASVS v2.1 groups (§0); every group either has findings or an explicit "examined, clean."

@@ -321,8 +321,6 @@ Keep overload sets small (2–4); a 10-overload function wants a redesign. Typed
       `find . -path ./.venv -prune -o -name '*.py' -exec awk '/^class [A-Za-z_]/{c=$2; sub(/[(:].*/,"",c)} c!="" && /^[[:space:]]+def [A-Za-z_][A-Za-z0-9_]*\((self|cls)/ && ($0 ~ ("-> \"?" c "\"?:")) {print FILENAME":"FNR": "$0}' {} +`
       (a method returning its own class by name: `Self`) ; un-parameterized `dict`/`list`/`Callable` in signatures
       are the `[type-arg]` errors of the `mypy --strict` run below (measured, mypy 2.4.0)
-- [ ] **Bare/unscoped ignores [LOW each, MEDIUM in aggregate]** —
-      `grep -rn "type: ignore$" --include="*.py" .` ; `grep -rn "# noqa$" --include="*.py" .`
 - [ ] **Unannotated APIs and legacy typing forms (§1) — ruff UP and ANN should be clean** —
       `uvx ruff check --select UP,ANN --statistics .` ;
       `grep -rn "typing.Optional\|typing.List\|typing.Dict\|Optional\[" --include="*.py" src/ | head` ;

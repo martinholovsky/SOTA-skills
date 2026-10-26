@@ -1,5 +1,7 @@
 # 03 — Per-Component Threat Catalogs
 
+## 0. How to walk the catalogs
+
 Use these catalogs AFTER decomposition (`02`): for each component on the DFD,
 walk its catalog and emit threat sentences (*actor → action → asset → impact*)
 for every applicable item. In AUDIT mode, additionally record control
@@ -314,7 +316,7 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
 
 ## Audit checklist
 
-- [ ] Every DFD component mapped to its catalog; each item dispositioned
+- [ ] Every DFD component mapped to its catalog (§0); each item dispositioned
       (present/partial/absent/N-A) — no silent skips.
 - [ ] Frontend: XSS sinks audited, CSP effective, token storage justified,
       CSRF covered, no secrets in bundles; privileged actions re-checked

@@ -54,6 +54,9 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
   `detached: true` and kill the process **group** (`process.kill(-child.pid)`), and
   decide explicitly what a timeout means for your caller rather than inferring it from
   `err`.
+- **`spawnSync` and `spawn` do not throw on a failing child.** `execFileSync`/`execSync` throw on a
+  non-zero exit, but `spawnSync` returns `{status, signal, error}` and `spawn` reports only through
+  the `'close'`/`'exit'` event's `code`: read the status before trusting the child's output.
 
 ## 2. SSRF and server-side validation
 
@@ -118,7 +121,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 
 - [ ] `grep -rn "exec(\|execSync(" src/` — template/concat input = CRITICAL; migrate to execFile array form. Array-form args taken from input still need a character allowlist or a `--` separator (MEDIUM); a `timeout:` on a child that may fork needs `detached: true` and a process-group kill (MEDIUM); `grep -rn 'DEP0190' --exclude-dir=node_modules .` hits in Node ≥24 logs or CI output mark a live `shell: true` sink (HIGH) (§1).
 - [ ] `grep -rn "child_process" src/ | grep "shell"` — `shell: true` (HIGH) (§1).
-- [ ] **Child exit status never read — MEDIUM, HIGH when the output is trusted** — `execFileSync`
+- [ ] **Child exit status never read (§1) — MEDIUM, HIGH when the output is trusted** — `execFileSync`
       and `execSync` throw on a non-zero exit and the `exec`/`execFile` callback receives an
       error, but `spawnSync` returns `{status, signal, error}` without throwing and `spawn`
       reports only through the `'close'`/`'exit'` event's `code` (Node.js `child_process` docs).
@@ -139,3 +142,30 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
       request carries credentials or its response is rendered** —
       ``grep -rnE "(fetch\(|new EventSource\(|\.open\( *['\"][A-Za-z]+['\"] *,)[^;]*(location\.(search|hash|href)|[sS]earchParams\.get\(|params\.get\(|\.data[.)[]|localStorage\.getItem\()" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' --include='*.jsx' .``
       — each hit needs an origin allowlist check before the call. Single-line calls only; a URL held in a variable needs a read.
+- [ ] SQL built by interpolation (§1) (the rule is the "Same family" bullet; this is its
+      probe, absent until 2026-09-22): ``grep -rnE '(query|execute|raw)\( *`' --exclude-dir=node_modules .`` — a
+      template literal reaching a driver is CRITICAL. Also `grep -rn "knex.raw\\|sequelize.query\\|\\$queryRawUnsafe\\|createQueryBuilder" --exclude-dir=node_modules .`
+      — Prisma's `$queryRaw` tagged template is parameterized while `$queryRawUnsafe` is not,
+      and the two differ by one word. Parameterized/bound form everywhere, or HIGH.
+- [ ] Webhook handlers: signature verification before parsing (§2) (absent = HIGH).
+- [ ] **Code chosen by the request, or a shell hidden in argv** (§1) —
+      ``grep -rnE '(require|import)\( *([[:alpha:]_$]|`[^`]*\$\{)|[^[:alnum:]_](/bin/)?(ba|z|da)?sh[^[:alnum:]_] *, *\[ *[^[:alnum:]]-c[^[:alnum:]]|shelljs|shell\.exec\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
+      — `require`/`import()` of a non-literal reached by request data is CRITICAL. So is
+      `spawn('sh', ['-c', …])` or `shell.exec` with interpolated input. The `shell: true`
+      probe above misses both.
+- [ ] **YAML loader version** (§1) — `grep -rnE '"js-yaml": *"[~^]?[0-3]\.|safeLoad' --include='package.json' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — js-yaml below 4 with `load` on untrusted input is HIGH. A `safeLoad` call on js-yaml
+      4 or later throws, so those hits are dead code.
+- [ ] **NoSQL operator injection** (§2) —
+      `grep -rnE '\.(find|findOne|findOneAndUpdate|findOneAndDelete|updateOne|updateMany|deleteOne|deleteMany|countDocuments|aggregate)\([^)]*req\.(body|query|params)|query parser.*extended' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — a request field in a filter without a scalar schema parse is HIGH (auth bypass via
+      `{"$ne": null}`). The probe sees single-line calls only. Also check the Express major,
+      because v4 defaults to the nesting `qs` parser.
+- [ ] **Ajv configuration** (§2) — `grep -rnE 'allErrors: *true|\.compile\([^)]*req\.' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — `allErrors: true` on a request-validation path is MEDIUM (DoS). Compiling a
+      request-supplied schema is HIGH.
+- [ ] **Path traversal: request data reaching the filesystem** (§1) (the rule is the
+      "Path traversal cousin" bullet; this is its probe) —
+      `grep -rnE '(readFile|readFileSync|createReadStream|writeFile|writeFileSync|createWriteStream|unlink|rm|readdir|sendFile|download|join|resolve)\([^)]*req\.(params|query|body)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — each hit needs the resolve + containment check (HIGH without it). The probe sees
+      single-line calls only.

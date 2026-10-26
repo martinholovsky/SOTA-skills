@@ -198,7 +198,7 @@ result of a bad path, an empty glob, an over-narrow filter, or a missing toolcha
   names. Dynamic completion calls back into the binary: it must be fast (§1)
   and **never block on the network or prompt**; degrade to nothing on failure.
 
-## Rehearse a costly command before handing it to a human
+## 9. Rehearse a costly command before handing it to a human
 
 Before giving a person a command whose **failure** is expensive, run it where failure is
 free. Expensive means: limited attempts before lockout (card PINs, PUKs, 2FA), destructive,
@@ -220,7 +220,7 @@ how carefully the person reads the line.
 
 ## Audit checklist
 
-- [ ] **Commands handed to a human are rehearsed where failure is free** when a failure
+- [ ] **Commands handed to a human are rehearsed where failure is free (§9)** when a failure
       costs an attempt, money, or an irreversible change — and the cost is stated in the
       handover. High wherever a lockout is possible: the recovery is often a factory reset
       that destroys unrelated material.
