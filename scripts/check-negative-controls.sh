@@ -1347,6 +1347,16 @@ m['tags']['unsafe'] = ['unsafe-discipline']; m['tags']['ffi'] = ['unsafe-discipl
 p.write_text(json.dumps(m, indent=1) + '\n', encoding='utf-8')
 " )
 probe 42f "a declared keyword that matches only the file's own path (rust 03)" "C4 sota-rust.json: rules/03 is declared for 'unsafe'"
+# 42h: an index row edited in SKILL.md behind its manifest's back -> C5 (2026-10-26). The manifest is
+# where a row is written (`--write-index` renders it); a hand edit would let declared tags and prose drift.
+( cd "$WT" && python3 -I -c "
+import pathlib, re
+p = pathlib.Path('skills/sota-rust/SKILL.md'); t = p.read_text(encoding='utf-8')
+m = re.search(r'^\|\s*\[\`?rules/01[^\n]*$', t, re.M)
+assert m, 'probe stale: no rules/01 index row in sota-rust'
+p.write_text(t[:m.end()] + ' (hand edit)' + t[m.end():], encoding='utf-8')
+" )
+probe 42h "an index row edited in SKILL.md but not in its manifest" "C5 sota-rust.json: rules/01 index row"
 # 42g: C4 reads a BUILD list ITEM, not a physical line (2026-10-26). kubernetes BUILD step 6 wraps:
 # "CVE-response runbook," sits on the line above its rules/01 link. A tag whose only keyword is that
 # phrase is backed by the prose; the old per-line reading rejected it. Must stay GREEN, and say it ran.

@@ -96,18 +96,21 @@
     "multi-tenancy",
     "ledger",
     "history-table"
-   ]
+   ],
+   "index_row": "| [`rules/01-choosing-and-modeling.md`](rules/01-choosing-and-modeling.md) | Picking an engine (SQL vs NoSQL/KV/columnar/time-series/vector); designing tables; deciding normalization, JSONB usage, primary keys, soft deletes, audit/history tables, ledgers and account balances, multi-tenancy, or **how absence is encoded (`NULL`/omitted property vs an in-band sentinel)**. |"
   },
   "02": {
    "build": [
     "migration"
-   ]
+   ],
+   "index_row": "| [`rules/02-schema-migrations.md`](rules/02-schema-migrations.md) | Writing or reviewing any migration; altering hot tables; planning zero-downtime schema changes; backfills; setting up migration tooling or testing. |"
   },
   "03": {
    "build": [
     "query",
     "index"
-   ]
+   ],
+   "index_row": "| [`rules/03-queries-and-indexes.md`](rules/03-queries-and-indexes.md) | Writing/reviewing queries or ORM code; reading EXPLAIN ANALYZE; choosing index types or composite column order; pagination; N+1 suspicion; CTEs and window functions. |"
   },
   "04": {
    "build": [
@@ -115,31 +118,36 @@
     "job-queue",
     "idempotency",
     "pooling"
-   ]
+   ],
+   "index_row": "| [`rules/04-transactions-concurrency.md`](rules/04-transactions-concurrency.md) | Anything with concurrent writes: isolation levels, locking (FOR UPDATE, SKIP LOCKED, advisory), job queues, idempotency, deadlocks, long transactions, connection pooling. |"
   },
   "05": {
    "build": [
     "ops",
     "partitioning",
     "caching"
-   ]
+   ],
+   "index_row": "| [`rules/05-reliability-and-scale.md`](rules/05-reliability-and-scale.md) | Backups/PITR, replication and read replicas, partitioning, vacuum/bloat, monitoring, capacity planning, sharding decisions, Redis caching patterns and distributed locks. |"
   },
   "06": {
    "build": [
     "db-security",
     "pii-retention",
     "db-audit-logging"
-   ]
+   ],
+   "index_row": "| [`rules/06-security-and-compliance.md`](rules/06-security-and-compliance.md) | DB roles and grants, RLS, encryption at rest/in transit, SQL injection surface, security audit logging (pgaudit), PII columns, data retention and GDPR-style deletion. |"
   },
   "07": {
    "build": [
     "vector"
-   ]
+   ],
+   "index_row": "| [`rules/07-vector-and-ai.md`](rules/07-vector-and-ai.md) | Embeddings, semantic/hybrid search, pgvector vs dedicated vector DBs (incl. Qdrant exposure hardening), embedding model versioning and re-indexing. |"
   },
   "08": {
    "build": [
     "surrealdb"
-   ]
+   ],
+   "index_row": "| [`rules/08-surrealdb-multimodel.md`](rules/08-surrealdb-multimodel.md) | Building on or auditing SurrealDB: DEFINE ACCESS auth, system users and least privilege, parameterized SurrealQL, SCHEMAFULL + PERMISSIONS, capability flags, indexes, multi-model (embed/reference/graph edges), backups. |"
   }
  },
  "via": [],

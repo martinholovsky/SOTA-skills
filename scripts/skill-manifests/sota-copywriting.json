@@ -2,36 +2,161 @@
  "_note": "Declared BUILD routing for sota-copywriting (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD links 01-04 directly; BUILD step 4 (the accuracy gate before publishing) is why every publishable case carries publish-gate and loads 04. Keywords are phrases from each file's index row or the BUILD line that links it; none relies on a file path. No routing gap found: each case's must_load was judged from the rules files' sections (01 positioning/evidence, 02 headlines/CTA/social proof/pricing pages, 03 search intent/E-E-A-T, 04 substantiation/endorsements/reviews/dark patterns/email law/app-store metadata) and each is named in its row.",
  "skill": "sota-copywriting",
  "tags": {
-  "positioning": ["value-proposition structure", "audience and awareness stages", "conversion goal", "benefit-vs-feature"],
-  "differentiation": ["differentiation claims"],
-  "page-copy": ["headline craft", "above-fold contract", "CTA wording"],
-  "social-proof": ["social-proof presentation", "testimonial consent"],
-  "pricing-page": ["pricing-page honesty"],
-  "seo": ["search-intent", "E-E-A-T", "Content meant to be found"],
-  "publish-gate": ["accuracy gate", "claim substantiation"],
-  "email": ["email law", "CAN-SPAM"],
-  "app-store": ["app-store metadata"],
-  "dark-patterns": ["dark patterns"]
+  "positioning": [
+   "value-proposition structure",
+   "audience and awareness stages",
+   "conversion goal",
+   "benefit-vs-feature"
+  ],
+  "differentiation": [
+   "differentiation claims"
+  ],
+  "page-copy": [
+   "headline craft",
+   "above-fold contract",
+   "CTA wording"
+  ],
+  "social-proof": [
+   "social-proof presentation",
+   "testimonial consent"
+  ],
+  "pricing-page": [
+   "pricing-page honesty"
+  ],
+  "seo": [
+   "search-intent",
+   "E-E-A-T",
+   "Content meant to be found"
+  ],
+  "publish-gate": [
+   "accuracy gate",
+   "claim substantiation"
+  ],
+  "email": [
+   "email law",
+   "CAN-SPAM"
+  ],
+  "app-store": [
+   "app-store metadata"
+  ],
+  "dark-patterns": [
+   "dark patterns"
+  ]
  },
  "files": {
-  "01": {"build": ["positioning", "differentiation"]},
-  "02": {"build": ["page-copy", "social-proof", "pricing-page"]},
-  "03": {"build": ["seo"]},
-  "04": {"build": ["publish-gate", "social-proof", "email", "app-store", "dark-patterns"]}
+  "01": {
+   "build": [
+    "positioning",
+    "differentiation"
+   ],
+   "index_row": "| [`rules/01-positioning-value-proposition.md`](rules/01-positioning-value-proposition.md) | Deciding what the copy argues: audience and awareness stages, value-proposition structure, benefit-vs-feature discipline, message hierarchy, differentiation claims, evidence types, we-vs-you framing. |"
+  },
+  "02": {
+   "build": [
+    "page-copy",
+    "social-proof",
+    "pricing-page"
+   ],
+   "index_row": "| [`rules/02-headlines-landing-pages.md`](rules/02-headlines-landing-pages.md) | Writing the page: headline craft and variants, above-fold contract, section flow (attention→interest→desire→action as a heuristic), scannability, CTA wording and placement, social-proof presentation, pricing-page honesty (incl. EU prior-price rule). |"
+  },
+  "03": {
+   "build": [
+    "seo"
+   ],
+   "index_row": "| [`rules/03-seo-content.md`](rules/03-seo-content.md) | Content meant to be found: search-intent matching, people-first content and E-E-A-T, Google spam policies (scaled content abuse, site reputation policy, doorway abuse), titles/meta as display heuristics, structured-data honesty, AI-assisted content discipline, generative-AI search surfaces (AI Overviews/AI Mode — still SEO, no GEO folklore), content maintenance. |"
+  },
+  "04": {
+   "build": [
+    "publish-gate",
+    "social-proof",
+    "email",
+    "app-store",
+    "dark-patterns"
+   ],
+   "index_row": "| [`rules/04-claims-legal-trust.md`](rules/04-claims-legal-trust.md) | The accuracy/legal gate: claim substantiation, puffery vs objective claims, FTC Endorsement Guides (16 CFR 255) and Consumer Reviews Rule (16 CFR 465), testimonial consent and typicality, EU review-verification and green-claims bans (UCPD Annex I), dark patterns and the EU withdrawal function, email law (CAN-SPAM, GDPR/ePrivacy), security/uptime claim hygiene, app-store metadata policies. |"
+  }
  },
  "via": [],
  "cases": [
-  {"task": "write a SaaS landing page with three customer testimonials", "mode": "build",
-   "tags": ["positioning", "page-copy", "social-proof", "publish-gate"], "must_load": ["01", "02", "04"]},
-  {"task": "write a pricing page for three plans with an annual-billing discount and a trial", "mode": "build",
-   "tags": ["pricing-page", "page-copy", "dark-patterns", "publish-gate"], "must_load": ["02", "04"]},
-  {"task": "write a 'X vs competitor' blog post meant to rank", "mode": "build",
-   "tags": ["seo", "differentiation", "publish-gate"], "must_load": ["03", "01", "04"]},
-  {"task": "write a product-launch newsletter and its signup consent line", "mode": "build",
-   "tags": ["email", "positioning", "publish-gate"], "must_load": ["04", "01"]},
-  {"task": "write an app store listing (title, subtitle, description)", "mode": "build",
-   "tags": ["app-store", "positioning", "publish-gate"], "must_load": ["04", "01"]},
-  {"task": "audit a marketing site's copy", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04"]}
+  {
+   "task": "write a SaaS landing page with three customer testimonials",
+   "mode": "build",
+   "tags": [
+    "positioning",
+    "page-copy",
+    "social-proof",
+    "publish-gate"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "04"
+   ]
+  },
+  {
+   "task": "write a pricing page for three plans with an annual-billing discount and a trial",
+   "mode": "build",
+   "tags": [
+    "pricing-page",
+    "page-copy",
+    "dark-patterns",
+    "publish-gate"
+   ],
+   "must_load": [
+    "02",
+    "04"
+   ]
+  },
+  {
+   "task": "write a 'X vs competitor' blog post meant to rank",
+   "mode": "build",
+   "tags": [
+    "seo",
+    "differentiation",
+    "publish-gate"
+   ],
+   "must_load": [
+    "03",
+    "01",
+    "04"
+   ]
+  },
+  {
+   "task": "write a product-launch newsletter and its signup consent line",
+   "mode": "build",
+   "tags": [
+    "email",
+    "positioning",
+    "publish-gate"
+   ],
+   "must_load": [
+    "04",
+    "01"
+   ]
+  },
+  {
+   "task": "write an app store listing (title, subtitle, description)",
+   "mode": "build",
+   "tags": [
+    "app-store",
+    "positioning",
+    "publish-gate"
+   ],
+   "must_load": [
+    "04",
+    "01"
+   ]
+  },
+  {
+   "task": "audit a marketing site's copy",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04"
+   ]
+  }
  ]
 }

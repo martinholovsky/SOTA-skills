@@ -44,6 +44,8 @@ Usage:
   reachability-graph.py --sync             run S1-S5; exit 1 on any violation
   reachability-graph.py --sync-tighten     rewrite the baseline, REMOVING stale entries only
   reachability-graph.py --sync-convert     move newly numbered, formerly unnumbered files to section-level debt
+  reachability-graph.py --write-index      render every manifest's index_row into its SKILL.md (C5)
+  reachability-graph.py --index-init       one-time: copy SKILL.md's index rows INTO the manifests
   reachability-graph.py --json             print the graph (nodes, edges with their source kind)
   reachability-graph.py --explain PATH     print every inbound edge of one rules file
 """
@@ -173,12 +175,18 @@ def routing_prose(sm_text, rules_file):
     sat on the line above its link ("Plan the upgrade: version skew, EOL date, CVE runbook,\n tested
     etcd restore ([rules/01](...))") routed nothing -- five manifest authors hit it in one session."""
     b, n = os.path.basename(rules_file), os.path.basename(rules_file)[:2]
-    idx = section(sm_text, r"Rules? index")
-    row = next((l for l in idx.splitlines() if re.match(r"^\|\s*\[`?rules/%s" % re.escape(b[:2]), l)
-                and b in l.split("|")[1]), "")
+    row = index_row(sm_text, rules_file)
     build = [it for it in build_items(section(sm_text, "BUILD"))
              if b in it or re.search(r"rules/%s\b|[Ll]oad %s\b" % (n, n), it)]
     return pathless("\n".join([row] + build))
+
+
+def index_row(sm_text, rules_file):
+    """The rules-index row whose FIRST cell links rules_file, verbatim, or ''."""
+    b = os.path.basename(rules_file)
+    idx = section(sm_text, r"Rules? index")
+    return next((l for l in idx.splitlines() if re.match(r"^\|\s*\[`?rules/%s" % re.escape(b[:2]), l)
+                 and b in l.split("|")[1]), "")
 
 
 def build_items(text):
@@ -231,6 +239,18 @@ def manifest_check(edges):
                 continue
             if not spec.get("build"):
                 bad.append("C4 %s: rules/%s declares no BUILD tag" % (mf, n))
+            # C5 (stage 3's generated half, 2026-10-26): the manifest is where a rules-index row is
+            # written; SKILL.md carries the rendered copy (`--write-index`). A row edited in SKILL.md
+            # alone would let its declared tags and its prose drift apart, which C4 cannot see once
+            # the edit keeps one keyword.
+            want = spec.get("index_row")
+            got = index_row(text, have[n])
+            if want is None:
+                bad.append("C5 %s: rules/%s has no index_row -- run `python3 scripts/reachability-graph.py "
+                           "--index-init` once, then edit rows in the manifest" % (mf, n))
+            elif want != got:
+                bad.append("C5 %s: rules/%s index row in %s differs from its manifest -- edit the manifest's "
+                           "index_row and run `python3 scripts/reachability-graph.py --write-index`" % (mf, n, sm))
             prose = routing_prose(text, have[n]).lower()
             for tag in spec.get("build", []):
                 kws = m["tags"].get(tag)
@@ -543,6 +563,41 @@ def sync_convert():
     return 0
 
 
+def index_sync(write_skill):
+    """--write-index: manifest -> SKILL.md (the normal direction). --index-init: SKILL.md -> manifest,
+    filling only rows a manifest does not yet carry (the one-time migration; it never overwrites)."""
+    changed = 0
+    for mf in sorted(os.listdir(MANIFEST_DIR)):
+        if not mf.endswith(".json"):
+            continue
+        path = os.path.join(MANIFEST_DIR, mf)
+        m = json.load(open(path, encoding="utf-8"))
+        sm = "skills/%s/SKILL.md" % m["skill"]
+        raw = open(sm, encoding="utf-8").read()
+        have = {os.path.basename(f)[:2]: f for f in git_files("skills/%s/rules/*.md" % m["skill"])}
+        new_raw, touched = raw, False
+        for n, spec in sorted(m["files"].items()):
+            if n not in have:
+                continue
+            cur = index_row(raw, have[n])
+            if not write_skill:
+                if "index_row" not in spec and cur:
+                    spec["index_row"] = cur; touched = True
+            elif spec.get("index_row") and cur and spec["index_row"] != cur:
+                assert new_raw.count(cur) == 1, "%s: row for rules/%s is not unique" % (sm, n)
+                new_raw = new_raw.replace(cur, spec["index_row"]); touched = True
+        if touched:
+            changed += 1
+            if write_skill:
+                open(sm, "w", encoding="utf-8").write(new_raw)
+            else:
+                with open(path, "w", encoding="utf-8") as fh:
+                    json.dump(m, fh, indent=1, ensure_ascii=False); fh.write("\n")
+    print("%s: %d %s updated" % ("--write-index" if write_skill else "--index-init", changed,
+                                 "SKILL.md file(s)" if write_skill else "manifest(s)"))
+    return 0
+
+
 def main(argv):
     if argv[1:2] == ["--sync-convert"]:
         return sync_convert()
@@ -556,6 +611,8 @@ def main(argv):
         if load_baseline() is not None:
             print("baseline exists; use --sync-tighten"); return 1
         write_baseline(*sync_state()); print("baseline written"); return 0
+    if argv[1:2] in (["--write-index"], ["--index-init"]):
+        return index_sync(write_skill=argv[1] == "--write-index")
     if argv[1:2] == ["--json"]:
         rules, _, _, edges, unresolved = build()
         json.dump({"nodes": rules, "edges": [dict(source=s, kind=k, target=t) for s, k, t in edges],

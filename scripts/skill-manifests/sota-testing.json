@@ -2,52 +2,256 @@
  "_note": "Declared BUILD routing for sota-testing (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. BUILD names only 01 (step 3) and 04 (step 6) by link; step 1 names 01-04 as bare backticked numbers, which C4 does not read, so every file is routed by its rules-index row. Each row is a dense 'Read this when' list, and every task below found its files there; no routing gap found.",
  "skill": "sota-testing",
  "tags": {
-  "strategy": ["pyramid/trophy/honeycomb", "unit vs integration boundaries", "risk-based prioritization", "suite shape"],
-  "test-writing": ["writing or reviewing any test", "AAA", "one logical assertion"],
-  "determinism": ["determinism (clock/random/network", "hermeticity"],
-  "snapshot": ["snapshot discipline"],
-  "doubles": ["mock vs fake vs stub", "over-mocked"],
-  "test-data": ["building test data", "builders/factories", "seeding test DBs", "production data"],
-  "real-deps": ["real DBs/brokers", "Testcontainers", "I/O semantics you don't own"],
-  "contract": ["contract testing between services"],
-  "api-test": ["API testing"],
-  "queue-or-migration": ["message/queue tests", "migrations"],
-  "e2e": ["e2e suite", "selector strategy", "auto-waiting", "visual regression"],
-  "property-fuzz": ["property-based testing", "fuzzing parsers"],
-  "mutation": ["mutation testing"],
-  "legacy": ["approval testing for legacy code"],
-  "flaky": ["flaky-test policy", "quarantine"],
-  "coverage-gate": ["coverage philosophy", "ratchets not targets"],
-  "ci": ["CI sharding", "speed budgets", "parallelization correctness"],
-  "bdd": ["BDD", "Given-When-Then", "acceptance criteria", "Gherkin"],
-  "security": ["security testing", "IDOR/BOLA", "authz matrix", "abuse-case tests", "tenant isolation"]
+  "strategy": [
+   "pyramid/trophy/honeycomb",
+   "unit vs integration boundaries",
+   "risk-based prioritization",
+   "suite shape"
+  ],
+  "test-writing": [
+   "writing or reviewing any test",
+   "AAA",
+   "one logical assertion"
+  ],
+  "determinism": [
+   "determinism (clock/random/network",
+   "hermeticity"
+  ],
+  "snapshot": [
+   "snapshot discipline"
+  ],
+  "doubles": [
+   "mock vs fake vs stub",
+   "over-mocked"
+  ],
+  "test-data": [
+   "building test data",
+   "builders/factories",
+   "seeding test DBs",
+   "production data"
+  ],
+  "real-deps": [
+   "real DBs/brokers",
+   "Testcontainers",
+   "I/O semantics you don't own"
+  ],
+  "contract": [
+   "contract testing between services"
+  ],
+  "api-test": [
+   "API testing"
+  ],
+  "queue-or-migration": [
+   "message/queue tests",
+   "migrations"
+  ],
+  "e2e": [
+   "e2e suite",
+   "selector strategy",
+   "auto-waiting",
+   "visual regression"
+  ],
+  "property-fuzz": [
+   "property-based testing",
+   "fuzzing parsers"
+  ],
+  "mutation": [
+   "mutation testing"
+  ],
+  "legacy": [
+   "approval testing for legacy code"
+  ],
+  "flaky": [
+   "flaky-test policy",
+   "quarantine"
+  ],
+  "coverage-gate": [
+   "coverage philosophy",
+   "ratchets not targets"
+  ],
+  "ci": [
+   "CI sharding",
+   "speed budgets",
+   "parallelization correctness"
+  ],
+  "bdd": [
+   "BDD",
+   "Given-When-Then",
+   "acceptance criteria",
+   "Gherkin"
+  ],
+  "security": [
+   "security testing",
+   "IDOR/BOLA",
+   "authz matrix",
+   "abuse-case tests",
+   "tenant isolation"
+  ]
  },
  "files": {
-  "01": {"build": ["strategy"]},
-  "02": {"build": ["test-writing", "determinism", "snapshot"]},
-  "03": {"build": ["doubles", "test-data"]},
-  "04": {"build": ["real-deps", "contract", "api-test", "queue-or-migration"]},
-  "05": {"build": ["e2e"]},
-  "06": {"build": ["property-fuzz", "mutation", "legacy"]},
-  "07": {"build": ["flaky", "coverage-gate", "ci"]},
-  "08": {"build": ["bdd"]},
-  "09": {"build": ["security"]}
+  "01": {
+   "build": [
+    "strategy"
+   ],
+   "index_row": "| [`rules/01-strategy-and-shape.md`](rules/01-strategy-and-shape.md) | choosing pyramid/trophy/honeycomb, defining unit vs integration boundaries, deciding what NOT to test, risk-based prioritization, budgeting test cost |"
+  },
+  "02": {
+   "build": [
+    "test-writing",
+    "determinism",
+    "snapshot"
+   ],
+   "index_row": "| [`rules/02-test-design-quality.md`](rules/02-test-design-quality.md) | writing or reviewing any test: behavior-over-implementation, AAA, naming, one logical assertion, determinism (clock/random/network — incl. **proving hermeticity by running the suite with egress blocked**, and tests that pass because a real call succeeded), test smells catalog (assertion-free, tautological, the liar, mystery guest, resource optimism), snapshot discipline |"
+  },
+  "03": {
+   "build": [
+    "doubles",
+    "test-data"
+   ],
+   "index_row": "| [`rules/03-doubles-and-test-data.md`](rules/03-doubles-and-test-data.md) | deciding mock vs fake vs stub, fixing over-mocked suites, building test data (builders/factories vs fixtures), seeding test DBs, using production data |"
+  },
+  "04": {
+   "build": [
+    "real-deps",
+    "contract",
+    "api-test",
+    "queue-or-migration"
+   ],
+   "index_row": "| [`rules/04-integration-contract-system.md`](rules/04-integration-contract-system.md) | testing against real DBs/brokers (Testcontainers-style), contract testing between services (Pact, schema-based), API testing, migrations, message/queue tests, ephemeral environments, and **a bench that fails silently — including a green run that quietly ran fewer tests** |"
+  },
+  "05": {
+   "build": [
+    "e2e"
+   ],
+   "index_row": "| [`rules/05-e2e-and-ui.md`](rules/05-e2e-and-ui.md) | building or pruning an e2e suite: critical-path selection, selector strategy, auto-waiting, page objects/screenplay, visual regression, when to delete e2e tests |"
+  },
+  "06": {
+   "build": [
+    "property-fuzz",
+    "mutation",
+    "legacy"
+   ],
+   "index_row": "| [`rules/06-property-fuzzing-mutation.md`](rules/06-property-fuzzing-mutation.md) | going beyond examples: property-based testing (what properties to encode), fuzzing parsers, mutation testing ROI — **including that the revert is part of the probe**, not cleanup — approval testing for legacy code, chaos pointer |"
+  },
+  "07": {
+   "build": [
+    "flaky",
+    "coverage-gate",
+    "ci"
+   ],
+   "index_row": "| [`rules/07-suite-health-and-ci.md`](rules/07-suite-health-and-ci.md) | flaky-test policy and quarantine, coverage philosophy (ratchets not targets), speed budgets, parallelization correctness **and the opposite case of two independent runs sharing one database**, CI sharding, failure triage, **a threshold measured on one population and asserted over a pooled one**, **a PR-diff check that routes deleted, skipped or weakened tests to human sign-off** |"
+  },
+  "08": {
+   "build": [
+    "bdd"
+   ],
+   "index_row": "| [`rules/08-bdd-spec-by-example.md`](rules/08-bdd-spec-by-example.md) | BDD / specification by example: Given-When-Then done declaratively, the three-amigos value (and when there's no cross-role audience), outside-in double loop with TDD, scenario-explosion and UI-script anti-patterns, Gherkin tooling, and tracing scenarios to spec acceptance criteria ([`sota-docs-workflow` rules/05](../sota-docs-workflow/rules/05-spec-driven-development.md)) |"
+  },
+  "09": {
+   "build": [
+    "security"
+   ],
+   "index_row": "| [`rules/09-security-testing.md`](rules/09-security-testing.md) | security testing as a test type: WSTG as the verification map, the security-regression set (IDOR/BOLA, BFLA, authn/session, injection, mass-assignment, rate-limit, SSRF, tenant isolation run as the production DB role and pooler, cross-identity cache tests), **a role × method × path authz matrix, OpenAPI-derived auth negatives and a test that the enforcer is still wired**, independent authorship of security tests, business-logic/abuse-case tests from threat models, where SAST/DAST/fuzz fit and their ceiling, security-critical coverage floor, stack fingerprinting and external recon, WebSocket and message-size tests, the penetration-testing process and manual REST technique, security stress runs, logging kept on during security runs. Pairs with [`sota-code-security`](../sota-code-security/SKILL.md), [`sota-threat-modeling`](../sota-threat-modeling/SKILL.md), [`sota-devsecops` rules/05](../sota-devsecops/rules/05-analysis-gates.md) |"
+  }
  },
  "via": [],
  "cases": [
-  {"task": "write the test suite for a new order service that touches HTTP, Postgres and a message queue", "mode": "build",
-   "tags": ["strategy", "test-writing", "doubles", "test-data", "real-deps", "queue-or-migration"], "must_load": ["01", "02", "03", "04"]},
-  {"task": "add Playwright end-to-end tests for the checkout flow", "mode": "build",
-   "tags": ["e2e", "test-writing"], "must_load": ["05", "02"]},
-  {"task": "add cross-tenant IDOR and role-based authorization tests for a multi-tenant REST API", "mode": "build",
-   "tags": ["security", "api-test", "test-writing"], "must_load": ["09", "04", "02"]},
-  {"task": "add property-based tests and a fuzz target for a date-range parser", "mode": "build",
-   "tags": ["property-fuzz", "test-writing", "determinism"], "must_load": ["06", "02"]},
-  {"task": "set up the CI test job with a coverage ratchet, sharding and a flaky-test quarantine", "mode": "build",
-   "tags": ["ci", "coverage-gate", "flaky"], "must_load": ["07"]},
-  {"task": "write Given-When-Then scenarios from a story's acceptance criteria", "mode": "build",
-   "tags": ["bdd", "test-writing"], "must_load": ["08", "02"]},
-  {"task": "audit a repository's test suite", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08", "09"]}
+  {
+   "task": "write the test suite for a new order service that touches HTTP, Postgres and a message queue",
+   "mode": "build",
+   "tags": [
+    "strategy",
+    "test-writing",
+    "doubles",
+    "test-data",
+    "real-deps",
+    "queue-or-migration"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04"
+   ]
+  },
+  {
+   "task": "add Playwright end-to-end tests for the checkout flow",
+   "mode": "build",
+   "tags": [
+    "e2e",
+    "test-writing"
+   ],
+   "must_load": [
+    "05",
+    "02"
+   ]
+  },
+  {
+   "task": "add cross-tenant IDOR and role-based authorization tests for a multi-tenant REST API",
+   "mode": "build",
+   "tags": [
+    "security",
+    "api-test",
+    "test-writing"
+   ],
+   "must_load": [
+    "09",
+    "04",
+    "02"
+   ]
+  },
+  {
+   "task": "add property-based tests and a fuzz target for a date-range parser",
+   "mode": "build",
+   "tags": [
+    "property-fuzz",
+    "test-writing",
+    "determinism"
+   ],
+   "must_load": [
+    "06",
+    "02"
+   ]
+  },
+  {
+   "task": "set up the CI test job with a coverage ratchet, sharding and a flaky-test quarantine",
+   "mode": "build",
+   "tags": [
+    "ci",
+    "coverage-gate",
+    "flaky"
+   ],
+   "must_load": [
+    "07"
+   ]
+  },
+  {
+   "task": "write Given-When-Then scenarios from a story's acceptance criteria",
+   "mode": "build",
+   "tags": [
+    "bdd",
+    "test-writing"
+   ],
+   "must_load": [
+    "08",
+    "02"
+   ]
+  },
+  {
+   "task": "audit a repository's test suite",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09"
+   ]
+  }
  ]
 }

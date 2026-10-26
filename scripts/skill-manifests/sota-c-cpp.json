@@ -2,52 +2,246 @@
  "_note": "Declared BUILD routing for sota-c-cpp (invariant 42 C4, ROADMAP item 78 rollout). BUILD step 1 says a parser of untrusted bytes 'needs `02`, `03`, `04`' by bare number, which routing_prose() does not read; the parser case reaches 02 and 03 through rules/04's own opening links, and 06 through its 'Fuzz the parser' link. Case 4 is the CBMC item the 2026-10-25 cross-language intake resolved into rules/06 §4a.",
  "skill": "sota-c-cpp",
  "tags": {
-  "cpp-idioms": ["Writing/reviewing any C++", "RAII", "error handling"],
-  "failure-paths": ["parser depth", "std::terminate"],
-  "memory": ["pointers, buffers", "use-after-free", "lifetimes"],
-  "undefined-behavior": ["Reasoning about UB", "integer overflow", "strict aliasing"],
-  "untrusted-input": ["trust boundary"],
-  "command-exec": ["command injection", "banned functions"],
-  "hardening-flags": ["OpenSSF hardening flag", "Windows/MSVC binary hardening"],
-  "outbound-http": ["SSRF through libcurl"],
-  "privilege-drop": ["privilege drop", "setuid"],
-  "threads": ["threads, atomics", "data races", "TSan"],
-  "build-ci": ["builds/CI", "CMake", "clang-tidy"],
-  "sanitizers-ci": ["sanitizer CI matrix", "the sanitizers"],
-  "fuzzing": ["fuzzing", "libFuzzer"],
-  "formal-proof": ["CBMC", "bounded model checking"],
-  "dependency": ["supply chain", "vcpkg/Conan", "selecting a new dependency"],
-  "performance": ["Latency/throughput/memory", "profiling", "cache locality"]
+  "cpp-idioms": [
+   "Writing/reviewing any C++",
+   "RAII",
+   "error handling"
+  ],
+  "failure-paths": [
+   "parser depth",
+   "std::terminate"
+  ],
+  "memory": [
+   "pointers, buffers",
+   "use-after-free",
+   "lifetimes"
+  ],
+  "undefined-behavior": [
+   "Reasoning about UB",
+   "integer overflow",
+   "strict aliasing"
+  ],
+  "untrusted-input": [
+   "trust boundary"
+  ],
+  "command-exec": [
+   "command injection",
+   "banned functions"
+  ],
+  "hardening-flags": [
+   "OpenSSF hardening flag",
+   "Windows/MSVC binary hardening"
+  ],
+  "outbound-http": [
+   "SSRF through libcurl"
+  ],
+  "privilege-drop": [
+   "privilege drop",
+   "setuid"
+  ],
+  "threads": [
+   "threads, atomics",
+   "data races",
+   "TSan"
+  ],
+  "build-ci": [
+   "builds/CI",
+   "CMake",
+   "clang-tidy"
+  ],
+  "sanitizers-ci": [
+   "sanitizer CI matrix",
+   "the sanitizers"
+  ],
+  "fuzzing": [
+   "fuzzing",
+   "libFuzzer"
+  ],
+  "formal-proof": [
+   "CBMC",
+   "bounded model checking"
+  ],
+  "dependency": [
+   "supply chain",
+   "vcpkg/Conan",
+   "selecting a new dependency"
+  ],
+  "performance": [
+   "Latency/throughput/memory",
+   "profiling",
+   "cache locality"
+  ]
  },
  "files": {
-  "01": {"build": ["cpp-idioms", "failure-paths"]},
-  "02": {"build": ["memory"]},
-  "03": {"build": ["undefined-behavior"]},
-  "04": {"build": ["untrusted-input", "command-exec", "hardening-flags", "outbound-http", "privilege-drop"]},
-  "05": {"build": ["threads"]},
-  "06": {"build": ["build-ci", "sanitizers-ci", "fuzzing", "formal-proof", "dependency"]},
-  "07": {"build": ["performance"]}
+  "01": {
+   "build": [
+    "cpp-idioms",
+    "failure-paths"
+   ],
+   "index_row": "| [`rules/01-idioms.md`](rules/01-idioms.md) | Writing/reviewing any C++: RAII and the rule of zero/five, ownership with `unique_ptr`/`shared_ptr`, value semantics and move, `const`/`constexpr`, references vs pointers, casts, `enum class`, error handling (exceptions vs `std::expected` vs error codes) and the **failures no `catch` stops** (`std::terminate`, stack overflow; parser depth), **in-band sentinels (absence encoded as `-1`/`0`/`\"\"`)** incl. **`EOF` in a `char` — broken only where `char` is unsigned**, C-vs-C++ idiom choices |"
+  },
+  "02": {
+   "build": [
+    "memory"
+   ],
+   "index_row": "| [`rules/02-memory-safety.md`](rules/02-memory-safety.md) | Anything touching pointers, buffers, lifetimes, or allocation: bounds, use-after-free/return, dangling references and views (`string_view`/`span`), iterator invalidation, ownership discipline, sanitizers (ASan/MSan), `_FORTIFY_SOURCE`/`_GLIBCXX_ASSERTIONS`, Clang Safe Buffers (`-Wunsafe-buffer-usage`) |"
+  },
+  "03": {
+   "build": [
+    "undefined-behavior"
+   ],
+   "index_row": "| [`rules/03-undefined-behavior.md`](rules/03-undefined-behavior.md) | Reasoning about UB and the optimizer: integer overflow, strict aliasing, uninitialized reads, null/misaligned access, signed shifts, data races as UB, `unsigned` arithmetic, overflow checks the optimiser deletes (`-fno-strict-overflow`/`-fwrapv` in production, never instead of a checked `ckd_*`), C++26 `std::saturating_*`, C++26 erroneous behaviour and its limits (`[[indeterminate]]`, heap), union `= {0}` on GCC 15+, UBSan, TypeSanitizer, **C++26 contracts are not input validation** (evaluation semantics), why \"it worked in debug\" proves nothing |"
+  },
+  "04": {
+   "build": [
+    "untrusted-input",
+    "command-exec",
+    "hardening-flags",
+    "outbound-http",
+    "privilege-drop"
+   ],
+   "index_row": "| [`rules/04-security.md`](rules/04-security.md) | Any input crossing a trust boundary: CERT C/C++ + MISRA, banned functions (`gets`/`strcpy`/`sprintf`/`system`), integer-overflow-to-allocation, format strings, path traversal/TOCTOU, command injection, SSRF through libcurl (connect-time address check, redirects, protocol allowlist), regex as a control (escaping, full-match anchoring, backtracking `std::regex`/PCRE2 vs linear-time RE2), deserialization/parsers, dynamic code evaluation (embedded Lua/Python interpreters, `dlsym` by input name), app-set cookie attributes (Drogon, Crow, cpp-httplib), CSPRNG, secret wiping (`memset_explicit`), the OpenSSF hardening flag set (plus inert flags, `-strong` vs `-all` canaries, retpoline thunks), hardening opt-out macros (`-U_FORTIFY_SOURCE`, `_CRT_SECURE_NO_WARNINGS`), Windows/MSVC binary hardening (`/sdl`, `/guard:cf`, `/CETCOMPAT`, BinSkim, process mitigations), a shipped debug/sanitizer build refused at compile time, privilege drop in setuid programs and root-started daemons (§7: groups → gid → uid, checked returns, proven permanent) |"
+  },
+  "05": {
+   "build": [
+    "threads"
+   ],
+   "index_row": "| [`rules/05-concurrency.md`](rules/05-concurrency.md) | Anything with threads, atomics, or shared state: the C++ memory model, data races, `std::atomic` and memory orders, `mutex`/`lock_guard`/`scoped_lock`, deadlock ordering, condition variables, `std::jthread`/stop tokens, request-scoped state in `thread_local` or a logging MDC on reused threads and across `co_await`, TSan |"
+  },
+  "06": {
+   "build": [
+    "build-ci",
+    "sanitizers-ci",
+    "fuzzing",
+    "formal-proof",
+    "dependency"
+   ],
+   "index_row": "| [`rules/06-build-tooling-ci.md`](rules/06-build-tooling-ci.md) | Setting up or auditing builds/CI: CMake hygiene, pinning the C/C++ dialect (GCC 15/16 moved the defaults), `-fpermissive` as a finding, Debug/Release configurations and the NDEBUG/DEBUG guard, flags that never reach a unit (stale objects, overridden `CFLAGS`, vendored libraries), warning flags (periodic `-Weverything`, per-site suppression), clang-tidy/clang-format, static analysis (clang-analyzer, cppcheck, Coverity), sanitizer CI matrix and the trap-mode UBSan subset that may ship, fuzzing (libFuzzer/OSS-Fuzz), **bounded model checking with CBMC and its two-pass non-vacuity gate**, suppressions that never expire (`NOLINT` has no unused report), dependencies and supply chain (vcpkg/Conan, pinning, SBOM, selecting a new dependency and overriding its insecure defaults, dependency code that runs at configure/build time). **Test *strategy* lives in [`sota-testing`](../sota-testing/SKILL.md); this file owns C/C++ build/test mechanics.** |"
+  },
+  "07": {
+   "build": [
+    "performance"
+   ],
+   "index_row": "| [`rules/07-performance.md`](rules/07-performance.md) | Latency/throughput/memory work: profiling (perf, VTune, Callgrind), allocation reduction and custom allocators, move/copy elision, cache locality and data-oriented layout, `<algorithm>` over hand loops, LTO/PGO, micro-benchmarking pitfalls |"
+  }
  },
  "via": [
-  {"from": "04", "to": "02", "when": ["parser"]},
-  {"from": "04", "to": "03", "when": ["parser"]},
-  {"from": "04", "to": "06", "when": ["parser"]},
-  {"from": "04", "to": "01", "when": ["recursive-format"]}
+  {
+   "from": "04",
+   "to": "02",
+   "when": [
+    "parser"
+   ]
+  },
+  {
+   "from": "04",
+   "to": "03",
+   "when": [
+    "parser"
+   ]
+  },
+  {
+   "from": "04",
+   "to": "06",
+   "when": [
+    "parser"
+   ]
+  },
+  {
+   "from": "04",
+   "to": "01",
+   "when": [
+    "recursive-format"
+   ]
+  }
  ],
  "cases": [
-  {"task": "write a parser for an untrusted binary file format", "mode": "build",
-   "tags": ["untrusted-input", "parser"], "must_load": ["02", "03", "04", "06"]},
-  {"task": "parse nested JSON documents from the network", "mode": "build",
-   "tags": ["untrusted-input", "parser", "recursive-format"], "must_load": ["01", "02", "03", "04", "06"]},
-  {"task": "add a worker thread pool draining a shared queue", "mode": "build",
-   "tags": ["threads"], "must_load": ["05"]},
-  {"task": "set up CMake, warnings, hardening flags, sanitizers and clang-tidy CI for a new project", "mode": "build",
-   "tags": ["build-ci", "sanitizers-ci", "hardening-flags"], "must_load": ["04", "06"]},
-  {"task": "prove a ring-buffer index stays in bounds with CBMC", "mode": "build",
-   "tags": ["formal-proof"], "must_load": ["06"]},
-  {"task": "drop root in a daemon that binds port 443 at start-up", "mode": "build",
-   "tags": ["privilege-drop"], "must_load": ["04"]},
-  {"task": "audit a C/C++ codebase", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+  {
+   "task": "write a parser for an untrusted binary file format",
+   "mode": "build",
+   "tags": [
+    "untrusted-input",
+    "parser"
+   ],
+   "must_load": [
+    "02",
+    "03",
+    "04",
+    "06"
+   ]
+  },
+  {
+   "task": "parse nested JSON documents from the network",
+   "mode": "build",
+   "tags": [
+    "untrusted-input",
+    "parser",
+    "recursive-format"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "06"
+   ]
+  },
+  {
+   "task": "add a worker thread pool draining a shared queue",
+   "mode": "build",
+   "tags": [
+    "threads"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "set up CMake, warnings, hardening flags, sanitizers and clang-tidy CI for a new project",
+   "mode": "build",
+   "tags": [
+    "build-ci",
+    "sanitizers-ci",
+    "hardening-flags"
+   ],
+   "must_load": [
+    "04",
+    "06"
+   ]
+  },
+  {
+   "task": "prove a ring-buffer index stays in bounds with CBMC",
+   "mode": "build",
+   "tags": [
+    "formal-proof"
+   ],
+   "must_load": [
+    "06"
+   ]
+  },
+  {
+   "task": "drop root in a daemon that binds port 443 at start-up",
+   "mode": "build",
+   "tags": [
+    "privilege-drop"
+   ],
+   "must_load": [
+    "04"
+   ]
+  },
+  {
+   "task": "audit a C/C++ codebase",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  }
  ]
 }

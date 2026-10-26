@@ -2,43 +2,224 @@
  "_note": "Declared BUILD routing for sota-ml-engineering (invariant 42 C4), drafted 2026-10-26 for ROADMAP item 78. No keyword matches a file's own link text. BUILD step 1 says a new model service 'needs `01`, `02`, `04`, `05`, `06`, `07`' by bare number, which routing_prose() does not read, and no BUILD step links any rules file, so every route here is an index row. No routing gap found for the cases below.",
  "skill": "sota-ml-engineering",
  "tags": {
-  "architecture": ["Designing/reviewing an ML system", "training vs serving paths", "Hidden-Technical-Debt"],
-  "feature-store": ["feature store"],
-  "registry": ["model registry"],
-  "reproducibility": ["reproducibility", "reproducible"],
-  "data": ["training data", "data leakage", "splits (temporal/group)", "feature/data versioning"],
-  "skew": ["train/serve skew", "training vs serving paths"],
-  "training": ["Training and iterating", "hyperparameter search", "distributed training", "experiment tracking"],
-  "evaluation": ["Deciding if a model is good enough", "sliced", "ML Test Score", "validation gates"],
-  "serving": ["Shipping a model", "batch vs online vs streaming serving", "canary/shadow"],
-  "monitoring": ["Operating a model", "data drift", "retraining triggers", "prediction & feature monitoring"],
-  "ml-security": ["training-data poisoning", "model extraction", "model artifacts", "model signing"],
-  "dataset-integrity": ["signed dataset attestations", "dataset provenance", "training-data admission"],
-  "privacy": ["PII minimization", "per-row consent codes", "DP training"],
-  "governance": ["model cards", "EU AI Act", "NIST AI RMF"]
+  "architecture": [
+   "Designing/reviewing an ML system",
+   "training vs serving paths",
+   "Hidden-Technical-Debt"
+  ],
+  "feature-store": [
+   "feature store"
+  ],
+  "registry": [
+   "model registry"
+  ],
+  "reproducibility": [
+   "reproducibility",
+   "reproducible"
+  ],
+  "data": [
+   "training data",
+   "data leakage",
+   "splits (temporal/group)",
+   "feature/data versioning"
+  ],
+  "skew": [
+   "train/serve skew",
+   "training vs serving paths"
+  ],
+  "training": [
+   "Training and iterating",
+   "hyperparameter search",
+   "distributed training",
+   "experiment tracking"
+  ],
+  "evaluation": [
+   "Deciding if a model is good enough",
+   "sliced",
+   "ML Test Score",
+   "validation gates"
+  ],
+  "serving": [
+   "Shipping a model",
+   "batch vs online vs streaming serving",
+   "canary/shadow"
+  ],
+  "monitoring": [
+   "Operating a model",
+   "data drift",
+   "retraining triggers",
+   "prediction & feature monitoring"
+  ],
+  "ml-security": [
+   "training-data poisoning",
+   "model extraction",
+   "model artifacts",
+   "model signing"
+  ],
+  "dataset-integrity": [
+   "signed dataset attestations",
+   "dataset provenance",
+   "training-data admission"
+  ],
+  "privacy": [
+   "PII minimization",
+   "per-row consent codes",
+   "DP training"
+  ],
+  "governance": [
+   "model cards",
+   "EU AI Act",
+   "NIST AI RMF"
+  ]
  },
  "files": {
-  "01": {"build": ["architecture", "feature-store", "registry", "reproducibility", "skew"]},
-  "02": {"build": ["data", "skew", "dataset-integrity", "privacy"]},
-  "03": {"build": ["training", "reproducibility"]},
-  "04": {"build": ["evaluation"]},
-  "05": {"build": ["serving", "registry", "reproducibility"]},
-  "06": {"build": ["monitoring"]},
-  "07": {"build": ["ml-security", "dataset-integrity", "privacy", "governance"]}
+  "01": {
+   "build": [
+    "architecture",
+    "feature-store",
+    "registry",
+    "reproducibility",
+    "skew"
+   ],
+   "index_row": "| [`rules/01-ml-systems-architecture.md`](rules/01-ml-systems-architecture.md) | Designing/reviewing an ML system: the model-is-small-part principle, training vs serving paths, feature store, model registry, reproducibility, append-only model audit trail and registered checkpoints, trust domains across training/evaluation/serving (tracker auth, purpose-scoped feature namespaces), the Hidden-Technical-Debt anti-patterns (entanglement/CACE, glue code, pipeline jungles, undeclared consumers, feedback loops) |"
+  },
+  "02": {
+   "build": [
+    "data",
+    "skew",
+    "dataset-integrity",
+    "privacy"
+   ],
+   "index_row": "| [`rules/02-data-and-features.md`](rules/02-data-and-features.md) | Anything touching training data or features: data leakage and label leakage, train/serve skew, feature/data versioning, splits (temporal/group), feature engineering discipline, dropping unused features, PII minimization, signed dataset attestations and stage-to-stage verification, purpose-bound fields and per-row consent codes, training-data admission (labeling roles, auto-label QA, adjudication-window quarantine) |"
+  },
+  "03": {
+   "build": [
+    "training",
+    "reproducibility"
+   ],
+   "index_row": "| [`rules/03-training-experimentation.md`](rules/03-training-experimentation.md) | Training and iterating: experiment tracking & reproducibility (seeds, env, data hash), hyperparameter search, distributed training/checkpointing, config management, reproducible runs, starting simple |"
+  },
+  "04": {
+   "build": [
+    "evaluation"
+   ],
+   "index_row": "| [`rules/04-evaluation-validation.md`](rules/04-evaluation-validation.md) | Deciding if a model is good enough: offline metrics vs the business objective, baselines, **sliced** evaluation and fairness, the ML Test Score tests, validation gates and regression thresholds before promotion, robustness slice, re-validating quantised/distilled artifacts |"
+  },
+  "05": {
+   "build": [
+    "serving",
+    "registry",
+    "reproducibility"
+   ],
+   "index_row": "| [`rules/05-deployment-serving.md`](rules/05-deployment-serving.md) | Shipping a model: packaging (containers/ONNX), batch vs online vs streaming serving, model registry promotion, canary/shadow/A-B rollout, full-state rollback and isolated runtime caches, latency/throughput, reproducible inference environment, model decommissioning |"
+  },
+  "06": {
+   "build": [
+    "monitoring"
+   ],
+   "index_row": "| [`rules/06-monitoring-drift.md`](rules/06-monitoring-drift.md) | Operating a model: data drift (PSI/KS) vs concept drift vs performance decay, label lag, embedding drift for text/images, abrupt vs gradual shift, prediction & feature monitoring, alerting, retraining triggers and cadence, ML-specific observability (cross-ref [`sota-observability`](../sota-observability/SKILL.md)) |"
+  },
+  "07": {
+   "build": [
+    "ml-security",
+    "dataset-integrity",
+    "privacy",
+    "governance"
+   ],
+   "index_row": "| [`rules/07-security-governance.md`](rules/07-security-governance.md) | ML security & compliance: training-data poisoning, model extraction/inversion/membership inference, adversarial inputs, supply chain (untrusted `pickle`/model artifacts, dataset provenance, OMS model signing verified at admission and load, sandboxed third-party-model workers), backdoor screening and trigger-corpus gate, extraction detection and response, required adversarial robustness, OOD gating at inference, signed per-model ML-BOM, prompt/guardrail drift checks, on-device model signing, credential leaks as data-integrity incidents, DP training and membership-inference tests, inferred special-category attributes, MITRE ATLAS, NIST AI RMF, model cards, EU AI Act obligations |"
+  }
  },
  "via": [],
  "cases": [
-  {"task": "ship a new fraud-scoring model service", "mode": "build",
-   "tags": ["architecture", "data", "evaluation", "serving", "monitoring", "ml-security"], "must_load": ["01", "02", "04", "05", "06", "07"]},
-  {"task": "fine-tune a pretrained model downloaded from a public hub", "mode": "build",
-   "tags": ["ml-security", "training", "reproducibility"], "must_load": ["07", "03", "01"]},
-  {"task": "add drift monitoring that triggers retraining and gated re-promotion", "mode": "build",
-   "tags": ["monitoring", "evaluation", "registry"], "must_load": ["06", "04", "05", "01"]},
-  {"task": "build a churn model's feature pipeline with time-based splits and shared train/serve transforms", "mode": "build",
-   "tags": ["data", "skew", "feature-store"], "must_load": ["02", "01"]},
-  {"task": "train a credit model on customer data under the EU AI Act", "mode": "build",
-   "tags": ["privacy", "governance", "evaluation"], "must_load": ["02", "07", "04"]},
-  {"task": "audit a production ML pipeline", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07"]}
+  {
+   "task": "ship a new fraud-scoring model service",
+   "mode": "build",
+   "tags": [
+    "architecture",
+    "data",
+    "evaluation",
+    "serving",
+    "monitoring",
+    "ml-security"
+   ],
+   "must_load": [
+    "01",
+    "02",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  },
+  {
+   "task": "fine-tune a pretrained model downloaded from a public hub",
+   "mode": "build",
+   "tags": [
+    "ml-security",
+    "training",
+    "reproducibility"
+   ],
+   "must_load": [
+    "07",
+    "03",
+    "01"
+   ]
+  },
+  {
+   "task": "add drift monitoring that triggers retraining and gated re-promotion",
+   "mode": "build",
+   "tags": [
+    "monitoring",
+    "evaluation",
+    "registry"
+   ],
+   "must_load": [
+    "06",
+    "04",
+    "05",
+    "01"
+   ]
+  },
+  {
+   "task": "build a churn model's feature pipeline with time-based splits and shared train/serve transforms",
+   "mode": "build",
+   "tags": [
+    "data",
+    "skew",
+    "feature-store"
+   ],
+   "must_load": [
+    "02",
+    "01"
+   ]
+  },
+  {
+   "task": "train a credit model on customer data under the EU AI Act",
+   "mode": "build",
+   "tags": [
+    "privacy",
+    "governance",
+    "evaluation"
+   ],
+   "must_load": [
+    "02",
+    "07",
+    "04"
+   ]
+  },
+  {
+   "task": "audit a production ML pipeline",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+   ]
+  }
  ]
 }

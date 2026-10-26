@@ -64,18 +64,21 @@
     "threat-classification",
     "boundary-choice",
     "boundary-verification"
-   ]
+   ],
+   "index_row": "| [`rules/01-isolation-boundaries.md`](rules/01-isolation-boundaries.md) | choosing or judging the isolation boundary itself: threat classification (untrusted code vs input vs multi-tenant), boundary strength ranking (hardware > VM > microVM > gVisor > container > process > runtime), defense-in-depth layering, verifying a boundary with a probe, fail-closed, ephemerality, anti-patterns, model inference runtimes and native-object deserialization as named workloads. Read first in every engagement. |"
   },
   "02": {
    "build": [
     "linux-primitives"
-   ]
+   ],
+   "index_row": "| [`rules/02-linux-os-hardening.md`](rules/02-linux-os-hardening.md) | building or auditing anything on a Linux kernel: namespaces (incl. userns dual nature), cgroups v2 budgets, deny-by-default seccomp-bpf (with JSON fragment + never-allow syscall list), Landlock, capabilities drop-ALL, no-new-privileges, read-only rootfs, AppArmor/SELinux, systemd sandboxing directives. |"
   },
   "03": {
    "build": [
     "container",
     "kubernetes"
-   ]
+   ],
+   "index_row": "| [`rules/03-containers-microvms.md`](rules/03-containers-microvms.md) | Docker/OCI images and run flags (good/bad Dockerfile, prohibited flags/mounts, read-only data mounts, GPU and network-bandwidth limits, published ports vs host firewall, default bridge), choosing gVisor vs Kata vs Firecracker (GPU tenant sharing and memory scrubbing), Kubernetes pod security (restricted PSA, securityContext template incl. AppArmor and procMount, RBAC/service-account tokens, default-deny NetworkPolicy), runtime detection (Falco/Tetragon; device-node and metadata-endpoint alerts). |"
   },
   "04": {
    "build": [
@@ -83,7 +86,8 @@
     "privsep",
     "subprocess",
     "wasm"
-   ]
+   ],
+   "index_row": "| [`rules/04-process-app-sandboxing.md`](rules/04-process-app-sandboxing.md) | isolating risky code inside your own app: sandboxed parser workers for image/PDF/archive handling, broker/privilege-separation pattern, pledge/unveil-style lockdown sequencing, WASM/wasmtime + WASI capabilities, V8 isolates' real guarantees, subprocess hygiene (no shell=True, argv, clean env), macOS (sandbox-exec reality, App Sandbox, ES). |"
   },
   "05": {
    "build": [
@@ -91,7 +95,8 @@
     "mcp",
     "egress",
     "agent-probe"
-   ]
+   ],
+   "index_row": "| [`rules/05-ai-agent-sandboxing.md`](rules/05-ai-agent-sandboxing.md) | any LLM/agent workload: model-generated code execution, prompt injection as confused-deputy, lethal trifecta analysis, the in-sandbox verification probe, tool permission scoping/broker design, per-instance agent identity, MCP server risk and local MCP server sandboxing, developer-machine agent permission baselines, FQDN egress allowlists + DNS exfil, time/memory/output/spend limits, fleet-wide out-of-band kill switch and rollback, high-risk action audit fields and named agent detection thresholds, graduated automatic containment, multi-agent and computer-use containment. |"
   }
  },
  "cases": [

@@ -2,45 +2,198 @@
  "_note": "Declared BUILD routing for sota-rust (stage-3 pilot, invariant 42 C4). Every tag's keywords must appear in the routing prose of each file declared for it; every via hop must be a real link; every case must reach its must_load files. Cases are the incidents that motivated this: see docs/ADOPTION-LOG.md 2026-10-24/25.",
  "skill": "sota-rust",
  "tags": {
-  "ownership-api": ["structs", "borrow checker", "traits"],
-  "errors": ["error", "unwrap", "panic"],
-  "unsafe": ["unsafe"],
-  "ffi": ["FFI"],
-  "async": ["async", "tokio"],
-  "untrusted-input": ["network input", "untrusted input", "network-facing"],
-  "dependency": ["dependenc"],
-  "performance": ["performance", "profiling"],
-  "ci-tooling": ["clippy", "CI shape"],
-  "external-process": ["external program", "std::process::Command"],
-  "proof": ["Kani", "Proving"]
+  "ownership-api": [
+   "structs",
+   "borrow checker",
+   "traits"
+  ],
+  "errors": [
+   "error",
+   "unwrap",
+   "panic"
+  ],
+  "unsafe": [
+   "unsafe"
+  ],
+  "ffi": [
+   "FFI"
+  ],
+  "async": [
+   "async",
+   "tokio"
+  ],
+  "untrusted-input": [
+   "network input",
+   "untrusted input",
+   "network-facing"
+  ],
+  "dependency": [
+   "dependenc"
+  ],
+  "performance": [
+   "performance",
+   "profiling"
+  ],
+  "ci-tooling": [
+   "clippy",
+   "CI shape"
+  ],
+  "external-process": [
+   "external program",
+   "std::process::Command"
+  ],
+  "proof": [
+   "Kani",
+   "Proving"
+  ]
  },
  "files": {
-  "01": {"build": ["ownership-api"]},
-  "02": {"build": ["errors"]},
-  "03": {"build": ["unsafe", "ffi"]},
-  "04": {"build": ["async"]},
-  "05": {"build": ["untrusted-input", "dependency"]},
-  "06": {"build": ["performance"]},
-  "07": {"build": ["ci-tooling"]},
-  "08": {"build": ["external-process"]},
-  "09": {"build": ["proof"]}
+  "01": {
+   "build": [
+    "ownership-api"
+   ],
+   "index_row": "| [rules/01-ownership-and-api-design.md](rules/01-ownership-and-api-design.md) | Designing structs/traits/modules/workspaces; fighting the borrow checker; deciding clone vs borrow vs Rc/Arc; newtype, typestate, builder patterns; sealed traits, coherence; comparison-trait (`Eq`/`Ord`) invariants and the 1.98 derived-`PartialOrd` fast path; exhaustive matching; iterator-chain idioms; **money as integer minor units or decimal, and arithmetic edge cases (NaN/`inf` from `parse::<f64>`, `MIN / -1`, `Duration::try_from_secs_f64`, §3)** |"
+  },
+  "02": {
+   "build": [
+    "errors"
+   ],
+   "index_row": "| [rules/02-errors-and-panics.md](rules/02-errors-and-panics.md) | Choosing thiserror vs anyhow/eyre; designing error enums; unwrap/expect policy and invariant messages; context discipline; panic policy for servers, FFI (a panic leaving `extern \"C\"` aborts since 1.81), and `Drop` (no panic in destructors); `assert!` is a panic and `debug_assert!` is not a check in release; Option/Result combinator flow; **not unwrapping an `Option` back into a sentinel** (`unwrap_or(-1)`, `serde(default)` on numbers) |"
+  },
+  "03": {
+   "build": [
+    "unsafe",
+    "ffi"
+   ],
+   "index_row": "| [rules/03-unsafe-discipline.md](rules/03-unsafe-discipline.md) | Writing or reviewing ANY `unsafe`; SAFETY comment standards; UB catalog (aliasing, uninit, transmute, FFI lifetimes); **the FFI boundary** (values of restricted types arriving from C, null pointers and callbacks, `core::ffi` widths, bindgen/cbindgen, opaque handles); **leak APIs** (`mem::forget`, `Box::leak`, `into_raw` without `from_raw`); Miri/sanitizers/loom in CI; cargo-geiger; soundness review protocol |"
+  },
+  "04": {
+   "build": [
+    "async"
+   ],
+   "index_row": "| [rules/04-async-tokio.md](rules/04-async-tokio.md) | Anything async: tokio, spawn vs spawn_blocking, Send/Sync bound errors, `select!` and cancellation safety, JoinSet/TaskTracker, channel selection, locks across await, async traits, graceful shutdown; **request-scoped state: `task_local!` scope, never a `thread_local!` (§4)** |"
+  },
+  "05": {
+   "build": [
+    "untrusted-input",
+    "dependency"
+   ],
+   "index_row": "| [rules/05-security-supply-chain.md](rules/05-security-supply-chain.md) | Network-facing or deployed code; adding dependencies; cargo audit/deny/vet; integer overflow on untrusted input; panic-DoS; zeroize/constant-time for secrets; serde hardening (untagged enums, size limits); service-edge defaults; **outbound requests to a caller-influenced URL (SSRF: reqwest `dns_resolver` connect-time check, redirect policy, IP literals, §7)**; **regex as a control (`regex::escape`, whole-input anchors, `fancy-regex` backtracking limit, §7)**; **app-set cookie attributes and debug build / tokio-console in production (§7)**; **raw-SQL sinks (sqlx `QueryBuilder::push`/`AssertSqlSafe`, diesel `sql_query`/`sql::<T>`, §7)**; spawning external programs moved to [rules/08](rules/08-external-programs.md) |"
+  },
+  "06": {
+   "build": [
+    "performance"
+   ],
+   "index_row": "| [rules/06-performance.md](rules/06-performance.md) | Performance work or claims: profiling (samply/perf/flamegraph, criterion/divan), allocation reduction (Cow/SmallVec/buffer reuse), accidental clones, iterator fusion, release profile (LTO, codegen-units, panic=abort), PGO; hasher choice vs HashDoS (unkeyed FxHash/fnv vs runtime-seeded ahash, §4) |"
+  },
+  "07": {
+   "build": [
+    "ci-tooling"
+   ],
+   "index_row": "| [rules/07-tooling-ci.md](rules/07-tooling-ci.md) | Setting up or auditing repo scaffolding: clippy policy and pedantic triage, rustfmt, nextest, MSRV declaration+testing, **build config outside `Cargo.toml`** (`RUSTFLAGS`/`.cargo/config.toml` in any ancestor overriding the profile, `rustc-wrapper`, dev/test profiles keeping overflow checks, stable channel, target tier), additive feature flags, docs.rs discipline, edition 2024 migration (newly `unsafe` `env::set_var`), crates.io Trusted Publishing (GitHub Actions; GitLab.com public beta), CI baseline. **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in [`sota-testing`](../sota-testing/SKILL.md); load it for any build that writes logic. This file owns Rust runner mechanics only.** |"
+  },
+  "08": {
+   "build": [
+    "external-process"
+   ],
+   "index_row": "| [rules/08-external-programs.md](rules/08-external-programs.md) | Spawning processes with `std::process::Command`: argv vs shell, `.bat`/`.cmd` on Windows, environment and working directory, kill-and-wait on every exit path, deadlines, output limits (formerly [rules/05](rules/05-security-supply-chain.md) section 9, now §1); **code evaluation from input — mlua stdlib, rhai limits, `libloading` (R9.8)** |"
+  },
+  "09": {
+   "build": [
+    "proof"
+   ],
+   "index_row": "| [rules/09-formal-verification.md](rules/09-formal-verification.md) | Proving rather than sampling: Kani harnesses (panic, overflow, out-of-bounds and pointer validity over every input within a bound; function and loop contracts; `autoharness`), Flux refinement types for index/length relations; **vacuity** (a proof over zero executions prints the same success line — the trailing `cover!()` and the cover gate), mutation adequacy of postconditions, the unstable flags that silently change what is checked, and soundness limits of contracts on `unsafe` code. BUILD and AUDIT both |"
+  }
  },
  "via": [
-  {"from": "05", "to": "09", "when": ["security-critical"]},
-  {"from": "03", "to": "09", "when": ["security-critical"]}
+  {
+   "from": "05",
+   "to": "09",
+   "when": [
+    "security-critical"
+   ]
+  },
+  {
+   "from": "03",
+   "to": "09",
+   "when": [
+    "security-critical"
+   ]
+  }
  ],
  "cases": [
-  {"task": "build a parser for this binary network protocol", "mode": "build",
-   "tags": ["untrusted-input", "security-critical"], "must_load": ["05", "09"]},
-  {"task": "write a safe wrapper around a C library", "mode": "build",
-   "tags": ["unsafe", "ffi", "security-critical"], "must_load": ["03", "09"]},
-  {"task": "shell out to ffmpeg to transcode uploads", "mode": "build",
-   "tags": ["external-process", "untrusted-input"], "must_load": ["08", "05"]},
-  {"task": "add a tokio service with cancellation-safe timeouts", "mode": "build",
-   "tags": ["async"], "must_load": ["04"]},
-  {"task": "set up clippy and CI for a new crate", "mode": "build",
-   "tags": ["ci-tooling"], "must_load": ["07"]},
-  {"task": "audit a Rust network service", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06", "07", "08", "09"]}
+  {
+   "task": "build a parser for this binary network protocol",
+   "mode": "build",
+   "tags": [
+    "untrusted-input",
+    "security-critical"
+   ],
+   "must_load": [
+    "05",
+    "09"
+   ]
+  },
+  {
+   "task": "write a safe wrapper around a C library",
+   "mode": "build",
+   "tags": [
+    "unsafe",
+    "ffi",
+    "security-critical"
+   ],
+   "must_load": [
+    "03",
+    "09"
+   ]
+  },
+  {
+   "task": "shell out to ffmpeg to transcode uploads",
+   "mode": "build",
+   "tags": [
+    "external-process",
+    "untrusted-input"
+   ],
+   "must_load": [
+    "08",
+    "05"
+   ]
+  },
+  {
+   "task": "add a tokio service with cancellation-safe timeouts",
+   "mode": "build",
+   "tags": [
+    "async"
+   ],
+   "must_load": [
+    "04"
+   ]
+  },
+  {
+   "task": "set up clippy and CI for a new crate",
+   "mode": "build",
+   "tags": [
+    "ci-tooling"
+   ],
+   "must_load": [
+    "07"
+   ]
+  },
+  {
+   "task": "audit a Rust network service",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09"
+   ]
+  }
  ]
 }

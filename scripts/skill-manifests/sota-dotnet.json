@@ -2,47 +2,218 @@
  "_note": "Declared BUILD routing for sota-dotnet (invariant 42 C4, ROADMAP item 78 rollout). BUILD step 1's 'needs `02`, `03`, `04`' names files by bare number, which routing_prose() does not read, so those three are reached here through their own index rows. Case 2 is the 2026-10-24 reachability review's MessagePack row (rules/04 -> rules/06 §3); case 4 is the 2026-10-25 cross-language intake's P2 (IsTestProject, test exemptions).",
  "skill": "sota-dotnet",
  "tags": {
-  "csharp-idioms": ["Writing/reviewing any C#", "nullable reference types", "pattern matching"],
-  "api-design": ["Designing types/APIs", "IDisposable", "options pattern"],
-  "http-limits": ["rate limiting", "request limits", "MaxRequestBodySize"],
-  "async": ["async", "CancellationToken", "Channel<T>"],
-  "untrusted-input": ["trust boundary"],
-  "data-access": ["EF Core/Dapper parameterization", "SqlQueryRaw"],
-  "deserialization": ["BinaryFormatter", "TypeNameHandling", "serializers"],
-  "authn-authz": ["ASP.NET Core authn/authz", "FallbackPolicy", "JWT"],
-  "outbound-http": ["SSRF", "SocketsHttpHandler"],
-  "crypto": ["crypto", "Data Protection"],
-  "native-interop": ["P/Invoke"],
-  "performance": ["Latency/throughput/memory", "BenchmarkDotNet", "Native AOT"],
-  "build-ci": ["build/CI", "Directory.Build.props", "Roslyn analyzers"],
-  "dependency": ["NuGet lockfiles", "vetting a new dependency", "insecure defaults of what you consume"],
-  "tests": ["xUnit/NUnit", "exempting tests"],
-  "fuzz": ["fuzz target"]
+  "csharp-idioms": [
+   "Writing/reviewing any C#",
+   "nullable reference types",
+   "pattern matching"
+  ],
+  "api-design": [
+   "Designing types/APIs",
+   "IDisposable",
+   "options pattern"
+  ],
+  "http-limits": [
+   "rate limiting",
+   "request limits",
+   "MaxRequestBodySize"
+  ],
+  "async": [
+   "async",
+   "CancellationToken",
+   "Channel<T>"
+  ],
+  "untrusted-input": [
+   "trust boundary"
+  ],
+  "data-access": [
+   "EF Core/Dapper parameterization",
+   "SqlQueryRaw"
+  ],
+  "deserialization": [
+   "BinaryFormatter",
+   "TypeNameHandling",
+   "serializers"
+  ],
+  "authn-authz": [
+   "ASP.NET Core authn/authz",
+   "FallbackPolicy",
+   "JWT"
+  ],
+  "outbound-http": [
+   "SSRF",
+   "SocketsHttpHandler"
+  ],
+  "crypto": [
+   "crypto",
+   "Data Protection"
+  ],
+  "native-interop": [
+   "P/Invoke"
+  ],
+  "performance": [
+   "Latency/throughput/memory",
+   "BenchmarkDotNet",
+   "Native AOT"
+  ],
+  "build-ci": [
+   "build/CI",
+   "Directory.Build.props",
+   "Roslyn analyzers"
+  ],
+  "dependency": [
+   "NuGet lockfiles",
+   "vetting a new dependency",
+   "insecure defaults of what you consume"
+  ],
+  "tests": [
+   "xUnit/NUnit",
+   "exempting tests"
+  ],
+  "fuzz": [
+   "fuzz target"
+  ]
  },
  "files": {
-  "01": {"build": ["csharp-idioms"]},
-  "02": {"build": ["api-design", "http-limits"]},
-  "03": {"build": ["async"]},
-  "04": {"build": ["untrusted-input", "data-access", "deserialization", "authn-authz", "outbound-http", "crypto", "native-interop"]},
-  "05": {"build": ["performance"]},
-  "06": {"build": ["build-ci", "dependency", "tests", "fuzz", "native-interop"]}
+  "01": {
+   "build": [
+    "csharp-idioms"
+   ],
+   "index_row": "| [`rules/01-idioms.md`](rules/01-idioms.md) | Writing/reviewing any C#: records & `record struct`, nullable reference types, pattern matching/`switch` expressions, spans, LINQ discipline, `var`, expression vs statement, file-scoped namespaces, error handling, modern C# 12–14 features, undefined enum values from input (`Enum.IsDefined`) |"
+  },
+  "02": {
+   "build": [
+    "api-design",
+    "http-limits"
+   ],
+   "index_row": "| [`rules/02-design-api.md`](rules/02-design-api.md) | Designing types/APIs: nullable reference type discipline, `int?` over a magic `int` and **using `TryParse`'s `bool` (its `out` is `0` on failure)**, immutability, `IDisposable`/`IAsyncDisposable` and `using`, exceptions, value vs reference types, `internal`/visibility, DI (the built-in container), options pattern, `UseExceptionHandler` first in the pipeline; **ASP.NET Core rate limiting and request limits** (`AddRateLimiter`/`UseRateLimiter` after authentication, `RequireRateLimiting`/`[EnableRateLimiting]`, per-caller partitions, 503 default rejection, auth endpoints; Kestrel `MaxRequestBodySize`, `FormOptions`, `MaxConcurrentConnections` defaults); a **compiled worked minimal-API example**; **failures that end the process** (an uncatchable `StackOverflowException`) and parser depth (`MaxDepth`, Newtonsoft below 13.0.1) |"
+  },
+  "03": {
+   "build": [
+    "async"
+   ],
+   "index_row": "| [`rules/03-async-concurrency.md`](rules/03-async-concurrency.md) | Anything `async`/`Task`/threads: async-all-the-way, never block (`.Result`/`.Wait()`), `ConfigureAwait(false)` in libraries, `CancellationToken` flow, `async void`, `Channel<T>`, `IAsyncEnumerable`, TPL/`Parallel`, thread-safety, `ValueTask`, injected `TimeProvider`/`FakeTimeProvider` for testable time, `System.Threading.Lock` (.NET 9+, CS9216) |"
+  },
+  "04": {
+   "build": [
+    "untrusted-input",
+    "data-access",
+    "deserialization",
+    "authn-authz",
+    "outbound-http",
+    "crypto",
+    "native-interop"
+   ],
+   "index_row": "| [`rules/04-security.md`](rules/04-security.md) | Any input crossing a trust boundary: SQL (EF Core/Dapper parameterization), legacy serializers (`BinaryFormatter` removed .NET 9 — **and its opt-back-in package**) + JSON `TypeNameHandling` + `DataSet.ReadXml`, command/path injection (`Path.Combine` dropping the root, Zip Slip, regex timeouts, `\\z` not `$` for whole-input anchoring), **SSRF** (address check in `SocketsHttpHandler.ConnectCallback`, lenient `IPAddress.TryParse`, redirects on by default, proxy blinds the callback), ASP.NET Core authn/authz, antiforgery/CORS, Data Protection, crypto (`RandomNumberGenerator`, AES-GCM, `Pbkdf2` over the legacy `Rfc2898DeriveBytes` ctor, no hard-coded TLS version), secrets; OWASP .NET; default-deny `FallbackPolicy`; `JsonSerializerOptions.Strict`; `SqlQueryRaw`; **escape hatches into raw memory**: `unsafe` code and P/Invoke; **ASP.NET Core defaults that fail open** — attribute-less cookies, open redirect, `Html.Raw`/`MarkupString`, verb-less actions that skip antiforgery, JWT validation switched off, forwarded headers that trust any peer; XML consumers (`XPathDocument`, XSLT) that inherit an unsafe reader; a shared Data Protection key ring; SPKI pinning on top of chain validation; **legacy `System.Web` config** (request/event validation off, the `web.config` chain and `allowOverride`) |"
+  },
+  "05": {
+   "build": [
+    "performance"
+   ],
+   "index_row": "| [`rules/05-performance.md`](rules/05-performance.md) | Latency/throughput/memory work: GC (gen/SOH/LOH, server vs workstation, DATAS on by default with Server GC), allocation reduction, `Span<T>`/`Memory<T>`/`ArrayPool`, `struct`/`record struct`, BenchmarkDotNet, async overhead, Native AOT / trimming, string handling |"
+  },
+  "06": {
+   "build": [
+    "build-ci",
+    "dependency",
+    "tests",
+    "fuzz",
+    "native-interop"
+   ],
+   "index_row": "| [`rules/06-build-tooling-ci.md`](rules/06-build-tooling-ci.md) | Setting up or auditing build/CI: SDK/TFM targeting (and whether it is past end of support), `Directory.Build.props`, nullable + warnings-as-errors, Roslyn analyzers (incl. security CA rules — **off by default, opted in with `AnalysisModeSecurity`**), `dotnet format`, NuGet lockfiles + supply chain (lock mode, source mapping, signed packages, strong name vs publisher signature, CVE scan, package code that runs at build — `build/*.targets`, analyzers, `ExcludeAssets`), vetting a new dependency and the insecure defaults of what you consume, SBOM, **runtime/framework patch level** (Kestrel CVE-2025-55315, incl. the 2.3.x `Kestrel.Core` package), `signatureValidationMode=require` (**measured enforced on Linux**; bypassed by a warm package cache and `DOTNET_NUGET_SIGNATURE_VERIFICATION=false`; config file name matched case-insensitively). **Test *strategy* lives in [`sota-testing`](../sota-testing/SKILL.md); this owns .NET build/test mechanics (xUnit/NUnit, Testcontainers).** Also: suppressions that name a rule and a reason (**IDE0079 is IDE-only, so no CLI gate**), exempting tests by project (`IsTestProject` in `Directory.Build.targets`) or `.editorconfig` path, **the implicit unlocked restore** (`RestoreLockedMode`; `--locked-mode` with no lock file passes), build-time SBOM for AOT/single-file, ASan on the P/Invoke native side. |"
+  }
  },
  "via": [
-  {"from": "04", "to": "02", "when": ["parses-untrusted-json"]},
-  {"from": "04", "to": "06", "when": ["third-party-deserializer"]}
+  {
+   "from": "04",
+   "to": "02",
+   "when": [
+    "parses-untrusted-json"
+   ]
+  },
+  {
+   "from": "04",
+   "to": "06",
+   "when": [
+    "third-party-deserializer"
+   ]
+  }
  ],
  "cases": [
-  {"task": "add a minimal-API endpoint that takes a JSON body from clients and writes it through EF Core", "mode": "build",
-   "tags": ["untrusted-input", "data-access", "async", "parses-untrusted-json"], "must_load": ["02", "03", "04"]},
-  {"task": "deserialize MessagePack frames arriving on a public socket", "mode": "build",
-   "tags": ["untrusted-input", "deserialization", "third-party-deserializer"], "must_load": ["04", "06"]},
-  {"task": "P/Invoke into a native image decoder fed uploaded files", "mode": "build",
-   "tags": ["native-interop", "untrusted-input", "fuzz"], "must_load": ["04", "06"]},
-  {"task": "scaffold a new solution: analyzers, nullable, NuGet lock mode, xUnit test projects", "mode": "build",
-   "tags": ["build-ci", "dependency", "tests"], "must_load": ["06"]},
-  {"task": "cut allocations on a hot serialization path and prove it with a benchmark", "mode": "build",
-   "tags": ["performance"], "must_load": ["05"]},
-  {"task": "audit an ASP.NET Core service", "mode": "audit",
-   "tags": [], "must_load": ["01", "02", "03", "04", "05", "06"]}
+  {
+   "task": "add a minimal-API endpoint that takes a JSON body from clients and writes it through EF Core",
+   "mode": "build",
+   "tags": [
+    "untrusted-input",
+    "data-access",
+    "async",
+    "parses-untrusted-json"
+   ],
+   "must_load": [
+    "02",
+    "03",
+    "04"
+   ]
+  },
+  {
+   "task": "deserialize MessagePack frames arriving on a public socket",
+   "mode": "build",
+   "tags": [
+    "untrusted-input",
+    "deserialization",
+    "third-party-deserializer"
+   ],
+   "must_load": [
+    "04",
+    "06"
+   ]
+  },
+  {
+   "task": "P/Invoke into a native image decoder fed uploaded files",
+   "mode": "build",
+   "tags": [
+    "native-interop",
+    "untrusted-input",
+    "fuzz"
+   ],
+   "must_load": [
+    "04",
+    "06"
+   ]
+  },
+  {
+   "task": "scaffold a new solution: analyzers, nullable, NuGet lock mode, xUnit test projects",
+   "mode": "build",
+   "tags": [
+    "build-ci",
+    "dependency",
+    "tests"
+   ],
+   "must_load": [
+    "06"
+   ]
+  },
+  {
+   "task": "cut allocations on a hot serialization path and prove it with a benchmark",
+   "mode": "build",
+   "tags": [
+    "performance"
+   ],
+   "must_load": [
+    "05"
+   ]
+  },
+  {
+   "task": "audit an ASP.NET Core service",
+   "mode": "audit",
+   "tags": [],
+   "must_load": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+   ]
+  }
  ]
 }
