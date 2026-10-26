@@ -73,12 +73,19 @@ request's estimate can exceed the whole budget: lower `max_tokens` or the input)
 the structured field, never on the message text, and re-check your own provider's table:
 the SDKs named there retry no `402` on their own.
 
-- **Retry policy:** exponential backoff with full jitter, honoring
-  `retry-after` when present; retry 429 (with `retry-after`)/500/504/529 and
-  transport timeouts; never retry other 4xx (408 aside, and 409 only after the
-  conflict is resolved); cap attempts (3–5) and total elapsed
-  time. Official SDKs do this out of the box (e.g. `max_retries` defaults) —
-  prefer SDK retry config over hand-rolled loops; hand-rolled string-matching
+- **Retry policy:** the library's policy is [`sota-architecture`
+  rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §2 (full jitter, `retry-after` honoured, a retry budget,
+  one retrying layer); what LLM APIs change is the error list. The official
+  SDKs retry connection errors, `408`, `409`, `429` and every `5xx`
+  (Anthropic's `529` overload included), 2 retries by default (read 2026-10-26:
+  Anthropic Python SDK source, `DEFAULT_MAX_RETRIES = 2` and `_should_retry`;
+  the OpenAI Python README). Two of those the API docs qualify: a `409` is a
+  state conflict to "Resolve … then retry", and a spend-cap `429` "has no
+  `retry-after` header and keeps failing until access resumes" (Anthropic API
+  errors page) — so a `409` or a header-less `429` that outlives the SDK's
+  retries is a condition to handle, not a blip to retry harder. Cap total
+  elapsed time too, and raise `max_retries` only inside a budget.
+  Prefer SDK retry config over hand-rolled loops; hand-rolled string-matching
   on error messages instead of typed exception classes is a Medium finding.
 - **Idempotency:** any retried call that triggers side effects (via tools or
   downstream writes) needs idempotency keys ([rules/04](04-agents-tools.md) §2).

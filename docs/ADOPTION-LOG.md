@@ -8829,3 +8829,13 @@ stable?"), it also re-measured the one deferral that would have meant a public p
 | Unification, i18n | **completed**: `sota-frontend-design` rules/04 §2a points at `sota-ux-writing` rules/04, which now carries the calibrated string-concatenation and Latin-only-validator probes, positional-placeholder detection, and the non-Latin-name rule moved from frontend | `sota-ux-writing` rules/04 |
 | Two items that contradicted their own file, fixed on the way | **fixed**: shell-scripting rules/02's curl probe filtered out any line holding either `--fail` or `--max-time`, so `curl --fail` with no timeout passed; its rules/02 §10 item demanded `--` before `chmod` operands, which its own §5 says BSD `chmod` rejects | `sota-shell-scripting` rules/02 |
 | The remaining debt | **recorded**: 933 checklist items cite no section (S2's per-file ratchet still holds them down). The drift list from the unification sweep and all four waves (about 80 places where duplicated guidance disagrees, each with file:line) is the next work | — |
+
+## 2026-10-26 — drifted duplicates, part 2: one retry policy (ROADMAP item 79), taken in 2026-10-26
+
+**Source:** the 2026-10-25 unification sweep, D75, where three paydown validators independently named retry policy as the strongest single-home candidate. The sides disagreed on attempt caps (2–3 vs 3–5), retryable codes, and whether a retry budget is required.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| One canonical retry policy | **adopted**: `sota-architecture` rules/04 §2 now owns the classification (connection errors, timeouts, `408`, `429`, `502`–`504`; `Retry-After` per RFC 6585 Section 4 / RFC 9110 Section 15.6.4 is a floor; other `4xx` final; `500` only where documented transient) and the default cap (3 attempts, 2 retries). async, js and llm point at it; data-eng's task retries are scoped as a separate layer; webhook delivery (api-design 06 §4) is named as a separate policy, not an exception | `sota-architecture` rules/04 §2 |
+| LLM attempt cap "3–5" | **corrected to the measured SDK default**: the Anthropic Python SDK source (`DEFAULT_MAX_RETRIES = 2`, `_should_retry`) and the OpenAI Python README both retry twice by default, on connection errors, `408`, `409`, `429` and every `5xx`. The Anthropic API errors page qualifies two of those: `409` is a state conflict to "Resolve … then retry", and a spend-cap `429` "has no `retry-after` header and keeps failing until access resumes". Both were in llm's original text and were nearly dropped by a draft that trusted the SDK source's comment ("lock timeouts") over the API's own docs | `sota-llm-engineering` rules/05 §2, SKILL.md item 10 (retry budget added) |
+

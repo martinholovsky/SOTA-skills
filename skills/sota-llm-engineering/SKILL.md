@@ -151,5 +151,5 @@ acceptable shortcuts:
 9. **Production model versions are pinned and rolled out deliberately**
    (shadow or A/B with eval gates) — never silent auto-upgrade. ([rules/05](rules/05-production-engineering.md))
 10. **429/529/timeout handling is explicit**: jittered exponential backoff
-    honoring `retry-after`, idempotency on retried writes, a degradation
+    honoring `retry-after` inside a retry budget, idempotency on retried writes, a degradation
     path when the provider is down. ([rules/05](rules/05-production-engineering.md))

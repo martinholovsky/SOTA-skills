@@ -145,7 +145,8 @@ arrive in waves.
 (`sleep(rand(0, min(cap, base·2^attempt)))`); retry budget (e.g., retries ≤
 10% of requests — token bucket on the retry path); retry at **one** layer;
 honor `Retry-After`; circuit breaker for persistent failure; classify errors
-(retry 503/timeout, never 4xx except 429).
+(the retryable list — `408`, `429`, `502`–`504`, timeouts, connection errors —
+is [`sota-architecture` rules/04](../../sota-architecture/rules/04-resilience-and-failure-design.md) §2).
 
 ```python
 # GOOD
