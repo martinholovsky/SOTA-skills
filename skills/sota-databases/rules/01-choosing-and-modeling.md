@@ -129,7 +129,7 @@ CREATE TABLE users (
 - Note: UUIDv7 encodes creation time and creation order — if either is sensitive,
   that is an information leak; use UUIDv4 external IDs in that case.
 - **An ID's shape is never the access control.** Object-level authz is the fix
-  for enumeration; a hard-to-guess ID is defence in depth only. RFC 9562 §8:
+  for enumeration; a hard-to-guess ID is defence in depth only. RFC 9562 Section 8:
   "Implementations SHOULD NOT assume that UUIDs are hard to guess", UUIDs "MUST
   NOT be used as security capabilities", and where a UUID takes part in any
   security operation "UUIDv4 … SHOULD be utilized" (read 2026-10-26). So a

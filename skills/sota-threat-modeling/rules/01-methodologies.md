@@ -83,7 +83,7 @@ STRIDE-per-interaction on flow 1 (crosses TB1→TB2):
   + request hash; `SR-103`.
 - **I**: order IDs sequential → enumeration of others' orders via GET.
   Mitigation: object-level authz check (unguessable IDs are defence in depth
-  only — RFC 9562 §8: never a security capability; prefer UUIDv4 there, not
+  only — RFC 9562 Section 8: never a security capability; prefer UUIDv4 there, not
   time-ordered UUIDv7); `SR-104`.
 - **D**: unbounded order payload / no rate limit. Mitigation: body size cap +
   per-user rate limit; `SR-105`.

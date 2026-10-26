@@ -24,7 +24,7 @@ workflow, contract testing.
 - IDs: opaque, non-enumerable (ULID/UUIDv7 or prefixed IDs like `cus_01H...`).
   Sequential integer IDs leak volume and invite IDOR scanning — but the ID is depth, not the
   control: authz decides access, and an ID relied on to be unguessable is UUIDv4, never v7
-  (RFC 9562 §8; [`sota-databases` rules/01](../../sota-databases/rules/01-choosing-and-modeling.md)). Prefixed IDs
+  (RFC 9562 Section 8; [`sota-databases` rules/01](../../sota-databases/rules/01-choosing-and-modeling.md)). Prefixed IDs
   (Stripe-style) make logs and support tickets self-describing.
 - Resource representation = stable contract, not a DB row dump. Never serialize ORM
   entities directly; map through an explicit response type so schema migrations don't
