@@ -306,13 +306,26 @@ SECTION = re.compile(r"^## (?:§\s?)?(\d+[a-z]?(?:\.\d+[a-z]?)*)\.?\s+(.*)$", re
 MARKER = re.compile(r"\*\((?:advisory|audited in)\b", re.I)
 
 
+# A bare two-digit file number right before the `§` names ANOTHER file: `` `04` §8 ``, `(01 §5)`,
+# `code-security 01 §5`. Until 2026-10-26 these read as local cites (threat-modeling 05 credited its own
+# §8 with a cite of 04's §8) -- false credit, the one failure a coverage ratchet must not have.
+OTHER_FILE_SHORTHAND = re.compile(r"(?:`\d{2}`|(?<![\d.§])\b\d{2})\)?\s*$")
+
+
+def blank_fences(text):
+    """Blank fenced code blocks to spaces, keeping every offset: a `## 1.` inside a template is a sample
+    of a document, not a section of this one (threat-modeling 05 read 7 such headings as sections)."""
+    return re.sub(r"^(`{3,}|~{3,}).*?^\1", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text, flags=re.M | re.S)
+
+
 def local_cites(text):
     """Section numbers a checklist cites in its OWN file: `§N` not preceded (same line, 60 chars) by
-    another file's reference, so `[rules/03](...) §2` and `sota-x` rules/NN §M do not count."""
+    another file's reference, so `[rules/03](...) §2`, `sota-x` rules/NN §M and `` `04` §8 `` do not count."""
     out = set()
     for line in text.splitlines():
         for m in re.finditer(r"§\s?(\d+[a-z]?(?:\.\d+[a-z]?)*)", line):
-            if re.search(r"rules/\d|sota-[a-z]|SKILL\.md|\]\(", line[max(0, m.start() - 60):m.start()]):
+            pre = line[max(0, m.start() - 60):m.start()]
+            if re.search(r"rules/\d|sota-[a-z]|SKILL\.md|\]\(", pre) or OTHER_FILE_SHORTHAND.search(pre):
                 continue
             parts = m.group(1).split(".")  # `§6.3.2` cites 6, 6.3 and 6.3.2: a top-level `## 6.` is cited
             for k in range(1, len(parts) + 1):  # by `§6.3` exactly as before, and a dotted `## 6.3` by itself
@@ -327,6 +340,7 @@ def sync_state():
         s = open(f, encoding="utf-8").read()
         i = s.find("\n## Audit checklist")
         body, chk = (s[:i], s[i:]) if i >= 0 else (s, "")
+        body = blank_fences(body)
         secs = list(SECTION.finditer(body))
         if not secs:
             unnumbered.append(f)

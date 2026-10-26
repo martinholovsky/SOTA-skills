@@ -1443,6 +1443,34 @@ else
   echo "        all, or there is no baseline at the merge base), so the conversion exemption is unused."
   echo "  [43f] SKIPPED -- same reason as 43e."
 fi
+# 43g/43h — the section PARSER, probed on both sides of its two 2026-10-26 fixes (ROADMAP 79, P1/P2).
+# 43g: a `## N.` inside a fenced code block is a sample of another document (threat-modeling 05 carries
+# a whole template), not a section of this one -- it must NOT be demanded a cite, so the gate stays
+# GREEN. Committed with a ledger line because check 31 reads added headings from the diff, fences and all.
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
+t = p.read_text(encoding='utf-8')
+i = t.find('\n## Audit checklist')
+assert i > 0, 'probe stale: no Audit checklist in golang rules/03'
+p.write_text(t[:i] + '\n\n\`\`\`markdown\n## 97. A heading inside a template\n\`\`\`\n' + t[i:], encoding='utf-8')
+" && printf '\n<!-- probe 43g: a fenced heading is a diff-added heading to check 31 -->\n' >> docs/ADOPTION-LOG.md ) \
+  || { echo "FATAL: probe 43g could not add a fenced heading."; exit 1; }
+wt_commit "probe 43g: a numbered heading inside a fenced code block"
+probe_committed_green 43g "a numbered heading inside a fenced block is not a section — the gate must stay green" \
+  "numbered sections uncited"
+# 43h: a cite of ANOTHER file in shorthand -- `04` §99 -- is not a cite of this file's §99. Before the
+# fix it credited the local section, so a new section passed with no item auditing it (false credit).
+( cd "$WT" && python3 -I -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/03-concurrency.md')
+t = p.read_text(encoding='utf-8')
+i = t.find('\n## Audit checklist')
+assert i > 0, 'probe stale: no Audit checklist in golang rules/03'
+t = t[:i] + '\n\n## 99. A brand-new rule\n\nDo the thing.\n' + t[i:]
+p.write_text(t.rstrip('\n') + '\n- [ ] Checks another file, in shorthand (\`04\` §99).\n', encoding='utf-8')
+" )
+probe 43h "a section credited only by another file's shorthand cite" "S1 skills/sota-golang/rules/03-concurrency.md :: 99. A brand-new rule"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh

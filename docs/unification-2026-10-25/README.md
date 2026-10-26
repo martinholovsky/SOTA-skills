@@ -26,9 +26,9 @@ Pointer pattern: owners cited by 10/10 stayed consistent; devsecops 03 (2/10), 0
  D14 OWASP MCP03:2025 scope: threat-modeling 03:251-252 vs code-security 23:77-78 (verify).
  D15 re-model triggers inside threat-modeling: 05:177-190 canonical 10; PR template 05:230-232 has 7; 01:217-220 has 7; SKILL:158-159 4 examples.
 PARSER DEFECTS (invariant 43, reachability-graph.py sync_state/local_cites) — fix in a dedicated PR after the paydown:
- P1 headings inside fenced code counted as sections (threat-modeling 05 template: 6 false entries)
- P2 backtick file shorthand "`04` §8" counted as a local cite (false credit; threat-modeling 05:307)
- P3 '### N.' subsections colliding with '## N.' numbering (threat-modeling 02)
+ P1 [FIXED 2026-10-26, probe 43g] headings inside fenced code counted as sections (threat-modeling 05 template: 6 false entries)
+ P2 [FIXED 2026-10-26, probe 43h] backtick file shorthand "`04` §8" counted as a local cite (false credit; threat-modeling 05:307)
+ P3 [FIXED 2026-10-26, content] '### N.' subsections colliding with '## N.' numbering (threat-modeling 02)
  D16 standing admin: cloud 02:24 "~0-2", 02:185 ">2 Medium" vs identity 05:32 "No standing admin", 05:120 JIT.
  D17 LB health checks: cloud 03:187-188 (+07:49) "checks downstream dependency readiness" vs architecture 04:177-181 "readiness reflects this instance, not shared deps".
  D18 k8s support window: cloud 04:40,:185 "~14-month" vs kubernetes 01:256-257 "~1 year" (verify kubernetes.io); and lag threshold inside cloud: 04:40 ">2 behind" vs 04:186/:223 "<=1 behind".
