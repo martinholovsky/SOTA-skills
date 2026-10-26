@@ -244,7 +244,7 @@ section's MEDIUM covers the other heisenbug smells. Production code that
 "sleeps to let X finish" is finding-worthy as written — it encodes an
 ordering assumption with no enforcement.
 
-## Audit sweep order (efficient pass over a codebase)
+## 13. Audit sweep order (efficient pass over a codebase)
 
 1. **Topology first** (30 min): entry points, spawns, shared state, queues,
    locks. Write down the lock graph and channel graph.
@@ -293,4 +293,4 @@ ordering assumption with no enforcement.
 - [ ] #11 generator/stream cleanup on early exit (`aclosing`, a `return()`
       on hand-rolled JS iterators, Rust resources in `Drop`) (§11)
 - [ ] #12 sleep-based synchronization anywhere, tests and production (§12)
-- [ ] Shutdown path read end-to-end; hottest path timeout chain proven
+- [ ] Shutdown path read end-to-end; hottest path timeout chain proven (§13)

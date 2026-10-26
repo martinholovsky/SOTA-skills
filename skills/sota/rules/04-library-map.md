@@ -3,6 +3,8 @@
 The per-skill index of every `rules/NN` file in the library, so a routing decision can
 name the file to open without loading a `SKILL.md` first.
 
+## 0. What this file is, and the gates on it
+
 **This lived in the router until it was offloaded.** It is pure lookup — every entry is a
 condensed second copy of the index inside that skill's own `SKILL.md`, which the BUILD
 workflow ([`rules/02`](02-build-workflow.md) step 2) tells you to read anyway. Keeping it in the router charged
@@ -18,6 +20,8 @@ map deliberately drops.
 **Both directions are gated.** Invariant 7 requires every skill to appear here; invariant
 15 requires every `rules/NN` file that exists to be listed, and every listed file to
 exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-path-diagnostics.md) sat unlisted for two releases before 15 existed.
+So adding, splitting or renumbering a `rules/NN` file updates this map and the owning `SKILL.md`
+index (invariant 10) in the same commit.
 
 ## 1. Library map (rules files per skill)
 
@@ -184,10 +188,10 @@ control that cannot fail.
       does every number in the map name a file that exists (invariant 15 checks both
       directions — a missing entry is invisible to a router-driven load, and a stale one
       sends the model after nothing)? (§1)
-- [ ] Does every domain skill have a `**<skill>/rules**` entry (invariant 7)?
-- [ ] When a `rules/NN` file is added, split or renumbered, was this map updated in the
+- [ ] (§0) Does every domain skill have a `**<skill>/rules**` entry (invariant 7)?
+- [ ] (§0) When a `rules/NN` file is added, split or renumbered, was this map updated in the
       **same commit** — and the owning `SKILL.md` index too (invariant 10)?
-- [ ] Is this file still only a lookup table? Guidance that belongs at the point of use
+- [ ] (§0) Is this file still only a lookup table? Guidance that belongs at the point of use
       has drifted here if an entry has grown a rule rather than a title.
 - [ ] **Medium** — (§2) Was each routing gap closed by fixing the skill's
       `description` (after ruling out the listing budget: `scripts/verify-setup.sh`

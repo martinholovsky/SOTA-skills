@@ -355,7 +355,7 @@ Run from repo root. Severity guidance in brackets.
       `grep -n "mypy\|pyright\|basedpyright\| ty " .github/workflows/*.yml .gitlab-ci.yml 2>/dev/null`
       ; `grep -rn "type: ignore$\|type: ignore " --include="*.py" src/ | grep -v "ignore\["`
       (bare ignores [LOW])
-- [ ] **Suppressions that never expire (§3, §4) [LOW; MEDIUM where they silence `S` rules]** —
+- [ ] **Suppressions that never expire (§3, §4) [LOW each, MEDIUM in aggregate or where they silence `S` rules]** —
       `uvx ruff check --extend-select PGH003,PGH004,RUF100 --statistics .` (bare and stale
       `noqa`/`type: ignore`; `--extend-select` keeps the project's rules, §3) ;
       `grep -nE 'reportUnnecessaryTypeIgnoreComment|warn_unused_ignores|strict[[:space:]]*=' pyproject.toml pyrightconfig.json 2>/dev/null`
@@ -388,7 +388,8 @@ Run from repo root. Severity guidance in brackets.
       [MEDIUM]) ; `find . -path ./.venv -prune -o -path ./tests -prune -o \( -name 'test_*.py' -o -name '*_test.py' -o -name conftest.py \) -print | head -3`
       (tests inside the package ship with it [LOW])
 - [ ] **Ruff coverage** (§3) — `uvx ruff check --statistics .` (what's currently violated);
-      `grep -n "select" pyproject.toml` (B/S/ASYNC missing from select [LOW])
+      `grep -n "select" pyproject.toml` (B/S/ASYNC missing from select [LOW]) ;
+      `uvx ruff check --select PERF,C4,SIM --statistics .` (the perf rules)
 - [ ] **Hygiene (§10)** — `git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"` (committed artifacts
       [LOW]) ; `git ls-files .python-version | grep -q . || echo "no .python-version committed"` [LOW] ;
       `git ls-files | grep -E '(^|/)requirements[^/]*\.txt$'` (each must be a generated `uv export`,

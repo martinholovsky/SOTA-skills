@@ -1,5 +1,7 @@
 # 07 — Swift in apps
 
+## 0. Scope: the Swift language lives in sota-swift
+
 **The Swift language now has its own skill, [`sota-swift`](../../sota-swift/SKILL.md)** (2026-10-07): concurrency and
 data-race safety, optionals and errors, ARC and retain cycles, unsafe code, security, SwiftPM
 supply chain, tooling and testing all live there, for every target. Read it for any Swift code.
@@ -47,4 +49,4 @@ this file held the language rules; they moved to [`sota-swift` rules/01](../../s
 - [ ] (§3) View models and controllers have `deinit`-fires tests; cycles in closures, delegates, timers, observers and stored cancellables reviewed; leaks checked with the memory graph on device.
 - [ ] (§4) XCUITest and `measure` suites remain on XCTest deliberately; new unit tests use Swift Testing.
 - [ ] (§5) Binary SDKs carry checksums and their privacy manifests are reflected in the app's own.
-- [ ] Every language-level Swift finding in the app is reported against [`sota-swift`](../../sota-swift/SKILL.md), not this file.
+- [ ] (§0) Every language-level Swift finding in the app is reported against [`sota-swift`](../../sota-swift/SKILL.md), not this file.

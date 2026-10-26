@@ -370,8 +370,6 @@ existing parameter means.
       `clang-tidy --checks='bugprone-unused-return-value,cert-err33-c' <files>` (cert-err33-c
       aliases the former);
       `grep -rn 'std::expected\|absl::Status\|tl::expected' --include='*.cpp' --include='*.hpp' . | head`
-- [ ] **Broad idiom enforcement (the canonical config)** —
-      `clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>`
 - [ ] **In-band sentinels (§7/§7a/§8) — absence encoded as a value — MEDIUM** —
       `grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*(getchar|fgetc|getc)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' .`
       (`EOF` stored in a `char`: the loop never ends where `char` is unsigned) ;

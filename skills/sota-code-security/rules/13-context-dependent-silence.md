@@ -7,6 +7,8 @@ you shipped into — small input vs large, fresh artifact vs stale, the sample
 format vs the next one, one component vs the seam between two, this environment
 vs that one.
 
+## 0. Why these survive review: test the condition, not the instance
+
 That is why they survive review. There is no wrong line to find: the code is
 right, and the *condition* is what changed. A test written against the passing
 condition passes forever, which makes every one of these invisible to the
@@ -257,10 +259,12 @@ command that **writes** the data defaulted the other.
 
 - [ ] **Scale**: does any control's behaviour change with input size — a
       size-gated path, a chunked branch, a timeout, a pagination limit — and does
-      a fixture actually cross that threshold (§1)?
+      a fixture actually cross that threshold (§1)? Unbounded traversals, recursion and
+      variable-length queries bounded?
 - [ ] **Staleness**: is any cache, fingerprint, tag or memo keyed on **less** than
       the behaviour it stands for, so a change that matters leaves the key equal
-      (§2)?
+      (§2)? Asked of every key: what input can change while it stays constant — tool/ruleset
+      **version** included?
 - [ ] **One sample**: was any parser, matcher or format assumption written against
       a single reference implementation, and does it reject the *other* correct
       spelling (§3)?
@@ -273,10 +277,23 @@ command that **writes** the data defaulted the other.
 - [ ] **Location**: does the control depend on an environment fact — a default
       `char` signedness, a filesystem's case behaviour, a locale, a mounted
       path — that differs between where it was tested and where it runs (§5)?
-- [ ] For every one found: is the **condition** written into a regression test,
+- [ ] For every one found: is the **condition** written into a regression test (§0),
       rather than the instance being patched (all sections)?
 - [ ] **Does every empty result name the store it queried?** (§6) "0 rows" without the store's
       path and inventory is not a finding. Where a writer and its readers each carry a default
       path, audit them *together* — one design decision expressed N times, and the defect is
       invisible in either half alone.
+- [ ] Truncating budgets degrade **loudly and in the returned value** (§1)
+      (`coverage: partial`), never only in a log line?
+- [ ] External-interface parsers validated against the **declared schema** (§3) and a
+      real sample from the installed version, not one observed response; numeric
+      parsing rejects trailing garbage?
+- [ ] Every artifact handed **between stages** (§4) has its layout, writer and reader
+      named, and any producer change validated by **running the consumer on real
+      output** — not by each side's own tests?
+- [ ] **Environment-dependent predicates** (§5): any filter tested against an absolute
+      path, hostname, username, env var or locale — each hit of
+      `grep -rnE '\.parts|os\.environ|gethostname' .` near a comprehension. Run the suite from a `mktemp -d` clone, not
+      the working tree; on macOS that path resolves under `/private`, which is exactly
+      the component such filters tend to exclude.
 

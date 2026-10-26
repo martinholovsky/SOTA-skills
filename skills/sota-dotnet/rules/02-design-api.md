@@ -234,8 +234,6 @@ record ([`rules/04`](04-security.md) §4).
 - [ ] **Exception handler not first in the pipeline (§4) — MEDIUM** — per file, the first
       `app.Use…` call other than the developer page should be the handler:
       `grep -rlE 'UseExceptionHandler' --include='*.cs' . | while IFS= read -r f; do grep -E 'app\.Use[A-Z]' "$f" | grep -v UseDeveloperExceptionPage | head -n 1 | grep -q UseExceptionHandler || echo "$f: middleware registered before UseExceptionHandler"; done`
-- [ ] **throw ex / swallow — MEDIUM (see [rules/01](01-idioms.md))** —
-      `grep -rnE 'throw ex;' --include='*.cs' .`
 - [ ] **Mutable collection exposed (§2) — LOW** —
       `grep -rnE 'public (List|Dictionary|HashSet)<' --include='*.cs' . | head` (prefer
       IReadOnly* / encapsulate)

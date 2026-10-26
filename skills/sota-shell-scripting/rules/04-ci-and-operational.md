@@ -217,7 +217,7 @@ exec > >(stdbuf -oL tee -a "$logfile") 2>&1
   in-script ([rules/03](03-security.md) §3); redirect both streams to a log or you get silent failures /
   mail spam: `*/5 * * * * /opt/job.sh >>/var/log/job.log 2>&1`.
 
-## Killing a backgrounded build orphans its children
+## 5. Killing a backgrounded build orphans its children
 
 A backgrounded build is a process **tree**. `kill <pid>` reaps the shell you started and
 leaves the compiler running:
@@ -245,7 +245,7 @@ corrupts the next run.
 
 ## Audit checklist
 
-- [ ] **Background builds are killed by process group, not by pid**, and the sweep is
+- [ ] **Background builds are killed by process group, not by pid (§5)**, and the sweep is
       verified before a restart — an orphaned compiler contends for `target/` and the next
       run's failure then reads as a defect in the change under test
 

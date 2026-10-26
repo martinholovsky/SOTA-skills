@@ -442,15 +442,6 @@ unvalidated instrument is not yet a finding.
       that the count moves when the input does (§2.6)?
 - [ ] After each fix, the **new path proven to have executed** (emission, counter,
       or asserted runtime effect), not just "tests pass" (§2.5)?
-- [ ] Unbounded traversals/recursion/variable-length queries bounded, and every
-      **size-gated path** exercised by a fixture that crosses the threshold ([`rules/13`](13-context-dependent-silence.md) §1)?
-- [ ] Truncating budgets degrade **loudly and in the returned value**
-      (`coverage: partial`), never only in a log line ([`rules/13`](13-context-dependent-silence.md) §1)?
-- [ ] Every cache/tag/fingerprint key audited with "what input can change while
-      the key stays constant?" — tool/ruleset **version** included ([`rules/13`](13-context-dependent-silence.md) §2)?
-- [ ] External-interface parsers validated against the **declared schema** and a
-      real sample from the installed version, not one observed response; numeric
-      parsing rejects trailing garbage ([`rules/13`](13-context-dependent-silence.md) §3)?
 - [ ] Every aggregate drawn from a sink that **anything but production writes to**
       states its exclusion filter and the count on both sides of it, and no finding was
       withdrawn on a number whose n grew unexplained (§2.7)?
@@ -464,16 +455,8 @@ unvalidated instrument is not yet a finding.
       validation before shipping (§5)?
 - [ ] Config and feature flags traced **end-to-end**: read, validated, *and*
       applied to the branch they name (§6.7)?
-- [ ] Every artifact handed **between stages** has its layout, writer and reader
-      named, and any producer change validated by **running the consumer on real
-      output** — not by each side's own tests ([`rules/13`](13-context-dependent-silence.md) §4)?
 - [ ] Every script CI, a hook or a runbook references **actually executed this
       pass**, the silent ones recorded as dead until proven otherwise (§6)?
-- [ ] **Environment-dependent predicates**: any filter tested against an absolute
-      path, hostname, username, env var or locale — each hit of
-      `grep -rnE '\.parts|os\.environ|gethostname' .` near a comprehension. Run the suite from a `mktemp -d` clone, not
-      the working tree; on macOS that path resolves under `/private`, which is exactly
-      the component such filters tend to exclude.
 - [ ] **Every collection a suite iterates has a non-empty assertion** (§2) — without one an
       empty parameter set reports SKIPPED and the suite passes vacuously.
 - [ ] The tools that produced these findings held to the same standard (§7) —

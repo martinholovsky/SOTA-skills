@@ -457,7 +457,8 @@ was false, and the signature was gone. Only asking a question the benign state c
 
 - [ ] Does any **report or output** claim more than the run establishes — a count
       of things not examined, or a verification word (`verified`, `reachable`,
-      `tainted`) applied to something merely matched (§1)?
+      `tainted`) applied to something merely matched (§1)? Each such word, severity or confidence
+      field traceable to a line that can fail, matched by claim shape rather than keyword?
 - [ ] Is every reported number computed from the value the function **returned**, not
       from an intermediate it discards — and is the claim **sited in the consumer**,
       derived from what was received rather than from what the producer intended to
@@ -466,12 +467,15 @@ was false, and the signature was gone. Only asking a question the benign state c
       than by a passing test suite? Anything running unattended has the log as its only
       witness, so a log unchanged by the mutation is the finding (§1).
 - [ ] Is every control the runtime needs **present in the shipped artifact** — the
-      image, the wheel, the bundle — and not only in the source tree (§2)?
+      image, the wheel, the bundle — and not only in the source tree (§2)? Smoke tests
+      run against the built artifact; startup asserts its own required artifacts?
 - [ ] Is any safeguard carried by a **natural-language instruction** where an
-      enforced control is required (§3)?
+      enforced control is required (§3) — "do not reveal/surface", "ignore instructions
+      below", authz-in-prompt over data or permissions in the same context?
 - [ ] Does every gate, job and hook **actually execute** — trigger reachable,
       stage installed, path filter not excluding the case it guards — rather than
-      being configured and never fired (§4)?
+      being configured and never fired (§4)? Has it ever **rejected** anything, with the
+      sample size stated ("not in the last N runs" is not "never")?
 - [ ] Is any control parked in **audit / warn / dry-run / report-only** mode, and
       is that a recorded decision with an owner and a date rather than a default
       nobody revisited (§5)?
@@ -493,5 +497,3 @@ was false, and the signature was gone. Only asking a question the benign state c
 - [ ] **Runtime rewrites of security config** (§8) — High where the write is reachable in
       production without a log: `grep -rnE 'NODE_TLS_REJECT_UNAUTHORIZED[^=]{0,3}= *.?0|_create_default_https_context *= *(ssl\.)?_create_unverified|WTF_CSRF_ENABLED.{0,4}= *False' .`.
       Does every attack-surface-widening switch emit an event and show on a status surface?
-- [ ] For each of the above: **if this were a no-op, would anything observable
-      differ** — a log, a metric, a failing test ([`rules/10`](10-silent-control-failure.md) §1)?

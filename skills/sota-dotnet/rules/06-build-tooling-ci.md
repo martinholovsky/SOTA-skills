@@ -53,6 +53,8 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   page). So never write a CI step that expects `dotnet build` to fail on a stale suppression. The
   CLI substitute is the checklist's inventory, plus deleting a suppression and rebuilding: no new
   diagnostic means it was dead.
+- **"Build and Suppress Active Issues" is baselining** (Microsoft's term), so its `GlobalSuppressions.cs`
+  holds verdicts nobody read; and `[SuppressMessage]` reaches the assembly only when `CODE_ANALYSIS` is defined.
 - **Exempt tests by project or path in config, never by switching a rule off.** The §1 baseline
   reaches test projects too. Measured on SDK 10.0.402 with it in `Directory.Build.props`: an xUnit
   test named `Parse_ReturnsNull_WhenEmpty` failed the build on CA1707. `IsTestProject` comes from
@@ -254,7 +256,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `grep -rnE 'CA(2100|23[0-9][0-9]|53[0-9][0-9]|54[0-9][0-9])' --include='.editorconfig' --include='*.globalconfig' --include='Directory.Build.props' --include='*.csproj' .`
       (for each `severity = none` or `NoWarn` hit, read its section or condition: a test-path
       glob or `.targets` condition is the scoped form; anything else disables it for production)
-- [ ] **"Build and Suppress Active Issues" is BASELINING: Microsoft's own term for suppressing
+- [ ] **"Build and Suppress Active Issues" is BASELINING (§2): Microsoft's own term for suppressing
       every current violation at once. A large GlobalSuppressions.cs with uniform timestamps is
       its signature, and it means the analyser's verdict on that code was never read. NOTE:
       [SuppressMessage] is conditional on the CODE_ANALYSIS compilation symbol, so the attribute

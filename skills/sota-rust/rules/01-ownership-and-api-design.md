@@ -46,6 +46,9 @@ fn process(s: &str, items: &[u32]) -> usize { ... }
   able to move; prefer `impl Into<String>` there.
 - Return `&str`/`&[T]` borrowed from `self` where lifetimes allow; `Cow<'_, str>`
   when sometimes-owned (see [rules/06](06-performance.md) for perf framing).
+- Gate this file with Clippy: `needless_pass_by_value`, `trivially_copy_pass_by_ref` (pedantic) and
+  `rc_buffer` (restriction) fire only when enabled by name; `large_enum_variant` (perf) and
+  `mutable_key_type` (suspicious) are on by default, so keep them unsilenced.
 
 ## 2. Rc/Arc/Box/RefCell: when shared ownership is right
 
@@ -374,6 +377,6 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       `pub(crate)`.
 - [ ] Multi-crate repo without `[workspace.dependencies]` (§9) → version drift;
       `cargo tree -d` to find duplicate dependency versions.
-- [ ] Clippy gates for this file's concerns: `clippy::needless_pass_by_value`,
+- [ ] Clippy gates for this file's concerns (§1): `clippy::needless_pass_by_value`,
       `clippy::trivially_copy_pass_by_ref`, `clippy::large_enum_variant`,
       `clippy::rc_buffer`, `clippy::mutable_key_type`.

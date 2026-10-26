@@ -113,7 +113,8 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   sensitive bugs the compiler misses. Commercial: Coverity, PVS-Studio for
   deeper interprocedural analysis. Do not pass cppcheck `--addon=cert`: 2.21 ships no such
   addon, prints "Did not find addon cert.py" and exits 1 having analysed nothing (measured).
-  SEI CERT coverage comes from clang-tidy `cert-*` or a commercial tool.
+  SEI CERT coverage comes from clang-tidy `cert-*` or a commercial tool. An inline
+  `// cppcheck-suppress <id>` is read only under `--inline-suppr`; without that flag it is inert.
 - **clang-format** with a committed `.clang-format`; enforce in CI
   (`--dry-run --Werror`) so style never enters review.
 
@@ -332,7 +333,7 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       measured, it flagged all three check-listed forms in a clean file and missed `NOLINT(*)`) ;
       `grep -rn 'NOLINTBEGIN' . | wc -l ; grep -rn 'NOLINTEND' . | wc -l` (must be equal). No tool
       reports a stale `NOLINT(check)` (§2): read each one on a changed line
-- [ ] **cppcheck: `// cppcheck-suppress <id>` on the line BEFORE the reported line -- and it is
+- [ ] **cppcheck (§2): `// cppcheck-suppress <id>` on the line BEFORE the reported line -- and it is
       INERT unless --inline-suppr is passed. Measured with cppcheck 2.21.0: without that flag
       both planted warnings still fired; with it, one was suppressed and the other was NOT,
       because the comment sat above the wrong line. So check the FLAG before reading the
@@ -443,3 +444,10 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       `case $rc in 0) ;; 1) echo "no -ffile-prefix-map or SOURCE_DATE_EPOCH: build paths and times reach the binary" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ; then read the release job: LTO on, the suite still run under UBSan, and split debug
       symbols kept for each shipped binary
+- [ ] (§2) **Broad idiom enforcement for [rules/01](01-idioms.md) (the canonical config)** —
+      `clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>`
+- [ ] **Static + safety-standard analysis** (§2) —
+      `clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>` ;
+      `cppcheck --enable=warning,portability <src>` (cppcheck 2.21 ships no `cert` addon:
+      `--addon=cert` prints "Did not find addon cert.py" and exits 1 without analysing, measured.
+      CERT coverage comes from clang-tidy's `cert-*` checks or a commercial analyser)

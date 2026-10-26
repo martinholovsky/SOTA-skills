@@ -222,4 +222,3 @@ the type system, and expression-oriented code**. References:
       (a file that parses a float and never checks finiteness) ;
       `grep -rnE 'Math\.abs\([^;]*hashCode\(\)|TimeUnit\.[A-Z]+\.to(Nanos|Micros|Millis)\(|\*[[:space:]]*1_?000_?000' --include='*.java' --include='*.kt' .`
       (`abs` of a hash that can be `MIN_VALUE`; a saturating or hand-rolled unit conversion)
-- [ ] **Analyzer enforcement Error Prone + NullAway (Java); detekt + ktlint (Kotlin)**

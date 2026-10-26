@@ -16,6 +16,9 @@ control work starts:
 | Data types | What categories? | Payment cards → PCI DSS; US health data as covered entity/BA → HIPAA; health-adjacent outside HIPAA → state health-data laws (e.g., Washington My Health My Data); special-category → GDPR Art. 9 |
 | Sector/role | What are you? | EU financial entity → DORA; EU essential/important entity → NIS2; AI system provider/deployer in EU → AI Act; processor for enterprises → SOC 2/ISO 27001 expectations ([rules/05](05-audit-ready-engineering.md)) |
 
+Re-verify any date or status from this file against a primary source before relying on it, and
+treat one last verified more than six months ago as unverified.
+
 ## 1. GDPR / UK GDPR — the mechanics that hit engineering
 
 **Lawful basis (Art. 6).** Every processing purpose in the catalog ([rules/01](01-data-inventory-classification.md))
@@ -309,4 +312,4 @@ deny contains msg if {
 - [ ] AI Act Art. 50 marking: generated media leaves the generator with a hard-bound, signed C2PA manifest; each rendition or transcode is re-signed with the prior manifest as ingredient; soft binding is used only for recovery (§5) — MEDIUM; judgment, no generic probe (see [sota-llm-engineering rules/05](../../sota-llm-engineering/rules/05-production-engineering.md) for the generation-call probe)
 - [ ] DORA/NIS2 (if in sector/supply chain): incident-reporting clocks wired into IR runbooks; third-party register current; DORA resilience testing (TLPT for significant entities) scheduled (§6)
 - [ ] Residency requirements per tenant/market recorded; region pinning enforced by policy-as-code; key residency where required; compute, queues, caches, telemetry and support access stay in-region, and cross-region admin reads are gated (§7)
-- [ ] All dates/statuses in this file re-verified within the last 6 months against primary sources
+- [ ] All dates/statuses in this file re-verified within the last 6 months against primary sources (§0)

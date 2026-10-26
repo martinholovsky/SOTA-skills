@@ -427,7 +427,8 @@ n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
 
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
       with the permissive no-op, with the dependency forced present and the
-      mutation's **runtime effect asserted** before trusting a green run (§1)?
+      mutation's **runtime effect asserted** before trusting a green run (§1)? And the instrument
+      or guard that reported the result validated in turn ([rules/15](15-instruments-and-guards.md))?
 - [ ] Negative controls run as a **mode of the tool** (`--self-test`, `doctor`), not
       only as a harness beside it — a check with no declared known-bad fails the
       self-test, each probe asserts the **named** check caught it rather than

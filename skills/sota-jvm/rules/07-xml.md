@@ -218,14 +218,3 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
       `grep -rlE 'TransformerFactory|SchemaFactory' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE 'setURIResolver|setResourceResolver|catalogResolver\(' "$f" || echo "$f: factory with no resolver"; done`
       (fine if the §3 secure factory installs it elsewhere; an `ACCESS_EXTERNAL_STYLESHEET` or
       `ACCESS_EXTERNAL_SCHEMA` of `"all"` or `"file"` is the loosened backstop)
-- [ ] **No XXE-specific SAST gate — HIGH** (the greps above are for a review; CI needs a rule set
-      that fails the build). Find-Sec-Bugs (1.14.0) reports `XXE_DOCUMENT`, `XXE_SAXPARSER`,
-      `XXE_XMLREADER`, `XXE_XMLSTREAMREADER`, `XXE_XPATH`, `XXE_SCHEMA_FACTORY`, `XXE_VALIDATOR`,
-      `XXE_DTD_TRANSFORM_FACTORY` and `XXE_XSLT_TRANSFORM_FACTORY`. The Semgrep/Opengrep rule
-      repositories carry `documentbuilderfactory-disallow-doctype-decl-missing`,
-      `saxparserfactory-disallow-doctype-decl-missing`, `transformerfactory-dtds-not-disabled`
-      (under `java/lang/security/audit/xxe/`) and `xmlinputfactory-possible-xxe` ([`rules/06`](06-build-tooling-ci.md) §3) —
-      `grep -rlE 'findsecbugs|java[./]lang[./]security[./]audit[./]xxe|xmlinputfactory-possible-xxe' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.yml' --include='*.yaml' . || echo "FINDING: no XXE-capable SAST rule set configured"`
-      ; a gate that cannot fail, or XXE patterns excluded:
-      `grep -rnE 'pattern="[^"]*XXE_|failOnError>false|spotbugs\.failOnError=false|ignoreFailures[[:space:]]*=[[:space:]]*true' --include='*exclude*.xml' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.properties' .`
-      (an exclude filter under another file name needs a separate read)

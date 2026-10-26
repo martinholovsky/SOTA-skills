@@ -70,6 +70,10 @@ grep -rEn '0\.0\.0\.0/0|::/0|\bany\b|\bworld\b' ./policies ./firewall
 A reachable secrets store / DB / registry / admin UI from a broad entity → Critical, fix is usually
 *small* (tighten the source to the one identity that needs it) but the exposure is severe.
 
+**R5.1 — Measure exposure from outside, against an intended list.** Enumerate every owned subdomain
+(DNS zone exports plus Certificate Transparency) and every owned public IP range, scan them from
+outside, and treat any listening service missing from the intended exposure list as a finding.
+
 ## 4. Microsegmentation & choke points
 
 **R6 — Segment to the workload, then funnel cross-zone traffic through choke points.**
@@ -188,7 +192,7 @@ sheet, Zero Trust Architecture cheat sheet.
       behind the IdP, and stay the *only* SSH path (hosts refuse SSH from anything but its
       identity/SG) (§6)?
 - [ ] For each control layer, is there a next layer if it's bypassed (defense in depth, §7)?
-- [ ] **High — unintended external exposure.** Enumerate what you actually expose, then diff it
+- [ ] **High — unintended external exposure (§3).** Enumerate what you actually expose, then diff it
       against the intended list: every owned subdomain (DNS zone exports plus a Certificate
       Transparency search for the domain — CT shows names nobody put in the inventory) and every
       owned public IP range, scanned from outside, e.g.

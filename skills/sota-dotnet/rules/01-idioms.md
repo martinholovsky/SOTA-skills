@@ -180,4 +180,3 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       `grep -rnE '\.Where\(|\.Select\(|\.Count\(\)' --include='*.cs' . | head`
       (a locator: an `IEnumerable` enumerated twice is materialized once with `ToList()`; the EF Core
       lazy-loading N+1 half is the N+1 item in [rules/05](05-performance.md) §4)
-- [ ] **Broad analyzer pass (idioms): enable .NET analyzers + IDE rules in CI ([rules/06](06-build-tooling-ci.md))**
