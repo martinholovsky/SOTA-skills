@@ -318,6 +318,12 @@ auto-install malware minutes after it's published. The strategy:
 - **Cooldown**: Renovate `minimumReleaseAge: "5 days"` (Dependabot: cooldown config) for
   public packages — most malicious versions are yanked within days. Exception: security
   updates bypass cooldown.
+  The bot gates only its own PRs; a hand-run `add`/`install` is gated by the package
+  manager's own setting (read 2026-10-26): pnpm `minimumReleaseAge` (minutes, since 10.16;
+  the 1440 default since 11 falls back when unmet, so set it explicitly), npm `min-release-age`
+  (days, since 11.10.0), Yarn `npmMinimalAgeGate` (since 4.10.0), uv relative `exclude-newer =
+  "7 days"` (since 0.9.17), Bundler `cooldown`/`--cooldown N` (days, since 4.0.13; a gem
+  server that omits `created_at` leaves every version resolvable).
 - **Group** related updates (monorepo presets, `group:allNonMajor` for dev-deps) to keep
   review load sane; never group majors.
 - **Automerge** only: dev/test dependencies + patch/minor + full required-check suite
@@ -473,7 +479,7 @@ So require a second value that **cannot** be produced from plausibility:
       `first_patched_version` against the **resolved** graph rather than a bump's PR title
 - [ ] SBOM (one format org-wide, CycloneDX or SPDX) regenerated per build for each artifact from lockfile + image, with component hashes and PURLs, attached to the digest, queryable centrally (§3.5); none = Medium
 - [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
-- [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`) (§3.7), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned
+- [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`) (§3.7), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned; hand-run installs also cooled down by the package manager's native setting where it has one (pnpm `minimumReleaseAge` set explicitly, npm `min-release-age`, Yarn `npmMinimalAgeGate`, uv `exclude-newer` duration, Bundler `cooldown`)
 - [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream) (§3.8)
 - [ ] **Does any support-matrix row infer a capability from a version number? (§3.9)** That

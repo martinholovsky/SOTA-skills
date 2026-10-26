@@ -19,6 +19,9 @@ Scope: React itself (any renderer). Next-specific RSC/Server-Action mechanics ar
 - **Every effect that subscribes must clean up** (return a teardown): listeners,
   timers, sockets, subscriptions. A missing cleanup leaks across Strict Mode's
   double-invoke and across remounts.
+- **Non-reactive logic an Effect calls goes in `useEffectEvent`** (stable since React 19.2),
+  not an `eslint-disable` of `react-hooks/exhaustive-deps`, which hides stale values. Call it
+  only from Effects (never in render, never passed on), and never to drop a real dependency.
 - **Stable IDs come from `useId`**, never `Math.random()` or a module counter — this
   is what keeps SSR and client markup matching ([`rules/06`](06-ssr-hydration.md)). For form-field `id`/
   `htmlFor` pairs and ARIA wiring.
@@ -34,6 +37,10 @@ Scope: React itself (any renderer). Next-specific RSC/Server-Action mechanics ar
 - **`useTransition` / `startTransition`** mark state updates as non-urgent so input
   stays responsive; `useDeferredValue` defers re-rendering expensive subtrees. Reach
   for these on measured jank, not preemptively.
+- **`<Activity mode="hidden">`** (stable since React 19.2) keeps a subtree's state: React
+  hides it with `display: none` and destroys its Effects until it is shown. Hidden is not
+  removed: the markup stays in the DOM, so never use it to withhold unauthorized content.
+  **`<ViewTransition>`** (stable since React 19.3) animates Transition and Suspense updates.
 - **Error boundaries are mandatory around risky subtrees** (lazy loads, third-party
   widgets, RSC islands). Hooks can't catch render errors — you still need a class
   boundary or `react-error-boundary`. Server-render errors and hydration errors
@@ -83,7 +90,10 @@ Generic XSS theory is in [`sota-code-security` rules/05](../../sota-code-securit
 
 - **`dangerouslySetInnerHTML` is the one HTML-injection sink** JSX gives you (JSX
   text is auto-escaped). Only ever feed it sanitizer output (DOMPurify or a server
-  sanitizer with an allowlist), never raw user/CMS HTML.
+  sanitizer with an allowlist), never raw user/CMS HTML. Since React 19.3 (Trusted Types
+  integration) React passes `TrustedHTML` through unstringified, so a CSP
+  `require-trusted-types-for 'script'` makes the browser reject a raw string at this sink:
+  wrap the sanitizer in `trustedTypes.createPolicy`. Earlier versions stringify, and the sink throws.
 
 ```jsx
 // BAD — HIGH: stored/reflected XSS
@@ -126,11 +136,12 @@ import DOMPurify from 'dompurify';
       — a hit is a candidate: fine when the call returns a cached/stable promise (from an RSC or a
       cache); a promise made inline is new every render and never resolves
 
-- [ ] Every `dangerouslySetInnerHTML` fed sanitizer output (allowlist), not raw user/CMS HTML? (§5)
+- [ ] Every `dangerouslySetInnerHTML` fed sanitizer output (allowlist), not raw user/CMS HTML? (§5) If the CSP sets `require-trusted-types-for 'script'`, React is 19.3 or later (earlier versions stringify the value and the sink throws)?
 - [ ] `href`/`src`/URL props validated against a scheme allowlist (§5) (no `javascript:`/`data:`)?
 - [ ] No `Math.random()`/`Date.now()`/`window` used *during render* (hydration determinism); element IDs from `useId`, never a random value or a module counter (§1)?
 - [ ] Effects only for external synchronization, each with cleanup; no fetch-in-bare-effect racing; no `ref.current` read or written during render (§1)?
 - [ ] Stable domain IDs as list keys (not array index) for insertable/reorderable lists; state and props never mutated in place (immutable updates) (§4)?
 - [ ] Rules of Hooks enforced by lint (also required for the React Compiler) (§1, §4)?
+- [ ] No suppressed `react-hooks/exhaustive-deps` (§1) — `grep -rn 'eslint-disable.*exhaustive-deps' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules .`; non-reactive Effect logic uses `useEffectEvent`; no `<Activity mode="hidden">` used to hide unauthorized content (§2)?
 - [ ] Every `<Suspense>` boundary has a fallback; error boundaries around lazy/third-party/RSC subtrees; error text not rendered as HTML (§2)?
 - [ ] No attacker-influenced object spread onto a DOM element (§5)? Probe the call sites where the props are built: [`sota-frontend-design` rules/03](../../sota-frontend-design/rules/03-design-systems-components.md) Audit checklist.

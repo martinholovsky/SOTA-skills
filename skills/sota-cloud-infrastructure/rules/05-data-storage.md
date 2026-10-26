@@ -121,7 +121,11 @@ backup setups handle the first two only.
 - **Cross-account is the ransomware control:** backup vault in a dedicated backup
   account (AWS Backup cross-account vault copy; GCS bucket in a backup project with
   distinct IAM; Azure Backup vault in isolated subscription) that prod admin
-  credentials cannot reach.
+  credentials cannot reach. On AWS a **logically air-gapped vault** adds what a standard
+  vault lacks: Vault Lock compliance mode always on, and restore from another account it
+  is shared with (AWS RAM) or via multi-party approval "even if the vault-owning account
+  is inaccessible". With a customer-managed key, AWS advises one held in a separate recovery
+  organization, not the vault's own account.
 - **Immutability where supported:** S3 Object Lock (compliance mode for regulated
   retention, governance otherwise), AWS Backup vault lock, GCS retention policy +
   bucket lock, Azure immutable blob storage / vault immutability. An admin-deletable
@@ -248,7 +252,9 @@ The real design decisions are about **key control and blast radius**:
 - [ ] Stateful resources carry backup-tier tags; org backup plans select by tag;
       sample-verify an actual recovery point exists for each tier-1 system (§3).
 - [ ] Backups copied cross-account; immutability/vault-lock on tier-1; verify prod
-      admin role genuinely cannot delete backup copies (§3).
+      admin role genuinely cannot delete backup copies (§3). On AWS, a logically air-gapped
+      vault with a recovery path (RAM share or MPA) that works without the owning account,
+      and any customer-managed key held outside that account.
 - [ ] Restore tested within the last quarter for tier-1 (ask for the record and
       the measured time); retention matches stated policy, both min and max; the
       restore covered the whole unit of recovery — DB + config + KMS access (§3).

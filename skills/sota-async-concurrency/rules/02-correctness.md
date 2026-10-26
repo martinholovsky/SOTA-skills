@@ -162,7 +162,9 @@ Prevention rules, in order of preference:
    or mutate the state without it. Unsafe: `lock(this)` / `synchronized(this)`
    and Java `synchronized` methods on a type untrusted code can hold (they lock
    `this`; `static synchronized` locks the class object, reachable via
-   `getClass()`); `lock(typeof(T))` / `synchronized(T.class)`; string literals
+   `getClass()`); C# `[MethodImpl(MethodImplOptions.Synchronized)]` and Kotlin
+   `@Synchronized`, which lock the instance, or the type for a static member;
+   `lock(typeof(T))` / `synchronized(T.class)`; string literals
    or interned strings, and in Java boxed primitives/`Boolean` (shared
    instances); in Go, a `sync.Mutex` **embedded** in a struct promotes `Lock`/
    `Unlock` to every holder of the value — use a named unexported field
@@ -238,8 +240,10 @@ do real work in a raw handler.
 - [ ] Callbacks/virtual calls/logging/awaits inside lock regions (§5)?
 - [ ] Lock reachable by outside code (§5 rule 5; HIGH where untrusted or
       plugin code can reach the object, else MEDIUM):
-      `grep -rnE '(^|[^A-Za-z0-9_])(lock|synchronized) *\( *((this|getClass\(\)|[A-Za-z_][A-Za-z0-9_]*\.class) *\)|"|typeof *\()|(public|protected)( [a-z]+)* synchronized |synchronized( [a-z]+)* (public|protected) |^[[:space:]]+\*?sync\.(RW)?Mutex[[:space:]]*(//.*)?$' --include='*.cs' --include='*.java' --include='*.kt' --include='*.go' .`
-      — a Go hit is an embedded mutex; confirm the enclosing type escapes.
+      `grep -rnE '(^|[^A-Za-z0-9_])(lock|synchronized) *\( *((this|getClass\(\)|[A-Za-z_][A-Za-z0-9_]*\.class) *\)|"|typeof *\()|(public|protected)( [a-z]+)* synchronized |synchronized( [a-z]+)* (public|protected) |MethodImplOptions\.Synchronized([^A-Za-z0-9_]|$)|@([a-z]+:)?(kotlin\.jvm\.)?Synchronized([^A-Za-z0-9_]|$)|^[[:space:]]+\*?sync\.(RW)?Mutex[[:space:]]*(//.*)?$' --include='*.cs' --include='*.java' --include='*.kt' --include='*.go' .`
+      — a Go hit is an embedded mutex; confirm the enclosing type escapes. A
+      `MethodImplOptions.Synchronized` or `@Synchronized` hit locks the instance (the type, if
+      static): reachable when that type is public.
 - [ ] Wait-for cycles without locks (§5): tasks awaiting each other, self-feeding
       queues, pool-within-pool acquisition.
 - [ ] RwLocks under write-heavy or reader-storm load: starvation analysis

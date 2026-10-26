@@ -194,6 +194,11 @@ CREATE TABLE audit_log (
 `valid_from`/`valid_to` ranges with an exclusion constraint
 (`EXCLUDE USING gist (id WITH =, validity WITH &&)`) guarantee non-overlap;
 the `=` on a scalar id needs `CREATE EXTENSION btree_gist` first.
+Since PostgreSQL 18 the same rule is a key: `PRIMARY KEY (id, validity WITHOUT OVERLAPS)`
+"behaves like" that exclusion constraint (GiST-backed, still `btree_gist`, no empty
+ranges), and `FOREIGN KEY (id, PERIOD validity) REFERENCES parent (id, PERIOD validity)`
+requires a parent row for the child's "entire duration". A temporal FK supports no
+`CASCADE`, `SET NULL`, `SET DEFAULT` or `RESTRICT`, so parent edits need their own plan.
 Use trigger-maintained history tables or a temporal extension; query with
 `WHERE id = $1 AND validity @> $2::timestamptz`. Reserve full event sourcing
 for domains that genuinely replay events — it is an architecture, not a table
@@ -379,7 +384,8 @@ multi-tenant system: HIGH.
       actor attribution (`SET LOCAL app.actor`) and partitioned retention — not
       ad hoc app logging; the app role has no UPDATE/DELETE grant on audit tables;
       point-in-time history uses `valid_from`/`valid_to` with an
-      `EXCLUDE USING gist` non-overlap constraint (§6).
+      `EXCLUDE USING gist` non-overlap constraint, or on PostgreSQL 18+ a `WITHOUT OVERLAPS`
+      key with `PERIOD` foreign keys to it (§6).
 - [ ] Money and consumable balances: append-only entries, at least two per
       movement summing to zero, with sum-zero enforced by a **deferred DB
       constraint** rather than app code; balance derived (or a rollup that a job

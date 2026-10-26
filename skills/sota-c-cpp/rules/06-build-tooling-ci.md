@@ -360,10 +360,12 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       (no `override`: a `make CFLAGS=...` on the command line replaces the line) ;
       `grep -rn 'ExternalProject_Add' --include='CMakeLists.txt' --include='*.cmake' .` (read
       whether its `CMAKE_ARGS` pass the hardening flags) ; then `checksec` the linked artifact
-- [ ] **Warnings-as-errors and standard pinned?** —
-      `grep -rnE 'Werror|/WX' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no -Werror"`
+- [ ] **Warnings-as-errors and standard pinned?** (§2, §1) —
+      `err=$(grep -rE 'Werror|/WX' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no -Werror or /WX in any build file" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ; `grep -rnE 'CXX_STANDARD|cxx_std_|std=c\+\+' CMakeLists.txt 2>/dev/null`
-      ; `grep -nE 'C_STANDARD|c_std_|std=(gnu|c)[0-9]' CMakeLists.txt || echo "C dialect not pinned, unless grep printed an error"`
+      ; `err=$(grep -E 'C_STANDARD|c_std_|std=(gnu|c)[0-9]' CMakeLists.txt 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "C dialect not pinned" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       (§1: the default moved to `gnu23` in GCC 15 and `gnu++20` in GCC 16)
 - [ ] **GCC 14 C errors downgraded (§1) — MEDIUM, HIGH if the code then warns about
       int-conversion or implicit declarations** —
@@ -375,7 +377,9 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       trap flag, which covers only UBSan — plus any UBSan line with neither trap nor minimal
       runtime. Each line left: is it the release configuration? then it ships a sanitizer runtime)
 - [ ] **clang-tidy / clang-format / cppcheck configs present?** (§2, §1) —
-      `ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"`
+      `out=$(find . -maxdepth 1 \( -name .clang-tidy -o -name .clang-format \) -print 2>&1); rc=$?` ;
+      `case $rc in 0) [ -n "$out" ] || echo "missing lint/format config" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
+      (`find` exits non-zero only on an error, so an empty list at exit 0 is the absence)
       ; `test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt`
 - [ ] **Test code linted to a different standard, scoped in config (§2) — LOW, MEDIUM when the
       root config lost a security check to make tests pass** —
@@ -394,7 +398,8 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
       verdict (outside a per-line parse like §4a's script) = MEDIUM, since it exits 0 at 0 covered; harnesses with no
       `__CPROVER_cover`, or with covers and no separate safety pass = MEDIUM
 - [ ] **Dependency manager + lockfile?** (§5) —
-      `ls vcpkg.json conan.lock conanfile.* 2>/dev/null | grep -q . || echo "no pinned dependency manifest/lockfile"`
+      `out=$(find . -maxdepth 1 \( -name vcpkg.json -o -name conan.lock -o -name 'conanfile.*' \) -print 2>&1); rc=$?` ;
+      `case $rc in 0) [ -n "$out" ] || echo "no pinned dependency manifest/lockfile" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
       ;
       `grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null`
       (verify pinning)

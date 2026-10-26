@@ -316,7 +316,9 @@ testpaths = ["tests"]
       (mutable shared state?);
       `grep -rn "os.environ\[" --include="*.py" tests/ | grep -v monkeypatch` (env pollution);
       `grep -rln "parametrize" --include="*.py" tests/ | wc -l` ;
-      `grep -rln "hypothesis" --include="*.py" tests/ || echo "no property tests"` ;
+      `err=$({ [ -d tests ] && [ -r tests ] || { echo "tests/ missing or unreadable" >&2; exit 2; }; grep -rl "hypothesis" --include="*.py" tests/; } 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no property tests" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      (the guard is needed: macOS grep exits 1, not 2, when `tests/` is missing under `--include`) ;
       `pytest -q -n auto 2>&1 | tail -3` (parallel-safe = independent);
       `pytest -q -p randomly 2>&1 | tail -3` (order-independent?)
 - [ ] **Escape hatch with no runtime checker in CI (§3) [MEDIUM; HIGH where the native call

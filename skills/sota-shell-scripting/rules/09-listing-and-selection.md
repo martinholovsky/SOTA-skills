@@ -163,6 +163,11 @@ grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — 
   `find . \( -name '*.rb' -o -name config.ru \) -exec grep -Hn 'Rack::Protection' {} +`
   (measured 2026-09-26: BusyBox 1.37/1.38 reject `--include`; the `find` form hit the same
   files under BusyBox, BSD grep, ugrep and GNU grep).
+- **BSD grep with `--include` reports a missing directory as a clean absence.** macOS
+  `/usr/bin/grep -rn --include='*.py' X missing_dir` exits `1` with empty stderr — the no-match
+  status — while without `--include` it exits `2` with an error, and ugrep exits `2` either way
+  (measured 2026-10-26, BSD grep 2.6.0, ugrep 7.8.4). So an `err=…; rc=$?; case` probe cannot tell
+  a missing `tests/` from "no tests" on macOS: check the directory exists first (`[ -d tests ] &&`).
 - **Invariant 37** fails the build on both shapes in any skill file.
 
 ## 5c. Selecting processes by command-line substring selects the selector
