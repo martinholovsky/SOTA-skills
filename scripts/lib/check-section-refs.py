@@ -31,6 +31,11 @@ FENCE    = re.compile(r'^\s*```')
 # shaped exactly like an internal reference.
 EXTERNAL = re.compile(r'(CFR|PCI|DSS|ASVS|NIST|HIPAA|GDPR|\bISO\b|\bIEC\b|62443'
                       r'|800-\d|USC|Art\.)[^\n]{0,40}$')
+# An RFC section is external too, but only when the RFC number sits right before the `§`: the
+# keyword window above would also swallow a true local cite that merely shares a line with an RFC
+# ("timestamps RFC 3339; no magic-int enums (§6)"). Until 2026-10-26 `RFC 9110 §15.6.4` was resolved
+# against the citing file, and `RFC 9562 §8` passed only because that file happened to have a §8.
+RFC_SEC  = re.compile(r'\bRFC ?\d{3,5},?\s*$')
 SEC      = re.compile(r'§(\d+[a-z]?(?:\.\d+[a-z]?){0,2})\b')   # §3, §8a, §2.2a, §1b.1
 RULES    = re.compile(r'`?rules/(\d{2})[a-z0-9-]*`?|(?<![\w/])`(\d{2})`')
 SKILL    = re.compile(r'\b(sota(?:-[a-z]+)*)\b')
@@ -121,7 +126,7 @@ def main():
             for m in SEC.finditer(joined):
                 if m.end() <= off:            # matched wholly inside the carried tail
                     continue
-                if EXTERNAL.search(joined[:m.start()]):
+                if EXTERNAL.search(joined[:m.start()]) or RFC_SEC.search(joined[:m.start()]):
                     continue
                 sec, cands, dangling = m.group(1), {f}, set()
                 for (start, end, nn, shorthand) in rules_here:
