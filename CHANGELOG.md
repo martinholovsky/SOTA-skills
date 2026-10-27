@@ -5,6 +5,19 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.53.0] - 2026-10-27
+
+A MINOR: a new script, `scripts/check-probe-fixtures.py`, behind **invariant 44** — every runnable audit-checklist probe is now proven by a known-bad and a known-good tree, 1,899 of 1,899 — plus four new refusals in the zsh PreToolUse hook, and this repo's own secret scan now reads merge commits. Thirteen PRs since v1.52.0: #623–#637.
+
+**Front door checked:** fixtures · declared locator · merge commits · per-language · PIPESTATUS
+
+- **Every checklist probe proven by fixtures** (#627, #630, #635; invariant 44). Each runnable `grep` probe has a `bad/` tree it must flag and a `good/` tree it must not, run on BSD and GNU grep in CI; a new probe ships with its fixtures. The first pass proved 1,546 of 1,899 and recorded a defect for each of the rest; 285 tested replacements followed, then the last 68 became 6 rewrites, 2 non-probes and 60 **declared locators** (the item says it lists every site and each hit is read, not a finding). Harness fixes, each with a self-test watched failing: a quoted `<Tag>` is pattern text, not a placeholder; spaces inside a probe are kept; probes run in a copy with an absolute `HOME`; a quoted `<… …>` is not prose.
+- **Cross-cutting skills and language skills link both ways** (#631, invariant 42 C6): `sota-performance`, `sota-async-concurrency` and `sota-testing` each carry a **per-language** table naming the one file per language skill, and each of those links back; no rules file is reached only by its own index any more (23 → 0). Rules-index rows are generated from the manifests (#626, C5).
+- **The secret scan reads merge commits** (#634). `gitleaks git` skips them by default — git shows no diff for a merge without a `--diff-merges` variant — so a secret added in a conflict resolution was never read (reproduced: "3 commits scanned" of 4, no leaks, key at HEAD). This repo's CI scanned 707 of 713 commits (clean when re-scanned); it now passes `--diff-merges=first-parent` and requires the count to equal `git rev-list --all --count` (626 of 626 in CI). The library's history-pass guidance says the same.
+- **Four more zsh-hook refusals** (#637), each measured over 39,715 local agent Bash calls before shipping: a variable named `path` or `status`; a spaced literal expanded unquoted as arguments; `$PIPESTATUS`/`$BASH_REMATCH`; a `git grep` escape the platform reads as a plain letter (which also corrected `sota-shell-scripting` rules/06 §2f's mechanism).
+- **Intake of six field reports** (two from this library's own sessions, #624 and #633; four from other projects, #634) and a closure pass (#632): intentionally vulnerable test data feeds the dependency graph (399 fixture alerts dismissed, bot PRs closed); counts from subagent prose; pre-commit scores the staged tree, not the one `--all-files` reads; `gen-agents-md.sh` now warns that its block is machine-local; a code-rules-hook row for model-API code; good-bot verification in `sota-code-security` rules/19 §5 (#636); nine fired deferrals resolved (#625).
+- **Counts:** 44 invariants; 129 negative-control probes, 127 live; 1,899 of 1,899 checklist probes proven; 2,610 reachability edges. ROADMAP items 80–85 closed; open: 5, 70, 73.
+
 ## [1.52.0] - 2026-10-26
 
 A MINOR: `reachability-graph.py` gained `--sync-convert`, and invariant 43 now holds every rules file to **zero** uncited sections and checklist items, alongside routing manifests for every skill and a library-wide reconciliation of guidance that had drifted. Twenty PRs since v1.51.0: #602–#621.
@@ -11705,6 +11718,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.53.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.53.0
 [1.52.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.52.0
 [1.51.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.51.0
 [1.50.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.50.4
