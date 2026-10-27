@@ -132,7 +132,7 @@ rules files that match the code in front of you. Never load all skills at once.
    evidence. State the check you actually ran and its result: test output with
    pass/fail counts and exit code, the command and its output, or the reproduced
    behavior. If you did not run it, say so plainly. Unverified completion is not
-   completion — this applies to your own build output before you hand it back.
+   completion — this applies to your own build output before you hand it back. **A tool the check needs that is not installed** (a prover, scanner, linter, sanitizer, runtime) **is a question for the operator, not a skip**: name it, its install command from the tool's own docs, and what it would check, and ask them to install it or approve a disposable container. Never install it unasked, never swap in a weaker check without saying so, and never report the unrun check as passed.
 7. **Restate from the artifact, never from your own summary.** Re-reading your
    own write-up re-runs the reasoning that produced it — the weakest check
    available. Before a claim reaches anything user-visible, go back to the
