@@ -3,7 +3,8 @@ name: sota-rust
 description: >-
   State-of-the-art Rust engineering (2026) for writing and auditing Rust code.
   Covers idiomatic ownership and API design, error handling and panic policy,
-  unsafe discipline with Miri, async/tokio (cancellation safety, structured
+  unsafe discipline with Miri, formal verification (Kani proof harnesses, Flux
+  refinement types), async/tokio (cancellation safety, structured
   concurrency, graceful shutdown), security and supply chain (cargo
   audit/deny/vet, integer overflow, serde hardening, zeroize), performance
   (profiling, allocation reduction, release profiles), and tooling/CI (clippy
@@ -12,7 +13,8 @@ description: >-
   debugging borrow checker or Send/Sync errors, or hardening Rust services.
   Triggers: Rust, cargo, crate, tokio, unsafe, lifetime, borrow checker,
   clippy, async Rust, Cargo.toml, thiserror, anyhow, serde, Miri, MSRV,
-  std::process::Command, subprocess, spawn a process.
+  std::process::Command, subprocess, spawn a process, Kani, cargo kani, flux-rs,
+  formal verification, proof harness.
 ---
 
 # SOTA Rust (2026)
@@ -53,7 +55,8 @@ When writing or modifying Rust code:
 5. **Verify before claiming done:** `cargo fmt --check`, `cargo clippy
    --all-targets --all-features -- -D warnings`, `cargo nextest run` +
    `cargo test --doc`, and `cargo doc` warning-free for libraries. If you
-   wrote unsafe: `cargo +nightly miri test` over it. If the crate has Kani harnesses: run them
+   wrote unsafe: `cargo +nightly miri test` over it. If the crate has Kani harnesses: run them (no `cargo kani` here? ask the operator
+   to install it, router principle 6, rather than skip)
    through the cover gate ([rules/09](rules/09-formal-verification.md) §4) — a bare `cargo kani` passes vacuous proofs. If you claimed
    performance: show the benchmark.
 6. **Comment intent at decision points** the next reader will question:

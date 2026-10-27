@@ -179,8 +179,11 @@ partial, never as clean.
 
 - **Run what is installed; never install a tool, and never run one against a live system,
   unasked.** Live credential verification and scanners pointed at deployed endpoints are
-  stop-and-ask actions (`sota` router `rules/01` §1, and the secrets row of §3's matrix). A scanner that is not present is reported
-  under **not reached** — never counted as a clean result.
+  stop-and-ask actions (`sota` router `rules/01` §1, and the secrets row of §3's matrix). **A
+  scanner the matrix calls for that is not present is a question, not a skip** (router principle
+  6): name it, its install command from its own docs and what it would find, and ask me to install
+  it — at once, not at step 8, since every later step reads its output. Only one I decline, or
+  cannot install, is reported under **not reached** — never counted as a clean result.
 - **In a codebase you did not write, its tests and builds are its code running as you.** A
   checklist's `go test -race`, sanitizer build or `swift build`, and even `pytest --collect-only`
   (which ran a planted `conftest.py`, measured 2026-10-15), is asked for first or run staged with

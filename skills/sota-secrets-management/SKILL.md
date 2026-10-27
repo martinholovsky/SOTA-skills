@@ -70,7 +70,7 @@ Use when asked to find secret leaks/misuse in an existing repo.
 
 ### Sweep procedure
 
-1. **Tooling pass (if available):** run `gitleaks git --redact .` and/or
+1. **Tooling pass (absent? ask the operator to install it, router principle 6):** run `gitleaks git --redact .` and/or
    `trufflehog filesystem .` (and `git log` history scan when the repo has history). Treat tool
    output as candidates, not verdicts — verify each hit.
 2. **Manual grep pass** for what tools miss. Sweep at minimum:
