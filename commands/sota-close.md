@@ -177,7 +177,8 @@ pass exists to compensate for.
   chose is a page, not a total (`sota-shell-scripting` rules/09 §5). An implausibly *large*
   result is usually an empty value that removed a filter rather than matching nothing
   (`sota-shell-scripting` rules/06 §2b). And a zero from a pattern using `\b` under
-  `git grep -E` on macOS is the pattern, not the corpus: it matches nothing, silently
+  `git grep -E` on macOS is the pattern, not the corpus: macOS reads `\b` as the letter `b`, so it
+  usually matches nothing and can match the wrong lines, silently
   (`sota-shell-scripting` rules/06 §2f).
 
 ## 5. State plainly what is not done

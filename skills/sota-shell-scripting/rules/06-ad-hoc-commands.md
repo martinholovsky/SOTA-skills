@@ -14,7 +14,7 @@ way. Quoting itself stays in [`rules/01`](01-safety-baseline.md) §3, which this
 Committed scripts are immune: every one carries a `#!/usr/bin/env bash` shebang, so bash runs them
 whatever your login shell is. The exposure is **interactive, pasted, and agent-issued commands** —
 including the audit checklists in this library, which are written to be pasted, and **macOS's
-interactive shell is zsh**. Check the operator's shell rather than assuming; then treat the table below as live. **To leave the whole zsh column behind, run a multi-command check as `bash -c '…'` or from a script file** — switching searcher (`git grep`) fixes one row and adds others: zsh still rewrites `=word`, `\b` under `-E` matches nothing on macOS (§2f), and ignored files are skipped. **The other direction** — zsh habits that break silently in bash and dash (`**` one level deep, a piped `while` losing its count) — is [`rules/05`](05-constructs-and-cleanup.md) §5a.
+interactive shell is zsh**. Check the operator's shell rather than assuming; then treat the table below as live. **To leave the whole zsh column behind, run a multi-command check as `bash -c '…'` or from a script file** — switching searcher (`git grep`) fixes one row and adds others: zsh still rewrites `=word`, `\b` under `-E` is read as the letter `b` on macOS (§2f), and ignored files are skipped. **The other direction** — zsh habits that break silently in bash and dash (`**` one level deep, a piped `while` losing its count) — is [`rules/05`](05-constructs-and-cleanup.md) §5a.
 
 | | bash | zsh | how it fails |
 |---|---|---|---|
