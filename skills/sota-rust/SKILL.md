@@ -69,8 +69,9 @@ When writing or modifying Rust code:
 
 When reviewing or auditing existing Rust:
 
-1. **Recon first:** `cargo metadata`/workspace layout (in a checkout you do not trust, every
-   cargo command runs its `rustc-wrapper` and `[build] rustc`; pin both first, [rules/07](rules/07-tooling-ci.md) §4a), `Cargo.toml` profiles
+1. **Recon first:** `cargo metadata`/workspace layout (in a checkout you do not trust, every cargo command runs its `rustc-wrapper` and `[build] rustc`, a toolchain its
+   `rust-toolchain.toml` names by path, and a registry credential provider: pin `RUSTUP_TOOLCHAIN`
+   first, then both, and read with `--no-deps`, [rules/07](rules/07-tooling-ci.md) §4a), `Cargo.toml` profiles
    and features, CI config, `rg 'unsafe' --count-matches`, dependency tree
    (`cargo tree -d`), and `rg -c 'kani::|flux_rs' -t rust .`. Load 09 when proofs are present (audit
    them as controls that can pass vacuously) **or** when a security-critical crate parses untrusted

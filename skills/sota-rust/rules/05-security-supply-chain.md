@@ -45,7 +45,8 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   `cargo install <tool>` ignores the tool's packaged `Cargo.lock` without `--locked` (write
   `cargo install --locked <tool>@<version>`), and a third-party subcommand with no `--locked` flag
   gets none — gate its job with `cargo metadata --locked --format-version 1 >/dev/null` first
-  (with `RUSTC` and `RUSTC_WRAPPER` pinned: it runs a configured wrapper, [rules/07](07-tooling-ci.md) §4a).
+  (with `RUSTUP_TOOLCHAIN`, `RUSTC` and `RUSTC_WRAPPER` pinned, in that order: it runs a configured
+  wrapper, and a registry credential provider that no pin stops, [rules/07](07-tooling-ci.md) §4a).
 - Dependabot/Renovate for bumps; review changelogs of security-sensitive deps
   (crypto, TLS, parsing) instead of auto-merging.
 - Minimize the tree first: every dep is attack surface and build time.
@@ -113,8 +114,8 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   `rust-toolchain.toml` get CODEOWNERS entries plus the branch rule "Require review from Code
   Owners" — an agent-authored PR included. CI: `cargo fetch --locked` is the networked step
   and runs no *dependency* code, but it does run a `rustc-wrapper` or `[build] rustc` from any
-  `.cargo/config.toml` in the checkout or above it (measured, [rules/07](07-tooling-ci.md) §4a), so run it with
-  `RUSTC` and `RUSTC_WRAPPER` pinned, or where that is acceptable; build and test with `--frozen` in a job that holds no publish,
+  `.cargo/config.toml` in the checkout or above it (measured, [rules/07](07-tooling-ci.md) §4a), so run it with `RUSTUP_TOOLCHAIN`, `RUSTC` and `RUSTC_WRAPPER` pinned, in that order — a registry
+  credential provider from the checkout's config still runs — or where that is acceptable; build and test with `--frozen` in a job that holds no publish,
   deploy or cloud credentials, and hand the artifact to a separate job that does. (OWASP: CI/CD
   Security cheat sheet; Software Supply Chain Security cheat sheet; NPM Security cheat sheet.)
 - **Declared but not reached**: an unused crate is still install/build-time trust
@@ -402,7 +403,7 @@ Running external programs (formerly section 9) moved to
 - [ ] `cargo vet` (or documented dep-review process) for new dependencies (§2);
       build.rs / proc-macro deps enumerated and reviewed.
 - [ ] **Build-time code (build.rs / proc-macro) is inventoried, owned and isolated (§2) —
-      High** — `RUSTC="$(rustup which rustc)" RUSTC_WRAPPER= cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(any(.targets[]; any(.kind[]; . == "custom-build" or . == "proc-macro"))) | "\(.name) \(.version)"'`
+      High** — in isolation, since this resolves dependencies and so runs any registry credential provider the checkout configures ([rules/07](07-tooling-ci.md) §4a): `export RUSTUP_TOOLCHAIN="$(rustup default | cut -d' ' -f1)"; RUSTC="$(rustup which rustc)" RUSTC_WRAPPER= cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(any(.targets[]; any(.kind[]; . == "custom-build" or . == "proc-macro"))) | "\(.name) \(.version)"'`
       (every line is code that runs on `cargo check`: each needs a review record, e.g. a
       `cargo vet` audit). Then `rg -n --no-messages 'build\.rs|Cargo\.(toml|lock)|\.cargo/' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS`
       — no line means your own build-executing files merge without an owner. A CI job that

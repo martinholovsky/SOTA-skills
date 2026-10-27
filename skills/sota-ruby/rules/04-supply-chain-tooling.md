@@ -264,8 +264,12 @@ mechanics only:
   ([`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §3), and the interpreter must load the runtime at
   start: measured on macOS (Ruby 4.0.6), an ASan-built extension loaded into a stock
   `ruby` aborted on `require` ("Interceptors are not working ... loaded too late (e.g.
-  via dlopen)", exit 134). The exact Ruby recipe (preloaded runtime, an ASan-built
-  Ruby, or Valgrind on Linux) is not verified here; record the one you use.
+  via dlopen)", exit 134). On Linux the preloaded runtime works (Ruby 4.0.9, GCC 14.2,
+  measured 2026-10-27): a stock `ruby` refused the extension (*ASan runtime does not come first*,
+  exit 1), and `LD_PRELOAD="$(gcc -print-file-name=libasan.so)" ASAN_OPTIONS=detect_leaks=0` loaded
+  it, caught a planted heap overflow (exit 1) and passed the clean call. Plant the bad write through
+  a `volatile` pointer: under Ruby's `-O2` a plain one was optimised away and the run passed. An
+  ASan-built Ruby and Valgrind were not measured.
 
 ## 7. CI gates (the minimum green wall)
 

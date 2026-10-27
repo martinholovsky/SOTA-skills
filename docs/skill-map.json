@@ -3927,6 +3927,14 @@
       "targets": []
     },
     {
+      "from": "sota-rust",
+      "to": "sota-shell-scripting",
+      "weight": 1,
+      "targets": [
+        "rules/03"
+      ]
+    },
+    {
       "from": "sota-sandboxing",
       "to": "sota-ml-engineering",
       "weight": 1,
@@ -4310,12 +4318,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1836,
+    "md link, other skill": 1837,
     "md link, outside skills/": 3,
     "md link, same skill": 2827,
     "name (backticked)": 450,
     "name (bare)": 242,
-    "name+file (backticked)": 837,
+    "name+file (backticked)": 838,
     "name+file (bare)": 175,
     "own rules/NN": 3044
   },
@@ -4327,7 +4335,7 @@
     "md link, same skill": 0,
     "name (backticked)": 435,
     "name (bare)": 198,
-    "name+file (backticked)": 833,
+    "name+file (backticked)": 834,
     "name+file (bare)": 163,
     "own rules/NN": 2942
   },
