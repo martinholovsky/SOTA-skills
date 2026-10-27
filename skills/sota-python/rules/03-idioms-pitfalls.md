@@ -378,8 +378,9 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       reaches it; MEDIUM otherwise]** —
       `grep -rnE 'setrecursionlimit\(' --include='*.py' src/` (raised: a C-stack crash on
       ≤ 3.11, deeper recursion before the error on any version) ;
-      `grep -rnE 'json\.loads?\(' --include='*.py' src/` (for each request-reachable call,
-      find the body-size cap before it, and a depth bound in any recursive walk after it)
+      `grep -rnE 'json\.loads?\(' --include='*.py' src/` (lists every JSON parse; each hit is
+      read, not a finding: for each request-reachable call, find the body-size cap before it,
+      and a depth bound in any recursive walk after it)
 - [ ] **Mutable defaults (§1) & late binding (§2)** — `uvx ruff check --select B006,B008,B023,RUF008,RUF009 .`
       (B008: a call such as `datetime.now()` evaluated once as a default; RUF008/RUF009: a mutable
       or call default on a dataclass field)

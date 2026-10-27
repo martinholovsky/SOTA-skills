@@ -459,7 +459,7 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
       `rust-toolchain.toml`. `cargo msrv verify` passes.
 - [ ] **Profile overrides** (§4a): `find . \( -name Cargo.toml -o -path '*/.cargo/config' -o -path '*/.cargo/config.toml' \) -type f -not -path '*/target/*' -exec grep -nE '^[[:space:]]*(overflow-checks|debug-assertions)[[:space:]]*=[[:space:]]*false' /dev/null {} +`
       — a hit under `[profile.dev]`/`[profile.test]`, or a profile inheriting them, =
-      Medium. `find`, not `grep -r .`: it enters `.cargo/`, which `rg` and `ugrep` skip by
+      Medium. `find`, not a recursive grep: it enters `.cargo/`, which `rg` and `ugrep` skip by
       default (measured for ugrep).
 - [ ] **Flag and wrapper overrides** (§4a): `find . \( -path '*/.cargo/config' -o -path '*/.cargo/config.toml' -o -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name justfile -o -name Dockerfile \) -type f -not -path '*/target/*' -exec grep -nE 'rustflags|rustc-wrapper|rustc[[:space:]]*=|RUSTFLAGS|RUSTC_WRAPPER|RUSTC_BOOTSTRAP|CARGO_(BUILD|ENCODED)_RUSTFLAGS' /dev/null {} +`
       — `-C overflow-checks`/`-C debug-assertions` in any hit overrides the profile =

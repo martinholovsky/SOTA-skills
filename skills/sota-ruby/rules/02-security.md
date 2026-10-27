@@ -283,6 +283,8 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 - [ ] **Fiddle / `ffi` / C extensions — HIGH where a length or pointer comes from input** (§8) —
       `grep -rnE "require[[:space:]]+['\"](fiddle|ffi)['\"]|Fiddle::|extend[[:space:]]+FFI::Library|attach_function" --include='*.rb' .`
       ; `grep -rnE 'ext/.*extconf\.rb|extensions' --include='*.gemspec' .`
+      (both list every FFI binding or C extension; each hit is read, not a finding: does a length
+      or pointer come from input?)
 - [ ] **SQL injection (§1) — CRITICAL on any hit with non-literal interpolation** —
       `grep -rnE '\.(where|order|group|having|select|joins|pluck|find_by_sql|update_all)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .`
       ; `grep -rn "Arel.sql" --include='*.rb' .` ;
@@ -311,7 +313,8 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       (`JSON.load` honours `create_additions`, so external input goes through `JSON.parse`) ;
       `grep -rnE "YAML\.(safe_)?load[^_]" --include='*.rb' . | grep "aliases: true"`
 - [ ] **CSV or spreadsheet export of user data without a formula guard (§3) — MEDIUM** —
-      `grep -rnE 'CSV\.(generate|open)|to_csv' --include='*.rb' .` — each hit writing user-controlled
+      `grep -rnE 'CSV\.(generate|open)|to_csv' --include='*.rb' .` — lists every CSV export; each hit
+      is read, not a finding: each one writing user-controlled
       cells prefixes values starting `=`, `+`, `-`, `@`, tab or CR with `'`
       ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11)
 - [ ] **XML parser options that re-enable XXE / expansion — HIGH on untrusted XML** (§3) —

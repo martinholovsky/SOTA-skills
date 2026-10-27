@@ -319,7 +319,8 @@ Run from repo root; verify each hit manually.
       widen a return? Each is a MAJOR. Widening a parameter and narrowing a return are safe
       (variance). non-final released classes: extensible forever, and adding `final` later
       breaks them promoted constructor properties are PUBLIC API, not implementation detail** —
-      `grep -rn 'interface ' --include='*.php' src/` ;
+      `grep -rn 'interface ' --include='*.php' src/` (lists every interface; each hit is read, not a
+      finding: the BC break is a `+` line in the diff below) ;
       `git diff <last-release-tag>..HEAD -- '*.php' | grep -nE '^\+.*(function |final |readonly )'`
       ; `grep -rnE '^\s*(class|abstract class) [A-Z]' --include='*.php' src/ | grep -v 'final'`
       ; `grep -rn 'public readonly' --include='*.php' src/`

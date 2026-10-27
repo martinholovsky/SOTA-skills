@@ -1,0 +1,5 @@
+tenants:
+  pooled:
+    database: app_pooled
+  acme-silo:
+    database: app_acme

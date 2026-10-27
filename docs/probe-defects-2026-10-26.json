@@ -1,32 +1,35 @@
 {
- "_note": "Invariant 44 first fixture pass, 2026-10-26: every runnable checklist probe that could NOT be proven by a known-bad/known-good fixture pair, with the reason and (where the batch agent built one) a proposed replacement probe tested on its own bad/good trees. A record of that pass: the live debt is scripts/probe-fixture-baseline.json. in_baseline=false marks a probe that has passing fixtures but a recorded weakness. ROADMAP item 81. ROADMAP 81 applied the replacements on 2026-10-26: 288 records now carry `resolved`; the 68 still baselined have no tested replacement.",
+ "_note": "Invariant 44 first fixture pass, 2026-10-26: every runnable checklist probe that could NOT be proven by a known-bad/known-good fixture pair, with the reason and (where the batch agent built one) a proposed replacement probe tested on its own bad/good trees. A record of that pass: the live debt is scripts/probe-fixture-baseline.json. in_baseline=false marks a probe that has passing fixtures but a recorded weakness. ROADMAP item 81. ROADMAP 81 applied the replacements on 2026-10-26: 288 records now carry `resolved`; the 68 still baselined have no tested replacement. On 2026-10-27 the last 68 were resolved (rewritten, declared locators, or found not to be probes); the baseline is empty.",
  "defects": [
   {
    "id": "05-realtime-websockets-sse#2b1628af52",
    "rules_file": "skills/sota-api-design/rules/05-realtime-websockets-sse.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rniE 'websockify|novnc|ttyd' .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. A bridge that keeps its own authn (the item's requirement) prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree: `websockify --auth-plugin TokenFile` -> prints both compose lines."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree: `websockify --auth-plugin TokenFile` -> prints both compose lines.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "07-security-operations#497f7abfa4",
    "rules_file": "skills/sota-api-design/rules/07-security-operations.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'Authorization:[[:space:]]*Basic|WWW-Authenticate:[[:space:]]*Basic|HTTPBasicAuth|BasicAuthentication' .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. 'Basic auth absent or TLS-only': TLS-only Basic is acceptable and prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree: nginx `listen 443 ssl; add_header WWW-Authenticate: Basic` -> prints line 3."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree: nginx `listen 443 ssl; add_header WWW-Authenticate: Basic` -> prints line 3.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "07-security-operations#8caeb4515a",
    "rules_file": "skills/sota-api-design/rules/07-security-operations.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rniE 'forwarded-client-cert|ssl[-_]client[-_](cert|escaped)|client[-_]cert(ificate)?[-_]?header|x-client-cert' .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. Reading the header only from TRUSTED_PROXIES (the required pattern) prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree: `if request.remote_addr not in TRUSTED_PROXIES: raise Forbidden(); ...headers.get('X-Client-Cert')` -> prints line 4."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree: `if request.remote_addr not in TRUSTED_PROXIES: raise Forbidden(); ...headers.get('X-Client-Cert')` -> prints line 4.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-distributed-systems-and-events#a525576209",
@@ -51,29 +54,32 @@
   {
    "id": "04-resilience-and-failure-design#aaa03bfb7d",
    "rules_file": "skills/sota-architecture/rules/04-resilience-and-failure-design.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE -i '(maximumPoolSize|SetMaxOpenConns|max_?pool_?size|pool_?size|max_?connections)' .",
    "problem": "Locator: lists every pool setting; a pool whose ceiling IS documented (pool x replicas vs server limit) prints identically — the defect (no doc) lives in another file and no grep can see its absence per pool.",
    "proposed_probe": null,
-   "evidence": "application.properties 'spring.datasource.hikari.maximumPoolSize=10' + '# ceiling: 10 x 6 replicas = 60 < max_connections 100, see docs/capacity.md' -> both lines printed"
+   "evidence": "application.properties 'spring.datasource.hikari.maximumPoolSize=10' + '# ceiling: 10 x 6 replicas = 60 < max_connections 100, see docs/capacity.md' -> both lines printed",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-scalability-state-and-data#3904f93a49",
    "rules_file": "skills/sota-architecture/rules/05-scalability-state-and-data.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE -i '(redis|valkey|memcached?|cache)[_.-]?(url|uri|host|endpoint)' .",
    "problem": "Locator: lists every cache endpoint; a silo tenant correctly on its own endpoint prints exactly like one on the shared endpoint.",
    "proposed_probe": null,
-   "evidence": "config/tenants.yaml pooled 'redis_url: redis://cache-pooled:6379' + acme-silo 'redis_url: redis://cache-acme:6379' -> both printed"
+   "evidence": "config/tenants.yaml pooled 'redis_url: redis://cache-pooled:6379' + acme-silo 'redis_url: redis://cache-acme:6379' -> both printed",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-idioms#17f179c394",
    "rules_file": "skills/sota-c-cpp/rules/01-idioms.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '^\\s*(virtual |[A-Z][A-Za-z0-9_]*::)?~?[A-Z][A-Za-z0-9_]*\\s*\\([^)]*\\)\\s*(:|\\{)' --include='*.cpp' . | head",
    "problem": "Inventory probe: lists EVERY out-of-line ctor/dtor; the defect (§8a virtual call inside a ctor/dtor body) is in the body lines it never reads, so the correct near-miss (same ctor, no virtual call) prints the identical line. Also: under ugrep 7.8.4 (the session grep) it prints nothing even for the bad ctor line.",
    "proposed_probe": null,
-   "evidence": "evidence trees in $SCRATCH/stageA/a09-01/ev/ctor/{bad,good}; run with case dir as cwd, PATH=/usr/bin:/bin (BSD grep 2.6.0) unless noted. ORIG bad: './src/shape.cpp:2:Shape::Shape() : id_(next_id()) {' ; ORIG good: './src/shape.cpp:2:Shape::Shape() : id_(next_id()) {' (identical). Under ugrep shim: bad and good both print 0 lines (full pattern returns 0 matches; its sub-patterns each match)."
+   "evidence": "evidence trees in $SCRATCH/stageA/a09-01/ev/ctor/{bad,good}; run with case dir as cwd, PATH=/usr/bin:/bin (BSD grep 2.6.0) unless noted. ORIG bad: './src/shape.cpp:2:Shape::Shape() : id_(next_id()) {' ; ORIG good: './src/shape.cpp:2:Shape::Shape() : id_(next_id()) {' (identical). Under ugrep shim: bad and good both print 0 lines (full pattern returns 0 matches; its sub-patterns each match).",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-idioms#25dce75639",
@@ -148,11 +154,12 @@
   {
    "id": "03-undefined-behavior#159086dbb9",
    "rules_file": "skills/sota-c-cpp/rules/03-undefined-behavior.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '(cout|cerr|<<=|stream)'",
    "problem": "Flags the correct near-miss: a range-guarded shift (`if (bits >= 32) return 0; return 1u << bits;`, CERT INT34-C fix) prints exactly like the unguarded one, and every `>>` closing a nested template in .cpp is a hit. A grep cannot see the guard; this is a reading list, not a detector.",
    "proposed_probe": null,
-   "evidence": "good/mask.c (guarded) -> './mask.c:6:    return 1u << bits;'; good/idx.cpp -> './idx.cpp:3:std::map<int, std::vector<int>> index_;'"
+   "evidence": "good/mask.c (guarded) -> './mask.c:6:    return 1u << bits;'; good/idx.cpp -> './idx.cpp:3:std::map<int, std::vector<int>> index_;'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-undefined-behavior#2190628c5d",
@@ -507,11 +514,12 @@
   {
    "id": "06-motion-design#b71ec9afc3",
    "rules_file": "skills/sota-frontend-design/rules/06-motion-design.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'pointermove|onPointerMove|touchmove|onTouchMove' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. Every gesture surface is listed; a correct one (touch-action set, spring-back) prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `card.style.touchAction = 'pan-y'; card.addEventListener('pointermove', ...)` -> prints './src/components/SwipeCard.ts:3:...pointermove...' (both greps)."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `card.style.touchAction = 'pan-y'; card.addEventListener('pointermove', ...)` -> prints './src/components/SwipeCard.ts:3:...pointermove...' (both greps).",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-errors#baa1e80f1d",
@@ -536,11 +544,12 @@
   {
    "id": "02-design#0d76c97392",
    "rules_file": "skills/sota-golang/rules/02-design.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '^type [A-Za-z0-9_]*Option func|^func With[A-Z][A-Za-z0-9_]*\\(' --include='*.go' .",
    "problem": "Item is functional-options MISUSE, but the probe matches every functional-options declaration, including the rules file's own recommended §7 example (`type Option func(*Server)`, `func WithTimeout(...) Option`), so the correct near-miss is always flagged; misuse (required param as option, no default, ≤2 knobs) is not grep-visible.",
    "proposed_probe": null,
-   "evidence": "good server.go = §7's New(addr, opts...) + type Option func(*Server) + WithTimeout: probe prints ./server.go:11:type Option func(*Server) and ./server.go:13:func WithTimeout(...)"
+   "evidence": "good server.go = §7's New(addr, opts...) + type Option func(*Server) + WithTimeout: probe prints ./server.go:11:type Option func(*Server) and ./server.go:13:func WithTimeout(...)",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-design#af5552a7db",
@@ -565,11 +574,12 @@
   {
    "id": "03-concurrency#033d95d775",
    "rules_file": "skills/sota-golang/rules/03-concurrency.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn 'close(' --include='*.go' .",
    "problem": "Item is consumer-side/double close, but the probe lists every close(), including the rules file's own §3 FIX (`defer close(ch)` in the producer goroutine), so the correct near-miss is always flagged; ownership is not grep-visible.",
    "proposed_probe": null,
-   "evidence": "good gen.go: producer goroutine with `defer close(ch)` (the §3 FIX) -> probe prints ./gen.go:6:\t\tdefer close(ch)"
+   "evidence": "good gen.go: producer goroutine with `defer close(ch)` (the §3 FIX) -> probe prints ./gen.go:6:\t\tdefer close(ch)",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-concurrency#916bc21e91",
@@ -1102,20 +1112,22 @@
   {
    "id": "05-security#22d1b4c6b1",
    "rules_file": "skills/sota-javascript-typescript/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'subtle\\.(encrypt|importKey)\\(' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .",
    "problem": "inventory probe: the item's own correct pattern necessarily matches, so the correct near-miss is flagged (every subtle.encrypt/importKey call prints, including one with a fresh IV and a KMS key)",
    "proposed_probe": null,
-   "evidence": "cmd: grep -rnE 'subtle\\.(encrypt|importKey)\\(' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .\noriginal on bad/: rc=0 stdout=\"./src/crypto.ts:2:export const seal = (key: CryptoKey, data: BufferSource) => crypto.subtle.encrypt({ name: 'AES-GCM', iv: IV }, key, data);\"\noriginal on good/: rc=0 stdout=\"./src/crypto.ts:3:  return crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);\""
+   "evidence": "cmd: grep -rnE 'subtle\\.(encrypt|importKey)\\(' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .\noriginal on bad/: rc=0 stdout=\"./src/crypto.ts:2:export const seal = (key: CryptoKey, data: BufferSource) => crypto.subtle.encrypt({ name: 'AES-GCM', iv: IV }, key, data);\"\noriginal on good/: rc=0 stdout=\"./src/crypto.ts:3:  return crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-security#2f96b1f0ba",
    "rules_file": "skills/sota-javascript-typescript/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"href={\" --include=\"*.tsx\" --exclude-dir=node_modules .",
    "problem": "inventory probe: the item's own correct pattern necessarily matches, so the correct near-miss is flagged (every dynamic JSX href prints, including one passed through a protocol allowlist)",
    "proposed_probe": null,
-   "evidence": "cmd: grep -rn \"href={\" --include=\"*.tsx\" --exclude-dir=node_modules .\noriginal on bad/: rc=0 stdout=\"./src/Profile.tsx:1:export const Website = ({ url }: { url: string }) => <a href={url}>site</a>;\"\noriginal on good/: rc=0 stdout=\"./src/Profile.tsx:1:export const Website = ({ url }: { url: string }) => <a href={safeHttpUrl(url)}>site</a>;\""
+   "evidence": "cmd: grep -rn \"href={\" --include=\"*.tsx\" --exclude-dir=node_modules .\noriginal on bad/: rc=0 stdout=\"./src/Profile.tsx:1:export const Website = ({ url }: { url: string }) => <a href={url}>site</a>;\"\noriginal on good/: rc=0 stdout=\"./src/Profile.tsx:1:export const Website = ({ url }: { url: string }) => <a href={safeHttpUrl(url)}>site</a>;\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-security#4026a1529f",
@@ -1160,11 +1172,12 @@
   {
    "id": "05-security#6716b9a6ba",
    "rules_file": "skills/sota-javascript-typescript/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"__proto__\" --exclude-dir=node_modules .",
    "problem": "inverted by design: the item calls a `__proto__` hit 'a good signal of awareness' (a guard or test), so the known-bad tree (no guard) prints nothing and the guarded tree prints",
    "proposed_probe": null,
-   "evidence": "cmd: grep -rn \"__proto__\" --exclude-dir=node_modules .\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=0 stdout=\"./src/merge.ts:1:const FORBIDDEN = new Set(['__proto__', 'constructor', 'prototype']);\""
+   "evidence": "cmd: grep -rn \"__proto__\" --exclude-dir=node_modules .\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=0 stdout=\"./src/merge.ts:1:const FORBIDDEN = new Set(['__proto__', 'constructor', 'prototype']);\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-security#6a7e68aefc",
@@ -1189,11 +1202,12 @@
   {
    "id": "05-security#94f3213453",
    "rules_file": "skills/sota-javascript-typescript/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -nE '\"(esbuild|webpack|rollup|postject)\"|sea-config' package.json",
    "problem": "inventory probe: the item's own correct pattern necessarily matches, so the correct near-miss is flagged (any bundler in package.json prints; the remedy, an SBOM step in CI, lives in another file the probe cannot see)",
    "proposed_probe": null,
-   "evidence": "cmd: grep -nE '\"(esbuild|webpack|rollup|postject)\"|sea-config' package.json\noriginal on bad/: rc=0 stdout=\"3:  \\\"devDependencies\\\": { \\\"esbuild\\\": \\\"^0.25.0\\\" }\"\noriginal on good/: rc=0 stdout=\"3:  \\\"devDependencies\\\": { \\\"esbuild\\\": \\\"^0.25.0\\\" },\""
+   "evidence": "cmd: grep -nE '\"(esbuild|webpack|rollup|postject)\"|sea-config' package.json\noriginal on bad/: rc=0 stdout=\"3:  \\\"devDependencies\\\": { \\\"esbuild\\\": \\\"^0.25.0\\\" }\"\noriginal on good/: rc=0 stdout=\"3:  \\\"devDependencies\\\": { \\\"esbuild\\\": \\\"^0.25.0\\\" },\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-security#b01289bfe2",
@@ -1267,11 +1281,12 @@
   {
    "id": "06-performance#3d16635561",
    "rules_file": "skills/sota-javascript-typescript/rules/06-performance.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn 'requestIdleCallback' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules .",
    "problem": "inventory probe: the item's own correct pattern necessarily matches, so the correct near-miss is flagged (any requestIdleCallback prints, including one doing invisible work such as an analytics flush)",
    "proposed_probe": null,
-   "evidence": "cmd: grep -rn 'requestIdleCallback' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules .\noriginal on bad/: rc=0 stdout=\"./src/search.ts:1:requestIdleCallback(() => { resultsEl.replaceChildren(...renderResults(query)); });\"\noriginal on good/: rc=0 stdout=\"./src/analytics.ts:1:requestIdleCallback(() => navigator.sendBeacon('/beacon', JSON.stringify(queue.splice(0))));\""
+   "evidence": "cmd: grep -rn 'requestIdleCallback' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules .\noriginal on bad/: rc=0 stdout=\"./src/search.ts:1:requestIdleCallback(() => { resultsEl.replaceChildren(...renderResults(query)); });\"\noriginal on good/: rc=0 stdout=\"./src/analytics.ts:1:requestIdleCallback(() => navigator.sendBeacon('/beacon', JSON.stringify(queue.splice(0))));\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "06-performance#50a79ac693",
@@ -1325,20 +1340,22 @@
   {
    "id": "07-testing-and-tooling#3780ecdd75",
    "rules_file": "skills/sota-javascript-typescript/rules/07-testing-and-tooling.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -nE \"'@typescript-eslint/[a-z-]+':[[:space:]]*['\\\"]?(off|0)\" eslint.config.*",
    "problem": "inventory probe: the item's own correct pattern necessarily matches, so the correct near-miss is flagged (an `'off'` inside a block whose `files` glob names tests, which the item calls correct, prints)",
    "proposed_probe": null,
-   "evidence": "cmd: grep -nE \"'@typescript-eslint/[a-z-]+':[[:space:]]*['\\\"]?(off|0)\" eslint.config.*\noriginal on bad/: rc=0 stdout=\"2:  { rules: { '@typescript-eslint/no-explicit-any': 'off' } },\"\noriginal on good/: rc=0 stdout=\"2:  { files: ['**/*.test.ts'], rules: { '@typescript-eslint/no-explicit-any': 'off' } },\""
+   "evidence": "cmd: grep -nE \"'@typescript-eslint/[a-z-]+':[[:space:]]*['\\\"]?(off|0)\" eslint.config.*\noriginal on bad/: rc=0 stdout=\"2:  { rules: { '@typescript-eslint/no-explicit-any': 'off' } },\"\noriginal on good/: rc=0 stdout=\"2:  { files: ['**/*.test.ts'], rules: { '@typescript-eslint/no-explicit-any': 'off' } },\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "07-testing-and-tooling#44a292477d",
    "rules_file": "skills/sota-javascript-typescript/rules/07-testing-and-tooling.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rlE 'export (async )?(function|const) (parse|decode|deserialize|serialize|encode)[A-Za-z]*' --include='*.ts' --include='*.js' src/",
    "problem": "inventory probe: the item's own correct pattern necessarily matches, so the correct near-miss is flagged (it lists every exported parser/serializer, including those that already have a property test)",
    "proposed_probe": null,
-   "evidence": "cmd: grep -rlE 'export (async )?(function|const) (parse|decode|deserialize|serialize|encode)[A-Za-z]*' --include='*.ts' --include='*.js' src/\noriginal on bad/: rc=0 stdout=\"src/parseHeader.ts\"\noriginal on good/: rc=0 stdout=\"src/parseHeader.ts\""
+   "evidence": "cmd: grep -rlE 'export (async )?(function|const) (parse|decode|deserialize|serialize|encode)[A-Za-z]*' --include='*.ts' --include='*.js' src/\noriginal on bad/: rc=0 stdout=\"src/parseHeader.ts\"\noriginal on good/: rc=0 stdout=\"src/parseHeader.ts\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "07-testing-and-tooling#4ef8cbeba3",
@@ -1719,11 +1736,12 @@
   {
    "id": "08-web-layer#3a41ea04b8",
    "rules_file": "skills/sota-jvm/rules/08-web-layer.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .",
    "problem": "Pure inventory: every @RequestBody/@ModelAttribute prints, including the DTO/record binding §1 recommends; whether the target is an entity is not visible to grep. No single-pipeline fix found.",
    "proposed_probe": null,
-   "evidence": "cmd: the probe run as check-probe-fixtures.py runs it (bash -c, cwd=case dir, PATH=/usr/bin:/bin, BSD grep 2.6.0; same result under ugrep 7.8.4) over trees in $SCRATCH/stageA/A03/defects/08-web-layer#3a41ea04b8/{bad,good}: [bad] rc=0 stdout=\"./src/main/java/com/example/UserController.java:10:    UserEntity save(@ModelAttribute UserEntity user) {\" | [good] rc=0 stdout=\"./src/main/java/com/example/UserController.java:17:    UserEntity save(@ModelAttribute SignupForm form) {\""
+   "evidence": "cmd: the probe run as check-probe-fixtures.py runs it (bash -c, cwd=case dir, PATH=/usr/bin:/bin, BSD grep 2.6.0; same result under ugrep 7.8.4) over trees in $SCRATCH/stageA/A03/defects/08-web-layer#3a41ea04b8/{bad,good}: [bad] rc=0 stdout=\"./src/main/java/com/example/UserController.java:10:    UserEntity save(@ModelAttribute UserEntity user) {\" | [good] rc=0 stdout=\"./src/main/java/com/example/UserController.java:17:    UserEntity save(@ModelAttribute SignupForm form) {\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "08-web-layer#568894faf0",
@@ -1808,11 +1826,12 @@
   {
    "id": "01-ml-systems-architecture#0948063af9",
    "rules_file": "skills/sota-ml-engineering/rules/01-ml-systems-architecture.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head) -> rc=0 stdout='./serve.py:1:def transform(req):\\n./train.py:1:def transform(df):' | $ (cd good && grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head) -> rc=0 stdout='./serve.py:1:from feast import FeatureStore\\n./train.py:1:from feast import FeatureStore'"
+   "evidence": "$ (cd bad && grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head) -> rc=0 stdout='./serve.py:1:def transform(req):\\n./train.py:1:def transform(df):' | $ (cd good && grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head) -> rc=0 stdout='./serve.py:1:from feast import FeatureStore\\n./train.py:1:from feast import FeatureStore'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-ml-systems-architecture#19c69a07ce",
@@ -1847,11 +1866,12 @@
   {
    "id": "02-data-and-features#60cf7ab01e",
    "rules_file": "skills/sota-ml-engineering/rules/02-data-and-features.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?) -> rc=0 stdout='./prep.py:1:X = StandardScaler().fit_transform(X)' | $ (cd good && grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?) -> rc=0 stdout='./prep.py:2:pipe = make_pipeline(StandardScaler(), LogisticRegression()).fit(X_tr, y_tr)'"
+   "evidence": "$ (cd bad && grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?) -> rc=0 stdout='./prep.py:1:X = StandardScaler().fit_transform(X)' | $ (cd good && grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?) -> rc=0 stdout='./prep.py:2:pipe = make_pipeline(StandardScaler(), LogisticRegression()).fit(X_tr, y_tr)'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-data-and-features#b6ff430e29",
@@ -1876,11 +1896,12 @@
   {
    "id": "03-training-experimentation#b7731a2a20",
    "rules_file": "skills/sota-ml-engineering/rules/03-training-experimentation.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rniE 'GridSearch|RandomizedSearch|optuna|ray.tune|hyperopt' --include='*.py' . | head",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rniE 'GridSearch|RandomizedSearch|optuna|ray.tune|hyperopt' --include='*.py' . | head) -> rc=0 stdout='./tune.py:1:GridSearchCV(model, grid).fit(X_test, y_test)' | $ (cd good && grep -rniE 'GridSearch|RandomizedSearch|optuna|ray.tune|hyperopt' --include='*.py' . | head) -> rc=0 stdout='./tune.py:1:GridSearchCV(model, grid, cv=5).fit(X_train, y_train)'"
+   "evidence": "$ (cd bad && grep -rniE 'GridSearch|RandomizedSearch|optuna|ray.tune|hyperopt' --include='*.py' . | head) -> rc=0 stdout='./tune.py:1:GridSearchCV(model, grid).fit(X_test, y_test)' | $ (cd good && grep -rniE 'GridSearch|RandomizedSearch|optuna|ray.tune|hyperopt' --include='*.py' . | head) -> rc=0 stdout='./tune.py:1:GridSearchCV(model, grid, cv=5).fit(X_train, y_train)'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-training-experimentation#fe772c4d99",
@@ -1915,29 +1936,32 @@
   {
    "id": "04-evaluation-validation#78fae7b132",
    "rules_file": "skills/sota-ml-engineering/rules/04-evaluation-validation.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '(quantile|percentile)\\(' --include='*.py' .",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rnE '(quantile|percentile)\\(' --include='*.py' .) -> rc=0 stdout='./thr.py:1:threshold = np.quantile(model.predict_proba(X_train)[:, 1], 0.99)' | $ (cd good && grep -rnE '(quantile|percentile)\\(' --include='*.py' .) -> rc=0 stdout='./thr.py:1:threshold = np.quantile(oof_scores, 0.99)  # out-of-fold'"
+   "evidence": "$ (cd bad && grep -rnE '(quantile|percentile)\\(' --include='*.py' .) -> rc=0 stdout='./thr.py:1:threshold = np.quantile(model.predict_proba(X_train)[:, 1], 0.99)' | $ (cd good && grep -rnE '(quantile|percentile)\\(' --include='*.py' .) -> rc=0 stdout='./thr.py:1:threshold = np.quantile(oof_scores, 0.99)  # out-of-fold'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "04-evaluation-validation#8fc3a0571f",
    "rules_file": "skills/sota-ml-engineering/rules/04-evaluation-validation.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .) -> rc=0 stdout='./compress.py' | $ (cd good && grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .) -> rc=0 stdout='./compress.py'"
+   "evidence": "$ (cd bad && grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .) -> rc=0 stdout='./compress.py' | $ (cd good && grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .) -> rc=0 stdout='./compress.py'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "04-evaluation-validation#e74c283fbe",
    "rules_file": "skills/sota-ml-engineering/rules/04-evaluation-validation.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head) -> rc=0 stdout='./eval.py:1:print(accuracy_score(y, p))' | $ (cd good && grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head) -> rc=0 stdout='./eval.py:1:assert f1_score(y, p_new) >= f1_score(y, p_prod) - 0.01  # vs current prod and baseline'"
+   "evidence": "$ (cd bad && grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head) -> rc=0 stdout='./eval.py:1:print(accuracy_score(y, p))' | $ (cd good && grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head) -> rc=0 stdout='./eval.py:1:assert f1_score(y, p_new) >= f1_score(y, p_prod) - 0.01  # vs current prod and baseline'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-deployment-serving#0a63bd1ed8",
@@ -1962,11 +1986,12 @@
   {
    "id": "05-deployment-serving#37ec8600c6",
    "rules_file": "skills/sota-ml-engineering/rules/05-deployment-serving.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rniE 'predict|inference|serve' --include='*.py' . | head",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rniE 'predict|inference|serve' --include='*.py' . | head) -> rc=0 stdout=\"./serve.py:1:def predict(req):\\n./serve.py:2:    return MODEL.predict([req['amount'] / 100.0])\" | $ (cd good && grep -rniE 'predict|inference|serve' --include='*.py' . | head) -> rc=0 stdout='./serve.py:2:def predict(req):\\n./serve.py:3:    return MODEL.predict(build_features(req))'"
+   "evidence": "$ (cd bad && grep -rniE 'predict|inference|serve' --include='*.py' . | head) -> rc=0 stdout=\"./serve.py:1:def predict(req):\\n./serve.py:2:    return MODEL.predict([req['amount'] / 100.0])\" | $ (cd good && grep -rniE 'predict|inference|serve' --include='*.py' . | head) -> rc=0 stdout='./serve.py:2:def predict(req):\\n./serve.py:3:    return MODEL.predict(build_features(req))'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-deployment-serving#61a712a117",
@@ -2021,11 +2046,12 @@
   {
    "id": "07-security-governance#279bb83ebf",
    "rules_file": "skills/sota-ml-engineering/rules/07-security-governance.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head) -> rc=0 stdout=\"./api.py:1:return {'proba': MODEL.predict_proba(x).tolist()}\" | $ (cd good && grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head) -> rc=0 stdout=\"./api.py:1:@rate_limit('100/min')\""
+   "evidence": "$ (cd bad && grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head) -> rc=0 stdout=\"./api.py:1:return {'proba': MODEL.predict_proba(x).tolist()}\" | $ (cd good && grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head) -> rc=0 stdout=\"./api.py:1:@rate_limit('100/min')\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "07-security-governance#718449567e",
@@ -2080,11 +2106,12 @@
   {
    "id": "07-security-governance#fd3e2c9f5f",
    "rules_file": "skills/sota-ml-engineering/rules/07-security-governance.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'load_adapter\\(|PeftModel\\.from_pretrained\\(' --include='*.py' .",
    "problem": "a locator: it lists every site using the vocabulary, and the item's correct pattern uses the same vocabulary, so the correct near-miss is flagged exactly like the defect; the finding is a manual read, not a probe result",
    "proposed_probe": null,
-   "evidence": "$ (cd bad && grep -rnE 'load_adapter\\(|PeftModel\\.from_pretrained\\(' --include='*.py' .) -> rc=0 stdout='./load.py:1:model = PeftModel.from_pretrained(base, adapter_dir)' | $ (cd good && grep -rnE 'load_adapter\\(|PeftModel\\.from_pretrained\\(' --include='*.py' .) -> rc=0 stdout='./load.py:2:model = PeftModel.from_pretrained(base, adapter_dir)'"
+   "evidence": "$ (cd bad && grep -rnE 'load_adapter\\(|PeftModel\\.from_pretrained\\(' --include='*.py' .) -> rc=0 stdout='./load.py:1:model = PeftModel.from_pretrained(base, adapter_dir)' | $ (cd good && grep -rnE 'load_adapter\\(|PeftModel\\.from_pretrained\\(' --include='*.py' .) -> rc=0 stdout='./load.py:2:model = PeftModel.from_pretrained(base, adapter_dir)'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "07-security-governance#feaf2844e2",
@@ -2109,11 +2136,12 @@
   {
    "id": "03-memory#c104019c1b",
    "rules_file": "skills/sota-performance/rules/03-memory.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'talloc|apr_pool|bumpalo|typed_arena|ArrayPool|arena' --include='*.c' --include='*.h' --include='*.cpp' --include='*.rs' --include='*.cs' .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. An arena with a request-scoped lifetime (the recommended use) prints the same as a leaking one.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree: bumpalo arena local to one fn, nothing escapes -> prints 'use bumpalo::Bump;' and 'let arena = Bump::new();'."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree: bumpalo arena local to one fn, nothing escapes -> prints 'use bumpalo::Bump;' and 'let arena = Bump::new();'.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-language-baseline#495e821321",
@@ -2148,11 +2176,12 @@
   {
    "id": "01-language-baseline#d0b7417044",
    "rules_file": "skills/sota-php/rules/01-language-baseline.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn 'interface ' --include='*.php' src/",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; lists every interface; the BC finding (a method added to a released interface) is diff-based (the item's own `git diff <tag>..HEAD` span), so no tree-only probe can separate bad from good. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/01-language-baseline_d0b7417044/bad [both greps]: rc=0 stdout=\"src/Billing/PaymentGateway.php:7:interface PaymentGateway\"\nprobe on A05-tmp/01-language-baseline_d0b7417044/good [both greps]: rc=0 stdout=\"src/Billing/PaymentGateway.php:7:interface PaymentGateway\\nsrc/Billing/RefundingGateway.php:7:interface RefundingGateway extends PaymentGateway\""
+   "evidence": "probe on A05-tmp/01-language-baseline_d0b7417044/bad [both greps]: rc=0 stdout=\"src/Billing/PaymentGateway.php:7:interface PaymentGateway\"\nprobe on A05-tmp/01-language-baseline_d0b7417044/good [both greps]: rc=0 stdout=\"src/Billing/PaymentGateway.php:7:interface PaymentGateway\\nsrc/Billing/RefundingGateway.php:7:interface RefundingGateway extends PaymentGateway\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-language-baseline#d131bd4bfb",
@@ -2217,11 +2246,12 @@
   {
    "id": "02-injection#7f1a552956",
    "rules_file": "skills/sota-php/rules/02-injection.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'ldap_(bind|search|list|read)[[:space:]]*\\(' --include='*.php' src/",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; the item's question is whether the password is checked non-empty BEFORE ldap_bind; the guarded bind is printed identically. Needs multi-line context; no proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/02-injection_7f1a552956/bad [both greps]: rc=0 stdout=\"src/Auth/LdapLogin.php:11:        return ldap_bind($c, $dn, $pw);\"\nprobe on A05-tmp/02-injection_7f1a552956/good [both greps]: rc=0 stdout=\"src/Auth/LdapLogin.php:14:        return ldap_bind($c, $dn, $pw);\""
+   "evidence": "probe on A05-tmp/02-injection_7f1a552956/bad [both greps]: rc=0 stdout=\"src/Auth/LdapLogin.php:11:        return ldap_bind($c, $dn, $pw);\"\nprobe on A05-tmp/02-injection_7f1a552956/good [both greps]: rc=0 stdout=\"src/Auth/LdapLogin.php:14:        return ldap_bind($c, $dn, $pw);\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-injection#9aed447c1e",
@@ -2256,29 +2286,32 @@
   {
    "id": "03-files-deserialization-ssrf#27f02e13a7",
    "rules_file": "skills/sota-php/rules/03-files-deserialization-ssrf.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '\\\\?FFI::(cdef|load|scope|new)' --include='*.php' .",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; §6's correct pattern (FFI loaded from a preload script, `FFI::scope()` at request time, ffi.enable=preload) is printed; the finding is ffi.enable=true, which probe d60ed06d69 already catches. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/03-files-deserialization-ssrf_27f02e13a7/bad [both greps]: rc=0 stdout=\"./src/Native/Hasher.php:11:        $ffi = \\\\FFI::cdef('uint32_t xxh32(const char *p, size_t n, uint32_t s);', 'libxxhash.so');\"\nprobe on A05-tmp/03-files-deserialization-ssrf_27f02e13a7/good [both greps]: rc=0 stdout=\"./preload.php:2:\\\\FFI::load(__DIR__ . '/native/xxhash.h');\\n./src/Native/Hasher.php:11:        $ffi = \\\\FFI::scope('XXHASH');\""
+   "evidence": "probe on A05-tmp/03-files-deserialization-ssrf_27f02e13a7/bad [both greps]: rc=0 stdout=\"./src/Native/Hasher.php:11:        $ffi = \\\\FFI::cdef('uint32_t xxh32(const char *p, size_t n, uint32_t s);', 'libxxhash.so');\"\nprobe on A05-tmp/03-files-deserialization-ssrf_27f02e13a7/good [both greps]: rc=0 stdout=\"./preload.php:2:\\\\FFI::load(__DIR__ . '/native/xxhash.h');\\n./src/Native/Hasher.php:11:        $ffi = \\\\FFI::scope('XXHASH');\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-files-deserialization-ssrf#2a17312fe0",
    "rules_file": "skills/sota-php/rules/03-files-deserialization-ssrf.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE -e '->extractTo[[:space:]]*\\(|new[[:space:]]+\\\\?(ZipArchive|PharData)' --include='*.php' --exclude-dir=vendor .",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; §1's correct extraction (entry names and count checked, then extractTo) is printed identically; the check lives on other lines. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/03-files-deserialization-ssrf_2a17312fe0/bad [both greps]: rc=0 stdout=\"./src/Import/ZipImport.php:11:        $z = new \\\\ZipArchive();\\n./src/Import/ZipImport.php:13:        $z->extractTo($dest);\"\nprobe on A05-tmp/03-files-deserialization-ssrf_2a17312fe0/good [both greps]: rc=0 stdout=\"./src/Import/ZipImport.php:11:        $z = new \\\\ZipArchive();\\n./src/Import/ZipImport.php:22:        $z->extractTo($dest);\""
+   "evidence": "probe on A05-tmp/03-files-deserialization-ssrf_2a17312fe0/bad [both greps]: rc=0 stdout=\"./src/Import/ZipImport.php:11:        $z = new \\\\ZipArchive();\\n./src/Import/ZipImport.php:13:        $z->extractTo($dest);\"\nprobe on A05-tmp/03-files-deserialization-ssrf_2a17312fe0/good [both greps]: rc=0 stdout=\"./src/Import/ZipImport.php:11:        $z = new \\\\ZipArchive();\\n./src/Import/ZipImport.php:22:        $z->extractTo($dest);\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-files-deserialization-ssrf#2de89465a4",
    "rules_file": "skills/sota-php/rules/03-files-deserialization-ssrf.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '__(destruct|wakeup|toString)' --include='*.php' src/",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; 'gadget surface inventory' by design: every magic method is printed, a safe one included; there is no bad/good distinction to prove. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/03-files-deserialization-ssrf_2de89465a4/bad [both greps]: rc=0 stdout=\"src/Cache/TempFile.php:9:    public function __destruct()\"\nprobe on A05-tmp/03-files-deserialization-ssrf_2de89465a4/good [both greps]: rc=0 stdout=\"src/Cache/TempFile.php:9:    public function __destruct()\""
+   "evidence": "probe on A05-tmp/03-files-deserialization-ssrf_2de89465a4/bad [both greps]: rc=0 stdout=\"src/Cache/TempFile.php:9:    public function __destruct()\"\nprobe on A05-tmp/03-files-deserialization-ssrf_2de89465a4/good [both greps]: rc=0 stdout=\"src/Cache/TempFile.php:9:    public function __destruct()\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-files-deserialization-ssrf#9b02abbd2c",
@@ -2343,20 +2376,22 @@
   {
    "id": "04-sessions-auth-web-hardening#0d5c92dbc5",
    "rules_file": "skills/sota-php/rules/04-sessions-auth-web-hardening.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn 'sodium_crypto' --include='*.php' src/",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; lists the RECOMMENDED primitive (§3 'sodium first'); a tree using it is printed, a tree without it is not. No finding to prove; the cbc/ecb probe bb2b2248a6 is the detector. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/04-sessions-auth-web-hardening_0d5c92dbc5/bad [both greps]: rc=1 stdout=<empty>\nprobe on A05-tmp/04-sessions-auth-web-hardening_0d5c92dbc5/good [both greps]: rc=0 stdout=\"src/Crypto/Box.php:12:        return $nonce . sodium_crypto_secretbox($msg, $nonce, $key);\""
+   "evidence": "probe on A05-tmp/04-sessions-auth-web-hardening_0d5c92dbc5/bad [both greps]: rc=1 stdout=<empty>\nprobe on A05-tmp/04-sessions-auth-web-hardening_0d5c92dbc5/good [both greps]: rc=0 stdout=\"src/Crypto/Box.php:12:        return $nonce . sodium_crypto_secretbox($msg, $nonce, $key);\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "04-sessions-auth-web-hardening#2ac2ccd7fe",
    "rules_file": "skills/sota-php/rules/04-sessions-auth-web-hardening.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn 'hash_equals' --include='*.php' src/",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; lists the RECOMMENDED comparison (hash_equals); the finding probe is b0570bc421. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/04-sessions-auth-web-hardening_2ac2ccd7fe/bad [both greps]: rc=1 stdout=<empty>\nprobe on A05-tmp/04-sessions-auth-web-hardening_2ac2ccd7fe/good [both greps]: rc=0 stdout=\"src/Http/CsrfGuard.php:11:        return hash_equals((string) $_SESSION['csrf_token'], $sent);\""
+   "evidence": "probe on A05-tmp/04-sessions-auth-web-hardening_2ac2ccd7fe/bad [both greps]: rc=1 stdout=<empty>\nprobe on A05-tmp/04-sessions-auth-web-hardening_2ac2ccd7fe/good [both greps]: rc=0 stdout=\"src/Http/CsrfGuard.php:11:        return hash_equals((string) $_SESSION['csrf_token'], $sent);\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "04-sessions-auth-web-hardening#3d2c2a6c5f",
@@ -2391,11 +2426,12 @@
   {
    "id": "04-sessions-auth-web-hardening#73c2c89f18",
    "rules_file": "skills/sota-php/rules/04-sessions-auth-web-hardening.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn 'password_hash' --include='*.php' src/",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; lists the RECOMMENDED API (password_hash); a homemade hash is not printed. The md5/sha1 probe 2eaee18e98 is the detector. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/04-sessions-auth-web-hardening_73c2c89f18/bad [both greps]: rc=1 stdout=<empty>\nprobe on A05-tmp/04-sessions-auth-web-hardening_73c2c89f18/good [both greps]: rc=0 stdout=\"src/Auth/Registrar.php:11:        return password_hash($password, PASSWORD_DEFAULT);\""
+   "evidence": "probe on A05-tmp/04-sessions-auth-web-hardening_73c2c89f18/bad [both greps]: rc=1 stdout=<empty>\nprobe on A05-tmp/04-sessions-auth-web-hardening_73c2c89f18/good [both greps]: rc=0 stdout=\"src/Auth/Registrar.php:11:        return password_hash($password, PASSWORD_DEFAULT);\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "04-sessions-auth-web-hardening#b77d663d9b",
@@ -2520,11 +2556,12 @@
   {
    "id": "06-performance-runtime#30d8ecd989",
    "rules_file": "skills/sota-php/rules/06-performance-runtime.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '(curl_exec|file_get_contents\\s*\\(\\s*.http)' --include='*.php' src/",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; item: '(HTTP in loops?)', but a single batched call outside any loop is printed identically; the loop is on another line. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/06-performance-runtime_30d8ecd989/bad [both greps]: rc=0 stdout=\"src/Shipping/Rates.php:15:            $out[$sku] = curl_exec($ch);\"\nprobe on A05-tmp/06-performance-runtime_30d8ecd989/good [both greps]: rc=0 stdout=\"src/Shipping/Rates.php:13:        return (array) json_decode((string) curl_exec($ch), true);\""
+   "evidence": "probe on A05-tmp/06-performance-runtime_30d8ecd989/bad [both greps]: rc=0 stdout=\"src/Shipping/Rates.php:15:            $out[$sku] = curl_exec($ch);\"\nprobe on A05-tmp/06-performance-runtime_30d8ecd989/good [both greps]: rc=0 stdout=\"src/Shipping/Rates.php:13:        return (array) json_decode((string) curl_exec($ch), true);\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): rewritten to detect as 06-performance-runtime#3b4762e6ed, proven on BSD and GNU grep."
   },
   {
    "id": "06-performance-runtime#47cc3356e8",
@@ -2549,11 +2586,12 @@
   {
    "id": "06-performance-runtime#cc35aef71c",
    "rules_file": "skills/sota-php/rules/06-performance-runtime.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn 'fetchAll' --include='*.php' src/",
    "problem": "inventory probe: the checklist item's own correct pattern contains the grepped token, so the known-good near-miss is flagged; item: '(unbounded result sets?)', but a LIMITed keyset page's fetchAll is printed identically; the bound is in the SQL on another line. No proposal.",
    "proposed_probe": null,
-   "evidence": "probe on A05-tmp/06-performance-runtime_cc35aef71c/bad [both greps]: rc=0 stdout=\"src/Repo/AuditRepo.php:11:        return $db->query('SELECT * FROM audit_log')->fetchAll();\"\nprobe on A05-tmp/06-performance-runtime_cc35aef71c/good [both greps]: rc=0 stdout=\"src/Repo/AuditRepo.php:13:        return $st->fetchAll();\""
+   "evidence": "probe on A05-tmp/06-performance-runtime_cc35aef71c/bad [both greps]: rc=0 stdout=\"src/Repo/AuditRepo.php:11:        return $db->query('SELECT * FROM audit_log')->fetchAll();\"\nprobe on A05-tmp/06-performance-runtime_cc35aef71c/good [both greps]: rc=0 stdout=\"src/Repo/AuditRepo.php:13:        return $st->fetchAll();\"",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "06-performance-runtime#ccc39fb4d2",
@@ -2588,20 +2626,22 @@
   {
    "id": "02-privacy-by-design#175bc76ee7",
    "rules_file": "skills/sota-privacy-compliance/rules/02-privacy-by-design.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE \"toDataURL\\(|UNMASKED_RENDERER_WEBGL|WEBGL_debug_renderer_info|@fingerprintjs|FingerprintJS\" .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. Fingerprinting that is inventoried and consent-gated (the item's requirement) prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree consent-gated FingerprintJS on the login flow -> prints 2 lines."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree consent-gated FingerprintJS on the login flow -> prints 2 lines.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-privacy-by-design#f36a2cea06",
    "rules_file": "skills/sota-privacy-compliance/rules/02-privacy-by-design.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE \"(innerHTML|dangerouslySetInnerHTML|v-html)[^;]*(mail|message)[A-Za-z_.]*(html|body)\" .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. ('each hit must show the remote-content rewrite or proxy'): the proxied render prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `el.innerHTML = proxyRemoteImages(sanitize(message.bodyHtml))` -> prints."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `el.innerHTML = proxyRemoteImages(sanitize(message.bodyHtml))` -> prints.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-consent-and-user-rights#62dc114c90",
@@ -2616,20 +2656,22 @@
   {
    "id": "05-audit-ready-engineering#3bec6e4692",
    "rules_file": "skills/sota-privacy-compliance/rules/05-audit-ready-engineering.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE \"<script[^>]+src=[\\\"']?(https?:)?//\" .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. An inventory of third-party served scripts; one with a registry entry, SRI and supplier terms prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `<script src=\"https://cdn.vendor.example/chat-widget.js\" integrity=\"sha384-...\">` -> prints."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `<script src=\"https://cdn.vendor.example/chat-widget.js\" integrity=\"sha384-...\">` -> prints.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "06-incident-breach-readiness#df130790b1",
    "rules_file": "skills/sota-privacy-compliance/rules/06-incident-breach-readiness.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE \"(analytics|telemetry|posthog|mixpanel|segment)\\.(identify|track|capture)\\(\" .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. ('direct emitter calls to review for a consent guard'): a guarded call prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `if (await consent.allows('analytics')) analytics.identify(user.id);` -> prints."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `if (await consent.allows('analytics')) analytics.identify(user.id);` -> prints.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-tooling-project-setup#091cc97d97",
@@ -2674,11 +2716,12 @@
   {
    "id": "01-tooling-project-setup#c0790daf25",
    "rules_file": "skills/sota-python/rules/01-tooling-project-setup.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -n \"requires-python\" pyproject.toml",
    "problem": "Inventory: prints requires-python for every project; the finding (floor below the syntax used) needs the other half of the item, so a correct floor prints exactly like a wrong one.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/01-tooling-project-setup_c0790daf25/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='4:requires-python = \">=3.10\"'; good: rc=0 stdout='4:requires-python = \">=3.12\"' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='4:requires-python = \">=3.10\"'; good: rc=0 stdout='4:requires-python = \">=3.12\"'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/01-tooling-project-setup_c0790daf25/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='4:requires-python = \">=3.10\"'; good: rc=0 stdout='4:requires-python = \">=3.12\"' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='4:requires-python = \">=3.10\"'; good: rc=0 stdout='4:requires-python = \">=3.12\"'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-tooling-project-setup#c435dd33ed",
@@ -2703,11 +2746,12 @@
   {
    "id": "02-typing-correctness#1ad05d9040",
    "rules_file": "skills/sota-python/rules/02-typing-correctness.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'except[[:space:]]+\\(?[A-Za-z_.]*ValidationError' --include='*.py' --exclude-dir=.venv .",
    "problem": "Read-each lead: the correct handler (an `except ValidationError` that returns field paths) matches exactly like the vague-500 one; no grep can tell them apart.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/02-typing-correctness_1ad05d9040/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='./src/app/api.py:7:    except ValidationError:'; good: rc=0 stdout='./src/app/api.py:7:    except ValidationError as e:' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='./src/app/api.py:7:    except ValidationError:'; good: rc=0 stdout='./src/app/api.py:7:    except ValidationError as e:'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/02-typing-correctness_1ad05d9040/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='./src/app/api.py:7:    except ValidationError:'; good: rc=0 stdout='./src/app/api.py:7:    except ValidationError as e:' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='./src/app/api.py:7:    except ValidationError:'; good: rc=0 stdout='./src/app/api.py:7:    except ValidationError as e:'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-typing-correctness#2885116e28",
@@ -2732,11 +2776,12 @@
   {
    "id": "02-typing-correctness#ed9db8941a",
    "rules_file": "skills/sota-python/rules/02-typing-correctness.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"model_validate\\|TypeAdapter\" --include=\"*.py\" src/",
    "problem": "Inventory: lists every model_validate/TypeAdapter, and the correct layering (validation at the edge) is exactly such a call; nothing distinguishes edge from core.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/02-typing-correctness_ed9db8941a/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/core.py:2:    o = Order.model_validate(order)'; good: rc=0 stdout='src/app/api.py:2:    return service.create(Order.model_validate_json(body))' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/core.py:2:    o = Order.model_validate(order)'; good: rc=0 stdout='src/app/api.py:2:    return service.create(Order.model_validate_json(body))'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/02-typing-correctness_ed9db8941a/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/core.py:2:    o = Order.model_validate(order)'; good: rc=0 stdout='src/app/api.py:2:    return service.create(Order.model_validate_json(body))' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/core.py:2:    o = Order.model_validate(order)'; good: rc=0 stdout='src/app/api.py:2:    return service.create(Order.model_validate_json(body))'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-idioms-pitfalls#36b490b8e7",
@@ -2771,11 +2816,12 @@
   {
    "id": "03-idioms-pitfalls#91848a49a0",
    "rules_file": "skills/sota-python/rules/03-idioms-pitfalls.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'json\\.loads?\\(' --include='*.py' src/",
    "problem": "Read-each lead: the correct code (a body-size cap, then json.loads) still calls json.loads, so it prints exactly like the uncapped one.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/03-idioms-pitfalls_91848a49a0/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/api.py:5:    return json.loads(request.body)'; good: rc=0 stdout='src/app/api.py:9:    return json.loads(request.body)' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/api.py:5:    return json.loads(request.body)'; good: rc=0 stdout='src/app/api.py:9:    return json.loads(request.body)'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/03-idioms-pitfalls_91848a49a0/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/api.py:5:    return json.loads(request.body)'; good: rc=0 stdout='src/app/api.py:9:    return json.loads(request.body)' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/api.py:5:    return json.loads(request.body)'; good: rc=0 stdout='src/app/api.py:9:    return json.loads(request.body)'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-idioms-pitfalls#aa152617b9",
@@ -2830,11 +2876,12 @@
   {
    "id": "04-async#8e5a9c68fb",
    "rules_file": "skills/sota-python/rules/04-async.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"asyncio_mode\" pyproject.toml setup.cfg 2>/dev/null",
    "problem": "Inventory of pytest-asyncio config (prints asyncio_mode whatever its value) and rc 2 unless both pyproject.toml and setup.cfg exist.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/04-async_8e5a9c68fb/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=2 stdout='pyproject.toml:7:asyncio_mode = \"auto\"'; good: rc=2 stdout='pyproject.toml:7:asyncio_mode = \"strict\"' || GNU grep 3.11 (podman python:3-slim): bad: rc=2 stdout='pyproject.toml:7:asyncio_mode = \"auto\"'; good: rc=2 stdout='pyproject.toml:7:asyncio_mode = \"strict\"'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/04-async_8e5a9c68fb/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=2 stdout='pyproject.toml:7:asyncio_mode = \"auto\"'; good: rc=2 stdout='pyproject.toml:7:asyncio_mode = \"strict\"' || GNU grep 3.11 (podman python:3-slim): bad: rc=2 stdout='pyproject.toml:7:asyncio_mode = \"auto\"'; good: rc=2 stdout='pyproject.toml:7:asyncio_mode = \"strict\"'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): rewritten to detect as 04-async#c8677dd708, proven on BSD and GNU grep."
   },
   {
    "id": "04-async#c64a275ecb",
@@ -2879,38 +2926,42 @@
   {
    "id": "05-security#57720fbd32",
    "rules_file": "skills/sota-python/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"request.*filename\\|\\.filename\" --include=\"*.py\" src/",
    "problem": "Read-each lead: `secure_filename(f.filename)` plus a containment check (the fix) matches `.filename` exactly like the raw join.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_57720fbd32/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/upload.py:5:    f.save(os.path.join(\"/srv/uploads\", f.filename))'; good: rc=0 stdout='src/app/upload.py:9:    dest = (ROOT / secure_filename(f.filename)).resolve()' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/upload.py:5:    f.save(os.path.join(\"/srv/uploads\", f.filename))'; good: rc=0 stdout='src/app/upload.py:9:    dest = (ROOT / secure_filename(f.filename)).resolve()'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_57720fbd32/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/upload.py:5:    f.save(os.path.join(\"/srv/uploads\", f.filename))'; good: rc=0 stdout='src/app/upload.py:9:    dest = (ROOT / secure_filename(f.filename)).resolve()' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/upload.py:5:    f.save(os.path.join(\"/srv/uploads\", f.filename))'; good: rc=0 stdout='src/app/upload.py:9:    dest = (ROOT / secure_filename(f.filename)).resolve()'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-security#586b53275d",
    "rules_file": "skills/sota-python/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"webbrowser.open\" --include=\"*.py\" src/",
    "problem": "Read-each lead: a constant documentation URL (safe) matches exactly like a user-influenced one.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_586b53275d/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/cli.py:5:    webbrowser.open(msg.link)'; good: rc=0 stdout='src/app/cli.py:7:    webbrowser.open(DOCS)' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/cli.py:5:    webbrowser.open(msg.link)'; good: rc=0 stdout='src/app/cli.py:7:    webbrowser.open(DOCS)'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_586b53275d/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/cli.py:5:    webbrowser.open(msg.link)'; good: rc=0 stdout='src/app/cli.py:7:    webbrowser.open(DOCS)' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/cli.py:5:    webbrowser.open(msg.link)'; good: rc=0 stdout='src/app/cli.py:7:    webbrowser.open(DOCS)'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): rewritten to detect as 05-security#459213027c, proven on BSD and GNU grep."
   },
   {
    "id": "05-security#6d5a3ebc38",
    "rules_file": "skills/sota-python/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"zlib.decompress\\|Image.open\" --include=\"*.py\" src/",
    "problem": "Flags the fix: the bounded form `zlib.decompressobj().decompress(data, max_length)` contains `zlib.decompress`, and a capped `Image.open` after `MAX_IMAGE_PIXELS` still matches.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_6d5a3ebc38/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/inflate.py:5:    return zlib.decompress(data)'; good: rc=0 stdout='src/app/inflate.py:7:    d = zlib.decompressobj()' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/inflate.py:5:    return zlib.decompress(data)'; good: rc=0 stdout='src/app/inflate.py:7:    d = zlib.decompressobj()'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_6d5a3ebc38/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/inflate.py:5:    return zlib.decompress(data)'; good: rc=0 stdout='src/app/inflate.py:7:    d = zlib.decompressobj()' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/inflate.py:5:    return zlib.decompress(data)'; good: rc=0 stdout='src/app/inflate.py:7:    d = zlib.decompressobj()'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): rewritten to detect as 05-security#548ac1f4d5, proven on BSD and GNU grep."
   },
   {
    "id": "05-security#7c59014ea6",
    "rules_file": "skills/sota-python/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"get(url\\|get(request\\.\\|urlopen(\" --include=\"*.py\" src/ | head",
    "problem": "Read-each lead keyed on a variable name: a fetch of a validated, allow-listed url matches `get(url` exactly like an unchecked one.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_7c59014ea6/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/preview.py:5:    return httpx.get(url, timeout=5).text'; good: rc=0 stdout='src/app/preview.py:3:    return client.get(url).text' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/preview.py:5:    return httpx.get(url, timeout=5).text'; good: rc=0 stdout='src/app/preview.py:3:    return client.get(url).text'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_7c59014ea6/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/preview.py:5:    return httpx.get(url, timeout=5).text'; good: rc=0 stdout='src/app/preview.py:3:    return client.get(url).text' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/preview.py:5:    return httpx.get(url, timeout=5).text'; good: rc=0 stdout='src/app/preview.py:3:    return client.get(url).text'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-security#85e8747a12",
@@ -2925,11 +2976,12 @@
   {
    "id": "05-security#9489b1208c",
    "rules_file": "skills/sota-python/rules/05-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE '(^|[^A-Za-z_])I?LIKE[[:space:]]|\\.i?like\\(' --include='*.py' --exclude-dir=.venv .",
    "problem": "Read-each lead: the correct LIKE (wildcards escaped before binding) matches exactly like the unescaped one.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_9489b1208c/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='./src/app/repo.py:2:    cur.execute(\"SELECT * FROM book WHERE title LIKE %s\", (f\"%{term}%\",))'; good: rc=0 stdout='./src/app/repo.py:3:    cur.execute(\"SELECT * FROM book WHERE title LIKE %s ESCAPE \\'\\\\\\\\\\'\", (f\"%{esc}%\",))' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='./src/app/repo.py:2:    cur.execute(\"SELECT * FROM book WHERE title LIKE %s\", (f\"%{term}%\",))'; good: rc=0 stdout='./src/app/repo.py:3:    cur.execute(\"SELECT * FROM book WHERE title LIKE %s ESCAPE \\'\\\\\\\\\\'\", (f\"%{esc}%\",))'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/05-security_9489b1208c/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='./src/app/repo.py:2:    cur.execute(\"SELECT * FROM book WHERE title LIKE %s\", (f\"%{term}%\",))'; good: rc=0 stdout='./src/app/repo.py:3:    cur.execute(\"SELECT * FROM book WHERE title LIKE %s ESCAPE \\'\\\\\\\\\\'\", (f\"%{esc}%\",))' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='./src/app/repo.py:2:    cur.execute(\"SELECT * FROM book WHERE title LIKE %s\", (f\"%{term}%\",))'; good: rc=0 stdout='./src/app/repo.py:3:    cur.execute(\"SELECT * FROM book WHERE title LIKE %s ESCAPE \\'\\\\\\\\\\'\", (f\"%{esc}%\",))'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): rewritten to detect as 05-security#a761d749a4, proven on BSD and GNU grep."
   },
   {
    "id": "05-security#a72c55531a",
@@ -2974,11 +3026,12 @@
   {
    "id": "06-performance#678e823b5d",
    "rules_file": "skills/sota-python/rules/06-performance.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"multiprocessing\\|ProcessPoolExecutor\" --include=\"*.py\" src/ | head",
    "problem": "Inventory: lists every multiprocessing/ProcessPoolExecutor use; correct CPU-bound use prints exactly like a misuse.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/06-performance_678e823b5d/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/batch.py:1:from multiprocessing import Pool'; good: rc=0 stdout='src/app/batch.py:1:from concurrent.futures import ProcessPoolExecutor\\nsrc/app/batch.py:5:    with ProcessPoolExecutor() as pool:' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/batch.py:1:from multiprocessing import Pool'; good: rc=0 stdout='src/app/batch.py:1:from concurrent.futures import ProcessPoolExecutor\\nsrc/app/batch.py:5:    with ProcessPoolExecutor() as pool:'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/06-performance_678e823b5d/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/batch.py:1:from multiprocessing import Pool'; good: rc=0 stdout='src/app/batch.py:1:from concurrent.futures import ProcessPoolExecutor\\nsrc/app/batch.py:5:    with ProcessPoolExecutor() as pool:' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/batch.py:1:from multiprocessing import Pool'; good: rc=0 stdout='src/app/batch.py:1:from concurrent.futures import ProcessPoolExecutor\\nsrc/app/batch.py:5:    with ProcessPoolExecutor() as pool:'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "06-performance#946a28b8fa",
@@ -3013,20 +3066,22 @@
   {
    "id": "07-frameworks-testing#987f7639e8",
    "rules_file": "skills/sota-python/rules/07-frameworks-testing.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"scope=\\\"session\\\"\\|scope=\\\"module\\\"\" --include=\"*.py\" tests/ conftest.py 2>/dev/null",
    "problem": "rc 2 when conftest.py lives in tests/ (the usual place) because the root conftest.py operand is missing; and a read-each lead: an immutable session fixture matches like a mutable one.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/07-frameworks-testing_987f7639e8/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=2 stdout='tests/conftest.py:4:@pytest.fixture(scope=\"session\")'; good: rc=2 stdout='tests/conftest.py:4:@pytest.fixture(scope=\"session\")' || GNU grep 3.11 (podman python:3-slim): bad: rc=2 stdout='tests/conftest.py:4:@pytest.fixture(scope=\"session\")'; good: rc=2 stdout='tests/conftest.py:4:@pytest.fixture(scope=\"session\")'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/07-frameworks-testing_987f7639e8/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=2 stdout='tests/conftest.py:4:@pytest.fixture(scope=\"session\")'; good: rc=2 stdout='tests/conftest.py:4:@pytest.fixture(scope=\"session\")' || GNU grep 3.11 (podman python:3-slim): bad: rc=2 stdout='tests/conftest.py:4:@pytest.fixture(scope=\"session\")'; good: rc=2 stdout='tests/conftest.py:4:@pytest.fixture(scope=\"session\")'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): rewritten to detect as 07-frameworks-testing#aed75aea16, proven on BSD and GNU grep."
   },
   {
    "id": "07-frameworks-testing#b17d120cf6",
    "rules_file": "skills/sota-python/rules/07-frameworks-testing.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"async def\" $(grep -rln \"APIRouter\\|FastAPI\" --include=\"*.py\" src/) | head",
    "problem": "Inventory: lists every async def in FastAPI modules; the correct non-blocking handler prints exactly like a blocking one.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/07-frameworks-testing_b17d120cf6/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/api.py:9:async def x():'; good: rc=0 stdout='src/app/api.py:9:async def x():' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='9:async def x():'; good: rc=0 stdout='9:async def x():'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/07-frameworks-testing_b17d120cf6/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/api.py:9:async def x():'; good: rc=0 stdout='src/app/api.py:9:async def x():' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='9:async def x():'; good: rc=0 stdout='9:async def x():'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "07-frameworks-testing#c5440c1b28",
@@ -3061,11 +3116,12 @@
   {
    "id": "08-supply-chain#dbfb2a518d",
    "rules_file": "skills/sota-python/rules/08-supply-chain.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn \"nosec\\|noqa: S\" --include=\"*.py\" src/",
    "problem": "Read-each lead: a justified `# nosec B603 - reason` matches exactly like an unjustified one; the bare case is already 8387130cbc's job.",
    "proposed_probe": null,
-   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/08-supply-chain_dbfb2a518d/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/run.py:1:import subprocess  # nosec'; good: rc=0 stdout='src/app/run.py:1:import subprocess  # nosec B404 - only fixed argv lists are run' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/run.py:1:import subprocess  # nosec'; good: rc=0 stdout='src/app/run.py:1:import subprocess  # nosec B404 - only fixed argv lists are run'"
+   "evidence": "bash -c '<probe>' in scratch trees scratchpad/stageA/A01_defect_trees/08-supply-chain_dbfb2a518d/{bad,good} (macOS bash; grep = BSD grep 2.6.0-FreeBSD under both the session PATH and PATH=/usr/bin:/bin): bad: rc=0 stdout='src/app/run.py:1:import subprocess  # nosec'; good: rc=0 stdout='src/app/run.py:1:import subprocess  # nosec B404 - only fixed argv lists are run' || GNU grep 3.11 (podman python:3-slim): bad: rc=0 stdout='src/app/run.py:1:import subprocess  # nosec'; good: rc=0 stdout='src/app/run.py:1:import subprocess  # nosec B404 - only fixed argv lists are run'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "01-language-idioms#67902cf4e5",
@@ -3110,11 +3166,12 @@
   {
    "id": "02-security#697961a5ac",
    "rules_file": "skills/sota-ruby/rules/02-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'ext/.*extconf\\.rb|extensions' --include='*.gemspec' .",
    "problem": "Pure locator of a C extension: the defect (length/pointer from input) lives in the C source, so a correctly bounds-checked extension is flagged identically; only 'no extension at all' passes, which is not a near-miss.",
    "proposed_probe": null,
-   "evidence": "by construction: any gemspec declaring spec.extensions prints, whatever the C code does."
+   "evidence": "by construction: any gemspec declaring spec.extensions prints, whatever the C code does.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-security#adffe2ca47",
@@ -3129,20 +3186,22 @@
   {
    "id": "02-security#d790eec133",
    "rules_file": "skills/sota-ruby/rules/02-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE \"require[[:space:]]+['\\\"](fiddle|ffi)['\\\"]|Fiddle::|extend[[:space:]]+FFI::Library|attach_function\" --include='*.rb' .",
    "problem": "Pure locator of FFI use: a binding with fixed, validated lengths is flagged identically to one passing an input-derived length; no near-miss can pass.",
    "proposed_probe": null,
-   "evidence": "by construction: `extend FFI::Library` + `attach_function` with constant sizes prints."
+   "evidence": "by construction: `extend FFI::Library` + `attach_function` with constant sizes prints.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-security#fb403f90ea",
    "rules_file": "skills/sota-ruby/rules/02-security.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'CSV\\.(generate|open)|to_csv' --include='*.rb' .",
    "problem": "Pure locator: a CSV export that applies the formula guard (prefix ' to cells starting = + - @ tab CR) is flagged the same as an unguarded one.",
    "proposed_probe": null,
-   "evidence": "by construction: any CSV.generate prints, guarded or not."
+   "evidence": "by construction: any CSV.generate prints, guarded or not.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-web-hardening#2bc4327742",
@@ -3157,11 +3216,12 @@
   {
    "id": "03-web-hardening#5ff00f433a",
    "rules_file": "skills/sota-ruby/rules/03-web-hardening.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'MiniMagick|Magick::|ImageProcessing|Vips' --include='*.rb' .",
    "problem": "Pure locator: a processor call with formats restricted and a sandboxed worker is flagged the same as an unrestricted one; the hardening lives outside the matched line (policy.xml, worker config).",
    "proposed_probe": null,
-   "evidence": "by construction: any ImageProcessing::Vips use prints."
+   "evidence": "by construction: any ImageProcessing::Vips use prints.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "04-supply-chain-tooling#6b95f984d1",
@@ -3186,11 +3246,12 @@
   {
    "id": "05-concurrency-performance#23cf72fdaa",
    "rules_file": "skills/sota-ruby/rules/05-concurrency-performance.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'Fiber\\.set_scheduler|Async[[:space:]]*(do|\\{)|falcon' --include='*.rb' --include='Gemfile' .",
    "problem": "Locator of scheduler presence ('no hit: no scheduler, skip'): the defect is a GVL-holding native gem on the loop, which the probe cannot see; a fiber-safe app on Async is flagged identically.",
    "proposed_probe": null,
-   "evidence": "by construction: any `Async do` prints."
+   "evidence": "by construction: any `Async do` prints.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-concurrency-performance#a289f7b9cd",
@@ -3235,20 +3296,22 @@
   {
    "id": "07-tooling-ci#74a34e6852",
    "rules_file": "skills/sota-rust/rules/07-tooling-ci.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -r .",
    "problem": "Mis-extracted, not a probe: line 462 says '`find`, not `grep -r .`: it enters .cargo/ ...' — prose naming the command NOT to use. Extracted as a runnable probe it prints every line of every file, so any non-empty good tree is flagged.",
    "proposed_probe": null,
-   "evidence": "sed -n 460,463p skills/sota-rust/rules/07-tooling-ci.md -> '— ... Medium. `find`, not `grep -r .`: it enters `.cargo/`, which `rg` and `ugrep` skip by default'"
+   "evidence": "sed -n 460,463p skills/sota-rust/rules/07-tooling-ci.md -> '— ... Medium. `find`, not `grep -r .`: it enters `.cargo/`, which `rg` and `ugrep` skip by default'",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): not a probe — a command quoted as what not to do; the prose was reworded so it is no longer extracted."
   },
   {
    "id": "09-formal-verification#baf6249fc4",
    "rules_file": "skills/sota-rust/rules/09-formal-verification.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rnE 'kani::(requires|ensures|modifies)|stub_verified' --include='*.rs' .",
    "problem": "Inventory probe: lists every kani contract/stub_verified; the defect is a contract too WEAK (requires missing aliasing/provenance, modifies missing a write), which a strong contract shares every token with. A correct near-miss is always flagged; the judgement is a human read.",
    "proposed_probe": null,
-   "evidence": "by construction: the regex 'kani::(requires|ensures|modifies)|stub_verified' matches any contract, e.g. '#[kani::requires(kani::mem::can_dereference(p))]' on the correct form; no fixture written"
+   "evidence": "by construction: the regex 'kani::(requires|ensures|modifies)|stub_verified' matches any contract, e.g. '#[kani::requires(kani::mem::can_dereference(p))]' on the correct form; no fixture written",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-containers-microvms#81e1aaec51",
@@ -3353,11 +3416,12 @@
   {
    "id": "06-ad-hoc-commands#329166179d",
    "rules_file": "skills/sota-shell-scripting/rules/06-ad-hoc-commands.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -o \"$v[A-Z_]*\"",
    "problem": "Not a probe: rules/06 audit checklist quotes `grep -o \"$v[A-Z_]*\"` as the field-reported BUGGY command (zsh modifier bug), and the extractor picked it up as a probe. It has no file operand and depends on an unset $v.",
    "proposed_probe": null,
-   "evidence": "tp.sh <scratch>/stageA/A10/shell/def/329166179d/bad 'grep -o \"$v[A-Z_]*\"' -> rc=1, no output (stdin empty, $v unset)."
+   "evidence": "tp.sh <scratch>/stageA/A10/shell/def/329166179d/bad 'grep -o \"$v[A-Z_]*\"' -> rc=1, no output (stdin empty, $v unset).",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): not a probe — a command quoted as what not to do; the prose was reworded so it is no longer extracted."
   },
   {
    "id": "06-ad-hoc-commands#4c48c8f13f",
@@ -3432,29 +3496,32 @@
   {
    "id": "02-decomposition#8d258b1ad7",
    "rules_file": "skills/sota-threat-modeling/rules/02-decomposition.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn -E \"[\\\"'](/?[A-Za-z0-9_{}:.-]+/)*/?(v[0-9]+|internal|admin|legacy|mobile)/\" .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. An alternate route enforcing the same checks as its sibling (correct) prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `router.post('/internal/transfer', requireAuth, requireMfa, transfer)` -> prints line 2."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `router.post('/internal/transfer', requireAuth, requireMfa, transfer)` -> prints line 2.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-decomposition#fb0bcdbac0",
    "rules_file": "skills/sota-threat-modeling/rules/02-decomposition.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn -i -E \"(webhook|callback|import|feed|avatar|remote|source|target)_?url\" .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. A user URL field that IS in the destination table with containment prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `webhook_url = models.URLField(validators=[allowlisted_egress])  # threat-model.md#destinations` -> prints."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `webhook_url = models.URLField(validators=[allowlisted_egress])  # threat-model.md#destinations` -> prints.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "03-threat-catalogs#3f4774771d",
    "rules_file": "skills/sota-threat-modeling/rules/03-threat-catalogs.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn -i -E '(\\{\\{|<%=|\\$\\{|#\\{) *[@A-Za-z_.]*(display_?name|full_?name|team_?name|org_?name|workspace_?name|custom_?message|personal_?message|invite_?note)' .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. A constrained field (length/plain-text) prints the same.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `{{ inviter.display_name|truncate(40)|striptags }}` -> prints."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree `{{ inviter.display_name|truncate(40)|striptags }}` -> prints.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "05-outputs-operationalization#807f01b901",
@@ -3489,11 +3556,12 @@
   {
    "id": "06-audit-reconstruction#624b5baaa6",
    "rules_file": "skills/sota-threat-modeling/rules/06-audit-reconstruction.md",
-   "in_baseline": true,
+   "in_baseline": false,
    "probe": "grep -rn -E \"aws_route53_record|google_dns_record_set|azurerm_dns_[a-z]+_record|kind: *Ingress|server_name \" .",
    "problem": "LOCATOR: the item's own fix leaves the matched line in place (the finding is decided by context the probe does not read), so the closest correct near-miss is flagged. It is a host inventory; a reconciled host prints the same as an orphan, and the finding (a live host absent from every repo) cannot appear in a repo tree at all.",
    "proposed_probe": null,
-   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree aws_route53_record for a reconciled host -> prints './infra/dns.tf:1:...'."
+   "evidence": "probe run via bash in a12tmp trees, PATH=session and PATH=/usr/bin:/bin (both BSD grep 2.6.0 under bash): correct tree aws_route53_record for a reconciled host -> prints './infra/dns.tf:1:...'.",
+   "resolved": "2026-10-27 (ROADMAP 81, last 68): kept unchanged as a declared locator (the item now says it lists every site and each hit is read, not a finding); fixtures prove it finds the construct."
   },
   {
    "id": "02-microcopy-components#215e02776b",

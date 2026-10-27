@@ -328,8 +328,9 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
       evidence.
 - [ ] Every app-originated message and page carrying attacker-chosen text is
       listed with its constraints (§2 borrowed reputation). Find candidates with
-      `grep -rn -i -E '(\{\{|<%=|\$\{|#\{) *[@A-Za-z_.]*(display_?name|full_?name|team_?name|org_?name|workspace_?name|custom_?message|personal_?message|invite_?note)' .`;
-      a free-text field in an outbound email with no length, URL or plain-text
+      `grep -rn -i -E '(\{\{|<%=|\$\{|#\{) *[@A-Za-z_.]*(display_?name|full_?name|team_?name|org_?name|workspace_?name|custom_?message|personal_?message|invite_?note)' .`
+      — a locator: it lists every template interpolating such a field; each hit is read, not a
+      finding; a free-text field in an outbound email with no length, URL or plain-text
       constraint → Medium (High when any anonymous sign-up can send it).
 - [ ] Each public business flow has its OAT items dispositioned (§2); a
       value-dispensing or scarce-inventory flow with no disposition → Medium.

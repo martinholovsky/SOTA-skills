@@ -203,7 +203,8 @@ mutex. Build threaded code under TSan.
       misalignment
 - [ ] **Bad shifts / conversions — MEDIUM/HIGH** (§1, §2) —
       `grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '(cout|cerr|<<=|stream)'`
-      (verify shift amounts)
+      lists every shift (and every `>>` closing a nested template); each hit is read, not a
+      finding (verify the shift amount is range-checked)
 - [ ] **Money in binary floats, truncating float-to-int (§2) — MEDIUM, HIGH in money paths** —
       `grep -rniE '(double|float)[[:space:]]+[*&]?[a-z_]*(price|amount|total|balance|cost|fee|tax)' --include='*.c' --include='*.h' --include='*.cc' --include='*.cpp' --include='*.hpp' .`
       (money declared as a binary float) ;

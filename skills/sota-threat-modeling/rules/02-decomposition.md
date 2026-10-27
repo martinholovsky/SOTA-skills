@@ -343,11 +343,13 @@ scope must be written down — silent exclusions are where breaches live.
       dispenses value (credits, refunds, coupons) → Medium (§3).
 - [ ] Dangerous-functionality and user-chosen-destination table exists (§3) and
       matches code. Sweep sinks with `grep -rn -E "pickle\.loads?\(|yaml\.(unsafe_)?load\(|ObjectInputStream|unserialize\(|Marshal\.load|(^|[^.A-Za-z_])(eval|exec)\(|new Function\(|os\.system\(|shell=True|\.raw\(|execute\(f[\"']" .`
-      and user-supplied URL fields with `grep -rn -i -E "(webhook|callback|import|feed|avatar|remote|source|target)_?url" .`;
+      and user-supplied URL fields with `grep -rn -i -E "(webhook|callback|import|feed|avatar|remote|source|target)_?url" .`
+      (both are locators: they list every sink and URL field; each hit is read, not a finding);
       a hit absent from the table → Medium, and High when it reaches untrusted
       input with no containment recorded.
 - [ ] Each sensitive operation has a cross-entry-point row set (§8a); list
       alternate route prefixes with `grep -rn -E "[\"'](/?[A-Za-z0-9_{}:.-]+/)*/?(v[0-9]+|internal|admin|legacy|mobile)/" .`
+      — a locator: it lists every alternate route prefix; each hit is read, not a finding —
       and add cron/consumer/webhook callers by reading. A path enforcing fewer
       checks than its sibling → High (Critical if reachable pre-auth).
 - [ ] Boundaries inferred from IaC/middleware/IAM match documented

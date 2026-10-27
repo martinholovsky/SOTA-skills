@@ -276,7 +276,9 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
       (each file listed declares an async generator and never uses `aclosing`; a consumer in
       another file may still close it, so read the call sites)
 - [ ] **Forgotten awaits — runtime + type checker; async test setup (§10)** —
-      `grep -rn "asyncio_mode" pyproject.toml setup.cfg 2>/dev/null` ;
+      `grep -rqsE 'asyncio[_-]mode[[:space:]]*=[[:space:]]*.?auto|anyio' --include=pyproject.toml --include=setup.cfg --include=pytest.ini --include=tox.ini --exclude-dir=.venv . || grep -rlE '^[[:space:]]*async def test' --include='*.py' --exclude-dir=.venv .`
+      (each file listed holds async tests while no config sets `asyncio_mode = "auto"` or
+      names anyio [LOW]) ;
       `grep -rnE 'await[[:space:]]+asyncio\.sleep\([[:space:]]*([1-9]|0?\.[0-9]*[1-9])' --include='test_*.py' --include='*_test.py' --include='conftest.py' --exclude-dir=.venv .`
       (a real-time sleep in a test: inject a clock [MEDIUM]) ;
       `grep -rlE '\.cancel\(\)' --include='test_*.py' --include='*_test.py' --exclude-dir=.venv . | grep -q . || echo "no test cancels a task"` [LOW] ;
