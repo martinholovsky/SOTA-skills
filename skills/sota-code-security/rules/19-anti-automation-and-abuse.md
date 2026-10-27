@@ -171,6 +171,45 @@ OWASP: Code Review Guide v2 (CAPTCHA); Bot Management and Anti-Automation cheat 
 OWASP: Business Logic Security cheat sheet; Bot Management and Anti-Automation cheat
 sheet; Third Party Payment Gateway Integration cheat sheet.
 
+## 5. Verifying a claimed crawler or agent
+
+An exemption for "good bots" (no rate limit, no challenge, the full page for a search
+crawler) is an allow-list, and the `User-Agent` header is not an identity: any client can
+send `Googlebot`. Copying a crawler's User-Agent is the cheapest way past every rung of §1.
+
+- **The User-Agent selects which check to run; it never passes one.** Verify the connecting
+  IP (the one your own proxy recorded, never a client-sent `X-Forwarded-For` —
+  [`sota-network-security` rules/05](../../sota-network-security/rules/05-edge-ingress-egress.md) R6)
+  by the method the crawler's operator publishes:
+  - **Forward-confirmed reverse DNS.** Look up the IP's PTR name, require it to end in a
+    domain the operator lists (read 2026-10-27: `googlebot.com`, `google.com` or
+    `googleusercontent.com` for Google; `search.msn.com` for Bingbot), then resolve that name
+    forward and require the same IP back. **The reverse lookup alone proves nothing**: the
+    owner of an address block writes its PTR records and can make them say `googlebot.com`;
+    only the forward lookup in the operator's own zone ties the name to the address. Match
+    the suffix at a label boundary (`.googlebot.com`), never as a substring.
+  - **The operator's published IP ranges.** Google and Bing publish crawler CIDR lists as
+    JSON; Bing asks that its list be refreshed daily. Fetch on a schedule and cache; a
+    vendored copy goes stale silently (as §2's disposable-domain list does) and on a failed
+    refresh keep the last good copy and log its age rather than loading an empty list.
+- **Keep lookups off the hot path.** Cache each IP's verdict for a bounded time, give DNS a
+  short timeout, and treat a timeout or error as *unverified*, never verified — a lookup that
+  fails open is a no-op control ([rules/10](10-silent-control-failure.md)).
+- **An unverified claim is an ordinary client**, scored by §1 like any other, and a
+  crawler User-Agent from an address that fails verification is itself a signal.
+- **Web Bot Auth is the cryptographic direction, still a draft.** The IETF webbotauth working
+  group's `draft-ietf-webbotauth-httpsig-protocol` (datatracker, read 2026-10-27: revision -00,
+  "WG Document", not in WG last call) has the agent sign requests with HTTP Message
+  Signatures (RFC 9421) and name its key directory (JWKS, served at
+  `/.well-known/http-message-signatures-directory`) in a `Signature-Agent` header. Verify
+  through a maintained library with expiry and replay checks, and keep DNS or IP verification
+  for crawlers that do not sign. A CDN's verified-bot flag (some list Web Bot Auth, published
+  IP lists and reverse DNS as their methods) is trustworthy only on traffic that provably
+  arrived through that CDN.
+
+Sources: Google, "Verify requests from Google crawlers and fetchers"; Bing Webmaster Tools,
+"How to Verify Bingbot"; IETF datatracker, webbotauth working group documents.
+
 ## Audit checklist
 
 Probes print a lead list; read each hit before reporting it.
@@ -220,3 +259,9 @@ Probes print a lead list; read each hit before reporting it.
 - [ ] **Referral rewards check two people, not two accounts (§4)** — MEDIUM. A
       self-referral check that compares only account IDs:
       `grep -rnE -i '(referrer|inviter)_?(id)?[[:space:]]*(!=|!==|==|===)[[:space:]]*(referee|invitee|new_?user|user)_?(id)?' .`
+- [ ] **Crawler allow-list verified, not keyed on the User-Agent (§5)** — HIGH where the
+      exemption skips a rate limit, challenge or paywall. A crawler name tested against the
+      User-Agent on a line that does no verification (a check split across lines is missed;
+      read the allow-list path):
+      `grep -rniE '(user.?agent|[^a-z]ua[^a-z])[^;]*(googlebot|bingbot|applebot|duckduckbot|yandexbot|baiduspider|gptbot|claudebot)|(googlebot|bingbot|applebot|duckduckbot|yandexbot|baiduspider|gptbot|claudebot)[^;]*(user.?agent|[^a-z]ua[^a-z])' . | grep -viE '^[^:]*robots[.]txt:|^[^:]*:[0-9]+:.*(rdns|reverse|gethostby|verif|ip_?range|cidr|signature)'`
+      Then confirm reverse DNS is forward-confirmed and published IP lists are refreshed.

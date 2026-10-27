@@ -242,7 +242,7 @@
    "build": [
     "bot-abuse"
    ],
-   "index_row": "| [rules/19-anti-automation-and-abuse.md](rules/19-anti-automation-and-abuse.md) | Automated abuse that is neither volumetric DoS nor injection: fake signups and multi-accounting, credential-stuffing responses, CAPTCHA and proof-of-work challenges, and business flows that hand out value (coupons, referrals, trials, scarce inventory, card payments) — OWASP OAT, CWE-799/837 | ...building or reviewing signup, login, checkout, promotions, referrals or anything a bot can farm |"
+   "index_row": "| [rules/19-anti-automation-and-abuse.md](rules/19-anti-automation-and-abuse.md) | Automated abuse that is neither volumetric DoS nor injection: fake signups and multi-accounting, credential-stuffing responses, CAPTCHA and proof-of-work challenges, business flows that hand out value (coupons, referrals, trials, scarce inventory, card payments), and verifying a claimed crawler (forward-confirmed reverse DNS, published IP ranges, Web Bot Auth) — OWASP OAT, CWE-799/837 | ...building or reviewing signup, login, checkout, promotions, referrals, a crawler allow-list, or anything a bot can farm |"
   },
   "20": {
    "build": [
