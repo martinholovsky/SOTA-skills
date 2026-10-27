@@ -67,6 +67,12 @@ quantity at every scale that matters:
 - **Label quality:** double-annotate a sample, measure inter-annotator
   agreement; where humans disagree, the rubric is broken — fix the rubric
   before "fixing" the labels. Adjudicate disagreements, don't average them.
+- **Agreement is not truth.** Where an authoritative source exists (an advisory database
+  for a vulnerability set, the upstream fix for a location, the spec for a format case),
+  check each label against it before the set measures anything, and report the label
+  error rate beside the metric. Field-reported 2026-10-26: a recall ground-truth set used
+  for months had 7 bad baselines in 58 files, five naming the wrong CVE and two pinned to
+  the version that *fixed* it, where a "catch" measures nothing.
 - **Negative and refusal examples:** include "no answer", "refuse", and
   "escalate" cases — sets containing only happy-path completions teach
   overconfidence (same rule as eval sets, [rules/01](01-evals.md) §1).
@@ -216,7 +222,8 @@ stores: [sota-code-security rules/07](../../sota-code-security/rules/07-data-exp
       re-validation against evals; adapter rollback path; provider offering
       verified current, not assumed (§1).
 - [ ] Datasets: provenance + license per example; deduped; entity-level
-      splits; inter-annotator agreement measured; refusal/negative cases
+      splits; inter-annotator agreement measured; labels checked against an
+      authoritative source where one exists, error rate reported; refusal/negative cases
       present; annotator disagreements adjudicated, not averaged; PII scrubbed
       at ingestion; versioned releases with pinned eval results (§2).
 - [ ] Feedback: implicit signals (edits, regenerations, copies, escalations)

@@ -110,7 +110,12 @@ than merely ignored:
   line still builds, publishes or pushes the unedited file (measured bash and zsh,
   2026-10-25; field-reported 2026-10-24, where the assertion failed and the action ran). An
   assertion gates only what is joined to it: end the line with `&&`, or put the sequence
-  in a script under `set -e`.
+  in a script under `set -e`. An agent harness running a multi-line command, foreground or
+  background, reports the **last line's** status: a commit blocked by a failing hook, then
+  `echo "rc=$?"` and an `&&` chain on the next line, is announced as exit 0 with HEAD
+  unmoved (field-reported 2026-10-26; reproduced 2026-10-27 in bash and zsh, where the
+  `&&`-joined control reported 1; [rules/01](01-safety-baseline.md) §2a). End the chain in
+  an explicit token: `git commit … && echo COMMITTED || { echo FAILED; exit 1; }`.
 - **Diff-based checks can legitimately differ before and after a push**, because their
   merge base changes. Re-run the gate *after* the branch exists upstream before
   concluding the tree is broken — and never let the first, pre-push result authorise the

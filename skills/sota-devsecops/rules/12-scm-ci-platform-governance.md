@@ -23,6 +23,13 @@ controls, and a visibility flip. Close both at org level.
 - Only org owners may change repository visibility
   (`members_can_change_repo_visibility: false`). A flip to public exposes the entire
   history, including every secret ever committed and later "removed" ([`sota-secrets-management`](../../sota-secrets-management/SKILL.md)).
+- **Before a flip to public, sweep what the flip publishes**; a history scan alone misses part
+  of it. Scan every ref with merge diffs ([`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §1);
+  fetch `refs/pull/*/head`, which a default clone does not, and scan what only they reach; read
+  PR and issue titles and bodies and commit author/committer emails; and search the project's
+  trackers and decision records for items whose trigger is going public. A deferral that names
+  the flip is due before it: field-reported 2026-10-27, a licence check deferred "before going
+  public" was found by the end-of-session pass after the flip.
 - Review visibility changes in the org audit log (event `repo.access`, "the visibility of
   a repository changed") and alert on any flip to public ([rules/07](07-runtime-ops.md) §7.3.1).
   (OWASP: CI/CD Security cheat sheet)
@@ -191,6 +198,7 @@ satisfy for crypto code, is a formality.
 
 ## Audit checklist
 
+- [ ] **Pre-publication sweep recorded before any flip to public (§12.1), Medium:** history scanned with merge diffs and `refs/pull/*/head` fetched; PR texts and author emails read; tracker items triggered by going public put to the owner before the flip
 - [ ] **Forking and visibility locked to owners (§12.1), High:** `gh api orgs/<org> --jq '{members_can_fork_private_repositories, members_can_change_repo_visibility}'` prints `false` for both with an owner token (`null` = not visible, re-run as owner); recent `repo.access` events in the org audit log reviewed
 - [ ] **Org-wide 2FA enforced (§12.2), High:** `gh api orgs/<org> --jq .two_factor_requirement_enabled` prints `true` with an owner token; secure-methods-only on; the CI/CD platform's own accounts enforce the same; 2FA-disable events alerted
 - [ ] **Fork-PR approval covers all external contributors (§12.3), Medium:** `gh api repos/<owner>/<repo>/actions/permissions/fork-pr-contributor-approval --jq '.approval_policy == "all_external_contributors"'` (and the `/orgs/<org>/…` form) prints `true`

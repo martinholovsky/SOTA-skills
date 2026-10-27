@@ -315,7 +315,7 @@ without logging (linux-pam `modules/pam_faillock/pam_faillock.c`, master `584ef2
 that runs PAM as the user, and 0755 recorded 3. `su` and `sudo` tests passed both ways, because
 they run PAM as root. Census the callers **by principal**, and test from the least-privileged one,
 read through an observer that is not itself a caller: a `sudo` read of the tally ran the
-module's success path and cleared it.
+module's success path and cleared it. Least-privileged is not the only arm that can differ: a privilege can be **held but disabled**. Microsoft documents LocalSystem holding `SeSecurityPrivilege` disabled, and the system checking that a held privilege is *enabled*; field-reported 2026-10-25 (not reproduced here), an audit-policy write passed from an elevated admin session and failed as LocalSystem until the code enabled the privilege around the call. Keep one gate run **as the production principal** (on Windows, a one-shot scheduled task as SYSTEM).
 
 This is [`rules/15`](15-instruments-and-guards.md) §3's "verify per target, not once" pointed the other way:
 there the population belongs to a **guard** and you inject a defect per member;

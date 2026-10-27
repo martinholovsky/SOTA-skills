@@ -189,6 +189,12 @@ every tool whose answer is a function of flags *plus* file selection.
 **The rule.** To verify a gate locally, reproduce **its exact invocation** — flags and
 file selection — read out of the hook or workflow config, not a convenient equivalent.
 Better, run the hook manager itself: `pre-commit run --all-files`, `act`, the CI script.
+**Name the tree too**: at commit time pre-commit stashes unstaged changes, so its hooks
+score the *staged* content, while `--all-files` or `--files` skips the stash and scores the
+working tree (`stash = not args.all_files and not args.files`, `pre_commit/commands/run.py`;
+measured on pre-commit 4.6.0, 2026-10-27: one hook saw `staged` at commit and
+`unstaged-working-tree` under `--all-files`). A commit-time pass says nothing about an
+unstaged edit, and an `--all-files` pass nothing about what was committed.
 Where a tool's answer depends on its file selection, say so at the gate definition so
 the next person does not re-derive it. And read **each gate's exit code on its own**: an
 `&&` chain reports only the last command's status, a trailing `echo` makes the shell's
@@ -256,7 +262,8 @@ Count the runs in which an entry produced no comparison at all, and alert on tha
       re-run", the evidence is gone — and any "unexplained intermittent failure" list built
       that way is a list of unread logs, not of flakes.
 - [ ] **Is every "gates are clean" claim backed by the gate's own invocation?** (§5) Reproduce
-      the pipeline's command, not an equivalent — a different scope is a different question.
+      the pipeline's command, not an equivalent — a different scope is a different question, and
+      so is a different tree (staged at commit time, working tree under `--all-files`).
 - [ ] **Can each entry in a hand-rolled watcher report at all?** (§6) Per entry, not in
       aggregate: count the runs in which an entry produced no comparison, and alert on it.
       "I have not been able to read this for six weeks" is not "up to date".

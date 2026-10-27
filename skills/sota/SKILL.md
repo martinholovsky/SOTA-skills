@@ -144,9 +144,9 @@ rules files that match the code in front of you. Never load all skills at once.
    asserting or editing against its contents. **Nor is a project's own index, tracker row
    or status table** — a summary an earlier session wrote; open the record it summarises
    before repeating its status (field-reported 2026-09-26: "NOT filed", ten days after
-   filing). **Nor is a comment or doc that describes another file, or a search tool's summary of a page** — open the thing itself; a paraphrase
+   filing). **Nor is a comment or doc that describes another file, or a search or fetch tool's answer about a page** — open the thing itself (a fetch tool that answers a prompt returns a model's answer even when the prompt says "verbatim": before an artifact attributes a quote or fact to a page, `curl` the raw bytes and grep each quote, byte count beside the hits; field-reported 2026-10-25, a toolchain ADR lost a fact the summary dropped); a paraphrase
    turned "not relied on" into "required", and a cited summary named a state the page did not (both field-reported 2026-10-22). Summaries silently drop the case
-   that contradicts them and raw output does not. **Writing a number into an agent file, tracker row or baseline is a claim, not bookkeeping**: paste it from the command output in the same turn, because after compaction a number you "remember" came from the summary (field-reported 2026-10-23: two recalled facts fused into one wrong baseline). A count keeps its unit: an agent's "55 edits" restated as "55 probes" is a new claim — count the new noun or keep the agent's (field-reported 2026-10-26: it reached a release's notes). Full adversarial procedure for audit findings: AUDIT step 7 and [`rules/03`](rules/03-audit-findings.md) §4.
+   that contradicts them and raw output does not. **Writing a number, or an aggregate status ("all", "every", "done", "none left"), into an agent file, tracker row or baseline is a claim, not bookkeeping**: paste it from the command output in the same turn (for a status, the command that lists what is still open: field-reported 2026-10-25, "every box done" with one box open), because after compaction a number you "remember" came from the summary (field-reported 2026-10-23: two recalled facts fused into one wrong baseline). A count keeps its unit: an agent's "55 edits" restated as "55 probes" is a new claim — count the new noun or keep the agent's (field-reported 2026-10-26: it reached a release's notes). Full adversarial procedure for audit findings: AUDIT step 7 and [`rules/03`](rules/03-audit-findings.md) §4.
 8. **Publishing under someone else's name raises the bar.** A claim to the
    person who asked costs one reader's trust and is cheap to retract. A claim
    published as them — a PR review comment, an issue, a commit message, a
@@ -158,7 +158,7 @@ rules files that match the code in front of you. Never load all skills at once.
 9. **Match the rigour to the stakes — and name the level you chose.** A spike, a
    one-off script, a local experiment: build it, say in one line that it is a
    prototype and what you left out, stop. Anything reachable by an untrusted caller
-   or touching money, credentials or another tenant's data gets the full treatment
+   or touching money (your own paid API credit too), credentials or another tenant's data gets the full treatment
    including principle 5, whether or not the request said "quick"; if it is
    genuinely ambiguous, ask in one line. An *unnamed* shortcut is not a prototype.
 

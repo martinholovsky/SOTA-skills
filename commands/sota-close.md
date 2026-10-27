@@ -156,7 +156,7 @@ it, and leave it.
 
 ## 4. Validate by execution, not recall
 
-Every number you write in this pass is re-derived **now**, with the command shown next to it.
+Every number you write in this pass is re-derived **now**, with the command shown next to it — and so is every aggregate status ("all", "every", "done", "none left"), including the ones step 3 already wrote into memory or a tracker.
 A number carried forward from earlier in the session is recall, and recall is the thing this
 pass exists to compensate for.
 

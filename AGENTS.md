@@ -104,7 +104,9 @@ secret-shaped examples don't false-positive). CI scans the **full git history**
 (`gitleaks git` on a `fetch-depth: 0` checkout), not just the working tree, and
 **asserts that scope**: a shallow checkout scans 1 commit, reports "no leaks
 found", and exits 0, so the workflow fails on a shallow clone rather than trusting
-the setting. The pre-commit hook scans each commit locally.
+the setting. By default gitleaks also **skips merge commits** (a secret added in a merge
+resolution is never read), so CI passes `--diff-merges=first-parent` and requires the count to
+equal `git rev-list --all --count`. The pre-commit hook scans each commit locally.
 
 ## Conventions that matter
 

@@ -332,9 +332,12 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
       origin isn't directly reachable) (§4)?
 - [ ] Internal/admin surfaces behind an identity-aware proxy / tunnel, not a public origin (§4)?
 - [ ] Is egress **default-deny** with an FQDN/IP allowlist for app tiers and none for data tiers?
-      Probe: a pod reaching an arbitrary internet host must fail (§6).
+      Probe: a pod reaching an arbitrary internet host is refused **by the control** (its deny
+      status or log line), and a run with the control removed gets through or fails differently;
+      from a pod with no internet route, "must fail" passes either way (§6).
 - [ ] Is `169.254.0.0/16` (and `fd00:ec2::254`) — the metadata endpoint — blocked from workload
-      egress? On cloud, is **IMDSv2** enforced (hop limit, account-level) (§6)?
+      egress, proved the same way (the control's own refusal, not a timeout)? On cloud, is
+      **IMDSv2** enforced (hop limit, account-level) (§6)?
 - [ ] Is egress funneled through an inspectable choke point and are egress/proxy logs exported to
       detection (§6)?
 - [ ] DDoS stance recorded; per-identity rate limits and autoscale caps set (§5)?
