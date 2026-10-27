@@ -88,6 +88,12 @@
    "selection checklist",
    "chain of custody",
    "CI plugin"
+  ],
+  "ci-speed": [
+   "CI is slow",
+   "caching",
+   "path filters",
+   "sharding"
   ]
  },
  "files": {
@@ -181,6 +187,12 @@
     "new-dependency"
    ],
    "index_row": "| [rules/15-dependency-adoption.md](rules/15-dependency-adoption.md) | Taking in a **new** dependency, action or CI plugin: the language-neutral selection checklist, confirming origin and chain of custody (provenance attestations, trusted publishing), reading a high-risk dependency's source on adoption and its published diff on upgrade, and hardening the security-relevant defaults of what you consume |"
+  },
+  "16": {
+   "build": [
+    "ci-speed"
+   ],
+   "index_row": "| [rules/16-fast-ci-without-blind-spots.md](rules/16-fast-ci-without-blind-spots.md) | **When CI is slow: measure before you optimise, then cut it without making a required check pass unrun** · per-job and per-step timing and the critical path (§16.1); caching keyed on what determines it, where a `restore-keys` match is not a hit (§16.2); change-scoping, where path filters leave a required check Pending and a job skipped by `if:` reports Success (§16.3); sharding under one `always()` aggregator that keeps the required name and proves every unit ran once (§16.4); cancelling superseded PR runs and `timeout-minutes` on every job (§16.5); and measuring equivalence before and after (§16.6) |"
   }
  },
  "via": [
@@ -343,6 +355,16 @@
     "13",
     "14",
     "15"
+   ]
+  },
+  {
+   "task": "CI takes 18 minutes; add caching or run only the jobs for what changed (2026-10-28)",
+   "mode": "build",
+   "tags": [
+    "ci-speed"
+   ],
+   "must_load": [
+    "16"
    ]
   }
  ]

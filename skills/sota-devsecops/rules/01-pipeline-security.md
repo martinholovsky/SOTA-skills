@@ -324,7 +324,7 @@ configuration is usually valid YAML with no expression in it.
 - `concurrency:` groups on deploy workflows (`group: deploy-prod, cancel-in-progress:
   false`) — two concurrent applies/deploys interleaving is a corruption class, and
   cancel-in-progress on a deploy can kill a half-finished migration. Cancel-in-progress
-  *is* right for PR validation (saves runners, no integrity stake).
+  *is* right for PR validation (saves runners, no integrity stake): [rules/16](16-fast-ci-without-blind-spots.md) §16.5.
 - Re-run semantics: re-running an old workflow run re-executes old workflow code with
   *current* secrets — relevant after rotating a compromised workflow; revoke environments
   or disable old runs rather than assuming history is inert.

@@ -71,8 +71,8 @@ if [ "${1:-}" = "--aggregate" ]; then
     ords="$ords $(sed -n 's/^ords=//p' "$f")"; PROBED_IDS="$PROBED_IDS $(sed -n 's/^probed=//p' "$f")"
     SKIPPED_IDS="$SKIPPED_IDS $(sed -n 's/^skipped=//p' "$f")"
   done
-  uniq_ords=$(printf '%s\n' $ords | sed '/^$/d' | sort -n | uniq | { grep -c . || true; })
-  all_ords=$(printf '%s\n' $ords | sed '/^$/d' | { grep -c . || true; })
+  uniq_ords=$(tr ' ' '\n' <<<"$ords" | sed '/^$/d' | sort -n | uniq | { grep -c . || true; })
+  all_ords=$(tr ' ' '\n' <<<"$ords" | sed '/^$/d' | { grep -c . || true; })
   [ "$all_ords" -eq "$uniq_ords" ] || { echo "FAIL: an ordinal ran in more than one shard."; exit 1; }
   [ "$uniq_ords" -eq "$total" ] || { printf 'FAIL: %d of %d probe ordinals ran — the shards left a gap.\n' "$uniq_ords" "$total"; exit 1; }
   [ "$tested" -eq "$total" ] || { printf 'FAIL: %d probes tested for %d ordinals.\n' "$tested" "$total"; exit 1; }
@@ -82,7 +82,7 @@ fi
 if [ -n "${NC_SHARD:-}" ]; then
   NC_I=${NC_SHARD%/*}; NC_N=${NC_SHARD#*/}
   case "$NC_I$NC_N" in *[!0-9]*|'') echo "FAIL: NC_SHARD must be i/n, got '$NC_SHARD'"; exit 1 ;; esac
-  [ "$NC_N" -ge 1 ] && [ "$NC_I" -lt "$NC_N" ] || { echo "FAIL: NC_SHARD $NC_SHARD out of range"; exit 1; }
+  if [ "$NC_N" -lt 1 ] || [ "$NC_I" -ge "$NC_N" ]; then echo "FAIL: NC_SHARD $NC_SHARD out of range"; exit 1; fi
   : "${NC_MANIFEST:?NC_SHARD needs NC_MANIFEST, the file --aggregate reads}"
 fi
 ORD=0; TAKEN_ORDS=""

@@ -1,0 +1,132 @@
+# 16 — Fast CI without blind spots: measure, cache, scope, parallelise
+
+Scope: making a pipeline faster without making it see less. A slow pipeline gets worked
+around (batched changes, skipped local runs, a gate quietly removed), so speed is part of a
+gate holding ([rules/05](05-analysis-gates.md) §5.8: "every gate over ~10 minutes generates
+organizational pressure to remove it"). But every speed lever here also has a way to make a
+required check pass without running. This file is the levers with their failure modes side by
+side. What a suite should contain and how to shard tests by timing is
+[`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.3 and §7.5;
+cache *security* is [rules/01](01-pipeline-security.md) §1.6; deploy concurrency is §1.9 there.
+The platform facts below are GitHub Actions', read from GitHub's documentation on
+2026-10-28; other CI systems have the same failure modes under other names, so check yours.
+
+## 16.1 Measure before you optimise
+
+Read the time per job **and per step** across enough runs to have a median, and find the
+critical path: the chain of jobs the run's wall-clock actually waits on. Queue time (created to
+started) is a separate number and has a separate fix (runner capacity, not the pipeline).
+
+```bash
+# per job and per step for one run; repeat over N runs for a median
+gh api "repos/OWNER/REPO/actions/runs/RUN_ID/jobs?per_page=100" \
+  --jq '.jobs[] | [.name, .created_at, .started_at, .completed_at] | @tsv'
+```
+
+Measured on this library's own CI (2026-10-28, 40 runs): a PR run's median was 18.1 minutes,
+and **one step was 15.3 of them**: a harness that ran 129 probes serially, each a full run of a
+44-check gate. Every other job took about a minute, so dependency caching would have saved
+seconds; the lever was the repeated unit, not the installs. Optimising without this table
+tunes whatever is most familiar. When one unit runs N times, a second off the unit is N
+seconds off the run: this repo's earlier speed-up made the gate itself faster and proved the
+change with a byte-identical differential over 12 trees (CHANGELOG 1.44.1, 2026-09-24: that job went from 7.5–8.7 to 2.9 minutes).
+
+## 16.2 Cache inputs that are expensive to fetch, keyed on what determines them
+
+- **What to cache:** dependency downloads, toolchains and compiler caches, keyed on a hash of
+  what determines them (the lockfile, the toolchain file). A key that omits an input serves a
+  stale artifact as if it were current.
+- **A partial restore is not a hit.** `actions/cache` sets `cache-hit` to `true` only for an
+  exact match on `key`, and `false` when the restore came through `restore-keys`; its README
+  recommends installing missing or updated dependencies on a partial match. A step skipped on
+  `cache-hit` also skips the frozen install's verification, so a restored directory is trusted
+  on its key alone ([rules/04](04-build-containers.md) §4.1: "a CI cache restore is matched on
+  its key").
+- **Never cache a verdict** across code changes unless a build system you trust keys it on
+  the content hash of every input ([`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.5).
+- **Count the hits.** Print `cache-hit` or the tool's own hit statistics in the job log; a cache
+  that never hits costs an upload per run and saves nothing. The `actions/cache` README at
+  v6.1.0 states a per-repository cap with eviction of entries unused for a week, so a key that
+  churns evicts the entries that would have hit.
+- **Trust boundaries come first.** The default branch's cache is readable from other branches,
+  so a cache a PR can write must never reach a release or signing job ([rules/01](01-pipeline-security.md) §1.6,
+  `cache-mode`).
+
+## 16.3 Run less only where skipping cannot pass a required check
+
+Change-scoping is the biggest lever and the most dangerous one, because GitHub treats the two
+ways of skipping differently (GitHub's "Troubleshooting required status checks"):
+
+| how the work is skipped | what the required check does | failure mode |
+|---|---|---|
+| the **workflow** is skipped by `paths`, `branches` or a commit message | stays **"Pending"** and blocks merging | fails closed, and deadlocks a PR that touched nothing it filters |
+| a **job** is skipped by an `if:` condition | reports **"Success"** | **fails open**: the gate passed without running |
+| a job whose `needs` failed is skipped | "may not block merging" | fails open, silently |
+
+GitHub counts `success`, `skipped` and `neutral` as passing statuses. So:
+
+- **Keep required workflows unfiltered.** Do the change detection *inside* the job: compute the
+  changed files against the merge base (`git diff --name-only "$BASE"...HEAD`, which needs the
+  history: `fetch-depth: 0` or a fetch of the base), and if nothing relevant changed, exit 0 **and
+  print the reason and the list it read**, so a no-op is visible in the log rather than
+  indistinguishable from a pass.
+- **A check that reads the whole tree cannot be path-scoped.** Link checkers, generated-file
+  checks, cross-file invariants and coverage reconciliations can be broken by an edit to a file
+  they do not "own". Measured in this repo: a negative-control probe went inert after a docs
+  edit, so "skip when `scripts/` is unchanged" would have passed a gate that had stopped working.
+- **Every scoped run needs an unscoped one behind it**: the full suite on the default branch, in
+  the merge queue (which needs the separate `merge_group` trigger), or on a schedule with an owner
+  ([`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.5: heuristic selection needs a periodic full run).
+- Graph-based selection (a build system that knows the dependency graph) is the reliable form;
+  a hand-written path map drifts as the code moves.
+
+## 16.4 Run in parallel, and keep one check that proves the whole ran
+
+Sharding the long pole cuts wall-clock and raises total runner minutes (each shard pays its
+own setup). Shard by measured duration, not by count, and make the verdict a property of the
+union, not of any shard:
+
+- **One aggregator job carries the required check's name**, with `needs:` on the shards and
+  `if: always()`, and its first step fails unless `needs.<shards>.result` is `success`. Without
+  `always()` a failed shard skips the aggregator, and a skipped required job reports Success
+  (§16.3). Keeping the name means branch protection needs no change.
+- **The aggregator proves completeness**: every shard reported, they agree on the total, every
+  unit ran exactly once (no gap, no overlap), and any coverage declaration is checked over the
+  union. A shard prints its count, never PASS.
+- **`fail-fast: false`** on the shard matrix, so a red run shows every shard's failures.
+- **The aggregator has its own known-bads** (a missing shard, a gap, an overlap, an aborted shard,
+  short coverage), each asserting its own message ([rules/09](09-gates-that-hold.md) §2).
+
+Worked example: `scripts/check-negative-controls.sh` (`NC_SHARD=i/n`, `--aggregate`) and its
+9-case self-test `scripts/test-negative-controls-aggregate.sh`, wired in this repo's `ci.yml`.
+
+## 16.5 Stop paying for runs nobody reads
+
+- **Cancel superseded PR runs**: `concurrency:` keyed on the PR number with `cancel-in-progress`
+  true **for `pull_request` only**. A push to the default branch keys on its own SHA and is never
+  cancelled; a deploy or apply never cancels in progress ([rules/01](01-pipeline-security.md) §1.9).
+- **Set `timeout-minutes` on every job.** The default is 360: a hung job holds a runner for six
+  hours and reports nothing until then. Set it near three times the job's measured time.
+- **Order by speed and signal**: the cheapest checks that fail most often run first or in
+  parallel with the slow ones, never queued behind them.
+
+## 16.6 What a faster pipeline must still prove
+
+A speed change is a change to the gates, and it is reviewed as one:
+
+- The **required check names** are unchanged, or branch protection is updated in the same
+  change (`gh api repos/OWNER/REPO/branches/BRANCH/protection --jq '.required_status_checks.contexts'`).
+- **Equivalence is measured**: the new pipeline reports the same totals as the old one on the
+  same commit (this repo's sharded harness had to aggregate to the unsharded `127/127`).
+- No lever adds `continue-on-error`, a retry that hides a red, or a skip without a printed reason.
+
+## Audit checklist
+
+- [ ] **Per-job and per-step durations were measured over several runs before any speed change, and the critical path is named** (§16.1) — Info: optimising without it; Low: a cache added to a job that was never on the critical path
+- [ ] **Workflows with no `timeout-minutes`** (§16.5) — `find .github/workflows -name '*.y*ml' -exec grep -L -e 'timeout-minutes' {} +` — each file printed runs every job at the 360-minute default = Low (a hung job holds a runner for six hours)
+- [ ] **A cache restore that skips the install** (§16.2) — `grep -rnE --include='*.yml' --include='*.yaml' -e "cache-hit (!=|==) '(true|false)'" .github/workflows` — each hit: confirm the key covers every input and that a `restore-keys` partial match still runs the frozen install; a skipped verification on a partial match = Medium
+- [ ] **A path-filtered workflow that is a required check** (§16.3) — `grep -rnE --include='*.yml' --include='*.yaml' -e '^[[:space:]]+(paths|paths-ignore):' .github/workflows` — each hit whose workflow's job names appear in the branch's required contexts = Medium (it blocks PRs it skips); a required job gated by `if:` with no in-job reason = High (it reports Success without running)
+- [ ] **Every change-scoped check has an unscoped run behind it** (§16.3) — the full suite on the default branch, in the merge queue (`merge_group`) or on an owned schedule; a whole-tree check (links, generated files, cross-file invariants) scoped by path = High
+- [ ] **A sharded check's verdict is an `always()` aggregator under the required name** (§16.4) — it fails unless every shard succeeded, proves the union ran each unit once, and ships known-bads for a missing shard, a gap and an overlap; a required check set on the individual shards, or an aggregator without `always()` = High
+- [ ] **Superseded PR runs are cancelled and default-branch runs are not** (§16.5) — `cancel-in-progress` true on a push to the default branch or on a deploy = Medium
+- [ ] **A speed change kept the required names and measured equivalence** (§16.6) — same totals on the same commit, before and after; no `continue-on-error`, hidden retry or silent skip introduced
