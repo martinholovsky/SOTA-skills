@@ -3,7 +3,8 @@
 # Negative controls — proof our own gates can still FAIL.
 #
 # Two subjects: scripts/check-invariants.sh (part A) and scripts/verify-setup.sh
-# (part B). One script, one CI job, one bar.
+# (part B). One script, one bar; CI splits its probes across shards (NC_SHARD) and one
+# aggregator job under the required check's name gives the verdict (--aggregate).
 #
 # WHY THIS EXISTS. check-invariants.sh prints "ok" fifteen times on a clean tree.
 # So does a check whose pathspec drifted, whose predicate stopped matching, or
