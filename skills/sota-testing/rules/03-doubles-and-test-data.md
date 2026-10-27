@@ -151,6 +151,10 @@ the rule is about. Rules:
 - Factory libs (factory_boy, FactoryBot, Fishery, etc.) implement this
   pattern; per-language picks live in the language skills.
 
+A fixture that pins a vulnerable dependency on purpose (a known-bad tree for a supply-chain
+check) is read by the repository's dependency scanner like real code: decide how its alerts are
+handled before it lands ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.7).
+
 ## 3.6 Seeding strategies and referential integrity
 
 For integration suites against a real DB:

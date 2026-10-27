@@ -774,6 +774,9 @@ CI scans the full git history, the pre-commit hook scans each commit.
     quoted `<Tag>` in a probe is pattern text and runs as written; only an unquoted `<name>` operand
     is replaced with a file called `empty`. Git keeps no empty directory: give a case with no files a
     `.keep`. The unproven ones each have a defect record in `docs/probe-defects-2026-10-26.json`.
+    A fixture that pins a vulnerable version on purpose raises a Dependabot alert, and Dependabot
+    opens a PR that would make the bad tree good: close the PR, and dismiss the alert as
+    `not_used` with a comment naming the fixture (399 were dismissed so on 2026-10-27).
 
 ## Local setup
 

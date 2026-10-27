@@ -406,7 +406,8 @@ Dev-agent") replicating org charts instead of isolating contexts; depth>1
 delegation trees nobody can trace; agents sharing no state but expected to
 agree; multi-agent where one good prompt + workflow scores the same on the
 eval. Subagent results are inputs to the orchestrator — validate them like
-tool output; budgets (§3) apply **per-agent and per-tree** (a parent's
+tool output, and name before fanning out every number you will report, as a field in the
+agents' structured output: a count summed from their prose is not a measurement; budgets (§3) apply **per-agent and per-tree** (a parent's
 budget bounds the sum of its children). Budgets cap the total; they do not
 notice a hijacked agent working inside them. Give each agent and each tool a
 **circuit breaker that trips on anomaly, not only on errors** — a call rate far

@@ -1566,6 +1566,16 @@
     },
     {
       "from": "sota-testing",
+      "to": "sota-devsecops",
+      "weight": 4,
+      "targets": [
+        "rules/03 \u00a73.7",
+        "rules/05",
+        "rules/07 \u00a77.7"
+      ]
+    },
+    {
+      "from": "sota-testing",
       "to": "sota-architecture",
       "weight": 4,
       "targets": [
@@ -2022,15 +2032,6 @@
       "targets": [
         "rules/03 \u00a73.1",
         "rules/05 \u00a75.1"
-      ]
-    },
-    {
-      "from": "sota-testing",
-      "to": "sota-devsecops",
-      "weight": 3,
-      "targets": [
-        "rules/05",
-        "rules/07 \u00a77.7"
       ]
     },
     {
@@ -4306,12 +4307,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1829,
+    "md link, other skill": 1830,
     "md link, outside skills/": 3,
     "md link, same skill": 2823,
     "name (backticked)": 450,
     "name (bare)": 242,
-    "name+file (backticked)": 830,
+    "name+file (backticked)": 831,
     "name+file (bare)": 175,
     "own rules/NN": 3039
   },
@@ -4323,7 +4324,7 @@
     "md link, same skill": 0,
     "name (backticked)": 435,
     "name (bare)": 198,
-    "name+file (backticked)": 826,
+    "name+file (backticked)": 827,
     "name+file (bare)": 163,
     "own rules/NN": 2938
   },

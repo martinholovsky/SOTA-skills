@@ -26,6 +26,7 @@ interactive shell is zsh**. Check the operator's shell rather than assuming; the
 | an unquoted word starting with `=` (`echo =====`, `grep -c =ls f`) | a literal word | `EQUALS` (on by default) rewrites `=ls` to `/bin/ls`; a word naming no command **aborts the whole `;` list** | `echo =====` as a separator is loud **only at the tail**: commands before it printed, so `==== not found` (exit 1) is the last line of a plausible result and everything after it never ran — read top-down it passes as complete (field-reported 2026-10-20: two sessions, five hits, one cancelling the load of this file). **silently** for a real command name — measured zsh 5.9: `grep -c =ls` counted 0 where bash counted 1. Separate with `echo ---`, never a bare run of `=`; quote it, or `setopt noequals`. The tell: a nonzero exit whose last line is `<word> not found` means the list was cut there. **A bare `==` aborts too, outside `[[ ]]`**: `[ a == a ]` → `= not found` — write `[[ a == a ]]`. A cut inside `( )`, `$( )` or a function body ends only that subshell or call, and is still the half that never ran. **Reading this row does not stop it** (field-reported 2026-10-21: read 07:30:02Z, broken 07:31:02Z) — the separator is a reflex, so the control is structural: the PreToolUse hook `scripts/zsh-equals-hook.py` (on by default in the plugin; `install.sh --routing` offers it) refuses the command before it runs, and over one operator's 43,875 agent Bash calls it caught 344 of 344 real cuts with 0 false refusals (measured 2026-10-21) |
 | an unbraced `$var` followed by `:` and a **letter**, or by `[`, even inside double quotes | a literal `:` or `[` | `[…]` is a **subscript**: `"$v[A-Z_]*"` → `*` (the range is arithmetic on unset names, so `$v[0]`, which is empty), `"$f[1]"` → the first character of `$f`. The letter is a **modifier**: `"$d:tmp"` → `bmp` (`:t`), `"$d:home"` → `/aome` (`:h`), `r=HEAD; "$r:scripts/check-invariants.sh"` → `HEADk-invariants.sh` (`:s`, `c` as delimiter); `$h:8080` and `$h:$d` are untouched | **silently** when the word completes a modifier — git was asked for a path that does not exist, its error went to stderr, and `grep -c` counted 0 (2026-10-16); loudly (`bad substitution`, the list aborts) when `:s` finds no closing delimiter. Brace it: `"${r}:path"`. Measured zsh 5.9, 2026-10-18 |
 | `[[ $s =~ re ]]`, then `${BASH_REMATCH[n]}` | the captures, from index 1 | `BASH_REMATCH` is **unset** (captures go to `$match`); with `setopt BASH_REMATCH` it is 1-based, so `[1]` is the **whole match** and every group shifts by one, unless `KSH_ARRAYS` is also set | **silently** — empty `-eq` empty is `0 -eq 0`, so a guard comparing two captures passes: `43/44` accepted as "N/N checks passed" (field-reported 2026-10-22), and after a regex that matched nothing too. Test a bash snippet with `bash -c`. Measured zsh 5.9 |
+| a variable named `path` (`for path in`, `read -r a path`, `local path=`) or `status` | ordinary variables | `path` is the array **tied to `$PATH`**: assigning it empties the command search path, and every later command fails `command not found` (rc 127); `status` is **read-only**, so `status=$?` aborts the list. Use `p`, `f`, `rc` (zsh 5.9, reproduced 2026-10-27; 5 real failures in 33,260 local agent calls) |
 
 **The third is the dangerous one: a failed glob means the command never runs at all.**
 zsh's `NOMATCH` is on by default, so a glob matching nothing is a hard error rather than a
@@ -48,8 +49,7 @@ out=$(grep -rn --include='*.md' ABSENT . 2>/dev/null)  # GENUINE: stdout empty, 
 
 It goes silent once stderr is dropped **around** the command (`{ …; } 2>/dev/null`, `… ) 2>/dev/null`
 on the assignment, a script run with `2>/dev/null`), and a check reading `$out` or `$?` never sees it. **Such a
-sweep cannot tell "the codebase is clean" from "my search never executed"** — [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md)'s
-instrument failure arriving through the shell.
+sweep cannot tell "the codebase is clean" from "my search never executed"** — [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md)'s instrument failure arriving through the shell.
 
 Rules:
 
@@ -375,7 +375,7 @@ esac
 This library shipped the broken form in **11 files** of its own audit checklists until
 v1.42.2 — found by a reporter, not by any gate. A checklist line is a control, and a
 control that cannot distinguish "clean" from "did not run" is the silent-control-failure
-shape ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).
+shape ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)). With `-q` the split narrows: a match exits `0` even when another operand is unreadable (BSD grep 2.6.0 and GNU grep 3.11, measured 2026-10-27), so `-q … || echo` never prints a match beside a false verdict, but a missing path still reads as absence. Where a one-line probe cannot hold the `case` above, keep stderr visible rather than suppress it.
 
 ## 2e. A label that states the verdict is not evidence of the verdict
 
