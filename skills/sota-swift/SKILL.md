@@ -38,7 +38,8 @@ Feature notes below name the release that introduced each feature.
 
 1. Recon: `Package.swift` (tools version, language modes, `unsafeFlags`, plugins, macros,
    binary targets), `Package.resolved`, CI config, the server framework in use.
-2. Run what is installed (never install unasked): the compiler in Swift 6 mode with
+2. Run what is installed (never install unasked; ask the operator for what is missing, router
+   principle 6): the compiler in Swift 6 mode with
    `-warnings-as-errors`, SwiftLint, `swift build --sbom-spec` (6.4+), a dependency scanner
    ([rules/09](rules/09-supply-chain.md)), CodeQL's Swift queries where CI has them.
 3. Walk every applicable rules file's Audit checklist; each probe below is a grep you can run.

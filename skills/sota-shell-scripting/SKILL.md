@@ -46,8 +46,9 @@ When writing or modifying shell scripts:
 5. **Make it idempotent and interrupt-safe**: `mktemp` + `trap` cleanup, atomic writes via
    `mv`, check-before-create, `flock` if concurrent runs are possible.
 6. **Run `shellcheck` (treat all findings as blockers, suppress only with a justifying
-   comment) and `shfmt -d` before declaring done.** If they are unavailable locally, state
-   that and flag CI must run them.
+   comment) and `shfmt -d` before declaring done.** If they are unavailable locally, ask the
+   operator to install them (router principle 6); only if they decline, state that and flag CI
+   must run them.
 7. Provide `--help` always; `--version` for distributed tools; `set -x` behind a
    `DEBUG`/`TRACE` env guard, never unconditionally (secret leakage).
 
