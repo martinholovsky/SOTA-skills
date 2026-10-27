@@ -242,12 +242,12 @@ The profile a reviewer reads in `Cargo.toml` is not the whole build. Measured on
   target through them (`rustc -vV`, `--print=cfg`). Only `cargo metadata --no-deps` ran neither.
   *Corrected 2026-10-22: this bullet said the wrapper did not run on `cargo metadata`; a
   field report refuted it.* So **any cargo command in an untrusted checkout runs that
-  checkout's config.** To read one, pin both: `RUSTC="$(rustup which rustc)" RUSTC_WRAPPER=
-  cargo metadata --format-version 1 --locked` made 0 calls, and its output differed only in the
-  crate's own path. An empty
-  `RUSTC_WRAPPER` alone left the replaced `rustc` running. Other config surfaces (credential
-  providers, a toolchain file naming a path) were not measured, so isolate rather than trust the
-  pin. This is build-time code execution with `build.rs`'s trust ([rules/05](05-security-supply-chain.md) §2), except it
+  checkout's config.** To read one, pin the toolchain first, then both: `export RUSTUP_TOOLCHAIN="$(rustup default | cut -d' ' -f1)"; RUSTC="$(rustup which rustc)" RUSTC_WRAPPER= cargo metadata --format-version 1 --no-deps`
+  made 0 calls. An empty `RUSTC_WRAPPER` alone left the replaced `rustc` running. **The toolchain comes first because the checkout picks it** (measured 2026-10-27, cargo 1.99.1, rustup 1.29.2): a
+  `rust-toolchain.toml` with `path = "<dir>"` ran that directory's `cargo` with `RUSTC` and `RUSTC_WRAPPER` both pinned, and `rustup which rustc` run inside the checkout **returned the checkout's
+  `rustc`**, so the pin itself pointed at it; `RUSTUP_TOOLCHAIN` from `rustup default` stopped both (0 calls). **A registry `credential-provider` from the checkout's config runs past every pin**: `cargo
+  metadata` executed it as soon as a dependency named an auth-required registry. `--no-deps` stopped it (0 runs, exit 0), and so did `--offline`, which then fails resolution without a cached index. So
+  read an untrusted workspace with `--no-deps`, and run anything that resolves dependencies in isolation, not behind the pin. This is build-time code execution with `build.rs`'s trust ([rules/05](05-security-supply-chain.md) §2), except it
   can come from outside the repository. A legitimate wrapper (e.g. a compiler cache) is named,
   pinned and documented.
 - **Dev and test profiles keep their checks.** `overflow-checks` and `debug-assertions` are

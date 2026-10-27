@@ -24,8 +24,11 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
   `requiresSecureCoding = false` on untrusted data.
 - `XMLParser.shouldResolveExternalEntities` defaults to `false` (Apple: setting it `true` *"may
   cause other I/O operations, either network-based or disk-based"*) — XXE. Keep it `false`.
-  Needs verification: whether swift-corelibs-foundation's `XMLParser` on Linux expands *internal*
-  entities regardless (entity-expansion DoS); cap XML input size either way.
+  Measured on Linux (Swift 6.4.1, 2026-10-27): a declared internal entity delivered **no** characters
+  to the delegate (`&a;` gave 0, while plain text and the predefined `&amp;` arrived), and a nested
+  expansion parsed at 10^4 characters and failed with error 114 at 10^5 in 0.01 s, so libxml2 still
+  expands internally and its own limit stopped it. Cap XML input size either way, and do not rely
+  on entity text reaching the delegate.
 - `XMLDocument` loads external entities unless told not to: Apple's loads the non-network ones,
   and swift-corelibs-foundation (Linux) sets libxml2 `XML_PARSE_NOENT`, which loads them all.
   Always pass `.nodeLoadExternalEntitiesNever` ([`sota-mobile` rules/04](../../sota-mobile/rules/04-security.md) §4, 4.12).
@@ -89,7 +92,8 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
 
 - **AsyncHTTPClient follows up to 5 redirects by default**: set `.disallow` or a deliberate
   `.follow(max:allowCycles:)`, and re-validate the target of each hop. Its configuration has no
-  connect-time address filter (needs verification: only `dnsOverride` was found), so resolve and
+  connect-time address filter (read at 1.36.2, 2026-10-27: its resolution knobs are `dnsOverride` and `dnsResolver`, whose
+  `DNSResolver` has a private initializer and only `.system` and `.randomized`, so neither filters), so resolve and
   check the destination against private, loopback and metadata ranges yourself before dialling
   user-supplied URLs ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md)).
 - **TLS verification stays on**: never `certificateVerification: .none` or
