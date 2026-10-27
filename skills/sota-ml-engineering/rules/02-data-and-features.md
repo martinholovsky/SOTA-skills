@@ -147,6 +147,8 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       `grep -rnE '\.fit(_transform)?\(' --include='*.py' . | grep -vE 'Pipeline|fit\(X_train|fit\(train'`
       (fit on full data?);
       `grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?`
+      — a locator: it lists every resampling/scaling/selection site; each hit is read, not a
+      finding (is it fit before the split, or inside a Pipeline on the training fold?)
 - [ ] **Split correctness (§1, §3) — CRITICAL/HIGH** —
       `grep -rnE 'train_test_split\(' --include='*.py' . | grep -v 'stratify\|TimeSeries\|Group'`
       (temporal/group needed?);

@@ -299,7 +299,7 @@ err := g.Wait()
       (RWMutex only where a profile showed read contention; a panicking `Once` fn is consumed, so
       retryable init needs a mutex + done flag)
 - [ ] **Consumer-side close, double close candidates; channel sizing (§3)** — `grep -rn 'close(' --include='*.go' .`
-      (verify producer owns each) ;
+      lists every `close(`; each hit is read, not a finding (verify the producer owns each) ;
       `grep -rnE 'make\(chan [^,]+,[[:space:]]*([2-9]|[1-9][0-9]+)\)|make\(chan struct\{\},[[:space:]]*1\)' --include='*.go' . | grep -v '//'`
       (a literal buffer other than 0 or 1 needs a comment — MEDIUM; a 1-slot `struct{}` channel used
       as a lock needs a commented ctx-aware reason)

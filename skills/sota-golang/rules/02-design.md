@@ -330,6 +330,7 @@ func UserFrom(ctx context.Context) (*User, bool) {
       `grep -rn 'exec.Command(' --include='*.go' . | grep -v CommandContext`
 - [ ] **Functional options misuse (§7) — LOW** —
       `grep -rnE '^type [A-Za-z0-9_]*Option func|^func With[A-Z][A-Za-z0-9_]*\(' --include='*.go' .`
+      lists every functional-options declaration; each hit is read, not a finding
       (manual: a required parameter passed as an option, an option with no default, an invalid
       combination accepted without an `error`, or options on a constructor with ≤2 stable knobs)
 - [ ] **Embedding that leaks API or rewrites encoding (§6) — MEDIUM on API types** —

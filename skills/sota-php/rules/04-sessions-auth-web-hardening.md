@@ -386,18 +386,21 @@ Run from repo root; verify each hit manually.
       `grep -rnE 'set(raw)?cookie[[:space:]]*\(' --include='*.php' src/ | grep -vi 'samesite'`
 - [ ] **Password handling** —
       `grep -rnE '\b(md5|sha1|crypt)\s*\(' --include='*.php' src/ | grep -iE 'pass|pwd'` ;
-      `grep -rn 'password_hash' --include='*.php' src/` ;
+      `grep -rn 'password_hash' --include='*.php' src/` (lists every use of the recommended API; each
+      hit is read, not a finding) ;
       `grep -rl 'password_verify' --include='*.php' src/ | xargs -r grep -L 'password_needs_rehash'` (lists files that verify passwords but never rehash: MEDIUM (stuck costs)) ;
       `grep -rnE 'PASSWORD_(DEFAULT|BCRYPT)' --include='*.php' src/` (bcrypt, §2: confirm the
       input is rejected above 72 bytes by `strlen`, else MEDIUM)
 - [ ] **Weak randomness / timing-unsafe compares — HIGH where security-relevant** —
       `grep -rnE '\b(rand|mt_rand|uniqid|str_shuffle|array_rand)\s*\(' --include='*.php' src/` ;
       `grep -rnE '(===?)\s*\$.*(token|signature|hmac|hash)' -i --include='*.php' src/` ;
-      `grep -rn 'hash_equals' --include='*.php' src/` ;
+      `grep -rn 'hash_equals' --include='*.php' src/` (lists every constant-time compare; each hit is
+      read, not a finding) ;
       `grep -rn 'base_convert' --include='*.php' src/` (on a token, key or ID = HIGH, §3)
 - [ ] **Crypto** (§3) — `grep -rn 'mcrypt' --include='*.php' src/` (removed 7.2 — abandoned code);
       `grep -rnE "openssl_encrypt\([^)]*(cbc|ecb)" -i --include='*.php' src/` ;
-      `grep -rn 'sodium_crypto' --include='*.php' src/`
+      `grep -rn 'sodium_crypto' --include='*.php' src/` (lists every sodium call, the recommended
+      primitive; each hit is read, not a finding)
 - [ ] **Framework application key committed or hard-coded (§3) — CRITICAL for a production
       value** — a key in a tracked env file (`.example`, `.dist`, `.dev` and `.test` skipped):
       `git ls-files | grep -E '(^|/)\.env(\.[^/]*)?$' | grep -vE '\.(example|dist|dev|test)$' | while IFS= read -r f; do grep -nHE '^[[:space:]]*(APP_KEY|APP_SECRET)[[:space:]]*=[[:space:]]*[^[:space:]#]' "$f"; done`

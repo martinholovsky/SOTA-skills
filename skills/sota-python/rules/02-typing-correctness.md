@@ -344,11 +344,13 @@ Keep overload sets small (2–4); a 10-overload function wants a redesign. Typed
       silently absorbs a new member);
       `grep -rln "assert_never" --include="*.py" src/ || echo "no exhaustiveness guards"`
 - [ ] **Validation layering (§5)** — `grep -rn "model_validate\|TypeAdapter" --include="*.py" src/`
-      (should cluster at edges); `grep -rn "model_construct" --include="*.py" src/` (smell:
+      (lists every validation call; each hit is read — they should cluster at edges — not a
+      finding); `grep -rn "model_construct" --include="*.py" src/` (smell:
       wanted a dataclass [LOW]); `grep -rn 'extra.*allow\|extra="ignore"' --include="*.py" src/`
       (permissive input models [LOW-MEDIUM], §6) ;
       `grep -rnE 'except[[:space:]]+\(?[A-Za-z_.]*ValidationError' --include='*.py' --exclude-dir=.venv .`
-      (read each: field paths surfaced, not a vague 500 [LOW])
+      (lists every `ValidationError` handler; each hit is read, not a finding: field paths
+      surfaced, not a vague 500 [LOW])
 - [ ] **Protocol/ABC hygiene (§4)** —
       `grep -rn "class.*ABC).*:" --include="*.py" src/ -A3 | grep -c abstractmethod` (1-method
       ABCs → Protocol?); `grep -rn "isinstance.*Protocol" --include="*.py" src/`

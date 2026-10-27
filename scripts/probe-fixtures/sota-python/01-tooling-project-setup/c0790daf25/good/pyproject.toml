@@ -1,0 +1,6 @@
+# tool configuration only; packaging lives in setup.cfg
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "B"]

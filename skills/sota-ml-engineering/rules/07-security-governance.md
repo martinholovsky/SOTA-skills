@@ -231,7 +231,8 @@ rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-e
       data sources? Is training data validated ([rules/02](02-data-and-features.md))?**
 - [ ] **Extraction/inference exposure — MEDIUM** (§1) —
       `grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head`
-      (raw scores exposed? rate-limited?)
+      — a locator: it lists every score-output and rate-limit site; each hit is read, not a
+      finding (raw scores exposed? rate-limited?)
 - [ ] **Governance docs (§4) — MEDIUM/LOW** —
       `out=$(grep -rniE 'model.?card|MODEL_CARD|datasheet|intended.use|limitation' . 2>&1); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no model card" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
@@ -258,7 +259,8 @@ rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-e
       and a revoke/IR path exists
 - [ ] **ML-BOM, signed, per model (§2) — HIGH** —
       `grep -rqiE 'cyclonedx|ml[-_]?bom|ai[-_]?bom|machine-learning-model' . || echo "no ML-BOM for model artifacts"`
-      ; adapter load sites, each needing a signature check bound to its BOM entry:
+      ; a locator listing every adapter load site (each hit is read, not a finding; each needs
+      a signature check bound to its BOM entry):
       `grep -rnE 'load_adapter\(|PeftModel\.from_pretrained\(' --include='*.py' .`
       ; manual: is the BOM itself signed and verified at deploy and load?
 - [ ] **Pickle scanned before load where pickle is unavoidable (§2) — MEDIUM** — if the

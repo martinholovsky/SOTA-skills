@@ -283,7 +283,8 @@ testpaths = ["tests"]
 
 - [ ] **FastAPI** —
       `grep -rn "async def" $(grep -rln "APIRouter\|FastAPI" --include="*.py" src/) | head`
-      (then check for blocking calls inside);
+      (lists every async def in a FastAPI module; each hit is read for blocking calls
+      inside, not a finding);
       `grep -rn "requests\.\|time.sleep\|session.query\|Session(" --include="*.py" src/ | grep -i route`
       (sync-in-async [HIGH]);
       `grep -rn "@\(app\|router\)\.\(get\|post\|put\|delete\)" --include="*.py" src/ -A3 | grep -L response_model | head`
@@ -312,8 +313,9 @@ testpaths = ["tests"]
 - [ ] **pytest** (§3) — `grep -rn "def setUp\|TestCase" --include="*.py" tests/` (legacy style
       [LOW]); `grep -rn "pytest.raises(Exception)" --include="*.py" tests/` (too-broad
       [MEDIUM]); `grep -rn "time.sleep" --include="*.py" tests/` (flaky timing [MEDIUM]);
-      `grep -rn "scope=\"session\"\|scope=\"module\"" --include="*.py" tests/ conftest.py 2>/dev/null`
-      (mutable shared state?);
+      `grep -rnE 'scope=.(session|module).' --include='*.py' --exclude-dir=.venv .`
+      (lists every session/module-scoped fixture; each hit is read for mutable shared
+      state, not a finding);
       `grep -rn "os.environ\[" --include="*.py" tests/ | grep -v monkeypatch` (env pollution);
       `grep -rln "parametrize" --include="*.py" tests/ | wc -l` ;
       `err=$({ [ -d tests ] && [ -r tests ] || { echo "tests/ missing or unreadable" >&2; exit 2; }; grep -rl "hypothesis" --include="*.py" tests/; } 2>&1 >/dev/null); rc=$?` ;
