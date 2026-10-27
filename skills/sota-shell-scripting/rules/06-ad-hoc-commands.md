@@ -433,7 +433,7 @@ Measured 2026-09-18 over a file containing `53`, control (`53` alone) matching i
 **There is no version to pin** — three older gits match `\b` and the newest does not. The GNU
 and BSD forms are **mutually exclusive**, so neither is portable. Use `-P` where PCRE is
 compiled in, or drop the boundary and filter afterwards.
-**Class escapes split the same way** (measured 2026-09-30, control `7687` matching everywhere): `\s` and `\w` match on Debian git 2.39.5 (glibc) and Alpine git 2.54.0 (musl) and **match nothing** on macOS git 2.55.0; `\d` matches nothing on **all three** — it was never ERE. Write `[[:space:]]`, `[[:alnum:]_]`, `[[:digit:]]`, or use `-P`.
+**Class escapes split the same way** (measured 2026-09-30, control `7687` matching everywhere): `\s` and `\w` match on Debian git 2.39.5 (glibc) and Alpine git 2.54.0 (musl) and **match nothing** on macOS git 2.55.0; `\d` matches nothing on **all three** — it was never ERE. Write `[[:space:]]`, `[[:alnum:]_]`, `[[:digit:]]`, or use `-P`. **On macOS the escape is read as the plain letter, not dropped** (re-measured 2026-10-27, git 2.55.0, lines printed): under `-E`, `a\b` matched `ab` and `foo\b` matched `foobar`, so the pattern can also match the *wrong* lines, while the default BRE (`git grep` without `-E`) honoured `\b`, `\s` and `\w` like `-P`.
 
 This cost two false absences in one session: a count search over an agent file that plainly
 contained the number, and a reference sweep that reported zero while five references existed.
