@@ -236,7 +236,10 @@ hours):
   `prettier`, a **formatter reflow**: a multi-line patch that no longer matches
   because the code was folded onto one line, which is the most common cause of all
   and the one that looks least like an environment problem). Force the path live and
-  assert the mutation's runtime effect before trusting a green run.
+  assert the mutation's runtime effect before trusting a green run. A **red** run counts only
+  when it fails at the assertion the mutant targets: a lint or compile rejection shares the
+  suite's exit code (cargo-mutants calls it `unviable`) and proves nothing
+  ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1).
   [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md).
 - **Apply and revert with FILE EDITS, not a shell command pair — the revert is part
   of the technique, not cleanup.** This probe deliberately puts a real defect into

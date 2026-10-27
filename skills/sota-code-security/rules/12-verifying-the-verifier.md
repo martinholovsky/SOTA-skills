@@ -83,6 +83,17 @@ Two traps that make step 3 lie:
   the control being built. Only the loud sibling made the harness suspect at all
   ([`rules/15`](15-instruments-and-guards.md) §2.1, sixth bullet — the harness is the newer artifact).
 
+**The converse lies too: a red run is not the test catching the mutant.** Every stage of a gate
+script shares one exit code. Measured 2026-10-27: a deleted guard call rejected by `cargo clippy
+-- -D warnings` (`associated function enable is never used`) and a reachable mutant failing its
+assertion both exited **101** through the same `set -e` script. Count a mutant killed only when it
+fails **at the stage and assertion it targets** — read the failing line, not the exit code. A lint
+or compile rejection is §1a.2's *not attempted* (cargo-mutants files it as `unviable`,
+"inconclusive about test coverage"); keep the mutant reachable — an early return behind a
+never-set condition, not a deleted call. A failure at an **earlier** assertion than the targeted
+one is a finding in its own right: a precondition that passed by luck, or a false premise
+(field-reported 2026-10-25, both shapes).
+
 A **third probe** costs one edit: leave code and fixture alone and point the
 assertion at a plausible **wrong expected value** — still passing means it is keyed
 to something true that is not evidence ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).

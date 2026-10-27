@@ -317,12 +317,16 @@ jobs:
         # preventing that, and a gate whose correctness rests on a setting nobody
         # asserts is `sota-code-security` rules/11 §2.2.
         #
-        # The scope is asserted from the SHALLOW FLAG, not from a commit count.
-        # Counts cannot do it: `git rev-list --count HEAD` truncates to 1 in the
-        # same clone, so it degrades alongside the scan it would be checking. The
-        # three numbers do not agree either (measured here: rev-list HEAD 175,
-        # rev-list --all 181, gitleaks 179 — gitleaks walks refs beyond HEAD), so
-        # any equality test would be flaky, and a flaky gate gets disabled.
+        # The scope is asserted twice. The SHALLOW FLAG catches a truncated clone
+        # (`git rev-list --count HEAD` truncates to 1 in the same clone, so a count
+        # alone degrades alongside the scan). Then the count: with the default log
+        # options gitleaks does NOT scan merge commits, so a secret introduced only
+        # in a merge resolution is never read (reproduced 2026-10-27, gitleaks 8.30.1:
+        # "3 commits scanned. no leaks found" with the key at HEAD; this repo: 707 of
+        # 713). An earlier note here read a gap of 2 (181 vs 179) as gitleaks walking
+        # other refs and ruled equality out as flaky; it was the merges. With
+        # `--all --diff-merges=first-parent` every commit is scanned, so the count
+        # must EQUAL `git rev-list --all --count` (713 = 713 measured locally).
         run: |
           set -euo pipefail
           if [ "$(git rev-parse --is-shallow-repository)" != "false" ]; then
@@ -332,14 +336,15 @@ jobs:
           # Log outside the worktree: a file written into the repo root would be
           # committable by accident and in scope for the next scan.
           LOG="${RUNNER_TEMP:-/tmp}/gitleaks.log"
-          gitleaks git --config .gitleaks.toml --redact --verbose . 2>&1 | tee "$LOG"
+          gitleaks git --config .gitleaks.toml --redact --verbose --log-opts="--all --diff-merges=first-parent" . 2>&1 | tee "$LOG"
           scanned=$(grep -oE '[0-9]+ commits scanned' "$LOG" | grep -oE '^[0-9]+' || true)
           if [ -z "$scanned" ]; then
             echo "::error::gitleaks printed no 'N commits scanned' line — output format changed, so the scope is no longer verified."
             exit 1
           fi
-          if [ "$scanned" -lt 2 ]; then
-            echo "::error::gitleaks scanned only ${scanned} commit(s) on a non-shallow checkout."
+          total=$(git rev-list --all --count)
+          if [ "$scanned" -ne "$total" ]; then
+            echo "::error::gitleaks scanned ${scanned} commits, but the repository has ${total} (git rev-list --all --count). A merge commit or a ref is outside the scan."
             exit 1
           fi
-          echo "gitleaks scope OK: ${scanned} commits scanned, non-shallow checkout."
+          echo "gitleaks scope OK: ${scanned} of ${total} commits scanned (merges included), non-shallow checkout."

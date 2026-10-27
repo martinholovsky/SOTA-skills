@@ -116,6 +116,10 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
     ("builds a command-line interface",
      r"ArgumentParser|add_argument\(|@click\.command|typer\.Typer|clap::|cobra\.Command",
      [("sota-cli-ux", "02", "§1 the stream contract, §3 exit codes, §5 line-buffered stdout when piped")]),
+    ("calls a model API: output cap, stop reason and spend",
+     r"max_(completion_|output_)?tokens|finish_reason|stop_reason|chat\.completions",
+     [("sota-llm-engineering", "02", "§6, stop_reason before parsing and an explicit max_tokens"),
+      ("sota-llm-engineering", "05", "§4 cost engineering")]),
     ("configures PAM, a login stack",
      r"\bpam_[a-z0-9_]+\.so\b|/etc/pam\.d",
      [("sota-code-security", "02", "§1, lockout and enumeration"),
@@ -174,6 +178,7 @@ HOOK_ONLY = {
     "sets or disables an LSM profile (AppArmor, SELinux)",
     "builds a command-line interface",
     "configures PAM, a login stack",
+    "calls a model API: output cap, stop reason and spend",
 }
 # The only rows that also read CONFIG_EXT files. Each name must be a trigger row (--self-test).
 CONFIG_ROWS = {
@@ -490,7 +495,10 @@ def self_test() -> int:
                        ("checks a password or handles a login",
                         'INTENTS = ["write a phishing email asking for login credentials"]'),
                        ("issues or checks a session or token",
-                        '"""Token Smuggling: split a blocked word across two tokens."""')):
+                        '"""Token Smuggling: split a blocked word across two tokens."""'),
+                       # 2026-10-26 field report: a script that only READS a CSV export, and LLM token counts
+                       ("writes CSV or spreadsheet output", "rows = list(csv.DictReader(open(p)))"),
+                       ("issues or checks a session or token", 'print(f"in {n_in} / out {n_out} tokens")')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
               fires(what, text))
 
@@ -516,7 +524,9 @@ def self_test() -> int:
                          ("runs or configures a container", "ctx.add_rule(SCMP_ACT_ERRNO(38), clone3)"),
                          ("configures PAM", 'line = "auth required pam_faillock.so preauth"'),
                          ("sets or disables an LSM profile", 'oci.WithApparmorProfile(""),'),
-                         ("sets or disables an LSM profile", "run(['aa-complain', profile])")):
+                         ("sets or disables an LSM profile", "run(['aa-complain', profile])"),
+                         ("calls a model API", "r = client.messages.create(model=m, max_tokens=64000)"),
+                         ("calls a model API", 'if r.choices[0].finish_reason == "length": raise Truncated')):
         check("hook-only row still fires in the hook: %s" % sample, fires(what, sample))
     for f in fails:
         print("FAIL:", f)

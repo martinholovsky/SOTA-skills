@@ -99,6 +99,14 @@ The mechanics that make everything above real:
   Audit grep across workflows; every hit on a security/test job is a finding (Medium-High).
   Same for tools invoked with their own "don't fail" flags (`--exit-code 0`, `--soft-fail`,
   `npm audit || true`).
+- **On GitHub, a private repository on a free plan can have neither.** *"Protected branches are
+  available in public repositories with GitHub Free and GitHub Free for organizations"*, and
+  *"Rulesets are available in public repositories with GitHub Free and GitHub Free for
+  organizations, and in public and private repositories with GitHub Pro, GitHub Team, and GitHub
+  Enterprise Cloud"* (GitHub docs, checked 2026-10-27); a field report saw both APIs answer 403
+  *"Upgrade to GitHub Pro or make this repository public"*. Record the High finding with that
+  constraint and its exits: a paid plan, going public (after [rules/12](12-scm-ci-platform-governance.md) §12.1), or local
+  guards (a pre-push hook, an agent deny rule), which enforce nothing server-side.
 - **Rulesets apply to admins**; bypass lists are empty or break-glass-only with audit
   ([rules/07](07-runtime-ops.md) §7.5). `[skip ci]` must not be honored on protected branches' required gates
   (merge queue or push-triggered verification covers post-merge).

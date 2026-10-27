@@ -452,7 +452,7 @@ the choice belongs in the repo's contributing docs either way:
   everywhere but your machine).
 
 A pointer file that references tooling the reader doesn't have is worse than no
-pointer: it reads as a satisfied requirement.
+pointer: it reads as a satisfied requirement. A generated pointer is no exception: this library's `scripts/gen-agents-md.sh` writes the skills directory as an **absolute** path, even from a relative `--skills-dir` on a project-scoped install (measured 2026-10-27, `--dry-run`), so before committing its output to a shared repo, rewrite those paths relative to the repo (over a `--copy` install) or replace them with the install step.
 
 ## §11 A durable note records an invariant, not an observation
 

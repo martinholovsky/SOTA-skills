@@ -83,7 +83,8 @@ Use when asked to find secret leaks/misuse in an existing repo.
    - Files: `.env*` tracked in git, `*.pem`, `*.p12`, `*.pfx`, `*.key`, `*.jks`, `*.keystore`,
      `id_rsa*`, `credentials.json`, `serviceaccount*.json`, `kubeconfig`, `.npmrc`/`.pypirc`
      with tokens, `terraform.tfstate` (state files contain plaintext secrets).
-3. **History pass:** `git log -p` / `gitleaks git --log-opts` for secrets removed from HEAD
+3. **History pass:** `git log --all -m -p` / `gitleaks git --log-opts="--all -m"` for secrets removed
+   from HEAD (without `-m`, merge commits show no diff: rules/04 §1)
    but live in history. A secret deleted in a later commit is **still leaked** — severity is
    unchanged.
 4. **Handling pass (misuse, not just leaks):** secrets in log statements, error messages,

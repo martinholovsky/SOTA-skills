@@ -49,7 +49,7 @@ paths = ['''testdata/fake_keys\.json''']     # narrow, path-based; never allowli
 ```
 
 CI (gitleaks ≥ 8.19 subcommands): `gitleaks git --redact .` on PRs — diff-aware via
-`--log-opts="origin/main.."` for speed — plus a scheduled full-history scan without log-opts
+`--log-opts="origin/main.."` for speed — plus a scheduled full-history scan with `--log-opts="--all -m"`
 (needs a `fetch-depth: 0` checkout) so old commits are rechecked as rules improve. The legacy
 `detect`/`protect` spellings still run but are deprecated aliases.
 
@@ -92,6 +92,12 @@ non-git surfaces: S3 buckets, container images, CI logs exports — secrets leak
   8.30.1's default config, checked here, skipped the AWS documentation key
   `AKIAIOSFODNN7EXAMPLE` while flagging a random `AKIA…` beside it — but confirm each against
   your scanner rather than assuming. OWASP: Secrets Management cheat sheet.
+- **The same skip voids a positive control.** A secret-scan gate "proven" by planting a
+  vendor example value or a patterned token proves nothing: exit 0 is what the scanner does
+  with those by design. Plant a freshly generated random value of a real token format.
+  Measured 2026-10-27, gitleaks 8.30.1, one file per arm: the AWS documentation pair and
+  `ghp_` + 36 sequential characters each exited 0; a `ghp_` + 36 `secrets.choice` characters
+  and a random `AKIA…` each exited 1 ([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2).
 - **A working-tree scan is not limited to tracked files, and does not read `.gitignore`.**
   `gitleaks dir` (and directory scanners generally) treat the path as a plain directory, so an
   untracked artifact — a log, an editor backup, a crash dump, a tool's scratch output — is in
@@ -114,6 +120,16 @@ non-git surfaces: S3 buckets, container images, CI logs exports — secrets leak
   working-tree pass written as `detect --source .` passed, and the pre-push history scan then
   blocked the same token once it was committed. Read as an entropy difference, it was a scope
   difference.
+- **A history scan reads no merge commit's own changes unless you ask.** `gitleaks git` runs
+  `git log -p`, and git shows no diff for a merge without a `--diff-merges` variant, so a secret
+  introduced in a conflict resolution is out of scope with or without `--log-opts="--all"`.
+  Verified 2026-10-27 on gitleaks 8.30.1, both arms: an AWS-shaped key in an ordinary commit
+  gave `2 commits scanned`, `leaks found: 2`; the same key added only in a merge resolution gave
+  `3 commits scanned` of 4 and `no leaks found`, exit 0. `--log-opts="--all -m"` and
+  `"--all --diff-merges=first-parent"` scanned 4 and found it; `"--all --cc"` did not. Once a later
+  commit removed the key, `gitleaks dir` was clean as well. Run the history pass with
+  `--log-opts="--all -m"` and reconcile `N commits scanned` with `git rev-list --all --count`:
+  a shortfall equal to `git rev-list --all --merges --count` is this gap.
 
 ### Adopting scanning on a legacy repo (baseline workflow)
 
@@ -290,7 +306,7 @@ grep -rInE '[a-z+]+://[^/:@[:space:]]+:[^@[:space:]]+@' .
 # Dangerous tracked files
 git ls-files | grep -E '\.env($|\.)|\.pem$|\.key$|\.p12$|\.pfx$|\.jks$|id_rsa|credentials\.json|terraform\.tfstate|kubeconfig|\.npmrc$|\.netrc$'
 # History (HEAD-clean but leaked)
-git log --all -p --unified=0 | grep -E '^(\+).*(AKIA|ghp_|PRIVATE KEY|sk_live_)' | head -50
+git log --all -m -p --unified=0 | grep -E '^(\+).*(AKIA|ghp_|PRIVATE KEY|sk_live_)' | head -50
 # Scanner suppressions hiding bodies
 grep -rn 'gitleaks:allow\|nosec\|trufflehog:ignore' .
 ```
@@ -319,6 +335,12 @@ file is a claim, not evidence — check it the way you would any other
   (`jq '{id, status}'`) instead. Field-reported 2026-10-22, one cloud GPU CLI: a `create
   instance … --raw` piped to a pretty-printer showed an instance API key. Its scope and
   lifetime were not verified, and the case was not re-run, since that would print it again.
+- **Build the output; do not scrub it — personal data included.** A `sed` redaction is a
+  classifier whose misses are the leak, and the lines it did match look redacted. Field-reported
+  2026-10-25: a filter keyed to two shapes of a device serial missed a third
+  (`…USBSTOR#…#<serial>&0#{guid}`); reproduced 2026-10-27, 1 of 3 shapes leaked, while printing
+  only fields split out by construction leaked 0. If you must scrub, run the filter over every
+  shape the value takes and assert each is masked first ([`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §4).
 - **Inventory the path.** It belongs on the same list as `.env`, shell history, IDE
   settings and CI variables. It is missing from most checklists because it is newer than
   they are, not because it is safe.
@@ -352,6 +374,8 @@ inventory that does not name the transcript path = **Medium**.
       dev setup; custom rules cover internal token prefixes.
 - [ ] Blocking CI secret-scan on every PR; (§2) scheduled full-history scan; built images scanned;
       scanner output redacted.
+- [ ] **The history pass reads merge commits (§1):** it runs with `--log-opts="--all -m"` (or `-m` on
+      `git log -p`), and its `N commits scanned` equals `git rev-list --all --count`.
 - [ ] **Every gate described as a working-tree scan really reads uncommitted files** — it is
       `gitleaks dir` or `--no-git`, not `gitleaks git` / `detect --source .`, which scan commits
       only and print a healthy byte count while missing the file you just wrote (§1).

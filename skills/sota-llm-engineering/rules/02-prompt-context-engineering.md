@@ -275,6 +275,11 @@ category = data.get("category", "other")                    # silently launders 
   provider reports usage, also assert `output_tokens < max_tokens`: a wrapper
   that drops `stop_reason` leaves that arithmetic as your only tell
   ([`sota-code-security/rules/16`](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.7, [`rules/11`](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2).
+  **On a reasoning model the cap covers the thinking too** — "Thinking tokens count toward
+  the `max_tokens` limit for the turn" (Anthropic extended-thinking docs, read 2026-10-27) —
+  so a cap sized for the answer alone can come back at `max_tokens` with an empty or cut
+  answer while the reasoning is still billed as output ([rules/05](05-production-engineering.md) §4). A retry at the
+  same cap is the repair loop the bullet above rules out: raise the cap or shrink the input.
 - **Schema design for models:** flat-ish, every field `description`-annotated,
   enums for closed sets, `additionalProperties: false`, no clever recursion.
   Include an escape hatch field (`"unsure": true` / `"other"` enum arm) so

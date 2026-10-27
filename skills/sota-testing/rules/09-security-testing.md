@@ -28,6 +28,13 @@ skills.
 - Security tests are **negative tests**: the assertion is that the attack is
   *refused* (403/404/422, rejected, no state change), not that the happy path
   works. A suite with only positive cases is blind to every control bypass.
+- **…and the refusal is the control's own.** "Not success" (`!= 200`, a non-zero exit, "must
+  fail") is also what an unreachable destination or a missing route returns, and a sandboxed
+  test environment fails by default. Assert the control's refusal signature (its status code,
+  error type or deny log line), and keep a mutant arm with the control removed that must change
+  the outcome ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1). Measured 2026-10-27 with a toy forward
+  proxy and the metadata address, which the host could not reach: denying, it answered 407;
+  with the deny rule removed, 504. `!= 200` passed both arms, `== 407` only the real one.
 - **…and every enforcement control still needs one allow case.** Negative-only is
   the right emphasis and the wrong totality: a cap, quota, filter, allowlist or
   policy that refuses *everything* passes every negative test you can write. Pair

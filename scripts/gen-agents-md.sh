@@ -69,6 +69,22 @@ fi
 SKILLS_DIR="$(cd -- "$SKILLS_DIR" && pwd)"   # absolute
 [ -d "$SKILLS_DIR/sota" ] || die "no sota/ under $SKILLS_DIR — is this a skills dir?"
 
+# --- warn when the block would be machine-local inside a repo -----------------
+# Every path the block writes is absolute ($SKILLS_DIR is resolved with pwd), even
+# for a repo-resident install. Committed to a shared repo, it points every other
+# clone and CI runner at files they do not have and publishes this machine's
+# layout (field report 2026-10-26; `sota-docs-workflow` rules/01 §10).
+out_dir="$(dirname -- "$OUTPUT")"
+if top="$(git -C "$out_dir" rev-parse --show-toplevel 2>/dev/null)"; then
+  top="$(cd -- "$top" && pwd)"
+  case "$SKILLS_DIR/" in
+    "$top"/*) fix="rewrite ${SKILLS_DIR#"$top"/} paths relative to the repo before committing" ;;
+    *) fix="use a repo-resident install (install.sh --project . --copy) and relative paths, or state the install step" ;;
+  esac
+  printf '%s: warning: %s is in the git work tree %s, and every path in the block is absolute\n  (%s), so it works only on this machine. For a shared repo: %s.\n' \
+    "$(basename -- "$0")" "$OUTPUT" "$top" "$SKILLS_DIR" "$fix" >&2
+fi
+
 # --- pull a one-line summary from a SKILL.md's frontmatter description --------
 # Frontmatter is two fields (name + description); take the description's first
 # sentence and squeeze whitespace.

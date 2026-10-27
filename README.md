@@ -681,7 +681,9 @@ plainly. Every item below is in the repo, not a claim about it:
   The same lens later caught this repo's **secret scan**: `gitleaks` prints
   `179 commits scanned`, and nobody read it. In a shallow clone it scans **1 of
   179**, prints `no leaks found`, and exits 0 — a green scan over 0.5% of history,
-  with one CI setting the only thing preventing it. CI now asserts the scope.
+  with one CI setting the only thing preventing it. CI now asserts the scope —
+  and since 2026-10-27 counts it against `git rev-list --all`, after a field report showed
+  `gitleaks` skips **merge commits** by default (here 707 of 713 scanned, all clean).
   Two more, both 2026-09-04. **Two releases had shipped and were never tagged** — a
   CHANGELOG entry, a version bump, a merge, and no tag: unreachable by `git tag`, and
   invisible because the one version gate checked only that a tag is never *ahead* of
@@ -1328,7 +1330,14 @@ It writes a thin `AGENTS.md` that carries the operating principles and points th
 agent at the installed `skills/` tree — the index is built from each skill's
 frontmatter so it stays in sync, and the agent reads the relevant `rules/*.md` on
 demand (no rule text is duplicated). Idempotent via a managed block, like the
-others; `--skills-dir`/`--output` override the defaults. Claude Code keeps using
+others; `--skills-dir`/`--output` override the defaults. **Every path it writes is
+absolute** (`--skills-dir` is resolved with `pwd`, even when given relative), so the block
+works on the machine that generated it: fine for a solo repo, wrong to commit to a shared or
+public one, where it points every other clone and CI runner at files they do not have and
+publishes your home-directory layout. There, read the `--dry-run` output and rewrite the paths
+relative to a repo-resident (`install.sh --project . --copy`) install, or state the install
+step instead ([`sota-docs-workflow` rules/01](skills/sota-docs-workflow/rules/01-documentation-architecture.md) §10); run inside a git
+work tree, the script prints that warning itself. Claude Code keeps using
 the native Skills install above. This repo itself follows the standard:
 [`AGENTS.md`](AGENTS.md) is canonical; `CLAUDE.md`/`GEMINI.md` are symlinks.
 

@@ -273,6 +273,29 @@
       ]
     },
     {
+      "from": "sota-testing",
+      "to": "sota-code-security",
+      "weight": 23,
+      "targets": [
+        "rules/01 \u00a711",
+        "rules/03 \u00a71",
+        "rules/03 \u00a74",
+        "rules/03 \u00a77",
+        "rules/04 \u00a72",
+        "rules/05",
+        "rules/07 \u00a72",
+        "rules/10",
+        "rules/11 \u00a72.2",
+        "rules/11 \u00a76.7",
+        "rules/12 \u00a71",
+        "rules/12 \u00a71a",
+        "rules/13 \u00a71",
+        "rules/14 \u00a71",
+        "rules/14 \u00a77",
+        "rules/15 \u00a72.4"
+      ]
+    },
+    {
       "from": "sota-shell-scripting",
       "to": "sota-code-security",
       "weight": 22,
@@ -291,28 +314,6 @@
         "rules/15",
         "rules/15 \u00a72.1",
         "rules/15 \u00a72.2"
-      ]
-    },
-    {
-      "from": "sota-testing",
-      "to": "sota-code-security",
-      "weight": 21,
-      "targets": [
-        "rules/01 \u00a711",
-        "rules/03 \u00a71",
-        "rules/03 \u00a74",
-        "rules/03 \u00a77",
-        "rules/04 \u00a72",
-        "rules/05",
-        "rules/07 \u00a72",
-        "rules/10",
-        "rules/11 \u00a72.2",
-        "rules/11 \u00a76.7",
-        "rules/12 \u00a71a",
-        "rules/13 \u00a71",
-        "rules/14 \u00a71",
-        "rules/14 \u00a77",
-        "rules/15 \u00a72.4"
       ]
     },
     {
@@ -1213,6 +1214,15 @@
       ]
     },
     {
+      "from": "sota-devsecops",
+      "to": "sota-secrets-management",
+      "weight": 5,
+      "targets": [
+        "rules/04",
+        "rules/04 \u00a71"
+      ]
+    },
+    {
       "from": "sota-docs-workflow",
       "to": "sota-testing",
       "weight": 5,
@@ -1456,15 +1466,6 @@
       "weight": 4,
       "targets": [
         "rules/07 \u00a74"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-secrets-management",
-      "weight": 4,
-      "targets": [
-        "rules/04",
-        "rules/04 \u00a71"
       ]
     },
     {
@@ -1992,6 +1993,16 @@
       "targets": [
         "rules/03 \u00a73",
         "rules/03 \u00a75"
+      ]
+    },
+    {
+      "from": "sota-secrets-management",
+      "to": "sota-code-security",
+      "weight": 3,
+      "targets": [
+        "rules/02 \u00a75",
+        "rules/04",
+        "rules/15 \u00a72.2"
       ]
     },
     {
@@ -2535,20 +2546,20 @@
     },
     {
       "from": "sota-secrets-management",
-      "to": "sota-code-security",
-      "weight": 2,
-      "targets": [
-        "rules/02 \u00a75",
-        "rules/04"
-      ]
-    },
-    {
-      "from": "sota-secrets-management",
       "to": "sota-devsecops",
       "weight": 2,
       "targets": [
         "rules/05 \u00a75.2",
         "rules/07 \u00a77.4"
+      ]
+    },
+    {
+      "from": "sota-secrets-management",
+      "to": "sota-observability",
+      "weight": 2,
+      "targets": [
+        "rules/01 \u00a74",
+        "rules/05 \u00a73"
       ]
     },
     {
@@ -3997,14 +4008,6 @@
     },
     {
       "from": "sota-secrets-management",
-      "to": "sota-observability",
-      "weight": 1,
-      "targets": [
-        "rules/05 \u00a73"
-      ]
-    },
-    {
-      "from": "sota-secrets-management",
       "to": "sota-cli-ux",
       "weight": 1,
       "targets": [
@@ -4307,14 +4310,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1830,
+    "md link, other skill": 1835,
     "md link, outside skills/": 3,
-    "md link, same skill": 2823,
+    "md link, same skill": 2826,
     "name (backticked)": 450,
     "name (bare)": 242,
-    "name+file (backticked)": 831,
+    "name+file (backticked)": 836,
     "name+file (bare)": 175,
-    "own rules/NN": 3039
+    "own rules/NN": 3043
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4324,9 +4327,9 @@
     "md link, same skill": 0,
     "name (backticked)": 435,
     "name (bare)": 198,
-    "name+file (backticked)": 827,
+    "name+file (backticked)": 832,
     "name+file (bare)": 163,
-    "own rules/NN": 2938
+    "own rules/NN": 2941
   },
   "rules_index_style": {
     "link": 42

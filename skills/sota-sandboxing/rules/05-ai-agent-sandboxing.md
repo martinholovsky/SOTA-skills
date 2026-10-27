@@ -157,7 +157,7 @@ sessions and push rights, so its approval settings are a security control:
   (drops the per-command escape hatch), pushed from the managed tier. Codex:
   `--sandbox read-only|workspace-write` (config `sandbox_mode`), with admin requirements
   limiting `allowed_sandbox_modes`. It confines shell commands the agent runs, not MCP
-  servers (R3.4). Docs: code.claude.com/docs/en/sandboxing, developers.openai.com/codex/config-reference.
+  servers (R3.4). **A permission rule is not this sandbox: it matches command text, not effects** — Claude Code's Read/Edit deny rules do not reach "a Python or Node script that opens files itself", and `Bash(git push *)` does not match `git -C . push`, so a path the agent must not write needs the OS sandbox. Agent side: a denial's scope is its rule's pattern — read the rule before recording it as a path policy, and never reach a denied effect through another tool. Docs: code.claude.com/docs/en/sandboxing, code.claude.com/docs/en/permissions, developers.openai.com/codex/config-reference.
 - **Policy hooks live where the agent cannot write** — outside the workspace and
   not in a file the agent may edit (R3.4, R2.2).
 - **Gate agent pushes at the VCS boundary**: branch protection plus required
