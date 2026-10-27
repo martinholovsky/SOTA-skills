@@ -1,0 +1,13 @@
+name: CI
+on: pull_request
+jobs:
+  b:
+    runs-on: ubuntu-latest
+    steps:
+      - id: c
+        uses: actions/cache@v0
+        with:
+          path: ~/.cache
+          key: deps-${{ hashFiles('uv.lock') }}
+      - run: uv sync --frozen
+      - run: echo "cache-hit=${{ steps.c.outputs.cache-hit }}"

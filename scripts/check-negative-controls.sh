@@ -3,7 +3,8 @@
 # Negative controls — proof our own gates can still FAIL.
 #
 # Two subjects: scripts/check-invariants.sh (part A) and scripts/verify-setup.sh
-# (part B). One script, one CI job, one bar.
+# (part B). One script, one bar; CI splits its probes across shards (NC_SHARD) and one
+# aggregator job under the required check's name gives the verdict (--aggregate).
 #
 # WHY THIS EXISTS. check-invariants.sh prints "ok" fifteen times on a clean tree.
 # So does a check whose pathspec drifted, whose predicate stopped matching, or
@@ -43,7 +44,56 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 REPO=$(pwd)
+
+# --- SHARDING (2026-10-28) -------------------------------------------------
+# Every probe runs the FULL gate, about 7 s each, so 129 probes took 15.3 of CI's 18 minutes.
+# NC_SHARD=i/n (0-based) runs only the probes whose ordinal falls in shard i; every shard
+# still applies the same mutations in the same order, so ordinals agree across shards. Each
+# shard writes NC_MANIFEST, and `--aggregate DIR` is the verdict: every shard present, one
+# total, every ordinal run exactly once, zero failures, and the COVERED reconciliation over
+# the union. A shard alone proves nothing about coverage, so it never prints PASS.
+# Unset, the harness runs every probe exactly as before (sota-devsecops rules/16).
+NC_I=""; NC_N=""
+if [ "${1:-}" = "--aggregate" ]; then
+  dir="${2:?--aggregate needs the directory holding the shard manifests}"
+  shopt -s nullglob; files=("$dir"/*.manifest); shopt -u nullglob
+  [ "${#files[@]}" -gt 0 ] || { echo "FAIL: no shard manifests in $dir — nothing ran."; exit 1; }
+  n=$(sed -n 's/^shards=//p' "${files[0]}")
+  [ "${#files[@]}" -eq "$n" ] || { printf 'FAIL: %d manifest(s) for %d shards — a shard did not report.\n' "${#files[@]}" "$n"; exit 1; }
+  total=""; tested=0; caught=0; failed=0; ords=""; PROBED_IDS=""; SKIPPED_IDS=""; seen=" "
+  for f in "${files[@]}"; do
+    grep -qx 'complete=yes' "$f" || { echo "FAIL: $f has no completion marker — that shard aborted."; exit 1; }
+    s=$(sed -n 's/^shard=//p' "$f"); case "$seen" in *" $s "*) echo "FAIL: shard $s reported twice."; exit 1 ;; esac; seen="$seen$s "
+    tt=$(sed -n 's/^total=//p' "$f"); [ -z "$total" ] && total=$tt
+    [ "$tt" = "$total" ] || { printf 'FAIL: shards disagree on the probe count (%s vs %s) — they did not run the same harness.\n' "$tt" "$total"; exit 1; }
+    tested=$((tested + $(sed -n 's/^tested=//p' "$f"))); caught=$((caught + $(sed -n 's/^caught=//p' "$f")))
+    failed=$((failed + $(sed -n 's/^failed=//p' "$f")))
+    ords="$ords $(sed -n 's/^ords=//p' "$f")"; PROBED_IDS="$PROBED_IDS $(sed -n 's/^probed=//p' "$f")"
+    SKIPPED_IDS="$SKIPPED_IDS $(sed -n 's/^skipped=//p' "$f")"
+  done
+  uniq_ords=$(tr ' ' '\n' <<<"$ords" | sed '/^$/d' | sort -n | uniq | { grep -c . || true; })
+  all_ords=$(tr ' ' '\n' <<<"$ords" | sed '/^$/d' | { grep -c . || true; })
+  [ "$all_ords" -eq "$uniq_ords" ] || { echo "FAIL: an ordinal ran in more than one shard."; exit 1; }
+  [ "$uniq_ords" -eq "$total" ] || { printf 'FAIL: %d of %d probe ordinals ran — the shards left a gap.\n' "$uniq_ords" "$total"; exit 1; }
+  [ "$tested" -eq "$total" ] || { printf 'FAIL: %d probes tested for %d ordinals.\n' "$tested" "$total"; exit 1; }
+  printf 'Aggregated %d shard(s): %d probe ordinals, each run once.\n' "$n" "$total"
+  NC_AGGREGATE=1
+fi
+if [ -n "${NC_SHARD:-}" ]; then
+  NC_I=${NC_SHARD%/*}; NC_N=${NC_SHARD#*/}
+  case "$NC_I$NC_N" in *[!0-9]*|'') echo "FAIL: NC_SHARD must be i/n, got '$NC_SHARD'"; exit 1 ;; esac
+  if [ "$NC_N" -lt 1 ] || [ "$NC_I" -ge "$NC_N" ]; then echo "FAIL: NC_SHARD $NC_SHARD out of range"; exit 1; fi
+  : "${NC_MANIFEST:?NC_SHARD needs NC_MANIFEST, the file --aggregate reads}"
+fi
+ORD=0; TAKEN_ORDS=""
+shard_take() {  # true when this probe's ordinal belongs to this shard (always, unsharded)
+  ORD=$((ORD + 1))
+  [ -z "$NC_N" ] && return 0
+  [ $(( (ORD - 1) % NC_N )) -eq "$NC_I" ] || return 1
+  TAKEN_ORDS="$TAKEN_ORDS $ORD"
+}
 GATE=scripts/check-invariants.sh
+if [ -z "${NC_AGGREGATE:-}" ]; then
 [ -f "$GATE" ] || { echo "FAIL: $GATE not found"; exit 1; }
 
 WT=$(mktemp -d)/wt
@@ -129,6 +179,7 @@ restore() {
 
 probe() {  # <id> <name> <expected substring>   — mutation already applied
   local id="$1" name="$2" want="$3"
+  shard_take || { restore; return; }
   tested=$((tested + 1))
   PROBED_IDS="$PROBED_IDS ${id%%[a-z]*}"
   # ASSERT THE MUTATION TOOK (added 2026-08-16). Every mutation below is a hardcoded
@@ -481,8 +532,15 @@ wt_commit() {  # <message> — commit whatever the caller staged/changed
              commit -q --no-verify -m "$1" ) \
     || { echo "FATAL: probe commit failed — the diff-based probes below would be inert."; exit 1; }
 }
+wt_rewind() {  # back to the original HEAD, with the gate under test re-copied
+  ( cd "$WT" && git reset -q --hard "$WT_ORIG" && git clean -fdq ) >/dev/null 2>&1 \
+    || { echo "FATAL: could not rewind the probe worktree to $WT_ORIG."; exit 1; }
+  cp "$REPO/$GATE" "$WT/$GATE"
+  cmp -s "$REPO/$GATE" "$WT/$GATE" || { echo "FAIL: gate copy did not survive rewind"; exit 1; }
+}
 probe_committed() {  # <id> <name> <expected substring>  — commit already made
   local id="$1" name="$2" want="$3"
+  shard_take || { wt_rewind; return; }
   tested=$((tested + 1))
   PROBED_IDS="$PROBED_IDS ${id%%[a-z]*}"
   local head; head=$(git -C "$WT" rev-parse HEAD)
@@ -505,13 +563,11 @@ probe_committed() {  # <id> <name> <expected substring>  — commit already made
       failed=$((failed + 1))
     fi
   fi
-  ( cd "$WT" && git reset -q --hard "$WT_ORIG" && git clean -fdq ) >/dev/null 2>&1 \
-    || { echo "FATAL: could not rewind the probe worktree to $WT_ORIG."; exit 1; }
-  cp "$REPO/$GATE" "$WT/$GATE"
-  cmp -s "$REPO/$GATE" "$WT/$GATE" || { echo "FAIL: gate copy did not survive rewind"; exit 1; }
+  wt_rewind
 }
 
 probe_committed_green() {  # <id> <name> <expected ok-substring> — commit already made
+  shard_take || { wt_rewind; return; }
   # The inverse of probe_committed: for an EXEMPTION, the gate must stay green. A bare
   # "exit 0" is too weak — a check that SKIPPED is also green, so the pass would prove
   # nothing (probe 29b's lesson: an escape that can never fire is a checkbox). Assert
@@ -542,10 +598,7 @@ probe_committed_green() {  # <id> <name> <expected ok-substring> — commit alre
       failed=$((failed + 1))
     fi
   fi
-  ( cd "$WT" && git reset -q --hard "$WT_ORIG" && git clean -fdq ) >/dev/null 2>&1 \
-    || { echo "FATAL: could not rewind the probe worktree to $WT_ORIG."; exit 1; }
-  cp "$REPO/$GATE" "$WT/$GATE"
-  cmp -s "$REPO/$GATE" "$WT/$GATE" || { echo "FAIL: gate copy did not survive rewind"; exit 1; }
+  wt_rewind
 }
 
 # 27c — the exemption side of 27: a valid deferral whose marker cell QUOTES a pipe. Markdown
@@ -1759,6 +1812,7 @@ VSEOF
 
 vs_probe() {  # <name> <expected check label>  — fixture already broken by caller
   local name="$1" want="$2"
+  shard_take || { build_fixture; return; }
   tested=$((tested + 1))
   run_vs
   if [ "$VS_RC" -eq 0 ]; then
@@ -1790,6 +1844,7 @@ VSEOF
 }
 
 vs_probe_partial() {  # <name> <expected check label> — for branches that report
+  shard_take || { build_fixture; return; }
   # PARTIAL rather than FAIL. verify-setup exits on n_fail alone, so a PARTIAL run
   # exits 0 and vs_probe (which demands non-zero) would read it as INERT. Assert the
   # row instead of the exit code — and still refuse a catch for the wrong reason.
@@ -1860,6 +1915,7 @@ vs_fixture_plugin() {  # <plugin name> <skill name> <description>
 }
 vs_probe_info() {  # <name> <label> <needle> — a row that must turn INFO (1b never fails)
   local name="$1" want="$2" needle="$3" line hit=0
+  shard_take || { build_fixture; return; }
   tested=$((tested + 1))
   run_vs
   while IFS= read -r line; do
@@ -1976,6 +2032,7 @@ VS_SEARCHERS=blindgrep
 vs_probe "a searcher that cannot even find the control" "13. searcher: blindgrep"
 VS_SEARCHERS=""
 
+fi  # end of the probing body; --aggregate starts here with the shards' totals
 # --- result ---------------------------------------------------------------
 echo
 if [ "$tested" -eq 0 ]; then
@@ -1985,6 +2042,20 @@ fi
 if [ "$failed" -ne 0 ]; then
   printf 'FAIL: %d of %d mutations were not caught by the check they target.\n' "$failed" "$tested"
   exit 1
+fi
+if [ -n "$NC_N" ]; then
+  # A shard's result is an input to --aggregate, never a verdict: coverage is a property of
+  # the union, so this path prints no PASS. complete=yes is written last, so a shard that
+  # died mid-run leaves a manifest the aggregator refuses.
+  {
+    echo "shards=$NC_N"; echo "shard=$NC_I"; echo "total=$ORD"
+    echo "tested=$tested"; echo "caught=$caught"; echo "failed=$failed"
+    echo "ords=$TAKEN_ORDS"; echo "probed=$PROBED_IDS"; echo "skipped=$SKIPPED_IDS"
+    echo "complete=yes"
+  } > "$NC_MANIFEST"
+  printf 'SHARD %s/%s: %d/%d mutations caught (probe ordinals %d in all); --aggregate gives the verdict.\n' \
+    "$NC_I" "$NC_N" "$caught" "$tested" "$ORD"
+  exit 0
 fi
 # --- the declaration must match what just ran ------------------------------
 # The COVERED line below stays a literal on purpose: invariant 17 parses it out of this

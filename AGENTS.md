@@ -67,7 +67,7 @@ every edit, in a file loaded into every session, with a one-command source of tr
 Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not. The
 gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
 
-**`scripts/check-negative-controls.sh` proves our gates can still fail.** Its CI job runs it plus
+**`scripts/check-negative-controls.sh` proves our gates can still fail.** CI runs it in four shards (`NC_SHARD`) and gives the verdict in one aggregator job under the required name (`--aggregate`), plus
 `evals/smoke-runners.py` over **two** subjects — `check-invariants.sh` (part A) and
 `verify-setup.sh` (part B). Each probe injects a known-bad and requires *the intended check* to
 complain; any other non-zero exit is a **FALSE PASS**. **Part A reads the COMMITTED tree**

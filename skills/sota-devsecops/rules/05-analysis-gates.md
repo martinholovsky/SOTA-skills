@@ -264,7 +264,8 @@ post-merge ─► CodeQL full, DAST baseline on preview, scheduled deep scans
 ```
 
 Latency budget matters: every gate over ~10 minutes generates organizational pressure to
-remove it. Diff-aware modes, caching, and tiering are how gates survive.
+remove it. Diff-aware modes, caching, and tiering are how gates survive, and each can pass a required
+check that never ran: [rules/16](16-fast-ci-without-blind-spots.md) §16.3.
 
 ## Audit checklist
 

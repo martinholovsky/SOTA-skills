@@ -1368,6 +1368,17 @@
     },
     {
       "from": "sota-testing",
+      "to": "sota-devsecops",
+      "weight": 5,
+      "targets": [
+        "rules/03 \u00a73.7",
+        "rules/05",
+        "rules/07 \u00a77.7",
+        "rules/16"
+      ]
+    },
+    {
+      "from": "sota-testing",
       "to": "sota-shell-scripting",
       "weight": 5,
       "targets": [
@@ -1469,6 +1480,16 @@
       ]
     },
     {
+      "from": "sota-devsecops",
+      "to": "sota-testing",
+      "weight": 4,
+      "targets": [
+        "rules/04 \u00a74.8",
+        "rules/07 \u00a77.3",
+        "rules/07 \u00a77.5"
+      ]
+    },
+    {
       "from": "sota-docs-workflow",
       "to": "sota-architecture",
       "weight": 4,
@@ -1563,16 +1584,6 @@
       "weight": 4,
       "targets": [
         "rules/05 \u00a73"
-      ]
-    },
-    {
-      "from": "sota-testing",
-      "to": "sota-devsecops",
-      "weight": 4,
-      "targets": [
-        "rules/03 \u00a73.7",
-        "rules/05",
-        "rules/07 \u00a77.7"
       ]
     },
     {
@@ -3106,14 +3117,6 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-testing",
-      "weight": 1,
-      "targets": [
-        "rules/04 \u00a74.8"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
       "to": "sota-performance",
       "weight": 1,
       "targets": [
@@ -4318,14 +4321,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1837,
+    "md link, other skill": 1841,
     "md link, outside skills/": 3,
-    "md link, same skill": 2827,
+    "md link, same skill": 2836,
     "name (backticked)": 450,
     "name (bare)": 242,
-    "name+file (backticked)": 838,
+    "name+file (backticked)": 842,
     "name+file (bare)": 175,
-    "own rules/NN": 3044
+    "own rules/NN": 3053
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4335,9 +4338,9 @@
     "md link, same skill": 0,
     "name (backticked)": 435,
     "name (bare)": 198,
-    "name+file (backticked)": 834,
+    "name+file (backticked)": 838,
     "name+file (bare)": 163,
-    "own rules/NN": 2942
+    "own rules/NN": 2951
   },
   "rules_index_style": {
     "link": 42
@@ -4395,7 +4398,7 @@
     "invariants": 44,
     "ci_jobs": [
       "Repository invariants",
-      "Negative controls (the gate can fail)",
+      "Negative controls shard per OS/4",
       "Executable claims (per OS)",
       "Shell lint (shellcheck)",
       "Secret scan (gitleaks)"

@@ -1,0 +1,11 @@
+name: CI
+on:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/upload-artifact@v0
+        with:
+          path: dist
+      - run: echo "paths: none filtered"

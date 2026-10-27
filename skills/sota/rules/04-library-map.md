@@ -65,7 +65,8 @@ index (invariant 10) in the same commit.
   gate's invocation, preserving a red run's log — split out of 09, · v1.43.0), 12 SCM/CI platform
   governance, 13 vulnerability remediation (triage beyond the score, fixing transitives, backports),
   14 SBOM content, quality and handling, 15 dependency adoption (selecting, verifying and
-  configuring what you take in)
+  configuring what you take in), 16 fast CI without blind spots (measure first, cache, change-scope
+  safely, shard under one aggregator)
 - **sota-databases/rules**: 01 choosing & modeling, 02 schema & migrations, 03 queries & indexes,
   04 transactions & concurrency, 05 reliability & scale, 06 security & compliance, 07 vector & AI,
   08 SurrealDB & multi-model

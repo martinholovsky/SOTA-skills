@@ -189,6 +189,8 @@ a suite that can't run parallel is telling you it has shared state.
 - **The merge queue / main must run the full blocking suite.** Skipping on
   "it passed on the PR branch" breaks under concurrent merges (semantic
   conflicts between independently-green PRs).
+- Speeding up a pipeline without making a required check pass unrun (measuring first,
+  safe change-scoping, an aggregator over shards): [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md).
 - Cache dependency/image layers, never test *results* across code changes
   unless keyed by a content hash you trust (build systems that hash inputs
   may; hand-rolled "skip if green yesterday" may not).

@@ -14,10 +14,17 @@ defaults:
   run:
     shell: bash
 
+# A new push to a PR makes its previous run worthless, so cancel it; a push to main keys on
+# its own sha and is never cancelled (sota-devsecops rules/16; rules/01 §1.9 for deploys).
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   invariants:
     name: Repository invariants
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       # actions/checkout, pinned by commit SHA (sota-devsecops rules/01). The version
       # lives in the trailing comment on each `uses:` line — Dependabot rewrites those
@@ -126,9 +133,15 @@ jobs:
           python3 evals/run-dead-path.py --selftest
           python3 evals/run-reimplement.py --selftest
 
-  negative-controls:
-    name: Negative controls (the gate can fail)
+  negative-controls-shard:
+    name: Negative controls shard ${{ matrix.shard }}/4
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      # Every shard reports, so a red run shows all its failures, not the first shard's.
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -139,11 +152,6 @@ jobs:
           # reason and the run aborts with no results.
           fetch-depth: 0
           fetch-tags: true
-      - name: Prove every eval runner can still start
-        # A runner that dies before its first API call is invisible: run-desc-routing.py
-        # was dead for three weeks because the guard that killed it landed AFTER the last
-        # recorded run. `--help` misses it — the crash is inside main().
-        run: python3 evals/smoke-runners.py --timeout 20
       - name: Prove check-invariants.sh and verify-setup.sh still reject known-bad input
         # The invariants job proves the gate PASSES on a good tree. Nothing proved
         # it can still FAIL — and "ok" from a working check is byte-identical to
@@ -153,10 +161,62 @@ jobs:
         # mutates a good tree in a worktree, part B builds a fully-configured fake
         # machine for verify-setup.sh and removes one thing per probe.
         # sota-code-security rules/12 §1/§2.2 + sota-devsecops rules/05 §5.6.
-        # Not in pre-commit: it runs the full gate once per mutation (~1 min).
+        # Not in pre-commit: it runs the full gate once per mutation, ~7 s each on a runner.
+        # Sharded four ways (NC_SHARD): 129 probes took 15.3 of the run's ~16 minutes in one
+        # job. Each shard still runs the REAL full gate; the aggregator below proves the union.
         env:
           SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
+          NC_SHARD: ${{ matrix.shard }}/4
+          NC_MANIFEST: ${{ runner.temp }}/shard-${{ matrix.shard }}.manifest
         run: ./scripts/check-negative-controls.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: negative-controls-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/shard-${{ matrix.shard }}.manifest
+          if-no-files-found: error
+          retention-days: 7
+
+  negative-controls:
+    # THE REQUIRED CHECK keeps this exact name, so branch protection needs no change.
+    # always(): a job whose `needs` failed is SKIPPED, and a skipped required check counts as
+    # success on GitHub ("Handling skipped but required checks"), so without always() a red
+    # shard would merge green. The first step then fails unless every shard succeeded.
+    name: Negative controls (the gate can fail)
+    needs: negative-controls-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Every shard succeeded
+        env:
+          SHARDS_RESULT: ${{ needs.negative-controls-shard.result }}
+        run: |
+          [ "$SHARDS_RESULT" = success ] || { echo "FAIL: negative-control shards: $SHARDS_RESULT"; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          # The harness creates a git worktree and runs the full gate inside it,
+          # so it needs the same history/tags the invariants job needs — otherwise
+          # the POSITIVE control (clean copy must pass) fails for an unrelated
+          # reason and the run aborts with no results.
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          pattern: negative-controls-shard-*
+          path: ${{ runner.temp }}/nc-manifests
+          merge-multiple: true
+      - name: The aggregator still refuses a missing shard, a gap, an overlap and short coverage
+        # Synthetic manifests, no gate runs: 1 good and 8 known-bad, each for its own reason.
+        # Mutation-checked 2026-10-28: an aggregator that skips the gap check fails 1 of 9.
+        run: ./scripts/test-negative-controls-aggregate.sh
+      - name: The shards together ran every probe once, and coverage matches COVERED
+        run: ./scripts/check-negative-controls.sh --aggregate "$RUNNER_TEMP/nc-manifests"
+      - name: Prove every eval runner can still start
+        # A runner that dies before its first API call is invisible: run-desc-routing.py
+        # was dead for three weeks because the guard that killed it landed AFTER the last
+        # recorded run. `--help` misses it — the crash is inside main().
+        run: python3 evals/smoke-runners.py --timeout 20
       - name: Prove the verified-done Stop hook still blocks unverified sessions
         # An opt-in hook (scripts/verified-done-hook.py) that blocks "done" on a changed tree
         # until a verification command has passed on it. Its self-test is mostly KNOWN-BAD
@@ -214,6 +274,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -260,6 +321,7 @@ jobs:
   shellcheck:
     name: Shell lint (shellcheck)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -294,6 +356,7 @@ jobs:
   secrets:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
