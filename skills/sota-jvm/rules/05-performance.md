@@ -44,13 +44,17 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
   `--module-path`, `--add-modules` and `--enable-native-access` arguments. It bans
   `--illegal-native-access` (**any** value), `--add-opens`, `--add-reads`, `--limit-modules`,
   `--patch-module`, `--upgrade-module-path` and class-rewriting JVMTI agents. `--add-exports`
-  is allowed from JDK 25 only if identical in every phase (JDK-8352437). **So the cache and
-  [`rules/04`](04-security.md) §7's `--illegal-native-access=deny` are a trade-off, not a pair.** Run the
-  `--illegal-native-access=deny` / `--sun-misc-unsafe-memory-access=deny` gate in a CI job
-  that runs **without** the cache, so a new native dependency still fails the build. In
-  production pick one: the cache, with native access left at the default `warn` and the same
-  `--enable-native-access=<modules>` in every phase, **or** `deny` without the cache. (From
-  the documents — JEP 483, updated 2026-08-26 — not measured here.) Prove the cache is used
+  is allowed from JDK 25 only if identical in every phase (JDK-8352437). **Measured on Temurin 25.0.4 and 26.0.2 (2026-10-27), `--illegal-native-access` acts as a match
+rule there, not a ban:** a cache created with `--illegal-native-access=deny` launched under the same
+flag with `-XX:AOTMode=on` (exit 0, so the cache mapped), while a cache created without it failed
+that launch (*Error occurred during initialization of VM*), as did an `--enable-native-access` the
+training run did not have. With `deny` the log reads *optimized module handling: disabled*, so the
+archived module graph, part of the startup gain, is lost; how much remains was not measured. In the
+default mode the mismatched cache launched with nothing on stderr. Run the `--illegal-native-access=deny` /
+`--sun-misc-unsafe-memory-access=deny` gate in a CI job **without** the cache, so a new native
+dependency still fails the build. In production, either keep `deny` in every phase, training
+included, or use the cache with native access at the default `warn`; either way keep the same
+`--enable-native-access=<modules>` in every phase. Prove the cache is used
   in a smoke test with `-XX:AOTMode=on`; JDK 27 adds `-XX:AOTMode=required` as an alias for
   it (JDK-8374348), not a rename — keep one of them in the smoke test. Either fails the launch
   instead of warning, so a skipped cache fails loudly; JEP 483 advises care before using it
@@ -141,6 +145,7 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
 - [ ] **Startup-bound service without an AOT cache, or a cache it never uses — LOW** (§2) —
       `grep -rnE 'AOTCache=|SharedArchiveFile' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' --include='*.gradle*' --include='pom.xml' . | grep -E 'illegal-native-access|add-opens|add-reads|limit-modules|patch-module|upgrade-module-path|javaagent'`
       (each line printed launches a cache beside a flag that makes the JVM skip it with only a
-      warning, so the cache is never used. A service with a startup SLO and no `AOTCache`,
+      warning, so the cache is never used — for `--illegal-native-access`, only when the training
+      run lacked the same value: measured on JDK 25 and 26, a matched `deny` maps (§2). A service with a startup SLO and no `AOTCache`,
       `SharedArchiveFile` or `native-image` anywhere is the other finding: try
       `-XX:AOTCacheOutput` first)

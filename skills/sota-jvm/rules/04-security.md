@@ -331,8 +331,10 @@ and `deny` throws `UnsupportedOperationException`. A warning printed once to std
 On JDK 24+, run CI and production with `--illegal-native-access=deny` and
 `--sun-misc-unsafe-memory-access=deny`. Then a new dependency that reaches native code or
 `Unsafe` fails the build instead of printing that warning. Where you do need an exception, grant
-only the named module. **JEP 483's AOT cache refuses any `--illegal-native-access` value**, so
-with a cache run this gate in a cache-free CI job instead ([`rules/05`](05-performance.md) §2). Test JNI under `-Xcheck:jni`: [`rules/06`](06-build-tooling-ci.md) §4.
+only the named module. **JEP 483 lists `--illegal-native-access` as banned for the AOT cache; measured on JDK 25 and 26 it
+must instead match in every phase** (a cache trained with `deny` maps under `deny`, one trained
+without it does not, and the default mode skips it quietly), so with a cache run this gate in a
+cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under `-Xcheck:jni`: [`rules/06`](06-build-tooling-ci.md) §4.
 
 ## Audit checklist
 
