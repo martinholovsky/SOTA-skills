@@ -160,7 +160,7 @@ at adoption proves nothing about the next Kani release.
 
 | what | without the flag | measured |
 |---|---|---|
-| `#[kani::proof_for_contract(f)]` | build error: *requires activating the unstable `function-contracts` feature* | loud — good. `requires`/`ensures` on a function no contract harness names: not measured |
+| `#[kani::proof_for_contract(f)]` | build error: *requires activating the unstable `function-contracts` feature* | loud — good. A false `ensures` on a function no contract harness names still failed a plain `#[kani::proof]` that called it (measured 2026-10-27, `function-contracts` on) |
 | `#[kani::loop_invariant(...)]` | **ignored, silently**: the loop is unrolled instead | a deliberately **false** invariant passed with `VERIFICATION:- SUCCESSFUL`, exit 0; with `-Z loop-contracts` it failed its step check (the base check passed: the invariant held on entry) |
 | `#[kani::stub_verified(f)]` | build error: *requires activating the unstable `stubbing` feature* — `-Z function-contracts` alone is not enough | loud |
 | `--harness name` | **substring** match: `--harness verify_get_bug` also ran `verify_get_bug_should_panic` | add `--exact` and the fully qualified name in CI |
@@ -168,7 +168,11 @@ at adoption proves nothing about the next Kani release.
 Put the unstable features in `Cargo.toml` so a bare `cargo kani` and CI agree. Measured:
 `[package.metadata.kani.unstable]` with `function-contracts = true` made a bare `cargo kani`
 verify a contract harness; `[package.metadata.kani] flags = ["-Z", "function-contracts", "-Z", "loop-contracts"]` did not
-(the same build error as no flag). `loop-contracts` and `stubbing` were not measured in that table.
+(the same build error as no flag). Measured the same way on 2026-10-27: `loop-contracts = true` there made a bare `cargo kani` fail a
+false invariant on its step check, and `function-contracts` plus `stubbing` verified a
+`stub_verified` harness (2 of 2) where `function-contracts` alone was the build error above. That
+loop's no-flag control timed out at 20 minutes instead of passing: unrolling a larger loop is slow,
+not safe, so set the flag rather than rely on a timeout.
 
 ## 6. A postcondition needs teeth: mutation adequacy
 
