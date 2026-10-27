@@ -183,9 +183,10 @@ Run from repo root / against the runtime; verify each hit manually.
 - [ ] **max_children default-ish (5) on a production box, or no slowlog = MEDIUM (§4)**
 - [ ] **N+1 / query-in-loop heuristics (§5) — confirm by reading the loop; MEDIUM on a hot path** —
       `grep -rnE -A4 '(foreach|while)[[:space:]]*\(' --include='*.php' src/ | grep -E -e '->(query|prepare|find|get)\(' | head`
-      ; `grep -rn 'fetchAll' --include='*.php' src/` (unbounded result sets?);
-      `grep -rnE '(curl_exec|file_get_contents\s*\(\s*.http)' --include='*.php' src/` (HTTP in
-      loops?) ;
+      ; `grep -rn 'fetchAll' --include='*.php' src/` (lists every `fetchAll`; each hit is read, not a
+      finding: is the result set bounded?);
+      `grep -rnE -A8 '(foreach|while|for)[[:space:]]*\(' --include='*.php' src/ | grep -E 'curl_exec|file_get_contents[[:space:]]*\([[:space:]]*.http'`
+      (an HTTP call within eight lines of a loop header; a batched `curl_multi_*` does not print) ;
       `grep -rnE -e '(apcu_(store|add)|->set)[[:space:]]*\([^,()]*,[^,()]*\)[[:space:]]*;' --include='*.php' --exclude-dir=vendor .`
       (a two-argument cache write: no TTL)
 - [ ] **Autoloader optimization in the deploy path (§5)** —

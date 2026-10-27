@@ -277,7 +277,8 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
       as evidence, is there a record of it failing on a mutant? None = Medium for
       security-critical code.
 - [ ] **Contracts on `unsafe` code too weak to be assumed (§7)** —
-      `grep -rnE 'kani::(requires|ensures|modifies)|stub_verified' --include='*.rs' .` — for each
+      `grep -rnE 'kani::(requires|ensures|modifies)|stub_verified' --include='*.rs' .` lists every
+      Kani contract and `stub_verified`; each hit is read, not a finding — for each
       contract on a raw-pointer function: `requires` states aliasing and provenance (for an
       allocator API, that the pointer came from that allocator), `modifies` names every write;
       `MaybeUninit` code keeps its Miri job; a recursive function's termination is argued outside

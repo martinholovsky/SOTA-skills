@@ -74,6 +74,7 @@ defend.
       (magic numbers)
 - [ ] **Hyperparameter search hygiene (§4) — MEDIUM** —
       `grep -rniE 'GridSearch|RandomizedSearch|optuna|ray.tune|hyperopt' --include='*.py' . | head`
+      — a locator: it lists every hyperparameter-search site; each hit is read, not a finding
       (verify search uses validation set, not test, and every trial is logged to the tracker)
 - [ ] **Notebook-only training (§2) — LOW/MEDIUM (debt)** — `find . -name '*.ipynb' | head` (is
       production training a notebook?)

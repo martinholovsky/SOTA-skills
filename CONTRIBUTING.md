@@ -773,7 +773,10 @@ CI scans the full git history, the pre-commit hook scans each commit.
     files; an `.expect` is compared as a set of lines, because `grep -r` order differs by platform. A
     quoted `<Tag>` in a probe is pattern text and runs as written; only an unquoted `<name>` operand
     is replaced with a file called `empty`. Git keeps no empty directory: give a case with no files a
-    `.keep`. The unproven ones each have a defect record in `docs/probe-defects-2026-10-26.json`.
+    `.keep`. The baseline has been empty since 2026-10-27, so a new probe ships with fixtures.
+    A probe that cannot tell a defect from the correct form is a **declared locator**: its item
+    says it lists every site and each hit is read, not a finding, and its fixtures prove it finds
+    the construct (bad/ has it, good/ does not). History: `docs/probe-defects-2026-10-26.json`.
     A fixture that pins a vulnerable version on purpose raises a Dependabot alert, and Dependabot
     opens a PR that would make the bad tree good: close the PR, and dismiss the alert as
     `not_used` with a comment naming the fixture (399 were dismissed so on 2026-10-27).

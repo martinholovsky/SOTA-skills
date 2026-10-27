@@ -338,7 +338,7 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
 - [ ] Inbound limits (§2): max message size (1009), frame rate limit, max subscriptions per connection, pre-auth resource caps.
 - [ ] Concurrent-connection caps per user (per IP pre-auth) and per node, enforced at the upgrade with a clean refusal (§2.5) — MEDIUM.
 - [ ] State-changing client commands carry a nonce/timestamp and replays or stale ones are rejected; each frame's parse/validate/dispatch is isolated so one bad message cannot crash the worker (§2.7) — MEDIUM.
-- [ ] **Raw TCP tunnelled over WebSocket (§2.1) — HIGH if browser-reachable**: the tunnelled service keeps its own authn/authz. Locator for bridges:
+- [ ] **Raw TCP tunnelled over WebSocket (§2.1) — HIGH if browser-reachable**: the tunnelled service keeps its own authn/authz. Locator, listing every TCP-over-WebSocket bridge (each hit is read, not a finding):
       `grep -rniE 'websockify|novnc|ttyd' .`
 - [ ] **SSE client URL (§3) — MEDIUM**: `EventSource` URLs come from config, `event.origin` checked where the stream can be cross-origin or redirected. Constructors fed from the location, query or params:
       `grep -rnE 'new[[:space:]]+EventSource\([^)]*(location|[pP]arams|query|\.search|\.hash|input)' --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' --include='*.vue' --include='*.svelte' .`

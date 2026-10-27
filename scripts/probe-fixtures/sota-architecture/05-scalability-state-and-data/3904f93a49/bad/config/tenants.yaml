@@ -1,0 +1,5 @@
+tenants:
+  pooled:
+    redis_url: redis://cache-pooled:6379
+  acme-silo:
+    redis_url: redis://cache-pooled:6379

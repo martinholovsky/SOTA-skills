@@ -375,7 +375,8 @@ Run from repo root. Severity guidance in brackets.
       (each hit installs a lock nobody compared with `pyproject.toml`: use `--locked`) ;
       `grep -rlE 'poetry[[:space:]]+install' --include='*.y*ml' . | while IFS= read -r f; do grep -qE 'poetry[[:space:]]+check[[:space:]]+--lock' "$f" || echo "$f: poetry install with no poetry check --lock"; done`
 - [ ] **requires-python vs syntax reality; `pyproject.toml` as the single source (§2)** —
-      `grep -n "requires-python" pyproject.toml` ;
+      `grep -n "requires-python" pyproject.toml` (prints the declared floor; it is read against
+      the syntax hits below, not a finding) ;
       `grep -rln "match \|type [A-Z].* = \|def .*\[T" --include="*.py" src/ | head` (3.12 syntax
       w/ old floor? [HIGH: release-blocking]) ;
       `find . -maxdepth 1 \( -name setup.py -o -name setup.cfg -o -name pytest.ini -o -name mypy.ini -o -name .flake8 \) -print`

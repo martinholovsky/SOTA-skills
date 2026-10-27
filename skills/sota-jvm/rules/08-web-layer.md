@@ -148,7 +148,8 @@ All Spring facts below were checked against Spring's own docs, advisories and so
       (Jackson 2 and 3 spellings. Then read the `PolymorphicTypeValidator`: allowing `Object`
       or a broad prefix is the same finding)
 - [ ] **Mass assignment — HIGH** (§1) — list binding targets and confirm none is an entity:
-      `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` ;
+      `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` (lists every
+      binding target; each hit is read, not a finding) ;
       `grep -rlE '@ModelAttribute' --include='*.java' --include='*.kt' . | xargs -r grep -LE 'setAllowedFields'`
       (each file printed binds a `@ModelAttribute` and never calls `setAllowedFields`: on an
       entity, the finding; a

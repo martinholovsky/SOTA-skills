@@ -418,7 +418,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
 - [ ] **SQL (§3) [CRITICAL]** —
       `grep -rn 'execute(f"\|execute(".*%s" *%\|execute(.*+ ' --include="*.py" src/` ;
       `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` (Django edges);
-      `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string) ; `grep -rnE '(^|[^A-Za-z_])I?LIKE[[:space:]]|\.i?like\(' --include='*.py' --exclude-dir=.venv .` (a bound `LIKE` value escapes `%` and `_` first [MEDIUM])
+      `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string) ; `grep -rlE '(^|[^A-Za-z_])I?LIKE[[:space:]]|\.i?like\(' --include='*.py' --exclude-dir=.venv . | xargs -r grep -LE 'escape[_=]|autoescape|ESCAPE|replace\(.[%_]'` (each file listed builds a `LIKE` and escapes nothing: a bound value escapes `%` and `_` first [MEDIUM]; a file that escapes one query and not another is not listed, so read the rest)
 - [ ] **--- t-string consumers that render values raw (§3a) --- [CRITICAL where the value
       is request-derived and the output is SQL or a shell string; HIGH for HTML]** —
       `grep -rlE 'string\.templatelib' --include='*.py' . | while IFS= read -r f; do grep -nE '\.values?([^A-Za-z0-9_]|$)|str\((t|tmpl|template)\)' "$f" | grep -vE 'escape|quote|param|bind' | while IFS= read -r l; do printf '%s:%s\n' "$f" "$l"; done; done`
@@ -427,7 +427,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       read it — a value escaped a line earlier is a false positive, `str(template)` is a repr)
 - [ ] **Path traversal & archives (§4, §5) [HIGH]** —
       `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ; `grep -rlE 'zipfile' --include='*.py' --exclude-dir=.venv . | xargs -r grep -LE 'file_size'` (no uncompressed-size budget) ;
-      `grep -rn "request.*filename\|\.filename" --include="*.py" src/` (then check containment);
+      `grep -rn "request.*filename\|\.filename" --include="*.py" src/` (lists every upload filename use; each hit is read for containment, not a finding);
       `grep -rqE 'is_relative_to|realpath' --include='*.py' src/ || echo "no path-containment check in src/"` (no mitigation anywhere)
 - [ ] **Randomness & secrets (§6) [HIGH]** —
       `grep -rn "random\.\(choice\|choices\|randint\|random\)" --include="*.py" src/ # security context?`
@@ -438,7 +438,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
 - [ ] **XML / SSRF** (§7) —
       `grep -rn "lxml.etree\|xml.etree\|xml.dom\|xml.sax" --include="*.py" src/` (defused?
       entities off?); `grep -rn "get(url\|get(request\.\|urlopen(" --include="*.py" src/ | head`
-      (user-controlled URL fetch?)
+      (lists every URL fetch; each hit is read for a user-controlled URL, not a finding)
 - [ ] **--- SSRF: outbound request to a caller-influenced host (§7) --- [HIGH; CRITICAL where
       the metadata endpoint 169.254.169.254 is reachable]** —
       `grep -rnE '(requests|httpx)\.(get|post|put|patch|delete|head|options|request|stream)\(|urlopen\(|(allow|follow)_redirects[[:space:]]*=[[:space:]]*True' --include='*.py' src/`
@@ -449,10 +449,10 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       `grep -rnE "re\.(match|search|fullmatch|findall|sub)\(" --include="*.py" src/ | head -30`
       (user-controlled subject?);
       `grep -rnE "\((\.\*|\\\\w\+|\[\^?[^]]*\]\+)\)[\*\+]" --include="*.py" src/` (nested
-      quantifiers); `grep -rn "zlib.decompress\|Image.open" --include="*.py" src/` (size budgets
-      present?); `grep -rn "set_int_max_str_digits" --include="*.py" src/` ;
-      `grep -rn "webbrowser.open" --include="*.py" src/` (user-influenced URL? [HIGH]
-      CVE-2026-4519/4786)
+      quantifiers); `grep -rn 'zlib\.decompress(' --include='*.py' src/ ; grep -rqE 'MAX_IMAGE_PIXELS[[:space:]]*=[[:space:]]*[0-9]' --include='*.py' src/ || grep -rn 'Image\.open(' --include='*.py' src/`
+      (a one-shot `zlib.decompress` has no decoded-size budget, `decompressobj().decompress(data, max_length)` does; an `Image.open` is listed only when nothing sets a numeric `Image.MAX_IMAGE_PIXELS`); `grep -rn "set_int_max_str_digits" --include="*.py" src/` ;
+      `grep -rn 'webbrowser\.open' --include='*.py' src/ | grep -vE "webbrowser\.open(_new|_new_tab)?\([[:space:]]*[\"'][^\"']*[\"'][[:space:]]*(,[^)]*)?\)"`
+      (a call whose URL is not one string literal; read whether a user influences it [HIGH] CVE-2026-4519/4786)
 - [ ] **--- Regex as a control: escaping, anchoring, engine (§8) --- [HIGH where the regex
       gates validation or authorization; MEDIUM elsewhere]** —
       `grep -rnE 're\.(match|compile|search|fullmatch|sub|findall)\([[:space:]]*(r?f|fr)["'"'"']|\.match\(|re\.(M|MULTILINE)([^A-Za-z_]|$)' --include='*.py' src/`

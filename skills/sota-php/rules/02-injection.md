@@ -406,7 +406,8 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE -e '->\{?\$[A-Za-z_]+\}?[[:space:]]*=[^=]' -e 'guarded[[:space:]]*=[[:space:]]*\[[[:space:]]*\]' --include='*.php' src/`
 - [ ] **LDAP and XPath (§6)** — is the password checked non-empty before every `ldap_bind` used
       as a login, and is every filter/DN value escaped with the right flag?
-      `grep -rnE 'ldap_(bind|search|list|read)[[:space:]]*\(' --include='*.php' src/` ;
+      `grep -rnE 'ldap_(bind|search|list|read)[[:space:]]*\(' --include='*.php' src/` (lists every
+      LDAP call; each hit is read, not a finding: an empty-password check, an escaped value) ;
       `grep -rn 'ldap_escape' --include='*.php' src/ | grep -v 'LDAP_ESCAPE_'` ;
       `grep -rnE '(->query|->evaluate|->xpath)[[:space:]]*\([[:space:]]*["'"'"'](/|\.)[^;]*\$' --include='*.php' src/ | grep -v 'DOMXPath::quote'`
 - [ ] **Regex escaping, anchoring and engine limits (§7) — HIGH** — a variable spliced into a

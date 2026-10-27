@@ -204,7 +204,7 @@ Run from repo root; verify each hit manually.
       `grep -rnE "Thread\.current\[" --include='*.rb' . | head`
 - [ ] **Blocking the fiber-scheduler loop (§3) — HIGH on a fiber-per-request server** —
       `grep -rnE 'Fiber\.set_scheduler|Async[[:space:]]*(do|\{)|falcon' --include='*.rb' --include='Gemfile' .`
-      (no hit: no scheduler, skip) ; then list the gems with native extensions, which can
+      (lists every fiber scheduler; each hit is read, not a finding. No hit: no scheduler, skip) ; then list the gems with native extensions, which can
       hold the GVL and stall the whole loop:
       `bundle exec ruby -e 'all = Gem.loaded_specs.values; puts all.reject { |s| s.extensions.empty? }.map(&:name); warn "#{all.size} gems loaded"'`
       (each name needs a fiber-safe answer; a pure-Ruby gem using core I/O yields

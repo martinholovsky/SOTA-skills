@@ -120,7 +120,8 @@ Audit for these (Sculley et al.) — each is real ML debt:
       `ls -R | grep -iE 'requirements|environment.ya?ml|poetry.lock|uv.lock|Dockerfile|conda'`
       (env pinned?)
 - [ ] **Train/serve consistency (§2, §3) — CRITICAL if features computed two ways** —
-      `grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head` (compare training
+      `grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head` — a locator: it lists
+      every feature-store/transform site; each hit is read, not a finding (compare training
       feature code vs serving feature code — same source?)
 - [ ] **Glue code / pipeline jungle / config sprawl (§7) — MEDIUM** —
       `grep -rniE 'TODO|FIXME|HACK|temp|quick' --include='*.py' . | grep -iE 'pipeline|feature|etl' | head`

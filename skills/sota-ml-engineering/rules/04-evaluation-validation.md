@@ -96,8 +96,9 @@ rubric (data / model / infra / monitoring tests) is the backbone.
 ## Audit checklist
 
 - [ ] **Single-metric / no-baseline evaluation (§1, §2) — MEDIUM/HIGH** —
-      `grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head` (is there
-      a baseline + current-prod comparison? A single aggregate number is a finding.) Manual: does
+      `grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head` — a
+      locator: it lists every metric call; each hit is read, not a finding (is there a baseline +
+      current-prod comparison? A single aggregate number is a finding.) Manual: does
       the metric fit the objective (not accuracy alone on imbalanced data), is the offline metric's
       relation to the online business metric stated, and does each added feature survive an
       ablation on held-out data?
@@ -108,8 +109,8 @@ rubric (data / model / infra / monitoring tests) is the backbone.
       `case $rc in 0) ;; 1) echo "no automated promotion gate in CI config" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       (the previous form piped through `head`, which exits 0, so its fallback could never fire)
 - [ ] **Operating threshold fit in-sample (§4) — HIGH where the threshold gates a decision** —
-      `grep -rnE '(quantile|percentile)\(' --include='*.py' .`: for each hit that sets a
-      threshold, are the scores held-out or out-of-fold, or the training rows?
+      `grep -rnE '(quantile|percentile)\(' --include='*.py' .` — a locator: it lists every
+      quantile/percentile call; each hit is read, not a finding. For each hit that sets a threshold, are the scores held-out or out-of-fold, or the training rows?
 - [ ] **Decision report without a denominator (§4) — MEDIUM** — does every rule print its
       evaluated count beside its verdicts, and is the population an explicit list?
       Name-shape filters to read: `grep -rnE '\.(endswith|startswith)\(|rpartition\(' --include='*.py' .`
@@ -122,6 +123,7 @@ rubric (data / model / infra / monitoring tests) is the backbone.
       ; manual: the business metric, sample size and guardrail metrics fixed before the experiment
 - [ ] **Compressed artifact re-validated (§4) — HIGH** — files that quantise, prune or
       distil: `grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .`
+      — a locator: it lists every such file; each hit is read, not a finding
       ; manual: does the gate run the eval suite on the compressed output, not the parent?
 - [ ] **Robustness slice where inputs are attacker-influenced (§3) — HIGH** — see the
       robustness item in [`rules/07`](07-security-governance.md); manual: is there a per-slice floor for it?
