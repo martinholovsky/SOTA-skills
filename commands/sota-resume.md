@@ -50,8 +50,8 @@ it.** Five failure modes produce a confident zero, and none of them prints an er
 - **The flag meant something else.** `rg -r` is `--replace`, not "recursive"; it silently
   rewrites every match to the next token and the output looks like content
   (`sota-shell-scripting` rules/06 §2a).
-- **The pattern cannot match on this machine.** `\b` in `git grep -E` matches nothing on macOS
-  (no error, exit 1), and so does every alternative in the pattern that uses it. Use `-w`, a
+- **The pattern cannot match on this machine.** `\b` in `git grep -E` on macOS is read as the letter
+  `b` (no error): it usually matches nothing, exit 1, and can match the wrong lines. Use `-w`, a
   bracket boundary, or no boundary (`sota-shell-scripting` rules/06 §2f).
 - **The lister answered about one page.** `gh issue list` and friends cap at 30 by default,
   exit 0, empty stderr. A result whose size equals a round number you or the tool chose is a
