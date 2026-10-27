@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""zsh-equals-hook.py — refuse a Bash command whose unquoted `=word` zsh would rewrite or abort on,
-or whose `set -- $scalar` zsh would not split.
+r"""zsh-equals-hook.py — refuse a Bash command whose unquoted `=word` zsh would rewrite or abort on,
+or whose `set -- $scalar` zsh would not split, and (2026-10-27) four more bash habits zsh breaks:
+a variable named `path`/`status`, a spaced literal expanded unquoted as arguments, `PIPESTATUS`/
+`BASH_REMATCH`, and a `git grep` regex escape the platform reads as a plain letter.
 A Claude Code PreToolUse hook on Bash, ON by default since 2026-10-21 (operator decision, ADOPTION-LOG):
 the plugin registers it (hooks/hooks.json) and install.sh's routing setup offers it.
 
@@ -32,9 +34,32 @@ quoted `"$p"`, and a name assigned as an array in the same command (`a=(x y)`). 
 66,195 local agent Bash calls: 13 matched, all intended splits; every zsh session whose outcome is
 visible failed downstream (one argument), so the false-refusal count found there is 0.
 
+ALSO FLAGS (2026-10-27, ROADMAP 85). MEASURED before shipping over 39,715 unique local agent Bash
+calls (tool_use ids deduplicated, heredoc bodies and quoted text not lexed), each hit read against
+its joined result; the ADOPTION-LOG 2026-10-27 rows carry the method and the examples.
+  - `path` or `status` assigned: `for path in`, `read … path`, `local/export/typeset path`,
+    `path=…`, `status=$?`. `path` is tied to $PATH (every later command `command not found`),
+    `status` is read-only. Exempt: `path=(… $path)`, the zsh idiom. 2 hits, 2 real (rules/06 §1).
+  - a name assigned a quoted literal holding a space earlier in the same command, then expanded
+    unquoted as an argument or a `for … in` list (`C="--a x"; cmd $C`): zsh passes ONE word.
+    Deliberately narrow (`cmd $file` is usually right): not `echo`/`print`/`[`/`test`/declarations,
+    not `${=C}`, `"$C"`, or a name reassigned or assigned an array. 9 hits, 9 real (rules/06 §1).
+  - `$PIPESTATUS`, `${PIPESTATUS[n]}`, `$BASH_REMATCH`, `${BASH_REMATCH[n]}`, unquoted or in double
+    quotes: unset in zsh, so empty. Exempt: single quotes (`bash -c '…'`), `\$`, a `:-` fallback
+    (`${pipestatus[1]:-$PIPESTATUS}`), and BASH_REMATCH after `setopt bash_rematch`. 8 hits, 8 real
+    (the fallback exemption was added on that corpus, after 1 false refusal).
+  - `git grep` with `\b \B \< \> \s \S \w \W \d \D` in an -E pattern on macOS, and `\d`/`\D` under -E
+    or the default BRE elsewhere (rules/06 §2f). Measured 2026-10-27: macOS git 2.55.0 reads every
+    one of them under -E as the plain letter (`a\b` matches `ab`) and honours them under BRE; Debian
+    git 2.47.3 (glibc) honours all but `\d`/`\D`, under both. So the check reads sys.platform. 72
+    hits; re-run in their repos as -E against -P, 25 had silently dropped matches, 21 gave the same
+    count at today's HEAD, 23 could not be re-run, and 3 were deliberate reproductions of this trap.
+  The git grep failure is not zsh's: bash on macOS has it too, but the hook acts only under zsh.
+
 ONLY UNDER zsh: it works out the shell Claude Code runs Bash commands in the way Claude Code does
 (CLAUDE_CODE_SHELL, then $SHELL, then the first zsh or bash on PATH; see agent_shell) and acts only
 when that is zsh. Under bash `echo ===` is harmless and the hook allows everything.
+To reproduce one of these traps on purpose, run it inside `zsh -fc '…'`: quoted text is not lexed.
 SOTA_ZSH_EQUALS_HOOK=off (or 0 / false / no) disables it, and =on forces it whatever the shell.
 
 ON A HIT it exits 2 with the reason on stderr. Claude Code blocks the call and shows Claude that
@@ -55,6 +80,7 @@ absent rather than skip the half that checks each case against the real shell)
 """
 import json
 import os
+import re
 import sys
 
 # shutil, subprocess and tempfile are imported inside self_test(): this runs before every Bash
@@ -64,9 +90,22 @@ OPERATORS = set(";&|()<>`\n")
 COND_OPERATORS = {"=", "==", "=~"}
 # `set -- $p` in zsh: an unquoted scalar is NOT word-split (no SH_WORD_SPLIT), so it sets ONE
 # positional parameter. `$@`, `$*`, `$argv`, `${=p}`, `${(s: :)p}` and `$(cmd)` do not match.
-SCALAR_REF = __import__("re").compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
-ARRAY_ASSIGN = __import__("re").compile(r"(?:^|[\s;&|(])(?:typeset -a |local -a |declare -a )?([A-Za-z_][A-Za-z0-9_]*)=\(")
+SCALAR_REF = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
+ARRAY_ASSIGN = re.compile(r"(?:^|[\s;&|(])(?:typeset -a |local -a |declare -a )?([A-Za-z_][A-Za-z0-9_]*)=\(")
 RESERVED = {"do", "then", "else", "elif", "{", "!", "time", "if", "while", "until"}
+ASSIGN = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)\+?=(.*)", re.DOTALL)
+# zsh special parameters a bash habit clobbers: `path` is tied to $PATH, `status` is read-only.
+SPECIAL_NAMES = {"path", "status"}
+DECLARE = {"local", "typeset", "declare", "export", "readonly", "integer", "float", "private"}
+# `read` options that take the NEXT word as a value rather than a variable name
+READ_VALUE_OPTS = set("dupitnNk")
+# bash-only variables that zsh leaves unset: `${pipestatus[1]}` and `$match` are the zsh names
+BASH_VARS = re.compile(r"\$\{?(PIPESTATUS|BASH_REMATCH)(?![A-Za-z0-9_])")
+# The escapes `git grep` patterns silently fail on, measured 2026-10-27 over a file holding
+# `foo 53 bar`: on macOS (git 2.55.0, system regex) every one of these matches nothing under -E and
+# matches under the default BRE; on Debian (git 2.47.3, glibc) only `\d`/`\D` fail, under -E and BRE.
+GREP_ESCAPES_DARWIN_ERE = set("bB<>sSwWdD")
+GREP_ESCAPES_ANY = set("dD")
 
 
 def _skip_quoted(s, i, quote, subs=None):
@@ -146,12 +185,216 @@ def _read_heredoc_word(s, i):
 
 def equals_words(cmd):
     """Return the unquoted `=word`s zsh's EQUALS would expand, in order."""
-    return _lex(cmd)[0]
+    return _lex(cmd)["equals"]
 
 
 def split_words(cmd):
     """Return each unquoted `$name` in `set -- $name` that zsh will NOT word-split, in order."""
-    return _lex(cmd)[1]
+    return _lex(cmd)["split"]
+
+
+def _dequote(w):
+    """The value of one shell word after quote removal (no expansion): `'\\b'` -> `\\b`."""
+    out, i, n = [], 0, len(w)
+    while i < n:
+        c = w[i]
+        if c == "\\":
+            out.append(w[i + 1:i + 2])
+            i += 2
+        elif c == "'":
+            j = w.find("'", i + 1)
+            j = n if j < 0 else j
+            out.append(w[i + 1:j])
+            i = j + 1
+        elif c == '"':
+            i += 1
+            while i < n and w[i] != '"':
+                if w[i] == "\\" and i + 1 < n and w[i + 1] in '$`"\\\n':
+                    out.append(w[i + 1])
+                    i += 2
+                else:
+                    out.append(w[i])
+                    i += 1
+            i += 1
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
+def _bash_vars(word):
+    """`$PIPESTATUS` / `${BASH_REMATCH…}` references zsh would expand in this raw word: unquoted or
+    inside double quotes, not escaped, not in single quotes (a `$( )` inside "" is lexed on its own)."""
+    out, i, dq = [], 0, False
+    while i < len(word):
+        c = word[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c == "'" and not dq:
+            j = word.find("'", i + 1)
+            i = len(word) if j < 0 else j + 1
+            continue
+        if c == '"':
+            dq, i = not dq, i + 1
+            continue
+        if c == "$" and word.startswith("$(", i) and not word.startswith("$((", i):
+            i = _skip_cmdsub(word, i + 2)
+            continue
+        if c == "$":
+            m = BASH_VARS.match(word, i)
+            # `${pipestatus[1]:-$PIPESTATUS}` names the bash form only as a fallback: exempt
+            if m and not word.endswith((":-", ":="), 0, i):
+                end = word.find("}", i) + 1 if m.group(0).startswith("${") else m.end()
+                out.append(word[i:end or m.end()])
+        i += 1
+    return out
+
+
+def _bad_escapes(pattern, ptype, darwin):
+    """The backslash escapes in a `git grep` pattern that match nothing for this pattern type here."""
+    bad, i = [], 0
+    while i < len(pattern) - 1:
+        if pattern[i] == "\\":
+            e = pattern[i + 1]
+            if (ptype == "E" and darwin and e in GREP_ESCAPES_DARWIN_ERE) or \
+                    (ptype in "EG" and not darwin and e in GREP_ESCAPES_ANY):
+                bad.append("\\" + e)
+            i += 2
+            continue
+        i += 1
+    return bad
+
+
+def _git_grep(dw, darwin):
+    """dw: the dequoted words of one simple command. Return [(pattern, [escapes])] for a `git grep`
+    whose pattern carries an escape the regex type cannot match on this platform."""
+    if not dw or dw[0] != "git":
+        return []
+    i = 1
+    while i < len(dw) and dw[i].startswith("-"):
+        i += 2 if dw[i] in {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env"} else 1
+    if i >= len(dw) or dw[i] != "grep":
+        return []
+    ptype, pats, explicit, j = "G", [], False, i + 1
+    types = {"--extended-regexp": "E", "--basic-regexp": "G", "--perl-regexp": "P", "--fixed-strings": "F"}
+    long_value = {"--max-depth", "--threads", "--context", "--after-context", "--before-context",
+                  "--max-count", "--file", "--regexp"}
+    while j < len(dw):
+        a = dw[j]
+        if a == "--":
+            break
+        if a.startswith("--"):
+            name, eq, val = a.partition("=")
+            ptype = types.get(name, ptype)
+            if name in long_value and not eq:
+                val = dw[j + 1] if j + 1 < len(dw) else ""
+                j += 1
+            if name == "--regexp":
+                pats.append(val)
+                explicit = True
+        elif a.startswith("-") and len(a) > 1:
+            k = 1
+            while k < len(a):
+                ch = a[k]
+                if ch in "EGPF":
+                    ptype = ch
+                elif ch in "ABCmef":
+                    val = a[k + 1:]
+                    if not val:
+                        val = dw[j + 1] if j + 1 < len(dw) else ""
+                        j += 1
+                    if ch == "e":
+                        pats.append(val)
+                        explicit = True
+                    break
+                k += 1
+        elif not explicit and not pats:
+            pats.append(a)
+        j += 1
+    out = []
+    for p in pats:
+        bad = _bad_escapes(p, ptype, darwin)
+        if bad:
+            out.append((p, bad))
+    return out
+
+
+def _special_names(w):
+    """The `path`/`status` a simple command assigns: `for path in`, `read … path`, `local path=`,
+    `status=$?`. A zsh array edit of `path` itself (`path=(… $path)`) is the zsh idiom and exempt."""
+    out, k = [], 0
+    while k < len(w):
+        m = ASSIGN.fullmatch(w[k])
+        if not m:
+            break
+        if m.group(1) in SPECIAL_NAMES and not (m.group(2).startswith("(") and m.group(1) == "path"):
+            out.append(w[k])
+        k += 1
+    if k >= len(w):
+        return out
+    head, rest = w[k], w[k + 1:]
+    if head in {"for", "select"}:
+        for x in rest:
+            if x in {"in", "("} or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", x):
+                break
+            if x in SPECIAL_NAMES:
+                out.append(f"{head} {x}")
+    elif head == "read":
+        skip = False
+        for x in rest:
+            if skip:
+                skip = False
+            elif x.startswith("-"):
+                skip = x[-1] in READ_VALUE_OPTS
+            elif x.split("?", 1)[0] in SPECIAL_NAMES:
+                out.append(f"read {x}")
+    elif head in DECLARE:
+        for x in rest:
+            name = x.split("=", 1)[0].rstrip("+")
+            if name in SPECIAL_NAMES and not (name == "path" and x[len(name):].lstrip("+=").startswith("(")):
+                out.append(f"{head} {x}")
+    return out
+
+
+def _analyze(words, st, hits):
+    """Run the per-simple-command checks over one command's raw words."""
+    while words and words[0] in RESERVED:
+        words = words[1:]
+    hits["split"].extend(_set_split(words, st["arrays"]))
+    if not words:
+        return
+    dw = [_dequote(x) for x in words]
+    hits["special"].extend(_special_names(words))
+    k = 0
+    assigns = []
+    while k < len(words) and ASSIGN.fullmatch(words[k]):
+        m = ASSIGN.fullmatch(words[k])
+        assigns.append((m.group(1), m.group(2)))
+        k += 1
+    if k < len(words):
+        head = dw[k]
+        if head == "for" and "in" in dw[k:]:
+            args = words[k + dw[k:].index("in") + 1:]
+        elif head in {"echo", "print", "[", "test", "[[", "set", "export", "local", "typeset",
+                      "declare", "readonly", "unset"}:
+            args = []
+        else:
+            args = words[k + 1:]
+        for x in args:
+            m = SCALAR_REF.fullmatch(x)
+            name = m and (m.group(1) or m.group(2))
+            if name and name in st["spaced"] and name not in st["arrays"]:
+                hits["argv"].append((head, x))
+        for pat, bad in _git_grep(dw[k:], st["darwin"]):
+            hits["gitgrep"].append((pat, bad))
+    for name, val in assigns:
+        q = val[:1]
+        if q in "'\"" and len(val) > 1 and val.endswith(q) and " " in val and \
+                not (q == '"' and ("$" in val or "`" in val)):
+            st["spaced"].add(name)
+        else:
+            st["spaced"].discard(name)
 
 
 def _set_split(words, arrays):
@@ -168,10 +411,26 @@ def _set_split(words, arrays):
     return out
 
 
-def _lex(cmd):
-    s, i, found, split = cmd, 0, [], []
+CHECKS = ("equals", "split", "special", "argv", "bashvar", "gitgrep")
+
+
+def _lex(cmd, darwin=None):
+    """Lex one zsh command line; return {check: [hits]} for every check in CHECKS."""
+    if darwin is None:
+        darwin = sys.platform == "darwin"
+    hits = {k: [] for k in CHECKS}
+    found = hits["equals"]
+    s, i = cmd, 0
     at_start, cond, heredocs = True, 0, []
-    words, arrays = [], set(ARRAY_ASSIGN.findall(cmd))
+    words = []
+    st = {"arrays": set(ARRAY_ASSIGN.findall(cmd)), "spaced": set(), "darwin": darwin}
+    rematch_on = re.search(r"setopt\s[^;\n]*bash_?rematch", cmd, re.IGNORECASE) is not None
+
+    def sub(inner):
+        h = _lex(inner, darwin)
+        for k in CHECKS:
+            hits[k].extend(h[k])
+
     while i < len(s):
         c = s[i]
         if c == "\n":
@@ -185,7 +444,7 @@ def _lex(cmd):
                     if (line.lstrip("\t") if strip else line) == delim:
                         break
             heredocs, at_start = [], True
-            split.extend(_set_split(words, arrays))
+            _analyze(words, st, hits)
             words = []
             continue
         if c in " \t":
@@ -206,7 +465,7 @@ def _lex(cmd):
             continue
         if c in OPERATORS:
             i, at_start = i + 1, True
-            split.extend(_set_split(words, arrays))
+            _analyze(words, st, hits)
             words = []
             continue
         if at_start:
@@ -214,11 +473,12 @@ def _lex(cmd):
             while end < len(s) and s[end] not in " \t" and s[end] not in OPERATORS:
                 end = _skip_quoted(s, end + 1, s[end], subs) if s[end] in "'\"" else end + 1
             word = s[i:end]
-            words.append(word)
+            # `name=(…)`: the `(` is an operator to this lexer, so mark the assignment as an array one
+            words.append(word + "(" if word.endswith("=") and s.startswith("(", end) else word)
+            hits["bashvar"].extend(v for v in _bash_vars(word)
+                                   if not (rematch_on and "BASH_REMATCH" in v))
             for inner in subs:
-                e, sp = _lex(inner)
-                found.extend(e)
-                split.extend(sp)
+                sub(inner)
             if word == "[[":
                 cond += 1
             elif word == "]]" and cond:
@@ -231,15 +491,13 @@ def _lex(cmd):
             subs = []
             i = _skip_quoted(s, i + 1, c, subs)
             for inner in subs:
-                e, sp = _lex(inner)
-                found.extend(e)
-                split.extend(sp)
+                sub(inner)
         elif c == "\\":
             i += 2
         else:
             i += 1
-    split.extend(_set_split(words, arrays))
-    return found, split
+    _analyze(words, st, hits)
+    return hits
 
 
 def reason(words):
@@ -262,6 +520,55 @@ def split_reason(words):
         "an array, write `set -- \"${p[@]}\"`. Not run. "
         "(sota-shell-scripting rules/01 §3; this hook: scripts/zsh-equals-hook.py)"
     )
+
+
+def special_reason(hits):
+    shown = ", ".join(f"`{w}`" for w in hits[:5])
+    return (
+        f"zsh special parameter: {shown}. In zsh `path` is the array tied to $PATH, so assigning it "
+        "empties the command search path and every later command fails `command not found`; "
+        "`status` is read-only, so `status=$?` aborts the list. Rename it (`p`, `f`, `rc`). Not run. "
+        "(sota-shell-scripting rules/06 §1, the `path`/`status` row; this hook: scripts/zsh-equals-hook.py)"
+    )
+
+
+def argv_reason(hits):
+    shown = ", ".join(f"`{cmd} {w}`" for cmd, w in hits[:5])
+    return (
+        f"zsh word splitting: {shown} passes the variable as ONE argument in zsh, which does not "
+        "split an unquoted scalar, and this command assigned it a value with a space. bash would "
+        "split it; zsh hands the callee one word, which it rejects or silently misreads (measured: an option list reported back as one `unrecognized arguments:` string). "
+        "Write `${=T}` (zsh), or use an array: `T=(a b); cmd \"${T[@]}\"`. Not run. "
+        "(sota-shell-scripting rules/06 §1, the unquoted `$var` row; this hook: scripts/zsh-equals-hook.py)"
+    )
+
+
+def bashvar_reason(hits):
+    shown = ", ".join(f"`{w}`" for w in hits[:5])
+    return (
+        f"bash-only variable in zsh: {shown}. zsh leaves `PIPESTATUS` unset (its form is "
+        "`${pipestatus[1]}`, 1-based) and `BASH_REMATCH` unset unless `setopt BASH_REMATCH` "
+        "(captures are in `${match[1]}`), so it prints empty, and two empties compare equal. Use the "
+        "zsh form, or run the snippet under `bash -c '…'`. Not run. "
+        "(sota-shell-scripting rules/06 §1, the pipeline-status and BASH_REMATCH rows; "
+        "this hook: scripts/zsh-equals-hook.py)"
+    )
+
+
+def gitgrep_reason(hits):
+    shown = ", ".join(f"`{p}` ({' '.join(sorted(set(b)))})" for p, b in hits[:5])
+    return (
+        f"git grep escape: {shown}. On macOS git uses the system regex, which under -E reads `\\b`, "
+        "`\\<`, `\\s`, `\\w`, `\\d` as plain letters (measured git 2.55.0: `a\\b` matches `ab`), and "
+        "`\\d` matches nothing under -E or the default BRE on glibc either. The result is a zero, or "
+        "fewer lines, that reads as a clean answer. Write `[[:space:]]`, `[[:alnum:]_]`, "
+        "`[[:digit:]]`, drop the boundary and filter afterwards, or use -P. Not run. "
+        "(sota-shell-scripting rules/06 §2f; this hook: scripts/zsh-equals-hook.py)"
+    )
+
+
+REASONS = {"equals": reason, "split": split_reason, "special": special_reason, "argv": argv_reason,
+           "bashvar": bashvar_reason, "gitgrep": gitgrep_reason}
 
 
 def active():
@@ -301,8 +608,8 @@ def main():
         cmd = (event.get("tool_input") or {}).get("command")
         if not isinstance(cmd, str):
             return 0
-        words, split = _lex(cmd)
-        msg = [m for m in (words and reason(words), split and split_reason(split)) if m]
+        h = _lex(cmd)
+        msg = [REASONS[k](h[k]) for k in CHECKS if h[k]]
         if msg:
             print("\n".join(msg), file=sys.stderr)
             return 2
@@ -373,6 +680,56 @@ SPLIT_CASES = [
 ]
 
 
+# (check, command, expected hits, a stdout line real zsh must print; "!LINE" = must NOT print it).
+# Every command is run in `zsh -f`: a flagged case shows the defect, an exempt one shows it works.
+N = "n(){ echo N=$#; }; "
+TRAP_CASES = [
+    ("special", "for path in a b; do :; done; ls / >/dev/null && echo AFTER", ["for path"], "!AFTER"),
+    ("special", 'read -r x path <<<"1 2"; ls / >/dev/null && echo AFTER', ["read path"], "!AFTER"),
+    ("special", "f(){ local path=/x; ls / >/dev/null && echo AFTER; }; f", ["local path=/x"], "!AFTER"),
+    ("special", "status=$?; echo AFTER", ["status=$?"], "!AFTER"),
+    ("special", "for status in a; do :; done; echo AFTER", ["for status"], "!AFTER"),
+    ("special", "path=(/usr/bin /bin $path); ls / >/dev/null && echo AFTER", [], "AFTER"),
+    ("special", "p=x; for f in a; do :; done; read -r q <<<1; ls / >/dev/null && echo AFTER", [], "AFTER"),
+    ("special", "echo $status $path >/dev/null; ls / >/dev/null && echo AFTER", [], "AFTER"),
+    ("special", "cat <<'E' >/dev/null\nfor path in x\nE\nls / >/dev/null && echo AFTER", [], "AFTER"),
+    ("special", "bash -c 'for path in a; do :; done; ls / >/dev/null' && echo AFTER", [], "AFTER"),
+    ("argv", N + 'T="a b"; n $T', [("n", "$T")], "N=1"),
+    ("argv", N + "T='-x -y'; n ${T}", [("n", "${T}")], "N=1"),
+    ("argv", 'T="a b"; c=0; for x in $T; do c=$((c+1)); done; echo N=$c', [("for", "$T")], "N=1"),
+    ("argv", N + 'T="a b"; n ${=T}', [], "N=2"),
+    ("argv", N + 'T="a b"; n "$T"', [], "N=1"),
+    ("argv", N + "T=(a b); n $T", [], "N=2"),
+    ("argv", N + 'T="a b"; T=x; n $T', [], "N=1"),
+    ("argv", 'T="a b"; echo $T', [], "a b"),
+    ("bashvar", 'false | true; echo "p=${PIPESTATUS[0]}"', ["${PIPESTATUS[0]}"], "p="),
+    ("bashvar", "false | true; echo p=$PIPESTATUS", ["$PIPESTATUS"], "p="),
+    ("bashvar", '[[ ab =~ (a)(b) ]] && echo "m=${BASH_REMATCH[1]}"', ["${BASH_REMATCH[1]}"], "m="),
+    ("bashvar", 'false | true; echo "p=${pipestatus[1]}"', [], "p=1"),
+    ("bashvar", 'false | true; echo "p=${pipestatus[1]:-$PIPESTATUS}"', [], "p=1"),
+    ("bashvar", "bash -c 'false | true; echo p=${PIPESTATUS[0]}'", [], "p=1"),
+    ("bashvar", 'echo "p=\\${PIPESTATUS[0]}"', [], "p=${PIPESTATUS[0]}"),
+    ("bashvar", "setopt bash_rematch; [[ ab =~ (a)(b) ]] && echo \"m=${BASH_REMATCH[2]}\"", [], "m=a"),
+]
+
+# (command, hits on macOS, hits elsewhere). Run in zsh inside a scratch repo whose one file holds
+# `foo 53 bar`; each pattern matches it when its escapes work, so a hit on THIS platform must come
+# back empty from real git and an exempt case must print `f.txt:1`.
+GITGREP_CASES = [
+    ("git grep -cE '\\bfoo'", [("\\bfoo", ["\\b"])], []),
+    ("git grep -cE 'foo\\s53'", [("foo\\s53", ["\\s"])], []),
+    ("git grep -cE '\\<foo'", [("\\<foo", ["\\<"])], []),
+    ("git grep -c -e 'fo\\w' -E", [("fo\\w", ["\\w"])], []),
+    ('git grep -cE "\\\\bfoo"', [("\\bfoo", ["\\b"])], []),
+    ("git -C . grep -c -E '5\\d'", [("5\\d", ["\\d"])], [("5\\d", ["\\d"])]),
+    ("git grep -c '5\\d'", [], [("5\\d", ["\\d"])]),
+    ("git grep -c '\\bfoo'", [], []),
+    ("git grep -cP '\\bfoo'", [], []),
+    ("git grep -cE '[[:space:]]53'", [], []),
+    ("echo git grep -cE '\\bfoo' >/dev/null; git grep -c foo", [], []),
+]
+
+
 def self_test(require_zsh):
     import shutil
     import subprocess
@@ -393,6 +750,30 @@ def self_test(require_zsh):
             print(f"FAIL split lexer {cmd!r}: want {want} got {got}")
     fails += sfails
     print(f"split lexer: {len(SPLIT_CASES) - sfails}/{len(SPLIT_CASES)} cases")
+    # each trap case flags only its own check, and no older case trips a newer check
+    tfails, others = 0, [(c, None, "equals") for c, _, _ in CASES] + [(c, None, "split") for c, _, _ in SPLIT_CASES]
+    for check, cmd, want, _ in TRAP_CASES:
+        got = _lex(cmd)
+        stray = [k for k in CHECKS if k != check and got[k]]
+        if got[check] != want or stray:
+            tfails += 1
+            print(f"FAIL {check} lexer {cmd!r}: want {want} got {got[check]} stray {stray}")
+    for cmd, mac, other in GITGREP_CASES:
+        for darwin, want in ((True, mac), (False, other)):
+            got = _lex(cmd, darwin)
+            stray = [k for k in CHECKS if k != "gitgrep" and got[k]]
+            if got["gitgrep"] != want or stray:
+                tfails += 1
+                print(f"FAIL gitgrep lexer (darwin={darwin}) {cmd!r}: want {want} got {got['gitgrep']} stray {stray}")
+    for cmd, _, own in others:
+        got = _lex(cmd)
+        stray = [k for k in CHECKS if k != own and got[k]]
+        if stray:
+            tfails += 1
+            print(f"FAIL {own} case trips {stray}: {cmd!r}")
+    fails += tfails
+    ntrap = len(TRAP_CASES) + 2 * len(GITGREP_CASES) + len(others)
+    print(f"trap lexer: {ntrap - tfails}/{ntrap} cases (path/status, argv, bash vars, git grep, cross-talk)")
 
     zsh = shutil.which("zsh")
     if zsh is None:
@@ -422,6 +803,40 @@ def self_test(require_zsh):
                 print(f"FAIL zsh disagrees on {cmd!r}: expected N={n}, got {r.stdout.strip()!r}")
         fails += bad
         print(f"zsh ({zsh}): {len(SPLIT_CASES) - bad}/{len(SPLIT_CASES)} split counts agree")
+        bad = 0
+        for check, cmd, _, line in TRAP_CASES:
+            r = subprocess.run([zsh, "-fc", cmd], check=False, capture_output=True, text=True, timeout=10,
+                               cwd="/", stdin=subprocess.DEVNULL)
+            lines = r.stdout.splitlines()
+            ok = (line[1:] not in lines) if line.startswith("!") else (line in lines)
+            if not ok:
+                bad += 1
+                print(f"FAIL zsh disagrees on {check} {cmd!r}: expected line {line!r}, got {r.stdout.strip()[:60]!r}")
+        fails += bad
+        print(f"zsh ({zsh}): {len(TRAP_CASES) - bad}/{len(TRAP_CASES)} trap verdicts agree")
+        git = shutil.which("git")
+        if git is None:
+            print("SKIP: git not found, so the git grep cases were not checked against real git")
+        else:
+            bad = 0
+            darwin = sys.platform == "darwin"
+            with tempfile.TemporaryDirectory() as d:
+                for argv in (["init", "-q", d], ["-C", d, "add", "f.txt"]):
+                    if argv[0] == "-C":
+                        with open(os.path.join(d, "f.txt"), "w", encoding="utf-8") as f:
+                            f.write("foo 53 bar\n")
+                    subprocess.run([git, *argv], check=True, capture_output=True, timeout=30)
+                for cmd, mac, other in GITGREP_CASES:
+                    flagged = bool(mac if darwin else other)
+                    r = subprocess.run([zsh, "-fc", cmd], check=False, capture_output=True, text=True,
+                                       timeout=10, cwd=d, stdin=subprocess.DEVNULL)
+                    matched = "f.txt:1" in r.stdout.split()
+                    if matched == flagged:
+                        bad += 1
+                        print(f"FAIL git disagrees on {cmd!r}: hook flags={flagged}, git matched={matched} "
+                              f"(stderr {r.stderr.strip()[:60]!r})")
+            fails += bad
+            print(f"git ({sys.platform}): {len(GITGREP_CASES) - bad}/{len(GITGREP_CASES)} git grep verdicts agree")
 
     # the hook end to end: event in, exit code and stderr out
     real_bash = shutil.which("bash") or "/bin/bash"
@@ -448,6 +863,11 @@ def self_test(require_zsh):
         ("forced on", run("echo ===", {"SHELL": "/bin/bash", "SOTA_ZSH_EQUALS_HOOK": "on"}), 2, "EQUALS"),
         ("opt-out", run("echo ===", {"SHELL": "/bin/zsh", "SOTA_ZSH_EQUALS_HOOK": "off"}), 0, ""),
         ("other tool", run("echo ===", {"SHELL": "/bin/zsh"}, tool="Read"), 0, ""),
+        ("deny path under zsh", run("for path in a; do ls; done", {"SHELL": "/bin/zsh"}), 2, "special parameter"),
+        ("deny joined argv under zsh", run('C="--a x"; cmd $C', {"SHELL": "/bin/zsh"}), 2, "ONE argument"),
+        ("deny PIPESTATUS under zsh", run('a | b; echo "${PIPESTATUS[0]}"', {"SHELL": "/bin/zsh"}), 2, "bash-only"),
+        ("deny git grep -E \\d under zsh", run("git grep -E 'x\\d'", {"SHELL": "/bin/zsh"}), 2, "rules/06 §2f"),
+        ("allow PIPESTATUS under bash", run('a | b; echo "${PIPESTATUS[0]}"', {"SHELL": "/bin/bash"}), 0, ""),
     ]
     for name, (rc, err), want_rc, want_err in e2e:
         if rc != want_rc or want_err not in err:
@@ -468,16 +888,24 @@ def self_test(require_zsh):
         split = os.path.join(d, "split.sh")
         with open(split, "w", encoding="utf-8") as f:
             f.write('p="h 22"\nset -- $p\n')
+        traps = {}
+        for name, text in (("path", "for path in a b; do :; done\nls\n"), ("status", "status=$?\n"),
+                           ("argv", 'C="--a x"\ncmd $C\n'), ("pipestatus", 'a | b\necho "${PIPESTATUS[0]}"\n'),
+                           ("gitgrep", "git grep -nE 'a\\d'\n")):
+            traps[name] = os.path.join(d, name + ".sh")
+            with open(traps[name], "w", encoding="utf-8") as f:
+                f.write(text)
         me = [sys.executable, os.path.abspath(__file__), "--check"]
         for name, argv, want in [("check hit", [bad], 1), ("check clean", [good], 0),
                                  ("check split hit", [split], 1),
+                                 *[(f"check {k} hit", [v], 1) for k, v in traps.items()],
                                  ("check unreadable", [os.path.join(d, "nope")], 2),
                                  ("check no files", [], 2)]:
             r = subprocess.run(me + argv, check=False, capture_output=True, text=True, timeout=30)
             if r.returncode != want:
                 fails += 1
                 print(f"FAIL {name}: rc={r.returncode} (want {want}) {r.stdout.strip()[:80]!r}")
-    print(f"end to end: {len(e2e) + 6} checks")
+    print(f"end to end: {len(e2e) + 6 + len(traps)} checks")
     print("ok" if not fails else f"FAILED: {fails}")
     return 1 if fails else 0
 
@@ -495,12 +923,20 @@ def check(paths):
             print(f"{path}: unreadable: {e}", file=sys.stderr)
             return 2
         total += len(text.encode())
-        words, split = _lex(text)
-        for w in words:
+        h = _lex(text)
+        for w in h["equals"]:
             print(f"{path}: unquoted {w}")
-            rc = 1
-        for w in split:
+        for w in h["split"]:
             print(f"{path}: set -- {w} (zsh does not word-split it)")
+        for w in h["special"]:
+            print(f"{path}: {w} (a zsh special parameter: path is $PATH, status is read-only)")
+        for cmd, w in h["argv"]:
+            print(f"{path}: {cmd} {w} (zsh passes one word)")
+        for w in h["bashvar"]:
+            print(f"{path}: {w} (unset in zsh)")
+        for pat, bad in h["gitgrep"]:
+            print(f"{path}: git grep '{pat}' ({' '.join(sorted(set(bad)))} not honoured here)")
+        if any(h.values()):
             rc = 1
     print(f"checked {len(paths)} file(s), {total} bytes: {'HITS' if rc else 'clean'}")
     return rc

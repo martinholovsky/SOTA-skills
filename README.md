@@ -1075,7 +1075,7 @@ anything". Three corrections, each re-checked 2026-10-02:
   opt-in Stop hook that refuses "done" on a changed tree until a verification command has
   passed on exactly that tree (router principle 6, enforced). **`scripts/zsh-equals-hook.py`**, on by
   default in the plugin, is a PreToolUse hook that refuses a zsh command carrying an unquoted `=word`, or a `set -- $scalar` zsh will not split, before it runs
-  (`sota-shell-scripting` rules/06 §1), a reflex the written rule did not stop. The git hooks from
+  (`sota-shell-scripting` rules/06 §1), a reflex the written rule did not stop. Since 2026-10-27 it also refuses a variable named `path` or `status`, a spaced literal expanded unquoted as arguments, `PIPESTATUS`/`BASH_REMATCH`, and a `git grep` escape the platform reads as a plain letter (rules/06 §2f). The git hooks from
   `scripts/init-gates.sh` and CI are enforcement on every host, whatever the agent.
 - **The router is not an always-on 43 KB blob.** Only each skill's frontmatter `description`
   is in every turn's listing; the router's body loads when the skill is invoked
@@ -1452,7 +1452,14 @@ and needs `python3`. Turn it off with `SOTA_ZSH_EQUALS_HOOK=off`; `install.sh --
 to clone installs. Since 2026-10-25 it also refuses `set -- $p` on a scalar, which zsh does not
 word-split, so `$2` is empty (`ssh -p "$2"` → `Bad port ''`); over 66,195 local agent Bash calls it
 matched 13, every one an intended split, and in the zsh sessions whose outcome is visible each
-one failed downstream.
+one failed downstream. Since 2026-10-27 it refuses four more bash habits that zsh breaks, each measured over 39,715
+unique local agent Bash calls before it shipped: a variable named `path` (tied to `$PATH`, so every
+later command is `not found`) or `status` (read-only), 2 hits, both real; a name given a spaced
+literal and then expanded unquoted as arguments (`C="--a x"; cmd $C`, one word in zsh), 9 hits, all
+real; `${PIPESTATUS[n]}` and `BASH_REMATCH`, unset in zsh, 8 hits, all real; and a `git grep -E`
+pattern with `\b`, `\s`, `\w` or `\d`, which macOS git reads as plain letters (`\d` fails under
+glibc too). Re-run in their repositories, 25 of those 72 `git grep` calls had silently dropped
+matches, 21 returned the same count at today's HEAD, and 3 were deliberate reproductions.
 
 The plugin does **not** touch your global config or status line. To match the clone experience,
 opt in to any of these; the scripts ship *with* the plugin, under its cache dir:
