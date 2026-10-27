@@ -389,9 +389,10 @@ channel.
   them is code injection into the browser. Pass data as the *argument* to a constant
   function.
 - Rendering **user-supplied HTML** (`setContent`, an HTML-to-PDF job) hands the page's
-  subresource loads to the attacker. A first check with `<img src="http://127.0.0.1/…">`
-  loaded from a `data:` URL made **no** request, so that path is **not verified here**. Do
-  not rely on the browser to block it. Sanitize the HTML and deny the renderer network
+  subresource loads to the attacker. Measured 2026-10-27 (Playwright 1.64.0, Chromium 156): `page.setContent()` loaded an
+  `<img>`, a stylesheet and an `<iframe>` from `127.0.0.1` (3 requests reached a local server), on a
+  blank page and on an `http:` origin alike; only a top-level `data:` URL navigation made none.
+  The browser does not block it. Sanitize the HTML and deny the renderer network
   egress.
 
 ## Audit checklist

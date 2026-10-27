@@ -230,7 +230,10 @@ rewritten mid-run. After truncate-and-write it printed `EDITED line 3`; after wr
 it printed the original line 3. Field case in this library: a 27-minute run died with
 `$1: unbound variable` and a syntax error at a line that was valid in both versions, after the
 script was rewritten beneath it. **Never rewrite a script while it runs**: write a new file and
-rename it over the old one, or wait for the run to end. Other shells are not measured here.
+rename it over the old one, or wait for the run to end. Measured on Linux (2026-10-27) in bash 5.2, dash 0.5.12, zsh 5.9, mksh 59c, BusyBox 1.37 and
+ksh93u+m 1.0.10: write-and-rename left every one on its original lines. Truncate-and-write made
+bash run the edit, and made the other five, which had read ahead, carry on from their old byte
+offset in the new file and run a fragment (`ITED4: not found`, exit 127).
 
 ## 3e. A heredoc inside a heredoc closes the outer one, and the rest runs as shell
 

@@ -45,8 +45,8 @@ one place.**
   Measured: on Temurin **21.0.12** a stylesheet calling
   `java.lang.System.getProperty` through the `xalan/java` namespace **ran by default**. On
   **25.0.4** it was refused, because that JDK's `conf/jaxp.properties` sets
-  `jdk.xml.enableExtensionFunctions=false`. The exact JDK release where this default flipped
-  was not verified. On either version, `FEATURE_SECURE_PROCESSING=true` refused it. Never
+  `jdk.xml.enableExtensionFunctions=false`. It flipped in **JDK 24**: measured 2026-10-27, Temurin 21.0.12, 22.0.2 and 23.0.2 ran it, and
+  24.0.2 and 25.0.4 refused it; both of those ship `jdk.xml.enableExtensionFunctions=false`. On either version, `FEATURE_SECURE_PROCESSING=true` refused it. Never
   compile a caller-supplied stylesheet. If you must, set that feature and the
   `ACCESS_EXTERNAL_STYLESHEET`/`ACCESS_EXTERNAL_DTD` properties to `""`, and treat any
   `enableExtensionFunctions=true` as a finding.
@@ -127,8 +127,11 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
 - **JDOM**: `new SAXBuilder()` fetched (2.0.6.1, measured). Use
   `SAXBuilder(XMLReaderJDOMFactory)` returning your reader, or `setEntityResolver(deny)`.
 - **JAXB** (`jakarta.xml.bind`): the `File`, `InputStream`, `Reader`, `URL` and `InputSource`
-  overloads of `unmarshal` leave the parser to the implementation, whose defaults were not
-  measured. On untrusted input use `unmarshal(XMLStreamReader)` from your hardened factory, or
+  overloads of `unmarshal` leave the parser to the implementation. Measured 2026-10-27, jaxb-runtime
+  4.0.9 on Temurin 21.0.12 and 25.0.4: the `InputStream`, `Reader` and `StreamSource` overloads
+  refused a `file:` external entity (*'file' access is not allowed due to … accessExternalDTD*) on
+  both JDKs, so the runtime sets it, not the JDK; an internal entity still expanded. Another
+  implementation or version may differ. On untrusted input use `unmarshal(XMLStreamReader)` from your hardened factory, or
   `unmarshal(Source)` with a `SAXSource` over your hardened reader.
 - **Oracle XDK** (`oracle.xml.parser.v2`): Oracle's docs say `setSecureProcessing()` on the
   parser sets its entity-reference, DTD-object and expansion-depth attributes. Not measured.

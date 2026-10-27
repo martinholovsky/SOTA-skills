@@ -45,7 +45,8 @@ Moved from the former Swift-language file in [`sota-mobile`](../../sota-mobile/S
 - SwiftPM's sandbox for plugins is **macOS-only**: its source applies `/usr/bin/sandbox-exec`
   under `#if os(macOS)` and otherwise returns the command unchanged (*"tracks implementing
   sandboxes for other platforms"*). **On Linux CI, plugins and manifests run unsandboxed.**
-  Needs verification: macro sandboxing on Linux.
+  Macros too: measured on Linux (Swift 6.4.1, 2026-10-27), a macro's implementation wrote a file to
+  `/tmp` and read `/etc/hostname` during `swift build`, unsandboxed.
 - Command plugins can ask for `--allow-writing-to-package-directory` and
   `--allow-network-connections`; CI never passes `--disable-sandbox`.
 - `unsafeFlags` *"can be exploited for unsupported or malicious behavior"* and make a product
@@ -62,8 +63,9 @@ Moved from the former Swift-language file in [`sota-mobile`](../../sota-mobile/S
 - **Vulnerability scanning**: the GitHub Advisory Database lists Swift advisories ("Swift
   (registry: N/A)"); **Dependabot** supports the `swift` ecosystem (*"Private registry support
   applies to git registries only"*); OSV's ecosystem is `SwiftURL` (the name is the Git URL).
-  Needs verification: osv-scanner's `Package.resolved` support in practice — run it once on a
-  known-vulnerable resolution before trusting a clean result. Run at least one of these in CI,
+  Measured 2026-10-27: osv-scanner 2.7.0 (`scan source --lockfile Package.resolved`, a v3 file)
+  reported all three advisories for swift-nio 2.99.0 and exited 1, and none for 2.100.0 (exit 0).
+  Keep a known-vulnerable resolution like that as the scanner's positive control in CI. Run at least one of these in CI,
   and report each Critical/High advisory as its own finding (module@version).
 
 ## 5. Adopting a dependency

@@ -10,8 +10,9 @@ crate. Miri, sanitizers and fuzzing stay in [rules/03](03-unsafe-discipline.md) 
 **BUILD** uses §1–§8: choose the tool, write the harness, make it able to fail, wire it into CI.
 **AUDIT** uses §9 and the checklist: a proof is a control, and the defect that matters is the one
 that prints success over nothing. Behaviour quoted here was measured on **Kani 0.68.0 / CBMC
-6.11.0** in a Linux container on 2026-10-24 unless a line says otherwise; Flux was **not**
-executed and its lines come from its own install guide. Re-measure on the release you run.
+6.11.0** in a Linux container on 2026-10-24 unless a line says otherwise; Flux was **executed** on 2026-10-27 at commit `9fe62fab` (its pinned nightly, z3 5.1.0, the
+`liquid-fixpoint` nightly of 2026-10-16) in a Linux container; §8 says what that measured.
+Re-measure on the release you run.
 
 ## 1. When to prove, and with which tool
 
@@ -159,7 +160,7 @@ at adoption proves nothing about the next Kani release.
 
 | what | without the flag | measured |
 |---|---|---|
-| `#[kani::proof_for_contract(f)]` | build error: *requires activating the unstable `function-contracts` feature* | loud — good. `requires`/`ensures` on a function no contract harness names: not measured |
+| `#[kani::proof_for_contract(f)]` | build error: *requires activating the unstable `function-contracts` feature* | loud — good. A false `ensures` on a function no contract harness names still failed a plain `#[kani::proof]` that called it (measured 2026-10-27, `function-contracts` on) |
 | `#[kani::loop_invariant(...)]` | **ignored, silently**: the loop is unrolled instead | a deliberately **false** invariant passed with `VERIFICATION:- SUCCESSFUL`, exit 0; with `-Z loop-contracts` it failed its step check (the base check passed: the invariant held on entry) |
 | `#[kani::stub_verified(f)]` | build error: *requires activating the unstable `stubbing` feature* — `-Z function-contracts` alone is not enough | loud |
 | `--harness name` | **substring** match: `--harness verify_get_bug` also ran `verify_get_bug_should_panic` | add `--exact` and the fully qualified name in CI |
@@ -167,7 +168,11 @@ at adoption proves nothing about the next Kani release.
 Put the unstable features in `Cargo.toml` so a bare `cargo kani` and CI agree. Measured:
 `[package.metadata.kani.unstable]` with `function-contracts = true` made a bare `cargo kani`
 verify a contract harness; `[package.metadata.kani] flags = ["-Z", "function-contracts", "-Z", "loop-contracts"]` did not
-(the same build error as no flag). `loop-contracts` and `stubbing` were not measured in that table.
+(the same build error as no flag). Measured the same way on 2026-10-27: `loop-contracts = true` there made a bare `cargo kani` fail a
+false invariant on its step check, and `function-contracts` plus `stubbing` verified a
+`stub_verified` harness (2 of 2) where `function-contracts` alone was the build error above. That
+loop's no-flag control timed out at 20 minutes instead of passing: unrolling a larger loop is slow,
+not safe, so set the flag rather than rely on a timeout.
 
 ## 6. A postcondition needs teeth: mutation adequacy
 
@@ -203,16 +208,32 @@ effort (`model-checking/verify-rust-std`; issues read, not reproduced here):
 
 ## 8. Flux, operationally
 
-From Flux's install guide (not executed here): Flux is built **from source** (`cargo xtask
-install`) on a pinned nightly from its `rust-toolchain.toml`, and needs `liquid-fixpoint` and
-`z3` on `PATH`. It has no versioned releases, so pin the git dependency by commit and allowlist
-exactly that source in `cargo deny`; the guide's own example `flux-rs = { git = … }` carries no
-`rev`, which [rules/05](05-security-supply-chain.md) §1 does not accept.
+Measured 2026-10-27 at Flux commit `9fe62fab`, in a Linux container: `cargo xtask install` built it
+**from source** on the nightly its `rust-toolchain.toml` pins (582 s), with `liquid-fixpoint` and
+`z3` on `PATH` (the guide asks for z3 4.15 or later), and installed `cargo-flux` plus a sysroot
+under `~/.flux`. The guide now also offers a `curl … | bash` quick installer: treat it as any
+piped installer ([`sota-shell-scripting` rules/03](../../sota-shell-scripting/rules/03-security.md)). There are no versioned releases (0 on
+GitHub), so pin the git dependency by commit and allowlist exactly that source in `cargo deny`:
+`flux-rs = { git = …, rev = "<sha>" }` resolved and worked, while the guide's own example carries
+no `rev`, which [rules/05](05-security-supply-chain.md) §1 does not accept.
 
 - Opt in per crate: `[package.metadata.flux] enabled = true`; run with `cargo flux`. Specs are
-  written as `#[spec(fn(n: i32) -> bool[0 < n])]` after `use flux_rs::attrs::*;`.
+  written as `#[spec(fn(n: i32) -> bool[0 < n])]` after `use flux_rs::attrs::*;` — measured, that
+  spec passed on `0 < n` and failed on `0 <= n`. A failure prints `error[E0999]: refinement type
+  error` and exits 101; the guide's example still shows `error[FLUX]`, so gate on the exit status,
+  not on that text. A crate that uses the attributes without `enabled = true` fails to build
+  (`E0433`, `flux_tool`), so a missing opt-in is loud there; a crate with none is simply unchecked.
+- **Overflow is not checked by default.** `check-overflow` defaults to `none`, which checks only
+  underflow on unsigned subtraction (`crates/flux-config` at the pinned commit). Measured:
+  `#[spec(fn(x: i32) -> i32{v: x < v})]` over an unguarded `x + 1` **verified**, and failed with
+  *arithmetic operation may overflow* under `check-overflow = "strict"` in
+  `[package.metadata.flux]` or `FLUXFLAGS="-Fcheck-overflow=strict"`; the guarded version passed
+  under `strict`. Put `strict` in the manifest of any crate whose specs are about lengths, offsets
+  or arithmetic, so a bare `cargo flux` and CI agree.
 - **`trusted` and `opaque` are both opt-outs.** `trusted` skips a function body; `opaque` hides a
-  type from Flux (verify-rust-std #716 removes both together, one on `ptr::NonNull`). Each needs a
+  type from Flux (verify-rust-std #716 removes both together, one on `ptr::NonNull`). Measured: a
+  `trusted` function with a false postcondition passed, and its only trace was the summary line
+  (`1 trusted`). Each needs a
   written reason and a Kani harness or test that covers what Flux no longer checks.
 - On an internal compiler error, `FLUXFLAGS="-Fflux-verbose" cargo flux` names the last function
   checked: mark that one `trusted` with a reason, or report upstream — never drop the crate from
@@ -286,4 +307,5 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
       caller's proof backs a security claim.
 - [ ] **Flux opt-outs** (§8): `rg -n -g '*.rs' -e '#\[(flux_rs::|flux::)?(trusted|opaque)\b' .` (the bare form is what `use flux_rs::attrs::*;` produces) — each without a
       reason and a covering harness or test = Low; a Flux job that excludes a crate after an ICE =
-      Medium.
+      Medium; a crate whose specs are about arithmetic with `check-overflow` absent or `none` in
+      `[package.metadata.flux]` = Medium (§8: an overflowing `x + 1` still verifies).

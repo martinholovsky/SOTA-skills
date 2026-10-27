@@ -242,8 +242,11 @@ Then add every row whose situation applies:
 
 The common set plus the production and C rows compiled cleanly under Apple clang 21 for both
 `-target x86_64-linux-gnu` and `-target aarch64-linux-gnu`, each with its own architecture row,
-with `-Werror=unused-command-line-argument` (measured, compile only: the `-Wl,` options are GNU
-ld/lld flags that the macOS linker does not take, so their link step was not run here).
+with `-Werror=unused-command-line-argument` (compile only there: the macOS linker does not take the `-Wl,` options). The link step was measured
+on Linux (2026-10-27, GCC 16.2, GNU ld 2.44 and LLD 19.1.7, with `-Wl,--fatal-warnings`): the common
+set linked a PIE and a shared object with empty stderr on both, and `readelf` showed `GNU_RELRO`
+with `BIND_NOW`, a non-executable `GNU_STACK`, `NOOPEN` on the shared object, and `--as-needed`
+dropping an unused `-lm`. A build without them showed none of these.
 
 - **What some older flag lists add, and what it really does** (measured with GCC 16.2, binutils
   2.44, glibc 2.41). `-Wl,-z,nodump` only sets `DF_1_NODUMP`, which marks the object for
