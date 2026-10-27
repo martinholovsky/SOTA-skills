@@ -19,7 +19,11 @@ Defense in depth — each layer catches what the previous missed:
 | Runtime | honeytokens (§5), backend access-log anomaly alerts ([rules/03](03-application-patterns.md) §8) | Detect use |
 
 Pre-commit alone is insufficient (devs skip hooks, `--no-verify`); CI alone is too late (the
-secret already left the laptop and entered shared history). Run both.
+secret already left the laptop and entered shared history). Run both. The layers do not share
+rules, so a clean run in one is not a clean run in another: measured 2026-10-27, a provider-shaped
+key inside a JSON string (followed by an escaped quote) passed `gitleaks dir` 8.30.1 and was blocked
+by push protection, while the same key in plain source was flagged by both. Text an agent writes
+(evidence fields, generated fixtures) is where such strings now come from.
 
 ### gitleaks
 

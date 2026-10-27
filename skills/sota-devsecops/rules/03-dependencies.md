@@ -324,6 +324,12 @@ auto-install malware minutes after it's published. The strategy:
   (days, since 11.10.0), Yarn `npmMinimalAgeGate` (since 4.10.0), uv relative `exclude-newer =
   "7 days"` (since 0.9.17), Bundler `cooldown`/`--cooldown N` (days, since 4.0.13; a gem
   server that omits `created_at` leaves every version resolvable).
+- **Intentionally vulnerable test data is still a manifest.** A known-bad fixture, a scanner's
+  test corpus or a vulnerable sample app pins bad versions on purpose, and the dependency graph
+  reads it like any other manifest: alerts, then bot "fix" PRs that would break the test. Decide
+  before committing it: a path or file name the graph does not parse where the test allows, else
+  a dismissal per alert with its reason, and close the bot PRs for that path. `exclude-paths` in
+  `dependabot.yml` is documented as version-updates-only, so it stops neither (read 2026-10-27).
 - **Group** related updates (monorepo presets, `group:allNonMajor` for dev-deps) to keep
   review load sane; never group majors.
 - **Automerge** only: dev/test dependencies + patch/minor + full required-check suite
