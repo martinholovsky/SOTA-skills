@@ -248,7 +248,8 @@ Meta-findings — the audit also rates the team's PROCESS:
       catalog work; sweep commands/searches reproducible.
 - [ ] Outside-in host list (passive DNS, CT logs) (§1) reconciled against the
       hostnames the IaC declares; list those with
-      `grep -rn -E "aws_route53_record|google_dns_record_set|azurerm_dns_[a-z]+_record|kind: *Ingress|server_name " .`.
+      `grep -rn -E "aws_route53_record|google_dns_record_set|azurerm_dns_[a-z]+_record|kind: *Ingress|server_name " .`
+      — a locator: it lists every declared hostname; each hit is read, not a finding.
       A live host serving an application but absent from every repo → High
       (Medium when it serves only static content).
 - [ ] Implied assumptions written down and each tested against code/config (§1, §4);

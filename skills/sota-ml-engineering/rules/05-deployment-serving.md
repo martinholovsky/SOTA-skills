@@ -86,8 +86,8 @@ progressive rollout validated on live traffic.
       built where scheduled batch would meet the freshness requirement, and does the feature
       path match the chosen pattern (batch, online, streaming)?
 - [ ] **Serving/training parity (§2) — CRITICAL if features reimplemented in the server** —
-      `grep -rniE 'predict|inference|serve' --include='*.py' . | head` (confirm the server calls
-      the SAME feature transform code/store as training, [rules/02](02-data-and-features.md))
+      `grep -rniE 'predict|inference|serve' --include='*.py' . | head` — a locator: it lists
+      every serving site; each hit is read, not a finding (confirm the server calls the SAME feature transform code/store as training, [rules/02](02-data-and-features.md))
 - [ ] **Safe model format & reproducible env (§2) — HIGH** —
       `grep -rniE 'pickle|joblib|torch.load|cloudpickle' --include='*.py' . | head` (unsafe
       load? ([rules/07](07-security-governance.md))); `grep -rqiE 'safetensors|onnx|torchscript' --include='*.py' . || echo "no safe model format"` ;

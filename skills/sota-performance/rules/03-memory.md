@@ -271,7 +271,7 @@ Tune in this order — most GC problems are application problems:
       measurement (§2)?
 - [ ] Arena/region allocation (§3): locate arenas with
       `grep -rnE 'talloc|apr_pool|bumpalo|typed_arena|ArrayPool|arena' --include='*.c' --include='*.h' --include='*.cpp' --include='*.rs' --include='*.cs' .`
-      and for each: is anything allocated in it stored into a longer-lived
+      (lists every arena; each hit is read, not a finding) and for each: is anything allocated in it stored into a longer-lived
       structure or used after the arena is reset? High in native code
       (use-after-free), Medium in managed code (forced copies). No stated
       lifetime boundary (request scope is the natural one) → flag.

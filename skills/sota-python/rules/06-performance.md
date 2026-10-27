@@ -237,7 +237,8 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
       (the message = no invalidation or test isolation anywhere)
 - [ ] **Concurrency model sanity (§5)** — `grep -rn "ThreadPoolExecutor" --include="*.py" src/` (used
       for CPU-bound work? [MEDIUM]);
-      `grep -rn "multiprocessing\|ProcessPoolExecutor" --include="*.py" src/ | head` ;
+      `grep -rn "multiprocessing\|ProcessPoolExecutor" --include="*.py" src/ | head` (lists
+      process-pool use; each hit is read for CPU-bound work, not a finding) ;
       `grep -rl ProcessPoolExecutor --include='*.py' src/ | xargs -r grep -L '__name__'`
       (each file listed starts worker processes with no `__main__` guard)
 - [ ] **Import-time cost (CLIs/lambdas) (§6)** —

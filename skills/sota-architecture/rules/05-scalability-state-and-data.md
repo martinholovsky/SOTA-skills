@@ -263,7 +263,7 @@ OWASP: Multi Tenant Security cheat sheet.
 - [ ] If sharded: was the partition key chosen from access patterns (ADR)? Are logical→physical partitions resharding-friendly? Any cross-shard transactions or joins? Is there hot-partition monitoring with a relocation plan? (§5)
 - [ ] Does every large table/topic have retention, archival, and erasure paths? Does time-series/append-mostly data (events, logs, audit) live outside the hot transactional tables (dedicated store or time partitions)? (§6)
 - [ ] Is the multi-tenancy model explicit per tenant tier (§7)? Is tenant isolation enforced below application code (RLS or mandatory scoped layer) with cross-tenant access tests?
-- [ ] **Isolated tiers have their own cache (§7), High:** for each silo or high-isolation tenant, its cache endpoint differs from the pooled one. List the endpoints with `grep -rnE -i '(redis|valkey|memcached?|cache)[_.-]?(url|uri|host|endpoint)' .`. A silo tenant that resolves to the shared endpoint is a finding.
+- [ ] **Isolated tiers have their own cache (§7), High:** for each silo or high-isolation tenant, its cache endpoint differs from the pooled one. List the endpoints with `grep -rnE -i '(redis|valkey|memcached?|cache)[_.-]?(url|uri|host|endpoint)' .`; it lists every cache endpoint, and each hit is read, not a finding. A silo tenant that resolves to the shared endpoint is a finding.
 - [ ] Is tenant context derived from identity (§7) (not request params) and present in queries, cache keys, messages, logs, metrics?
 - [ ] Are per-tenant rate/concurrency/queue quotas in place in pooled tiers (§7)?
 - [ ] Is all user-triggered heavy work async with job handles, and are background jobs on dedicated workers? (§8)

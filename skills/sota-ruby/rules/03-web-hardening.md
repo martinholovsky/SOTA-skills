@@ -367,8 +367,8 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rnE 'send_file\s*\(?\s*params|send_file[^,]*#\{' --include='*.rb' .` ;
       `grep -rn "original_filename" --include='*.rb' . | grep -v basename` ;
       `grep -rnE 'render\s*\(?\s*file:' --include='*.rb' .` (user-influenced path = file
-      disclosure) ; `grep -rnE 'MiniMagick|Magick::|ImageProcessing|Vips' --include='*.rb' .` (untrusted
-      images through a processor: kept current, formats restricted, worker sandboxed) ; manual: a
+      disclosure) ; `grep -rnE 'MiniMagick|Magick::|ImageProcessing|Vips' --include='*.rb' .` (lists
+      every image processor use; each hit is read, not a finding: untrusted images through a processor: kept current, formats restricted, worker sandboxed) ; manual: a
       server-side size cap, extension allowlist and content sniffing run before storing
 - [ ] **Secrets reaching logs (§8) — HIGH** —
       `grep -rniE 'logger\.(debug|info|warn|error|fatal|unknown).*#\{[^}]*(passw|secret|token|api_?key|credential)' --include='*.rb' .`

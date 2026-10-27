@@ -243,13 +243,14 @@ Run from repo root; verify each hit manually.
 
 - [ ] **FFI — HIGH if enabled for every request** (§6) —
       `grep -rniE 'ffi\.enable[[:space:]]*=[[:space:]]*"?(true|1|on)' --include='*.ini' --include='*.conf' --include='Dockerfile*' .` ;
-      `grep -rnE '\\?FFI::(cdef|load|scope|new)' --include='*.php' .`
+      `grep -rnE '\\?FFI::(cdef|load|scope|new)' --include='*.php' .` (lists every FFI call; each hit
+      is read, not a finding: the finding is the `ffi.enable` line above)
 - [ ] **Uploads — client-trusted name/type, executable destinations (§1) — HIGH** —
       `grep -rnE "\\\$_FILES\[[^]]+\]\['(name|type)'\]" --include='*.php' src/` ;
       `grep -rnE 'move_uploaded_file[[:space:]]*\([^;]*(\[.name.\]|/public/|/web/|/htdocs/|DOCUMENT_ROOT)' --include='*.php' src/` (flags a client-supplied name or a webroot-looking destination; trace the rest: webroot? renamed?);
       `grep -rlE 'move_uploaded_file|\$_FILES' --include='*.php' src/ | xargs -r grep -L 'is_uploaded_file'` (lists upload-handling files with no `is_uploaded_file`: MEDIUM) ;
       `grep -rnE -e '->extractTo[[:space:]]*\(|new[[:space:]]+\\?(ZipArchive|PharData)' --include='*.php' --exclude-dir=vendor .`
-      (archive extraction, §1: each entry name checked against the target directory, entry count
+      (lists every archive extraction; each hit is read, not a finding. §1: each entry name checked against the target directory, entry count
       and sizes capped; the generic checks are the archive item in
       [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md))
 - [ ] **LFI/RFI/traversal — user data reaching include/fs functions (§2) — CRITICAL** —
@@ -264,7 +265,7 @@ Run from repo root; verify each hit manually.
       `grep -rnE 'unserialize\s*\(\s*\$_(GET|POST|COOKIE|REQUEST)' --include='*.php' src/` ;
       `grep -rn 'getMetadata(' --include='*.php' src/ | grep -v 'allowed_classes'` ;
       `grep -rnE '__(destruct|wakeup|toString)' --include='*.php' src/` (gadget surface
-      inventory) ; a `serialize()`d blob from a cache or queue is verified with `hash_equals()`
+      inventory: lists every magic method; each hit is read, not a finding) ; a `serialize()`d blob from a cache or queue is verified with `hash_equals()`
       against a `hash_hmac()` before it is deserialized
 - [ ] **XML (§4) — HIGH** — `grep -rnE 'LIBXML_(NOENT|DTDLOAD)' --include='*.php' src/` ;
       `grep -rn 'libxml_disable_entity_loader' --include='*.php' src/` (deprecated; check PHP<8

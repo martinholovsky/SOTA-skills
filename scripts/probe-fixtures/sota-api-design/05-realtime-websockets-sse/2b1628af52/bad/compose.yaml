@@ -1,0 +1,4 @@
+services:
+  console:
+    image: example/novnc:latest
+    command: websockify --web /usr/share/novnc 6080 vm:5900

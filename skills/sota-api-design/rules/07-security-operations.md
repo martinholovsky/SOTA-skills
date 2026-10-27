@@ -422,7 +422,7 @@ OWASP: WSTG-APIT-01; Django REST Framework cheat sheet.
 - [ ] **Framing (§3a) — HIGH**: every hop strict; a relaxed HTTP parser anywhere on the path is a finding:
       `grep -rnE 'insecureHTTPParser[[:space:]]*:[[:space:]]*true|--insecure-http-parser|accept-(invalid-http|unsafe-violations-in-http)-request' .`
       — then walk the hop chain for an h2-front/h1-back downgrade and for hand-set `Content-Length` on streamed bodies.
-- [ ] **API keys and Basic auth (§1) — MEDIUM**: no high-value resource guarded by an API key alone; abuse leads to revocation; Basic auth absent or TLS-only. Locator:
+- [ ] **API keys and Basic auth (§1) — MEDIUM**: no high-value resource guarded by an API key alone; abuse leads to revocation; Basic auth absent or TLS-only. Locator, listing every Basic-auth site (each hit is read, not a finding):
       `grep -rnE 'Authorization:[[:space:]]*Basic|WWW-Authenticate:[[:space:]]*Basic|HTTPBasicAuth|BasicAuthentication' .`
 - [ ] **Message signing (§1) — HIGH on money or authority paths**: high-value, B2B and agent requests signed with a receiver-enforced minimum covered set including `content-digest`, digest recomputed over received bytes. Verifiers that never mention the digest:
       `grep -rliE 'signature-input' . | while IFS= read -r f; do grep -qi 'content-digest' "$f" || echo "$f"; done`
@@ -440,5 +440,5 @@ OWASP: WSTG-APIT-01; Django REST Framework cheat sheet.
 - [ ] JSON responses a browser can reach (§8) carry `default-src 'none'; frame-ancestors 'none'`, empty-allowlist `Permissions-Policy`, `Referrer-Policy: no-referrer`, `nosniff` (check with `curl -sI`) — LOW.
 - [ ] **Inventory (§9) — MEDIUM**: every host has version, environment and audience; routed vs spec vs client-bundle endpoint lists reconciled; no stray published server URL:
       `grep -rnE 'url"?[[:space:]]*:[[:space:]]*"?https?://[^"[:space:]]*(staging|localhost|127\.0\.0\.1|internal|\.local[:/"]|10\.[0-9]+\.|192\.168\.)' --include='*.yaml' --include='*.yml' --include='*.json' .`
-- [ ] **Forwarded client certificate (§8) — HIGH**: every read of a forwarded cert header is honoured only from the terminating proxy, stripped at the edge, and not the sole basis of an identity-authorised write. Locator:
+- [ ] **Forwarded client certificate (§8) — HIGH**: every read of a forwarded cert header is honoured only from the terminating proxy, stripped at the edge, and not the sole basis of an identity-authorised write. Locator, listing every forwarded-cert header read (each hit is read, not a finding):
       `grep -rniE 'forwarded-client-cert|ssl[-_]client[-_](cert|escaped)|client[-_]cert(ificate)?[-_]?header|x-client-cert' .`

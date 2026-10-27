@@ -204,7 +204,7 @@ incident. Reconcile explicitly in the IR runbook:
 - [ ] Processor-role obligations mapped (§1, §2): every customer DPA's breach-notice clause inventoried with its clock
 - [ ] Data-access audit logging enabled on all special-category/financial/regulated stores (§3); write-once, clock-synced, retention ≥ regime minimum and cataloged as a justified exception
 - [ ] Security telemetry pseudonymized (§3); no secrets/tokens/bodies in logs (sample); log stores classified and access-controlled accordingly
-- [ ] Analytics/telemetry emitters that carry personal data consult current consent, opt-out (incl. GPC) and jurisdiction state before emitting; security-log event classes have a recorded lawful basis (§3) — MEDIUM. Probe for direct emitter calls to review for a consent guard: `grep -rnE "(analytics|telemetry|posthog|mixpanel|segment)\.(identify|track|capture)\(" .`
+- [ ] Analytics/telemetry emitters that carry personal data consult current consent, opt-out (incl. GPC) and jurisdiction state before emitting; security-log event classes have a recorded lawful basis (§3) — MEDIUM. Locator listing every direct emitter call to review for a consent guard (each hit is read, not a finding): `grep -rnE "(analytics|telemetry|posthog|mixpanel|segment)\.(identify|track|capture)\(" .`
 - [ ] Affected-subject enumeration capability demonstrated (§1) (query from access logs + store snapshot), not asserted
 - [ ] Encryption/tokenization state per store recorded (§1) so "data was protected" claims are provable in a notification decision
 - [ ] Communication templates (regulator, individual, customer, public) exist, counsel-reviewed, version-controlled; decision-rights matrix current (§4)

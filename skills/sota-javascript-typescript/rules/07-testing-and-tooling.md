@@ -281,7 +281,7 @@ steps:
       (a directive naming no rule hides every future finding on its lines) ;
       `grep -rnE 'biome[[:space:]]+(ci|check|lint)' .github/workflows/ | grep -v -- '--error-on-warnings'` (a stale `biome-ignore` passes).
 - [ ] **Strict rules weakened for test code (§"ESLint flat config", the test-code bullet) (§5) — MEDIUM** —
-      `grep -nE "'@typescript-eslint/[a-z-]+':[[:space:]]*['\"]?(off|0)" eslint.config.*` — a hit outside a block whose `files` glob names tests disables the rule for app code too.
+      `grep -nE "'@typescript-eslint/[a-z-]+':[[:space:]]*['\"]?(off|0)" eslint.config.*` lists every `@typescript-eslint` rule turned off; each hit is read, not a finding: a hit outside a block whose `files` glob names tests disables the rule for app code too.
       Then `npx eslint --print-config <file>` on one test file of each naming shape the repo uses (`.spec.ts`, `.test.tsx`, `tests/…`): a shape the exemption misses gets the full set, which breeds per-line disables in tests.
 - [ ] `grep -rnE --include='*.test.tsx' 'querySelector|container\.' src/` and `getByTestId` density — implementation-coupled tests (§2) (LOW/MEDIUM).
 - [ ] `grep -rn "fireEvent" src/` in component tests — should be `userEvent` (LOW). Arbitrary `setTimeout` sleeps instead of `findBy…`/`waitFor` in component tests are MEDIUM (§2).
@@ -290,7 +290,7 @@ steps:
       MEDIUM for a parser of untrusted input** —
       `grep -qE '"(fast-check|@fast-check/[a-z]+)"' package.json || echo 'package.json: no fast-check'` (printed: no property test can
       exist) ; `grep -rlE 'export (async )?(function|const) (parse|decode|deserialize|serialize|encode)[A-Za-z]*' --include='*.ts' --include='*.js' src/`
-      (each listed module with no `fc.assert(fc.property(` in its tests is a candidate)
+      (lists every exported parser or serializer; each is read, not a finding: each listed module with no `fc.assert(fc.property(` in its tests is a candidate)
 - [ ] `grep -rn "vi.mock(\|jest.mock(" src/ | wc -l` high vs test count — module-mock-heavy suite; check MSW present for network (`grep -q '"msw"' package.json || echo 'package.json: no msw'`) (MEDIUM if fetch wrappers are mocked instead). (§3)
 - [ ] MSW server with `onUnhandledRequest: 'error'`? (§3) Real network calls in unit tests (`grep -rnE --include='*.test.ts' 'localhost|https://' src/`; an unquoted `src/**/` searches one level in bash, [`sota-shell-scripting` rules/05](../../sota-shell-scripting/rules/05-constructs-and-cleanup.md) §5a) = MEDIUM (flaky + slow).
 - [ ] Coverage thresholds configured and honest (§10) (no `**/index.ts` exclusion games) — absent = LOW; tests asserting nothing (`grep -rn "expect(" -L` on test files) = HIGH for the affected area.
