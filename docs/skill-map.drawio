@@ -910,13 +910,13 @@
         <mxCell id="mtlines2" value="2050" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="646" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines3" value="1938" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines3" value="1945" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="754" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines4" value="2793" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="862" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines5" value="2697" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines5" value="2698" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="970" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines6" value="1549" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
@@ -925,7 +925,7 @@
         <mxCell id="mtlines7" value="2224" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1186" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines8" value="1819" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines8" value="1823" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1294" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines9" value="765" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
@@ -3064,7 +3064,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 8 — how skill files point at each other, by FORM.&lt;br&gt;&lt;br&gt;Since ROADMAP 73 (n), 2026-10-12, a pointer is a relative Markdown link whose visible text is the old name form: 4573 of 4750 skill-name and rules/NN pointers are links (3940 of the 4058 that name a rules file). The unlinked rest are mostly bare prose mentions of a skill. 1705 mentions of another skill&#x27;s name across 348 skill files; 3 @path tokens, all in sota-docs-workflow/rules/01-documentation-architecture.md, which DESCRIBES the CLAUDE.md feature.&lt;br&gt;&lt;br&gt;Why links: with names only, an agent had to turn the name into a directory and the number into a file, and every failed rules-file read in sota-agent-evals v6-v11 was a guessed filename. Measured in v12: links ended the guessing (failed reads 2 -&gt; 0) but did NOT raise how often the cited rules file was reached (5/20 names, 6/20 links): agents follow the links where they sit, not to the file the task needs. A hook naming the file for the code being written reached 18/20 (v9)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 8 — how skill files point at each other, by FORM.&lt;br&gt;&lt;br&gt;Since ROADMAP 73 (n), 2026-10-12, a pointer is a relative Markdown link whose visible text is the old name form: 4572 of 4749 skill-name and rules/NN pointers are links (3939 of the 4057 that name a rules file). The unlinked rest are mostly bare prose mentions of a skill. 1705 mentions of another skill&#x27;s name across 348 skill files; 3 @path tokens, all in sota-docs-workflow/rules/01-documentation-architecture.md, which DESCRIBES the CLAUDE.md feature.&lt;br&gt;&lt;br&gt;Why links: with names only, an agent had to turn the name into a directory and the number into a file, and every failed rules-file read in sota-agent-evals v6-v11 was a guessed filename. Measured in v12: links ended the guessing (failed reads 2 -&gt; 0) but did NOT raise how often the cited rules file was reached (5/20 names, 6/20 links): agents follow the links where they sit, not to the file the task needs. A hook naming the file for the code being written reached 18/20 (v9)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="1100" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="lh0" value="form" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;align=left;spacingLeft=8;" vertex="1" parent="1">
@@ -3130,7 +3130,7 @@
         <mxCell id="lk4" value="own rules/NN" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="370" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln4" value="3045 (2943)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln4" value="3044 (2942)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="370" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le4" value="[rules/04](04-library-map.md) §1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
@@ -3142,7 +3142,7 @@
         <mxCell id="lk5" value="md link, same skill" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="402" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln5" value="2828" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln5" value="2827" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="402" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le5" value="[rules/04-library-map.md](rules/04-library-map.md)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
