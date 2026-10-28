@@ -23,7 +23,7 @@ gh api "repos/OWNER/REPO/actions/runs/RUN_ID/jobs?per_page=100" \
   --jq '.jobs[] | [.name, .created_at, .started_at, .completed_at] | @tsv'
 ```
 
-Measured on this library's own CI (2026-10-28, 40 runs): a PR run's median was 18.1 minutes,
+Measured on this library's own CI (2026-10-28, the latest 40 runs of `ci.yml`, `gh run list --limit 40`): a PR run's median was 18.1 minutes,
 and **one step was 15.3 of them**: a harness that ran 129 probes serially, each a full run of a
 44-check gate. Every other job took about a minute, so dependency caching would have saved
 seconds; the lever was the repeated unit, not the installs. Optimising without this table
