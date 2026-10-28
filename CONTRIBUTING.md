@@ -159,6 +159,10 @@ the recommendation**. Measuring it inverted the advice. So:
 > **When an unverified value would change the recommendation, it is a blocker, not a
 > caveat.** Measure it, or give no recommendation.
 
+It bit again on 2026-10-28: `sota-rust` rules/07 §4a said "other config surfaces were not
+measured" beside a runnable read-only `cargo metadata` recipe, and measuring them showed the
+recipe ran checkout-chosen code. A recipe next to an unmeasured caveat is the same blocker.
+
 A container usually settles it in two minutes — distro behaviour, package contents, a tool's
 exit code on an edge case. Check for a runtime (`podman machine list`, `docker info`) before
 writing "not verified".

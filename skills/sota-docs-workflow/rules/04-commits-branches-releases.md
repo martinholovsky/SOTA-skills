@@ -89,7 +89,12 @@ you're actually running.
   repository's own delete-on-merge setting. And a multi-ref `git push origin --delete A B`
   deletes **nothing** when any one ref is already gone, at rc 1, with or without `--atomic`
   (measured, git 2.55.0). A stale list fails the whole command, not just the stale name
-  (field-reported 2026-10-20).
+  (field-reported 2026-10-20). **A branch with no PR, or a closed one, has no state to derive
+  from**: it is not on the list until its commits are reachable from a remote ref (`git branch -r
+  --contains <sha>`, after fetching `refs/pull/*/head`) and no record pins its hash (search the
+  eval and release records for its 7-character prefix). Measured 2026-10-28: of 14 eval roots
+  cited by hash, one existed only on a local branch with no PR. And generate the delete command
+  from the list; a hand-typed one dropped 1 of 21 names in the same session.
 
 ## §4 Versioning discipline
 

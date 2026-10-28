@@ -21,8 +21,8 @@ enforcement is on). Every change goes through a pull request:
    `pre-commit run --all-files`). `pre-commit install` sets up **both** stages —
    pre-push re-runs the invariants, the first moment the **diff-based** ones
    (11, 14) have a commit to read, and checks the pushed branch name and commit messages
-   against the internal-name denylist (`scripts/check-published-names.sh`). **Neither runs CI's other steps**: touched a skill file?
-   `python3 scripts/gen-skill-map.py` and commit any diff, or CI's skill-map check goes red
+   against the internal-name denylist (`scripts/check-published-names.sh`), and mirrors CI's skill-map and shellcheck steps
+   (`scripts/pre-push-ci-mirror.sh`; a local shellcheck can be older than CI's). **It runs none of CI's other steps** (probes, claims, the harness)
 3. push the branch and open a PR
 4. **every** required check must pass, then squash-merge — invariants, secret scan, shell
    lint, executable claims, and the negative-control harness that proves the gates can
