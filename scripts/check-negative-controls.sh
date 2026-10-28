@@ -1169,6 +1169,17 @@ p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60grep -rn X --include=\\x27*
 probe 37c "a brace glob inside --include matches no file" \
   "INCLUDE BRACE NEVER EXPANDS: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
 
+# 37d — a probe in a DOUBLE-backtick span (its pattern holds a backtick). A single-backtick
+# extractor cuts the span at the inner backtick and never sees the --include beside the file.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-shell-scripting/rules/09-listing-and-selection.md')
+t = p.read_text()
+p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60\\x60grep -rn \\x60X\\x60 --include=\\x27*.rb\\x27 config.ru\\x60\\x60\\n')
+" )
+probe 37d "a double-backtick probe filters out the file it names" \
+  "INCLUDE DROPS NAMED FILE: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
+
 # 38 — a claim about what is current that carries a version. Written in the shape the first
 # detector missed: emphasis and a line wrap between the cue and the number.
 ( cd "$WT" && python3 -c "

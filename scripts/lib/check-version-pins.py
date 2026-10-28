@@ -85,6 +85,9 @@ VERSION = re.compile(
     r'(?<![\w.§/-])(?<!§ )(?<!\bsections )(?<!\bsection )(?<!\bWCAG )(?<!\bSC )(?<!\bASVS )'
     r'(v\d+(?:\.\d+)*(?:\.x)?\+?|\d+\.(?:\d+|x)(?:\.(?:\d+|x))*\+?)'
     r'(?![\w%]|\s?(?:ms|s|GB|MB|KB|TB|x|×|%|px|em|rem|days?|hours?|min)\b)')
+# "current C# (14 / .NET 10)": the number sits in a parenthesis after a product name, where no
+# VERSION shape reads it, so the cue carries its own number (a cue-only pin, like a year baseline).
+CURRENT_PRODUCT_PAREN = re.compile(r'\bcurrent\s+' + PRODUCT + r'\s*\(\s*v?\d')
 PRODUCT_NUM = re.compile(r'\b' + PRODUCT + r'\s?(\d{1,3})(?![\w.])')
 GLUED = re.compile(r'\b(?:net|netcoreapp|netstandard|py|node|jdk)(\d+(?:\.\d+)*)\b', re.I)
 EDITION = re.compile(r'\bedition\s*=?\s*"?(20\d\d)\b', re.I)
@@ -171,6 +174,8 @@ def is_pin(clause):
     c = CURRENCY_FALSE.sub(' ', c)
     if BASELINE_LABEL.search(c):
         return bool(versions(c)) or bool(re.search(r'20\d\d\s+baseline', c, re.I))
+    if CURRENT_PRODUCT_PAREN.search(c) and not prov:
+        return True
     cues = list(CURRENCY.finditer(c))
     if not cues:
         return False
@@ -275,6 +280,8 @@ PINS = [
     'React ≥ 19.x, Next ≥ 15.x (16.x current), Vue ≥ 3.5, Nuxt ≥ 4.x (Nuxt 3 security-only until 2026-07-31).',
     'ES2024+ available, React 19.2-era with Server Components and React Compiler 1.0 where relevant, latest stable Vitest + flat-config ESLint (v9/v10).',
     'Frame against the CIS Kubernetes Benchmark (CIS listed v2.0.1 as latest on 2026-09-25; use the edition matched to your minor version) and the NSA/CISA Kubernetes Hardening Guidance (v1.2, Aug 2022 — still the current edition; verify before citing).',
+    # an external proposal, 2026-10-28: "current <product> (<number>" names no release noun
+    "Write to current C# (14 / .NET 10), not C# 7.",
 ]
 NOT_PINS = [
     "latest stable (verify at go.dev/doc/devel/release)",
@@ -328,6 +335,8 @@ NOT_PINS = [
     "The OAuth 2.0 Security Best Current Practice, RFC 9700, requires PKCE.",
     "sota-code-security rules/11 §2.2: the same gate's green today does not cover the scope it had.",
     "## 8.8 Product notes (brief — verify current at use)",
+    # the near-miss the first proposed pattern for the line above flagged (2026-10-28)
+    "manual renewal or cert older than the current CA/B cap (200d in 2026) → finding (§1).",
     "go version (os.Root containment needs >=1.26.5 on the 1.26 line — CVE-2026-39822 symlink escape)",
     "use a golangci-lint release whose notes list your Go minor (v2.9.0 first supported 1.26, v2.13.0 first supports 1.27)",
     "Compare the running php -v with the newest release of its branch (https://www.php.net/releases/?json&version=8.4 returns it).",

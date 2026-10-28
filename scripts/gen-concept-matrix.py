@@ -21,7 +21,7 @@ over item text. A matcher answers "does this wording appear", never "is this ide
   * a concept's absence from a language is a CANDIDATE, never a finding. Confirm by opening
     the file -- 2 of 8 candidate Python gaps died on reading during ROADMAP 59's first pass.
   * EVERY absence of a universal concept is listed, in one of two blocks: CANDIDATE GAPS
-    (missing in 1-5 languages) and MOSTLY ABSENT (missing in 6-9). The second block exists
+    (missing in 1-5 languages) and MOSTLY ABSENT (missing in 6 or more). The second block exists
     because the first one alone hid `numeric precision & money` at 3/9 for a whole pass
     (ROADMAP 65): a threshold with no recorded rationale made the widest absences the
     invisible ones. A concept missing almost everywhere is either a class-wide gap or not
@@ -620,16 +620,16 @@ def main():
     if not candidates:
         print("  (none)")
     for concept, missing, have in sorted(candidates, key=lambda x: -x[2]):
-        print("  %-42s present %d/9, absent: %s"
-              % (concept, have, ", ".join(E.label(m) for m in missing)))
+        print("  %-42s present %d/%d, absent: %s"
+              % (concept, have, len(E.LANGS), ", ".join(E.label(m) for m in missing)))
 
     print("\nMOSTLY ABSENT -- a universal concept missing in 6+ languages: either a real")
     print("class-wide gap or a concept that is not universal; triage decides.")
     if not mostly_absent:
         print("  (none)")
     for concept, missing, have in sorted(mostly_absent, key=lambda x: -x[2]):
-        print("  %-42s present %d/9, absent: %s"
-              % (concept, have, ", ".join(E.label(m) for m in missing)))
+        print("  %-42s present %d/%d, absent: %s"
+              % (concept, have, len(E.LANGS), ", ".join(E.label(m) for m in missing)))
 
     if args.show_unmatched:
         print("\nUNCLASSIFIED ITEMS -- holes in THIS FILE's vocabulary, not in the skills.")

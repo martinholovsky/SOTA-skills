@@ -285,7 +285,7 @@ steps:
       Then `npx eslint --print-config <file>` on one test file of each naming shape the repo uses (`.spec.ts`, `.test.tsx`, `tests/…`): a shape the exemption misses gets the full set, which breeds per-line disables in tests.
 - [ ] `grep -rnE --include='*.test.tsx' 'querySelector|container\.' src/` and `getByTestId` density — implementation-coupled tests (§2) (LOW/MEDIUM).
 - [ ] `grep -rn "fireEvent" src/` in component tests — should be `userEvent` (LOW). Arbitrary `setTimeout` sleeps instead of `findBy…`/`waitFor` in component tests are MEDIUM (§2).
-- [ ] `grep -rn "waitForTimeout\|setTimeout" e2e/ tests/` — sleep-based waits = flake (MEDIUM). `grep -rnE "locator\( *['\"](\.|#|//|xpath=|css=)" --include='*.spec.ts' --include='*.test.ts' --include='*.e2e.ts' --exclude-dir=node_modules .` — CSS/XPath locators where `getByRole`/`getByLabel` would do (LOW) (§4).
+- [ ] `grep -rn "waitForTimeout\|setTimeout" --include='*.ts' --include='*.js' --exclude-dir=node_modules . | grep -E '^\./(e2e|tests?)/'` — sleep-based waits = flake (MEDIUM). `grep -rnE "locator\( *['\"](\.|#|//|xpath=|css=)" --include='*.spec.ts' --include='*.test.ts' --include='*.e2e.ts' --exclude-dir=node_modules .` — CSS/XPath locators where `getByRole`/`getByLabel` would do (LOW) (§4).
 - [ ] **Parsers and serializers with no property-based test (Practices: `fast-check`) (§1) — LOW,
       MEDIUM for a parser of untrusted input** —
       `grep -qE '"(fast-check|@fast-check/[a-z]+)"' package.json || echo 'package.json: no fast-check'` (printed: no property test can
@@ -297,7 +297,7 @@ steps:
 - [ ] knip (or equivalent) in CI? Run `npx knip` during audit — large unused-dependency list = MEDIUM (supply-chain surface). Each candidate is a lead, not a finding, until deleting it in a scratch copy leaves the real build and suite green (§7).
 - [ ] Libraries: `npx publint && npx @arethetypeswrong/cli --pack` clean (§8); `files` allowlist present — failures = HIGH for published packages.
 - [ ] **Tarball contents unchecked (§8, the tarball bullet) — HIGH for a published package** —
-      `grep -rL --include='package.json' --exclude-dir=node_modules '"files"' . ; find . -name .npmignore -not -path '*/node_modules/*'`
+      `grep -rL --include='package.json' --exclude-dir=node_modules -e '"files"' -e '"private": *true' . ; find . -name .npmignore -not -path '*/node_modules/*'`
       — a publishable `package.json` (no `"private": true`) without `files`, or any `.npmignore`, ships whatever the
       ignore rules miss. Then check CI runs `npm pack --dry-run --json` against an expected file list (absent: MEDIUM).
 - [ ] Snapshot test sprawl (§1): `grep -rln "toMatchSnapshot" src/ | wc -l` — high count = change-detector suite (LOW/MEDIUM).

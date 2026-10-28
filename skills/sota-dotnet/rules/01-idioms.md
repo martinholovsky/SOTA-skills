@@ -1,6 +1,6 @@
 # 01 — Idioms: modern C#, nullability, error handling
 
-Write to current C# (14 / .NET 10), not C# 7. The through-line is
+Write to the latest stable C# your target framework supports (verify at the link below), not C# 7. The through-line is
 **immutability, the nullable-aware type system, and expression-oriented code**.
 Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/),
 [.NET 10](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-10/overview).

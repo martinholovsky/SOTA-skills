@@ -1,5 +1,5 @@
 {
- "_note": "Invariant 44 first fixture pass, 2026-10-26: every runnable checklist probe that could NOT be proven by a known-bad/known-good fixture pair, with the reason and (where the batch agent built one) a proposed replacement probe tested on its own bad/good trees. A record of that pass: the live debt is scripts/probe-fixture-baseline.json. in_baseline=false marks a probe that has passing fixtures but a recorded weakness. ROADMAP item 81. ROADMAP 81 applied the replacements on 2026-10-26: 288 records now carry `resolved`; the 68 still baselined have no tested replacement. On 2026-10-27 the last 68 were resolved (rewritten, declared locators, or found not to be probes); the baseline is empty.",
+ "_note": "Invariant 44 first fixture pass, 2026-10-26: every runnable checklist probe that could NOT be proven by a known-bad/known-good fixture pair, with the reason and (where the batch agent built one) a proposed replacement probe tested on its own bad/good trees. A record of that pass: the live debt is scripts/probe-fixture-baseline.json. in_baseline=false marks a probe that has passing fixtures but a recorded weakness. ROADMAP item 81. ROADMAP 81 applied the replacements on 2026-10-26: 288 records now carry `resolved`; the 68 still baselined have no tested replacement. On 2026-10-27 the last 68 were resolved (rewritten, declared locators, or found not to be probes); the baseline is empty. On 2026-10-28 an external proposal found 8 in_baseline=false records ROADMAP 81 had not marked (all sota-javascript-typescript): 7 replaced, 1 declared a locator; every record now carries `resolved`.",
  "defects": [
   {
    "id": "05-realtime-websockets-sse#2b1628af52",
@@ -918,7 +918,8 @@
    "probe": "grep -rnE 'export (const|let) [A-Za-z]+ *= *(\\[|\\{)' src/",
    "problem": "identifier class [A-Za-z]+ excludes _ and digits, so the most common spelling of an exported constant (SCREAMING_SNAKE_CASE) and any typed declaration (`: string[] =`) are missed; a camelCase fixture is proven, this records the partial miss",
    "proposed_probe": "grep -rnE 'export (const|let) [A-Za-z_$][A-Za-z0-9_$]* *(: *[^=]+)?= *(\\[|\\{)' src/",
-   "evidence": "cmd: grep -rnE 'export (const|let) [A-Za-z]+ *= *(\\[|\\{)' src/\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=1 stdout=\"\"\nproposed: bad/ -> \"src/defaults.ts:1:export const DEFAULT_ROLES = ['viewer', 'editor'];\\nsrc/defaults.ts:2:export const ALLOWED_HOSTS: string[] = ['a.example.com'];\" ; good/ -> \"\""
+   "evidence": "cmd: grep -rnE 'export (const|let) [A-Za-z]+ *= *(\\[|\\{)' src/\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=1 stdout=\"\"\nproposed: bad/ -> \"src/defaults.ts:1:export const DEFAULT_ROLES = ['viewer', 'editor'];\\nsrc/defaults.ts:2:export const ALLOWED_HOSTS: string[] = ['a.example.com'];\" ; good/ -> \"\"",
+   "resolved": "2026-10-28 (external proposal intake): replaced; fixtures re-keyed to #3bb2def885, and the old probe fails the new pair (misses bad/, flags good/, or exits 2), so the fixture proves the fix."
   },
   {
    "id": "03-async-patterns#4b21d56c30",
@@ -937,7 +938,8 @@
    "probe": "grep -rn \"^await \\|^const .* = await\" src/",
    "problem": "`^const .* = await` misses `export const x = await ...`, the usual shape of top-level await in a shared module; a non-exported fixture is proven, this records the partial miss",
    "proposed_probe": "grep -rnE '^await |^(export )?(const|let) .* = await ' src/",
-   "evidence": "cmd: grep -rn \"^await \\|^const .* = await\" src/\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=1 stdout=\"\"\nproposed: bad/ -> \"src/db.ts:2:export const pool = await createPool(process.env.DATABASE_URL);\" ; good/ -> \"\""
+   "evidence": "cmd: grep -rn \"^await \\|^const .* = await\" src/\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=1 stdout=\"\"\nproposed: bad/ -> \"src/db.ts:2:export const pool = await createPool(process.env.DATABASE_URL);\" ; good/ -> \"\"",
+   "resolved": "2026-10-28 (external proposal intake): replaced; fixtures re-keyed to #2aabd0fc80, and the old probe fails the new pair (misses bad/, flags good/, or exits 2), so the fixture proves the fix."
   },
   {
    "id": "03-async-patterns#aa05b10c3b",
@@ -1266,7 +1268,8 @@
    "probe": "grep -rn \"localStorage.setItem\\|sessionStorage.setItem\" --exclude-dir=node_modules . | grep -i \"token\\|jwt\\|session\\|auth\\|key\"",
    "problem": "the `grep -i` filter runs on the whole output line, filename included, so every setItem in a file named session.*/auth.*/token.* prints (a fixture with a neutral filename is proven; this records the false-hit source)",
    "proposed_probe": "grep -rnE \"(localStorage|sessionStorage)\\.setItem\\( *['\\\"\\`][^'\\\"\\`]*([Tt]oken|jwt|JWT|[Ss]ession|[Aa]uth|[Kk]ey)\" --exclude-dir=node_modules .",
-   "evidence": "cmd: grep -rn \"localStorage.setItem\\|sessionStorage.setItem\" --exclude-dir=node_modules . | grep -i \"token\\|jwt\\|session\\|auth\\|key\"\noriginal on bad/: rc=0 stdout=\"./src/auth.ts:1:export const saveLogin = (t: string) => localStorage.setItem('accessToken', t);\"\noriginal on good/: rc=0 stdout=\"./src/session.ts:1:export const saveTheme = (theme: string) => localStorage.setItem('theme', theme);\"\nproposed: bad/ -> \"./src/auth.ts:1:export const saveLogin = (t: string) => localStorage.setItem('accessToken', t);\" ; good/ -> \"\""
+   "evidence": "cmd: grep -rn \"localStorage.setItem\\|sessionStorage.setItem\" --exclude-dir=node_modules . | grep -i \"token\\|jwt\\|session\\|auth\\|key\"\noriginal on bad/: rc=0 stdout=\"./src/auth.ts:1:export const saveLogin = (t: string) => localStorage.setItem('accessToken', t);\"\noriginal on good/: rc=0 stdout=\"./src/session.ts:1:export const saveTheme = (theme: string) => localStorage.setItem('theme', theme);\"\nproposed: bad/ -> \"./src/auth.ts:1:export const saveLogin = (t: string) => localStorage.setItem('accessToken', t);\" ; good/ -> \"\"",
+   "resolved": "2026-10-28 (external proposal intake): replaced; fixtures re-keyed to #5d83e5e4ad, and the old probe fails the new pair (misses bad/, flags good/, or exits 2), so the fixture proves the fix."
   },
   {
    "id": "05-security#fda57096eb",
@@ -1335,7 +1338,8 @@
    "probe": "grep -rn \"waitForTimeout\\|setTimeout\" e2e/ tests/",
    "problem": "names both e2e/ and tests/; Playwright projects normally have one, so grep exits 2 on the missing directory (a fixture with both directories is proven)",
    "proposed_probe": "grep -rn \"waitForTimeout\\|setTimeout\" --include='*.ts' --include='*.js' --exclude-dir=node_modules . | grep -E '^\\./(e2e|tests)/'",
-   "evidence": "cmd: grep -rn \"waitForTimeout\\|setTimeout\" e2e/ tests/\noriginal on bad/: rc=2 stdout=\"e2e/checkout.spec.ts:2:  await page.waitForTimeout(3000);\"\noriginal on good/: rc=2 stdout=\"\"\nproposed: bad/ -> \"./e2e/checkout.spec.ts:2:  await page.waitForTimeout(3000);\" ; good/ -> \"\""
+   "evidence": "cmd: grep -rn \"waitForTimeout\\|setTimeout\" e2e/ tests/\noriginal on bad/: rc=2 stdout=\"e2e/checkout.spec.ts:2:  await page.waitForTimeout(3000);\"\noriginal on good/: rc=2 stdout=\"\"\nproposed: bad/ -> \"./e2e/checkout.spec.ts:2:  await page.waitForTimeout(3000);\" ; good/ -> \"\"",
+   "resolved": "2026-10-28 (external proposal intake): replaced; fixtures re-keyed to #e50f7cf2a6, and the old probe fails the new pair (misses bad/, flags good/, or exits 2), so the fixture proves the fix."
   },
   {
    "id": "07-testing-and-tooling#3780ecdd75",
@@ -1364,7 +1368,8 @@
    "probe": "grep -rL --include='package.json' --exclude-dir=node_modules '\"files\"' . ; find . -name .npmignore -not -path '*/node_modules/*'",
    "problem": "the item exempts `\"private\": true` packages, but the probe lists every package.json without \"files\", so a monorepo root or app package prints (a publishable fixture is proven)",
    "proposed_probe": "grep -rL --include='package.json' --exclude-dir=node_modules -e '\"files\"' -e '\"private\": *true' . ; find . -name .npmignore -not -path '*/node_modules/*'",
-   "evidence": "cmd: grep -rL --include='package.json' --exclude-dir=node_modules '\"files\"' . ; find . -name .npmignore -not -path '*/node_modules/*'\noriginal on bad/: rc=0 stdout=\"./package.json\"\noriginal on good/: rc=0 stdout=\"./package.json\"\nproposed: bad/ -> \"./package.json\" ; good/ -> \"\""
+   "evidence": "cmd: grep -rL --include='package.json' --exclude-dir=node_modules '\"files\"' . ; find . -name .npmignore -not -path '*/node_modules/*'\noriginal on bad/: rc=0 stdout=\"./package.json\"\noriginal on good/: rc=0 stdout=\"./package.json\"\nproposed: bad/ -> \"./package.json\" ; good/ -> \"\"",
+   "resolved": "2026-10-28 (external proposal intake): replaced; fixtures re-keyed to #6908541bbd, and the old probe fails the new pair (misses bad/, flags good/, or exits 2), so the fixture proves the fix."
   },
   {
    "id": "07-testing-and-tooling#552189820f",
@@ -1423,7 +1428,8 @@
    "probe": "grep -rn \"knex.raw\\\\|sequelize.query\\\\|\\\\$queryRawUnsafe\\\\|createQueryBuilder\" --exclude-dir=node_modules .",
    "problem": "the span is double-quoted, so bash expands `\\\\$queryRawUnsafe` to a backslash plus an EMPTY variable: the `$queryRawUnsafe` alternative (the one the item singles out) and `createQueryBuilder` are dead, only knex.raw/sequelize.query match (a knex.raw fixture is proven)",
    "proposed_probe": "grep -rn 'knex\\.raw\\|sequelize\\.query\\|\\$queryRawUnsafe\\|createQueryBuilder' --exclude-dir=node_modules .",
-   "evidence": "cmd: grep -rn \"knex.raw\\\\|sequelize.query\\\\|\\\\$queryRawUnsafe\\\\|createQueryBuilder\" --exclude-dir=node_modules .\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=1 stdout=\"\"\nproposed: bad/ -> \"./src/users.ts:2:  prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = '${id}'`);\" ; good/ -> \"\""
+   "evidence": "cmd: grep -rn \"knex.raw\\\\|sequelize.query\\\\|\\\\$queryRawUnsafe\\\\|createQueryBuilder\" --exclude-dir=node_modules .\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=1 stdout=\"\"\nproposed: bad/ -> \"./src/users.ts:2:  prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = '${id}'`);\" ; good/ -> \"\"",
+   "resolved": "2026-10-28 (external proposal intake): replaced; fixtures re-keyed to #23f6d130d7, and the old probe fails the new pair (misses bad/, flags good/, or exits 2), so the fixture proves the fix."
   },
   {
    "id": "08-process-and-outbound#95c43f56de",
@@ -1432,7 +1438,8 @@
    "probe": "grep -rn \"child_process\" src/ | grep \"shell\"",
    "problem": "requires `child_process` and `shell` on the SAME line, so the usual shape (import on one line, `spawn(cmd, { shell: true })` on another) is missed; only a one-line `require('child_process').x(..., { shell: true })` is caught (that fixture is proven)",
    "proposed_probe": "grep -rnE 'shell: *true' src/",
-   "evidence": "cmd: grep -rn \"child_process\" src/ | grep \"shell\"\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=1 stdout=\"\"\nproposed: bad/ -> \"src/run.ts:2:export const run = (cmd: string) => spawn(cmd, { shell: true });\" ; good/ -> \"\""
+   "evidence": "cmd: grep -rn \"child_process\" src/ | grep \"shell\"\noriginal on bad/: rc=1 stdout=\"\"\noriginal on good/: rc=1 stdout=\"\"\nproposed: bad/ -> \"src/run.ts:2:export const run = (cmd: string) => spawn(cmd, { shell: true });\" ; good/ -> \"\"",
+   "resolved": "2026-10-28 (external proposal intake): replaced; fixtures re-keyed to #70c8a7b24a, and the old probe fails the new pair (misses bad/, flags good/, or exits 2), so the fixture proves the fix."
   },
   {
    "id": "09-browser-platform-security#f4284297d4",
@@ -1441,7 +1448,8 @@
    "probe": "grep -rnE \"\\\"world\\\": *\\\"MAIN\\\"|world: *['\\\"]MAIN|import\\( *['\\\"\\`]https?:|<script[^>]*src=['\\\"]https?:|onMessage(External)?\\.addListener|onConnect(External)?\\.addListener|externally_connectable\" --include='*.js' --include='*.ts' --include='*.json' --include='*.html' .",
    "problem": "inventory probe: the item's own correct pattern necessarily matches, so the correct near-miss is flagged for the listener branch: every onMessage/onConnect listener prints, including one that checks sender.id/origin first (the MAIN-world branch is proven by a fixture)",
    "proposed_probe": null,
-   "evidence": "cmd: grep -rnE \"\\\"world\\\": *\\\"MAIN\\\"|world: *['\\\"]MAIN|import\\( *['\\\"\\`]https?:|<script[^>]*src=['\\\"]https?:|onMessage(External)?\\.addListener|onConnect(External)?\\.addListener|externally_connectable\" --include='*.js' --include='*.ts' --include='*.json' --include='*.html' .\noriginal on bad/: rc=0 stdout=\"./background.js:1:chrome.runtime.onMessageExternal.addListener((msg, _sender, reply) => { chrome.cookies.getAll({}, reply); return true; });\"\noriginal on good/: rc=0 stdout=\"./background.js:1:chrome.runtime.onMessageExternal.addListener((msg, sender, reply) => { if (sender.origin !== 'https://app.example.com') return; reply(handle(msg)); });\""
+   "evidence": "cmd: grep -rnE \"\\\"world\\\": *\\\"MAIN\\\"|world: *['\\\"]MAIN|import\\( *['\\\"\\`]https?:|<script[^>]*src=['\\\"]https?:|onMessage(External)?\\.addListener|onConnect(External)?\\.addListener|externally_connectable\" --include='*.js' --include='*.ts' --include='*.json' --include='*.html' .\noriginal on bad/: rc=0 stdout=\"./background.js:1:chrome.runtime.onMessageExternal.addListener((msg, _sender, reply) => { chrome.cookies.getAll({}, reply); return true; });\"\noriginal on good/: rc=0 stdout=\"./background.js:1:chrome.runtime.onMessageExternal.addListener((msg, sender, reply) => { if (sender.origin !== 'https://app.example.com') return; reply(handle(msg)); });\"",
+   "resolved": "2026-10-28 (external proposal intake): kept unchanged; the item now declares the listener branch a locator (every listener prints and each hit is read, not a finding); the MAIN-world branch stays proven by its fixture."
   },
   {
    "id": "01-idioms#6f7ee51811",

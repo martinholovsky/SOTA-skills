@@ -164,8 +164,9 @@ and they sit on disk for anyone with the device.
 - [ ] **Extension: remote code, main-world scripts and message handlers (§3)
       — CRITICAL for remote code, HIGH for a handler that acts without a sender check** —
       ``grep -rnE "\"world\": *\"MAIN\"|world: *['\"]MAIN|import\( *['\"\`]https?:|<script[^>]*src=['\"]https?:|onMessage(External)?\.addListener|onConnect(External)?\.addListener|externally_connectable" --include='*.js' --include='*.ts' --include='*.json' --include='*.html' .``
-      — each listener hit must check `sender.id` and `sender.origin`/`sender.url` before any
-      privileged call. Each `MAIN` hit needs a reason, and remote script loading is CRITICAL.
+      — the listener branch is a **declared locator**: it lists every `onMessage`/`onConnect` listener,
+      including correct ones, so each hit is read, not a finding. A listener must check `sender.id`
+      and `sender.origin`/`sender.url` before any privileged call. Each `MAIN` hit needs a reason, and remote script loading is CRITICAL.
       Secret-bearing UI injected into the page (read the content scripts) is HIGH.
 - [ ] **Extension permissions wider than the feature (§"Browser extensions", least privilege) (§3) — MEDIUM, HIGH for
       `<all_urls>` with `cookies`/`debugger`/`webRequest`** —

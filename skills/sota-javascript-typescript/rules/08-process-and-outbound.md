@@ -120,7 +120,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 ## Audit checklist
 
 - [ ] `grep -rn "exec(\|execSync(" src/` — template/concat input = CRITICAL; migrate to execFile array form. Array-form args taken from input still need a character allowlist or a `--` separator (MEDIUM); a `timeout:` on a child that may fork needs `detached: true` and a process-group kill (MEDIUM); `grep -rn 'DEP0190' --exclude-dir=node_modules .` hits in Node ≥24 logs or CI output mark a live `shell: true` sink (HIGH) (§1).
-- [ ] `grep -rn "child_process" src/ | grep "shell"` — `shell: true` (HIGH) (§1).
+- [ ] `grep -rnE 'shell: *true' src/` — a `child_process` call with `shell: true` (HIGH) (§1); the option is usually on a different line from the import.
 - [ ] **Child exit status never read (§1) — MEDIUM, HIGH when the output is trusted** — `execFileSync`
       and `execSync` throw on a non-zero exit and the `exec`/`execFile` callback receives an
       error, but `spawnSync` returns `{status, signal, error}` without throwing and `spawn`
@@ -144,7 +144,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
       — each hit needs an origin allowlist check before the call. Single-line calls only; a URL held in a variable needs a read.
 - [ ] SQL built by interpolation (§1) (the rule is the "Same family" bullet; this is its
       probe, absent until 2026-09-22): ``grep -rnE '(query|execute|raw)\( *`' --exclude-dir=node_modules .`` — a
-      template literal reaching a driver is CRITICAL. Also `grep -rn "knex.raw\\|sequelize.query\\|\\$queryRawUnsafe\\|createQueryBuilder" --exclude-dir=node_modules .`
+      template literal reaching a driver is CRITICAL. Also `grep -rn 'knex\.raw\|sequelize\.query\|\$queryRawUnsafe\|createQueryBuilder' --exclude-dir=node_modules .`
       — Prisma's `$queryRaw` tagged template is parameterized while `$queryRawUnsafe` is not,
       and the two differ by one word. Parameterized/bound form everywhere, or HIGH.
 - [ ] Webhook handlers: signature verification before parsing (§2) (absent = HIGH).

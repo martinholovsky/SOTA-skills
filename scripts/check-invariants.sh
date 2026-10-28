@@ -3094,7 +3094,11 @@ for f in files:
     for i, line in enumerate(open(f, encoding="utf-8"), 1):
         if "--include" not in line or "grep" not in line or "# BAD" in line:
             continue
-        for span in (re.findall(r'`([^`]*grep[^`]*)`', line) or [line]):
+        # A span opens and closes on the SAME run of backticks: a probe whose pattern holds a
+        # backtick is written ``like `this` one``, and a single-backtick regex cut it at the inner
+        # backtick, so 20 spans were unparseable and their commands never checked (2026-10-28).
+        spans = [m.group(2).strip() for m in re.finditer(r'(`+)(.+?)\1', line) if "grep" in m.group(2)]
+        for span in (spans or [line]):
             try:
                 lex = shlex.shlex(span, posix=True, punctuation_chars="|;&()")
                 lex.whitespace_split = True

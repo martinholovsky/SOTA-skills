@@ -322,7 +322,7 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
       *narrow a parameter*, *widen a return*, add a **required** property to an accepted
       object, or add a member to a **returned** union? Each compiles for you and breaks a
       consumer's build. `git diff <last-tag>..HEAD -- '**/*.d.ts' 'src/**/*.ts' | grep '^[+-].*export'`
-- [ ] `grep -rnE 'export (const|let) [A-Za-z]+ *= *(\[|\{)' src/` — an exported mutable array (§13)
+- [ ] `grep -rnE 'export (const|let) [A-Za-z_$][A-Za-z0-9_$]* *(: *[^=]+)?= *(\[|\{)' src/` — an exported mutable array (§13)
       or object literal is a shared singleton every consumer can mutate (MEDIUM).
 
 - [ ] In-band sentinels (§4): `grep -rnE 'return -1' --include='*.ts' --include='*.js' src/` — a
