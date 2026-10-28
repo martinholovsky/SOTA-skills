@@ -93,7 +93,8 @@ you're actually running.
   from**: it is not on the list until its commits are reachable from a remote ref (`git branch -r
   --contains <sha>`, after fetching `refs/pull/*/head`) and no record pins its hash (search the
   eval and release records for its 7-character prefix). Measured 2026-10-28: of 14 eval roots
-  cited by hash, one existed only on a local branch with no PR. And generate the delete command
+  found cited by hash (a lower bound: the search keyed on the library's name), one existed only on
+  a local branch with no PR. And generate the delete command
   from the list; a hand-typed one dropped 1 of 21 names in the same session.
 
 ## §4 Versioning discipline
