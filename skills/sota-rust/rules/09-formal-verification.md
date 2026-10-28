@@ -241,9 +241,10 @@ no `rev`, which [rules/05](05-security-supply-chain.md) §1 does not accept.
   `MIN / -1` assertions, and passes every other overflow assertion through; its `<<`/`>>` rules carry
   no precondition (`flux-refineck` `checker.rs` and `primops.rs` at `9fe62fab`, read, not run). Kani
   checks shift distance by default, so a shift by an input-derived amount needs a Kani harness.
-- **Off by default, also read from `flags.rs`, not run:** panic freedom (`-Fno-panic`, or
-  `#[no_panic]` per function) and the standard-library specs (`-Fstd-extern-specs`, which make
-  `Option::unwrap` require `Some`). Without the first, a verified function may still panic.
+- **Off by default, read from source, not run:** panic freedom (`-Fno-panic` in `flags.rs`, or
+  `#[no_panic]` per function, from `flux-attrs`) and the standard-library specs (`-Fstd-extern-specs`;
+  `lib/flux-core/src/option.rs` gives `Option::unwrap` the signature `fn(Option<T>[true]) -> T`, so it
+  requires `Some`). Without the first, a verified function may still panic.
 - **`allow-raw-deref = "ok"` checks nothing about the pointer.** The default `none` rejects a raw
   dereference; `ok` accepts it, and that branch emits no constraint (`place_ty.rs` at `9fe62fab`):
   no null, alignment or bounds condition. Treat it as `trusted` for every function that uses it.
