@@ -5,6 +5,8 @@ description: State-of-the-art Swift engineering rules (Swift 6 language mode) th
 
 # SOTA Swift (2026)
 
+## Purpose
+
 Expert-level rules for producing and auditing production Swift, on any target. Swift is a
 language first and an Apple-platform toolkit second: a Vapor service on Linux, a CLI and an
 iOS app share every rule here. **Platform concerns route elsewhere**: app lifecycle, store

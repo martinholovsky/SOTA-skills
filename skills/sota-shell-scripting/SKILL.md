@@ -6,7 +6,9 @@ description: >-
 
 # SOTA Shell Scripting
 
-Purpose: produce shell scripts that survive contact with reality — unusual filenames, missing
+## Purpose
+
+Produce shell scripts that survive contact with reality — unusual filenames, missing
 commands, partial failures, hostile input, signals, and concurrent invocation — and audit
 existing scripts for the defect classes that cause most production shell incidents:
 unquoted expansions, silent error swallowing, injection, secret leakage, and temp-file races.

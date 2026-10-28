@@ -18,6 +18,8 @@ description: >-
 
 # SOTA Data Engineering
 
+## Purpose
+
 Expert rules for analytical data systems: pipelines, streaming, warehousing,
 lakehouse storage, data quality, and operations. OLTP schema/query/index craft
 is owned by [`sota-databases`](../sota-databases/SKILL.md) — reference it, do not duplicate it. Outbox and

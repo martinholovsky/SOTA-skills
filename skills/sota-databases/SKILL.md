@@ -17,6 +17,8 @@ description: >-
 
 # SOTA Databases
 
+## Purpose
+
 Expert-level rules for the full lifecycle of a data layer: choosing an engine,
 modeling data, evolving schemas safely, writing efficient queries, handling
 concurrency, operating reliably at scale, securing data, and supporting

@@ -5,6 +5,8 @@ description: State-of-the-art privacy and compliance engineering guidance for bu
 
 # SOTA Privacy & Compliance Engineering
 
+## Purpose
+
 Engineering-facing privacy and compliance architecture: how to design, build, and
 audit systems so that data protection is a property of the code and infrastructure,
 not a binder of policy documents. Compliance that lives in schemas, TTLs, IAM

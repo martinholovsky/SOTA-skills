@@ -19,6 +19,8 @@ description: >-
 
 # SOTA Security & Compliance Engineering
 
+## Purpose
+
 The engineering half of cybersecurity regulation: how to make a control framework
 a property of the codebase, pipeline, and infrastructure rather than a binder of
 policy documents. A control that lives in a schema, an IAM policy, a CI gate, or a
