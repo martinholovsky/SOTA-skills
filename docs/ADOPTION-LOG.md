@@ -46,7 +46,9 @@ lessons-log — its own best structural idea, applied to ourselves.
   <cited files>`), our text with a controlled search on current `origin/main` even when the
   stamp is current, behaviour by our own reproduction, the proposed wording against that
   reproduction. Each item's entry says which it is — **verified**, **corrected**, **refuted** or
-  **not reproducible here** — and by what command. Procedure:
+  **not reproducible here** — and by what command. A wrong quote whose point holds is
+  **corrected**, not refuted, and the **Source:** line records the report's line count and
+  `sha256` prefix, so a re-sent revision is visible (both added 2026-10-28). Procedure:
   [FIELD-REPORT-PROMPT.md](FIELD-REPORT-PROMPT.md#after-the-report-arrives). Operator rule,
   2026-10-24, after one report's proposals needed three corrections that only re-running found.
 - **A mechanical edit does not fire a "next edit" trigger.** A deferral whose trigger is *the
@@ -9150,3 +9152,16 @@ stable?"), it also re-measured the one deferral that would have meant a public p
 | (proposal WP 3.2.2) the finding schema missing from AUDIT sections | **rejected: already covered** — the router's AUDIT mode states the canonical `file:line \| rule \| severity \| effort \| fix` and that it supersedes any per-skill variant (`skills/sota/SKILL.md:23-24`). The proposal's count of 4 is also low: 17 AUDIT sections do not spell out `file:line` with severity and effort | — |
 | (proposal WP 3.2.3) `rules/NN` citations on Top-10 items, as a routing-depth lever | **DEFERRED — revisit trigger: the next ROADMAP 73 experiment design, which should measure it as a depth candidate before a 240-item sweep.** Counted by item block: 18 skills cite on all 10, 5 on some, 19 on none (the first count, by item first line, said 0 and 40 and was the instrument's error). Each citation is a claim about which section holds the rule, so an unmeasured sweep risks wrong pointers at the highest-salience spot | — |
 | Four copywriting `.expect` files without a final newline | **no change: not a defect.** `check-probe-fixtures.py:110-113` strips both `.expect` and stdout before comparing, so a final newline cannot change a verdict | — |
+
+## 2026-10-28 — today's two field reports, re-read for what is worth improving (operator request), taken in 2026-10-28
+
+**Sources:** `FIELD-REPORT-SOTA-skills-2026-10-28.local.md` (191 lines, `sha256` 92027d949850920e; taken in by #648 above) and `FIELD-REPORT-SOTA-skills-2026-10-28-b.local.md` (154 lines, bb9847573fcadfec; this session's own report on the #650–#653 intake). Both local, not filed. Checked on main `da12e08e`. The first report's file was modified five minutes after #648 merged, so it was re-read in full: its six findings are #648's six rows, and nothing in it is new except the loose end below.
+
+| Idea | Verdict | Landed in |
+|---|---|---|
+| (report 1, F2) #613 went red in CI on the concept matrix after a local green, "which this proposal does not cover" | **verified, adopted.** The mirror's own header named #613 as an observed failure; no ledger row records a decision to leave the step out; CI's exact command took 2.45 s locally. Step 3 added. Watched failing: a `TRIAGED` entry for a present cell made the mirror exit 1 on the concept matrix alone; the restored tree exits 0 with all three steps `ok` | `scripts/pre-push-ci-mirror.sh`; `.pre-commit-config.yaml`; `AGENTS.md`; `docs/CONVENTIONS-LEDGER.md`; `docs/INDEX.md` |
+| (report 2, F4) record each intake source's identity | **adopted.** The 2026-10-24 Rust intake's "336 lines" is the only reason its 366-line revision was noticed; the cross-language intake recorded neither number. New step 1 of the procedure: line count and `sha256` prefix on the **Source:** line (this entry does it) | `docs/FIELD-REPORT-PROMPT.md` § After the report arrives; `docs/ADOPTION-LOG.md` § How this log works |
+| (report 2, F3) a claim's point refuted on its form | **adopted** as a sentence in the procedure's re-check step: a mismatched quote, line or format is a lead to the passage that does match, and a point that holds is **corrected**, never **refuted**. The `corrected` label already existed; nothing said how to tell the two apart | same two files |
+| (report 2, F2) cite each clause when a sentence takes facts from two sources | **rejected: already covered** by `docs/FIELD-REPORT-PROMPT.md:182` (step 5, "The proposed wording is a claim too … check every flag, command and number in it"). The session broke it because it never read that file. **Adopted instead as a reach fix:** AGENTS.md's ledger bullet now says to read the procedure before an intake | `AGENTS.md` |
+| (report 2, F1) an instrument whose output drops a field that changes an item's meaning | **the instance is fixed** (#653, the concept matrix prints each triaged verdict). A general failure mode for `sota-code-security` rules/15 §2.1 was offered and **not taken by operator decision** (one session's evidence); none of the six existing modes covers it | — |
+| (report 2) a new `/sota-close` step-1 shape, "an absence about a file you did not open" | **rejected: already covered** — `commands/sota-close.md:38` lists "any absence … backed by a single search", and one backed by none falls under it | — |

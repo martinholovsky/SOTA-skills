@@ -21,7 +21,7 @@ enforcement is on). Every change goes through a pull request:
    `pre-commit run --all-files`). `pre-commit install` sets up **both** stages —
    pre-push re-runs the invariants, the first moment the **diff-based** ones
    (11, 14) have a commit to read, and checks the pushed branch name and commit messages
-   against the internal-name denylist (`scripts/check-published-names.sh`), and mirrors CI's skill-map and shellcheck steps
+   against the internal-name denylist (`scripts/check-published-names.sh`), and mirrors CI's skill-map, shellcheck and concept-matrix steps
    (`scripts/pre-push-ci-mirror.sh`; a local shellcheck can be older than CI's). **It runs none of CI's other steps** (probes, claims, the harness)
 3. push the branch and open a PR
 4. **every** required check must pass, then squash-merge — invariants, secret scan, shell
@@ -161,6 +161,7 @@ equal `git rev-list --all --count`. The pre-commit hook scans each commit locall
 - [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) — the **external-idea intake
   ledger**: every idea from an outside repo, paper or review, with a verdict and
   reason (adopted / adopted-with-a-correction / rejected / deferred / superseded).
+  **Before an intake, read [the procedure](docs/FIELD-REPORT-PROMPT.md#after-the-report-arrives)**.
   A recorded rejection stops the idea being re-litigated; `rejected: already
   covered` must cite the file:line that covers it. Intake is not only external —
   a session *applying* the library, and an unlicensed source whose ideas can be
