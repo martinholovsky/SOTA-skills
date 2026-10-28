@@ -158,18 +158,28 @@ ledger entry, with the command that produced the label: **verified** (reproduced
 **corrected** (reproduced, but the claim or the proposal needed changing), **refuted**, or
 **not reproducible here** (and why). An item with no label has not been taken in.
 
-1. **The stamp is a claim.** Run the triage above. If the stamp resolves to nothing, or the
+1. **Record what you read, so a revision is visible.** Write the source's line count and the first
+   16 hex digits of its `sha256` into the entry's **Source:** line (`wc -l`, `shasum -a 256`). A
+   report is often re-sent after it was taken in, with more text. 2026-10-28: an intake that had
+   recorded "336 lines" made a 366-line revision visible, and its 30 new lines were taken in;
+   its companion recorded neither, and whether a re-sent copy was the same file could only be
+   guessed from a file date.
+2. **The stamp is a claim.** Run the triage above. If the stamp resolves to nothing, or the
    install type is `unknown`, treat every claim about library text as unverified until
    re-checked against `origin/main`.
-2. **A claim about our text is re-checked against current `origin/main`, even when the stamp is
+3. **A claim about our text is re-checked against current `origin/main`, even when the stamp is
    current.** "rules/NN says X", "file F contains none of Y" and "the checklist has no item for
    Z" are searches the reporter ran with an instrument you cannot inspect. Re-run each with a
    positive control in the same invocation, and check the skill that would **own** the topic
-   as well as the file the report names.
-3. **A behaviour claim is reproduced by you**, in a disposable repo, a scratch directory or a
+   as well as the file the report names. **A quote, line number or format that does not match is
+   a lead to the passage that does, not a refutation:** find that passage and test the claim's
+   point against it. If the point holds, the label is **corrected**, never **refuted**. 2026-10-28:
+   a point that the skill template's section order disagreed with all 42 skills was recorded as
+   refuted because its quoted skeleton was really a table; the order mismatch was real.
+4. **A behaviour claim is reproduced by you**, in a disposable repo, a scratch directory or a
    container, on both sides of any platform split the claim implies. The report's own
    reproduction counts as a lead, not as evidence.
-4. **The proposed wording is a claim too, and it is where most corrections land.** Check every
+5. **The proposed wording is a claim too, and it is where most corrections land.** Check every
    flag, command and number in it against your reproduction before it goes into a rules file.
    2026-10-24, one report: its proposed fix `rg --no-ignore` still missed a tracked file in a
    hidden directory (it needed `--hidden` as well), its "`git check-ignore` does not reveal it"

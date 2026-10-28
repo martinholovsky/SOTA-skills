@@ -121,7 +121,7 @@ exactly the blind spot that let it recur — the count was right both times. **T
 |---|---|
 | **Every audit-checklist `grep` probe runs** | `scripts/check-checklist-probes.py`, in CI's executable-claims job on both runners (BSD and GNU grep): an exit 2 that is not a missing path fails. Three filters: it had failed (two probes dead four weeks, four earlier); it was silent (`2>/dev/null`); it is mechanical (1,620 probes on 2026-10-21, 0 artefacts once double-backtick spans were parsed). It cannot tell a probe that runs and asks the wrong question |
 | **What a push publishes besides the tree carries no internal name** | `scripts/check-published-names.sh`: pre-push (branch name, unpushed commit messages) and CI on pull requests (plus title and body). Invariant 3's list, loaded the same way; in CI it names where a hit is, never the text |
-| **A push does not reach CI with a stale skill map or shell lint below CI's severity** | `scripts/pre-push-ci-mirror.sh`, pre-push: CI's own two commands. Three filters: it had failed (red in CI after a local green on #608, 2026-10-25, and #644, 2026-10-28), silently until CI, and mechanically. Limit: a local shellcheck may be older than CI's, so CI still decides |
+| **A push does not reach CI with a stale skill map, shell lint below CI's severity, or a failing concept matrix** | `scripts/pre-push-ci-mirror.sh`, pre-push: CI's own three commands. Three filters: it had failed (red in CI after a local green on #608, 2026-10-25, #613, 2026-10-25, and #644, 2026-10-28), silently until CI, and mechanically. Limit: a local shellcheck may be older than CI's, so CI still decides |
 
 ### Judgment — correctly ungateable (≈18)
 
