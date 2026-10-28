@@ -164,6 +164,13 @@ at adoption proves nothing about the next Kani release.
 | `#[kani::loop_invariant(...)]` | **ignored, silently**: the loop is unrolled instead | a deliberately **false** invariant passed with `VERIFICATION:- SUCCESSFUL`, exit 0; with `-Z loop-contracts` it failed its step check (the base check passed: the invariant held on entry) |
 | `#[kani::stub_verified(f)]` | build error: *requires activating the unstable `stubbing` feature* — `-Z function-contracts` alone is not enough | loud |
 | `--harness name` | **substring** match: `--harness verify_get_bug` also ran `verify_get_bug_should_panic` | add `--exact` and the fully qualified name in CI |
+| `-Z valid-value-checks` | **off**: a value that breaks its type's validity (a `bool` that is not 0 or 1, an out-of-range enum discriminant, a `transmute` of an invalid bit pattern) is not reported | documented, not measured here (Kani `docs/src/soundness.md` at `744b3e84`) — turn it on for harnesses over `transmute` or byte-to-type decoding |
+| `-Z uninit-checks` | **off**: a read of uninitialized memory through a pointer is not reported | documented, not measured here (same page) — turn it on for `MaybeUninit` and raw-buffer code, beside its Miri job |
+| `--restrict-vtable` | (opt-in) limits `dyn` dispatch targets; Kani's own docs call it a **known soundness issue** that can exclude a valid target and miss a real failure (kani #802) | documented, not measured — never in a job whose proofs back a claim |
+
+What no flag adds (same page): **aliasing** (Stacked/Tree Borrows) and mutation of immutable data are
+seen only as a symptom they cause, never as the violation, so an `unsafe` wrapper keeps its Miri job
+(rules/03 §4); and Kani checks **sequential code only**, so data races stay with `loom` or `shuttle` (§1).
 
 Put the unstable features in `Cargo.toml` so a bare `cargo kani` and CI agree. Measured:
 `[package.metadata.kani.unstable]` with `function-contracts = true` made a bare `cargo kani`
@@ -230,6 +237,16 @@ no `rev`, which [rules/05](05-security-supply-chain.md) §1 does not accept.
   `[package.metadata.flux]` or `FLUXFLAGS="-Fcheck-overflow=strict"`; the guarded version passed
   under `strict`. Put `strict` in the manifest of any crate whose specs are about lengths, offsets
   or arithmetic, so a bare `cargo flux` and CI agree.
+- **Shift distance is not checked in any mode.** Flux checks rustc's bounds, division-by-zero and
+  `MIN / -1` assertions, and passes every other overflow assertion through; its `<<`/`>>` rules carry
+  no precondition (`flux-refineck` `checker.rs` and `primops.rs` at `9fe62fab`, read, not run). Kani
+  checks shift distance by default, so a shift by an input-derived amount needs a Kani harness.
+- **Off by default, also read from `flags.rs`, not run:** panic freedom (`-Fno-panic`, or
+  `#[no_panic]` per function) and the standard-library specs (`-Fstd-extern-specs`, which make
+  `Option::unwrap` require `Some`). Without the first, a verified function may still panic.
+- **`allow-raw-deref = "ok"` checks nothing about the pointer.** The default `none` rejects a raw
+  dereference; `ok` accepts it, and that branch emits no constraint (`place_ty.rs` at `9fe62fab`):
+  no null, alignment or bounds condition. Treat it as `trusted` for every function that uses it.
 - **`trusted` and `opaque` are both opt-outs.** `trusted` skips a function body; `opaque` hides a
   type from Flux (verify-rust-std #716 removes both together, one on `ptr::NonNull`). Measured: a
   `trusted` function with a false postcondition passed, and its only trace was the summary line
@@ -283,9 +300,10 @@ an untrusted-input parser. A missing trailing cover with the harness otherwise s
       `printf 'harness_files=%s ci_kani_lines=%s\n' "$(grep -rlE '#\[kani::proof' --include='*.rs' . | wc -l | tr -d ' ')" "$(git grep -n 'cargo kani' -- .github .gitlab-ci.yml Makefile justfile scripts | wc -l | tr -d ' ')"`
       — harnesses with no CI line are documentation, rated as if no proof existed.
 - [ ] **Flags that change what is checked** (§2, §5):
-      `rg -n --hidden -g '!.git' -e '--no-unwinding-checks' -e 'kani::should_panic' -e '--harness' .` (`--hidden`, or CI under `.github/` is never read) — `--no-unwinding-checks` anywhere = Medium;
+      `rg -n --hidden -g '!.git' -e '--no-unwinding-checks' -e 'kani::should_panic' -e '--harness' -e '--restrict-vtable' -e 'allow-raw-deref' .` (`--hidden`, or CI under `.github/` is never read) — `--no-unwinding-checks` anywhere = Medium;
       each `should_panic` outside a named negative control = Medium; `--harness` without
-      `--exact` = Low.
+      `--exact` = Low; `--restrict-vtable` in a job whose proofs back a claim = Medium; a Flux
+      `allow-raw-deref` set to `ok` with no Kani harness or Miri job on those functions = Medium (§8).
 - [ ] **Contract or loop attributes without their feature** (§5):
       `rg -l 'loop_invariant' -t rust .` non-empty while
       `rg -n --hidden -g '!.git' -g 'Cargo.toml' -g '*.y*ml' -g '*.sh' -g 'Makefile' -g 'justfile' -e 'loop-contracts\s*=\s*true' -e '-Z\s*loop-contracts' .` is empty (a `flags = ["-Z", "loop-contracts"]` array does not count: §5 measured that form not enabling `function-contracts`, and whether it enables `loop-contracts` was not measured — treat it as off) = **High** for the
