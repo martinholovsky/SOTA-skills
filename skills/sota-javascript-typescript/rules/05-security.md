@@ -394,7 +394,7 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       — a variable into an event-handler, URL or `srcdoc` attribute, a Lit `unsafe*` directive,
       or a script element built in code (read what sets its text or `src`).
 - [ ] `grep -rn "href={" --include="*.tsx" --exclude-dir=node_modules .` lists every dynamic JSX href; each hit is read, not a finding: user-controlled hrefs without protocol allowlist (§1) (`javascript:`) = HIGH.
-- [ ] `grep -rn "localStorage.setItem\|sessionStorage.setItem" --exclude-dir=node_modules . | grep -i "token\|jwt\|session\|auth\|key"` — HIGH (§8).
+- [ ] `grep -rniE "(localStorage|sessionStorage)\.setItem\( *[^,]*(token|jwt|session|auth|key)" --exclude-dir=node_modules .` — HIGH (§8).
 - [ ] `grep -rnE "postMessage\(.*, *['\"]\*['\"]" --exclude-dir=node_modules .` — `'*'` target with sensitive data (HIGH); then read each `message` listener for an origin check (HIGH). `grep -rnE "target=[\"'{]*_blank" --include='*.tsx' --include='*.jsx' --include='*.html' --include='*.vue' --exclude-dir=node_modules . | grep -v noopener` — external links opened with `target="_blank"` and no `rel="noopener"` hand over `window.opener` (LOW) (§10).
 - [ ] **Worker script built from data (§"postMessage", the Web Workers paragraph) (§10) — HIGH with user input** —
       ``grep -rnE "new (Shared)?Worker\( *([^'\"\` ]|['\"\`](data|blob):|\`[^\`]*\\$\{)|importScripts\( *[^'\"\` )]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' . | grep -vE "Worker\( *new URL\( *['\"]"``

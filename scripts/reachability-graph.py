@@ -167,7 +167,7 @@ def build():
     return rules, skill_mds, by_skill, sorted(set(edges)), unresolved
 
 
-# --- C4: declared routing (stage-3 pilot) --------------------------------------------------------
+# --- C4: declared routing (piloted on two skills; all 42 domain skills since ROADMAP 78) ---------
 MANIFEST_DIR = "scripts/skill-manifests"
 
 
