@@ -41,8 +41,8 @@ description must declare a routing check (invariant 29).
 | Purpose | one paragraph: what this owns, and explicitly what it does **not** (name the skill that does) |
 | BUILD mode | the workflow when writing new code in this domain |
 | AUDIT mode | the workflow when reviewing existing code. Its first paragraph is the canonical coverage line from `scripts/reachability-graph.py` (`COVERAGE`), copied verbatim — invariant 42 fails a domain skill without it, because a numbered sweep ("01–06") stops growing when 07 is added |
-| Top-10 non-negotiables | the rules that survive context pressure; these are what a long session drops first |
 | Rules index | one row per `rules/NN-*.md`, each with "read this when…" guidance (invariant 10 gates both directions against `skills/sota/rules/04`) |
+| Top-10 non-negotiables | the rules that survive context pressure; these are what a long session drops first |
 
 ## `rules/NN-topic.md` — the shape
 
