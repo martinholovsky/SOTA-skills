@@ -613,6 +613,16 @@ def main():
     probed = sorted(c for c, ss in sh_present.items() if "shell-scripting" in ss)
     print("  " + ("\n  ".join(probed) if probed else "(none)"))
 
+    # A triaged absence still lists here, but with its verdict beside it: unlabelled, the
+    # block read as open work to two readers on 2026-10-28 while every row was already
+    # decided in TRIAGED (only --assert-universal printed those verdicts).
+    def absent_with_verdicts(concept, missing):
+        out = []
+        for m in missing:
+            v = TRIAGED.get((concept, m))
+            out.append("%s [%s]" % (E.label(m), v[0]) if v else E.label(m))
+        return ", ".join(out)
+
     # --- candidates, never called findings
     print("\nCANDIDATE GAPS -- a universal concept absent from some languages.")
     print("NOT findings. Open the file before believing any row (2 of 8 such Python")
@@ -621,7 +631,7 @@ def main():
         print("  (none)")
     for concept, missing, have in sorted(candidates, key=lambda x: -x[2]):
         print("  %-42s present %d/%d, absent: %s"
-              % (concept, have, len(E.LANGS), ", ".join(E.label(m) for m in missing)))
+              % (concept, have, len(E.LANGS), absent_with_verdicts(concept, missing)))
 
     print("\nMOSTLY ABSENT -- a universal concept missing in 6+ languages: either a real")
     print("class-wide gap or a concept that is not universal; triage decides.")
@@ -629,7 +639,7 @@ def main():
         print("  (none)")
     for concept, missing, have in sorted(mostly_absent, key=lambda x: -x[2]):
         print("  %-42s present %d/%d, absent: %s"
-              % (concept, have, len(E.LANGS), ", ".join(E.label(m) for m in missing)))
+              % (concept, have, len(E.LANGS), absent_with_verdicts(concept, missing)))
 
     if args.show_unmatched:
         print("\nUNCLASSIFIED ITEMS -- holes in THIS FILE's vocabulary, not in the skills.")

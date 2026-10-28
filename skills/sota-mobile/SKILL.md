@@ -6,6 +6,8 @@ description: >-
 
 # SOTA Mobile Engineering
 
+## Purpose
+
 Expert-level rules for building new mobile apps and auditing existing ones. Mobile is unlike web or backend in three load-bearing ways, and every rule in this skill flows from them:
 
 1. **You cannot roll back a shipped binary.** Users update on their own schedule; some never do. Every release is permanent for some cohort. Design for kill switches, forced updates, and servers that tolerate ancient clients.
