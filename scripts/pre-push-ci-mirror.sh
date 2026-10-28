@@ -2,9 +2,10 @@
 #
 # Pre-push mirror of two CI steps that pass locally only if someone remembers them.
 #
-# WHY. Field-reported three times (2026-10-25 twice, 2026-10-28 once): a branch passed every
-# local gate and went red in CI on (1) a stale docs/skill-map.* and (2) shellcheck, run here at a
-# lower severity than CI's `-S style`. A memory note naming the gap did not prevent the third
+# WHY. Twice a branch passed every local gate and went red in CI on these steps: #608
+# (2026-10-25, a stale docs/skill-map.*) and #644 (2026-10-28, the skill map again, and shellcheck
+# run locally at a lower severity than CI's `-S style`). A third local-green PR the same week,
+# #613, failed on the concept matrix, which this mirror does not run. A memory note naming the gap did not prevent the third
 # occurrence, so the step is mechanical now. The commands below are CI's own (ci.yml, "Skill map
 # is current" and "shellcheck scripts/ and tracked *.sh"); keep them identical.
 #

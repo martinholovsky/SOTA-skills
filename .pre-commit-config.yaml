@@ -68,8 +68,8 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
-      # CI's skill-map and shellcheck steps, mirrored: both went red after a local green three
-      # times (2026-10-25 twice, 2026-10-28). Skip one push on purpose with SKIP=ci-mirror.
+      # CI's skill-map and shellcheck steps, mirrored: they went red after a local green on #608
+      # (2026-10-25) and #644 (2026-10-28). Skip one push on purpose with SKIP=ci-mirror.
       - id: ci-mirror
         name: CI mirror (skill map current, shellcheck -S style)
         entry: scripts/pre-push-ci-mirror.sh
