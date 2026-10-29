@@ -3060,7 +3060,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="p8" name="8 · How skills point at each other">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1278" pageHeight="2098" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1278" pageHeight="2574" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -4971,6 +4971,90 @@
         </mxCell>
         <mxCell id="m_41_35" value="1" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#ffdede;" vertex="1" parent="1">
           <mxGeometry x="1070" y="2034" width="23" height="23" as="geometry"/>
+        </mxCell>
+        <mxCell id="it" value="Who reaches each rules file. The matrix counts mentions between skills, so it cannot show which FILE they land on: six pointers from a language skill into another skill read as well connected even when none reaches the file the task needs. Of 301 domain rules files, 55 are pointed at by no other skill and not by the router (below, by number; * = not even by another file of their own skill, only by their SKILL.md index). Every citing file, per rules file: rules_inbound in docs/skill-map.json." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=none;align=left;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2098" width="1174" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir0" value="code-security:  19*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2170" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir1" value="threat-modeling:  04*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2196" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir2" value="skill-security:  03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2222" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir3" value="confidential-computing:  03, 05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2248" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir4" value="detection-engineering:  03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2274" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir5" value="network-security:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2300" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir6" value="security-compliance:  01, 03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2326" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir7" value="cloud-infrastructure:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2352" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir8" value="observability:  06*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2378" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir9" value="architecture:  07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2404" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir10" value="data-engineering:  01, 05, 06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#ffe6cc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2430" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir11" value="ml-engineering:  01, 03, 04, 05, 06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#ffe6cc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2456" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir12" value="frontend-design:  06, 07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2482" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir13" value="web-frameworks:  01, 04, 05, 06, 07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2508" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir14" value="copywriting:  01, 02, 03*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2170" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir15" value="mobile:  01, 02, 05, 06, 07*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2196" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir16" value="docs-workflow:  02, 04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2222" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir17" value="performance:  02*, 03, 04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2248" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir18" value="async-concurrency:  03*, 05*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2274" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir19" value="rust:  02, 03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2300" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir20" value="golang:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2326" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir21" value="c-cpp:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2352" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir22" value="jvm:  02*, 07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2378" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir23" value="python:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2404" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir24" value="dotnet:  02, 04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2430" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir25" value="php:  03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2456" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir26" value="swift:  02, 05, 06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2482" width="580" height="24" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>

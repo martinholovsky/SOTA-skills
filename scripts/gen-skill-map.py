@@ -22,7 +22,9 @@ Eight pages:
      scripts/install.sh, check-invariants.sh and the CI workflow.
   8. How skill files point at each other, by FORM (skill name, name + rules/NN, own
      rules/NN, Markdown link, @path import, generic class), how many of each are relative
-     links, what an agent must do to follow each, and the full skill x skill matrix.
+     links, what an agent must do to follow each, the full skill x skill matrix, and the
+     rules files no other skill points at (the JSON's `rules_inbound` lists every citing
+     file per rules file, because the matrix counts skills and cannot say which FILE).
 
 LAYOUT IS A CORRECTNESS CONCERN HERE, not decoration. Three of these pages were first
 drawn in forms that RENDER but cannot be READ: 63 bipartite edges collapsed into one
@@ -323,6 +325,7 @@ def main():
 
     assert_matrix_matches_tree()
     forms, linked, form_ex, at_files = link_forms(files, domain)
+    inbound, n_in_linked, n_in_unlinked = rules_inbound(files)
     idx_style = collections.Counter()
     for sk in domain:
         body = (ROOT / ("skills/%s/SKILL.md" % sk)).read_text(encoding="utf-8")
@@ -343,7 +346,8 @@ def main():
              page_graph(edges, indeg, args.min_weight), page_slice(),
              page_matrix(lang_files), page_concepts(load_concept_matrix()),
              page_surfaces(surf),
-             page_links(forms, linked, form_ex, at_files, edges, len(files), idx_style)]
+             page_links(forms, linked, form_ex, at_files, edges, len(files), idx_style,
+                        inbound)]
     xml = ('<mxfile host="gen-skill-map.py" type="device">\n'
            + "\n".join(pages) + "\n</mxfile>\n")
     (ROOT / args.out).write_text(xml, encoding="utf-8")
@@ -358,6 +362,7 @@ def main():
         "link_forms": dict(sorted(forms.items())),
         "link_forms_linked": dict(sorted(linked.items())),
         "rules_index_style": dict(sorted(idx_style.items())),
+        "rules_inbound": inbound,
         "surfaces": {"commands": [n for n, _ in surf["commands"]],
                      "command_references": [list(e) for e in surf["cmd_edges"]],
                      "skill_dirs": [p for _, p in surf["skill_dirs"]],
@@ -378,6 +383,10 @@ def main():
     print("link forms (page 8) : %s" % ", ".join("%s=%d" % kv for kv in sorted(forms.items())))
     print("  of them linked    : %s" % ", ".join("%s=%d" % kv for kv in sorted(linked.items()) if kv[1]))
     print("rules index style   : %s" % dict(sorted(idx_style.items())))
+    print("rules inbound       : %d rules files, %d linked + %d unlinked pointers; "
+          "%d reached from no other skill, %d from nothing but their index"
+          % (len(inbound), n_in_linked, n_in_unlinked,
+             len(no_cross_skill(inbound)), len(index_only(inbound))))
     print("wrote %s and %s" % (args.out, args.json))
 
 
@@ -1223,7 +1232,82 @@ def link_forms(files, domain):
     return forms, linked, example, at_files
 
 
-def page_links(forms, linked, example, at_files, edges, n_files, idx_style):
+def rules_inbound(files):
+    """For every rules file, WHICH files point at it. The skill x skill matrix counts
+    mentions between skills, so a language skill with six pointers into sota-devsecops reads
+    as well connected while none of them reaches the file its CI work needs (found
+    2026-10-29: no language skill's CI file pointed at sota-devsecops rules/16, the fast-CI
+    file, and the matrix showed rust -> devsecops = 6). A pointer is a relative link
+    resolved to its path, or an unlinked `sota-x` rules/NN / own rules/NN resolved by number.
+    Returns (dict rules file -> {"index", "same", "router", "other"} -> sorted citing files,
+    linked count, unlinked count). Fails closed: every rules file is in its own SKILL.md
+    index (invariant 10), so a rules file this finds no index pointer to means the
+    extractor is broken, not the tree."""
+    rules = [f for f in files if re.match(r'skills/[^/]+/rules/\d\d-[^/]*\.md$', f)]
+    if not rules:
+        sys.exit("gen-skill-map: found 0 rules files for the inbound index, refusing to draw")
+    by_num = {(f.split("/")[1], f.split("/")[3][:2]): f for f in rules}
+    known = set(rules)
+    cites = collections.defaultdict(set)
+    n_linked = n_unlinked = 0
+    for f in files:
+        me = f.split("/")[1]
+        t = unwrap((ROOT / f).read_text(encoding="utf-8"))
+        spans = []
+        for m in LINK.finditer(t):
+            spans.append((m.start(), m.end()))
+            tgt = m.group(2).split("#")[0]
+            if tgt.startswith(("http:", "https:", "mailto:")) or not tgt.endswith(".md"):
+                continue
+            res = os.path.normpath(os.path.join(os.path.dirname(f), tgt))
+            if res in known and res != f:
+                cites[res].add(f)
+                n_linked += 1
+
+        def unlinked(pos):
+            return not any(a <= pos < b for a, b in spans)
+
+        for m in re.finditer(r'`?(sota-[a-z0-9-]+)`?[*\s]*rules/(\d\d)', t):
+            r = by_num.get((m.group(1), m.group(2)))
+            if r and r != f and unlinked(m.start()):
+                cites[r].add(f)
+                n_unlinked += 1
+        for m in re.finditer(r'(?<![\w/.-])rules/(\d\d)', t):
+            r = by_num.get((me, m.group(1)))
+            if (r and r != f and unlinked(m.start()) and not
+                    re.search(r'sota-[a-z0-9-]+[`*\s]*$', t[max(0, m.start() - 50):m.start()])):
+                cites[r].add(f)
+                n_unlinked += 1
+    inbound = {}
+    for r in sorted(rules):
+        sk = r.split("/")[1]
+        cls = {"index": [], "same": [], "router": [], "other": []}
+        for s in sorted(cites[r]):
+            k = ("index" if s == "skills/%s/SKILL.md" % sk else
+                 "same" if s.split("/")[1] == sk else
+                 "router" if s.split("/")[1] == "sota" else "other")
+            cls[k].append(s.replace("skills/", ""))
+        inbound[r.replace("skills/", "")] = cls
+    unindexed = sorted(r for r, c in inbound.items() if not c["index"])
+    if unindexed:
+        sys.exit("gen-skill-map: %d rules files with no pointer from their own SKILL.md, which "
+                 "invariant 10 guarantees exists -- the inbound extractor is broken: %s"
+                 % (len(unindexed), unindexed[:5]))
+    return inbound, n_linked, n_unlinked
+
+
+def no_cross_skill(inbound):
+    """Domain rules files no other skill points at (the router's own rules files excluded:
+    the router's SKILL.md is what reaches them, and it is always loaded first)."""
+    return [r for r, c in inbound.items()
+            if not r.startswith("sota/") and not c["other"] and not c["router"]]
+
+
+def index_only(inbound):
+    return [r for r in no_cross_skill(inbound) if not inbound[r]["same"]]
+
+
+def page_links(forms, linked, example, at_files, edges, n_files, idx_style, inbound):
     ptr = [k for k in forms if k.startswith("name") or k == "own rules/NN"]
     n_ptr, n_linked = sum(forms[k] for k in ptr), sum(linked[k] for k in ptr)
     deep = [k for k in ptr if k != "name (bare)" and k != "name (backticked)"]
@@ -1346,7 +1430,33 @@ def page_links(forms, linked, example, at_files, edges, n_files, idx_style):
                           "rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=%s;%s"
                           % (col, "fontColor=#ffffff;" if shade < 140 else ""),
                           x0 + j * cw, ry, cw - 1, cw - 1))
-    h = top + hh + 6 + len(order) * cw + 40
+    # who reaches each rules file. Text, not edges -- the page-3 hairball again otherwise.
+    y = top + hh + 6 + len(order) * cw + 40
+    lone, bare = no_cross_skill(inbound), set(index_only(inbound))
+    domain_rules = [r for r in inbound if not r.startswith("sota/")]
+    c.append(cell("it", "Who reaches each rules file. The matrix counts mentions between skills, so it "
+                  "cannot show which FILE they land on: six pointers from a language skill into "
+                  "another skill read as well connected even when none reaches the file the task "
+                  "needs. Of %d domain rules files, %d are pointed at by no other skill and not by "
+                  "the router (below, by number; * = not even by another file of their own skill, "
+                  "only by their SKILL.md index). Every citing file, per rules file: "
+                  "rules_inbound in docs/skill-map.json."
+                  % (len(domain_rules), len(lone)),
+                  BOX + "fillColor=none;strokeColor=none;align=left;fontStyle=1;",
+                  40, y, 1174, 64))
+    per_skill = collections.defaultdict(list)
+    for r in lone:
+        sk, _, name = r.split("/")
+        per_skill[sk].append(name[:2] + ("*" if r in bare else ""))
+    st = BOX + "rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;"
+    listed = [s for s in order if s in per_skill]
+    half = (len(listed) + 1) // 2
+    for k, sk in enumerate(listed):
+        col, row = divmod(k, half)
+        c.append(cell("ir%d" % k, "%s:  %s" % (sk.replace("sota-", ""), ", ".join(per_skill[sk])),
+                      st + "fillColor=%s;" % skill_family(sk)[1],
+                      40 + col * 590, y + 72 + row * 26, 580, 24))
+    h = y + 72 + half * 26 + 40
     return page("p8", "8 · How skills point at each other", c, max(1260, x0 + len(order) * cw + 40), h)
 
 
