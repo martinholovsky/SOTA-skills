@@ -37,7 +37,8 @@ CI caching starts here, and each concern has a home: trust boundaries, poisoning
 `cache-mode` are [rules/01](01-pipeline-security.md) §1.6; verifying a restored dependency is
 [rules/04](04-build-containers.md) §4.1, and BuildKit cache mounts are §4.2; caching test results
 is [`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.5, whose exception for a
-hand-built cache is below. Keys, partial restores and hit counts are this section.
+hand-built cache is below. Keys, partial restores, hit counts and reusing a gate's own pass are
+this section; shared compiler, layer and remote build caches are §16.2a.
 
 - **What to cache:** dependency downloads, toolchains and compiler caches, keyed on a hash of
   what determines them (the lockfile, the toolchain file). A key that omits an input serves a
@@ -60,14 +61,15 @@ hand-built cache is below. Keys, partial restores and hit counts are this sectio
     variables and config read from outside the tree (`$HOME`, global tool config); the gate's
     own arguments; and any host input it exercises, such as the kernel for a gate that loads
     code into it. A file is left out only when a recorded file-access trace or a build
-    system's declared inputs shows the gate never reads it; a hand-kept exclusion list drifts
-    as the code moves (§16.3).
+    system's declared inputs shows the gate never reads it, and the runner refuses an exclusion
+    with no such record behind it; a hand-kept exclusion list drifts as the code moves (§16.3).
   - **A gate whose verdict depends on what the key cannot capture is never reused**: a remote
-    database, the network, the clock, randomness, or a flake history. Advisory, licence and
-    scanner gates are the common case, since their database changes while the tree does not.
-  - **A pass expires** a stated number of days after the run that actually executed the gate
-    (seven in the design this came from), and reusing it never renews it, so an input the key
-    missed is wrong for a bounded time.
+    database, the network, the clock or randomness; a gate that has flaked is never reused
+    either. Advisory, licence and scanner gates are the common case, since their database
+    changes while the tree does not.
+  - **A pass expires** a stated number of days after the run that actually executed the gate (a
+    week is a reasonable default), and reusing it never renews it, so an input the key missed is
+    wrong for a bounded time.
   - **Trusted paths rerun everything**: a tag, publish, sign or deploy job, and the merge queue
     or default branch, refuse a record that reused any gate (§16.3: a scoped run needs an
     unscoped one behind it).
@@ -86,6 +88,61 @@ hand-built cache is below. Keys, partial restores and hit counts are this sectio
 - **Trust boundaries come first.** The default branch's cache is readable from other branches,
   so a cache a PR can write must never reach a release or signing job ([rules/01](01-pipeline-security.md) §1.6,
   `cache-mode`).
+
+## 16.2a Shared build caches: compiler, image layer and remote
+
+A compiler cache (ccache, sccache), a BuildKit layer cache exported with `--cache-to`, and a
+remote build cache (Bazel, Gradle, Nx) all store **outputs**, and a later build links or ships
+them without rebuilding. So whoever can write the cache chooses what other builds contain.
+GitHub's dependency-caching reference calls this cache poisoning: an untrusted run could
+"write a malicious cache that a later, more privileged workflow restores and trusts", and
+"Cache contents are not signed or verified". CVE-2025-36852 is the published case: with a
+self-hosted Nx remote-cache plugin (a bucket or a shared filesystem), any contributor with
+pull-request privileges could inject compromised artifacts, because the first write to a key
+wins.
+
+- **Only trusted CI writes; everything else reads.** Each tool has a read-only switch, and the
+  vendors recommend it: Bazel ("You may want only your CI system to be able to write to the
+  remote cache"; clients set `--remote_upload_local_results=false`), Gradle (remote push is
+  off by default; CI populates the cache "while developers only load from it", and a PR job must
+  not count as the CI server that pushes), Nx Cloud ("Use a read-write token only on protected
+  branches"; it is not in the CVE's affected list; a self-hosted Nx cache gives PR jobs
+  read-only storage credentials), sccache (`SCCACHE_GHA_RW_MODE=READ_ONLY`, or
+  `SCCACHE_S3_NO_CREDENTIALS` for "a readonly cache for pull requests", which needs a publicly
+  readable bucket, so the cache contents are public), ccache (a `read-only` property on a
+  `remote_storage` entry) and BuildKit's `gha` backend (in
+  read-only workflows "keep `cache-from: type=gha` and omit `cache-to`"). A pull request, a
+  fork and a developer machine are readers. The trust rules are [rules/01](01-pipeline-security.md) §1.6.
+- **The key must name the compiler, not just the source.** sccache hashes "the compiler binary"
+  for C and C++. ccache identifies the compiler by size and modification time unless
+  `compiler_check=content` is set. Bazel "does not track tools outside a workspace", so two
+  machines with different compilers in `/usr/bin` "wrongly share cache hits", and only
+  environment variables passed with `--action_env` reach its key. Gradle: "Missing task inputs
+  can cause incorrect cache hits." Pin the toolchain inside the build (a hermetic toolchain or a
+  pinned image digest) rather than trusting the host's.
+- **A layer cache is keyed on the instruction text, not on what it fetches.** For `RUN`, Docker
+  says "just the command string itself is used to find a match", so a cached `apt-get install`
+  keeps last week's packages, and a base image already in the builder's store is reused under a
+  moved tag unless `--pull` is passed.
+  Cache mounts (`RUN --mount=type=cache`) are not part of the exported cache: on an ephemeral
+  runner they start empty every build ([rules/04](04-build-containers.md) §4.2).
+- **Some work never hits; measure before crediting a cache.** sccache cannot cache
+  incrementally compiled Rust crates, or crates that invoke the system linker (`bin`, `dylib`,
+  `cdylib`, `proc-macro`). Print hit statistics in the job log: `sccache --show-stats`,
+  `ccache --show-stats`, Bazel's summary line ("remote cache hit"), Gradle's `FROM-CACHE` task
+  outcome.
+- **Absolute paths stop hits across checkouts.** ccache's `base_dir` and sccache's
+  `SCCACHE_BASEDIRS` strip a base directory before hashing; without them two runners with
+  different workspace paths never share an entry.
+- **A poisoned cache is rebuilt, not repaired.** Bazel lists "Create a clean cache after a cache
+  was poisoned" as a reason to delete its contents. Know how to empty each shared cache, and do
+  it after any write by an untrusted party.
+
+Sources, read 2026-10-29: GitHub "Dependency caching" reference; sccache README and
+`docs/GHA.md`, `docs/S3.md`, `docs/Caching.md`; the ccache manual; bazel.build "Remote
+caching" and "Debugging remote cache hits"; Gradle "Build Cache"; Nx "Remote cache"; the
+CVE-2025-36852 record; Docker "Cache management with GitHub Actions", "Build cache
+invalidation", "Building best practices" and the Dockerfile reference.
 
 ## 16.3 Run less only where skipping cannot pass a required check
 
@@ -159,6 +216,7 @@ A speed change is a change to the gates, and it is reviewed as one:
 
 - [ ] **Per-job and per-step durations were measured over several runs before any speed change, and the critical path is named** (§16.1) — Info: optimising without it; Low: a cache added to a job that was never on the critical path
 - [ ] **A runner that reuses a gate's earlier pass** (§16.2) — read how it builds the key, which gates it may skip and who writes its records: a reused advisory, licence or scanner gate whose record a tag, publish, sign or deploy job or the merge queue accepts = High (an advisory published after the pass ships unchecked); the same gate reused only on development runs that a trusted path reruns = Medium; a key missing an input class, no stated expiry or a reuse that renews it, records written by lower-trust code and reused by a trusted job, reuse the record does not name, or no known-bad per input class = Medium
+- [ ] **A shared build cache (compiler, layer or remote) that untrusted code can write** (§16.2a) — list each cache and the credential that writes it: a pull request, fork or developer machine able to write a cache that a release, publish or deploy build reads = High, assuming review gates what merges (Critical where any fork PR can write without review): it chooses what ships, as in CVE-2025-36852; a key that omits the compiler or relies on the host's toolchain = Low, Medium where a release build reads that cache; no hit statistics in the job log = Low
 - [ ] **Workflows with no `timeout-minutes`** (§16.5) — `find .github/workflows -name '*.y*ml' -exec grep -L -e 'timeout-minutes' {} +` — each file printed runs every job at the 360-minute default = Low (a hung job holds a runner for six hours)
 - [ ] **A cache restore that skips the install** (§16.2) — `grep -rnE --include='*.yml' --include='*.yaml' -e "cache-hit (!=|==) '(true|false)'" .github/workflows` — each hit: confirm the key covers every input and that a `restore-keys` partial match still runs the frozen install; a skipped verification on a partial match = Medium
 - [ ] **A path-filtered workflow that is a required check** (§16.3) — `grep -rnE --include='*.yml' --include='*.yaml' -e '^[[:space:]]+(paths|paths-ignore):' .github/workflows` — each hit whose workflow's job names appear in the branch's required contexts = Medium (it blocks PRs it skips); a required job gated by `if:` with no in-job reason = High (it reports Success without running)

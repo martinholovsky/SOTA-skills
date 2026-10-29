@@ -269,7 +269,7 @@ client := &http.Client{Transport: transport, Timeout: 10 * time.Second,
 
 - Disable DTDs and external entities on **every** XML parser, explicitly — many
   parsers (Java DocumentBuilderFactory, libxml2 pre-2.9) are unsafe by default:
-  `factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)`.
+  `factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)`. Per-parser Java matrix (DOM, SAX, StAX, Validator, Transformer): [`sota-jvm` rules/07](../../sota-jvm/rules/07-xml.md) §2.
 - Python: use `defusedxml`; .NET: `XmlResolver = null`; Node: avoid `libxmljs`
   `noent: true`.
 - Same family: disable external schema/DTD fetch in SVG processing, DOCX/XLSX

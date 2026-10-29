@@ -314,6 +314,9 @@ require `VERIFICATION FAILED` naming the broken check, revert, and record the ru
 
 ## 6. Reproducible, deterministic builds
 
+A compiler cache in CI (ccache, sccache) is a shared build cache: who may write it, what its key
+must name and how to count its hits are [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2a.
+
 - Avoid timestamps/paths leaking into binaries (`-ffile-prefix-map`,
   `SOURCE_DATE_EPOCH`); enable LTO for release (`-flto`) but verify it doesn't
   mask UBSan. Keep debug info (`-g`) and ship split symbols.
