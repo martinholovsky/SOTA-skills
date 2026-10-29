@@ -3060,7 +3060,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="p8" name="8 · How skills point at each other">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1278" pageHeight="2098" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1278" pageHeight="3562" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -4971,6 +4971,198 @@
         </mxCell>
         <mxCell id="m_41_35" value="1" style="rounded=0;html=1;fontSize=8;strokeColor=#ffffff;fillColor=#ffdede;" vertex="1" parent="1">
           <mxGeometry x="1070" y="2034" width="23" height="23" as="geometry"/>
+        </mxCell>
+        <mxCell id="it" value="Who reaches each rules file. The matrix counts mentions between skills, so it cannot show which FILE they land on: six pointers from a language skill into another skill read as well connected even when none reaches the file the task needs. Of 301 domain rules files, 55 are pointed at by no other skill and not by the router (below, by number; * = not even by another file of their own skill, only by their SKILL.md index). Every citing file, per rules file: rules_inbound in docs/skill-map.json." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=none;align=left;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2098" width="1174" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir0" value="code-security:  19*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2170" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir1" value="threat-modeling:  04*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2196" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir2" value="skill-security:  03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2222" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir3" value="confidential-computing:  03, 05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2248" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir4" value="detection-engineering:  03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2274" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir5" value="network-security:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2300" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir6" value="security-compliance:  01, 03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2326" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir7" value="cloud-infrastructure:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2352" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir8" value="observability:  06*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2378" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir9" value="architecture:  07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2404" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir10" value="data-engineering:  01, 05, 06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#ffe6cc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2430" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir11" value="ml-engineering:  01, 03, 04, 05, 06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#ffe6cc;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2456" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir12" value="frontend-design:  06, 07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2482" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir13" value="web-frameworks:  01, 04, 05, 06, 07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2508" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir14" value="copywriting:  01, 02, 03*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2170" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir15" value="mobile:  01, 02, 05, 06, 07*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2196" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir16" value="docs-workflow:  02, 04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2222" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir17" value="performance:  02*, 03, 04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2248" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir18" value="async-concurrency:  03*, 05*" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2274" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir19" value="rust:  02, 03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2300" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir20" value="golang:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2326" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir21" value="c-cpp:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2352" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir22" value="jvm:  02*, 07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2378" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir23" value="python:  01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2404" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir24" value="dotnet:  02, 04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2430" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir25" value="php:  03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2456" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ir26" value="swift:  02, 05, 06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="630" y="2482" width="580" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="it1" value="Reached by exactly ONE other skill (110 files): rules/NN &lt;- the skill that points at it. One pointer is one edit from zero, and the skills a file&#x27;s topic suggests may not be the one that cites it." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=none;align=left;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2564" width="1174" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="is0" value="threat-modeling:  01 &lt;- databases, 02 &lt;- router, 03 &lt;- detection-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2612" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is1" value="confidential-computing:  01 &lt;- code-security, 02 &lt;- sandboxing, 04 &lt;- code-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2638" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is2" value="detection-engineering:  01 &lt;- confidential-computing, 05 &lt;- code-security, 07 &lt;- identity-access" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2664" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is3" value="network-security:  02 &lt;- sandboxing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2690" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is4" value="identity-access:  02 &lt;- secrets-management, 03 &lt;- testing, 07 &lt;- detection-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2716" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is5" value="security-compliance:  05 &lt;- c-cpp" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2742" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is6" value="privacy-compliance:  05 &lt;- security-compliance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#d5e8d4;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2768" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is7" value="cloud-infrastructure:  02 &lt;- kubernetes, 04 &lt;- kubernetes, 05 &lt;- ml-engineering, 06 &lt;- architecture, 07 &lt;- kubernetes" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2794" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is8" value="kubernetes:  02 &lt;- identity-access, 04 &lt;- code-security, 05 &lt;- devsecops, 06 &lt;- cloud-infrastructure, 07 &lt;- detection-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2820" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is9" value="devsecops:  08 &lt;- kubernetes, 12 &lt;- docs-workflow, 13 &lt;- security-compliance, 15 &lt;- architecture, 16 &lt;- testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2846" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is10" value="observability:  03 &lt;- api-design, 04 &lt;- detection-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2872" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is11" value="architecture:  03 &lt;- async-concurrency, 05 &lt;- performance, 06 &lt;- devsecops, 08 &lt;- api-design" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#dae8fc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2898" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is12" value="databases:  02 &lt;- architecture, 05 &lt;- data-engineering, 08 &lt;- code-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#ffe6cc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2924" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is13" value="data-engineering:  02 &lt;- observability, 03 &lt;- architecture, 04 &lt;- code-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#ffe6cc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2950" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is14" value="ml-engineering:  02 &lt;- llm-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#ffe6cc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2976" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is15" value="llm-engineering:  03 &lt;- code-security, 06 &lt;- privacy-compliance, 07 &lt;- testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#ffe6cc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3002" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is16" value="api-design:  04 &lt;- detection-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3028" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is17" value="frontend-design:  01 &lt;- performance, 02 &lt;- ux-writing, 03 &lt;- web-frameworks, 04 &lt;- ux-writing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3054" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is18" value="ux-writing:  01 &lt;- copywriting, 02 &lt;- frontend-design, 03 &lt;- copywriting, 04 &lt;- frontend-design" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3080" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is19" value="cli-ux:  01 &lt;- secrets-management, 03 &lt;- shell-scripting, 04 &lt;- devsecops" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3106" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is20" value="mobile:  03 &lt;- ux-writing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3132" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is21" value="docs-workflow:  01 &lt;- router, 05 &lt;- testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3158" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is22" value="testing:  03 &lt;- code-security, 05 &lt;- architecture, 08 &lt;- docs-workflow" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3184" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is23" value="async-concurrency:  01 &lt;- python, 02 &lt;- python, 04 &lt;- performance, 06 &lt;- architecture" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3210" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is24" value="rust:  01 &lt;- code-security, 04 &lt;- async-concurrency, 05 &lt;- devsecops, 06 &lt;- performance, 08 &lt;- sandboxing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3236" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is25" value="golang:  02 &lt;- code-security, 04 &lt;- javascript-typescript, 08 &lt;- devsecops" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3262" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is26" value="c-cpp:  02 &lt;- router, 03 &lt;- code-security, 05 &lt;- async-concurrency, 07 &lt;- performance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3288" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is27" value="jvm:  01 &lt;- code-security, 04 &lt;- code-security, 05 &lt;- performance, 06 &lt;- testing, 08 &lt;- code-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3314" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is28" value="python:  02 &lt;- databases, 03 &lt;- code-security, 07 &lt;- testing, 08 &lt;- devsecops" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3340" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is29" value="javascript-typescript:  01 &lt;- web-frameworks, 03 &lt;- async-concurrency, 05 &lt;- devsecops, 06 &lt;- performance, 08 &lt;- sandboxing, 09 &lt;- code-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3366" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is30" value="dotnet:  01 &lt;- code-security, 03 &lt;- async-concurrency, 05 &lt;- performance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3392" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is31" value="php:  02 &lt;- code-security, 04 &lt;- code-security, 05 &lt;- testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3418" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is32" value="ruby:  01 &lt;- code-security, 02 &lt;- code-security, 03 &lt;- jvm" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3444" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is33" value="swift:  01 &lt;- mobile, 07 &lt;- performance, 09 &lt;- mobile" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3470" width="1170" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="is34" value="shell-scripting:  04 &lt;- devsecops, 07 &lt;- devsecops, 09 &lt;- devsecops" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;rounded=0;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontSize=10;fillColor=#f8cecc;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3496" width="1170" height="24" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>

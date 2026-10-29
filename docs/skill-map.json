@@ -4345,6 +4345,4900 @@
   "rules_index_style": {
     "link": 42
   },
+  "rules_inbound": {
+    "sota-api-design/rules/01-rest-http-design.md": {
+      "index": [
+        "sota-api-design/SKILL.md"
+      ],
+      "same": [
+        "sota-api-design/rules/04-grpc-protocols.md",
+        "sota-api-design/rules/05-realtime-websockets-sse.md",
+        "sota-api-design/rules/07-security-operations.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-docs-workflow/rules/05-spec-driven-development.md"
+      ]
+    },
+    "sota-api-design/rules/02-versioning-evolution.md": {
+      "index": [
+        "sota-api-design/SKILL.md"
+      ],
+      "same": [
+        "sota-api-design/rules/01-rest-http-design.md",
+        "sota-api-design/rules/03-graphql.md",
+        "sota-api-design/rules/04-grpc-protocols.md",
+        "sota-api-design/rules/05-realtime-websockets-sse.md",
+        "sota-api-design/rules/06-webhooks.md",
+        "sota-api-design/rules/07-security-operations.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-code-security/rules/16-where-no-ops-hide.md",
+        "sota-observability/rules/05-operational-readiness.md"
+      ]
+    },
+    "sota-api-design/rules/03-graphql.md": {
+      "index": [
+        "sota-api-design/SKILL.md"
+      ],
+      "same": [
+        "sota-api-design/rules/02-versioning-evolution.md",
+        "sota-api-design/rules/07-security-operations.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-docs-workflow/rules/05-spec-driven-development.md",
+        "sota-observability/rules/05-operational-readiness.md"
+      ]
+    },
+    "sota-api-design/rules/04-grpc-protocols.md": {
+      "index": [
+        "sota-api-design/SKILL.md"
+      ],
+      "same": [
+        "sota-api-design/rules/02-versioning-evolution.md",
+        "sota-api-design/rules/07-security-operations.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md"
+      ]
+    },
+    "sota-api-design/rules/05-realtime-websockets-sse.md": {
+      "index": [
+        "sota-api-design/SKILL.md"
+      ],
+      "same": [
+        "sota-api-design/rules/03-graphql.md",
+        "sota-api-design/rules/07-security-operations.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-javascript-typescript/rules/08-process-and-outbound.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md"
+      ]
+    },
+    "sota-api-design/rules/06-webhooks.md": {
+      "index": [
+        "sota-api-design/SKILL.md"
+      ],
+      "same": [
+        "sota-api-design/rules/01-rest-http-design.md",
+        "sota-api-design/rules/07-security-operations.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-architecture/rules/04-resilience-and-failure-design.md",
+        "sota-code-security/rules/09-untrusted-data-ingestion.md",
+        "sota-web-frameworks/rules/03-nextjs.md"
+      ]
+    },
+    "sota-api-design/rules/07-security-operations.md": {
+      "index": [
+        "sota-api-design/SKILL.md"
+      ],
+      "same": [
+        "sota-api-design/rules/01-rest-http-design.md",
+        "sota-api-design/rules/03-graphql.md",
+        "sota-api-design/rules/05-realtime-websockets-sse.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-docs-workflow/rules/02-api-reference-changelogs.md",
+        "sota-dotnet/rules/02-design-api.md",
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-network-security/SKILL.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-threat-modeling/rules/03-threat-catalogs.md",
+        "sota-web-frameworks/rules/07-security.md"
+      ]
+    },
+    "sota-architecture/rules/01-architecture-styles-and-decisions.md": {
+      "index": [
+        "sota-architecture/SKILL.md"
+      ],
+      "same": [
+        "sota-architecture/rules/02-domain-modeling-and-boundaries.md",
+        "sota-architecture/rules/04-resilience-and-failure-design.md",
+        "sota-architecture/rules/06-cloud-native-config-and-delivery.md",
+        "sota-architecture/rules/07-anti-patterns-catalog.md"
+      ],
+      "router": [
+        "sota/rules/03-audit-findings.md"
+      ],
+      "other": [
+        "sota-devsecops/rules/03-dependencies.md"
+      ]
+    },
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md": {
+      "index": [
+        "sota-architecture/SKILL.md"
+      ],
+      "same": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-architecture/rules/05-scalability-state-and-data.md",
+        "sota-architecture/rules/06-cloud-native-config-and-delivery.md",
+        "sota-architecture/rules/07-anti-patterns-catalog.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-c-cpp/rules/01-idioms.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-dotnet/rules/02-design-api.md",
+        "sota-golang/rules/01-errors.md",
+        "sota-javascript-typescript/rules/02-language-idioms.md",
+        "sota-jvm/rules/02-design-api.md",
+        "sota-php/rules/01-language-baseline.md",
+        "sota-python/rules/02-typing-correctness.md",
+        "sota-ruby/rules/01-language-idioms.md",
+        "sota-rust/rules/02-errors-and-panics.md",
+        "sota-swift/rules/01-idioms-and-errors.md",
+        "sota-testing/rules/07-suite-health-and-ci.md"
+      ]
+    },
+    "sota-architecture/rules/03-distributed-systems-and-events.md": {
+      "index": [
+        "sota-architecture/SKILL.md"
+      ],
+      "same": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-architecture/rules/02-domain-modeling-and-boundaries.md",
+        "sota-architecture/rules/04-resilience-and-failure-design.md",
+        "sota-architecture/rules/05-scalability-state-and-data.md",
+        "sota-architecture/rules/06-cloud-native-config-and-delivery.md",
+        "sota-architecture/rules/07-anti-patterns-catalog.md",
+        "sota-architecture/rules/08-nats-jetstream.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/rules/06-backpressure-flow-control.md"
+      ]
+    },
+    "sota-architecture/rules/04-resilience-and-failure-design.md": {
+      "index": [
+        "sota-architecture/SKILL.md"
+      ],
+      "same": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-architecture/rules/05-scalability-state-and-data.md",
+        "sota-architecture/rules/06-cloud-native-config-and-delivery.md",
+        "sota-architecture/rules/07-anti-patterns-catalog.md",
+        "sota-architecture/rules/08-nats-jetstream.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-async-concurrency/rules/07-audit-bug-catalog.md",
+        "sota-cloud-infrastructure/rules/03-networking.md",
+        "sota-code-security/rules/19-anti-automation-and-abuse.md",
+        "sota-data-engineering/rules/02-pipelines-and-orchestration.md",
+        "sota-javascript-typescript/rules/03-async-patterns.md",
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-llm-engineering/rules/05-production-engineering.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md"
+      ]
+    },
+    "sota-architecture/rules/05-scalability-state-and-data.md": {
+      "index": [
+        "sota-architecture/SKILL.md"
+      ],
+      "same": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-architecture/rules/04-resilience-and-failure-design.md",
+        "sota-architecture/rules/06-cloud-native-config-and-delivery.md",
+        "sota-architecture/rules/07-anti-patterns-catalog.md",
+        "sota-architecture/rules/08-nats-jetstream.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/rules/05-caching.md"
+      ]
+    },
+    "sota-architecture/rules/06-cloud-native-config-and-delivery.md": {
+      "index": [
+        "sota-architecture/SKILL.md"
+      ],
+      "same": [
+        "sota-architecture/rules/07-anti-patterns-catalog.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/06-iac-deployment.md"
+      ]
+    },
+    "sota-architecture/rules/07-anti-patterns-catalog.md": {
+      "index": [
+        "sota-architecture/SKILL.md"
+      ],
+      "same": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-architecture/rules/02-domain-modeling-and-boundaries.md",
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-architecture/rules/08-nats-jetstream.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-architecture/rules/08-nats-jetstream.md": {
+      "index": [
+        "sota-architecture/SKILL.md"
+      ],
+      "same": [
+        "sota-architecture/rules/03-distributed-systems-and-events.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-api-design/rules/05-realtime-websockets-sse.md"
+      ]
+    },
+    "sota-async-concurrency/rules/01-models-and-structure.md": {
+      "index": [
+        "sota-async-concurrency/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-python/rules/04-async.md"
+      ]
+    },
+    "sota-async-concurrency/rules/02-correctness.md": {
+      "index": [
+        "sota-async-concurrency/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-python/rules/03-idioms-pitfalls.md"
+      ]
+    },
+    "sota-async-concurrency/rules/03-primitives.md": {
+      "index": [
+        "sota-async-concurrency/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-async-concurrency/rules/04-event-loop-hygiene.md": {
+      "index": [
+        "sota-async-concurrency/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-performance/rules/04-io-network.md"
+      ]
+    },
+    "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md": {
+      "index": [
+        "sota-async-concurrency/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-async-concurrency/rules/06-backpressure-flow-control.md": {
+      "index": [
+        "sota-async-concurrency/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-architecture/rules/08-nats-jetstream.md"
+      ]
+    },
+    "sota-async-concurrency/rules/07-audit-bug-catalog.md": {
+      "index": [
+        "sota-async-concurrency/SKILL.md"
+      ],
+      "same": [],
+      "router": [
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-rust/rules/04-async-tokio.md"
+      ]
+    },
+    "sota-c-cpp/rules/01-idioms.md": {
+      "index": [
+        "sota-c-cpp/SKILL.md"
+      ],
+      "same": [
+        "sota-c-cpp/rules/02-memory-safety.md",
+        "sota-c-cpp/rules/04-security.md",
+        "sota-c-cpp/rules/06-build-tooling-ci.md",
+        "sota-c-cpp/rules/07-performance.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-c-cpp/rules/02-memory-safety.md": {
+      "index": [
+        "sota-c-cpp/SKILL.md"
+      ],
+      "same": [
+        "sota-c-cpp/rules/04-security.md",
+        "sota-c-cpp/rules/05-concurrency.md",
+        "sota-c-cpp/rules/06-build-tooling-ci.md"
+      ],
+      "router": [
+        "sota/rules/05-audit-report-and-tracking.md"
+      ],
+      "other": []
+    },
+    "sota-c-cpp/rules/03-undefined-behavior.md": {
+      "index": [
+        "sota-c-cpp/SKILL.md"
+      ],
+      "same": [
+        "sota-c-cpp/rules/01-idioms.md",
+        "sota-c-cpp/rules/02-memory-safety.md",
+        "sota-c-cpp/rules/04-security.md",
+        "sota-c-cpp/rules/05-concurrency.md",
+        "sota-c-cpp/rules/06-build-tooling-ci.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-c-cpp/rules/04-security.md": {
+      "index": [
+        "sota-c-cpp/SKILL.md"
+      ],
+      "same": [
+        "sota-c-cpp/rules/01-idioms.md",
+        "sota-c-cpp/rules/02-memory-safety.md",
+        "sota-c-cpp/rules/03-undefined-behavior.md",
+        "sota-c-cpp/rules/06-build-tooling-ci.md"
+      ],
+      "router": [
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/22-constant-time-comparison.md",
+        "sota-mobile/rules/04-security.md"
+      ]
+    },
+    "sota-c-cpp/rules/05-concurrency.md": {
+      "index": [
+        "sota-c-cpp/SKILL.md"
+      ],
+      "same": [
+        "sota-c-cpp/rules/02-memory-safety.md",
+        "sota-c-cpp/rules/03-undefined-behavior.md",
+        "sota-c-cpp/rules/06-build-tooling-ci.md",
+        "sota-c-cpp/rules/07-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md"
+      ]
+    },
+    "sota-c-cpp/rules/06-build-tooling-ci.md": {
+      "index": [
+        "sota-c-cpp/SKILL.md"
+      ],
+      "same": [
+        "sota-c-cpp/rules/03-undefined-behavior.md",
+        "sota-c-cpp/rules/04-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-dotnet/rules/06-build-tooling-ci.md",
+        "sota-golang/rules/07-tooling-ci.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md",
+        "sota-jvm/rules/06-build-tooling-ci.md",
+        "sota-php/rules/05-composer-tooling.md",
+        "sota-python/rules/07-frameworks-testing.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md",
+        "sota-swift/rules/08-tooling-ci-testing.md",
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-c-cpp/rules/07-performance.md": {
+      "index": [
+        "sota-c-cpp/SKILL.md"
+      ],
+      "same": [
+        "sota-c-cpp/rules/05-concurrency.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/SKILL.md"
+      ]
+    },
+    "sota-cli-ux/rules/01-commands-flags-config.md": {
+      "index": [
+        "sota-cli-ux/SKILL.md"
+      ],
+      "same": [
+        "sota-cli-ux/rules/02-output-interaction.md",
+        "sota-cli-ux/rules/04-distribution-docs.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-secrets-management/rules/03-application-patterns.md"
+      ]
+    },
+    "sota-cli-ux/rules/02-output-interaction.md": {
+      "index": [
+        "sota-cli-ux/SKILL.md"
+      ],
+      "same": [
+        "sota-cli-ux/rules/01-commands-flags-config.md",
+        "sota-cli-ux/rules/03-behavior-lifecycle.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-ux-writing/rules/03-errors-feedback.md"
+      ]
+    },
+    "sota-cli-ux/rules/03-behavior-lifecycle.md": {
+      "index": [
+        "sota-cli-ux/SKILL.md"
+      ],
+      "same": [
+        "sota-cli-ux/rules/01-commands-flags-config.md",
+        "sota-cli-ux/rules/02-output-interaction.md",
+        "sota-cli-ux/rules/04-distribution-docs.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-shell-scripting/rules/02-robustness-correctness.md"
+      ]
+    },
+    "sota-cli-ux/rules/04-distribution-docs.md": {
+      "index": [
+        "sota-cli-ux/SKILL.md"
+      ],
+      "same": [
+        "sota-cli-ux/rules/01-commands-flags-config.md",
+        "sota-cli-ux/rules/03-behavior-lifecycle.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/02-provenance-signing.md"
+      ]
+    },
+    "sota-cloud-infrastructure/rules/01-org-accounts-governance.md": {
+      "index": [
+        "sota-cloud-infrastructure/SKILL.md"
+      ],
+      "same": [
+        "sota-cloud-infrastructure/rules/02-iam-design.md",
+        "sota-cloud-infrastructure/rules/03-networking.md",
+        "sota-cloud-infrastructure/rules/05-data-storage.md",
+        "sota-cloud-infrastructure/rules/06-cost-finops.md",
+        "sota-cloud-infrastructure/rules/07-resilience-dr.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-cloud-infrastructure/rules/02-iam-design.md": {
+      "index": [
+        "sota-cloud-infrastructure/SKILL.md"
+      ],
+      "same": [
+        "sota-cloud-infrastructure/rules/01-org-accounts-governance.md",
+        "sota-cloud-infrastructure/rules/07-resilience-dr.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/01-control-plane-etcd.md"
+      ]
+    },
+    "sota-cloud-infrastructure/rules/03-networking.md": {
+      "index": [
+        "sota-cloud-infrastructure/SKILL.md"
+      ],
+      "same": [
+        "sota-cloud-infrastructure/rules/01-org-accounts-governance.md",
+        "sota-cloud-infrastructure/rules/04-compute-selection.md",
+        "sota-cloud-infrastructure/rules/05-data-storage.md",
+        "sota-cloud-infrastructure/rules/06-cost-finops.md",
+        "sota-cloud-infrastructure/rules/07-resilience-dr.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-devsecops/rules/06-iac-deployment.md",
+        "sota-network-security/SKILL.md",
+        "sota-network-security/rules/02-segmentation-blast-radius.md",
+        "sota-network-security/rules/03-k8s-network-policy.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-network-security/rules/06-dns-tls-pki.md"
+      ]
+    },
+    "sota-cloud-infrastructure/rules/04-compute-selection.md": {
+      "index": [
+        "sota-cloud-infrastructure/SKILL.md"
+      ],
+      "same": [
+        "sota-cloud-infrastructure/rules/06-cost-finops.md",
+        "sota-cloud-infrastructure/rules/07-resilience-dr.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-kubernetes/SKILL.md"
+      ]
+    },
+    "sota-cloud-infrastructure/rules/05-data-storage.md": {
+      "index": [
+        "sota-cloud-infrastructure/SKILL.md"
+      ],
+      "same": [
+        "sota-cloud-infrastructure/rules/01-org-accounts-governance.md",
+        "sota-cloud-infrastructure/rules/02-iam-design.md",
+        "sota-cloud-infrastructure/rules/04-compute-selection.md",
+        "sota-cloud-infrastructure/rules/06-cost-finops.md",
+        "sota-cloud-infrastructure/rules/07-resilience-dr.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-ml-engineering/rules/05-deployment-serving.md"
+      ]
+    },
+    "sota-cloud-infrastructure/rules/06-cost-finops.md": {
+      "index": [
+        "sota-cloud-infrastructure/SKILL.md"
+      ],
+      "same": [
+        "sota-cloud-infrastructure/rules/01-org-accounts-governance.md",
+        "sota-cloud-infrastructure/rules/03-networking.md",
+        "sota-cloud-infrastructure/rules/05-data-storage.md",
+        "sota-cloud-infrastructure/rules/07-resilience-dr.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/06-cloud-native-config-and-delivery.md"
+      ]
+    },
+    "sota-cloud-infrastructure/rules/07-resilience-dr.md": {
+      "index": [
+        "sota-cloud-infrastructure/SKILL.md"
+      ],
+      "same": [
+        "sota-cloud-infrastructure/rules/05-data-storage.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/01-control-plane-etcd.md"
+      ]
+    },
+    "sota-code-security/rules/01-input-injection.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/02-authentication.md",
+        "sota-code-security/rules/03-authorization.md",
+        "sota-code-security/rules/05-web-security.md",
+        "sota-code-security/rules/06-memory-resource-safety.md",
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/09-untrusted-data-ingestion.md",
+        "sota-code-security/rules/17-sessions-and-tokens.md",
+        "sota-code-security/rules/21-file-uploads.md",
+        "sota-code-security/rules/23-llm-platform-supply-chain.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-api-design/rules/05-realtime-websockets-sse.md",
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-c-cpp/rules/04-security.md",
+        "sota-devsecops/rules/15-dependency-adoption.md",
+        "sota-dotnet/rules/04-security.md",
+        "sota-golang/rules/05-security.md",
+        "sota-identity-access/rules/02-idp-operations.md",
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-javascript-typescript/rules/08-process-and-outbound.md",
+        "sota-jvm/rules/04-security.md",
+        "sota-jvm/rules/08-web-layer.md",
+        "sota-mobile/rules/04-security.md",
+        "sota-network-security/SKILL.md",
+        "sota-network-security/rules/03-k8s-network-policy.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-php/rules/02-injection.md",
+        "sota-php/rules/03-files-deserialization-ssrf.md",
+        "sota-python/rules/05-security.md",
+        "sota-ruby/rules/02-security.md",
+        "sota-ruby/rules/03-web-hardening.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-sandboxing/rules/01-isolation-boundaries.md",
+        "sota-swift/rules/05-security.md",
+        "sota-testing/rules/09-security-testing.md",
+        "sota-threat-modeling/rules/01-methodologies.md"
+      ]
+    },
+    "sota-code-security/rules/02-authentication.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/03-authorization.md",
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-code-security/rules/05-web-security.md",
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-code-security/rules/17-sessions-and-tokens.md",
+        "sota-code-security/rules/19-anti-automation-and-abuse.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-api-design/rules/01-rest-http-design.md",
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-databases/rules/06-security-and-compliance.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-dotnet/rules/04-security.md",
+        "sota-identity-access/SKILL.md",
+        "sota-identity-access/rules/01-federation-protocols.md",
+        "sota-identity-access/rules/06-mfa-federation-assurance.md",
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-privacy-compliance/rules/02-privacy-by-design.md",
+        "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md",
+        "sota-ux-writing/SKILL.md",
+        "sota-ux-writing/rules/03-errors-feedback.md"
+      ]
+    },
+    "sota-code-security/rules/03-authorization.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/01-input-injection.md",
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/16-where-no-ops-hide.md",
+        "sota-code-security/rules/19-anti-automation-and-abuse.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-identity-access/SKILL.md",
+        "sota-identity-access/rules/03-authorization-models.md",
+        "sota-performance/rules/05-caching.md",
+        "sota-swift/rules/06-server-side.md",
+        "sota-testing/rules/09-security-testing.md",
+        "sota-threat-modeling/rules/02-decomposition.md",
+        "sota-threat-modeling/rules/05-outputs-operationalization.md"
+      ]
+    },
+    "sota-code-security/rules/04-cryptography.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/05-web-security.md",
+        "sota-code-security/rules/06-memory-resource-safety.md",
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-code-security/rules/16-where-no-ops-hide.md",
+        "sota-code-security/rules/18-tamper-evident-logs.md",
+        "sota-code-security/rules/22-constant-time-comparison.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-c-cpp/rules/04-security.md",
+        "sota-confidential-computing/rules/05-pets-coed.md",
+        "sota-copywriting/rules/04-claims-legal-trust.md",
+        "sota-golang/rules/05-security.md",
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-jvm/rules/04-security.md",
+        "sota-mobile/rules/04-security.md",
+        "sota-network-security/rules/04-service-mesh-mtls.md",
+        "sota-network-security/rules/06-dns-tls-pki.md",
+        "sota-php/rules/03-files-deserialization-ssrf.md",
+        "sota-python/rules/05-security.md",
+        "sota-ruby/rules/03-web-hardening.md",
+        "sota-secrets-management/rules/05-credential-types.md",
+        "sota-shell-scripting/rules/09-listing-and-selection.md",
+        "sota-swift/rules/05-security.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md"
+      ]
+    },
+    "sota-code-security/rules/05-web-security.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/03-authorization.md",
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/09-untrusted-data-ingestion.md",
+        "sota-code-security/rules/17-sessions-and-tokens.md",
+        "sota-code-security/rules/20-browser-response-hardening.md",
+        "sota-code-security/rules/21-file-uploads.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-dotnet/rules/04-security.md",
+        "sota-golang/rules/04-http-services.md",
+        "sota-jvm/rules/04-security.md",
+        "sota-jvm/rules/08-web-layer.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-network-security/SKILL.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-performance/rules/05-caching.md",
+        "sota-privacy-compliance/rules/05-audit-ready-engineering.md",
+        "sota-testing/rules/09-security-testing.md",
+        "sota-web-frameworks/rules/02-react.md",
+        "sota-web-frameworks/rules/04-vue.md",
+        "sota-web-frameworks/rules/06-ssr-hydration.md",
+        "sota-web-frameworks/rules/07-security.md"
+      ]
+    },
+    "sota-code-security/rules/06-memory-resource-safety.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/01-input-injection.md",
+        "sota-code-security/rules/02-authentication.md",
+        "sota-code-security/rules/03-authorization.md",
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/16-where-no-ops-hide.md",
+        "sota-code-security/rules/19-anti-automation-and-abuse.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-dotnet/rules/04-security.md",
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-jvm/rules/04-security.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-php/rules/03-files-deserialization-ssrf.md",
+        "sota-python/rules/05-security.md",
+        "sota-ruby/rules/02-security.md"
+      ]
+    },
+    "sota-code-security/rules/07-data-exposure.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/03-authorization.md",
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-code-security/rules/05-web-security.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/09-untrusted-data-ingestion.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-code-security/rules/17-sessions-and-tokens.md",
+        "sota-code-security/rules/19-anti-automation-and-abuse.md",
+        "sota-code-security/rules/20-browser-response-hardening.md",
+        "sota-code-security/rules/21-file-uploads.md",
+        "sota-code-security/rules/23-llm-platform-supply-chain.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-cli-ux/rules/02-output-interaction.md",
+        "sota-dotnet/rules/04-security.md",
+        "sota-golang/rules/05-security.md",
+        "sota-identity-access/rules/03-authorization-models.md",
+        "sota-llm-engineering/rules/06-data-lifecycle.md",
+        "sota-observability/rules/01-structured-logging.md",
+        "sota-php/rules/02-injection.md",
+        "sota-php/rules/04-sessions-auth-web-hardening.md",
+        "sota-testing/rules/09-security-testing.md",
+        "sota-ux-writing/rules/01-voice-tone-plain-language.md",
+        "sota-ux-writing/rules/03-errors-feedback.md"
+      ]
+    },
+    "sota-code-security/rules/08-llm-ai-security.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/09-untrusted-data-ingestion.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-code-security/rules/23-llm-platform-supply-chain.md"
+      ],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-databases/rules/07-vector-and-ai.md",
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md",
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-llm-engineering/SKILL.md",
+        "sota-llm-engineering/rules/01-evals.md",
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-llm-engineering/rules/03-rag-retrieval.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-llm-engineering/rules/06-data-lifecycle.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md",
+        "sota-ml-engineering/rules/05-deployment-serving.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-security-compliance/rules/03-ssdf-secure-sdlc.md",
+        "sota-skill-security/SKILL.md",
+        "sota-skill-security/rules/02-trust-boundary-and-capability.md"
+      ]
+    },
+    "sota-code-security/rules/09-untrusted-data-ingestion.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/13-context-dependent-silence.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md",
+        "sota-skill-security/rules/01-provenance-and-installation.md",
+        "sota-skill-security/rules/02-trust-boundary-and-capability.md",
+        "sota-skill-security/rules/03-authoring-and-auditing-skills.md",
+        "sota-web-frameworks/rules/07-security.md"
+      ]
+    },
+    "sota-code-security/rules/10-silent-control-failure.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-code-security/rules/16-where-no-ops-hide.md",
+        "sota-code-security/rules/18-tamper-evident-logs.md",
+        "sota-code-security/rules/19-anti-automation-and-abuse.md",
+        "sota-code-security/rules/20-browser-response-hardening.md",
+        "sota-code-security/rules/23-llm-platform-supply-chain.md"
+      ],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/01-audit-methodology.md",
+        "sota/rules/02-build-workflow.md",
+        "sota/rules/03-audit-findings.md"
+      ],
+      "other": [
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-docs-workflow/rules/01-documentation-architecture.md",
+        "sota-jvm/rules/06-build-tooling-ci.md",
+        "sota-llm-engineering/rules/01-evals.md",
+        "sota-observability/rules/05-operational-readiness.md",
+        "sota-sandboxing/rules/02-linux-os-hardening.md",
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-shell-scripting/rules/07-powershell.md",
+        "sota-skill-security/rules/02-trust-boundary-and-capability.md",
+        "sota-testing/rules/02-test-design-quality.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md"
+      ]
+    },
+    "sota-code-security/rules/11-dead-path-diagnostics.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-code-security/rules/16-where-no-ops-hide.md"
+      ],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/01-audit-methodology.md",
+        "sota/rules/02-build-workflow.md",
+        "sota/rules/04-library-map.md",
+        "sota/rules/05-audit-report-and-tracking.md"
+      ],
+      "other": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-c-cpp/rules/01-idioms.md",
+        "sota-c-cpp/rules/04-security.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/14-sbom-component-inventory.md",
+        "sota-jvm/rules/04-security.md",
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-ml-engineering/rules/04-evaluation-validation.md",
+        "sota-observability/rules/05-operational-readiness.md",
+        "sota-performance/rules/01-methodology.md",
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-shell-scripting/rules/07-powershell.md",
+        "sota-shell-scripting/rules/09-listing-and-selection.md",
+        "sota-testing/rules/02-test-design-quality.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md"
+      ]
+    },
+    "sota-code-security/rules/12-verifying-the-verifier.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-code-security/rules/15-instruments-and-guards.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-cli-ux/rules/03-behavior-lifecycle.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-rust/rules/09-formal-verification.md",
+        "sota-sandboxing/rules/01-isolation-boundaries.md",
+        "sota-sandboxing/rules/02-linux-os-hardening.md",
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-code-security/rules/13-context-dependent-silence.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/15-instruments-and-guards.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-c-cpp/rules/01-idioms.md",
+        "sota-llm-engineering/rules/01-evals.md",
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-python/rules/05-security.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-testing/rules/03-doubles-and-test-data.md"
+      ]
+    },
+    "sota-code-security/rules/14-control-not-in-force.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-code-security/rules/16-where-no-ops-hide.md"
+      ],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-api-design/rules/01-rest-http-design.md",
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/04-build-containers.md",
+        "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-observability/rules/01-structured-logging.md",
+        "sota-observability/rules/02-metrics.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md",
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-testing/rules/02-test-design-quality.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-code-security/rules/15-instruments-and-guards.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-code-security/rules/16-where-no-ops-hide.md",
+        "sota-code-security/rules/18-tamper-evident-logs.md",
+        "sota-code-security/rules/22-constant-time-comparison.md"
+      ],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/03-audit-findings.md"
+      ],
+      "other": [
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-cli-ux/rules/03-behavior-lifecycle.md",
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/11-after-the-gate-fails.md",
+        "sota-kubernetes/rules/04-gitops-controllers.md",
+        "sota-rust/rules/07-tooling-ci.md",
+        "sota-secrets-management/rules/04-detection-and-remediation.md",
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-shell-scripting/rules/04-ci-and-operational.md",
+        "sota-shell-scripting/rules/05-constructs-and-cleanup.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-testing/rules/04-integration-contract-system.md"
+      ]
+    },
+    "sota-code-security/rules/16-where-no-ops-hide.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-code-security/rules/14-control-not-in-force.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-cli-ux/rules/03-behavior-lifecycle.md",
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-observability/rules/03-tracing.md"
+      ]
+    },
+    "sota-code-security/rules/17-sessions-and-tokens.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/02-authentication.md",
+        "sota-code-security/rules/03-authorization.md",
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-code-security/rules/05-web-security.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-c-cpp/rules/04-security.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-dotnet/rules/04-security.md",
+        "sota-frontend-design/rules/04-ux-patterns.md",
+        "sota-identity-access/SKILL.md",
+        "sota-identity-access/rules/01-federation-protocols.md",
+        "sota-identity-access/rules/02-idp-operations.md",
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-php/rules/04-sessions-auth-web-hardening.md",
+        "sota-python/rules/07-frameworks-testing.md",
+        "sota-ruby/rules/03-web-hardening.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-swift/rules/06-server-side.md"
+      ]
+    },
+    "sota-code-security/rules/18-tamper-evident-logs.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/03-authorization.md",
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/15-instruments-and-guards.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-kubernetes/rules/04-gitops-controllers.md",
+        "sota-ml-engineering/rules/01-ml-systems-architecture.md",
+        "sota-network-security/rules/02-segmentation-blast-radius.md",
+        "sota-observability/rules/01-structured-logging.md"
+      ]
+    },
+    "sota-code-security/rules/19-anti-automation-and-abuse.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-code-security/rules/20-browser-response-hardening.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/21-file-uploads.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-network-security/rules/06-dns-tls-pki.md",
+        "sota-web-frameworks/rules/07-security.md"
+      ]
+    },
+    "sota-code-security/rules/21-file-uploads.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/05-web-security.md",
+        "sota-code-security/rules/09-untrusted-data-ingestion.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-golang/rules/04-http-services.md"
+      ]
+    },
+    "sota-code-security/rules/22-constant-time-comparison.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/04-cryptography.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-dotnet/rules/04-security.md",
+        "sota-ruby/rules/02-security.md"
+      ]
+    },
+    "sota-code-security/rules/23-llm-platform-supply-chain.md": {
+      "index": [
+        "sota-code-security/SKILL.md"
+      ],
+      "same": [
+        "sota-code-security/rules/08-llm-ai-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md",
+        "sota-threat-modeling/rules/03-threat-catalogs.md"
+      ]
+    },
+    "sota-confidential-computing/rules/01-threat-model-and-selection.md": {
+      "index": [
+        "sota-confidential-computing/SKILL.md"
+      ],
+      "same": [
+        "sota-confidential-computing/rules/02-tee-technologies.md",
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-confidential-computing/rules/04-confidential-kubernetes.md",
+        "sota-confidential-computing/rules/05-pets-coed.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/18-tamper-evident-logs.md"
+      ]
+    },
+    "sota-confidential-computing/rules/02-tee-technologies.md": {
+      "index": [
+        "sota-confidential-computing/SKILL.md"
+      ],
+      "same": [
+        "sota-confidential-computing/rules/01-threat-model-and-selection.md",
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-confidential-computing/rules/04-confidential-kubernetes.md",
+        "sota-confidential-computing/rules/05-pets-coed.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-sandboxing/rules/03-containers-microvms.md"
+      ]
+    },
+    "sota-confidential-computing/rules/03-remote-attestation.md": {
+      "index": [
+        "sota-confidential-computing/SKILL.md"
+      ],
+      "same": [
+        "sota-confidential-computing/rules/01-threat-model-and-selection.md",
+        "sota-confidential-computing/rules/02-tee-technologies.md",
+        "sota-confidential-computing/rules/04-confidential-kubernetes.md",
+        "sota-confidential-computing/rules/05-pets-coed.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-confidential-computing/rules/04-confidential-kubernetes.md": {
+      "index": [
+        "sota-confidential-computing/SKILL.md"
+      ],
+      "same": [
+        "sota-confidential-computing/rules/01-threat-model-and-selection.md",
+        "sota-confidential-computing/rules/02-tee-technologies.md",
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-confidential-computing/rules/05-pets-coed.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/18-tamper-evident-logs.md"
+      ]
+    },
+    "sota-confidential-computing/rules/05-pets-coed.md": {
+      "index": [
+        "sota-confidential-computing/SKILL.md"
+      ],
+      "same": [
+        "sota-confidential-computing/rules/01-threat-model-and-selection.md",
+        "sota-confidential-computing/rules/02-tee-technologies.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-copywriting/rules/01-positioning-value-proposition.md": {
+      "index": [
+        "sota-copywriting/SKILL.md"
+      ],
+      "same": [
+        "sota-copywriting/rules/02-headlines-landing-pages.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-copywriting/rules/02-headlines-landing-pages.md": {
+      "index": [
+        "sota-copywriting/SKILL.md"
+      ],
+      "same": [
+        "sota-copywriting/rules/01-positioning-value-proposition.md",
+        "sota-copywriting/rules/03-seo-content.md",
+        "sota-copywriting/rules/04-claims-legal-trust.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-copywriting/rules/03-seo-content.md": {
+      "index": [
+        "sota-copywriting/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-copywriting/rules/04-claims-legal-trust.md": {
+      "index": [
+        "sota-copywriting/SKILL.md"
+      ],
+      "same": [
+        "sota-copywriting/rules/01-positioning-value-proposition.md",
+        "sota-copywriting/rules/02-headlines-landing-pages.md",
+        "sota-copywriting/rules/03-seo-content.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-frontend-design/rules/07-visual-craft-distinctiveness.md",
+        "sota-network-security/rules/06-dns-tls-pki.md",
+        "sota-ux-writing/rules/03-errors-feedback.md"
+      ]
+    },
+    "sota-data-engineering/rules/01-architecture-and-modeling.md": {
+      "index": [
+        "sota-data-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-data-engineering/rules/05-storage-and-performance.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-data-engineering/rules/02-pipelines-and-orchestration.md": {
+      "index": [
+        "sota-data-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-data-engineering/rules/04-data-quality-and-contracts.md",
+        "sota-data-engineering/rules/05-storage-and-performance.md",
+        "sota-data-engineering/rules/06-operations-and-governance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-observability/rules/04-slos-alerting.md"
+      ]
+    },
+    "sota-data-engineering/rules/03-streaming-and-cdc.md": {
+      "index": [
+        "sota-data-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-data-engineering/rules/02-pipelines-and-orchestration.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/03-distributed-systems-and-events.md"
+      ]
+    },
+    "sota-data-engineering/rules/04-data-quality-and-contracts.md": {
+      "index": [
+        "sota-data-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-data-engineering/rules/01-architecture-and-modeling.md",
+        "sota-data-engineering/rules/02-pipelines-and-orchestration.md",
+        "sota-data-engineering/rules/03-streaming-and-cdc.md",
+        "sota-data-engineering/rules/05-storage-and-performance.md",
+        "sota-data-engineering/rules/06-operations-and-governance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/13-context-dependent-silence.md"
+      ]
+    },
+    "sota-data-engineering/rules/05-storage-and-performance.md": {
+      "index": [
+        "sota-data-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-data-engineering/rules/01-architecture-and-modeling.md",
+        "sota-data-engineering/rules/04-data-quality-and-contracts.md",
+        "sota-data-engineering/rules/06-operations-and-governance.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-data-engineering/rules/06-operations-and-governance.md": {
+      "index": [
+        "sota-data-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-data-engineering/rules/02-pipelines-and-orchestration.md",
+        "sota-data-engineering/rules/05-storage-and-performance.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-databases/rules/01-choosing-and-modeling.md": {
+      "index": [
+        "sota-databases/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-api-design/rules/01-rest-http-design.md",
+        "sota-architecture/rules/02-domain-modeling-and-boundaries.md",
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-python/rules/02-typing-correctness.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-databases/rules/02-schema-migrations.md": {
+      "index": [
+        "sota-databases/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/06-cloud-native-config-and-delivery.md"
+      ]
+    },
+    "sota-databases/rules/03-queries-and-indexes.md": {
+      "index": [
+        "sota-databases/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-dotnet/rules/05-performance.md",
+        "sota-golang/rules/05-security.md"
+      ]
+    },
+    "sota-databases/rules/04-transactions-concurrency.md": {
+      "index": [
+        "sota-databases/SKILL.md"
+      ],
+      "same": [
+        "sota-databases/rules/03-queries-and-indexes.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-code-security/rules/03-authorization.md",
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-performance/rules/04-io-network.md"
+      ]
+    },
+    "sota-databases/rules/05-reliability-and-scale.md": {
+      "index": [
+        "sota-databases/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-data-engineering/rules/03-streaming-and-cdc.md"
+      ]
+    },
+    "sota-databases/rules/06-security-and-compliance.md": {
+      "index": [
+        "sota-databases/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-privacy-compliance/SKILL.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-databases/rules/07-vector-and-ai.md": {
+      "index": [
+        "sota-databases/SKILL.md"
+      ],
+      "same": [
+        "sota-databases/rules/06-security-and-compliance.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-code-security/rules/08-llm-ai-security.md"
+      ]
+    },
+    "sota-databases/rules/08-surrealdb-multimodel.md": {
+      "index": [
+        "sota-databases/SKILL.md"
+      ],
+      "same": [
+        "sota-databases/rules/06-security-and-compliance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/01-input-injection.md"
+      ]
+    },
+    "sota-detection-engineering/rules/01-detection-engineering-discipline.md": {
+      "index": [
+        "sota-detection-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-detection-engineering/rules/05-hunting-intel-deception.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md",
+        "sota-detection-engineering/rules/07-ad-attack-detection.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-confidential-computing/rules/03-remote-attestation.md"
+      ]
+    },
+    "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md": {
+      "index": [
+        "sota-detection-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-detection-engineering/rules/03-rule-languages-engines.md",
+        "sota-detection-engineering/rules/04-alerting-triage-soc-soar.md",
+        "sota-detection-engineering/rules/05-hunting-intel-deception.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md",
+        "sota-detection-engineering/rules/07-ad-attack-detection.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/02-authentication.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/18-tamper-evident-logs.md",
+        "sota-llm-engineering/rules/05-production-engineering.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md"
+      ]
+    },
+    "sota-detection-engineering/rules/03-rule-languages-engines.md": {
+      "index": [
+        "sota-detection-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-detection-engineering/rules/04-alerting-triage-soc-soar.md",
+        "sota-detection-engineering/rules/05-hunting-intel-deception.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md",
+        "sota-detection-engineering/rules/07-ad-attack-detection.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-detection-engineering/rules/04-alerting-triage-soc-soar.md": {
+      "index": [
+        "sota-detection-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-detection-engineering/rules/03-rule-languages-engines.md",
+        "sota-detection-engineering/rules/05-hunting-intel-deception.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md",
+        "sota-detection-engineering/rules/07-ad-attack-detection.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md"
+      ]
+    },
+    "sota-detection-engineering/rules/05-hunting-intel-deception.md": {
+      "index": [
+        "sota-detection-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-detection-engineering/rules/04-alerting-triage-soc-soar.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md",
+        "sota-detection-engineering/rules/07-ad-attack-detection.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/08-llm-ai-security.md"
+      ]
+    },
+    "sota-detection-engineering/rules/06-incident-response-validation.md": {
+      "index": [
+        "sota-detection-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-detection-engineering/rules/03-rule-languages-engines.md",
+        "sota-detection-engineering/rules/04-alerting-triage-soc-soar.md",
+        "sota-detection-engineering/rules/05-hunting-intel-deception.md",
+        "sota-detection-engineering/rules/07-ad-attack-detection.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-network-security/rules/06-dns-tls-pki.md"
+      ]
+    },
+    "sota-detection-engineering/rules/07-ad-attack-detection.md": {
+      "index": [
+        "sota-detection-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-identity-access/SKILL.md",
+        "sota-identity-access/rules/01-federation-protocols.md",
+        "sota-identity-access/rules/07-active-directory.md"
+      ]
+    },
+    "sota-devsecops/rules/01-pipeline-security.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/02-provenance-signing.md",
+        "sota-devsecops/rules/04-build-containers.md",
+        "sota-devsecops/rules/05-analysis-gates.md",
+        "sota-devsecops/rules/06-iac-deployment.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/08-registry-security.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/11-after-the-gate-fails.md",
+        "sota-devsecops/rules/12-scm-ci-platform-governance.md",
+        "sota-devsecops/rules/15-dependency-adoption.md",
+        "sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-docs-workflow/rules/03-code-review-pr-workflow.md",
+        "sota-dotnet/rules/06-build-tooling-ci.md",
+        "sota-kubernetes/rules/04-gitops-controllers.md",
+        "sota-shell-scripting/rules/04-ci-and-operational.md",
+        "sota-skill-security/rules/02-trust-boundary-and-capability.md",
+        "sota-threat-modeling/rules/03-threat-catalogs.md"
+      ]
+    },
+    "sota-devsecops/rules/02-provenance-signing.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/04-build-containers.md",
+        "sota-devsecops/rules/06-iac-deployment.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/08-registry-security.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/12-scm-ci-platform-governance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/03-admission-policy.md",
+        "sota-kubernetes/rules/07-supply-chain-audit.md",
+        "sota-ml-engineering/rules/02-data-and-features.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md",
+        "sota-threat-modeling/rules/03-threat-catalogs.md"
+      ]
+    },
+    "sota-devsecops/rules/03-dependencies.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/02-provenance-signing.md",
+        "sota-devsecops/rules/04-build-containers.md",
+        "sota-devsecops/rules/05-analysis-gates.md",
+        "sota-devsecops/rules/06-iac-deployment.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/08-registry-security.md",
+        "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-devsecops/rules/11-after-the-gate-fails.md",
+        "sota-devsecops/rules/12-scm-ci-platform-governance.md",
+        "sota-devsecops/rules/13-vulnerability-remediation.md",
+        "sota-devsecops/rules/14-sbom-component-inventory.md",
+        "sota-devsecops/rules/15-dependency-adoption.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-c-cpp/rules/06-build-tooling-ci.md",
+        "sota-golang/rules/07-tooling-ci.md",
+        "sota-golang/rules/08-supply-chain.md",
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-php/rules/01-language-baseline.md",
+        "sota-php/rules/05-composer-tooling.md",
+        "sota-python/rules/01-tooling-project-setup.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md",
+        "sota-security-compliance/rules/04-eu-cyber-resilience-act.md",
+        "sota-shell-scripting/rules/07-powershell.md",
+        "sota-swift/rules/09-supply-chain.md",
+        "sota-testing/rules/03-doubles-and-test-data.md"
+      ]
+    },
+    "sota-devsecops/rules/04-build-containers.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/02-provenance-signing.md",
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/06-iac-deployment.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/08-registry-security.md",
+        "sota-devsecops/rules/12-scm-ci-platform-governance.md",
+        "sota-devsecops/rules/14-sbom-component-inventory.md",
+        "sota-devsecops/rules/15-dependency-adoption.md",
+        "sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-docs-workflow/rules/04-commits-branches-releases.md",
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/03-admission-policy.md",
+        "sota-kubernetes/rules/07-supply-chain-audit.md",
+        "sota-python/rules/01-tooling-project-setup.md"
+      ]
+    },
+    "sota-devsecops/rules/05-analysis-gates.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/06-iac-deployment.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/14-sbom-component-inventory.md",
+        "sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-c-cpp/rules/06-build-tooling-ci.md",
+        "sota-code-security/rules/09-untrusted-data-ingestion.md",
+        "sota-dotnet/rules/06-build-tooling-ci.md",
+        "sota-golang/rules/07-tooling-ci.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md",
+        "sota-jvm/rules/06-build-tooling-ci.md",
+        "sota-php/rules/05-composer-tooling.md",
+        "sota-python/rules/01-tooling-project-setup.md",
+        "sota-python/rules/08-supply-chain.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md",
+        "sota-rust/rules/07-tooling-ci.md",
+        "sota-secrets-management/rules/04-detection-and-remediation.md",
+        "sota-swift/rules/08-tooling-ci-testing.md",
+        "sota-testing/SKILL.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-devsecops/rules/06-iac-deployment.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/04-build-containers.md",
+        "sota-devsecops/rules/05-analysis-gates.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/12-scm-ci-platform-governance.md",
+        "sota-devsecops/rules/13-vulnerability-remediation.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-cloud-infrastructure/rules/03-networking.md",
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/04-gitops-controllers.md",
+        "sota-kubernetes/rules/07-supply-chain-audit.md"
+      ]
+    },
+    "sota-devsecops/rules/07-runtime-ops.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/02-provenance-signing.md",
+        "sota-devsecops/rules/04-build-containers.md",
+        "sota-devsecops/rules/05-analysis-gates.md",
+        "sota-devsecops/rules/06-iac-deployment.md",
+        "sota-devsecops/rules/08-registry-security.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/12-scm-ci-platform-governance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-kubernetes/SKILL.md",
+        "sota-secrets-management/rules/02-storage-backends.md",
+        "sota-shell-scripting/rules/08-ad-hoc-side-effects.md",
+        "sota-testing/rules/04-integration-contract-system.md"
+      ]
+    },
+    "sota-devsecops/rules/08-registry-security.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/04-build-containers.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-kubernetes/rules/07-supply-chain-audit.md"
+      ]
+    },
+    "sota-devsecops/rules/09-gates-that-hold.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/05-analysis-gates.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/11-after-the-gate-fails.md",
+        "sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-rust/rules/07-tooling-ci.md",
+        "sota-rust/rules/09-formal-verification.md",
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-shell-scripting/rules/07-powershell.md"
+      ]
+    },
+    "sota-devsecops/rules/10-inert-dependencies.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/15-dependency-adoption.md"
+      ],
+      "router": [
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-golang/rules/08-supply-chain.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md",
+        "sota-observability/rules/05-operational-readiness.md",
+        "sota-python/rules/01-tooling-project-setup.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-rust/rules/08-external-programs.md"
+      ]
+    },
+    "sota-devsecops/rules/11-after-the-gate-fails.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/09-gates-that-hold.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-kubernetes/rules/04-gitops-controllers.md",
+        "sota-shell-scripting/rules/03-security.md"
+      ]
+    },
+    "sota-devsecops/rules/12-scm-ci-platform-governance.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/02-provenance-signing.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/15-dependency-adoption.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-docs-workflow/rules/04-commits-branches-releases.md"
+      ]
+    },
+    "sota-devsecops/rules/13-vulnerability-remediation.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/14-sbom-component-inventory.md",
+        "sota-devsecops/rules/15-dependency-adoption.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-security-compliance/rules/03-ssdf-secure-sdlc.md"
+      ]
+    },
+    "sota-devsecops/rules/14-sbom-component-inventory.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/13-vulnerability-remediation.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-c-cpp/rules/06-build-tooling-ci.md",
+        "sota-dotnet/rules/06-build-tooling-ci.md",
+        "sota-golang/rules/08-supply-chain.md",
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-jvm/rules/06-build-tooling-ci.md",
+        "sota-python/rules/08-supply-chain.md"
+      ]
+    },
+    "sota-devsecops/rules/15-dependency-adoption.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/06-iac-deployment.md",
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/12-scm-ci-platform-governance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md"
+      ]
+    },
+    "sota-devsecops/rules/16-fast-ci-without-blind-spots.md": {
+      "index": [
+        "sota-devsecops/SKILL.md"
+      ],
+      "same": [
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/05-analysis-gates.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-testing/rules/07-suite-health-and-ci.md"
+      ]
+    },
+    "sota-docs-workflow/rules/01-documentation-architecture.md": {
+      "index": [
+        "sota-docs-workflow/SKILL.md"
+      ],
+      "same": [
+        "sota-docs-workflow/rules/02-api-reference-changelogs.md",
+        "sota-docs-workflow/rules/05-spec-driven-development.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": []
+    },
+    "sota-docs-workflow/rules/02-api-reference-changelogs.md": {
+      "index": [
+        "sota-docs-workflow/SKILL.md"
+      ],
+      "same": [
+        "sota-docs-workflow/rules/01-documentation-architecture.md",
+        "sota-docs-workflow/rules/03-code-review-pr-workflow.md",
+        "sota-docs-workflow/rules/04-commits-branches-releases.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-docs-workflow/rules/03-code-review-pr-workflow.md": {
+      "index": [
+        "sota-docs-workflow/SKILL.md"
+      ],
+      "same": [
+        "sota-docs-workflow/rules/01-documentation-architecture.md",
+        "sota-docs-workflow/rules/04-commits-branches-releases.md",
+        "sota-docs-workflow/rules/05-spec-driven-development.md"
+      ],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-testing/rules/09-security-testing.md",
+        "sota-threat-modeling/rules/04-risk-rating-treatment.md"
+      ]
+    },
+    "sota-docs-workflow/rules/04-commits-branches-releases.md": {
+      "index": [
+        "sota-docs-workflow/SKILL.md"
+      ],
+      "same": [
+        "sota-docs-workflow/rules/02-api-reference-changelogs.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-docs-workflow/rules/05-spec-driven-development.md": {
+      "index": [
+        "sota-docs-workflow/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-testing/SKILL.md",
+        "sota-testing/rules/08-bdd-spec-by-example.md"
+      ]
+    },
+    "sota-dotnet/rules/01-idioms.md": {
+      "index": [
+        "sota-dotnet/SKILL.md"
+      ],
+      "same": [
+        "sota-dotnet/rules/02-design-api.md",
+        "sota-dotnet/rules/05-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-dotnet/rules/02-design-api.md": {
+      "index": [
+        "sota-dotnet/SKILL.md"
+      ],
+      "same": [
+        "sota-dotnet/rules/04-security.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-dotnet/rules/03-async-concurrency.md": {
+      "index": [
+        "sota-dotnet/SKILL.md"
+      ],
+      "same": [
+        "sota-dotnet/rules/01-idioms.md",
+        "sota-dotnet/rules/05-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md"
+      ]
+    },
+    "sota-dotnet/rules/04-security.md": {
+      "index": [
+        "sota-dotnet/SKILL.md"
+      ],
+      "same": [
+        "sota-dotnet/rules/02-design-api.md",
+        "sota-dotnet/rules/06-build-tooling-ci.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-dotnet/rules/05-performance.md": {
+      "index": [
+        "sota-dotnet/SKILL.md"
+      ],
+      "same": [
+        "sota-dotnet/rules/01-idioms.md",
+        "sota-dotnet/rules/02-design-api.md",
+        "sota-dotnet/rules/03-async-concurrency.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/SKILL.md"
+      ]
+    },
+    "sota-dotnet/rules/06-build-tooling-ci.md": {
+      "index": [
+        "sota-dotnet/SKILL.md"
+      ],
+      "same": [
+        "sota-dotnet/rules/04-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-frontend-design/rules/01-typography-and-color.md": {
+      "index": [
+        "sota-frontend-design/SKILL.md"
+      ],
+      "same": [
+        "sota-frontend-design/rules/05-accessibility.md",
+        "sota-frontend-design/rules/07-visual-craft-distinctiveness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/rules/06-frontend-web.md"
+      ]
+    },
+    "sota-frontend-design/rules/02-layout-spacing-responsive.md": {
+      "index": [
+        "sota-frontend-design/SKILL.md"
+      ],
+      "same": [
+        "sota-frontend-design/rules/03-design-systems-components.md",
+        "sota-frontend-design/rules/04-ux-patterns.md",
+        "sota-frontend-design/rules/07-visual-craft-distinctiveness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-ux-writing/rules/04-accessibility-localization.md"
+      ]
+    },
+    "sota-frontend-design/rules/03-design-systems-components.md": {
+      "index": [
+        "sota-frontend-design/SKILL.md"
+      ],
+      "same": [
+        "sota-frontend-design/rules/04-ux-patterns.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-web-frameworks/rules/02-react.md"
+      ]
+    },
+    "sota-frontend-design/rules/04-ux-patterns.md": {
+      "index": [
+        "sota-frontend-design/SKILL.md"
+      ],
+      "same": [
+        "sota-frontend-design/rules/01-typography-and-color.md",
+        "sota-frontend-design/rules/03-design-systems-components.md",
+        "sota-frontend-design/rules/05-accessibility.md",
+        "sota-frontend-design/rules/06-motion-design.md",
+        "sota-frontend-design/rules/07-visual-craft-distinctiveness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-ux-writing/SKILL.md",
+        "sota-ux-writing/rules/02-microcopy-components.md",
+        "sota-ux-writing/rules/03-errors-feedback.md",
+        "sota-ux-writing/rules/04-accessibility-localization.md"
+      ]
+    },
+    "sota-frontend-design/rules/05-accessibility.md": {
+      "index": [
+        "sota-frontend-design/SKILL.md"
+      ],
+      "same": [
+        "sota-frontend-design/rules/01-typography-and-color.md",
+        "sota-frontend-design/rules/02-layout-spacing-responsive.md",
+        "sota-frontend-design/rules/03-design-systems-components.md",
+        "sota-frontend-design/rules/04-ux-patterns.md",
+        "sota-frontend-design/rules/07-visual-craft-distinctiveness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/19-anti-automation-and-abuse.md",
+        "sota-ux-writing/rules/04-accessibility-localization.md"
+      ]
+    },
+    "sota-frontend-design/rules/06-motion-design.md": {
+      "index": [
+        "sota-frontend-design/SKILL.md"
+      ],
+      "same": [
+        "sota-frontend-design/rules/02-layout-spacing-responsive.md",
+        "sota-frontend-design/rules/05-accessibility.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-frontend-design/rules/07-visual-craft-distinctiveness.md": {
+      "index": [
+        "sota-frontend-design/SKILL.md"
+      ],
+      "same": [
+        "sota-frontend-design/rules/01-typography-and-color.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-golang/rules/01-errors.md": {
+      "index": [
+        "sota-golang/SKILL.md"
+      ],
+      "same": [
+        "sota-golang/rules/02-design.md",
+        "sota-golang/rules/04-http-services.md",
+        "sota-golang/rules/05-security.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-golang/rules/02-design.md": {
+      "index": [
+        "sota-golang/SKILL.md"
+      ],
+      "same": [
+        "sota-golang/rules/04-http-services.md",
+        "sota-golang/rules/05-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-golang/rules/03-concurrency.md": {
+      "index": [
+        "sota-golang/SKILL.md"
+      ],
+      "same": [
+        "sota-golang/rules/01-errors.md",
+        "sota-golang/rules/06-performance.md",
+        "sota-golang/rules/07-tooling-ci.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md",
+        "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md",
+        "sota-performance/rules/03-memory.md"
+      ]
+    },
+    "sota-golang/rules/04-http-services.md": {
+      "index": [
+        "sota-golang/SKILL.md"
+      ],
+      "same": [
+        "sota-golang/rules/01-errors.md",
+        "sota-golang/rules/05-security.md",
+        "sota-golang/rules/08-supply-chain.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-javascript-typescript/rules/08-process-and-outbound.md"
+      ]
+    },
+    "sota-golang/rules/05-security.md": {
+      "index": [
+        "sota-golang/SKILL.md"
+      ],
+      "same": [
+        "sota-golang/rules/01-errors.md",
+        "sota-golang/rules/02-design.md",
+        "sota-golang/rules/04-http-services.md",
+        "sota-golang/rules/06-performance.md",
+        "sota-golang/rules/07-tooling-ci.md",
+        "sota-golang/rules/08-supply-chain.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md",
+        "sota-sandboxing/rules/04-process-app-sandboxing.md",
+        "sota-shell-scripting/rules/02-robustness-correctness.md"
+      ]
+    },
+    "sota-golang/rules/06-performance.md": {
+      "index": [
+        "sota-golang/SKILL.md"
+      ],
+      "same": [
+        "sota-golang/rules/04-http-services.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-observability/rules/03-tracing.md",
+        "sota-performance/SKILL.md",
+        "sota-performance/rules/03-memory.md"
+      ]
+    },
+    "sota-golang/rules/07-tooling-ci.md": {
+      "index": [
+        "sota-golang/SKILL.md"
+      ],
+      "same": [
+        "sota-golang/rules/08-supply-chain.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/03-dependencies.md",
+        "sota-devsecops/rules/15-dependency-adoption.md",
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-golang/rules/08-supply-chain.md": {
+      "index": [
+        "sota-golang/SKILL.md"
+      ],
+      "same": [
+        "sota-golang/rules/05-security.md",
+        "sota-golang/rules/07-tooling-ci.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/10-inert-dependencies.md"
+      ]
+    },
+    "sota-identity-access/rules/01-federation-protocols.md": {
+      "index": [
+        "sota-identity-access/SKILL.md"
+      ],
+      "same": [
+        "sota-identity-access/rules/02-idp-operations.md",
+        "sota-identity-access/rules/04-lifecycle-provisioning.md",
+        "sota-identity-access/rules/06-mfa-federation-assurance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-detection-engineering/rules/07-ad-attack-detection.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-network-security/rules/06-dns-tls-pki.md"
+      ]
+    },
+    "sota-identity-access/rules/02-idp-operations.md": {
+      "index": [
+        "sota-identity-access/SKILL.md"
+      ],
+      "same": [
+        "sota-identity-access/rules/01-federation-protocols.md",
+        "sota-identity-access/rules/03-authorization-models.md",
+        "sota-identity-access/rules/04-lifecycle-provisioning.md",
+        "sota-identity-access/rules/05-privileged-workload.md",
+        "sota-identity-access/rules/06-mfa-federation-assurance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-secrets-management/rules/02-storage-backends.md"
+      ]
+    },
+    "sota-identity-access/rules/03-authorization-models.md": {
+      "index": [
+        "sota-identity-access/SKILL.md"
+      ],
+      "same": [
+        "sota-identity-access/rules/01-federation-protocols.md",
+        "sota-identity-access/rules/02-idp-operations.md",
+        "sota-identity-access/rules/04-lifecycle-provisioning.md",
+        "sota-identity-access/rules/05-privileged-workload.md",
+        "sota-identity-access/rules/06-mfa-federation-assurance.md",
+        "sota-identity-access/rules/07-active-directory.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-identity-access/rules/04-lifecycle-provisioning.md": {
+      "index": [
+        "sota-identity-access/SKILL.md"
+      ],
+      "same": [
+        "sota-identity-access/rules/01-federation-protocols.md",
+        "sota-identity-access/rules/02-idp-operations.md",
+        "sota-identity-access/rules/03-authorization-models.md",
+        "sota-identity-access/rules/05-privileged-workload.md",
+        "sota-identity-access/rules/06-mfa-federation-assurance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-privacy-compliance/rules/05-audit-ready-engineering.md"
+      ]
+    },
+    "sota-identity-access/rules/05-privileged-workload.md": {
+      "index": [
+        "sota-identity-access/SKILL.md"
+      ],
+      "same": [
+        "sota-identity-access/rules/02-idp-operations.md",
+        "sota-identity-access/rules/03-authorization-models.md",
+        "sota-identity-access/rules/04-lifecycle-provisioning.md",
+        "sota-identity-access/rules/06-mfa-federation-assurance.md",
+        "sota-identity-access/rules/07-active-directory.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-cloud-infrastructure/rules/02-iam-design.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md"
+      ]
+    },
+    "sota-identity-access/rules/06-mfa-federation-assurance.md": {
+      "index": [
+        "sota-identity-access/SKILL.md"
+      ],
+      "same": [
+        "sota-identity-access/rules/02-idp-operations.md",
+        "sota-identity-access/rules/04-lifecycle-provisioning.md",
+        "sota-identity-access/rules/05-privileged-workload.md",
+        "sota-identity-access/rules/07-active-directory.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/03-authorization.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md"
+      ]
+    },
+    "sota-identity-access/rules/07-active-directory.md": {
+      "index": [
+        "sota-identity-access/SKILL.md"
+      ],
+      "same": [
+        "sota-identity-access/rules/01-federation-protocols.md",
+        "sota-identity-access/rules/04-lifecycle-provisioning.md",
+        "sota-identity-access/rules/06-mfa-federation-assurance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-detection-engineering/SKILL.md",
+        "sota-detection-engineering/rules/07-ad-attack-detection.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/01-typescript-config-and-types.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md",
+        "sota-javascript-typescript/rules/08-process-and-outbound.md",
+        "sota-javascript-typescript/rules/09-browser-platform-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-web-frameworks/rules/01-baseline.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/02-language-idioms.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-javascript-typescript/rules/06-performance.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md",
+        "sota-performance/rules/03-memory.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/03-async-patterns.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-javascript-typescript/rules/06-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/04-node-backend.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [
+        "sota-javascript-typescript/rules/01-typescript-config-and-types.md",
+        "sota-javascript-typescript/rules/05-security.md",
+        "sota-javascript-typescript/rules/06-performance.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/rules/07-audit-bug-catalog.md",
+        "sota-cloud-infrastructure/rules/04-compute-selection.md",
+        "sota-web-frameworks/rules/01-baseline.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/05-security.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [
+        "sota-javascript-typescript/rules/02-language-idioms.md",
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md",
+        "sota-javascript-typescript/rules/08-process-and-outbound.md",
+        "sota-javascript-typescript/rules/09-browser-platform-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/05-analysis-gates.md",
+        "sota-devsecops/rules/10-inert-dependencies.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/06-performance.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-performance/SKILL.md",
+        "sota-performance/rules/06-frontend-web.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/07-testing-and-tooling.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [
+        "sota-javascript-typescript/rules/01-typescript-config-and-types.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/08-process-and-outbound.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-javascript-typescript/rules/05-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-sandboxing/rules/04-process-app-sandboxing.md"
+      ]
+    },
+    "sota-javascript-typescript/rules/09-browser-platform-security.md": {
+      "index": [
+        "sota-javascript-typescript/SKILL.md"
+      ],
+      "same": [
+        "sota-javascript-typescript/rules/01-typescript-config-and-types.md",
+        "sota-javascript-typescript/rules/05-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/05-web-security.md"
+      ]
+    },
+    "sota-jvm/rules/01-idioms.md": {
+      "index": [
+        "sota-jvm/SKILL.md"
+      ],
+      "same": [
+        "sota-jvm/rules/02-design-api.md",
+        "sota-jvm/rules/03-concurrency.md",
+        "sota-jvm/rules/04-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-jvm/rules/02-design-api.md": {
+      "index": [
+        "sota-jvm/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-jvm/rules/03-concurrency.md": {
+      "index": [
+        "sota-jvm/SKILL.md"
+      ],
+      "same": [
+        "sota-jvm/rules/01-idioms.md",
+        "sota-jvm/rules/05-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md",
+        "sota-async-concurrency/rules/07-audit-bug-catalog.md",
+        "sota-observability/rules/01-structured-logging.md",
+        "sota-performance/rules/03-memory.md"
+      ]
+    },
+    "sota-jvm/rules/04-security.md": {
+      "index": [
+        "sota-jvm/SKILL.md"
+      ],
+      "same": [
+        "sota-jvm/rules/06-build-tooling-ci.md",
+        "sota-jvm/rules/07-xml.md",
+        "sota-jvm/rules/08-web-layer.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/17-sessions-and-tokens.md"
+      ]
+    },
+    "sota-jvm/rules/05-performance.md": {
+      "index": [
+        "sota-jvm/SKILL.md"
+      ],
+      "same": [
+        "sota-jvm/rules/04-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/SKILL.md"
+      ]
+    },
+    "sota-jvm/rules/06-build-tooling-ci.md": {
+      "index": [
+        "sota-jvm/SKILL.md"
+      ],
+      "same": [
+        "sota-jvm/rules/04-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-jvm/rules/07-xml.md": {
+      "index": [
+        "sota-jvm/SKILL.md"
+      ],
+      "same": [
+        "sota-jvm/rules/04-security.md",
+        "sota-jvm/rules/06-build-tooling-ci.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-jvm/rules/08-web-layer.md": {
+      "index": [
+        "sota-jvm/SKILL.md"
+      ],
+      "same": [
+        "sota-jvm/rules/04-security.md",
+        "sota-jvm/rules/06-build-tooling-ci.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/07-data-exposure.md"
+      ]
+    },
+    "sota-kubernetes/rules/01-control-plane-etcd.md": {
+      "index": [
+        "sota-kubernetes/SKILL.md"
+      ],
+      "same": [
+        "sota-kubernetes/rules/02-rbac-serviceaccounts.md",
+        "sota-kubernetes/rules/04-gitops-controllers.md",
+        "sota-kubernetes/rules/06-workloads-tenancy.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-cloud-infrastructure/rules/04-compute-selection.md",
+        "sota-sandboxing/rules/03-containers-microvms.md"
+      ]
+    },
+    "sota-kubernetes/rules/02-rbac-serviceaccounts.md": {
+      "index": [
+        "sota-kubernetes/SKILL.md"
+      ],
+      "same": [
+        "sota-kubernetes/rules/01-control-plane-etcd.md",
+        "sota-kubernetes/rules/03-admission-policy.md",
+        "sota-kubernetes/rules/05-operators-crds-webhooks.md",
+        "sota-kubernetes/rules/06-workloads-tenancy.md",
+        "sota-kubernetes/rules/07-supply-chain-audit.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-identity-access/rules/05-privileged-workload.md"
+      ]
+    },
+    "sota-kubernetes/rules/03-admission-policy.md": {
+      "index": [
+        "sota-kubernetes/SKILL.md"
+      ],
+      "same": [
+        "sota-kubernetes/rules/01-control-plane-etcd.md",
+        "sota-kubernetes/rules/02-rbac-serviceaccounts.md",
+        "sota-kubernetes/rules/05-operators-crds-webhooks.md",
+        "sota-kubernetes/rules/06-workloads-tenancy.md",
+        "sota-kubernetes/rules/07-supply-chain-audit.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-network-security/rules/04-service-mesh-mtls.md"
+      ]
+    },
+    "sota-kubernetes/rules/04-gitops-controllers.md": {
+      "index": [
+        "sota-kubernetes/SKILL.md"
+      ],
+      "same": [
+        "sota-kubernetes/rules/01-control-plane-etcd.md",
+        "sota-kubernetes/rules/03-admission-policy.md",
+        "sota-kubernetes/rules/07-supply-chain-audit.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/14-control-not-in-force.md"
+      ]
+    },
+    "sota-kubernetes/rules/05-operators-crds-webhooks.md": {
+      "index": [
+        "sota-kubernetes/SKILL.md"
+      ],
+      "same": [
+        "sota-kubernetes/rules/01-control-plane-etcd.md",
+        "sota-kubernetes/rules/06-workloads-tenancy.md",
+        "sota-kubernetes/rules/07-supply-chain-audit.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/07-runtime-ops.md"
+      ]
+    },
+    "sota-kubernetes/rules/06-workloads-tenancy.md": {
+      "index": [
+        "sota-kubernetes/SKILL.md"
+      ],
+      "same": [
+        "sota-kubernetes/rules/05-operators-crds-webhooks.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-cloud-infrastructure/rules/04-compute-selection.md"
+      ]
+    },
+    "sota-kubernetes/rules/07-supply-chain-audit.md": {
+      "index": [
+        "sota-kubernetes/SKILL.md"
+      ],
+      "same": [
+        "sota-kubernetes/rules/01-control-plane-etcd.md",
+        "sota-kubernetes/rules/02-rbac-serviceaccounts.md",
+        "sota-kubernetes/rules/05-operators-crds-webhooks.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md"
+      ]
+    },
+    "sota-llm-engineering/rules/01-evals.md": {
+      "index": [
+        "sota-llm-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-llm-engineering/rules/03-rag-retrieval.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-llm-engineering/rules/05-production-engineering.md",
+        "sota-llm-engineering/rules/06-data-lifecycle.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md"
+      ],
+      "router": [
+        "sota/rules/03-audit-findings.md"
+      ],
+      "other": [
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/15-instruments-and-guards.md"
+      ]
+    },
+    "sota-llm-engineering/rules/02-prompt-context-engineering.md": {
+      "index": [
+        "sota-llm-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-llm-engineering/rules/01-evals.md",
+        "sota-llm-engineering/rules/03-rag-retrieval.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-llm-engineering/rules/05-production-engineering.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-code-security/rules/13-context-dependent-silence.md"
+      ]
+    },
+    "sota-llm-engineering/rules/03-rag-retrieval.md": {
+      "index": [
+        "sota-llm-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-llm-engineering/rules/01-evals.md",
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-llm-engineering/rules/05-production-engineering.md",
+        "sota-llm-engineering/rules/06-data-lifecycle.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/09-untrusted-data-ingestion.md"
+      ]
+    },
+    "sota-llm-engineering/rules/04-agents-tools.md": {
+      "index": [
+        "sota-llm-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-llm-engineering/rules/01-evals.md",
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-llm-engineering/rules/03-rag-retrieval.md",
+        "sota-llm-engineering/rules/05-production-engineering.md",
+        "sota-llm-engineering/rules/06-data-lifecycle.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/05-web-security.md",
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-testing/rules/07-suite-health-and-ci.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-llm-engineering/rules/05-production-engineering.md": {
+      "index": [
+        "sota-llm-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-llm-engineering/rules/01-evals.md",
+        "sota-llm-engineering/rules/02-prompt-context-engineering.md",
+        "sota-llm-engineering/rules/03-rag-retrieval.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-llm-engineering/rules/06-data-lifecycle.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-architecture/rules/04-resilience-and-failure-design.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md",
+        "sota-privacy-compliance/rules/04-regulatory-landscape.md"
+      ]
+    },
+    "sota-llm-engineering/rules/06-data-lifecycle.md": {
+      "index": [
+        "sota-llm-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-llm-engineering/rules/01-evals.md",
+        "sota-llm-engineering/rules/03-rag-retrieval.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-llm-engineering/rules/05-production-engineering.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-privacy-compliance/rules/03-consent-and-user-rights.md"
+      ]
+    },
+    "sota-llm-engineering/rules/07-code-generation-evals.md": {
+      "index": [
+        "sota-llm-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-llm-engineering/rules/01-evals.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-testing/rules/06-property-fuzzing-mutation.md"
+      ]
+    },
+    "sota-ml-engineering/rules/01-ml-systems-architecture.md": {
+      "index": [
+        "sota-ml-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-ml-engineering/rules/02-data-and-features.md",
+        "sota-ml-engineering/rules/03-training-experimentation.md",
+        "sota-ml-engineering/rules/04-evaluation-validation.md",
+        "sota-ml-engineering/rules/05-deployment-serving.md",
+        "sota-ml-engineering/rules/06-monitoring-drift.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-ml-engineering/rules/02-data-and-features.md": {
+      "index": [
+        "sota-ml-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-ml-engineering/rules/01-ml-systems-architecture.md",
+        "sota-ml-engineering/rules/03-training-experimentation.md",
+        "sota-ml-engineering/rules/04-evaluation-validation.md",
+        "sota-ml-engineering/rules/05-deployment-serving.md",
+        "sota-ml-engineering/rules/06-monitoring-drift.md",
+        "sota-ml-engineering/rules/07-security-governance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-llm-engineering/rules/01-evals.md"
+      ]
+    },
+    "sota-ml-engineering/rules/03-training-experimentation.md": {
+      "index": [
+        "sota-ml-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-ml-engineering/rules/01-ml-systems-architecture.md",
+        "sota-ml-engineering/rules/04-evaluation-validation.md",
+        "sota-ml-engineering/rules/06-monitoring-drift.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-ml-engineering/rules/04-evaluation-validation.md": {
+      "index": [
+        "sota-ml-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-ml-engineering/rules/01-ml-systems-architecture.md",
+        "sota-ml-engineering/rules/03-training-experimentation.md",
+        "sota-ml-engineering/rules/05-deployment-serving.md",
+        "sota-ml-engineering/rules/06-monitoring-drift.md",
+        "sota-ml-engineering/rules/07-security-governance.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-ml-engineering/rules/05-deployment-serving.md": {
+      "index": [
+        "sota-ml-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-ml-engineering/rules/01-ml-systems-architecture.md",
+        "sota-ml-engineering/rules/04-evaluation-validation.md",
+        "sota-ml-engineering/rules/06-monitoring-drift.md",
+        "sota-ml-engineering/rules/07-security-governance.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-ml-engineering/rules/06-monitoring-drift.md": {
+      "index": [
+        "sota-ml-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-ml-engineering/rules/04-evaluation-validation.md",
+        "sota-ml-engineering/rules/07-security-governance.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-ml-engineering/rules/07-security-governance.md": {
+      "index": [
+        "sota-ml-engineering/SKILL.md"
+      ],
+      "same": [
+        "sota-ml-engineering/rules/02-data-and-features.md",
+        "sota-ml-engineering/rules/04-evaluation-validation.md",
+        "sota-ml-engineering/rules/05-deployment-serving.md",
+        "sota-ml-engineering/rules/06-monitoring-drift.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-confidential-computing/rules/05-pets-coed.md",
+        "sota-python/rules/05-security.md",
+        "sota-sandboxing/rules/01-isolation-boundaries.md"
+      ]
+    },
+    "sota-mobile/rules/01-platform-and-stack.md": {
+      "index": [
+        "sota-mobile/SKILL.md"
+      ],
+      "same": [
+        "sota-mobile/rules/05-performance.md",
+        "sota-mobile/rules/06-release-and-operations.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-mobile/rules/02-architecture-and-state.md": {
+      "index": [
+        "sota-mobile/SKILL.md"
+      ],
+      "same": [
+        "sota-mobile/rules/03-offline-background-push.md",
+        "sota-mobile/rules/04-security.md",
+        "sota-mobile/rules/05-performance.md",
+        "sota-mobile/rules/06-release-and-operations.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-mobile/rules/03-offline-background-push.md": {
+      "index": [
+        "sota-mobile/SKILL.md"
+      ],
+      "same": [
+        "sota-mobile/rules/02-architecture-and-state.md",
+        "sota-mobile/rules/04-security.md",
+        "sota-mobile/rules/05-performance.md",
+        "sota-mobile/rules/06-release-and-operations.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-ux-writing/rules/02-microcopy-components.md",
+        "sota-ux-writing/rules/03-errors-feedback.md"
+      ]
+    },
+    "sota-mobile/rules/04-security.md": {
+      "index": [
+        "sota-mobile/SKILL.md"
+      ],
+      "same": [
+        "sota-mobile/rules/01-platform-and-stack.md",
+        "sota-mobile/rules/02-architecture-and-state.md",
+        "sota-mobile/rules/03-offline-background-push.md",
+        "sota-mobile/rules/05-performance.md",
+        "sota-mobile/rules/06-release-and-operations.md",
+        "sota-mobile/rules/07-swift-in-apps.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-swift/rules/05-security.md"
+      ]
+    },
+    "sota-mobile/rules/05-performance.md": {
+      "index": [
+        "sota-mobile/SKILL.md"
+      ],
+      "same": [
+        "sota-mobile/rules/03-offline-background-push.md",
+        "sota-mobile/rules/04-security.md",
+        "sota-mobile/rules/06-release-and-operations.md",
+        "sota-mobile/rules/07-swift-in-apps.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-mobile/rules/06-release-and-operations.md": {
+      "index": [
+        "sota-mobile/SKILL.md"
+      ],
+      "same": [
+        "sota-mobile/rules/02-architecture-and-state.md",
+        "sota-mobile/rules/04-security.md",
+        "sota-mobile/rules/05-performance.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-mobile/rules/07-swift-in-apps.md": {
+      "index": [
+        "sota-mobile/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-network-security/rules/01-zero-trust-architecture.md": {
+      "index": [
+        "sota-network-security/SKILL.md"
+      ],
+      "same": [
+        "sota-network-security/rules/02-segmentation-blast-radius.md",
+        "sota-network-security/rules/03-k8s-network-policy.md",
+        "sota-network-security/rules/04-service-mesh-mtls.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-network-security/rules/02-segmentation-blast-radius.md": {
+      "index": [
+        "sota-network-security/SKILL.md"
+      ],
+      "same": [
+        "sota-network-security/rules/01-zero-trust-architecture.md",
+        "sota-network-security/rules/03-k8s-network-policy.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-sandboxing/rules/03-containers-microvms.md"
+      ]
+    },
+    "sota-network-security/rules/03-k8s-network-policy.md": {
+      "index": [
+        "sota-network-security/SKILL.md"
+      ],
+      "same": [
+        "sota-network-security/rules/01-zero-trust-architecture.md",
+        "sota-network-security/rules/02-segmentation-blast-radius.md",
+        "sota-network-security/rules/04-service-mesh-mtls.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-kubernetes/rules/01-control-plane-etcd.md",
+        "sota-sandboxing/rules/03-containers-microvms.md"
+      ]
+    },
+    "sota-network-security/rules/04-service-mesh-mtls.md": {
+      "index": [
+        "sota-network-security/SKILL.md"
+      ],
+      "same": [
+        "sota-network-security/rules/01-zero-trust-architecture.md",
+        "sota-network-security/rules/02-segmentation-blast-radius.md",
+        "sota-network-security/rules/03-k8s-network-policy.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md",
+        "sota-network-security/rules/06-dns-tls-pki.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-security-compliance/rules/01-control-frameworks-as-code.md"
+      ]
+    },
+    "sota-network-security/rules/05-edge-ingress-egress.md": {
+      "index": [
+        "sota-network-security/SKILL.md"
+      ],
+      "same": [
+        "sota-network-security/rules/01-zero-trust-architecture.md",
+        "sota-network-security/rules/02-segmentation-blast-radius.md",
+        "sota-network-security/rules/03-k8s-network-policy.md",
+        "sota-network-security/rules/06-dns-tls-pki.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-cloud-infrastructure/rules/03-networking.md",
+        "sota-code-security/rules/05-web-security.md",
+        "sota-code-security/rules/19-anti-automation-and-abuse.md",
+        "sota-dotnet/rules/04-security.md",
+        "sota-identity-access/rules/06-mfa-federation-assurance.md"
+      ]
+    },
+    "sota-network-security/rules/06-dns-tls-pki.md": {
+      "index": [
+        "sota-network-security/SKILL.md"
+      ],
+      "same": [
+        "sota-network-security/rules/01-zero-trust-architecture.md",
+        "sota-network-security/rules/04-service-mesh-mtls.md",
+        "sota-network-security/rules/05-edge-ingress-egress.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-cloud-infrastructure/rules/03-networking.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-performance/rules/04-io-network.md",
+        "sota-secrets-management/rules/04-detection-and-remediation.md",
+        "sota-swift/rules/05-security.md",
+        "sota-threat-modeling/rules/06-audit-reconstruction.md"
+      ]
+    },
+    "sota-observability/rules/01-structured-logging.md": {
+      "index": [
+        "sota-observability/SKILL.md"
+      ],
+      "same": [
+        "sota-observability/rules/03-tracing.md",
+        "sota-observability/rules/05-operational-readiness.md",
+        "sota-observability/rules/06-audit-playbook.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-detection-engineering/SKILL.md",
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-dotnet/rules/04-security.md",
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-jvm/rules/04-security.md",
+        "sota-ruby/rules/03-web-hardening.md",
+        "sota-secrets-management/rules/04-detection-and-remediation.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-observability/rules/02-metrics.md": {
+      "index": [
+        "sota-observability/SKILL.md"
+      ],
+      "same": [
+        "sota-observability/rules/01-structured-logging.md",
+        "sota-observability/rules/04-slos-alerting.md",
+        "sota-observability/rules/05-operational-readiness.md",
+        "sota-observability/rules/06-audit-playbook.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-performance/rules/01-methodology.md"
+      ]
+    },
+    "sota-observability/rules/03-tracing.md": {
+      "index": [
+        "sota-observability/SKILL.md"
+      ],
+      "same": [
+        "sota-observability/rules/01-structured-logging.md",
+        "sota-observability/rules/06-audit-playbook.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-api-design/rules/07-security-operations.md"
+      ]
+    },
+    "sota-observability/rules/04-slos-alerting.md": {
+      "index": [
+        "sota-observability/SKILL.md"
+      ],
+      "same": [
+        "sota-observability/rules/05-operational-readiness.md",
+        "sota-observability/rules/06-audit-playbook.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-detection-engineering/SKILL.md",
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-detection-engineering/rules/04-alerting-triage-soc-soar.md"
+      ]
+    },
+    "sota-observability/rules/05-operational-readiness.md": {
+      "index": [
+        "sota-observability/SKILL.md"
+      ],
+      "same": [
+        "sota-observability/rules/01-structured-logging.md",
+        "sota-observability/rules/04-slos-alerting.md",
+        "sota-observability/rules/06-audit-playbook.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-api-design/rules/02-versioning-evolution.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-golang/rules/06-performance.md",
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-jvm/rules/08-web-layer.md",
+        "sota-performance/rules/01-methodology.md",
+        "sota-python/rules/07-frameworks-testing.md",
+        "sota-secrets-management/rules/03-application-patterns.md",
+        "sota-shell-scripting/rules/09-listing-and-selection.md"
+      ]
+    },
+    "sota-observability/rules/06-audit-playbook.md": {
+      "index": [
+        "sota-observability/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-performance/rules/01-methodology.md": {
+      "index": [
+        "sota-performance/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-devsecops/rules/11-after-the-gate-fails.md",
+        "sota-observability/rules/02-metrics.md"
+      ]
+    },
+    "sota-performance/rules/02-algorithms-data-structures.md": {
+      "index": [
+        "sota-performance/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-performance/rules/03-memory.md": {
+      "index": [
+        "sota-performance/SKILL.md"
+      ],
+      "same": [
+        "sota-performance/rules/01-methodology.md",
+        "sota-performance/rules/04-io-network.md",
+        "sota-performance/rules/05-caching.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-performance/rules/04-io-network.md": {
+      "index": [
+        "sota-performance/SKILL.md"
+      ],
+      "same": [
+        "sota-performance/rules/01-methodology.md",
+        "sota-performance/rules/05-caching.md",
+        "sota-performance/rules/06-frontend-web.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-performance/rules/05-caching.md": {
+      "index": [
+        "sota-performance/SKILL.md"
+      ],
+      "same": [
+        "sota-performance/rules/01-methodology.md",
+        "sota-performance/rules/02-algorithms-data-structures.md",
+        "sota-performance/rules/04-io-network.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-databases/rules/05-reliability-and-scale.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-performance/rules/06-frontend-web.md": {
+      "index": [
+        "sota-performance/SKILL.md"
+      ],
+      "same": [
+        "sota-performance/rules/04-io-network.md",
+        "sota-performance/rules/05-caching.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-web-frameworks/SKILL.md",
+        "sota-web-frameworks/rules/01-baseline.md"
+      ]
+    },
+    "sota-php/rules/01-language-baseline.md": {
+      "index": [
+        "sota-php/SKILL.md"
+      ],
+      "same": [
+        "sota-php/rules/02-injection.md",
+        "sota-php/rules/04-sessions-auth-web-hardening.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md",
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-php/rules/02-injection.md": {
+      "index": [
+        "sota-php/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/02-authentication.md"
+      ]
+    },
+    "sota-php/rules/03-files-deserialization-ssrf.md": {
+      "index": [
+        "sota-php/SKILL.md"
+      ],
+      "same": [
+        "sota-php/rules/02-injection.md",
+        "sota-php/rules/04-sessions-auth-web-hardening.md",
+        "sota-php/rules/05-composer-tooling.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-php/rules/04-sessions-auth-web-hardening.md": {
+      "index": [
+        "sota-php/SKILL.md"
+      ],
+      "same": [
+        "sota-php/rules/01-language-baseline.md",
+        "sota-php/rules/02-injection.md",
+        "sota-php/rules/06-performance-runtime.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/17-sessions-and-tokens.md"
+      ]
+    },
+    "sota-php/rules/05-composer-tooling.md": {
+      "index": [
+        "sota-php/SKILL.md"
+      ],
+      "same": [
+        "sota-php/rules/01-language-baseline.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-php/rules/06-performance-runtime.md": {
+      "index": [
+        "sota-php/SKILL.md"
+      ],
+      "same": [
+        "sota-php/rules/01-language-baseline.md",
+        "sota-php/rules/05-composer-tooling.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md",
+        "sota-performance/SKILL.md"
+      ]
+    },
+    "sota-privacy-compliance/rules/01-data-inventory-classification.md": {
+      "index": [
+        "sota-privacy-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-privacy-compliance/rules/02-privacy-by-design.md",
+        "sota-privacy-compliance/rules/03-consent-and-user-rights.md",
+        "sota-privacy-compliance/rules/04-regulatory-landscape.md",
+        "sota-privacy-compliance/rules/05-audit-ready-engineering.md",
+        "sota-privacy-compliance/rules/06-incident-breach-readiness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-security-compliance/rules/01-control-frameworks-as-code.md",
+        "sota-security-compliance/rules/03-ssdf-secure-sdlc.md"
+      ]
+    },
+    "sota-privacy-compliance/rules/02-privacy-by-design.md": {
+      "index": [
+        "sota-privacy-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-privacy-compliance/rules/01-data-inventory-classification.md",
+        "sota-privacy-compliance/rules/03-consent-and-user-rights.md",
+        "sota-privacy-compliance/rules/04-regulatory-landscape.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-confidential-computing/rules/05-pets-coed.md",
+        "sota-databases/rules/06-security-and-compliance.md"
+      ]
+    },
+    "sota-privacy-compliance/rules/03-consent-and-user-rights.md": {
+      "index": [
+        "sota-privacy-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-privacy-compliance/rules/01-data-inventory-classification.md",
+        "sota-privacy-compliance/rules/02-privacy-by-design.md",
+        "sota-privacy-compliance/rules/04-regulatory-landscape.md",
+        "sota-privacy-compliance/rules/05-audit-ready-engineering.md",
+        "sota-privacy-compliance/rules/06-incident-breach-readiness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/18-tamper-evident-logs.md",
+        "sota-copywriting/rules/04-claims-legal-trust.md",
+        "sota-databases/rules/06-security-and-compliance.md",
+        "sota-frontend-design/rules/07-visual-craft-distinctiveness.md"
+      ]
+    },
+    "sota-privacy-compliance/rules/04-regulatory-landscape.md": {
+      "index": [
+        "sota-privacy-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-privacy-compliance/rules/01-data-inventory-classification.md",
+        "sota-privacy-compliance/rules/02-privacy-by-design.md",
+        "sota-privacy-compliance/rules/03-consent-and-user-rights.md",
+        "sota-privacy-compliance/rules/05-audit-ready-engineering.md",
+        "sota-privacy-compliance/rules/06-incident-breach-readiness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-copywriting/rules/03-seo-content.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-security-compliance/rules/04-eu-cyber-resilience-act.md"
+      ]
+    },
+    "sota-privacy-compliance/rules/05-audit-ready-engineering.md": {
+      "index": [
+        "sota-privacy-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-privacy-compliance/rules/03-consent-and-user-rights.md",
+        "sota-privacy-compliance/rules/04-regulatory-landscape.md",
+        "sota-privacy-compliance/rules/06-incident-breach-readiness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-security-compliance/rules/01-control-frameworks-as-code.md"
+      ]
+    },
+    "sota-privacy-compliance/rules/06-incident-breach-readiness.md": {
+      "index": [
+        "sota-privacy-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-privacy-compliance/rules/04-regulatory-landscape.md",
+        "sota-privacy-compliance/rules/05-audit-ready-engineering.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md"
+      ]
+    },
+    "sota-python/rules/01-tooling-project-setup.md": {
+      "index": [
+        "sota-python/SKILL.md"
+      ],
+      "same": [
+        "sota-python/rules/04-async.md",
+        "sota-python/rules/05-security.md",
+        "sota-python/rules/06-performance.md",
+        "sota-python/rules/07-frameworks-testing.md",
+        "sota-python/rules/08-supply-chain.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-python/rules/02-typing-correctness.md": {
+      "index": [
+        "sota-python/SKILL.md"
+      ],
+      "same": [
+        "sota-python/rules/01-tooling-project-setup.md",
+        "sota-python/rules/03-idioms-pitfalls.md",
+        "sota-python/rules/06-performance.md",
+        "sota-python/rules/07-frameworks-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-databases/rules/01-choosing-and-modeling.md"
+      ]
+    },
+    "sota-python/rules/03-idioms-pitfalls.md": {
+      "index": [
+        "sota-python/SKILL.md"
+      ],
+      "same": [
+        "sota-python/rules/01-tooling-project-setup.md",
+        "sota-python/rules/02-typing-correctness.md",
+        "sota-python/rules/04-async.md",
+        "sota-python/rules/05-security.md",
+        "sota-python/rules/06-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-python/rules/04-async.md": {
+      "index": [
+        "sota-python/SKILL.md"
+      ],
+      "same": [
+        "sota-python/rules/06-performance.md",
+        "sota-python/rules/07-frameworks-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md",
+        "sota-async-concurrency/rules/07-audit-bug-catalog.md",
+        "sota-observability/rules/01-structured-logging.md"
+      ]
+    },
+    "sota-python/rules/05-security.md": {
+      "index": [
+        "sota-python/SKILL.md"
+      ],
+      "same": [
+        "sota-python/rules/01-tooling-project-setup.md",
+        "sota-python/rules/03-idioms-pitfalls.md",
+        "sota-python/rules/07-frameworks-testing.md",
+        "sota-python/rules/08-supply-chain.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-sandboxing/rules/04-process-app-sandboxing.md"
+      ]
+    },
+    "sota-python/rules/06-performance.md": {
+      "index": [
+        "sota-python/SKILL.md"
+      ],
+      "same": [
+        "sota-python/rules/01-tooling-project-setup.md",
+        "sota-python/rules/03-idioms-pitfalls.md",
+        "sota-python/rules/07-frameworks-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/SKILL.md",
+        "sota-secrets-management/rules/02-storage-backends.md"
+      ]
+    },
+    "sota-python/rules/07-frameworks-testing.md": {
+      "index": [
+        "sota-python/SKILL.md"
+      ],
+      "same": [
+        "sota-python/rules/02-typing-correctness.md",
+        "sota-python/rules/04-async.md",
+        "sota-python/rules/05-security.md",
+        "sota-python/rules/06-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-python/rules/08-supply-chain.md": {
+      "index": [
+        "sota-python/SKILL.md"
+      ],
+      "same": [
+        "sota-python/rules/01-tooling-project-setup.md",
+        "sota-python/rules/05-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/15-dependency-adoption.md"
+      ]
+    },
+    "sota-ruby/rules/01-language-idioms.md": {
+      "index": [
+        "sota-ruby/SKILL.md"
+      ],
+      "same": [
+        "sota-ruby/rules/02-security.md",
+        "sota-ruby/rules/05-concurrency-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-ruby/rules/02-security.md": {
+      "index": [
+        "sota-ruby/SKILL.md"
+      ],
+      "same": [
+        "sota-ruby/rules/03-web-hardening.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-ruby/rules/03-web-hardening.md": {
+      "index": [
+        "sota-ruby/SKILL.md"
+      ],
+      "same": [
+        "sota-ruby/rules/02-security.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-jvm/rules/08-web-layer.md"
+      ]
+    },
+    "sota-ruby/rules/04-supply-chain-tooling.md": {
+      "index": [
+        "sota-ruby/SKILL.md"
+      ],
+      "same": [
+        "sota-ruby/rules/01-language-idioms.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/15-dependency-adoption.md",
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-ruby/rules/05-concurrency-performance.md": {
+      "index": [
+        "sota-ruby/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md",
+        "sota-performance/SKILL.md"
+      ]
+    },
+    "sota-rust/rules/01-ownership-and-api-design.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/03-unsafe-discipline.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-rust/rules/06-performance.md",
+        "sota-rust/rules/07-tooling-ci.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md"
+      ]
+    },
+    "sota-rust/rules/02-errors-and-panics.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/03-unsafe-discipline.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-rust/rules/06-performance.md",
+        "sota-rust/rules/07-tooling-ci.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-rust/rules/03-unsafe-discipline.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/01-ownership-and-api-design.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-rust/rules/06-performance.md",
+        "sota-rust/rules/07-tooling-ci.md",
+        "sota-rust/rules/09-formal-verification.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-rust/rules/04-async-tokio.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/01-ownership-and-api-design.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-rust/rules/06-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md"
+      ]
+    },
+    "sota-rust/rules/05-security-supply-chain.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/01-ownership-and-api-design.md",
+        "sota-rust/rules/02-errors-and-panics.md",
+        "sota-rust/rules/03-unsafe-discipline.md",
+        "sota-rust/rules/06-performance.md",
+        "sota-rust/rules/07-tooling-ci.md",
+        "sota-rust/rules/08-external-programs.md",
+        "sota-rust/rules/09-formal-verification.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/15-dependency-adoption.md"
+      ]
+    },
+    "sota-rust/rules/06-performance.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/01-ownership-and-api-design.md",
+        "sota-rust/rules/02-errors-and-panics.md",
+        "sota-rust/rules/07-tooling-ci.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/SKILL.md"
+      ]
+    },
+    "sota-rust/rules/07-tooling-ci.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/02-errors-and-panics.md",
+        "sota-rust/rules/05-security-supply-chain.md",
+        "sota-rust/rules/06-performance.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/02-provenance-signing.md",
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-rust/rules/08-external-programs.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/04-async-tokio.md",
+        "sota-rust/rules/05-security-supply-chain.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-sandboxing/rules/04-process-app-sandboxing.md"
+      ]
+    },
+    "sota-rust/rules/09-formal-verification.md": {
+      "index": [
+        "sota-rust/SKILL.md"
+      ],
+      "same": [
+        "sota-rust/rules/03-unsafe-discipline.md",
+        "sota-rust/rules/05-security-supply-chain.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/03-distributed-systems-and-events.md",
+        "sota-c-cpp/rules/06-build-tooling-ci.md",
+        "sota-dotnet/rules/06-build-tooling-ci.md",
+        "sota-golang/rules/07-tooling-ci.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md",
+        "sota-jvm/rules/06-build-tooling-ci.md",
+        "sota-php/rules/05-composer-tooling.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md",
+        "sota-swift/rules/08-tooling-ci-testing.md"
+      ]
+    },
+    "sota-sandboxing/rules/01-isolation-boundaries.md": {
+      "index": [
+        "sota-sandboxing/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-confidential-computing/rules/01-threat-model-and-selection.md",
+        "sota-confidential-computing/rules/02-tee-technologies.md",
+        "sota-confidential-computing/rules/04-confidential-kubernetes.md",
+        "sota-confidential-computing/rules/05-pets-coed.md",
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/06-workloads-tenancy.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-rust/rules/08-external-programs.md"
+      ]
+    },
+    "sota-sandboxing/rules/02-linux-os-hardening.md": {
+      "index": [
+        "sota-sandboxing/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-databases/rules/06-security-and-compliance.md",
+        "sota-network-security/SKILL.md",
+        "sota-network-security/rules/02-segmentation-blast-radius.md",
+        "sota-python/rules/05-security.md",
+        "sota-rust/rules/08-external-programs.md",
+        "sota-shell-scripting/rules/08-ad-hoc-side-effects.md"
+      ]
+    },
+    "sota-sandboxing/rules/03-containers-microvms.md": {
+      "index": [
+        "sota-sandboxing/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/01-control-plane-etcd.md",
+        "sota-kubernetes/rules/03-admission-policy.md",
+        "sota-kubernetes/rules/06-workloads-tenancy.md",
+        "sota-network-security/rules/03-k8s-network-policy.md"
+      ]
+    },
+    "sota-sandboxing/rules/04-process-app-sandboxing.md": {
+      "index": [
+        "sota-sandboxing/SKILL.md"
+      ],
+      "same": [],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-c-cpp/rules/04-security.md",
+        "sota-code-security/rules/06-memory-resource-safety.md",
+        "sota-javascript-typescript/rules/04-node-backend.md",
+        "sota-jvm/rules/04-security.md",
+        "sota-rust/rules/08-external-programs.md",
+        "sota-testing/rules/07-suite-health-and-ci.md"
+      ]
+    },
+    "sota-sandboxing/rules/05-ai-agent-sandboxing.md": {
+      "index": [
+        "sota-sandboxing/SKILL.md"
+      ],
+      "same": [],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-code-security/rules/08-llm-ai-security.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
+        "sota-detection-engineering/rules/05-hunting-intel-deception.md",
+        "sota-detection-engineering/rules/06-incident-response-validation.md",
+        "sota-llm-engineering/SKILL.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-llm-engineering/rules/05-production-engineering.md",
+        "sota-llm-engineering/rules/06-data-lifecycle.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md"
+      ]
+    },
+    "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md": {
+      "index": [
+        "sota-secrets-management/SKILL.md"
+      ],
+      "same": [
+        "sota-secrets-management/rules/02-storage-backends.md",
+        "sota-secrets-management/rules/03-application-patterns.md",
+        "sota-secrets-management/rules/04-detection-and-remediation.md",
+        "sota-secrets-management/rules/05-credential-types.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-confidential-computing/rules/05-pets-coed.md",
+        "sota-identity-access/SKILL.md",
+        "sota-identity-access/rules/05-privileged-workload.md",
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/02-rbac-serviceaccounts.md"
+      ]
+    },
+    "sota-secrets-management/rules/02-storage-backends.md": {
+      "index": [
+        "sota-secrets-management/SKILL.md"
+      ],
+      "same": [
+        "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md",
+        "sota-secrets-management/rules/03-application-patterns.md",
+        "sota-secrets-management/rules/05-credential-types.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/07-data-exposure.md",
+        "sota-confidential-computing/rules/01-threat-model-and-selection.md",
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-kubernetes/SKILL.md",
+        "sota-kubernetes/rules/05-operators-crds-webhooks.md",
+        "sota-kubernetes/rules/06-workloads-tenancy.md",
+        "sota-python/rules/06-performance.md"
+      ]
+    },
+    "sota-secrets-management/rules/03-application-patterns.md": {
+      "index": [
+        "sota-secrets-management/SKILL.md"
+      ],
+      "same": [
+        "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md",
+        "sota-secrets-management/rules/02-storage-backends.md",
+        "sota-secrets-management/rules/04-detection-and-remediation.md",
+        "sota-secrets-management/rules/05-credential-types.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-cloud-infrastructure/rules/04-compute-selection.md",
+        "sota-cloud-infrastructure/rules/05-data-storage.md",
+        "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-php/rules/04-sessions-auth-web-hardening.md"
+      ]
+    },
+    "sota-secrets-management/rules/04-detection-and-remediation.md": {
+      "index": [
+        "sota-secrets-management/SKILL.md"
+      ],
+      "same": [
+        "sota-secrets-management/rules/03-application-patterns.md",
+        "sota-secrets-management/rules/05-credential-types.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/23-llm-platform-supply-chain.md",
+        "sota-detection-engineering/SKILL.md",
+        "sota-detection-engineering/rules/05-hunting-intel-deception.md",
+        "sota-detection-engineering/rules/07-ad-attack-detection.md",
+        "sota-devsecops/rules/05-analysis-gates.md",
+        "sota-devsecops/rules/12-scm-ci-platform-governance.md",
+        "sota-docs-workflow/rules/01-documentation-architecture.md",
+        "sota-ml-engineering/rules/07-security-governance.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md",
+        "sota-skill-security/rules/02-trust-boundary-and-capability.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-secrets-management/rules/05-credential-types.md": {
+      "index": [
+        "sota-secrets-management/SKILL.md"
+      ],
+      "same": [
+        "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md",
+        "sota-secrets-management/rules/02-storage-backends.md",
+        "sota-secrets-management/rules/04-detection-and-remediation.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/04-cryptography.md",
+        "sota-identity-access/SKILL.md",
+        "sota-identity-access/rules/02-idp-operations.md",
+        "sota-identity-access/rules/05-privileged-workload.md"
+      ]
+    },
+    "sota-security-compliance/rules/01-control-frameworks-as-code.md": {
+      "index": [
+        "sota-security-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-security-compliance/rules/02-nist-800-53-171-cmmc-fedramp.md",
+        "sota-security-compliance/rules/03-ssdf-secure-sdlc.md",
+        "sota-security-compliance/rules/05-iec-62443-ot-ics.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-security-compliance/rules/02-nist-800-53-171-cmmc-fedramp.md": {
+      "index": [
+        "sota-security-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-security-compliance/rules/01-control-frameworks-as-code.md",
+        "sota-security-compliance/rules/05-iec-62443-ot-ics.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-secrets-management/rules/05-credential-types.md"
+      ]
+    },
+    "sota-security-compliance/rules/03-ssdf-secure-sdlc.md": {
+      "index": [
+        "sota-security-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-security-compliance/rules/02-nist-800-53-171-cmmc-fedramp.md",
+        "sota-security-compliance/rules/05-iec-62443-ot-ics.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-security-compliance/rules/04-eu-cyber-resilience-act.md": {
+      "index": [
+        "sota-security-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-security-compliance/rules/01-control-frameworks-as-code.md",
+        "sota-security-compliance/rules/03-ssdf-secure-sdlc.md",
+        "sota-security-compliance/rules/05-iec-62443-ot-ics.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-c-cpp/SKILL.md",
+        "sota-privacy-compliance/rules/06-incident-breach-readiness.md"
+      ]
+    },
+    "sota-security-compliance/rules/05-iec-62443-ot-ics.md": {
+      "index": [
+        "sota-security-compliance/SKILL.md"
+      ],
+      "same": [
+        "sota-security-compliance/rules/02-nist-800-53-171-cmmc-fedramp.md",
+        "sota-security-compliance/rules/04-eu-cyber-resilience-act.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-c-cpp/SKILL.md"
+      ]
+    },
+    "sota-shell-scripting/rules/01-safety-baseline.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-shell-scripting/rules/03-security.md",
+        "sota-shell-scripting/rules/04-ci-and-operational.md",
+        "sota-shell-scripting/rules/05-constructs-and-cleanup.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-shell-scripting/rules/07-powershell.md",
+        "sota-shell-scripting/rules/08-ad-hoc-side-effects.md",
+        "sota-shell-scripting/rules/09-listing-and-selection.md"
+      ],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/03-audit-findings.md"
+      ],
+      "other": [
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-devsecops/rules/11-after-the-gate-fails.md",
+        "sota-testing/rules/04-integration-contract-system.md",
+        "sota-testing/rules/07-suite-health-and-ci.md"
+      ]
+    },
+    "sota-shell-scripting/rules/02-robustness-correctness.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/03-security.md",
+        "sota-shell-scripting/rules/04-ci-and-operational.md",
+        "sota-shell-scripting/rules/05-constructs-and-cleanup.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-devsecops/rules/09-gates-that-hold.md"
+      ]
+    },
+    "sota-shell-scripting/rules/03-security.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-shell-scripting/rules/04-ci-and-operational.md",
+        "sota-shell-scripting/rules/07-powershell.md",
+        "sota-shell-scripting/rules/08-ad-hoc-side-effects.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-cli-ux/rules/04-distribution-docs.md",
+        "sota-devsecops/rules/02-provenance-signing.md",
+        "sota-rust/rules/09-formal-verification.md",
+        "sota-testing/rules/07-suite-health-and-ci.md"
+      ]
+    },
+    "sota-shell-scripting/rules/04-ci-and-operational.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/03-security.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-shell-scripting/rules/07-powershell.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/04-build-containers.md"
+      ]
+    },
+    "sota-shell-scripting/rules/05-constructs-and-cleanup.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-shell-scripting/rules/03-security.md",
+        "sota-shell-scripting/rules/04-ci-and-operational.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-shell-scripting/rules/07-powershell.md"
+      ],
+      "router": [
+        "sota/rules/04-library-map.md"
+      ],
+      "other": [
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md"
+      ]
+    },
+    "sota-shell-scripting/rules/06-ad-hoc-commands.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/05-constructs-and-cleanup.md",
+        "sota-shell-scripting/rules/07-powershell.md",
+        "sota-shell-scripting/rules/08-ad-hoc-side-effects.md",
+        "sota-shell-scripting/rules/09-listing-and-selection.md"
+      ],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/01-audit-methodology.md",
+        "sota/rules/02-build-workflow.md"
+      ],
+      "other": [
+        "sota-c-cpp/rules/01-idioms.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md"
+      ]
+    },
+    "sota-shell-scripting/rules/07-powershell.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/02-robustness-correctness.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/09-gates-that-hold.md"
+      ]
+    },
+    "sota-shell-scripting/rules/08-ad-hoc-side-effects.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/03-security.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-shell-scripting/rules/09-listing-and-selection.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md",
+        "sota-testing/rules/07-suite-health-and-ci.md"
+      ]
+    },
+    "sota-shell-scripting/rules/09-listing-and-selection.md": {
+      "index": [
+        "sota-shell-scripting/SKILL.md"
+      ],
+      "same": [
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/07-runtime-ops.md"
+      ]
+    },
+    "sota-skill-security/rules/01-provenance-and-installation.md": {
+      "index": [
+        "sota-skill-security/SKILL.md"
+      ],
+      "same": [
+        "sota-skill-security/rules/02-trust-boundary-and-capability.md",
+        "sota-skill-security/rules/03-authoring-and-auditing-skills.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/23-llm-platform-supply-chain.md",
+        "sota-docs-workflow/rules/05-spec-driven-development.md"
+      ]
+    },
+    "sota-skill-security/rules/02-trust-boundary-and-capability.md": {
+      "index": [
+        "sota-skill-security/SKILL.md"
+      ],
+      "same": [
+        "sota-skill-security/rules/01-provenance-and-installation.md",
+        "sota-skill-security/rules/03-authoring-and-auditing-skills.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-secrets-management/rules/04-detection-and-remediation.md"
+      ]
+    },
+    "sota-skill-security/rules/03-authoring-and-auditing-skills.md": {
+      "index": [
+        "sota-skill-security/SKILL.md"
+      ],
+      "same": [
+        "sota-skill-security/rules/01-provenance-and-installation.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-swift/rules/01-idioms-and-errors.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/02-api-design.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-mobile/rules/07-swift-in-apps.md"
+      ]
+    },
+    "sota-swift/rules/02-api-design.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/01-idioms-and-errors.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-swift/rules/03-concurrency.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/01-idioms-and-errors.md",
+        "sota-swift/rules/04-memory-and-unsafe.md",
+        "sota-swift/rules/06-server-side.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/SKILL.md",
+        "sota-mobile/rules/05-performance.md",
+        "sota-mobile/rules/07-swift-in-apps.md"
+      ]
+    },
+    "sota-swift/rules/04-memory-and-unsafe.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/03-concurrency.md",
+        "sota-swift/rules/05-security.md",
+        "sota-swift/rules/06-server-side.md",
+        "sota-swift/rules/08-tooling-ci-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/06-memory-resource-safety.md",
+        "sota-mobile/rules/07-swift-in-apps.md"
+      ]
+    },
+    "sota-swift/rules/05-security.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/09-supply-chain.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-swift/rules/06-server-side.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/01-idioms-and-errors.md",
+        "sota-swift/rules/05-security.md",
+        "sota-swift/rules/09-supply-chain.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-swift/rules/07-performance.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/02-api-design.md",
+        "sota-swift/rules/04-memory-and-unsafe.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/SKILL.md"
+      ]
+    },
+    "sota-swift/rules/08-tooling-ci-testing.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/04-memory-and-unsafe.md",
+        "sota-swift/rules/05-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-mobile/rules/07-swift-in-apps.md",
+        "sota-testing/SKILL.md"
+      ]
+    },
+    "sota-swift/rules/09-supply-chain.md": {
+      "index": [
+        "sota-swift/SKILL.md"
+      ],
+      "same": [
+        "sota-swift/rules/08-tooling-ci-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-mobile/rules/07-swift-in-apps.md"
+      ]
+    },
+    "sota-testing/rules/01-strategy-and-shape.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [
+        "sota-testing/rules/02-test-design-quality.md",
+        "sota-testing/rules/04-integration-contract-system.md",
+        "sota-testing/rules/05-e2e-and-ui.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md",
+        "sota-testing/rules/08-bdd-spec-by-example.md",
+        "sota-testing/rules/09-security-testing.md"
+      ],
+      "router": [
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-docs-workflow/rules/05-spec-driven-development.md"
+      ]
+    },
+    "sota-testing/rules/02-test-design-quality.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [
+        "sota-testing/rules/01-strategy-and-shape.md",
+        "sota-testing/rules/03-doubles-and-test-data.md",
+        "sota-testing/rules/05-e2e-and-ui.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md",
+        "sota-testing/rules/07-suite-health-and-ci.md",
+        "sota-testing/rules/08-bdd-spec-by-example.md",
+        "sota-testing/rules/09-security-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-async-concurrency/rules/07-audit-bug-catalog.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/15-instruments-and-guards.md"
+      ]
+    },
+    "sota-testing/rules/03-doubles-and-test-data.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [
+        "sota-testing/rules/01-strategy-and-shape.md",
+        "sota-testing/rules/02-test-design-quality.md",
+        "sota-testing/rules/04-integration-contract-system.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md",
+        "sota-testing/rules/07-suite-health-and-ci.md",
+        "sota-testing/rules/09-security-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/13-context-dependent-silence.md"
+      ]
+    },
+    "sota-testing/rules/04-integration-contract-system.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [
+        "sota-testing/rules/01-strategy-and-shape.md",
+        "sota-testing/rules/02-test-design-quality.md",
+        "sota-testing/rules/03-doubles-and-test-data.md",
+        "sota-testing/rules/05-e2e-and-ui.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md",
+        "sota-testing/rules/07-suite-health-and-ci.md",
+        "sota-testing/rules/09-security-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-devsecops/rules/07-runtime-ops.md"
+      ]
+    },
+    "sota-testing/rules/05-e2e-and-ui.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [
+        "sota-testing/rules/01-strategy-and-shape.md",
+        "sota-testing/rules/07-suite-health-and-ci.md",
+        "sota-testing/rules/08-bdd-spec-by-example.md",
+        "sota-testing/rules/09-security-testing.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/02-domain-modeling-and-boundaries.md"
+      ]
+    },
+    "sota-testing/rules/06-property-fuzzing-mutation.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [
+        "sota-testing/rules/01-strategy-and-shape.md",
+        "sota-testing/rules/02-test-design-quality.md",
+        "sota-testing/rules/03-doubles-and-test-data.md",
+        "sota-testing/rules/07-suite-health-and-ci.md",
+        "sota-testing/rules/08-bdd-spec-by-example.md",
+        "sota-testing/rules/09-security-testing.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-architecture/rules/02-domain-modeling-and-boundaries.md",
+        "sota-c-cpp/rules/06-build-tooling-ci.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-code-security/rules/22-constant-time-comparison.md",
+        "sota-dotnet/rules/06-build-tooling-ci.md",
+        "sota-golang/rules/07-tooling-ci.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md",
+        "sota-jvm/rules/06-build-tooling-ci.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md",
+        "sota-php/rules/05-composer-tooling.md",
+        "sota-python/rules/07-frameworks-testing.md",
+        "sota-ruby/rules/04-supply-chain-tooling.md",
+        "sota-rust/rules/07-tooling-ci.md",
+        "sota-rust/rules/09-formal-verification.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
+        "sota-swift/rules/08-tooling-ci-testing.md"
+      ]
+    },
+    "sota-testing/rules/07-suite-health-and-ci.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [
+        "sota-testing/rules/01-strategy-and-shape.md",
+        "sota-testing/rules/02-test-design-quality.md",
+        "sota-testing/rules/04-integration-contract-system.md",
+        "sota-testing/rules/05-e2e-and-ui.md",
+        "sota-testing/rules/06-property-fuzzing-mutation.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-architecture/rules/02-domain-modeling-and-boundaries.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-devsecops/rules/16-fast-ci-without-blind-spots.md",
+        "sota-docs-workflow/rules/03-code-review-pr-workflow.md",
+        "sota-llm-engineering/rules/04-agents-tools.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md"
+      ]
+    },
+    "sota-testing/rules/08-bdd-spec-by-example.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-docs-workflow/SKILL.md",
+        "sota-docs-workflow/rules/05-spec-driven-development.md"
+      ]
+    },
+    "sota-testing/rules/09-security-testing.md": {
+      "index": [
+        "sota-testing/SKILL.md"
+      ],
+      "same": [
+        "sota-testing/rules/07-suite-health-and-ci.md"
+      ],
+      "router": [
+        "sota/SKILL.md"
+      ],
+      "other": [
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-identity-access/rules/03-authorization-models.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md",
+        "sota-threat-modeling/rules/05-outputs-operationalization.md"
+      ]
+    },
+    "sota-threat-modeling/rules/01-methodologies.md": {
+      "index": [
+        "sota-threat-modeling/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-databases/rules/01-choosing-and-modeling.md"
+      ]
+    },
+    "sota-threat-modeling/rules/02-decomposition.md": {
+      "index": [
+        "sota-threat-modeling/SKILL.md"
+      ],
+      "same": [
+        "sota-threat-modeling/rules/03-threat-catalogs.md"
+      ],
+      "router": [
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": []
+    },
+    "sota-threat-modeling/rules/03-threat-catalogs.md": {
+      "index": [
+        "sota-threat-modeling/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": [
+        "sota-detection-engineering/rules/01-detection-engineering-discipline.md"
+      ]
+    },
+    "sota-threat-modeling/rules/04-risk-rating-treatment.md": {
+      "index": [
+        "sota-threat-modeling/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota-threat-modeling/rules/05-outputs-operationalization.md": {
+      "index": [
+        "sota-threat-modeling/SKILL.md"
+      ],
+      "same": [
+        "sota-threat-modeling/rules/01-methodologies.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-docs-workflow/rules/05-spec-driven-development.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-threat-modeling/rules/06-audit-reconstruction.md": {
+      "index": [
+        "sota-threat-modeling/SKILL.md"
+      ],
+      "same": [],
+      "router": [
+        "sota/SKILL.md",
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-security-compliance/rules/03-ssdf-secure-sdlc.md"
+      ]
+    },
+    "sota-ux-writing/rules/01-voice-tone-plain-language.md": {
+      "index": [
+        "sota-ux-writing/SKILL.md"
+      ],
+      "same": [
+        "sota-ux-writing/rules/03-errors-feedback.md",
+        "sota-ux-writing/rules/04-accessibility-localization.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-copywriting/rules/02-headlines-landing-pages.md"
+      ]
+    },
+    "sota-ux-writing/rules/02-microcopy-components.md": {
+      "index": [
+        "sota-ux-writing/SKILL.md"
+      ],
+      "same": [
+        "sota-ux-writing/rules/03-errors-feedback.md",
+        "sota-ux-writing/rules/04-accessibility-localization.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-frontend-design/rules/07-visual-craft-distinctiveness.md"
+      ]
+    },
+    "sota-ux-writing/rules/03-errors-feedback.md": {
+      "index": [
+        "sota-ux-writing/SKILL.md"
+      ],
+      "same": [
+        "sota-ux-writing/rules/02-microcopy-components.md",
+        "sota-ux-writing/rules/04-accessibility-localization.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-copywriting/rules/04-claims-legal-trust.md"
+      ]
+    },
+    "sota-ux-writing/rules/04-accessibility-localization.md": {
+      "index": [
+        "sota-ux-writing/SKILL.md"
+      ],
+      "same": [
+        "sota-ux-writing/rules/01-voice-tone-plain-language.md",
+        "sota-ux-writing/rules/02-microcopy-components.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-frontend-design/rules/04-ux-patterns.md"
+      ]
+    },
+    "sota-web-frameworks/rules/01-baseline.md": {
+      "index": [
+        "sota-web-frameworks/SKILL.md"
+      ],
+      "same": [
+        "sota-web-frameworks/rules/06-ssr-hydration.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-web-frameworks/rules/02-react.md": {
+      "index": [
+        "sota-web-frameworks/SKILL.md"
+      ],
+      "same": [
+        "sota-web-frameworks/rules/01-baseline.md",
+        "sota-web-frameworks/rules/06-ssr-hydration.md",
+        "sota-web-frameworks/rules/07-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-frontend-design/rules/03-design-systems-components.md",
+        "sota-javascript-typescript/rules/06-performance.md"
+      ]
+    },
+    "sota-web-frameworks/rules/03-nextjs.md": {
+      "index": [
+        "sota-web-frameworks/SKILL.md"
+      ],
+      "same": [
+        "sota-web-frameworks/rules/01-baseline.md",
+        "sota-web-frameworks/rules/02-react.md",
+        "sota-web-frameworks/rules/06-ssr-hydration.md",
+        "sota-web-frameworks/rules/07-security.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-performance/rules/05-caching.md",
+        "sota-testing/rules/09-security-testing.md"
+      ]
+    },
+    "sota-web-frameworks/rules/04-vue.md": {
+      "index": [
+        "sota-web-frameworks/SKILL.md"
+      ],
+      "same": [
+        "sota-web-frameworks/rules/02-react.md",
+        "sota-web-frameworks/rules/05-nuxt.md",
+        "sota-web-frameworks/rules/06-ssr-hydration.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-web-frameworks/rules/05-nuxt.md": {
+      "index": [
+        "sota-web-frameworks/SKILL.md"
+      ],
+      "same": [
+        "sota-web-frameworks/rules/01-baseline.md",
+        "sota-web-frameworks/rules/04-vue.md",
+        "sota-web-frameworks/rules/06-ssr-hydration.md",
+        "sota-web-frameworks/rules/07-security.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-web-frameworks/rules/06-ssr-hydration.md": {
+      "index": [
+        "sota-web-frameworks/SKILL.md"
+      ],
+      "same": [
+        "sota-web-frameworks/rules/01-baseline.md",
+        "sota-web-frameworks/rules/02-react.md",
+        "sota-web-frameworks/rules/03-nextjs.md",
+        "sota-web-frameworks/rules/04-vue.md",
+        "sota-web-frameworks/rules/05-nuxt.md",
+        "sota-web-frameworks/rules/07-security.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota-web-frameworks/rules/07-security.md": {
+      "index": [
+        "sota-web-frameworks/SKILL.md"
+      ],
+      "same": [
+        "sota-web-frameworks/rules/01-baseline.md",
+        "sota-web-frameworks/rules/02-react.md",
+        "sota-web-frameworks/rules/03-nextjs.md",
+        "sota-web-frameworks/rules/05-nuxt.md",
+        "sota-web-frameworks/rules/06-ssr-hydration.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota/rules/01-audit-methodology.md": {
+      "index": [
+        "sota/SKILL.md"
+      ],
+      "same": [
+        "sota/rules/03-audit-findings.md",
+        "sota/rules/05-audit-report-and-tracking.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-devsecops/rules/05-analysis-gates.md",
+        "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md",
+        "sota-threat-modeling/SKILL.md",
+        "sota-threat-modeling/rules/06-audit-reconstruction.md"
+      ]
+    },
+    "sota/rules/02-build-workflow.md": {
+      "index": [
+        "sota/SKILL.md"
+      ],
+      "same": [
+        "sota/rules/04-library-map.md"
+      ],
+      "router": [],
+      "other": []
+    },
+    "sota/rules/03-audit-findings.md": {
+      "index": [
+        "sota/SKILL.md"
+      ],
+      "same": [
+        "sota/rules/01-audit-methodology.md",
+        "sota/rules/05-audit-report-and-tracking.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-c-cpp/SKILL.md",
+        "sota-code-security/rules/11-dead-path-diagnostics.md",
+        "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-code-security/rules/15-instruments-and-guards.md",
+        "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-docs-workflow/rules/01-documentation-architecture.md",
+        "sota-dotnet/SKILL.md",
+        "sota-golang/SKILL.md",
+        "sota-javascript-typescript/SKILL.md",
+        "sota-jvm/SKILL.md",
+        "sota-kubernetes/rules/04-gitops-controllers.md",
+        "sota-llm-engineering/rules/07-code-generation-evals.md",
+        "sota-php/SKILL.md",
+        "sota-python/SKILL.md",
+        "sota-ruby/SKILL.md",
+        "sota-rust/SKILL.md",
+        "sota-sandboxing/rules/05-ai-agent-sandboxing.md",
+        "sota-security-compliance/rules/04-eu-cyber-resilience-act.md",
+        "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-swift/SKILL.md",
+        "sota-testing/rules/04-integration-contract-system.md",
+        "sota-testing/rules/07-suite-health-and-ci.md",
+        "sota-threat-modeling/rules/04-risk-rating-treatment.md",
+        "sota-threat-modeling/rules/06-audit-reconstruction.md"
+      ]
+    },
+    "sota/rules/04-library-map.md": {
+      "index": [
+        "sota/SKILL.md"
+      ],
+      "same": [],
+      "router": [],
+      "other": []
+    },
+    "sota/rules/05-audit-report-and-tracking.md": {
+      "index": [
+        "sota/SKILL.md"
+      ],
+      "same": [
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "router": [],
+      "other": [
+        "sota-code-security/rules/12-verifying-the-verifier.md"
+      ]
+    }
+  },
   "surfaces": {
     "commands": [
       "sota-audit",
