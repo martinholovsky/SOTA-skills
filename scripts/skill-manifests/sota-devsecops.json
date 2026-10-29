@@ -192,7 +192,7 @@
    "build": [
     "ci-speed"
    ],
-   "index_row": "| [rules/16-fast-ci-without-blind-spots.md](rules/16-fast-ci-without-blind-spots.md) | **When CI is slow: measure before you optimise, then cut it without making a required check pass unrun** · per-job and per-step timing and the critical path (§16.1); caching keyed on what determines it, where a `restore-keys` match is not a hit (§16.2); change-scoping, where path filters leave a required check Pending and a job skipped by `if:` reports Success (§16.3); sharding under one `always()` aggregator that keeps the required name and proves every unit ran once (§16.4); cancelling superseded PR runs and `timeout-minutes` on every job (§16.5); and measuring equivalence before and after (§16.6) |"
+   "index_row": "| [rules/16-fast-ci-without-blind-spots.md](rules/16-fast-ci-without-blind-spots.md) | **When CI is slow: measure before you optimise, then cut it without making a required check pass unrun** · per-job and per-step timing and the critical path (§16.1); caching keyed on what determines it, where a `restore-keys` match is not a hit, and when a runner may reuse a gate's own pass (§16.2); shared compiler, image-layer and remote build caches, which only trusted CI may write (§16.2a); change-scoping, where path filters leave a required check Pending and a job skipped by `if:` reports Success (§16.3); sharding under one `always()` aggregator that keeps the required name and proves every unit ran once (§16.4); cancelling superseded PR runs and `timeout-minutes` on every job (§16.5); and measuring equivalence before and after (§16.6) |"
   }
  },
  "via": [

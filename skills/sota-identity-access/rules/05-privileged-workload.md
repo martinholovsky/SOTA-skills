@@ -93,7 +93,8 @@ API key or service-account key file baked into config). Replace it:
   access token at the IdP/cloud — no stored credential at all. This is the preferred way
   for CI→cloud and service→cloud. The OIDC-federation *mechanics* are
   **[sota-secrets-management** rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md); the *identity design* (one workload identity per
-  service, narrowly scoped, attested) is here.
+  service, narrowly scoped, attested) is here. Which platform identity each cloud runtime issues
+  is [`sota-cloud-infrastructure` rules/02](../../sota-cloud-infrastructure/rules/02-iam-design.md) §2.
 - **Short-lived over static, always.** A workload credential should live minutes, be
   scoped to one service's needs, and rotate automatically. A static service-account key
   in a repo/config/env is a defect — push it up the hierarchy to federation or SVIDs.

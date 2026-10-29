@@ -145,7 +145,8 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
   changes (recompute, don't append); admin roles audited and minimal.
 - **ABAC**: policy over attributes (user dept, resource classification, time,
   device). Use when context matters; keep policies in one engine (OPA/Rego,
-  Cedar, Casbin), versioned and tested like code:
+  Cedar, Casbin), versioned and tested like code (choosing an engine, and its pitfalls:
+  [`sota-identity-access` rules/03](../../sota-identity-access/rules/03-authorization-models.md) §5):
 
 ```cedar
 // Cedar: explicit, testable, deny-by-default (no permit -> deny)

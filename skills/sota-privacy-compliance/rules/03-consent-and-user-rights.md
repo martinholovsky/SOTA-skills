@@ -163,7 +163,8 @@ recorded derivative graph ([rules/01](01-data-inventory-classification.md) §5) 
    resurrect from a stale source snapshot.
 4. **Analytics/warehouse** — delete or null user rows in warehouse + downstream
    marts; modern lakehouse formats (Iceberg/Delta) support targeted deletes;
-   schedule compaction so deleted data physically leaves storage.
+   schedule compaction so deleted data physically leaves storage; old snapshots keep the bytes
+   until snapshot expiry runs ([`sota-data-engineering` rules/06](../../sota-data-engineering/rules/06-operations-and-governance.md) §4).
 5. **Logs** — bounded retention (e.g., 30–90 d) usually suffices instead of
    per-user log scrubbing — acceptable and defensible IF retention is short,
    enforced, and documented; long-retention logs containing PII make per-user

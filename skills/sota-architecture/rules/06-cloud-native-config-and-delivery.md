@@ -60,7 +60,7 @@ ships them. Apps never manage log files, rotation, or destinations.
 - **Structured logs** with correlation/trace IDs and tenant/user context (no PII/secrets — enforce with log scrubbing).
 - **Metrics**: RED (rate, errors, duration) per endpoint/consumer + key business metrics + saturation (pools, queues).
 - **Distributed traces** (OpenTelemetry), context propagated across HTTP *and* queues ([rules/03](03-distributed-systems-and-events.md) §9).
-- **SLOs with alerts on burn rate** — alert on user-impacting symptoms (SLO burn), page on those; cause-based alerts are tickets, not pages.
+- **SLOs with alerts on burn rate** — alert on user-impacting symptoms (SLO burn), page on those; cause-based alerts are tickets, not pages. Burn-rate windows: [`sota-observability` rules/04](../../sota-observability/rules/04-slos-alerting.md) §3.
 
 **Rule:** If you can't answer "what did request X do across services, and why was
 it slow?" from telemetry alone, observability is insufficient — that's a High

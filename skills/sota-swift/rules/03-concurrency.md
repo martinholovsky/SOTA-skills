@@ -17,7 +17,8 @@ The cross-runtime model — structured concurrency, cancellation and timeouts, b
   - **Default isolation** per module (SE-0466): `-default-isolation MainActor` /
     `.defaultIsolation(MainActor.self)`. The proposal: *"If no `-default-isolation` flag is
     specified, the default isolation for the module is `nonisolated`."* Use `MainActor` default
-    for UI/app modules; leave libraries and servers `nonisolated`.
+    for UI/app modules; leave libraries and servers `nonisolated`. What that means in UI code:
+    [`sota-mobile` rules/07](../../sota-mobile/rules/07-swift-in-apps.md) §1.
   - `NonisolatedNonsendingByDefault` (SE-0461, upcoming feature) runs `nonisolated` async
     functions in the caller's context; `@concurrent` marks the ones that should leave it.
 

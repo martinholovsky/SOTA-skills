@@ -193,7 +193,8 @@ a suite that can't run parallel is telling you it has shared state.
   safe change-scoping, an aggregator over shards): [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md).
 - Cache dependency/image layers, never test *results* across code changes
   unless keyed by a content hash you trust (build systems that hash inputs
-  may; hand-rolled "skip if green yesterday" may not).
+  may; hand-rolled "skip if green yesterday" may not). A runner that reuses a gate's own
+  pass meets that bar only under [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2's conditions.
 
 ## 7.6 Failure triage discipline
 

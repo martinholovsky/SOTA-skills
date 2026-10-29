@@ -319,7 +319,7 @@ configuration is usually valid YAML with no expression in it.
   audit who has Actions write (can dispatch with arbitrary inputs).
 - Disable Actions entirely on repos that don't need it (org policy: "Allow select repos").
 
-## 1.9 Concurrency, caches, and run integrity
+## 1.9 Concurrency and run integrity
 
 - `concurrency:` groups on deploy workflows (`group: deploy-prod, cancel-in-progress:
   false`) — two concurrent applies/deploys interleaving is a corruption class, and

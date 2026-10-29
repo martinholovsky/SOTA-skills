@@ -199,7 +199,7 @@ tests/contract/
 
 - Machine-readable changelog (one entry per change: date, surface affected,
   additive/deprecation/breaking, link). Generated from spec diffs where
-  possible; hand-written prose drifts.
+  possible; hand-written prose drifts. Changelog format and migration guides: [`sota-docs-workflow` rules/02](../../sota-docs-workflow/rules/02-api-reference-changelogs.md) §6 and §7.
 - Every API key/app has a registered owner contact; deprecation mail goes to
   owners of keys that *actually called* the deprecated surface in the last 90
   days (from §5 metrics) — not a newsletter blast everyone filters.
