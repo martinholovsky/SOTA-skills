@@ -135,7 +135,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
   succeeded. Two ways it still let the package through, both measured:
   - **The check runs only when a package is extracted into the global packages folder.** A package
     already there from an earlier, laxer restore was used without any check (restore exit 0). So CI
-    needs a fresh `NUGET_PACKAGES` folder, or a cache keyed on the `nuget.config` content.
+    needs a fresh `NUGET_PACKAGES` folder, or a cache keyed on the `nuget.config` content (a key that omits an input: [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2).
   - **`DOTNET_NUGET_SIGNATURE_VERIFICATION=false` turns verification off even under `require`.**
     Microsoft's "NuGet signed-package verification" page says Linux verifies by default from the
     .NET 8 SDK on, and macOS does not; Microsoft advises against turning it on there, so on a macOS

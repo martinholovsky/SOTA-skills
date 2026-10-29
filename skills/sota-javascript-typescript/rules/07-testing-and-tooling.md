@@ -267,7 +267,7 @@ steps:
   - run: pnpm build
 ```
 
-`--max-warnings 0` keeps warnings from becoming wallpaper. Cache pnpm store, not node_modules. Pin action SHAs ([rules/05](05-security.md)).
+`--max-warnings 0` keeps warnings from becoming wallpaper. Cache pnpm store, not node_modules; key and count it per [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2. Pin action SHAs ([rules/05](05-security.md)).
 
 ## Audit checklist
 

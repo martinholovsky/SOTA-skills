@@ -771,6 +771,20 @@
       ]
     },
     {
+      "from": "sota-rust",
+      "to": "sota-devsecops",
+      "weight": 8,
+      "targets": [
+        "rules/03 \u00a73.1",
+        "rules/05 \u00a75.1",
+        "rules/09 \u00a72",
+        "rules/09 \u00a72a",
+        "rules/10",
+        "rules/10 \u00a75",
+        "rules/16 \u00a716.2"
+      ]
+    },
+    {
       "from": "sota-sandboxing",
       "to": "sota-code-security",
       "weight": 8,
@@ -881,6 +895,19 @@
       "targets": [
         "rules/01 \u00a710",
         "rules/07 \u00a72"
+      ]
+    },
+    {
+      "from": "sota-golang",
+      "to": "sota-devsecops",
+      "weight": 7,
+      "targets": [
+        "rules/03 \u00a73.1",
+        "rules/03 \u00a73.7",
+        "rules/05 \u00a75.1",
+        "rules/10",
+        "rules/14 \u00a714.6",
+        "rules/16 \u00a716.2"
       ]
     },
     {
@@ -1054,15 +1081,14 @@
       ]
     },
     {
-      "from": "sota-golang",
+      "from": "sota-dotnet",
       "to": "sota-devsecops",
       "weight": 6,
       "targets": [
-        "rules/03 \u00a73.1",
-        "rules/03 \u00a73.7",
+        "rules/01 \u00a71.10",
         "rules/05 \u00a75.1",
-        "rules/10",
-        "rules/14 \u00a714.6"
+        "rules/14 \u00a714.6",
+        "rules/16 \u00a716.2"
       ]
     },
     {
@@ -1079,6 +1105,18 @@
       "to": "sota-privacy-compliance",
       "weight": 6,
       "targets": []
+    },
+    {
+      "from": "sota-javascript-typescript",
+      "to": "sota-devsecops",
+      "weight": 6,
+      "targets": [
+        "rules/03 \u00a73.1",
+        "rules/05 \u00a75.1",
+        "rules/10",
+        "rules/14 \u00a714.6",
+        "rules/16 \u00a716.2"
+      ]
     },
     {
       "from": "sota-ml-engineering",
@@ -1107,19 +1145,6 @@
       "targets": []
     },
     {
-      "from": "sota-rust",
-      "to": "sota-devsecops",
-      "weight": 6,
-      "targets": [
-        "rules/03 \u00a73.1",
-        "rules/05 \u00a75.1",
-        "rules/09 \u00a72",
-        "rules/09 \u00a72a",
-        "rules/10",
-        "rules/10 \u00a75"
-      ]
-    },
-    {
       "from": "sota-security-compliance",
       "to": "sota-identity-access",
       "weight": 6,
@@ -1131,6 +1156,17 @@
       "weight": 6,
       "targets": [
         "rules/04"
+      ]
+    },
+    {
+      "from": "sota-testing",
+      "to": "sota-devsecops",
+      "weight": 6,
+      "targets": [
+        "rules/03 \u00a73.7",
+        "rules/05",
+        "rules/07 \u00a77.7",
+        "rules/16"
       ]
     },
     {
@@ -1242,16 +1278,6 @@
       ]
     },
     {
-      "from": "sota-dotnet",
-      "to": "sota-devsecops",
-      "weight": 5,
-      "targets": [
-        "rules/01 \u00a71.10",
-        "rules/05 \u00a75.1",
-        "rules/14 \u00a714.6"
-      ]
-    },
-    {
       "from": "sota-javascript-typescript",
       "to": "sota-architecture",
       "weight": 5,
@@ -1260,17 +1286,6 @@
         "rules/02 \u00a78a",
         "rules/04 \u00a72",
         "rules/04 \u00a77"
-      ]
-    },
-    {
-      "from": "sota-javascript-typescript",
-      "to": "sota-devsecops",
-      "weight": 5,
-      "targets": [
-        "rules/03 \u00a73.1",
-        "rules/05 \u00a75.1",
-        "rules/10",
-        "rules/14 \u00a714.6"
       ]
     },
     {
@@ -1364,17 +1379,6 @@
       "targets": [
         "rules/03 \u00a77",
         "rules/05"
-      ]
-    },
-    {
-      "from": "sota-testing",
-      "to": "sota-devsecops",
-      "weight": 5,
-      "targets": [
-        "rules/03 \u00a73.7",
-        "rules/05",
-        "rules/07 \u00a77.7",
-        "rules/16"
       ]
     },
     {
@@ -4321,14 +4325,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1841,
+    "md link, other skill": 1847,
     "md link, outside skills/": 3,
-    "md link, same skill": 2836,
+    "md link, same skill": 2838,
     "name (backticked)": 450,
     "name (bare)": 242,
-    "name+file (backticked)": 842,
+    "name+file (backticked)": 848,
     "name+file (bare)": 175,
-    "own rules/NN": 3054
+    "own rules/NN": 3056
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4338,9 +4342,9 @@
     "md link, same skill": 0,
     "name (backticked)": 435,
     "name (bare)": 198,
-    "name+file (backticked)": 838,
+    "name+file (backticked)": 844,
     "name+file (bare)": 163,
-    "own rules/NN": 2951
+    "own rules/NN": 2953
   },
   "rules_index_style": {
     "link": 42
@@ -6309,10 +6313,16 @@
       ],
       "same": [
         "sota-devsecops/rules/01-pipeline-security.md",
+        "sota-devsecops/rules/04-build-containers.md",
         "sota-devsecops/rules/05-analysis-gates.md"
       ],
       "router": [],
       "other": [
+        "sota-dotnet/rules/06-build-tooling-ci.md",
+        "sota-golang/rules/07-tooling-ci.md",
+        "sota-javascript-typescript/rules/07-testing-and-tooling.md",
+        "sota-rust/rules/07-tooling-ci.md",
+        "sota-testing/SKILL.md",
         "sota-testing/rules/07-suite-health-and-ci.md"
       ]
     },
