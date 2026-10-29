@@ -418,7 +418,7 @@ jobs:
 ```
 
 Plus scheduled: `cargo audit` (new advisories), fuzz jobs, bench regression
-gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin action SHAs ([rules/05](05-security-supply-chain.md)).
+gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`, keyed and counted per [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2; pin action SHAs ([rules/05](05-security-supply-chain.md)).
 
 ## Audit checklist
 
@@ -492,7 +492,7 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`; pin acti
       `rg -q 'aud:[[:space:]]*crates\.io' .gitlab-ci.yml || rg -n 'CARGO_REGISTRY_TOKEN' .gitlab-ci.yml`
       printing anything (a stored token, no crates.io id-token) = Low; CHANGELOG maintained.
 - [ ] Reproducibility and CI shape (§9): `Cargo.lock` committed, toolchain pinned, CI action
-      SHAs pinned, `rust-cache` keyed correctly (not caching stale clippy); each job of the §9
+      SHAs pinned, `rust-cache` keyed correctly (not caching stale clippy; [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2); each job of the §9
       baseline present or deliberately absent, plus scheduled `cargo audit`, fuzz and bench jobs.
 - [ ] Quick greps: `rg 'dbg!|println!' -t rust -g '!*test*' -g '!*/bin/*'` (§1)
       (debug leftovers in libs); `rg 'FIXME|HACK|XXX' -t rust` triaged.

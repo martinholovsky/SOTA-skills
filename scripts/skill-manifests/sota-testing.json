@@ -139,7 +139,7 @@
     "coverage-gate",
     "ci"
    ],
-   "index_row": "| [`rules/07-suite-health-and-ci.md`](rules/07-suite-health-and-ci.md) | flaky-test policy and quarantine, coverage philosophy (ratchets not targets), speed budgets, parallelization correctness **and the opposite case of two independent runs sharing one database**, CI sharding, failure triage, **a threshold measured on one population and asserted over a pooled one**, **a PR-diff check that routes deleted, skipped or weakened tests to human sign-off** |"
+   "index_row": "| [`rules/07-suite-health-and-ci.md`](rules/07-suite-health-and-ci.md) | flaky-test policy and quarantine, coverage philosophy (ratchets not targets), speed budgets, parallelization correctness **and the opposite case of two independent runs sharing one database**, CI sharding (CI speed and caching itself: [`sota-devsecops` rules/16](../sota-devsecops/rules/16-fast-ci-without-blind-spots.md)), failure triage, **a threshold measured on one population and asserted over a pooled one**, **a PR-diff check that routes deleted, skipped or weakened tests to human sign-off** |"
   },
   "08": {
    "build": [

@@ -17,7 +17,7 @@ go mod tidy && git diff --exit-code go.mod go.sum
 go build ./...                           # catches main-package breakage tests miss
 ```
 
-Pin tool versions (see §4); cache `~/go/pkg/mod` and golangci-lint cache.
+Pin tool versions (see §4); cache `~/go/pkg/mod` and golangci-lint cache, keyed and counted per [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2.
 A repo missing `-race` or govulncheck in CI: HIGH audit finding.
 
 **Code that uses the escape hatch (`unsafe`, cgo) runs its tests under the runtime checker.**

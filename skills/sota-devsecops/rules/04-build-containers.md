@@ -47,7 +47,8 @@ RUN curl -fsSLo /tmp/tool.tgz https://releases.example.com/tool-1.4.2-linux-amd6
   unless a recorded hash is checked. `pip install --require-hashes` refused a local wheel
   listed without a hash (measured, pip 26.1.2). A CI cache restore is matched on its key,
   which is a name you chose, not a hash of the content, so never restore dependencies from a
-  cache without re-verifying them against the lockfile ([rules/01](01-pipeline-security.md) §1.6).
+  cache without re-verifying them against the lockfile ([rules/01](01-pipeline-security.md) §1.6;
+  a partial restore through `restore-keys` is not a hit: [rules/16](16-fast-ci-without-blind-spots.md) §16.2).
 - **CI executes only the reviewed build definition.** No step runs code fetched or generated
   outside it: no `curl | sh`, no `eval "$(curl …)"`, no script whose URL comes from a
   variable. zizmor's `adhoc-packages` audit (v1.26.0+) flags `run:` steps that install
@@ -109,7 +110,7 @@ Hard rules:
 - **`.dockerignore`** excluding `.git`, `.env*`, secrets, local configs, `node_modules` —
   `COPY . .` without it ships your git history and whatever junk is on the build machine.
 - Order for cache correctness: manifests + frozen install first, then source. Never let a
-  cache mount cross trust boundaries ([rules/01](01-pipeline-security.md) §1.6).
+  cache mount cross trust boundaries ([rules/01](01-pipeline-security.md) §1.6, [rules/16](16-fast-ci-without-blind-spots.md) §16.2).
 - No `apt-get upgrade` at build (unreproducible drift) — get fixes by bumping the base
   digest instead. `apt-get install` with `--no-install-recommends` and version pins where
   the base supports it.
