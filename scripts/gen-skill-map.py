@@ -23,7 +23,7 @@ Eight pages:
   8. How skill files point at each other, by FORM (skill name, name + rules/NN, own
      rules/NN, Markdown link, @path import, generic class), how many of each are relative
      links, what an agent must do to follow each, the full skill x skill matrix, and the
-     rules files no other skill points at (the JSON's `rules_inbound` lists every citing
+     rules files no other skill points at or exactly one does (the JSON's `rules_inbound` lists every citing
      file per rules file, because the matrix counts skills and cannot say which FILE).
 
 LAYOUT IS A CORRECTNESS CONCERN HERE, not decoration. Three of these pages were first
@@ -384,9 +384,10 @@ def main():
     print("  of them linked    : %s" % ", ".join("%s=%d" % kv for kv in sorted(linked.items()) if kv[1]))
     print("rules index style   : %s" % dict(sorted(idx_style.items())))
     print("rules inbound       : %d rules files, %d linked + %d unlinked pointers; "
-          "%d reached from no other skill, %d from nothing but their index"
-          % (len(inbound), n_in_linked, n_in_unlinked,
-             len(no_cross_skill(inbound)), len(index_only(inbound))))
+          "%d reached from no other skill, %d from nothing but their index, "
+          "%d from exactly one other skill"
+          % (len(inbound), n_in_linked, n_in_unlinked, len(no_cross_skill(inbound)),
+             len(index_only(inbound)), len(one_cross_skill(inbound))))
     print("wrote %s and %s" % (args.out, args.json))
 
 
@@ -1307,6 +1308,21 @@ def index_only(inbound):
     return [r for r in no_cross_skill(inbound) if not inbound[r]["same"]]
 
 
+def one_cross_skill(inbound):
+    """Domain rules files exactly ONE other skill (the router counted as one) points at,
+    mapped to that skill. The case that motivated the inbound index sits here, not in
+    no_cross_skill: sota-devsecops rules/16 was reached from sota-testing alone, so a list
+    of zero-inbound files never showed it."""
+    out = {}
+    for r, c in inbound.items():
+        if r.startswith("sota/"):
+            continue
+        srcs = {s.split("/")[0] for s in c["other"] + c["router"]}
+        if len(srcs) == 1:
+            out[r] = srcs.pop()
+    return out
+
+
 def page_links(forms, linked, example, at_files, edges, n_files, idx_style, inbound):
     ptr = [k for k in forms if k.startswith("name") or k == "own rules/NN"]
     n_ptr, n_linked = sum(forms[k] for k in ptr), sum(linked[k] for k in ptr)
@@ -1456,7 +1472,27 @@ def page_links(forms, linked, example, at_files, edges, n_files, idx_style, inbo
         c.append(cell("ir%d" % k, "%s:  %s" % (sk.replace("sota-", ""), ", ".join(per_skill[sk])),
                       st + "fillColor=%s;" % skill_family(sk)[1],
                       40 + col * 590, y + 72 + row * 26, 580, 24))
-    h = y + 72 + half * 26 + 40
+
+    # reached by exactly one other skill: one link away from the list above
+    y += 72 + half * 26 + 30
+    single = one_cross_skill(inbound)
+    c.append(cell("it1", "Reached by exactly ONE other skill (%d files): rules/NN <- the skill that "
+                  "points at it. One pointer is one edit from zero, and the skills a file's topic "
+                  "suggests may not be the one that cites it."
+                  % len(single),
+                  BOX + "fillColor=none;strokeColor=none;align=left;fontStyle=1;",
+                  40, y, 1174, 40))
+    per_skill = collections.defaultdict(list)
+    for r, src in sorted(single.items()):
+        sk, _, name = r.split("/")
+        per_skill[sk].append("%s <- %s" % (name[:2], "router" if src == "sota"
+                                           else src.replace("sota-", "")))
+    listed = [s for s in order if s in per_skill]
+    for k, sk in enumerate(listed):
+        c.append(cell("is%d" % k, "%s:  %s" % (sk.replace("sota-", ""), ", ".join(per_skill[sk])),
+                      st + "fillColor=%s;whiteSpace=wrap;" % skill_family(sk)[1],
+                      40, y + 48 + k * 26, 1170, 24))
+    h = y + 48 + len(listed) * 26 + 40
     return page("p8", "8 · How skills point at each other", c, max(1260, x0 + len(order) * cw + 40), h)
 
 
