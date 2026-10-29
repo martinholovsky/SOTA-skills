@@ -964,6 +964,18 @@
       "targets": []
     },
     {
+      "from": "sota-testing",
+      "to": "sota-devsecops",
+      "weight": 7,
+      "targets": [
+        "rules/03 \u00a73.7",
+        "rules/05",
+        "rules/07 \u00a77.7",
+        "rules/16",
+        "rules/16 \u00a716.2"
+      ]
+    },
+    {
       "from": "sota-threat-modeling",
       "to": "sota-code-security",
       "weight": 7,
@@ -1159,17 +1171,6 @@
       ]
     },
     {
-      "from": "sota-testing",
-      "to": "sota-devsecops",
-      "weight": 6,
-      "targets": [
-        "rules/03 \u00a73.7",
-        "rules/05",
-        "rules/07 \u00a77.7",
-        "rules/16"
-      ]
-    },
-    {
       "from": "sota-web-frameworks",
       "to": "sota-javascript-typescript",
       "weight": 6,
@@ -1256,6 +1257,16 @@
       "targets": [
         "rules/04",
         "rules/04 \u00a71"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-testing",
+      "weight": 5,
+      "targets": [
+        "rules/04 \u00a74.8",
+        "rules/07 \u00a77.3",
+        "rules/07 \u00a77.5"
       ]
     },
     {
@@ -1481,16 +1492,6 @@
       "weight": 4,
       "targets": [
         "rules/07 \u00a74"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-testing",
-      "weight": 4,
-      "targets": [
-        "rules/04 \u00a74.8",
-        "rules/07 \u00a77.3",
-        "rules/07 \u00a77.5"
       ]
     },
     {
@@ -4325,14 +4326,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1847,
+    "md link, other skill": 1849,
     "md link, outside skills/": 3,
-    "md link, same skill": 2838,
+    "md link, same skill": 2842,
     "name (backticked)": 450,
     "name (bare)": 242,
-    "name+file (backticked)": 848,
+    "name+file (backticked)": 850,
     "name+file (bare)": 175,
-    "own rules/NN": 3056
+    "own rules/NN": 3060
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4342,9 +4343,9 @@
     "md link, same skill": 0,
     "name (backticked)": 435,
     "name (bare)": 198,
-    "name+file (backticked)": 844,
+    "name+file (backticked)": 846,
     "name+file (bare)": 163,
-    "own rules/NN": 2953
+    "own rules/NN": 2957
   },
   "rules_index_style": {
     "link": 42

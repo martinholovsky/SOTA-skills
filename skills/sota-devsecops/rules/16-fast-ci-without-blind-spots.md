@@ -33,6 +33,12 @@ change with a byte-identical differential over 12 trees (CHANGELOG 1.44.1, 2026-
 
 ## 16.2 Cache inputs that are expensive to fetch, keyed on what determines them
 
+CI caching starts here, and each concern has a home: trust boundaries, poisoning and
+`cache-mode` are [rules/01](01-pipeline-security.md) §1.6; verifying a restored dependency is
+[rules/04](04-build-containers.md) §4.1, and BuildKit cache mounts are §4.2; caching test results
+is [`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.5, whose exception for a
+hand-built cache is below. Keys, partial restores and hit counts are this section.
+
 - **What to cache:** dependency downloads, toolchains and compiler caches, keyed on a hash of
   what determines them (the lockfile, the toolchain file). A key that omits an input serves a
   stale artifact as if it were current.
@@ -43,7 +49,36 @@ change with a byte-identical differential over 12 trees (CHANGELOG 1.44.1, 2026-
   on its key alone ([rules/04](04-build-containers.md) §4.1: "a CI cache restore is matched on
   its key").
 - **Never cache a verdict** across code changes unless a build system you trust keys it on
-  the content hash of every input ([`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.5).
+  the content hash of every input ([`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.5), or
+  a hand-built reuse meets every condition in the next bullet.
+- **Reusing a gate's own pass** (a local or self-hosted runner that skips a gate whose inputs
+  match an earlier pass) is that verdict cache built by hand, so it carries the whole burden
+  itself. It is acceptable only when every condition below holds; with any one missing it is
+  "skip if green yesterday":
+  - **The key is every input, byte for byte**: the tracked tree plus untracked and generated
+    files the gate reads; the toolchain and tool binaries; container image digests; environment
+    variables and config read from outside the tree (`$HOME`, global tool config); the gate's
+    own arguments; and any host input it exercises, such as the kernel for a gate that loads
+    code into it. A file is left out only when a recorded file-access trace or a build
+    system's declared inputs shows the gate never reads it; a hand-kept exclusion list drifts
+    as the code moves (§16.3).
+  - **A gate whose verdict depends on what the key cannot capture is never reused**: a remote
+    database, the network, the clock, randomness, or a flake history. Advisory, licence and
+    scanner gates are the common case, since their database changes while the tree does not.
+  - **A pass expires** a stated number of days after the run that actually executed the gate
+    (seven in the design this came from), and reusing it never renews it, so an input the key
+    missed is wrong for a bounded time.
+  - **Trusted paths rerun everything**: a tag, publish, sign or deploy job, and the merge queue
+    or default branch, refuse a record that reused any gate (§16.3: a scoped run needs an
+    unscoped one behind it).
+  - **Records cross no trust boundary**: a pass recorded by lower-trust code (a PR, a fork, a
+    shared runner) is never reused by a higher-trust job ([rules/01](01-pipeline-security.md) §1.6).
+  - **Reuse is visible**: the run prints which gates it reused and the record names them, so a
+    reused pass is never read as a fresh one.
+  - **The cache has known-bads**: a self-test changes one input from each class above (a
+    tracked file, the toolchain, an image digest, an environment variable, a host input) and
+    asserts the gate runs again each time; another adds a file the gate does read to the
+    exclusion and asserts the exclusion check refuses it ([rules/09](09-gates-that-hold.md) §2).
 - **Count the hits.** Print `cache-hit` or the tool's own hit statistics in the job log; a cache
   that never hits costs an upload per run and saves nothing. The `actions/cache` README at
   v6.1.0 states a per-repository cap with eviction of entries unused for a week, so a key that
@@ -123,6 +158,7 @@ A speed change is a change to the gates, and it is reviewed as one:
 ## Audit checklist
 
 - [ ] **Per-job and per-step durations were measured over several runs before any speed change, and the critical path is named** (§16.1) — Info: optimising without it; Low: a cache added to a job that was never on the critical path
+- [ ] **A runner that reuses a gate's earlier pass** (§16.2) — read how it builds the key, which gates it may skip and who writes its records: a reused advisory, licence or scanner gate whose record a tag, publish, sign or deploy job or the merge queue accepts = High (an advisory published after the pass ships unchecked); the same gate reused only on development runs that a trusted path reruns = Medium; a key missing an input class, no stated expiry or a reuse that renews it, records written by lower-trust code and reused by a trusted job, reuse the record does not name, or no known-bad per input class = Medium
 - [ ] **Workflows with no `timeout-minutes`** (§16.5) — `find .github/workflows -name '*.y*ml' -exec grep -L -e 'timeout-minutes' {} +` — each file printed runs every job at the 360-minute default = Low (a hung job holds a runner for six hours)
 - [ ] **A cache restore that skips the install** (§16.2) — `grep -rnE --include='*.yml' --include='*.yaml' -e "cache-hit (!=|==) '(true|false)'" .github/workflows` — each hit: confirm the key covers every input and that a `restore-keys` partial match still runs the frozen install; a skipped verification on a partial match = Medium
 - [ ] **A path-filtered workflow that is a required check** (§16.3) — `grep -rnE --include='*.yml' --include='*.yaml' -e '^[[:space:]]+(paths|paths-ignore):' .github/workflows` — each hit whose workflow's job names appear in the branch's required contexts = Medium (it blocks PRs it skips); a required job gated by `if:` with no in-job reason = High (it reports Success without running)
