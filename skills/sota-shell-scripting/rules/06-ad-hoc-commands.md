@@ -147,7 +147,7 @@ a fetch returned an empty page (an anti-bot challenge), `apt-cache depends` prin
 (wrong query shape). Every one was the reader failing, and every one rendered as `0`.
 
 The fix is mechanical and needs no prior knowledge of the target: make each extraction,
-fetch or search emit **what it got** beside **what it found**, in the same invocation. **And a count from a regex classifier ships with a printed sample of its matches**: a denominator says how much you read, a sample says what you counted (field-reported 2026-10-22, four times in one session: "23 still `exit`" was the word inside `echo "exit=$?"`, and a hook-firing count of 18 included the hook's own source; the real count was 6).
+fetch or search emit **what it got** beside **what it found**, in the same invocation. **And a count from a regex classifier ships with a printed sample of its matches**: a denominator says how much you read, a sample says what you counted (field-reported 2026-10-22, four times in one session: "23 still `exit`" was the word inside `echo "exit=$?"`, and a hook-firing count of 18 included the hook's own source; the real count was 6). **Key the sample to the producer the claim is about** (the test name, the job id), not the first match: a line many producers print reads the same from all of them. Field-reported 2026-10-30: `grep -o … | head -1` re-derived a cross-check as "1 agreed" from the first test's health line; listing every match showed 1, 10, 8, 6, 8, 10, and the identity test's own line said 8.
 
 ```bash
 # BAD  — a fact about the subject, or a broken reader. Indistinguishable.
@@ -189,7 +189,7 @@ or `.githooks/`. Only `--hidden` reaches them (404 → 576 files, 2 → 4 matchi
 routinely alias it. In one measured case it was a shell *function* running `ugrep -G
 --ignore-files --hidden -I --exclude-dir=.git …` — so it honoured `.gitignore` (which GNU
 grep does not) and skipped binaries, neither of which appears in any manual the reader would
-consult. **An absence measured through an unexamined wrapper is not an absence.**
+consult. **An absence measured through an unexamined wrapper is not an absence.** A count that **gates** an action (`grep -c … && run`) is a control: search a literal needle with `-F` (§2f). Field-reported 2026-10-30: the wrapper's ugrep counted 0 for `'^RATCHET'` where `/usr/bin/grep` counted 1, so the gated measurement never ran.
 
 **Two tools can answer to the same name.** Measured in one agent environment: `grep` was a
 shell *function* running **ugrep 7.8.4**, except that any `-z`/`-Z` argument was routed to
@@ -408,7 +408,7 @@ the **consumer**, derived from the value it actually received. **The tell on rev
 line beginning `^`, `(` or `<-` that asserts a *state* rather than naming a *quantity*. Read
 the output above it before believing it — including your own.
 
-## 2f. A backslash escape (`\b` `\<` `\s` `\w` `\d`) is a property of the machine, not of the tool
+## 2f. A backslash escape (`\b` `\<` `\s` `\w` `\d`), or a `^`/`$` inside a pattern, is a property of the machine, not of the tool
 
 `\b` and `\<` are not portable, and failing them is **silent**: no match, exit 1,
 indistinguishable from a true absence. The same pattern, the same git and the same repository
@@ -433,7 +433,7 @@ Measured 2026-09-18 over a file containing `53`, control (`53` alone) matching i
 **There is no version to pin** — three older gits match `\b` and the newest does not. The GNU
 and BSD forms are **mutually exclusive**, so neither is portable. Use `-P` where PCRE is
 compiled in, or drop the boundary and filter afterwards.
-**Class escapes split the same way** (measured 2026-09-30, control `7687` matching everywhere): `\s` and `\w` match on Debian git 2.39.5 (glibc) and Alpine git 2.54.0 (musl) and **match nothing** on macOS git 2.55.0; `\d` matches nothing on **all three** — it was never ERE. Write `[[:space:]]`, `[[:alnum:]_]`, `[[:digit:]]`, or use `-P`. **On macOS the escape is read as the plain letter, not dropped** (re-measured 2026-10-27, git 2.55.0, lines printed): under `-E`, `a\b` matched `ab` and `foo\b` matched `foobar`, so the pattern can also match the *wrong* lines, while the default BRE (`git grep` without `-E`) honoured `\b`, `\s` and `\w` like `-P`.
+**Class escapes split the same way** (measured 2026-09-30, control `7687` matching everywhere): `\s` and `\w` match on Debian git 2.39.5 (glibc) and Alpine git 2.54.0 (musl) and **match nothing** on macOS git 2.55.0; `\d` matches nothing on **all three** — it was never ERE. Write `[[:space:]]`, `[[:alnum:]_]`, `[[:digit:]]`, or use `-P`. **On macOS the escape is read as the plain letter, not dropped** (re-measured 2026-10-27, git 2.55.0, lines printed): under `-E`, `a\b` matched `ab` and `foo\b` matched `foobar`, so the pattern can also match the *wrong* lines, while the default BRE (`git grep` without `-E`) honoured `\b`, `\s` and `\w` like `-P`. **A `^` or `$` that is not at the pattern's edge splits by binary** (measured 2026-10-30 on macOS, over a file of `a^b`, `ab`, `a$b`): BSD grep 2.6.0 BRE and git 2.55.0's default BRE read `a^b` and `a$b` as literals; ugrep 7.8.4 — the binary behind many agents' `grep` wrapper (§2) — matched `a^b` to the **other** line (`ab`) under both `-G` and `-E` (why was not read in its source), and found nothing for `a$b`; every ERE (BSD `-E`, `git grep -E`, ripgrep 15.2.0) finds nothing. GNU grep was not measured. With `-F`, all five printed the literal line. **So a needle that is data is searched with `-F`** (and `-e` when it may begin with `-`, §2c): a metacharacter in a literal is a property of the binary, not of the pattern.
 
 This cost two false absences in one session: a count search over an agent file that plainly
 contained the number, and a reference sweep that reported zero while five references existed.
@@ -476,7 +476,7 @@ thing** — index it by what it is *for*.
 - [ ] **Does any search rely on `\b`, `\<`, `\s`, `\w` or `\d`?** (§2f) — absent from BSD/macOS regex, and
       `git grep` inherits the platform's, so the same pattern silently returns zero on one
       machine and matches on another. There is no version to pin. Use `-P`, the POSIX
-      bracket form, or no boundary at all — and control the search
+      bracket form, or no boundary at all — and control the search. And does a **literal** needle contain `^` or `$`? Search it with `-F`; ugrep and BSD grep match different lines
 - [ ] **Sweeps: is the searcher's traversal and exclusion set stated with the count?** (§2)
       `-r` skips symlinked dirs met in traversal and `-R` follows **only on ugrep/GNU** —
       on BSD grep (macOS `/usr/bin/grep`) neither does; `rg` skips gitignored and hidden by

@@ -239,7 +239,10 @@ hours):
   assert the mutation's runtime effect before trusting a green run. A **red** run counts only
   when it fails at the assertion the mutant targets: a lint or compile rejection shares the
   suite's exit code (cargo-mutants calls it `unviable`) and proves nothing
-  ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1).
+  ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1). **So does an unrelated test going red in the same run** — the
+  commoner case in any suite with a flaky test — so read *which* test failed, not the exit
+  code. Field-reported 2026-10-30: a mutant passed a new kernel test whose premise was false,
+  and only reading that the run's one failure was a known-intermittent rename test showed it.
   [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md).
 - **Apply and revert with FILE EDITS, not a shell command pair — the revert is part
   of the technique, not cleanup.** This probe deliberately puts a real defect into
@@ -252,6 +255,13 @@ hours):
   repair path was blocked too** — `git checkout --` was denied by policy and `cp` from
   a backup also needed a fork — so the edit had to be undone with a file-edit tool,
   which needs no process. Assume the cheap repair may be unavailable.
+  **Never launch the probe in the background.** That stretches the unguarded window from
+  seconds to the gate's whole runtime, during which you may keep editing the same tree.
+  Field-reported 2026-10-30: three backgrounded `cp backup && sed && gate; cp back` probes
+  against a 6–11-minute gate left a deliberately wrong unit conversion in a security
+  sensor's source for that long; every restore was checked and none was left behind. If the
+  gate is that slow, mutate in a disposable `git worktree`, so the mutated tree is never
+  the one you are working in.
 - **A wrapper reporting on that shell will call it a pass.** The failure surfaced as a
   bare `Exit code 1`, with the real cause only in the error text; piped, it reads as
   "mutation applied, suite run, mutation reverted" ([`sota-shell-scripting` rules/06](../../sota-shell-scripting/rules/06-ad-hoc-commands.md)
@@ -398,7 +408,8 @@ label it as such.
 - [ ] **Mutation probes: is the revert verified, not assumed?** (§6.3) Any hand-mutation
       of production source must be applied and undone by **file edit**, not by an
       `inject && run && revert` shell chain that strands the defect if the shell dies
-      mid-sequence. Check the working tree (`git status --short`) or grep a
+      mid-sequence, and never one launched in the background, which keeps the defect on
+      disk for the gate's whole runtime. Check the working tree (`git status --short`) or grep a
       `# MUTATION-<id>` marker to 0 — never the exit status, which a wrapper reports as
       a clean pass.
 
