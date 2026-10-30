@@ -1,0 +1,3016 @@
+{
+ "groups": [
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "9. **Webhooks signed and SSRF-proof**: HMAC(id.timestamp.raw body) verified in constant time with replay window; senders",
+   "members": [
+    "sota-api-design/SKILL.md#55eb586b09ae",
+    "sota-code-security/rules/02-authentication.md#b2c63cc5c09c"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "required by invariant 42 (C2): the canonical coverage line every domain skill's AUDIT section carries",
+   "sample": "**Coverage:** every `rules/` file's Audit checklist applies in AUDIT mode. Mark one *not applicable* only with its reaso",
+   "members": [
+    "sota-api-design/SKILL.md#ffabed55991e",
+    "sota-architecture/SKILL.md#ffabed55991e",
+    "sota-async-concurrency/SKILL.md#ffabed55991e",
+    "sota-c-cpp/SKILL.md#ffabed55991e",
+    "sota-cli-ux/SKILL.md#ffabed55991e",
+    "sota-cloud-infrastructure/SKILL.md#ffabed55991e",
+    "sota-code-security/SKILL.md#ffabed55991e",
+    "sota-confidential-computing/SKILL.md#ffabed55991e",
+    "sota-copywriting/SKILL.md#ffabed55991e",
+    "sota-data-engineering/SKILL.md#ffabed55991e",
+    "sota-databases/SKILL.md#ffabed55991e",
+    "sota-detection-engineering/SKILL.md#ffabed55991e",
+    "sota-devsecops/SKILL.md#ffabed55991e",
+    "sota-docs-workflow/SKILL.md#ffabed55991e",
+    "sota-dotnet/SKILL.md#ffabed55991e",
+    "sota-frontend-design/SKILL.md#ffabed55991e",
+    "sota-golang/SKILL.md#ffabed55991e",
+    "sota-identity-access/SKILL.md#ffabed55991e",
+    "sota-javascript-typescript/SKILL.md#ffabed55991e",
+    "sota-jvm/SKILL.md#ffabed55991e",
+    "sota-kubernetes/SKILL.md#ffabed55991e",
+    "sota-llm-engineering/SKILL.md#ffabed55991e",
+    "sota-ml-engineering/SKILL.md#ffabed55991e",
+    "sota-mobile/SKILL.md#ffabed55991e",
+    "sota-network-security/SKILL.md#ffabed55991e",
+    "sota-observability/SKILL.md#ffabed55991e",
+    "sota-performance/SKILL.md#ffabed55991e",
+    "sota-php/SKILL.md#ffabed55991e",
+    "sota-privacy-compliance/SKILL.md#ffabed55991e",
+    "sota-python/SKILL.md#ffabed55991e",
+    "sota-ruby/SKILL.md#ffabed55991e",
+    "sota-rust/SKILL.md#ffabed55991e",
+    "sota-sandboxing/SKILL.md#ffabed55991e",
+    "sota-secrets-management/SKILL.md#ffabed55991e",
+    "sota-security-compliance/SKILL.md#ffabed55991e",
+    "sota-shell-scripting/SKILL.md#ffabed55991e",
+    "sota-skill-security/SKILL.md#ffabed55991e",
+    "sota-swift/SKILL.md#ffabed55991e",
+    "sota-testing/SKILL.md#ffabed55991e",
+    "sota-threat-modeling/SKILL.md#ffabed55991e",
+    "sota-ux-writing/SKILL.md#ffabed55991e",
+    "sota-web-frameworks/SKILL.md#ffabed55991e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Never leak internals**: no stack traces, SQL, file paths, or dependency versions in any environment reachable by cli",
+   "members": [
+    "sota-api-design/rules/01-rest-http-design.md#13f8044e3b4a",
+    "sota-code-security/rules/07-data-exposure.md#61caffa1e5f9",
+    "sota-web-frameworks/rules/07-security.md#5ba549bfff0a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Offset pagination (`?page=3&per_page=50`) is broken at scale**: O(n) skip cost in the DB, and rows shift under the c",
+   "members": [
+    "sota-api-design/rules/01-rest-http-design.md#963c36f2e0f8",
+    "sota-performance/rules/04-io-network.md#1082a6464758"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Return total counts only when cheap and genuinely needed; `COUNT(*)` on large tables is a self-DoS. Offer `?include_to",
+   "members": [
+    "sota-api-design/rules/01-rest-http-design.md#e88f48d0050f",
+    "sota-databases/rules/03-queries-and-indexes.md#ad31c5675d97"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] CORS (§5): explicit origin allowlist; no origin reflection with credentials (send `Origin: https://evil.example` t",
+   "members": [
+    "sota-api-design/rules/07-security-operations.md#197223b848ee",
+    "sota-code-security/rules/05-web-security.md#79b91d73a6c6",
+    "sota-code-security/rules/05-web-security.md#9843c0be8579",
+    "sota-code-security/rules/05-web-security.md#ce5dd8b328f5"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Never log**: credentials, bearer tokens, full API keys (log the key *prefix*), passwords, cookie values, full card/S",
+   "members": [
+    "sota-api-design/rules/07-security-operations.md#1e8afae9c3f5",
+    "sota-code-security/rules/04-cryptography.md#222b857d46dd",
+    "sota-code-security/rules/07-data-exposure.md#a4979a255dd2",
+    "sota-observability/rules/01-structured-logging.md#3e96f7c2fa43",
+    "sota-observability/rules/01-structured-logging.md#b5fed5d12b7a",
+    "sota-privacy-compliance/rules/06-incident-breach-readiness.md#439bcc0802a9",
+    "sota-secrets-management/SKILL.md#e91415154ced",
+    "sota-secrets-management/rules/03-application-patterns.md#9001e0563d3f",
+    "sota-swift/rules/05-security.md#4a1bbbf8a567"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- JSON parsing limits: max depth, max keys/array length — deeply nested payloads are a CPU/stack DoS. Decompression limi",
+   "members": [
+    "sota-api-design/rules/07-security-operations.md#34356f193709",
+    "sota-api-design/rules/07-security-operations.md#b06d85dbb2c4",
+    "sota-code-security/rules/06-memory-resource-safety.md#ab47ba5a4409",
+    "sota-javascript-typescript/rules/04-node-backend.md#1eeaf3accc27",
+    "sota-swift/rules/06-server-side.md#8316e01832da"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **HTTP/2 and HTTP/3**: a message carrying a connection-specific field (`Transfer-Encoding`, `Connection`, `Keep-Alive`",
+   "members": [
+    "sota-api-design/rules/07-security-operations.md#542d667078ec",
+    "sota-network-security/rules/05-edge-ingress-egress.md#315149de2c44"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Scope every query structurally**: tenant filter applied by a repository layer/ORM global scope or Postgres RLS (`SET",
+   "members": [
+    "sota-api-design/rules/07-security-operations.md#7576e9f45294",
+    "sota-code-security/rules/03-authorization.md#5adfed90762d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Cookie-auth'd APIs additionally need CSRF defenses (`SameSite=Lax/Strict` + token or custom-header check) — CORS prefl",
+   "members": [
+    "sota-api-design/rules/07-security-operations.md#bcbecad90d02",
+    "sota-code-security/rules/05-web-security.md#c7fe384870eb",
+    "sota-javascript-typescript/rules/05-security.md#907d5c2174c5",
+    "sota-javascript-typescript/rules/05-security.md#db6a73aa681b",
+    "sota-php/rules/04-sessions-auth-web-hardening.md#ab71c599fcfb",
+    "sota-ruby/rules/03-web-hardening.md#893a01fffb2f",
+    "sota-threat-modeling/rules/03-threat-catalogs.md#75bef94892b7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "6. **Before finishing**, run the relevant \"Audit checklist\" sections from each rules file you used against your own outp",
+   "members": [
+    "sota-architecture/SKILL.md#a6ee8a7b559e",
+    "sota-code-security/SKILL.md#f35f99a8e54b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "2. **Asymmetric guard** — the highest-yield tell. A comparison where **one operand is filtered against the sentinel and ",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#23b19b86e5ee",
+    "sota-python/rules/02-typing-correctness.md#1024f5ffdee6",
+    "sota-python/rules/02-typing-correctness.md#dbf854836c91"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Absence/unknown/failure encoded **outside** the value domain (option type, nullable, second return value, `NULL`, ",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#49bca0391c4e",
+    "sota-databases/rules/01-choosing-and-modeling.md#b2ad8dc565a9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Rule:** When a wire format, a fixed-width store, or a stdlib you don't own forces a sentinel, it is **per field with i",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#55f19dd85103",
+    "sota-databases/rules/01-choosing-and-modeling.md#e78f2b6ee72a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**A value-based lint is only sound on a field with a stated non-negative (or otherwise sentinel-free) domain.** Measure ",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#706280ff0138",
+    "sota-python/rules/02-typing-correctness.md#8d3f52d5abf6"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "3. **Truthiness-as-presence:** `if n:` guarding a number whose domain includes the sentinel. High recall, high false-pos",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#7a7063699f4b",
+    "sota-python/rules/02-typing-correctness.md#553c13f06e37"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **It has an ordering, so it changes answers rather than crashing.** A sentinel **loses** every `<` against a real valu",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#9d0b9e57ae87",
+    "sota-python/rules/02-typing-correctness.md#eb0710a91806"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Distinct causes collapse into one value.** *Absent* and *malformed* returned as the same constant can never be told ",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#c2aa8c50f9df",
+    "sota-python/rules/02-typing-correctness.md#5f2381081ff6"
+   ]
+  },
+  {
+   "verdict": "consolidate",
+   "note": "sentinel-value rule stated in sota-architecture rules/02 and sota-python rules/02",
+   "sample": "1. **Producer:** one function returning the *same* constant from a not-found branch and from an error/`except` branch. N",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#c2c6f3717167",
+    "sota-python/rules/02-typing-correctness.md#9055db6f6cf8"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Presence checks silently pass.** `if x:` / `if (x)` reads as \"do I have a value?\" and admits `-1`, which is truthy i",
+   "members": [
+    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#e86befc1c8a3",
+    "sota-python/rules/02-typing-correctness.md#8cb285a7a752"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Rule:** Scale consumers via the competing-consumers pattern, but know your broker's unit of parallelism (Kafka: partit",
+   "members": [
+    "sota-architecture/rules/03-distributed-systems-and-events.md#16d7a76f061c",
+    "sota-data-engineering/rules/03-streaming-and-cdc.md#a92c70541ded"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "2. Idempotency key: caller supplies a key; handler records `(key → result)` and replays the stored result on duplicates.",
+   "members": [
+    "sota-architecture/rules/03-distributed-systems-and-events.md#33713377e47e",
+    "sota-async-concurrency/rules/02-correctness.md#e0ba580a6d36"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Rule:** Acknowledge messages only after the state change is durably committed. Ack-then-process loses messages on cras",
+   "members": [
+    "sota-architecture/rules/03-distributed-systems-and-events.md#505261241266",
+    "sota-architecture/rules/08-nats-jetstream.md#280315c351a5"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Rule:** Ordering is per-partition-key only. Pick the partition key = the entity whose events must be ordered (order_id",
+   "members": [
+    "sota-architecture/rules/03-distributed-systems-and-events.md#652f51523638",
+    "sota-data-engineering/rules/03-streaming-and-cdc.md#3648fee68b86"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Rule:** Consumer prefetch (`basic.qos`) is the backpressure knob. AMQP pushes, so the cap on unacked deliveries is you",
+   "members": [
+    "sota-architecture/rules/03-distributed-systems-and-events.md#77a6bbf8bf6a",
+    "sota-architecture/rules/08-nats-jetstream.md#d315a8142e6d",
+    "sota-async-concurrency/rules/06-backpressure-flow-control.md#d92db8a5723f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Do liveness probes avoid dependency checks? Does readiness avoid mass-unready on shared-dependency failure? Are he",
+   "members": [
+    "sota-architecture/rules/04-resilience-and-failure-design.md#04699d03c4b2",
+    "sota-architecture/rules/04-resilience-and-failure-design.md#e48fe562cd24",
+    "sota-javascript-typescript/rules/04-node-backend.md#58218530ee18",
+    "sota-javascript-typescript/rules/04-node-backend.md#ed1831ee29d9",
+    "sota-observability/rules/05-operational-readiness.md#9a42a439b5e3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Rule:** Enforce a deadline budget across hops: the caller's total deadline is distributed down the chain (propagate re",
+   "members": [
+    "sota-architecture/rules/04-resilience-and-failure-design.md#b86dec06fff5",
+    "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md#28ea67c4cc61"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Rule:** Environments are created and destroyed from code (IaC + seeded data), not curated by hand. Prefer ephemeral pe",
+   "members": [
+    "sota-architecture/rules/06-cloud-native-config-and-delivery.md#54d168d6cf02",
+    "sota-testing/rules/04-integration-contract-system.md#987a43ee5f10"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **JVM:** virtual threads (Loom) give event-loop economics with thread programming model; pinning on `synchronized` blo",
+   "members": [
+    "sota-async-concurrency/rules/01-models-and-structure.md#31211bc4b7f8",
+    "sota-jvm/SKILL.md#46b75bf6be0e",
+    "sota-jvm/rules/03-concurrency.md#8c9c2a9a4950"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Async fan-out: never `gather(*[f(x) for x in million_items])`. Bound with a semaphore or worker pool reading from a bo",
+   "members": [
+    "sota-async-concurrency/rules/01-models-and-structure.md#9c862dbe776c",
+    "sota-performance/rules/04-io-network.md#88a71e583ae0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- A plain boolean `done` flag set by one thread and polled by another with no sync is broken in C/C++/Rust/Go/Java. Use ",
+   "members": [
+    "sota-async-concurrency/rules/02-correctness.md#50e5b76b8e2e",
+    "sota-c-cpp/rules/05-concurrency.md#0bbd59744760"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Data race:** two threads access the same memory location concurrently, at least one writes, with no synchronization.",
+   "members": [
+    "sota-async-concurrency/rules/02-correctness.md#a68177b877c2",
+    "sota-c-cpp/rules/03-undefined-behavior.md#0d0baf8b0632",
+    "sota-c-cpp/rules/05-concurrency.md#d1c23b14fd34",
+    "sota-jvm/rules/03-concurrency.md#d6c13e3a044f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "`notify_one` vs `notify_all`: `notify_one` is an optimization that is only correct when all waiters are interchangeable ",
+   "members": [
+    "sota-async-concurrency/rules/03-primitives.md#3b3d61982c64",
+    "sota-async-concurrency/rules/07-audit-bug-catalog.md#17a32a9eb8f1"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Rust: `OnceLock` / `LazyLock`. Go: `sync.Once` / `sync.OnceValue`. Java: holder class idiom or `volatile` + DCL (prefe",
+   "members": [
+    "sota-async-concurrency/rules/03-primitives.md#8f11c92f9b92",
+    "sota-golang/rules/03-concurrency.md#4fe445b4fa8a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Close from the producer side only**; receivers detect closure (`for range ch`, `recv() -> None`). Go: send on closed",
+   "members": [
+    "sota-async-concurrency/rules/03-primitives.md#aacd59b05541",
+    "sota-golang/rules/03-concurrency.md#96903f2498cb"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**An unbounded channel is a memory leak with extra steps.** If the producer is ever faster than the consumer — and under",
+   "members": [
+    "sota-async-concurrency/rules/03-primitives.md#e54b3878c779",
+    "sota-performance/rules/02-algorithms-data-structures.md#6c2f0172410c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Node:** monitor event-loop lag/utilization (`perf_hooks.monitorEventLoopDelay`, `performance.eventLoopUtilization()`",
+   "members": [
+    "sota-async-concurrency/rules/04-event-loop-hygiene.md#6c333c7389d8",
+    "sota-performance/rules/04-io-network.md#46641c602fca"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Grep async modules for: `time.sleep`, `requests.`, `urllib`, `subprocess.run`, `open(`, `.read()`/`.write()` on fi",
+   "members": [
+    "sota-async-concurrency/rules/04-event-loop-hygiene.md#863dd6685de7",
+    "sota-performance/rules/04-io-network.md#5e902aac0eb4"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Microtasks** (promise callbacks, `queueMicrotask`, `await` resumption) run to exhaustion after the current task, *be",
+   "members": [
+    "sota-async-concurrency/rules/04-event-loop-hygiene.md#b8af0fafdb08",
+    "sota-javascript-typescript/rules/03-async-patterns.md#7e0c98959ee7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Invariant restoration:** if a task mutates shared state in steps, cancellation between steps leaves it broken. Make ",
+   "members": [
+    "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md#caef4bbb26e5",
+    "sota-rust/rules/04-async-tokio.md#b9882f6badf9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] #2 missing await: truthy-promise checks, forEach(async), return-in-try, un-awaited async tests; `no-floating-promi",
+   "members": [
+    "sota-async-concurrency/rules/07-audit-bug-catalog.md#01bd49f9709b",
+    "sota-javascript-typescript/rules/03-async-patterns.md#0d8557d9f6b2"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "`sleep(0.1)`-then-assert synchronization in tests or — worse — production (\"wait a bit for the worker to pick it up\"). S",
+   "members": [
+    "sota-async-concurrency/rules/07-audit-bug-catalog.md#197c66b23523",
+    "sota-testing/rules/02-test-design-quality.md#4b1770eeacf1"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Request-scoped state must also be un-set.** Ambient per-request context (tenant, user, locale) is only request-scoped ",
+   "members": [
+    "sota-async-concurrency/rules/07-audit-bug-catalog.md#562c54edc1a1",
+    "sota-async-concurrency/rules/07-audit-bug-catalog.md#a3a93232cbeb",
+    "sota-jvm/rules/03-concurrency.md#af21e3e2258a",
+    "sota-python/rules/04-async.md#7a7bfe00e896",
+    "sota-python/rules/04-async.md#e6feaeecee8e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-c-cpp description: >- State-of-the-art C and C++ engineering rules that Claude applies when writing or au",
+   "members": [
+    "sota-c-cpp/SKILL.md#d75d7ced4410",
+    "sota/rules/04-library-map.md#626b624d20ab"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "per-language finding-format paragraph, kept so each language skill reads alone",
+   "sample": "Expands the router's canonical row (`file:line | rule | severity | effort | fix`, which wins on a cross-domain roll-up);",
+   "members": [
+    "sota-c-cpp/SKILL.md#eaf58b1fede7",
+    "sota-dotnet/SKILL.md#eaf58b1fede7",
+    "sota-golang/SKILL.md#eaf58b1fede7",
+    "sota-javascript-typescript/SKILL.md#964171c880f6",
+    "sota-jvm/SKILL.md#eaf58b1fede7",
+    "sota-python/SKILL.md#eaf58b1fede7",
+    "sota-rust/SKILL.md#eaf58b1fede7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Build & run the suite under sanitizers (§5, ground truth; TSan in its own job, since it cannot share one with AS",
+   "members": [
+    "sota-c-cpp/rules/02-memory-safety.md#a2f50ccac572",
+    "sota-c-cpp/rules/06-build-tooling-ci.md#b749945e6e43"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Banned/dangerous buffer ops (§2) — HIGH/CRITICAL (also [rules/04])** — `grep -rnE '\\b(strcpy|strcat|sprintf|gets",
+   "members": [
+    "sota-c-cpp/rules/02-memory-safety.md#cae5c18e2d1d",
+    "sota-c-cpp/rules/04-security.md#e7ad1889ed36"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- In C, always pass length alongside the pointer and check it; prefer `snprintf`/`memcpy_s`-style bounded ops. `-D_FORTI",
+   "members": [
+    "sota-c-cpp/rules/02-memory-safety.md#e621d496536e",
+    "sota-code-security/rules/06-memory-resource-safety.md#67a3121f3912"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Sanitizer/hardening presence in the build (§5, §2) — HIGH if a network binary lacks them** — `grep -rqE 'fsaniti",
+   "members": [
+    "sota-c-cpp/rules/02-memory-safety.md#ec81aab5fbfe",
+    "sota-c-cpp/rules/04-security.md#39716a4a36ea",
+    "sota-c-cpp/rules/04-security.md#46d0d4003fc8",
+    "sota-c-cpp/rules/06-build-tooling-ci.md#c938ad95cca9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Arithmetic edge cases at the boundary.** `strtod`, `std::stod` and `std::from_chars` all accept `\"nan\"`, `\"inf\"` and",
+   "members": [
+    "sota-c-cpp/rules/03-undefined-behavior.md#611901d00744",
+    "sota-code-security/rules/06-memory-resource-safety.md#0bed85b28f12",
+    "sota-dotnet/rules/01-idioms.md#06fa127fc76a",
+    "sota-jvm/rules/01-idioms.md#d89717f0da8e",
+    "sota-rust/rules/01-ownership-and-api-design.md#a9d6345ee1e9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **NaN/infinity from parsed input, divide by zero, INT_MIN / -1 (§2) — HIGH on size, price or limit paths** — `grep",
+   "members": [
+    "sota-c-cpp/rules/03-undefined-behavior.md#872dc36d14a6",
+    "sota-code-security/rules/06-memory-resource-safety.md#a35ae8793669",
+    "sota-dotnet/rules/01-idioms.md#51dfb8d13e59",
+    "sota-golang/rules/02-design.md#f4b7682230dc",
+    "sota-jvm/rules/01-idioms.md#01fc70f89296",
+    "sota-python/rules/03-idioms-pitfalls.md#92cf9311104c",
+    "sota-rust/rules/01-ownership-and-api-design.md#be272d9a0184"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **TLS / transport verification (§4) — HIGH when a peer certificate is never checked, CRITICAL in a client on user ",
+   "members": [
+    "sota-c-cpp/rules/04-security.md#10a9bdf03c80",
+    "sota-code-security/rules/04-cryptography.md#38f16200080f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Logs carry neither secrets nor raw input.** C has no standard logger, so every `syslog`/`fprintf(stderr, ...)` call ",
+   "members": [
+    "sota-c-cpp/rules/04-security.md#1281c24881bb",
+    "sota-code-security/rules/07-data-exposure.md#5d87a36e0be4",
+    "sota-python/rules/05-security.md#5a956fdbd889",
+    "sota-rust/rules/05-security-supply-chain.md#cfa4e2238ea7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Never** use `rand()`/`random()`/`std::mt19937` for security (keys, tokens, IVs, salts) — they're predictable. Use th",
+   "members": [
+    "sota-c-cpp/rules/04-security.md#15bf2ed4b575",
+    "sota-code-security/rules/04-cryptography.md#9ce97fb879f8",
+    "sota-golang/rules/05-security.md#94b9c6bd915c",
+    "sota-javascript-typescript/rules/05-security.md#9b4d7f22bcda",
+    "sota-php/rules/04-sessions-auth-web-hardening.md#594979607b28",
+    "sota-ruby/rules/02-security.md#8aee277c8260",
+    "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md#cce0e1cd21be"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Where feasible, move new untrusted-input-parsing code to a memory-safe language (Rust), or isolate the C/C++ parser (s",
+   "members": [
+    "sota-c-cpp/rules/04-security.md#6bc123a0e866",
+    "sota-code-security/rules/06-memory-resource-safety.md#254f87e42b2b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Bounds- and overflow-check every length/count/offset from input *before* using it to allocate, index, or copy ([`rules",
+   "members": [
+    "sota-c-cpp/rules/04-security.md#86c32fee7749",
+    "sota-code-security/rules/06-memory-resource-safety.md#403b5a331075"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "per-language pointer to sota-async-concurrency, kept so each language skill reads alone",
+   "sample": "The cross-runtime model — structured concurrency, cancellation and timeouts, backpressure, the race and deadlock catalog",
+   "members": [
+    "sota-c-cpp/rules/05-concurrency.md#c28bb9143e94",
+    "sota-dotnet/rules/03-async-concurrency.md#b9517ea09d19",
+    "sota-golang/rules/03-concurrency.md#d69f9d359b54",
+    "sota-javascript-typescript/rules/03-async-patterns.md#a1f5f2453bc5",
+    "sota-php/rules/01-language-baseline.md#02d7a9001cfa",
+    "sota-python/rules/04-async.md#3895c5778a82",
+    "sota-swift/rules/03-concurrency.md#17cc3cba3580"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Shipped binary scanned with no build-time SBOM (§5) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rul",
+   "members": [
+    "sota-c-cpp/rules/06-build-tooling-ci.md#678b3b51a775",
+    "sota-devsecops/rules/14-sbom-component-inventory.md#5442f41330e6"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **A library's insecure defaults become your code's defaults.** Every security-relevant option you do not set is a deci",
+   "members": [
+    "sota-c-cpp/rules/06-build-tooling-ci.md#6f6cffba3d3a",
+    "sota-devsecops/rules/15-dependency-adoption.md#29ebf5753a3e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Any code parsing untrusted bytes (network, file formats, decoders) gets a fuzz target: prefer **AFL++** or **FuzzTest*",
+   "members": [
+    "sota-c-cpp/rules/06-build-tooling-ci.md#b1ee27d0db7b",
+    "sota-testing/rules/06-property-fuzzing-mutation.md#f9f39c05dee7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Heap allocation (`new`/`malloc`) is expensive and a contention point. Reduce allocations on hot paths: - `reserve()` c",
+   "members": [
+    "sota-c-cpp/rules/07-performance.md#7391518a2cdf",
+    "sota-dotnet/rules/05-performance.md#1cfabcba2d2f",
+    "sota-performance/SKILL.md#f756f39af9c5"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] No secret accepted via argv; file/stdin/no-echo-prompt paths exist; a secret env var, if supported at all, is docu",
+   "members": [
+    "sota-cli-ux/rules/01-commands-flags-config.md#2601e626ab1b",
+    "sota-cli-ux/rules/01-commands-flags-config.md#dc092cc0770b",
+    "sota-secrets-management/rules/03-application-patterns.md#42de5ec69c02"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Never auto-execute the guess — `tool prune` guessed from `tool prun` deleting data is unforgivable. (cobra: disable `Sug",
+   "members": [
+    "sota-cli-ux/rules/01-commands-flags-config.md#a45dd7e9836d",
+    "sota-cli-ux/rules/02-output-interaction.md#0517e5dc2f51"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Differentiate at minimum: - `0` success - `1` operational failure (the thing failed) - `2` usage error (bad flags/args",
+   "members": [
+    "sota-cli-ux/rules/02-output-interaction.md#0674313cfa3d",
+    "sota-cli-ux/rules/02-output-interaction.md#dd82974ac7cd",
+    "sota-shell-scripting/rules/02-robustness-correctness.md#5792cf530c38"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- `130` after SIGINT (128+signal, the shell convention) — most runtimes do this if you re-raise the signal after cleanup",
+   "members": [
+    "sota-cli-ux/rules/02-output-interaction.md#50f4eda63f43",
+    "sota-cli-ux/rules/03-behavior-lifecycle.md#b6c6dd32d3cd"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Skips are output, not silence.** A check that could not run (missing toolchain, no network, unsupported platform) pr",
+   "members": [
+    "sota-cli-ux/rules/03-behavior-lifecycle.md#887a3ab8bec1",
+    "sota-shell-scripting/rules/02-robustness-correctness.md#95ef5d197add"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- `curl | sh` installers are popular and acceptable **only** as a human's convenience channel — never the path CI or pro",
+   "members": [
+    "sota-cli-ux/rules/04-distribution-docs.md#50784c8464e7",
+    "sota-devsecops/rules/02-provenance-signing.md#e6aa63fb333f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Every example in docs must be copy-pasteable and CI-tested if feasible (doc-test runners / cram-style tests); stale ex",
+   "members": [
+    "sota-cli-ux/rules/04-distribution-docs.md#c3f4efdb080c",
+    "sota-docs-workflow/rules/02-api-reference-changelogs.md#10f2a587789c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Changelog per release, human-written headline per breaking change, with the migration command/flag mapping. `tool` maj",
+   "members": [
+    "sota-cli-ux/rules/04-distribution-docs.md#fc3bfc52a3ca",
+    "sota-docs-workflow/SKILL.md#0f0defec0777",
+    "sota-docs-workflow/rules/02-api-reference-changelogs.md#45a7ae869587"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Break-glass: both paths (org root, account-level role) exist, IdP-independent, alarmed, tested within last quarter",
+   "members": [
+    "sota-cloud-infrastructure/rules/02-iam-design.md#27330e14be42",
+    "sota-cloud-infrastructure/rules/02-iam-design.md#2e7661a9893d",
+    "sota-devsecops/rules/07-runtime-ops.md#ac5933354551",
+    "sota-devsecops/rules/07-runtime-ops.md#b2946630d182",
+    "sota-identity-access/rules/05-privileged-workload.md#ad88f3d69ad6"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Separate **control-plane admin** from **data access** in role design: the person who can change KMS key policy should ",
+   "members": [
+    "sota-cloud-infrastructure/rules/02-iam-design.md#823e6645f4ca",
+    "sota-cloud-infrastructure/rules/05-data-storage.md#e44cc0909877"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Certificate lifetimes are collapsing by CA/Browser Forum schedule: max 200 days from 2026-03-15, 100 days from 2027-",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#006d7035d15a",
+    "sota-cloud-infrastructure/rules/03-networking.md#8534b2c52b8f",
+    "sota-network-security/SKILL.md#12c2a26ce62b",
+    "sota-network-security/rules/06-dns-tls-pki.md#36e9fe319987",
+    "sota-secrets-management/rules/05-credential-types.md#627405792268"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Dangling records are the top DNS finding:** CNAMEs/A records pointing at released cloud resources (deleted buckets, ",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#24f7f6257484",
+    "sota-cloud-infrastructure/rules/03-networking.md#2c99f3bade1f",
+    "sota-devsecops/rules/06-iac-deployment.md#b0e266471036",
+    "sota-devsecops/rules/06-iac-deployment.md#c6f7c2255d1a",
+    "sota-network-security/rules/06-dns-tls-pki.md#70afc0746858"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Security groups / firewall rules: deny-by-default, reference **security groups (or tags/service accounts in GCP), not ",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#38e8318d54e8",
+    "sota-cloud-infrastructure/rules/03-networking.md#74de115389d3",
+    "sota-network-security/rules/02-segmentation-blast-radius.md#35608bb48866",
+    "sota-network-security/rules/02-segmentation-blast-radius.md#5735c38dd296",
+    "sota-network-security/rules/02-segmentation-blast-radius.md#add349256759"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Split-horizon:** public zones contain only public entry points; internal records live in private zones (Route 53 pri",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#4e9ef85e1ee0",
+    "sota-network-security/rules/06-dns-tls-pki.md#699747402759"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Internal/mTLS: use a private CA service (AWS Private CA, GCP CA Service, or service-mesh-issued identities) with short",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#5b2fca176130",
+    "sota-network-security/rules/06-dns-tls-pki.md#3acbe7cb1eb0",
+    "sota-secrets-management/rules/05-credential-types.md#0d3f64d787a6"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Egress is a control point, not a default-open pipe.** Data exfiltration and C2 traffic leave through egress; treat `",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#dd56ee5bb0e9",
+    "sota-network-security/SKILL.md#77238729b2b3",
+    "sota-network-security/rules/05-edge-ingress-egress.md#5a8c814b8ca6"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **DNSSEC stance:** sign zones where the registrar+provider support is solid and you have rotation automation (managed ",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#e67bab459f27",
+    "sota-network-security/rules/06-dns-tls-pki.md#9079286d892b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **A warm start reuses the whole environment, not just your connections.** AWS documents that objects declared outside ",
+   "members": [
+    "sota-cloud-infrastructure/rules/04-compute-selection.md#2273f89293da",
+    "sota-code-security/rules/06-memory-resource-safety.md#5ca116623df5"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **High** — no per-request or user-scoped data in function globals, and no sensitive file left in `/tmp` across inv",
+   "members": [
+    "sota-cloud-infrastructure/rules/04-compute-selection.md#2f26725337bc",
+    "sota-code-security/rules/06-memory-resource-safety.md#ab8a9aa80990"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **PDB on everything with > 1 replica** — node upgrades and spot reclaim drain nodes; without PDBs, voluntary disruptio",
+   "members": [
+    "sota-cloud-infrastructure/rules/04-compute-selection.md#43eb686b9ae4",
+    "sota-kubernetes/rules/06-workloads-tenancy.md#e8e9784a617c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Upgrade cadence is a standing commitment:** upstream ships 3 minors/year with a ~14-month support window (owner: sot",
+   "members": [
+    "sota-cloud-infrastructure/rules/04-compute-selection.md#440d8f7b4b1c",
+    "sota-kubernetes/rules/01-control-plane-etcd.md#b515f03d5b93"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "9. **Outbound fetch of user-supplied URLs gets full SSRF defense** — scheme allowlist, post-resolution private-IP block,",
+   "members": [
+    "sota-code-security/SKILL.md#07c31d70026b",
+    "sota-code-security/rules/01-input-injection.md#11fc5f96f89e",
+    "sota-php/rules/03-files-deserialization-ssrf.md#c4ff326042b6",
+    "sota-swift/rules/05-security.md#5c924d5753ee",
+    "sota-threat-modeling/rules/03-threat-catalogs.md#065d0f767a04"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "One skill, two modes. The `rules/` files define the 2026 secure-coding baseline (OWASP Top 10 2025/API 2023/LLM + Agenti",
+   "members": [
+    "sota-code-security/SKILL.md#080bd3fafe76",
+    "sota-llm-engineering/SKILL.md#d667a0e23b23"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "5. **When requirements force a deviation** (e.g. shell-out unavoidable, CORS must reflect origins), implement the rules ",
+   "members": [
+    "sota-code-security/SKILL.md#54d41ad09684",
+    "sota-llm-engineering/SKILL.md#3b0dab44f8ae"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "5. **Check the inert**: a control that is *present* but does nothing is invisible to steps 2–4, because the code is not ",
+   "members": [
+    "sota-code-security/SKILL.md#57f0aee2dffe",
+    "sota/rules/01-audit-methodology.md#1a0350d97321"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "6. **Every control must be falsifiable.** For each control you add, ask: *if this were silently a no-op, would anything ",
+   "members": [
+    "sota-code-security/SKILL.md#66d5cc5feeb7",
+    "sota-code-security/rules/10-silent-control-failure.md#80638e582ea8",
+    "sota/rules/02-build-workflow.md#645ca87f901b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "6. **JWT verification pins algorithms and checks `exp`/`iss`/`aud`**; OAuth is Authorization Code + PKCE with exact redi",
+   "members": [
+    "sota-code-security/SKILL.md#af77cba11401",
+    "sota-databases/rules/08-surrealdb-multimodel.md#fd0af506341d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Open redirect (CWE-601)**: `?next=` targets must be relative-path-only (reject `//evil.com`, `https:`, `\\\\`, scheme-",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#0aabd37d9f3d",
+    "sota-dotnet/rules/04-security.md#f80acdd0e82f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Argv arrays stop shell metacharacters but NOT argument injection (CWE-88): a filename of `--output=/etc/cron.d/x` or `",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#0d39f84f691b",
+    "sota-python/rules/05-security.md#07e6c6474ca1",
+    "sota-rust/rules/08-external-programs.md#ca162f941e1d",
+    "sota-sandboxing/rules/04-process-app-sandboxing.md#73ea2a75d4c8"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Disable DTDs and external entities on **every** XML parser, explicitly — many parsers (Java DocumentBuilderFactory, li",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#44ee6a16392c",
+    "sota-jvm/SKILL.md#eb9fc89f49a0",
+    "sota-jvm/rules/06-build-tooling-ci.md#1c4473e94b88",
+    "sota-jvm/rules/07-xml.md#1c04ef437112",
+    "sota-jvm/rules/07-xml.md#8a079738fad9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **LDAP DN vs filter (§11)**: is each LDAP value escaped with the encoder for where it lands (RFC 4514 for DN compo",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#7066a945b1bf",
+    "sota-code-security/rules/01-input-injection.md#d26fa8cd2c75",
+    "sota-jvm/rules/04-security.md#86b6276f2009",
+    "sota-php/rules/02-injection.md#210ce81d4cbc"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **A validating regex matches the whole input.** Use the full-match API (`re.fullmatch`) or absolute anchors, and know ",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#88df1cbdce2c",
+    "sota-jvm/rules/04-security.md#3951a7b23095",
+    "sota-python/rules/05-security.md#723cbbb8e885"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Is user input confined to template variables (never concatenated into template strings), and do user-authored temp",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#9929322ff7d2",
+    "sota-code-security/rules/01-input-injection.md#ee3a49b59af4",
+    "sota-javascript-typescript/rules/05-security.md#0b8e0139ea78",
+    "sota-python/rules/05-security.md#89cffe764547"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Validation regexes (§10)**: are validators full-match with an absolute end anchor, bounded inside the pattern, a",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#9f76137ea080",
+    "sota-python/rules/05-security.md#96a680096e96"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Treat archive extraction as path traversal (Zip Slip, CWE-22): validate every entry name post-join; reject absolute pa",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#9fd3f9e12e94",
+    "sota-code-security/rules/09-untrusted-data-ingestion.md#57b95a00e9d1",
+    "sota-code-security/rules/09-untrusted-data-ingestion.md#e03244d7d0ac",
+    "sota-golang/rules/05-security.md#3a9a33a21120",
+    "sota-php/rules/03-files-deserialization-ssrf.md#9b1c4b73faec",
+    "sota-python/rules/05-security.md#7448ffcaf3e1",
+    "sota-ruby/rules/02-security.md#87c1480f2a4b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **CRLF / header injection (CWE-93/113)**: reject `\\r`/`\\n` in anything placed into HTTP headers (redirect `Location` f",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#af3a4a492685",
+    "sota-python/rules/05-security.md#b17be48e03b7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Never deserialize untrusted data with native object serializers**: Python `pickle`/`PyYAML yaml.load`, Java `ObjectI",
+   "members": [
+    "sota-code-security/rules/01-input-injection.md#c620cb6b959f",
+    "sota-jvm/SKILL.md#70e789d27d9d",
+    "sota-sandboxing/rules/01-isolation-boundaries.md#a67c95cfabd7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Verify against the key you configured, never the one in the message.** Use the IdP certificate from pinned metadata,",
+   "members": [
+    "sota-code-security/rules/02-authentication.md#0435db2f48a3",
+    "sota-identity-access/rules/01-federation-protocols.md#2132709f34cc"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Service-to-service: prefer short-lived, asymmetric, workload-bound credentials over static keys — mTLS/SPIFFE identiti",
+   "members": [
+    "sota-code-security/rules/02-authentication.md#07c593806c5e",
+    "sota-identity-access/rules/05-privileged-workload.md#d5bb1a0a37c6"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "\"The bind succeeded, so the password is right\" is false for one input: **the empty password.** A simple bind with a DN a",
+   "members": [
+    "sota-code-security/rules/02-authentication.md#24c6a756910c",
+    "sota-code-security/rules/02-authentication.md#49658bfdfdc3",
+    "sota-code-security/rules/02-authentication.md#d51af7e55270",
+    "sota-php/rules/02-injection.md#966b606e3c06"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Is SMS/voice OTP absent from high-value apps, and elsewhere offered only for a verified number beside a stronger",
+   "members": [
+    "sota-code-security/rules/02-authentication.md#4005d2b012e8",
+    "sota-identity-access/rules/06-mfa-federation-assurance.md#88b1e5cb5912"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Authorization Code flow **with PKCE (S256)** for every client type — SPAs, native apps, and confidential web apps (OAu",
+   "members": [
+    "sota-code-security/rules/02-authentication.md#90c88a4f5665",
+    "sota-identity-access/rules/01-federation-protocols.md#33aad476dac8"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Detectors. Each was run against a known-bad and a known-good fixture under ugrep and BSD grep. A hit is a finding when t",
+   "members": [
+    "sota-code-security/rules/02-authentication.md#9a9c40937c2c",
+    "sota-code-security/rules/06-memory-resource-safety.md#129019d216a1",
+    "sota-code-security/rules/06-memory-resource-safety.md#1844bc9daa6a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Use a maintained library; validate the **signature before** parsing assertions, on the whole document with a fixed exp",
+   "members": [
+    "sota-code-security/rules/02-authentication.md#e7dcd97e7404",
+    "sota-identity-access/rules/01-federation-protocols.md#818e54c6c72d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **ReBAC**: relationships as the model (\"editor of doc\", \"member of org that owns folder\") — Zanzibar-style (SpiceDB, O",
+   "members": [
+    "sota-code-security/rules/03-authorization.md#bc24b259771d",
+    "sota-identity-access/rules/03-authorization-models.md#02148a2e7c44"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **No hardcoded keys/secrets in source, config files in git, or client-side bundles** (CWE-798). Scan history too — a c",
+   "members": [
+    "sota-code-security/rules/04-cryptography.md#000bd7bfb8f0",
+    "sota-ruby/rules/02-security.md#68edbee752b0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Design for key *loss*, not just compromise** (OWASP Key Management): a root key with no recovery path means every ci",
+   "members": [
+    "sota-code-security/rules/04-cryptography.md#0b33b499812e",
+    "sota-secrets-management/rules/05-credential-types.md#e4fdf62a8e2f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **SSH host-key verification is the same control, and it is disabled the same way** (CWE-322, key exchange without enti",
+   "members": [
+    "sota-code-security/rules/04-cryptography.md#38a45d7305e8",
+    "sota-code-security/rules/04-cryptography.md#6980f4feb79d",
+    "sota-javascript-typescript/rules/04-node-backend.md#22166624b49e",
+    "sota-php/rules/03-files-deserialization-ssrf.md#971be04f4d4f",
+    "sota-php/rules/03-files-deserialization-ssrf.md#cb5436d20f47",
+    "sota-python/rules/05-security.md#432c3e78327b",
+    "sota-ruby/rules/03-web-hardening.md#4aa79e445813"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Authenticate context with **associated data (AAD)**: bind ciphertexts to their purpose/record (`aad = user_id || field",
+   "members": [
+    "sota-code-security/rules/04-cryptography.md#51b55cdf0f62",
+    "sota-secrets-management/rules/05-credential-types.md#a1debbaaf760"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Tamper-evident logs and audit ledgers (formerly section 8) moved to [rules/18] §1 on 2026-09-25; signed request/response",
+   "members": [
+    "sota-code-security/rules/04-cryptography.md#57b8c6bf6246",
+    "sota-code-security/rules/18-tamper-evident-logs.md#482266d0149b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Nonce: CSPRNG, per **response** (never static/cached — a cached nonce is no nonce). No `unsafe-inline`/`unsafe-eval` i",
+   "members": [
+    "sota-code-security/rules/05-web-security.md#1ae048d42f33",
+    "sota-javascript-typescript/rules/05-security.md#bcf30565622e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Broad `Domain=.example.com` cookies are readable/settable by every subdomain — one XSS'd or taken-over subdomain compr",
+   "members": [
+    "sota-code-security/rules/05-web-security.md#6885d55d19bd",
+    "sota-code-security/rules/05-web-security.md#f5a39bb09be3",
+    "sota-dotnet/rules/04-security.md#22909b2d171f",
+    "sota-php/rules/04-sessions-auth-web-hardening.md#d8c7e0bda363"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Browser-side: `Cache-Control: no-store` for sensitive pages also defends shared-computer history attacks (`no-cache` s",
+   "members": [
+    "sota-code-security/rules/05-web-security.md#87f65a9c8322",
+    "sota-code-security/rules/17-sessions-and-tokens.md#b373f12b695d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Name now, file later.** An API that returns a *name* and creates nothing (C `mktemp`/`tmpnam`/`tempnam`, Python `tem",
+   "members": [
+    "sota-code-security/rules/06-memory-resource-safety.md#1bf6e3fc2987",
+    "sota-code-security/rules/06-memory-resource-safety.md#a521c845577d",
+    "sota-python/rules/05-security.md#af4c038c8f53"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**A `.csproj` with `AllowUnsafeBlocks`, a Python import of `ctypes`, or a PHP `ffi.enable=true` is the one-line signal**",
+   "members": [
+    "sota-code-security/rules/06-memory-resource-safety.md#31cf140d7052",
+    "sota-dotnet/rules/04-security.md#912346920ece"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Permissions widened after the fact.** A secret written into a 0644 file, a later `chmod 0777`, or a process `umask(0",
+   "members": [
+    "sota-code-security/rules/06-memory-resource-safety.md#346661b838ff",
+    "sota-python/rules/05-security.md#0a23a699a14f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Default: forbid. `#![forbid(unsafe_code)]` in app crates; `unsafe` allowed only in designated low-level crates with: -",
+   "members": [
+    "sota-code-security/rules/06-memory-resource-safety.md#5968b8a54ba5",
+    "sota-rust/SKILL.md#c85eb67410fe",
+    "sota-rust/rules/03-unsafe-discipline.md#e16aba24c7ea"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Decompression: enforce output-size caps and **ratio caps** (zip/gzip/zstd bombs, CWE-409); decode images with pixel-co",
+   "members": [
+    "sota-code-security/rules/06-memory-resource-safety.md#c291b9b41255",
+    "sota-python/rules/05-security.md#a836cfaa84ba",
+    "sota-sandboxing/rules/04-process-app-sandboxing.md#9a9e3d775bb0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Authorization**: every denial (`authz_fail`) and privilege change. At high assurance, log **every** authorization de",
+   "members": [
+    "sota-code-security/rules/07-data-exposure.md#6607e0801bd2",
+    "sota-identity-access/rules/03-authorization-models.md#0ddce82bf90c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Production must have: debug modes off (framework debug pages, GraphQL playgrounds, Swagger UIs gated or auth'd), actua",
+   "members": [
+    "sota-code-security/rules/07-data-exposure.md#76920355005e",
+    "sota-secrets-management/rules/02-storage-backends.md#d709f853292d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Session**: created, renewed, expired (with the reason: idle or absolute), logout, and use after expiry (`session_*`)",
+   "members": [
+    "sota-code-security/rules/07-data-exposure.md#d598aa70de21",
+    "sota-code-security/rules/17-sessions-and-tokens.md#baad411bbf6e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Self-hosted vector DBs ship auth-OFF by default** (Qdrant, among others): set an API key / JWT, enable TLS, and bind",
+   "members": [
+    "sota-code-security/rules/08-llm-ai-security.md#08478ea87980",
+    "sota-databases/rules/07-vector-and-ai.md#ac1c32b5e104"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Validate tool arguments like any untrusted input** — model output IS untrusted input ([rules/01] applies in full): s",
+   "members": [
+    "sota-code-security/rules/08-llm-ai-security.md#29fe40111714",
+    "sota-threat-modeling/rules/03-threat-catalogs.md#013bc3308d6f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- The lethal trifecta to refuse by design: (a) access to private data + (b) exposure to untrusted content + (c) an exfil",
+   "members": [
+    "sota-code-security/rules/08-llm-ai-security.md#31fbab05398a",
+    "sota-sandboxing/rules/05-ai-agent-sandboxing.md#22c7d436598b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Human-in-the-loop for irreversible/high-impact actions (payments, deletes, external sends, code execution): explicit c",
+   "members": [
+    "sota-code-security/rules/08-llm-ai-security.md#a132e079c173",
+    "sota-sandboxing/rules/05-ai-agent-sandboxing.md#713ecdeacfe9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Bind the approval to what executes, and fail closed.** The approval record names the actor (agent), the requester (h",
+   "members": [
+    "sota-code-security/rules/08-llm-ai-security.md#a1826073f83b",
+    "sota-llm-engineering/rules/04-agents-tools.md#0f767fed620b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Parse structured output strictly: schema-validate JSON tool calls/extractions (`extra=forbid`, types, ranges); on fail",
+   "members": [
+    "sota-code-security/rules/08-llm-ai-security.md#d6f06066bb55",
+    "sota-llm-engineering/SKILL.md#b10716f2f3a0",
+    "sota-llm-engineering/rules/02-prompt-context-engineering.md#e5019be10190"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Format parsers are the largest ingest attack surface: complex state machines in C/C++ (image codecs, PDF, archive libs) ",
+   "members": [
+    "sota-code-security/rules/09-untrusted-data-ingestion.md#09163b07d3d7",
+    "sota-sandboxing/rules/04-process-app-sandboxing.md#8cc7e2167477",
+    "sota-sandboxing/rules/04-process-app-sandboxing.md#921484f3efba"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Size caps at every layer**: max request body, max field length, max file size, max decompressed size, max entry coun",
+   "members": [
+    "sota-code-security/rules/09-untrusted-data-ingestion.md#19e6a9e4495d",
+    "sota-golang/rules/04-http-services.md#43f8c2fe45a5"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Invisible code points in code and history (§4)**: does CI reject bidi and zero-width characters in source of eve",
+   "members": [
+    "sota-code-security/rules/09-untrusted-data-ingestion.md#fdf368f18126",
+    "sota-devsecops/rules/05-analysis-gates.md#7a615ee263b1",
+    "sota-javascript-typescript/rules/05-security.md#6aa4535831ae"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **A negative claim needs more proof than a positive one.** \"There are no swallowed exceptions on the enforcement path\"",
+   "members": [
+    "sota-code-security/rules/10-silent-control-failure.md#24cb20584881",
+    "sota/rules/03-audit-findings.md#088ea6dd4247"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **The proxy question asked of every control's predicate** (§1): is the tested condition the dependency itself, or ",
+   "members": [
+    "sota-code-security/rules/10-silent-control-failure.md#3f31bfda8166",
+    "sota-code-security/rules/14-control-not-in-force.md#9c3889740122"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **No security, authz, bounds, or data-integrity check implemented as an `assert`**, and the deployment's flags (`-",
+   "members": [
+    "sota-code-security/rules/11-dead-path-diagnostics.md#0bcb6c12d6f0",
+    "sota-python/rules/05-security.md#7ef0367e81d1"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Java's own documentation states it plainly: *\"By default, assertions are disabled at runtime\"*, and once disabled they a",
+   "members": [
+    "sota-code-security/rules/11-dead-path-diagnostics.md#1a9209896203",
+    "sota-code-security/rules/11-dead-path-diagnostics.md#4c1934b62188",
+    "sota-jvm/rules/04-security.md#ec4602e27100"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- AUDIT: grep for assertions on validation, authz, size, and parsing paths, then check what flags the **deployment** act",
+   "members": [
+    "sota-code-security/rules/11-dead-path-diagnostics.md#81dfe003f4ef",
+    "sota-python/rules/05-security.md#5551400781d0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "A neighbouring check that recounted the tree did **not** catch it, because the count it recounted (`SKILL.md` files) was",
+   "members": [
+    "sota-code-security/rules/11-dead-path-diagnostics.md#9671892a0b2d",
+    "sota-code-security/rules/15-instruments-and-guards.md#c6e77287550d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Constant duration across very different inputs** is the same tell without a baseline: if 100 files and 100k files ta",
+   "members": [
+    "sota-code-security/rules/11-dead-path-diagnostics.md#b29a9ba996e6",
+    "sota-performance/rules/01-methodology.md#8857781618c0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Related: the instruments and guards that do the checking → [`rules/15`]; the inert-control catalog → [rules/10]; the cod",
+   "members": [
+    "sota-code-security/rules/12-verifying-the-verifier.md#051193a3dfc6",
+    "sota-code-security/rules/15-instruments-and-guards.md#f171915e2d4d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Every **enforcement** control (cap, quota, filter, allowlist, sandbox policy) carries an **allow arm** as well as ",
+   "members": [
+    "sota-code-security/rules/12-verifying-the-verifier.md#1226f0459b22",
+    "sota-testing/rules/09-security-testing.md#2ec42f7ca9a7",
+    "sota-testing/rules/09-security-testing.md#94beea16c6f4"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Mutation probe run on security-critical paths** — control body replaced with the permissive no-op, with the depe",
+   "members": [
+    "sota-code-security/rules/12-verifying-the-verifier.md#40f665dfc30b",
+    "sota-testing/rules/06-property-fuzzing-mutation.md#2df27b7e96ac"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "The reason it earns its own file is an asymmetry. A broken feature produces a complaint. **A broken verifier produces a ",
+   "members": [
+    "sota-code-security/rules/12-verifying-the-verifier.md#42adb2d317a1",
+    "sota-code-security/rules/15-instruments-and-guards.md#660b4a8620bf"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Use it in BUILD to decide whether a control you just wrote is actually held in place by anything, and in AUDIT as the pa",
+   "members": [
+    "sota-code-security/rules/12-verifying-the-verifier.md#e8a63dc709f6",
+    "sota-code-security/rules/15-instruments-and-guards.md#61c40818c020"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Probe it by mutating the application and reading the output — not the test suite.** The usual probe changes the contro",
+   "members": [
+    "sota-code-security/rules/14-control-not-in-force.md#082c94d60e12",
+    "sota-code-security/rules/14-control-not-in-force.md#b0d9f9b528fc",
+    "sota-testing/rules/06-property-fuzzing-mutation.md#488b9e8b3f40"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "The audit move is a **census, not a search**. Do not grep for the control and confirm it exists — grep for the *operatio",
+   "members": [
+    "sota-code-security/rules/14-control-not-in-force.md#42c491c556ba",
+    "sota-code-security/rules/14-control-not-in-force.md#b1cdca035821",
+    "sota/rules/01-audit-methodology.md#791b391cc897"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**The mandatory direction is a different bug with a different fix.** Everything above is *prohibitive* — an instruction ",
+   "members": [
+    "sota-code-security/rules/14-control-not-in-force.md#c75b2f9f0f95",
+    "sota-llm-engineering/rules/04-agents-tools.md#5d826339d888"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Is every control the runtime needs **present in the shipped artifact** — the image, the wheel, the bundle — and no",
+   "members": [
+    "sota-code-security/rules/14-control-not-in-force.md#fe6436cfecf1",
+    "sota-devsecops/rules/04-build-containers.md#4532019afd56"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Pin the algorithm at verification.** Pass an explicit allowlist (`algorithms=[\"ES256\"]`); never trust the header's `",
+   "members": [
+    "sota-code-security/rules/17-sessions-and-tokens.md#10bc17acd124",
+    "sota-secrets-management/rules/05-credential-types.md#c5e612a6fbca"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Regenerate the session ID on every privilege change**: login, logout, password change, MFA step-up, role elevation, ",
+   "members": [
+    "sota-code-security/rules/17-sessions-and-tokens.md#8af6604c99b6",
+    "sota-javascript-typescript/rules/05-security.md#57197dffc9ab",
+    "sota-php/rules/04-sessions-auth-web-hardening.md#90e0d947b152",
+    "sota-ruby/rules/03-web-hardening.md#6360b334e0d2"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Browser storage: keep tokens **and any other sensitive data** out of `localStorage` and `sessionStorage` (CWE-922). Ev",
+   "members": [
+    "sota-code-security/rules/17-sessions-and-tokens.md#a45a029f174d",
+    "sota-javascript-typescript/rules/05-security.md#4c726b1e93da"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Revocation: JWTs can't be revoked, so keep them short-lived and pair with rotating refresh tokens (server-side, revoca",
+   "members": [
+    "sota-code-security/rules/17-sessions-and-tokens.md#e86b1ea5656e",
+    "sota-identity-access/SKILL.md#be6dbbad4107"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Are uploads content-validated (magic bytes or a real decoder; an extension allowlist that rejects double extension",
+   "members": [
+    "sota-code-security/rules/21-file-uploads.md#5dfa5fa27d5a",
+    "sota-javascript-typescript/rules/05-security.md#35bccbb8818f",
+    "sota-ruby/rules/03-web-hardening.md#e8b1e417b1b4"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Split out of [rules/05] (formerly section 10) on 2026-09-25, when [rules/05] reached the 500-line cap; the section is no",
+   "members": [
+    "sota-code-security/rules/21-file-uploads.md#6ace8b16bd51",
+    "sota-code-security/rules/22-constant-time-comparison.md#7515d0ba228b",
+    "sota-code-security/rules/23-llm-platform-supply-chain.md#2286a0f64430",
+    "sota-devsecops/rules/09-gates-that-hold.md#a58c9e92d93e",
+    "sota-jvm/rules/08-web-layer.md#f91552b4bbd5",
+    "sota-python/rules/08-supply-chain.md#e6616f140ec5",
+    "sota-rust/rules/08-external-programs.md#6c6c935705a5"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Store outside the web root, or in object storage with no execute semantics. Never in a directory where the app server ",
+   "members": [
+    "sota-code-security/rules/21-file-uploads.md#713723c965bb",
+    "sota-php/rules/03-files-deserialization-ssrf.md#36be159801ef"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Any comparison where one side is secret (MACs, tokens, API keys, OTP codes, signatures) must be constant-time: `hmac.c",
+   "members": [
+    "sota-code-security/rules/22-constant-time-comparison.md#00c637666361",
+    "sota-code-security/rules/22-constant-time-comparison.md#6f88c668ae5c",
+    "sota-performance/rules/05-caching.md#e5620382b36a",
+    "sota-ruby/rules/02-security.md#49f56858e41b",
+    "sota-rust/rules/05-security-supply-chain.md#502c5e21096a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Named MCP/agent attack classes — use these names in findings (IDs: OWASP MCP Top 10 MCP03:2025 Tool Poisoning, which n",
+   "members": [
+    "sota-code-security/rules/23-llm-platform-supply-chain.md#a7a987db7a2c",
+    "sota-threat-modeling/rules/03-threat-catalogs.md#106940fb39c1"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **AMD SEV without SNP** (plain SEV, SEV-ES): encrypts guest memory but provides no memory *integrity* — a malicious hy",
+   "members": [
+    "sota-confidential-computing/rules/01-threat-model-and-selection.md#29b930c1c4fa",
+    "sota-confidential-computing/rules/02-tee-technologies.md#a78eebccc929"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Zero unsubstantiated superlatives/only/first claims (§5): `grep -rniwE '#1|best|leading|only|first|fastest|world-c",
+   "members": [
+    "sota-copywriting/rules/01-positioning-value-proposition.md#e727c6dc439b",
+    "sota-copywriting/rules/04-claims-legal-trust.md#8004ef26872c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Bulk sends (Gmail: 5,000+/day; Yahoo: no published number): SPF + DKIM + DMARC aligned, RFC 8058 one-click-unsubsc",
+   "members": [
+    "sota-copywriting/rules/04-claims-legal-trust.md#bef3d22a25f8",
+    "sota-copywriting/rules/04-claims-legal-trust.md#dbae69cc7a13",
+    "sota-network-security/rules/06-dns-tls-pki.md#bad1ed04a7f9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Dark-pattern sweep (§4): no confirmshaming (`grep -riE '[\">]No thanks, I' --include='*.html' --include='*.md' --in",
+   "members": [
+    "sota-copywriting/rules/04-claims-legal-trust.md#eebdfee2be52",
+    "sota-frontend-design/rules/07-visual-craft-distinctiveness.md#2f9c30a3a463"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Log-based CDC holds a replication slot on the source**, and an abandoned or lagging slot makes the source retain WAL",
+   "members": [
+    "sota-data-engineering/rules/03-streaming-and-cdc.md#783c0bc5883a",
+    "sota-databases/rules/05-reliability-and-scale.md#03c91092c821"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "9. **Least privilege at the database.** The app role owns no schema, cannot DROP, and cannot read tables it does not use",
+   "members": [
+    "sota-databases/SKILL.md#d9cee424a569",
+    "sota-secrets-management/rules/05-credential-types.md#aad50dad6067"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "2. **Seq Scan on a large table with a selective filter** → missing index. Seq scan on a small table or non-selective pre",
+   "members": [
+    "sota-databases/rules/03-queries-and-indexes.md#1420b7e84242",
+    "sota-performance/rules/02-algorithms-data-structures.md#0e4cf6e3302c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Always a TTL**, even with explicit invalidation — TTL is the bound on how wrong you can be. Jitter TTLs (±10%, [`sot",
+   "members": [
+    "sota-databases/rules/05-reliability-and-scale.md#c66235aeea35",
+    "sota-performance/rules/05-caching.md#44325cd09744"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Backups: industry-accepted approach is documented backup-expiry windows (deleted data ages out of backups within N day",
+   "members": [
+    "sota-databases/rules/06-security-and-compliance.md#451ac1825682",
+    "sota-privacy-compliance/rules/03-consent-and-user-rights.md#45041bc397a3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- All SQL through bind parameters, including in ORMs' raw escape hatches (`whereRaw`, `extra()`, `$queryRawUnsafe` — aud",
+   "members": [
+    "sota-databases/rules/06-security-and-compliance.md#bec7e360e65d",
+    "sota-dotnet/rules/04-security.md#ffd375bbaa43",
+    "sota-jvm/rules/04-security.md#9f3011448cb7",
+    "sota-swift/rules/05-security.md#5749c4e56b05"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Query embeddings must come from the same model as stored ones; assert this in code (config couples the query-encoder a",
+   "members": [
+    "sota-databases/rules/07-vector-and-ai.md#f67c509f942f",
+    "sota-llm-engineering/rules/03-rag-retrieval.md#d6bb931e5a03"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-detection-engineering description: >- State-of-the-art detection engineering, SOC, threat hunting, and in",
+   "members": [
+    "sota-detection-engineering/SKILL.md#2cd860349f50",
+    "sota/rules/04-library-map.md#56625a6767b3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **[sota-observability]** owns the telemetry pipeline. Detection logic consumes its output. Reference [rules/01] (struc",
+   "members": [
+    "sota-detection-engineering/rules/01-detection-engineering-discipline.md#cd5fab24fe3e",
+    "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md#5213182cf183"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**No actionable alert reaches a human without a runbook.** The runbook answers: what does this detection mean, what's th",
+   "members": [
+    "sota-detection-engineering/rules/04-alerting-triage-soc-soar.md#d18487897882",
+    "sota-docs-workflow/rules/01-documentation-architecture.md#74a781a99f56",
+    "sota-docs-workflow/rules/01-documentation-architecture.md#9c70c690010c",
+    "sota-observability/rules/04-slos-alerting.md#8ac98a2c9315"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Honeytokens / canary credentials** — fake AWS keys, API tokens, DB connection strings, service-account creds planted",
+   "members": [
+    "sota-detection-engineering/rules/05-hunting-intel-deception.md#9d386f9d92a7",
+    "sota-secrets-management/rules/04-detection-and-remediation.md#1022c19e7c3e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Detection wiring.** Every deception asset must alert with maximum severity and rich context (who/where/how) and rout",
+   "members": [
+    "sota-detection-engineering/rules/05-hunting-intel-deception.md#b6a69201848c",
+    "sota-detection-engineering/rules/05-hunting-intel-deception.md#dc4478e4fe66",
+    "sota-detection-engineering/rules/07-ad-attack-detection.md#4c9ee9db49a6"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "If the user asks for something that violates a non-negotiable, implement the secure alternative and explain the delta; o",
+   "members": [
+    "sota-devsecops/SKILL.md#8fbf15de7f44",
+    "sota-kubernetes/SKILL.md#b831bd02f1c0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "End every audit with: counts per severity, the top 3 fixes by risk reduction per effort, and an explicit list of what wa",
+   "members": [
+    "sota-devsecops/SKILL.md#96074f24451f",
+    "sota-frontend-design/SKILL.md#faa7b25392cd",
+    "sota-kubernetes/SKILL.md#564984f0a649"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "4. **Never combine untrusted PR code with secrets or write tokens.** `pull_request_target` (or `workflow_run`) must not ",
+   "members": [
+    "sota-devsecops/SKILL.md#f3b8eae59177",
+    "sota-devsecops/rules/01-pipeline-security.md#1029c7e4bdbb",
+    "sota-secrets-management/rules/04-detection-and-remediation.md#30a6b35052dc"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Default branch ruleset: PR + review required, stale-approval dismissal, exact required checks, no force-push, appl",
+   "members": [
+    "sota-devsecops/rules/01-pipeline-security.md#0b7ae4d9ad2c",
+    "sota-kubernetes/rules/04-gitops-controllers.md#37abf922c9a3"
+   ]
+  },
+  {
+   "verdict": "consolidate",
+   "note": "same dated GitHub OIDC fact in sota-devsecops rules/01 and sota-secrets-management rules/01: keep one, link from the other",
+   "sample": "- **Immutable subject claims:** repos created, renamed or transferred after 2026-07-15 get a `sub` carrying numeric IDs ",
+   "members": [
+    "sota-devsecops/rules/01-pipeline-security.md#679ac254ff55",
+    "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md#7feedfb8ba26"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Secrets are masked in logs by value-match only: derived values (base64 of a secret, a URL embedding it) print in clear",
+   "members": [
+    "sota-devsecops/rules/01-pipeline-security.md#9537686c0ef1",
+    "sota-shell-scripting/rules/03-security.md#025f5a4a24a6",
+    "sota-shell-scripting/rules/03-security.md#e5223207bf62"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] No long-lived cloud keys in secrets; OIDC trust policies pin `aud` and an exact `sub` (repo + ref/environment, no ",
+   "members": [
+    "sota-devsecops/rules/01-pipeline-security.md#cfbf1cfd8ea1",
+    "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md#4335d6e4dec4"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Cache poisoning: `actions/cache` is scoped, but a cache written by a default-branch workflow is trusted by all branche",
+   "members": [
+    "sota-devsecops/rules/01-pipeline-security.md#e672ab88601a",
+    "sota-devsecops/rules/16-fast-ci-without-blind-spots.md#b0339466d10c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Tag protection**: protect release tag patterns (`v*`) via rulesets — release pipelines trust tags; anyone who can cr",
+   "members": [
+    "sota-devsecops/rules/01-pipeline-security.md#ed44ba4868f8",
+    "sota-devsecops/rules/02-provenance-signing.md#852e235e2d38"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **PyPI Trusted Publishers**: register the exact repo + workflow + environment on PyPI; publish with `pypa/gh-action-py",
+   "members": [
+    "sota-devsecops/rules/02-provenance-signing.md#9efd19f017eb",
+    "sota-python/rules/08-supply-chain.md#e38110ce60c3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Immutable releases**: never re-publish an existing version with different bytes (no re-tagging, no overwriting GitHu",
+   "members": [
+    "sota-devsecops/rules/02-provenance-signing.md#aad9aca17be5",
+    "sota-devsecops/rules/04-build-containers.md#2d2220bd7ae6",
+    "sota-devsecops/rules/04-build-containers.md#f957cbeaa554",
+    "sota-devsecops/rules/08-registry-security.md#3a3364f25aa9",
+    "sota-devsecops/rules/08-registry-security.md#9fc485d62c2f",
+    "sota-docs-workflow/rules/04-commits-branches-releases.md#a72c473124a4"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **crates.io**: Trusted Publishing has been available since July 2025. GitHub Actions exchanges an OIDC token for a sho",
+   "members": [
+    "sota-devsecops/rules/02-provenance-signing.md#e9cbc8639d19",
+    "sota-rust/rules/07-tooling-ci.md#6cae863d3067"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Cooldown**: Renovate `minimumReleaseAge: \"5 days\"` (Dependabot: cooldown config) for public packages — most maliciou",
+   "members": [
+    "sota-devsecops/rules/03-dependencies.md#17f2b3885abb",
+    "sota-javascript-typescript/rules/05-security.md#fbaafb26dfe0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Process: adding a dependency is an architectural decision — require PR description to justify new direct deps; prefer ",
+   "members": [
+    "sota-devsecops/rules/03-dependencies.md#bf9415d99996",
+    "sota-devsecops/rules/15-dependency-adoption.md#0c34bd97aaa0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Install-time execution**: npm `preinstall`/`install`/`postinstall`, Python `setup.py` arbitrary code. Most npm malwa",
+   "members": [
+    "sota-devsecops/rules/03-dependencies.md#f76a04403205",
+    "sota-javascript-typescript/rules/05-security.md#dcbade410fa3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **`USER` non-root** in the final stage (numeric UID for k8s `runAsNonRoot` checks, or distroless `:nonroot`). Root-in-",
+   "members": [
+    "sota-devsecops/rules/04-build-containers.md#1052df409548",
+    "sota-sandboxing/rules/03-containers-microvms.md#394fc03393bc",
+    "sota-sandboxing/rules/03-containers-microvms.md#a78d8d956747"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Deploy by digest** ([rules/06] §6.6, [rules/07] §7.1): manifests reference `image@sha256:...`; tags are for humans. ",
+   "members": [
+    "sota-devsecops/rules/04-build-containers.md#52c898f63797",
+    "sota-devsecops/rules/08-registry-security.md#1035c3d50b87",
+    "sota-kubernetes/rules/07-supply-chain-audit.md#d4c3156b025c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Retention: garbage-collect untagged/dev images on schedule, but **never** delete digests referenced by running workloa",
+   "members": [
+    "sota-devsecops/rules/04-build-containers.md#d73e5f7bb259",
+    "sota-devsecops/rules/08-registry-security.md#1cd734fbd765"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Retries: at most one automatic retry, *recorded* (flake-detection reporting), never silent. `retry: 3` sprinkled in CI",
+   "members": [
+    "sota-devsecops/rules/05-analysis-gates.md#46917a3c71e9",
+    "sota-testing/rules/07-suite-health-and-ci.md#30d0f18d9d54"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "(When the plan needs real credentials, this runs under the read-only plan role of [rules/06] §6.2 and never on fork PRs ",
+   "members": [
+    "sota-devsecops/rules/05-analysis-gates.md#746e9fd1caf0",
+    "sota-devsecops/rules/06-iac-deployment.md#ae42c1404b73"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recor",
+   "members": [
+    "sota-devsecops/rules/05-analysis-gates.md#bb345771817a",
+    "sota-devsecops/rules/05-analysis-gates.md#f000aa7157ea",
+    "sota-testing/SKILL.md#f92a96f04d87"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Keep secrets out of state where possible**: prefer `ephemeral` resources/values and write-only arguments (TF ≥1.10/1",
+   "members": [
+    "sota-devsecops/rules/06-iac-deployment.md#0f050633269c",
+    "sota-devsecops/rules/06-iac-deployment.md#fb3b545980c8",
+    "sota-secrets-management/rules/02-storage-backends.md#c7c52451a78f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Manifest provenance: pin remote Helm charts by version + verify chart signatures/ digests (OCI charts by digest); a `t",
+   "members": [
+    "sota-devsecops/rules/06-iac-deployment.md#4fdcb85c532a",
+    "sota-kubernetes/rules/07-supply-chain-audit.md#83a10216fad0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Secrets in GitOps**: never plaintext in the repo. Preference order: External Secrets Operator / CSI secrets-store re",
+   "members": [
+    "sota-devsecops/rules/06-iac-deployment.md#9c1d4f2bfeca",
+    "sota-kubernetes/rules/06-workloads-tenancy.md#fd6594d240d7",
+    "sota-secrets-management/rules/02-storage-backends.md#16f4e799880a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- GitOps equivalents: Argo CD `selfHeal: true` auto-reverts live drift; Flux reconciles continuously. Self-heal is drift",
+   "members": [
+    "sota-devsecops/rules/06-iac-deployment.md#daac11f51088",
+    "sota-kubernetes/rules/04-gitops-controllers.md#92feb75d8045"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- `failurePolicy: Fail` on the webhook for prod admission — `Ignore` means \"enforce unless the enforcer is down\", which ",
+   "members": [
+    "sota-devsecops/rules/07-runtime-ops.md#0f1710583cd1",
+    "sota-kubernetes/rules/05-operators-crds-webhooks.md#c7f2e9b1fe22"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Policies have tests**: `kyverno test` fixtures / OPA `opa test` + conftest unit tests with good/bad manifests, run a",
+   "members": [
+    "sota-devsecops/rules/07-runtime-ops.md#159b4504c1b0",
+    "sota-identity-access/rules/03-authorization-models.md#168348a73ec0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Exceptions are first-class, scoped, and time-bound**: Kyverno `PolicyException` (or documented exclusion lists) nami",
+   "members": [
+    "sota-devsecops/rules/07-runtime-ops.md#2422bae2df3d",
+    "sota-kubernetes/rules/03-admission-policy.md#0ae8f3b62825",
+    "sota-privacy-compliance/rules/05-audit-ready-engineering.md#e99a85edfa20",
+    "sota-security-compliance/rules/01-control-frameworks-as-code.md#8ea695722963",
+    "sota-security-compliance/rules/01-control-frameworks-as-code.md#ed6b8d5f0d58"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Stopping or restarting a shared runtime is destructive, not maintenance.** `podman machine stop`, `colima stop`, res",
+   "members": [
+    "sota-devsecops/rules/07-runtime-ops.md#f469f9048e83",
+    "sota-shell-scripting/rules/08-ad-hoc-side-effects.md#d9bf38180960"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Field-reported 2026-09-16: a gate suite failed, and a second run started concurrently by a pre-push hook collided with i",
+   "members": [
+    "sota-devsecops/rules/11-after-the-gate-fails.md#a8881b6debc9",
+    "sota-shell-scripting/rules/01-safety-baseline.md#383e10036b2c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Never cache a verdict** across code changes unless a build system you trust keys it on the content hash of every inp",
+   "members": [
+    "sota-devsecops/rules/16-fast-ci-without-blind-spots.md#abb9f7bb4aac",
+    "sota-testing/rules/07-suite-health-and-ci.md#e4dcf6731e5a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Changelog vs release notes**: the changelog is the complete, append-only, per-version record in the repo; release no",
+   "members": [
+    "sota-docs-workflow/rules/02-api-reference-changelogs.md#737f58109eaa",
+    "sota-docs-workflow/rules/04-commits-branches-releases.md#19da00b8eb9d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Anything published to a **third party under someone else's name** (PR comment, issue, commit message, upstream pos",
+   "members": [
+    "sota-docs-workflow/rules/03-code-review-pr-workflow.md#bd375d7454a9",
+    "sota/SKILL.md#88b805d5b412"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-dotnet description: >- State-of-the-art C# / .NET engineering rules (.NET LTS releases, modern C#) that C",
+   "members": [
+    "sota-dotnet/SKILL.md#4b00d4449ad1",
+    "sota/rules/04-library-map.md#528760e9a4ee"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Runtime patch level is an audit surface** — framework CVEs such as CVE-2025-55315 (Kestrel request smuggling) and ho",
+   "members": [
+    "sota-dotnet/rules/04-security.md#8d44d52ecf47",
+    "sota-dotnet/rules/06-build-tooling-ci.md#79ee145934ca"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **`unsafe` / P/Invoke — HIGH on input-derived lengths** (§6) — `grep -rnE 'AllowUnsafeBlocks' --include='*.csproj'",
+   "members": [
+    "sota-dotnet/rules/04-security.md#d806bf8eec15",
+    "sota-dotnet/rules/06-build-tooling-ci.md#b16fdb8cbe6a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Parsers of untrusted bytes have fuzz / property-based tests (§4) — LOW, MEDIUM for a parser of untrusted bytes; ",
+   "members": [
+    "sota-dotnet/rules/06-build-tooling-ci.md#68f02224dd7a",
+    "sota-testing/rules/09-security-testing.md#2e12c343aa6b"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "per-language statement written at the formal-verification intake (2026-10-25)",
+   "sample": "- **No proof tool is expected here.** No bounded model checker or refinement checker is in mainstream use for C#. A pars",
+   "members": [
+    "sota-dotnet/rules/06-build-tooling-ci.md#79dd7d80cb86",
+    "sota-golang/rules/07-tooling-ci.md#a4365171901c",
+    "sota-javascript-typescript/rules/07-testing-and-tooling.md#d63e366a13b3",
+    "sota-jvm/rules/06-build-tooling-ci.md#da5a05d4ea46",
+    "sota-php/rules/05-composer-tooling.md#4b4ebe96a84b",
+    "sota-ruby/rules/04-supply-chain-tooling.md#3384e70dbb6c",
+    "sota-swift/rules/08-tooling-ci-testing.md#06a64e8860bd"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Define fallback metrics to kill CLS: `size-adjust`, `ascent-override`, `descent-override` on a local fallback `@font-f",
+   "members": [
+    "sota-frontend-design/rules/01-typography-and-color.md#170c06f94617",
+    "sota-performance/rules/06-frontend-web.md#fb40b757a28f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Variable font self-hosted, subset, `font-display` set, metric-matched fallback (no font-swap CLS); `preload` limit",
+   "members": [
+    "sota-frontend-design/rules/01-typography-and-color.md#fa44ebf8212c",
+    "sota-performance/rules/06-frontend-web.md#35c0394cb90a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Images: dimensions/aspect-ratio set (zero CLS), correct `sizes`, modern formats via `<picture>`, lazy below fold, ",
+   "members": [
+    "sota-frontend-design/rules/02-layout-spacing-responsive.md#e53ee2e47d8c",
+    "sota-performance/rules/06-frontend-web.md#ef57a32d756e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Empty states differentiated (first-use vs filtered-zero vs error) with action; error states always include a recov",
+   "members": [
+    "sota-frontend-design/rules/04-ux-patterns.md#684baca4172a",
+    "sota-ux-writing/rules/02-microcopy-components.md#8b57056ea125"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Validation on blur → re-validate on input after first error; `:user-invalid` not `:invalid`; submit focuses first ",
+   "members": [
+    "sota-frontend-design/rules/04-ux-patterns.md#79725347539e",
+    "sota-frontend-design/rules/05-accessibility.md#ad6b97ecb71d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Message says **what's wrong and how to fix it** — never \"Invalid input\". Adjacent to the field (not toast, not only to",
+   "members": [
+    "sota-frontend-design/rules/04-ux-patterns.md#8684595cea36",
+    "sota-ux-writing/rules/04-accessibility-localization.md#cd2a3baff860"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- When confirmation is genuinely required (irreversible, shared, bulk, expensive): the dialog states the *specific* cons",
+   "members": [
+    "sota-frontend-design/rules/04-ux-patterns.md#890391a38f49",
+    "sota-ux-writing/rules/02-microcopy-components.md#bf495c70621a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Accessible-name rules: visible text > `aria-labelledby` > `aria-label`. Icon-only buttons MUST have one (`<button aria",
+   "members": [
+    "sota-frontend-design/rules/05-accessibility.md#2f235c2b955d",
+    "sota-ux-writing/rules/04-accessibility-localization.md#2c25b81bcc5d",
+    "sota-ux-writing/rules/04-accessibility-localization.md#584ac863c376"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Buttons say what they do: \"Save changes\", \"Create project\" — never \"Submit\", and never \"Yes/No\" or \"OK/Cancel\" on a de",
+   "members": [
+    "sota-frontend-design/rules/07-visual-craft-distinctiveness.md#de753fb13808",
+    "sota-ux-writing/SKILL.md#516031bef10b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-golang description: State-of-the-art Go engineering rules (supported Go releases) that Claude applies whe",
+   "members": [
+    "sota-golang/SKILL.md#4e6028fce090",
+    "sota/rules/04-library-map.md#fc7a02912c6e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Work through each relevant rules file's audit checklist against the target repo. Run the listed grep/vet/lint commands; ",
+   "members": [
+    "sota-golang/SKILL.md#5a7ae55c6a62",
+    "sota-ruby/SKILL.md#e2294688db3c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- `panic` across goroutines is fatal: **a panic in a goroutine you spawned kills the whole process** regardless of recov",
+   "members": [
+    "sota-golang/rules/01-errors.md#a614d719890b",
+    "sota-golang/rules/03-concurrency.md#91a4f54cbfd0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Never use `time.Sleep` to \"wait for the goroutine to start/finish\" — that's a race with a timer on it. Synchronize wit",
+   "members": [
+    "sota-golang/rules/03-concurrency.md#303021b940c9",
+    "sota-golang/rules/07-tooling-ci.md#ec76bb8e798b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Never construct a temp path yourself** (`\"/tmp/\" + name`, `filepath.Join(os.TempDir(), fixedName)`). It is predictab",
+   "members": [
+    "sota-golang/rules/05-security.md#1ef9f809838f",
+    "sota-shell-scripting/rules/03-security.md#3a641f8c0cbe"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Profiling wired up? (§1) (absence in a latency-sensitive service = LOW gap)** — `grep -rn 'net/http/pprof' --inc",
+   "members": [
+    "sota-golang/rules/06-performance.md#71051d6cf656",
+    "sota-observability/rules/05-operational-readiness.md#0ed5e078a308",
+    "sota-performance/rules/01-methodology.md#fbd97869ca2d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- The IdP's token-signing keys rotate on a schedule (e.g. quarterly) and immediately on suspected compromise. Each key h",
+   "members": [
+    "sota-identity-access/rules/02-idp-operations.md#a13122c231c0",
+    "sota-secrets-management/rules/05-credential-types.md#a2b208663697"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Prefer asymmetric signing (ES256 as the portable default, RS256, or Ed25519 where supported — RFC 9864 deprecates the ",
+   "members": [
+    "sota-identity-access/rules/02-idp-operations.md#b750832570ad",
+    "sota-secrets-management/rules/05-credential-types.md#2ade97a796ba"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Do not blindly trust upstream group/role claims — re-map them through your own authorization model ([rules/03]); an up",
+   "members": [
+    "sota-identity-access/rules/02-idp-operations.md#cb4ad9f1f98a",
+    "sota-identity-access/rules/03-authorization-models.md#9ac681d9742f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **No permission accumulation across role changes.** When a user moves roles, *recompute* their effective permissions —",
+   "members": [
+    "sota-identity-access/rules/03-authorization-models.md#3276f0825ec8",
+    "sota-identity-access/rules/04-lifecycle-provisioning.md#a56a215e60f1"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **SPIFFE / SPIRE**: every workload gets a cryptographic identity (a SPIFFE ID like `spiffe://trust-domain/ns/app`) mat",
+   "members": [
+    "sota-identity-access/rules/05-privileged-workload.md#15dd439eecf0",
+    "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md#754bed96136d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Vault credentials, issue dynamically.** Privileged credentials (DB superuser, cloud admin) are not handed out long-l",
+   "members": [
+    "sota-identity-access/rules/05-privileged-workload.md#4855fb8ece35",
+    "sota-secrets-management/rules/05-credential-types.md#fb3e3b7cb458"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **One identity per workload**, scoped least-privilege through the authorization model ([rules/03]). Shared service acc",
+   "members": [
+    "sota-identity-access/rules/05-privileged-workload.md#a401dd254b66",
+    "sota-kubernetes/rules/02-rbac-serviceaccounts.md#f5b1dd4cfd6b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Admin work uses a separate identity** from daily work. The same human has a normal account (email, chat, browsing) a",
+   "members": [
+    "sota-identity-access/rules/05-privileged-workload.md#c0985c87588b",
+    "sota-identity-access/rules/07-active-directory.md#5a0e024debeb"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Measured: this installs cleanly beside typescript-eslint 8.70.1, `npx tsc -v` reports 7.0.2, `npx tsc6 -v` reports 6.0.x",
+   "members": [
+    "sota-javascript-typescript/rules/01-typescript-config-and-types.md#07b9f80ae294",
+    "sota-javascript-typescript/rules/01-typescript-config-and-types.md#82ef31c5f32d",
+    "sota-javascript-typescript/rules/01-typescript-config-and-types.md#ae196e5fe09b",
+    "sota-javascript-typescript/rules/07-testing-and-tooling.md#043ca3f131bd",
+    "sota-javascript-typescript/rules/07-testing-and-tooling.md#c4383797b171"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- `finally` for cleanup; or ES2027 explicit resource management (Stage 4 May 2026): `using conn = await pool.acquire()` ",
+   "members": [
+    "sota-javascript-typescript/rules/02-language-idioms.md#e51e0e92bbbf",
+    "sota-javascript-typescript/rules/03-async-patterns.md#f53cd70076df"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] `grep -rn \"jwt.verify\\|jwtVerify\" --exclude-dir=node_modules . | grep -v \"algorithms\"` — lists verify calls with n",
+   "members": [
+    "sota-javascript-typescript/rules/05-security.md#27f80572d5e0",
+    "sota-secrets-management/rules/05-credential-types.md#0af1e7d83c5b"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **CORS via the `cors` middleware** (§8) — `grep -rnE 'origin: *(true|/)' --include='*.js' --include='*.ts' --inclu",
+   "members": [
+    "sota-javascript-typescript/rules/05-security.md#c26266a8c311",
+    "sota-javascript-typescript/rules/08-process-and-outbound.md#1181ba49ed6e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Effects**: `useEffect` is for synchronizing with external systems, not for derived state (compute during render) or ",
+   "members": [
+    "sota-javascript-typescript/rules/06-performance.md#34c7bd6edd44",
+    "sota-web-frameworks/rules/02-react.md#cde2e6c341c4"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Identify: `node --cpu-prof` (open the `.cpuprofile` in DevTools) or `0x` flamegraphs under load, `--heap-prof` for all",
+   "members": [
+    "sota-javascript-typescript/rules/06-performance.md#997063975234",
+    "sota-performance/rules/01-methodology.md#1b738cdb0484"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-jvm description: >- State-of-the-art JVM engineering rules for Java and Kotlin that Claude applies when w",
+   "members": [
+    "sota-jvm/SKILL.md#873ca9bb6b4b",
+    "sota/rules/04-library-map.md#c1c7898f53e2"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Actuator exposure.** By default Spring Boot exposes only `health` over HTTP. Treat every widening of `management.end",
+   "members": [
+    "sota-jvm/rules/08-web-layer.md#c39a342faed0",
+    "sota-observability/rules/05-operational-readiness.md#b85a57640369"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "6. **Pod Security Admission `restricted` ENFORCED** on workload namespaces (label `pod-security.kubernetes.io/enforce: r",
+   "members": [
+    "sota-kubernetes/SKILL.md#844b78e4c518",
+    "sota-kubernetes/rules/03-admission-policy.md#a14257e999b7",
+    "sota-sandboxing/rules/03-containers-microvms.md#45ccd384f6b2"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "3. **Encrypt etcd at rest with a KMS provider** ([`rules/01`]) — Secrets are base64, not encrypted, by default. This is ",
+   "members": [
+    "sota-kubernetes/SKILL.md#fc3779465b5c",
+    "sota-kubernetes/rules/01-control-plane-etcd.md#799f1b4258d6",
+    "sota-secrets-management/rules/02-storage-backends.md#6df9ffdad846"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Protect node metadata endpoints: block pod access to the cloud metadata service (169.254.169.254); workload identity o",
+   "members": [
+    "sota-kubernetes/rules/01-control-plane-etcd.md#23b6bfdcd538",
+    "sota-network-security/rules/03-k8s-network-policy.md#3e4ac771b9a3",
+    "sota-network-security/rules/03-k8s-network-policy.md#bf98a359a1e1",
+    "sota-network-security/rules/05-edge-ingress-egress.md#cacb0d31d9fe",
+    "sota-network-security/rules/05-edge-ingress-egress.md#dd23fb826343",
+    "sota-threat-modeling/rules/03-threat-catalogs.md#43823a92aeb2"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **ingress-nginx is EOL** (retired by SIG Network/SRC; maintenance ended March 2026, repo read-only). The 2026 CVE wave",
+   "members": [
+    "sota-kubernetes/rules/01-control-plane-etcd.md#28b95f487d29",
+    "sota-kubernetes/rules/01-control-plane-etcd.md#3e4a6ae9fe37",
+    "sota-network-security/rules/05-edge-ingress-egress.md#c99d3efbe3c5"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Charts and operators bundle their own RBAC. A values toggle like `rbac.clusterAdministrator: true`, `rbac.create: true` ",
+   "members": [
+    "sota-kubernetes/rules/02-rbac-serviceaccounts.md#94436d2180ef",
+    "sota-kubernetes/rules/05-operators-crds-webhooks.md#a2d94eb4816f",
+    "sota-kubernetes/rules/07-supply-chain-audit.md#a5250ca16fb7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **`automountServiceAccountToken: false` by default** — on the ServiceAccount and/or pod spec. A pod that never calls t",
+   "members": [
+    "sota-kubernetes/rules/02-rbac-serviceaccounts.md#cb9a7e98d5ce",
+    "sota-sandboxing/rules/03-containers-microvms.md#25060787119f",
+    "sota-sandboxing/rules/03-containers-microvms.md#7f1b977c086f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Signing an image (cosign, [`sota-devsecops` rules/02]) does nothing unless **admission verifies the signature and reject",
+   "members": [
+    "sota-kubernetes/rules/03-admission-policy.md#83f0a61c9aa5",
+    "sota-kubernetes/rules/07-supply-chain-audit.md#a646b19b9a45"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Don't inject secrets as plain env vars** where avoidable — env is readable via `/proc`, crash dumps, `kubectl descri",
+   "members": [
+    "sota-kubernetes/rules/06-workloads-tenancy.md#55cf9c03f013",
+    "sota-rust/rules/05-security-supply-chain.md#7840ec7b0e13"
+   ]
+  },
+  {
+   "verdict": "consolidate",
+   "note": "stop_reason handling stated in sota-llm-engineering rules/02 and rules/04",
+   "sample": "- **Check `stop_reason` before parsing.** `max_tokens` or `model_context_window_exceeded` → truncated JSON (raise the ca",
+   "members": [
+    "sota-llm-engineering/rules/02-prompt-context-engineering.md#a586d3c47a8e",
+    "sota-llm-engineering/rules/04-agents-tools.md#9ad9e3c9c625"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Mark what the model made.** Images, audio and video your feature generates carry provenance: a C2PA manifest (Conten",
+   "members": [
+    "sota-llm-engineering/rules/05-production-engineering.md#a4a540af4178",
+    "sota-privacy-compliance/rules/04-regulatory-landscape.md#e181fe0c1257"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Group by severity, CRITICAL first. End with: counts per severity, an ML Test Score-style readiness summary (data/model/i",
+   "members": [
+    "sota-ml-engineering/SKILL.md#9b26cc39c80e",
+    "sota-rust/SKILL.md#ea4db9babb3a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "8. **Never deserialize an untrusted model/`pickle`.** `pickle`/`joblib`/`torch.load` on an untrusted artifact is arbitra",
+   "members": [
+    "sota-ml-engineering/SKILL.md#d0bcddfd3d18",
+    "sota-ml-engineering/rules/07-security-governance.md#15bddb8de7e4",
+    "sota-python/rules/05-security.md#b465f80e6fce",
+    "sota-python/rules/05-security.md#fe9f249c77b3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-ml-engineering description: >- State-of-the-art ML engineering / MLOps rules (2026) for BUILDING and AUDI",
+   "members": [
+    "sota-ml-engineering/SKILL.md#ecb240ae70eb",
+    "sota/rules/04-library-map.md#05bc764d5d91"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Train/serve consistency (§2, §3) — CRITICAL if features computed two ways** — `grep -rniE 'feature.?store|feast|",
+   "members": [
+    "sota-ml-engineering/rules/01-ml-systems-architecture.md#943f44520c22",
+    "sota-ml-engineering/rules/02-data-and-features.md#a76dbb7dfc0c",
+    "sota-ml-engineering/rules/05-deployment-serving.md#3aca8edf2deb"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- The training path (offline, large batch, historical data) and the serving path (online, low-latency, current data) are",
+   "members": [
+    "sota-ml-engineering/rules/01-ml-systems-architecture.md#a7659db09358",
+    "sota-ml-engineering/rules/02-data-and-features.md#4d369593efab",
+    "sota-ml-engineering/rules/02-data-and-features.md#b3cee17f1673"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [Rules of ML] #1–#4: don't be afraid to ship without ML; design and implement **metrics** first; a **simple model with",
+   "members": [
+    "sota-ml-engineering/rules/01-ml-systems-architecture.md#bf6d61480ff9",
+    "sota-ml-engineering/rules/03-training-experimentation.md#8f075aad5074"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Snapshot:** every design-system component, and key screens rendered once per sealed state case (2.2 fixtures), acros",
+   "members": [
+    "sota-mobile/rules/02-architecture-and-state.md#b2099136ba7b",
+    "sota-mobile/rules/06-release-and-operations.md#341320cfd0df"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] (§1: 2.9) Test pyramid intact: fast unit bulk on VMs/reducers, snapshot coverage of design system + state cases (i",
+   "members": [
+    "sota-mobile/rules/02-architecture-and-state.md#da6a7f87844c",
+    "sota-mobile/rules/06-release-and-operations.md#92688e9ac543"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Parse untrusted XML with external entities off.** `XMLParser` has `shouldResolveExternalEntities` = `false` by defau",
+   "members": [
+    "sota-mobile/rules/04-security.md#cf7d0ad7c6e2",
+    "sota-mobile/rules/04-security.md#fd24daedff80",
+    "sota-swift/rules/05-security.md#a839040b3942"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- App and UI modules use **default main-actor isolation** (SE-0466, Swift 6.2: `.defaultIsolation(MainActor.self)`) inst",
+   "members": [
+    "sota-mobile/rules/07-swift-in-apps.md#85dc8f1f7c27",
+    "sota-swift/rules/03-concurrency.md#fc6252315689"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **[sota-cloud-infrastructure]** ([rules/03] networking) owns cloud-provider network *setup*: VPC/subnet layout, CIDR/I",
+   "members": [
+    "sota-network-security/SKILL.md#829bd1693366",
+    "sota/SKILL.md#c1cc2ccaece7"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **In-cluster peer → identity, no exception.** `podSelector`/`namespaceSelector`, never the pod CIDR. Pod IPs are ephem",
+   "members": [
+    "sota-network-security/rules/03-k8s-network-policy.md#02ae9b88ad6f",
+    "sota-network-security/rules/03-k8s-network-policy.md#952e7ca492a1",
+    "sota-network-security/rules/03-k8s-network-policy.md#c781d806ca46",
+    "sota-sandboxing/rules/03-containers-microvms.md#0f2530de0725",
+    "sota-sandboxing/rules/03-containers-microvms.md#95e5726be686"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**R7 — Egress gateways for stable, inspectable egress.** When external partners allowlist your source IP, or you want al",
+   "members": [
+    "sota-network-security/rules/03-k8s-network-policy.md#ab6002e98332",
+    "sota-network-security/rules/05-edge-ingress-egress.md#fc966a7c7324"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**R5 — Egress is first-class; allowlist by FQDN, not open `0.0.0.0/0`.** Cilium's DNS-aware policy snoops DNS to map all",
+   "members": [
+    "sota-network-security/rules/03-k8s-network-policy.md#acf689f2f8b7",
+    "sota-network-security/rules/05-edge-ingress-egress.md#58b6a8294da9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Medium — client certs from a public CA (§3, R4.1).** Are mTLS client certificates issued by a private CA? Public",
+   "members": [
+    "sota-network-security/rules/04-service-mesh-mtls.md#0b026ee18d9a",
+    "sota-network-security/rules/06-dns-tls-pki.md#47c54182547c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Keep a logging inventory.** Per stack layer: which events are logged, in what format, to which sink, read by whom, u",
+   "members": [
+    "sota-observability/rules/01-structured-logging.md#2f040a11e143",
+    "sota-observability/rules/06-audit-playbook.md#330cd3948a57"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- This is not the \"many samples, report variance\" of a benchmark ([`sota-performance` rules/01] §3). A production series",
+   "members": [
+    "sota-observability/rules/02-metrics.md#7a1b95bd8e7b",
+    "sota-performance/rules/01-methodology.md#d166b458bf40"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Does CI gate on any perf signal (query counts, alloc counts, bundle size, benchmark deltas)? None → flag (Medium):",
+   "members": [
+    "sota-performance/rules/01-methodology.md#c29127ca9d87",
+    "sota-rust/rules/06-performance.md#58bccbd8aac0"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Typical wins: multi-row INSERT 10–100× vs row-at-a-time; Redis pipeline of 100 commands ≈ 1 RTT instead of 100; `write",
+   "members": [
+    "sota-performance/rules/02-algorithms-data-structures.md#cde538e7e58d",
+    "sota-python/rules/06-performance.md#4e1cf7bcc80c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "Effort: trivial · small · medium · large. Group by severity, CRITICAL first. Borderline severities state the deciding as",
+   "members": [
+    "sota-php/SKILL.md#e09bd17c8e8e",
+    "sota-python/SKILL.md#17a1ab26455e",
+    "sota-ruby/SKILL.md#827936963b1d",
+    "sota-web-frameworks/SKILL.md#e59c31e3d996",
+    "sota/rules/03-audit-findings.md#4d77c7d01b5f"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**Defense in depth:** a strict `Content-Security-Policy` (see [`rules/04`] §6) and `X-Content-Type-Options: nosniff` cap",
+   "members": [
+    "sota-php/rules/02-injection.md#4eb1d9d52f96",
+    "sota-web-frameworks/rules/06-ssr-hydration.md#79ab8d0b077a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "The detailed rules live in `rules/*.md`. Read SKILL.md fully; load rules files on demand per the index table below. When",
+   "members": [
+    "sota-python/SKILL.md#06eabbb1985b",
+    "sota/SKILL.md#11dc3711fef8"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **3.14 — `compression.zstd`** (PEP 784): stdlib Zstandard, also wired into `tarfile`/`zipfile`/`shutil`. Drops the thi",
+   "members": [
+    "sota-python/rules/01-tooling-project-setup.md#e6d0c5b0cb03",
+    "sota-python/rules/06-performance.md#0eb8724b9204"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **3.14 — template strings (PEP 750):** `t\"...\"` returns a `Template` of static parts + `Interpolation` objects instead",
+   "members": [
+    "sota-python/rules/01-tooling-project-setup.md#ff36d22fee64",
+    "sota-python/rules/05-security.md#0c73d79f687a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Memory cap via `RLIMIT_AS` (§2) [HIGH when it gates an inspection]** — `grep -rn \"RLIMIT_AS\" --include=\"*.py\" sr",
+   "members": [
+    "sota-python/rules/05-security.md#28c8752379c0",
+    "sota-python/rules/05-security.md#7aeaca5190a4",
+    "sota-sandboxing/rules/02-linux-os-hardening.md#46592d5422d7",
+    "sota-sandboxing/rules/02-linux-os-hardening.md#b946e5196ef0",
+    "sota-shell-scripting/rules/08-ad-hoc-side-effects.md#256ee7ebf480",
+    "sota-shell-scripting/rules/08-ad-hoc-side-effects.md#fd8b523ba7e9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **`eval`/`exec` on any string containing external input — banned.** \"Sandboxing\" with `{\"__builtins__\": {}}` is bypass",
+   "members": [
+    "sota-python/rules/05-security.md#ac9d21e7973c",
+    "sota-shell-scripting/rules/03-security.md#98270ae839f2"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Banned: module-level mutable state shared across tests, tests that rely on execution order, `lru_cache`d functions tes",
+   "members": [
+    "sota-python/rules/07-frameworks-testing.md#0faa50b7a88b",
+    "sota-testing/rules/02-test-design-quality.md#3e7676f68de1"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "7. When code must violate a rule for a legitimate reason, leave a `# NOTE(sota):` comment explaining the trade-off so au",
+   "members": [
+    "sota-ruby/SKILL.md#4dfa0cad06aa",
+    "sota-testing/SKILL.md#5a304dc66d54"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **FFI**: a Rust panic that reaches an `extern \"C\"` boundary **aborts the process** — since Rust 1.81; before that it w",
+   "members": [
+    "sota-rust/rules/02-errors-and-panics.md#c3d8b4ff8d58",
+    "sota-rust/rules/02-errors-and-panics.md#f824ddca822e",
+    "sota-rust/rules/03-unsafe-discipline.md#66dda7a63a3d"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Fuzz targets exist for each untrusted-input parser; absent on a network-facing parser = Medium. Count both kinds o",
+   "members": [
+    "sota-rust/rules/05-security-supply-chain.md#1e5bd53a55cd",
+    "sota-rust/rules/05-security-supply-chain.md#1f2de42453e2",
+    "sota-rust/rules/09-formal-verification.md#89d08d77d1e1",
+    "sota-rust/rules/09-formal-verification.md#bdee7717e3c2"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Enable and route audit logs** (CloudTrail data events, GCP Data Access logs, Key Vault diagnostics) — reads must be ",
+   "members": [
+    "sota-secrets-management/rules/02-storage-backends.md#3aa5e0f15ecd",
+    "sota-secrets-management/rules/03-application-patterns.md#e4f5207483e6"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-security-compliance description: >- State-of-the-art security & compliance engineering (2026) for the cyb",
+   "members": [
+    "sota-security-compliance/SKILL.md#d7578031b58f",
+    "sota/rules/04-library-map.md#855a23a0889e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "5. **Rate it on [`sota/rules/03`] §1** — impact × exploitability in context — not on the reporter's claimed severity and",
+   "members": [
+    "sota-security-compliance/rules/04-eu-cyber-resilience-act.md#158a898c71ad",
+    "sota/rules/03-audit-findings.md#9b78c81bbe9a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **ISA/IEC 62443 and NIST frameworks** are widely expected to *inform* the harmonized standards and are common industry",
+   "members": [
+    "sota-security-compliance/rules/04-eu-cyber-resilience-act.md#2b311fd91e31",
+    "sota-security-compliance/rules/05-iec-62443-ot-ics.md#2d3a2e6215d3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Wait on an artefact the job writes, never on the launcher's status.** `until grep -q '^EXIT=' out.txt; do sleep 5; d",
+   "members": [
+    "sota-shell-scripting/rules/01-safety-baseline.md#7a6862dcf6b0",
+    "sota-testing/rules/07-suite-health-and-ci.md#11c0e59ffc94"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- `set -o pipefail` makes the pipeline status the rightmost nonzero status. Two follow-ups: - **zsh spells it differentl",
+   "members": [
+    "sota-shell-scripting/rules/02-robustness-correctness.md#4dc2de61a571",
+    "sota-shell-scripting/rules/04-ci-and-operational.md#25b0da18e3e8",
+    "sota-shell-scripting/rules/06-ad-hoc-commands.md#7875ced9b47e",
+    "sota-shell-scripting/rules/07-powershell.md#88c3838278a8"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- A glob that matches nothing stays **literal**: `rm ./*.tmp` with no matches tries to remove the file `./*.tmp`. Choose",
+   "members": [
+    "sota-shell-scripting/rules/05-constructs-and-cleanup.md#b80ac61837ae",
+    "sota-shell-scripting/rules/06-ad-hoc-commands.md#28b96f08dc74"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**The rule: name the precedence, or the next reader reverts you.** When you follow one of two conflicting rules, say whi",
+   "members": [
+    "sota-skill-security/rules/02-trust-boundary-and-capability.md#03f1c1bbcf63",
+    "sota/SKILL.md#699537133c9c"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-swift description: State-of-the-art Swift engineering rules (Swift 6 language mode) that Claude applies w",
+   "members": [
+    "sota-swift/SKILL.md#4342df557951",
+    "sota/rules/04-library-map.md#d818ad75a813"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- Standard collections are **copy-on-write**: assignment is O(1) until mutation, so passing large collections is cheap; ",
+   "members": [
+    "sota-swift/rules/01-idioms-and-errors.md#3af051bd8574",
+    "sota-swift/rules/07-performance.md#f6989d10faa4"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] Order/parallel safety: does CI run the suite shuffled and parallel? Run shuffled once during audit, plus a sampled",
+   "members": [
+    "sota-testing/rules/02-test-design-quality.md#7466f0c823b3",
+    "sota-testing/rules/07-suite-health-and-ci.md#eeab060c42f1"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] In-memory DB standing in for the real engine? Grep `sqlite::memory:|:memory:|H2|jdbc:h2` in integration config of ",
+   "members": [
+    "sota-testing/rules/03-doubles-and-test-data.md#0d050ce0eccc",
+    "sota-testing/rules/04-integration-contract-system.md#220eb1596d82"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Artifacts on failure are mandatory**: trace/video/screenshot + console + network log wired into CI. An e2e failure t",
+   "members": [
+    "sota-testing/rules/05-e2e-and-ui.md#d934e2b27272",
+    "sota-testing/rules/07-suite-health-and-ci.md#7aa759531010"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "--- name: sota-web-frameworks description: >- State-of-the-art engineering rules (2026) for the JavaScript SSR meta-fram",
+   "members": [
+    "sota-web-frameworks/SKILL.md#31539c741a94",
+    "sota/rules/04-library-map.md#ffd5831335e3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Hooks/vue lint present?** (§4) — `find . -maxdepth 2 -path ./node_modules -prune -o \\( -name '.eslintrc*' -o -na",
+   "members": [
+    "sota-web-frameworks/rules/01-baseline.md#236157f27d60",
+    "sota-web-frameworks/rules/01-baseline.md#7b24f18a8045",
+    "sota-web-frameworks/rules/02-react.md#0f7a2a823183"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **React Compiler 1.0 is stable** (2025-10-07): a build-time plugin that auto-memoizes, removing most manual `useMemo`/",
+   "members": [
+    "sota-web-frameworks/rules/01-baseline.md#353e1cafb45a",
+    "sota-web-frameworks/rules/02-react.md#f6d4a5c89d98"
+   ]
+  },
+  {
+   "verdict": "consolidate",
+   "note": "version fact stated twice in sota-web-frameworks (rules/01 and rules/03)",
+   "sample": "- **Next.js**: route-segment config + `\"use cache\"`; PPR is the default when `cacheComponents: true`. Fetch is **not cac",
+   "members": [
+    "sota-web-frameworks/rules/01-baseline.md#fb2e23a948ad",
+    "sota-web-frameworks/rules/03-nextjs.md#4a635a0a110a"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "**next/image SSRF:** `remotePatterns` with a `**` wildcard host turns the `/_next/image` optimizer into a blind-SSRF pro",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#130a9eac439b",
+    "sota-web-frameworks/rules/07-security.md#5d90a1467aa1"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Everything a Server Component passes as a prop to a Client Component is serialized into the RSC payload and shipped ",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#4b6442ec84c2",
+    "sota-web-frameworks/rules/07-security.md#c1688c81f37e"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Server Actions / Route Handlers — each must authn+authz+validate** (§2) — `grep -rn \"'use server'\" --include='*.",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#4c69038fec61",
+    "sota-web-frameworks/rules/07-security.md#fac364792820"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Server->client data exposure: whole objects as props, env on client** (§1) — `grep -rnE 'process\\.env\\.[A-Z0-9_]",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#695a62157ff0",
+    "sota-web-frameworks/rules/07-security.md#0d26095eafba"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **Keep secrets and data access server-side.** Mark server-only modules with `import 'server-only'` so importing them f",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#d17608cc6ba1",
+    "sota-web-frameworks/rules/07-security.md#739c4f1ccb14"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- **`proxy.ts`/middleware** (renamed from `middleware.ts` in Next 16; `proxy.ts` defaults to the Node runtime) is for co",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#d31eaedb6ac0",
+    "sota-web-frameworks/rules/07-security.md#d82ae640d0a9"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **next/image SSRF precondition** (§5) — `find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#eca5cf594600",
+    "sota-web-frameworks/rules/07-security.md#9e967166d0af"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] No secret under `runtimeConfig.public`; server secrets at the root only; every `NUXT_*` override has a matching ke",
+   "members": [
+    "sota-web-frameworks/rules/05-nuxt.md#242631138e0b",
+    "sota-web-frameworks/rules/05-nuxt.md#6fb377b554a0",
+    "sota-web-frameworks/rules/07-security.md#b5d191837c96"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Secret under public runtimeConfig (CRITICAL)** (§3) — `find . -maxdepth 2 -path ./node_modules -prune -o -name '",
+   "members": [
+    "sota-web-frameworks/rules/05-nuxt.md#9001c35f1740",
+    "sota-web-frameworks/rules/07-security.md#8e59405670c3"
+   ]
+  },
+  {
+   "verdict": "untriaged",
+   "note": "",
+   "sample": "- [ ] **Module-level refs / state outside setup (cross-request leak)** (§2) — `grep -rnE '^(export )?const \\w+\\s*=\\s*(re",
+   "members": [
+    "sota-web-frameworks/rules/05-nuxt.md#d39f64eab1b7",
+    "sota-web-frameworks/rules/06-ssr-hydration.md#34aead86e86a"
+   ]
+  }
+ ],
+ "model": "qwen3-embedding:8b",
+ "digest": "64b933495768fbd3",
+ "threshold": 0.84,
+ "control_threshold": 0.71
+}

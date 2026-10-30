@@ -204,6 +204,32 @@ compares the extracted `(name, description)` **map** against the merge base, not
 diff — a folded description block, a rename and a deletion all change routing without
 touching a line that starts `description:`.
 
+## 2d. Duplicated instructions (every release) — local, not gated
+
+The same instruction written in two files drifts: one copy gets a correction and the other keeps
+the old wording. A word-overlap search finds only near-copies (and on 2026-10-29 it silently
+skipped the most-copied paragraph of all, because a speed cut-off ignored text shared by more than
+40 blocks). So each cut runs a meaning-based pass:
+
+```sh
+ollama pull qwen3-embedding:8b      # once; local, no API spend
+uv run --no-project --with numpy python3 scripts/semantic-dup-scan.py
+```
+
+It embeds every paragraph and bullet of 25 or more words, joins cross-file pairs above the
+threshold stored in `docs/semantic-duplicates.json` into groups, and fails (exit 1) on any group
+with a block that has no verdict yet. Give each new group a verdict there: `deliberate` (a gated
+canonical line, or a template chosen per skill), `consolidate` (keep one copy, link from the other)
+or `distinct` (looks alike, says different things). `untriaged` entries are the backlog recorded
+when the file was created; they may only shrink. Exit 2 means the instrument did not run or failed
+its built-in control (the model no longer separates 12 paraphrase pairs from 12 same-topic
+neighbours), so it is not a result. A cold run embeds about 13,000 blocks (14.5 hours on 2026-10-30, 52,227 s, on the maintainer's machine);
+later runs embed only changed blocks, from a git-ignored cache in the main checkout's
+`.cache/semantic-dup/` (found through git, so a run from a worktree reuses it).
+
+Why that model and threshold, and how the control set was built: the script's header, and
+[docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) (2026-10-30 entry).
+
 ## 3. Land the PR
 
 ```sh
@@ -284,4 +310,6 @@ skills.
       changed** — its `evals/results/<date>/` path is what carries the date. A run from
       before the edit measured a different classifier, which is the hole the existence-only
       check left open until 2026-09-20
+- [ ] **Duplicate scan run (§2d)** — `scripts/semantic-dup-scan.py` exits 0, or every new group
+      it printed now has a verdict in `docs/semantic-duplicates.json`. Exit 2 is not a pass
 - [ ] GitHub Settings social-preview re-upload — only if the PNG changed

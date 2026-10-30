@@ -41,3 +41,6 @@ evals/results/durations.tsv
 # Offline copies of external sources and analysis outputs (large, often licence-restricted:
 # e.g. CC BY-SA text that must not enter this CC BY repo). Kept locally for lookup, never committed.
 /offline/
+
+# local embedding cache for scripts/semantic-dup-scan.py (RELEASING.md §2d); hundreds of MB
+.cache/
