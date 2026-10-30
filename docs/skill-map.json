@@ -320,7 +320,7 @@
     {
       "from": "sota-code-security",
       "to": "sota-testing",
-      "weight": 18,
+      "weight": 19,
       "targets": [
         "rules/02",
         "rules/02 \u00a72.10",
@@ -4449,14 +4449,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1885,
+    "md link, other skill": 1887,
     "md link, outside skills/": 3,
     "md link, same skill": 2856,
     "name (backticked)": 454,
     "name (bare)": 240,
-    "name+file (backticked)": 877,
+    "name+file (backticked)": 878,
     "name+file (bare)": 180,
-    "own rules/NN": 3076
+    "own rules/NN": 3077
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4466,9 +4466,9 @@
     "md link, same skill": 0,
     "name (backticked)": 439,
     "name (bare)": 196,
-    "name+file (backticked)": 873,
+    "name+file (backticked)": 874,
     "name+file (bare)": 168,
-    "own rules/NN": 2973
+    "own rules/NN": 2974
   },
   "rules_index_style": {
     "link": 42
