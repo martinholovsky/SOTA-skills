@@ -908,7 +908,7 @@
   },
   {
    "verdict": "deliberate",
-   "note": "code-security owns LDAP DN-vs-filter encoders; JVM and PHP give language-specific escaping APIs and probes.",
+   "note": "code-security owns the LDAP distinguished-name vs search-filter encoders; JVM and PHP give language-specific escaping APIs and probes.",
    "sample": "- [ ] **LDAP DN vs filter (§11)**: is each LDAP value escaped with the encoder for where it lands (RFC 4514 for DN compo",
    "members": [
     "sota-code-security/rules/01-input-injection.md#7066a945b1bf",
