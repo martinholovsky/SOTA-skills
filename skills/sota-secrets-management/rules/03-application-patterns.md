@@ -299,8 +299,8 @@ Every credential answers: who uses it, for which actions, on which resources, un
 
 - **Backend side:** enable the store's access logs (CloudTrail data events for Secrets Manager,
   GCP Data Access logs, Key Vault diagnostics, Vault audit devices) and ship them off-system.
-  Alert on: reads by unexpected principals, first-time principal/secret pairs, reads from new
-  geographies, spikes, and reads of honeytokens ([rules/04](04-detection-and-remediation.md) §5).
+  Alert on: reads (e.g. Secrets Manager `GetSecretValue`) by unexpected principals,
+  first-time principal/secret pairs, reads from new geographies or regions, spikes, and reads of honeytokens ([rules/04](04-detection-and-remediation.md) §5).
 - **App side:** log secret *usage events* — "rotated DB cred picked up," "token refresh failed,"
   "auth failure forced refresh" — with secret *names*, never values. These logs are how you
   verify a rotation completed ([rules/01](01-lifecycle-and-workload-identity.md) §3 step 4).

@@ -93,7 +93,8 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   that typosquatted/brandjacked real crates
   and exfiltrated `.env` files from developer and CI machines. Mitigations are
   exactly the above plus secret hygiene: no long-lived credentials in `.env`
-  on build machines; rotate anything exposed to an unvetted build.
+  on build machines; rotate anything exposed to an unvetted build (rotation and short-lived
+  credentials: [`sota-secrets-management` rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md) §3, §4).
 - Pin GitHub Actions by SHA, not tag; CI tokens least-privilege
   (`permissions: contents: read` default).
 - **Build-time code runs before any test or review of your code does.** Each `build.rs`
@@ -481,8 +482,8 @@ Running external programs (formerly section 9) moved to
 - [ ] Fuzz targets exist for each untrusted-input parser; absent on a
       network-facing parser = Medium. Count both kinds of evidence in one run:
       `printf 'fuzz_targets=%s kani_harness_files=%s\n' "$(rg -l 'fuzz_target!' -g '*.rs' . | wc -l | tr -d ' ')" "$(rg -l '#\[kani::proof' -g '*.rs' . | wc -l | tr -d ' ')"`
-      — both 0 on a security-critical crate parsing untrusted input = Medium (§6); harnesses
-      present: load [rules/09](09-formal-verification.md) and audit them, a vacuous proof is not evidence.
+      — both 0 (§6): severity per the [rules/09](09-formal-verification.md) Audit checklist;
+      harnesses present: audit them there, a vacuous proof is not evidence.
 - [ ] **Unlocked tool installs (§1) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** —
       `find . \( -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name justfile -o -name Dockerfile \) -type f -not -path '*/target/*' -exec grep -nE 'cargo[[:space:]]+install' /dev/null {} + | grep -v -e '--locked'`
 - [ ] Release CI uses `--locked` (§8); binaries built from tags in CI;

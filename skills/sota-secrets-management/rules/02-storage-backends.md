@@ -22,8 +22,8 @@ Rules that override the table:
   audit logging, rotation, and access control — the parts that matter.
 - **Terraform/Pulumi state contains plaintext secrets** regardless of backend. State must live
   in an encrypted, access-controlled backend (S3+SSE+restricted IAM, Terraform Cloud) and never
-  in VCS. Prefer ephemeral resources / `write-only` arguments (Terraform ≥1.11) so secret values
-  never enter state at all.
+  in VCS. Prefer ephemeral resources / `write-only` arguments so secret values never enter
+  state at all (patterns and version floors: [`sota-devsecops` rules/06](../../sota-devsecops/rules/06-iac-deployment.md) §6.1).
 
 ## 2. Vault / OpenBao
 
@@ -83,9 +83,8 @@ Rules:
   names the exact secret ARNs it rotates (AWS's examples also pin KMS use with a
   `kms:EncryptionContext:SecretARN` condition), and only the secret manager may invoke it.
   The staged create → set → **test** → promote sequence it must run is [rules/01](01-lifecycle-and-workload-identity.md) §3.
-- **Enable and route audit logs** (CloudTrail data events, GCP Data Access logs, Key Vault
-  diagnostics) — reads must be attributable. Alert on `GetSecretValue` from unexpected
-  principals or regions.
+- **Enable and route audit logs** — reads must be attributable; what to log and alert on is
+  [rules/03](03-application-patterns.md) §8.
 - **Replicate via the service** (multi-region replication) rather than copying values into a
   second region's store by hand.
 

@@ -153,12 +153,9 @@ Sessions and JWT (formerly §2 and §3) moved to [rules/17](17-sessions-and-toke
 - Validate `Recipient`, `Audience`, `InResponseTo`, `NotOnOrAfter` (clock-skew
   bounded), enforce single-use assertion IDs (replay cache). XXE hardening from
   [rules/01](01-input-injection.md) §6 applies to the SAML parser itself.
-- **Verify against the key you configured, never the one in the message.** Use the IdP
-  certificate from pinned metadata, for the `Issuer` you expect, and ignore `KeyInfo` and
-  embedded certificates. A validator that trusts the certificate the response carries
-  accepts anyone's self-signed assertion. Allowlist `SignatureMethod` and `DigestMethod`
-  (RSA-SHA256 or stronger) and reject the SHA-1 family: `xmldsig#rsa-sha1`, `#dsa-sha1`,
-  `#hmac-sha1` and `#sha1`.
+- **Verify against the key you configured, never the one in the message**: the IdP's
+  pinned metadata key for the expected `Issuer`, with a SHA-256+ `SignatureMethod`/`DigestMethod`
+  allowlist — [`sota-identity-access` rules/01](../../sota-identity-access/rules/01-federation-protocols.md) §7.
 - Check `Conditions` `NotBefore` as well as `NotOnOrAfter`. Require the assertion's `Issuer`
   (equal to the configured IdP entity ID) and a `Subject` whose bearer
   `SubjectConfirmationData` carries `Recipient`, `NotOnOrAfter` and `InResponseTo`. A

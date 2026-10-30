@@ -147,7 +147,7 @@ Rules:
 - Set `this.name` in subclasses; route on `instanceof` or a `code` field, never on message text.
 - Always pass `{ cause: e }` when wrapping — loggers (pino) serialize the chain.
 - Never swallow: empty `catch {}` is a finding unless commented with why. Catch only where you can handle or add context; otherwise let it propagate.
-- `finally` for cleanup; or ES2027 explicit resource management (Stage 4 May 2026): `using conn = await pool.acquire()` with `[Symbol.asyncDispose]` (use `await using` for async disposal) — adopt where the runtime/tsconfig supports it.
+- `finally` for cleanup; or `using`/`await using` (explicit resource management) where the runtime/tsconfig supports it — [rules/03](03-async-patterns.md) §10.
 
 Result-style for expected failures: exceptions for bugs/infra, values for domain outcomes the caller must handle.
 

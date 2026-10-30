@@ -147,9 +147,9 @@ without sources, "award-winning" without naming the award.
       links to real docs, not adjective badges; every section maps to a node
       of promise → benefits → proof → objections → action, and orphan
       sections are cut or moved (§4)
-- [ ] Zero unsubstantiated superlatives/only/first claims (§5):
-      `grep -rniwE '#1|best|leading|only|first|fastest|world-class|revolutionary|guaranteed|never|100%' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .`
-      — every hit has evidence on file or gets cut ([`rules/04`](04-claims-legal-trust.md));
+- [ ] Zero unsubstantiated superlatives/only/first claims (§5) — run the
+      superlative sweep in the [`rules/04`](04-claims-legal-trust.md) §1 audit checklist;
+      every hit has evidence on file or gets cut;
       "only/first" claims re-verified on a schedule; no competitor weakness
       claimed without proof
 - [ ] Every proof element is top-3-tier where possible; no anonymous quotes,

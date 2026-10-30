@@ -135,7 +135,7 @@ class AgentBudget:
   `model_context_window_exceeded`) is the same truncation; refusal → its own
   path; provider pause/continue signals (Anthropic's `pause_turn`: a
   server-tool loop hit its iteration limit — send the content back) →
-  resume per provider docs. An unhandled
+  resume per provider docs (Anthropic's values, verified 2026-09-26). An unhandled
   `stop_reason` is an infinite-loop or data-corruption bug waiting.
 - Long runs on current frontier models can legitimately take minutes per
   request — plan streaming/async/progress UX rather than raising HTTP
@@ -217,13 +217,9 @@ the harness pauses, a human (or policy engine) approves:
   to work counts as irreversible and needs approval *before* it runs, not a
   review after. The critical tier (money above a limit, production deletes,
   permission grants) needs a second, independent approver.
-- **An approval is a record bound to one action.** Store actor, tool,
-  target, the normalised arguments (or their hash), approver identity,
-  reason, timestamp and expiry; the executor re-checks that the call it is
-  about to run matches the record and has not expired, so an approval for
-  one argument set cannot be replayed on another. **A timed-out approval is
-  a denial** — the pending action is dropped, never run by default. OWASP:
-  AISVS 9.6.2; OWASP AI Agent Security cheat sheet; OWASP DSOMM.
+- **An approval is a signed record bound to one action** (normalised args,
+  expiry, executor re-check, fail closed; **a timed-out approval is a
+  denial**) — [`sota-code-security` rules/08](../../sota-code-security/rules/08-llm-ai-security.md) §2. OWASP DSOMM.
 - **A run nobody asked for is still a request.** An agent started by a
   schedule, an event, a webhook or its own follow-up plan goes through the
   same tiers and approvals as a user-initiated one — with no human in the

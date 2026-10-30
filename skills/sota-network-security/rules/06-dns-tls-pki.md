@@ -24,8 +24,9 @@ metadata cross-reference ([rules/05](05-edge-ingress-egress.md)). Pin the CA/B s
 **R1 — Every certificate is auto-issued and auto-renewed. Manual renewal is now an outage
 generator.** Public cert max lifetime drops to 200 days (2026-03), then ~100, then 47 (2029). A
 human cannot reliably re-issue every ~6 weeks across a fleet. Therefore:
-- **ACME everywhere** — Let's Encrypt / your CA's ACME endpoint for public certs; **cert-manager** on
-  Kubernetes (Issuer/ClusterIssuer + Certificate) for both public and internal.
+- **ACME everywhere** — Let's Encrypt / your CA's ACME endpoint for public certs (DNS-01 for
+  wildcards and names not reachable from the internet); **cert-manager** on Kubernetes
+  (Issuer/ClusterIssuer + Certificate) for both public and internal.
 - **Provider-managed certs** on managed LB/CDN/Cloudflare where applicable (no private key you can
   leak).
 - **Expiry monitoring as a backstop** (alert at 30/14/7 days) *even with* automation — automation
@@ -170,8 +171,9 @@ topology and aid recon. Public zones hold only public entry points; internal rec
 zones served to internal resolvers only.
 
 **R6 — DNSSEC where the registrar+provider support is solid and rotation is automated.** Sign zones
-used as identity anchors (email/SPF/DKIM-bearing); use *managed* DNSSEC (avoid hand-rolled key
-rollover). DNSSEC protects integrity (anti-spoofing), not confidentiality.
+used as identity anchors (email/SPF/DKIM-bearing) — always, there; use *managed* DNSSEC (e.g. Route 53,
+Cloud DNS, Azure DNS) and avoid hand-rolled key rollover. DNSSEC protects integrity
+(anti-spoofing), not confidentiality.
 
 **R7 — DNS firewall / RPZ + DoH/DoT for confidentiality and policy.**
 - **Resolver-level DNS firewall (RPZ)** blocks resolution of known-malicious / newly-registered /
@@ -285,9 +287,13 @@ consent) is [sota-copywriting rules/04](../../sota-copywriting/rules/04-claims-l
 
 **R14 — Bulk-sender rules are now table stakes.** Since Feb 2024, Gmail (senders of **5,000+ messages/day**
 to Gmail accounts) and Yahoo (its "bulk senders"; Yahoo publishes no volume number) require them to authenticate with SPF *and* DKIM, publish DMARC (at least
-`p=none`), keep the From domain aligned, offer **one-click unsubscribe** (List-Unsubscribe with
-RFC 8058) on bulk mail, and hold the spam-complaint rate **below 0.3%** (aim <0.1%); Microsoft added
-equivalent requirements (enforcement from 2025). Treat these as the minimum for any transactional or
+`p=none`), keep the From domain aligned, offer **one-click unsubscribe** (`List-Unsubscribe` + `List-Unsubscribe-Post`,
+RFC 8058) on bulk mail (Yahoo: honoured within 2 days), and hold the spam-complaint rate **below
+0.3%** (aim <0.1%). Microsoft Outlook (consumer) requires SPF, DKIM and DMARC of domains sending
+over 5,000 messages/day, enforced since 2025-05-05 by rejecting non-compliant mail
+(`550 5.7.515`). (Checked 2026-10-30: senders.yahooinc.com/best-practices; Microsoft Defender
+for Office 365 blog "Outlook's New Requirements for High-Volume Senders".) Treat these as the
+minimum for any transactional or
 marketing sender. Monitor DMARC RUA reports as a *spoofing-detection* feed as well — hand them to
 [sota-detection-engineering](../../sota-detection-engineering/SKILL.md). (Logo display via **BIMI** is an IETF draft, not yet an RFC, and rewards
 reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, not required.)

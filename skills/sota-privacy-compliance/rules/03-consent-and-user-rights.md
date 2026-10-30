@@ -173,8 +173,9 @@ recorded derivative graph ([rules/01](01-data-inventory-classification.md) §5) 
    data dies with the backup cycle; document the max window (e.g., "fully purged
    within retention period + cycle = 35 days") AND ensure restore procedure
    re-applies deletions (replay tombstones after restore) so restoring a backup
-   doesn't resurrect deleted users. Crypto-shredding makes backups immediate
-   instead.
+   doesn't resurrect deleted users. Where strict erasure from backups is required,
+   crypto-shredding (per-user key; destroy it and every copy, backups included, is
+   unreadable at once) makes backups immediate instead.
 7. **Third-party processors** — call their deletion APIs (most major processors
    have them) or ticket per DPA; record confirmation.
 8. **ML training data & derived models** — remove from training sets and feature

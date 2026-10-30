@@ -16,10 +16,10 @@ CDN, DDoS posture, IPv6.
     internet in either direction; reach cloud APIs via private endpoints.
 - **Span ≥ 2 (prefer 3) availability zones** with one subnet per tier per AZ. A
   single-AZ subnet layout silently forces single-AZ workloads later.
-- Security groups / firewall rules: deny-by-default, reference **security groups (or
-  tags/service accounts in GCP), not CIDRs**, for internal flows — `sg-app → sg-db:5432`
-  survives re-IPs; CIDR rules rot. No `0.0.0.0/0` ingress anywhere except 80/443 on
-  the edge LB tier. SSH/RDP from the internet is a finding even "temporarily" — use
+- Security groups / firewall rules follow [sota-network-security rules/02](../../sota-network-security/rules/02-segmentation-blast-radius.md)
+  §5 R8: deny-by-default, SG/tag references rather than CIDRs for internal flows, no
+  `0.0.0.0/0`/`::/0` ingress except 80/443 on the edge LB tier (Terraform shape
+  below). SSH/RDP from the internet is a finding even "temporarily" — use
   SSM Session Manager / IAP / Azure Bastion instead, and you usually don't need a
   bastion subnet at all.
 - Keep NACLs/subnet-level rules coarse (subnet-tier intent) and do fine-grained
@@ -153,26 +153,20 @@ resource "aws_security_group_rule" "db_in" {
   that a new alternate name needs a certificate covering it raises the bar but is
   not a control to rely on. Delete the holder only after the record is gone.
   (OWASP: Subdomain Takeover Prevention cheat sheet)
-- **DNSSEC stance:** sign zones where the registrar+provider support is solid and
-  you have rotation automation (managed DNSSEC on Route 53/Cloud DNS/Azure DNS);
-  skip hand-rolled key management. Always enable it for domains used as identity
-  anchors (email/SPF/DKIM-bearing zones). CAA records on all public zones limiting
-  issuance to your CAs.
+- **DNSSEC stance:** decide and record it per [sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md)
+  §3 R6 (managed signing only, identity-anchor zones first). CAA records on all
+  public zones limiting issuance to your CAs.
 - Low TTLs (60–300s) on records you'll need to move in an incident; long TTLs on
   stable apex/MX.
 
 ## 7. TLS and certificate automation
 
-- **Certificate lifetimes are collapsing by CA/Browser Forum schedule: max 200 days
-  from 2026-03-15, 100 days from 2027-03-15, 47 days from 2029-03-15.** Manual
-  renewal is now an outage generator, period. Every cert must be issued and renewed
-  automatically.
+- **Every cert is issued and renewed automatically**, with expiry alerts as a
+  backstop: the CA/B lifetime schedule, ACME and the 30/14/7-day alerts are
+  [sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) §1 R1.
 - Prefer **provider-managed certs** terminated on managed LBs/CDN (ACM, Google-managed
   certs, Azure-managed) — auto-renewed, no private key you can leak. Where you must
-  hold certs (self-managed ingress, on-prem), use **ACME** (Let's Encrypt or your
-  CA's ACME endpoint) with DNS-01 for wildcards/internal, cert-manager on Kubernetes.
-- Expiry monitoring as a backstop (alert at 30/14/7 days) even with automation —
-  automation fails silently; see [sota-observability](../../sota-observability/SKILL.md) for alert wiring.
+  hold certs (self-managed ingress, on-prem), use ACME per R1.
 - Internal/mTLS: use a private CA service (AWS Private CA, GCP CA Service, or
   service-mesh-issued identities) with short lifetimes; never a long-lived wildcard
   cert copied between services.
@@ -251,8 +245,8 @@ resource "aws_security_group_rule" "db_in" {
       public subnets; databases have no internet route; NACLs carry coarse tier intent
       only, not copies of SG rules (§1).
 - [ ] ≥ 2 AZs per tier; NAT per AZ in prod (§1, §3).
-- [ ] No `0.0.0.0/0` or `::/0` ingress except 80/443 on edge LBs; no SSH/RDP from
-      internet; internal rules reference SGs/tags, not broad CIDRs (§1, §11).
+- [ ] SG/firewall rules pass the R8 item of [sota-network-security rules/02](../../sota-network-security/rules/02-segmentation-blast-radius.md)
+      (edge-only `0.0.0.0/0`/`::/0`, SG/tag references); no SSH/RDP from internet (§1, §11).
 - [ ] CIDR plan documented/IPAM-tracked; no overlaps among connected networks; no
       192.168.0.0/16 or common 10.0.0.0/24-style defaults on anything that may connect
       to a partner/VPN; cluster subnets sized for pod IPs or given secondary ranges (§2).
@@ -286,8 +280,8 @@ resource "aws_security_group_rule" "db_in" {
       CloudFront distribution or its `aliases` while a CNAME still targets it is the
       same finding.
 - [ ] CAA records present; DNSSEC stance decided and recorded (§6).
-- [ ] All public certs auto-issued/renewed (ACM/ACME/managed); expiry alerts as
-      backstop; nothing renewed by hand or living past current CA/B lifetime caps;
+- [ ] All public certs auto-issued/renewed (ACM/ACME/managed) with expiry alerts —
+      a hand-renewed cert is High on a public endpoint ([sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) §1 R1);
       internal/mTLS certs come from a private CA with short lifetimes, no long-lived
       wildcard copied between services (§7). TLS 1.2-minimum and HSTS probes:
       [sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md).

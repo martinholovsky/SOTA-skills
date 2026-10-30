@@ -106,7 +106,7 @@ enum OrderStatus: RawRepresentable, Decodable {
 
 ### 6.9 Testing strategy: a pyramid with device reality at the top
 
-- **Unit (the bulk):** view models, reducers, repositories, sync/outbox logic against fakes — milliseconds each, every commit. Cheap because the architecture made it cheap ([rules/02](02-architecture-and-state.md) §2.9).
+- **Unit (the bulk):** view models, reducers, repositories, sync/outbox logic against fakes, with sealed-state assertions and an injected `TestDispatcher`/test clock — milliseconds each, thousands every commit. Cheap because the architecture made it cheap ([rules/02](02-architecture-and-state.md) §2.9).
 - **Snapshot:** design-system components and key screens per sealed-state case, across dark mode, large dynamic type/font scale, and RTL. This layer catches the visual regressions E2E suites are too slow and flaky to police.
 - **Integration:** repository ↔ real local DB; sync engine against a fake server scripted with the [rules/03](03-offline-background-push.md) edge cases (conflict, resync, poison message); **DB schema migration tests** (Room's `MigrationTestHelper`, GRDB migrator tests) — a failed migration bricks the app for exactly your most loyal, longest-installed users.
 - **UI/E2E (a handful):** login, the core loop, purchase — per-PR on emulators/simulators; nightly on a **real-device farm** (Firebase Test Lab, AWS Device Farm, BrowserStack) across an OS × device matrix mirroring your actual user base. Emulators miss OEM skins, real keyboards, memory pressure, and vendor-modified WebViews.

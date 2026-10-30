@@ -151,13 +151,10 @@ runs two. Treat ambiguous framing as an attack, not as something to be lenient a
   same goes for a request whose `Transfer-Encoding` does not end in `chunked`, and
   for an invalid or self-contradicting `Content-Length` list (Section 6.3 makes
   both a `400`-and-close).
-- **HTTP/2 and HTTP/3**: a message carrying a connection-specific field
-  (`Transfer-Encoding`, `Connection`, `Keep-Alive`, `Upgrade`, `Proxy-Connection`;
-  `TE` only as `trailers`) is malformed, and so is a `content-length` that differs
-  from the sum of the DATA frame payloads (RFC 9113 Sections 8.1.1 and 8.2.2, RFC
-  9114 Sections 4.1.2 and 4.2). An intermediary must not forward either. This matters most where
-  an HTTP/2 edge **downgrades** to HTTP/1.1 towards the origin: a field that the
-  binary framing carried harmlessly becomes framing again on the old wire (the
+- **HTTP/2 and HTTP/3**: refuse, never forward, a message with a connection-specific
+  field or a mismatched `content-length` — above all where an h2/h3 edge
+  **downgrades** to HTTP/1.1 (field list and RFC sections:
+  [`sota-network-security` rules/05](../../sota-network-security/rules/05-edge-ingress-egress.md) §1 R2.2; the
   CR/LF/NUL variant: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11).
 - **Generating**: never emit a `Content-Length` that disagrees with what the
   framing actually sends, and never both headers on one message (RFC 9112 Section 6.2).
@@ -287,13 +284,11 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   query is at most a *consistency check* against the credential — never the
   source of truth. (`X-Tenant-Id` headers trusted from clients = critical
   finding.)
-- **Scope every query structurally**: tenant filter applied by a repository
-  layer/ORM global scope or Postgres RLS (`SET LOCAL app.tenant_id` or
-  `set_config('app.tenant_id', …, true)` inside the request's transaction — a
-  plain `SET` leaks to the next borrower under transaction pooling, see
-  [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md); policies on every table) — not by remembering
-  `WHERE tenant_id = ?` in each handler. RLS as a second enforcement layer
-  catches the handler someone forgot.
+- **Scope every query structurally** (repository layer/ORM global scope, with
+  Postgres RLS as the boundary that catches the handler someone forgot) — not by
+  remembering `WHERE tenant_id = ?` in each handler. The pattern, including
+  `SET LOCAL`/`set_config` under transaction pooling:
+  [`sota-code-security` rules/03](../../sota-code-security/rules/03-authorization.md) §5.
 - Resource IDs: lookups are always `(tenant_id, id)`; return `404` (not `403`)
   for other tenants' resources to avoid existence oracles — and make that
   consistent (a timing or message difference is still an oracle).

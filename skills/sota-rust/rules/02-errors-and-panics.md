@@ -211,7 +211,7 @@ impl FetchError {
   place (an `IntoResponse`/`From<Error> for Status` impl), not per-handler.
 - Idempotency: only auto-retry operations that are idempotent or carry an
   idempotency key — a retried non-idempotent POST is a correctness bug, not
-  resilience.
+  resilience. Designing the key: [`sota-api-design` rules/01](../../sota-api-design/rules/01-rest-http-design.md) §6.
 
 ## 8. Testing error paths
 

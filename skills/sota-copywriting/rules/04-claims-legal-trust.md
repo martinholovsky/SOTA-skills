@@ -164,15 +164,13 @@ Two regimes cover most senders; apply the stricter when audiences mix:
   bait-and-switch subjects violate the deception rules *and* train users to
   ignore you.
 - **Mailbox-provider bulk-sender rules gate delivery before any law does**:
-  Gmail (senders of more than 5,000 messages/day to Gmail accounts) and
-  Yahoo (its "bulk senders" — Yahoo publishes no volume number) require
-  aligned SPF + DKIM + DMARC, RFC 8058 one-click unsubscribe
-  (`List-Unsubscribe`/`List-Unsubscribe-Post` headers; Yahoo: honored within
-  2 days), and reported spam rates below 0.3%; Microsoft Outlook
-  (consumer) enforces SPF + DKIM + DMARC for domains sending more than
-  5,000 messages/day since May 2025. Stricter in
-  practice than CAN-SPAM's 10-business-day window — non-compliant bulk mail
-  gets junked or rejected regardless of legal compliance.
+  Gmail, Yahoo and Microsoft Outlook require authenticated, aligned mail,
+  RFC 8058 one-click unsubscribe and a low complaint rate from bulk senders
+  (thresholds, dates and the full list:
+  [`sota-network-security` rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) §5 R14).
+  Stricter in practice than CAN-SPAM's 10-business-day window (Yahoo: unsubscribe
+  honoured within 2 days) — non-compliant bulk mail gets junked or rejected
+  regardless of legal compliance.
 - Sunset/engagement policies (stop mailing the long-unengaged) are
   deliverability hygiene and consent hygiene at once.
 

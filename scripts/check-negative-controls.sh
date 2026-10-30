@@ -1346,16 +1346,21 @@ probe 41 "router §BUILD changed without the eval mirror's pin being re-read" "B
 
 # 42 — reachability graph (scripts/reachability-graph.py). One probe per property, each a
 # python edit that asserts its anchor first, so a stale literal fails as a PROBE.
-# 42: delete devsecops/rules/08's pointers beyond its index row -> C1 (index-only). There are two
-# since 2026-10-26 (rules/04, and kubernetes rules/07's digest-pinning hand-off): removing only the
-# first left a path, C1 stayed silent and the harness reported a FALSE PASS. Both are asserted.
+# 42: delete devsecops/rules/08's pointers beyond its index row -> C1 (index-only). Its other
+# citers are rules/04 and kubernetes rules/07's digest-pinning hand-off. Removing only the first
+# pointer left a path, C1 stayed silent and the harness reported a FALSE PASS (2026-10-26); and
+# rules/04 gained two more pointers on 2026-10-30 (ROADMAP 89, §4.5 and its checklist), which
+# made the old one-pointer mutation inert. So every rules/08 reference in rules/04 is removed,
+# with its section number, and the absence of any 'rules/08' text there is asserted.
 ( cd "$WT" && python3 -I -c "
 import pathlib, re
 p = pathlib.Path('skills/sota-devsecops/rules/04-build-containers.md')
 t = p.read_text(encoding='utf-8')
-old = 'the registry itself as tier-0 infrastructure: [rules/08](08-registry-security.md).'
-assert t.count(old) == 1, 'probe stale: the rules/04 -> rules/08 pointer not found'
-p.write_text(t.replace(old, 'the registry itself as tier-0 infrastructure.', 1), encoding='utf-8')
+n = len(re.findall(r'\[rules/08\]\(08-registry-security\.md\)', t))
+assert n >= 1, 'probe stale: no rules/04 -> rules/08 pointer found'
+t = re.sub(r'(:? ?)\[rules/08\]\(08-registry-security\.md\)( §[0-9.]+)?', '', t)
+assert 'rules/08' not in t and '08-registry-security' not in t, 'probe stale: a rules/08 reference survived in rules/04'
+p.write_text(t, encoding='utf-8')
 k = pathlib.Path('skills/sota-kubernetes/rules/07-supply-chain-audit.md')
 u = k.read_text(encoding='utf-8')
 v = re.sub(r' \(\[\`sota-devsecops\` rules/08\]\([^)]*\)[^)]*\)', '', u)

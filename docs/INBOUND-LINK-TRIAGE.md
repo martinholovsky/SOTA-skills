@@ -10,6 +10,11 @@ the next pass reads the verdict instead of redoing it.
 reached only by their own `SKILL.md` index) and **109** reached by exactly one, so **164** in
 total. The router counts as "another skill" in the generator, and it does here.
 
+*Note added 2026-10-30:* "reached only by their own index" below means reached only by their own
+`SKILL.md`, counting its BUILD and AUDIT steps as well as its rules-index row. The reachability
+graph (`scripts/reachability-graph.py`) counts those separately, which is why it reports 0
+index-only files where page 8 showed 7. The page-8 label now says so (ROADMAP 89).
+
 **Verdicts.**
 
 - **KEEP-INTERNAL:** the topic belongs to its own skill, so no sibling's task needs it.

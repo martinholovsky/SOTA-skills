@@ -384,7 +384,7 @@ def main():
     print("  of them linked    : %s" % ", ".join("%s=%d" % kv for kv in sorted(linked.items()) if kv[1]))
     print("rules index style   : %s" % dict(sorted(idx_style.items())))
     print("rules inbound       : %d rules files, %d linked + %d unlinked pointers; "
-          "%d reached from no other skill, %d from nothing but their index, "
+          "%d reached from no other skill, %d from nothing but their own SKILL.md, "
           "%d from exactly one other skill"
           % (len(inbound), n_in_linked, n_in_unlinked, len(no_cross_skill(inbound)),
              len(index_only(inbound)), len(one_cross_skill(inbound))))
@@ -1455,7 +1455,7 @@ def page_links(forms, linked, example, at_files, edges, n_files, idx_style, inbo
                   "another skill read as well connected even when none reaches the file the task "
                   "needs. Of %d domain rules files, %d are pointed at by no other skill and not by "
                   "the router (below, by number; * = not even by another file of their own skill, "
-                  "only by their SKILL.md index). Every citing file, per rules file: "
+                  "only by their own SKILL.md: its rules index or its BUILD/AUDIT steps). Every citing file, per rules file: "
                   "rules_inbound in docs/skill-map.json."
                   % (len(domain_rules), len(lone)),
                   BOX + "fillColor=none;strokeColor=none;align=left;fontStyle=1;",

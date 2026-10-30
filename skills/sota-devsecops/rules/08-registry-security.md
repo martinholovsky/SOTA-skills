@@ -103,12 +103,19 @@ mutable pointer instead of the digest.
     patterns.
   - **ECR**: per-repository `imageTagMutability: IMMUTABLE` — a second push of an existing tag is
     rejected (verified, AWS docs).
-  - **GAR**: immutable-tags setting is GA for Docker repositories — locks the digest a tag points
-    to (verified, Google docs).
+  - **GAR**: a per-repository **Immutable image tags** setting for Docker repositories
+    (`gcloud artifacts repositories create … --immutable-tags`, or the console toggle; off by
+    default, changeable later by an Artifact Registry administrator) — a tag always points to the
+    same digest. It is a repository setting, not a policy, and the docs carry no Preview label
+    (verified 2026-10-30, [create repositories](https://docs.cloud.google.com/artifact-registry/docs/repositories/create-repos)).
   - **ACR**: there is **no registry-wide immutable-tag toggle**; immutability is achieved by
     *locking* an image/repo (`az acr repository update --write-enabled false`) per artifact —
     treat ACR tag-immutability as a manual/automated lock step, not a built-in policy (verify
     current; Microsoft has had this as an open feature request).
+  - **Artifactory**: overwriting a deployed artifact needs the Delete/Overwrite permission, so
+    withhold it from push identities on release repos (JFrog: "You can prevent a user or group
+    from overwriting a deployed release … by not granting the Delete permission"; verified
+    2026-10-30, [permissions](https://jfrog.com/help/r/jfrog-platform-administration-documentation/permissions)).
   - **Zot**: enforce immutability at the consumer (digest pinning) + retention/policy; Zot does
     not ship a Harbor-style immutable-tag rule engine — do not assume one.
 - **Consumers pin by digest.** Deploy manifests reference `image@sha256:...`, not tags (this is
@@ -255,7 +262,7 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
   scan-on-push:
   - **ECR**: `IMMUTABLE` tags; Inspector enhanced scanning (on-push + continuous); managed image
     signing; pull-through cache. IAM/repo policies for access.
-  - **GAR**: immutable-tags GA; Artifact Analysis scanning; IAM-scoped; remote/virtual repos.
+  - **GAR**: per-repository immutable-tags setting (§8.3); Artifact Analysis scanning; IAM-scoped; remote/virtual repos.
   - **ACR**: image-lock for immutability (no registry-wide toggle — verify); Defender for Cloud
     scanning (manifest-level); artifact cache; RBAC/AAD.
   - **GHCR / Docker Hub**: GHCR ties access to the source repo (`image.source` label, [rules/04](04-build-containers.md)

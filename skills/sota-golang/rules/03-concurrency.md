@@ -29,9 +29,8 @@ g.Go(func() error { return processQueue(ctx, q) })
 if err := g.Wait(); err != nil { ... }
 ```
 
-- **A panic in any goroutine kills the process** — goroutines running
-  panic-capable code (callbacks, plugins, parsers on untrusted input) need
-  their own `defer func(){ if r := recover(); ... }()`.
+- **A panic in any goroutine kills the process**, so a goroutine running
+  panic-capable code needs its own deferred recover — [rules/01](01-errors.md) §5.
 - Libraries must not spawn goroutines that outlive the call unless the API
   has an explicit `Close`/`Shutdown` that joins them.
 - Never use `time.Sleep` to "wait for the goroutine to start/finish" — that's

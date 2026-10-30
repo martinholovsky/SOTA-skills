@@ -39,7 +39,7 @@ Node now ships what used to require packages. Every dep removed is supply-chain 
 | jest/mocha (for libs/simple apps) | `node:test` + `node:assert` |
 | chalk (basic) | `styleText` from `node:util` |
 | uuid | `crypto.randomUUID()` |
-| minimist/yargs (simple CLIs) | `util.parseArgs` |
+| minimist/yargs (simple CLIs) | `util.parseArgs` (the CLI's design: [`sota-cli-ux`](../../sota-cli-ux/SKILL.md)) |
 | glob (simple) | `fs.glob` (≥22) |
 | ws client (basic) | global `WebSocket` (≥22) |
 

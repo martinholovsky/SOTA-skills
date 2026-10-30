@@ -238,7 +238,9 @@ through a real regression, and "tests are red anyway" normalizes overriding gate
   quarantine size is a tracked metric with a hard cap. Quarantine without deadline =
   deletion with extra steps.
 - Retries: at most one automatic retry, *recorded* (flake-detection reporting), never
-  silent. `retry: 3` sprinkled in CI config to make red go away is mute culture (flag it).
+  silent. A blanket `retry: 3` to make red go away is mute culture and **High** — a gate
+  retried until green also passes a real regression. The policy and its grep are
+  [`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.1.
 - A test that is muted/`@skip`ped without a linked issue is a finding (Low-Medium,
   pattern-dependent). Greps: `@pytest.mark.skip`, `it.skip`, `xit(`, `t.Skip(`,
   `@Disabled` — sample them, check for issue links and age.
@@ -280,4 +282,4 @@ check that never ran: [rules/16](16-fast-ci-without-blind-spots.md) §16.3.
 - [ ] **Agent PR gates (§5.6), High:** `git diff --name-only origin/main...HEAD | grep -E '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum|Cargo\.lock|poetry\.lock|uv\.lock)$|^\.github/|^\.gitlab-ci\.yml$|(^|/)tests?/|_test\.go$'` hits force a required reviewer; `git diff --name-only --diff-filter=d -z origin/main...HEAD | xargs -0 -r rg -H -n -- '[\x{202A}-\x{202E}\x{2066}-\x{2069}\x{200B}-\x{200D}\x{FEFF}]'` fails the check when its **stdout is non-empty** — never on its exit status (a deleted path makes `xargs` exit non-zero, and `rg` exits 1 on a clean diff)
 - [ ] License gate covers transitive deps (SBOM-based) and license *changes* on upgrades; unknown licenses block (§5.5)
 - [ ] All gates are required checks by exact name, each layer of the PR gate stack (lint+unit, SAST diff, dependency review + license, secret diff scan, IaC, build + image scan) its own check (§5.8); no `continue-on-error`/`|| true`/soft-fail on gate steps; path-filtered required checks have no-op fallbacks; rulesets apply to admins; merge queue (or equivalent) re-validates merge results
-- [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recorded (a blanket `retry: 3` is a finding); skipped tests linked to issues; PR gate latency within budget (§5.7)
+- [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recorded (a blanket `retry: 3` is High); skipped tests linked to issues; PR gate latency within budget (§5.7)

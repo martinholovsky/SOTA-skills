@@ -219,7 +219,7 @@ async function* readBatches(db: Db, signal: AbortSignal) {
 }
 ```
 
-- ES2027 explicit resource management (Stage 4 May 2026) generalizes this: `await using cursor = await db.openCursor();` with `[Symbol.asyncDispose]` on the resource — adopt for locks, files, connections as the runtimes/tsconfig (`lib: esnext.disposable`) allow.
+- ES2027 explicit resource management (Stage 4 May 2026) generalizes this: `await using cursor = await db.openCursor();` with `[Symbol.asyncDispose]` on the resource (`using` with `[Symbol.dispose]` for synchronous disposal) — adopt for locks, files, connections as the runtimes/tsconfig (`lib: esnext.disposable`) allow.
 - Browser-side last-resort rejection telemetry: `window.addEventListener('unhandledrejection', e => { report(e.reason); e.preventDefault(); })` — report, don't suppress silently; this is monitoring, not error handling.
 
 ## 11. Deferred patterns worth knowing

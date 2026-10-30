@@ -61,8 +61,8 @@ per route, so match each route to its data:
 | **PPR** (Next, Cache Components) | Static shell + streamed dynamic holes via Suspense | Pages mixing static chrome + dynamic data | Uncached data outside `<Suspense>` is a build error; incompatible with CSP nonces |
 
 - **Next.js**: route-segment config + `"use cache"`; PPR is the default when
-  `cacheComponents: true`. Fetch is **not cached by default since v15** — opt in
-  explicitly ([`rules/03`](03-nextjs.md)).
+  `cacheComponents: true`. What `fetch` caches by default, and how to opt in:
+  [`rules/03`](03-nextjs.md) §4.
 - **Nuxt**: `routeRules` in `nuxt.config` sets per-route mode (`ssr: false`,
   `prerender: true`, `swr: <ttl>`, `isr: <ttl>`) — hybrid rendering ([`rules/05`](05-nuxt.md)).
 - **Security corollary:** the more a route is cached and shared, the more a caching

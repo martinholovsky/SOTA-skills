@@ -109,8 +109,8 @@ exit=1
 ```
 
 A neighbouring check that recounted the tree did **not** catch it, because the
-count it recounted (`SKILL.md` files) was unaffected — worth stating as its own
-lesson: *one gate's green does not cover another gate's scope.*
+count it recounted (`SKILL.md` files) was unaffected — one gate's green does not cover
+another gate's scope ([rules/15](15-instruments-and-guards.md) §3).
 
 The commonest instance ships inside the toolchains themselves, **and they do not
 agree with each other** — which is the whole point. Both verified by running them:
