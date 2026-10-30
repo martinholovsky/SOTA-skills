@@ -92,7 +92,7 @@ LANG_TOPICS = {
                "06": ["Performance"],
                "07": ["Tooling / CI / supply chain", "Testing"], "08": ["Tooling / CI / supply chain"]},
     "c-cpp": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Memory / UB"], "03": ["Memory / UB"],
-              "04": ["Security"], "05": ["Concurrency"],
+              "04": ["Security", "Web / HTTP"], "05": ["Concurrency"],
               "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Performance"]},
     "jvm": {"01": ["Idioms / baseline", "Errors"], "02": ["API / design", "Typing"], "03": ["Concurrency"],
             "04": ["Security", "Memory / UB"], "05": ["Performance"],

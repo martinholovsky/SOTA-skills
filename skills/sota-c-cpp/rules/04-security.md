@@ -68,7 +68,7 @@ Replace on sight (CERT STR/FIO; MISRA):
   of any inflate/uncompress output (meter it while streaming; the header's claimed size is
   input too). Never pass `XML_PARSE_HUGE` on untrusted input: libxml2 documents it as
   relaxing every hardcoded parser limit. OWASP XML Security cheat sheet (coercive parsing,
-  quadratic blowup). Failures no `catch` stops, parser depth defaults: [rules/01](01-idioms.md) §7.
+  quadratic blowup). Failures no `catch` stops, parser depth defaults: [rules/01](01-idioms.md) §7. **HTTP bodies are the same input, and each library's default differs:** Boost.Beast's parser allows a 1 MB request body, an 8 MB response body and 8,192 bytes of header (`body_limit`, `header_limit`); cpp-httplib allows a 100 MB payload (`CPPHTTPLIB_PAYLOAD_MAX_LENGTH`, `set_payload_max_length`); libcurl applies no download cap (`CURLOPT_MAXFILESIZE_LARGE` defaults to 0, and before 8.4.0 it acted only when the size was known up front) and no stall cutoff (`CURLOPT_LOW_SPEED_LIMIT`/`_TIME` default to 0; timeouts are [rules/06](06-build-tooling-ci.md) §5). Set each to what the endpoint needs. Each default read in the project's own source or docs, 2026-10-30.
 
 ## 3. Format-string and injection
 
@@ -402,7 +402,7 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
 - [ ] **Resource limits / DoS guards (§2) — HIGH where input is untrusted** —
       `grep -rnE 'XML_PARSE_HUGE|\b(inflate|uncompress|BZ2_bzDecompress|ZSTD_decompress)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.h' .`
       (every hit needs a visible output-size cap; `XML_PARSE_HUGE` on untrusted input is the
-      finding) ; and read each recursive parser for its max depth
+      finding) ; and read each recursive parser for its max depth, and each HTTP server and client setup for its body cap (Beast `body_limit`, cpp-httplib `set_payload_max_length`, libcurl `CURLOPT_MAXFILESIZE_LARGE`)
 - [ ] **TLS / transport verification (§4) — HIGH when a peer certificate is never checked, CRITICAL in a client on user networks or on a channel whose content runs ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5)** —
       `grep -rnE 'SSL_VERIFY_NONE|CURLOPT_SSL_VERIFY(PEER|HOST)[^;]*,[[:space:]]*0L?[[:space:]]*\)|SSL_get_verify_result' --include='*.c' --include='*.cpp' --include='*.h' .`
       (verification disabled, or a verify-result check that must be paired with a non-NULL
