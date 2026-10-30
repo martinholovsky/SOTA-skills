@@ -94,6 +94,8 @@ The cross-runtime model — structured concurrency, cancellation and timeouts, b
   code can take the same lock. You still cannot `await` inside `lock`; use `SemaphoreSlim` (§5).
   (Microsoft Learn, "The lock statement".)
 
+**Graceful shutdown (SIGTERM).** Since .NET 6 the generic host's default `ConsoleLifetime` handles SIGTERM. `IHostApplicationLifetime.ApplicationStopping` fires while requests may still be in flight, each `BackgroundService.ExecuteAsync(stoppingToken)` must observe its token, and `HostOptions.ShutdownTimeout` bounds `StopAsync`. The sequence and the other runtimes: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
+
 ## Audit checklist
 
 - [ ] **Blocking on async (§1) — CRITICAL/HIGH (deadlock / thread-pool starvation)** —

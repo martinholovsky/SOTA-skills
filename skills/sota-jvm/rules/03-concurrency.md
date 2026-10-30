@@ -133,6 +133,8 @@ coroutines. References:
   some concurrency bugs (e.g. inconsistent synchronization); Error Prone has
   `@GuardedBy` checking.
 
+**Graceful shutdown (SIGTERM).** A signal from the operating system starts the JVM's shutdown sequence, which runs the hooks registered with `Runtime.getRuntime().addShutdownHook`; `Runtime.halt` skips them. Spring Boot's embedded Jetty, Reactor Netty and Tomcat shut down gracefully by default; bound each phase with `spring.lifecycle.timeout-per-shutdown-phase`. The sequence and the other runtimes: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
+
 ## Audit checklist
 
 - [ ] **Data-race smells — MEDIUM/HIGH (verify happens-before)** (§1) —

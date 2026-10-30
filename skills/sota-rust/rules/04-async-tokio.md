@@ -256,10 +256,14 @@ The canonical service shape:
 let token = CancellationToken::new();
 let tracker = TaskTracker::new();
 
-// signal handling
+// signal handling: SIGTERM is what an orchestrator sends, and ctrl_c() never sees it (Unix)
 let t = token.clone();
+let mut term = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
 tokio::spawn(async move {
-    tokio::signal::ctrl_c().await.expect("ctrl_c handler installed");
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {}
+        _ = term.recv() => {}
+    }
     t.cancel();
 });
 
@@ -282,6 +286,11 @@ tokio::select! {
 }
 ```
 
+- **Trap SIGTERM, not only Ctrl-C.** `tokio::signal::ctrl_c()` completes on a Ctrl-C
+  notification only. Measured 2026-10-31 (tokio 1.54.1, macOS): a service awaiting just
+  `ctrl_c()` exited with status 143 on SIGTERM and never ran its drain; with the `select!`
+  above it drained on both signals. This example once shipped the `ctrl_c()`-only form.
+  Other runtimes' primitives: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
 - Order: stop intake → signal cancellation → drain with deadline → flush
   (logs, metrics, WAL) → exit. Dropping the `Runtime` mid-flight cancels
   everything abruptly — drain first.
@@ -328,7 +337,7 @@ tokio::select! {
       Each hit set inside a handler or task leaks into the next request on that worker.
       Use `task_local!` + `.scope(..)` or an explicit argument. Check each
       `task_local!` read inside a `tokio::spawn` child, which sees none.
-- [ ] Shutdown path exists (§8): signal handler, drain deadline, `tracker.close()`
+- [ ] Shutdown path exists (§8): a SIGTERM handler (`ctrl_c()` alone misses it, Medium), drain deadline, `tracker.close()`
       before `wait()` (close-after-wait hangs forever); long-running handlers observe
       `token.cancelled()` or are cancel-safe end to end; a test exercises shutdown under load.
 - [ ] `rg 'async fn' -t rust` + `clippy::unused_async` (§7); public async traits:
