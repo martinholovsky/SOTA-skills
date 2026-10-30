@@ -286,7 +286,7 @@ check your change against it and its Audit checklist before you finish. These ru
 16. **User-facing words split three ways.** In-product UI text (labels, errors, empty states) →
     [`sota-ux-writing`](../sota-ux-writing/SKILL.md); marketing/site/email content → [`sota-copywriting`](../sota-copywriting/SKILL.md); technical docs → `sota-
     docs-workflow`. The component patterns the text lives in stay [`sota-frontend-design`](../sota-frontend-design/SKILL.md).
-17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines, Makefiles,
+17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines, Makefiles, test harnesses inside a project in another language (a shell-written test is still a test: [`sota-testing`](../sota-testing/SKILL.md) applies too),
     entrypoints, **and the one-liners you type to verify a claim**: unlinted shell run
     against the system under test, which when wrong produces a false finding *about the
     product* (a usage error, exit 2, from the callee is the tell — but a failed glob is
@@ -315,7 +315,7 @@ check your change against it and its Audit checklist before you finish. These ru
 20. **"It's enabled" is a claim, not a fact.** Whenever a control's *presence* is established but
     its *effect* isn't — a banner, a config flag, a green test, "we have a scanner" — route to
     [`sota-code-security` rules/10](../sota-code-security/rules/10-silent-control-failure.md) (silent control failure). It pairs with [`sota-testing` rules/06](../sota-testing/rules/06-property-fuzzing-mutation.md)
-    (mutation-probe the control) and [rules/09](../sota-testing/rules/09-security-testing.md) (a security test must be watched to fail), `sota-
+    (mutation-probe the control; mutate and revert by file edit, in the foreground, never a backgrounded shell chain: [rules/06](../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3) and [rules/09](../sota-testing/rules/09-security-testing.md) (a security test must be watched to fail), `sota-
     observability` [rules/05](../sota-observability/rules/05-operational-readiness.md) (degradation must be visible), and [`sota-devsecops` rules/04](../sota-devsecops/rules/04-build-containers.md) (does the
     shipped artifact contain what the control needs at runtime?). Not for controls that are simply
     *missing* — that's the owning domain skill's audit checklist.

@@ -1,0 +1,4 @@
+grep -rn 'set -e' --include=*.sh .
+git grep -n -e aur HEAD -- bin/up bin/up-aur*
+git diff -- *.yml
+git -C repo log --oneline -- src/*.rs

@@ -109,7 +109,7 @@
     "filenames",
     "background-job"
    ],
-   "index_row": "| [rules/02-robustness-correctness.md](rules/02-robustness-correctness.md) | Argument parsing (getopts/while-case, --help/--version), input validation, POSIX vs bash portability, stderr/exit-code discipline, PIPESTATUS, command -v, network timeouts & retries, flock & background jobs, idempotency & atomic writes, safe filename handling; **a `grep -c` count inside `$( )` aborts silently on zero under `set -e`** |"
+   "index_row": "| [rules/02-robustness-correctness.md](rules/02-robustness-correctness.md) | Argument parsing (getopts/while-case, --help/--version), input validation, POSIX vs bash portability, stderr/exit-code discipline, PIPESTATUS, command -v, network timeouts & retries, flock & background jobs, idempotency & atomic writes, safe filename handling; **any `$( )` whose producer can find nothing — a `grep -c` count, a `grep -n`-then-`cut` or `grep -o` extraction, `git grep`, `jq -e` — ends a `set -e` script with no message; close it with `\\|\\| true`** |"
   },
   "03": {
    "build": [

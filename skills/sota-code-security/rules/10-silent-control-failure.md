@@ -147,7 +147,9 @@ Design:
 - **Before claiming a fix works**: add the regression test, then **revert the fix
   and confirm the test fails**. A regression test is not evidence until it has
   been watched to fail. Report the exact command and the pass/fail counts —
-  "should work" is not evidence (router operating principle 6).
+  "should work" is not evidence (router operating principle 6). Revert and restore
+  with file edits, in the foreground, never with a backgrounded shell chain: while the gate
+  runs, the security control sits broken on disk ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
 - **Check the fixture before concluding the code is broken.** A bad test input
   looks exactly like a broken detector; a validator rejecting a deliberately
   malformed test value is working as designed.

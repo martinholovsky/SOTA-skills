@@ -194,7 +194,8 @@
       "title": "Shell scripts hide everywhere",
       "skills": [
         "sota-code-security",
-        "sota-shell-scripting"
+        "sota-shell-scripting",
+        "sota-testing"
       ]
     },
     {
@@ -320,7 +321,7 @@
     {
       "from": "sota-code-security",
       "to": "sota-testing",
-      "weight": 18,
+      "weight": 19,
       "targets": [
         "rules/02",
         "rules/02 \u00a72.10",
@@ -2643,6 +2644,15 @@
       ]
     },
     {
+      "from": "sota-shell-scripting",
+      "to": "sota-testing",
+      "weight": 2,
+      "targets": [
+        "rules/06 \u00a76.3",
+        "rules/09 \u00a71"
+      ]
+    },
+    {
       "from": "sota-swift",
       "to": "sota-sandboxing",
       "weight": 2,
@@ -4221,14 +4231,6 @@
     },
     {
       "from": "sota-shell-scripting",
-      "to": "sota-testing",
-      "weight": 1,
-      "targets": [
-        "rules/06 \u00a76.3"
-      ]
-    },
-    {
-      "from": "sota-shell-scripting",
       "to": "sota-observability",
       "weight": 1,
       "targets": [
@@ -4449,14 +4451,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1885,
+    "md link, other skill": 1889,
     "md link, outside skills/": 3,
     "md link, same skill": 2856,
-    "name (backticked)": 454,
+    "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 877,
+    "name+file (backticked)": 879,
     "name+file (bare)": 180,
-    "own rules/NN": 3076
+    "own rules/NN": 3077
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4464,11 +4466,11 @@
     "md link, other skill": 0,
     "md link, outside skills/": 0,
     "md link, same skill": 0,
-    "name (backticked)": 439,
+    "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 873,
+    "name+file (backticked)": 875,
     "name+file (bare)": 168,
-    "own rules/NN": 2973
+    "own rules/NN": 2974
   },
   "rules_index_style": {
     "link": 42
@@ -9099,6 +9101,7 @@
         "sota-code-security/rules/15-instruments-and-guards.md",
         "sota-identity-access/rules/03-authorization-models.md",
         "sota-llm-engineering/rules/07-code-generation-evals.md",
+        "sota-shell-scripting/rules/06-ad-hoc-commands.md",
         "sota-threat-modeling/rules/05-outputs-operationalization.md"
       ]
     },
