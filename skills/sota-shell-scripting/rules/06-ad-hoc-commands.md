@@ -54,7 +54,7 @@ sweep cannot tell "the codebase is clean" from "my search never executed"** — 
 Rules:
 
 - **Quote every glob you intend the *callee* to interpret** — `--include`, `--exclude`,
-  `find -name`, `rsync --filter`, and any flag taking a pattern as its value. This is the
+  `find -name`, `rsync --filter`, any flag taking a pattern as its value, and a **git pathspec after `--`** (`git grep … -- 'bin/*'`, `git diff -- '*.yml'`), which names files in the repository, not on disk: under NOMATCH, zsh aborts `git grep … -- bin/up bin/up-aur*` with `no matches found` when the files exist only in the history being searched (reproduced 2026-10-30, zsh 5.9). This is the
   opposite of [`rules/01`](01-safety-baseline.md) §3's advice for filenames: there you quote so *your* shell does not split;
   here you quote so your shell does not *expand* at all.
 - **`setopt nonomatch` is the wrong fix.** It changes global shell behaviour to hide a
@@ -147,7 +147,7 @@ a fetch returned an empty page (an anti-bot challenge), `apt-cache depends` prin
 (wrong query shape). Every one was the reader failing, and every one rendered as `0`.
 
 The fix is mechanical and needs no prior knowledge of the target: make each extraction,
-fetch or search emit **what it got** beside **what it found**, in the same invocation. **And a count from a regex classifier ships with a printed sample of its matches**: a denominator says how much you read, a sample says what you counted (field-reported 2026-10-22, four times in one session: "23 still `exit`" was the word inside `echo "exit=$?"`, and a hook-firing count of 18 included the hook's own source; the real count was 6). **Key the sample to the producer the claim is about** (the test name, the job id), not the first match: a line many producers print reads the same from all of them. Field-reported 2026-10-30: `grep -o … | head -1` re-derived a cross-check as "1 agreed" from the first test's health line; listing every match showed 1, 10, 8, 6, 8, 10, and the identity test's own line said 8.
+fetch or search emit **what it got** beside **what it found**, in the same invocation. **And a count from a regex classifier ships with a printed sample of its matches**: a denominator says how much you read, a sample says what you counted (field-reported 2026-10-22, four times in one session: "23 still `exit`" was the word inside `echo "exit=$?"`, and a hook-firing count of 18 included the hook's own source; the real count was 6). **Key the sample to the producer the claim is about** (the test name, the job id), not the first match: a line many producers print reads the same from all of them. Field-reported 2026-10-30: `grep -o … | head -1` re-derived a cross-check as "1 agreed" from the first test's health line; listing every match showed 1, 10, 8, 6, 8, 10, and the identity test's own line said 8. **A sample shows what the filter kept, never what it dropped**: when the result becomes an exact-match control (an accept list, an expected set), take it from the unfiltered record. Field-reported 2026-10-30: `grep -E "checksum|Size"` over a package check's reasons showed two, the raw record had a third, and an exact-set accept entry built from the two would never have matched.
 
 ```bash
 # BAD  — a fact about the subject, or a broken reader. Indistinguishable.
@@ -358,7 +358,7 @@ $ grep -rnE 'ZZZ'    CMakeLists.txt                 >/dev/null 2>&1 ; echo $?   
 The failure is **directional**: it manufactures findings rather than hiding them, so an
 auditor sees plausible output and files it against someone's codebase. In zsh an unquoted
 `Makefile*` that matches nothing raises NOMATCH and aborts the whole command, so neither
-the `grep` nor the `|| echo` runs and the item silently yields nothing at all (§1).
+the `grep` nor the `|| echo` runs and the item silently yields nothing at all (§1). **The same shape in a test:** `if cmd; then fail "accepted"; fi` passes for every reason `cmd` can fail. Field-reported 2026-10-30: a "commit refused without the security key" test passed because git refused the commit for a missing `user.email`. Assert the refusal's own message ([`sota-testing` rules/09](../../sota-testing/rules/09-security-testing.md) §1, "the control's refusal signature").
 
 **Never suppress stderr on a sweep whose *absence* you intend to report.** Branch on the
 exit code you actually mean, and print the captured stderr beside the verdict:
@@ -495,6 +495,6 @@ thing** — index it by what it is *for*.
       bracket group, `${=args}` prints several. Symptom to recognise in a bug report — a
       **usage error (exit 2) from the callee**, which looks like the tool is broken.
 - [ ] **Does any command pipe into `interpreter - <<EOF`?** (§1) Both claim fd 0: bash drops
-      the pipe, zsh prepends it to the program. Sweep with `grep -nE '\| *[a-z0-9]+ +- *<<' <file>`. Same section, two more silent rows: an **unquoted glob in a flag value** (`NOMATCH` aborts the command with a genuine no-match's stdout and exit) — `grep -nE -e "(--include|--exclude|--glob|-i?name)[= ][^'\"[:space:]]*[*?]" <snippet>`, quote each hit; and **`${BASH_REMATCH[n]}` in a snippet run under zsh** (unset, or 1-based) — run it with `bash -c`.
+      the pipe, zsh prepends it to the program. Sweep with `grep -nE '\| *[a-z0-9]+ +- *<<' <file>`. Same section, two more silent rows: an **unquoted glob in a flag value or a git pathspec** (`NOMATCH` aborts the command with a genuine no-match's stdout and exit) — `grep -nE -e "(--include|--exclude|--glob|-i?name)[= ][^'\"[:space:]]*[*?]" -e "git .* -- ([^'\"[:space:]]+ )*[^'\"[:space:]]*[*?]" <snippet>`, quote each hit; and **`${BASH_REMATCH[n]}` in a snippet run under zsh** (unset, or 1-based) — run it with `bash -c`.
 - [ ] **An unquoted `=word`, or `set -- $scalar`, in a zsh command** (§1, `EQUALS` and the `$var` row): `python3 scripts/zsh-equals-hook.py --check <snippet>`, a lexer that exempts quotes, heredocs, comments, `[[ ]]` and `(( ))` — the regex once given here flagged 1,686 clean commands of 43,875 and missed bare `==` (2026-10-21); since 2026-10-27 it also reports a variable named `path`/`status`, a spaced literal expanded unquoted, `$PIPESTATUS`/`$BASH_REMATCH`, and `git grep` escapes (§1 rows, §2f); without the script, `grep -nE '(^|[[:space:]])(=[^[:space:]=]|==+([^[:space:]=]|[[:space:]]|$)|={3,})' <snippet>` and read each hit — quote each hit; `=cmd` silently becomes that command's path, and a word naming no command aborts the list. Separators are `echo ---`; a tool result ending `<word> not found` after a nonzero exit was cut there.
 - [ ] **An unbraced `$var:` before a letter in a zsh command** (§1, modifiers): `grep -nE -e '\$[A-Za-z_][A-Za-z0-9_]*:[A-Za-z]' -e '\$[A-Za-z_][A-Za-z0-9_]*\[' <snippet>` — brace each hit (`"${var}:…"`, `"${v}[…]"`); `"$rev:path"` can silently become a different path, and a `grep -o` given `"$v[A-Z_]*"` handed grep the pattern `*` (field-reported 2026-10-21).

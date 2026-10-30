@@ -209,11 +209,30 @@ instead of a hardware one, a dry-run flag, a throwaway target, `--help` parsed a
 **installed** binary rather than remembered (and see [`sota-code-security` rules/16](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.15:
 a flag that parses is not a feature that works). Run it. *Then* hand over the real command.
 
-Field-reported: a YubiKey PIN allows **three** attempts before the applet blocks and needs a
-factory reset. A `cosign sign-blob` command composed from `--help` failed twice on flags
+Field-reported: a YubiKey PIV PIN allows **three** consecutive attempts before it blocks
+(corrected 2026-10-30 against Yubico's PIV admin-access page: the PUK unblocks it, and only
+with the PUK blocked too does a reset recover the applet, deleting its keys and
+certificates). A `cosign sign-blob` command composed from `--help` failed twice on flags
 deprecated in v3, each round-trip risking an attempt. Rehearsed against a throwaway
 file-based key — identical argument parsing and bundle-writing path, zero cost — it failed
 twice more for free, and the third form worked first time on the real device.
+
+**When the step drives the person's own authenticator** (a FIDO2 key, a smart card), the
+device is stateful and the attempts are theirs. The CTAP 2.1 specification (section 6.5.2.2) allows at most **8** PIN
+retries, requires a power cycle after 3 consecutive mismatches, and disables the PIN at 0
+until an authenticator reset. So:
+- **Read the counter without spending an attempt** before any step that can prompt:
+  `fido2-token -I <device>` prints `pin retries: N` (libfido2 `tools/token.c`); CTAP's
+  `getPINRetries` has no decrement step.
+- **Tell the person every prompt that can appear, in order** (PIN, then touch), before the
+  step starts. Never infer the sequence from a log that is still running: field-reported
+  2026-10-30, the log showed only "You may need to touch your authenticator", the person was
+  told "touch only", and the PIN prompt came next.
+- **A touch at a PIN prompt can be a wrong PIN.** Field-reported, not found in the Yubico
+  pages read: on a YubiKey with an OTP slot, the touch typed the OTP string into the PIN
+  prompt, twice, and the counter fell from 8 to 6.
+- **Start a touch-only step after the person says ready**, not as you print the
+  instruction. In the same report a missed touch surfaced from `ssh` as `invalid format`.
 
 **State the cost when you hand it over**: "this has three attempts before lockout" changes
 how carefully the person reads the line.
@@ -223,7 +242,8 @@ how carefully the person reads the line.
 - [ ] **Commands handed to a human are rehearsed where failure is free (§9)** when a failure
       costs an attempt, money, or an irreversible change — and the cost is stated in the
       handover. High wherever a lockout is possible: the recovery is often a factory reset
-      that destroys unrelated material.
+      that destroys unrelated material. When the step drives the person's own authenticator:
+      was its retry counter read first, and was every prompt named in order before it began?
 
 - [ ] `time tool --help` ≪ 500ms; no network I/O on `--help`/`--version` (verify: airplane-mode or strace/dtruss spot-check) (§1).
 - [ ] Re-running `init`/`create`/`apply` twice converges; second run no-ops or reports "already" without failing (§2).

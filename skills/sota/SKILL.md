@@ -286,7 +286,7 @@ check your change against it and its Audit checklist before you finish. These ru
 16. **User-facing words split three ways.** In-product UI text (labels, errors, empty states) →
     [`sota-ux-writing`](../sota-ux-writing/SKILL.md); marketing/site/email content → [`sota-copywriting`](../sota-copywriting/SKILL.md); technical docs → `sota-
     docs-workflow`. The component patterns the text lives in stay [`sota-frontend-design`](../sota-frontend-design/SKILL.md).
-17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines, Makefiles,
+17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines, Makefiles, test harnesses inside a project in another language (a shell-written test is still a test: [`sota-testing`](../sota-testing/SKILL.md) applies too),
     entrypoints, **and the one-liners you type to verify a claim**: unlinted shell run
     against the system under test, which when wrong produces a false finding *about the
     product* (a usage error, exit 2, from the callee is the tell — but a failed glob is
