@@ -114,10 +114,9 @@ deny contains msg if {
 }
 ```
 
-Exceptions live in a register with `policy, resource, justification, compensating
-control, owner, approved-by, expires` — CI re-fails the build the day an exception
-expires. An exception that cannot expire is a policy change; argue it as one. (Same
-discipline as [`sota-privacy-compliance` rules/05](../../sota-privacy-compliance/rules/05-audit-ready-engineering.md) §4 and [`sota-devsecops`](../../sota-devsecops/SKILL.md).)
+Exceptions live in an expiring register that CI re-fails on, never as silent policy
+carve-outs — register shape in [`sota-privacy-compliance` rules/05](../../sota-privacy-compliance/rules/05-audit-ready-engineering.md) §4 (same
+discipline as [`sota-devsecops`](../../sota-devsecops/SKILL.md)).
 
 ## 5. Baselines and tailoring
 

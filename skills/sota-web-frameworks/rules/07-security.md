@@ -48,8 +48,8 @@ Server-side rendering means the server makes outbound requests — attacker-infl
 URLs become SSRF.
 
 - **Image optimizers:** `next/image` `remotePatterns`/`domains` with a `**` wildcard,
-  and IPX/`@nuxt/image` (path-traversal CVE-2025-54387), turn the optimizer into a
-  proxy to internal URLs and the cloud metadata endpoint (169.254.169.254). Allowlist
+  and IPX/`@nuxt/image` (path-traversal CVE-2025-54387), turn the optimizer (Next's
+  `/_next/image`) into a blind-SSRF proxy to internal URLs and the cloud metadata endpoint (169.254.169.254). Allowlist
   explicit hosts, protocols, ports, and path prefixes — and note the optimizer follows
   redirects from an allowed host *without re-validating*, so an open redirect on an
   allowlisted domain becomes SSRF.
@@ -162,6 +162,8 @@ dependency updates + a fast patch path is the actual control ([`sota-devsecops`]
 - [ ] **Server->client exposure & the server-only guard** (§1) —
       `grep -rL "import 'server-only'\|import \"server-only\"" --include='*.ts' --exclude-dir=node_modules lib` (data-layer modules lacking the guard; point it at yours) ;
       `grep -rnE 'process\.env\.' --include='*.tsx' --include='*.vue' app components pages | grep -iv 'NEXT_PUBLIC\|NODE_ENV'`
+      — a CANDIDATE list, not an absence proof: it greps text, not the client module graph, so a
+      server module imported by a client one is invisible to it
 - [ ] **Authz only at the edge? enumerate actions/handlers and check each** (§2) —
       `grep -rn "'use server'" app lib; find app src/app server/api server/routes -type f \( -name 'route.[jt]s' -o -path 'server/*' -name '*.[jt]s' \) 2>/dev/null`
 - [ ] **SSRF surfaces** (§3) —

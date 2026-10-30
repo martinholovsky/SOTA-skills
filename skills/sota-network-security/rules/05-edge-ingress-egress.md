@@ -81,10 +81,13 @@ become the start of the backend's *next* request — which skipped the WAF, auth
   `--insecure-http-parser` / `insecureHTTPParser: true`. Measured 2026-09-25 on Node 22.22.1: a
   CL+TE request got `400` + `Connection: close` from the default parser and `200` + keep-alive with
   `insecureHTTPParser: true`.
-- **HTTP/2 front, HTTP/1.1 back:** RFC 9113 Sec. 8.2.2 and 8.1.1 make an h2 message carrying
-  `Transfer-Encoding` (or another connection-specific field), or a `content-length` that differs
-  from the DATA it arrived with, malformed — an intermediary MUST NOT forward it. The edge must
-  rebuild the 1.1 framing itself from the h2 frames, never copy a client-supplied length header.
+- **HTTP/2 or HTTP/3 front, HTTP/1.1 back:** RFC 9113 Sec. 8.2.2 and 8.1.1 (h2) and RFC 9114
+  Sec. 4.2 and 4.1.2 (h3) make a message malformed if it carries a connection-specific field
+  (`Transfer-Encoding`, `Connection`, `Keep-Alive`, `Upgrade`, `Proxy-Connection`; `TE` only as
+  `trailers`) or a `content-length` that differs from the sum of its DATA frames — an
+  intermediary MUST NOT forward it. A field the binary framing carried harmlessly becomes framing
+  again on the 1.1 wire (the CR/LF/NUL variant: [sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) §11). The edge
+  must rebuild the 1.1 framing itself from the frames, never copy a client-supplied length header.
 - **No h2c upgrade through the edge.** RFC 9113 deprecated the `h2c` Upgrade token; a proxy that
   forwards the client's `Upgrade` header lets the backend switch protocols and turns the connection
   into a tunnel the proxy no longer inspects. Forward `Upgrade` only on WebSocket routes, and only
@@ -268,8 +271,10 @@ egress. Treat broad outbound (`0.0.0.0/0` from app/data tiers) as a finding. Tie
 **R10 — Block the cloud metadata endpoint — the SSRF-meets-egress chain.** An SSRF in an app
 ([sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) owns finding/fixing it) becomes credential theft only if the workload
 can actually *reach* `169.254.169.254`. Close the egress side: deny `169.254.0.0/16` (and
-`fd00:ec2::254`) from workload egress at the CNI/firewall, and on cloud use **IMDSv2** (token
-required, hop-limit 1, account-level enforcement so v1 can't be used). Workload identity is the one
+`fd00:ec2::254`) from workload egress at the CNI/firewall — explicitly when a broad egress allow
+exists — and on cloud use **IMDSv2** (token required, hop-limit 1, account-level enforcement so v1
+can't be used; on AWS an account-level IMDSv2-only default for new launches, per region, exists
+since 2024-03-25 — AWS What's New, checked 2026-10-30). Workload identity is the one
 exception and it is a `/32`, not the range: the endpoints per platform, and where the carve-out must
 sit when deny rules outrank allows, are [rules/03](03-k8s-network-policy.md) §5 R6a. Defense in depth: the app
 should also not be SSRF-able, but egress denial is the backstop that turns "credential theft" into

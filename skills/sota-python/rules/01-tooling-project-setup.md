@@ -332,6 +332,7 @@ image by digest ([`sota-devsecops` rules/04](../../sota-devsecops/rules/04-build
 - No committed `.venv/`, `__pycache__/`, `.mypy_cache/` — `.gitignore` covers them.
 - Version in exactly one place (`pyproject.toml` or `__init__.py` via dynamic) — not both.
 - Entry points via `[project.scripts]`, not instructions to run `python src/mypkg/cli.py`.
+  The command's own design (flags, exit codes, stdout vs stderr, `--json`): [`sota-cli-ux`](../../sota-cli-ux/SKILL.md).
 - Declared-but-unreached dependencies: `deptry .` reports DEP002 (unused), DEP003
   (imported but only a transitive dep), DEP005 (stdlib shadowed). Treat its output as
   candidates — `importlib`/entry-point/plugin loads read as unused — and prove each by

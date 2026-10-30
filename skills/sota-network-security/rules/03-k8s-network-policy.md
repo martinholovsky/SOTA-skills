@@ -185,13 +185,10 @@ spec:
     toPorts: [{ ports: [{ port: "443", protocol: TCP }] }]
 ```
 
-**R6 — Block the cloud metadata endpoint from pods.** `169.254.169.254` (and `fd00:ec2::254`) is
-the SSRF pivot to cloud credentials. Default egress should not include `169.254.0.0/16`; if a
-broad egress exists, explicitly deny the link-local range. This is the egress side of the SSRF chain
-([sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) owns the app-side SSRF; [rules/05](05-edge-ingress-egress.md) here covers the edge/egress side).
-An on-prem cluster has no IMDS, but the habit prevents the finding if it
-ever bursts to cloud — and IMDSv2 (token-required; an account-level default for new launches since
-March 2024) is the cloud-side mitigation ([sota-cloud-infrastructure](../../sota-cloud-infrastructure/SKILL.md)).
+**R6 — Block the cloud metadata endpoint from pods.** Pod egress never includes `169.254.0.0/16`
+(or `fd00:ec2::254`); where a broad egress allow exists, deny the range explicitly. The rule —
+SSRF chain, IMDSv2, the on-prem case — is [rules/05](05-edge-ingress-egress.md) §6 R10; what is specific to
+pods is the workload-identity carve-out below.
 
 **R6a — Workload identity needs one link-local address, never the range.** Keep the block when pods
 use workload identity; open exactly the endpoint it uses, for exactly the service accounts that use it:
@@ -297,9 +294,9 @@ audit cross-cluster policies for `world`/wildcard exactly as single-cluster.
 - [ ] Is egress FQDN-allowlisted for sensitive namespaces, not open to `0.0.0.0/0`? Where partners
       allowlist your source IP, or egress must pass one inspected point, does it leave through an
       egress gateway (§5)?
-- [ ] Is `169.254.0.0/16` (and `fd00:ec2::254`) — the metadata endpoint — blocked from pod
-      egress, with workload identity opened only at its own `/32` for its own service accounts,
-      and in Cilium carved out of the deny's `except:` rather than allowed beside it (§5)?
+- [ ] Metadata-range block in pod egress (the block and its proof: [rules/05](05-edge-ingress-egress.md) §6 checklist):
+      is workload identity opened only at its own `/32` for its own service accounts, and in
+      Cilium carved out of the deny's `except:` rather than allowed beside it (§5, R6a)?
 - [ ] Every `ipBlock` justified: `grep -n 'ipBlock' -r policies/` and for each hit ask which side
       of §3's R3a it is on — an **in-cluster** peer written as a CIDR is a finding (recycled pod
       IPs re-point it silently), and an external one needs the destination, the reason, and a

@@ -243,7 +243,8 @@ pathological on large, with nothing in the output saying so — is
       does a shared contract suite run against fake AND real? No → High. (§3.4)
 - [ ] In-memory DB standing in for the real engine? Grep
       `sqlite::memory:|:memory:|H2|jdbc:h2` in integration config of a
-      Postgres/MySQL system → High. (§3.4)
+      Postgres/MySQL system → High. (§3.4; scope and the wider lookalike grep:
+      [rules/04](04-integration-contract-system.md) §4.1)
 - [ ] Fixture-file gravity: any fixture/seed file referenced by >10 tests
       (`grep -rl 'fixtures/users' tests/ | wc -l`)? → Medium; migrate to
       builders incrementally. (§3.5)

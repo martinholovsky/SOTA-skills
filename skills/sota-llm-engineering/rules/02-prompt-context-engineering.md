@@ -263,12 +263,10 @@ category = data.get("category", "other")                    # silently launders 
   Constrained decoding above is the structural fix; instructing the format in
   the prompt demonstrably is not, and §1's inline-the-schema rule does not help
   here — it was already satisfied in every reported case.
-- **Check `stop_reason` before parsing.** `max_tokens` or
-  `model_context_window_exceeded` → truncated JSON (raise the cap or shrink
-  the input, don't repair-loop it); `refusal` → no schema guarantee (handle
-  explicitly); `pause_turn` → not finished, send the content back to
-  continue (Anthropic's stop-reason values, verified 2026-09-26). Code that
-  indexes `content[0]` unconditionally breaks on refusal-shaped responses.
+- **Check `stop_reason` before parsing.** A truncated or refused response carries no
+  schema guarantee, so never parse it as if complete; the handling for each value is
+  [rules/04](04-agents-tools.md) §3. Code that indexes `content[0]` unconditionally breaks on
+  refusal-shaped responses.
 - **Set `max_tokens` explicitly at every structured-output call site.** An unset
   cap inherits a client/config default sized for chat, so a long JSON document
   hits it silently — the call returns a fragment, not an error. Where the

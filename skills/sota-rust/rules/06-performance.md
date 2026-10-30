@@ -28,7 +28,8 @@ debug = true            # or: [profile.profiling] inherits = "release", debug = 
 - **Allocation profiling**: `dhat-rs` (heap profiling as a test harness),
   `heaptrack` (Linux); divan's `AllocProfiler` for per-bench alloc counts.
 - **Async**: tokio-console for task-level stalls ([rules/04](04-async-tokio.md)); `tracing` spans +
-  `tracing-timing`/OTel histograms for production latency attribution.
+  `tracing-timing`/OTel histograms for production latency attribution (span design:
+  [`sota-observability` rules/03](../../sota-observability/rules/03-tracing.md) §2).
 - Lock contention: `perf lock` / mutex wrappers with metrics; high sys-time +
   low throughput on many cores is the contention signature.
 

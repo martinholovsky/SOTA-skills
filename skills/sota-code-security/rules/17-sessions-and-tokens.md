@@ -74,8 +74,14 @@ OAuth/OIDC, passkeys, recovery) stays in [rules/02](02-authentication.md).
   Maintain a session registry to make this possible.
 - **Renewal timeout**: regenerate the session ID periodically mid-session (e.g. every
   few hours) even without a privilege change, capping the window a stolen ID is useful.
-- On logout/sensitive responses, send `Clear-Site-Data: "cookies", "storage"` and
-  `Cache-Control: no-store` so the session artifact isn't left in the browser/proxy cache.
+- On the logout response, send `Clear-Site-Data: "cache", "cookies", "storage"` and
+  `Cache-Control: no-store`; send `no-store` (not `Clear-Site-Data`, which would end the
+  session) on every other sensitive response, so no session artifact is left in the
+  browser or a proxy cache. `"*"` clears every data type, including any added later, and
+  MDN's logout example adds `"executionContexts"` (reloads open tabs), `"prefetchCache"` and
+  `"prerenderCache"`; `"cookies"` clears the whole registered domain, subdomains included
+  (MDN Clear-Site-Data, checked 2026-10-30). Client code also clears Web Storage, IndexedDB and
+  sensitive DOM itself, which works offline (ASVS 5.0 V14.3.1).
 - Bind nothing secret into URLs: session tokens in query strings leak via logs,
   referrers, and browser history (CWE-598).
 - "Remember me" done right: a separate long-lived token, never an extended

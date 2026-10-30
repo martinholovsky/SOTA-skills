@@ -137,13 +137,9 @@ Design:
   defect to report as one.
 - **Say "nothing found" per category** rather than padding with weak findings.
   An honest empty category is a result.
-- **A negative claim needs more proof than a positive one.** "There are no
-  swallowed exceptions on the enforcement path" is a far stronger assertion than
-  "here is one at `auth.py:88`" — a narrow search and a true absence look
-  identical from the outside. Before asserting absence: widen the search
-  (synonyms, other languages, generated code, vendored trees), use a **second
-  independent method** (grep *and* AST/call-graph *and* a mutation run), and
-  state the search you actually performed so the reader can judge its reach.
+- **A negative claim needs more proof than a positive one** ("no swallowed exceptions
+  on the enforcement path"): widen the search, confirm by a second independent method,
+  and state the search performed — [`sota` rules/03](../../sota/rules/03-audit-findings.md) §2.
   That governs the **search**, which is discarded once it has answered. If the
   conclusion is instead left behind as a durable **guard**, it needs the stronger
   default in [`sota-testing` rules/02](../../sota-testing/rules/02-test-design-quality.md) §2.10: structure in AST, behaviour by execution,

@@ -250,8 +250,8 @@ editing Dockerfiles by hand, the strategy is missing (Medium).
 
 ## 4.5 Registry security & immutable tags
 
-- **Immutable tags**: enable tag immutability where the registry supports it (ECR
-  immutable tags, Artifactory, GAR via policy). A re-pushed `v1.2.3` is either an accident
+- **Immutable tags**: enable tag immutability on release repos — the per-registry settings
+  are in [rules/08](08-registry-security.md) §8.3. A re-pushed `v1.2.3` is either an accident
   that breaks provenance or an attack that survives review. Mutable release tags = High.
 - **Deploy by digest** ([rules/06](06-iac-deployment.md) §6.6, [rules/07](07-runtime-ops.md) §7.1): manifests reference
   `image@sha256:...`; tags are for humans. `:latest` in any deploy manifest = High; a
@@ -358,7 +358,7 @@ of the supply chain, and its IDE extensions run with the developer's full access
 - [ ] No secrets in ARG/ENV/COPY'd files/layers (§4.2) — BuildKit secret mounts only; `.dockerignore` excludes `.git` and env/secret files
 - [ ] Every `FROM` digest-pinned with Renovate-managed updates (§4.3); org-blessed base images rebuilt on schedule from an internal mirror
 - [ ] Image scans per build on the built digest + scheduled scans of deployed digests (§4.4); gates fail closed; ignores carry owner + expiry; hadolint/dockerfile misconfig checks on PRs
-- [ ] Registry (§4.5): immutable tags on; deploys reference digests (no `:latest`); CI is the sole writer to release repos via OIDC and humans hold no push rights there; runtime pulls use read-only per-cluster/namespace identities; dev/staging/prod repos are separate and prod pulls only from the prod registry (admission allowlist); promotion copies verified digests, never rebuilds
+- [ ] Registry (§4.5): immutable tags on (per-registry check: [rules/08](08-registry-security.md) §8.3); deploys reference digests (no `:latest`); CI is the sole writer to release repos via OIDC and humans hold no push rights there; runtime pulls use read-only per-cluster/namespace identities; dev/staging/prod repos are separate and prod pulls only from the prod registry (admission allowlist); promotion copies verified digests, never rebuilds
 - [ ] Retention preserves digests referenced by running workloads plus released digests + attestations (§4.5); pull-through cache for upstream bases
 - [ ] Build infra isolated from runtime (§4.6); no docker.sock mounts; ephemeral or rootless builders; caches scoped by trust boundary
 - [ ] **Runner hosts hardened (§4.6.1), High:** `grep -rn -E 'RUNNER_ALLOW_RUNASROOT|runAsUser:[[:space:]]*0[[:space:]]*$' <runner provisioning: Dockerfiles, IaC, Helm values>` is empty; hosts/images on a patch schedule with a CIS/STIG baseline; no credentials left between jobs

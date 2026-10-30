@@ -240,11 +240,12 @@
     {
       "from": "sota-llm-engineering",
       "to": "sota-code-security",
-      "weight": 29,
+      "weight": 30,
       "targets": [
         "rules/05",
         "rules/07",
         "rules/08",
+        "rules/08 \u00a72",
         "rules/08 \u00a74",
         "rules/09 \u00a74",
         "rules/10",
@@ -389,6 +390,7 @@
       "weight": 15,
       "targets": [
         "rules/01",
+        "rules/01 \u00a711",
         "rules/04 \u00a71",
         "rules/04 \u00a75",
         "rules/06 \u00a75",
@@ -552,6 +554,21 @@
       ]
     },
     {
+      "from": "sota-api-design",
+      "to": "sota-code-security",
+      "weight": 10,
+      "targets": [
+        "rules/01 \u00a711",
+        "rules/01 \u00a75",
+        "rules/02",
+        "rules/03 \u00a75",
+        "rules/04 \u00a75",
+        "rules/05",
+        "rules/07 \u00a72.1",
+        "rules/14 \u00a76a"
+      ]
+    },
+    {
       "from": "sota-detection-engineering",
       "to": "sota-observability",
       "weight": 10,
@@ -572,15 +589,6 @@
       ]
     },
     {
-      "from": "sota-network-security",
-      "to": "sota-cloud-infrastructure",
-      "weight": 10,
-      "targets": [
-        "rules/03",
-        "rules/03 \u00a710"
-      ]
-    },
-    {
       "from": "sota-security-compliance",
       "to": "sota-privacy-compliance",
       "weight": 10,
@@ -591,20 +599,6 @@
         "rules/05 \u00a72",
         "rules/05 \u00a72b",
         "rules/05 \u00a74"
-      ]
-    },
-    {
-      "from": "sota-api-design",
-      "to": "sota-code-security",
-      "weight": 9,
-      "targets": [
-        "rules/01 \u00a711",
-        "rules/01 \u00a75",
-        "rules/02",
-        "rules/04 \u00a75",
-        "rules/05",
-        "rules/07 \u00a72.1",
-        "rules/14 \u00a76a"
       ]
     },
     {
@@ -664,6 +658,15 @@
       "targets": [
         "rules/02",
         "rules/02 \u00a76"
+      ]
+    },
+    {
+      "from": "sota-network-security",
+      "to": "sota-cloud-infrastructure",
+      "weight": 9,
+      "targets": [
+        "rules/03",
+        "rules/03 \u00a710"
       ]
     },
     {
@@ -828,6 +831,19 @@
       ]
     },
     {
+      "from": "sota-testing",
+      "to": "sota-devsecops",
+      "weight": 8,
+      "targets": [
+        "rules/03 \u00a73.7",
+        "rules/05",
+        "rules/05 \u00a75.7",
+        "rules/07 \u00a77.7",
+        "rules/16",
+        "rules/16 \u00a716.2"
+      ]
+    },
+    {
       "from": "sota-c-cpp",
       "to": "sota-code-security",
       "weight": 7,
@@ -858,6 +874,19 @@
       "weight": 7,
       "targets": [
         "rules/06 \u00a76.7"
+      ]
+    },
+    {
+      "from": "sota-cloud-infrastructure",
+      "to": "sota-network-security",
+      "weight": 7,
+      "targets": [
+        "rules/02",
+        "rules/02 \u00a75",
+        "rules/05 \u00a76",
+        "rules/06",
+        "rules/06 \u00a71",
+        "rules/06 \u00a73"
       ]
     },
     {
@@ -976,18 +1005,6 @@
       "targets": []
     },
     {
-      "from": "sota-testing",
-      "to": "sota-devsecops",
-      "weight": 7,
-      "targets": [
-        "rules/03 \u00a73.7",
-        "rules/05",
-        "rules/07 \u00a77.7",
-        "rules/16",
-        "rules/16 \u00a716.2"
-      ]
-    },
-    {
       "from": "sota-threat-modeling",
       "to": "sota-code-security",
       "weight": 7,
@@ -1088,12 +1105,33 @@
     },
     {
       "from": "sota-devsecops",
+      "to": "sota-secrets-management",
+      "weight": 6,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/04",
+        "rules/04 \u00a71"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
       "to": "sota-golang",
       "weight": 6,
       "targets": [
         "rules/07 \u00a74",
         "rules/08",
         "rules/08 \u00a71"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-testing",
+      "weight": 6,
+      "targets": [
+        "rules/04 \u00a74.8",
+        "rules/07 \u00a77.1",
+        "rules/07 \u00a77.3",
+        "rules/07 \u00a77.5"
       ]
     },
     {
@@ -1212,12 +1250,6 @@
     },
     {
       "from": "sota-cloud-infrastructure",
-      "to": "sota-observability",
-      "weight": 5,
-      "targets": []
-    },
-    {
-      "from": "sota-cloud-infrastructure",
       "to": "sota-secrets-management",
       "weight": 5,
       "targets": [
@@ -1251,25 +1283,6 @@
         "rules/07",
         "rules/07 \u00a71a",
         "rules/07 \u00a75"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-secrets-management",
-      "weight": 5,
-      "targets": [
-        "rules/04",
-        "rules/04 \u00a71"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-testing",
-      "weight": 5,
-      "targets": [
-        "rules/04 \u00a74.8",
-        "rules/07 \u00a77.3",
-        "rules/07 \u00a77.5"
       ]
     },
     {
@@ -1353,6 +1366,17 @@
         "rules/12 \u00a71",
         "rules/15 \u00a72a",
         "rules/17"
+      ]
+    },
+    {
+      "from": "sota-secrets-management",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/02 \u00a75",
+        "rules/04",
+        "rules/15 \u00a72.2",
+        "rules/17 \u00a73"
       ]
     },
     {
@@ -1452,6 +1476,12 @@
       ]
     },
     {
+      "from": "sota-cloud-infrastructure",
+      "to": "sota-observability",
+      "weight": 4,
+      "targets": []
+    },
+    {
       "from": "sota-code-security",
       "to": "sota-secrets-management",
       "weight": 4,
@@ -1495,6 +1525,16 @@
       "weight": 4,
       "targets": [
         "rules/07 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-javascript-typescript",
+      "weight": 4,
+      "targets": [
+        "rules/05",
+        "rules/05 \u00a75",
+        "rules/07"
       ]
     },
     {
@@ -1557,6 +1597,14 @@
       "targets": [
         "rules/06 \u00a76.3",
         "rules/06 \u00a76.6"
+      ]
+    },
+    {
+      "from": "sota-python",
+      "to": "sota-sandboxing",
+      "weight": 4,
+      "targets": [
+        "rules/02"
       ]
     },
     {
@@ -1684,6 +1732,16 @@
     },
     {
       "from": "sota-code-security",
+      "to": "sota-identity-access",
+      "weight": 3,
+      "targets": [
+        "rules/01 \u00a77",
+        "rules/03 \u00a75",
+        "rules/06 \u00a75"
+      ]
+    },
+    {
+      "from": "sota-code-security",
       "to": "sota-php",
       "weight": 3,
       "targets": [
@@ -1800,15 +1858,6 @@
       "to": "sota-detection-engineering",
       "weight": 3,
       "targets": []
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-javascript-typescript",
-      "weight": 3,
-      "targets": [
-        "rules/05",
-        "rules/07"
-      ]
     },
     {
       "from": "sota-devsecops",
@@ -1962,18 +2011,18 @@
     },
     {
       "from": "sota-python",
-      "to": "sota-async-concurrency",
+      "to": "sota-architecture",
       "weight": 3,
       "targets": [
-        "rules/01 \u00a72",
-        "rules/02"
+        "rules/02 \u00a78a"
       ]
     },
     {
       "from": "sota-python",
-      "to": "sota-sandboxing",
+      "to": "sota-async-concurrency",
       "weight": 3,
       "targets": [
+        "rules/01 \u00a72",
         "rules/02"
       ]
     },
@@ -2016,12 +2065,12 @@
     },
     {
       "from": "sota-secrets-management",
-      "to": "sota-code-security",
+      "to": "sota-devsecops",
       "weight": 3,
       "targets": [
-        "rules/02 \u00a75",
-        "rules/04",
-        "rules/15 \u00a72.2"
+        "rules/05 \u00a75.2",
+        "rules/06 \u00a76.1",
+        "rules/07 \u00a77.4"
       ]
     },
     {
@@ -2091,11 +2140,11 @@
     },
     {
       "from": "sota-api-design",
-      "to": "sota-databases",
+      "to": "sota-network-security",
       "weight": 2,
       "targets": [
-        "rules/01",
-        "rules/04"
+        "rules/04",
+        "rules/05 \u00a71"
       ]
     },
     {
@@ -2219,27 +2268,9 @@
     },
     {
       "from": "sota-cloud-infrastructure",
-      "to": "sota-network-security",
-      "weight": 2,
-      "targets": [
-        "rules/05 \u00a76",
-        "rules/06"
-      ]
-    },
-    {
-      "from": "sota-cloud-infrastructure",
       "to": "sota-api-design",
       "weight": 2,
       "targets": []
-    },
-    {
-      "from": "sota-code-security",
-      "to": "sota-identity-access",
-      "weight": 2,
-      "targets": [
-        "rules/03 \u00a75",
-        "rules/06 \u00a75"
-      ]
     },
     {
       "from": "sota-code-security",
@@ -2509,14 +2540,6 @@
     },
     {
       "from": "sota-python",
-      "to": "sota-architecture",
-      "weight": 2,
-      "targets": [
-        "rules/02 \u00a78a"
-      ]
-    },
-    {
-      "from": "sota-python",
       "to": "sota-observability",
       "weight": 2,
       "targets": [
@@ -2574,20 +2597,20 @@
     },
     {
       "from": "sota-secrets-management",
-      "to": "sota-devsecops",
-      "weight": 2,
-      "targets": [
-        "rules/05 \u00a75.2",
-        "rules/07 \u00a77.4"
-      ]
-    },
-    {
-      "from": "sota-secrets-management",
       "to": "sota-observability",
       "weight": 2,
       "targets": [
         "rules/01 \u00a74",
         "rules/05 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-secrets-management",
+      "to": "sota-network-security",
+      "weight": 2,
+      "targets": [
+        "rules/06",
+        "rules/06 \u00a71"
       ]
     },
     {
@@ -2746,6 +2769,14 @@
     },
     {
       "from": "sota-api-design",
+      "to": "sota-databases",
+      "weight": 1,
+      "targets": [
+        "rules/01"
+      ]
+    },
+    {
+      "from": "sota-api-design",
       "to": "sota-docs-workflow",
       "weight": 1,
       "targets": [
@@ -2765,14 +2796,6 @@
       "to": "sota-secrets-management",
       "weight": 1,
       "targets": []
-    },
-    {
-      "from": "sota-api-design",
-      "to": "sota-network-security",
-      "weight": 1,
-      "targets": [
-        "rules/04"
-      ]
     },
     {
       "from": "sota-api-design",
@@ -2887,6 +2910,14 @@
       "to": "sota-api-design",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-c-cpp",
+      "to": "sota-observability",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a74"
+      ]
     },
     {
       "from": "sota-c-cpp",
@@ -3035,6 +3066,14 @@
       "to": "sota-observability",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-copywriting",
+      "to": "sota-network-security",
+      "weight": 1,
+      "targets": [
+        "rules/06 \u00a75"
+      ]
     },
     {
       "from": "sota-data-engineering",
@@ -3411,6 +3450,12 @@
     {
       "from": "sota-javascript-typescript",
       "to": "sota-network-security",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-javascript-typescript",
+      "to": "sota-cli-ux",
       "weight": 1,
       "targets": []
     },
@@ -3888,6 +3933,12 @@
     },
     {
       "from": "sota-python",
+      "to": "sota-cli-ux",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-python",
       "to": "sota-databases",
       "weight": 1,
       "targets": [
@@ -3966,6 +4017,12 @@
     },
     {
       "from": "sota-rust",
+      "to": "sota-cli-ux",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-rust",
       "to": "sota-architecture",
       "weight": 1,
       "targets": [
@@ -3974,9 +4031,33 @@
     },
     {
       "from": "sota-rust",
+      "to": "sota-api-design",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a76"
+      ]
+    },
+    {
+      "from": "sota-rust",
+      "to": "sota-secrets-management",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-rust",
       "to": "sota-performance",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-rust",
+      "to": "sota-observability",
+      "weight": 1,
+      "targets": [
+        "rules/03 \u00a72"
+      ]
     },
     {
       "from": "sota-rust",
@@ -4076,14 +4157,6 @@
     },
     {
       "from": "sota-secrets-management",
-      "to": "sota-network-security",
-      "weight": 1,
-      "targets": [
-        "rules/06"
-      ]
-    },
-    {
-      "from": "sota-secrets-management",
       "to": "sota-skill-security",
       "weight": 1,
       "targets": [
@@ -4169,6 +4242,12 @@
       "targets": [
         "rules/04 \u00a77"
       ]
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-cli-ux",
+      "weight": 1,
+      "targets": []
     },
     {
       "from": "sota-swift",
@@ -4370,14 +4449,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1858,
+    "md link, other skill": 1885,
     "md link, outside skills/": 3,
-    "md link, same skill": 2844,
-    "name (backticked)": 450,
-    "name (bare)": 242,
-    "name+file (backticked)": 859,
-    "name+file (bare)": 175,
-    "own rules/NN": 3062
+    "md link, same skill": 2856,
+    "name (backticked)": 454,
+    "name (bare)": 240,
+    "name+file (backticked)": 877,
+    "name+file (bare)": 180,
+    "own rules/NN": 3076
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4385,11 +4464,11 @@
     "md link, other skill": 0,
     "md link, outside skills/": 0,
     "md link, same skill": 0,
-    "name (backticked)": 435,
-    "name (bare)": 198,
-    "name+file (backticked)": 855,
-    "name+file (bare)": 163,
-    "own rules/NN": 2959
+    "name (backticked)": 439,
+    "name (bare)": 196,
+    "name+file (backticked)": 873,
+    "name+file (bare)": 168,
+    "own rules/NN": 2973
   },
   "rules_index_style": {
     "link": 42
@@ -4408,7 +4487,8 @@
         "sota/SKILL.md"
       ],
       "other": [
-        "sota-docs-workflow/rules/05-spec-driven-development.md"
+        "sota-docs-workflow/rules/05-spec-driven-development.md",
+        "sota-rust/rules/02-errors-and-panics.md"
       ]
     },
     "sota-api-design/rules/02-versioning-evolution.md": {
@@ -5031,7 +5111,6 @@
         "sota-jvm/rules/08-web-layer.md",
         "sota-mobile/rules/04-security.md",
         "sota-network-security/SKILL.md",
-        "sota-network-security/rules/03-k8s-network-policy.md",
         "sota-network-security/rules/05-edge-ingress-egress.md",
         "sota-php/rules/02-injection.md",
         "sota-php/rules/03-files-deserialization-ssrf.md",
@@ -5095,6 +5174,7 @@
         "sota/SKILL.md"
       ],
       "other": [
+        "sota-api-design/rules/07-security-operations.md",
         "sota-architecture/rules/03-distributed-systems-and-events.md",
         "sota-identity-access/SKILL.md",
         "sota-identity-access/rules/03-authorization-models.md",
@@ -5531,6 +5611,7 @@
         "sota-python/rules/07-frameworks-testing.md",
         "sota-ruby/rules/03-web-hardening.md",
         "sota-rust/rules/05-security-supply-chain.md",
+        "sota-secrets-management/rules/05-credential-types.md",
         "sota-swift/rules/06-server-side.md"
       ]
     },
@@ -5857,7 +5938,6 @@
       ],
       "router": [],
       "other": [
-        "sota-api-design/rules/07-security-operations.md",
         "sota-code-security/rules/03-authorization.md",
         "sota-javascript-typescript/rules/04-node-backend.md",
         "sota-performance/rules/04-io-network.md"
@@ -6177,6 +6257,7 @@
         "sota-secrets-management/rules/04-detection-and-remediation.md",
         "sota-swift/rules/08-tooling-ci-testing.md",
         "sota-testing/SKILL.md",
+        "sota-testing/rules/07-suite-health-and-ci.md",
         "sota-testing/rules/09-security-testing.md"
       ]
     },
@@ -6198,7 +6279,8 @@
         "sota-cloud-infrastructure/rules/03-networking.md",
         "sota-kubernetes/SKILL.md",
         "sota-kubernetes/rules/04-gitops-controllers.md",
-        "sota-kubernetes/rules/07-supply-chain-audit.md"
+        "sota-kubernetes/rules/07-supply-chain-audit.md",
+        "sota-secrets-management/rules/02-storage-backends.md"
       ]
     },
     "sota-devsecops/rules/07-runtime-ops.md": {
@@ -6617,6 +6699,7 @@
       ],
       "same": [
         "sota-golang/rules/02-design.md",
+        "sota-golang/rules/03-concurrency.md",
         "sota-golang/rules/04-http-services.md",
         "sota-golang/rules/05-security.md"
       ],
@@ -6737,6 +6820,7 @@
       ],
       "router": [],
       "other": [
+        "sota-code-security/rules/02-authentication.md",
         "sota-detection-engineering/rules/07-ad-attack-detection.md",
         "sota-llm-engineering/rules/04-agents-tools.md",
         "sota-network-security/rules/06-dns-tls-pki.md"
@@ -6876,6 +6960,7 @@
         "sota-javascript-typescript/SKILL.md"
       ],
       "same": [
+        "sota-javascript-typescript/rules/02-language-idioms.md",
         "sota-javascript-typescript/rules/04-node-backend.md",
         "sota-javascript-typescript/rules/06-performance.md"
       ],
@@ -6914,6 +6999,7 @@
       ],
       "router": [],
       "other": [
+        "sota-devsecops/rules/03-dependencies.md",
         "sota-devsecops/rules/05-analysis-gates.md",
         "sota-devsecops/rules/10-inert-dependencies.md"
       ]
@@ -7511,6 +7597,7 @@
       ],
       "router": [],
       "other": [
+        "sota-cloud-infrastructure/rules/03-networking.md",
         "sota-sandboxing/rules/03-containers-microvms.md"
       ]
     },
@@ -7560,6 +7647,7 @@
       ],
       "router": [],
       "other": [
+        "sota-api-design/rules/07-security-operations.md",
         "sota-cloud-infrastructure/rules/03-networking.md",
         "sota-code-security/rules/05-web-security.md",
         "sota-code-security/rules/19-anti-automation-and-abuse.md",
@@ -7582,8 +7670,10 @@
       "other": [
         "sota-cloud-infrastructure/rules/03-networking.md",
         "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-copywriting/rules/04-claims-legal-trust.md",
         "sota-performance/rules/04-io-network.md",
         "sota-secrets-management/rules/04-detection-and-remediation.md",
+        "sota-secrets-management/rules/05-credential-types.md",
         "sota-swift/rules/05-security.md",
         "sota-threat-modeling/rules/06-audit-reconstruction.md"
       ]
@@ -7600,6 +7690,7 @@
       "router": [],
       "other": [
         "sota-api-design/rules/07-security-operations.md",
+        "sota-c-cpp/rules/04-security.md",
         "sota-detection-engineering/SKILL.md",
         "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
         "sota-dotnet/rules/04-security.md",
@@ -7636,7 +7727,8 @@
       ],
       "router": [],
       "other": [
-        "sota-api-design/rules/07-security-operations.md"
+        "sota-api-design/rules/07-security-operations.md",
+        "sota-rust/rules/06-performance.md"
       ]
     },
     "sota-observability/rules/04-slos-alerting.md": {
@@ -8364,10 +8456,12 @@
         "sota-architecture/rules/01-architecture-styles-and-decisions.md",
         "sota-confidential-computing/rules/03-remote-attestation.md",
         "sota-confidential-computing/rules/05-pets-coed.md",
+        "sota-devsecops/rules/01-pipeline-security.md",
         "sota-identity-access/SKILL.md",
         "sota-identity-access/rules/05-privileged-workload.md",
         "sota-kubernetes/SKILL.md",
-        "sota-kubernetes/rules/02-rbac-serviceaccounts.md"
+        "sota-kubernetes/rules/02-rbac-serviceaccounts.md",
+        "sota-rust/rules/05-security-supply-chain.md"
       ]
     },
     "sota-secrets-management/rules/02-storage-backends.md": {
@@ -8968,6 +9062,7 @@
       "other": [
         "sota-architecture/rules/02-domain-modeling-and-boundaries.md",
         "sota-code-security/rules/14-control-not-in-force.md",
+        "sota-devsecops/rules/05-analysis-gates.md",
         "sota-devsecops/rules/16-fast-ci-without-blind-spots.md",
         "sota-docs-workflow/rules/03-code-review-pr-workflow.md",
         "sota-llm-engineering/rules/04-agents-tools.md",
@@ -9260,6 +9355,7 @@
       "router": [],
       "other": [
         "sota-c-cpp/SKILL.md",
+        "sota-code-security/rules/10-silent-control-failure.md",
         "sota-code-security/rules/11-dead-path-diagnostics.md",
         "sota-code-security/rules/12-verifying-the-verifier.md",
         "sota-code-security/rules/13-context-dependent-silence.md",

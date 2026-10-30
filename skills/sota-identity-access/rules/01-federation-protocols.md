@@ -284,7 +284,10 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
   *someone* signed it. Load the IdP's signing certificate(s) from its metadata at
   onboarding, keyed by entity ID, and verify against those; ignore embedded `KeyInfo` /
   `X509Certificate` except to select among already-trusted keys. Check the response and
-  assertion `<Issuer>` equal the expected IdP entity ID *before* choosing the key.
+  assertion `<Issuer>` equal the expected IdP entity ID *before* choosing the key. A
+  validator that trusts the certificate the response carries accepts anyone's self-signed
+  assertion. Allowlist `SignatureMethod` and `DigestMethod` (RSA-SHA256 or stronger) and
+  reject the SHA-1 family: `xmldsig#rsa-sha1`, `#dsa-sha1`, `#hmac-sha1` and `#sha1`.
 - **Run the profile's processing rules and the binding's rules.** Walk Web SSO Profile
   Sec. 4.1.4.3 in full (verify signatures, `Recipient` = your ACS URL, bearer
   `NotOnOrAfter`, `InResponseTo` = your request ID or absent for unsolicited, discard any

@@ -133,15 +133,10 @@ Review *new* dependencies (human + automated) for:
 - **Install-time execution**: npm `preinstall`/`install`/`postinstall`, Python `setup.py`
   arbitrary code. Most npm malware fires at install. Mitigation:
   `npm ci --ignore-scripts` in CI plus an explicit allowlist step for the few packages
-  that genuinely need scripts (e.g., rebuild native deps deliberately); pnpm blocks
-  dependency build scripts by default and takes an explicit allowlist — `allowBuilds`
-  (a map of matchers to `true`/`false`). **`onlyBuiltDependencies` was removed in pnpm
-  v11**, along with `onlyBuiltDependenciesFile`, `neverBuiltDependencies`,
-  `ignoredBuiltDependencies` and `ignoreDepScripts` (verify the latest stable's
-  settings at [pnpm settings/build](https://pnpm.io/settings/build)). Keep
-  `strictDepBuilds` on — added in v10.3.0, default `true` since v11.0.0, it *"will exit with a non-zero exit
-  code if any dependencies have unreviewed build scripts"*, which is the half that fails
-  the build rather than warning. `dangerouslyAllowAllBuilds: true` reverts all of it.
+  that genuinely need scripts (e.g., rebuild native deps deliberately). Whatever the
+  package manager, the allowlist must *fail* the install on an unreviewed script, not
+  warn; pnpm's settings for that (its v11 allowlist and the strict flag) are in
+  [`sota-javascript-typescript` rules/05](../../sota-javascript-typescript/rules/05-security.md) §5.
 - **Name proximity** to a popular package (`lodahs`, `python-dateutil` vs `dateutil`),
   starjacking (README/links pointing at an unrelated popular repo).
 - **Slopsquatting** (OWASP "Secure Coding with AI"): AI coding assistants routinely

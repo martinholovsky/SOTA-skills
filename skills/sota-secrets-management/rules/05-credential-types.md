@@ -77,11 +77,9 @@ Usually irreplaceable by federation — manage the static secret well:
 
 - **Automate issuance: ACME everywhere** (Let's Encrypt/ZeroSSL via cert-manager, Caddy,
   certbot, cloud LB-managed certs). ≤90-day certs make key compromise self-limiting and force
-  the automation that prevents 2am expiry outages. The industry mandates this direction:
-  CA/Browser Forum ballot SC-081v3 caps public TLS validity at 200 days since March 2026,
-  dropping to 100 days (March 2027) and 47 days (March 2029) — manual issuance is being
-  regulated out of existence. A multi-year manually-installed cert is a
-  Medium finding (process smell), expired-soon without automation is operationally urgent.
+  the automation that prevents 2am expiry outages. The CA/B lifetime schedule, the expiry
+  backstop and the severity of a hand-renewed cert are
+  [`sota-network-security` rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) §1 R1.
 - **Generate the key where it terminates** (CSR flow); never email/chat a `.key` or `.pfx`.
   Wildcard cert keys copied to N servers multiply exposure N-fold — prefer per-host/per-SAN
   certs, or distribute via secret manager with per-host access if a wildcard is unavoidable.
@@ -124,17 +122,14 @@ Usually irreplaceable by federation — manage the static secret well:
 
 ## 6. JWT signing secrets and `kid` rotation
 
-- **Prefer asymmetric (ES256 as the portable default; Ed25519 where the library supports it;
-  RS256 for interop) over HS256** whenever any party other
+- **Prefer asymmetric over HS256** (which algorithm: [`sota-code-security` rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md) §3) whenever any party other
   than the issuer verifies tokens: with HS256 every verifier holds the *signing* secret and can
   mint tokens; with asymmetric, verifiers hold only public keys. HS256 is acceptable only
   issuer-verifies-own-tokens (e.g., session tokens in a monolith) — and then the secret is
   ≥256-bit CSPRNG ([rules/01](01-lifecycle-and-workload-identity.md) §1), not a passphrase.
-- **Pin the algorithm at verification.** Accept exactly the expected `alg`; never `alg: none`;
-  never let an attacker downgrade RS256→HS256 (verifier treating the public key as an HMAC
-  secret — the classic confusion attack). Library config: explicit `algorithms=["ES256"]`. RFC 9864
-  deprecates the polymorphic JOSE `EdDSA` identifier in favour of the fully-specified `Ed25519`;
-  libraries differ (e.g. `jose` accepts `Ed25519`, PyJWT still names it `EdDSA`) — check yours.
+- **Pin the algorithm at verification** (explicit `algorithms=[...]`, never `none`, no
+  RS256→HS256 confusion); the rule and per-library Ed25519/RFC 9864 support are
+  [`sota-code-security` rules/17](../../sota-code-security/rules/17-sessions-and-tokens.md) §3.
 - **`kid` rotation (zero-downtime):**
   1. Generate key N+1; add to the published JWKS (`/.well-known/jwks.json`) alongside N.
   2. Switch issuance to N+1 (`kid` header = N+1's id).

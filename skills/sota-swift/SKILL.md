@@ -10,7 +10,7 @@ description: State-of-the-art Swift engineering rules (Swift 6 language mode) th
 Expert-level rules for producing and auditing production Swift, on any target. Swift is a
 language first and an Apple-platform toolkit second: a Vapor service on Linux, a CLI and an
 iOS app share every rule here. **Platform concerns route elsewhere**: app lifecycle, store
-review, Keychain, push and offline sync → [`sota-mobile`](../sota-mobile/SKILL.md); containers → [`sota-sandboxing`](../sota-sandboxing/SKILL.md);
+review, Keychain, push and offline sync → [`sota-mobile`](../sota-mobile/SKILL.md); containers → [`sota-sandboxing`](../sota-sandboxing/SKILL.md); a command-line tool's flags, output and exit codes → [`sota-cli-ux`](../sota-cli-ux/SKILL.md);
 telemetry → [`sota-observability`](../sota-observability/SKILL.md).
 
 **Version floor.** swift.org publishes **no end-of-life or support-window policy** for older

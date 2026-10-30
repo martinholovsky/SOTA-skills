@@ -203,7 +203,10 @@ Three probes, decreasing precision:
 otherwise sentinel-free) domain.** Measure the per-field distribution before
 linting; a field where the sentinel is 99% of rows and one where it is 0% are
 different problems, and a field whose producer emits it legitimately makes such a
-lint 100% false-positive. Language-specific stdlib traps and the idiomatic
+lint 100% false-positive. A converter that treats every field alike does not tell you each
+field's domain, so key the rule on the **declaration**: add a value lint only on the fields
+whose sentinel-free domain is written down. Usually it is not yet, and writing it down is
+part of the fix. Language-specific stdlib traps and the idiomatic
 alternative: each `sota-<language>` skill. Persistence: [`sota-databases` rules/01](../../sota-databases/rules/01-choosing-and-modeling.md).
 
 ## 9. Repositories and persistence

@@ -217,9 +217,7 @@ interface OrdersRepository {
 
 If 2.1–2.8 hold, testing is cheap. If testing is hard, the architecture is wrong — fix the architecture, don't write more heroic tests.
 
-- **Unit (the bulk):** reducers/view models with fake repositories; sealed-state assertions; injected `TestDispatcher`/test clock. Milliseconds each, thousands run per commit.
-- **Snapshot:** every design-system component, and key screens rendered once per sealed state case (2.2 fixtures), across dark mode, large font scale, and RTL.
-- **UI/E2E:** a handful of critical flows only — login, the core loop, purchase. Expensive and flaky by nature; keep the pyramid shaped like a pyramid. Full strategy in [rules/06](06-release-and-operations.md) §6.9.
+The layers — a unit bulk on reducers/view models with fake repositories, snapshots per sealed state case (the 2.2 fixtures), a handful of E2E flows — are in [rules/06](06-release-and-operations.md) §6.9.
 
 ## Audit checklist
 

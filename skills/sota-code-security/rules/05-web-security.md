@@ -434,9 +434,9 @@ Cache-Control: no-store                      (on authenticated/personal response
   the edge ([rules/01](01-input-injection.md) §11 Host-header rules apply).
 - Browser-side: `Cache-Control: no-store` for sensitive pages also defends
   shared-computer history attacks (`no-cache` still permits storing, RFC 9111
-  section 5.2.2.4); pair with `Clear-Site-Data: "*"` on logout for high-sensitivity
-  apps, and also clear Web Storage, IndexedDB and sensitive DOM from client code
-  (works offline). No PII/financial data there. OWASP: ASVS 5.0 V14.3.1, V14.3.3.
+  section 5.2.2.4). Logout clearing (`Clear-Site-Data` value, client-side storage
+  wipe): [rules/17](17-sessions-and-tokens.md) §2. No PII/financial data in browser
+  storage. OWASP: ASVS 5.0 V14.3.1, V14.3.3.
 
 File upload handling (formerly section 10) moved to [rules/21](21-file-uploads.md) §1 on 2026-09-25.
 
@@ -475,5 +475,5 @@ File upload handling (formerly section 10) moved to [rules/21](21-file-uploads.m
 - [ ] **Cross-window leaks — MEDIUM**: `grep -rnEi -- "postMessage\(.*,[[:space:]]*['\"]\*['\"]|window\.open\(" . | grep -vi noopener` — every send names an exact `targetOrigin`; every `window.open` to a foreign URL passes `noopener` (§1).
 - [ ] **Mixed content — MEDIUM**: `grep -rnEi -- "(src|href|action)[[:space:]]*=[[:space:]]*['\"]?http://" .` — no plain-HTTP subresource, form target or link on an HTTPS page (§6).
 - [ ] **Header value defects — MEDIUM**: `grep -rnEi -- "x-xss-protection['\"]?[[:space:]]*[:,=]?[[:space:]]*['\"]?1|text/html(['\"]|[[:space:]]*$)|cache-control[^;]*no-cache" . | grep -vi no-store` — auditor enabled, HTML without `charset=utf-8`, or `no-cache` where `no-store` was meant (§6, §9).
-- [ ] **Sensitive data in browser storage — MEDIUM**: `grep -rnEi -- "(localStorage|sessionStorage)\.setItem|indexedDB\.open" .` — each hit holds no PII/financial data and is cleared client-side at logout, with `Clear-Site-Data: "*"` sent on logout for high-sensitivity apps (§9).
+- [ ] **Sensitive data in browser storage — MEDIUM**: `grep -rnEi -- "(localStorage|sessionStorage)\.setItem|indexedDB\.open" .` — each hit holds no PII/financial data and is cleared client-side at logout, with `Clear-Site-Data` sent on logout (§9; header value in [rules/17](17-sessions-and-tokens.md) §2).
 - [ ] **CSP gaps — MEDIUM**: `grep -rnEi -- "style-src[^;]*unsafe-inline|<[a-z][^>]*[[:space:]]on[a-z]+=|report-uri" . | grep -vi report-to` — inline styles/handlers to refactor; `report-uri` without `report-to`; enforced policy reports somewhere, to a collector that keeps `effective-directive`/`blocked-uri`/`disposition` and strips query strings; each policy also passes a CSP evaluator (§2).

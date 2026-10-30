@@ -1,8 +1,8 @@
 {
  "groups": [
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "API SKILL.md non-negotiable summarising its own rules/06; code-security states the inbound-auth rule with per-source secret and reject-before-parse detail.",
    "sample": "9. **Webhooks signed and SSRF-proof**: HMAC(id.timestamp.raw body) verified in constant time with replay window; senders",
    "members": [
     "sota-api-design/SKILL.md#55eb586b09ae",
@@ -59,8 +59,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "API, code-security and web-frameworks each state no-internals-to-client with their own surface detail (500 body+trace ID; CWE-489 debug pages; HTML rendering of error text).",
    "sample": "- **Never leak internals**: no stack traces, SQL, file paths, or dependency versions in any environment reachable by cli",
    "members": [
     "sota-api-design/rules/01-rest-http-design.md#13f8044e3b4a",
@@ -69,8 +69,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "API design says offset pagination is broken; performance adds keyset SQL, max page size and a hot-path severity: same fact seen from two skills' angles.",
    "sample": "- **Offset pagination (`?page=3&per_page=50`) is broken at scale**: O(n) skip cost in the DB, and rows shift under the c",
    "members": [
     "sota-api-design/rules/01-rest-http-design.md#963c36f2e0f8",
@@ -78,8 +78,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "API rule is an opt-in include_total parameter; DB rule is how to estimate or cap the count query.",
    "sample": "- Return total counts only when cheap and genuinely needed; `COUNT(*)` on large tables is a self-DoS. Offer `?include_to",
    "members": [
     "sota-api-design/rules/01-rest-http-design.md#e88f48d0050f",
@@ -87,8 +87,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "API checklist adds API-specific probes (Expose-Headers, preflight cache, public read-only `*`) while code-security owns the general CORS misconfig list and its own checklist.",
    "sample": "- [ ] CORS (§5): explicit origin allowlist; no origin reflection with credentials (send `Origin: https://evil.example` t",
    "members": [
     "sota-api-design/rules/07-security-operations.md#197223b848ee",
@@ -98,8 +98,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Never-log lists are scoped per domain (API key prefix + redaction test; auth-endpoint bodies; PII/PCI in observability; connection-string userinfo; swift-log has no redaction) and the lists differ.",
    "sample": "- **Never log**: credentials, bearer tokens, full API keys (log the key *prefix*), passwords, cookie values, full card/S",
    "members": [
     "sota-api-design/rules/07-security-operations.md#1e8afae9c3f5",
@@ -114,8 +114,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Request-size limits restated per layer and language: API gateway 413, code-security's general list, Express/Fastify settings, a Swift checklist item.",
    "sample": "- JSON parsing limits: max depth, max keys/array length — deeply nested payloads are a CPU/stack DoS. Decompression limi",
    "members": [
     "sota-api-design/rules/07-security-operations.md#34356f193709",
@@ -126,17 +126,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- **HTTP/2 and HTTP/3**: a message carrying a connection-specific field (`Transfer-Encoding`, `Connection`, `Keep-Alive`",
-   "members": [
-    "sota-api-design/rules/07-security-operations.md#542d667078ec",
-    "sota-network-security/rules/05-edge-ingress-egress.md#315149de2c44"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: api-design §7 restates the same structural tenant-scoping rule with identical SET LOCAL/set_config/pooling detail; code-security §5 owns it with the SQL example, api-design should keep a one-line link. Owner: skills/sota-code-security/rules/03-authorization.md §5",
    "sample": "- **Scope every query structurally**: tenant filter applied by a repository layer/ORM global scope or Postgres RLS (`SET",
    "members": [
     "sota-api-design/rules/07-security-operations.md#7576e9f45294",
@@ -144,8 +135,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "CSRF rule restated per language/framework with distinct detail (custom header + CORS in JS, PHP token+SameSite, Ruby hybrid cookie API, threat-catalog entry).",
    "sample": "- Cookie-auth'd APIs additionally need CSRF defenses (`SameSite=Lax/Strict` + token or custom-header check) — CORS prefl",
    "members": [
     "sota-api-design/rules/07-security-operations.md#bcbecad90d02",
@@ -158,8 +149,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "A standard 'finish with the audit checklist' workflow step, repeated per SKILL.md.",
    "sample": "6. **Before finishing**, run the relevant \"Audit checklist\" sections from each rules file you used against your own outp",
    "members": [
     "sota-architecture/SKILL.md#a6ee8a7b559e",
@@ -167,8 +158,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Python §2a says the class is stated once in architecture §8a, yet repeats the asymmetric-guard probe in substance; keep the Python worked example and link the probe list. Owner: skills/sota-architecture/rules/02-domain-modeling-and-boundaries.md §8a",
    "sample": "2. **Asymmetric guard** — the highest-yield tell. A comparison where **one operand is filtered against the sentinel and ",
    "members": [
     "sota-architecture/rules/02-domain-modeling-and-boundaries.md#23b19b86e5ee",
@@ -177,8 +168,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Architecture checklist is the language-neutral domain rule; databases adds a CHECK constraint and centralized read-path filtering specific to persistence.",
    "sample": "- [ ] Absence/unknown/failure encoded **outside** the value domain (option type, nullable, second return value, `NULL`, ",
    "members": [
     "sota-architecture/rules/02-domain-modeling-and-boundaries.md#49bca0391c4e",
@@ -186,8 +177,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Databases adds the DB-specific enforcement (CHECK constraint, central read-path filtering) and already links the producer side; architecture states the general rule.",
    "sample": "**Rule:** When a wire format, a fixed-width store, or a stdlib you don't own forces a sentinel, it is **per field with i",
    "members": [
     "sota-architecture/rules/02-domain-modeling-and-boundaries.md#55f19dd85103",
@@ -195,26 +186,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "**A value-based lint is only sound on a field with a stated non-negative (or otherwise sentinel-free) domain.** Measure ",
-   "members": [
-    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#706280ff0138",
-    "sota-python/rules/02-typing-correctness.md#8d3f52d5abf6"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "3. **Truthiness-as-presence:** `if n:` guarding a number whose domain includes the sentinel. High recall, high false-pos",
-   "members": [
-    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#7a7063699f4b",
-    "sota-python/rules/02-typing-correctness.md#553c13f06e37"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Python §2a explicitly declares itself the Python instance of architecture §8a and ties the ordering bullet to its own worked example and asymmetric-guard code.",
    "sample": "- **It has an ordering, so it changes answers rather than crashing.** A sentinel **loses** every `<` against a real valu",
    "members": [
     "sota-architecture/rules/02-domain-modeling-and-boundaries.md#9d0b9e57ae87",
@@ -222,8 +195,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Architecture §8a states the general sentinel defect; python §2a restates it around a Python code example with Python truthiness detail.",
    "sample": "- **Distinct causes collapse into one value.** *Absent* and *malformed* returned as the same constant can never be told ",
    "members": [
     "sota-architecture/rules/02-domain-modeling-and-boundaries.md#c2aa8c50f9df",
@@ -231,17 +204,8 @@
    ]
   },
   {
-   "verdict": "consolidate",
-   "note": "sentinel-value rule stated in sota-architecture rules/02 and sota-python rules/02",
-   "sample": "1. **Producer:** one function returning the *same* constant from a not-found branch and from an error/`except` branch. N",
-   "members": [
-    "sota-architecture/rules/02-domain-modeling-and-boundaries.md#c2c6f3717167",
-    "sota-python/rules/02-typing-correctness.md#9055db6f6cf8"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General truthiness trap in architecture vs Python's own 'if line_num:' example: a general rule plus a language-specific restatement.",
    "sample": "- **Presence checks silently pass.** `if x:` / `if (x)` reads as \"do I have a value?\" and admits `-1`, which is truthy i",
    "members": [
     "sota-architecture/rules/02-domain-modeling-and-boundaries.md#e86befc1c8a3",
@@ -249,8 +213,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Architecture rule is broker-neutral and already points to data-engineering rules/03 for Kafka partition and share-group detail.",
    "sample": "**Rule:** Scale consumers via the competing-consumers pattern, but know your broker's unit of parallelism (Kafka: partit",
    "members": [
     "sota-architecture/rules/03-distributed-systems-and-events.md#16d7a76f061c",
@@ -258,8 +222,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Architecture states the idempotency-key pattern; async-concurrency adds the TOCTOU angle of a separate 'did I do this' check.",
    "sample": "2. Idempotency key: caller supplies a key; handler records `(key → result)` and replays the stored result on duplicates.",
    "members": [
     "sota-architecture/rules/03-distributed-systems-and-events.md#33713377e47e",
@@ -267,8 +231,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "NATS rules/08 already points to rules/03 §3 and adds AckExplicit/AckNone/AckAll specifics.",
    "sample": "**Rule:** Acknowledge messages only after the state change is durably committed. Ack-then-process loses messages on cras",
    "members": [
     "sota-architecture/rules/03-distributed-systems-and-events.md#505261241266",
@@ -276,8 +240,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Per-partition ordering: architecture design rule vs data-engineering's version, which adds the round-robin-key CRITICAL finding.",
    "sample": "**Rule:** Ordering is per-partition-key only. Pick the partition key = the entity whose events must be ordered (order_id",
    "members": [
     "sota-architecture/rules/03-distributed-systems-and-events.md#652f51523638",
@@ -285,8 +249,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Architecture §7b owns broker semantics, async rules/06 states the backpressure angle and links §7b, and NATS rules/08 is the JetStream analogue.",
    "sample": "**Rule:** Consumer prefetch (`basic.qos`) is the backpressure knob. AMQP pushes, so the cap on unacked deliveries is you",
    "members": [
     "sota-architecture/rules/03-distributed-systems-and-events.md#77a6bbf8bf6a",
@@ -295,8 +259,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Architecture §7 owns liveness/readiness; JS adds Node drain and a grep probe, observability adds startup probes and log/metric exclusion, each linking back.",
    "sample": "- [ ] Do liveness probes avoid dependency checks? Does readiness avoid mass-unready on shared-dependency failure? Are he",
    "members": [
     "sota-architecture/rules/04-resilience-and-failure-design.md#04699d03c4b2",
@@ -307,8 +271,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Architecture states cross-hop deadline budgets; async rules/05 adds the per-call min(own_limit, remaining_budget) mechanics.",
    "sample": "**Rule:** Enforce a deadline budget across hops: the caller's total deadline is distributed down the chain (propagate re",
    "members": [
     "sota-architecture/rules/04-resilience-and-failure-design.md#b86dec06fff5",
@@ -316,8 +280,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Ephemeral environments: architecture's delivery rule vs testing's use of them for e2e determinism. Different purposes.",
    "sample": "**Rule:** Environments are created and destroyed from code (IaC + seeded data), not curated by hand. Prefer ephemeral pe",
    "members": [
     "sota-architecture/rules/06-cloud-native-config-and-delivery.md#54d168d6cf02",
@@ -325,8 +289,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Async cross-runtime summary vs JVM SKILL top-10 summary vs JVM checklist probe with greps.",
    "sample": "- **JVM:** virtual threads (Loom) give event-loop economics with thread programming model; pinning on `synchronized` blo",
    "members": [
     "sota-async-concurrency/rules/01-models-and-structure.md#31211bc4b7f8",
@@ -335,8 +299,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Async rule is about bounding gather over huge collections via queue; performance is about parallelising sequential I/O with a concurrency limit.",
    "sample": "- Async fan-out: never `gather(*[f(x) for x in million_items])`. Bound with a semaphore or worker pool reading from a bo",
    "members": [
     "sota-async-concurrency/rules/01-models-and-structure.md#9c862dbe776c",
@@ -344,8 +308,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Async gives per-language atomic defaults; c-cpp states the memory-model acquire/release publication rule.",
    "sample": "- A plain boolean `done` flag set by one thread and polled by another with no sync is broken in C/C++/Rust/Go/Java. Use ",
    "members": [
     "sota-async-concurrency/rules/02-correctness.md#50e5b76b8e2e",
@@ -353,8 +317,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Data-race definition with language-specific consequences (C/C++ UB, JVM visibility); c-cpp rules/05 already cites rules/03.",
    "sample": "- **Data race:** two threads access the same memory location concurrently, at least one writes, with no synchronization.",
    "members": [
     "sota-async-concurrency/rules/02-correctness.md#a68177b877c2",
@@ -364,8 +328,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Correctness rule for choosing notify_one vs the performance bug of broadcasting for one item.",
    "sample": "`notify_one` vs `notify_all`: `notify_one` is an optimization that is only correct when all waiters are interchangeable ",
    "members": [
     "sota-async-concurrency/rules/03-primitives.md#3b3d61982c64",
@@ -373,8 +337,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Cross-language once-init table vs Go-specific sync.Once panic-consumes-Once caveat.",
    "sample": "- Rust: `OnceLock` / `LazyLock`. Go: `sync.Once` / `sync.OnceValue`. Java: holder class idiom or `volatile` + DCL (prefe",
    "members": [
     "sota-async-concurrency/rules/03-primitives.md#8f11c92f9b92",
@@ -382,8 +346,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Generic producer-closes rule vs Go-specific close semantics (panic on double close, v, ok receive).",
    "sample": "- **Close from the producer side only**; receivers detect closure (`for range ch`, `recv() -> None`). Go: send on closed",
    "members": [
     "sota-async-concurrency/rules/03-primitives.md#aacd59b05541",
@@ -391,8 +355,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Unbounded queue = memory leak in async primitives vs performance design; each points at its own backpressure rule.",
    "sample": "**An unbounded channel is a memory leak with extra steps.** If the producer is ever faster than the consumer — and under",
    "members": [
     "sota-async-concurrency/rules/03-primitives.md#e54b3878c779",
@@ -400,8 +364,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Performance line is a short pointer to async rules/04 §7, which owns the 100 ms threshold.",
    "sample": "- **Node:** monitor event-loop lag/utilization (`perf_hooks.monitorEventLoopDelay`, `performance.eventLoopUtilization()`",
    "members": [
     "sota-async-concurrency/rules/04-event-loop-hygiene.md#6c333c7389d8",
@@ -409,8 +373,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Different grep lists: blocking calls inside coroutines (correctness) vs sync APIs on hot paths (performance).",
    "sample": "- [ ] Grep async modules for: `time.sleep`, `requests.`, `urllib`, `subprocess.run`, `open(`, `.read()`/`.write()` on fi",
    "members": [
     "sota-async-concurrency/rules/04-event-loop-hygiene.md#863dd6685de7",
@@ -418,8 +382,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Event-loop rule is runtime-general; JS rule adds the concrete yield APIs (scheduler.yield, setImmediate).",
    "sample": "- **Microtasks** (promise callbacks, `queueMicrotask`, `await` resumption) run to exhaustion after the current task, *be",
    "members": [
     "sota-async-concurrency/rules/04-event-loop-hygiene.md#b8af0fafdb08",
@@ -427,8 +391,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General invariant restoration under cancellation vs Rust's own drop-guard mechanism.",
    "sample": "- **Invariant restoration:** if a task mutates shared state in steps, cancellation between steps leaves it broken. Make ",
    "members": [
     "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md#caef4bbb26e5",
@@ -436,8 +400,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cross-language catalog checklist vs TS-specific lint configuration with severities.",
    "sample": "- [ ] #2 missing await: truthy-promise checks, forEach(async), return-in-try, un-awaited async tests; `no-floating-promi",
    "members": [
     "sota-async-concurrency/rules/07-audit-bug-catalog.md#01bd49f9709b",
@@ -445,8 +409,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Async catalog explicitly defers test-sleep severity to sota-testing rules/02 §2.7 and covers production sleeps itself.",
    "sample": "`sleep(0.1)`-then-assert synchronization in tests or — worse — production (\"wait a bit for the worker to pick it up\"). S",
    "members": [
     "sota-async-concurrency/rules/07-audit-bug-catalog.md#197c66b23523",
@@ -454,8 +418,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Async catalog is the cross-runtime entry and links the language rules; JVM and Python carry their own measured, language-specific detail and probes.",
    "sample": "**Request-scoped state must also be un-set.** Ambient per-request context (tenant, user, locale) is only request-scoped ",
    "members": [
     "sota-async-concurrency/rules/07-audit-bug-catalog.md#562c54edc1a1",
@@ -466,8 +430,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "The SKILL.md frontmatter and the library map's index line for the same skill.",
    "sample": "--- name: sota-c-cpp description: >- State-of-the-art C and C++ engineering rules that Claude applies when writing or au",
    "members": [
     "sota-c-cpp/SKILL.md#d75d7ced4410",
@@ -489,8 +453,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Audit checklist run instruction vs CI job design; different rules files with different purposes.",
    "sample": "- [ ] **Build & run the suite under sanitizers (§5, ground truth; TSan in its own job, since it cannot share one with AS",
    "members": [
     "sota-c-cpp/rules/02-memory-safety.md#a2f50ccac572",
@@ -498,8 +462,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Memory-safety buffer-op probe vs broader security banned-function list with VLA/alloca probe; overlapping but different checks.",
    "sample": "- [ ] **Banned/dangerous buffer ops (§2) — HIGH/CRITICAL (also [rules/04])** — `grep -rnE '\\b(strcpy|strcat|sprintf|gets",
    "members": [
     "sota-c-cpp/rules/02-memory-safety.md#cae5c18e2d1d",
@@ -507,8 +471,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "C-cpp gives FORTIFY_SOURCE and length-passing; code-security gives the banned-function policy and truncation checks.",
    "sample": "- In C, always pass length alongside the pointer and check it; prefer `snprintf`/`memcpy_s`-style bounded ops. `-D_FORTI",
    "members": [
     "sota-c-cpp/rules/02-memory-safety.md#e621d496536e",
@@ -516,8 +480,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Different checks: rules/02 looks for sanitizer and hardening flags in source, rules/04 for an extra flag list and the shipped binary (checksec), rules/06 for flags dropped by Makefile overrides.",
    "sample": "- [ ] **Sanitizer/hardening presence in the build (§5, §2) — HIGH if a network binary lacks them** — `grep -rqE 'fsaniti",
    "members": [
     "sota-c-cpp/rules/02-memory-safety.md#ec81aab5fbfe",
@@ -527,8 +491,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General code-security rule restated per language with measured parser behaviour (C/C++, .NET, JVM, Rust).",
    "sample": "- **Arithmetic edge cases at the boundary.** `strtod`, `std::stod` and `std::from_chars` all accept `\"nan\"`, `\"inf\"` and",
    "members": [
     "sota-c-cpp/rules/03-undefined-behavior.md#611901d00744",
@@ -539,8 +503,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Per-language NaN/overflow checklist items, each with its own language-specific probe; code-security holds the generic one.",
    "sample": "- [ ] **NaN/infinity from parsed input, divide by zero, INT_MIN / -1 (§2) — HIGH on size, price or limit paths** — `grep",
    "members": [
     "sota-c-cpp/rules/03-undefined-behavior.md#872dc36d14a6",
@@ -553,8 +517,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Different checks: C OpenSSL/curl verify-result probe vs a cross-language probe for absent/implicit TLS verification.",
    "sample": "- [ ] **TLS / transport verification (§4) — HIGH when a peer certificate is never checked, CRITICAL in a client on user ",
    "members": [
     "sota-c-cpp/rules/04-security.md#10a9bdf03c80",
@@ -562,8 +526,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Log injection with language-specific mechanics: C syslog call sites, Python formatter, Rust tracing fields.",
    "sample": "- **Logs carry neither secrets nor raw input.** C has no standard logger, so every `syslog`/`fprintf(stderr, ...)` call ",
    "members": [
     "sota-c-cpp/rules/04-security.md#1281c24881bb",
@@ -573,8 +537,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "CSPRNG rule repeated with language-specific APIs and predictable-function lists.",
    "sample": "- **Never** use `rand()`/`random()`/`std::mt19937` for security (keys, tokens, IVs, salts) — they're predictable. Use th",
    "members": [
     "sota-c-cpp/rules/04-security.md#15bf2ed4b575",
@@ -587,8 +551,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Same CISA/NSA direction, but c-cpp is the language-owner instance and code-security the cross-language policy with sandbox examples.",
    "sample": "- Where feasible, move new untrusted-input-parsing code to a memory-safe language (Rust), or isolate the C/C++ parser (s",
    "members": [
     "sota-c-cpp/rules/04-security.md#6bc123a0e866",
@@ -596,8 +560,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General hostile-number rule vs C/C++-specific check-before-allocate/index instruction.",
    "sample": "- Bounds- and overflow-check every length/count/offset from input *before* using it to allocate, index, or copy ([`rules",
    "members": [
     "sota-c-cpp/rules/04-security.md#86c32fee7749",
@@ -619,8 +583,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "The c-cpp checklist item points to devsecops rules/14 §14.6 and keeps the C-specific consequence (the scanner sees no C/C++ components).",
    "sample": "- [ ] **Shipped binary scanned with no build-time SBOM (§5) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rul",
    "members": [
     "sota-c-cpp/rules/06-build-tooling-ci.md#678b3b51a775",
@@ -628,8 +592,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General devsecops rule vs C/C++-specific verified OpenSSL/libcurl defaults.",
    "sample": "- **A library's insecure defaults become your code's defaults.** Every security-relevant option you do not set is a deci",
    "members": [
     "sota-c-cpp/rules/06-build-tooling-ci.md#6f6cffba3d3a",
@@ -637,8 +601,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "C/C++ fuzzing engine choice for that language vs testing's cross-language fuzz policy; libFuzzer status repeated but each skill needs it.",
    "sample": "- Any code parsing untrusted bytes (network, file formats, decoders) gets a fuzz target: prefer **AFL++** or **FuzzTest*",
    "members": [
     "sota-c-cpp/rules/06-build-tooling-ci.md#b1ee27d0db7b",
@@ -646,8 +610,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Allocation-reduction advice is language-specific in c-cpp and dotnet; performance SKILL.md is its own summary line.",
    "sample": "- Heap allocation (`new`/`malloc`) is expensive and a contention point. Reduce allocations on hot paths: - `reserve()` c",
    "members": [
     "sota-c-cpp/rules/07-performance.md#7391518a2cdf",
@@ -656,8 +620,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Checklist summarising its own body (cli-ux §3); secrets-management already links cli-ux rules/01 §3 and adds the subprocess-invocation half.",
    "sample": "- [ ] No secret accepted via argv; file/stdin/no-echo-prompt paths exist; a secret env var, if supported at all, is docu",
    "members": [
     "sota-cli-ux/rules/01-commands-flags-config.md#2601e626ab1b",
@@ -666,8 +630,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Both cross-link (rules/01 never-auto-execute, rules/02 machine-mode suppression); different aspects.",
    "sample": "Never auto-execute the guess — `tool prune` guessed from `tool prun` deleting data is unforgivable. (cobra: disable `Sug",
    "members": [
     "sota-cli-ux/rules/01-commands-flags-config.md#a45dd7e9836d",
@@ -675,8 +639,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "cli-ux §3 owns the exit-code table; shell rules/02 explicitly points there and adds shell-reserved 126/127 and 128+N.",
    "sample": "- Differentiate at minimum: - `0` success - `1` operational failure (the thing failed) - `2` usage error (bad flags/args",
    "members": [
     "sota-cli-ux/rules/02-output-interaction.md#0674313cfa3d",
@@ -685,8 +649,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/02 is the exit-code table entry and already points to rules/03 §3, which holds the re-raise mechanics.",
    "sample": "- `130` after SIGINT (128+signal, the shell convention) — most runtimes do this if you re-raise the signal after cleanup",
    "members": [
     "sota-cli-ux/rules/02-output-interaction.md#50f4eda63f43",
@@ -694,8 +658,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "CLI-UX output rule and shell-scripting rule on skips; the shell copy cites code-security rules/14 and this repo's own example.",
    "sample": "- **Skips are output, not silence.** A check that could not run (missing toolchain, no network, unsupported platform) pr",
    "members": [
     "sota-cli-ux/rules/03-behavior-lifecycle.md#887a3ab8bec1",
@@ -703,8 +667,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Each owns its channel (human convenience installer vs consumer verification) and they cross-reference each other.",
    "sample": "- `curl | sh` installers are popular and acceptable **only** as a human's convenience channel — never the path CI or pro",
    "members": [
     "sota-cli-ux/rules/04-distribution-docs.md#50784c8464e7",
@@ -712,8 +676,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "CLI doc-example rule is a short distribution note; docs-workflow checklist is broader (one example per entry point, quickstarts in CI).",
    "sample": "- Every example in docs must be copy-pasteable and CI-tested if feasible (doc-test runners / cram-style tests); stale ex",
    "members": [
     "sota-cli-ux/rules/04-distribution-docs.md#c3f4efdb080c",
@@ -721,8 +685,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "CLI changelog/upgrade-guide rule is CLI-specific; docs-workflow SKILL.md summarizes its own rules/02 checklist.",
    "sample": "- Changelog per release, human-written headline per breaking change, with the migration command/flag mapping. `tool` maj",
    "members": [
     "sota-cli-ux/rules/04-distribution-docs.md#fc3bfc52a3ca",
@@ -731,8 +695,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Break-glass in three domains (cloud org root, CI gate bypass, IdP privileged accounts), each with domain-specific paths; same-file pairs are body plus checklist.",
    "sample": "- [ ] Break-glass: both paths (org root, account-level role) exist, IdP-independent, alarmed, tested within last quarter",
    "members": [
     "sota-cloud-infrastructure/rules/02-iam-design.md#27330e14be42",
@@ -743,8 +707,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "IAM rules/02 states the role-split principle and points to rules/05; rules/05 gives the KMS key-policy mechanics.",
    "sample": "- Separate **control-plane admin** from **data access** in role design: the person who can change KMS key policy should ",
    "members": [
     "sota-cloud-infrastructure/rules/02-iam-design.md#823e6645f4ca",
@@ -752,8 +716,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Cloud-infra rules/03 §7 restates R1 (CA/B lifetime schedule, ACME, provider-managed, 30/14/7 expiry backstop) and secrets rules/05 §4 restates the schedule with a conflicting severity (Medium vs High); network-security owns TLS posture, the others should link, network-security SKILL.md summary stays. Owner: skills/sota-network-security/rules/06-dns-tls-pki.md §1",
    "sample": "- **Certificate lifetimes are collapsing by CA/Browser Forum schedule: max 200 days from 2026-03-15, 100 days from 2027-",
    "members": [
     "sota-cloud-infrastructure/rules/03-networking.md#006d7035d15a",
@@ -764,8 +728,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cloud-infra owns inventory and decommission order, devsecops owns the pipeline gate (and links back), network-security adds NS/MX/SPF dangling-record classes.",
    "sample": "- **Dangling records are the top DNS finding:** CNAMEs/A records pointing at released cloud resources (deleted buckets, ",
    "members": [
     "sota-cloud-infrastructure/rules/03-networking.md#24f7f6257484",
@@ -776,8 +740,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Both state 'reference SGs/tags not CIDRs; no 0.0.0.0/0 ingress except 80/443 on the edge'. network-security §5 R8 says it owns the posture (cloud-infra owns setup), so cloud-infra §1 and its checklist should keep the SSM/IAP note and link the rest. Owner: skills/sota-network-security/rules/02-segmentation-blast-radius.md §5",
    "sample": "- Security groups / firewall rules: deny-by-default, reference **security groups (or tags/service accounts in GCP), not ",
    "members": [
     "sota-cloud-infrastructure/rules/03-networking.md#38e8318d54e8",
@@ -788,8 +752,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cloud rules/03 is DNS setup with the private-endpoint DNS pitfall; network-security R5 is the recon/security posture.",
    "sample": "- **Split-horizon:** public zones contain only public entry points; internal records live in private zones (Route 53 pri",
    "members": [
     "sota-cloud-infrastructure/rules/03-networking.md#4e9ef85e1ee0",
@@ -797,8 +761,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Each states internal-CA mTLS with skill-specific detail: cloud managed CA services, network mesh-to-step-ca chaining, secrets lifetimes and InsecureSkipVerify finding.",
    "sample": "- Internal/mTLS: use a private CA service (AWS Private CA, GCP CA Service, or service-mesh-issued identities) with short",
    "members": [
     "sota-cloud-infrastructure/rules/03-networking.md#5b2fca176130",
@@ -807,8 +771,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cloud-infra line is a pointer to network-security rules/05 R9; network-security SKILL.md summarizes its own R9.",
    "sample": "- **Egress is a control point, not a default-open pipe.** Data exfiltration and C2 traffic leave through egress; treat `",
    "members": [
     "sota-cloud-infrastructure/rules/03-networking.md#dd56ee5bb0e9",
@@ -817,17 +781,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- **DNSSEC stance:** sign zones where the registrar+provider support is solid and you have rotation automation (managed ",
-   "members": [
-    "sota-cloud-infrastructure/rules/03-networking.md#e67bab459f27",
-    "sota-network-security/rules/06-dns-tls-pki.md#9079286d892b"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security is cross-request data bleed; cloud rules/04 is what may live in module scope on warm starts.",
    "sample": "- **A warm start reuses the whole environment, not just your connections.** AWS documents that objects declared outside ",
    "members": [
     "sota-cloud-infrastructure/rules/04-compute-selection.md#2273f89293da",
@@ -835,8 +790,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cloud checklist owns the serverless /tmp probe; code-security covers request state in globals generally with a Python global probe.",
    "sample": "- [ ] **High** — no per-request or user-scoped data in function globals, and no sensitive file left in `/tmp` across inv",
    "members": [
     "sota-cloud-infrastructure/rules/04-compute-selection.md#2f26725337bc",
@@ -844,8 +799,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cloud-infra adds the minAvailable=replicas blocking finding; kubernetes adds severity and voluntary-vs-involuntary scope.",
    "sample": "- **PDB on everything with > 1 replica** — node upgrades and spot reclaim drain nodes; without PDBs, voluntary disruptio",
    "members": [
     "sota-cloud-infrastructure/rules/04-compute-selection.md#43eb686b9ae4",
@@ -853,8 +808,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cloud-infra already names sota-kubernetes rules/01 §7 as the owner and adds provider extended-support fees.",
    "sample": "- **Upgrade cadence is a standing commitment:** upstream ships 3 minors/year with a ~14-month support window (owner: sot",
    "members": [
     "sota-cloud-infrastructure/rules/04-compute-selection.md#440d8f7b4b1c",
@@ -862,8 +817,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "SKILL top-10 summary and language/threat-catalog restatements of SSRF with their own specifics.",
    "sample": "9. **Outbound fetch of user-supplied URLs gets full SSRF defense** — scheme allowlist, post-resolution private-IP block,",
    "members": [
     "sota-code-security/SKILL.md#07c31d70026b",
@@ -874,8 +829,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Standard 'one skill, two modes' template sentence repeated per skill.",
    "sample": "One skill, two modes. The `rules/` files define the 2026 secure-coding baseline (OWASP Top 10 2025/API 2023/LLM + Agenti",
    "members": [
     "sota-code-security/SKILL.md#080bd3fafe76",
@@ -883,8 +838,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Standard per-skill deviation template with skill-specific examples and comment tag.",
    "sample": "5. **When requirements force a deviation** (e.g. shell-out unavoidable, CORS must reflect origins), implement the rules ",
    "members": [
     "sota-code-security/SKILL.md#54d41ad09684",
@@ -892,8 +847,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "The router's audit-methodology pointer to code-security rules/10, and code-security's own SKILL.md step.",
    "sample": "5. **Check the inert**: a control that is *present* but does nothing is invisible to steps 2–4, because the code is not ",
    "members": [
     "sota-code-security/SKILL.md#57f0aee2dffe",
@@ -901,8 +856,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "SKILL summary, rules/10 checklist and router pointer to rules/10.",
    "sample": "6. **Every control must be falsifiable.** For each control you add, ask: *if this were silently a no-op, would anything ",
    "members": [
     "sota-code-security/SKILL.md#66d5cc5feeb7",
@@ -911,8 +866,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "General JWT non-negotiable vs SurrealDB TYPE JWT access-method specifics ($token vs $auth).",
    "sample": "6. **JWT verification pins algorithms and checks `exp`/`iss`/`aud`**; OAuth is Authorization Code + PKCE with exact redi",
    "members": [
     "sota-code-security/SKILL.md#af77cba11401",
@@ -920,8 +875,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Dotnet checklist is a language-specific probe that cites code-security rules/01 §11.",
    "sample": "- **Open redirect (CWE-601)**: `?next=` targets must be relative-path-only (reject `//evil.com`, `https:`, `\\\\`, scheme-",
    "members": [
     "sota-code-security/rules/01-input-injection.md#0aabd37d9f3d",
@@ -929,8 +884,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Argument injection: a general rule, Python's one-line pointer, Rust R9.2 linking sandboxing §5 for the gadget list, and sandboxing's canonical list.",
    "sample": "- Argv arrays stop shell metacharacters but NOT argument injection (CWE-88): a filename of `--output=/etc/cron.d/x` or `",
    "members": [
     "sota-code-security/rules/01-input-injection.md#0d39f84f691b",
@@ -940,8 +895,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security general XXE line already links jvm rules/07 §2; JVM SKILL summary, CI gate and XML checklist are different roles.",
    "sample": "- Disable DTDs and external entities on **every** XML parser, explicitly — many parsers (Java DocumentBuilderFactory, li",
    "members": [
     "sota-code-security/rules/01-input-injection.md#44ee6a16392c",
@@ -952,8 +907,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "code-security owns LDAP DN-vs-filter encoders; JVM and PHP give language-specific escaping APIs and probes.",
    "sample": "- [ ] **LDAP DN vs filter (§11)**: is each LDAP value escaped with the encoder for where it lands (RFC 4514 for DN compo",
    "members": [
     "sota-code-security/rules/01-input-injection.md#7066a945b1bf",
@@ -963,8 +918,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Regex-as-control rule restated with measured language-specific APIs (JVM Pattern/matches, Python fullmatch/\\Z).",
    "sample": "- **A validating regex matches the whole input.** Use the full-match API (`re.fullmatch`) or absolute anchors, and know ",
    "members": [
     "sota-code-security/rules/01-input-injection.md#88df1cbdce2c",
@@ -973,8 +928,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "SSTI: code-security's body plus its own checklist, plus JS (EJS/Pug measured) and Python (str.format) language-specific detail.",
    "sample": "- [ ] Is user input confined to template variables (never concatenated into template strings), and do user-authored temp",
    "members": [
     "sota-code-security/rules/01-input-injection.md#9929322ff7d2",
@@ -984,8 +939,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cross-language regex checklist vs Python-specific probe (fullmatch, re.escape, MULTILINE).",
    "sample": "- [ ] **Validation regexes (§10)**: are validators full-match with an absolute end anchor, bounded inside the pattern, a",
    "members": [
     "sota-code-security/rules/01-input-injection.md#9f76137ea080",
@@ -993,8 +948,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "code-security rules/01 and rules/09 cross-link (09 adds ratio/nesting caps); language skills add their own APIs (filepath.IsLocal, zipfile behaviour).",
    "sample": "- Treat archive extraction as path traversal (Zip Slip, CWE-22): validate every entry name post-join; reject absolute pa",
    "members": [
     "sota-code-security/rules/01-input-injection.md#9fd3f9e12e94",
@@ -1007,8 +962,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Python line is a short language pointer to code-security rules/01 §11.",
    "sample": "- **CRLF / header injection (CWE-93/113)**: reject `\\r`/`\\n` in anything placed into HTTP headers (redirect `Location` f",
    "members": [
     "sota-code-security/rules/01-input-injection.md#af3a4a492685",
@@ -1016,8 +971,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Native deserialization: the general list, the JVM top-10 summary (ObjectInputFilter), and sandboxing's isolate-the-decoder rule, which is a different control.",
    "sample": "- **Never deserialize untrusted data with native object serializers**: Python `pickle`/`PyYAML yaml.load`, Java `ObjectI",
    "members": [
     "sota-code-security/rules/01-input-injection.md#c620cb6b959f",
@@ -1026,17 +981,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- **Verify against the key you configured, never the one in the message.** Use the IdP certificate from pinned metadata,",
-   "members": [
-    "sota-code-security/rules/02-authentication.md#0435db2f48a3",
-    "sota-identity-access/rules/01-federation-protocols.md#2132709f34cc"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Same short-lived-over-static principle stated at app-auth level and at identity-infrastructure level with different actions.",
    "sample": "- Service-to-service: prefer short-lived, asymmetric, workload-bound credentials over static keys — mTLS/SPIFFE identiti",
    "members": [
     "sota-code-security/rules/02-authentication.md#07c593806c5e",
@@ -1044,8 +990,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security owns the generic LDAP empty-password rule; PHP adds php.net ldap_bind and php-src specifics.",
    "sample": "\"The bind succeeded, so the password is right\" is false for one input: **the empty password.** A simple bind with a DN a",
    "members": [
     "sota-code-security/rules/02-authentication.md#24c6a756910c",
@@ -1055,8 +1001,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Different checks: code-security flags SMS OTP in high-value apps; identity requires a risk-acceptance record, SIM-swap checks and a verifier service wherever SMS is enabled.",
    "sample": "- [ ] **Is SMS/voice OTP absent from high-value apps, and elsewhere offered only for a verified number beside a stronger",
    "members": [
     "sota-code-security/rules/02-authentication.md#4005d2b012e8",
@@ -1064,8 +1010,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Short one-line rule in code-security §4 vs identity §1's protocol-level ownership; no drift-prone detail.",
    "sample": "- Authorization Code flow **with PKCE (S256)** for every client type — SPAs, native apps, and confidential web apps (OAu",
    "members": [
     "sota-code-security/rules/02-authentication.md#90c88a4f5665",
@@ -1073,8 +1019,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Standard 'Detectors' lead-in template with a different finding condition each time.",
    "sample": "Detectors. Each was run against a known-bad and a known-good fixture under ugrep and BSD grep. A hit is a finding when t",
    "members": [
     "sota-code-security/rules/02-authentication.md#9a9c40937c2c",
@@ -1083,8 +1029,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security gives app-level SAML parsing rules; identity-access explains XSW in federation terms with resolve-by-reference defense.",
    "sample": "- Use a maintained library; validate the **signature before** parsing assertions, on the whole document with a fixed exp",
    "members": [
     "sota-code-security/rules/02-authentication.md#e7dcd97e7404",
@@ -1092,8 +1038,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "ReBAC as a model choice in code-security vs identity's engine catalogue (OpenFGA, SpiceDB, Keto).",
    "sample": "- **ReBAC**: relationships as the model (\"editor of doc\", \"member of org that owns folder\") — Zanzibar-style (SpiceDB, O",
    "members": [
     "sota-code-security/rules/03-authorization.md#bc24b259771d",
@@ -1101,8 +1047,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General CWE-798 rule vs Ruby-specific grep targets.",
    "sample": "- **No hardcoded keys/secrets in source, config files in git, or client-side bundles** (CWE-798). Scan history too — a c",
    "members": [
     "sota-code-security/rules/04-cryptography.md#000bd7bfb8f0",
@@ -1110,8 +1056,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Two skills cross-reference each other: code-security states loss-vs-escrow principle, secrets adds separate failure domain, split custody and restore drill.",
    "sample": "- **Design for key *loss*, not just compromise** (OWASP Key Management): a root key with no recovery path means every ci",
    "members": [
     "sota-code-security/rules/04-cryptography.md#0b33b499812e",
@@ -1119,8 +1065,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security owns the cross-library class; JS, PHP, Python and Ruby add library-specific defaults and probes.",
    "sample": "- **SSH host-key verification is the same control, and it is disabled the same way** (CWE-322, key exchange without enti",
    "members": [
     "sota-code-security/rules/04-cryptography.md#38a45d7305e8",
@@ -1133,8 +1079,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "AAD in crypto vs KMS encryption context in secrets-management, which adds the audit-log property.",
    "sample": "- Authenticate context with **associated data (AAD)**: bind ciphertexts to their purpose/record (`aad = user_id || field",
    "members": [
     "sota-code-security/rules/04-cryptography.md#51b55cdf0f62",
@@ -1142,8 +1088,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Provenance lines for the rules/04 to rules/18 split.",
    "sample": "Tamper-evident logs and audit ledgers (formerly section 8) moved to [rules/18] §1 on 2026-09-25; signed request/response",
    "members": [
     "sota-code-security/rules/04-cryptography.md#57b8c6bf6246",
@@ -1151,8 +1097,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Generic per-response nonce rule vs JS-specific strict-dynamic over allowlist advice.",
    "sample": "- Nonce: CSPRNG, per **response** (never static/cached — a cached nonce is no nonce). No `unsafe-inline`/`unsafe-eval` i",
    "members": [
     "sota-code-security/rules/05-web-security.md#1ae048d42f33",
@@ -1160,8 +1106,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security general cookie scope; dotnet adds measured ASP.NET Core non-enforcement of prefixes; PHP adds the RFC 6265 note.",
    "sample": "- Broad `Domain=.example.com` cookies are readable/settable by every subdomain — one XSS'd or taken-over subdomain compr",
    "members": [
     "sota-code-security/rules/05-web-security.md#6885d55d19bd",
@@ -1171,17 +1117,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- Browser-side: `Cache-Control: no-store` for sensitive pages also defends shared-computer history attacks (`no-cache` s",
-   "members": [
-    "sota-code-security/rules/05-web-security.md#87f65a9c8322",
-    "sota-code-security/rules/17-sessions-and-tokens.md#b373f12b695d"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security intro and bullet are one section; Python adds the stdlib deprecation quote.",
    "sample": "- **Name now, file later.** An API that returns a *name* and creates nothing (C `mktemp`/`tmpnam`/`tempnam`, Python `tem",
    "members": [
     "sota-code-security/rules/06-memory-resource-safety.md#1bf6e3fc2987",
@@ -1190,8 +1127,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "code-security names the one-line signal across languages; dotnet adds LibraryImport, DllImport, Marshal and its CI checker, linking back.",
    "sample": "**A `.csproj` with `AllowUnsafeBlocks`, a Python import of `ctypes`, or a PHP `ffi.enable=true` is the one-line signal**",
    "members": [
     "sota-code-security/rules/06-memory-resource-safety.md#31cf140d7052",
@@ -1199,8 +1136,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Python restates the general rule naming the os.chmod API.",
    "sample": "- **Permissions widened after the fact.** A secret written into a 0644 file, a later `chmod 0777`, or a process `umask(0",
    "members": [
     "sota-code-security/rules/06-memory-resource-safety.md#346661b838ff",
@@ -1208,8 +1145,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Unsafe policy in code-security vs the Rust SKILL top-10 and Rust rules/03 (workspace lint), which add Rust-specific detail.",
    "sample": "- Default: forbid. `#![forbid(unsafe_code)]` in app crates; `unsafe` allowed only in designated low-level crates with: -",
    "members": [
     "sota-code-security/rules/06-memory-resource-safety.md#5968b8a54ba5",
@@ -1218,8 +1155,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Same class with Python-specific (PIL MAX_IMAGE_PIXELS) and sandbox-output angles.",
    "sample": "- Decompression: enforce output-size caps and **ratio caps** (zip/gzip/zstd bombs, CWE-409); decode images with pixel-co",
    "members": [
     "sota-code-security/rules/06-memory-resource-safety.md#c291b9b41255",
@@ -1228,8 +1165,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Different logging scopes: code-security logs every decision at high assurance; identity requires deny plus privileged allow with policy id.",
    "sample": "- **Authorization**: every denial (`authz_fail`) and privilege change. At high assurance, log **every** authorization de",
    "members": [
     "sota-code-security/rules/07-data-exposure.md#6607e0801bd2",
@@ -1237,8 +1174,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Data-exposure is about debug endpoints leaking data; secrets-management is about heap dumps as secret extraction with profiling caveats.",
    "sample": "- Production must have: debug modes off (framework debug pages, GraphQL playgrounds, Swagger UIs gated or auth'd), actua",
    "members": [
     "sota-code-security/rules/07-data-exposure.md#76920355005e",
@@ -1246,8 +1183,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/17 already points to rules/07 §2.1 for event names and adds the tombstone-on-revocation requirement.",
    "sample": "- **Session**: created, renewed, expired (with the reason: idle or absolute), logout, and use after expiry (`session_*`)",
    "members": [
     "sota-code-security/rules/07-data-exposure.md#d598aa70de21",
@@ -1255,8 +1192,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Auth-off default and ingestion hashing vs a network/key checklist for vector DBs.",
    "sample": "- **Self-hosted vector DBs ship auth-OFF by default** (Qdrant, among others): set an API key / JWT, enable TLS, and bind",
    "members": [
     "sota-code-security/rules/08-llm-ai-security.md#08478ea87980",
@@ -1264,8 +1201,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Coding rule (validate tool args) vs threat-catalog entry with STRIDE letters for the same threat.",
    "sample": "- **Validate tool arguments like any untrusted input** — model output IS untrusted input ([rules/01] applies in full): s",
    "members": [
     "sota-code-security/rules/08-llm-ai-security.md#29fe40111714",
@@ -1273,8 +1210,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security states the trifecta for LLM security; sandboxing R1.2 adds the design-by-removing-a-leg examples and audit framing.",
    "sample": "- The lethal trifecta to refuse by design: (a) access to private data + (b) exposure to untrusted content + (c) an exfil",
    "members": [
     "sota-code-security/rules/08-llm-ai-security.md#31fbab05398a",
@@ -1282,8 +1219,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "HITL in code-security tool authorization (followed by approval binding) vs sandboxing R3.3's action list (default-branch push, permission changes, spend thresholds). The library makes both co-owners of agent security.",
    "sample": "- Human-in-the-loop for irreversible/high-impact actions (payments, deletes, external sends, code execution): explicit c",
    "members": [
     "sota-code-security/rules/08-llm-ai-security.md#a132e079c173",
@@ -1291,17 +1228,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- **Bind the approval to what executes, and fail closed.** The approval record names the actor (agent), the requester (h",
-   "members": [
-    "sota-code-security/rules/08-llm-ai-security.md#a1826073f83b",
-    "sota-llm-engineering/rules/04-agents-tools.md#0f767fed620b"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Security parse-strictly rule vs LLM-engineering SKILL summary and its own checklist item on schema-constrained output.",
    "sample": "- Parse structured output strictly: schema-validate JSON tool calls/extractions (`extra=forbid`, types, ranges); on fail",
    "members": [
     "sota-code-security/rules/08-llm-ai-security.md#d6f06066bb55",
@@ -1310,8 +1238,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security points to sandboxing for the mechanism; sandboxing R1.1 and its checklist are the owner and its own checklist summary.",
    "sample": "Format parsers are the largest ingest attack surface: complex state machines in C/C++ (image codecs, PDF, archive libs) ",
    "members": [
     "sota-code-security/rules/09-untrusted-data-ingestion.md#09163b07d3d7",
@@ -1320,8 +1248,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General size caps vs Go's http.MaxBytesReader specifics.",
    "sample": "- **Size caps at every layer**: max request body, max field length, max file size, max decompressed size, max entry coun",
    "members": [
     "sota-code-security/rules/09-untrusted-data-ingestion.md#19e6a9e4495d",
@@ -1329,8 +1257,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Cross-language checklist, devsecops CI gate and JS-specific grep.",
    "sample": "- [ ] **Invisible code points in code and history (§4)**: does CI reject bidi and zero-width characters in source of eve",
    "members": [
     "sota-code-security/rules/09-untrusted-data-ingestion.md#fdf368f18126",
@@ -1339,8 +1267,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: code-security rules/10 §4 restates the router's negative-claim evidence rule nearly verbatim; keep a one-line link plus its unique search-vs-durable-guard addendum. Owner: skills/sota/rules/03-audit-findings.md §2",
    "sample": "- **A negative claim needs more proof than a positive one.** \"There are no swallowed exceptions on the enforcement path\"",
    "members": [
     "sota-code-security/rules/10-silent-control-failure.md#24cb20584881",
@@ -1348,8 +1276,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/10 §1 asks the general proxy question; rules/14 §4a adds the neighbouring-setting grep and severity.",
    "sample": "- [ ] **The proxy question asked of every control's predicate** (§1): is the tested condition the dependency itself, or ",
    "members": [
     "sota-code-security/rules/10-silent-control-failure.md#3f31bfda8166",
@@ -1357,8 +1285,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General assert-as-control item vs Python's -O/PYTHONOPTIMIZE probe.",
    "sample": "- [ ] **No security, authz, bounds, or data-integrity check implemented as an `assert`**, and the deployment's flags (`-",
    "members": [
     "sota-code-security/rules/11-dead-path-diagnostics.md#0bcb6c12d6f0",
@@ -1366,8 +1294,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security rules/11 covers three runtimes; JVM rules/04 is the Java instance with -ea deployment context.",
    "sample": "Java's own documentation states it plainly: *\"By default, assertions are disabled at runtime\"*, and once disabled they a",
    "members": [
     "sota-code-security/rules/11-dead-path-diagnostics.md#1a9209896203",
@@ -1376,8 +1304,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General build-flag-removed-control audit vs Python-specific assert/-O probe.",
    "sample": "- AUDIT: grep for assertions on validation, authz, size, and parsing paths, then check what flags the **deployment** act",
    "members": [
     "sota-code-security/rules/11-dead-path-diagnostics.md#81dfe003f4ef",
@@ -1385,8 +1313,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Both files state the same lesson 'one gate's green does not cover another gate's scope' as a standalone corollary; rules/11 should keep its incident and link to rules/15 §3. Owner: skills/sota-code-security/rules/15-instruments-and-guards.md §3",
    "sample": "A neighbouring check that recounted the tree did **not** catch it, because the count it recounted (`SKILL.md` files) was",
    "members": [
     "sota-code-security/rules/11-dead-path-diagnostics.md#9671892a0b2d",
@@ -1394,8 +1322,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Performance already says 'same test as code-security rules/11 §2.3': a short cross-referenced restatement.",
    "sample": "- **Constant duration across very different inputs** is the same tell without a baseline: if 100 files and 100k files ta",
    "members": [
     "sota-code-security/rules/11-dead-path-diagnostics.md#b29a9ba996e6",
@@ -1403,8 +1331,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Each file's own Related line; the link sets differ (12 vs 15 point at each other).",
    "sample": "Related: the instruments and guards that do the checking → [`rules/15`]; the inert-control catalog → [rules/10]; the cod",
    "members": [
     "sota-code-security/rules/12-verifying-the-verifier.md#051193a3dfc6",
@@ -1412,8 +1340,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Testing rules/09 restates code-security rules/12 §1a with an explicit link because test authors need it in their own checklist.",
    "sample": "- [ ] Every **enforcement** control (cap, quota, filter, allowlist, sandbox policy) carries an **allow arm** as well as ",
    "members": [
     "sota-code-security/rules/12-verifying-the-verifier.md#1226f0459b22",
@@ -1422,8 +1350,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security checklist item vs testing's full mutation-probe how-to with traps.",
    "sample": "- [ ] **Mutation probe run on security-critical paths** — control body replaced with the permissive no-op, with the depe",
    "members": [
     "sota-code-security/rules/12-verifying-the-verifier.md#40f665dfc30b",
@@ -1431,8 +1359,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/15 explicitly reuses rules/12's opening asymmetry, one level up, and extends it to instruments.",
    "sample": "The reason it earns its own file is an asymmetry. A broken feature produces a complaint. **A broken verifier produces a ",
    "members": [
     "sota-code-security/rules/12-verifying-the-verifier.md#42adb2d317a1",
@@ -1440,8 +1368,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Each file's own scope sentence: rules/12 is the mutation probe, rules/15 the instruments.",
    "sample": "Use it in BUILD to decide whether a control you just wrote is actually held in place by anything, and in AUDIT as the pa",
    "members": [
     "sota-code-security/rules/12-verifying-the-verifier.md#e8a63dc709f6",
@@ -1449,8 +1377,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Testing rules/06 frames mutate-and-read-output as one use of mutation testing and links code-security rules/14 §1, which owns the control-not-in-force rule.",
    "sample": "**Probe it by mutating the application and reading the output — not the test suite.** The usual probe changes the contro",
    "members": [
     "sota-code-security/rules/14-control-not-in-force.md#082c94d60e12",
@@ -1459,8 +1387,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/14 §6 prose and its own checklist item, plus a router checklist that links to it.",
    "sample": "The audit move is a **census, not a search**. Do not grep for the control and confirm it exists — grep for the *operatio",
    "members": [
     "sota-code-security/rules/14-control-not-in-force.md#42c491c556ba",
@@ -1469,8 +1397,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Prohibitive vs mandatory twins: each cross-links the other and states its own remedy.",
    "sample": "**The mandatory direction is a different bug with a different fix.** Everything above is *prohibitive* — an instruction ",
    "members": [
     "sota-code-security/rules/14-control-not-in-force.md#c75b2f9f0f95",
@@ -1478,8 +1406,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security checklist on controls present in the artifact vs devsecops container-build rule.",
    "sample": "- [ ] Is every control the runtime needs **present in the shipped artifact** — the image, the wheel, the bundle — and no",
    "members": [
     "sota-code-security/rules/14-control-not-in-force.md#fe6436cfecf1",
@@ -1487,8 +1415,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: secrets rules/05 §6 repeats the JWT alg-pinning rule and an Ed25519/RFC 9864 library-support claim that already differs from code-security's measured one; code-security owns JWT verification, secrets should link. Owner: skills/sota-code-security/rules/17-sessions-and-tokens.md §3",
    "sample": "- **Pin the algorithm at verification.** Pass an explicit allowlist (`algorithms=[\"ES256\"]`); never trust the header's `",
    "members": [
     "sota-code-security/rules/17-sessions-and-tokens.md#10bc17acd124",
@@ -1496,8 +1424,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security owns the trigger list; JS/Ruby link to it and PHP adds session_regenerate_id(true).",
    "sample": "- **Regenerate the session ID on every privilege change**: login, logout, password change, MFA step-up, role elevation, ",
    "members": [
     "sota-code-security/rules/17-sessions-and-tokens.md#8af6604c99b6",
@@ -1507,8 +1435,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "code-security's browser-storage/BFF rule vs JS's cookie attributes, with a link to JS rules/09.",
    "sample": "- Browser storage: keep tokens **and any other sensitive data** out of `localStorage` and `sessionStorage` (CWE-922). Ev",
    "members": [
     "sota-code-security/rules/17-sessions-and-tokens.md#a45a029f174d",
@@ -1516,8 +1444,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Identity SKILL top-10 summary vs code-security rule body.",
    "sample": "- Revocation: JWTs can't be revoked, so keep them short-lived and pair with rotating refresh tokens (server-side, revoca",
    "members": [
     "sota-code-security/rules/17-sessions-and-tokens.md#e86b1ea5656e",
@@ -1525,8 +1453,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "code-security owns the upload checklist; JS and Ruby add language-specific probes and libraries.",
    "sample": "- [ ] Are uploads content-validated (magic bytes or a real decoder; an extension allowlist that rejects double extension",
    "members": [
     "sota-code-security/rules/21-file-uploads.md#5dfa5fa27d5a",
@@ -1535,8 +1463,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Provenance 'Split out of ...' boilerplate.",
    "sample": "Split out of [rules/05] (formerly section 10) on 2026-09-25, when [rules/05] reached the 500-line cap; the section is no",
    "members": [
     "sota-code-security/rules/21-file-uploads.md#6ace8b16bd51",
@@ -1549,8 +1477,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General upload storage vs PHP-specific detail (php_admin_flag, double-extension tricks).",
    "sample": "- Store outside the web root, or in object storage with no execute semantics. Never in a directory where the app server ",
    "members": [
     "sota-code-security/rules/21-file-uploads.md#713723c965bb",
@@ -1558,8 +1486,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Code-security rules/22 owns the rule (and says language skills point here); language and performance copies add their own APIs and caveats.",
    "sample": "- Any comparison where one side is secret (MACs, tokens, API keys, OTP codes, signatures) must be constant-time: `hmac.c",
    "members": [
     "sota-code-security/rules/22-constant-time-comparison.md#00c637666361",
@@ -1570,8 +1498,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Threat-modeling enumerates the attack classes per server with STRIDE letters and links mitigations to code-security rules/23 §1.",
    "sample": "- Named MCP/agent attack classes — use these names in findings (IDs: OWASP MCP Top 10 MCP03:2025 Tool Poisoning, which n",
    "members": [
     "sota-code-security/rules/23-llm-platform-supply-chain.md#a7a987db7a2c",
@@ -1579,8 +1507,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/01 describes SEV in threat-model selection; rules/02 R1.1 is the rated finding with the verification command.",
    "sample": "- **AMD SEV without SNP** (plain SEV, SEV-ES): encrypts guest memory but provides no memory *integrity* — a malicious hy",
    "members": [
     "sota-confidential-computing/rules/01-threat-model-and-selection.md#29b930c1c4fa",
@@ -1588,17 +1516,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- [ ] Zero unsubstantiated superlatives/only/first claims (§5): `grep -rniwE '#1|best|leading|only|first|fastest|world-c",
-   "members": [
-    "sota-copywriting/rules/01-positioning-value-proposition.md#e727c6dc439b",
-    "sota-copywriting/rules/04-claims-legal-trust.md#8004ef26872c"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: The Gmail/Yahoo/Microsoft bulk-sender facts are restated in full and have already drifted (Microsoft 'May 2025' vs 'from 2025', Yahoo 2-day unsubscribe); network-security owns SPF/DKIM/DMARC, and copywriting §5 keeps its 'stricter than CAN-SPAM' line plus a link. Owner: skills/sota-network-security/rules/06-dns-tls-pki.md §5 R14",
    "sample": "- [ ] Bulk sends (Gmail: 5,000+/day; Yahoo: no published number): SPF + DKIM + DMARC aligned, RFC 8058 one-click-unsubsc",
    "members": [
     "sota-copywriting/rules/04-claims-legal-trust.md#bef3d22a25f8",
@@ -1607,8 +1526,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Copywriting owns the dark-pattern sweep; frontend's checklist covers UI prominence and links copy and consent probes.",
    "sample": "- [ ] Dark-pattern sweep (§4): no confirmshaming (`grep -riE '[\">]No thanks, I' --include='*.html' --include='*.md' --in",
    "members": [
     "sota-copywriting/rules/04-claims-legal-trust.md#eebdfee2be52",
@@ -1616,8 +1535,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Data-engineering line is a CDC-slot pointer to databases rules/05 with the default value spelled out.",
    "sample": "- **Log-based CDC holds a replication slot on the source**, and an abandoned or lagging slot makes the source retain WAL",
    "members": [
     "sota-data-engineering/rules/03-streaming-and-cdc.md#783c0bc5883a",
@@ -1625,8 +1544,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Databases SKILL top-10 summary vs secrets-management's credential-type note.",
    "sample": "9. **Least privilege at the database.** The app role owns no schema, cannot DROP, and cannot read tables it does not use",
    "members": [
     "sota-databases/SKILL.md#d9cee424a569",
@@ -1634,8 +1553,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "DB EXPLAIN-reading rule with a selectivity caveat vs a performance catalog entry.",
    "sample": "2. **Seq Scan on a large table with a selective filter** → missing index. Seq scan on a small table or non-selective pre",
    "members": [
     "sota-databases/rules/03-queries-and-indexes.md#1420b7e84242",
@@ -1643,8 +1562,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Databases states TTL-always and points to sota-performance rules/05 §4 for jitter.",
    "sample": "- **Always a TTL**, even with explicit invalidation — TTL is the bound on how wrong you can be. Jitter TTLs (±10%, [`sot",
    "members": [
     "sota-databases/rules/05-reliability-and-scale.md#c66235aeea35",
@@ -1652,17 +1571,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- Backups: industry-accepted approach is documented backup-expiry windows (deleted data ages out of backups within N day",
-   "members": [
-    "sota-databases/rules/06-security-and-compliance.md#451ac1825682",
-    "sota-privacy-compliance/rules/03-consent-and-user-rights.md#45041bc397a3"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Bind-parameter rule restated with per-language APIs (Dapper, JPA, SQLKit).",
    "sample": "- All SQL through bind parameters, including in ORMs' raw escape hatches (`whereRaw`, `extra()`, `$queryRawUnsafe` — aud",
    "members": [
     "sota-databases/rules/06-security-and-compliance.md#bec7e360e65d",
@@ -1672,8 +1582,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "DB line is the code-coupling of encoder to index; RAG rule adds version stamping and severity.",
    "sample": "- Query embeddings must come from the same model as stored ones; assert this in code (config couples the query-encoder a",
    "members": [
     "sota-databases/rules/07-vector-and-ai.md#f67c509f942f",
@@ -1681,8 +1591,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Frontmatter description vs library-map index line.",
    "sample": "--- name: sota-detection-engineering description: >- State-of-the-art detection engineering, SOC, threat hunting, and in",
    "members": [
     "sota-detection-engineering/SKILL.md#2cd860349f50",
@@ -1690,8 +1600,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Two boundary statements in the same skill, each scoped to its own rules file (detection logic vs data layer).",
    "sample": "- **[sota-observability]** owns the telemetry pipeline. Detection logic consumes its output. Reference [rules/01] (struc",
    "members": [
     "sota-detection-engineering/rules/01-detection-engineering-discipline.md#cd5fab24fe3e",
@@ -1699,8 +1609,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Runbook links across detection, observability and docs-workflow, each listing different runbook content. The docs-workflow pair is body plus checklist.",
    "sample": "**No actionable alert reaches a human without a runbook.** The runbook answers: what does this detection mean, what's th",
    "members": [
     "sota-detection-engineering/rules/04-alerting-triage-soc-soar.md#d18487897882",
@@ -1710,8 +1620,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Detection deception planting vs secrets-management honeytoken sources.",
    "sample": "- **Honeytokens / canary credentials** — fake AWS keys, API tokens, DB connection strings, service-account creds planted",
    "members": [
     "sota-detection-engineering/rules/05-hunting-intel-deception.md#9d386f9d92a7",
@@ -1719,8 +1629,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/07 restates deception wiring for AD decoys, adds placement-in-attack-path, and links rules/05 §4.",
    "sample": "- **Detection wiring.** Every deception asset must alert with maximum severity and rich context (who/where/how) and rout",
    "members": [
     "sota-detection-engineering/rules/05-hunting-intel-deception.md#b6a69201848c",
@@ -1729,8 +1639,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Standard per-skill template sentence.",
    "sample": "If the user asks for something that violates a non-negotiable, implement the secure alternative and explain the delta; o",
    "members": [
     "sota-devsecops/SKILL.md#8fbf15de7f44",
@@ -1738,8 +1648,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Template 'End every audit with...' sentence repeated per skill, with skill-specific out-of-scope lists.",
    "sample": "End every audit with: counts per severity, the top 3 fixes by risk reduction per effort, and an explicit list of what wa",
    "members": [
     "sota-devsecops/SKILL.md#96074f24451f",
@@ -1748,8 +1658,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "SKILL summary, pipeline rule on fork PR tokens, and secrets-side audit item.",
    "sample": "4. **Never combine untrusted PR code with secrets or write tokens.** `pull_request_target` (or `workflow_run`) must not ",
    "members": [
     "sota-devsecops/SKILL.md#f3b8eae59177",
@@ -1758,8 +1668,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Kubernetes GitOps note is a short pointer to devsecops rules/01.",
    "sample": "- [ ] Default branch ruleset: PR + review required, stale-approval dismissal, exact required checks, no force-push, appl",
    "members": [
     "sota-devsecops/rules/01-pipeline-security.md#0b7ae4d9ad2c",
@@ -1767,17 +1677,8 @@
    ]
   },
   {
-   "verdict": "consolidate",
-   "note": "same dated GitHub OIDC fact in sota-devsecops rules/01 and sota-secrets-management rules/01: keep one, link from the other",
-   "sample": "- **Immutable subject claims:** repos created, renamed or transferred after 2026-07-15 get a `sub` carrying numeric IDs ",
-   "members": [
-    "sota-devsecops/rules/01-pipeline-security.md#679ac254ff55",
-    "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md#7feedfb8ba26"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Devsecops gives the GitHub add-mask fix; shell-scripting gives the shell-side habit and its checklist.",
    "sample": "- Secrets are masked in logs by value-match only: derived values (base64 of a secret, a URL embedding it) print in clear",
    "members": [
     "sota-devsecops/rules/01-pipeline-security.md#9537686c0ef1",
@@ -1786,8 +1687,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "OIDC sub pinning in two skills' checklists. The devsecops item carries the numeric @id form and the Critical shared-prod-role severity.",
    "sample": "- [ ] No long-lived cloud keys in secrets; OIDC trust policies pin `aud` and an exact `sub` (repo + ref/environment, no ",
    "members": [
     "sota-devsecops/rules/01-pipeline-security.md#cfbf1cfd8ea1",
@@ -1795,8 +1696,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/16 line is a pointer to rules/01 §1.6.",
    "sample": "- Cache poisoning: `actions/cache` is scoped, but a cache written by a default-branch workflow is trusted by all branche",
    "members": [
     "sota-devsecops/rules/01-pipeline-security.md#e672ab88601a",
@@ -1804,8 +1705,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "devsecops rules/01 §1.7 bullet is a short pointer to rules/02 §2.7, which owns release-tag integrity.",
    "sample": "- **Tag protection**: protect release tag patterns (`v*`) via rulesets — release pipelines trust tags; anyone who can cr",
    "members": [
     "sota-devsecops/rules/01-pipeline-security.md#ed44ba4868f8",
@@ -1813,8 +1714,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Devsecops gives the registry configuration; python adds GhostAction context and PEP 740 attestation detail.",
    "sample": "- **PyPI Trusted Publishers**: register the exact repo + workflow + environment on PyPI; publish with `pypa/gh-action-py",
    "members": [
     "sota-devsecops/rules/02-provenance-signing.md#9efd19f017eb",
@@ -1822,8 +1723,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: devsecops rules/04 §4.5 and rules/08 §8.3 both instruct enabling registry tag immutability, and have already drifted (GAR 'via policy' vs 'setting GA'). rules/08 owns it with per-registry detail; rules/04 §4.5 and its checklist should keep 'mutable release tags = High' and link. rules/02 (GitHub releases) and docs-workflow (git tags) are distinct. Owner: skills/sota-devsecops/rules/08-registry-security.md §8.3",
    "sample": "- **Immutable releases**: never re-publish an existing version with different bytes (no re-tagging, no overwriting GitHu",
    "members": [
     "sota-devsecops/rules/02-provenance-signing.md#aad9aca17be5",
@@ -1835,8 +1736,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Devsecops provenance detail vs Rust release-automation with GitLab beta detail.",
    "sample": "- **crates.io**: Trusted Publishing has been available since July 2025. GitHub Actions exchanges an OIDC token for a sho",
    "members": [
     "sota-devsecops/rules/02-provenance-signing.md#e9cbc8639d19",
@@ -1844,8 +1745,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "devsecops owns cooldown across ecosystems; JS adds npm/Yarn/pnpm fail-open detail specific to its ecosystem.",
    "sample": "- **Cooldown**: Renovate `minimumReleaseAge: \"5 days\"` (Dependabot: cooldown config) for public packages — most maliciou",
    "members": [
     "sota-devsecops/rules/03-dependencies.md#17f2b3885abb",
@@ -1853,8 +1754,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/03 already points to rules/15, which owns the adoption checklist.",
    "sample": "- Process: adding a dependency is an architectural decision — require PR description to justify new direct deps; prefer ",
    "members": [
     "sota-devsecops/rules/03-dependencies.md#bf9415d99996",
@@ -1862,17 +1763,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- **Install-time execution**: npm `preinstall`/`install`/`postinstall`, Python `setup.py` arbitrary code. Most npm malwa",
-   "members": [
-    "sota-devsecops/rules/03-dependencies.md#f76a04403205",
-    "sota-javascript-typescript/rules/05-security.md#dcbade410fa3"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Devsecops build rule vs sandboxing rule with image-minimisation rationale.",
    "sample": "- **`USER` non-root** in the final stage (numeric UID for k8s `runAsNonRoot` checks, or distroless `:nonroot`). Root-in-",
    "members": [
     "sota-devsecops/rules/04-build-containers.md#1052df409548",
@@ -1881,8 +1773,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Three cross-linked statements of digest pinning in build, registry, and admission contexts.",
    "sample": "- **Deploy by digest** ([rules/06] §6.6, [rules/07] §7.1): manifests reference `image@sha256:...`; tags are for humans. ",
    "members": [
     "sota-devsecops/rules/04-build-containers.md#52c898f63797",
@@ -1891,8 +1783,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Build-containers retention line vs registry checklist adding GC maintenance mode.",
    "sample": "- Retention: garbage-collect untagged/dev images on schedule, but **never** delete digests referenced by running workloa",
    "members": [
     "sota-devsecops/rules/04-build-containers.md#d73e5f7bb259",
@@ -1900,17 +1792,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- Retries: at most one automatic retry, *recorded* (flake-detection reporting), never silent. `retry: 3` sprinkled in CI",
-   "members": [
-    "sota-devsecops/rules/05-analysis-gates.md#46917a3c71e9",
-    "sota-testing/rules/07-suite-health-and-ci.md#30d0f18d9d54"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/05 line is a pointer to rules/06 §6.2 and rules/01 §1.4.",
    "sample": "(When the plan needs real credentials, this runs under the read-only plan role of [rules/06] §6.2 and never on fork PRs ",
    "members": [
     "sota-devsecops/rules/05-analysis-gates.md#746e9fd1caf0",
@@ -1918,8 +1801,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "devsecops CI-gate quarantine rule and checklist vs testing SKILL non-negotiable summary with root-cause labels.",
    "sample": "- [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recor",
    "members": [
     "sota-devsecops/rules/05-analysis-gates.md#bb345771817a",
@@ -1928,18 +1811,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- **Keep secrets out of state where possible**: prefer `ephemeral` resources/values and write-only arguments (TF ≥1.10/1",
-   "members": [
-    "sota-devsecops/rules/06-iac-deployment.md#0f050633269c",
-    "sota-devsecops/rules/06-iac-deployment.md#fb3b545980c8",
-    "sota-secrets-management/rules/02-storage-backends.md#c7c52451a78f"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "devsecops' short pin-and-verify for Helm vs Kubernetes' cosign identity-pinning detail.",
    "sample": "- Manifest provenance: pin remote Helm charts by version + verify chart signatures/ digests (OCI charts by digest); a `t",
    "members": [
     "sota-devsecops/rules/06-iac-deployment.md#4fdcb85c532a",
@@ -1947,8 +1820,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Different scopes; note devsecops ranks ESO > SOPS > Sealed while kubernetes lists them neutrally, which is worth checking for conflict.",
    "sample": "- **Secrets in GitOps**: never plaintext in the repo. Preference order: External Secrets Operator / CSI secrets-store re",
    "members": [
     "sota-devsecops/rules/06-iac-deployment.md#9c1d4f2bfeca",
@@ -1957,8 +1830,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Drift alerting on selfHeal events vs selfHeal plus prune deletion risk.",
    "sample": "- GitOps equivalents: Argo CD `selfHeal: true` auto-reverts live drift; Flux reconciles continuously. Self-heal is drift",
    "members": [
     "sota-devsecops/rules/06-iac-deployment.md#daac11f51088",
@@ -1966,8 +1839,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Devsecops states the admission failurePolicy and links kubernetes rules/05 §3, which owns the deadlock and selector detail.",
    "sample": "- `failurePolicy: Fail` on the webhook for prod admission — `Ignore` means \"enforce unless the enforcer is down\", which ",
    "members": [
     "sota-devsecops/rules/07-runtime-ops.md#0f1710583cd1",
@@ -1975,8 +1848,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Admission-policy (Kyverno/OPA) tests in CI vs authorization-model (Rego/Cedar/FGA) tests: different policy layers.",
    "sample": "- **Policies have tests**: `kyverno test` fixtures / OPA `opa test` + conftest unit tests with good/bad manifests, run a",
    "members": [
     "sota-devsecops/rules/07-runtime-ops.md#159b4504c1b0",
@@ -1984,8 +1857,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: security-compliance rules/01 §4 repeats the privacy register shape word for word and already says 'same discipline as privacy rules/05 §4'; shrink it to a link (devsecops/kubernetes members are Kyverno-specific and stay). Owner: skills/sota-privacy-compliance/rules/05-audit-ready-engineering.md §4",
    "sample": "- **Exceptions are first-class, scoped, and time-bound**: Kyverno `PolicyException` (or documented exclusion lists) nami",
    "members": [
     "sota-devsecops/rules/07-runtime-ops.md#2422bae2df3d",
@@ -1996,8 +1869,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Shell rules/08 is a short pointer to devsecops rules/07 §7.7.",
    "sample": "- **Stopping or restarting a shared runtime is destructive, not maintenance.** `podman machine stop`, `colima stop`, res",
    "members": [
     "sota-devsecops/rules/07-runtime-ops.md#f469f9048e83",
@@ -2005,8 +1878,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Same field incident, but each file draws a different lesson (archive evidence before re-running vs masked pipe status and duration as the harness tell).",
    "sample": "Field-reported 2026-09-16: a gate suite failed, and a second run started concurrently by a pre-push hook collided with i",
    "members": [
     "sota-devsecops/rules/11-after-the-gate-fails.md#a8881b6debc9",
@@ -2014,8 +1887,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Already cross-linked in both directions with distinct roles (testing's result cache vs devsecops §16.2's reuse conditions).",
    "sample": "- **Never cache a verdict** across code changes unless a build system you trust keys it on the content hash of every inp",
    "members": [
     "sota-devsecops/rules/16-fast-ci-without-blind-spots.md#abb9f7bb4aac",
@@ -2023,8 +1896,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "docs rules/04 already points to rules/02 §6 for the changelog vs release notes definition.",
    "sample": "- **Changelog vs release notes**: the changelog is the complete, append-only, per-version record in the repo; release no",
    "members": [
     "sota-docs-workflow/rules/02-api-reference-changelogs.md#737f58109eaa",
@@ -2032,8 +1905,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Router SKILL principle summarises and links docs-workflow rules/03 §8.",
    "sample": "- [ ] Anything published to a **third party under someone else's name** (PR comment, issue, commit message, upstream pos",
    "members": [
     "sota-docs-workflow/rules/03-code-review-pr-workflow.md#bd375d7454a9",
@@ -2041,8 +1914,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Frontmatter description vs the library-map index line.",
    "sample": "--- name: sota-dotnet description: >- State-of-the-art C# / .NET engineering rules (.NET LTS releases, modern C#) that C",
    "members": [
     "sota-dotnet/SKILL.md#4b00d4449ad1",
@@ -2050,8 +1923,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/04 is a one-line pointer to the canonical rules/06 §3.",
    "sample": "- **Runtime patch level is an audit surface** — framework CVEs such as CVE-2025-55315 (Kestrel request smuggling) and ho",
    "members": [
     "sota-dotnet/rules/04-security.md#8d44d52ecf47",
@@ -2059,8 +1932,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Security checklist for unsafe/P/Invoke vs CI check for a sanitized native test job.",
    "sample": "- [ ] **`unsafe` / P/Invoke — HIGH on input-derived lengths** (§6) — `grep -rnE 'AllowUnsafeBlocks' --include='*.csproj'",
    "members": [
     "sota-dotnet/rules/04-security.md#d806bf8eec15",
@@ -2068,8 +1941,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Dotnet-specific fuzz probe vs testing's generic fuzzing line.",
    "sample": "- [ ] **Parsers of untrusted bytes have fuzz / property-based tests (§4) — LOW, MEDIUM for a parser of untrusted bytes; ",
    "members": [
     "sota-dotnet/rules/06-build-tooling-ci.md#68f02224dd7a",
@@ -2091,8 +1964,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Typography gives fallback metrics; performance adds font-display choice and framework tooling.",
    "sample": "- Define fallback metrics to kill CLS: `size-adjust`, `ascent-override`, `descent-override` on a local fallback `@font-f",
    "members": [
     "sota-frontend-design/rules/01-typography-and-color.md#170c06f94617",
@@ -2100,8 +1973,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Font checklists overlap but differ: frontend is about variation settings and preloading only the primary face; performance allows ≤2 preloads and limits weights. The preload guidance disagrees, so worth a look.",
    "sample": "- [ ] Variable font self-hosted, subset, `font-display` set, metric-matched fallback (no font-swap CLS); `preload` limit",
    "members": [
     "sota-frontend-design/rules/01-typography-and-color.md#fa44ebf8212c",
@@ -2109,8 +1982,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Design checklist (alt, CLS, video controls) vs performance checklist (formats, bytes).",
    "sample": "- [ ] Images: dimensions/aspect-ratio set (zero CLS), correct `sizes`, modern formats via `<picture>`, lazy below fold, ",
    "members": [
     "sota-frontend-design/rules/02-layout-spacing-responsive.md#e53ee2e47d8c",
@@ -2118,8 +1991,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Frontend audits empty-state UX and recovery actions; ux-writing audits empty-state copy.",
    "sample": "- [ ] Empty states differentiated (first-use vs filtered-zero vs error) with action; error states always include a recov",
    "members": [
     "sota-frontend-design/rules/04-ux-patterns.md#684baca4172a",
@@ -2127,8 +2000,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "UX-patterns checklist vs accessibility rule with WCAG criteria.",
    "sample": "- [ ] Validation on blur → re-validate on input after first error; `:user-invalid` not `:invalid`; submit focuses first ",
    "members": [
     "sota-frontend-design/rules/04-ux-patterns.md#79725347539e",
@@ -2136,8 +2009,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "UX-pattern error placement vs the WCAG 3.3.1/3.3.3 criteria and their security exception.",
    "sample": "- Message says **what's wrong and how to fix it** — never \"Invalid input\". Adjacent to the field (not toast, not only to",
    "members": [
     "sota-frontend-design/rules/04-ux-patterns.md#8684595cea36",
@@ -2145,8 +2018,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Design dialog behaviour (focus, styling) vs UX-writing copy rules.",
    "sample": "- When confirmation is genuinely required (irreversible, shared, bulk, expensive): the dialog states the *specific* cons",
    "members": [
     "sota-frontend-design/rules/04-ux-patterns.md#890391a38f49",
@@ -2154,8 +2027,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Frontend name-computation precedence vs ux-writing copy rules; same WCAG fact in each skill's own context.",
    "sample": "- Accessible-name rules: visible text > `aria-labelledby` > `aria-label`. Icon-only buttons MUST have one (`<button aria",
    "members": [
     "sota-frontend-design/rules/05-accessibility.md#2f235c2b955d",
@@ -2164,8 +2037,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Frontend line already defers wording to ux-writing rules/02 §1; ux-writing SKILL.md summarizes its own rule.",
    "sample": "- Buttons say what they do: \"Save changes\", \"Create project\" — never \"Submit\", and never \"Yes/No\" or \"OK/Cancel\" on a de",
    "members": [
     "sota-frontend-design/rules/07-visual-craft-distinctiveness.md#de753fb13808",
@@ -2173,8 +2046,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "The SKILL.md frontmatter and the library map's index line.",
    "sample": "--- name: sota-golang description: State-of-the-art Go engineering rules (supported Go releases) that Claude applies whe",
    "members": [
     "sota-golang/SKILL.md#4e6028fce090",
@@ -2182,8 +2055,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Standard SKILL template sentence, with Ruby-specific sweeps.",
    "sample": "Work through each relevant rules file's audit checklist against the target repo. Run the listed grep/vet/lint commands; ",
    "members": [
     "sota-golang/SKILL.md#5a7ae55c6a62",
@@ -2191,17 +2064,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- `panic` across goroutines is fatal: **a panic in a goroutine you spawned kills the whole process** regardless of recov",
-   "members": [
-    "sota-golang/rules/01-errors.md#a614d719890b",
-    "sota-golang/rules/03-concurrency.md#91a4f54cbfd0"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Concurrency rule vs tooling/CI tests rule with severity and synctest usage.",
    "sample": "- Never use `time.Sleep` to \"wait for the goroutine to start/finish\" — that's a race with a timer on it. Synchronize wit",
    "members": [
     "sota-golang/rules/03-concurrency.md#303021b940c9",
@@ -2209,8 +2073,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Go's os.TempDir/gosec rule vs shell's mktemp rule: language-specific.",
    "sample": "- **Never construct a temp path yourself** (`\"/tmp/\" + name`, `filepath.Join(os.TempDir(), fixedName)`). It is predictab",
    "members": [
     "sota-golang/rules/05-security.md#1ef9f809838f",
@@ -2218,8 +2082,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Go checklist probe, observability rule, and performance pointer to observability rules/05 §3.",
    "sample": "- [ ] **Profiling wired up? (§1) (absence in a latency-sensitive service = LOW gap)** — `grep -rn 'net/http/pprof' --inc",
    "members": [
     "sota-golang/rules/06-performance.md#71051d6cf656",
@@ -2228,8 +2092,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Identity states IdP key rotation cadence; secrets owns the step-by-step kid rotation procedure.",
    "sample": "- The IdP's token-signing keys rotate on a schedule (e.g. quarterly) and immediately on suspected compromise. Each key h",
    "members": [
     "sota-identity-access/rules/02-idp-operations.md#a13122c231c0",
@@ -2237,17 +2101,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- Prefer asymmetric signing (ES256 as the portable default, RS256, or Ed25519 where supported — RFC 9864 deprecates the ",
-   "members": [
-    "sota-identity-access/rules/02-idp-operations.md#b750832570ad",
-    "sota-secrets-management/rules/05-credential-types.md#2ade97a796ba"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Two one-liners in the same skill that already cross-link each other (rules/02 §8 vs rules/03).",
    "sample": "- Do not blindly trust upstream group/role claims — re-map them through your own authorization model ([rules/03]); an up",
    "members": [
     "sota-identity-access/rules/02-idp-operations.md#cb4ad9f1f98a",
@@ -2255,8 +2110,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Authorization-model rule points to rules/04; lifecycle file owns the mover process.",
    "sample": "- **No permission accumulation across role changes.** When a user moves roles, *recompute* their effective permissions —",
    "members": [
     "sota-identity-access/rules/03-authorization-models.md#3276f0825ec8",
@@ -2264,8 +2119,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Identity describes SPIFFE as workload identity model; secrets adds attestors, rotation default and Workload API consumption.",
    "sample": "- **SPIFFE / SPIRE**: every workload gets a cryptographic identity (a SPIFFE ID like `spiffe://trust-domain/ns/app`) mat",
    "members": [
     "sota-identity-access/rules/05-privileged-workload.md#15dd439eecf0",
@@ -2273,8 +2128,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Identity-access points to secrets-management for dynamic credentials; secrets gives the engine mechanics.",
    "sample": "- **Vault credentials, issue dynamically.** Privileged credentials (DB superuser, cloud admin) are not handed out long-l",
    "members": [
     "sota-identity-access/rules/05-privileged-workload.md#4855fb8ece35",
@@ -2282,8 +2137,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Identity's one-identity-per-workload rule links Kubernetes rules/02; Kubernetes adds the default-SA specifics.",
    "sample": "- **One identity per workload**, scoped least-privilege through the authorization model ([rules/03]). Shared service acc",
    "members": [
     "sota-identity-access/rules/05-privileged-workload.md#a401dd254b66",
@@ -2291,8 +2146,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "AD file points to rules/05 and adds per-plane identities and JIT Domain Admins.",
    "sample": "- **Admin work uses a separate identity** from daily work. The same human has a normal account (email, chat, browsing) a",
    "members": [
     "sota-identity-access/rules/05-privileged-workload.md#c0985c87588b",
@@ -2300,8 +2155,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: rules/07 §5 re-states rules/01's measured typescript-eslint 8.70.1 peer-range/ERESOLVE/exit-2 fact that will change; keep a one-line link (the two checklist items test different things and stay). Owner: skills/sota-javascript-typescript/rules/01-typescript-config-and-types.md §1",
    "sample": "Measured: this installs cleanly beside typescript-eslint 8.70.1, `npx tsc -v` reports 7.0.2, `npx tsc6 -v` reports 6.0.x",
    "members": [
     "sota-javascript-typescript/rules/01-typescript-config-and-types.md#07b9f80ae294",
@@ -2312,17 +2167,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- `finally` for cleanup; or ES2027 explicit resource management (Stage 4 May 2026): `using conn = await pool.acquire()` ",
-   "members": [
-    "sota-javascript-typescript/rules/02-language-idioms.md#e51e0e92bbbf",
-    "sota-javascript-typescript/rules/03-async-patterns.md#f53cd70076df"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Different probes: JS checks that verify pins algorithms; secrets-management greps for leaked JWT literals and default secrets.",
    "sample": "- [ ] `grep -rn \"jwt.verify\\|jwtVerify\" --exclude-dir=node_modules . | grep -v \"algorithms\"` — lists verify calls with n",
    "members": [
     "sota-javascript-typescript/rules/05-security.md#27f80572d5e0",
@@ -2330,8 +2176,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/05 checklist item vs rules/08 measured cors-middleware prose; the checklist cites §8 of its own file.",
    "sample": "- [ ] **CORS via the `cors` middleware** (§8) — `grep -rnE 'origin: *(true|/)' --include='*.js' --include='*.ts' --inclu",
    "members": [
     "sota-javascript-typescript/rules/05-security.md#c26266a8c311",
@@ -2339,8 +2185,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "JS perf view (render cascades, useEffectEvent) vs web-frameworks React view (fetch in effects, react.dev guide).",
    "sample": "- **Effects**: `useEffect` is for synchronizing with external systems, not for derived state (compute during render) or ",
    "members": [
     "sota-javascript-typescript/rules/06-performance.md#34c7bd6edd44",
@@ -2348,8 +2194,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "JS gives Node profiling with clinic/blocked-at status; performance methodology gives the cross-runtime tool list.",
    "sample": "- Identify: `node --cpu-prof` (open the `.cpuprofile` in DevTools) or `0x` flamegraphs under load, `--heap-prof` for all",
    "members": [
     "sota-javascript-typescript/rules/06-performance.md#997063975234",
@@ -2357,8 +2203,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "The SKILL.md frontmatter and the library map's index line.",
    "sample": "--- name: sota-jvm description: >- State-of-the-art JVM engineering rules for Java and Kotlin that Claude applies when w",
    "members": [
     "sota-jvm/SKILL.md#873ca9bb6b4b",
@@ -2366,8 +2212,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "JVM rule with Spring-specific severity vs observability include-list line.",
    "sample": "- **Actuator exposure.** By default Spring Boot exposes only `health` over HTTP. Treat every widening of `management.end",
    "members": [
     "sota-jvm/rules/08-web-layer.md#c39a342faed0",
@@ -2375,8 +2221,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Kubernetes SKILL summary and rules/03 owner text; sandboxing R3.1 is a brief cross-skill restatement.",
    "sample": "6. **Pod Security Admission `restricted` ENFORCED** on workload namespaces (label `pod-security.kubernetes.io/enforce: r",
    "members": [
     "sota-kubernetes/SKILL.md#844b78e4c518",
@@ -2385,8 +2231,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Kubernetes SKILL.md summary of rules/01; secrets-management adds RBAC and no-git baseline.",
    "sample": "3. **Encrypt etcd at rest with a KMS provider** ([`rules/01`]) — Secrets are base64, not encrypted, by default. This is ",
    "members": [
     "sota-kubernetes/SKILL.md#fc3779465b5c",
@@ -2395,8 +2241,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Within network-security, rules/03 R6 and rules/05 R10 (and their checklists) both instruct denying 169.254.0.0/16 plus IMDSv2, including the same on-prem sentence. R10 is the fuller egress rule; rules/03 R6 should keep only the pod-policy enforcement plus R6a and link. The kubernetes and threat-modeling copies are pointers or catalogue entries. Owner: skills/sota-network-security/rules/05-edge-ingress-egress.md §6",
    "sample": "- Protect node metadata endpoints: block pod access to the cloud metadata service (169.254.169.254); workload identity o",
    "members": [
     "sota-kubernetes/rules/01-control-plane-etcd.md#23b6bfdcd538",
@@ -2408,8 +2254,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Kubernetes §7 adds patched final versions for CVE response and points to network-security; network R2.1 adds ingress2gateway; same fact, each with its own detail (drift risk noted).",
    "sample": "- **ingress-nginx is EOL** (retired by SIG Network/SRC; maintenance ended March 2026, repo read-only). The 2026 CVE wave",
    "members": [
     "sota-kubernetes/rules/01-control-plane-etcd.md#28b95f487d29",
@@ -2418,8 +2264,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Chart RBAC trap in RBAC, operator and supply-chain contexts, cross-linked.",
    "sample": "Charts and operators bundle their own RBAC. A values toggle like `rbac.clusterAdministrator: true`, `rbac.create: true` ",
    "members": [
     "sota-kubernetes/rules/02-rbac-serviceaccounts.md#94436d2180ef",
@@ -2428,8 +2274,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Kubernetes RBAC rule vs sandboxing R3.3 adding metadata blocking and escalation verbs, plus its own checklist.",
    "sample": "- **`automountServiceAccountToken: false` by default** — on the ServiceAccount and/or pod spec. A pod that never calls t",
    "members": [
     "sota-kubernetes/rules/02-rbac-serviceaccounts.md#cb9a7e98d5ce",
@@ -2438,8 +2284,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Kubernetes rules/07 is a pointer to rules/03 §4.",
    "sample": "Signing an image (cosign, [`sota-devsecops` rules/02]) does nothing unless **admission verifies the signature and reject",
    "members": [
     "sota-kubernetes/rules/03-admission-policy.md#83f0a61c9aa5",
@@ -2447,8 +2293,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Kubernetes pod secret injection vs Rust app config with a binary strings check.",
    "sample": "- **Don't inject secrets as plain env vars** where avoidable — env is readable via `/proc`, crash dumps, `kubectl descri",
    "members": [
     "sota-kubernetes/rules/06-workloads-tenancy.md#55cf9c03f013",
@@ -2456,17 +2302,8 @@
    ]
   },
   {
-   "verdict": "consolidate",
-   "note": "stop_reason handling stated in sota-llm-engineering rules/02 and rules/04",
-   "sample": "- **Check `stop_reason` before parsing.** `max_tokens` or `model_context_window_exceeded` → truncated JSON (raise the ca",
-   "members": [
-    "sota-llm-engineering/rules/02-prompt-context-engineering.md#a586d3c47a8e",
-    "sota-llm-engineering/rules/04-agents-tools.md#9ad9e3c9c625"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "LLM build rule for C2PA marking vs privacy AI Act Art. 50 checklist, linked.",
    "sample": "- **Mark what the model made.** Images, audio and video your feature generates carry provenance: a C2PA manifest (Conten",
    "members": [
     "sota-llm-engineering/rules/05-production-engineering.md#a4a540af4178",
@@ -2474,8 +2311,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Different report endings per skill (ML Test Score summary vs coverage and quick wins).",
    "sample": "Group by severity, CRITICAL first. End with: counts per severity, an ML Test Score-style readiness summary (data/model/i",
    "members": [
     "sota-ml-engineering/SKILL.md#9b26cc39c80e",
@@ -2483,8 +2320,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "The ML SKILL top-10 summary, plus ML vs Python checklists that probe different things (model formats vs jsonpickle/yaml/eval).",
    "sample": "8. **Never deserialize an untrusted model/`pickle`.** `pickle`/`joblib`/`torch.load` on an untrusted artifact is arbitra",
    "members": [
     "sota-ml-engineering/SKILL.md#d0bcddfd3d18",
@@ -2494,8 +2331,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "SKILL frontmatter vs router library-map line.",
    "sample": "--- name: sota-ml-engineering description: >- State-of-the-art ML engineering / MLOps rules (2026) for BUILDING and AUDI",
    "members": [
     "sota-ml-engineering/SKILL.md#ecb240ae70eb",
@@ -2503,8 +2340,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Three ML checklist items with different probes per lifecycle stage.",
    "sample": "- [ ] **Train/serve consistency (§2, §3) — CRITICAL if features computed two ways** — `grep -rniE 'feature.?store|feast|",
    "members": [
     "sota-ml-engineering/rules/01-ml-systems-architecture.md#943f44520c22",
@@ -2513,8 +2350,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Architecture introduces skew and links rules/02; rules/02 holds the definition and its own checklist.",
    "sample": "- The training path (offline, large batch, historical data) and the serving path (online, low-latency, current data) are",
    "members": [
     "sota-ml-engineering/rules/01-ml-systems-architecture.md#a7659db09358",
@@ -2523,8 +2360,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "ML rules/03 restates Rules of ML for the training stage and links rules/01.",
    "sample": "- [Rules of ML] #1–#4: don't be afraid to ship without ML; design and implement **metrics** first; a **simple model with",
    "members": [
     "sota-ml-engineering/rules/01-ml-systems-architecture.md#bf6d61480ff9",
@@ -2532,17 +2369,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- **Snapshot:** every design-system component, and key screens rendered once per sealed state case (2.2 fixtures), acros",
-   "members": [
-    "sota-mobile/rules/02-architecture-and-state.md#b2099136ba7b",
-    "sota-mobile/rules/06-release-and-operations.md#341320cfd0df"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/02 checklist audits architecture-enabled testability and links §6.9; rules/06 owns the full pyramid with integration and device farm.",
    "sample": "- [ ] (§1: 2.9) Test pyramid intact: fast unit bulk on VMs/reducers, snapshot coverage of design system + state cases (i",
    "members": [
     "sota-mobile/rules/02-architecture-and-state.md#da6a7f87844c",
@@ -2550,8 +2378,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Mobile owns XXE for Apple XML parsers and its checklist; swift adds Linux corelibs behavior and links mobile.",
    "sample": "- **Parse untrusted XML with external entities off.** `XMLParser` has `shouldResolveExternalEntities` = `false` by defau",
    "members": [
     "sota-mobile/rules/04-security.md#cf7d0ad7c6e2",
@@ -2560,8 +2388,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Mobile's app-side use links Swift rules/03 §1, and Swift links back.",
    "sample": "- App and UI modules use **default main-actor isolation** (SE-0466, Swift 6.2: `.defaultIsolation(MainActor.self)`) inst",
    "members": [
     "sota-mobile/rules/07-swift-in-apps.md#85dc8f1f7c27",
@@ -2569,8 +2397,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Network SKILL ownership note vs router disambiguation line.",
    "sample": "- **[sota-cloud-infrastructure]** ([rules/03] networking) owns cloud-provider network *setup*: VPC/subnet layout, CIDR/I",
    "members": [
     "sota-network-security/SKILL.md#829bd1693366",
@@ -2578,8 +2406,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "network-security rules/03 owns the CIDR rule; sandboxing explains its own example's change and checklist, linking back.",
    "sample": "- **In-cluster peer → identity, no exception.** `podSelector`/`namespaceSelector`, never the pod CIDR. Pod IPs are ephem",
    "members": [
     "sota-network-security/rules/03-k8s-network-policy.md#02ae9b88ad6f",
@@ -2590,8 +2418,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "K8s R7 is Cilium-specific egress gateway; edge rules/05 lists it as one egress tier.",
    "sample": "**R7 — Egress gateways for stable, inspectable egress.** When external partners allowlist your source IP, or you want al",
    "members": [
     "sota-network-security/rules/03-k8s-network-policy.md#ab6002e98332",
@@ -2599,8 +2427,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/05 tier list points to rules/03 §5 for FQDN policy.",
    "sample": "**R5 — Egress is first-class; allowlist by FQDN, not open `0.0.0.0/0`.** Cilium's DNS-aware policy snoops DNS to map all",
    "members": [
     "sota-network-security/rules/03-k8s-network-policy.md#acf689f2f8b7",
@@ -2608,8 +2436,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/04 checklist item vs rules/06 rule body with dates.",
    "sample": "- [ ] **Medium — client certs from a public CA (§3, R4.1).** Are mTLS client certificates issued by a private CA? Public",
    "members": [
     "sota-network-security/rules/04-service-mesh-mtls.md#0b026ee18d9a",
@@ -2617,8 +2445,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Rule in structured-logging vs audit-playbook catalogue entry with severity.",
    "sample": "- **Keep a logging inventory.** Per stack layer: which events are logged, in what format, to which sink, read by whom, u",
    "members": [
     "sota-observability/rules/01-structured-logging.md#2f040a11e143",
@@ -2626,8 +2454,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Reciprocal cross-pointers; each states the distinction from its own side.",
    "sample": "- This is not the \"many samples, report variance\" of a benchmark ([`sota-performance` rules/01] §3). A production series",
    "members": [
     "sota-observability/rules/02-metrics.md#7a1b95bd8e7b",
@@ -2635,8 +2463,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "General perf-gate checklist vs Rust-specific tools (criterion, codspeed).",
    "sample": "- [ ] Does CI gate on any perf signal (query counts, alloc counts, bundle size, benchmark deltas)? None → flag (Medium):",
    "members": [
     "sota-performance/rules/01-methodology.md#c29127ca9d87",
@@ -2644,8 +2472,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Performance catalog numbers vs Python-specific batching APIs.",
    "sample": "- Typical wins: multi-row INSERT 10–100× vs row-at-a-time; Redis pipeline of 100 commands ≈ 1 RTT instead of 100; `write",
    "members": [
     "sota-performance/rules/02-algorithms-data-structures.md#cde538e7e58d",
@@ -2653,8 +2481,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Standard severity-grouping report template per SKILL.md.",
    "sample": "Effort: trivial · small · medium · large. Group by severity, CRITICAL first. Borderline severities state the deciding as",
    "members": [
     "sota-php/SKILL.md#e09bd17c8e8e",
@@ -2665,8 +2493,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Same principle (CSP over escaping) stated with PHP and SSR framework context and links.",
    "sample": "**Defense in depth:** a strict `Content-Security-Policy` (see [`rules/04`] §6) and `X-Content-Type-Options: nosniff` cap",
    "members": [
     "sota-php/rules/02-injection.md#4eb1d9d52f96",
@@ -2674,8 +2502,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Per-skill 'load rules on demand' vs the router's progressive-loading rule: template guidance.",
    "sample": "The detailed rules live in `rules/*.md`. Read SKILL.md fully; load rules files on demand per the index table below. When",
    "members": [
     "sota-python/SKILL.md#06eabbb1985b",
@@ -2683,8 +2511,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Tooling 3.14 feature note vs performance trade-off; different topics.",
    "sample": "- **3.14 — `compression.zstd`** (PEP 784): stdlib Zstandard, also wired into `tarfile`/`zipfile`/`shutil`. Drops the thi",
    "members": [
     "sota-python/rules/01-tooling-project-setup.md#e6d0c5b0cb03",
@@ -2692,8 +2520,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/01 version note is a pointer to rules/05 §3a.",
    "sample": "- **3.14 — template strings (PEP 750):** `t\"...\"` returns a `Template` of static parts + `Interpolation` objects instead",
    "members": [
     "sota-python/rules/01-tooling-project-setup.md#ff36d22fee64",
@@ -2701,8 +2529,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Python rules/05 and sandboxing R7.2b both carry the same dated macOS setrlimit measurement (2026-10-23, macOS 26.7.1, CPython 3.9.6/3.14.8); python should keep its Linux RLIMIT_DATA preexec_fn line and link for macOS. Shell-scripting rules/08 stays (prlimit, ad-hoc). Owner: skills/sota-sandboxing/rules/02-linux-os-hardening.md §7 R7.2b",
    "sample": "- [ ] **Memory cap via `RLIMIT_AS` (§2) [HIGH when it gates an inspection]** — `grep -rn \"RLIMIT_AS\" --include=\"*.py\" sr",
    "members": [
     "sota-python/rules/05-security.md#28c8752379c0",
@@ -2714,8 +2542,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Python eval vs shell eval and its shell-specific cousins.",
    "sample": "- **`eval`/`exec` on any string containing external input — banned.** \"Sandboxing\" with `{\"__builtins__\": {}}` is bypass",
    "members": [
     "sota-python/rules/05-security.md#ac9d21e7973c",
@@ -2723,8 +2551,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Python pytest-specific bans vs general test-design rule.",
    "sample": "- Banned: module-level mutable state shared across tests, tests that rely on execution order, `lru_cache`d functions tes",
    "members": [
     "sota-python/rules/07-frameworks-testing.md#0faa50b7a88b",
@@ -2732,8 +2560,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Standard 'comment why when violating' template per SKILL.md.",
    "sample": "7. When code must violate a rule for a legitimate reason, leave a `# NOTE(sota):` comment explaining the trade-off so au",
    "members": [
     "sota-ruby/SKILL.md#4dfa0cad06aa",
@@ -2741,8 +2569,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/03 is a pointer to rules/02 §5, which owns the rule and its checklist.",
    "sample": "- **FFI**: a Rust panic that reaches an `extern \"C\"` boundary **aborts the process** — since Rust 1.81; before that it w",
    "members": [
     "sota-rust/rules/02-errors-and-panics.md#c3d8b4ff8d58",
@@ -2751,8 +2579,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Different probes: rules/05 counts fuzz targets and Kani harness files separately, rules/09 checks a crate has neither; the severity now lives only in rules/09 (2026-10-30).",
    "sample": "- [ ] Fuzz targets exist for each untrusted-input parser; absent on a network-facing parser = Medium. Count both kinds o",
    "members": [
     "sota-rust/rules/05-security-supply-chain.md#1e5bd53a55cd",
@@ -2762,17 +2590,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- **Enable and route audit logs** (CloudTrail data events, GCP Data Access logs, Key Vault diagnostics) — reads must be ",
-   "members": [
-    "sota-secrets-management/rules/02-storage-backends.md#3aa5e0f15ecd",
-    "sota-secrets-management/rules/03-application-patterns.md#e4f5207483e6"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Frontmatter description vs library-map index line.",
    "sample": "--- name: sota-security-compliance description: >- State-of-the-art security & compliance engineering (2026) for the cyb",
    "members": [
     "sota-security-compliance/SKILL.md#d7578031b58f",
@@ -2780,8 +2599,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "CRA rule links to the router's rating rule.",
    "sample": "5. **Rate it on [`sota/rules/03`] §1** — impact × exploitability in context — not on the reporter's claimed severity and",
    "members": [
     "sota-security-compliance/rules/04-eu-cyber-resilience-act.md#158a898c71ad",
@@ -2789,8 +2608,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "CRA and 62443 files cross-link; each carries its own angle (CRA presumption route vs the TC65X adaptation detail).",
    "sample": "- **ISA/IEC 62443 and NIST frameworks** are widely expected to *inform* the harmonized standards and are common industry",
    "members": [
     "sota-security-compliance/rules/04-eu-cyber-resilience-act.md#2b311fd91e31",
@@ -2798,8 +2617,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Testing line is a pointer to shell-scripting rules/01 §2a.",
    "sample": "- **Wait on an artefact the job writes, never on the launcher's status.** `until grep -q '^EXIT=' out.txt; do sleep 5; d",
    "members": [
     "sota-shell-scripting/rules/01-safety-baseline.md#7a6862dcf6b0",
@@ -2807,8 +2626,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Each file points to rules/01 §3 for $? after a pipeline with context-specific angle (CI, ad-hoc, PowerShell).",
    "sample": "- `set -o pipefail` makes the pipeline status the rightmost nonzero status. Two follow-ups: - **zsh spells it differentl",
    "members": [
     "sota-shell-scripting/rules/02-robustness-correctness.md#4dc2de61a571",
@@ -2818,8 +2637,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "bash nullglob/failglob choice vs zsh NOMATCH aborting ad-hoc commands.",
    "sample": "- A glob that matches nothing stays **literal**: `rm ./*.tmp` with no matches tries to remove the file `./*.tmp`. Choose",
    "members": [
     "sota-shell-scripting/rules/05-constructs-and-cleanup.md#b80ac61837ae",
@@ -2827,8 +2646,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "The router imperative and skill-security's detailed rule; the library keeps imperatives in the router.",
    "sample": "**The rule: name the precedence, or the next reader reverts you.** When you follow one of two conflicting rules, say whi",
    "members": [
     "sota-skill-security/rules/02-trust-boundary-and-capability.md#03f1c1bbcf63",
@@ -2836,8 +2655,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "SKILL frontmatter vs router library-map line.",
    "sample": "--- name: sota-swift description: State-of-the-art Swift engineering rules (Swift 6 language mode) that Claude applies w",
    "members": [
     "sota-swift/SKILL.md#4342df557951",
@@ -2845,8 +2664,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Swift idioms explains COW semantics; performance covers accidental-alias copies.",
    "sample": "- Standard collections are **copy-on-write**: assignment is O(1) until mutation, so passing large collections is cheap; ",
    "members": [
     "sota-swift/rules/01-idioms-and-errors.md#3af051bd8574",
@@ -2854,8 +2673,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/07 already points to rules/02 §2.5; checklist vs CI policy.",
    "sample": "- [ ] Order/parallel safety: does CI run the suite shuffled and parallel? Run shuffled once during audit, plus a sampled",
    "members": [
     "sota-testing/rules/02-test-design-quality.md#7466f0c823b3",
@@ -2863,8 +2682,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Different probes: rules/03's grep also matches sqlite::memory: and lowercase jdbc:h2, which rules/04's does not; rules/03 cites rules/04 §4.1 for scope (2026-10-30).",
    "sample": "- [ ] In-memory DB standing in for the real engine? Grep `sqlite::memory:|:memory:|H2|jdbc:h2` in integration config of ",
    "members": [
     "sota-testing/rules/03-doubles-and-test-data.md#0d050ce0eccc",
@@ -2872,8 +2691,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "rules/07 line points to rules/05 §5.7.",
    "sample": "- **Artifacts on failure are mandatory**: trace/video/screenshot + console + network log wired into CI. An e2e failure t",
    "members": [
     "sota-testing/rules/05-e2e-and-ui.md#d934e2b27272",
@@ -2881,8 +2700,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Frontmatter description vs library-map index line.",
    "sample": "--- name: sota-web-frameworks description: >- State-of-the-art engineering rules (2026) for the JavaScript SSR meta-fram",
    "members": [
     "sota-web-frameworks/SKILL.md#31539c741a94",
@@ -2890,8 +2709,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Baseline lint rule and probe cover React and Vue; rules/02 probe is React-only.",
    "sample": "- [ ] **Hooks/vue lint present?** (§4) — `find . -maxdepth 2 -path ./node_modules -prune -o \\( -name '.eslintrc*' -o -na",
    "members": [
     "sota-web-frameworks/rules/01-baseline.md#236157f27d60",
@@ -2900,8 +2719,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "The baseline version table's React Compiler note points to rules/02; rules/02 §4 carries the 'don't rip out' guidance.",
    "sample": "- **React Compiler 1.0 is stable** (2025-10-07): a build-time plugin that auto-memoizes, removing most manual `useMemo`/",
    "members": [
     "sota-web-frameworks/rules/01-baseline.md#353e1cafb45a",
@@ -2909,26 +2728,8 @@
    ]
   },
   {
-   "verdict": "consolidate",
-   "note": "version fact stated twice in sota-web-frameworks (rules/01 and rules/03)",
-   "sample": "- **Next.js**: route-segment config + `\"use cache\"`; PPR is the default when `cacheComponents: true`. Fetch is **not cac",
-   "members": [
-    "sota-web-frameworks/rules/01-baseline.md#fb2e23a948ad",
-    "sota-web-frameworks/rules/03-nextjs.md#4a635a0a110a"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "**next/image SSRF:** `remotePatterns` with a `**` wildcard host turns the `/_next/image` optimizer into a blind-SSRF pro",
-   "members": [
-    "sota-web-frameworks/rules/03-nextjs.md#130a9eac439b",
-    "sota-web-frameworks/rules/07-security.md#5d90a1467aa1"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Next.js-specific RSC prop rule vs cross-framework security rule that adds Nuxt payload and inline scripts.",
    "sample": "- **Everything a Server Component passes as a prop to a Client Component is serialized into the RSC payload and shipped ",
    "members": [
     "sota-web-frameworks/rules/03-nextjs.md#4b6442ec84c2",
@@ -2936,8 +2737,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Next.js probe vs cross-framework probe including Nuxt server routes.",
    "sample": "- [ ] **Server Actions / Route Handlers — each must authn+authz+validate** (§2) — `grep -rn \"'use server'\" --include='*.",
    "members": [
     "sota-web-frameworks/rules/03-nextjs.md#4c69038fec61",
@@ -2945,17 +2746,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
-   "sample": "- [ ] **Server->client data exposure: whole objects as props, env on client** (§1) — `grep -rnE 'process\\.env\\.[A-Z0-9_]",
-   "members": [
-    "sota-web-frameworks/rules/03-nextjs.md#695a62157ff0",
-    "sota-web-frameworks/rules/07-security.md#0d26095eafba"
-   ]
-  },
-  {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Next file §1 states its own boundary rule briefly; 07 §1 adds the Nuxt equivalent.",
    "sample": "- **Keep secrets and data access server-side.** Mark server-only modules with `import 'server-only'` so importing them f",
    "members": [
     "sota-web-frameworks/rules/03-nextjs.md#d17608cc6ba1",
@@ -2963,8 +2755,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Next.js proxy.ts rule vs cross-framework middleware rule adding Nuxt bypass CVE.",
    "sample": "- **`proxy.ts`/middleware** (renamed from `middleware.ts` in Next 16; `proxy.ts` defaults to the Node runtime) is for co",
    "members": [
     "sota-web-frameworks/rules/03-nextjs.md#d31eaedb6ac0",
@@ -2972,8 +2764,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Next.js image probe vs cross-framework SSRF probe with Nuxt and fetch/host-header checks.",
    "sample": "- [ ] **next/image SSRF precondition** (§5) — `find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -",
    "members": [
     "sota-web-frameworks/rules/03-nextjs.md#eca5cf594600",
@@ -2981,8 +2773,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Nuxt checklist plus body in the same file; rules/07 generalises across NEXT_PUBLIC/VITE/Nuxt.",
    "sample": "- [ ] No secret under `runtimeConfig.public`; server secrets at the root only; every `NUXT_*` override has a matching ke",
    "members": [
     "sota-web-frameworks/rules/05-nuxt.md#242631138e0b",
@@ -2991,8 +2783,8 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "deliberate",
+   "note": "Same find command in the Nuxt checklist and the cross-stack security checklist; each file's audit walk needs it (keep them byte-identical).",
    "sample": "- [ ] **Secret under public runtimeConfig (CRITICAL)** (§3) — `find . -maxdepth 2 -path ./node_modules -prune -o -name '",
    "members": [
     "sota-web-frameworks/rules/05-nuxt.md#9001c35f1740",
@@ -3000,12 +2792,208 @@
    ]
   },
   {
-   "verdict": "untriaged",
-   "note": "",
+   "verdict": "distinct",
+   "note": "Different scopes and probes: Nuxt module-level refs vs any module-level mutable server state.",
    "sample": "- [ ] **Module-level refs / state outside setup (cross-request leak)** (§2) — `grep -rnE '^(export )?const \\w+\\s*=\\s*(re",
    "members": [
     "sota-web-frameworks/rules/05-nuxt.md#d39f64eab1b7",
     "sota-web-frameworks/rules/06-ssr-hydration.md#34aead86e86a"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **Scope every query structurally** (repository layer/ORM global scope, with Postgres RLS as the boundary that catches ",
+   "members": [
+    "sota-api-design/rules/07-security-operations.md#546053ad1f84",
+    "sota-code-security/rules/03-authorization.md#5adfed90762d"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **Logs carry neither secrets nor raw input** (redaction at the logger: [`sota-observability` rules/01] §4). C has no s",
+   "members": [
+    "sota-c-cpp/rules/04-security.md#0d8f1616565a",
+    "sota-code-security/rules/07-data-exposure.md#5d87a36e0be4",
+    "sota-python/rules/05-security.md#5a956fdbd889",
+    "sota-rust/rules/05-security-supply-chain.md#cfa4e2238ea7"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- Security groups / firewall rules follow [sota-network-security rules/02] §5 R8: deny-by-default, SG/tag references rat",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#5f2d63788125",
+    "sota-network-security/rules/02-segmentation-blast-radius.md#add349256759"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **Every cert is issued and renewed automatically**, with expiry alerts as a backstop: the CA/B lifetime schedule, ACME",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#dc410a706379",
+    "sota-network-security/SKILL.md#12c2a26ce62b",
+    "sota-secrets-management/rules/05-credential-types.md#fa0bbf79a6b0"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **Bind the approval to what executes, and fail closed.** The approval record names the actor (agent), the requester (h",
+   "members": [
+    "sota-code-security/rules/08-llm-ai-security.md#52ec3cb75d47",
+    "sota-llm-engineering/rules/04-agents-tools.md#09dc3019cc11"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **A negative claim needs more proof than a positive one** (\"no swallowed exceptions on the enforcement path\"): widen t",
+   "members": [
+    "sota-code-security/rules/10-silent-control-failure.md#fa2dc3a76cb2",
+    "sota/rules/03-audit-findings.md#088ea6dd4247"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "A neighbouring check that recounted the tree did **not** catch it, because the count it recounted (`SKILL.md` files) was",
+   "members": [
+    "sota-code-security/rules/11-dead-path-diagnostics.md#10b0398a8b0f",
+    "sota-code-security/rules/15-instruments-and-guards.md#c6e77287550d"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **Pin the algorithm at verification.** Pass an explicit allowlist (`algorithms=[\"ES256\"]`); never trust the header's `",
+   "members": [
+    "sota-code-security/rules/17-sessions-and-tokens.md#10bc17acd124",
+    "sota-secrets-management/rules/05-credential-types.md#7de1692ac076"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- [ ] Bulk sends (Gmail: 5,000+/day; Yahoo: no published number): SPF + DKIM + DMARC aligned, RFC 8058 one-click-unsubsc",
+   "members": [
+    "sota-copywriting/rules/04-claims-legal-trust.md#bef3d22a25f8",
+    "sota-network-security/rules/06-dns-tls-pki.md#477810eae3e2"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- Backups: document the expiry window, re-apply deletions on restore, and use **crypto-shredding** where strict erasure ",
+   "members": [
+    "sota-databases/rules/06-security-and-compliance.md#ff88b6dc3c82",
+    "sota-privacy-compliance/rules/03-consent-and-user-rights.md#136ccd3d49ea"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **Immutable releases**: never re-publish an existing version with different bytes (no re-tagging, no overwriting GitHu",
+   "members": [
+    "sota-devsecops/rules/02-provenance-signing.md#aad9aca17be5",
+    "sota-devsecops/rules/04-build-containers.md#5c2e00255f7c",
+    "sota-devsecops/rules/04-build-containers.md#9e2969f66fc7",
+    "sota-devsecops/rules/08-registry-security.md#40b04a9c3578",
+    "sota-devsecops/rules/08-registry-security.md#9fc485d62c2f",
+    "sota-docs-workflow/rules/04-commits-branches-releases.md#a72c473124a4"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recor",
+   "members": [
+    "sota-devsecops/rules/05-analysis-gates.md#6b0908ef51bd",
+    "sota-devsecops/rules/05-analysis-gates.md#f000aa7157ea",
+    "sota-testing/SKILL.md#f92a96f04d87"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- Retries: at most one automatic retry, *recorded* (flake-detection reporting), never silent. A blanket `retry: 3` to ma",
+   "members": [
+    "sota-devsecops/rules/05-analysis-gates.md#a68a9472a03c",
+    "sota-testing/rules/07-suite-health-and-ci.md#13c6061a8997"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **Keep secrets out of state where possible**: prefer `ephemeral` resources/values and write-only arguments for credent",
+   "members": [
+    "sota-devsecops/rules/06-iac-deployment.md#cbc0517c4e3c",
+    "sota-secrets-management/rules/02-storage-backends.md#c0e05842931d"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "Measured: this installs cleanly beside typescript-eslint 8.70.1, `npx tsc -v` reports 7.0.2, `npx tsc6 -v` reports 6.0.x",
+   "members": [
+    "sota-javascript-typescript/rules/01-typescript-config-and-types.md#07b9f80ae294",
+    "sota-javascript-typescript/rules/01-typescript-config-and-types.md#82ef31c5f32d",
+    "sota-javascript-typescript/rules/01-typescript-config-and-types.md#d4bfae5d5e68",
+    "sota-javascript-typescript/rules/07-testing-and-tooling.md#4e177a8af301",
+    "sota-javascript-typescript/rules/07-testing-and-tooling.md#c4383797b171"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- Protect node metadata endpoints: block pod access to the cloud metadata service (169.254.169.254); workload identity o",
+   "members": [
+    "sota-kubernetes/rules/01-control-plane-etcd.md#23b6bfdcd538",
+    "sota-network-security/rules/03-k8s-network-policy.md#c4878ee0fd94",
+    "sota-network-security/rules/05-edge-ingress-egress.md#6978a0255a6d",
+    "sota-threat-modeling/rules/03-threat-catalogs.md#43823a92aeb2"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- **Idempotency for anything retried:** loops re-execute on transient failure. Mutating tools take an idempotency key (d",
+   "members": [
+    "sota-llm-engineering/rules/04-agents-tools.md#f417388182b9",
+    "sota-rust/rules/02-errors-and-panics.md#8926974d8bcd"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
+   "sample": "- A memory budget on a child is, **on Linux**, `preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_DATA, …)`, **never",
+   "members": [
+    "sota-python/rules/05-security.md#1ef3a7ba2980",
+    "sota-python/rules/05-security.md#28c8752379c0",
+    "sota-sandboxing/rules/02-linux-os-hardening.md#b946e5196ef0",
+    "sota-shell-scripting/rules/08-ad-hoc-side-effects.md#256ee7ebf480",
+    "sota-shell-scripting/rules/08-ad-hoc-side-effects.md#fd8b523ba7e9"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "Different probes: rules/03's grep also matches sqlite::memory: and lowercase jdbc:h2, which rules/04's does not; rules/03 cites rules/04 §4.1 for scope (2026-10-30).",
+   "sample": "- [ ] In-memory DB standing in for the real engine? Grep `sqlite::memory:|:memory:|H2|jdbc:h2` in integration config of ",
+   "members": [
+    "sota-testing/rules/03-doubles-and-test-data.md#81f92d3e0c40",
+    "sota-testing/rules/04-integration-contract-system.md#220eb1596d82"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "Each item keeps its own env grep (Next-only vs cross-framework); the server-only grep is byte-identical in both and must be edited together. Removing it from rules/03 changes that probe's hash and needs new invariant-44 fixtures (2026-10-30).",
+   "sample": "- [ ] **Server->client data exposure: whole objects as props, env on client** (§1; the cross-framework item is [rules/07",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#dc2bcad5e5be",
+    "sota-web-frameworks/rules/07-security.md#709b29847a0f"
    ]
   }
  ],

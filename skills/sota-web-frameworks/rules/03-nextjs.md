@@ -177,11 +177,7 @@ from the lockfile and compare.
 | 2026-07-22 batch: CVE-2026-64645 (GHSA-p9j2-gv94-2wf4), CVE-2026-64649 (GHSA-89xv-2m56-2m9x), CVE-2026-64641, CVE-2026-64642 (16.x only), CVE-2026-64643/-64644/-64646/-64647/-64648 | SSRF via rewrite destination host; Server Actions SSRF on custom servers; Server Actions DoS; Turbopack proxy bypass; cache confusion; endpoint disclosure | 15.5.21 / 16.2.11 | Nine advisories (published 2026-07-21), four High |
 | **GHSA-2xp9-vwfh-vxw4** (2026-09-08) / **CVE-2026-75604** (GHSA-p293-qw3h-jr36) | **Unauthenticated RCE**: Image Optimization API with AVIF; Windows-hosted servers | **15.5.24 / 16.3.3** | Both critical. As of 2026-09-26 this is the floor: **Next ≥ 15.5.24 / ≥ 16.3.3**; newer advisories: the [vercel/next.js advisory feed](https://github.com/vercel/next.js/security/advisories) |
 
-**next/image SSRF:** `remotePatterns` with a `**` wildcard host turns the
-`/_next/image` optimizer into a blind-SSRF proxy (reachable internal URLs / metadata
-endpoint), and it follows redirects from an allowed host without re-validating — an
-open redirect on an allowlisted domain becomes SSRF. Allowlist explicit hosts,
-protocols, and paths ([`rules/07`](07-security.md)).
+**next/image SSRF:** a `**` wildcard in `remotePatterns` makes `/_next/image` an SSRF proxy — allowlist explicit hosts ([`rules/07`](07-security.md) §3).
 
 ## Audit checklist
 
@@ -194,7 +190,7 @@ protocols, and paths ([`rules/07`](07-security.md)).
       parens are LITERAL in BRE and this silently finds 0)
 - [ ] **Authz only in middleware/layout? (finding)** (§3) —
       `find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'middleware.*' -o -name 'proxy.*' \) -type f -print; grep -rnE 'getServerSession|auth\(\)|requireUser' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next . | head`
-- [ ] **Server->client data exposure: whole objects as props, env on client** (§1) —
+- [ ] **Server->client data exposure: whole objects as props, env on client** (§1; the cross-framework item is [rules/07](07-security.md) §1) —
       `grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next . | grep -v 'NEXT_PUBLIC_'`
       (no negative lookahead: POSIX ERE has none, so `(?!...)` is a syntax error or a literal —
       list the env reads, then exclude the public prefix with a second pass). **NB this is a

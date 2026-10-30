@@ -199,7 +199,8 @@ Legitimate panic patterns:
   init-time constants, never runtime data.
 - `panic` across goroutines is fatal: **a panic in a goroutine you spawned
   kills the whole process** regardless of recovers elsewhere. Any goroutine
-  running third-party or panic-capable code needs its own deferred recover
+  running third-party or panic-capable code (callbacks, plugins, parsers on
+  untrusted input) needs its own deferred recover
   *inside* the function. errgroup does NOT recover for you: `golang.org/x/sync`
   v0.14–v0.15 briefly re-panicked in `Wait`, but v0.16+ reverted that, so a
   panic in a `g.Go` func crashes the process (read `errgroup.go` at your

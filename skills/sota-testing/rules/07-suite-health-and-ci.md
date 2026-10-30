@@ -49,7 +49,9 @@ also masks *real* intermittent bugs, the most expensive kind.
 5. **Retries**: at most one auto-retry, with both outcomes recorded and
    feeding the detector. Retry-to-green WITHOUT tracking is the suite
    silently rotting; blanket `retries: 3` to "stabilize CI" is a High
-   finding wherever you see it.
+   finding wherever you see it — High rather than Medium because a suite
+   retried until green also passes real regressions, security gates included
+   ([`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.7).
 
 ```python
 # BAD — permanent amnesty; nothing tracks it, nothing expires it

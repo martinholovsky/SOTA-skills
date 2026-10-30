@@ -378,11 +378,9 @@ for app-side review. Database-layer obligations:
   outbox/queue payloads, caches (delete keys), search/vector indexes, logs,
   backups. Track request → completion with a deadline (GDPR Art. 12(3): one month,
   extensible by two more — [privacy rules/03](../../sota-privacy-compliance/rules/03-consent-and-user-rights.md)).
-- Backups: industry-accepted approach is documented backup-expiry windows
-  (deleted data ages out of backups within N days) plus re-deletion on
-  restore; **crypto-shredding** (per-user encryption keys; destroy the key to
-  erase the data everywhere at once, including backups) where strict
-  erasure-from-backups is required.
+- Backups: document the expiry window, re-apply deletions on restore, and use
+  **crypto-shredding** where strict erasure from backups is required —
+  [privacy rules/03](../../sota-privacy-compliance/rules/03-consent-and-user-rights.md) §5 (item 6).
 - **Anonymization beats deletion** when aggregates must survive: nulling
   identifying columns while keeping the row is acceptable only if genuinely
   irreversible (no quasi-identifier re-identification). Hashing is not:

@@ -111,7 +111,7 @@ Unit/integration tests for logic breadth; a thin Playwright layer for critical u
 
 Flat config (`eslint.config.js`) is the only supported format since ESLint 9; ESLint 10 (Feb 2026) removes the eslintrc system entirely, resolves config from each linted file's directory (multiple configs per run — monorepo-friendly), and requires Node ≥20.19. typescript-eslint v8 supports ESLint 9 and 10. Type-aware strict preset catches real bugs (floating promises, unsafe any-flow) that syntax-only linting can't.
 
-**Typed lint does not run on TypeScript 7.0.** typescript-eslint v8's peer range is `typescript <6.1.0` and 7.0 has no compiler API: with `typescript@^7` the install fails `ERESOLVE`, and forced, `eslint` exits 2 (measured, typescript-eslint 8.70.1). Keep the `typescript` dependency on the 6.0 API with the `npm:@typescript/typescript6` alias and run `tsc` from 7.0 beside it — the `package.json` snippet is in [rules/01](01-typescript-config-and-types.md) §"tsconfig". Exit 2 in CI is a broken gate, not a lint failure.
+**Typed lint does not run on TypeScript 7.0**: keep the `typescript` dependency on the 6.0 API with the `npm:@typescript/typescript6` alias beside 7.0's `tsc` — the peer-range failure, the exit-2 measurement and the `package.json` snippet are in [rules/01](01-typescript-config-and-types.md) §1.
 
 ```js
 // eslint.config.js

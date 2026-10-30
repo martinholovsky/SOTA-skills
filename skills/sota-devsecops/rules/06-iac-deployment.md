@@ -18,7 +18,9 @@ credentials vault:
   in CI and people read plan output. Broad `s3:*` on the state bucket for all engineers =
   High.
 - **Keep secrets out of state where possible**: prefer `ephemeral` resources/values and
-  write-only arguments (TF ≥1.10/1.11; OpenTofu ≥1.11, Dec 2025) for credentials; or have
+  write-only arguments for credentials — Terraform added ephemeral resources in 1.10.0
+  (2024-11-27) and write-only attributes in 1.11.0 (2025-02-27); OpenTofu added both in
+  1.11.0 (2025-12-09) (each project's CHANGELOG, read 2026-10-30); or have
   Terraform create the *container* (secret resource) while a separate controlled path
   writes the *value*; or reference external secret managers at runtime (ESO, rules below).
   `random_password` + direct DB resource args put the password in state forever — flag,

@@ -75,7 +75,7 @@ Replace on sight (CERT STR/FIO; MISRA):
 - **Never** pass user data as the format string: `printf(user)` is a
   format-string vuln (read/write via `%n`). Use `printf("%s", user)`. Compile
   with `-Wformat -Wformat=2 -Werror=format-security` to catch it.
-- **Logs carry neither secrets nor raw input.** C has no standard logger, so every
+- **Logs carry neither secrets nor raw input** (redaction at the logger: [`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §4). C has no standard logger, so every
   `syslog`/`fprintf(stderr, ...)` call site is the control: never pass a credential, key or
   token to it, and neutralise CR/LF in any external string before it is logged (CWE-117,
   *Improper Output Neutralization for Logs*): a forged line in a syslog-fed pipeline is an

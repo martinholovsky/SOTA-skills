@@ -305,7 +305,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
   Member crates use `serde = { workspace = true }`. Split crates along compile
   and dependency boundaries (`core` no-heavy-deps, `cli`, `server`), not by
   "layer" for its own sake — each crate is a compile unit and a semver unit.
-- Binary crates: keep `main.rs` thin (arg parsing + call into `lib.rs`) so the
+- Binary crates: keep `main.rs` thin (arg parsing + call into `lib.rs`; flag, output and exit-code design: [`sota-cli-ux`](../../sota-cli-ux/SKILL.md)) so the
   logic is testable.
 
 ## Audit checklist

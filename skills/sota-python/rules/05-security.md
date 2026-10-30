@@ -68,10 +68,8 @@ subprocess.run(
 - A memory budget on a child is, **on Linux**, `preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_DATA, …)`,
   **never `RLIMIT_AS`**: an AS cap kills a native binary in its loader with exit 127 ("command not
   found"), so a probe reads as EMPTY, not FAILED ([`sota-sandboxing` rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md) R7.2a).
-  **On macOS no memory rlimit can be set**: `setrlimit` rejects `RLIMIT_DATA`, `RLIMIT_AS` and
-  `RLIMIT_RSS` (`ValueError`), so that `preexec_fn` aborts the spawn with `SubprocessError`
-  (measured 2026-10-23, macOS 26.7.1, CPython 3.9.6 and 3.14.8). There, run the child in a
-  container with `--memory`, or under a supervisor that polls the process tree's RSS (R7.2b).
+  **On macOS no memory rlimit can be set** and that `preexec_fn` aborts the spawn: run the child
+  in a container with `--memory`, or under an RSS-polling supervisor ([`sota-sandboxing` rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md) R7.2b, *Not Linux*).
 
 ## 3. SQL: parameters, never interpolation
 

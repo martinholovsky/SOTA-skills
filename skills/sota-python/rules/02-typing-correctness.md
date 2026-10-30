@@ -106,29 +106,13 @@ absence — and then it is **per field**, documented with that field's domain, n
 constant applied across a heterogeneous set (see [`sota-databases` rules/01](../../sota-databases/rules/01-choosing-and-modeling.md), *Modeling
 hygiene*, for the persistence half).
 
-### Detecting it — three probes, decreasing precision
+### Detecting it
 
-1. **Producer (near-zero false positives, AST-checkable).** One function returning the
-   *same constant* from a not-found branch and from an `except` branch. That shape is
-   almost never intentional, and it is the declaration — fix it once and every caller
-   is fixed.
-2. **Asymmetric guard (the one that catches the live bug).** A comparison where one
-   operand is filtered against the sentinel and the other is not. Greppable in review
-   and visible in a diff; see the example above.
-3. **Truthiness-as-presence.** `if x:` / `if x and ...` guarding an `int` whose domain
-   includes the sentinel or `0`. High recall, high false-positive rate — use it to
-   build a list to read, not a gate.
-
-**A value-based lint ("flag any `-1` in this field") is only sound where the field's
-domain is stated non-negative, and you cannot assume that per-field from the converter
-— the converter is uniform, the domains are not.** A field where the producer emits
-`-1` legitimately (an index meaning "not an argument", an enum's *unset* member, a
-`ORDER` that is genuinely signed) makes such a lint 100% false positive, and the code
-*cannot recover* which meaning a stored `-1` had. So: key the rule on the
-**declaration**, and add a value lint only on the subset that carries an explicit
-non-negative domain declaration — which usually does not exist yet, and writing it
-down is part of the fix. Measure the per-field distribution before you lint: a field
-where the sentinel is 99% of rows and one where it is 0% are different problems.
+The three probes (producer, asymmetric guard, truthiness-as-presence) and when a value lint
+is sound are in [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a. In Python the producer probe is
+AST-checkable: one function returning the same constant from a not-found branch and from an
+`except` branch. Truthiness-as-presence is `if x:` or `if x and ...` on an `int` whose domain
+includes the sentinel or `0`.
 
 ## 3. No `Any` leaks
 

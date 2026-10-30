@@ -202,8 +202,9 @@ Payments cheat sheet, DSOMM.
   "always allow" defeat the control — scope them narrowly.
 - **Bind the approval to what executes, and fail closed.** The approval record
   names the actor (agent), the requester (human principal), the tool, the
-  target, the *normalised* arguments, the context, a single-use nonce and an
-  expiry, and the approval service signs or MACs it. The executor recomputes
+  target, the *normalised* arguments (or their hash), the context, the approver's
+  identity, the reason, a timestamp, a single-use nonce and an expiry, and the
+  approval service signs or MACs it. The executor recomputes
   that binding from the call it is about to run and refuses on any difference,
   a reused nonce or an expired record: approving `transfer(10, to=A)` must not
   authorize `transfer(10000, to=B)`. The approver sees a risk level and a plain
@@ -212,7 +213,8 @@ Payments cheat sheet, DSOMM.
   tool registry, never from the model's account of the call, and in a chain the
   highest class of any step sets the gate. If approval validation, the policy
   lookup or the audit write errors or times out, the action does not run
-  ([rules/03](03-authorization.md) §1). OWASP: AISVS 9.2.3, AISVS 9.2.8, AISVS 9.2.10, AI Agent
+  ([rules/03](03-authorization.md) §1), and **a pending approval nobody answers is a
+  denial** — dropped, never run by default. OWASP: AISVS 9.2.3, AISVS 9.2.8, AISVS 9.2.10, AISVS 9.6.2, AI Agent
   Security cheat sheet, AI-Powered Advertising Systems Security cheat sheet.
 - Rate-limit and budget-limit per session: max tool calls, max spend, max
   loop iterations (agent loops are resource-exhaustion surfaces, [rules/06](06-memory-resource-safety.md) §5).
