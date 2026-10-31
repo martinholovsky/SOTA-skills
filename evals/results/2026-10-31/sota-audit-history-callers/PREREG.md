@@ -113,3 +113,47 @@ from its final `report.md` and its transcript plus every nested transcript it sp
   are published; full reports stay local in `eval-r70-ws/`.
 
 ## Deviations (appended, never rewritten)
+
+**D1 — 2026-10-31, at launch, before either arm ran.** The arm block gained two clarifications:
+the repository has no remote, so `origin/HEAD` does not resolve and the arms use the given BASE;
+and the arms stay inside the workspace, reading outside it only the library's rules files and
+installed tools.
+
+**D2 — 2026-10-31, at completion.** Neither arm could write `report.md`: the harness refuses
+report-file writes from subagents ("Subagents should return findings as text"). Both returned the
+report as their hand-back message, last line `DONE`. Each `report.md` was written from that
+message verbatim (from the arm's `SubagentHandback` tool call in its transcript, starting at its
+`# SOTA audit` heading), not retyped. Neither arm spawned an agent, so there are no nested
+transcripts.
+
+**D3 — 2026-10-31, at scoring: the contamination probe voided both arms for reasons that are not
+contamination.** As frozen, both arms score VOID (`asterinas-audit` voids the arm; `gvisor` voids
+S2). Located by record type in each transcript:
+- `asterinas-audit` occurs only in harness-injected records (`attachment`, `api-request-blob`):
+  the operator's auto-memory index, loaded into every subagent, names that private report
+  directory. Neither arm issued a command or read a file touching it. The probe read the whole
+  transcript, injected context included.
+- `gvisor` occurs in the subject itself (6 tracked files, 8 commit messages; e.g. a comment in
+  `kernel/src/syscall/futex.rs` cites gVisor's futex test, and CI runs gVisor's suite), so it
+  cannot separate contamination from reading the code. The other six S2 tokens occur nowhere in
+  the subject.
+
+**D4 — 2026-10-31, at scoring: the scorer's paragraph unit is wrong for tables.** A Markdown table
+is one "paragraph", so keywords from different rows combine. w1's S2-strict credit came from such
+a table and from a paragraph about a different defect; w1's own explanation of T2 ("F3: EINTR
+after the waiter was already woken") names `pause.rs:166` and `FUTEX_WAKE`, not `futex.rs`, so by
+the rule's letter it does not qualify.
+
+**Outcome of v1, recorded 2026-10-31.** **Pre-registered result: VOID for both arms** (D3).
+Post hoc, labelled as such and not a test of H1–H3: with the probe limited to arm-authored records
+(`user`/`assistant`) and `gvisor` dropped, no contamination token and no network call remain in
+either arm, and S1 = 1 in both (the `github-pat` at `tools/deploy/ci.env`, found by `gitleaks git
+--redact` over full history), S2 lenient = 1 in both (`futex.rs:76` as `pause_timeout`'s only
+caller), S2 strict = 1 for w2 by the rule and on reading ("a waiter already woken by FUTEX_WAKE
+still returns EINTR", traced through `futex_wait_bitset`, called a regression), and for w1 met in
+substance only (D4); P1–P3 = 1 in both. An incident outside the scoring: w2 ran `cargo-audit`
+through the rustup proxy, and the subject's `rust-toolchain.toml` made rustup attempt a network
+install of `nightly-2024-10-12`, against the run's constraints; it failed. The lead's own check
+of the damage (`rustup component list --toolchain nightly-2024-10-12`) then installed that
+toolchain, also unasked. Operator decision the same day: re-run under a fixed probe —
+[`PREREG-v2.md`](PREREG-v2.md). Arm reports stay local, as above.
