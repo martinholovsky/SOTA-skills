@@ -201,6 +201,8 @@ Slow builds are a perf problem too — they tax every iteration.
 - Don't unsafe-away bounds checks without a flamegraph showing them (§1,
   [rules/03](03-unsafe-discipline.md)).
 
+**Connection pool.** sqlx's `PoolOptions` defaults are bounded (10 connections, `acquire_timeout` 30 s, `max_lifetime` 30 min, `idle_timeout` 10 min, `test_before_acquire` on); size the cap to the server's budget rather than per instance. Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
 ## Audit checklist
 
 - [ ] Benchmarks exist for claimed-hot code (§1) (criterion/divan in `benches/`);

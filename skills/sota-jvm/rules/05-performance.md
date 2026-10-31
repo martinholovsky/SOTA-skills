@@ -111,6 +111,8 @@ included, or use the cache with native access at the default `warn`; either way 
   long-running throughput-bound ones. Test the native binary — behavior can
   differ from JVM mode.
 
+**Connection pool.** HikariCP defaults to 10 connections, a 30 s `connectionTimeout` and a 30 min `maxLifetime` (set it a few seconds under any database or infrastructure limit), with `leakDetectionThreshold` 0, i.e. leak detection off. Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
 ## Audit checklist
 
 - [ ] **Allocation/boxing on hot paths, finalizers — LOW/MEDIUM (verify with profiler)** (§3) —

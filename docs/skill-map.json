@@ -2016,6 +2016,14 @@
       ]
     },
     {
+      "from": "sota-php",
+      "to": "sota-databases",
+      "weight": 3,
+      "targets": [
+        "rules/04 \u00a75"
+      ]
+    },
+    {
       "from": "sota-privacy-compliance",
       "to": "sota-code-security",
       "weight": 3,
@@ -2413,6 +2421,15 @@
       "targets": []
     },
     {
+      "from": "sota-dotnet",
+      "to": "sota-databases",
+      "weight": 2,
+      "targets": [
+        "rules/03",
+        "rules/04 \u00a75"
+      ]
+    },
+    {
       "from": "sota-frontend-design",
       "to": "sota-web-frameworks",
       "weight": 2,
@@ -2430,12 +2447,29 @@
       ]
     },
     {
+      "from": "sota-golang",
+      "to": "sota-databases",
+      "weight": 2,
+      "targets": [
+        "rules/03",
+        "rules/04 \u00a75"
+      ]
+    },
+    {
       "from": "sota-javascript-typescript",
       "to": "sota-observability",
       "weight": 2,
       "targets": [
         "rules/01",
         "rules/05 \u00a71"
+      ]
+    },
+    {
+      "from": "sota-javascript-typescript",
+      "to": "sota-databases",
+      "weight": 2,
+      "targets": [
+        "rules/04 \u00a75"
       ]
     },
     {
@@ -2546,12 +2580,6 @@
     },
     {
       "from": "sota-php",
-      "to": "sota-databases",
-      "weight": 2,
-      "targets": []
-    },
-    {
-      "from": "sota-php",
       "to": "sota-architecture",
       "weight": 2,
       "targets": [
@@ -2573,6 +2601,15 @@
       "weight": 2,
       "targets": [
         "rules/04 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-python",
+      "to": "sota-databases",
+      "weight": 2,
+      "targets": [
+        "rules/01",
+        "rules/04 \u00a75"
       ]
     },
     {
@@ -2621,6 +2658,14 @@
       "weight": 2,
       "targets": [
         "rules/05 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-databases",
+      "weight": 2,
+      "targets": [
+        "rules/04 \u00a75"
       ]
     },
     {
@@ -3373,14 +3418,6 @@
     },
     {
       "from": "sota-dotnet",
-      "to": "sota-databases",
-      "weight": 1,
-      "targets": [
-        "rules/03"
-      ]
-    },
-    {
-      "from": "sota-dotnet",
       "to": "sota-rust",
       "weight": 1,
       "targets": [
@@ -3432,14 +3469,6 @@
       "to": "sota-async-concurrency",
       "weight": 1,
       "targets": []
-    },
-    {
-      "from": "sota-golang",
-      "to": "sota-databases",
-      "weight": 1,
-      "targets": [
-        "rules/03"
-      ]
     },
     {
       "from": "sota-golang",
@@ -3519,14 +3548,6 @@
     },
     {
       "from": "sota-javascript-typescript",
-      "to": "sota-databases",
-      "weight": 1,
-      "targets": [
-        "rules/04 \u00a75"
-      ]
-    },
-    {
-      "from": "sota-javascript-typescript",
       "to": "sota-performance",
       "weight": 1,
       "targets": []
@@ -3592,6 +3613,14 @@
       "to": "sota-secrets-management",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-jvm",
+      "to": "sota-databases",
+      "weight": 1,
+      "targets": [
+        "rules/04 \u00a75"
+      ]
     },
     {
       "from": "sota-jvm",
@@ -3985,14 +4014,6 @@
     },
     {
       "from": "sota-python",
-      "to": "sota-databases",
-      "weight": 1,
-      "targets": [
-        "rules/01"
-      ]
-    },
-    {
-      "from": "sota-python",
       "to": "sota-ml-engineering",
       "weight": 1,
       "targets": [
@@ -4050,12 +4071,6 @@
       "targets": []
     },
     {
-      "from": "sota-ruby",
-      "to": "sota-databases",
-      "weight": 1,
-      "targets": []
-    },
-    {
       "from": "sota-rust",
       "to": "sota-cli-ux",
       "weight": 1,
@@ -4097,6 +4112,14 @@
       "weight": 1,
       "targets": [
         "rules/03 \u00a72"
+      ]
+    },
+    {
+      "from": "sota-rust",
+      "to": "sota-databases",
+      "weight": 1,
+      "targets": [
+        "rules/04 \u00a75"
       ]
     },
     {
@@ -4475,12 +4498,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1900,
+    "md link, other skill": 1908,
     "md link, outside skills/": 3,
     "md link, same skill": 2858,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 890,
+    "name+file (backticked)": 898,
     "name+file (bare)": 180,
     "own rules/NN": 3079
   },
@@ -4492,7 +4515,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 886,
+    "name+file (backticked)": 894,
     "name+file (bare)": 168,
     "own rules/NN": 2976
   },
@@ -5975,8 +5998,16 @@
       "router": [],
       "other": [
         "sota-code-security/rules/03-authorization.md",
+        "sota-dotnet/rules/05-performance.md",
+        "sota-golang/rules/06-performance.md",
         "sota-javascript-typescript/rules/04-node-backend.md",
-        "sota-performance/rules/04-io-network.md"
+        "sota-javascript-typescript/rules/06-performance.md",
+        "sota-jvm/rules/05-performance.md",
+        "sota-performance/rules/04-io-network.md",
+        "sota-php/rules/06-performance-runtime.md",
+        "sota-python/rules/06-performance.md",
+        "sota-ruby/rules/05-concurrency-performance.md",
+        "sota-rust/rules/06-performance.md"
       ]
     },
     "sota-databases/rules/05-reliability-and-scale.md": {

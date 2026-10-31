@@ -79,6 +79,8 @@ profiler before optimizing. Cross-reference [`sota-performance`](../../sota-perf
 - Choose AOT for startup/footprint-bound workloads; stay on the JIT for
   long-running throughput-bound compute where peak JIT throughput wins.
 
+**Connection pool.** Npgsql and Microsoft.Data.SqlClient both default to `Max Pool Size` 100; SqlClient queues an exhausted pool until its 15 s connect timeout and then throws, and its `Connection Lifetime` defaults to 0, while Npgsql's has been 3600 s since 9.0. Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
 ## Audit checklist
 
 - [ ] **Allocation/boxing on hot paths (§2) — LOW/MEDIUM (verify with profiler)** —

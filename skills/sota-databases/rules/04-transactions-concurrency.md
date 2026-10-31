@@ -235,6 +235,26 @@ Settings that matter: `default_pool_size` (per user+db!), `max_client_conn`,
 beats piling up). Monitor `cl_waiting` and pool saturation. Keep a separate,
 small pool/role for migrations and admin so app saturation can't block them.
 
+### Rule: Bound the app-side pool: its size, the wait, the lifetime, the leak.
+The driver's pool needs the same four limits the server-side pooler has, and several drivers
+ship without them. Set a **cap** below the server's or pooler's connection budget; a **wait
+timeout** for a free connection, so an exhausted pool fails fast instead of queueing forever;
+a **maximum lifetime** a few seconds shorter than any server, proxy or load-balancer limit;
+and close every statement, cursor and checked-out connection on **every path**, or the pool
+drains one leak at a time. Defaults, read in each project's own docs or source on 2026-10-31:
+
+| Driver | Cap | Wait for a connection | Lifetime | Also |
+|---|---|---|---|---|
+| Go `database/sql` | `SetMaxOpenConns`: default 0, **no limit** | no pool setting: pass a deadline context to every `…Context` call | `SetConnMaxLifetime`, `SetConnMaxIdleTime`: at ≤ 0 (unset) a connection is never closed for age or idleness | `SetMaxIdleConns` defaults to 2; `defer rows.Close()`, then check `rows.Err()` after the loop |
+| HikariCP | `maximumPoolSize` 10 | `connectionTimeout` 30 s | `maxLifetime` 30 min, set "several seconds shorter than any database or infrastructure imposed connection time limit" | `leakDetectionThreshold` 0: leak detection **off** |
+| SQLAlchemy `QueuePool` | `pool_size` 5 + `max_overflow` 10 | `pool_timeout` 30 s | `pool_recycle` -1: **no recycling** | `pool_pre_ping` False |
+| node-postgres `pg.Pool` | `max` 10 | `connectionTimeoutMillis` 0, **no timeout**: once the pool is exhausted, `pool.connect` can "hang indefinitely" | — | `idleTimeoutMillis` 10 s; every client from `pool.connect()` must be `release()`d, or the pool is exhausted |
+| sqlx `PoolOptions` | `max_connections` 10 | `acquire_timeout` 30 s | `max_lifetime` 30 min, `idle_timeout` 10 min | `test_before_acquire` true |
+| Npgsql | `Max Pool Size` 100 | — | `Connection Lifetime` 3600 s since 9.0 (0, disabled, before) | `Connection Idle Lifetime` 300 s |
+| Microsoft.Data.SqlClient | `Max Pool Size` 100 | queued until the connect timeout (15 s), then an exception | `Connection Lifetime` 0 | — |
+| Active Record | `pool` 5 | `checkout_timeout` 5 s | — | `idle_timeout` 300 s |
+| PHP PDO | no pool | — | — | `PDO::ATTR_PERSISTENT` reuses a connection across scripts and carries its table locks, uncommitted transactions, temporary tables and session settings into the next one, which "may cause other queries to be blocked indefinitely" (the PHP manual) — the same leak as a plain `SET` below |
+
 ### Rule: Per-tenant/per-request session state must be SET LOCAL inside the transaction.
 With transaction pooling, plain `SET app.tenant_id` leaks to the next
 borrower — a tenant-isolation breach (CRITICAL). `SET LOCAL` resets at
@@ -288,6 +308,13 @@ OWASP: Multi Tenant Security cheat sheet.
       (§5).
 - [ ] Separate admin/migration pool; query_wait_timeout bounds queueing;
       `cl_waiting` and pool saturation monitored (§5).
+- [ ] App-side pool bounded (§5): a cap below the server or pooler budget; a wait timeout
+      (Go's `database/sql` has none of its own and node-postgres defaults to none); a
+      maximum lifetime below every server, proxy or load-balancer limit; statements,
+      cursors and checked-out clients closed on every path (Go `rows.Close()` and
+      `rows.Err()`, node-postgres `release()`); no `PDO::ATTR_PERSISTENT` where a script
+      can leave a lock, a transaction or a session setting behind. Medium where an
+      unbounded wait or an unlimited cap meets real load.
 - [ ] CRITICAL: tenant context never outlives its transaction — every
       transaction ends (commit or rollback, error path included) before the
       connection is released, and a one-connection pool test proves tenant

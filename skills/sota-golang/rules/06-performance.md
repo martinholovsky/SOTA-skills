@@ -218,6 +218,8 @@ profiler) so the incident carries its own evidence.
   default, with `encoding/json` itself backed by v2 — opt out with
   `GOEXPERIMENT=nojsonv2`) or a faster codec — measure.
 
+**Connection pool.** `database/sql` has no open-connection limit by default (`SetMaxOpenConns` 0) and never closes a connection for age or idleness unless `SetConnMaxLifetime`/`SetConnMaxIdleTime` are set; it has no wait timeout of its own, so pass a deadline context to every `…Context` call, and `defer rows.Close()` then check `rows.Err()`. Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
 ## Audit checklist
 
 - [ ] **Profiling wired up? (§1) (absence in a latency-sensitive service = LOW gap)** —
