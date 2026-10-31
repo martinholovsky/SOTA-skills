@@ -203,6 +203,8 @@ setInterval(() => {
 
 In hot paths (per-row in 100k iterations, per-frame): avoid spread-accumulator `reduce` (O(n²), [rules/02](02-language-idioms.md)), reuse compiled regexes, prefer `for...of` over chained array methods, avoid `try/catch`-free claims (modern engines made try cheap — don't contort code for it), and don't `delete obj.prop` in hot objects (deopts shapes; set to `undefined` or use Maps). Outside hot paths, write the readable version.
 
+**Connection pool.** node-postgres's `pg.Pool` defaults to `max` 10 with `connectionTimeoutMillis` 0, so once the pool is exhausted `pool.connect` can hang indefinitely; set a timeout, and `release()` every client you check out. Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
 ## Audit checklist
 
 - [ ] Bundle analyzer wired and a size budget enforced in CI (`size-limit`/bundlesize)? (§1) Absent on a frontend app = MEDIUM.

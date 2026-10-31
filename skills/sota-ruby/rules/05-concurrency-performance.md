@@ -192,6 +192,8 @@ deliver **at least once**: crashes and retries re-run jobs. Design contract:
 
 **Graceful shutdown (TERM).** Inside a `Signal.trap` block, `Mutex#synchronize` raises `ThreadError: can't be called from trap context` (measured on Ruby 4.0.6), so a logger or connection pool that locks fails there: push to a `Queue` and act on an ordinary thread. Sidekiq shuts down within its `-t` timeout (default 25 s); a Puma worker on TERM attempts to finish, then exits. The sequence and the other runtimes: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
 
+**Connection pool.** Active Record's pool defaults to 5 connections with a 5 s `checkout_timeout` and a 300 s `idle_timeout`; size `pool` to the threads that actually share it. Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually.

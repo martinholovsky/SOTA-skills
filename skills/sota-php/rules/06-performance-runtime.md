@@ -163,6 +163,8 @@ OWASP: Multi-Tenant Security, Session Management cheat sheets.
 - Micro-benchmarks: PHP's timers (`hrtime(true)`) with warmup and OPcache on,
   or phpbench (neutral example); beware measuring the JIT/opcache cold path.
 
+**Connection pool.** PDO has no pool; `PDO::ATTR_PERSISTENT` reuses a connection across scripts and carries its table locks, uncommitted transactions, temporary tables and session settings into the next script (the PHP manual). Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
 ## Audit checklist
 
 Run from repo root / against the runtime; verify each hit manually.

@@ -218,6 +218,8 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
   cost dwarfs the speedup.
 - Don't benchmark with `time.time()` — `time.perf_counter()` or pyperf.
 
+**Connection pool.** SQLAlchemy's `QueuePool` defaults to `pool_size` 5 plus `max_overflow` 10 and a 30 s `pool_timeout`, but `pool_recycle` -1 (connections are never recycled) and `pool_pre_ping` False. Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
 ## Audit checklist
 
 - [ ] **String building & containers (§2) [hot-loop suspects]** —
