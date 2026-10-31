@@ -1359,6 +1359,18 @@
     },
     {
       "from": "sota-rust",
+      "to": "sota-async-concurrency",
+      "weight": 5,
+      "targets": [
+        "rules/05 \u00a74",
+        "rules/07 \u00a71",
+        "rules/07 \u00a74",
+        "rules/07 \u00a75",
+        "rules/07 \u00a78"
+      ]
+    },
+    {
+      "from": "sota-rust",
       "to": "sota-code-security",
       "weight": 5,
       "targets": [
@@ -1619,17 +1631,6 @@
       ]
     },
     {
-      "from": "sota-rust",
-      "to": "sota-async-concurrency",
-      "weight": 4,
-      "targets": [
-        "rules/07 \u00a71",
-        "rules/07 \u00a74",
-        "rules/07 \u00a75",
-        "rules/07 \u00a78"
-      ]
-    },
-    {
       "from": "sota-security-compliance",
       "to": "sota-cloud-infrastructure",
       "weight": 4,
@@ -1702,6 +1703,35 @@
       "weight": 3,
       "targets": [
         "rules/04"
+      ]
+    },
+    {
+      "from": "sota-async-concurrency",
+      "to": "sota-golang",
+      "weight": 3,
+      "targets": [
+        "rules/03",
+        "rules/03 \u00a72",
+        "rules/04 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-async-concurrency",
+      "to": "sota-rust",
+      "weight": 3,
+      "targets": [
+        "rules/04",
+        "rules/04 \u00a78"
+      ]
+    },
+    {
+      "from": "sota-async-concurrency",
+      "to": "sota-javascript-typescript",
+      "weight": 3,
+      "targets": [
+        "rules/03",
+        "rules/04",
+        "rules/04 \u00a75"
       ]
     },
     {
@@ -2191,36 +2221,10 @@
     },
     {
       "from": "sota-async-concurrency",
-      "to": "sota-golang",
-      "weight": 2,
-      "targets": [
-        "rules/03",
-        "rules/03 \u00a72"
-      ]
-    },
-    {
-      "from": "sota-async-concurrency",
-      "to": "sota-rust",
-      "weight": 2,
-      "targets": [
-        "rules/04"
-      ]
-    },
-    {
-      "from": "sota-async-concurrency",
       "to": "sota-jvm",
       "weight": 2,
       "targets": [
         "rules/03"
-      ]
-    },
-    {
-      "from": "sota-async-concurrency",
-      "to": "sota-javascript-typescript",
-      "weight": 2,
-      "targets": [
-        "rules/03",
-        "rules/04"
       ]
     },
     {
@@ -2247,6 +2251,14 @@
       "weight": 2,
       "targets": [
         "rules/06 \u00a72d"
+      ]
+    },
+    {
+      "from": "sota-c-cpp",
+      "to": "sota-async-concurrency",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a74"
       ]
     },
     {
@@ -2388,6 +2400,14 @@
     },
     {
       "from": "sota-dotnet",
+      "to": "sota-async-concurrency",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-dotnet",
       "to": "sota-performance",
       "weight": 2,
       "targets": []
@@ -2416,6 +2436,14 @@
       "targets": [
         "rules/01",
         "rules/05 \u00a71"
+      ]
+    },
+    {
+      "from": "sota-jvm",
+      "to": "sota-async-concurrency",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a74"
       ]
     },
     {
@@ -2532,6 +2560,14 @@
       ]
     },
     {
+      "from": "sota-php",
+      "to": "sota-async-concurrency",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a74"
+      ]
+    },
+    {
       "from": "sota-privacy-compliance",
       "to": "sota-security-compliance",
       "weight": 2,
@@ -2577,6 +2613,14 @@
       "targets": [
         "rules/06 \u00a73",
         "rules/06 \u00a74a"
+      ]
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-async-concurrency",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a74"
       ]
     },
     {
@@ -2663,6 +2707,14 @@
       "to": "sota-observability",
       "weight": 2,
       "targets": []
+    },
+    {
+      "from": "sota-swift",
+      "to": "sota-async-concurrency",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a74"
+      ]
     },
     {
       "from": "sota-testing",
@@ -2895,6 +2947,14 @@
     },
     {
       "from": "sota-async-concurrency",
+      "to": "sota-devsecops",
+      "weight": 1,
+      "targets": [
+        "rules/04 \u00a74.2"
+      ]
+    },
+    {
+      "from": "sota-async-concurrency",
       "to": "sota-testing",
       "weight": 1,
       "targets": [
@@ -2932,12 +2992,6 @@
     {
       "from": "sota-c-cpp",
       "to": "sota-databases",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-c-cpp",
-      "to": "sota-async-concurrency",
       "weight": 1,
       "targets": []
     },
@@ -3285,12 +3339,6 @@
     },
     {
       "from": "sota-dotnet",
-      "to": "sota-async-concurrency",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-dotnet",
       "to": "sota-sandboxing",
       "weight": 1,
       "targets": []
@@ -3530,12 +3578,6 @@
       "targets": [
         "rules/02 \u00a78a"
       ]
-    },
-    {
-      "from": "sota-jvm",
-      "to": "sota-async-concurrency",
-      "weight": 1,
-      "targets": []
     },
     {
       "from": "sota-jvm",
@@ -3851,12 +3893,6 @@
     },
     {
       "from": "sota-php",
-      "to": "sota-async-concurrency",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-php",
       "to": "sota-api-design",
       "weight": 1,
       "targets": []
@@ -4010,12 +4046,6 @@
     {
       "from": "sota-ruby",
       "to": "sota-performance",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-ruby",
-      "to": "sota-async-concurrency",
       "weight": 1,
       "targets": []
     },
@@ -4261,12 +4291,6 @@
     },
     {
       "from": "sota-swift",
-      "to": "sota-async-concurrency",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-swift",
       "to": "sota-secrets-management",
       "weight": 1,
       "targets": []
@@ -4451,14 +4475,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1889,
+    "md link, other skill": 1900,
     "md link, outside skills/": 3,
-    "md link, same skill": 2857,
+    "md link, same skill": 2858,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 879,
+    "name+file (backticked)": 890,
     "name+file (bare)": 180,
-    "own rules/NN": 3078
+    "own rules/NN": 3079
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4468,9 +4492,9 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 875,
+    "name+file (backticked)": 886,
     "name+file (bare)": 168,
-    "own rules/NN": 2975
+    "own rules/NN": 2976
   },
   "rules_index_style": {
     "link": 42
@@ -4752,7 +4776,9 @@
       "index": [
         "sota-async-concurrency/SKILL.md"
       ],
-      "same": [],
+      "same": [
+        "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md"
+      ],
       "router": [],
       "other": [
         "sota-python/rules/03-idioms-pitfalls.md"
@@ -4782,7 +4808,15 @@
       ],
       "same": [],
       "router": [],
-      "other": []
+      "other": [
+        "sota-c-cpp/rules/05-concurrency.md",
+        "sota-dotnet/rules/03-async-concurrency.md",
+        "sota-jvm/rules/03-concurrency.md",
+        "sota-php/rules/01-language-baseline.md",
+        "sota-ruby/rules/05-concurrency-performance.md",
+        "sota-rust/rules/04-async-tokio.md",
+        "sota-swift/rules/03-concurrency.md"
+      ]
     },
     "sota-async-concurrency/rules/06-backpressure-flow-control.md": {
       "index": [
@@ -6221,6 +6255,7 @@
         "sota/SKILL.md"
       ],
       "other": [
+        "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md",
         "sota-code-security/rules/07-data-exposure.md",
         "sota-code-security/rules/10-silent-control-failure.md",
         "sota-code-security/rules/13-context-dependent-silence.md",
@@ -6748,6 +6783,7 @@
       ],
       "router": [],
       "other": [
+        "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md",
         "sota-javascript-typescript/rules/08-process-and-outbound.md"
       ]
     },
@@ -6983,6 +7019,7 @@
       ],
       "router": [],
       "other": [
+        "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md",
         "sota-async-concurrency/rules/07-audit-bug-catalog.md",
         "sota-cloud-infrastructure/rules/04-compute-selection.md",
         "sota-web-frameworks/rules/01-baseline.md"
@@ -8272,7 +8309,8 @@
       ],
       "router": [],
       "other": [
-        "sota-async-concurrency/SKILL.md"
+        "sota-async-concurrency/SKILL.md",
+        "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md"
       ]
     },
     "sota-rust/rules/05-security-supply-chain.md": {

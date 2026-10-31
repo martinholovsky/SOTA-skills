@@ -236,6 +236,9 @@ code parallel and does not schedule anything by itself.
   (CLI workers, e.g. FrankenPHP/Swoole-style servers as neutral examples) are
   where async PHP pays off; in those, blocking calls (`PDO`, `file_get_contents`)
   stall the whole loop — same discipline as any event loop.
+- **A CLI worker handles SIGTERM itself:** `pcntl_async_signals(true)` (PHP 7.1+) and
+  `pcntl_signal(SIGTERM, $handler)`, where the handler only sets a flag that the loop checks
+  between jobs. The sequence and the other runtimes: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
 - AUDIT: raw `new Fiber(` in application (non-library) code is a MEDIUM design
   smell; blocking I/O inside an event-loop callback is HIGH in async runtimes.
 

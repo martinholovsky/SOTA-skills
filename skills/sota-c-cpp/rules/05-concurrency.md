@@ -105,6 +105,8 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
   `REQUIRES`) gives compile-time race checking when you annotate. Helgrind
   (Valgrind) is a no-recompile alternative to TSan.
 
+**Graceful shutdown (SIGTERM).** Block the signal with `pthread_sigmask` in the main thread before starting any other, read it with `sigwaitinfo` or, on Linux, `signalfd`, then stop accepting, drain under a deadline and release on an ordinary thread. A classic handler may only set a `volatile sig_atomic_t` or a lock-free atomic (SEI CERT SIG31-C). The sequence and the other runtimes: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
+
 ## Audit checklist
 
 - [ ] **Shared mutable state with no stated discipline (§1) — MEDIUM, HIGH when more than one

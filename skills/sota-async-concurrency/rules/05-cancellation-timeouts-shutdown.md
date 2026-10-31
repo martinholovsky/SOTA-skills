@@ -176,6 +176,27 @@ Ordering pitfalls:
   consumer), closing the channel (Go: `for range` exits), or cancelling the
   getter task.
 
+**The same sequence, per runtime.** Step 1 and steps 2–3 are what differ. Each entry below
+was checked against the runtime's own documentation on 2026-10-31 (the Ruby trap behaviour
+by running it), and nothing in this table sets a timeout for you: steps 3 and 4 still need
+your deadline.
+
+| Runtime | Step 1: trap the signal | Steps 2–3: stop accepting, drain | Detail |
+|---|---|---|---|
+| Go | `signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)` | `srv.Shutdown(ctx)` with a deadline context | [`sota-golang` rules/04](../../sota-golang/rules/04-http-services.md) §3 |
+| Node | `process.on('SIGTERM', …)` | `server.close()`, then `server.closeIdleConnections()` | [`sota-javascript-typescript` rules/04](../../sota-javascript-typescript/rules/04-node-backend.md) §5 |
+| Python asyncio | `loop.add_signal_handler(signal.SIGTERM, …)` | the skeleton above | — |
+| Rust (tokio) | `tokio::signal::unix::signal(SignalKind::terminate())?`, then `.recv().await`; `tokio::signal::ctrl_c()` is Ctrl-C only, **not** SIGTERM | axum: `axum::serve(listener, app).with_graceful_shutdown(fut)`; your own tasks: `tokio_util`'s `CancellationToken` to tell them, then `TaskTracker::close()` and `wait()`, which returns once the tracker is closed and empty. Wrap the wait in a deadline | [`sota-rust` rules/04](../../sota-rust/rules/04-async-tokio.md) §8 |
+| JVM | `Runtime.getRuntime().addShutdownHook(thread)`: hooks start when the shutdown sequence begins, which includes a signal from the operating system; `Runtime.halt` skips them | Spring Boot: graceful shutdown is on by default for embedded Jetty, Reactor Netty and Tomcat (`server.shutdown=immediate` turns it off); bound each phase with `spring.lifecycle.timeout-per-shutdown-phase` | — |
+| .NET | the generic host's default `ConsoleLifetime` handles SIGINT, SIGQUIT and SIGTERM (since .NET 6; before it, SIGTERM could not be handled gracefully) | `IHostApplicationLifetime.ApplicationStopping` fires while requests may still be in flight; every `BackgroundService.ExecuteAsync(stoppingToken)` must observe its token; `HostOptions.ShutdownTimeout` bounds `StopAsync` | — |
+| PHP (CLI workers) | `pcntl_async_signals(true)` (PHP 7.1+), then `pcntl_signal(SIGTERM, $handler)` | the handler only sets a flag; the worker loop checks it between jobs, finishes the current one and exits | — |
+| Ruby | `Signal.trap("TERM") { … }`. **Inside a trap, `Mutex#synchronize` raises `ThreadError: can't be called from trap context`** (measured, Ruby 4.0.6), so a logger or connection pool that locks fails there: push to a `Queue` and act on a normal thread | Sidekiq: TERM shuts down within the `-t` timeout (default 25 s) and pushes unfinished jobs back to Redis; Puma: on TERM a worker "will attempt to finish then exit" | — |
+| Swift | swift-service-lifecycle: `ServiceGroup(services:gracefulShutdownSignals: [.sigterm], logger:)`, then `try await serviceGroup.run()` | the group triggers a graceful shutdown on each service | — |
+| C/C++ | block the signal with `pthread_sigmask` in the main thread before starting any other (new threads inherit the mask), then read it synchronously with `sigwaitinfo` or, on Linux, `signalfd`. A classic handler may touch only `volatile sig_atomic_t` or lock-free atomics (SEI CERT SIG31-C) and call only async-safe functions (SIG30-C) | run steps 2–6 on an ordinary thread once the signal is read | [rules/02](02-correctness.md) §8 |
+
+**In a container the signal must reach your process at all.** A package-manager launcher as
+PID 1 does not forward it: [`sota-devsecops` rules/04](../../sota-devsecops/rules/04-build-containers.md) §4.2.1.
+
 ## 5. Retry interplay
 
 Cancellation and timeout must beat retry logic: a retry loop that ignores
@@ -224,6 +245,9 @@ extend it.
       closure to wake blocked getters? Background daemons cancelled and
       awaited? Queue drained before it is closed? Tasks cancelled before the
       pools they use close? Nonzero exit when the drain was forced? (§4)
+      Is SIGTERM trapped with the runtime's own primitive from §4's table (not Ctrl-C
+      alone, not a lock taken inside a Ruby trap or a C handler), and does it reach
+      the process in its container?
 - [ ] Retry loops: ctx/signal checked per attempt? Backoff sleep cancellable?
       Retries within the deadline budget? (§5)
 - [ ] Subprocesses/remote jobs killed on cancellation (§3)?

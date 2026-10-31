@@ -90,6 +90,8 @@ actor AccountCache {
   elements. Fan-out is an explicit layer.
 - Bound fan-out: a task group adding a child per input item needs a concurrency limit.
 
+**Graceful shutdown (SIGTERM).** swift-service-lifecycle's `ServiceGroup(services:gracefulShutdownSignals: [.sigterm], logger:)` triggers a graceful shutdown on each service it runs; shut down clients and pools after it. The sequence and the other runtimes: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
+
 ## Audit checklist
 
 - [ ] Language mode (§1): all first-party targets build in Swift 6 language mode (or carry a dated plan); a target still in Swift 5 mode builds with `-strict-concurrency=complete`, never `-strict-concurrency=minimal`; UI modules use default `MainActor` isolation, libraries stay `nonisolated`.

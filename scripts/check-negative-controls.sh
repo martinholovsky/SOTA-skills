@@ -1447,7 +1447,7 @@ probe 42i "a cross-cutting skill's per-language table loses a language" "C6 sota
 ( cd "$WT" && python3 -I -c "
 import pathlib, re
 p = pathlib.Path('skills/sota-swift/rules/03-concurrency.md'); t = p.read_text(encoding='utf-8')
-u = re.sub(r'\[\`sota-async-concurrency\`\]\([^)]*\)', 'sota-async-concurrency', t)
+u = re.sub(r'\[([^]]*)\]\(\.\./\.\./sota-async-concurrency/[^)]*\)', r'\1', t)  # by link TARGET: a new link text (2026-10-31) left the old text-matching form stale
 assert u != t and '../../sota-async-concurrency/' not in u, 'probe stale: swift 03 has no link to sota-async-concurrency'
 p.write_text(u, encoding='utf-8')
 " )
