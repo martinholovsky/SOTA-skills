@@ -2385,6 +2385,15 @@
     },
     {
       "from": "sota-devsecops",
+      "to": "sota-cli-ux",
+      "weight": 2,
+      "targets": [
+        "rules/03 \u00a79",
+        "rules/04 \u00a72"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
       "to": "sota-architecture",
       "weight": 2,
       "targets": [
@@ -3282,14 +3291,6 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-cli-ux",
-      "weight": 1,
-      "targets": [
-        "rules/04 \u00a72"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
       "to": "sota-cloud-infrastructure",
       "weight": 1,
       "targets": [
@@ -3356,6 +3357,14 @@
       "weight": 1,
       "targets": [
         "rules/10"
+      ]
+    },
+    {
+      "from": "sota-docs-workflow",
+      "to": "sota-shell-scripting",
+      "weight": 1,
+      "targets": [
+        "rules/09 \u00a75a"
       ]
     },
     {
@@ -4292,6 +4301,14 @@
     },
     {
       "from": "sota-shell-scripting",
+      "to": "sota-docs-workflow",
+      "weight": 1,
+      "targets": [
+        "rules/03 \u00a75"
+      ]
+    },
+    {
+      "from": "sota-shell-scripting",
       "to": "sota-observability",
       "weight": 1,
       "targets": [
@@ -4506,12 +4523,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1909,
+    "md link, other skill": 1912,
     "md link, outside skills/": 3,
     "md link, same skill": 2860,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 899,
+    "name+file (backticked)": 902,
     "name+file (bare)": 180,
     "own rules/NN": 3081
   },
@@ -4523,7 +4540,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 895,
+    "name+file (backticked)": 898,
     "name+file (bare)": 168,
     "own rules/NN": 2978
   },
@@ -5020,6 +5037,7 @@
       ],
       "router": [],
       "other": [
+        "sota-devsecops/rules/02-provenance-signing.md",
         "sota-shell-scripting/rules/02-robustness-correctness.md"
       ]
     },
@@ -6574,6 +6592,7 @@
         "sota/rules/01-audit-methodology.md"
       ],
       "other": [
+        "sota-shell-scripting/rules/09-listing-and-selection.md",
         "sota-testing/rules/09-security-testing.md",
         "sota-threat-modeling/rules/04-risk-rating-treatment.md"
       ]
@@ -8843,7 +8862,8 @@
       ],
       "router": [],
       "other": [
-        "sota-devsecops/rules/07-runtime-ops.md"
+        "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-docs-workflow/rules/03-code-review-pr-workflow.md"
       ]
     },
     "sota-skill-security/rules/01-provenance-and-installation.md": {
