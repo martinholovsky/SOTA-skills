@@ -30,10 +30,21 @@ Search widely before concluding anything:
   `git status --ignored --porcelain` lists ignored paths (`!! campaigns/`); for each
   output-shaped one (results, campaigns, evidence, runs) count `find <dir> -newer <newest
   handoff> -type f`. For every sibling repo the trackers name, read
-  `git -C <sibling> log --since=<handoff date> --oneline`. Field-reported 2026-10-24: a sibling
+  `git -C <sibling> log --since="<handoff date> 00:00" --oneline`, or better the handoff's
+  exact timestamp or `<last-known-sha>..HEAD`: a **bare** date gets the current clock time
+  attached, so `--since=2026-10-24` run in the evening drops that day's morning at exit 0
+  (`sota-shell-scripting` rules/09 §5a; field-reported 2026-11-01, 2 of 19 commits, after this
+  line had said exactly that). Field-reported 2026-10-24: a sibling
   session had run this repo's campaign tool into a gitignored directory three days earlier and
   recorded it only in its own repo. It made an operator-deferred item that carried a spend
   ALREADY DONE, and no text search above can find it, because nothing describes it.
+  To classify **uncommitted** work, compare tree ids instead of reading diffs: stage the working
+  tree into a throwaway index at a path that does not exist yet
+  (`d=$(mktemp -d); GIT_INDEX_FILE="$d/index" sh -c 'git add -A && git write-tree'`; an empty
+  `$(mktemp)` file is refused, `index file smaller than expected`) and compare it with `git merge-tree --write-tree <branchA> <branchB>` for the open branches it
+  may duplicate. An identical id proves the uncommitted paths are exactly those branches
+  combined (field-reported 2026-11-01: 65 paths, two open PRs; reproduced, and one extra edit
+  breaks the match).
 
 **A clean "nothing found" is the result you were hoping for, which is exactly when to distrust
 it.** Five failure modes produce a confident zero, and none of them prints an error:

@@ -224,7 +224,15 @@ retries, requires a power cycle after 3 consecutive mismatches, and disables the
 until an authenticator reset. So:
 - **Read the counter without spending an attempt** before any step that can prompt:
   `fido2-token -I <device>` prints `pin retries: N` (libfido2 `tools/token.c`); CTAP's
-  `getPINRetries` has no decrement step.
+  `getPINRetries` has no decrement step. On an **OpenPGP card** (a YubiKey's OpenPGP applet, a
+  Nitrokey), `gpg --card-status` prints `PIN retry counter : U R A`: user PIN, reset code, admin
+  PIN, read from the card's PW status bytes without a PIN check (GnuPG `g10/card-util.c`,
+  `scd/app-openpgp.c` DO `0x00C4`). The admin PIN has its own counter, and typed at a user-PIN
+  prompt it is just a wrong user PIN.
+- **Never re-run a failed signing or unlock step to see its error**: the first run's stderr
+  already has it, and each run is an attempt. Field-reported 2026-11-01: a test signature failed
+  `Bad PIN`, was run again to read the message, and the user-PIN counter went from 5 to 3; the
+  person had been typing the admin PIN.
 - **Tell the person every prompt that can appear, in order** (PIN, then touch), before the
   step starts. Never infer the sequence from a log that is still running: field-reported
   2026-10-30, the log showed only "You may need to touch your authenticator", the person was

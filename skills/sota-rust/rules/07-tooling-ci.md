@@ -94,6 +94,8 @@ scopes test code with `#![cfg_attr(test, allow(clippy::arithmetic_side_effects, 
   rejects `#[allow]` that macros emit: measured for both lints, a proc-macro derive's and another
   crate's `macro_rules!` `#[allow(…)]` failed with E0453 under `forbid` and compiled under `deny`. `unsafe_code = "forbid"` is still right in crates that need no unsafe (rules/03 §5);
   check that its derives compile.
+- **A lint level that names a lint the toolchain does not know is only a warning (E0602)**, so the control is inert at exit 0: measured 2026-11-01 on clippy 0.1.97, a misspelled `-F clippy::float_compare`, `[lints.clippy] float_compare = "forbid"` and `#![forbid(clippy::float_compare)]` each exited 0, and adding `unknown_lints = "deny"` (or `-D unknown_lints`, or `#![deny(unknown_lints)]`) in the same place made each exit 101. Set it beside every lint list. Diagnostics print lint names hyphenated (`-F clippy::float-cmp`, `-F dead-code`), so a count of which lints fired matches `[a-z_-]`, never `[a-z_]` (field-reported 2026-11-01: 4 of 16 counted, all 16 had fired).
+  Of the inner allows above, `#![allow(dead_code)]` is the one that hides an uncalled function, a cleanup or drop path included, so read what it covers before rating it.
 - Run clippy on the same pinned toolchain as the build (lint sets drift across
   versions).
 

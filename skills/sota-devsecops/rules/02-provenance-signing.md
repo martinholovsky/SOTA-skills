@@ -275,6 +275,11 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
 - Git tags themselves: sign release tags (`git tag -s` / gitsign); CI release workflow
   verifies tag signature before building when your threat model includes repo-write
   compromise.
+- **Signing with a person's hardware key** (OpenPGP card, PIV, FIDO2) spends their attempts:
+  read the retry counter first, name every prompt in order (PIN, then touch), and never re-run a
+  failed signature to read its error ([`sota-cli-ux` rules/03](../../sota-cli-ux/rules/03-behavior-lifecycle.md) §9, which has each
+  device's counter command). Field-reported 2026-11-01: a commit-signing task never reached that
+  section, and two of five user-PIN attempts went before anyone read the counter.
 
 ### 2.7.1 Release workflow shape (reference)
 

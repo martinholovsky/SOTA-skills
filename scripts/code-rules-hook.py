@@ -498,7 +498,11 @@ def self_test() -> int:
                         '"""Token Smuggling: split a blocked word across two tokens."""'),
                        # 2026-10-26 field report: a script that only READS a CSV export, and LLM token counts
                        ("writes CSV or spreadsheet output", "rows = list(csv.DictReader(open(p)))"),
-                       ("issues or checks a session or token", 'print(f"in {n_in} / out {n_out} tokens")')):
+                       ("issues or checks a session or token", 'print(f"in {n_in} / out {n_out} tokens")'),
+                       # 2026-11-01 field reports: a lint name containing "circuit", and a probe of a
+                       # hard-coded loopback URL inside a --network none container
+                       ("calls something that can fail or hang", 'LINTS = ["clippy::short_circuit_statement"]'),
+                       ("fetches a URL", 'r = urllib.request.urlopen("http://127.0.0.1:8080/readyz")')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
               fires(what, text))
 
