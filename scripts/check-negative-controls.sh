@@ -674,6 +674,62 @@ wt_commit "probe: a release declaring a routing check that predates the change"
 probe_committed 29c "a routing declaration older than the description it covers" \
   "predates the change it claims to"
 
+# 29d — THE HOLE 29/29b/29c COULD NOT SEE: every one of them edits a description INSIDE the
+# release commit, the one place a merge-base comparison looks. Real description edits land in
+# ordinary PRs, where 29 does not fire, so by the release they sit in the merge base and the
+# old check reported "unchanged". v1.54.0 shipped exactly that way: sota-devsecops (#644) and
+# sota-rust (#642) changed after v1.53.0, and the release PR's check read "43 descriptions
+# unchanged since the merge base".
+#
+# REPLAYED ON REAL HISTORY, NOT A FAKE TAG. A synthetic tag or a moved origin/main would be
+# written into the refs this worktree SHARES with the real repository. So the worktree is
+# rewound to b92046f8 (#673, the last commit before the v1.54.0 release commit), which holds
+# both edits, is an ancestor of main (so it becomes the merge base), and reaches v1.53.0 as
+# its newest tag. The probe commit bumps VERSION and nothing else, as a release PR does.
+# Every precondition is checked as a fact of history first: a missing tag or commit (a
+# shallow clone, a fork without tags) is a PROBE BROKEN, never a skip, because CI fetches
+# full history and tags and a silent skip would hide the probe going away.
+P29D_AT=b92046f85a835c0e124a18fe3763f4c7d5673d36
+P29D_PREV=v1.53.0
+p29d_desc() {  # <rev> — sota-rust's frontmatter description block at that revision
+  git show "$1:skills/sota-rust/SKILL.md" 2>/dev/null | awk '
+    /^description:/ {f=1; print; next}
+    f && /^[A-Za-z_-]+:/ {exit}
+    f {print}'
+}
+p29d_pre=""
+if ! git cat-file -e "${P29D_AT}^{commit}" 2>/dev/null; then
+  p29d_pre="commit ${P29D_AT:0:12} is not in this clone"
+elif ! git rev-parse -q --verify "refs/tags/$P29D_PREV" >/dev/null; then
+  p29d_pre="tag $P29D_PREV is not in this clone"
+elif ! git merge-base --is-ancestor "$P29D_PREV" "$P29D_AT"; then
+  p29d_pre="$P29D_PREV is not an ancestor of ${P29D_AT:0:12}"
+elif ! git merge-base --is-ancestor "$P29D_AT" origin/main 2>/dev/null; then
+  p29d_pre="${P29D_AT:0:12} is not an ancestor of origin/main, so it cannot be the merge base"
+else
+  p29d_then=$(p29d_desc "$P29D_PREV"); p29d_now=$(p29d_desc "$P29D_AT")
+  if [ -z "$p29d_then" ] || [ -z "$p29d_now" ]; then
+    p29d_pre="could not read sota-rust's description at $P29D_PREV or ${P29D_AT:0:12}"
+  elif [ "$p29d_then" = "$p29d_now" ]; then
+    p29d_pre="sota-rust's description is the same at $P29D_PREV and ${P29D_AT:0:12}: nothing to miss"
+  fi
+fi
+if [ -n "$p29d_pre" ]; then
+  if shard_take; then
+    tested=$((tested + 1)); failed=$((failed + 1)); PROBED_IDS="$PROBED_IDS 29"
+    echo "  [29d] a release whose description edits were merged before it — PROBE BROKEN: $p29d_pre."
+    echo "        This is a defect in the probe's environment, not evidence about the gate."
+  fi
+else
+  ( cd "$WT" && git reset -q --hard "$P29D_AT" && git clean -fdq ) >/dev/null 2>&1 \
+    || { echo "FATAL: could not rewind the probe worktree to ${P29D_AT:0:12}."; exit 1; }
+  cp "$REPO/$GATE" "$WT/$GATE"
+  ( cd "$WT" && printf '99.0.0\n' > VERSION )
+  wt_commit "probe: a release that bumps VERSION over description edits merged before it"
+  probe_committed 29d "a release whose description edits were merged before it" \
+    "this release changes the routing surface"
+fi
+
 # --- probes 11/11b/11c need a NON-sweep branch ------------------------------------
 # Invariant 11 deliberately EXEMPTS a sweep-shaped diff (>= SWEEP_MIN_SKILL_FILES skill
 # files) because that is what a real re-verification looks like. On a branch that already
