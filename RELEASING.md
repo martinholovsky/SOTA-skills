@@ -200,9 +200,12 @@ The named artifact must exist **and** mention `desc-routing-regressions`, so a l
 resolving to an unrelated file fails rather than passing as a checkbox. A case that moves
 is a finding: fix the description on the side that owns the *question*, then add the case
 to `evals/cases/desc-routing-regressions.jsonl` if it is not already there. Invariant 29
-compares the extracted `(name, description)` **map** against the merge base, not the
-diff — a folded description block, a rename and a deletion all change routing without
-touching a line that starts `description:`.
+compares the extracted `(name, description)` **map** against the **previous release** (the
+newest `vX.Y.Z` tag the branch reaches), not the diff — a folded description block, a rename
+and a deletion all change routing without touching a line that starts `description:`. Until
+2026-11-01 it compared against the merge base, which already holds every description edit
+merged since the last release, so the v1.54.0 cut read "unchanged" over two changed
+descriptions (probe 29d replays it).
 
 ## 2d. Duplicated instructions (every release) — local, not gated
 
