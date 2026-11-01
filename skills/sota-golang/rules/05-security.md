@@ -81,9 +81,8 @@ q := "SELECT ... ORDER BY " + orderCol // safe: values are program constants
   binding (`= ANY($1)`).
 - LIKE patterns: escape `%`/`_` in user input before binding.
 - Always `defer rows.Close()`; check `rows.Err()` after the loop; use
-  `QueryContext`/`ExecContext` (ctx discipline). Pool settings
-  (`SetMaxOpenConns`, `SetMaxIdleConns`, `SetConnMaxLifetime`) explicit —
-  default unlimited open conns can flatten the DB.
+  `QueryContext`/`ExecContext` (ctx discipline). An unbounded pool is an availability
+  risk: its limits and defaults are [rules/06](06-performance.md) §8, "Connection pool".
 - `database/sql`'s `Open` does not dial (its doc: it "may just validate its arguments"); call
   `db.PingContext` under a timeout at startup so a bad DSN or credential fails the deploy. A
   `*sql.Stmt` from `db.Prepare` re-prepares itself on each pooled connection that runs it: one
