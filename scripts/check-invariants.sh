@@ -2174,7 +2174,12 @@ if [ "$v28" -ne 0 ]; then fail=1; fi
 #
 # It fires only when BOTH hold: this is a release commit (VERSION changed against the
 # merge base, the same detection invariant 14 uses) AND the extracted (name, description)
-# map differs from the merge base's. Comparing the extracted MAP, not the diff, is
+# map differs from the PREVIOUS RELEASE's -- the newest vX.Y.Z tag reachable from the merge
+# base, or the merge base itself when no tag is. Until 2026-11-01 it compared against the
+# merge base, which a release branch cut from main already holds every description edit
+# merged since the last release in: those edits land in ordinary PRs, where this check does
+# not fire, so the release that shipped them reported "unchanged" (v1.54.0 did, with two
+# descriptions changed since v1.53.0; probe 29d replays it). Comparing the extracted MAP, not the diff, is
 # deliberate: a description can be a folded block, so `+description:` in a diff misses
 # an edit to its second line, and a renamed or deleted skill changes routing without
 # touching any surviving description at all.
@@ -2271,7 +2276,7 @@ def descs(read):
 
 def at_base(p):
     try:
-        return subprocess.check_output(["git", "show", f"{base}:{p}"],
+        return subprocess.check_output(["git", "show", f"{baseline}:{p}"],
                                        stderr=subprocess.DEVNULL).decode("utf-8")
     except subprocess.CalledProcessError:
         return None
@@ -2284,6 +2289,20 @@ def on_disk(p):
         return None
 
 
+def prev_release(ref):
+    """The newest vX.Y.Z tag reachable from ref, other than the version being released."""
+    try:
+        out = subprocess.check_output(
+            ["git", "describe", "--tags", "--abbrev=0", "--match", "v[0-9]*.[0-9]*.[0-9]*",
+             "--exclude", f"v{ver}", ref], stderr=subprocess.DEVNULL).decode().strip()
+    except subprocess.CalledProcessError:
+        return ""
+    return out if re.fullmatch(r"v\d+\.\d+\.\d+", out) else ""
+
+
+# The baseline is what users last received, not where this branch forked: see the header.
+prev = prev_release(base)
+baseline, label = (prev, prev) if prev else (base, "the merge base (no release tag reachable)")
 now, then = descs(on_disk), descs(at_base)
 if not now:
     print("no skills/*/SKILL.md found at all — the scan drifted, and an empty scan makes")
@@ -2294,7 +2313,7 @@ changed = sorted(set(now) ^ set(then)) + sorted(
     k for k in set(now) & set(then) if now[k] != then[k])
 print(f"SCOPE {len(now)}")
 if not changed:
-    print(f"    ok (release, {len(now)} descriptions unchanged since the merge base)")
+    print(f"    ok (release, {len(now)} descriptions unchanged since {label})")
     sys.exit(0)
 
 decl = ""
@@ -2304,7 +2323,7 @@ for line in section.splitlines():
         break
 if not decl:
     print("this release changes the routing surface — the description classifier —")
-    print("for: " + ", ".join(changed))
+    print(f"since {label}, for: " + ", ".join(changed))
     print("A description is the whole auto-load classifier, so adding or editing one")
     print("competes for every neighbour's traffic (ROADMAP 44). Run the regression set:")
     print("  python3 evals/run-desc-routing.py --samples 3 \\")
@@ -2334,10 +2353,11 @@ if "desc-routing-regressions" not in body:
 # classifier. That is the reported-but-never-read shape (sota-code-security rules/14):
 # a control whose output is checked for existence rather than for currency.
 #
-# The anchor is the newest commit in THIS release that touched a skills/*/SKILL.md, so the
-# rule reads "you ran the routing set after you last changed a description". Falling back
-# to the merge-base date keeps it from rejecting a correct release when the descriptions
-# arrived as uncommitted working-tree edits.
+# The anchor is the newest commit since the PREVIOUS RELEASE that touched a skills/*/SKILL.md,
+# so the rule reads "you ran the routing set after you last changed a description". It used
+# to count only base..HEAD, which misses the same merged edits the comparison above missed.
+# Falling back to the baseline's date keeps it from rejecting a correct release when the
+# descriptions arrived as uncommitted working-tree edits.
 #
 # WHAT THIS CANNOT SEE, written down rather than discovered later: the granularity is one
 # DAY, so a run and a later description edit on the same date both pass; and the date comes
@@ -2359,8 +2379,8 @@ def _newest(args):
 
 
 anchor = _newest(["git", "log", "-1", "--format=%ad", "--date=short",
-                  f"{base}..HEAD", "--", "skills/*/SKILL.md"]) \
-    or _newest(["git", "show", "-s", "--format=%ad", "--date=short", base])
+                  f"{baseline}..HEAD", "--", "skills/*/SKILL.md"]) \
+    or _newest(["git", "show", "-s", "--format=%ad", "--date=short", baseline])
 if anchor and mdate.group(1) < anchor:
     print(f"**Routing checked:** names {target}, dated {mdate.group(1)}, but this release's")
     print(f"descriptions last changed on {anchor}. The run predates the change it claims to")
@@ -2368,7 +2388,7 @@ if anchor and mdate.group(1) < anchor:
     print("  python3 evals/run-desc-routing.py --samples 3 \\")
     print("      --cases evals/cases/desc-routing-regressions.jsonl")
     sys.exit(1)
-print(f"    ok (release, {len(changed)} description(s) changed, routing checked in {target})")
+print(f"    ok (release, {len(changed)} description(s) changed since {label}, routing checked in {target})")
 ROUTEPY
   ) || v29=1
   n29=$(printf '%s\n' "$routed_out" | sed -n 's/^SCOPE //p')
