@@ -1351,15 +1351,6 @@
   },
   {
    "verdict": "deliberate",
-   "note": "Code-security checklist item vs testing's full mutation-probe how-to with traps.",
-   "sample": "- [ ] **Mutation probe run on security-critical paths** — control body replaced with the permissive no-op, with the depe",
-   "members": [
-    "sota-code-security/rules/12-verifying-the-verifier.md#40f665dfc30b",
-    "sota-testing/rules/06-property-fuzzing-mutation.md#2df27b7e96ac"
-   ]
-  },
-  {
-   "verdict": "deliberate",
    "note": "rules/15 explicitly reuses rules/12's opening asymmetry, one level up, and extends it to instruments.",
    "sample": "The reason it earns its own file is an asymmetry. A broken feature produces a complaint. **A broken verifier produces a ",
    "members": [

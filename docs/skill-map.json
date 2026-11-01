@@ -4508,12 +4508,12 @@
     "generic ('the language skill')": 21,
     "md link, other skill": 1909,
     "md link, outside skills/": 3,
-    "md link, same skill": 2858,
+    "md link, same skill": 2860,
     "name (backticked)": 455,
     "name (bare)": 240,
     "name+file (backticked)": 899,
     "name+file (bare)": 180,
-    "own rules/NN": 3079
+    "own rules/NN": 3081
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4525,7 +4525,7 @@
     "name (bare)": 196,
     "name+file (backticked)": 895,
     "name+file (bare)": 168,
-    "own rules/NN": 2976
+    "own rules/NN": 2978
   },
   "rules_index_style": {
     "link": 42
@@ -6850,7 +6850,8 @@
         "sota-golang/SKILL.md"
       ],
       "same": [
-        "sota-golang/rules/04-http-services.md"
+        "sota-golang/rules/04-http-services.md",
+        "sota-golang/rules/05-security.md"
       ],
       "router": [],
       "other": [
