@@ -353,6 +353,7 @@ under-covered. This will recur.
 | `hooks/` | the re-injection hook | shellcheck (tracked `*.sh`) | one file |
 | `profiles/` | `example.md.template` only; real profiles are git-ignored | 3 (internal-name leak) | by design — a real profile must never be committed |
 | `.claude-plugin/` | the plugin manifest | 5 (version lockstep) | one JSON file, and its version is the thing that rots |
+| `plugin/` | `README.md`, the Claude plugin directory's listing text; `scripts/build-plugin-dist.sh` ships it as the README of the generated `plugin-dist` branch | `scripts/check-plugin-dist.py` (40-word floor, plus every directory rule on the built tree), run by `plugin-dist.yml` before each publish and, as `--selftest`, by CI | **its claims about each hook are prose** (what it reads, writes and can block): nothing checks them against the scripts, so re-read the hooks when one changes (2026-11-01) |
 
 ## Findings
 

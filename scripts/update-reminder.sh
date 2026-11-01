@@ -167,7 +167,14 @@ if [ -n "$version" ]; then
 else
   printf 'SOTA-skills has been installed here for over %s days. No update check was made (this library never phones home).\n' "$days"
 fi
-# shellcheck disable=SC2016  # literal backticks/text for the user to read, not an expansion
-printf 'If they want to check for a newer release: run `scripts/update.sh`, or browse https://github.com/martinholovsky/SOTA-skills/releases\n'
+# A plugin install updates through Claude Code, not a checkout: scripts/update.sh pulls a git
+# checkout, and the directory build (scripts/build-plugin-dist.sh) does not ship it.
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  # shellcheck disable=SC2016  # literal backticks/text for the user to read, not an expansion
+  printf 'If they want to check for a newer release: open `/plugin` and update sota-skills there, or browse https://github.com/martinholovsky/SOTA-skills/releases\n'
+else
+  # shellcheck disable=SC2016  # literal backticks/text for the user to read, not an expansion
+  printf 'If they want to check for a newer release: run `scripts/update.sh`, or browse https://github.com/martinholovsky/SOTA-skills/releases\n'
+fi
 printf 'To silence this: export SOTA_UPDATE_REMINDER_DAYS=0 (or set it to a different number of days).\n'
 exit 0

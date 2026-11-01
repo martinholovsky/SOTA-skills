@@ -92,7 +92,7 @@ They take free-text arguments (`/sota-close focus on the migration branch`). Ful
 
 - [Standards & practices baked in](#standards--practices-baked-in) · [What the audit hunts that a scanner can't](#what-the-audit-hunts-that-a-scanner-cant) · [How the numbers are kept honest](#how-the-numbers-are-kept-honest)
 - [Skills](#skills) · [Coverage & non-goals](#coverage--non-goals)
-- [Installation](#installation) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
+- [Installation](#installation) · [From the Claude directory](#install-from-the-claude-directory) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
 - [Using it](#using-it) — [slash commands](#slash-commands) (`/sota-resume` · `/sota-audit` · `/sota-deep-audit` · `/sota-close` · `/sota-report`)
 - [Optional setup & integrations](#optional-setup--integrations) — [badge](#badge), [gates](#enforcing-the-gates), [other agents](#other-ai-agents-codex-copilot-gemini-), [status line](#status-line-optional), [plugin extras](#optional-extras-for-plugin-users)
 - [Structure](#structure) · [How it works](#how-it-works) · [Conventions](#conventions)
@@ -788,10 +788,27 @@ read, hack on, or pin). A few details on the clone path:
   the update-reminder hook, the routing-hook, code-rules-hook, zsh EQUALS hook and listing-budget offers, and the
   reach check.
 
-The plugin (or `--copy`) installs the skills; a few extras (routing reminder,
-status line, pre-commit gates, AGENTS.md) aren't auto-enabled — see
-[Optional extras for plugin users](#optional-extras-for-plugin-users). On first
-run the plugin shows a one-time notice pointing there.
+The plugin (or `--copy`) installs the skills, and the plugin also registers its hooks (the
+routing reminder among them); a few extras (status line, pre-commit gates, AGENTS.md) aren't
+auto-enabled — see [Optional extras for plugin users](#optional-extras-for-plugin-users). On
+first run the plugin shows a one-time notice pointing there.
+
+### Install from the Claude directory
+
+**Pending listing**: not yet in Anthropic's plugin directory. Once listed, find
+**SOTA Engineering Skills** under Customize → Plugins → Discover in claude.ai or the desktop
+app, or in `/plugin` in Claude Code. The listing is built from a generated branch,
+`plugin-dist`, which holds only what the plugin loads (skills, slash commands, hooks and the
+scripts they run) and is published by CI on each release tag
+([RELEASING.md §4b](RELEASING.md#4b-the-claude-plugin-directory-plugin-dist--automatic-on-the-tag)).
+
+What you get depends on where you use it (Anthropic's
+[plugin support table](https://claude.com/docs/plugins/platform-support), read 2026-11-01):
+**in claude.ai chat the skills and slash commands load but hooks are ignored**, so there is no
+per-prompt routing reminder and the skills are used only when something names them. In Cowork
+and Claude Code the hooks run. A plugin installed on your claude.ai account also appears in
+Claude Code as a synced plugin. Every hook, what it reads and writes, and how to turn it off is
+listed in the listing's own README, [`plugin/README.md`](plugin/README.md).
 
 ### An install is personal, not repo-resident
 
