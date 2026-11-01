@@ -5,6 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.54.0] - 2026-11-01
+
+A MINOR: the library can now be listed in the Claude plugin directory — each release tag builds a slim plugin tree and publishes it to a generated `plugin-dist` branch — and a release step finds instructions stated twice by meaning (`scripts/semantic-dup-scan.py`). Thirty-four PRs since v1.53.0: #639–#673 (#670 was closed unmerged).
+
+**Front door checked:** plugin-dist · Claude directory · hooks are ignored · rules/16
+
+**Routing checked:** evals/results/2026-11-01/ROUTING-CHECK-V1-54-0.md
+
+- **Publish to the Claude plugin directory** (#673). The directory refused `main` (17,190 files and folders in its archive, 15,783 of them probe fixtures; it stops at 10,000), so a tag now runs `.github/workflows/plugin-dist.yml`: build an allowlisted tree through `git archive` (374 files, 465 entries), check it against the directory's rules (`scripts/check-plugin-dist.py`, 18 checks, 21 known-bads in `--selftest`), and push one fast-forward commit (`scripts/publish-plugin-dist.sh`, never forced, refusing a downgrade or a changed tree under a published version). `plugin/README.md` is the listing text: every hook, what it reads and writes, that the zsh hook can block a command, and that in claude.ai chat **hooks are ignored**. The listing icon ships in `.claude-plugin/icon.png`. README: "Install from the Claude directory" (pending listing); RELEASING §4b.
+- **Instructions stated twice, found by meaning** (#659, #660; ROADMAP 89 closed). `scripts/semantic-dup-scan.py` embeds every block of 25 or more words with a local model, groups cross-file pairs above a threshold, and fails on a group without a verdict in `docs/semantic-duplicates.json`; it runs a built-in control before it trusts itself. A release step (RELEASING §2d), not a gate. The duplicate backlog it found was worked off.
+- **Fast CI without blind spots** (#644, #656, #658; ROADMAP 86–88 closed). CI's negative controls run in four shards under the same required check (about 18 → 6 min), and a new `sota-devsecops` **rules/16** covers measuring CI before optimising it, caches, change scoping and sharding without a required check passing unrun. The skill map gained page 8, who reaches each rules file (#655).
+- **Per-language rows, verified** (#663–#665; ROADMAP 90, 91 closed). `sota-async-concurrency` rules/05 §4 names each runtime's signal trap and drain; `sota-rust` rules/04 §8's canonical service trapped only Ctrl-C (measured: exit 143 on SIGTERM, no drain) and is fixed. `sota-databases` rules/04 §5 bounds the app-side pool, with nine drivers' defaults read from their docs. `sota-c-cpp` rules/04 §2 caps HTTP bodies (Beast, cpp-httplib, libcurl defaults from source).
+- **A missing tool is a question for the operator, not a skip** (#642): router principle 6. `sota-rust` names Kani and Flux (#642, #651); ten of the library's own "not measured" cells measured (#643).
+- **Two evaluations closed** (ROADMAP 70, 73). `/sota-audit` on a subject with history and callers: pre-registered, the v1 probe voided itself, v2 found the history secret and the caller-held defect in both arms (#666–#668). Routing depth: with the library, failed rule tests were named and handed back 131 of 145 times rather than missed (#669); narrowing the router's exits (v17) was NULL, 12/20 in both arms (#671).
+- **Intakes and closures**: field reports and external proposals (#648, #650, #654, #657, #662, #663), each item labelled verified, corrected, refuted or not reproducible; closure, resume and status passes (#639–#641, #645–#647, #649, #652, #653, #672), including a skill-map legend that still printed "N/A" beside a filled cell; a whole-repository audit run recorded against ROADMAP 70 without closing it (#661).
+- **Counts:** 44 invariants; 130 negative-control probes, 128 live; 1,900 checklist probes proven by fixtures. ROADMAP open: item 5 (dormant).
+
 ## [1.53.0] - 2026-10-27
 
 A MINOR: a new script, `scripts/check-probe-fixtures.py`, behind **invariant 44** — every runnable audit-checklist probe is now proven by a known-bad and a known-good tree, 1,899 of 1,899 — plus four new refusals in the zsh PreToolUse hook, and this repo's own secret scan now reads merge commits. Thirteen PRs since v1.52.0: #623–#637.
@@ -11718,6 +11735,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.54.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.0
 [1.53.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.53.0
 [1.52.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.52.0
 [1.51.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.51.0
