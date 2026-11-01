@@ -91,7 +91,8 @@ result of a bad path, an empty glob, an over-narrow filter, or a missing toolcha
   or no-echo on Ctrl-C is a High finding. Use defer/finally/atexit paths that
   run on signal, and test it: hit Ctrl-C inside every prompt and progress bar.
 - SIGINT must work **during network operations**: set cancellation on the
-  request context (Go contexts, Python signal→cancel, Rust select on ctrl_c).
+  request context (Go contexts, Python signal→cancel, Rust `select!` on `ctrl_c()` and
+  SIGTERM — `ctrl_c()` alone never sees SIGTERM, [`sota-rust` rules/04](../../sota-rust/rules/04-async-tokio.md) §8).
   A blocking socket read that ignores Ctrl-C for 60s reads as a hang.
 - Handle SIGTERM like SIGINT-without-prompt (CI and orchestrators send it);
   SIGHUP at minimum doesn't corrupt state.

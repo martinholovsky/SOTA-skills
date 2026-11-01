@@ -70,7 +70,8 @@ These track a property of the language. Adding the missing cells would be writin
   typed language does not need a chapter on adding types. *(Superseded 2026-09-23: the row
   counts type-system leverage too, and rust, jvm and go each have such a chapter. Page 5 now
   has no blank cells; the only `n/a` is c/c++ Web/HTTP, and the generator refuses to draw an
-  unexplained blank.)*
+  unexplained blank. Superseded again 2026-10-30, #663: that `n/a` was a mapping omission, c/c++
+  rules/04 now carries Web/HTTP, and page 5 has no `n/a` cell.)*
 - **Memory / UB** only in **C/C++** (two files) and **Rust** (`unsafe` discipline).
   Measured: 14 and 6 mentions of use-after-free / UB / bounds against ~0 in the GC'd
   languages. Correct, not a gap. **CORRECTED 2026-09-23: it was a gap.** Counting UB
@@ -438,7 +439,7 @@ on purpose, so that a later sweep does not "fix" the absence:
 ### Depth, measured 2026-09-23: breadth is uniform, depth is not
 
 After #426 every language has every applicable topic (page 5 has no blank cells; the only
-`n/a` is c/c++ Web/HTTP). Depth still varies:
+`n/a` is c/c++ Web/HTTP; since 2026-10-30, #663, none). Depth still varies:
 
 | language | rules lines | audit items | items / 100 lines | external gap-check |
 |---|---|---|---|---|

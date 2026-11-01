@@ -3049,6 +3049,14 @@
       ]
     },
     {
+      "from": "sota-cli-ux",
+      "to": "sota-rust",
+      "weight": 1,
+      "targets": [
+        "rules/04 \u00a78"
+      ]
+    },
+    {
       "from": "sota-cloud-infrastructure",
       "to": "sota-identity-access",
       "weight": 1,
@@ -4498,12 +4506,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1908,
+    "md link, other skill": 1909,
     "md link, outside skills/": 3,
     "md link, same skill": 2858,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 898,
+    "name+file (backticked)": 899,
     "name+file (bare)": 180,
     "own rules/NN": 3079
   },
@@ -4515,7 +4523,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 894,
+    "name+file (backticked)": 895,
     "name+file (bare)": 168,
     "own rules/NN": 2976
   },
@@ -8341,7 +8349,8 @@
       "router": [],
       "other": [
         "sota-async-concurrency/SKILL.md",
-        "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md"
+        "sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md",
+        "sota-cli-ux/rules/03-behavior-lifecycle.md"
       ]
     },
     "sota-rust/rules/05-security-supply-chain.md": {

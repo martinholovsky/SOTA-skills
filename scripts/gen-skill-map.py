@@ -179,11 +179,10 @@ INLINE = {("php", "Concurrency"): "01 §6",
 # A cell that does not apply says so. Until 2026-09-23 page 5 drew these BLANK, and a blank
 # is unreadable: a reader cannot tell "does not apply" from "nobody wrote it", and on that
 # date 11 of 12 blanks a reader flagged were the second kind. Every remaining blank must be
-# declared here WITH its reason, or the generator refuses to draw the page.
-NOT_APPLICABLE = {
-    ("c-cpp", "Web / HTTP"): "no mainstream C/C++ web stack to be idiomatic about; HTTP "
-                             "semantics belong to sota-api-design",
-}
+# declared here WITH its reason, or the generator refuses to draw the page. Empty since
+# 2026-10-30 (#663): its one entry, c/c++ Web / HTTP, was a mapping omission (rules/04 covers
+# libcurl and the body caps), and the entry kept printing "N/A" in the legend beside a filled cell.
+NOT_APPLICABLE = {}
 
 
 def audit_items(lang):
