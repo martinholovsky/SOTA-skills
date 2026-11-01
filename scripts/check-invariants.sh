@@ -2186,7 +2186,7 @@ if [ "$v28" -ne 0 ]; then fail=1; fi
 #
 # The declaration names an artifact, and the artifact is checked: it must exist and
 # must mention the regression case set, so declaring an unrelated file fails. The run
-# is cheap -- 2 cases x 3 samples x 2 arms is about 12 calls -- which is what makes a
+# is cheap -- each case x 3 samples x 2 arms, 24 calls for the 4 cases at the v1.54.0 cut -- which is what makes a
 # release-time trigger the right price for a defect that shipped for a day.
 echo "[29/44] A release changing skill descriptions declares a routing check"
 v29=0
