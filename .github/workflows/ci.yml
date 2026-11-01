@@ -262,6 +262,18 @@ jobs:
         # server that silently drops a reply (which printed 35/35 before) or a deleted check fails.
         run: python3 scripts/test-mcp-server.py
 
+      - name: Prove the plugin-dist checker and publisher still refuse their known-bads
+        # plugin-dist.yml runs both at release; here they run on every PR so a broken gate is found
+        # before a tag needs it. The checker's 21 known-bads each fail their own check and nothing
+        # else, and the publisher's 16 cases assert the refusal's reason, not only its exit code.
+        # Mutation-checked 2026-11-01: a silent icon check fails 4 of 18; a routing control loosened
+        # to "sota anywhere in stdout or stderr" fails 1; a publisher with the downgrade refusal
+        # removed still exited 1, through another guard, and failed only because the reason is
+        # asserted.
+        run: |
+          python3 scripts/check-plugin-dist.py --selftest
+          ./scripts/publish-plugin-dist.sh --selftest
+
   claims:
     name: Executable claims (${{ matrix.os }})
     # TWO RUNNERS ON PURPOSE. Several claims in skills/ are PLATFORM SPLITS -- BSD

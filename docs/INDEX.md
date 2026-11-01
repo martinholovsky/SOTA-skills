@@ -8,6 +8,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | I want to… | Go to |
 |---|---|
 | Install it (plugin or clone) | [README → Installation](../README.md#installation) |
+| Publish the plugin to the **Claude plugin directory** — the generated `plugin-dist` branch, why `main` cannot be listed (the 10,000-entry limit), the release step, what each hook discloses, and plan B | [RELEASING.md §4b](../RELEASING.md#4b-the-claude-plugin-directory-plugin-dist--automatic-on-the-tag); [`plugin/README.md`](../plugin/README.md); `scripts/build-plugin-dist.sh`, `scripts/check-plugin-dist.py`, `scripts/publish-plugin-dist.sh`, `.github/workflows/plugin-dist.yml` |
 | Update a clone to the latest release | `scripts/update.sh` (an alias for `scripts/install.sh --update`); [README → Updating](../README.md#updating) |
 | Make the skills apply to **every** prompt (always-on routing) | [README → Always-on routing](../README.md#always-on-routing-recommended) |
 | Understand how a prompt gets routed to skills | [README → How it works](../README.md#how-it-works); [`skills/sota/SKILL.md`](../skills/sota/SKILL.md) |

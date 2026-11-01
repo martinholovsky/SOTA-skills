@@ -352,7 +352,8 @@ under-covered. This will recur.
 | `.github/` | CI workflows | shellcheck reaches `*.sh` only, **not `run:` blocks** | **a real gap, stated rather than closed**: an unlinted `run:` block is the same class invariant 32 closes for skills. Not gated yet because extracting `run:` YAML scalars reliably is more machinery than the two blocks justify |
 | `hooks/` | the re-injection hook | shellcheck (tracked `*.sh`) | one file |
 | `profiles/` | `example.md.template` only; real profiles are git-ignored | 3 (internal-name leak) | by design — a real profile must never be committed |
-| `.claude-plugin/` | the plugin manifest | 5 (version lockstep) | one JSON file, and its version is the thing that rots |
+| `.claude-plugin/` | the plugin manifest, the marketplace entry, and `icon.png` (the directory listing icon) | 5 (version lockstep); `check-plugin-dist.py` `[icon]` on the built tree | the manifest's version is the thing that rots; the icon is taken by the directory **once**, at the first portal save, so a later change to the file reaches no one (2026-11-01) |
+| `plugin/` | `README.md`, the Claude plugin directory's listing text; `scripts/build-plugin-dist.sh` ships it as the README of the generated `plugin-dist` branch | `scripts/check-plugin-dist.py` (40-word floor, plus every directory rule on the built tree), run by `plugin-dist.yml` before each publish and, as `--selftest`, by CI | **its claims about each hook are prose** (what it reads, writes and can block): nothing checks them against the scripts, so re-read the hooks when one changes (2026-11-01) |
 
 ## Findings
 

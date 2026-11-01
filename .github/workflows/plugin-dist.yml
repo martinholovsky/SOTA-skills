@@ -1,0 +1,94 @@
+name: plugin-dist
+
+# Publishes the slim plugin tree to the plugin-dist branch, which the Claude plugin directory
+# follows (RELEASING.md §4b). Every commit on plugin-dist reaches everyone who has the plugin,
+# so this job is a release: it runs only for a vX.Y.Z tag that main already contains, and its
+# one write is a fast-forward push to plugin-dist (scripts/publish-plugin-dist.sh, never forced).
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'An existing release tag to (re)publish, e.g. v1.53.0'
+        required: true
+        type: string
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+# One publish at a time, never cancelled: two tags pushed together must not race for the branch.
+concurrency:
+  group: plugin-dist
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, check and publish plugin-dist
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # A release job is environment-gated (sota-devsecops rules/02 §2.6). GitHub creates the
+    # environment on the first run with no protection; its deployment rule (tags v*.*.*) and any
+    # required reviewer are repository settings, set by the operator (RELEASING.md §4b).
+    environment: plugin-directory
+    permissions:
+      contents: write  # the one fast-forward push to plugin-dist, in the last step; nothing else writes
+    steps:
+      - name: The tag is a release tag
+        # The tag reaches run: through env only, and is matched before anything uses it.
+        env:
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::not a release tag: '$TAG'"; exit 1; }
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      # actions/checkout, pinned by commit SHA (sota-devsecops rules/01), the same pin as ci.yml.
+      # No credential is left in .git/config: the selftests, the build and the check run the
+      # repository's scripts, hooks included, and none of them needs to write.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: The tag is on main
+        # Inline, before any repository script runs: a tag pushed on an unreviewed commit
+        # publishes nothing. The repository is public, so this fetch needs no token.
+        run: |
+          git fetch --quiet --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          tag_commit=$(git rev-parse --verify "refs/tags/${TAG}^{commit}")
+          [ "$(git rev-parse HEAD)" = "$tag_commit" ] || { echo "::error::HEAD is not $TAG"; exit 1; }
+          git merge-base --is-ancestor "$tag_commit" origin/main ||
+            { echo "::error::$TAG ($tag_commit) is not on main; refusing to publish it"; exit 1; }
+          echo "$TAG = $tag_commit, an ancestor of origin/main $(git rev-parse --short origin/main)"
+
+      - name: The checker and the publisher still catch their known-bads
+        run: |
+          python3 scripts/check-plugin-dist.py --selftest
+          ./scripts/publish-plugin-dist.sh --selftest
+
+      - name: Build the plugin tree from the tag
+        run: ./scripts/build-plugin-dist.sh "$RUNNER_TEMP/plugin-dist" "refs/tags/$TAG"
+
+      - name: Check the tree against the directory's rules
+        run: python3 scripts/check-plugin-dist.py "$RUNNER_TEMP/plugin-dist"
+
+      - name: Publish to plugin-dist
+        # The token reaches git through GIT_CONFIG_* in this step's environment only: not argv,
+        # not .git/config, and not any earlier step.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth"
+          export GIT_AUTHOR_NAME="github-actions[bot]" GIT_COMMITTER_NAME="github-actions[bot]"
+          export GIT_AUTHOR_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+          ./scripts/publish-plugin-dist.sh "$RUNNER_TEMP/plugin-dist" "$TAG" origin

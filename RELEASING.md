@@ -278,6 +278,54 @@ Plugin installs pick the release up because the `plugin.json` version bumped
 `git pull`, and `./scripts/install.sh --update` also links any brand-new
 skills.
 
+## 4b. The Claude plugin directory (`plugin-dist`) — automatic on the tag
+
+The directory follows the generated branch `plugin-dist`, not `main`: it refuses a repository
+archive of 10,000 files and folders or more, and `main` holds about 17,000, almost all probe
+fixtures. Every commit on `plugin-dist` reaches everyone who installed the plugin from the
+directory, so the branch is written by one workflow and nothing else.
+
+Pushing the tag in §4 runs `.github/workflows/plugin-dist.yml`. It refuses a tag that is not
+`vX.Y.Z` or not on `main`, re-runs both selftests, builds the tree from the tag
+(`scripts/build-plugin-dist.sh`, an allowlist read through `git archive`), checks it
+(`scripts/check-plugin-dist.py`), and pushes one fast-forward commit
+(`scripts/publish-plugin-dist.sh`: never forced; it refuses a downgrade, a VERSION or
+`plugin.json` that disagrees with the tag, and a second, different tree under a version already
+published). Check it landed, in its own step:
+
+```sh
+gh run list --workflow plugin-dist.yml --limit 1        # the run for this tag: completed, success
+git fetch origin plugin-dist
+git show origin/plugin-dist:VERSION                      # == $v
+git show origin/plugin-dist:SOURCE_COMMIT                # == git rev-parse "v$v^{commit}"
+```
+
+To try it before tagging (nothing is pushed):
+
+```sh
+out=$(mktemp -d)/dist
+./scripts/build-plugin-dist.sh "$out" HEAD && python3 scripts/check-plugin-dist.py "$out" &&
+  claude plugin validate --profile directory "$out"
+```
+
+`--profile directory` matters: without it `claude plugin validate` reports a directory refusal
+and still exits 0 (Claude Code 2.1.316, measured 2026-11-01). The directory then scans the new
+commit itself, on its schedule or through the GitHub push webhook, and publishes it according to
+the listing's auto-publish setting. To publish a tag again (a failed run, a portal fix), run the
+workflow from the Actions tab with that tag; an unchanged tree is a no-op.
+
+- **Never push `plugin-dist` by hand**, and never force it. A hand edit would reach every user
+  on the next scan, and the next release would build on it.
+- **The listing icon is taken once**, the first time the plugin is saved or submitted in the
+  portal (`claude plugin validate`, ICON_MISSING). `.claude-plugin/icon.png` is on the build
+  allowlist and checked (square PNG, 512–2048 px, under 2 MB), so it must exist before the first
+  submission. Changing the file later does not change the listing.
+- **Plan B — DEFERRED.** Revisit trigger: the portal refuses `plugin-dist` with "Repository too
+  large to validate" although the branch holds 465 entries, 374 of them files (built from 1.53.0 content plus an icon, 2026-11-01), meaning it counts the whole
+  repository, not the tracked branch). Then publish to a separate repository instead
+  (e.g. `SOTA-skills-plugin`): `publish-plugin-dist.sh` already takes a REMOTE, and the workflow
+  would need a token that may write to that repository only.
+
 ## Pre-tag checklist
 
 - [ ] `./scripts/check-invariants.sh` passes
@@ -313,3 +361,6 @@ skills.
 - [ ] **Duplicate scan run (§2d)** — `scripts/semantic-dup-scan.py` exits 0, or every new group
       it printed now has a verdict in `docs/semantic-duplicates.json`. Exit 2 is not a pass
 - [ ] GitHub Settings social-preview re-upload — only if the PNG changed
+- [ ] **After the tag: the `plugin-dist` run is green (§4b)** — `gh run list --workflow
+      plugin-dist.yml --limit 1`, then `git show origin/plugin-dist:SOURCE_COMMIT` equals the
+      tag's commit. A red run means the directory still serves the previous release
