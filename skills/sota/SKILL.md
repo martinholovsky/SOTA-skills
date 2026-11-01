@@ -76,10 +76,10 @@ rules files that match the code in front of you. Never load all skills at once.
    effectively cannot, so requiring it forces the lookup that "check this is
    current" does not. A version with no EOL date beside it has not been looked
    up. Detail, and what to do with a lapsed one: [`sota-devsecops` rules/03](../sota-devsecops/rules/03-dependencies.md) §3.9.
-2. **Stop-and-ask on security-relevant decisions.** When a choice materially
-   affects security posture (authn/z model, crypto primitive, trust boundary,
-   secrets handling, network exposure), present the options with a
-   recommendation and ask before proceeding. Do not silently pick.
+2. **Stop-and-ask on security-relevant decisions that have no safe default.** When a choice materially
+   affects security posture (authn/z model, crypto primitive, trust boundary, secrets handling, network
+   exposure) and every option costs something real, present the options with a recommendation and ask. Do not silently pick.
+   Where a conservative default exists (a cap, a limit, an allow-list, a guard) and the request does not rule it out, build it and name it in one line of your final message rather than handing it back: measured 2026-11-01, 131 of 145 failed rule tests had been named and handed back, not missed.
 3. **Evidence over vibes.** Every audit finding cites file:line, maps to a
    standard (CWE, OWASP, MITRE ATT&CK/ATLAS) where one applies, and proposes a
    concrete fix. Uncertain findings are marked "needs verification", never
@@ -125,8 +125,8 @@ rules files that match the code in front of you. Never load all skills at once.
    These are cross-cutting, so they get silently dropped under a long, dense
    task even when a rules file covers them — a measured attention effect, not a
    coverage gap. Keep this list short and **re-check it last, before you ship**
-   (BUILD step 4). If one is deliberately handled elsewhere (e.g. rate limiting
-   at the gateway), say so — don't silently omit it.
+   (BUILD step 4). Count one as handled elsewhere only when you can name where (the gateway config, the
+   middleware, the file); otherwise build it with a conservative default and name it — never silently omit it.
 6. **Claim "done" only with evidence.** Never report a task complete or a fix
    working from plausibility — "should work", "this fixes it", "Done!" are not
    evidence. State the check you actually ran and its result: test output with
