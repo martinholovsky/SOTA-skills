@@ -218,5 +218,8 @@ case "${1:-}" in
   -h | --help) usage 0 ;;
   --selftest) selftest ;;
   '') usage 2 >&2 ;;
-  *) [ $# -ge 2 ] && [ $# -le 3 ] || usage 2 >&2; publish "$@" ;;
+  *)
+    if [ $# -lt 2 ] || [ $# -gt 3 ]; then usage 2 >&2; fi
+    publish "$@"
+    ;;
 esac
