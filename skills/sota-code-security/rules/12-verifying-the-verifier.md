@@ -1,0 +1,471 @@
+# Verifying the Verifier — the mutation probe
+
+[rules/10](10-silent-control-failure.md) catalogs controls that look enabled and do nothing. [rules/11](11-dead-path-diagnostics.md) is the sweep
+that finds them at codebase scale. This file is the third move, and the one most
+often skipped: **proving that a specific control works** — by making it fail on
+purpose, and by putting that known-bad somewhere it will survive.
+
+Turning the same suspicion on **everything that did the proving** — the scorers,
+gates, benchmarks, watchers and guards, and the instrument you are auditing with
+right now — is [`rules/15`](15-instruments-and-guards.md), split out of this file on 2026-09-06 at the seam its own
+subtitle used to name. Section numbers did not change in the move: [`rules/15`](15-instruments-and-guards.md) §2 and
+[`rules/15`](15-instruments-and-guards.md) §3 mean there exactly what they meant here.
+
+The reason it earns its own file is an asymmetry. A broken feature produces a
+complaint. **A broken verifier produces a green tick or a number**, and both are
+believed, quoted, and put in a README. Nothing downstream distinguishes "we
+checked and it was fine" from "the check could not have failed".
+
+Use it in BUILD to decide whether a control you just wrote is actually held in
+place by anything, and in AUDIT as the pass that runs *after* [rules/10](10-silent-control-failure.md) and
+[rules/11](11-dead-path-diagnostics.md) have produced findings — because a finding produced by an unvalidated
+instrument is not yet a finding ([`rules/15`](15-instruments-and-guards.md) §2, §3).
+
+**Outside software this is settled practice, under four different names.** Every
+discipline that has to trust a detector tests it with something it *must* catch:
+a **proof test**, which exists because a safety function's dangerous failures
+stay hidden until the moment of demand (IEC 61508's framing); a **positive
+control** in an assay, where a run whose known-positive comes back negative is
+void rather than clean; **built-in test** on aircraft systems; and adversary
+emulation in detection engineering, where [`sota-detection-engineering` rules/06](../../sota-detection-engineering/rules/06-incident-response-validation.md)
+already requires proving a detection fires against the real technique. Software
+CI tests the code with the tests and almost never tests the tests, gates and
+scanners with a known-bad. Closing that asymmetry is what this file is for. The
+design-level generalisation is **poka-yoke**: prefer making the inert state
+impossible or self-announcing over making it detectable.
+
+Related: the instruments and guards that do the checking → [`rules/15`](15-instruments-and-guards.md); the
+inert-control catalog → [rules/10](10-silent-control-failure.md); the codebase-scale sweep → [rules/11](11-dead-path-diagnostics.md); vacuous tests in general, mutation testing, and watching a security
+test fail → [`sota-testing` rules/02](../../sota-testing/rules/02-test-design-quality.md), [rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) and [rules/09](../../sota-testing/rules/09-security-testing.md); the audit-level
+evidence and refutation standard → [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2 and §4.
+
+---
+
+## 1. The mutation probe — make the control fail on purpose
+
+A test that passes against broken code is worse than no test: it manufactures
+false safety. [`sota-testing` rules/02](../../sota-testing/rules/02-test-design-quality.md) (assertion-free, tautological), [rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md)
+(mutation testing), and [rules/09](../../sota-testing/rules/09-security-testing.md) (security regression tests must be watched to
+fail) own the general doctrine. What this file adds is the targeted procedure
+for a **security control**:
+
+1. Replace the control's body with the permissive no-op — `return []`,
+   `return True`, `pass`.
+2. Run the suite.
+3. **Nothing fails ⇒ that control is untested**, regardless of how many tests
+   name it. Report it as a finding, not as a coverage note.
+
+Two traps that make step 3 lie:
+
+- **Masked by a missing dependency.** The assertion passes because the feature
+  was disabled for an *unrelated* reason ([rules/16](16-where-no-ops-hide.md) §2.2) — the real path never
+  ran. Force the dependency present (monkeypatch the availability check) so the
+  control is actually exercised.
+- **The mutation did not take.** Commonest cause first, because it is not an environment
+  fault at all: **the substitution matched nothing.** A regex that does not match, a `sed`
+  delimiter colliding with a character in the pattern (`s|…|…|` against a pattern
+  containing `|`), an edit tool that no-ops. Then the environmental ones — editable
+  installs, copied/rsync'd trees, stale bytecode, cached images — and a **formatter
+  reflow**, where a multi-line revert silently matches nothing because
+  `ruff format`/`black`/`prettier` folded the target onto one line.
+
+  Two fixes, and the cheaper one is stronger. **Assert the pattern is present before you
+  write**, which fails at *mutation* time:
+
+  ```python
+  assert old in text, f"mutation {n} did not match -- harness bug, not a result"
+  ```
+
+  and **assert the mutation's runtime effect** — make the no-op print or raise once —
+  which fails at *interpretation* time. Field-measured: a three-mutation harness where one
+  `sed` died loudly on a delimiter collision and another matched nothing in silence; the
+  silent one made the self-test **pass**, and was read for half a minute as a real gap in
+  the control being built. Only the loud sibling made the harness suspect at all
+  ([`rules/15`](15-instruments-and-guards.md) §2.1, sixth bullet — the harness is the newer artifact).
+
+**The converse lies too: a red run is not the test catching the mutant.** Every stage of a gate
+script shares one exit code. Measured 2026-10-27: a deleted guard call rejected by `cargo clippy
+-- -D warnings` (`associated function enable is never used`) and a reachable mutant failing its
+assertion both exited **101** through the same `set -e` script. Count a mutant killed only when it
+fails **at the stage and assertion it targets** — read the failing line, not the exit code. A lint
+or compile rejection is §1a.2's *not attempted* (cargo-mutants files it as `unviable`,
+"inconclusive about test coverage"); keep the mutant reachable — an early return behind a
+never-set condition, not a deleted call. A failure at an **earlier** assertion than the targeted
+one is a finding in its own right: a precondition that passed by luck, or a false premise
+(field-reported 2026-10-25, both shapes).
+
+A **third probe** costs one edit: leave code and fixture alone and point the
+assertion at a plausible **wrong expected value** — still passing means it is keyed
+to something true that is not evidence ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
+
+Then build the **structural** test that catches the class: assert the loaded rule
+count is non-zero, assert every reference-config key resolves, assert the
+documented default equals the parsed default, assert the control's telemetry is
+emitted. Instance tests catch today's bug; structural tests catch the next one.
+
+## 1a. The other direction — the control that blocks everything
+
+§1's probe is **directional**. It installs the *permissive* no-op and asks what
+fails, which finds the control that does nothing. Nothing in it can find the
+opposite defect: an **enforcement** control — a cap, quota, limit, filter,
+allowlist, sandbox policy — set so tight that it refuses the legitimate case too.
+Both defects pass the same test, because a security suite asserts *refusal*
+([`sota-testing` rules/09](../../sota-testing/rules/09-security-testing.md) §1) and refusal is exactly what an over-tight control
+produces.
+
+The asymmetry is why only one of the two ever gets found. An inert control fails
+toward the attacker and nothing observable changes. An over-tight one fails toward
+the user and is loud — *in production*, weeks later, on the input nobody tested.
+
+**Every enforcement control needs two arms, and the deny arm is the one everybody
+writes:**
+
+1. **Deny arm** — the abusive case is refused. (The one you already have.)
+2. **Allow arm** — a *representative legitimate* case completes unchanged under the
+   same policy. Not a reduced case, not a synthetic one: the real workload's
+   ordinary input.
+
+**A negative control on the environment is not a negative control on the control.**
+Proving the machine can allocate a gigabyte says nothing about whether *your cap*
+permits legitimate work — an arm like that exercises the environment and passes
+whether or not the control exists at all. The allow arm has to run **through** the
+control.
+
+Worked instance, both arms measured (Go 1.26, linux/amd64, container, 2026-08-18):
+
+| memory cap | deny arm — over-budget allocation refused | allow arm — 200 MiB legitimate run completes |
+|---|---|---|
+| `ulimit -v` (`RLIMIT_AS`) | yes — **vacuously**: the process never starts | **no** — `fatal error: failed to reserve page summary memory` at `-v 512M` |
+| `ulimit -d` (`RLIMIT_DATA`) | yes — 400 MiB refused at `-d 128M` | yes — completes at `-d 512M` |
+
+Deny-only, the two configurations are indistinguishable and both read as "the cap
+works" — and the `RLIMIT_AS` row passes its deny arm **vacuously** ([`rules/15`](15-instruments-and-guards.md) §3), for the
+same reason it fails the allow arm: nothing ever runs ([`sota-sandboxing` rules/02](../../sota-sandboxing/rules/02-linux-os-hardening.md)
+R7.2a). The allow arm is the only thing that separates a working budget from a
+control that refuses everything — and it is precisely the arm the deny-only habit
+drops. The same gap applies to a WAF ruleset, an egress allowlist, an input
+validator, an admission policy, and a rate limiter keyed too narrowly.
+
+### 1a.1 A failed reproduction is an absence claim, and needs the same two arms
+
+§1a asks a *control* for an allow arm as well as a deny arm. The same requirement applies to
+an **experiment**, and nothing points it there — which is why it is skipped.
+
+*"It did not reproduce"* is a negative claim. It therefore already falls under the heavier
+burden `sota/SKILL.md` principle 3 puts on any absence — but it **does not feel like a
+search**, so the rule never fires. A refutation is reported as a result, not as a
+not-found, and passes unchallenged in a way "no instances of X" would not.
+
+Field-reported, and the reporter published the failure: a mechanism was reported to a
+reviewer as **REFUTED, twice, confidently**, from two harnesses that could not have produced
+any other outcome — the client short-circuited before sending the command under test, and
+the transport had no retry layer to exercise. The effect was not absent; **the instrument
+reached nothing**. What separated the third attempt from the first two was not insight, it
+was a control arm: identical code with the doubling switched off, proving the harness could
+produce *an* outcome at all. With it, the mechanism reproduced on the first run.
+
+- **An experiment that returns a null needs an arm that returns a non-null**, through the
+  same code path, before the null is reportable. Without it, *"the effect is absent"* and
+  *"my harness reaches nothing"* are the same output.
+- **State the falsifier before running** — then a null is a result rather than a mood.
+- **The cheap tell: a null that arrives instantly and identically on both runs.** A real
+  refutation usually costs something — a different error, a partial result, a changed
+  timing. Two byte-identical clean exits are more often a harness that never engaged.
+- **Say which arm you ran when you report a refutation.** A refutation with no control arm
+  should be labelled *"did not reproduce here"*, never *"refuted"* — the first is about your
+  instrument, the second about the world.
+- **In a before/after measurement, the "after" arm is an absence too, and needs its own control:**
+  run it on a fresh instance where it must succeed. Field-reported 2026-10-23: a resource-leak
+  proof's control first showed a session still held after its peer died. The cause was the
+  harness's own pending request, which re-opened it. Without the control, the write-up would have
+  claimed a stronger leak than the code has. A second control, a fresh scheduler reaching a live
+  peer, had to pass before "the legitimate peer received nothing" counted.
+
+### 1a.2 A reproduction has three outcomes, and only the sink proves the second
+
+A security reproduction ends in one of three states. Mantis's authors single out conflating
+the last two as a common false negative in agent reproductions:
+
+- **Reproduced** — the defect fired, observed through the target's own behaviour.
+- **Reached, did not fire** — execution got to the sink *carrying the triggering state* (an
+  earlier normaliser in the harness can reach the sink with the value already defused), and
+  §1a.1's control arm shows the harness can produce a firing at all. Only this state supports
+  §1a.1's *"did not reproduce here"* — and "refuted" still needs that control arm.
+- **Not attempted** — the harness never reached the sink. A build or compile failure, exit
+  127 (command not found), a missing input file, or a crash in your own wrapper all land
+  here. It is retry-eligible and says nothing about the code.
+
+**Proof of reaching the sink comes from the target, not from your wrapper.** A marker your
+script writes *before* launching the target proves only that a launch was attempted. Prefer
+evidence that does not edit the target — coverage output (`llvm-cov`, `gcov`, `coverage.py`)
+or a debugger breakpoint on the sink. If you must add an in-path marker, write it to a file
+(stdout can be truncated by the very crash you are looking for) and keep it in every run you
+compare ([`sota/rules/05`](../../sota/rules/05-audit-report-and-tracking.md) §5, identical instrumentation).
+
+**A crash that needs a direct-call harness is "reached in isolation", not yet a
+reproduction.** Feeding a private or static function a hand-built input — a buffer at a size
+the library's own wrappers never produce, a state no public entry point can create — shows
+the function is fragile. It is **needs verification**, not a downgrade ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §1):
+find the public path an attacker can reach (the *reaches* leg) and rate on that chain once
+found. Rate it as hardening only when reading every caller shows no entry point can produce
+the state. Where the called function *is* the exported API — a library, or a fuzz harness on
+an exported function — the direct call is the public path.
+
+Source: Google's Mantis toolkit (Apache-2.0) reproduction gates; adopted 2026-10-02.
+
+## 1b. Where the probe lives decides whether it survives
+
+§1 and §1a describe probes as things you *run*. In any suite that keeps them they
+are also things somebody *maintains*, and the two usual homes both leak:
+
+- **Beside the checks** — a separate harness or CI job that injects a known-bad per
+  check. It proves today's checks can fail. It says nothing about the check added
+  next week, because joining the harness is a **convention**, enforced by a sentence
+  in a contributing guide and by whoever happens to review the PR.
+- **In a reviewer's memory** — "we watched it fail once". Unrecorded, and gone with
+  the person.
+
+Prefer a third home: **a mode of the tool itself** — `--self-test`, a `doctor`
+subcommand — that walks the same registry of checks the ordinary run walks, injects
+each check's declared known-bad, and asserts that *that check, by name* is the one
+that reports. "Every check can go red" then stops being a property of who last
+edited the suite and becomes a property of the suite:
+
+- a check with **no declared known-bad fails the self-test** instead of being
+  silently exempt, so the probe cannot be forgotten at the moment a check is added
+  — which is the only moment it is ever forgotten;
+- the probe **ships with the tool**, so it runs against the operator's own
+  installation — exactly where §1's stale-install and missing-dependency traps bite
+  ([rules/11](11-dead-path-diagnostics.md) §2.5), and where a harness that only ever runs in your CI cannot look;
+- the known-bad sits **next to the check's definition**, where the reviewer of a new
+  check is already reading.
+
+**The self-test is itself an instrument** ([`rules/15`](15-instruments-and-guards.md) §2) and inherits every rule there. Three
+that decide whether its output means anything:
+
+- **Attribute the catch.** Requiring "the run failed" accepts a non-zero exit for an
+  unrelated reason as proof — a **false pass**, not a catch. Assert the intended
+  check is the one that complains.
+- **Assert the mutation took** (§1). A probe whose hardcoded known-bad has drifted
+  out of sync with the check reports `NOT CAUGHT` and accuses a healthy check.
+- **Report the denominator**: checks probed over checks registered. The gap is the
+  interesting number, and it is invisible in a pass/fail line.
+- **Assert the mutation crossed the threshold**, not merely that the tree changed — the
+  bullet above answers only the second question, and a probe can keep applying cleanly while
+  it stops biting (§1d).
+
+Two things a self-test does **not** establish, and both belong in its output rather
+than in a reader's assumption: checks whose known-bad needs state it cannot
+fabricate (a tag, a merge base, an mtime, a live upstream) are **skipped**, and a
+skip must print its reason instead of folding into the pass count; and a check that
+can fail may still have stopped covering the code that matters — scope drift is a
+separate failure with no diff to the check ([`sota-devsecops` rules/09](../../sota-devsecops/rules/09-gates-that-hold.md) §2).
+
+### 1b.1 A planned change is a legitimate source of a gate
+
+Gates are usually said to come from incidents — something failed, so now it is checked.
+That under-counts one case badly. **Before a rename, a move, a renumber or a split, ask
+what class of reference or assumption it invalidates and whether anything would report
+it.** Where the answer is *nothing would*, build that check first: the refactor then
+becomes its own negative control, because you can watch the check go red on damage you
+caused deliberately.
+
+The usual "has this already failed?" filter reads **no** at proposal time here, and that
+reading is unreliable — a class nothing reports has no incident history *by
+construction*. Running the check is what answers it. Worked case: a documentation tree
+carried ~1,300 prose section references (`rules/15 §2.4`, `rules/13 §5`) that no link checker
+could see, because a link checker resolves `[text](file.md)` and a `§` reference is
+prose. The check was written to protect a planned file split; on its **first run against
+the unmodified tree** it found six live breakages, then caught 27 more the split itself
+caused. Both sets were invisible the day before, and the second would have shipped.
+
+Two cautions from the same case, because a check like this is an instrument ([`rules/15`](15-instruments-and-guards.md) §2). **Read
+the findings before believing the count** — successive drafts reported 46, 29, 17, 13 and
+finally 6, and the shrinkage was not tuning but discovering two authoring conventions the
+first draft had not modelled, one of which made it flag *correct* references ([`rules/15`](15-instruments-and-guards.md) §2.1's
+"generalised from one sample", committed by the instrument itself). And **fail open on
+ambiguity**: where a reference could plausibly resolve more than one way, accept it. A
+gate that flags correct work gets switched off, which leaves you worse off than no gate.
+
+## 1c. The control that was correct, and then edited
+
+§1 probes a control that is **wrong**, §1a one that blocks **everything**, [`rules/14`](14-control-not-in-force.md)
+a control **not in force**. All three ask a correctness question about a control
+somebody else wrote. None of them asks the integrity question: *this control is
+correct today — who can change it?*
+
+**Detection is bounded by the integrity of the detector.** A control that a rewrite can
+delete provides exactly as much protection as the write permissions on its own source
+file, whatever its logic says.
+
+Field-reported. A policy gate protected two artifacts it had enumerated — its decision
+engine and its rule pack — staging both read-only outside the writable tree and recording
+both in an integrity manifest. It was correct about both, and short by one: **the gate's
+own module was an editable install**, so the import resolved *inside* the directory the
+gate permitted writes to. Replacing that module with a no-op allowed every subsequent
+call. The write was permitted by every rule pack tested, **including the fail-closed
+one** — because that pack constrained shell commands, and the write arrived through an
+editor tool the pack did not model.
+
+Three things that generalises to:
+
+- **Derive the protected set from what the decision depends on, not from what was
+  obvious when the manifest was written.** The artifact most often missing from a
+  control's own integrity list is the code doing the protecting. Enumerating inputs and
+  policy files while omitting the evaluator is the normal shape of this, not an unusual
+  one.
+- **Manifesting the verifier is worth doing and is not sufficient.** Whoever rewrites the
+  entry module deletes the verification call *in the same edit*, so a manifest checked by
+  the thing being manifested closes tampering with every module except the one that
+  matters most. The fix has to be **location**: execute the control from a copy the
+  constrained principal cannot write to, with the manifest and detection as the layer
+  that catches the rest.
+- **Enumerate the writers by capability, not by the mechanism you modelled.** A policy
+  that constrains shell commands does not constrain a file-writing tool, an editor
+  integration, a language server, or a package manager doing an editable reinstall. Ask
+  which *principals* can write the path, then which tools each of them has —
+  [`sota-skill-security` rules/02](../../sota-skill-security/rules/02-trust-boundary-and-capability.md) §2 makes the same argument for instruction files, and
+  this is the executable case of it.
+
+**Not the same as [`rules/14`](14-control-not-in-force.md) §8.** There, a *benign* neighbouring process overwrites what
+a control produced, and the fix is a predicate the innocent state fails. Here the actor is
+the principal the control constrains, the target is the control's own code, and no
+predicate on the output helps — the output is whatever the replacement chooses to say.
+
+### 1c.1 Some residuals are protocol-level, and the obvious fix costs more than it buys
+
+Where **"allow" is expressed as silence**, a control replaced by a no-op is byte-identical
+to a permitted call. Nothing downstream can tell them apart, and a `|| deny` wrapper does
+not fire — that wrapper exists for a *crash*, and this is not a crash.
+
+The tempting fix is to make silence anomalous by emitting an explicit allow. Price it
+first: an explicit allow can **override a separate permission layer** that was relying on
+the same silence, trading a real defence for a tamper signal. That is a worse trade than
+the residual.
+
+So: **price a fix against the layer it disables.** Writing the residual down — as a named
+test that documents what would not be detected, and an entry in whatever ledger records
+accepted risk — and leaving it open can be the correct call. What is not correct is
+leaving it undescribed, because the next reader cannot distinguish an accepted residual
+from an oversight ([`rules/15`](15-instruments-and-guards.md) §2).
+
+## 1d. The probe that still applies, and no longer bites
+
+§1b's *assert the mutation took* answers one question: **did the tree change?** It is a
+tree-dirty test and nothing more. So it catches a known-bad whose **literal has drifted** —
+the mutation stops matching, nothing changes, the guard fires. It is blind to the sibling
+case: **the mutation applies cleanly, the tree really does change, and the result still does
+not cross the threshold**, because the subject improved underneath it.
+
+Measured 2026-09-13 in this library's own harness. A probe for a **200-line cap** on an
+always-loaded file appended exactly **one line** — effective when written, because the file
+sat at 199, and fitted to that momentary state with a margin of one. Refactoring the file to
+169 lines, a deliberate improvement that removed the reason the cap kept being breached, left
+the same mutation applying perfectly and breaching nothing. The gate correctly passed; the
+harness reported `NOT CAUGHT`.
+
+Two things make it worth naming. **The improvement and the disarming were the same edit** —
+no review step separates them, because the diff improves a file and touches no probe. And
+**it is a decay, not a break**: the probe gets weaker as the subject gets healthier, in the
+one direction nobody is watching.
+
+**Which probes have this shape, precisely.** Not "anything with a numeric threshold" — the
+deciding property is a **fixed delta smaller than the threshold it must cross**, so that the
+probe's strength *is* the subject's current slack. Three constructions in the same harness
+are structurally immune, and two of them are the fix:
+
+- **Overshoot the threshold outright.** A cap probe that appends 600 lines against a
+  500-line cap breaches from any starting size.
+- **Write an absolute value**, not a delta — set the count to 999, the date to 2099.
+- **Pin the threshold to the subject** so slack is zero by construction. A ratchet that fails
+  when the measured value falls *below* its pin ("a slack ratchet is not a ratchet") can
+  never accumulate the slack this failure needs.
+
+**A second construction with the same decay: the borrowed bad state.** A known-bad that
+*removes whatever currently suppresses a real problem* — empty the advisory ignore list, drop
+the lint exclusion, re-enable the failing test — works only while a real problem exists to be
+un-suppressed. Field-reported: a `cargo audit` probe emptied the ignore list and expected the
+gate to fail; then the ignored crate left the dependency graph, the mutation still applied,
+and the probe could no longer fail. It dies **on the day the issue is fixed**, which is a
+success nobody investigates. Ask of every probe: **does it construct the bad state, or borrow
+one?** Construct it: inject a package with a live advisory, write the violating line, add the
+banned crate. A sibling `cargo deny` probe was already immune, because it banned a crate the
+workspace certainly uses: a fact about the project, not about its current problems.
+
+Otherwise, **pin the mutation to the threshold**: measure the subject at probe time, compute
+what it takes to cross from wherever it is, clamp, and print both numbers so a later reader
+sees what the probe did.
+
+```sh
+n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
+[ "$need" -lt 1 ] && need=1      # subject already in breach: still mutate, or the
+                                 # probe reports PROBE BROKEN on a genuine violation
+```
+
+- **Re-run the known-bads after a refactor**, not only after a change to a check. A refactor
+  can disarm a probe as easily as it can break a gate, and only one of those is loud.
+- **`NOT CAUGHT` is ambiguous, not an accusation in either direction.** It means *the gate
+  passed on a mutated tree*, which is equally consistent with an inert gate — the thing this
+  harness exists to find — and a decayed probe. Separate them by asking whether the mutation
+  **crossed the threshold**, not merely whether the tree changed; the standard guard answers
+  only the second question. [`rules/15`](15-instruments-and-guards.md) §2.1 puts the prior on the newer artifact; this is the
+  case where the *older* artifact's **assumptions** are what just changed, so the same
+  suspicion applies for a different reason.
+- **This is the mirror of [`sota-devsecops` rules/09](../../sota-devsecops/rules/09-gates-that-hold.md) §2.** There a refactor moves code out
+  from under a **gate** while the known-bad stays valid; here a refactor disarms the **probe**
+  while the gate stays valid. Both are invisible in the diff, and both take the same remedy:
+  have the check print the number it enumerated, and fail when that number moves.
+
+## Audit checklist
+
+- [ ] **Does every "did not reproduce here" rest on the sink being reached with the
+      triggering state, plus a control arm?** (§1a.2) A build failure, exit 127, a missing
+      input or a wrapper crash is *not attempted*; a marker written before launch proves only
+      the launch. Is any direct-call-harness crash still marked *needs verification* until
+      a public path is found or every caller has been read?
+- [ ] **Does any probe mutate by a fixed delta *smaller than the cap it must cross*?** (§1d)
+      That, not "a numeric threshold", is the shape that decays: the probe's strength is the
+      subject's current slack, so improving the subject disarms it while the mutation still
+      applies, the tree still changes, and *assert the mutation took* passes. Equality and
+      ratchet comparisons are immune (no slack exists); caps and budgets are not. Fix by
+      overshooting the cap, writing an absolute value, pinning the threshold to the subject,
+      or computing the crossing at probe time — and re-run the known-bads after a
+      **refactor**, not only after a check changes.
+- [ ] **Does any probe borrow its bad state rather than construct it?** (§1d) Emptying an
+      ignore list, dropping an exclusion or re-enabling a failing test proves something only
+      while a real problem is suppressed, and silently stops proving anything the day it is
+      fixed. Inject the bad state the probe needs.
+
+- [ ] **Mutation probe run on security-critical paths** — control body replaced
+      with the permissive no-op, with the dependency forced present and the
+      mutation's **runtime effect asserted** before trusting a green run (§1)? And the instrument
+      or guard that reported the result validated in turn ([rules/15](15-instruments-and-guards.md))?
+- [ ] Negative controls run as a **mode of the tool** (`--self-test`, `doctor`), not
+      only as a harness beside it — a check with no declared known-bad fails the
+      self-test, each probe asserts the **named** check caught it rather than
+      accepting any non-zero exit, skips print their reason, and the run reports
+      checks-probed over checks-registered (§1b)?
+- [ ] **Any reported refutation — does the experiment have a control arm?** (§1a.1) *"It did
+      not reproduce"* is an absence claim under principle 3's heavier burden, but it does not
+      feel like a search so the rule never fires. Without an arm that returns a **non-null**
+      through the same path, "the effect is absent" and "my harness reaches nothing" are the
+      same output. Tell: a null arriving **instantly and identically on both runs**. Label it
+      *"did not reproduce here"*, never *"refuted"*.
+- [ ] Every **enforcement** control (cap, quota, filter, allowlist, sandbox
+      policy) carries an **allow arm** as well as a deny arm — a representative
+      legitimate case completing *through* the control, not against the bare
+      environment — so "blocks everything" cannot read as "works" (§1a)?
+- [ ] Structural tests added alongside the instance test — non-zero loaded rule
+      count, every reference-config key resolving, documented default equal to
+      parsed default, control telemetry actually emitted (§1)?
+- [ ] Is the control's **own executable or source** on the list of things something
+      protects, and is that list derived from what the decision **depends on** rather
+      than from what was obvious when it was written (§1c)?
+- [ ] Can the principal the control constrains **write to the control's own code**, by
+      any tool — including tools the control does not model (an editor integration, a
+      package manager, an editable reinstall), not just the mechanism its policy
+      describes (§1c)?
+- [ ] If the control were replaced by a **no-op**, could anything downstream tell? Where
+      "allow" is silence the answer is **no** — say so explicitly, and record the
+      residual rather than reaching for an explicit-allow signal that may override a
+      separate permission layer (§1c.1).

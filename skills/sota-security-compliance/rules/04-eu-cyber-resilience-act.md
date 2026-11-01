@@ -1,0 +1,289 @@
+# 04 — EU Cyber Resilience Act (CRA)
+
+The first horizontal EU law that makes **product cybersecurity** a legal
+requirement for placing a "product with digital elements" on the EU market. Unlike
+the framework crosswalks elsewhere in this skill, the CRA is binding regulation
+with CE-marking, penalties, and hard reporting clocks — and its obligations are
+overwhelmingly *engineering* obligations (SBOM, vulnerability handling, secure-by-
+default, a maintained update channel). Retrofitting them is brutal; design them in.
+
+## 0. Status and phased application dates
+
+> **Status (verified July 2026 against EUR-Lex and the European Commission):**
+> Regulation **(EU) 2024/2847**, in force **10 Dec 2024**. Phased application:
+> **conformity-assessment/notified-body provisions from 11 Jun 2026**;
+> **reporting obligations (Art. 14) from 11 Sep 2026**; **main/essential
+> requirements from 11 Dec 2027**. **Art. 69(3): Art. 14 reporting also covers
+> products placed on the market *before* 11 Dec 2027** — legacy products are not
+> exempt from the clocks. ENISA's Single Reporting Platform has been operational
+> since 11 Sep 2026 (enisa.europa.eu, "The CRA Single Reporting Platform is
+> launched"; Art. 69/71 re-checked on EUR-Lex 2026-09-26). Article
+> sub-numbering below should be confirmed against EUR-Lex before quoting verbatim; the dates and Art. 14 clocks are
+> corroborated by the Commission's summary page. Re-verify — and route
+> product-class/conformity-route decisions to counsel or a notified body.
+
+## 1. Does it apply? Scope
+
+- **Product with digital elements (PDE):** any software or hardware product (plus
+  its remote data-processing solutions) whose intended or reasonably foreseeable
+  use includes a direct or indirect logical/physical data connection to a device or
+  network. Components placed on the market separately are covered.
+- **Risk tiers → conformity route:** **default** (self-assessment, Module A) →
+  **"important" products (Annex III), Class I and Class II** → **"critical"
+  products (Annex IV)**. Higher tiers require stricter routes — third-party
+  (notified-body) assessment or an EU cybersecurity certification scheme.
+- **Open-source nuance:** non-commercial OSS is out of scope. The **open-source
+  software steward** role (Art. 24) carries a lighter, tailored regime (a
+  cybersecurity policy, vulnerability handling, cooperation) and stewards are **exempt
+  from administrative fines** (Art. 64(10)(b)) — not from obligations: Art. 24(3)
+  applies Art. 14(1) reporting to them, from 11 Dec 2027. Commercial productization of OSS pulls you back
+  into full manufacturer obligations.
+- **Radio equipment is already regulated — before the CRA applies.** Delegated
+  Regulation (EU) 2022/30 activates the Radio Equipment Directive's cybersecurity
+  essential requirements (Art. 3(3)(d)(e)(f): network harm, personal data, fraud)
+  for internet-connected radio equipment, toys, childcare and wearables, **from
+  1 Aug 2025** (date set by (EU) 2023/2444) **until 11 Dec 2027**, when (EU)
+  2026/339 repeals it and the CRA takes over. Presumption of conformity comes from
+  **EN 18031-1/-2/-3:2024**, cited in the OJ **with restrictions** by Implementing
+  Decision (EU) 2025/138 — read the restrictions before relying on one (all four
+  acts read on EUR-Lex 2026-09-26).
+
+If you sell software/hardware into the EU and it talks to a network or device,
+assume in-scope and confirm the tier — the tier decides how heavy the conformity
+route is, not whether the essential requirements apply.
+
+## 2. Essential requirements → engineering work (Annex I)
+
+Annex I has two parts: **Part I = product security properties**; **Part II =
+vulnerability-handling process**. Both are engineering.
+
+**Part I — secure by design & default:**
+- Ship **without known exploitable vulnerabilities** → a **release gate** that
+  blocks known-exploitable findings; a mechanism to know your components' CVE
+  status (ties to the SBOM below and to [`sota-devsecops`](../../sota-devsecops/SKILL.md) scanning).
+- **Secure default configuration** — hardened out of the box, no default
+  credentials, minimal attack surface, secure-by-default TLS/auth
+  ([`sota-code-security`](../../sota-code-security/SKILL.md), [`sota-network-security`](../../sota-network-security/SKILL.md)).
+- Protect **confidentiality/integrity** of data and commands (encryption,
+  authenticated updates), **minimize attack surface**, and provide
+  **security-relevant logging** ([`sota-observability`](../../sota-observability/SKILL.md)).
+
+**Part II — vulnerability handling (for the whole support period):**
+- **SBOM** covering at least the top-level dependencies (the legal floor) → **generate in
+  CI/CD** (SPDX or CycloneDX), keep it current per release, and be able to produce it; build the
+  full per-build SBOM anyway ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.5). Pair with **VEX** to communicate which listed components are
+  actually exploitable.
+- **Coordinated Vulnerability Disclosure (CVD) policy** → a published intake
+  (`security.txt`, a disclosure address/portal) and a documented handling process.
+  `security.txt` is RFC 9116, served over HTTPS at `/.well-known/security.txt`. The
+  RFC requires only two fields: `Contact`, and `Expires`, which may appear once and
+  should be less than a year ahead. After that date researchers treat the file as
+  stale. `Policy`, `Encryption`, `Canonical`, `Preferred-Languages` and
+  `Acknowledgments` are optional. `Contact` may repeat, listed in order of preference,
+  so offer more than one route: a mailbox, a web form or the forge's private
+  reporting, and a bounty platform if you run one. One address fails as soon as it
+  bounces or its owner leaves. The linked policy says what a report should contain
+  (§3a), gives an encryption key, and says where confidential reports land: a
+  private tracker category or draft advisory, never a public issue. It also states the
+  safe-harbour terms for good-faith research. OWASP: Vulnerability Disclosure cheat
+  sheet
+- **Timely security updates** over the **support period — by default at least 5
+  years** (or the product's expected use time if shorter; confirm the exact Article
+  reference in EUR-Lex): a **signed update channel** and a maintained
+  long-lived branch. Updates must be **without delay** and **free** for security
+  fixes; separable from feature updates.
+- **A valid signature is not enough on a device (firmware/OTA).** Three more
+  properties, each a separate failure:
+  - **Anti-rollback.** An old image you signed is still validly signed, so the
+    device must also refuse anything below a *security version* held in trusted
+    non-volatile storage (eFuse/OTP or a hardware monotonic counter) and raised
+    after the new image is confirmed. A plain version compare in the bootloader
+    is weaker: MCUboot's own help text says its software check does not stop an
+    older image written straight to flash (e.g. over JTAG). Examples:
+    `CONFIG_MCUBOOT_HW_DOWNGRADE_PREVENTION` + `imgtool sign --security-counter`,
+    ESP-IDF `CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK`. Falling back to the last good
+    image after a failed boot is fine as long as it obeys the same counter.
+    TUF names this the *rollback attack*, and adds the *indefinite freeze
+    attack*: a server that keeps serving the same stale metadata.
+  - **Authenticate the update server.** Fetch over TLS with a pinned or
+    product-specific CA, and keep hostname checking on. Plain HTTP and a skipped
+    name check both appear as build switches (ESP-IDF
+    `CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP`, `skip_cert_common_name_check`). The
+    channel does not replace the signature: verify the signature on the device.
+  - **Encrypt the package** when the image carries confidential IP or data,
+    because encryption protects it in transit and on external flash. It adds no
+    integrity: the signature still has to cover the plaintext (MCUboot hashes and
+    signs the unencrypted image). ETSI EN 303 645 V3.1.3 provision 5.3 gives
+    version-based anti-rollback as an example of a secure update mechanism.
+    OWASP: Automotive Security, Drone Security cheat sheets
+
+## 3. The reporting clocks (Article 14) — wire them into on-call
+
+For an **actively exploited vulnerability** in your product **or** a **severe
+incident** affecting its security, report to the designated coordinating **CSIRT**
+*and* **ENISA** via the single reporting platform (ENISA SRP, operational since
+11 Sep 2026). This applies to every in-scope product on the market, **including
+ones placed before 11 Dec 2027** (Art. 69(3)):
+
+| Stage | Deadline |
+|---|---|
+| **Early warning** | **≤ 24 hours** of awareness |
+| **Notification** | **≤ 72 hours** of awareness |
+| **Vulnerability final report** | ≤ 14 days after a corrective/mitigating measure is available |
+| **Severe-incident final report** | ≤ 1 month after the incident notification |
+
+Engineering consequence: this is a **detection + telemetry + workflow** problem,
+not a legal one. You need to *know* within hours that a vuln in your product is
+being exploited (threat intel, telemetry, disclosure intake — `sota-detection-
+engineering`, [`sota-observability`](../../sota-observability/SKILL.md)) and a rehearsed reporting runbook. A clock that
+depends on someone happening to notice is already blown. These clocks sit alongside
+NIS2 (24h/72h) and DORA (4h/24h/72h) covered in [`sota-privacy-compliance` rules/04](../../sota-privacy-compliance/rules/04-regulatory-landscape.md)
+§6 — build one incident pipeline that satisfies the strictest applicable clock.
+
+## 3a. Triaging a report someone else sent you — what actually starts the clock
+
+§2 gives you an **intake** (CVD policy, `security.txt`, a portal) and §3 gives you the
+**outbound** clocks. The decision in between — is this real, is it ours, is it exploitable —
+is the part with no obligation attached and the part the clocks depend on, because Article
+14 runs from **awareness** and an untriaged report is precisely the state where "are we
+aware?" is undecided. §3's warning that *"a clock that depends on someone happening to
+notice is already blown"* applies to your own inbox, not just to telemetry.
+
+The standards that own this are **ISO/IEC 30111:2019** (vulnerability *handling* — the
+internal process: investigate, verify, prioritize, remediate) paired with **ISO/IEC
+29147:2018** (vulnerability *disclosure* — the external interface to finders and users).
+30111 is the one most teams have never read; it is the process behind the mailbox 29147
+tells you to publish. *Both are under revision (iso.org, 2026-09-26: AWI 29147 and WD 30111.2) — confirm
+the current edition before citing one in an assessment.*
+
+**R3a — write down when your clock starts, then triage against a fixed order.**
+
+1. **Acknowledge on a stated SLA.** 29147 expects a responsive interface; silence is what
+   turns a coordinated report into a public one.
+2. **Reproduce before you rate.** A report is a *claim*. Rating from the reporter's summary
+   is how a fabricated finding acquires a CVSS score and a deadline.
+3. **Check that the cited code exists.** The 2026-specific step, and the cheapest: a
+   machine-generated report is internally consistent, formatted like expertise, and may
+   reference functions, files or call paths that are not in your tree. curl has published a
+   worked example of exactly this shape. Grep the identifiers the report names *before*
+   reading its argument — if they do not exist, you are done, and you learned it in a minute
+   rather than an afternoon.
+4. **Scope it: ours, a dependency, or documented behaviour?** A vulnerable dependency that
+   your build does not reach is a **VEX** statement (§2) and an upstream conversation, not a
+   product vulnerability and not an Article 14 report. Intended behaviour that surprises the
+   reporter is a documentation fix.
+5. **Rate it on [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §1** — impact × exploitability in context — not on the
+   reporter's claimed severity and not on CVSS alone (§1 there: CVSS may inform a rating; it
+   is never the rating).
+6. **Decide the clock explicitly and record the decision either way**, with its timestamp:
+   does this meet "actively exploited vulnerability" or "severe incident" under §3? A
+   recorded *no* is what makes a later *yes* defensible; an unrecorded no is
+   indistinguishable from never having looked.
+7. **Close the loop with the reporter**, including on reject. The reporter is the control
+   that finds your next one.
+
+**Triage capacity is a security property, not a nicety.** Inbound reports now arrive at
+machine speed while triage stays human-speed, and the failure mode is not a wrong decision —
+it is a queue nobody reads, which looks exactly like having no reports. curl, which has
+handled well over a thousand reports, paused intake entirely for a month in July 2026 to
+recover maintainer capacity; treat that as evidence that the queue is a resource to be
+budgeted, and note that pausing intake does **not** pause a regulatory clock.
+
+**The one lever you have on inbound quality is publishing what a usable report contains.**
+Put it next to the intake address, and make the bar concrete rather than polite: a
+human-written first paragraph saying what breaks and what that leads to; a **self-contained
+reproducer** the team can build and run; the affected versions, with the earliest found by
+bisecting; ideally a patch; and a reporter who stays reachable. That list is Daniel
+Stenberg's, published from curl's intake in June 2026, and it doubles as your triage rubric
+— a report missing the reproducer is not yet a finding, whoever or whatever wrote it.
+The same list should ask for the evidence that makes the reproducer checkable (the request
+and response, a log excerpt or a screenshot), the reporter's own statement of impact, and
+any references such as a CWE or a related advisory. OWASP: Vulnerability Disclosure cheat
+sheet
+
+## 3b. Publishing an advisory for your own product
+
+§3a ends with a confirmed vulnerability. The fix ships with an advisory, and the advisory is
+what users and their scanners act on.
+
+- **Get a CVE ID from a CNA before you publish.** If you are a CNA, assign it. Otherwise
+  ask the CNA whose scope covers the project. GitHub is a CNA: its repository advisory form
+  can request an ID, the request usually gets a review within 72 hours, and asking does
+  not make the advisory public. GitHub cannot assign one to a project that another CNA
+  covers. Use the same ID in the advisory, the changelog and the release notes.
+- **Every advisory states** the impact (what an attacker gains) with your §3a rating, the
+  vulnerable version range, the fixed versions, any configuration the issue depends on, a
+  workaround for those who cannot upgrade yet, and the CVE ID. **Add where you can** a
+  disclosure timeline, credit to the reporter (under the name they choose), enough
+  technical detail for a defender to judge exposure, and indicators of compromise or a
+  detection rule when exploitation has been seen.
+- **Publish a machine-readable form, not only prose.** Scanners match only what the record
+  encodes. An OSV record carries `affected[].ranges` events (`introduced`, `fixed`,
+  `last_affected`). CSAF 2.0 (an OASIS Standard) carries product status and remediation
+  categories such as `vendor_fix`, `workaround` and `mitigation`, and its `csaf_vex`
+  profile is one way to publish the VEX statements of §2. GitHub's documentation warns
+  that an advisory published without a fixed version still alerts users but offers them
+  no safe version. A range written only in prose reaches no scanner at all.
+
+OWASP: Vulnerability Disclosure cheat sheet
+
+## 4. Conformity & the harmonized-standards route
+
+- **CE marking** signals CRA conformity. **Presumption of conformity** flows from
+  **harmonized standards** being drafted by CEN/CENELEC under a Commission
+  standardization request (a horizontal **EN 40000** series for all digital
+  products, plus vertical/OT tracks).
+- **Conformity routes — the split is conditional, not categorical.** Article 32(1) makes
+  the **internal control procedure (Module A)** available, and 32(2) sends a **class I**
+  important product to the stricter routes (module B+C, or module H) only *"where the
+  manufacturer has not applied or has applied only in part"* harmonised standards, common
+  specifications or a qualifying certification scheme at assurance level at least
+  `substantial` — or where none exist. **Fully apply them and Module A remains open to class
+  I.** Article 32(5) also provides a distinct route for products qualifying as free and
+  open-source software. Critical products are the genuinely stricter case. Verified
+  2026-09-16 against the Article 32 text; check which harmonised standards actually exist at
+  your date of use, because "fully applied" is doing the work in that sentence.
+  ([Regulation (EU) 2024/2847, Art. 32](https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng))
+- **ISA/IEC 62443 and NIST frameworks** are widely expected to *inform* the
+  harmonized standards and are common industry mappings — CEN/CENELEC is adapting
+  **EN IEC 62443-4-1 / 4-2** as the OT/industrial route ([rules/05](05-iec-62443-ot-ics.md)). **But being a
+  formally-recognized presumption-of-conformity route depends on the harmonized
+  standards actually cited in the Official Journal**, which are still being
+  finalized (target dates around late 2026). *Flag: evolving — confirm the
+  published hEN list at use time before claiming conformity via a standard.*
+
+**Practical stance:** build to Annex I now (SBOM, CVD, signed updates, secure-by-
+default, no-known-exploitable-vulns, the reporting pipeline). Those are true
+regardless of which harmonized standard you later certify against, and they are the
+expensive-to-retrofit parts. Track the hEN list; don't wait for it to start.
+
+## 5. What this shares with the rest of the library
+
+*(advisory)* — a routing list to the skills that own each mechanism; it states no rule of its own, and the Annex I and Article 14 obligations it names are probed by the §1–§4 items.
+
+The CRA is mostly a **repackaging of good product-security engineering** with legal
+teeth and deadlines. Reuse, don't rebuild:
+- SBOM/provenance/signing → [`sota-devsecops`](../../sota-devsecops/SKILL.md); secure-by-default & vuln classes →
+  [`sota-code-security`](../../sota-code-security/SKILL.md) + language skills; update-channel signing keys →
+  [`sota-secrets-management`](../../sota-secrets-management/SKILL.md); the incident/reporting pipeline → `sota-detection-
+  engineering` + [`sota-observability`](../../sota-observability/SKILL.md); OT products → [rules/05](05-iec-62443-ot-ics.md) (62443).
+
+## Audit checklist
+
+- [ ] CRA applicability determined (§1): is it a PDE placed on the EU market? tier (default / important Class I–II / critical) identified; OSS-steward status if relevant, and commercial productization of OSS treated as full manufacturer obligations; internet-connected radio equipment assessed against the Radio Equipment Directive cybersecurity requirements (Delegated Regulation (EU) 2022/30) until 11 Dec 2027
+- [ ] Release gate blocks **known exploitable vulnerabilities** at ship (§2); component CVE status known via SBOM + scanning
+- [ ] **SBOM generated in CI/CD** (§2) (SPDX/CycloneDX), current per release, producible on request; VEX used to scope exploitability
+- [ ] Secure-by-default config verified (§2): no default credentials, hardened defaults, minimal attack surface, authenticated/encrypted comms and updates
+- [ ] **Coordinated Vulnerability Disclosure** (§2) intake published (security.txt / portal) with a documented handling process
+- [ ] The handling process is **written and ordered** (§3a), not just claimed: acknowledge SLA → reproduce → confirm the cited code exists → scope (ours / dependency-VEX / documented behaviour) → rate on [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §1 → clock decision → reporter closed out (ISO/IEC 30111:2019 is the standard for this half; 29147:2018 for the interface)
+- [ ] **When awareness begins is defined in writing** and a clock decision is recorded for every report **including the rejects**, with a timestamp — an unrecorded "not reportable" is indistinguishable from never having looked, and Article 14's 24h runs from awareness (§3a)
+- [ ] Triage capacity is budgeted and the queue's age is visible: an unread backlog is indistinguishable from having no reports, and pausing intake does not pause the clock (§3a)
+- [ ] The intake page states what a usable report must contain (human-written summary, self-contained reproducer, affected + earliest versions, ideally a patch) — the only lever on inbound quality, and the rubric triage then applies, plus the evidence that makes the reproducer checkable (request/response, log excerpt or screenshot), the reporter's statement of impact and any references such as a CWE (§3a)
+- [ ] **`security.txt` is complete and in date (§2) — MEDIUM:** RFC 9116's required `Contact` and `Expires` are present, `Expires` is in the future, and more than one `Contact` route is listed; the policy page names the confidential channel, an encryption key and safe-harbour terms. Probe: `find . -name security.txt -exec sh -c 'grep -qi "^Contact:" "$1" && grep -qi "^Expires:" "$1" || echo "missing Contact or Expires: $1"' _ {} \;` prints each file missing a required field; then read each `Expires:` date against today. No `security.txt` anywhere on a web-facing product is a lead to ask where researchers report
+- [ ] **Own advisories are complete and machine-readable (§3b) — MEDIUM** (HIGH when users rely on scanner alerts to learn about fixes): each published advisory carries a CVE ID, a vulnerable range and a fixed version, or says no fix exists yet and gives a workaround. On GitHub: `gh api --paginate 'repos/OWNER/REPO/security-advisories?state=published' | jq -r '.[] | select(.cve_id == null or ((.vulnerabilities // []) | length == 0) or any(.vulnerabilities[]; (.vulnerable_version_range // "") == "" or (.patched_versions // "") == "")) | .ghsa_id'` prints each advisory missing one of them; a printed one whose only gap is an empty fixed version passes only if its text says no fix exists yet and gives a workaround
+- [ ] **Signed update channel** (§2) and a maintained branch covering the support period (default ≥ 5 years / expected use time); security updates delivered without delay, free, separable
+- [ ] **Device update integrity beyond the signature (§2) — HIGH** where the product takes firmware/OTA updates: an older signed image is refused by a counter in trusted storage, the update server is authenticated, the signature covers the plaintext of any encrypted package. Probe for switches that turn these off: `grep -rnE '^CONFIG_(ESP_HTTPS_OTA_ALLOW_HTTP|BOOT_SIGNATURE_TYPE_NONE)=y|skip_cert_common_name_check[[:space:]]*=[[:space:]]*true' .` — any hit is a finding; then `grep -rqE '^CONFIG_(MCUBOOT_HW_DOWNGRADE_PREVENTION|BOOTLOADER_APP_ANTI_ROLLBACK)=y' . || echo 'no hardware anti-rollback enabled'` printing its message on a signed-update build is a lead to ask how rollback is refused
+- [ ] Article 14 reporting pipeline built and rehearsed (§3): detection → 24h early warning / 72h notification to CSIRT + ENISA; final reports (14 days / 1 month) covered; unified with NIS2/DORA clocks where applicable; covers products placed on the market before 11 Dec 2027 (Art. 69(3))
+- [ ] Conformity route chosen for the tier (self-assessment vs notified body / certification scheme); CE-marking obligations understood; a class I important product on Module A has fully applied harmonised standards, common specifications or a qualifying certification scheme (Art. 32(2)), otherwise module B+C or H (§4)
+- [ ] Harmonized-standard reliance (incl. 62443 for OT) confirmed against the current OJ-published hEN list, not assumed (§4)
+- [ ] (§0) All CRA dates/Article references re-verified against EUR-Lex / the Commission within the last 6 months (timeline is live: reporting from 11 Sep 2026 — for legacy products too, Art. 69(3) — main obligations from 11 Dec 2027)

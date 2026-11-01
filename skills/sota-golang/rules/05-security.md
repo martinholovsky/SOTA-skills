@@ -1,0 +1,498 @@
+# 05 — Security: injection, paths, TLS, integers, supply chain
+
+Threat model every input by origin: network, files, env, CLI args, DB
+contents, and inter-service messages are all untrusted until validated.
+Go removes memory-corruption classes but injection, traversal, SSRF, and
+misconfiguration are entirely yours.
+
+## 1. Input validation at trust boundaries
+
+- Validate at the **boundary** (handler/consumer), once, into a typed value;
+  interior code trusts its types. Re-validating everywhere means nobody knows
+  where the real check is.
+- Allowlist over denylist: enums via `ParseX(string) (X, error)`, bounded
+  lengths/sizes on every string/slice, `utf8.ValidString` on text that
+  reaches storage or other parsers (its probe is in the [rules/04](04-http-services.md) checklist).
+- **Regexes as a control** (allowlist, routing, redaction). Stdlib `regexp` is RE2: matching
+  is linear in input length, and backreferences/lookaround do not compile. Four rules:
+  **escape** caller text spliced into a pattern with `regexp.QuoteMeta` (stdlib since Go 1) —
+  unescaped, `.`/`|` rewrite the rule, and `MustCompile` panics on a pattern that fails to parse;
+  **anchor** — `MatchString`/`Match` find a match *anywhere* and there is no full-match method,
+  so wrap as `^(?:…)$` (`^a|b$` accepts `a…` and `…b`). `$` is end-of-text (`\z`-like) with no
+  trailing-newline slack, but `(?m)` makes `^`/`$` line anchors, so `"ok\n;evil"` passes;
+  **bound** — cap `len(s)` before matching (linear is still proportional to size) and write
+  `{1,64}`, not `+` (the parser rejects repeat counts over 1000); **engine** — adopting a
+  backtracking library for lookaround (e.g. `github.com/dlclark/regexp2`, escaper
+  `regexp2.Escape`) forfeits the linear guarantee and its `MatchTimeout` defaults to
+  `math.MaxInt64` (never), so set it per pattern and treat the timeout error as a reject —
+  or restructure into two stdlib patterns. *(OWASP: Input Validation cheat sheet; Proactive
+  Controls 2024 C3; ASVS 5.0 V1.2.9; Go-SCP, validation.)*
+- JSON: `dec := json.NewDecoder(r.Body); dec.DisallowUnknownFields()` for strict APIs;
+  remember `encoding/json` ignores case in field matching, silently drops unknown fields,
+  and accepts **duplicate keys (last wins)** — `{"role":"user","role":"admin"}` decodes as
+  admin, while a proxy or validator that keeps the first sees user: a parser differential
+  (generic rule: [sota-code-security rules/01](../../sota-code-security/rules/01-input-injection.md) §11). On 1.27+ decode trust-boundary input with
+  `encoding/json/v2`, which rejects duplicates and matches names case-sensitively (measured
+  go1.27.1). Pair with `http.MaxBytesReader` ([`rules/04`](04-http-services.md) probe); depth limits: [rules/01](01-errors.md) §5.
+- Numbers from JSON into `any` become `float64` — large int64 IDs silently
+  lose precision; decode into concrete struct types or `json.Number`.
+- Never echo raw input into errors/logs without bounding
+  (`%.100q`) — log injection and PII leak.
+- Don't reflect internal errors to clients (`rules/01 §7`): stack traces,
+  SQL text, and file paths in responses are recon gifts — MEDIUM.
+- Output encoding is contextual and separate from input validation: render
+  HTML through `html/template` (it auto-escapes per context), never
+  `text/template` or `fmt.Fprintf` into a page — that's stored/reflected XSS.
+  The `template.HTML`/`JS`/`URL`/`CSS`/`HTMLAttr` cast types switch escaping
+  off; each is a sink that must be independently sanitized. Full
+  XSS/CSP/output-encoding rules live in [sota-code-security](../../sota-code-security/SKILL.md) `05`.
+
+## 2. SQL — parameterized always
+
+String-built SQL is CRITICAL regardless of the value's provenance ("it's an
+int", "it's internal") — provenance changes, code is copied.
+
+```go
+// BAD — CRITICAL
+q := fmt.Sprintf("SELECT * FROM users WHERE email = '%s'", email)
+rows, err := db.Query(q)
+
+// GOOD — database/sql placeholders
+rows, err := db.QueryContext(ctx,
+    "SELECT id, name FROM users WHERE email = $1", email)
+
+// GOOD — pgx native
+row := pool.QueryRow(ctx, "SELECT id FROM users WHERE email = $1", email)
+```
+
+- **sqlc** is SOTA for query-heavy services: SQL in `.sql` files, generated
+  type-safe Go, parameterization by construction, schema-checked at codegen.
+  **pgx/v5** as the runtime driver/pool (`pgxpool`) for Postgres.
+- Identifiers (table/column names, ORDER BY direction) can't be placeholders:
+  map them through a hardcoded allowlist, never interpolate input:
+
+```go
+orderCol, ok := map[string]string{"name": "name", "created": "created_at"}[req.Sort]
+if !ok { return ErrBadSort }
+q := "SELECT ... ORDER BY " + orderCol // safe: values are program constants
+```
+
+- `IN (...)` lists: build placeholders programmatically or use pgx's array
+  binding (`= ANY($1)`).
+- LIKE patterns: escape `%`/`_` in user input before binding.
+- Always `defer rows.Close()`; check `rows.Err()` after the loop; use
+  `QueryContext`/`ExecContext` (ctx discipline). An unbounded pool is an availability
+  risk: its limits and defaults are [rules/06](06-performance.md) §8, "Connection pool".
+- `database/sql`'s `Open` does not dial (its doc: it "may just validate its arguments"); call
+  `db.PingContext` under a timeout at startup so a bad DSN or credential fails the deploy. A
+  `*sql.Stmt` from `db.Prepare` re-prepares itself on each pooled connection that runs it: one
+  server-side statement per connection. Prefer parameterized `QueryContext`/`ExecContext` or
+  `tx.PrepareContext` (closed with the transaction), above all behind a transaction-mode pooler
+  ([sota-databases rules/03](../../sota-databases/rules/03-queries-and-indexes.md)). OWASP: Go-SCP (database security: connections, parameterized queries).
+- ORMs: if GORM/ent are in use, audit every `Raw`, `Exec`, `Where(fmt.Sprintf`
+  call site — string interpolation there is the same CRITICAL.
+
+## 3. os/exec — argv, never shell
+
+`exec.Command` does NOT invoke a shell — that's the security feature. Each
+argument is a separate argv entry; metacharacters are inert.
+
+```go
+// BAD — CRITICAL command injection
+out, err := exec.Command("sh", "-c", "convert "+userFile+" out.png").Output()
+
+// GOOD — argv vector, ctx-bound
+cmd := exec.CommandContext(ctx, "convert", userFile, "out.png")
+cmd.Stdout, cmd.Stderr = &outBuf, &errBuf
+err := cmd.Run()
+```
+
+- `sh -c` / `bash -c` with ANY interpolated data is CRITICAL. With constant
+  strings only, it's MEDIUM (fragile pattern, invites edits that interpolate).
+- Argument injection still applies: a userFile like `-trim` becomes a flag.
+  Use `--` end-of-options where the tool supports it, validate the value
+  shape, or prefix paths (`./`+name).
+- Set `cmd.Dir`, pass minimal `cmd.Env` (don't inherit secrets-laden environ
+  into child processes: `cmd.Env = []string{"PATH=/usr/bin"}`).
+- Binary resolution: Go 1.19+ `exec.LookPath`/`Command` refuse relative-path
+  matches from the current directory on Unix; still prefer absolute paths
+  for security-sensitive helpers.
+- `CommandContext` kills on ctx cancel but **waits for copied pipes**; set
+  `cmd.WaitDelay` (1.20+) so a child that inherits the pipe can't block
+  `Wait` forever.
+
+## 4. Path traversal
+
+Joining user input into paths without containment is HIGH/CRITICAL
+(read: arbitrary file read/write).
+
+```go
+// BAD — ../../../etc/passwd
+f, err := os.Open(filepath.Join(baseDir, userPath))
+```
+
+**Go 1.24+: `os.Root` is the answer** — containment enforced in userspace by
+walking the path one component at a time with `openat` from the root's
+descriptor and checking each symlink (`doInRoot`, `os/root_openat.go`; no
+`openat2`), so `..`, absolute paths and escaping symlinks are rejected. Its
+documented non-guarantees (`go doc os.Root`): it does not stop crossing
+filesystem boundaries or Linux bind mounts, `/proc` special files, or Unix
+device files; on Unix `Chmod`/`Chown`/`Chtimes` race a file-to-symlink swap:
+
+```go
+root, err := os.OpenRoot(baseDir)
+if err != nil { return err }
+defer root.Close()
+f, err := root.Open(userPath) // cannot escape baseDir, even via symlinks
+```
+
+Caveat: containment is only as good as the toolchain — CVE-2026-39822
+(fixed in 1.26.5/1.25.12, 2026-07) let `root.Open("symlink/")` follow a
+trailing-slash symlink out of the Root on Unix (go.dev issue #79005).
+Reinforces the keep-the-toolchain-current rule in [rules/08](08-supply-chain.md) §1.
+
+Pre-1.24 fallback (and for path *strings* not yet opened):
+
+```go
+func securePath(baseDir, userPath string) (string, error) {
+    if !filepath.IsLocal(userPath) { // 1.20+: rejects ../, absolute, reserved names
+        return "", fmt.Errorf("invalid path %q", userPath)
+    }
+    return filepath.Join(baseDir, userPath), nil
+}
+```
+
+- `filepath.Clean` alone is NOT containment (it normalizes; `Clean("../x")`
+  is still `../x`). Prefix-checking `strings.HasPrefix(abs, base)` misses
+  symlinks and `base`-sibling prefixes (`/srv/app` vs `/srv/app-secrets`) —
+  if you must, compare against `filepath.Separator`-terminated resolved
+  (`filepath.EvalSymlinks`) paths.
+- Zip/tar extraction: validate every entry name with `filepath.IsLocal` + reject absolute/`..`
+  (zip-slip) and link entries (`tar.TypeSymlink`/`TypeLink`, zip `fs.ModeSymlink`; [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §4);
+  bound total size and file count (decompression bomb).
+- Serving files: `http.ServeFile` rejects `..` but build the path with
+  `http.FileServer`/`http.FS` over a rooted FS rather than manual joins;
+  `os.DirFS` + `fs.Sub`, or `os.Root.FS()` on 1.24+. Containment does not stop listing:
+  `http.FileServer`/`FileServerFS` (1.22+) render an index of any directory lacking
+  `index.html` (measured: `/sub/` listed `secret.txt`). Wrap the `FileSystem` so `Open` of such
+  a directory returns `fs.ErrNotExist` (measured: 404, files still served) or serve an explicit
+  allowlist. Cross-language rule: [sota-code-security rules/07](../../sota-code-security/rules/07-data-exposure.md). OWASP: Go-SCP (system configuration).
+
+## 5. Integer conversion overflow (gosec G115)
+
+Conversions between int sizes/signs silently truncate/wrap — exploitable when
+the value gates an allocation, length, offset, or privilege check.
+
+```go
+// BAD — attacker sends length = 4294967296; on 32-bit int wraps to 0
+n := int32(req.Length)          // truncates
+buf := make([]byte, n)
+
+// BAD — negative int → huge uint
+u := uint64(off)                // off = -1 → 18446744073709551615
+
+// GOOD — bounds-check before every narrowing/sign-changing conversion
+if req.Length < 0 || req.Length > math.MaxInt32 {
+    return fmt.Errorf("length %d out of range", req.Length)
+}
+n := int32(req.Length)
+```
+
+- High-risk sites: `len()` math into smaller ints, binary protocol parsing,
+  `strconv.Atoi` (returns platform `int`) then narrowed — use
+  `strconv.ParseInt(s, 10, 32)` with the explicit bit size instead. Decoded fields there also hit slice bounds, zero divisors, NaN/Inf and the most negative integer: [rules/02](02-design.md) §4 (*Numeric edges*).
+- gosec rule G115 flags these; triage rather than blanket-`nolint`. For
+  hot paths a tiny generic helper (`func conv[T, U constraints.Integer]`)
+  centralizes the check.
+- Durations: `time.Duration(n) * time.Second` where `n` is attacker-supplied
+  can overflow int64 — bound first.
+- **Money is never `float64`.** Use `int64` minor units, or `math/big` (`big.Int`,
+  `big.Rat`) or a decimal library (e.g. `shopspring/decimal`) where fractions must be
+  exact. A float-to-integer conversion truncates toward zero: measured on go1.27.1,
+  `int64(f * 100)` with `f := 19.99` is `1998`. `math.Round` rounds half away from zero and
+  `math.RoundToEven` is banker's, so pick the one the business rule names. The JSON half is
+  §1: a number decoded into `any` is a `float64`, and `9007199254740993` comes back as
+  `...992` (measured) — decode into typed fields, or call `Decoder.UseNumber`.
+
+## 4a. Temp files, directories and permissions
+
+`os.CreateTemp`/`os.MkdirTemp` create with safe modes and an unpredictable suffix. A
+hand-built path does neither.
+
+- **Never construct a temp path yourself** (`"/tmp/" + name`, `filepath.Join(os.TempDir(),
+  fixedName)`). It is predictable and world-writable — an attacker wins the race by placing
+  a symlink there first (gosec G303).
+- **`os.WriteFile`, `os.Mkdir` and `os.Chmod` take the mode you pass and no more thought.**
+  `0o644` on a token file and `0o755` on a key directory are the common defaults that leak to
+  every local account. Secrets get `0o600`, their directories `0o700` (G301/G302/G306/G307).
+- **The mode is a request, not a guarantee** — the process `umask` masks it. `0o666` with a
+  `002` umask lands at `0o664`. Set the mode you mean and verify with `os.Stat` where it
+  matters.
+
+```go
+// BAD — predictable name, then permissions widened after the secret is on disk
+p := filepath.Join(os.TempDir(), "app-token")
+os.WriteFile(p, tok, 0o644)
+
+// GOOD — unpredictable, owner-only, created before anything is written
+f, err := os.CreateTemp("", "app-token-*")   // 0o600
+defer os.Remove(f.Name())
+```
+
+## 4b. SSH host keys and untrusted deserialization
+
+- **`ssh.InsecureIgnoreHostKey()` disables host verification entirely** (gosec G106). The
+  first connection is the one worth intercepting, so trust-on-first-use with no pinning is a
+  standing MITM window. Use `knownhosts.New()` and fail closed. `ssh.PublicKeyCallback`
+  misuse has its own analyzer (G408) because a callback that returns a permission set built
+  from mutable state can be walked into an auth bypass. gosec keeps analyzers in a second registry
+  (`analyzers/analyzerslist.go`, beside `rules/rulelist.go`): count a run's checks from both.
+- **`encoding/gob` on untrusted input is not safe** (G709). It constructs arbitrary
+  registered types and is a decode-side attack surface; it is a wire format for services that
+  already trust each other. Use JSON with a fixed struct for anything crossing a trust
+  boundary, and bound the reader — `io.LimitReader` — because a decoder will happily allocate
+  what the header claims.
+
+## 4c. SSRF — outbound requests to a caller-influenced destination
+
+The deny policy and its rationale live in [sota-code-security](../../sota-code-security/SKILL.md) `rules/01 §5`; this is how Go
+enforces it. Any `http.Client`, `net.Dial` or SDK call whose host, port or URL a caller can
+steer (webhooks, fetch-by-URL imports, link previews, resolvers that fetch) is HIGH until all
+of the below hold, CRITICAL where the instance metadata service hands out credentials.
+
+- **Build the request; never relay a caller's URL.** Take an ID or host key, look it up in a
+  server-side `map[string]*url.URL`, and build from that entry. If arbitrary URLs *are* the
+  feature, `url.Parse` and require an `https` (or `http`) `u.Scheme`, a nil `u.User`, and a
+  `u.Hostname()` not in a name denylist (`localhost`, `metadata.google.internal`, …) — then
+  still apply the dial-time check, because a name check says nothing about where it resolves.
+- **Check the address actually dialled, inside the dialer.** A resolve-then-check before the
+  request is time-of-check/time-of-use: a second DNS answer (rebinding) or a redirect lands
+  elsewhere. Set `net.Dialer.ControlContext` (1.20+; `Control` since 1.11), which runs for
+  every connection attempt after resolution with `address` as a literal `ip:port`. Parse it
+  with `netip.ParseAddrPort`, `Unmap()` it, and refuse `IsLoopback`, `IsPrivate` (RFC 1918 +
+  `fc00::/7`), `IsLinkLocalUnicast` (covers `169.254.169.254`), `IsLinkLocalMulticast`,
+  `IsMulticast`, `IsUnspecified`, plus an explicit `netip.Prefix` list for `0.0.0.0/8` (only
+  `0.0.0.0` itself is "unspecified") and any other range your network routes internally. The
+  predicates already unmap `::ffff:a.b.c.d`; unmap anyway before any `Prefix.Contains`. Treat
+  these as helpers, not the policy: the `netip` doc says `IsPrivate` is not an access-control
+  property, so the refusal set is yours to own and test.
+- **Set `Transport.Proxy: nil` on that transport.** With a proxy (`http.DefaultTransport` reads
+  `HTTP(S)_PROXY`), the dialer sees only the proxy's address, so the hook checks nothing about
+  the target — measured: the hook saw only `proxy:3128` for a request to `127.0.0.1`.
+- **Strict parsing is not enough on its own.** `netip.ParseAddr` and `net.ParseIP` (measured on
+  1.27) reject octal, hex, dword and short IPv4 forms (`0177.0.0.1`, `0x7f.0.0.1`, `2130706433`,
+  `127.1`) — but a URL host that fails to parse as an IP is treated as a *name*, and the
+  system resolver (measured on darwin, default resolver) then turns `0x7f.0.0.1` and
+  `2130706433` into `127.0.0.1`. A pre-check that says "not an IP, so allow" is bypassed; the
+  dial-time hook still sees `127.0.0.1` and refuses it.
+- **Redirects:** `CheckRedirect` defaults to following up to 10 hops. Return
+  `http.ErrUseLastResponse` to stop, or re-apply the host allowlist to `req.URL` on every hop;
+  the dial hook re-checks each hop's IP either way. Header stripping across hosts is `rules/04 §4b`.
+- **Schemes:** `net/http` refuses anything but `http`/`https` ("unsupported protocol scheme")
+  unless someone called `Transport.RegisterProtocol` — grep for it; `file://` via
+  `http.NewFileTransport` on a fetch path is CRITICAL.
+
+```go
+d := &net.Dialer{Timeout: 5 * time.Second, ControlContext: func(_ context.Context, _, addr string, _ syscall.RawConn) error {
+    ap, err := netip.ParseAddrPort(addr)
+    if err != nil { return err }
+    if ip := ap.Addr().Unmap(); !allowedDest(ip) { return fmt.Errorf("ssrf: refused %s", ip) }
+    return nil
+}}
+egress := &http.Client{Timeout: 10 * time.Second,
+    Transport:     &http.Transport{DialContext: d.DialContext, Proxy: nil},
+    CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+```
+
+OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
+
+## 4d. Dynamic code evaluation — Go has no `eval`, its libraries do
+
+A compiled binary cannot `eval`, so runtime code generation arrives through a dependency or
+a stdlib feature fed caller text. Each is code execution scoped by what you expose:
+
+- **Template text from input** — `template.New(n).Parse(userText)` (`text/` or `html/template`)
+  lets the template call every exported method of the data value, with arguments
+  (`{{.DeleteAll "/data"}}` ran, measured). Templates are code; users supply *values*.
+- **Interpreters** — `github.com/traefik/yaegi`: `i.Use(stdlib.Symbols)` still hands the
+  script `os.ReadFile`/`os.WriteFile`/`os.RemoveAll`/`os.StartProcess` (v0.16.1 source; only
+  `unrestricted` adds `os/exec`). `github.com/dop251/goja` has no `require`/`process`, but every
+  Go value you `rt.Set` has its exported methods callable from JS (measured).
+- **`plugin.Open(path)`** runs the shared object's init code; **`reflect` `MethodByName(input)`**
+  turns a request field into a call target — map names through a fixed `map[string]func`.
+- **Rules/filters for users** — a fixed-grammar library, compiled once with a declared
+  environment: `expr.Compile(src, expr.Env(Params{}), expr.AsBool())` (`github.com/expr-lang/expr`)
+  rejects undeclared names at compile time (measured), and `MaxNodes` defaults to 10000. The
+  env's exported methods are callable too, so pass a data-only struct.
+- **None of these is a security boundary.** An in-process interpreter shares the address space,
+  file descriptors and credentials; truly untrusted code runs in a separate sandboxed process or
+  VM ([sota-sandboxing](../../sota-sandboxing/SKILL.md)).
+OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.
+
+## 6. Cryptographic practices: CSPRNG & TLS
+
+### Randomness — `crypto/rand`, never `math/rand`
+
+Security-bearing randomness — tokens, session IDs, password-reset codes, API
+keys, salts, nonces, IVs — MUST come from `crypto/rand`. `math/rand` *and*
+`math/rand/v2` are PRNGs whose "outputs might be easily predictable regardless
+of how it's seeded" (package docs); using either for anything an attacker must
+not guess is HIGH (CRITICAL when it gates auth — a guessable reset token is
+account takeover).
+
+```go
+// BAD — predictable; applies to math/rand and math/rand/v2 alike
+token := strconv.FormatInt(mrand.Int63(), 36)
+
+// GOOD — Go 1.24+: ready-made secret string (RFC 4648 base32, ≥128 bits)
+token := rand.Text()                  // crypto/rand.Text
+
+// GOOD — raw bytes; Read never errors and always fills b entirely
+b := make([]byte, 32)
+rand.Read(b)                          // crypto/rand.Read
+```
+
+- `crypto/rand.Read`/`Text` cannot hand back a short or weak read — on a
+  failing source they crash the program rather than degrade. Don't wrap them in
+  `if err != nil` logic that silently falls back to `math/rand`.
+- Watch the import line, not just the call: `math/rand.Read` is **deprecated**
+  precisely because an unqualified `rand.Read` under `import "math/rand"`
+  reads like the crypto one but isn't. Grep imports, then call sites.
+- `math/rand/v2` is the right tool — and the better PRNG API — for *non-secret*
+  work: jitter, load distribution, sampling, test fixtures. The dividing line
+  is "does predictability help an attacker", not "which package is newer".
+- Keys, signing, AEAD: use `crypto/*` (`ed25519`, `crypto/ecdsa`, `crypto/aes` + `cipher.NewGCM`)
+  drawing from `crypto/rand.Reader`; never hand-roll. Password hashing is `golang.org/x/crypto/bcrypt`/
+  `argon2` — algorithm choice and parameters are owned by [sota-code-security](../../sota-code-security/SKILL.md) `04`.
+- FIPS 140-3 (1.24+, Go Cryptographic Module): pick the module at build with `GOFIPS140=` — `off`
+  (default), `latest` (like `off`, but FIPS 140-3 mode on by default), one of the module versions
+  the page lists (verify there), or `inprocess`/`certified` (the newest on the CMVP in-process list /
+  with a certificate). `GODEBUG=fips140=on` enables the mode at run; `fips140=only` is a best-effort
+  test mode, not for production (go.dev/doc/security/fips140). Which module a boundary needs: [sota-security-compliance](../../sota-security-compliance/SKILL.md) 02 §4.
+
+### TLS configuration
+
+Go's `crypto/tls` defaults are good (1.22+ defaults to strong suites; 1.24+
+enables post-quantum X25519MLKEM768 key exchange, and 1.26 also enables
+SecP256r1MLKEM768/SecP384r1MLKEM1024 by default; the legacy GODEBUG opt-outs
+`tlsrsakex`/`tls10server`/`tls3des` were removed in 1.27 — see [rules/08](08-supply-chain.md) §2 for the
+GODEBUG settings that still weaken TLS/x509). The main
+sins are *downgrades*:
+
+```go
+// HIGH (CRITICAL on user networks or a code channel) — disables all certificate verification
+cfg := &tls.Config{InsecureSkipVerify: true}
+
+// GOOD — modern floor, otherwise stdlib defaults
+cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
+```
+
+- `InsecureSkipVerify: true` near production paths, "temporary" test toggles compiled
+  in included, is HIGH, CRITICAL in a user-network client or a code channel ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5). Pinning or
+  custom CA? Use `RootCAs` with the CA pool, or `VerifyPeerCertificate` with
+  real verification — never blanket skip.
+- Don't set `CipherSuites`/`CurvePreferences` manually unless compliance
+  forces it — stale hand-picked lists rot; stdlib defaults track best
+  practice per release.
+- mTLS: server `ClientAuth: tls.RequireAndVerifyClientCert` + `ClientCAs`.
+- Plain `http://` to internal services carrying credentials is HIGH unless
+  the transport is otherwise authenticated/encrypted (mTLS mesh).
+
+## 7. unsafe and cgo policy
+
+- `unsafe`: forbidden outside a designated, documented, owner-reviewed
+  package. Each use carries a comment proving the invariant (per
+  `unsafe.Pointer` rules) and a fuzz/race-tested wrapper. Audit any new
+  `unsafe.Pointer` arithmetic as HIGH until proven.
+- `//go:linkname`, `reflect.SliceHeader`/`StringHeader` (deprecated): treat
+  as `unsafe`; 1.20+ `unsafe.String/StringData/Slice/SliceData` are the only
+  sanctioned forms.
+- cgo: each C dependency reintroduces memory-unsafety, complicates
+  cross-compilation and static linking, and bypasses govulncheck's call
+  analysis. Require justification (no pure-Go alternative), pin and scan the
+  C library separately, and isolate behind one package. `CGO_ENABLED=0` for
+  builds unless cgo is required.
+
+Supply chain and vulnerability management (formerly section 8) moved to
+[rules/08](08-supply-chain.md) §1 on 2026-09-25.
+
+## Audit checklist
+
+- [ ] **SQL injection — CRITICAL** (§2) —
+      `grep -rniE '(Sprintf|fmt\.Sprint|\+ ?\w+ ?\+).*(select|insert|update|delete|where)' --include='*.go' .`
+      ; `grep -rnE '(Query|Exec|QueryRow)[^(]*\(("[^"]*"\s*\+|fmt\.Sprintf)' --include='*.go' .`
+      ; `grep -rnE '\.(Raw|Where)\(fmt\.Sprintf' --include='*.go' .` (GORM-style)
+- [ ] **Command injection (§3) — CRITICAL** —
+      `grep -rnE 'exec\.Command(Context)?\(([^,"]+,[[:space:]]*)?"(sh|bash|cmd|powershell)"' --include='*.go' .` ;
+      `grep -rnE 'exec\.Command\(' --include='*.go' .` (ctx-less sites; for every `exec.Command*` site verify argv: `--` before caller values, a minimal `cmd.Env`, `WaitDelay` set; constant-only `sh -c` is MEDIUM)
+- [ ] **Path traversal — HIGH** (§4) —
+      `grep -rnE 'filepath\.Join\([^)]*(r\.|req\.|input|name|param|id)' --include='*.go' .` ;
+      `grep -rnE 'os\.(Root|OpenRoot|OpenInRoot)|filepath\.IsLocal' --include='*.go' .` (mitigations present? no output means none);
+      `go version` (os.Root containment needs >=1.26.5 on the 1.26 line — CVE-2026-39822 symlink escape);
+      `grep -rnE 'os\.(Open|OpenFile|Create|ReadFile|WriteFile|Remove)\(' --include='*.go' . # trace path provenance`
+- [ ] **Directory listing from an unwrapped `FileServer` (§4) — MEDIUM** —
+      `grep -rnE 'http\.FileServer(FS)?\((http\.(Dir|FS)|os\.DirFS)\(' --include='*.go' .`
+- [ ] **Unpinged pool; pool-level prepared statements (§2) — LOW, MEDIUM behind a
+      transaction-mode pooler** — `grep -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs grep -L 'Ping'` ;
+      `grep -rnE '(db|DB|pool)\.Prepare(Context)?\(' --include='*.go' .` ; pool limits left at the unlimited default (§2): `grep -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs -r grep -L 'SetMaxOpenConns'` — read each hit, the setter may live in another file
+- [ ] **SSRF: outbound request to a caller-chosen URL (§4c) — HIGH, CRITICAL on a cloud host
+      with a metadata endpoint** —
+      `grep -rnE '(Get|Post|Head|PostForm|NewRequest|NewRequestWithContext)\(.*(r\.(URL|Form|PostForm|Header)|FormValue\(|Query\(\))' --include='*.go' .`
+      (request target taken straight from the inbound request) ;
+      `grep -rnE 'ControlContext:|Control:|RegisterProtocol|NewFileTransport' --include='*.go' .`
+      (no dial hook in a service that fetches caller URLs = no internal-address check)
+- [ ] **Regex escaping, anchoring & engine (§1) — HIGH** —
+      ``grep -rnE 'regexp2?\.(MustCompile|Compile|MatchString|Match)\((fmt\.Sprintf|.*["`] \+ [A-Za-z_]|.*[A-Za-z0-9_)] \+ ["`])' --include='*.go' . | grep -v QuoteMeta``
+      (pattern built from data, not escaped) ; ``grep -rnE 'Compile\(`\^[^(`]*\|' --include='*.go' .``
+      (`^a|b$` — alternation escapes the anchors) ; `grep -rl 'regexp2\.' --include='*.go' . | xargs -r grep -L 'MatchTimeout'`
+      (files on the backtracking engine that never set `MatchTimeout`)
+- [ ] **TLS (§6) — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
+      `grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .` ;
+      `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'` ; `grep -rnE 'CipherSuites|CurvePreferences' --include='*.go' .` (hand-picked lists only where compliance forces them)
+- [ ] **Integer conversion — gosec G115** (§5) —
+      `grep -rnE -B4 '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)' | awk '/[<>]=?/ && /(Max|Min)(Int|Uint)/{g=1} /^--$/{g=0; next} $0 ~ /^[^ ]*:[0-9]+:/ && /(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(/ {if(!g)print; g=0}'`
+      ; `gosec -include=G115,G118,G119,G120,G121,G124,G201,G202,G204,G304,G401,G402,G701,G702,G703,G704,G705,G706,G707,G708,G709,G710 ./...`
+      (or plain `gosec ./...` for the full set)
+- [ ] **Money in binary floats (§5, §1) — MEDIUM, HIGH in money paths** —
+      `grep -rniE '(price|amount|total|balance|cost|fee|tax)[a-z0-9_]*[[:space:]]+(\[\])?float(32|64)' --include='*.go' .`
+      (a money field or variable typed as a float) ;
+      `grep -rnE 'int(32|64)?\([^()]*\*[[:space:]]*100(\.0)?\)' --include='*.go' .`
+      (scaled to minor units by a truncating conversion) ;
+      `grep -rnE 'map\[string\](any|interface[{][}])' --include='*.go' .` then
+      `grep -rn 'UseNumber' --include='*.go' .` (JSON decoded into `any` turns every number
+      into a `float64`; an amount or 64-bit ID there loses precision)
+- [ ] **G113/G115/G118/G408 are ANALYZERS, not rules (§4b): gosec keeps two registries
+      (rules/rulelist.go = 39, analyzers/analyzerslist.go = 22, 61 total at v2.29.0). A
+      denominator taken from rulelist.go alone silently omits every taint-analysis check
+      (G701-G710) and the modern HTTP ones (G119-G124).**
+- [ ] **CSPRNG misuse (§6) — HIGH (security-bearing randomness from a PRNG)** —
+      `grep -rn 'math/rand' --include='*.go' .` (any import: verify each call site is
+      non-secret);
+      `grep -rnE '\brand\.(Int|Intn|Int31|Int63|Uint|Float|Perm|Shuffle|N)\b' --include='*.go' . # PRNG calls — crypto context?`
+- [ ] **Output encoding / XSS — HIGH** (§1) —
+      `grep -rn 'text/template' --include='*.go' . | grep -iv _test` (HTML rendered via
+      text/template?);
+      `grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . | grep -viE 'saniti[sz]e'` (escaping bypass with no sanitizer on the same line)
+- [ ] **Dynamic code evaluation from input (§4d) — CRITICAL when the text is caller-supplied,
+      HIGH otherwise** —
+      `grep -rnE '(template\.New\([^)]*\)|[Tt]mpl|[Tt]emplate)\.Parse\([A-Za-z_]|interp\.New\(|goja\.New\(|plugin\.Open\(|MethodByName\(|expr\.Eval\(' --include='*.go' .`
+      (template text or a call target from a variable; embedded interpreter) ;
+      `grep -rn 'expr\.Compile(' --include='*.go' . | grep -v 'expr\.Env('` (no declared env)
+- [ ] **unsafe / cgo (§7) — HIGH for new `unsafe.Pointer` arithmetic** — `grep -rn 'unsafe.Pointer\|go:linkname\|reflect.SliceHeader\|reflect.StringHeader' --include='*.go' .` ;
+      `grep -rln 'import "C"' --include='*.go' .` ; `git grep -n 'CGO_ENABLED=1'` (each cgo use justified, in one package)
+- [ ] **--- Temp files and permissions (§4a) ---** —
+      `grep -rnE 'os\.TempDir\(\)|"/tmp/' --include='*.go' . | grep -v _test` (predictable path
+      [HIGH])
+- [ ] **mode where either the group or other digit is non-zero (§4a) (0600/0700 pass, 0644/0755/0640
+      flag)** —
+      `grep -rnE '(WriteFile|MkdirAll|Mkdir|Chmod)\(.*0o?[0-7]([1-7][0-7]|[0-7][1-7])\)' --include='*.go' .`
+- [ ] **--- Host keys and deserialization (§4b) ---** —
+      `grep -rn 'InsecureIgnoreHostKey' --include='*.go' .` (MITM [HIGH]);
+      `grep -rn 'encoding/gob' --include='*.go' . | grep -v _test` (decode-side surface
+      [MEDIUM])
+
+Severity guide: string-built SQL / `sh -c` with input / InsecureSkipVerify /
+`math/rand` for an auth-gating token CRITICAL; traversal-reachable file ops,
+disabled sumdb, unchecked narrowing on attacker-controlled sizes, `math/rand`
+for other secrets, HTML via `text/template` MEDIUM-to-HIGH; raw error echo to
+clients, silent `replace` MEDIUM.

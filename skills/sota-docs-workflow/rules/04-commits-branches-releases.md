@@ -1,0 +1,166 @@
+# 04 — Commits, Branches & Releases
+
+Commit message and atomicity discipline, conventional commits and when they pay,
+branch strategy, versioning, and release/changelog mechanics.
+
+## §1 Atomic commits
+
+A commit is the unit of `bisect`, `revert`, `cherry-pick`, and `blame`. Optimize
+for those four operations.
+
+- **One logical change per commit**: the change and its tests together, nothing
+  unrelated. "Fix X and also format the file" poisons blame; "half of feature
+  X" breaks bisect.
+- **Every commit on the main branch builds and passes tests.** A bisect that
+  lands on "WIP, doesn't compile" is a bisect wasted. With squash-merge this is
+  automatic (each merged PR = one green commit); with merge/rebase flows, clean
+  the branch (autosquash fixups) before merge — [rules/03](03-code-review-pr-workflow.md) §4.
+- Mechanical changes (rename, format, codemod) get their own commit, labeled as
+  such, so reviewers and blame can skip them. Consider
+  `.git-blame-ignore-revs` for repo-wide reformat commits.
+- **Don't commit what the build produces or the developer machine leaks**:
+  artifacts, `.env`, editor droppings — enforce via `.gitignore` + pre-commit
+  secret scanning (deeper treatment: [`sota-secrets-management`](../../sota-secrets-management/SKILL.md)).
+
+## §2 Commit messages and Conventional Commits
+
+- **Subject**: imperative mood ("Add", not "Added"/"Adds"), ≤72 characters
+  (50 is the classic ideal), no trailing period, capable of completing "if
+  applied, this commit will ___".
+- **Body**: explains *why* and what the alternatives were — the diff already
+  shows the what. Wrap at 72. Link issues/incidents. A one-line `fix typo` body
+  is fine; a one-line body on a 300-line behavioral change is a finding.
+- **Conventional Commits** (conventionalcommits.org, spec v1.0.0 — check the
+  site for a newer spec version): `type(scope)!: description` with `feat`, `fix`,
+  and friends; `!` or a `BREAKING CHANGE:` footer marks breaking changes.
+  - **When it pays**: you automate something with it — changelog drafts and
+    version bumps via semantic-release / release-please / git-cliff, monorepo
+    per-scope releases, commit-lint gates. `feat` → minor, `fix` → patch,
+    breaking → major gives you releases as a by-product of merging.
+  - **When it doesn't**: no automation consuming the types. Then it's ceremony;
+    plain well-written messages (above) are the actual requirement. Don't adopt
+    the syntax without the pipeline.
+  - If adopted: enforce mechanically (commitlint/PR-title check on squash
+    merges), keep the type honest (`feat` that's really a `fix` corrupts the
+    generated changelog), and remember the generated changelog still gets a
+    human edit ([rules/02](02-api-reference-changelogs.md) §6).
+
+**Bad**: `fixed stuff`, `WIP`, `address review comments`, `Update scheduler.py`.
+**Good**:
+
+```
+fix(payouts): skip frozen accounts in preview
+
+Preview ran the eligibility check but not the account-status check,
+so frozen creators saw payouts that execution would reject (#892).
+Reuse StatusGate from the execution path instead of duplicating the
+check, so the two paths cannot drift again.
+```
+
+## §3 Branch strategy honesty
+
+Pick the simplest strategy your release reality allows, and admit which one
+you're actually running.
+
+- **Default: trunk-based with short-lived branches.** Branch from main, PR
+  within a day or two, merge, delete. Long-lived feature branches are merge
+  debt with interest; integrate continuously behind feature flags instead.
+  Branch age is a metric worth alerting on (>3 days: ask why).
+- **Gitflow only with real release trains**: multiple maintained versions in
+  the field (on-prem, mobile, embedded), genuine hardening windows. If you
+  deploy from main continuously, `develop` + `release/*` + `hotfix/*` is
+  process cosplay — every extra long-lived branch is a divergence to reconcile.
+- **Release branches without gitflow** are a legitimate middle: cut
+  `release/1.4` from main at code freeze, cherry-pick fixes, tag from it —
+  while feature work continues on main. Use when you ship versioned artifacts
+  but develop trunk-based.
+- Hotfix path is defined *before* the incident: where it branches from (the
+  release tag), where it must land back (main, always — a fix that exists only
+  on a release branch regresses in the next release).
+- Default branch is protected: required reviews + checks, no direct pushes, no
+  force push ([rules/03](03-code-review-pr-workflow.md) §6). The approver is neither the author nor the last pusher, enforced
+  as a ruleset setting ([`sota-devsecops` rules/12](../../sota-devsecops/rules/12-scm-ci-platform-governance.md) §12.5).
+- **Derive a branch-cleanup list from fresh state, never from what you did.** After a
+  squash merge, git cannot tell the branch landed. `branch -d` refuses it once its
+  upstream is gone, and accepts it with a warning while the upstream still exists (both
+  measured, git 2.55.0). So take the list from PR state, not from `git branch --merged`. Then
+  intersect it with a `git ls-remote --heads origin` taken at the moment you hand the command
+  over. A merge flag is not remote state: `gh pr merge --delete-branch=false` does not stop a
+  repository's own delete-on-merge setting. And a multi-ref `git push origin --delete A B`
+  deletes **nothing** when any one ref is already gone, at rc 1, with or without `--atomic`
+  (measured, git 2.55.0). A stale list fails the whole command, not just the stale name
+  (field-reported 2026-10-20). **A branch with no PR, or a closed one, has no state to derive
+  from**: it is not on the list until its commits are reachable from a remote ref (`git branch -r
+  --contains <sha>`, after fetching `refs/pull/*/head`) and no record pins its hash (search the
+  eval and release records for its 7-character prefix). Measured 2026-10-28: of 14 eval roots
+  found cited by hash (a lower bound: the search keyed on the library's name), one existed only on
+  a local branch with no PR. And generate the delete command
+  from the list; a hand-typed one dropped 1 of 21 names in the same session.
+
+## §4 Versioning discipline
+
+- **SemVer means the numbers are promises**: major = breaking, minor =
+  additive, patch = fixes. Breaking in a minor is a contract violation no
+  matter what the release notes say. If you can't honor that, use explicit
+  CalVer or 0.x rather than fake SemVer — consumers' tooling (`^`, `~`,
+  dependabot) acts on the numbers, not your intentions.
+- **What counts as breaking is broader than compilation**: removed/renamed
+  symbols and endpoints, tightened validation, changed defaults, changed error
+  codes/types callers branch on, changed wire formats, raised minimum
+  runtime/OS versions. Behavioral contracts documented in [rules/02](02-api-reference-changelogs.md) §2 are part
+  of the API.
+- 0.x is an explicit "anything may change" signal — fine for pre-stable, but
+  don't live there for years while telling users you're production-ready.
+- **Breaking-change communication is a pipeline, not a number**: deprecation
+  warnings in code → changelog `Deprecated` section → migration guide
+  ([rules/02](02-api-reference-changelogs.md) §7) → major release → removal. The version bump is the last step,
+  never the first notice.
+- API surface evolution rules (additive change, deprecation headers, sunset)
+  are covered in [`sota-api-design`](../../sota-api-design/SKILL.md); this file covers the release mechanics.
+
+## §5 Releases, tags, and release notes
+
+- **Releases are tagged, and tags are immutable**: never delete or re-point a
+  published tag — downstream caches, lockfiles, and humans have already
+  resolved it; a moved tag is a supply-chain incident (signed tags, provenance,
+  artifact immutability: [`sota-devsecops`](../../sota-devsecops/SKILL.md)). A bad release gets a *new* patch
+  version, not a recycled tag.
+- **Releases are reproducible from the tag**: version is derived from the tag
+  (not hand-edited in three files — or if files must contain it, the bump is
+  automated and the tag is the source of truth), built by CI, never from a
+  laptop. **Write the recipe down** (a `BUILDING.md` or a section of
+  `RELEASING.md`/`CONTRIBUTING.md`): the toolchain and its exact version, where
+  pinned inputs come from (lockfiles, base-image digests), the one command that
+  produces each release artifact, and how to compare the result with the
+  published one. A build only the CI config can explain cannot be re-derived by
+  a user or auditor checking your artifacts. Mechanics of hermetic and
+  reproducible builds: [`sota-devsecops` rules/04](../../sota-devsecops/rules/04-build-containers.md) §4.1. (OWASP: SCVS 3.2)
+- **Automate the release train**: tag (or merged release PR) triggers build,
+  changelog finalization (move `Unreleased` → version section), artifact
+  publish, docs version publish ([rules/02](02-api-reference-changelogs.md) §5). release-please / semantic-release
+  style tooling does this off conventional commits (§2); the more humans in
+  the loop, the rarer and scarier releases become.
+- **Release notes are the curated story** (highlights, upgrade notes, breaking
+  changes up top, who should care); the changelog is the complete record
+  ([rules/02](02-api-reference-changelogs.md) §6). Generate the skeleton, edit for humans; leading with
+  "Bump deps (#1042)" tells users you didn't.
+- Pre-releases use ordered, machine-readable identifiers
+  (`2.0.0-rc.1`), published to pre-release channels (`next` dist-tag, pre-release
+  flag) so they never resolve as `latest`.
+- Ship breaking changes in a release that contains *only* the breaking changes
+  and their migration affordances where feasible — mixing "must-have fix" with
+  "must-rewrite-callers" forces users to take the break to get the fix.
+
+## Audit checklist
+
+- [ ] History bisects: sampled main-branch commits build and pass tests; no WIP/broken commits on main (§1).
+- [ ] Commits are atomic — one logical change with its tests; mechanical changes isolated (and in `.git-blame-ignore-revs` where repo-wide); no build artifacts, `.env` or editor droppings tracked, kept out by `.gitignore` + pre-commit secret scanning (§1).
+- [ ] Subjects imperative, ≤72 chars, no trailing period; bodies on non-trivial commits explain why and link issues/incidents; sampled `git log` is readable as a narrative (§2).
+- [ ] If Conventional Commits: enforced by commitlint/PR-title check, types honest, and an automation pipeline actually consumes them; if not adopted, no half-applied `feat:` cargo-culting (§2).
+- [ ] Branches are short-lived (check age of open branches); no zombie long-lived feature branches; flags used for incomplete work (§3).
+- [ ] Branch model matches release reality (no gitflow on a continuous-deploy service); hotfix path documented and lands back on main; any branch-cleanup script or runbook takes its list from PR state intersected with a fresh `git ls-remote --heads origin`, never from `git branch --merged` (§3).
+- [ ] Version numbers honor SemVer (diff a recent minor for breaking changes — including tightened validation, changed defaults, changed error codes/types, changed wire formats and raised minimum runtime/OS versions) or the project explicitly uses CalVer/0.x, without staying on 0.x for years while telling users it is production-ready (§4).
+- [ ] Breaking changes followed the pipeline: deprecation → changelog → migration guide → major; never a surprise minor (§4).
+- [ ] Published tags never moved/deleted (§5) (compare tag dates vs. registry artifacts if suspicious); releases built by CI from the tag.
+- [ ] Release notes curated with breaking changes first (§5); changelog `Unreleased` section flows into versioned sections at release; pre-releases can't resolve as latest.
+- [ ] **(Low; Medium for a distributed artifact) Build reproduction is documented** (§5): toolchain version, pinned inputs and the exact release command are written in the repo. Probe: `[ -n "$(grep -r -s -i -l -E 'reproduc[a-z]*[^.]*build|build[^.]*reproduc' README.md BUILDING.md RELEASING.md CONTRIBUTING.md docs)" ] || echo "no build-reproduction doc"` (either word order; tests output, not an exit status an absent file or `pipefail` would falsify).

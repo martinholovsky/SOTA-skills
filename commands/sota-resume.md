@@ -1,0 +1,195 @@
+---
+description: Find and finish the open work in this project — inventory every tracker, checkbox and marker with a controlled search, classify what is actually actionable, agree the list, then execute one item at a time against the project's own verification. Run it at the START of a session.
+---
+
+Find and finish the open work in this project.
+
+This is the other end of `/sota-close`: that command records open items where a new session
+will trip over them, this one picks them up. Neither assumes the other ran — most projects
+scatter their open work across files written by people who are not here.
+
+## 0. Load the shell rules before the first search
+
+Invoke the `sota-shell-scripting` skill and read its `rules/06` (ad-hoc commands) in full **now**,
+before step 1. Every step-1 sweep is an ad-hoc command whose *absence* you are about to report,
+and that file owns how such a sweep fails silently. The parentheses below are pointers into it,
+not substitutes: a citation loads nothing. Field-reported 2026-10-11: a resume pass ran ten
+sweeps with this command's paraphrase alone, and two of its defects were ones rules/06 prevents.
+
+## 1. Inventory — and prove the search works before trusting it
+
+Search widely before concluding anything:
+
+- files named `TODO*`, `BACKLOG*`, `ROADMAP*`, `NEXT*`, `next-steps*`, `PLAN*`, `*.local.md`;
+- unchecked `- [ ]` boxes in docs;
+- `TODO|FIXME|XXX|HACK` markers in tracked source;
+- `Unreleased`, "planned", "not yet", "for now" in the CHANGELOG and README;
+- deferred items in ADRs and design docs — an ADR that says "we defer X" *is* a tracker row;
+- open issues and PRs, if a remote is configured;
+- **work nobody wrote down** — output another session left here with no tracker line.
+  `git status --ignored --porcelain` lists ignored paths (`!! campaigns/`); for each
+  output-shaped one (results, campaigns, evidence, runs) count `find <dir> -newer <newest
+  handoff> -type f`. For every sibling repo the trackers name, read
+  `git -C <sibling> log --since=<handoff date> --oneline`. Field-reported 2026-10-24: a sibling
+  session had run this repo's campaign tool into a gitignored directory three days earlier and
+  recorded it only in its own repo. It made an operator-deferred item that carried a spend
+  ALREADY DONE, and no text search above can find it, because nothing describes it.
+
+**A clean "nothing found" is the result you were hoping for, which is exactly when to distrust
+it.** Five failure modes produce a confident zero, and none of them prints an error:
+
+- **The searcher skipped the tree.** `grep -r` does not follow symlinked directories, and
+  package dirs, dotfile checkouts and installed-plugin trees are symlink farms. Which flag
+  rescues you depends on the *binary*: on BSD grep neither `-r` nor `-R` traverses one. Say
+  which tool and which binary you used — `type grep`, which names a shell function or alias
+  (`command -v` prints only the bare name for a function, so it cannot answer this); then call
+  the real binary by path (`whence -p grep` in zsh, `type -P grep` in bash) — and reach for
+  `find -L`, `rg --follow` or `ugrep -R` (`sota-shell-scripting` rules/06 §2). `rg` also skips
+  any path an ignore rule matches **even when the file is tracked** (`git add -f`): search what
+  the repository holds with `git grep`, or what is on disk with `rg --hidden --no-ignore`.
+- **The flag meant something else.** `rg -r` is `--replace`, not "recursive"; it silently
+  rewrites every match to the next token and the output looks like content
+  (`sota-shell-scripting` rules/06 §2a).
+- **The pattern cannot match on this machine.** `\b` in `git grep -E` on macOS is read as the letter
+  `b` (no error): it usually matches nothing, exit 1, and can match the wrong lines. Use `-w`, a
+  bracket boundary, or no boundary (`sota-shell-scripting` rules/06 §2f).
+- **The lister answered about one page.** `gh issue list` and friends cap at 30 by default,
+  exit 0, empty stderr. A result whose size equals a round number you or the tool chose is a
+  page until proven otherwise (`sota-shell-scripting` rules/09 §5).
+- **The query asked your question, not the project's.** `grep` answers "does this string
+  appear", never "is this idea covered". A project that writes "parked" will not match "TODO".
+
+**Run one query whose answer you already know, in the same invocation as the real one and
+through the same input path** — the same file list, the same `xargs`, the same redirections,
+differing only in the needle; a control on the same line that reads a different input proves
+only that the shell ran — and drawn from where your search is least likely to reach, because a control from inside a
+too-narrow scope passes anyway (`sota-shell-scripting` rules/06 §2). If the
+control returns nothing, the instrument is broken and the absence is worth nothing. Then
+report the **denominator** — how many files you actually scanned — beside the finding count.
+`0 found over 0 files` and `0 found over 900 files` are different answers.
+
+## 2. Classify — show me this table before changing anything
+
+| Class | What it means |
+|---|---|
+| **READY** | Unambiguous, self-contained, finishable now. |
+| **NEEDS A DECISION** | Depends on a choice only the operator can make — naming, scope, priority, cost, anything security-, privacy- or money-relevant. State the question, **two or three options**, and **your recommendation with its reasoning** — rule 5's form, which applies here too. A bare recommendation is not a decision handed over. |
+| **DELIBERATELY DEFERRED** | The doc gives a reason to wait. Leave it, and say what the reason was. If the deferral names **no revisit trigger**, that is a finding: a deferral with no condition attached is a silent drop wearing a tracker row. **If it names one, test the trigger against the current state before you leave it**: a trigger whose condition is already true schedules nothing, which is the same silent drop one step later. Reclassify it as READY, or as NEEDS A DECISION when an operator ruling deferred it (the ruling's premise has expired, so the operator rules again). Then record that it fired and when, so the next pass does not rediscover it. Field-reported 2026-10-22: three of one repo's deferrals had already fired, a threat-model re-run among them, missed for the third time. |
+| **NOT AN ITEM** | Template checkboxes, worked examples, a `- [ ]` inside a code fence (it renders as sample output and no one was ever meant to tick it), completed rows still phrased as open. Say so rather than "doing" them. |
+| **ALREADY DONE / OBVIATED** | The work is unnecessary, in one of two ways: it was **implemented** and the tracker never updated, or it was never implemented and **the gap it names is now covered by a different mechanism**. Either way the fix is a **doc correction, not code**. |
+
+**ALREADY DONE is usually the largest class and the easiest to get wrong in the other
+direction.** The summary is always the stale half, and it is the half people read — a
+priorities table pointing at work its own ledger closed. Check the *ledger row*, the code, or
+the commit, never the header that summarises them.
+
+**OBVIATED is the half that lands in READY by default**, because the item itself really is
+untouched. Before classifying as READY anything that adds a *new* control — an alert, a check,
+a guard, a gate — name what covers that failure mode today and why it is not enough. If the
+answer is "nothing", test the incumbent against your target rather than reading its config:
+relax its threshold until it fires and confirm the target is in its selector set. Field-reported
+2026-09-16: a backlog row asked for a 96h backup-staleness alert, and a generic 25h rule
+already covered the job. A new control less sensitive than one already running is a regression
+shaped like an improvement. (Rule 5's false-premise pause catches this too, but only after the
+table has reached you.)
+
+**An item whose action is publishing has its own obviation test.** That covers an upstream
+issue, a PR, an advisory or a post. Before handing it over as a decision, re-run the finding
+on the **current stable release**, with its end-of-life date beside it, and search the upstream
+tracker for it. Invoke the `sota-docs-workflow` skill and read its rules/03 §8 for the rest of
+the bar. Otherwise the operator decides on the finding as recorded weeks ago, not as it stands.
+Field-reported 2026-10-20: a "report this docs bug upstream" deferral reached the decision table
+measured two patch releases and one minor release behind. Upstream had filed and fixed it six
+days earlier, and one of its three claims was documented behaviour. An approval trigger
+("when the operator approves the text") reads as "nothing to check until then", so check before
+asking.
+
+Order READY by value against risk. Estimate **blast radius and uncertainty**, not minutes: how
+many files it touches, whether anything else depends on it, and what you would have to know
+that you do not.
+
+## 3. Stop and let me steer
+
+Do not execute until the operator confirms the list. The one exception is *every* item being
+READY **and** small — where small means: inside one file or one obvious unit, no interface,
+schema, dependency or security posture touched, and verification already exists for it. Say
+you are taking the exception and which bar it met, then carry on. An exception invoked without
+naming its bar swallows the rule.
+
+**Hand every NEEDS A DECISION item over in rule 5's form**: the question, two or three options
+with what each costs and forecloses, and your recommendation **with its reasoning**. Batch them
+into this one interruption rather than asking serially — that is what this stop is for. Without
+the alternatives beside it the operator is ratifying a choice you already made rather than
+making one, and a recommendation whose reasoning went unsaid is the one that gets re-argued.
+
+## 4. Execute — one at a time, smallest blast radius first
+
+For each agreed item:
+
+1. Make the change.
+2. **Run this project's own verification** — find its entry point, do not assume one.
+   `Makefile`, `package.json` scripts, `justfile`, `tox.ini`, `noxfile.py`, `.pre-commit-config.yaml`,
+   and above all `.github/workflows/*` — CI is the definition of "passing" that actually
+   gates this repo. Run what CI runs.
+3. **Watch it fail before trusting it to pass.** If you did not see the check reject something,
+   you do not know it ran — a suite that silently matched zero files exits 0 and prints `ok`.
+   A green check whose environment cannot reach the defect is green and proves nothing; say
+   what depth it reached — read `sota-devsecops` rules/09 §2a for how before you claim it.
+4. **Update the tracker in the same change.** Status lives in one place; everything above it is
+   derived. Grep the summary for the item's own identifier in the same commit that closes it,
+   or the summary is stale before you finish reading this.
+
+## 5. When you find a better way mid-execution
+
+Do not silently take it, and do not silently ignore it. The threshold:
+
+- **Just do it, and note it in the final report** — choices *inside* the item's stated scope:
+  which helper to reuse, naming, test layout, ordering.
+- **Pause and ask** when the better way would change the item's **shape**: its scope, a public
+  interface or schema, a dependency, the security or privacy posture, the data model, or
+  anything contradicting a written decision (an ADR, a spec, an explicit "we chose X because
+  Y"). Also pause if the prescribed way would knowingly leave a defect, or if the item rests on
+  a **false premise** — a stated blocker that is simply no longer true is common, and doing the
+  work anyway is worse than saying so.
+
+When you pause, give: what the item asked for; the alternatives; the concrete trade-off of each
+(cost, risk, what it forecloses); your recommendation **and why**; and what you need to
+proceed. Two or three options, not a survey. **Batch related questions into one interruption**
+rather than asking serially, and keep working on any agreed item that does not depend on the
+answer.
+
+Once the operator decides, **record the decision where this project keeps them** — an ADR, the
+tracker row, a comment at the site. A recorded decision is what stops the same idea being
+re-litigated in three months, and that includes recorded *rejections*. If the operator chose
+against your recommendation, **write down their reasoning, not just the outcome**: an outcome
+with no reasoning gets re-argued by the next person who finds it surprising.
+
+## 6. If an item is bigger than it looked
+
+Stop and say so rather than half-finishing it. The tell is concrete: you are several files
+deep in something the item never named, or you are about to change an interface to make a
+"small" fix land. A half-finished item is worse than an untouched one — it looks done in the
+tracker and behaves like neither.
+
+## 7. Report honestly
+
+- What is **done and verified**, with the command and its result.
+- What you **skipped**, and why.
+- What is **still open**, including anything you downgraded from READY once you looked.
+- Every **judgement call** you took under rule 5, including the ones you decided were inside
+  scope and did not ask about.
+
+**Never mark something complete that you did not observe working.** If you could not test it,
+name the part that is unverified rather than the whole thing being "done". If verification
+failed for an environmental reason, fix the environment or say plainly that you could not —
+a red run described as green is the single most expensive thing in this list.
+
+## Constraints
+
+- **Don't invent work no file asked for.** If you see a genuine improvement outside every
+  item, collect it and summarise it at the end — do not fold it into an item.
+- **Don't widen scope past what an item says**, even when the adjacent fix is obvious.
+- **Prefer correcting a stale document over writing new prose.** A wrong line deleted is worth
+  more than a right paragraph added beside it.
+
+$ARGUMENTS

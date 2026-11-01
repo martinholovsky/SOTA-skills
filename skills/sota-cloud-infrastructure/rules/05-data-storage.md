@@ -1,0 +1,273 @@
+# 05 — Data & Storage Architecture
+
+Scope: object storage design, block/file/object selection, backup architecture,
+encryption and KMS key strategy. Database engine selection, schema, replication
+internals: see [sota-databases](../../sota-databases/SKILL.md). This file covers where data lives, how it's protected
+at rest, and how it survives deletion — malicious or accidental.
+
+## 1. Object storage design
+
+- **Bucket-per-purpose, not bucket-as-filesystem.** One bucket = one data class +
+  one access pattern + one lifecycle + one policy. Mixing public assets, internal
+  exports, and PII in one bucket under prefix conventions means the loosest policy
+  wins. Bucket names are global/guessable — never security-relevant.
+- **Public access blocked, belt and suspenders.** Provider defaults now help (S3
+  Block Public Access on + ACLs disabled for all new buckets since April 2023; GCP
+  public access prevention; Azure blob public access disable) — but defaults protect
+  only new resources. Enforce at account/org level (S3 BPA account setting guarded
+  by SCP; GCP org policy `storage.publicAccessPrevention`; Azure Policy), and audit
+  legacy buckets explicitly. Genuinely public content goes behind a CDN with origin
+  access control ([rules/03](03-networking.md) §9), not a public bucket.
+- **ACLs disabled everywhere** (S3 Object Ownership = bucket owner enforced).
+  Policy-only access control; ACL grants found on legacy buckets are migration debt.
+- **Versioning on** for any bucket whose objects you'd miss (protects against
+  overwrite/delete), paired with lifecycle rules expiring noncurrent versions —
+  versioning without expiry is an unbounded bill.
+  **Versioning also means "deleted" is not gone:** on S3 a delete without a
+  `versionId` only adds a delete marker, and an overwrite leaves the old bytes as a
+  noncurrent version — both still fetchable by anyone holding `s3:GetObjectVersion`
+  (and listable with `s3:ListBucketVersions`). Removing a leaked secret or erased PII
+  means deleting every version by ID (`s3:DeleteObjectVersion`), not the key; grant
+  the version-read actions only to roles that restore data. On other providers,
+  check how versioning retains old copies before trusting a delete. (OWASP: WSTG-CONF-11)
+- **Lifecycle policy on every bucket, by design not retrofit:** transition to
+  infrequent-access/archive tiers on access-pattern evidence (storage class
+  analysis / intelligent tiering for unknown patterns), expire what has a retention
+  end, always abort incomplete multipart uploads (silent cost leak), expire stale
+  delete markers.
+
+```hcl
+# GOOD: baseline private bucket (AWS flavor; mirror on GCS/Azure)
+resource "aws_s3_bucket_public_access_block" "b" {
+  bucket                  = aws_s3_bucket.b.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+resource "aws_s3_bucket_versioning" "b" {
+  bucket = aws_s3_bucket.b.id
+  versioning_configuration { status = "Enabled" }
+}
+resource "aws_s3_bucket_lifecycle_configuration" "b" {
+  bucket = aws_s3_bucket.b.id
+  rule {
+    id     = "baseline"
+    status = "Enabled"
+    abort_incomplete_multipart_upload { days_after_initiation = 7 }
+    noncurrent_version_expiration { noncurrent_days = 90 }
+  }
+}
+```
+
+- Bucket policies: require TLS (`aws:SecureTransport`), pin org
+  (`aws:PrincipalOrgID`) on shared buckets, restrict to VPC endpoints
+  (`aws:SourceVpce`) for internal data planes. The TLS and org-perimeter
+  conditions are better enforced org-wide once via an RCP ([rules/01](01-org-accounts-governance.md) §3); keep
+  bucket policies for the bucket-specific conditions. Access logging on sensitive
+  buckets to the central log account.
+- Cross-account writes (log delivery, partner drops): bucket-owner-enforced
+  ownership + explicit service principals with source-account/org conditions —
+  never `Principal:"*"` with a prefix "restriction".
+- **Pick the access path by data sensitivity.** Sensitive objects are served
+  *through* a backend: it authorizes the caller per object, reaches storage under
+  its own narrowly scoped workload identity (never a static key), and logs an
+  access record that names the user. A presigned URL is a bearer token: S3's docs
+  say anyone holding it can use it repeatedly until it expires, and SDK/CLI-issued
+  ones can live up to 7 days (less if the signing credentials expire first). Keep
+  presigned URLs for low-sensitivity objects; issue them only after the same
+  per-object authorization, with the shortest workable expiry (≤ 1 h: [sota-secrets-management rules/03](../../sota-secrets-management/rules/03-application-patterns.md) §3), for one object and
+  one method, and build the key from server-side values rather than concatenating
+  request input into it. A bucket policy can cap signature age on top
+  (`s3:signatureAge`). CDN signed URLs: [rules/03](03-networking.md) §9. (OWASP: Secure Cloud
+  Architecture cheat sheet)
+- **Shared multi-tenant buckets: stamp the tenant on the object and check it on
+  read.** The writer sets the tenant from the authenticated context — user metadata
+  (`x-amz-meta-tenant-id`, returned with every GET/HEAD) or an object tag (required
+  at write time with `s3:RequestObjectTag/<key>`) — and the read path compares it
+  with the caller's tenant before returning a byte, so a guessed or leaked key
+  cannot cross tenants. A bucket policy can enforce the tag on reads with
+  `s3:ExistingObjectTag/<key>` (not usable on PUT or DELETE). Encryption context is
+  a weaker substitute with SSE-KMS: S3 supplies the stored context itself on
+  decrypt (GETs must not send encryption headers), so it binds the ciphertext but
+  does not check the *caller*; client-side envelope encryption, where the reader
+  must present the tenant as context, does. (OWASP: Multi Tenant Security cheat
+  sheet)
+
+## 2. Block vs file vs object
+
+| Use | Pick | Notes |
+|---|---|---|
+| Boot volumes, databases on VMs, low-latency random IO | **Block** (EBS / PD / Managed Disks) | Single-instance attach (mostly); size + IOPS/throughput are separate dials — provision from measurements; snapshots ≠ backup until copied out (see §3) |
+| Shared POSIX across instances/pods, lift-and-shift NFS | **File** (EFS / Filestore / Azure Files) | Pay premium for shared semantics; check throughput mode pricing; don't use as a default because "it mounts everywhere" |
+| Everything else — artifacts, media, exports, data lake, backups, static sites | **Object** | Default choice; design per §1 |
+
+- Choosing file storage to share state between app replicas is usually an
+  architecture smell — externalize state to object storage or a database.
+- Block storage hygiene: delete-on-termination set deliberately, snapshots
+  lifecycle-managed, unattached volumes reaped (cost finding, [rules/06](06-cost-finops.md)), encryption
+  by default at the account/org setting.
+
+## 3. Backup architecture: survive the account, not just the disk
+
+Design backups against four failure classes: hardware/AZ loss, bad deploy/data bug,
+accidental deletion, and **malicious actor with prod credentials** (ransomware). Most
+backup setups handle the first two only.
+
+- **3-2-1 translated to cloud: primary + same-region backup + cross-account (and
+  cross-region per DR tier, [rules/07](07-resilience-dr.md)) copy.** Replication is not backup —
+  replication faithfully copies the corruption and the deletes. Versioning is not
+  backup either (a principal with delete rights removes versions).
+- **Cross-account is the ransomware control:** backup vault in a dedicated backup
+  account (AWS Backup cross-account vault copy; GCS bucket in a backup project with
+  distinct IAM; Azure Backup vault in isolated subscription) that prod admin
+  credentials cannot reach. On AWS a **logically air-gapped vault** adds what a standard
+  vault lacks: Vault Lock compliance mode always on, and restore from another account it
+  is shared with (AWS RAM) or via multi-party approval "even if the vault-owning account
+  is inaccessible". With a customer-managed key, AWS advises one held in a separate recovery
+  organization, not the vault's own account.
+- **Immutability where supported:** S3 Object Lock (compliance mode for regulated
+  retention, governance otherwise), AWS Backup vault lock, GCS retention policy +
+  bucket lock, Azure immutable blob storage / vault immutability. An admin-deletable
+  backup fails the threat model.
+- Coverage by data-tier policy, not per-team improvisation: every stateful resource
+  is tagged with a backup tier; org-wide backup plans select by tag; an untagged
+  stateful resource is a finding.
+- **Restore is the product; backups are a means.** Tested restores (at least
+  quarterly for tier-1 data) with measured restore time vs RTO; an unrestored backup
+  is Schrödinger's backup. Verify backup of the *whole* unit of recovery (DB +
+  config + KMS access), not just one piece.
+- Retention matches policy/regulation explicitly — both minimum (compliance) and
+  maximum (privacy/GDPR deletion duties). Infinite retention is a liability, not
+  diligence.
+
+## 4. Encryption defaults & KMS key strategy
+
+Encryption-at-rest with provider-managed keys is table stakes (mostly default-on).
+The real design decisions are about **key control and blast radius**:
+
+- **Three key tiers — pick deliberately per data class:**
+  1. **Provider-managed keys** (SSE-S3-style / Google default / Microsoft-managed):
+     fine for low-sensitivity data; zero ops; no access separation — anyone with
+     data-read IAM reads plaintext.
+  2. **Customer-managed keys, CMK** (KMS / Cloud KMS / Key Vault): the default for
+     confidential/regulated data. You get: key policy as a *second, independent*
+     authorization layer, per-key CloudTrail/audit usage logs, rotation control,
+     and a kill switch (disable key = data unreadable everywhere, including in
+     stolen snapshots).
+  3. **Hold-your-own/external key stores** (XKS, Cloud EKM, HYOK): only under
+     explicit regulatory mandate — you inherit an availability dependency on your
+     key store; treat as exceptional.
+- **Key segmentation = blast radius:** key per environment per data domain (e.g.,
+  `prod/payments-data`), not one org-wide key. One key for everything means one key
+  grant reads everything and key compromise is total.
+- **Separate key admins from data readers.** Key policy: security/platform team
+  administers (no Decrypt); workload roles get Encrypt/Decrypt via grants; nobody
+  holds both `kms:PutKeyPolicy`-class admin and broad decrypt. This is the control
+  that makes stolen-snapshot exfiltration fail: copying an encrypted snapshot
+  cross-account requires key access, not just data access.
+
+```json
+// BAD: one statement, everyone in the account, full key control + use
+{ "Effect": "Allow",
+  "Principal": { "AWS": "arn:aws:iam::111122223333:root" },
+  "Action": "kms:*", "Resource": "*" }
+
+// GOOD: admin and use split into distinct principals
+{ "Sid": "KeyAdmins",
+  "Effect": "Allow",
+  "Principal": { "AWS": "arn:aws:iam::111122223333:role/platform-kms-admin" },
+  "Action": ["kms:Put*", "kms:Update*", "kms:Enable*", "kms:Disable*",
+              "kms:TagResource", "kms:ScheduleKeyDeletion", "kms:CancelKeyDeletion"],
+  "Resource": "*" },
+{ "Sid": "DataUsers",
+  "Effect": "Allow",
+  "Principal": { "AWS": "arn:aws:iam::111122223333:role/payments-api-runtime" },
+  "Action": ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey*"],
+  "Resource": "*" }
+```
+- Enable **automatic key rotation** where supported (yearly rotation of backing key
+  material); deletion only via scheduled deletion windows (and alarms on
+  `ScheduleKeyDeletion` — it's a destruction primitive).
+- KMS calls cost per-request at volume: use S3 Bucket Keys / data-key caching
+  (envelope encryption) for high-request-rate paths instead of dropping to
+  provider-managed keys for cost reasons.
+- Secrets (API keys, passwords) do not live in object storage at all — see
+  [sota-secrets-management](../../sota-secrets-management/SKILL.md). Field-level/application-layer encryption for the most
+  sensitive fields: see [sota-code-security](../../sota-code-security/SKILL.md).
+
+## 5. Data placement hygiene
+
+- Residency: data-class tags ([rules/01](01-org-accounts-governance.md)) + region restrictions (org guardrails) keep
+  regulated data in approved regions; cross-region replication of regulated data is
+  a compliance decision, not a convenience default.
+- Minimize copies: every export/"temp" bucket/analytics dump is an unguarded replica.
+  Data flows into the lake/warehouse through governed pipelines, with the same
+  data-class controls as the source.
+- Snapshot/AMI sharing: shared-to-public snapshots are a recurring breach class —
+  audit for any snapshot/image shared outside the org; block publicly shared
+  snapshots via org guardrail where available (AWS: an EC2 declarative policy with
+  snapshot block public access `block_all_sharing`, [rules/01](01-org-accounts-governance.md) §3; AMI block public
+  access only blocks *new* sharing).
+- **Decommissioning is a data event, not a `destroy`.** Retiring a resource means
+  (1) erasing its data everywhere it was copied — snapshots, final snapshots, AMIs,
+  replicas, exports and backups, on the retention schedule of §3 rather than
+  immediately if policy requires holding them (RDS, for one, takes a final snapshot
+  on delete unless told to skip it); where physical deletion is impractical,
+  crypto-shred by scheduling deletion of a key used *only* by that resource (AWS KMS
+  waits 7–30 days); (2) removing its configuration, credentials, IAM roles, DNS
+  records ([rules/03](03-networking.md) §6) and secrets; (3) confirming it no longer runs; (4) deleting
+  it from the asset inventory, so tag-based policies and scanners stay accurate and
+  a later hit on its name is recognisable as an orphan. (OWASP: Infrastructure as
+  Code Security cheat sheet)
+
+## Audit checklist
+
+- [ ] Account/org-level public-access prevention enforced (not just per-bucket) (§1);
+      zero public buckets/containers outside an approved, documented list.
+- [ ] ACLs disabled (bucket-owner-enforced) on all buckets (§1); legacy ACL grants gone.
+- [ ] Every bucket has: versioning decision, lifecycle rules (incl. multipart (§1)
+      abort + noncurrent expiry), TLS-required policy; sensitive buckets have
+      access logging and endpoint/org conditions.
+- [ ] **High** — noncurrent versions hold no data the business thinks it deleted
+      (§1): list them with ``aws s3api list-object-versions --bucket <b> --query 'Versions[?IsLatest==`false`].[Key,VersionId]'``
+      and sample for secrets/PII; version-read grants limited to restore roles —
+      probe `grep -rn -E '"s3:((Get|List)[A-Za-z]*)?\*[A-Za-z*]*"|"s3:(GetObjectVersion|ListBucketVersions)"' --include='*.tf' --include='*.json' .`
+      (catches `s3:Get*`, `s3:List*`, `s3:*Object*` as well as the exact actions)
+      and justify each hit.
+- [ ] No `Principal:"*"` in bucket/queue/key resource policies without strong (§1)
+      conditions.
+- [ ] **High** — sensitive objects are not handed out as presigned URLs, and none
+      is long-lived (§1). Probe: `grep -rn -E '(ExpiresIn|expiresIn|expires_in|Expires) *[:=] *[0-9]{4,}' --include='*.py' --include='*.ts' --include='*.js' --include='*.go' --include='*.java' .`
+      (≥ 1000 s; a hit above 3600 s breaks the ≤ 1 h bound; literal seconds only — a computed expiry such as
+      `7 * 24 * 3600`, `Duration.ofDays(7)` or Go's `WithPresignExpires(...)` is
+      missed, so the call-site read is the real check); then read each presign call
+      site for a per-object authorization check before it and for request input in
+      the key.
+- [ ] **High** — shared multi-tenant buckets check the object's tenant on read
+      (§1). Probe (files that read objects and never mention a tenant):
+      `grep -rl --null -E 'get_object\(|GetObjectCommand|getObject\(' --include='*.py' --include='*.ts' --include='*.js' --include='*.java' . | xargs -0 -r grep -L -i 'tenant'`
+      — file-level; in files it spares, confirm each read compares stored tenant
+      metadata or tag with the caller's tenant (or the policy uses `s3:ExistingObjectTag`).
+- [ ] Stateful resources carry backup-tier tags; org backup plans select by tag;
+      sample-verify an actual recovery point exists for each tier-1 system (§3).
+- [ ] Backups copied cross-account; immutability/vault-lock on tier-1; verify prod
+      admin role genuinely cannot delete backup copies (§3). On AWS, a logically air-gapped
+      vault with a recovery path (RAM share or MPA) that works without the owning account,
+      and any customer-managed key held outside that account.
+- [ ] Restore tested within the last quarter for tier-1 (ask for the record and
+      the measured time); retention matches stated policy, both min and max; the
+      restore covered the whole unit of recovery — DB + config + KMS access (§3).
+- [ ] Unattached volumes, orphaned snapshots, stale AMIs reaped or scheduled;
+      no snapshots/images shared public or to unknown accounts; delete-on-termination
+      set deliberately on block volumes (§2, §5).
+- [ ] **Medium** — a decommissioning runbook exists and its last use left no
+      residue (§5): pick a retired resource and search for its snapshots, backups,
+      roles, secrets, DNS records and inventory entry by name/tag.
+- [ ] Default encryption on for block storage and DBs account-wide; CMKs used for
+      confidential/regulated data classes (§2, §4).
+- [ ] Key-per-domain segmentation (no single god key); key admins ≠ data readers in
+      key policies; rotation on; ScheduleKeyDeletion alarmed; external key stores
+      (XKS/EKM/HYOK) only under a recorded regulatory mandate (§4).
+- [ ] Regulated data regions match residency policy (§5); exports/temp copies of
+      sensitive data inventoried and governed.

@@ -1,0 +1,409 @@
+# 07 — Suite Health & CI
+
+A test suite is a production system with an SLO: fast, deterministic signal
+on every change. This file is about keeping it one.
+
+## 7.1 Flaky-test policy
+
+A flaky test (same code, different outcomes) is worse than a missing test: it
+costs run time, destroys trust in red, and trains retry-until-green — which
+also masks *real* intermittent bugs, the most expensive kind.
+
+**The policy (write it down, automate what you can):**
+
+1. **Detect**: track per-test pass/fail history across CI runs (most CI/test
+   platforms can; minimum viable = parse JUnit XML into a dashboard). A test
+   that fails then passes on retry with no code change is flagged
+   automatically.
+2. **Quarantine within a day, not debate**: move the flagged test to a
+   non-blocking quarantine lane (still runs, never gates merges). Quarantine
+   entry REQUIRES: a ticket, an owner, and an **expiry date** (e.g. 14–30
+   days). The worst steady-state is a permanent quarantine pile — that's
+   deleting tests with extra steps.
+3. **Root-cause with the taxonomy** — the fix differs by class:
+   - **Ordering/isolation**: passes alone, fails in suite (shared state,
+     leaked globals, DB residue). Fix via [`rules/02`](02-test-design-quality.md) §2.5 / [`rules/03`](03-doubles-and-test-data.md) §3.6.
+     Repro: run shuffled / run the failing pair alone.
+   - **Async/race**: fixed sleeps, unawaited promises, racing a spinner,
+     assertion before settle. Fix via [`rules/02`](02-test-design-quality.md) §2.6, [`rules/05`](05-e2e-and-ui.md) §5.3.
+   - **Time**: real clocks, midnight/DST/month boundaries, timeout tuned to
+     a fast machine. Fix: inject clock; never assert wall-clock durations —
+     **except where the deadline itself is the behaviour under test.** A
+     timeout, a cancellation, a kill-on-drop or a watchdog has no oracle other
+     than elapsed time: injecting the clock tests the arithmetic and says
+     nothing about whether the deadline *fires*. Assert those with an
+     **order-of-magnitude** margin rather than a percentage one — a 300 ms
+     budget asserted at `< 5 s` leaves a ~16x cushion, and one such
+     assertion caught a real case measured at **30.28 s**, where a grandchild
+     holding an inherited pipe kept the wait alive ([`sota-sandboxing` rules/04](../../sota-sandboxing/rules/04-process-app-sandboxing.md)
+     R5.3a). The flake this bullet is about is a *percentage* margin on shared
+     infrastructure; two orders of magnitude is not that.
+   - **Infra/environment**: port collisions, disk full, container pull
+     flakes, third-party sandbox blips. Fix in harness/CI, not the test.
+   - **Test bug**: nondeterministic data (unseeded random, map ordering),
+     overspecified assertion. Fix the test.
+   - **Real bug**: the code IS intermittently wrong (race in prod code).
+     The flake was the alarm — escalate, don't quarantine the alarm.
+4. **At expiry**: fixed and re-promoted, or deleted with rationale. No third
+   state.
+5. **Retries**: at most one auto-retry, with both outcomes recorded and
+   feeding the detector. Retry-to-green WITHOUT tracking is the suite
+   silently rotting; blanket `retries: 3` to "stabilize CI" is a High
+   finding wherever you see it — High rather than Medium because a suite
+   retried until green also passes real regressions, security gates included
+   ([`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.7).
+
+```python
+# BAD — permanent amnesty; nothing tracks it, nothing expires it
+@pytest.mark.flaky(reruns=3)
+def test_checkout_updates_inventory(): ...
+
+# GOOD — quarantined: out of the gate, owned, dated, classified
+@pytest.mark.quarantine(ticket="QA-1432", owner="payments-team",
+                        expires="2026-07-01", cause="async")  # CI fails the
+def test_checkout_updates_inventory(): ...                    # build past expiry
+```
+
+## 7.2 Coverage philosophy
+
+Coverage measures what tests *execute*, not what they *verify* (an
+assertion-free test covers everything it touches — [`rules/02`](02-test-design-quality.md) §2.7; mutation
+testing measures verification — [`rules/06`](06-property-fuzzing-mutation.md) §6.3).
+
+- **Use coverage as a gap-finder**: the uncovered-lines report on YOUR diff
+  is genuinely useful — it shows the error path you forgot. Read it per-PR.
+- **Branch coverage over line coverage** where the tooling offers it: line
+  coverage credits `if err != nil` lines without ever taking the branch.
+- **Never set a global percentage target.** Goodhart's law is undefeated:
+  targets manufacture assertion-light tests on easy code while risky code
+  stays bare. 80% chosen-by-committee says nothing — the *which* 20% is
+  everything.
+- **Ratchet instead of threshold**: fail CI only if coverage *decreases*
+  (with small tolerance), or apply a diff-coverage rule ("changed lines ≥ X%")
+  so the bar applies to new work without backfill theater. Ratchets create
+  pressure exactly where code is being touched.
+
+```text
+BAD:  fail_under = 80            # global target → gamed on easy code,
+                                 # ignored on risky code, fought at 79.9
+GOOD: diff-coverage: changed lines >= 85% branch coverage   AND
+      ratchet: total branch coverage >= last main build - 0.1%
+      (stored number auto-raises; lowering it requires a reviewed commit)
+```
+- Exclude generated/vendored code from measurement; measuring it inflates
+  the number and buries the signal. Same for the environment-bound shell that
+  unit tests cannot drive (GUI, device, process-spawn adapters) — but the fix
+  there is architectural: make that boundary explicit and keep it thin
+  ([`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §14), then measure the core.
+- **Rank the gaps by risk, not by size of deficit.** Coverage alone cannot say
+  where the next test belongs. Cross it with complexity: a module that is both
+  **branch-dense and thinly covered** is the highest-value target, and the
+  composite (complexity weighted by how little of it is verified) ranks work
+  better than either number alone. A 200-branch payment router at 50% is a
+  finding; a 3-line getter at 0% is not. Use the ranking to aim mutation runs
+  ([`rules/06`](06-property-fuzzing-mutation.md) §6.3) and review attention — as a *pointer*, never as a gate,
+  or it becomes the same Goodhart target as a coverage threshold.
+- Reporting coverage in PRs: show the uncovered lines, not just the delta
+  percentage — reviewers act on lines, not numbers.
+
+## 7.3 Speed budgets
+
+Slow suites change behavior: engineers batch changes, skip running tests
+locally, and context-switch during CI — each worse for quality than any
+individual missing test.
+
+Set explicit budgets per layer and enforce them like perf SLOs:
+
+- **Unit suite**: fast enough to run on every save for the module you're
+  editing (sub-second per module; whole unit suite minutes at most, fully
+  parallel).
+- **PR pipeline (test stages total)**: ~10 minutes wall-clock is the
+  long-standing target that keeps PRs flowing; parallelize/shard to hold it
+  as the suite grows rather than letting it drift to 40.
+- **Track the top-10 slowest tests** per suite (every runner can emit
+  timings) and treat a new entrant like a perf regression: push it down a
+  layer, fix its waits, or justify it.
+- Standard speed sinks, in order of yield: hard sleeps ([`rules/02`](02-test-design-quality.md)/`05`),
+  per-test container/app boot instead of per-suite ([`rules/04`](04-integration-contract-system.md) §4.1),
+  serialized DB tests that could namespace, e2e tests that should be API
+  tests, unbatched fixture I/O.
+- **Nightly is not a landfill**: slow-but-valuable jobs (long PBT runs, fuzz,
+  mutation, full-matrix, soak) belong post-merge/nightly — but each needs an
+  owner who triages failures next morning, or it's a dead letter queue.
+
+## 7.4 Parallelization correctness
+
+Parallel execution is the main speed lever and the main isolation auditor —
+a suite that can't run parallel is telling you it has shared state.
+
+- **Design for parallel from test #1**: unique-per-test data ([`rules/03`](03-doubles-and-test-data.md)
+  §3.6), no fixed ports (ask the OS for ephemeral ports / let the container
+  lib assign), no shared temp paths (per-test temp dirs from the framework),
+  no env-var mutation without scoped isolation (process-level env is shared
+  across threads — prefer config injection over env mutation entirely).
+- **Know your runner's model** (process-per-worker vs threads vs both —
+  detail in language skills) — "thread-safe enough" fixtures that share a
+  DB schema across workers serialize or corrupt. Pair worker-scoped
+  resources (one schema per worker) with test-scoped isolation inside them.
+- **Singletons and static caches** in production code surface here: if the
+  SUT caches global state, tests must be able to construct isolated
+  instances. "Reset the singleton between tests" is a workaround; injectable
+  construction is the fix.
+- Verify continuously: run shuffled AND parallel in CI ([`rules/02`](02-test-design-quality.md) §2.5).
+  Failures unique to parallel runs **within one suite invocation** are isolation
+  bugs, never "just rerun".
+- **Two independent runs are a different case, with the opposite answer — and the
+  bullet above will point you the wrong way if you read it unscoped.** Everything in
+  §7.4 is about workers *inside one invocation*, which share a codebase and are
+  yours to isolate. Two whole suites against one shared database, broker or container
+  runtime contend on state **neither run owns**, so the resulting failures are
+  artifacts, and re-running the failing subset in isolation is the correct diagnosis
+  rather than the forbidden one. This is increasingly common: CI plus a local run,
+  a teammate on the same shared instance, or **two agent sessions on one machine**.
+  Field-reported 2026-09-10 — a lane read 38,833 passed / **12 failed** / 60 skipped
+  against a baseline of 38,875 / 0 / 30; a second session was running the same repo's
+  suite unfiltered against the same container, clearing the graph underneath it. All
+  256 tests in the three failing files then passed in isolation, and the clean re-run
+  read 38,890 / 0 / 30.
+- **Establish that yours is the only run touching the shared services before believing
+  any failure — by parentage, not by process name**, since both runs match the same
+  name and the same command line: `ps -Ao pid=,ppid=,command=`, then check which ppid
+  each belongs to. (Same instrument, same reason, as [`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md)
+  §4 and [`rules/03`](../../sota-shell-scripting/rules/03-security.md) §3a.) **A skip count that moved is the tell**: skips doubling
+  alongside the failures says the *environment* changed, not the code — a service the
+  suite conditionally needs went away. Compare failures *and* skips against the
+  baseline, never failures alone.
+
+## 7.5 CI sharding and pipeline shape
+
+- **Shard by measured timing, not file count**: balanced shards by recorded
+  per-test duration keep the long pole short; naive alphabetical splits give
+  you one 12-minute shard and five 2-minute ones. Most ecosystems have
+  timing-based splitters; persist timing data between runs.
+- **Stage by speed and signal**: lint/type/unit first (fail in 2 min),
+  integration next, e2e last (or post-merge beyond the smoke set —
+  [`rules/05`](05-e2e-and-ui.md) §5.7). A pipeline that runs e2e before unit wastes its fastest
+  signal.
+- **Test selection** (running only tests affected by the diff) is a real
+  lever in monorepos — build-graph based selection (Bazel-style, Nx-style)
+  is reliable; heuristic selection needs a periodic full run as a safety
+  net (e.g. full suite on merge to main, selected on PR).
+- **The merge queue / main must run the full blocking suite.** Skipping on
+  "it passed on the PR branch" breaks under concurrent merges (semantic
+  conflicts between independently-green PRs).
+- Speeding up a pipeline without making a required check pass unrun (measuring first,
+  safe change-scoping, an aggregator over shards): [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md).
+- Cache dependency/image layers, never test *results* across code changes
+  unless keyed by a content hash you trust (build systems that hash inputs
+  may; hand-rolled "skip if green yesterday" may not). A runner that reuses a gate's own
+  pass meets that bar only under [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2's conditions.
+
+## 7.6 Failure triage discipline
+
+A red main/merge-queue is a site incident for the team's delivery:
+
+- **Red main stops the line**: fix-forward or revert within a defined window
+  (e.g. 30 min); reverting an innocent-looking PR is cheaper than a day of
+  everyone rebasing onto broken.
+- **Every CI failure gets classified**, even (especially) the rerun-and-it-
+  passed ones: real bug / flaky test / infra. The classification feeds the
+  flake detector (7.1) and the infra backlog. "Reran, green, moved on" with
+  no record is how suites rot invisibly.
+- **Failure output must be diagnosable from CI alone**: assertion diffs, SUT
+  logs, artifacts ([`rules/05`](05-e2e-and-ui.md) §5.7). A failure that requires local repro to
+  understand multiplies triage cost by 10.
+- **Don't normalize deviance**: a permanently-yellow optional job, a
+  `continue-on-error` on a once-important suite, a skipped-tests count
+  drifting upward (`grep -rc 'skip\|xfail\|todo(' tests/` trending) — each
+  is a finding. Skips need the same ticket+expiry discipline as quarantine.
+- Weekly suite-health review (10 min): flake list vs expiry, slowest-10,
+  quarantine size, skip count, coverage ratchet position. Suites stay
+  healthy by inspection, not by hope.
+
+## 7.7 A long run's result is scoped to the revision it started from
+
+A suite that takes forty minutes reports on the tree **as it was when it started**, and the
+number carries no hint of that. Field-reported: a lane reported **38,861 passed, EXIT=0** —
+true of a working tree that predated a later commit by ~50 minutes. Arithmetic predicted
+38,862, and the missing one was exactly the test that commit added.
+
+- **Record the revision beside the number**, always: `git rev-parse HEAD` at start, printed
+  in the same line as the result. "Green" is not a fact about your branch; "green at `<sha>`"
+  is ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2).
+- **Reconcile the count against the diff.** An unexplained ±1 is a signal, not noise — the
+  case above was only visible because the delta was *attributed* rather than accepted. Off
+  by one in the other direction is a test that silently stopped being collected, which
+  presents identically.
+- **A background job's completion notification is about the launcher, not the job**
+  ([`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md) §2a). Wait on an artefact the job itself writes.
+
+## 7.8 When a ratchet fires, the fix is never to re-record the ratchet
+
+A ratchet exists to make a number only move one way. Its failure message almost always
+offers the re-record command, which is the one action that destroys the signal — and it is
+offered at exactly the moment the ratchet is doing its job.
+
+Field-reported: a skip-site ratchet correctly caught a newly added `pytest.skip`. Re-recording
+was offered and would have been wrong; reading the flagged code showed the branch was
+**unreachable** — the parameter it skipped is not in the map it parametrizes over — so the
+fix was deleting dead code. *An inert branch, shipped inside a guard written during an
+inert-control audit.*
+
+- **Read the flagged site before touching the baseline.** Re-record only after establishing
+  that the new value is correct, and say why in the commit that moves it.
+- **A ratchet compares against its own stored state, never against prose.** So a count
+  quoted in a doc drifts freely while the suite stays green: field-reported, a matrix figure
+  quoted as 209 where the function returns 207, and a CWE count stated as 41 in two places
+  and 43 in another, the derived truth being 43. **Derive the number in a test whose failure
+  message names every place that quotes it** — then the prose is inside the ratchet instead
+  of beside it.
+
+## 7.9 A threshold measured on one population, asserted over a pooled one
+
+§7.8 covers what to do when a ratchet fires. This is the case where it fires for a
+reason that **is not a regression at all**: the threshold was measured on the data
+available at the time, and is then asserted over whatever the denominator later
+contains. Add a legitimate new data source — a new corpus, language, tenant, region,
+customer — and the control goes red with **no code change**, naming a regression that
+did not happen.
+
+Field-reported 2026-09-10. A recall control required a pre-LLM gate to reject ≥ 1.5%
+of adjudicated false positives; the floor was measured at 3.9% on a 205-row,
+JavaScript-derived corpus. A campaign against a Go target then contributed 491 false
+positives and 0 rejections:
+
+| population | rejected / FPs | share |
+|---|--:|--:|
+| tar-4.4.13 | 9/120 | 7.5% |
+| axios-0.21.0 | 3/99 | 3.0% |
+| handlebars-4.1.2 | 5/291 | 1.7% |
+| markdown-it-12.3.1 | 0/202 | 0.0% |
+| **a Go target** | **0/491** | **0.0%** |
+| pooled | 17/1203 | **1.4%** ← fired |
+| same corpus, minus the new population | 17/712 | **2.4%** ← passes |
+
+Nothing was inert; the rules were authored from JavaScript category errors and simply
+do not fire on Go. **No source line changed** — the gate module had been untouched for
+eight days.
+
+- **When such a control fires, decompose the denominator before believing its message.**
+  The failure text said *"a family has probably gone inert"* — and dilution is the one
+  cause a pooled metric **cannot** distinguish from the cause its author imagined. A
+  failure message is a hypothesis written before the failure, not a diagnosis.
+- **Assert per population, not over a pool**, wherever populations can differ in kind:
+  `max(share) >= floor` over populations above a minimum sample size (≥ 50 here). That
+  still fails when the property dies *everywhere* — which is what "has gone inert"
+  means — and cannot fail merely because data was added. Prove both directions with a
+  mutation ([`rules/06`](06-property-fuzzing-mutation.md) §6.3): break one population and watch it stay green, break all of them and
+  watch it go red.
+- **Lowering the floor is re-recording a ratchet** (§7.8). If the honest answer is that
+  the property does not hold on the new population, that is a finding about **scope**,
+  not a smaller number — and it belongs in the control's name.
+- **State the population a threshold was measured on next to the constant, in code.** A
+  floor whose provenance lives only in a commit message will be lowered by whoever
+  meets it next, because nothing on the line tells them what it meant.
+
+## 7.10 A PR that deletes, skips or weakens tests needs a human sign-off
+
+The cheapest way to turn a red test green is to delete it, skip it or drop its
+assertion. A coding agent told to "make CI pass" finds that route readily
+([`sota-llm-engineering` rules/04](../../sota-llm-engineering/rules/04-agents-tools.md) §3a). A reviewer skimming a large diff misses it just
+as readily, because a removed line is shorter than an added one. Make the diff say so:
+a PR check that counts removed test definitions, newly added skips and the net
+assertion delta in test files, and routes any hit to a required human approval.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+base=$(git merge-base "${BASE_REF:-origin/main}" HEAD)
+d=$(git diff -U0 "$base" HEAD -- '*test*' '*spec*')
+count() { printf '%s\n' "$d" | grep -cE "$1" || true; }   # grep -c exits 1 on zero
+removed=$(count '^-[[:space:]]*(async def test_|def test_|func Test|@Test|(it|test)\()')
+skipped=$(count '^\+.*(pytest\.mark\.(skip|xfail)|pytest\.skip\(|unittest\.skip|t\.Skip|@Disabled|@Ignore|(it|test|describe)\.skip\(|xit\()')
+a_plus=$(count '^\+[^+].*(assert|expect\(|t\.(Error|Fatal))')
+a_minus=$(count '^-[^-].*(assert|expect\(|t\.(Error|Fatal))')
+echo "removed-tests=$removed added-skips=$skipped assertions=+$a_plus/-$a_minus"
+if (( removed > 0 || skipped > 0 || a_minus > a_plus )); then
+  echo "needs human sign-off: tests removed, skipped or weakened" >&2; exit 1
+fi
+```
+
+Run against a PR that deleted a Python and a Go test, skipped a pytest and a Jest
+case and dropped an assertion, it printed `removed-tests=3 added-skips=2
+assertions=+0/-3` and exited 1. A PR that only added a test exited 0. It is a
+**flag, not a verdict**. A moved or renamed test also counts as removed, and a
+deleted redundant test is legitimate (§7.1 step 4). Adjust the patterns to your
+runners, and make the gate's failure mean "a named human approves", never "blocked".
+Security test files ([`rules/09`](09-security-testing.md)) deserve a code-owner rule of their own. OWASP:
+Secure Coding with AI cheat sheet.
+
+## Audit checklist
+
+- [ ] **Suite failures: was yours the only run touching the shared services?** (§7.4)
+      Two independent runs against one DB/broker/container produce failures that are
+      artifacts, and the parallel-isolation rule does **not** apply to them. Check
+      parentage (`ps -Ao pid=,ppid=,command=`), not process name, and compare the
+      **skip** count against the baseline as well as the failure count — doubled skips
+      mean the environment moved.
+- [ ] **Pooled thresholds** (§7.9): does any floor, budget or ratchet assert over a
+      denominator that can gain new populations (a language, corpus, tenant, region)?
+      If so it can fire with no code change. Assert per population above a minimum
+      sample size, and record next to the constant which population it was measured on.
+
+- [ ] Is there a written flaky-test policy with quarantine + expiry? No
+      policy and visible retry-to-green culture → High. (§7.1)
+- [ ] Blanket retries? Grep CI/test config:
+      `retries:|retry:|jest.retryTimes|flaky|rerun-fails|--retry` without
+      per-test tracking/tickets → High. (§7.1)
+- [ ] Quarantine pile: how many tests are quarantined/skipped and how old?
+      Grep `skip|xfail|disabled|@Ignore|\.todo|t\.Skip` with `git blame` on a
+      sample; skips >90 days with no ticket → Medium each, pattern → High. (§7.1, §7.6)
+- [ ] Coverage gating: hard global threshold (`fail_under|coverageThreshold`
+      with a flat number) and evidence of gaming (assertion-light tests on
+      trivial code) → Medium; ratchet/diff-coverage instead → good. Line-only
+      coverage where the tool offers branch coverage → Low (§7.2).
+- [ ] Is generated/vendored code excluded from coverage? Check coverage
+      config excludes vs `*_pb2.py|.pb.go|generated|vendor` → Low. (§7.2)
+- [ ] Does the measured scope match the testable core (§7.2), or does an
+      environment-bound shell (UI, device, process-spawn adapters) sit in the
+      denominator? Whole-tree measurement with an untestable region →
+      Low–Medium (the number is noise; fix the boundary, [`sota-architecture`
+      rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §14).
+- [ ] Are coverage gaps prioritized against complexity (§7.2) (branch-dense +
+      thinly-covered first), or is the backlog being worked by whatever moves
+      the percentage fastest (trivial modules) → Medium (effort aimed at the
+      metric, not the risk).
+- [ ] Pipeline timing: PR wall-clock now vs 6 months ago (CI history). >15
+      min and growing with no sharding/selection plan → Medium. (§7.3)
+- [ ] Slowest tests known? Runner timing reports enabled and reviewed? No
+      timing visibility → Low; top test >60s in the unit lane → Medium. (§7.3)
+- [ ] Parallel + shuffled in CI (§7.4)? Config shows `-shuffle|--randomize|-p auto|
+      --parallel|maxWorkers` in the blocking lane; serial-only suite for
+      speed reasons → Medium (isolation debt).
+- [ ] Fixed ports/paths blocking parallelism (§7.4)? Grep
+      `:8080|:5432|/tmp/test|port = [0-9]{4}` literals in tests → High.
+- [ ] Shards balanced by timing? One shard consistently 3× the others in CI
+      history → Low–Medium (rebalance). E2E staged before unit, heuristic test
+      selection with no periodic full run, or test results cached across code changes
+      without a trusted content hash → Medium (§7.5).
+- [ ] Does main/merge-queue run the full blocking suite? PR-only testing
+      with merge-queue skips → High. (§7.5)
+- [ ] Red-main discipline: recent history of main staying red >1 day →
+      High (process, not code). `continue-on-error` on a once-important suite, or
+      reruns-to-green with no recorded classification (real bug / flaky / infra) →
+      Medium (§7.6).
+- [ ] Nightly jobs owned? Long-running suites whose failures nobody triages
+      (check last 10 nightly failures for follow-up) → Medium (dead letter
+      queue). (§7.3)
+- [ ] **Is every long-run result recorded with the revision it started from?** (§7.7) — and is
+      an unexplained ±1 in the test count investigated rather than accepted?
+- [ ] **When a ratchet fires, was the flagged site read before the baseline moved?** (§7.8)
+      Re-recording destroys the signal and the failure message offers it. Counts quoted in
+      prose sit outside every ratchet — derive them in a test whose failure names each place
+      that quotes them.
+- [ ] **Does a PR that deletes, skips or weakens tests need a human sign-off?** (§7.10)
+      Probe a PR's diff:
+      `git diff -U0 "$(git merge-base origin/main HEAD)" HEAD | grep -nE '^-[[:space:]]*(async def test_|def test_|func Test|@Test|(it|test)\()|^\+.*(pytest\.mark\.(skip|xfail)|pytest\.skip\(|unittest\.skip|t\.Skip|@Disabled|@Ignore|(it|test|describe)\.skip\(|xit\()'`
+      Hits merged with no approval beyond the author's (or an agent's) → High. No
+      such check in CI where agents open PRs → Medium.
+

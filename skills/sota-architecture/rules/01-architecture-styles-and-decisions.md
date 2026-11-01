@@ -1,0 +1,393 @@
+# 01 — Architecture Styles & Decision-Making
+
+Rules for choosing an architecture style, recording decisions, and keeping the
+architecture evolvable. Apply before writing the first service; re-apply at every
+major boundary change.
+
+## 1. Default to a modular monolith
+
+**Rule:** Start every new system as a modular monolith: one deployable, internal
+modules with explicit boundaries, separate schemas-per-module inside one database.
+Extract services only when a *measured* force demands it.
+
+**Rationale:** Network boundaries are the most expensive boundaries you can buy.
+They convert function calls into failure modes (latency, partial failure, retries,
+versioning). A modular monolith gives you boundary discipline at refactor cost,
+not distributed-systems cost.
+
+**Forces that justify extraction (need at least one, measured):**
+- Independent scaling: one module needs 50x the replicas of the rest.
+- Independent deployment cadence blocked by org structure (multiple teams stepping on one release train).
+- Divergent runtime needs (GPU inference vs CRUD; different language/runtime).
+- Hard fault isolation requirements (a crash in module A must not take down module B).
+- Regulatory isolation (data residency, PCI scope reduction).
+
+**Never extract because:** "microservices are best practice", résumé pressure,
+"we might need to scale later", or to fix a tangled codebase (you'll get a
+tangled distributed system — see [rules/07](07-anti-patterns-catalog.md), distributed monolith).
+
+```text
+GOOD: one repo, one deploy
+  app/
+    billing/      (public API: billing/api.*, everything else internal)
+    catalog/
+    shipping/
+  Module imports only other modules' api/ surface. CI fails on deep imports.
+
+BAD: 14 services, one team of 5, shared DB, lockstep deploys.
+```
+
+## 2. Enforce module boundaries mechanically
+
+**Rule:** Boundaries that aren't enforced by tooling don't exist. Use import
+linting / architecture tests (dependency-cruiser, ArchUnit, deptrac, Nx tags,
+Go internal/ packages, or equivalent) in CI. A human code-review rule is not
+enforcement.
+
+**Rule:** Each module exposes exactly one public surface (an `api`/facade
+package and/or published events). Cross-module calls go through that surface.
+Cross-module data access goes through that surface — never through the other
+module's tables.
+
+## 2a. Monorepos: the build enforces the boundary, and CI selects honestly
+
+One repository holding many packages makes §2 easier to break: every package can reach every
+other. Facts below were read in each tool's own docs on 2026-10-07; re-check before relying
+on one.
+
+- **Prefer a boundary the build refuses to cross over one a linter reports.** Bazel's default
+  visibility is `//visibility:private`, and a target *"will fail to build during the analysis
+  phase if it violates the visibility of one of its dependencies"*. The docs advise against
+  `default_visibility` public. Nx's `@nx/enforce-module-boundaries` (tag `depConstraints`) is a
+  **lint** error, so it enforces only where lint gates CI. Turborepo's `turbo boundaries` (2.4+)
+  is still **experimental**, and it checks imports outside a package or of undeclared
+  dependencies, not architectural tags.
+- **Phantom dependencies are a boundary leak.** pnpm is *"semistrict"* by default: your code
+  sees only declared dependencies. `shamefully-hoist` / `publicHoistPattern` give application
+  code *"access to phantom dependencies"* again. `workspace:` refuses to resolve anything but a
+  local package.
+- **Ownership is enforced only when it is required.** CODEOWNERS lives in `.github/`, the root
+  or `docs/`, and the first location found wins. The *last* matching pattern takes precedence,
+  and a line with invalid syntax is skipped silently. Owners are merely *requested* unless
+  branch protection or a ruleset has "Require review from Code Owners". Own the CODEOWNERS file
+  itself.
+- **One lockfile per workspace, and know which workspace files to commit.** A Cargo workspace
+  shares one `Cargo.lock` at its root. Go: *"It is generally inadvisable to commit go.work
+  files"*, because CI may *"test the wrong versions of a module's dependencies"*. The exception
+  is modules developed exclusively together, and that should be a recorded decision.
+- **Affected-only CI is a selection rule, so give it its inputs.** `nx affected` derives the
+  set from git plus the project graph; take the base SHA from the last successful run on `main`.
+  Nx marks **every** project affected when the lockfile changes, as a failsafe. Its
+  `sharedGlobals` input (toolchain and runtime versions, root config) is **empty by default**,
+  so a change there selects nothing until a team declares it. Turborepo's `--affected` treats a
+  too-shallow checkout as "all changed", and its global hash covers the root lockfile,
+  `globalDependencies` and `globalEnv`. A selection that misses a global input reads as a green
+  build that tested nothing ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2).
+
+
+| Style | Wins when | Loses when |
+|---|---|---|
+| Modular monolith | Small/medium team, evolving domain, unknown load profile | Genuinely independent scaling/deploy needs across teams |
+| Microservices | Many teams, independent deploy cadence, per-service scaling, mature platform (CI/CD, observability, on-call) | Team < ~3 squads, no platform engineering, chatty domain |
+| Serverless (FaaS) | Spiky/bursty load, event glue, low ops budget, embarrassingly stateless handlers | Long-lived connections, latency-critical p99 (cold starts), heavy local state, cost at sustained high throughput |
+| Event-driven backbone | Many consumers per fact, audit/replay needs, temporal decoupling | Request/response semantics forced through events (see [rules/03](03-distributed-systems-and-events.md)) |
+
+**Rule:** Serverless is an operational model, not an architecture. You still owe
+module boundaries, idempotency, and observability. A pile of 200 lambdas sharing
+a database is a distributed monolith with cold starts.
+
+**Rule:** Never mix request/response and event-driven semantics blindly. Decide
+per interaction: does the caller need an answer now (sync), or is it publishing
+a fact (async)? Commands that need answers are sync or async-with-correlation;
+facts are events.
+
+## 4. Record every significant decision as an ADR
+
+**Rule:** Any decision that is expensive to reverse (datastore, message broker,
+service boundary, auth model, multi-tenancy model, sync vs async for a flow)
+gets an Architecture Decision Record before implementation. Store ADRs in the
+repo (`docs/adr/NNNN-title.md`), immutable once accepted; supersede, never edit
+history.
+
+**Minimum ADR format:**
+
+```text
+# NNNN: Use outbox pattern for order events
+Status: Accepted (2026-03-02)  Supersedes: 0007
+Context: Orders must emit events; dual-write to DB + broker loses events on crash.
+Decision: Write events to outbox table in the same TX; relay publishes async.
+Consequences: + atomicity, + replay; - eventual consistency (~1s lag), - relay to operate.
+Alternatives considered: CDC (Debezium) — rejected: no ops capacity for Kafka Connect.
+```
+
+**Rationale:** ADRs are the only durable defense against re-litigating decisions
+and against cargo-culting old constraints after they expire. "Why is it like
+this?" must have a greppable answer.
+
+**Rule:** An ADR without a *Consequences* section listing at least one downside
+is marketing, not a decision record. Reject it in review.
+
+**Directory discipline.** Sequential kebab-case filenames
+(`0012-use-outbox-for-order-events.md`) plus an `index.md` holding one row per
+ADR — number, title, status, date. The index is what makes the practice
+auditable at a glance: a status column that is all `proposed` is a stalled
+process, and a superseded chain is legible without opening a file. Commit the
+ADR **in the PR that implements the decision** where one exists, so rationale
+and code land together; a pre-implementation decision lands on its own.
+
+## 4a. A control's cost profile must be checked against decisions already in force
+
+A new control that consumes a **scarce resource on every use** — a hardware touch, a human
+approval, an interactive prompt, a rate-limited or paid API call — can silently reintroduce
+the exact friction an earlier decision removed. Both artifacts are locally correct; the
+contradiction lives in the gap between them, and no test sees it.
+
+Field-reported: a repository decided, with the reasoning written into `CONTRIBUTING`, to
+stop signing every commit because the key sat on a touch-required token and the tap per
+commit blocked automated work. About an hour later, in the same session, a gate ledger was
+built whose `anchor` command signed its chain head with that same key — and anchoring was
+recommended after every push. Every gate passed, every test passed, and the user found it.
+
+**At the point of adding the control, write one line: *this costs X, Y times per Z*. Then
+grep the repo's own decision records (§4) for X.** If a decision already rejected X at that
+frequency, either the new control is wrong or the old decision needs revisiting — the two
+cannot both stand unexamined. The tell that you missed it is a user asking *"why am I being
+asked for this again?"*, which is late and expensive.
+
+This is a **coherence** failure, not a code defect, so it is invisible per-artifact and to
+per-file review. It is worst in agent-authored work: an agent can hold both decisions in
+one context and still miss the interaction, because attention is on the artifact being
+built, not on the policy it lands inside.
+
+## 4b. A deferral is a standing question — give it somewhere to accumulate answers
+
+**Rule:** When a decision record defers an idea behind a condition ("revisit if…",
+"reconsider when we see…", "not yet — wait for a second case"), the record must also say
+**where the evidence toward that condition accrues, and who reads it**. A trigger with no
+evidence store is not a decision that will be revisited; it is a decision that will be
+re-derived from scratch by whoever next asks, at full cost, with no memory of the last
+answer.
+
+**Rationale:** The deferral itself is usually right — one instance is a trade-off, not a
+pattern, and generalising from it produces rules that fit one project. What fails is the
+return path. The evidence arrives incrementally, months apart, in places the record does
+not watch; each near-miss is recognised, judged not-quite-enough, and forgotten. The next
+person repeats the whole search to reach the same verdict, so the deferral never converges
+either way. Cost is asymmetric and invisible: writing the trigger takes a sentence, and
+answering it can take a full sweep of everything logged since.
+
+**What the record must carry**, next to the trigger:
+
+- **The trigger in falsifiable terms.** "A second implementation *ships* this design" is
+  checkable; "if it becomes a problem" is not, and cannot ever be closed.
+- **A running list of candidates checked, with dates and verdicts** — including the ones
+  that *did not* count. A near-miss and a deliberate refusal are both evidence about the
+  class, and both are lost by default.
+- **What the trigger would buy.** If part of the idea is already covered elsewhere, say
+  which part, so a future instance is judged on the remainder rather than re-argued whole.
+
+**The same rule covers a deliberately-unfixed state kept as evidence** — a known-bad left
+in place to prove a control fires, a pin left stale so an automated bump proves the
+automation runs. That is a good technique and an experiment, so it carries an experiment's
+obligation: write down where the result will show up and who looks. **An experiment with
+no scheduled read-back is indistinguishable from a note**, and it decays the same way —
+the state resolves, nobody returns, and the record still describes the world before the
+answer arrived. Reviewers reading it then act on a question that is already closed.
+
+**Smell:** a decisions log where several entries say "revisit when…" and none of them has
+ever been revisited. Check the dates: if the oldest trigger predates the last two people
+who joined, the log is recording intent, not process.
+
+## 5. Practice evolutionary architecture with fitness functions
+
+**Rule:** Encode architectural qualities as automated, continuously-run checks
+(fitness functions). If a quality matters, test it; if you can't test it, you
+can't claim it.
+
+**Examples of fitness functions (run in CI or scheduled):**
+- Dependency direction: "no module imports `billing/internal`" — architecture test.
+- Coupling budget: cyclic dependencies between modules = build failure.
+- Latency: p99 of checkout API < 300 ms under k6 load profile — perf gate on main.
+- Resilience: weekly chaos run kills one replica of each service; SLOs must hold (see [rules/04](04-resilience-and-failure-design.md)).
+- Cost: per-tenant infra cost stays under $X — scheduled report with alert.
+- Schema safety: migration linter forbids destructive DDL without expand/contract.
+
+**Rule:** When two qualities conflict (e.g., consistency vs availability), the
+ADR picks the winner per context; the fitness function enforces the chosen
+trade-off, not both.
+
+## 6. Plan for reversibility; classify decisions by exit cost
+
+**Rule:** Classify every decision: **Type 1** (hard to reverse: datastore,
+broker, cloud provider, tenancy model, public API contract) vs **Type 2**
+(cheap to reverse: library, internal interface, queue topology detail).
+Spend design effort proportionally. Type 2 decisions get minutes and a code
+comment; Type 1 decisions get an ADR, a spike, and an exit strategy.
+
+**Rule:** For every Type 1 dependency, write down the exit strategy in the ADR
+("we wrap the broker behind `EventBus` port; migration = reimplement adapter +
+dual-publish for N days"). Don't build a full abstraction layer preemptively —
+a thin port is enough (see [rules/02](02-domain-modeling-and-boundaries.md) on ports).
+
+## 7. Conway's law: design team and system boundaries together
+
+**Rule:** Service boundaries that cross team boundaries will erode. Align one
+service (or module) to one owning team; shared ownership means no ownership.
+If the org chart and the architecture disagree, change one of them deliberately
+(inverse Conway maneuver) — don't let the disagreement fester.
+
+**Rule:** Each module/service has a single on-call/owning team recorded in a
+machine-readable catalog (`catalog-info.yaml`, CODEOWNERS, or equivalent).
+"Orphaned service" is a Critical audit finding.
+
+## 8. Extraction playbook (monolith → service)
+
+**Rule:** Extract via strangler fig, never big-bang rewrite:
+1. Harden the module boundary in-process (own schema, api-only access, events).
+2. Add an anti-corruption layer at the seam if models differ.
+3. Route a slice of traffic to the new service behind a flag; compare outputs (shadow/dark launch).
+4. Migrate data with expand/contract: dual-write or CDC, backfill, verify, cut over, contract.
+5. Delete the old path. Extraction isn't done until the old code is deleted.
+
+**Rule:** Never extract two things at once (e.g., new service AND new datastore
+AND new language). One variable per migration.
+
+## 9. Buy/adopt vs build
+
+**Rule:** Build only what differentiates the business. Auth, payments, search,
+feature flags, observability, workflow engines: adopt proven solutions and wrap
+them behind a thin port. Building commodity infrastructure is a Type 1 decision
+disguised as a weekend project.
+
+**Rule:** Adopted dependencies still get an ADR (lock-in is a consequence) and
+a fitness function (e.g., "all calls to vendor X go through adapter Y" —
+architecture test). Before the manifest line lands, run the pre-adoption checks (release maturity,
+point of origin, source review, insecure defaults): [`sota-devsecops` rules/15](../../sota-devsecops/rules/15-dependency-adoption.md) §15.1.
+
+## 10. Edge composition: gateways and BFFs
+
+**Rule:** Clients never call internal services directly. Put an API gateway at
+the edge for cross-cutting concerns (authn, rate limiting, TLS, routing) and —
+when client needs diverge (mobile vs web vs partner API) — a Backend-for-
+Frontend per client class that composes internal calls into client-shaped
+responses.
+
+**Rule:** Keep business logic out of the gateway. A gateway that transforms
+payloads, enforces domain rules, or orchestrates workflows is an unowned god
+service ([rules/07](07-anti-patterns-catalog.md) §3) written in YAML. Gateways route and protect; BFFs compose;
+services decide.
+
+**Rule:** Each BFF is owned by the client team it serves. A shared BFF for all
+clients recreates the coupling BFFs exist to remove.
+
+## 11. Diagrams and design docs as code
+
+**Rule:** Maintain a current C4-style picture: one system-context diagram and
+one container diagram minimum, stored in the repo as text (Mermaid, Structurizr
+DSL, PlantUML) so diffs are reviewable and rot is visible in PRs. A diagram in a
+wiki dies in a quarter; a diagram in the repo dies in review.
+
+**Rule:** Significant designs get a short RFC/design doc *before* implementation
+(problem, constraints, options, recommendation), circulated to affected teams
+with a comment deadline. The ADR (§4) records the outcome; the RFC records the
+debate. Skip the RFC for Type 2 decisions — process must be proportional too.
+
+## 12. Sacrificial architecture and rewrite discipline
+
+**Rule:** Accept that successful systems outgrow their architecture (~10x scale
+changes the right design). Write code expecting parts to be replaced: boundaries
+and contracts are the durable assets, implementations are sacrificial. Optimize
+boundary quality over implementation polish.
+
+**Rule:** Never green-light a full rewrite while the old system keeps taking
+features ("second-system" trap). A rewrite must be: scoped to one bounded
+context at a time, strangler-style (§8), with a feature freeze on the replaced
+slice and a kill date for the old path. "Big rewrite, both evolve in parallel"
+fails at a rate that rounds to always.
+
+## 12a. Retire a service completely: find it, tear it down together, remove it from inventory
+
+A service nobody uses still has an open port, a credential and a dependency tree that stops
+getting patches. Retiring one is a routine with its own checklist, not a ticket that says
+"turn it off".
+
+**Rule:** Look for retirement candidates on a schedule, not by accident. The signals are
+traffic (no requests or messages for N weeks), ownership (the owning team is gone or
+disowns it), and a successor that already ships. Every candidate gets a decision:
+retire, keep with a named owner, or merge into something else.
+
+**Rule:** Move consumers off per customer, not by broadcast. List every caller and tenant
+still on the service or on an old version of it, give each one a migration plan and a
+date, and switch the service off only when that list is empty (the API side: [`sota-api-design`
+rules/02](../../sota-api-design/rules/02-versioning-evolution.md) §5). Stop supporting a version once no customer runs it.
+
+**Rule:** Tear everything down in one tracked change, in this order: stop traffic, revoke
+its identities and secrets (service accounts, API keys, certificates:
+[`sota-identity-access` rules/04](../../sota-identity-access/rules/04-lifecycle-provisioning.md), [`sota-secrets-management` rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md) §3), then export or delete
+its data under the retention policy ([rules/05](05-scalability-state-and-data.md) §6). Only after that remove DNS records
+([`sota-devsecops` rules/06](../../sota-devsecops/rules/06-iac-deployment.md) §6.7), firewall and routing rules, queues and topics, and compute,
+and delete the code path. Anything left behind is an orphan nobody will patch.
+
+**Rule:** The last step is taking it out of the inventory of production components, and of
+built artifacts where one is kept (service catalog, CMDB, registry). An inventory entry for
+a dead service hides the real attack surface. A running thing with no entry is worse: a
+shadow service. (OWASP: DSOMM, SAMM)
+
+## 13. Architecture review cadence
+
+**Rule:** Review the architecture on triggers, not just calendars: 10x traffic
+growth, new compliance regime, team doubling, p99 SLO erosion two quarters
+running, or a third incident with the same structural cause. Each review:
+re-validate prior ADRs' assumptions (load numbers, team size, vendor constraints)
+and explicitly supersede the ones whose context expired.
+
+**Rule:** Track architecture debt in the same backlog as features, each item
+tied to a measurable symptom (incident class, lead-time drag, cost line).
+"Refactor someday" items without symptoms get deleted, not hoarded.
+
+## Audit checklist
+
+- [ ] **Monorepo boundaries are build-enforced or lint-gated (§2a)** — `grep -rnE 'default_visibility[[:space:]]*=[[:space:]]*\[[^]]*"//visibility:public"' --include=BUILD --include=BUILD.bazel .`
+      (a package defaulting to public) ; `grep -nE '^[[:space:]]*(shamefully-hoist[[:space:]]*=[[:space:]]*true|shamefullyHoist:[[:space:]]*true|public-?[hH]oist-?[pP]attern)' .npmrc pnpm-workspace.yaml 2>/dev/null`
+      (phantom dependencies re-opened) ; `git ls-files | grep -E '(^|/)go\.work(\.sum)?$'` (a committed `go.work` needs a recorded reason)
+- [ ] **Ownership and affected-only CI actually hold (§2a)** — `gh api repos/OWNER/REPO/branches/main/protection --jq .required_pull_request_reviews.require_code_owner_reviews`
+      (not `true`, or no ruleset doing it: CODEOWNERS only requests review) ; for `nx affected`, read `nx.json` `namedInputs.sharedGlobals`
+      (empty: a toolchain or root-config change selects no project)
+- [ ] **Every deferral with a "revisit if…" trigger names where the evidence accrues and
+      who reads it** (§4b), and the trigger is stated so that some observation could close
+      it. Probe: list every deferred entry, then ask when each was last checked and what
+      was found — a trigger nobody has evaluated since it was written, or one no evidence
+      could ever satisfy, is a finding. Same probe for a known-bad deliberately left in
+      place as proof a control fires: if no one can say where the result appears, it is a
+      note, not an experiment.
+
+- [ ] **Every control that spends a scarce resource per use states its cost profile**
+      (*what, how often*), and that frequency was checked against the ADRs and contributor
+      docs (§4, §4a). A control whose per-use cost contradicts a decision already in force is a
+      finding even though it works.
+
+- [ ] **Retired services are fully gone and out of the inventory (§12a), Medium:** list
+      catalog entries marked for retirement with
+      `grep -rnE '^[[:space:]]*lifecycle:[[:space:]]*.?deprecated' --include=catalog-info.yaml .`
+      (Backstage `spec.lifecycle`; other catalogs have their own field). Each hit needs an
+      owner, a consumer-migration list and a date. Then take one service retired in the last
+      year and look for anything it left behind: DNS records, identities, secrets, queues,
+      firewall rules, images. Each leftover is a finding (High if it is a credential or a
+      DNS record that still resolves).
+
+- Is there a written rationale (ADR) for the current architecture style, with consequences and alternatives?
+- Could this system be a modular monolith? If it's microservices, can the team name the measured force that justified each extraction? Inside the monolith, does each module own a separate schema? (§1)
+- Are module/service boundaries enforced by CI tooling (import rules, architecture tests), not just convention? (§2)
+- Does any module reach into another module's internals or tables directly? (§2)
+- Do services deploy independently in practice (check release history), or do they ship in lockstep?
+- Is every Type 1 decision (datastore, broker, tenancy, public contracts) covered by an ADR with an exit strategy? (§6)
+- Are ADRs immutable and superseded rather than edited? Is the most recent ADR less than ~3 months old (i.e., is the practice alive)?
+- Are architectural qualities (latency, coupling, resilience, cost) encoded as automated fitness functions that run in CI or on a schedule? Where two qualities conflict, does an ADR name the winner and does the fitness function enforce that chosen trade-off rather than both? (§5)
+- Does every service/module have exactly one owning team, recorded machine-readably? Does any service boundary cross a team boundary (shared ownership)? An orphaned service is Critical (§7)
+- Were recent extractions done strangler-style with a deleted old path, or do zombie code paths remain? Did any extraction change more than one variable at once (new service AND new datastore AND new language)? (§8)
+- Is any commodity capability (auth, flags, queues, search) hand-built without an ADR justifying it? Does each adopted dependency have an ADR and a fitness function proving all calls go through its adapter? (§9)
+- Do sync vs async interaction choices match the semantics (answers vs facts), or are request/response flows tunneled through events?
+- Do clients reach internal services directly, or through a gateway/BFF? Does the gateway contain business logic? Is each BFF owned by the client team it serves, or is one BFF shared by all clients? (§10)
+- Are context/container diagrams stored as text in the repo and current (spot-check three services against the diagram)? Did significant (Type 1) designs get an RFC/design doc before implementation, circulated with a comment deadline? (§11)
+- Is any rewrite running big-bang style with parallel feature development on old and new? Is each rewrite scoped to one bounded context, with a feature freeze on the replaced slice and a kill date for the old path? (§12)
+- Do superseded ADRs exist (evidence assumptions get re-validated), or has nothing been revisited since launch? Is architecture debt in the feature backlog with each item tied to a measurable symptom (incident class, lead-time drag, cost line)? (§13)

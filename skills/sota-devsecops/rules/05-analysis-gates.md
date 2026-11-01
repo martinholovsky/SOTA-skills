@@ -1,0 +1,285 @@
+# 05 — Static/Dynamic Analysis & Non-Bypassable Gates
+
+Scope: the automated checks between "code written" and "code merged/shipped", and — at
+least as important — the mechanics that prevent those checks from being skipped, muted, or
+quietly turned green. A scanner you can bypass selects for people who bypass it.
+
+## 5.1 SAST: Opengrep + CodeQL
+
+Two complementary layers; mature setups run both:
+
+- **Opengrep** — fast, diff-aware, rules-as-readable-code, matching on a **parsed**
+  representation rather than text. Run on every PR with your language packs and **your
+  own rules** — the highest-value rules encode *your* invariants: "never call raw SQL
+  outside the repo layer", "all handlers use the authz decorator", "no `subprocess` with
+  `shell=True`". PR runs scan the diff; full scans run on schedule, because new rules
+  apply to old code.
+  It is the **LGPL-2.1 fork of Semgrep CE**, governed by a multi-vendor consortium, and
+  it adds cross-function taint *within one file*, opt-in via `--taint-intrafile` (CE is
+  intraprocedural only; cross-file taint stays Semgrep Pro-only); the **rule format
+  is compatible**, so existing rules and community rulesets port unchanged
+  ([`sota/rules/01`](../../sota/rules/01-audit-methodology.md) §3). Prefer it for anything you need to keep running. Semgrep CE
+  remains a drop-in alternative.
+- **CodeQL** — deep interprocedural taint tracking with **names and types resolved**;
+  catches what pattern-matching cannot (source→sink across files). Heavier:
+  default-branch + PR for the languages it supports; use the `security-extended` query
+  suite; budget for triage of the first full run.
+
+```yaml
+# PR gate — diff-aware, blocking. Verified against Opengrep 1.27.1.
+- run: |
+    opengrep scan --error \
+      --config .semgrep/ \
+      --baseline-commit "${{ github.event.pull_request.base.sha }}"
+```
+
+`--error` exits 1 on findings; `--baseline-commit` (env `SEMGREP_BASELINE_COMMIT`)
+restricts reporting to what the diff introduced. **Do not port a `semgrep ci` workflow as
+`opengrep ci`**: the subcommand exists but is hidden from `--help` (which lists
+`scan`/`test`/`validate`/`show`/`lsp`; checked on 1.30.0), and its exit status on blocking
+findings has differed between releases (measured 2026-09-27 on one fixture: 1.23.0 printed a
+blocking finding, summarised "0 blocking" and exited 0; 1.30.0 exited 1) — gate on `scan --error`. `--config` accepts a directory, a URL, a `git+<url>` remote rule repo, or a
+Semgrep registry entry name; **vendor or `git+`-clone the community rulesets you depend on
+rather than resolving a registry you do not control** — that registry is operated by the
+vendor whose licence change caused the fork.
+
+Suppression discipline (applies to every tool in this file, and to linters and type checkers;
+each language skill's tooling file carries its tool's syntax and whether it reports a stale suppression):
+- Inline suppressions (`# nosem`, `# nosemgrep`, `# noopengrep`, `lgtm[...]`, `#nosec`)
+  require a reason on the same line: `# nosemgrep: rule-id -- input is enum-validated
+  above`. Bare suppressions fail the build (`--disable-nosem` audits them; a grep-based
+  CI check works everywhere). Opengrep honours all three of its own tokens **and**
+  `.semgrepignore` files, so an existing suppression inventory carries over — which also
+  means porting the engine does **not** re-expose anything previously silenced. Audit it.
+- Audit the suppression inventory quarterly: count, age, clustering (one file with 30
+  `#nosec` is a finding in itself).
+- New-code-only baselining is acceptable to get started (don't block on legacy debt), but
+  the baseline must shrink: track it, never add to it.
+- Severity, the one scale (each language skill rates its tool's forms on it): a suppression
+  with no reason, owner or expiry is LOW; MEDIUM when it silences a security rule (SAST,
+  `#nosec`, a security lint); HIGH when the silenced finding sits on a reachable injection,
+  authz or crypto path.
+
+```yaml
+# CodeQL — default branch + PRs, extended queries, per-language matrix
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+  schedule: [{ cron: "31 4 * * 1" }]      # weekly full pass picks up new queries
+permissions: { contents: read, security-events: write }
+jobs:
+  analyze:
+    strategy: { matrix: { language: [go, javascript-typescript] } }
+    steps:
+      - uses: actions/checkout@<sha>
+      - uses: github/codeql-action/init@<sha>
+        with: { languages: "${{ matrix.language }}", queries: security-extended }
+      - uses: github/codeql-action/analyze@<sha>
+```
+
+Tool selection note: SARIF upload + code-scanning alerts give one triage surface for
+Opengrep, CodeQL, and IaC scanners — use it rather than three dashboards, and make "no new
+code-scanning alerts" the required check where the platform supports it.
+
+**Choosing and tuning the tool.** Judge candidates on: coverage of *your* languages and
+frameworks (per language, not per product sheet), analysis depth (pattern matching or
+interprocedural taint, the two layers above), false-positive rate measured on your own
+code, reporting (SARIF into one triage surface), fit with the SDLC (PR diff mode, IDE, CI
+latency), and whether your reviewers can triage its output. Trial two or three on the same
+repositories before committing. Then give the rulebase a **named owner** (CODEOWNERS on the
+rules and config directories): every false positive dismissed in triage goes back to that
+owner as a rule fix, the false-positive rate is tracked per rule, and lint and SAST configs
+are reviewed on a schedule alongside the suppression inventory.
+(OWASP: Code Review Guide v2; SCSVS S2.2.B4)
+
+## 5.2 Secret scanning
+
+Layered — each layer catches what the previous missed:
+
+1. **Pre-commit** (gitleaks/ggshield hook): cheapest fix, before the secret ever hits a
+   ref. Advisory (developers can skip hooks) — never your only layer.
+2. **Push protection** (GitHub secret scanning push protection / pre-receive): blocks the
+   push server-side. Turn it ON org-wide; bypasses require a reason and generate an
+   auditable event — review those events.
+3. **CI scan on full history** for new repos/audits (`gitleaks git`), diff scan per PR.
+4. **Provider-side detection** (GitHub partner program auto-revokes some token types) —
+   nice backstop, not a plan.
+
+**A committed secret is a rotation event, not a deletion event.** `git filter-repo` after
+the fact cleans the repo, not the forks/clones/caches. Process: revoke/rotate first, then
+clean history, then verify the old credential is dead. Any finding response that ends at
+"removed the file" is incomplete (keep it High until rotation is confirmed). The full
+leak-response runbook and scanner configuration live in [sota-secrets-management rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md);
+this section owns the pipeline gate layering.
+
+Tuning: enable entropy + provider-pattern rules; maintain an allowlist for test fixtures
+with fake-but-realistic secrets (and mark them clearly, e.g. `TEST_ONLY_` prefixes) so the
+tool stays quiet enough to be believed.
+
+```toml
+# .gitleaks.toml — allowlist with surgical scope, never directory-wide wildcards
+[extend]
+useDefault = true   # REQUIRED: a config with only an allowlist loads ZERO rules — "no leaks found", exit 0
+[[allowlists]]      # gitleaks ≥ 8.25.0; the single [allowlist] table is superseded
+  paths = ['''tests/fixtures/fake_credentials\.json''']   # exact files
+  regexes = ['''TEST_ONLY_[A-Za-z0-9]+''']
+# BAD: paths = ['''tests/.*'''] — tests are where real creds get pasted "temporarily"
+```
+
+(Same shape as [`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §1. Measured 2026-09-26 on gitleaks 8.30.1:
+the allowlist-only file reported no leaks over a planted AWS key; adding `[extend]` found it.)
+
+Rotation runbook per credential type (who rotates, blast radius, dependent systems)
+should pre-exist the incident — write it when you wire the scanner, not at 2am. The
+scanner finding a secret is the *start* of the response; verify revocation by attempting
+use of the old credential.
+
+## 5.3 IaC scanning
+
+- Tools: **checkov** or **trivy misconfig** (tfsec is folded into trivy) for Terraform/
+  CloudFormation/k8s manifests/Dockerfiles; run on PR (changed paths) as a required check.
+- Scan the **plan**, not just HCL, where possible (`terraform show -json plan.out > plan.json`
+  then `checkov -f plan.json` — checkov does not read a plan from stdin): catches values resolved from variables/modules that static HCL scanning
+  misses.
+- Policy exceptions inline with justification and ID:
+  `#checkov:skip=CKV_AWS_20:Public website bucket, approved SEC-1234` — same suppression
+  discipline as §5.1 (no bare skips, periodic inventory).
+- High-signal defaults to never except away: public S3/storage ACLs, 0.0.0.0/0 ingress on
+  admin ports, unencrypted state/storage/DB, IAM `*:*`, disabled logging.
+- Custom policies for org invariants (allowed regions, mandatory tags, blessed module
+  registry only) — Rego (OPA/conftest) or checkov Python/YAML custom checks; keep them in
+  a versioned policy repo with tests ([rules/07](07-runtime-ops.md) §7.2).
+
+```yaml
+# IaC gate: plan-aware checkov on Terraform changes (with no-op fallback — rules/09 §1)
+jobs:
+  iac-scan:
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@<sha>
+      - run: terraform init -backend=false && terraform plan -out=plan.bin && terraform show -json plan.bin > plan.json
+      - run: checkov -f plan.json --repo-root-for-plan-enrichment . --soft-fail-on LOW
+        # soft-fail ONLY on LOW; HIGH/CRITICAL and custom org policies hard-fail
+```
+
+(When the plan needs real credentials, this runs under the read-only plan role of
+[rules/06](06-iac-deployment.md) §6.2 and never on fork PRs — [rules/01](01-pipeline-security.md) §1.4.)
+
+## 5.4 DAST basics
+
+DAST finds what static analysis can't see (auth misconfig, header gaps, real injection
+through the full stack), but it's slow — keep it out of the PR path:
+
+- **ZAP baseline scan** (passive, minutes) against ephemeral/staging deploys per merge —
+  safe to run anywhere; gates on new alerts vs baseline file.
+- **Authenticated active scans** scheduled (nightly/weekly) against staging with seeded
+  data — never against prod without explicit scoping, and never against shared staging
+  during others' test windows.
+- API-aware scanning beats blind crawling: feed the OpenAPI spec (ZAP/StackHawk import) so
+  coverage is your actual surface, not what a crawler stumbled into.
+- **Coverage is what the scan saw, so widen it deliberately.** Log in as every role the
+  service has: in ZAP, one context `users:` entry per role, and one spider/scan job per
+  user (each job takes a single `user`). Crawl client-rendered apps with a browser-driven
+  spider (`spiderClient`, or `spiderAjax`, which ZAP no longer recommends for modern
+  apps). Add endpoints the crawler cannot reach — from traffic, route dumps or JS
+  bundles. Declare app-specific parameters and encodings (ZAP script input vectors). Run
+  more than one spider or scanner and merge what they find. (OWASP: DSOMM)
+- **Tune the scan policy to the stack; never lower intensity to save time.** Speed comes from
+  where a scan runs (§5.8 tiers), not from a weaker scan. In ZAP's automation framework the
+  `activeScan` job's `policyDefinition` takes `defaultStrength` (Low, Medium, High, Insane)
+  and `defaultThreshold` (Off, Low, Medium, High), both defaulting to Medium: give the
+  scheduled deep scan `High` strength and a `Low` threshold. Switch off checks for
+  technologies the target does not use (a rule `id` with `threshold: Off`), each with a
+  comment saying why. An unexplained `Off` is a suppression (§5.1). (OWASP: DSOMM)
+- Triage pipeline same as everything else: findings → tickets with owners, baseline file
+  reviewed in PRs (a growing ignored-alerts baseline is the DAST version of mute culture).
+
+Severity calibration for DAST findings: treat them as *leads*, not verdicts — confirm
+exploitability before filing High/Critical (DAST false-positive rates make unconfirmed
+findings a credibility tax on the whole program). Conversely, a missing-auth finding on
+an internal admin route confirmed by one manual request is real regardless of scanner
+confidence scores.
+
+## 5.5 License compliance
+
+- Enforce at the dependency-review gate ([rules/03](03-dependencies.md) §3.2 `deny-licenses`) and verify against
+  the SBOM ([rules/03](03-dependencies.md) §3.5) for the full transitive picture — manifest-level checks miss
+  transitive copyleft.
+- Policy is a legal decision encoded as config: typical denylist for proprietary shipping:
+  AGPL/SSPL always-review, GPL for statically-linked/distributed code, unknown/missing
+  license = blocked until identified (unknown is not "fine", it's "no license = all rights
+  reserved").
+- Watch for **license changes on upgrade** (relicensing events: Mongo→SSPL, HashiCorp→BUSL,
+  Redis) — the diff-aware gate catches these only if it checks licenses on version
+  *changes*, not just new packages.
+
+## 5.6 Gates for agent-authored changes: out-of-scope files and invisible characters
+
+An agent's PR declares a scope (the issue, the task prompt). Two checks hold it to that.
+
+- **Out-of-scope paths need explicit human review.** Flag an agent PR that touches
+  lockfiles, CI/CD config, tests, or anything outside the declared scope — a "fix" that
+  edits the test it was meant to pass, or a lockfile nobody asked for, is the shape to
+  catch. Route those paths to a required reviewer ([rules/01](01-pipeline-security.md) §1.8) rather than warning.
+- **Reject invisible and bidirectional characters in changed files**, whatever the
+  language: bidi controls (U+202A–202E, U+2066–2069), zero-width characters
+  (U+200B–200D) and U+FEFF. They make the reviewed text differ from what the compiler
+  reads. Homoglyphs (a Cyrillic letter that renders as a Latin one) need a confusables check, not a
+  character-range grep. Language-level detail: [`sota-javascript-typescript` rules/05](../../sota-javascript-typescript/rules/05-security.md).
+  (OWASP: Secure Coding with AI cheat sheet)
+
+## 5.7 Test discipline — no flaky-mute culture
+
+Flaky tests are a security topic: a suite people retry-until-green will also be retried
+through a real regression, and "tests are red anyway" normalizes overriding gates.
+
+- **Quarantine, don't delete or blind-retry**: a flaky test moves to a quarantine
+  set (still runs, doesn't block) **with a tracking issue, an owner, and a deadline**;
+  quarantine size is a tracked metric with a hard cap. Quarantine without deadline =
+  deletion with extra steps.
+- Retries: at most one automatic retry, *recorded* (flake-detection reporting), never
+  silent. A blanket `retry: 3` to make red go away is mute culture and **High** — a gate
+  retried until green also passes a real regression. The policy and its grep are
+  [`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.1.
+- A test that is muted/`@skip`ped without a linked issue is a finding (Low-Medium,
+  pattern-dependent). Greps: `@pytest.mark.skip`, `it.skip`, `xit(`, `t.Skip(`,
+  `@Disabled` — sample them, check for issue links and age.
+- New-flake policy: a test that flakes on main within N days of introduction reverts or
+  fixes-forward immediately — flake debt compounds.
+- Keep the blocking suite fast (<10–15 min PR path) by tiering: fast suite gates the PR;
+  slow/integration suites gate the merge queue or deploy, and **their** failures block
+  promotion ([rules/06](06-iac-deployment.md) §6.6), not get waved through.
+
+## 5.8 Putting it together — the PR gate stack
+
+Reference layout (each its own required check, all diff-aware, all fail-closed):
+
+```
+PR opened ──► lint+unit (fast)            [required]
+          ──► opengrep diff scan           [required]
+          ──► dependency review + license  [required]
+          ──► secret scan (diff)           [required]
+          ──► IaC scan (changed paths*)    [required, *with no-op fallback]
+          ──► build + image scan           [required when Dockerfile/src changes]
+merge queue ─► full test suite on merge result
+post-merge ─► CodeQL full, DAST baseline on preview, scheduled deep scans
+```
+
+Latency budget matters: every gate over ~10 minutes generates organizational pressure to
+remove it. Diff-aware modes, caching, and tiering are how gates survive, and each can pass a required
+check that never ran: [rules/16](16-fast-ci-without-blind-spots.md) §16.3.
+
+## Audit checklist
+
+- [ ] SAST: diff-aware Opengrep (org rules included) required on PRs (§5.1); CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
+- [ ] All inline suppressions (`nosemgrep`/`#nosec`/checkov skips) carry justifications (§5.1); suppression inventory reviewed; baseline only shrinks
+- [ ] Secret scanning (§5.2): pre-commit hook plus push protection org-wide, PR diff scan, history scanned at onboarding; committed secrets trigger rotation, not just removal, with a per-credential-type rotation runbook written in advance; bypass events reviewed; allowlists name exact files, never directory wildcards; `find . -name '.gitleaks.toml' -not -path './.git/*' -exec grep -L -E '^[[:space:]]*(useDefault[[:space:]]*=[[:space:]]*true|\[\[rules\]\])' {} +` prints nothing (an allowlist-only config loads zero rules and reports no leaks), High
+- [ ] IaC scanning on PRs as a required check (plan-aware where possible) with the high-signal defaults non-exceptable; custom org policies versioned + tested (§5.3)
+- [ ] DAST baseline on staging per merge (§5.4), authenticated scans scheduled, OpenAPI-fed; baseline file changes reviewed
+- [ ] **DAST covers every role and client-rendered routes (§5.4), Medium:** in the ZAP plan `grep -c -E 'type:[[:space:]]*(spiderAjax|spiderClient)' zap.yaml` and `grep -c -E '^[[:space:]]*users:' zap.yaml` are not `0`, with one user per role
+- [ ] **SAST rules have an owner and a tuning loop (§5.1), Low:** `grep -n -E '^/?(\.semgrep|\.opengrep|\.github/codeql)/' .github/CODEOWNERS` (or the repo's CODEOWNERS path) is non-empty; dismissed false positives are routed to the owner and the per-rule FP rate is tracked
+- [ ] **Deep DAST scan not throttled; disabled checks justified (§5.4), Medium:** `grep -n -i -E 'defaultStrength:[[:space:]]*low|defaultThreshold:[[:space:]]*high|threshold:[[:space:]]*off[[:space:]]*$' zap.yaml` over the deep-scan plan is empty (an `Off` with a trailing reason comment does not match)
+- [ ] **Agent PR gates (§5.6), High:** `git diff --name-only origin/main...HEAD | grep -E '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum|Cargo\.lock|poetry\.lock|uv\.lock)$|^\.github/|^\.gitlab-ci\.yml$|(^|/)tests?/|_test\.go$'` hits force a required reviewer; `git diff --name-only --diff-filter=d -z origin/main...HEAD | xargs -0 -r rg -H -n -- '[\x{202A}-\x{202E}\x{2066}-\x{2069}\x{200B}-\x{200D}\x{FEFF}]'` fails the check when its **stdout is non-empty** — never on its exit status (a deleted path makes `xargs` exit non-zero, and `rg` exits 1 on a clean diff)
+- [ ] License gate covers transitive deps (SBOM-based) and license *changes* on upgrades; unknown licenses block (§5.5)
+- [ ] All gates are required checks by exact name, each layer of the PR gate stack (lint+unit, SAST diff, dependency review + license, secret diff scan, IaC, build + image scan) its own check (§5.8); no `continue-on-error`/`|| true`/soft-fail on gate steps; path-filtered required checks have no-op fallbacks; rulesets apply to admins; merge queue (or equivalent) re-validates merge results
+- [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recorded (a blanket `retry: 3` is High); skipped tests linked to issues; PR gate latency within budget (§5.7)

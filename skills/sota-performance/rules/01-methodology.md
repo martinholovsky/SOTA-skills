@@ -1,0 +1,360 @@
+# 01 — Methodology: Measure, Budget, Decide, Protect
+
+Performance work without measurement is guessing; measurement without a budget
+is trivia. This file defines how to measure, what numbers mean, and how to
+decide what is worth fixing.
+
+## 1. Measure first — with the right instrument
+
+Pick the instrument for the question. Using a CPU profiler to debug an I/O-bound
+service tells you nothing.
+
+| Question | Instrument |
+|---|---|
+| Where does CPU time go? | Sampling CPU profiler → flamegraph |
+| Why is wall time >> CPU time? | Off-CPU / wall-clock profiler, async-aware tracing |
+| Where does latency go across services? | Distributed tracing (OpenTelemetry spans) |
+| Is it the kernel/syscalls? | `strace -c`, eBPF (bpftrace), `perf trace` |
+| Memory growth? | Heap profiler, allocation profiler, heap snapshots diff |
+| Is this function faster now? | Micro-benchmark harness with statistics |
+| Is the system faster? | Load test + latency distribution comparison |
+
+Per-runtime profilers (sampling, production-safe unless noted):
+
+- **Linux native / mixed**: `perf record -g -F 99`, eBPF tools, flamegraphs via
+  `perf script | stackcollapse-perf.pl | flamegraph.pl > out.svg` or `samply`.
+- **Go**: built-in `pprof` (CPU, heap, mutex, block, goroutine), continuous
+  profiling via Pyroscope/Parca. Enable `net/http/pprof` in services on a
+  dedicated internal-only mux/port — never the public `DefaultServeMux`, which
+  importing the package registers on ([`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §3).
+- **JVM**: async-profiler (CPU + alloc + locks, no safepoint bias), JFR
+  (always-on flight recorder, < 2% overhead).
+- **Node.js**: `node --prof`, `--cpu-prof`, Chrome DevTools, `0x` for
+  flamegraphs; `perf_hooks.monitorEventLoopDelay` for event-loop lag
+  ([rules/04](04-io-network.md) §9). Clinic.js is unmaintained (per its own README) — flag it
+  where found; don't adopt.
+- **Python**: `py-spy` (attach to live process, no code change), `cProfile`
+  (deterministic, high overhead — dev only), `memray` for allocations.
+- **Rust/C++**: `perf` + flamegraph, `heaptrack`/`valgrind --tool=massif` (dev).
+- **Browser**: Chrome DevTools Performance panel, Lighthouse (lab), RUM (field).
+
+**Rule: profile in production or production-like conditions.** Dev machines
+have empty caches, tiny datasets, no contention, and different CPUs. Sampling
+profilers at 49–99 Hz are safe in production; prefer continuous profiling so
+the data already exists when an incident starts.
+
+## 2. Reading flamegraphs
+
+- **Width = time** (samples). The x-axis is alphabetical, NOT chronological.
+- Look for **wide plateaus**: a single wide frame is your hottest code.
+- Look for **wide-but-thin towers repeated** under many parents: a hot utility
+  (serialization, logging, regex) called from everywhere — fix once, win
+  everywhere.
+- **CPU flamegraph flat/idle but requests slow?** The time is off-CPU: I/O,
+  locks, GC, scheduler. Switch to off-CPU analysis or tracing.
+- Inverted (icicle) view answers "which leaf functions burn the most total CPU".
+
+## 3. Benchmarks that don't lie
+
+Micro-benchmarks are adversarial: the compiler, CPU, and OS all conspire to
+give you fiction.
+
+```text
+BAD                                  GOOD
+start = now()                        Use a harness: JMH (JVM), criterion
+f()                                  (Rust), go test -bench + benchstat,
+print(now() - start)   # one run,    pytest-benchmark, mitata/tinybench (JS).
+                       # cold cache, They handle warmup, multiple samples,
+                       # no variance # outlier rejection, and statistics.
+```
+
+Non-negotiables for any benchmark:
+
+1. **Warm up** until JIT/branch predictors/caches stabilize (harnesses do this).
+2. **Many samples, report variance.** A result is `median ± MAD` or a
+   confidence interval, never a single number. Two results differ only if the
+   intervals don't overlap (Go: `benchstat`, p < 0.05).
+3. **Prevent dead-code elimination**: consume results (blackhole/`black_box`).
+4. **Realistic data**: production-shaped sizes and distributions. Sorting
+   already-sorted arrays or hashing tiny strings benchmarks nothing.
+5. **Pin the environment**: fixed CPU governor (`performance`), no turbo
+   variance for comparisons, no laptop on battery, no noisy CI neighbors —
+   or use dedicated runners / ratio-based comparisons.
+6. **Benchmark the distribution, not the mean** of latency-sensitive code.
+7. **Avoid coordinated omission** in load tests: closed-loop testers that wait
+   for each response before sending the next silently pause during slow
+   periods, deleting the worst samples from your data. Use open-loop /
+   constant-arrival-rate load (wrk2, vegeta, k6 `constant-arrival-rate`) when
+   measuring latency under a target throughput.
+
+**A production metric you cannot re-run has no "run it 30 times".** §3's remedy
+assumes a repeatable benchmark. For a live series the equivalent is sampling more
+*offsets*, never a `now` vs `offset 24h` pair — [`sota-observability` rules/02](../../sota-observability/rules/02-metrics.md) §4a
+has the measured case where such a pair showed 22x on a series that had not moved.
+
+## 4. Percentiles, not averages
+
+Averages are arithmetic fiction for latency. Latency distributions are
+long-tailed; the mean sits between p50 and p99 and describes no real request.
+
+- **p50**: typical experience. **p95/p99**: the experience of your heaviest
+  users (who are often your biggest customers — bigger carts, more data).
+- **Tail amplification**: if one page fans out to 50 backend calls, the page
+  hits a backend's p99 on `1 - 0.99⁵⁰ ≈ 39%` of loads. Per-service p99 IS the
+  user's median when fan-out is high. Budget backends at p999 when fan-out > 10.
+- p99/p50 ratio > ~10× signals queueing, GC pauses, lock contention, or cache
+  misses — not uniformly slow code.
+- Never average percentiles across hosts; aggregate histograms (HDRHistogram,
+  Prometheus native histograms / t-digest), then compute percentiles.
+
+## 5. Orders of magnitude — internalize this table
+
+Approximate 2020s hardware; exact values vary, ratios don't.
+
+| Operation | Latency |
+|---|---|
+| L1 cache hit | ~1 ns |
+| L2 cache hit | ~4 ns |
+| L3 cache hit | ~10–40 ns |
+| Main memory (DRAM) | ~60–100 ns |
+| Mutex lock/unlock, uncontended | ~20 ns |
+| Syscall (getpid, round trip) | ~100–300 ns |
+| NVMe SSD random read | ~20–100 µs |
+| Same-DC network round trip | ~100–500 µs |
+| Memory read of 1 MB sequential | ~10–50 µs |
+| Disk read of 1 MB sequential (NVMe) | ~50–200 µs |
+| Cross-AZ round trip | ~1–2 ms |
+| Same-region DB query (indexed, warm) | ~0.5–2 ms |
+| HDD seek | ~5–10 ms |
+| Cross-continent round trip (US↔EU) | ~70–90 ms |
+| TLS 1.3 full handshake (cross-continent) | ~1 RTT + crypto ≈ 80–100 ms |
+
+Consequences:
+
+- One avoidable network round trip (~0.5 ms in-DC) costs the same as ~5,000
+  DRAM accesses or ~500k L1 hits. **Round trips dominate; count them first.**
+- RAM is the new disk: a cache-missing pointer chase (100 ns) is 100× an L1
+  hit. Data layout ([rules/03](03-memory.md)) matters for hot loops.
+- Anything touching cross-region links is 100,000× slower than memory — cache
+  it, move it, or batch it.
+
+## 6. USE and RED
+
+**USE** (Brendan Gregg) — for every hardware/software *resource*:
+- **U**tilization: % busy (CPU %, disk busy %, pool in-use/size).
+- **S**aturation: queued work (run-queue length, pool wait time, queue depth).
+- **E**rrors: error counts (TCP retransmits, pool timeouts, OOM kills).
+
+Saturation, not utilization, predicts latency: 80% CPU with an empty run queue
+is fine; 60% CPU with a growing run queue is an incident. Check USE on: CPU,
+memory, network, disk, connection pools, thread pools, worker queues, locks.
+
+**RED** — for every *service/endpoint*:
+- **R**ate (req/s), **E**rrors (failed/s), **D**uration (latency histogram).
+
+Audit rule: a service without RED metrics per endpoint and USE on its pools is
+unauditable at runtime — flag that as a finding itself (Medium).
+
+## 7. Latency budgets
+
+Work backwards from the user:
+
+1. Pick the user-facing SLO: e.g. "search responds in ≤ 300 ms p99".
+2. Subtract fixed costs you don't control: client RTT (~50 ms), TLS (resumed,
+   ~0), CDN/proxy hops (~5 ms). Remainder = server budget (~245 ms).
+3. Decompose across the critical path: auth 10 ms + query 100 ms + ranking
+   80 ms + serialization 10 ms = 200 ms, leaving 45 ms slack (keep ≥ 20% slack
+   for variance).
+4. Assign each component's budget to its owning team/module; enforce in CI
+   and alerting per component, not just end-to-end.
+
+A new feature that adds a sequential dependency must fit the remaining slack
+or buy budget by optimizing something else. "We'll just add one more call" is
+how 300 ms endpoints become 900 ms over two years.
+
+## 8. Amdahl's law — what's worth optimizing
+
+Speedup from optimizing a fraction *p* of total time by factor *s*:
+`Speedup = 1 / ((1 − p) + p/s)`.
+
+- Optimizing 10% of runtime **infinitely** yields at most 1.11×. Don't touch
+  anything under ~20% of the profile unless it's a one-line fix.
+- Corollary for parallelism: 5% serial fraction caps speedup at 20× regardless
+  of core count. Find and shrink the serial section (locks, single-threaded
+  stages) before adding cores.
+- Inverse use: a component that is 60% of latency is where 2× effort yields
+  1.43× end-to-end — start there. The flamegraph tells you *p*.
+
+## 9. Premature optimization vs known pathology
+
+The Knuth quote has a second half: "...yet we should not pass up our
+opportunities in that critical 3%". Operationalize it:
+
+**Fix on sight, no profiler needed (known pathologies):**
+- O(n²)+ on input that can grow (user data, DB rows, list endpoints).
+- N+1 queries / RPC-in-a-loop.
+- Unbounded memory: caches without eviction, accumulating listeners, reading
+  unbounded result sets into memory.
+- Blocking calls on async event loops.
+- Per-request creation of poolable resources (connections, clients, regexes).
+- Missing timeouts/limits.
+- Sequential awaits on independent I/O.
+
+These are correctness-adjacent: they work in dev and fail at scale.
+
+**Profile first (speculative optimization):**
+- Rewriting idiomatic code into "fast" contorted code.
+- Caching something not yet shown to be hot or expensive.
+- Micro-tuning (manual loop unrolling, bit tricks, custom allocators).
+- Adding concurrency/complexity for an unmeasured win.
+
+Decision test: *"Does this code's cost grow with production scale in a way dev
+testing won't reveal?"* Yes → pathology, fix now. No → demand a profile.
+
+One more invariant: optimizations must not erode security — identity-keyed
+caching, constant-time comparisons, and validation/size limits are not
+overhead to shave ([rules/05](05-caching.md) §9, [sota-code-security](../../sota-code-security/SKILL.md)).
+
+## 9a. Duration as a correctness signal, not just a cost one
+
+Profiling asks "why is this slow?". Turn it around once per pipeline: **is any
+stage suspiciously *fast*?** A step that reports "nothing to do" far quicker than
+its claimed work allows did not do the work — a scan that returns 0 findings in
+2 s over 40k files, a migration that returns instantly, a backup that finishes in
+seconds. It is the cheapest diagnostic available and needs no code reading.
+
+Two forms worth timing deliberately:
+
+- **Duration vs claimed work** — record the wall time *and* the input size, then
+  compare against the order of magnitude the work implies.
+- **Duration constant across scales** — if a 100-item and a 100k-item input take
+  the same time, size is not reaching the work. Same test as [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.3.
+
+A stage that got dramatically faster while reporting the same result is a
+regression signal, not a win, until you can say what work was removed. Full class
+and the evidence bar: [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.1.
+
+**And the inverse: a duration that is suspiciously *slow* indicts the measurement before
+it indicts the subject.** "Suspiciously fast" impugns the work; "suspiciously slow" usually
+impugns your harness — and it is the more dangerous direction, because *"the suite got 6x
+slower"* is a far more exciting finding than *"I measured it wrong"*, which is exactly why
+it gets written down first.
+
+Before recording a slowdown against a recorded baseline, establish that the two runs are
+**comparable**: the **same inputs**, scheduling priority, machine load, and whether the run
+was backgrounded at all. Two medians over different case sets compare the sets, not the
+system. Field-reported 2026-10-22: p50 29.7 s against 2.6 s was written into an agent file,
+memory and a changelog as a 10x slowdown and blamed on a co-tenant build. The two p50s came
+from different probe sets: one case, measured both days, went 2.9 s → 28.9 s, and the slowness
+outlasted the build, so the cause was never established. **A job launched into the background may be niced by whatever launched it** — measured
+on one agent harness, backgrounded jobs ran at `nice 5` while the foreground shell in the
+same invocation was `nice 0`, under a load average of 5.9–8.6. An unprivileged user cannot
+renice back down, so the measurement cannot be rescued in place; it has to be re-run in the
+foreground.
+
+```sh
+ps -o pid=,nice=,stat= -p "$PID"     # SN / RN in the state column is the tell
+```
+
+Field-reported, and **corrected by the reporter when the run finished — the correction is the
+more useful half**. A test lane sitting at 2% after twelve minutes was extrapolated to a **6x**
+regression against a ~38-minute baseline, and that false claim was written to a durable
+project-memory file before anyone checked the process. The lane actually finished in 3190s =
+53m10s: **1.41x, not 6x.** Two errors were stacked, and the bigger one was not the nice
+penalty:
+
+1. **Arithmetic on a progress percentage is not a measurement.** A test runner's early
+   progress is dominated by collection and front-loaded heavy cases, so it is **not linear**
+   and multiplying it out means nothing. This produced the 6x.
+2. The run *was* also genuinely niced — a real effect worth the remaining ~41%.
+
+**So check the shape of your instrument before you extrapolate from it**: a percentage that
+moves non-uniformly is a progress *indicator*, not a clock, and the first 2% of a suite is the
+least representative slice of it. The baseline had been measured in the foreground.
+**A wall-clock number from a backgrounded run is not comparable to one from a foreground
+run** — and note the asymmetry with §3 item 5 ("pin the environment"): that rule is framed
+for a deliberate benchmark with a harness, and this case is someone running a test suite
+and glancing at the clock, which is where it does not think to apply.
+
+## 10. Performance regression testing in CI
+
+Performance regressions ship silently; functional tests pass at any speed.
+
+1. **Micro-benchmarks in CI** for hot library code. Compare against the base
+   branch with statistical tooling (`benchstat`, JMH + jmh-compare,
+   criterion's built-in comparisons). Gate on regressions beyond noise
+   (e.g. > 10% with p < 0.05), don't gate on raw thresholds that rot.
+2. **Macro load tests** (k6, Locust, Gatling, vegeta) on a fixed-size staging
+   environment, nightly or per-release: assert p95/p99 and throughput against
+   the budget, with the same dataset every run.
+3. **Counting tests beat timing tests in noisy CI.** Assert *invariants* that
+   don't depend on machine speed: number of DB queries per request (tools:
+   `assertNumQueries` in Django, n+1 detectors like Prosopite/Bullet in Rails,
+   query counters in tests), allocation counts per op (Go `testing.AllocsPerOp`,
+   JMH GC profiler), bytes over the wire, bundle size (size-limit). These are
+   deterministic and catch the most common regressions (a new N+1).
+4. **Frontend budgets in CI**: Lighthouse CI with budgets.json (LCP, TBT,
+   bundle bytes); fail PRs that exceed them.
+5. **Continuous profiling in prod** + alerting on RED p99 per endpoint catches
+   what CI misses; keep before/after flamegraphs for every major release.
+
+CI timing noise mitigation: dedicated runners, multiple iterations with
+median-of-runs, compare ratios vs base commit on the same machine in the same
+job, never compare absolute times across runner generations.
+
+## Audit checklist
+
+- [ ] **Any recorded slowdown compared like-for-like before it was believed?** (§9a) A
+      duration that is suspiciously *slow* indicts the measurement first — scheduling
+      priority, machine load, foreground vs backgrounded (`ps -o nice=,stat=`; a
+      backgrounded job may carry a nice penalty you cannot undo as a normal user). A
+      regression written down from a non-comparable run is a false finding about the
+      subject, and it reads as a much better finding than the truth.
+- [ ] Is there any profiling/tracing data, or is all perf discussion folklore?
+      No data on a "slow" system → first finding: add RED metrics + profiler.
+      Where data exists: was it taken with the instrument that fits the
+      question, under production or production-like conditions (§1)? A CPU
+      profile, or a flat CPU flamegraph, offered for a request that is slow in
+      wall time → flag: the time is off-CPU, use off-CPU analysis or tracing (§2).
+- [ ] Are SLOs/budgets defined in percentiles? Any dashboards showing averages
+      only → flag (Medium): averages hide the tail. Any percentile averaged
+      across hosts instead of computed from aggregated histograms → flag (§4).
+- [ ] Compute p99/p50 per hot endpoint; ratio > 10× → investigate queueing,
+      GC, locks, cache misses (§4).
+- [ ] High fan-out call graphs: is the per-dependency percentile budget set
+      accordingly (p999 for fan-out > 10) (§4)?
+- [ ] Do benchmarks exist? Do they use a statistical harness, warmup,
+      realistic data, and report variance? Single-run timing → flag. Results
+      consumed (blackhole/`black_box`) so dead-code elimination cannot delete
+      the work? Environment pinned, or comparisons ratio-based? Latency load
+      tests open-loop / constant-arrival-rate — a closed-loop tester measuring
+      latency under a target throughput hides the worst samples → flag (§3).
+- [ ] Does CI gate on any perf signal (query counts, alloc counts, bundle
+      size, benchmark deltas)? None → flag (Medium): regressions ship blind.
+      Benchmark gates compare against the base commit with statistics, on the
+      same machine in the same job — a raw absolute threshold, or times compared
+      across runner generations → flag (§10).
+- [ ] For each proposed/past optimization: what fraction of total time was it?
+      (< 20% of profile and non-trivial → likely wasted effort — Amdahl.) Cores
+      or parallelism added without first shrinking the measured serial section
+      (locks, single-threaded stages) → flag (§8).
+- [ ] Are USE metrics available for pools/queues (saturation especially)?
+      Pool wait time unmeasured → flag. RED (rate, errors, duration histogram)
+      per endpoint too? A service missing either is unauditable at runtime →
+      flag (Medium) (§6).
+- [ ] Were any "optimizations" added without before/after measurements?
+      Treat them as suspect complexity; consider recommending removal.
+      Conversely, a known pathology (O(n²)+ on growable input, N+1, unbounded
+      memory, blocking on an event loop, per-request poolable resources, missing
+      timeouts/limits, sequential awaits on independent I/O) left waiting for a
+      profile → flag; so is an optimization that removed identity-keyed caching,
+      a constant-time comparison or a validation/size limit (§9).
+- [ ] Count network round trips on the critical user journey; verify each is
+      necessary, parallelized where independent, and inside the budget —
+      round trips dominate; count them first (§5).
+- [ ] Latency budget (§7): is the user-facing percentile SLO decomposed into
+      per-component budgets along the critical path, with ≥ 20% slack kept, and
+      enforced in CI and alerting per component, not just end to end? Does a
+      change that adds a sequential dependency fit the remaining slack or buy
+      budget elsewhere? No written budget → flag (Medium); this prints when none exists:
+      `grep -rqiE 'latency[ _-]?budget' --include='*.md' --include='*.yaml' --include='*.yml' . || echo 'no written latency budget'`

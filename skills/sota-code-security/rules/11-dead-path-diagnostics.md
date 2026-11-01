@@ -1,0 +1,463 @@
+# Dead Paths — the diagnostics that expose a system reporting success while doing nothing
+
+[rules/10](10-silent-control-failure.md) asks, one control at a time, *"if this were a no-op, would anything look
+different?"* This file is the **hunt**: the cheap signals that surface the family
+across a whole codebase without reading every line, five classes [rules/10](10-silent-control-failure.md) does
+not cover (they are not security controls at all — they are correctness), and the
+evidence bar a finding in this family has to clear.
+
+Use it in AUDIT as the sweep that decides *where* to apply [rules/10](10-silent-control-failure.md), and in BUILD
+as the set of properties that make a stage falsifiable before you ship it.
+
+Related: inert controls (the catalog) → [rules/10](10-silent-control-failure.md); **proving a control works, and
+validating the instrument or guard that reported it → [rules/15](15-instruments-and-guards.md)**; fail-open authz
+→ [rules/03](03-authorization.md); truncation before inspection → [rules/16](16-where-no-ops-hide.md) §2.7; mutation testing and
+watching a test fail → [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) and [rules/09](../../sota-testing/rules/09-security-testing.md); degradation telemetry →
+[`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md); scale and cost → [`sota-performance` rules/01](../../sota-performance/rules/01-methodology.md);
+shell/CI exit-code masking → [`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md).
+
+---
+
+## 1. The governing observation: "zero" is a legitimate answer
+
+A bug that produces a **wrong** answer gets caught, because someone compares it
+to a right one. A bug that produces **no** answer — where "none" is a valid
+result — is invisible by construction.
+
+So the hunting ground is every place where:
+
+    failure state == a valid success state
+
+`0 results`, `nothing to do`, `all clean`, `no changes`, `exit 0`, an empty list,
+`None`, `0.0`. **If you cannot distinguish "it ran and found nothing" from "it
+never ran", that is a finding — whether or not it has fired yet.**
+
+This is [rules/10](10-silent-control-failure.md) §1 turned outward: there, per control; here, per pipeline stage,
+gate, job, and query.
+
+## 2. The diagnostics, highest yield first
+
+### 2.1 Duration, not result
+
+**The single highest-yield tell, and the only one that needs no code reading.**
+Compare each step's wall time against the work it claims to have done. A stage
+reporting "0 findings" in 5 s against a 300k-LOC target did not run. A test job
+that finishes in 3 s, a migration that returns instantly, a backup that completes
+suspiciously fast — same signal.
+
+```
+# Time every stage, then read the ratio, not the verdict.
+$ time ./scan.sh corpus/          # claims: full AST scan, 40k files
+real    0m2.104s                  # ← 40k files in 2s. It did not scan them.
+```
+
+What to record in a finding: the **measured** wall time, the input size, and the
+order of magnitude the claimed work implies. "Fast" is not evidence; "2.1 s for
+40k files, vs 6 min for the same corpus on the previous release" is.
+
+Two refinements:
+
+- **Constant duration across very different inputs** is the same tell without a
+  baseline: if 100 files and 100k files take the same time, size is not reaching
+  the work.
+- **Duration that collapses after a change** is a regression signal. A scanner
+  that got 30× faster and found the same number of issues did not get faster.
+
+**And the same arithmetic applied to your own reasoning: a rate computed over a window
+longer than the phenomenon describes the window, not the phenomenon.** [`sota-observability`
+rules/02](../../sota-observability/rules/02-metrics.md) §4 says averages hide what matters when you *design* a metric; this is the version
+that bites when you are *debugging*, and nothing routes you there. Field-reported
+2026-09-05: an importer's failures averaged **~4.2/s over an hour**, which was used to argue
+"steady per-call failure, not an expired-context spin" — and on that basis a correct fix was
+**retracted**. Per minute:
+
+```
+20:51..21:26   2-3 errors per minute
+21:27          14,977 errors in ONE minute   (~250/s)
+```
+
+The hourly mean was arithmetically true and qualitatively backwards. Before reasoning from
+a rate, look at the distribution at a resolution **finer than the event you are
+hypothesising about** — a burst and a trickle produce the same mean. And where the data
+carries a per-event cost, read that too: each of those failures recorded a duration of
+**11–12 µs**, the signature of a cancelled context returning before any I/O. **12 µs and
+12 s are different mechanisms with identical counts.**
+
+### 2.2 Scope of the check — print the denominator
+
+**`0 checked, 0 failed, exit 0` is the signature of this entire family.** Every
+gate must report *how many items it examined*, and must fail closed when that
+number is unexpectedly zero. A gate whose file glob, pathspec, or selector
+drifted keeps printing green forever.
+
+This library shipped that exact defect and fixed it (2026-07-30). The gate
+enumerated skill files via `git ls-files 'skills/*/rules/*.md'`; renaming the
+`rules/` directory level made the pathspec match nothing:
+
+```
+# BEFORE — pathspec mutated to match nothing:
+[2/10] Every skills/*/rules/*.md ends with an '## Audit checklist'
+    ok
+[10/10] Every skills/*/rules/*.md is referenced by its own SKILL.md
+    ok
+PASS: all repository invariants satisfied.        # exit 0, examined 0 files
+
+# AFTER — the same mutation, once each check reported its denominator:
+    SCOPE EMPTY: examined 0 rules files — pathspec drift? a gate that checks
+    nothing passes silently
+exit=1
+```
+
+A neighbouring check that recounted the tree did **not** catch it, because the
+count it recounted (`SKILL.md` files) was unaffected — one gate's green does not cover
+another gate's scope ([rules/15](15-instruments-and-guards.md) §3).
+
+The commonest instance ships inside the toolchains themselves, **and they do not
+agree with each other** — which is the whole point. Both verified by running them:
+`go test ./...` over a package with no test files prints `? x [no test files]` and
+**exits 0**; `pytest` on the same empty scope prints `no tests ran` and **exits 5**,
+as it does for a file with no test functions and for a `-k` selector that deselects
+everything (pytest 9.1.1). One fails closed, one fails green. So a test stage whose
+selector drifts is silently green on one toolchain and loud on the next, and no
+amount of folklore about "runners exit 0 when they find nothing" tells you which
+you have. Gate on a floor for tests **actually executed**, never on the exit code,
+and confirm your own runner's zero-collected behaviour by running it — an exit 5
+that CI discards is worth exactly as much as an exit 0.
+
+Rule for BUILD: a gate prints `ok (N items)`, and `N == 0` is a failure unless
+zero is explicitly expected and asserted as such. Rule for AUDIT: for every gate,
+ask what its denominator was on the last run, and whether anything would say so.
+
+**The same arithmetic on the output side: a produced size that lands exactly on
+its limit is a truncation report.** The cheapest tell in this family, and it
+needs no cooperation from the producer — compare what came back against the cap
+that bounded it (`output_tokens == max_tokens`, rows == `LIMIT`, bytes == the
+buffer) and treat equality as truncated until shown otherwise. Field-reported
+and reproduced 2026-08-19: a recon call left `max_tokens` unset, inherited a
+4096 default, and a 4,843-character JSON fragment reached `json.loads` as a
+plain string — no exception from the provider, no flag, and a swallowing
+`except` ([rules/16](16-where-no-ops-hide.md) §2.4) then published it as an empty profile. Corollary: **a
+parse-error offset is uninterpretable without the document length.** "Failed at
+char 3,023" argues *against* truncation while you assume 4,096 tokens yield
+12–16k characters, and *for* it the moment you learn 3,023 was the last
+character — so log the size beside the offset. Class and fix: [rules/16](16-where-no-ops-hide.md) §2.7.
+
+### 2.2a The empty comparand — the zero on the other operand
+
+§2.2 asks how many items the check **examined**. This asks how many were in the
+set it **compared against**, and the two fail independently. A differential
+oracle — a regression snapshot, a golden file, an approval set, a "no new
+findings vs. baseline" gate — computes its verdict from a *reference*, and when
+that reference is empty the verdict is a constant:
+
+```python
+lost   = baseline - current    # findings we used to produce and no longer do
+gained = current - baseline
+return 1 if lost else 0        # non-zero on any regression
+```
+
+`lost` is drawn **from the baseline**. With an empty `baseline`, `lost` is empty
+for every possible `current` — the check returns the pass value on every input,
+forever, while examining a full, healthy current set and reporting a large,
+*truthful* denominator. §2.2's remedy does not fire here, because nothing about
+the scope is wrong. Field-reported 2026-09-05: **4 of 12** committed reference
+sets were in this state, legitimately — the analysis genuinely finds nothing on
+those targets, and the files are kept because a *gain* is still informative.
+
+That is also why nobody notices: `gained` keeps working when the baseline is
+empty, so the file still earns its place in the tree while half the oracle is
+dead.
+
+**The rule.** Any differential, regression or equivalence check must assert that
+its reference set is non-empty **and that it loaded** — a baseline file that
+failed to parse yields the same empty set through a different door — before its
+result is readable as a pass, and must fail closed otherwise. Where an empty
+reference is a legitimate recorded state, require an explicit, greppable opt-out
+flag: the flag is how a human records that they know, and an exit code is not.
+
+Where to look: golden-file tests with an empty golden, approval suites
+([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.4) whose approved set was never populated, gates
+seeded from a baseline run that itself failed, and any `set(old) - set(new)`
+regression check.
+
+### 2.3 Cross-scale delta
+
+Run the same stage on a small and a large input. **Output that does not grow with
+input is suspect.** Findings, rows, log lines, bytes written, duration — pick a
+quantity the work should move and compare the two runs. This is the cheap version
+of [`rules/13`](13-context-dependent-silence.md) §1: it catches a threshold-gated path without finding the threshold first.
+
+### 2.4 Telemetry silence
+
+A stage that emits no log lines cannot be distinguished from a stage that did
+nothing. Silence is not evidence of health; it is absence of evidence. Any stage
+on a data path emits at least a start/finish pair carrying its denominator
+(§2.2). See [rules/10](10-silent-control-failure.md) §3 for the degraded-control helper and the gauge that stays
+1 while a control is degraded.
+
+**The inverse also holds, and it is the harder half: speech is not evidence of health
+either**, when the claim is sited *upstream* of the effect it describes. A line reading
+`1 adjudicated` proves a count was computed there, not that the count survived the rest
+of the function. Site the claim in the consumer, derived from the value received —
+[`rules/14`](14-control-not-in-force.md) §1.
+
+### 2.5 Did the changed code execute?
+
+**After any fix, prove the new path ran.** A fix that is never reached is
+indistinguishable from a fix that works — and both look like a green suite.
+
+The cheap proof: make the new branch emit exactly once (a log line, a counter, a
+one-shot `print`), run the real workload, and show the emission. **Placement is a
+precondition of that proof**: an emission establishes that the line it sits on ran, not
+that its result survived the suffix of the function — the filter, early return or
+reassignment that comes after it. Put the emission where the value is *consumed*, or it
+answers a weaker question than the one you asked ([`rules/14`](14-control-not-in-force.md) §1). The same trap
+bites mutation testing: an editable install, a copied tree, a stale image, or
+cached bytecode means the code you edited may not be the code that ran
+([rules/12](12-verifying-the-verifier.md) §1). Assert the runtime effect before trusting any before/after result.
+
+### 2.6 When you cannot state the right answer, state how it must change
+
+The reason a tool emitting nothing survives review is that nobody holds an oracle
+for its output. That difficulty has a name — the **test oracle problem** (Barr,
+Harman, McMinn, Shahbaz & Yoo, *IEEE TSE* 41(5):507–525, 2015,
+doi:10.1109/TSE.2014.2372785). You cannot write "the analyser should find 1,283
+functions" for an arbitrary repository, so nothing in the pipeline contradicts
+"it found 0", and §1's silent zero ships.
+
+A **metamorphic relation** gets you an oracle anyway: you cannot state the
+output, but you can state how it must *change*. Commit a fixture with N known
+functions and assert the extracted count is N; add one and assert the count
+rises; remove half and assert it falls. [`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §4 owns the
+technique for application code — the use here is different and cheaper. It is a
+**liveness oracle for a tool whose correct output you do not know**, and it is
+the one diagnostic in this file that catches an analyser emitting an
+empty-but-well-formed artifact while exiting 0.
+
+§2.3's cross-scale delta is the same idea without a fixture; the fixture buys you
+an absolute assertion instead of a relative one, and it belongs in CI rather than
+in an audit.
+
+### 2.7 Provenance of the rows, not just the count
+
+§2.2 asks a **gate** how many items it examined. This asks an **analysis** where its rows
+came from — the same arithmetic one level up, and the worse failure, because the
+contaminated number looks like the better one.
+
+A sink that both the test suite and the real system write, with the same name in the same
+place, is one population to every tool that reads it and two populations in fact.
+
+Two instances, both 2026-09-02. Field-reported: of 226 log files in one directory, **215
+were test fixtures**, identifiable only afterwards by a uniform verdict count and a
+`[test-provider]` string — every aggregate over it was ~90% test data. And in this
+library's own harness, where `evals/results/durations.tsv` received `--selftest` runs,
+usage errors and real measurements alike: **46 of 60 rows were sub-10s aborts (77%)**, and
+**3 of the 14 real runs had been compared against one**. The runner printed
+`previous 0.1s — 6340.0x slower <-- CHECK THIS` on its first genuine measurement, and the
+next real run would have read `previous 0.0s (no usable ratio)` against an abort logged 92
+seconds after a good 3651.8s run — so §2.1, the diagnostic that ledger exists to
+implement, was inert for the most-run runner in the repo. The cause was one line of
+ordering: `note_work(len(cases))` ran *before* the `--selftest` branch, so the runner's own
+scorer test recorded the same denominator as a measurement.
+
+**The third field case is why this is a diagnostic and not a hygiene note.**
+Contamination is taught as a source of false positives. There it *destroyed a true
+finding* — a rate read 8.5% across the shared directory against ~100% on real runs — and
+it argued more persuasively in that direction, because the contaminated aggregate carried
+the larger n. "5,000 samples" outranks "149" in review, and the 149 were the real ones. A
+false positive dies in review; a finding withdrawn on contaminated evidence leaves nothing
+behind at all — no retraction to grep for, no red build, no second look.
+
+Rule for BUILD: the writer stamps, not the reader — [`sota-observability` rules/05](../../sota-observability/rules/05-operational-readiness.md) §8a.
+Rule for AUDIT: every number reported from a shared sink states its **exclusion filter and
+the count on both sides of it** (`149 of 5,000 after excluding test-provider runs`); a bare
+n from a shared sink is not a measurement. And treat an **unexplained** jump in n when you
+widen the source as contamination, not power — widening one shard to all shards
+legitimately multiplies n, so the test is whether you can name where the new rows came
+from. If you cannot, you did not widen the sample; you merged two populations. §2.3 reads
+the same arithmetic from the other end.
+
+## 3. Five classes [rules/10](10-silent-control-failure.md) does not cover
+
+*(audited in [rules/13](13-context-dependent-silence.md))* — a pointer stub; the five classes and their checklist items live in rules/13.
+
+Moved to [`rules/13`](13-context-dependent-silence.md) — scale-dependent silence,
+stale-artifact no-ops, format assumptions generalised from one sample, contract
+drift at an undeclared seam, and location-dependent silence. §2's diagnostics are
+how you notice one; [`rules/13`](13-context-dependent-silence.md) is what you are looking at once you do.
+
+## 4. An assert is not a control in production
+
+An assertion is a developer-facing invariant check. In three major runtimes it is
+**removed or disabled** in the configuration production most often runs, so a
+control implemented as an assert is a guaranteed no-op there. Verified
+2026-07-30 by running each case:
+
+| Runtime | Command | Result |
+|---|---|---|
+| Python | `python3 -O prog.py` / `PYTHONOPTIMIZE=1` | failing `assert` vanished; program printed `passed` |
+| C/C++ | `cc -DNDEBUG` | `assert(x>0)` compiled out; program printed `passed` |
+| Java | default `java` (no `-ea`) | assertions are **disabled by default** at runtime |
+
+Java's own documentation states it plainly: *"By default, assertions are disabled
+at runtime"*, and once disabled they are *"essentially equivalent to empty
+statements in semantics and performance"*
+([Oracle, Programming with Assertions](https://docs.oracle.com/javase/8/docs/technotes/guides/language/assert.html)).
+
+Rules:
+
+- **Never** implement validation, authorization, bounds, or any
+  data-integrity check as an assert. Use an explicit conditional that raises,
+  returns a denial, or exits — code that survives optimisation flags.
+- Asserts are fine for *impossible* internal states you want loud in development.
+- AUDIT: grep for assertions on validation, authz, size, and parsing paths, then
+  check what flags the **deployment** actually uses (`-O`, `NDEBUG`,
+  `PYTHONOPTIMIZE`, the absence of `-ea`). A control removed by a build flag is
+  the purest form of this family: source code that reads correct and does not
+  exist at runtime.
+
+Language specifics: [`sota-python` rules/05](../../sota-python/rules/05-security.md), [`sota-c-cpp` rules/04](../../sota-c-cpp/rules/04-security.md), [`sota-jvm`
+rules/04](../../sota-jvm/rules/04-security.md).
+
+## 5. Evidence — one discriminating proof per finding
+
+Evidence must **distinguish broken from fine**. Reasoning is not evidence, and a
+mechanism you did not trigger is not a confirmed finding.
+
+| Class | The proof that discriminates |
+|---|---|
+| Vacuous control | **Mutation test.** Inject the exact failure the control claims to catch, run it, show it still reports green ([rules/12](12-verifying-the-verifier.md) §1) |
+| Silent zero | Show the failure return is **identical** to the success-but-empty return, and name **one consumer** that cannot distinguish them |
+| Scale-dependent | State the trigger numerically; show fixtures never cross it; measure both scales where cheap |
+| Stale artifact | Change the omitted input; show the key unchanged and the stale artifact reused |
+| Format assumption | A **real** sample from the installed version that violates the assumption |
+
+Label every finding exactly one of:
+
+- **ACTIVE** — proven to have fired. Cite the log line, output, or measurement.
+- **LATENT** — mechanism verified in the code; verified **not** to have fired,
+  and you say how you checked. Report it; do not inflate it to ACTIVE.
+- **REFUTED** — you suspected it and the evidence says no. **Report these too**:
+  a refuted suspicion stops the next auditor re-raising it ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §4).
+
+**Not findings** (disqualifiers):
+
+- "This could fail if…" with no proof that it does, or that no guard exists.
+- A control you called vacuous but never made fail.
+- Any conclusion drawn from a name, comment, or docstring rather than the code.
+  Comments are a **hypothesis** about behaviour and are themselves prime hunting
+  ground — a comment describing a check the code does not implement is the
+  canonical vacuous control.
+- Anything you cannot tie to a `file:line`, a command's output, or a log line.
+
+**Rank by blast radius × silence.** A loud partial failure outranks nothing; a
+silent total failure outranks everything.
+
+**Fix + risk — state whether the fix moves a decision boundary.** Making an inert
+detector work changes what the system reports. If the fix alters a decision
+boundary (a scanner that now fires, a validator that now rejects), it needs
+validation against a **labelled corpus — known-bad and known-good — before
+shipping**, or you trade a silent miss for a silent flood, and the flood gets the
+control switched off. Say so in the finding rather than shipping the fix blind.
+
+## 6. Where to hunt, in order
+
+1. **Every gate**: CI jobs, pre-commit hooks, health and readiness checks,
+   admission/validation webhooks, authz checks, quality gates. Mutation-test each
+   one — a gate you have never seen reject anything is unverified ([rules/14](14-control-not-in-force.md) §4).
+2. **The tests *of* those gates**: does any test assert the gate **fails** on bad
+   input? Happy-path-only tests are how vacuous controls survive review
+   ([`sota-testing` rules/09](../../sota-testing/rules/09-security-testing.md)).
+3. **Error handling on the main data path** — every catch/except between input
+   and output ([rules/16](16-where-no-ops-hide.md) §2.4).
+4. **Fallback, retry, degrade, and "continue anyway" branches** — verify the
+   fallback *actually engages*. A log line saying it will is not proof that it does.
+5. **Shell and CI glue**: pipelines without `pipefail` mask a non-final failure;
+   globs that match nothing; `find -exec` over an empty set; `|| true`; any
+   command whose exit code is discarded ([`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md)).
+6. **Caches, tags, fingerprints** ([`rules/13`](13-context-dependent-silence.md) §2).
+7. **Feature flags and config**: is the value **read** *and also* **applied**? A
+   config field that parses, validates, and is never plumbed to the code path it
+   names is a silent no-op — distinct from [rules/16](16-where-no-ops-hide.md) §2.5, where the flag *is*
+   applied, just more broadly than its name claims. Trace one flag end-to-end
+   from file to the branch it is supposed to control.
+8. **In-band sentinels on a compared value** — a number whose domain includes an
+   "absent/unknown/error" marker (`-1`, `0`, `""`, `9999-12-31`). It defeats a
+   presence check (`-1` is truthy), and because it has an **ordering** it loses
+   every `<` and wins every `>`, so a guard silently skips one way and fires
+   spuriously the other. Grep the *producer* — one function returning the same
+   constant from a not-found branch and an error branch — then look for the
+   **asymmetric guard**: a comparison with one operand filtered against the
+   sentinel and the other not. That asymmetry, not the constant, is the finding
+   ([`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a).
+
+Start by enumerating every gate, guard, and audit in the codebase. For each: read
+the comment, read the code, then **make it fail on purpose**. The controls you
+cannot make fail are the finding.
+
+Do one thing before any of that reading: **run every script CI, a hook, or a
+runbook references, and record which produce output and which do not.** A
+measurement tool nobody has executed this quarter is presumed dead until it
+prints something — the ones needing credentials, a daemon, a rules directory, a
+model file, or a network fail in precisely the way a clean result looks, and one
+environment change (auth switched on) kills them all at once.
+
+## 7. Then turn the lens around
+
+Every diagnostic above is run *by* something — a script, a gate, a scorer, a
+grep. Each of those is a control by the definition in §1, and the sweep is not
+finished until they have been held to the same standard: **[rules/12](12-verifying-the-verifier.md)** carries the
+mutation probe; **[rules/15](15-instruments-and-guards.md)** carries the bar an instrument must clear before its
+number is quoted, and the guard that is an instance of what it guards. A finding produced by an
+unvalidated instrument is not yet a finding.
+
+---
+
+## Audit checklist
+
+- [ ] For every stage, gate, job and query whose valid result can be empty (`0 results`,
+      `exit 0`, an empty list, `None`), name the evidence that separates "ran and found
+      nothing" from "never ran" — a count, a denominator, a duration or an execution
+      marker (§1)? None is a finding, HIGH on a security gate, whether or not it has fired yet.
+- [ ] **Duration recorded per stage** and compared against the work claimed —
+      any stage returning "nothing found" far faster than its claimed work allows
+      flagged, with the measured seconds and input size (§2.1)?
+- [ ] **Every gate reports its denominator** (`ok (N items)`), and an unexpected
+      **zero scope fails closed** — no `0 checked, 0 failed, exit 0` anywhere (§2.2)?
+- [ ] Every **differential, regression or equivalence check asserts its reference set
+      is non-empty and loaded** before its result reads as a pass (§2.2a) — an empty
+      baseline makes `baseline - current` empty for every input, forever; a legitimate
+      empty reference carries a greppable opt-out flag, never a silent exit code?
+- [ ] Every **generated** result checked against the cap that bounded it before
+      parsing (`output_tokens == max_tokens`, rows == `LIMIT`), and parse-error
+      offsets logged beside the document size (§2.2)?
+- [ ] Any **rate or average used in an argument** re-read at a resolution finer than the
+      event it is about, and its per-event cost inspected — a burst and a trickle share a mean,
+      and 12 µs vs 12 s are different mechanisms with identical counts (§2.1)?
+- [ ] Cross-scale delta run on at least the stages that gate on size: output
+      that does not grow with input investigated (§2.3)?
+- [ ] No stage on a data path is **silent** — start/finish with counts (§2.4)?
+- [ ] Any tool whose correct output cannot be stated carries a **metamorphic
+      liveness check** in CI — a fixture with a known count, and an assertion
+      that the count moves when the input does (§2.6)?
+- [ ] After each fix, the **new path proven to have executed** (emission, counter,
+      or asserted runtime effect), not just "tests pass" (§2.5)?
+- [ ] Every aggregate drawn from a sink that **anything but production writes to**
+      states its exclusion filter and the count on both sides of it, and no finding was
+      withdrawn on a number whose n grew unexplained (§2.7)?
+- [ ] **No security, authz, bounds, or data-integrity check implemented as an
+      `assert`**, and the deployment's flags (`-O`, `NDEBUG`, `PYTHONOPTIMIZE`,
+      missing `-ea`) checked against any assert on a control path (§4)?
+- [ ] Every finding carries a **discriminating proof** for its class, and is
+      labelled **ACTIVE / LATENT / REFUTED** — refuted ones reported too (§5)?
+- [ ] Findings ranked by **blast radius × silence**, and any fix that moves a
+      decision boundary flagged as needing labelled known-bad/known-good
+      validation before shipping (§5)?
+- [ ] Config and feature flags traced **end-to-end**: read, validated, *and*
+      applied to the branch they name (§6.7)?
+- [ ] Every script CI, a hook or a runbook references **actually executed this
+      pass**, the silent ones recorded as dead until proven otherwise (§6)?
+- [ ] **Every collection a suite iterates has a non-empty assertion** (§2) — without one an
+      empty parameter set reports SKIPPED and the suite passes vacuously.
+- [ ] The tools that produced these findings held to the same standard (§7) —
+      mutation probe (**[rules/12](12-verifying-the-verifier.md)**), instrument bar and guard recursion (**[rules/15](15-instruments-and-guards.md)**), with no finding quoted from an instrument not yet validated?

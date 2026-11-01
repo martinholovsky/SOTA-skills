@@ -1,0 +1,397 @@
+# 03 — Code Review & PR Workflow
+
+Pull request sizing and description, reviewer and author conduct, review SLAs,
+stacked/draft PRs, automation boundaries, and reviewing AI-generated code.
+
+## §1 Small PRs are the highest-leverage practice
+
+Review effectiveness degrades sharply with size: defect-detection rate falls as
+diff size grows, and large PRs converge on "LGTM" because nobody can hold 2,000
+lines in their head. Everything else in this file is downstream of size.
+
+- **Target ≤ ~400 changed lines of substantive diff; treat ~1,000 as a hard
+  ceiling** requiring justification (generated code, lockfiles, and mechanical
+  renames don't count — but call them out so reviewers can skip them).
+- **One logical change per PR.** "Implements X *and* refactors Y" is two PRs.
+  The refactor goes first, separately — it's the one that can be approved in
+  minutes because behavior is unchanged and tests prove it.
+- **Slicing strategies** for big features: vertical slices behind a feature
+  flag; preparatory refactors first; interface/contract PR before
+  implementation; data-model migration separate from the code that uses it;
+  stacked PRs (§5).
+- A PR that *can't* be made small (large migration, vendored code) gets a
+  reviewing map in the description: read order, where the decisions are, what's
+  mechanical.
+
+## §2 PR description discipline
+
+The description is documentation with a deadline: it's how the reviewer loads
+context, and how `git log` archaeology works in two years.
+
+Required content — **what / why / how-tested**:
+
+- **What**: the observable change, one or two sentences.
+- **Why**: the problem/motivation and the linked issue (`Fixes #123` to
+  auto-close). The diff shows what changed; only the description can say why.
+- **How tested**: specific — which tests added/updated, what was exercised
+  manually, what wasn't and why that's acceptable.
+- **UI changes**: before/after screenshots or a clip. Reviewers can't render
+  JSX in their heads.
+- **Risk & rollout** when relevant: feature flag, migration ordering, rollback
+  plan, blast radius.
+- State what's deliberately out of scope to pre-empt scope-creep review.
+
+Use a PR template (`.github/pull_request_template.md`) to make the structure
+the default. Keep it short enough that people fill it instead of deleting it.
+
+**Bad**: title `fix bug`, body empty, 23 files changed.
+**Good**:
+
+```markdown
+## What
+Reject payout previews for creators with frozen accounts (422 + code
+`account_frozen`).
+
+## Why
+Frozen accounts could see previews that would never execute, generating
+support tickets (#892). Execution was already blocked; preview wasn't.
+
+## How tested
+- New: `test_preview_frozen_account_422`
+- Manual: froze demo creator in staging, verified 422 body + UI message
+- Not covered: bulk-preview path — frozen filter happens upstream
+  (see `BulkPreviewService:88`), existing tests cover it.
+
+Out of scope: unfreezing flow cleanup → #901.
+```
+
+## §3 Reviewer behavior
+
+- **Review SLA: first response within one business day** (same-day for small
+  PRs as an aspiration). Review latency is the dominant term in cycle time, and
+  slow review is what teaches people to make giant batched PRs. Reviewing
+  others' code outranks writing your own in the daily priority order.
+- **WIP limits**: when your review queue is full, finish reviews before
+  starting new work. Ten open PRs awaiting review is a team-level incident, not
+  ten individual delays.
+- **Label every comment as blocking or non-blocking.** Conventional prefixes
+  (`blocking:`, `nit:`, `question:`, `suggestion:`, `praise:` — the
+  "conventional comments" style) remove the guess about what must be resolved
+  before merge.
+- **Suggest, don't command; ask, don't assert.** "What happens if `items` is
+  empty here?" beats "this is broken" — it's both kinder and more often
+  correct, because sometimes the answer is "it can't be, see the validator."
+  Comment on the code, never the author.
+- **Approve with nits.** If everything remaining is non-blocking, approve and
+  trust the author to address nits before merge. Holding approval hostage to
+  trivia trains people to argue instead of fix.
+- **Review for what automation can't catch**: design fit, correctness under
+  concurrency/failure, missing tests, naming, security, API contract, "should
+  this exist." If you're commenting on formatting, the CI config is the bug (§6).
+  **Security is reviewed against a written standard, by someone who knows it**:
+  name the secure-coding guideline the team reviews against (an in-repo checklist
+  or a published one) so "looks safe" has a yardstick, and give security-,
+  compliance- and business-critical paths (auth, crypto, payments, tenant
+  isolation, audit logging) a CODEOWNERS entry naming a security or domain
+  reviewer. CODEOWNERS only *requests* that reviewer; merge blocks only when
+  code-owner review is required on the branch ([`sota-devsecops` rules/01](../../sota-devsecops/rules/01-pipeline-security.md) §1.8).
+  (OWASP: Code Review Guide v2)
+- **Know when to take it offline.** Three back-and-forth rounds on one thread
+  means the medium failed: call/pair, then record the conclusion in the thread
+  for the archaeologists.
+- An approval means "I understood this and stake my name on it," not "the
+  author seems confident." If you didn't understand it, say so — that's a
+  finding about the PR, usually.
+
+## §3a `git diff main..pr` is not what the PR changes
+
+Two-dot **diff** compares two *tips*. If the branch forked before `main` gained a
+commit, everything `main` gained since renders as a **deletion on the branch's
+side** — so the form nearly everyone types systematically *invents* regressions.
+It never hides one: the error is directional, always in the alarming direction.
+In a lockfile or a dependency manifest an invented regression reads as a
+supply-chain attack, which is exactly the finding a reviewer will escalate
+fastest and check least.
+
+**Why the habit survives: the same token means different things to different
+subcommands.** This is the trap, not carelessness —
+
+```
+git log  main..feature   # commits in feature, not in main   <- CORRECT
+git diff main..feature   # compare the two tips              <- NOT the PR's changes
+```
+
+`A..B` is right where people learn it (`log`, `rev-list`, and as a `--log-opts`
+range for a history scanner) and wrong in `diff`. Both succeed, both print
+well-formed output, and nothing distinguishes *"B removed this"* from *"B never
+had it."*
+
+**Use the merge base**: `git diff $(git merge-base main pr)..pr`, or the
+three-dot `git diff main...pr`, which for `diff` is defined as exactly that.
+Forge UIs ("Files changed") and `gh pr diff` show the merge-base diff, so a
+local two-dot result that disagrees with the web view is *your* query, not a
+stale page — verified 2026-09-15 on a public PR **42 commits behind its base**,
+where `gh pr diff`, the `pulls/:n/files` endpoint behind "Files changed", and a
+three-dot compare all returned the same **11** files while the two-dot direction
+returned **33**. Measured the same day on a branch four commits behind its base, which
+is the trap at full strength: two-dot reported **15 files and 742 deletions**,
+three-dot and the forge's compare API both reported **zero files changed**. The
+branch had changed nothing.
+
+**Before reporting that a PR removes, downgrades or reverts anything, re-run it
+against the merge base.** The tell is that the "removed" content is something
+*you recently added to `main`* — which is also why this fires hardest right
+after a security bump, when the stakes of the false claim are highest. Field-
+reported 2026-09-15: a reviewer read a two-dot lockfile diff as a TLS library
+being downgraded past the previous day's advisory fix, wrote that into a commit
+message and drafted a PR comment saying so. The PR did not touch that dependency
+at all. Nothing caught it; a merge check surfaced the real diff by accident.
+Under §8 that claim was one step from being published under the maintainer's
+name.
+
+## §4 Author behavior
+
+- **Self-review first.** Read your own diff in the review UI before requesting
+  review; you'll catch the debug print, the stray file, the TODO. Annotate the
+  diff with PR comments where the reviewer will need context ("this rename is
+  mechanical, the real change is in `scheduler.py`").
+- **Respond to every comment** — fix, push back with reasoning, or file a
+  follow-up issue. Silently ignoring a comment, or marking it resolved without
+  action, destroys reviewer trust permanently.
+- **Don't force-push during active review**: it orphans comment anchors and
+  destroys the reviewer's "what changed since my last pass" diff. Push
+  fixup/appended commits during review; clean up history (squash/autosquash) at
+  merge time. (Pre-review and stacked-PR rebases are fine.)
+- The author merges (where the platform allows) — they own the timing against
+  deploys and freezes.
+- Don't request review on red CI. Reviewer attention is the scarce resource;
+  spend it on code that at least compiles and passes tests.
+
+## §5 Draft and stacked PRs
+
+- **Draft PRs for direction checks**: open as draft with a specific question
+  ("is this the right seam?") before investing in polish. Cheap course
+  correction beats a finished PR built on the wrong design. Mark ready only
+  when it meets the full bar (§2, green CI).
+- **Stacked PRs for large changes**: a sequence of dependent, individually
+  reviewable PRs (each targeting the previous branch), reviewed and merged in
+  order. This is how you keep §1's size discipline on multi-thousand-line
+  features. GitHub now ships native stacked PRs (public preview since 2026-07-30,
+  rolling out to all repositories; `gh stack` is the
+  `github/gh-stack` CLI extension, a stack map in the PR UI, branch protection and CI
+  evaluated against the final target branch, auto-rebase of the remaining
+  stack after each merge) — prefer it where enabled, since reviewers need no
+  third-party account. Until then, tooling (Graphite, `gh`/`git` stacking
+  workflows, `git-spice`, jj-based flows) automates the rebase cascade;
+  without tooling, keep stacks ≤3 deep or the rebase tax exceeds the review
+  benefit.
+- Each PR in a stack must stand alone: green CI, coherent description, no
+  forward references that make it unreviewable without reading the whole stack.
+
+## §5a The change surface is a design decision, not a side effect
+
+§1 says keep PRs small. This is the harder half: **what belongs in the diff at all.**
+Agents are unusually good at producing code and unusually bad at bounding what they
+touched, so this is where an otherwise correct change becomes unreviewable.
+
+**Do not change unrelated files.** A drive-by reformat, an import reorder, a "while I
+was here" rename — each is defensible alone and collectively they destroy the diff.
+The reviewer can no longer see the change, only the noise around it, and `git blame`
+on those lines now points at your unrelated PR forever. If a cleanup is worth doing,
+it is worth its own PR; if it is not worth its own PR, it is not worth burying in
+this one.
+
+**Generated files have a policy, and the policy is stated.** Lockfiles, generated
+clients, compiled assets, snapshots: either they are committed (and regenerated in a
+separate commit, so a review can skip them) or they are not committed at all. What
+must not happen is a diff where hand-written and generated lines are interleaved and
+the reviewer cannot tell which is which. Say which in `CONTRIBUTING.md`, and keep the
+regeneration in its own commit even inside one PR.
+
+**A generated file you then hand-edit can no longer be regenerated, so it drifts.** Re-running
+the generator would erase the edits, so nobody re-runs it, and the next change to its input
+leaves stale every number in the parts no one touched. This applies to docs and reports
+(coverage tables, totals, inventories) as much as to code. Field-reported 2026-10-09: a coverage
+doc's prose was updated by hand after a data change, and its generated Totals line shipped
+saying 58 when the data said 66. The session's closing re-count caught it. Keep each file
+**fully generated** (put the prose in the generator's input, or in a hand-written file that links
+the generated one) or **fully hand-written**, never both. Reviewing a change to a generated
+file's *input*, ask whether the output was regenerated in the same change.
+
+**A scripted edit of a hand-maintained structured file is a reformat until the diff shows
+otherwise.** Loading a JSON, YAML or TOML file, changing one value and dumping it back rewrites
+every line whose spelling the serializer would choose differently: quoting, key order, indent,
+string escapes, and comments (PyYAML 6.0.3 and tomli-w both drop an inline comment, measured). A JSON file that mixes
+`\u2014` escapes with literal `—` cannot survive either `ensure_ascii` setting, because one setting
+rewrites the escaped strings and the other rewrites the literal ones. Reproduced 2026-10-22 with
+Python's `json`: inserting one key into such a file gave a `--numstat` of 3/2 where the insert alone
+is 2/1, while a uniformly literal file gave 2/1 (field-reported 2026-10-21: 9+/3− against an
+expected 6+/0−). Edit at a textual anchor, or with a format-preserving library, and before
+committing compare `git diff --numstat` with the line count the edit should produce. A larger
+count is a drive-by reformat the tool did for you, with the same cost to the reviewer.
+
+**Decompose by reviewability, not by size.** A 600-line PR that is one mechanical
+rename plus one 20-line behaviour change is *two* PRs — and the behaviour change is
+the one that needs eyes. The test is not "how many lines" but "can a reviewer hold
+the intent of this diff in their head at once". Common seams: mechanical vs
+semantic; refactor vs behaviour; interface vs implementation; migration vs the code
+that uses it.
+
+**Sequence migrations so each commit is deployable.** Expand, migrate, contract — a
+PR that adds a column and starts writing to it is safe; one that also drops the old
+column is not, because a rollback of the code without a rollback of the data leaves
+production reading a field that no longer exists. Same rule for API deprecations
+([`rules/02`](02-api-reference-changelogs.md) §7) and for anything with a consumer you do not control.
+
+**Revert or fix forward — decide by blast radius, not by pride.** If the change is
+live and wrong, revert first and diagnose after: a revert is a known-good state and a
+fix-forward is a hypothesis. Fix forward when the revert is *itself* risky (a
+migration has run, a revert would re-break a dependent change). Either way the
+decision is recorded — a revert with no explanation reads as a mistake by whoever
+reverted.
+
+**Preserve archaeology.** Keep mechanical moves separate from edits so `git log
+--follow` and `git blame` still work; where a tool supports it, record the
+move-only commit so future bisects step over it rather than into it. A `git bisect`
+that lands on a 4,000-line reformat has cost more than the reformat saved.
+
+## §6 Automation does the robot work
+
+- **Lint, formatting, type errors, import order, coverage thresholds, secret
+  scanning, license checks are CI's job.** A human pointing out a formatting
+  issue is a process failure: add the rule to CI and it never recurs. Reviewer
+  attention is for judgment (§3).
+- Format-on-save + pre-commit hooks catch locally; CI enforces. Nobody debates
+  style in review because style isn't an opinion anymore — it's a config file.
+- Bot-noise budget: auto-comments (coverage deltas, preview links, size labels)
+  must collapse/update in place. A PR where human comments drown in bot spam
+  gets worse review.
+- CI status gates merge: required checks, no `--no-verify` culture, branch
+  protection on the default branch (supply-chain side: [`sota-devsecops`](../../sota-devsecops/SKILL.md)).
+
+## §7 Reviewing AI-generated code
+
+AI assistance raises PR volume; the review bar does not move.
+
+- **Same bar, same process.** "An agent wrote it" is not a provenance excuse —
+  the human who opens the PR owns every line of it, including understanding it.
+  If the author can't explain a hunk, it isn't ready for review.
+- **No rubber-stamping volume.** The failure mode of 2025–26 is plausible,
+  confident, subtly-wrong code reviewed at "looks idiomatic" depth. Spot-check
+  the parts AI gets wrong most: edge cases, error paths, concurrency,
+  off-by-one boundaries, invented APIs, tests that assert the implementation
+  rather than the requirement.
+- **AI-generated tests deserve the most suspicion**: verify they fail without
+  the change (mutation thinking), not just that they pass with it.
+- **Review an agent PR file by file, never from its summary.** Agents often edit
+  outside the task: lockfiles, CI config, unrelated tests, formatting. A reviewer
+  who follows the description sees only the files it names. Open every changed
+  file in a tool that lists the whole diff, including collapsed and generated
+  files. An approval given on the description alone is not a review.
+- **An agent PR that deletes, skips or loosens a security test gets a second
+  look.** That includes auth, authz, input validation and crypto tests. Deleting
+  or skipping a test is the easy way for an agent to turn CI green. Ask the author
+  why each test changed before approving, and route those files to a code owner.
+  [`sota-testing` rules/07](../../sota-testing/rules/07-suite-health-and-ci.md) §7.10 has a diff check that flags these PRs.
+- **Keep a provenance trail.** For each AI-assisted change, record which tool and
+  which model version produced it, and which human approved it. Use a PR-template
+  field or a commit trailer. This record is what lets you find every change a model
+  produced after a flaw in that model is reported. The approver stays accountable.
+  OWASP: Secure Coding with AI cheat sheet, AI Agent Security cheat sheet.
+- Disclose substantial AI generation in the PR when team policy asks; either
+  way, size limits (§1) apply with extra force — generated code is cheap to
+  produce and expensive to review, so the queue saturates from the author side.
+- AI *reviewers* (CI-integrated review bots) are a pre-filter on the author's
+  side, like a linter with opinions — they reduce trivial findings reaching
+  humans, they don't replace the human approval (§3's "stake my name on it").
+
+## §8 Claims you publish under someone else's name
+
+A finding you hand to the person who asked costs one reader's trust and is cheap
+to withdraw. The same finding posted to a **PR review comment, an issue, a commit
+message, or a mailing list** is public, attributed to whoever's account sent it,
+indexed, and quoted back years later. Upstream, it is also read by maintainers who
+have never met you and will calibrate every later report against this one. Treat
+the audience change as an evidence-bar change, not a tone change.
+
+Before anything leaves for a third party:
+
+- **Verify by execution, not inference.** Reading a source file and concluding how
+  a flag behaves is a hypothesis; running `--help`, the test, or the actual code
+  path is evidence. Most wrong public claims are correct reasoning from an
+  unchecked premise.
+- **Say what you did not test.** "Reproduced on x86-64 with `make run`; not tried
+  under TDX" is a stronger comment than one that quietly implies full coverage.
+- **Check whether it is already known** — read the whole thread, the linked
+  issues, and the commit that introduced the line. A duplicate report costs the
+  maintainer more than silence would have.
+- **Attack your own claim first** ([`sota`](../../sota/SKILL.md) principle 7): restate it from the tool
+  output rather than from your own earlier summary. A false report in a
+  maintainer's own subsystem is the most expensive kind.
+- **Never publish on someone's behalf without their approval of the final text.**
+  Draft it, show it, let them send it. This is not a formality — their name is on
+  it and the reputational cost lands on them, not on the drafter.
+
+The `§3` conduct rules still apply on top: ask rather than assert ("what happens
+if `items` is empty here?"), label blocking vs non-blocking, comment on the code
+and never the author. Conduct and evidence are separate axes — a politely worded
+claim that turns out to be false still burns the credibility.
+
+## Audit checklist
+
+- [ ] **Does the diff contain anything the PR title does not describe?** Drive-by
+      reformats, import reorders, opportunistic renames — each defensible alone, together they
+      make the change invisible and misattribute `git blame` (§5a).
+- [ ] **Is there a stated policy for generated files**, and are generated and hand-written
+      lines in separate commits rather than interleaved (§5a)?
+- [ ] **No generated file has been hand-edited** — a doc or report holding a generator's output
+      plus hand-written prose cannot be regenerated, so its derived numbers go stale (§5a).
+- [ ] Does a scripted edit of a hand-maintained JSON/YAML/TOML file touch only the lines it meant
+      to? A `git diff --numstat` larger than the intended edit means the serializer rewrote
+      untouched lines: quoting, escapes, order or comments (§5a).
+- [ ] **Was the PR decomposed by reviewability** — mechanical split from semantic, migration
+      from the code that uses it — rather than by line count (§5a)?
+- [ ] **Is every commit in a migration sequence independently deployable and rollback-safe**
+      (expand → migrate → contract), so a code rollback does not strand the data (§5a)?
+
+- [ ] Anything published to a **third party under someone else's name** (PR
+      comment, issue, commit message, upstream post) verified by **execution not
+      inference**, with untested parts named, the thread checked for a duplicate,
+      the claim restated from tool output rather than your own summary, and the
+      final text approved by the person whose account sends it (§8)?
+
+- [ ] **Any claim that a PR removes, downgrades or reverts something — re-run
+      against the merge base before it is reported** (§3a). The audit question is
+      not "is the finding alarming" but "which range produced it": a two-dot
+      `git diff main..pr` renders everything `main` gained since the fork as a
+      deletion on the PR's side. Check whether the "removed" content is something
+      recently added to `main`, and whether the local result matches the forge's
+      "Files changed" — a disagreement there means the query is wrong, not the page.
+
+- [ ] Median merged-PR size is small (≲400 substantive lines); large PRs are exceptions with stated justification or a reviewing map; generated code, lockfiles and mechanical renames are called out so reviewers can skip them (§1).
+- [ ] PRs are one logical change; refactors land separately from behavior changes (§1).
+- [ ] PR template exists (§2); sampled recent PRs have what/why/how-tested, linked issues, screenshots for UI changes, and risk/rollout notes and stated out-of-scope items where relevant.
+- [ ] Review first-response time is ~1 business day or better (§3); no PRs silently aging past the SLA.
+- [ ] Blocking vs non-blocking comments are distinguishable (prefixes/labels) (§3); approve-with-nits happens in practice.
+- [ ] Authors self-review (look for author-annotated diffs), respond to every comment (fix, reasoned push-back or a follow-up issue — never resolved without action), don't force-push mid-review, and don't request review on red CI (§4).
+- [ ] Draft PRs used for early direction (§5); oversized features arrive as stacks of independently green PRs, each with a coherent description and no forward references, and stacks without tooling stay ≤3 deep.
+- [ ] CI owns lint/format/type/coverage, secret scanning and license checks (§6); sampled reviews contain zero human style comments; bot comments collapse or update in place; required checks gate merge and no `--no-verify` culture bypasses them.
+- [ ] Review depth on AI-heavy PRs matches human-written ones (§7): comments engage with logic, tests proven to fail without the change, no volume rubber-stamps.
+- [ ] **(Medium) Agent PRs reviewed per file, with a provenance trail** (§7): sampled
+      agent PRs show every changed file was reviewed, not only the ones the description
+      names. Any deleted, skipped or loosened security test was signed off by a code owner.
+      The PR template or a commit trailer records the AI tool, the model version and the
+      approver. Probe:
+      `grep -L -i -E 'ai tool|model version|assisted-by' .github/pull_request_template.md`
+      prints the template's name when no such field
+      exists. GitHub also reads `pull_request_template.md` from the root or `docs/`,
+      and `PULL_REQUEST_TEMPLATE/` dirs in any of the three — check those before
+      calling the template missing, which is also a finding.
+- [ ] **(Medium) Security-critical paths route to a qualified reviewer against a
+      written standard** (§3): the team names its secure-coding guideline, and
+      CODEOWNERS covers auth, crypto, payment and similar paths with a security or
+      domain owner. Probe:
+      `[ -n "$(grep -s -h -i -E '^[^#]*(auth|secur|crypto|payment|billing)' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS)" ] || echo "no security-path owner"`
+      (output, not exit status, so an absent location or `pipefail` cannot false-alarm);
+      then confirm code-owner review is required.
+- [ ] Merged PR descriptions are useful in `git log` archaeology (pick 5 from six months ago and try to reconstruct the why) (§2).

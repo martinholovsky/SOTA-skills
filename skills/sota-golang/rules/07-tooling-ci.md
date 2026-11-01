@@ -1,0 +1,400 @@
+# 07 — Tooling, testing, CI, go.mod hygiene
+
+A Go repo without lint+race+vuln gates accumulates every defect class in this
+skill silently. Tooling is cheap; retrofitting it is not. This file defines
+the SOTA gate set and test discipline.
+
+## 1. CI gate set (minimum viable, in order)
+
+```bash
+gofumpt -l -d .                          # formatting (superset of gofmt)
+go vet ./...
+golangci-lint run                        # curated config below
+go test -race -shuffle=on ./...          # shuffle kills inter-test ordering deps
+go test -race -coverprofile=cover.out ./...
+govulncheck ./...
+go mod tidy && git diff --exit-code go.mod go.sum
+go build ./...                           # catches main-package breakage tests miss
+```
+
+Pin tool versions (see §4); cache `~/go/pkg/mod` and golangci-lint cache, keyed and counted per [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2.
+A repo missing `-race` or govulncheck in CI: HIGH audit finding.
+
+**Code that uses the escape hatch (`unsafe`, cgo) runs its tests under the runtime checker.**
+`-race`, `-msan` and `-asan` imply `-gcflags=all=-d=checkptr` unless it is set explicitly
+(`cmd/compile/internal/base/flag.go`, read at go1.27.1), so the `-race` job above already checks
+`unsafe.Pointer` conversions; without `-race`, pass the flag yourself. `-race` runs on darwin;
+`-asan` (since 1.18) and `-msan` are Linux-only — add a Linux `go test -asan ./...` job for
+cgo packages. Strict cgo pointer checks are build-time since Go 1.21:
+`GOEXPERIMENT=cgocheck2 go test ./...` (`GODEBUG=cgocheck=2` was removed). Escape hatch present
+and no checker job: HIGH.
+
+On toolchain upgrades, run Go 1.26's revamped `go fix` — it now applies
+"modernizer" fixers (built on the vet analysis framework) that rewrite code
+to current idioms; review the diff like any refactor.
+
+## 2. golangci-lint curated config
+
+Don't enable-all (noise kills adoption); don't run bare defaults (misses too
+much). Curated `.golangci.yml` (v2 schema):
+
+```yaml
+version: "2"
+linters:
+  default: none
+  enable:
+    # correctness
+    - govet          # includes shadow-ish checks, lostcancel, copylocks
+    - staticcheck    # the big one: SA bugs, ST style, S simplifications
+    - errcheck       # unchecked errors
+    - errorlint      # %w misuse, err == comparisons
+    - nilerr         # return nil after err != nil
+    - bodyclose      # unclosed http response bodies
+    - rowserrcheck   # rows.Err() after iteration
+    - sqlclosecheck  # rows/stmt Close
+    - noctx          # http requests without context
+    - contextcheck   # ctx not propagated
+    - containedctx   # ctx stored in struct
+    - copyloopvar    # obsolete loop-var copies (go >= 1.22)
+    - gosec          # security incl. G115
+    - musttag        # struct tags on (un)marshaled types
+    - nolintlint     # every //nolint names a linter, says why, still suppresses something
+  exclusions:        # v2 key; v1 used issues.exclude-rules
+    rules:
+      - path: _test\.go # tests only, one rule, with the reason
+        linters: [gosec]
+        text: G304       # golden/testdata paths built from t.Name()
+  settings:
+    nolintlint:
+      require-specific: true     # default false
+      require-explanation: true  # default false
+      allow-unused: false        # the default: an unused //nolint is itself an issue
+    errcheck:
+      check-type-assertions: true
+    gosec:
+      excludes: []        # triage per-finding with #nosec + justification
+    staticcheck:
+      checks: ["all"]
+formatters:
+  enable: [gofumpt, goimports]
+```
+
+Add per-repo: `prealloc`/`perfsprint` (perf-sensitive), `revive` (style
+depth), `exhaustive` (enum switches), `gomodguard` (dependency policy).
+Inline suppressions require a reason: General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1.
+`//nolint:gosec // G304: path validated by os.Root above` — bare `//nolint`
+is itself a LOW finding. **`nolintlint` makes that a gate, not a convention**: with the settings
+above `golangci-lint run` exits 1 on a bare `//nolint`, on one with no `// reason`, and on one
+whose linter no longer reports anything there (measured, golangci-lint 2.13.2). The unused
+check only covers linters that were enabled and ran. With default `uniq-by-line`, a
+real issue on the same line can hide the nolintlint report.
+
+**Strict linters versus test code: exempt by path in config, never by switching the linter
+off.** golangci-lint lints `_test.go` files by default (`run.tests: true`). When a construct
+the rules allow in tests trips a linter, scope the exemption to `_test\.go`, one linter, one
+rule (`text:`), as above. A v2 config takes it under `linters.exclusions.rules`; the v1 key
+`issues.exclude-rules` is rejected by a v2 binary (`golangci-lint config verify` exits 3,
+measured). `run.tests: false`, or a strict linter dropped project-wide because tests failed it,
+is a MEDIUM finding. Measured against this file: the golden-file example in §3 failed its own
+config (errcheck on an unchecked `os.WriteFile`, G304, G306) until it checked the error and
+wrote `0o600`. The G304 exemption above is the only one it needs.
+
+`staticcheck` ships inside golangci-lint; running the standalone binary too
+is fine but redundant. `gofumpt` over `gofmt`: stricter, zero-config,
+no debates.
+
+Version notes: use a golangci-lint release whose notes list your Go minor
+(v2.9.0 first supported 1.26, v2.13.0 first supports 1.27; take the latest
+stable and check its release notes). `noctx` now also flags missing-ctx `log/slog`,
+`os/exec` and `crypto/tls` call sites, not just HTTP requests; `errcheck`
+v1.10+ excludes `crypto/rand.Read` by default (it never fails).
+
+## 3. Test discipline
+
+**Table tests** are the default shape; name cases, use subtests:
+
+```go
+func TestParseLevel(t *testing.T) {
+    t.Parallel()
+    tests := map[string]struct {
+        in      string
+        want    Level
+        wantErr error
+    }{
+        "info":    {in: "info", want: LevelInfo},
+        "unknown": {in: "nope", wantErr: ErrBadLevel},
+    }
+    for name, tt := range tests {
+        t.Run(name, func(t *testing.T) {
+            t.Parallel()
+            got, err := ParseLevel(tt.in)
+            if tt.wantErr != nil {
+                if !errors.Is(err, tt.wantErr) {
+                    t.Fatalf("err = %v, want %v", err, tt.wantErr)
+                }
+                return
+            }
+            if err != nil { t.Fatal(err) }
+            if got != tt.want { t.Errorf("got %v, want %v", got, tt.want) }
+        })
+    }
+}
+```
+
+- **`t.Parallel()` correctness**: with `go.mod` ≥1.22 the loop-var capture
+  trap is gone; on older modules every parallel subtest needs `tt := tt`.
+  Parallel subtests + shared fixtures = races — fixtures must be per-subtest
+  or immutable. `t.Setenv`/`t.Chdir` are incompatible with `t.Parallel`
+  (panics — by design).
+- Use `t.Helper()` in assertion helpers, `t.Cleanup` over manual defers (runs
+  even on Fatal, ordered LIFO, works with subtests), `t.TempDir()` for files,
+  `t.Context()` (1.24+) for ctx.
+- Test behavior through exported APIs (`package foo_test`); reaching into
+  internals couples tests to refactors. `export_test.go` for the rare
+  internal hook.
+- Assertions: stdlib comparisons + `github.com/google/go-cmp` for deep diffs
+  (`cmp.Diff(want, got)` in the error message). testify is acceptable if
+  already in-house; don't mix styles.
+- **No time.Sleep synchronization** in tests — flaky by construction
+  (MEDIUM). Use channels, fakes for clocks, or `testing/synctest` (1.25):
+  `synctest.Test(t, func(t *testing.T){ ... })` runs goroutines in a bubble
+  with virtual time — `time.Sleep` completes instantly and deterministically.
+
+**Integration tests — testcontainers** over mocks for DB/queue behavior:
+
+```go
+func TestUserStore(t *testing.T) {
+    if testing.Short() { t.Skip("integration") }
+    ctx := t.Context()
+    pg, err := postgres.Run(ctx, "postgres:17-alpine",
+        postgres.WithDatabase("app"), postgres.BasicWaitStrategies())
+    testcontainers.CleanupContainer(t, pg)
+    if err != nil { t.Fatal(err) }
+    // connect, migrate, exercise the real store
+}
+```
+
+Gate with `testing.Short()` or build tags so `go test ./...` stays fast;
+CI runs both tiers. Mock at *your* consumer-side interfaces (hand-written
+fakes or `moq`/`mockgen` if codegen helps) — never mock `*sql.DB`.
+
+**Golden files** for large/structured outputs (rendered templates, JSON,
+codegen): store under `testdata/` (toolchain-ignored), compare bytes, update
+via flag:
+
+```go
+var update = flag.Bool("update", false, "rewrite golden files")
+
+golden := filepath.Join("testdata", t.Name()+".golden")
+if *update {
+    if err := os.WriteFile(golden, got, 0o600); err != nil { t.Fatal(err) }
+}
+want, err := os.ReadFile(golden)
+if err != nil { t.Fatal(err) }
+if diff := cmp.Diff(string(want), string(got)); diff != "" {
+    t.Errorf("mismatch (-want +got):\n%s", diff)
+}
+```
+
+Review golden diffs like code — `-update` runs that get rubber-stamped make
+the tests decorative.
+
+**Fuzzing** (native, 1.18+) for every parser/decoder/validator that touches
+untrusted bytes:
+
+```go
+func FuzzParseManifest(f *testing.F) {
+    f.Add([]byte(`{"v":1}`))                  // seed corpus
+    f.Fuzz(func(t *testing.T, data []byte) {
+        m, err := ParseManifest(data)
+        if err != nil { return }              // invalid input may error — must not panic
+        round, err := m.MarshalBinary()       // invariants: roundtrip, no panic, bounded output
+        if err != nil { t.Fatal(err) }
+        m2, err := ParseManifest(round)
+        if err != nil || !reflect.DeepEqual(m, m2) { t.Fatalf("round trip: %v", err) }
+    })
+}
+```
+
+The early `return` means a target can stay green while almost nothing parses. Prove reach as
+[`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6 says.
+In Go, assert that a counter is non-zero in an ordinary `TestXxx` that runs the seed corpus through
+the parser. A counter checked after `f.Fuzz` false-fails under `-fuzz`, because inputs run in
+separate worker processes.
+
+- **No proof tool is expected here.** Gobra, a verifier for Go, exists, but no bounded model checker or refinement checker is in
+  mainstream use for Go. A parser or invariant that must hold for
+  every input gets a property test and a fuzz target whose reach is gated (above): that is the
+  bar, and a PR says "fuzzed and property-tested", not "verified". Proof rules live where a
+  mature checker exists: [`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md) and [`sota-c-cpp` rules/06](../../sota-c-cpp/rules/06-build-tooling-ci.md) §4a.
+- **Mutation testing: gremlins**, gated through `.gremlins.yaml` (`unleash.threshold.efficacy`),
+  not the `--threshold-efficacy` flag, which was ignored when measured 2026-10-25 on v0.6.0 ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
+
+`go test -fuzz=FuzzParseManifest -fuzztime=60s` in a periodic CI job; commit
+found crashers from `testdata/fuzz/` as permanent regression seeds. Seeds run
+on every normal `go test`.
+
+Coverage: track trend, don't worship a number; `-coverprofile` +
+`go tool cover -func` in CI. Untested error paths matter more than the
+percentage.
+
+## 4. go.mod hygiene
+
+```
+module github.com/org/app
+
+go 1.(N-1).0       // language version: since 1.26, `go mod init` on toolchain 1.N writes the previous minor
+toolchain go1.N.P  // latest patch; verify at go.dev/doc/devel/release (reproducible builds across dev/CI)
+
+require ( ... )
+
+tool (             // 1.24+: tool dependencies, versioned & sum-verified
+    golang.org/x/tools/cmd/stringer
+    github.com/sqlc-dev/sqlc/cmd/sqlc
+)
+```
+
+- **`go` directive** is semantic, not decorative: it selects language
+  behavior per-module (loop-var scoping needs ≥1.22 — `rules/03 §5`). Keep it
+  within two releases of current (only the last two minors get security
+  fixes — an EOL `go` directive with no newer toolchain is a MEDIUM finding).
+- **`toolchain` directive** pins the exact compiler; CI and developers build
+  identically. Update deliberately (Dependabot/Renovate handle it).
+- **`tool` directives (1.24+)** replace the `tools.go` blank-import hack and
+  ad-hoc `go install tool@version` drift: `go get -tool <pkg>`, run via
+  `go tool stringer`. Tools become sum-verified supply chain (`rules/08 §1`).
+  Audit repos still using floating `go install foo@latest` in CI: MEDIUM.
+- `go mod tidy` clean in CI (diff check); `go mod verify` on release builds.
+- Versioning: tag semver; v2+ requires the `/v2` module path suffix —
+  retagging without it breaks consumers. Avoid `v0` forever for published
+  libraries; commit to v1 once the API settles.
+- Workspaces (`go.work`) for local multi-module dev only — **never commit
+  go.work to a library repo**; it's developer-machine state (`.gitignore` it).
+- `replace` directives in committed go.mod: temporary at best, document an
+  expiry; they don't apply to downstream consumers of a library (so a library
+  relying on `replace` is broken for users — HIGH).
+- **`require` is a floor, not a ceiling.** Under Minimal Version Selection the
+  build uses the **highest** version required anywhere in the module graph, and a
+  `require` line states a *minimum* — "required versions in go.mod files are
+  minimum versions and may be increased automatically" (go.dev/ref/mod). So
+  `require foo v1.2.3` — or a build-tool flag that becomes one, such as an
+  `xcaddy --with foo@v1.2.3` — **cannot cap** `foo`: if anything else in the graph
+  requires v1.5.0, you build v1.5.0 while your file reads v1.2.3. It is an exact
+  pin only for a **leaf** dependency nothing else requires. Only `replace` caps:
+  `exclude` drops a specific version and redirects that requirement to the *next
+  higher* one, so it cannot hold a module back either.
+- Used deliberately, the floor is the right tool for a CVE fix — requiring the
+  fixed version raises what gets selected without capping anything, and goes inert
+  once upstream requires it anyway. But **say which you mean**: "we pinned it"
+  reads as a ceiling to almost every reviewer, and for a transitive dependency it
+  is not one. Verify what was actually built with `go list -m <module>` (or
+  `go version -m ./bin/app`, §5) — never the `require` line you wrote. Same trap
+  from the supply-chain side: [`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.7.1.
+- **Adopting a new dependency — vet it before `go get`, whoever proposed it (you or an AI
+  assistant).** A module path *is* a repository URL, so the typosquat is a look-alike owner or
+  repo name, and an assistant may name a path that does not exist or was created last week.
+  Checks: `go list -m -json <mod>@latest` (fails if the path does not resolve; `Time` and
+  `Origin.URL` show the newest release and the repo it really came from);
+  `go list -m -versions <mod>` (a lone, days-old version is a red flag); pkg.go.dev (licence,
+  "Imported by", source link); deps.dev — `api.deps.dev/v3/systems/go/packages/<url-encoded
+  path>` gives publish dates, deprecation, licences and advisory keys, and
+  `/v3/projects/github.com%2F<owner>%2F<repo>` adds open issues and the OpenSSF Scorecard
+  (also `api.securityscorecards.dev/projects/github.com/<owner>/<repo>`, whose `Maintained`
+  check scores recent activity); advisories via vuln.go.dev / `govulncheck`. No Go registry
+  lists maintainers — read contributor and commit history on the origin repo. After adding,
+  `go list -m -u -retracted -json <mod>` surfaces `Deprecated`/`Retracted`. Review the code the
+  proxy serves (`go mod download -json <mod>@<ver>` → `Dir`), not the forge's current tree:
+  proxy.golang.org keeps a version cached after the author deletes it at the origin. The
+  "earns its place" bar is `rules/08 §1`.
+- **A library's security-relevant defaults are your code.** Review every option you pass to a
+  dependency — and every one you leave at its default — as you would your own. Verified in
+  source: `github.com/rs/cors` (v1.11.1) — `cors.Options` with no `AllowedOrigins` and no
+  `AllowOriginFunc` allows **every** origin; `github.com/gin-gonic/gin` (v1.12.0) — mode is
+  `debug` unless `GIN_MODE=release`/`gin.SetMode(gin.ReleaseMode)`, and the engine trusts
+  `X-Forwarded-For`/`X-Real-IP` from any peer (`0.0.0.0/0`, `::/0`) until
+  `SetTrustedProxies` is called, so `c.ClientIP()` is caller-chosen;
+  `github.com/golang-jwt/jwt/v5` (v5.3.1) — `jwt.Parse`/`ParseWithClaims` accept any `alg` the
+  keyfunc tolerates unless `jwt.WithValidMethods(...)` is passed; `github.com/gorilla/websocket`
+  (v1.5.3) — `Upgrader{}` with nil `CheckOrigin` rejects a cross-origin handshake, but the
+  deprecated package-level `websocket.Upgrade` func accepts every origin.
+- **README and `examples/` code is a demo, not a baseline.** Copying a sample imports its
+  settings: gorilla/websocket's own `examples/autobahn` sets `CheckOrigin` to `return true`;
+  samples routinely carry `InsecureSkipVerify: true`, `AllowedOrigins: []string{"*"}` or a
+  debug mode. Re-derive each security option from your threat model when you paste.
+  (OWASP: Vulnerable Dependency Management; Software Supply Chain Security; Secure Coding with
+  AI cheat sheets; SCVS V1, V6.)
+
+## 5. Reproducible builds & release
+
+- Build with `-trimpath`; inject version via
+  `-ldflags="-X main.version=$(git describe --tags)"` or read
+  `debug.ReadBuildInfo()` (embeds VCS revision automatically).
+- `CGO_ENABLED=0` for static binaries unless cgo is required (`rules/05 §7`);
+  distroless/scratch base images.
+- `go version -m ./bin/app` audits any binary's module versions and build
+  settings — use it on artifacts you didn't build.
+
+## Audit checklist
+
+- [ ] **CI gates present? Inspect workflow files** (§1) —
+      `grep -rnE '(go test|race|govulncheck|golangci-lint|staticcheck|gofumpt)' .github/workflows/ Makefile* 2>/dev/null`
+      ;
+      `grep -rn 'test -race' . --include='*.yml' --include='*.yaml' --include='Makefile*' || echo 'NO RACE IN CI — HIGH'`
+- [ ] **Lint config exists and is curated (not empty, not enable-all)** (§2) —
+      `ls .golangci.yml .golangci.yaml 2>/dev/null` ;
+      `grep -n 'enable-all\|disable-all' .golangci.y*ml 2>/dev/null`
+- [ ] **Suppressions that expire (§2) — LOW, MEDIUM when the suppressed linter is gosec** —
+      `grep -nE 'nolintlint|require-(specific|explanation)|allow-unused' .golangci.y*ml 2>/dev/null`
+      (no `nolintlint` with both `require-*: true`, or `allow-unused: true`, means
+      suppressions never expire)
+- [ ] **Test-code exemptions in config, not global (§2) — MEDIUM** —
+      `grep -nE '^[[:space:]]*(exclude-rules|exclude-dirs|exclude-files):|^[[:space:]]*tests:[[:space:]]*false' .golangci.y*ml 2>/dev/null`
+      (v1 keys a v2 binary rejects, or tests not linted at all) ; `golangci-lint config verify` ;
+      read every `exclusions.rules` entry: no `path:` means it applies to production code too
+- [ ] **Escape hatch without its runtime checker (§1) — HIGH** —
+      `grep -rqE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null || grep -rlE 'unsafe\.Pointer|^import "C"' --include='*.go' .`
+      (lists the unsafe/cgo files only when no CI line runs a checker: nothing checks them) ; the checker
+      lines themselves: `grep -rnE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null`
+- [ ] **Suppression hygiene** (§2) — `grep -rnE '//[[:space:]]+nolint' --include='*.go' .`
+      (malformed); `grep -rnE '//nolint(:\w+)?$' --include='*.go' .` (no justification — LOW);
+      `grep -rnE '#nosec([[:space:]]+G[0-9]+)*[[:space:]]*$' --include='*.go' .` (a bare `#nosec` with no `-- reason`: justify each)
+- [ ] **go.mod hygiene** — `grep -E '^(go|toolchain) ' go.mod` (version current? toolchain
+      pinned?); `grep -A5 '^tool' go.mod` (1.24 tool directives in use?);
+      `grep -rlE '^//go:build tools' --include='*.go' .` (legacy pattern — migrate (LOW));
+      `grep -rn 'go install .*@latest' .github/ Makefile* 2>/dev/null` (floating tools —
+      MEDIUM); `git ls-files | grep 'go.work$' && echo 'go.work committed — check intent'` ;
+      `grep -E '^replace' go.mod` ; `go list -m <module>` (the SELECTED version — `require` is a
+      floor, not a cap (§4))
+- [ ] **New dependency adoption & insecure defaults (§4) — MEDIUM, HIGH on an auth/origin/CORS
+      path** — each module a PR adds to go.mod (`git diff <base> -- go.mod`) gets the §4
+      selection checks (`go list -m -json <mod>@latest` resolves? deps.dev / Scorecard reviewed?);
+      `grep -rnE 'cors\.(AllowAll|Default)\(|cors\.Options\{\}|AllowedOrigins:[[:space:]]*\[\]string\{"\*"\}|CheckOrigin:[[:space:]]*func\([^)]*\)[[:space:]]*bool[[:space:]]*\{[[:space:]]*return true|websocket\.Upgrade\(|jwt\.Parse(WithClaims)?\(' --include='*.go' . | grep -v WithValidMethods`
+      (library left at, or copied to, a permissive default) ; the gofmt multi-line
+      `CheckOrigin` (body's first line `return true`):
+      `grep -rnA1 -E 'CheckOrigin:[[:space:]]*func\([^)]*\)[[:space:]]*bool[[:space:]]*\{[[:space:]]*$' --include='*.go' . | grep -E -- '-[0-9]+-[[:space:]]*return[[:space:]]+true[[:space:]]*$'` ;
+      `grep -rlE 'gin\.(Default|New)\(' --include='*.go' . | xargs -r grep -L 'SetTrustedProxies'`
+      (gin engine trusting every proxy). Single-line shapes only: a multi-line `cors.Options{`
+      or `jwt.Parse(` call needs reading
+- [ ] **Fuzz targets prove reach (§3) — MEDIUM for a parser of untrusted bytes** — each
+      `func Fuzz` with an early `return` on error has an ordinary `TestXxx` asserting that
+      seeds got past the parse, and its round-trip compares values instead of discarding them
+      (`grep -rnA8 'f\.Fuzz(func' --include='*_test.go' . | grep -E '_ = '`)
+- [ ] **Test quality** (§3) — `grep -rln 'func Test' --include='*_test.go' . | wc -l` ;
+      `grep -rn 't.Parallel' --include='*_test.go' . | wc -l` ;
+      `grep -rn 'time.Sleep' --include='*_test.go' .` (flaky sync — MEDIUM);
+      `grep -rln 'func Fuzz' --include='*_test.go' .` (parsers fuzzed?);
+      `ls testdata/fuzz 2>/dev/null` (crash corpus committed?);
+      `grep -n 'testcontainers' go.mod` ; `go test -shuffle=on ./...` (ordering deps?);
+      `go test -race -count=3 ./...`
+- [ ] **Reproducible builds (§5) — LOW** —
+      `git grep -nE 'go build' -- '*Makefile*' '*Dockerfile*' '*.sh' '*.y*ml' | grep -v -- '-trimpath'`
+      (a build line without `-trimpath`; `git grep` reaches `.github/`, which standalone ugrep skips) ;
+      `go version -m <binary>` on every artifact you did not build (module versions, build settings)
+- [ ] **Formatting drift** (§1, §2) — `gofumpt -l . | head` ; `goimports -l . | head`
+- [ ] **Toolchain & vuln state** — `go version; go env GOTOOLCHAIN` ; `govulncheck ./...`
+
+Severity guide: no `-race`/govulncheck in CI HIGH; library shipping `replace`
+HIGH; EOL toolchain MEDIUM; floating tool versions MEDIUM; a `require`
+cited as a version *cap* for a non-leaf dependency MEDIUM (it is a floor — §4); sleep-synced or
+order-dependent tests MEDIUM; missing table tests / `t.Parallel` / golden
+review discipline LOW.

@@ -1,0 +1,324 @@
+# 03 — Kubernetes Network Policy Depth
+
+Scope: Kubernetes `NetworkPolicy`, `CiliumNetworkPolicy` (CNP/CCNP), the namespaced default-deny
+pattern (ingress AND egress), the "default-deny that isn't" trap, the cluster-scoped
+AdminNetworkPolicy / BaselineAdminNetworkPolicy (ANP/BANP) API, L7 + identity-based policy,
+DNS-aware egress, egress gateways, and Hubble flow visibility. Examples here use a **Cilium**-based cluster as the worked case.
+
+Where this sits: **[sota-kubernetes](../../sota-kubernetes/SKILL.md)** owns admission/RBAC and *that NetworkPolicy is admitted and the
+CNI is wired*; this skill owns the policy *content and depth*. [sota-cloud-infrastructure rules/03](../../sota-cloud-infrastructure/rules/03-networking.md)
+owns the cluster's VPC/subnet/IPAM. [sota-detection-engineering](../../sota-detection-engineering/SKILL.md) consumes Hubble flows.
+
+Verified (2026-07): Cilium fully implements the upstream `networking.k8s.io/v1` NetworkPolicy and
+adds L7 via Envoy — run the latest stable patch and verify the current release with a quick search
+at time of use (the 2026 patch train fixed policy-bypass CVEs; see §4). The sig-network
+network-policy-api project merged ANP+BANP into a single **`ClusterNetworkPolicy` CRD at
+`policy.networking.k8s.io/v1alpha2`** (design NPEP-285 merged Jul 2025; **released in v0.2.0,
+Apr 2026**; a `tier` field selects Admin vs Baseline, the `Allow` action is renamed `Accept`, and
+`ports` is replaced by `protocols`) — still ALPHA, out-of-tree; ANP/BANP `v1alpha1` remain usable
+at v0.1.7. Pin behavior; don't assume GA semantics (verified 2026-09-26 against the project's
+GitHub releases).
+
+---
+
+## 1. The two failure modes this file exists to kill
+
+1. **No policy at all** — Kubernetes is allow-all by default. A namespace with zero NetworkPolicies
+   lets every pod talk to every other pod, cluster-wide. Each such namespace is a flat segment.
+2. **The "default-deny that isn't"** — a baseline policy that *looks* restrictive but effectively
+   allows all intra-cluster traffic (e.g. an allow-from `namespaceSelector: {}` matching every
+   namespace, or an egress allow to `0.0.0.0/0`, or a "deny" policy that only covers ingress while
+   egress stays open). This is more dangerous than no policy because it reads as "we're covered."
+
+**R1 — Always verify default-deny empirically.** Don't trust the policy's name or that one exists.
+Probe:
+
+```bash
+# From an unrelated namespace, traffic to a target must be REFUSED if default-deny works.
+kubectl -n scratch run probe --rm -it --image=nicolaka/netshoot --restart=Never -- \
+  sh -c 'curl -sm3 http://target.othernamespace:8080 && echo LEAKED || echo denied'
+# Egress test: can a pod reach the internet when it shouldn't?
+kubectl -n payments exec deploy/api -- sh -c 'curl -sm3 https://example.com && echo EGRESS_OPEN'
+```
+
+## 2. The namespaced default-deny pattern (ingress AND egress)
+
+**R2 — Every namespace gets a default-deny for BOTH directions, then explicit allows.** An
+ingress-only default-deny leaves egress wide open (free C2/exfil — see §5 and [rules/05](05-edge-ingress-egress.md)).
+
+```yaml
+# GOOD: per-namespace default-deny, both directions
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: default-deny, namespace: payments }
+spec:
+  podSelector: {}            # all pods in the namespace
+  policyTypes: [Ingress, Egress]   # BOTH — the common mistake is omitting Egress
+  # no ingress/egress rules => deny all in both directions
+```
+
+Then add narrow allows. Note the subtle trap below — it is the "default-deny that isn't":
+
+```yaml
+# BAD: reads as a policy, but allows the whole cluster in.
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+  - from: [{ namespaceSelector: {} }]   # {} matches EVERY namespace = allow-all ingress
+```
+
+**R3 — Allow DNS explicitly, or default-deny egress breaks everything.** Once egress is denied,
+pods can't resolve names. Allow egress to kube-dns/CoreDNS on 53 (and prefer the L7 DNS-aware form
+in §5 so you also constrain *which* names resolve):
+
+```yaml
+egress:
+- to: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } } }]
+  ports: [{ protocol: UDP, port: 53 }, { protocol: TCP, port: 53 }]
+```
+
+## 3. Standard NetworkPolicy: powers and limits
+
+`networking.k8s.io/v1` NetworkPolicy is namespaced, additive (allows union; deny is the absence of
+allow), and selects by pod labels, namespace labels, or `ipBlock`. Limits to know:
+- **No L7** (no HTTP path/method), **no FQDN** (only IPs/CIDRs in `ipBlock`), **no explicit deny**
+  (no priority/deny — you express deny by *not* allowing), **no cluster-scoped** baseline.
+- `ipBlock` and in-cluster IPs — **state which implementation you mean, the default is
+  opposite between them.** Under upstream `NetworkPolicy` a broad `ipBlock` can re-open
+  intra-cluster paths, because pod IPs fall inside the CIDR. Under **Cilium — which this
+  file's examples assume** — *"CIDR-based selectors do not match in-cluster entities (pods or
+  nodes)"* by default, and matching pods that way needs `--policy-cidr-match-mode=pods`
+  (which allocates an identity per matching pod, so it is not free)
+  ([Cilium L3 policy](https://docs.cilium.io/en/stable/security/policy/layer3/), verified
+  2026-09-16). So the same manifest has two different blast radii depending on the CNI:
+  check the mode before filing either the finding or the all-clear, and prefer identity
+  selectors for pod-to-pod policy as §below advises.
+
+**R3a — where the "never a bare CIDR" non-negotiable does and does not bind.** This skill's
+non-negotiable 3 says every allow references identity, never a bare CIDR. Read literally against
+vanilla NetworkPolicy it is unsatisfiable for **external** destinations, because the list above is
+exhaustive: there is no identity selector for anything outside the cluster, so `ipBlock` is the only
+expressible form. Scope it explicitly, in both directions:
+
+- **In-cluster peer → identity, no exception.** `podSelector`/`namespaceSelector`, never the pod
+  CIDR. Pod IPs are ephemeral and reused, so a CIDR grants whatever occupies the range next — the
+  allow widens with no change to the manifest, and nothing reports it.
+- **Out-of-cluster peer → `ipBlock` is a documented exception, not a default.** Name the destination
+  and the reason in a comment, keep the prefix to what the peer actually needs (a `/32` for one
+  host, not the VPC `/16`), and treat it as a standing argument to move that policy to a CNI that
+  *can* express identity — Cilium `toFQDNs` for named services, `toEntities` for cluster/host
+  classes (§4, §5). Auditing it is a two-step: an `ipBlock` whose CIDR overlaps the pod or service
+  range is the in-cluster case wearing the exception's clothes, and is a finding.
+
+Recorded 2026-09-11 from a measured cross-skill conflict: [`sota-sandboxing` rules/03](../../sota-sandboxing/rules/03-containers-microvms.md) R3.4 shipped a
+reference egress policy using `ipBlock` for an in-cluster backend, which this file's absolute
+forbade and which was the weaker pattern anyway. Both sides were fixed — the example now selects by
+identity, and the absolute now says where it binds.
+
+On a Cilium cluster, prefer **CiliumNetworkPolicy** for anything needing identity-based,
+L7, FQDN, or cluster-wide policy; keep plain NetworkPolicy for portable baselines.
+
+## 4. CiliumNetworkPolicy: identity, L7, FQDN
+
+**R4 — Use identity-based selectors and L7 where they tighten the rule.** Cilium enforces by
+*identity* (derived from labels) in eBPF, not by IP, so policy survives churn.
+
+```yaml
+# GOOD: identity + L7 — api may call billing ONLY on POST /charge
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: { name: api-to-billing, namespace: payments }
+spec:
+  endpointSelector: { matchLabels: { app: billing } }
+  ingress:
+  - fromEndpoints: [{ matchLabels: { app: api } }]
+    toPorts:
+    - ports: [{ port: "8080", protocol: TCP }]
+      rules:
+        http: [{ method: "POST", path: "/charge" }]
+```
+
+Beware the **`world` / `reserved:world` entity** and `toCIDR: 0.0.0.0/0` — allowing them on a
+sensitive endpoint is the Critical over-broad finding from [rules/02](02-segmentation-blast-radius.md) (the real OpenBao/Grafana/
+registry-from-`world` case). Audit every CNP for `world`, `all`, `0.0.0.0/0`.
+
+**Patch floor (2026 advisories, as of 2026-09-26):** Cilium below **1.19.6 / 1.18.12 / 1.17.18**
+has published policy-bypass, hijack or identity-spoofing advisories that undermine this file's
+guarantees. Each is a "fixed in" floor, not a statement of the latest release:
+- CVE-2026-33726 — L7 proxy could bypass NetworkPolicy for same-node traffic (fixed 1.19.2/1.18.8/1.17.14).
+- CVE-2026-49445 (critical) — Envoy admin socket exposure with L7 enabled (fixed 1.19.2/1.18.8/1.17.14).
+- GHSA-vh48-r624-p8v7 (no CVE) — ingress host and L7 policies bypassed when attaching to a VLAN
+  interface and its parent (fixed 1.18.9/1.17.15; the 1.16 line has no fix).
+- CVE-2026-53935 — `CiliumLocalRedirectPolicy` `addressMatcher` cross-namespace hijack (fixed 1.19.4/1.18.10/1.17.16).
+- CVE-2026-56743 — a NetworkPolicy with an `ipBlock` could admit ingress from the local
+  namespace (fixed 1.19.5; 1.19 only).
+- CVE-2026-56742 — namespaced HTTPRoutes could redirect traffic to other namespaces (fixed 1.19.5/1.18.11/1.17.17).
+- CVE-2026-77531 — secret-sync name collision, cross-namespace L7 policy bypass (fixed 1.19.6/1.18.12/1.17.18).
+- CVE-2026-83620 — identity spoofing in the beta mutual-authentication feature by appending the
+  target's certificate to the chain (fixed 1.19.6/1.18.12/1.17.18; see the verified-status note at the top of [rules/04](04-service-mesh-mtls.md)).
+
+The 1.20 line (first release 2026-07-29) is listed as affected by none of these; the last 1.17
+patch published was 1.17.18 (2026-07-16) — confirm that line's support status before relying on
+it. Check the running version against
+[Cilium's security advisories](https://github.com/cilium/cilium/security/advisories) rather than
+this list, which only grows.
+
+## 5. Egress control & DNS-aware egress
+
+**R5 — Egress is first-class; allowlist by FQDN, not open `0.0.0.0/0`.** Cilium's DNS-aware policy
+snoops DNS to map allowed names to IPs, so you can allowlist destinations by domain:
+
+```yaml
+# GOOD: pod may resolve+reach only api.stripe.com; everything else denied
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: { name: egress-stripe-only, namespace: payments }
+spec:
+  endpointSelector: { matchLabels: { app: billing } }
+  egress:
+  - toEndpoints: [{ matchLabels: { k8s:io.kubernetes.pod.namespace: kube-system, k8s-app: kube-dns } }]
+    toPorts:
+    - ports: [{ port: "53", protocol: UDP }]
+      rules: { dns: [{ matchPattern: "*.stripe.com" }] }   # constrain WHICH names resolve
+  - toFQDNs: [{ matchName: "api.stripe.com" }]
+    toPorts: [{ ports: [{ port: "443", protocol: TCP }] }]
+```
+
+**R6 — Block the cloud metadata endpoint from pods.** Pod egress never includes `169.254.0.0/16`
+(or `fd00:ec2::254`); where a broad egress allow exists, deny the range explicitly. The rule —
+SSRF chain, IMDSv2, the on-prem case — is [rules/05](05-edge-ingress-egress.md) §6 R10; what is specific to
+pods is the workload-identity carve-out below.
+
+**R6a — Workload identity needs one link-local address, never the range.** Keep the block when pods
+use workload identity; open exactly the endpoint it uses, for exactly the service accounts that use it:
+
+| Mechanism | Pods must reach | Source |
+|---|---|---|
+| GKE Workload Identity Federation | `169.254.169.252/32` TCP 988; on GKE Dataplane V2 also `169.254.169.254/32` TCP 80 (the GKE metadata server, which answers in place of the node's) | GKE "About Workload Identity Federation for GKE" |
+| EKS Pod Identity | `169.254.170.23/32` and `fd00:ec2::23/128`, TCP 80 (the agent's URL, `http://169.254.170.23/v1/credentials`, names no port) | EKS "Set up the Amazon EKS Pod Identity Agent" |
+| EKS IRSA | none: the SDK exchanges a projected token with STS (`AssumeRoleWithWebIdentity`) over 443 | EKS "Understand how EKS Pod Identity works" |
+
+*(verified 2026-10-26 against those three pages.)* **Where the exception goes depends on the policy
+engine.** Standard NetworkPolicy has no deny and allows are additive, so a separate `/32` allow next
+to an `ipBlock` whose `except` lists `169.254.0.0/16` works. In Cilium, **"Deny policies take
+precedence over allow policies"** (Cilium docs, `deny.rst`), so an `egressDeny` of `169.254.0.0/16`
+plus an allow of the `/32` still drops it: write the carve-out into the deny's own `toCIDRSet`
+`except:` list instead. A rule that blocks the whole range with no carve-out breaks credential
+fetches on every workload-identity pod — and the usual "fix" is to delete the block.
+
+**R7 — Egress gateways for stable, inspectable egress.** When external partners allowlist your
+source IP, or you want all egress through one inspected choke point, use a **Cilium egress gateway**
+(SNAT cluster egress to fixed node IPs). This pairs with FQDN policy: gateway = where you route and
+log, FQDN policy = what's allowed.
+
+## 6. Cluster-scoped baselines: ANP / BANP (alpha — handle with care)
+
+**R8 — Use ANP/BANP for cluster-wide guardrails the way RBAC uses ClusterRoles — but pin the alpha.**
+- **AdminNetworkPolicy (ANP)**: cluster-scoped, *priority-ordered*, supports explicit **Deny/Allow/
+  Pass** (unlike namespaced NetworkPolicy). Use for non-overridable org rules: "no namespace may
+  egress to the metadata IP," "deny all cross-tenant traffic." Evaluated *before* NetworkPolicy.
+- **BaselineAdminNetworkPolicy (BANP)**: a single cluster-scoped default (e.g. cluster-wide
+  default-deny) that namespaced NetworkPolicy can *override*. Use it to make default-deny the
+  cluster baseline so a new namespace isn't accidentally allow-all.
+
+Status: the `policy.networking.k8s.io` CRDs are **alpha**, out-of-tree. Since network-policy-api
+v0.2.0 (Apr 2026) ANP+BANP are consolidated into **`ClusterNetworkPolicy` (v1alpha2)** —
+`tier: Admin` replaces ANP, `tier: Baseline` replaces BANP, actions are `Accept`/`Deny`/`Pass`
+(`Allow` became `Accept`), and ports are expressed under `protocols` — and the working group will base the beta on ClusterNetworkPolicy,
+so plan migration toward it. Cilium and others implement subsets; **verify your CNI's support
+matrix and pin versions** — don't build a control you can't test. Until it's solid in your
+cluster, a Cilium *clusterwide* policy (CCNP) achieves the cluster-scoped default-deny today.
+
+```yaml
+# Cilium clusterwide default-deny baseline — kube-system excluded, DNS allowed
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata: { name: default-deny-all }
+spec:
+  endpointSelector:
+    matchExpressions:
+    - { key: io.kubernetes.pod.namespace, operator: NotIn, values: [kube-system] }
+  ingress: [{}]    # ONE empty rule: allows nothing, but puts selected endpoints in ingress default-deny
+  egress:
+  - toEndpoints: [{ matchLabels: { io.kubernetes.pod.namespace: kube-system, k8s-app: kube-dns } }]
+    toPorts: [{ ports: [{ port: "53", protocol: UDP }, { port: "53", protocol: TCP }] }]
+```
+
+`endpointSelector: {}` would also select kube-system — CoreDNS, the Cilium operator, Hubble —
+and cut the cluster's own DNS and control traffic; exclude it (as Cilium's own default-deny
+example does) and give kube-system a narrower policy of its own. The DNS allow is what keeps
+every namespace resolving once egress is in default-deny (R3).
+
+## 7. Hubble flow visibility
+
+**R9 — Turn on Hubble; you cannot secure flows you can't see.** Hubble gives L3/4 and L7 flow
+visibility and is how you (a) verify a policy actually denies, (b) author tight policies from
+observed traffic, (c) feed network telemetry to detection ([sota-detection-engineering](../../sota-detection-engineering/SKILL.md) owns the
+detection content — DNS-exfil, anomalous flows). Export flows; don't leave Hubble UI-only.
+
+```bash
+hubble observe --namespace payments --verdict DROPPED   # what's being denied (tighten or fix)
+hubble observe --to-fqdn '*.metadata*'                  # anyone reaching metadata-ish names?
+hubble observe --to-ip 169.254.169.254 --to-ip fd00:ec2::254   # IMDS by IP (no FQDN to match)
+hubble observe --from-pod payments/api --protocol http  # author L7 policy from real traffic
+```
+
+**R9.1 — Prune allows nobody uses: diff permitted against observed.** Policies accrete; an allow
+added for a migration or a debug session stays forever. On a schedule (and before each audit),
+take the flows that were forwarded by policy — `hubble observe --verdict FORWARDED
+-o json` — over at least one full business cycle, reduce them to (source identity,
+destination identity, port) tuples, and compare with the tuples each CNP/NetworkPolicy permits.
+An allow with no matching flow is a removal candidate (confirm with the owner, remove it, watch
+for drops); a flow that passed only through a broad rule gets a narrow rule of its own. The
+Hubble CLI reads the fixed-size in-memory flow buffer, so it holds only a recent window —
+run the diff over exported flow logs, not the live buffer. The general loop is [rules/01](01-zero-trust-architecture.md) R8.1.
+OWASP: Kubernetes Security cheat sheet, Zero Trust Architecture cheat sheet.
+
+## 8. Cluster mesh (multi-cluster)
+
+**R10 — Cluster mesh extends *identity and policy*, not a flat L3.** With Cilium Cluster Mesh,
+identities and CNP selectors span clusters — but that means a too-broad cross-cluster allow now has
+multi-cluster blast radius. Apply the same default-deny + identity-scoped allows across the mesh;
+audit cross-cluster policies for `world`/wildcard exactly as single-cluster.
+
+## Audit checklist
+
+- [ ] Does *every* namespace have a default-deny for **both** Ingress and Egress? List namespaces
+      with no NetworkPolicy/CNP: those are flat segments (§1, §2).
+- [ ] Is any "default-deny" actually allow-all? Hunt `namespaceSelector: {}`, `podSelector: {}` on
+      the *from* side, missing `Egress` in `policyTypes`, `0.0.0.0/0`/`world`/`reserved:world` in
+      CNPs. Then **probe** cross-namespace and egress reachability to confirm (§1).
+- [ ] Is DNS allowed explicitly under default-deny egress (else everything breaks), and is the DNS
+      policy constraining *which* names resolve (§2, §5)?
+- [ ] Is egress FQDN-allowlisted for sensitive namespaces, not open to `0.0.0.0/0`? Where partners
+      allowlist your source IP, or egress must pass one inspected point, does it leave through an
+      egress gateway (§5)?
+- [ ] Metadata-range block in pod egress (the block and its proof: [rules/05](05-edge-ingress-egress.md) §6 checklist):
+      is workload identity opened only at its own `/32` for its own service accounts, and in
+      Cilium carved out of the deny's `except:` rather than allowed beside it (§5, R6a)?
+- [ ] Every `ipBlock` justified: `grep -n 'ipBlock' -r policies/` and for each hit ask which side
+      of §3's R3a it is on — an **in-cluster** peer written as a CIDR is a finding (recycled pod
+      IPs re-point it silently), and an external one needs the destination, the reason, and a
+      prefix no wider than the peer. A CIDR overlapping the pod/service range is in-cluster
+      regardless of what the comment claims
+- [ ] Are sensitive services (secrets/DB/registry/admin) selected by identity and reachable only
+      from declared callers? Prove with Hubble + a probe. Audit every CNP for the `world`, `all`
+      and `0.0.0.0/0` peers, and use L7 rules where they tighten the allow (§4).
+- [ ] Is there a cluster-scoped default-deny baseline (BANP/ANP if stable, else
+      CiliumClusterwideNetworkPolicy) so new namespaces aren't allow-all (§6)?
+- [ ] Is Hubble enabled and flows exported to detection, not left UI-only (§7)?
+- [ ] **Medium — unused allows (§7, R9.1).** Is there a recurring permitted-vs-observed diff over
+      exported flows (`hubble observe --verdict FORWARDED -o json` as the source shape), with unused
+      allows removed and broad-rule-only flows given narrow rules?
+- [ ] ANP/BANP/ClusterNetworkPolicy usage: is the alpha API status pinned, CNI support verified,
+      and migration to `ClusterNetworkPolicy` (v1alpha2, tiered; `Accept`, `protocols`) planned (§6)?
+- [ ] Is Cilium at/above the 2026 advisory-fix floor (1.19.6 / 1.18.12 / 1.17.18 as of
+      2026-09-26) and checked against the current security advisories (§4)?
+- [ ] Does a clusterwide default-deny (CCNP) exclude kube-system and allow kube-dns on 53, rather
+      than selecting every endpoint with `endpointSelector: {}` (§6)?
+- [ ] **High — a broad allow spans the cluster mesh (§8, R10).** If `cilium clustermesh status`
+      shows connected clusters, run the over-broad hunt in *every* cluster's context, not only the
+      one you are on: `kubectl --context <ctx> get cnp,ccnp -A -o yaml | grep -nE -e '- (world|all)$|reserved:world|0\.0\.0\.0/0'`
+      — each hit carries multi-cluster blast radius; every cluster in the mesh holds the same
+      default-deny and identity-scoped allows.

@@ -1,0 +1,327 @@
+# 02 — Error Handling & Panic Policy
+
+Errors are API. Panics are program-integrity violations, not control flow.
+These rules define the library/application split, the unwrap policy, and how
+panics interact with servers and FFI.
+
+## 1. The library/application split
+
+- **Libraries**: concrete, structured error enums via `thiserror`. Callers must
+  be able to match on failure modes without string-parsing.
+- **Applications** (binaries, services, CLIs): `anyhow` (or `eyre` if you want
+  custom report handlers/spantrace) — context-rich, cheap to propagate, rendered
+  once at the top.
+- Never expose `anyhow::Error` in a library's public API; never build elaborate
+  error enums in app code that only ever get printed.
+
+```rust
+// LIBRARY (thiserror)
+#[derive(Debug, thiserror::Error)]
+pub enum StoreError {
+    #[error("key not found: {0}")]
+    NotFound(String),
+    #[error("serialization failed")]
+    Serde(#[from] serde_json::Error),
+    #[error("io error accessing {path}")]
+    Io { path: PathBuf, #[source] source: std::io::Error },
+}
+
+// APPLICATION (anyhow)
+use anyhow::{Context, Result};
+fn load_config(path: &Path) -> Result<Config> {
+    let raw = fs::read_to_string(path)
+        .with_context(|| format!("reading config {}", path.display()))?;
+    toml::from_str(&raw).context("parsing config TOML")
+}
+```
+
+## 2. Designing library error types
+
+- One error enum **per fallible subsystem**, not one giant crate-wide enum where
+  every function claims it can fail in 14 ways it can't. If a function has two
+  failure modes, its error type should show two.
+- Preserve sources: `#[source]` (or `#[from]`) so `Error::source()` chains work
+  and `anyhow` callers get full causality. Don't flatten causes into strings.
+- `#[from]` only when the conversion is unambiguous; if two variants wrap
+  `io::Error`, use explicit constructors with context (path, operation) instead.
+- Mark public error enums `#[non_exhaustive]` so adding failure modes is
+  non-breaking.
+- Errors must be `Debug + Display + Send + Sync + 'static` (and implement
+  `std::error::Error`) — otherwise they won't flow through `anyhow`/`Box<dyn>`.
+- Don't `impl From<MyError> for String` or stringly-type errors. Display is for
+  humans; variants are for machines.
+- Big errors slow every `Result` return: keep error types ≤ ~3 words or box the
+  payload (`clippy::result_large_err` flags >128 bytes).
+
+## 3. Context discipline
+
+- Add context **at each boundary where information exists that the callee
+  lacked**: file paths, IDs, request params. `?` alone up a 6-frame stack
+  yields "No such file or directory" with no idea which file.
+- `with_context(|| ...)` (lazy) over `context(format!(...))` (eager allocation
+  on success path).
+- In services, attach machine context to spans (`tracing` fields), human
+  context to the error. Log errors **once**, at the handling site, with
+  `{:#}`/error-chain rendering — not at every propagation hop (double-logging
+  audit smell).
+
+## 4. unwrap/expect policy
+
+**Production code paths: no `unwrap()`. `expect()` only with an invariant
+message — a message stating why this cannot fail, not what failed.**
+
+```rust
+// BAD
+let port = env::var("PORT").unwrap();
+let re = Regex::new(pattern).unwrap();           // user-supplied pattern!
+
+// ACCEPTABLE: invariant expect — message states the reason it can't fail
+let re = Regex::new(r"^[a-z]+$").expect("static regex is valid");
+let ts = UNIX_EPOCH.elapsed().expect("system clock before 1970");
+
+// GOOD: fallible inputs propagate
+let port: u16 = env::var("PORT")
+    .context("PORT not set")?
+    .parse()
+    .context("PORT is not a valid u16")?;
+```
+
+- Convention: messages read as "this holds because…" — `expect("mutex not
+  poisoned: no panicking critical sections")`. If you can't write the
+  invariant, you don't have one; return an error.
+- `unwrap()` is fine in: tests, benches, examples, doc-tests, build scripts,
+  and `const`/static init where failure is a compile-mistake. Gate the rest:
+  `#![warn(clippy::unwrap_used)]` (and `clippy::expect_used` in the strictest
+  crates), with `#[allow]` + justification at the call site when truly needed.
+- Slicing/indexing (`xs[i]`, `&s[a..b]`) and integer `as` casts are implicit
+  unwraps — use `.get(i)`, `s.get(a..b)`, `try_into()` on untrusted values
+  (string slicing also panics on non-char-boundary).
+- `unreachable!()` must carry the proof: `unreachable!("len checked > 0 above")`.
+- **A wall clock that steps backwards is an input, not an invariant.** The std docs say
+  `SystemTime` *"is not monotonic"*, and its `duration_since` and `elapsed` return `Err`
+  because earlier readings are not guaranteed to precede later ones (*"the system clock being
+  adjusted either forwards or backwards"*). The `UNIX_EPOCH.elapsed().expect(...)` above is
+  sound: a host clock before 1970 is broken. Timing an **interval** that way is not. A timeout,
+  a latency or a rate-limit window then panics on an NTP step. Use `Instant` (*"a monotonically
+  nondecreasing clock"*). Its `elapsed()` returns a `Duration` and cannot fail.
+
+## 5. Panics: when, and what they cost
+
+Panic only for **bugs** — violated invariants, impossible states — never for
+bad input, missing files, network failure, or anything an attacker controls.
+
+- Servers: a panic in a handler must not kill the process, and a reachable
+  panic is a DoS primitive ([rules/05](05-security-supply-chain.md) §4). Catch at the task boundary —
+  `tokio::spawn` already isolates panics into `JoinError`; check
+  `JoinError::is_panic()` and log. Axum/tower: `CatchPanicLayer`. But treat
+  every caught panic as a bug to fix, not a handled case.
+- `panic = "abort"` in release profiles ([rules/06](06-performance.md)) means no unwinding: no
+  `catch_unwind`, panics kill the process. Decide deliberately for servers —
+  abort+supervisor-restart is a valid stance, but then panic-freedom of
+  handlers is load-bearing.
+- **FFI**: a Rust panic that reaches an `extern "C"` boundary **aborts the
+  process** — since Rust 1.81; before that it was UB. Measured on 1.97.1: exit
+  134, "panic in a function that cannot unwind", and a `catch_unwind` *around
+  the call* did not catch it. So put `std::panic::catch_unwind` **inside** the
+  body of every Rust function called from C and turn a panic into an error code.
+  Use `extern "C-unwind"` only when both sides genuinely support unwinding. A
+  C++ exception unwinding into Rust through a `"C"` declaration is still UB
+  (Reference, "Unwinding across FFI boundaries").
+- **`Drop` impls must not panic.** `drop()` itself runs during unwinding from
+  another panic; a panic there is a *double panic* that — per the std `Drop`
+  docs — "will likely abort the program." So a panicking destructor turns one
+  recoverable failure into process death (DoS). Destructors clean up and return
+  normally; if a Drop genuinely must signal misuse, gate it on
+  `std::thread::panicking()` first. This applies to RAII guards, buffer
+  flushers, and `Zeroize`-on-drop types alike. (ANSSI `LANG-DROP-NO-PANIC`)
+- **`assert!` is a panic; `debug_assert!` is not a check.** `assert!`/`assert_eq!`
+  on an input-derived condition is the same DoS as `panic!`. `debug_assert!`
+  compiles out wherever `debug-assertions` is off: the release profile's default,
+  and any profile or `RUSTFLAGS` override that turns it off ([rules/07](07-tooling-ci.md) §4a).
+  Measured: a `debug_assert!` that fired under `cargo test` was silent under
+  `cargo test --release`. Never make it the only guard of a condition an attacker
+  can reach — return an error. (ANSSI `LANG-LIMIT-PANIC-SRC`)
+- Poisoned mutexes (`std::sync::Mutex`): a panic while holding the lock poisons
+  it. Decide policy once: propagate (`lock().expect("not poisoned: …")`) or
+  recover (`unwrap_or_else(PoisonError::into_inner)`) — document which.
+- Allocation failure aborts; for memory-bound parsing of untrusted sizes use
+  `try_reserve` ([rules/05](05-security-supply-chain.md) §6).
+
+## 6. Option/Result flow patterns
+
+- `?` everywhere it applies, including `Option` in functions returning `Option`.
+- Convert at the edges: `ok_or_else(|| StoreError::NotFound(key.into()))` turns
+  `Option` into `Result` exactly where "absence is an error" becomes true —
+  not earlier.
+- `let Some(x) = ... else { return ... };` for guard clauses; keeps the happy
+  path unindented.
+- Fallible iteration: `collect::<Result<Vec<_>, _>>()` fail-fast; or
+  `partition_result` / inspect-and-log per item when partial success is the
+  semantics. Choose explicitly — silent `filter_map(Result::ok)` **discards
+  errors** and is an audit finding unless commented.
+- Don't `match` on a `Result` just to re-wrap (`Ok(v) => Ok(f(v)), Err(e) =>
+  Err(e)`) — that's `.map(f)`. Clippy: `manual_map`, `question_mark`,
+  `needless_match`.
+
+### 6a. Don't unwrap an Option back into a sentinel
+
+Rust makes the in-band sentinel ([`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a) hard to write by
+accident: `str::find` and `Iterator::position` return `Option<usize>`, not `-1`
+(verified, rustc 1.97.1). The way it gets reintroduced is at the *seam*:
+
+- `opt.unwrap_or(-1)`, `unwrap_or_default()` on a numeric `Option`, or
+  `unwrap_or(0)` — each discards the type system's absence encoding and hands a
+  domain value downstream (verified: `None::<i32>.unwrap_or(-1)` is `-1`). Push the
+  `Option` outward instead; collapse it only where the value is *consumed*, and then
+  with `match`/`ok_or`, not a magic number.
+- FFI and wire boundaries are where it enters: a C ABI returning `-1`/`errno`, a
+  protobuf `int32` with no `optional`, `serde` deserializing a field whose absence
+  the schema encodes as a value. Convert **at the boundary** into `Option`/`Result`
+  — the anti-corruption-layer rule, applied to a scalar.
+- `#[serde(default)]` on a numeric field silently substitutes `0` for absent. That
+  is an in-band sentinel chosen by an attribute; use `Option<T>` unless `0` is
+  genuinely the right value.
+- Audit: `grep -rnE 'unwrap_or\(-?[0-9]+\)|unwrap_or_default\(\)' --include='*.rs' .`
+  and `serde(default)` on numeric fields.
+
+## 7. Retryability & error classification
+
+Services need errors classified for *behavior*, not just display. Encode the
+decision the caller must make:
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum FetchError {
+    #[error("transient: {0}")]
+    Transient(#[source] anyhow::Error),   // timeouts, 503, conn reset
+    #[error("permanent: {0}")]
+    Permanent(#[source] anyhow::Error),   // 4xx, validation, auth
+}
+impl FetchError {
+    pub fn is_retryable(&self) -> bool { matches!(self, Self::Transient(_)) }
+}
+```
+
+- Classify at the site that knows (the HTTP client wrapper knows 503 vs 400);
+  upper layers consume `is_retryable()` instead of re-inspecting causes.
+- Retries always carry backoff + jitter + a cap (`backon`/`tokio-retry`
+  style); retrying permanent errors is load amplification, retrying without
+  jitter is a thundering herd.
+- Map the same classification to HTTP/gRPC status at the boundary in ONE
+  place (an `IntoResponse`/`From<Error> for Status` impl), not per-handler.
+- Idempotency: only auto-retry operations that are idempotent or carry an
+  idempotency key — a retried non-idempotent POST is a correctness bug, not
+  resilience. Designing the key: [`sota-api-design` rules/01](../../sota-api-design/rules/01-rest-http-design.md) §6.
+
+## 8. Testing error paths
+
+Error paths are code; untested error paths are where prod incidents live.
+
+- Unit-test that fallible constructors reject bad input with the *right
+  variant*: `assert!(matches!(parse(""), Err(ParseError::Empty)))` — not just
+  `.is_err()` (a panic-turned-error or wrong variant passes `.is_err()`).
+  `assert_matches!`/`debug_assert_matches!` (stable since 1.96) do the same
+  and panic with the actual value on mismatch — prefer them in new tests.
+- Test `Display` output of user-facing errors (snapshot with `insta`) —
+  error messages are UI and regress silently.
+- Fault injection at trait boundaries: a mock `Storage` whose `get` returns
+  `Err(Io(...))` proves the caller's context/retry/cleanup logic. If errors
+  can't be injected, the seam is missing (concrete deps where traits/generics
+  belong).
+- For panics that are part of a documented contract: `#[should_panic(expected
+  = "...")]` pins the message; for `Result`-returning tests use
+  `fn test() -> anyhow::Result<()>` and `?` freely.
+
+## 9. Error reporting at the top
+
+```rust
+fn main() -> anyhow::Result<()> { ... } // Debug-renders the chain on error
+// or for custom exit codes / human rendering:
+fn main() -> ExitCode {
+    if let Err(e) = run() {
+        eprintln!("error: {e:#}");      // {:#} renders the full context chain
+        return ExitCode::FAILURE;
+    }
+    ExitCode::SUCCESS
+}
+```
+
+- Services: render error chain into structured logs
+  (`tracing::error!(error = ?err)` or the `err` field shorthand), map to a
+  client-safe status — never leak internal error text to HTTP responses
+  (info disclosure, [rules/05](05-security-supply-chain.md)).
+- Install a panic hook that logs through your structured logger
+  (`std::panic::set_hook`) so panics in production aren't lost to stderr.
+
+## Audit checklist
+
+- [ ] Sentinel re-entry (§6a): `rg 'unwrap_or\(-?[0-9]+\)|unwrap_or_default\(\)' -t rust`
+      on numeric `Option`s, and `#[serde(default)]` on numeric fields — each discards the
+      absence the type system was carrying.
+
+- [ ] `rg '\.unwrap\(\)' -t rust -g '!*test*' -g '!benches/*' -g '!examples/*'` (§4)
+      — every hit in production paths is a finding; severity scales with input
+      reachability (attacker-reachable unwrap = High).
+- [ ] `rg '\.expect\("' -t rust` (§4) — messages must state invariants ("valid
+      static regex"), not restate the failure ("failed to parse").
+- [ ] **Intervals timed on the wall clock (§4)** —
+      `grep -rnE '\.(elapsed|duration_since)\([^)]*\)[[:space:]]*\.(unwrap|expect)\(' --include='*.rs' .`
+      — every hit is a `SystemTime`, because `Instant`'s versions return a `Duration`, which has
+      no `unwrap` (rustc: E0599). Deriving a Unix timestamp from `UNIX_EPOCH` is the legitimate
+      use. A hit timing a timeout, latency or window panics on a clock step: High on a request
+      path. Use `Instant`. A chain split across lines needs reading.
+- [ ] `rg '\.unwrap_or_default\(\)|filter_map\(Result::ok\)|\.ok\(\)[;)]' -t rust`
+      — silently swallowed errors; require a comment justifying each (§6). Re-wrapping
+      `match`es that are `.map(f)` or `?`: `clippy::manual_map`, `question_mark`, `needless_match`.
+- [ ] `rg 'panic!|unreachable!|todo!|unimplemented!' -t rust -g '!*test*'` (§5) —
+      `todo!`/`unimplemented!` in shipped code = High; `panic!` on
+      input-derived conditions = High (DoS).
+- [ ] Indexing on untrusted data (§4): `rg '\[[a-z_]+\]' -t rust` near
+      parse/decode code; string slicing `&s[`, plus `clippy::indexing_slicing`
+      (restriction lint) on parser crates.
+- [ ] Library crates exporting `anyhow::Error`/`Box<dyn Error>` in public
+      signatures (§1): `rg 'pub fn .*-> .*(anyhow|Box<dyn Error)' -t rust`. Inversely, error
+      enums in a binary crate whose variants are only ever printed = Low (use `anyhow`).
+- [ ] thiserror enums (§2): variants missing `#[source]`/`#[from]` on wrapped
+      errors (broken causality chains); public error enums missing
+      `#[non_exhaustive]`; one crate-wide enum every function returns; a `#[from] io::Error`
+      variant reached from several operations, so path and operation are lost; error types not
+      `Send + Sync + 'static`; stringly errors,
+      `grep -rnE 'impl From<[A-Za-z0-9_:]+> for String' --include='*.rs' .`; oversized `Err`
+      payloads (`clippy::result_large_err`).
+- [ ] Double-logging (§3): error logged at propagation site AND handler.
+- [ ] `?` chains with no `.context(...)` anywhere between syscall and `main` (§3) —
+      undebuggable errors. Eager context on the success path:
+      `grep -rnE '\.context\(format!' --include='*.rs' .` — want `with_context(|| format!(..))` = Low.
+- [ ] FFI (§5): `grep -rlE 'extern "C(-unwind)?" fn' --include='*.rs' . | xargs -r grep -L 'catch_unwind' | xargs -r grep -nE 'extern "C(-unwind)?" fn'` lists them in files with no `catch_unwind` (file-level: one call hides the rest) — a body that
+      can panic without an inner `catch_unwind` aborts the process (since 1.81) =
+      High (DoS); with a declared MSRV below 1.81 it is UB = Critical.
+- [ ] `grep -rnE '(debug_)?assert(_eq|_ne)?!\(' --include='*.rs' --exclude-dir=tests --exclude-dir=benches --exclude-dir=examples .`
+      (then skip `#[cfg(test)]` modules) — `assert!` on an input-derived condition =
+      High (DoS); `debug_assert!` as the only guard of one = no check in release, High (§5).
+- [ ] `Drop` impls that can panic (§5): `rg -A15 'impl Drop' -t rust` then scan for
+      `unwrap`/`expect`/`panic!`/indexing/`?` inside `fn drop` — double-panic
+      aborts the process (DoS), High. `LANG-DROP-NO-PANIC`.
+- [ ] **Mutex poison policy undecided (§5) — Low** —
+      `grep -rnE '\.lock\(\)\.unwrap\(\)' --include='*.rs' .` — each hit neither states the
+      invariant (`expect("not poisoned: …")`) nor recovers
+      (`unwrap_or_else(PoisonError::into_inner)`); pick one policy and document it.
+- [ ] Retry loops (§7): `rg 'retry|backoff' -t rust -i` — retries without
+      classification (retrying 4xx), without jitter/cap, or around
+      non-idempotent operations. Error-to-status mapping repeated per handler instead of one
+      `IntoResponse`/`From<Error> for Status` impl = Low.
+- [ ] Error tests assert variants (`matches!`), not just `.is_err()`; error
+      seams injectable (trait boundaries) for fault testing (§8):
+      `grep -rnE '#\[should_panic\]|assert!\(.*\.is_err\(\)\)' --include='*.rs' .` — a bare
+      `should_panic` with no `expected =`, or an `is_err()` assert a wrong variant passes = Low;
+      user-facing `Display` output has a snapshot test.
+- [ ] Lints to enforce in CI (§4, §2): `clippy::unwrap_used`, `clippy::panic` (servers),
+      `clippy::result_large_err`, `clippy::or_fun_call`,
+      `clippy::manual_let_else`; consider `#![deny(clippy::unwrap_used)]` at
+      crate roots of network-facing crates.
+- [ ] **Error reporting at the top (§9) — Low; Medium when internal error text reaches a
+      client** — `grep -rnE '(eprintln|error|warn)!\(.*\{(e|err|error)\}' --include='*.rs' .`
+      (a plain `{e}` renders the outermost message only: want `{e:#}` or `error = ?err`);
+      `grep -rlE 'panic::set_hook' --include='*.rs' .` printing nothing in a service means no
+      panic hook into the structured logger; read the error-to-response mapping for the internal
+      error's `to_string()` or `{:?}` in a response body.

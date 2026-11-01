@@ -1,0 +1,112 @@
+# 05 — Performance: GC, allocations, spans, AOT
+
+.NET performance is mostly about **allocation pressure and the GC**, plus using
+the modern low-allocation primitives. Measure with BenchmarkDotNet and a
+profiler before optimizing. Cross-reference [`sota-performance`](../../sota-performance/SKILL.md) for methodology.
+
+## 1. The GC and allocation pressure
+
+- The .NET GC is generational (gen0/1/2) with a separate **Large Object Heap**
+  (objects ≥ 85,000 bytes). High allocation rate → frequent gen0 collections;
+  large/pinned objects fragment the LOH. The win is usually **allocate less**,
+  not tune the GC.
+- **Server GC** (`<ServerGarbageCollection>true`) for throughput on multi-core
+  servers; workstation GC for client/low-latency-single-core. Know which you're
+  running. Don't tune GC knobs before profiling shows GC is the bottleneck.
+- **Server GC now adapts its heap count by default.** DATAS (dynamic adaptation to application
+  sizes) is on by default from .NET 9 and applies to Server GC: it starts with one heap and grows or
+  shrinks the count with load. Microsoft's TechEmpower runs showed a working set over 80% smaller for
+  a 2–3% drop in peak RPS, and allocating threads can wait at startup or when load rises. For a
+  throughput-bound service that owns its machine, measure with it off:
+  `<GarbageCollectionAdaptationMode>0</GarbageCollectionAdaptationMode>` (or
+  `System.GC.DynamicAdaptationMode: 0` / `DOTNET_GCDynamicAdaptationMode=0`). Keep it on where many
+  processes share memory, such as dense containers. *(Microsoft: DATAS; GC runtime configuration.)*
+
+## 2. Reduce allocations
+
+- Avoid needless allocations on hot paths: reuse buffers (`ArrayPool<T>`),
+  avoid LINQ allocations in tight loops (closures, iterators, intermediate
+  collections), avoid boxing (value type → `object`/non-generic API), and avoid
+  `params object[]` / string concatenation in loops (`StringBuilder`, or
+  `string.Create`/interpolated handlers).
+- Prefer `struct`/`record struct` for small short-lived values to keep them off
+  the heap — but beware large structs being copied (pass by `in`/`ref`).
+
+## 3. Span and friends
+
+- `Span<T>`/`ReadOnlySpan<T>`/`Memory<T>` for slicing arrays/strings/stack
+  buffers **without copying** — parsing, formatting, buffer processing.
+  `stackalloc` for small fixed buffers. C# 14 broadens span conversions
+  ([`rules/01`](01-idioms.md)).
+- `Utf8` APIs, `System.Text.Json` source-gen, and `IBufferWriter<T>` for
+  low-allocation I/O. Pool large/reused buffers with `ArrayPool`/`MemoryPool`.
+
+## 4. Async & throughput
+
+- Async done right scales I/O ([`rules/03`](03-async-concurrency.md)); done wrong (blocking, sync-over-async)
+  it starves the thread pool. `ValueTask`/`ValueTask<T>` for very hot,
+  frequently-synchronous paths to avoid a `Task` allocation — but never await a
+  `ValueTask` twice, store it, or block on it.
+- **EF Core round trips: N+1 is opt-in, and then it is invisible.** Lazy loading is off until
+  `UseLazyLoadingProxies()` (package `Microsoft.EntityFrameworkCore.Proxies`, `virtual`
+  navigations) or an injected `ILazyLoader`. Once it is on, every navigation touched in a loop
+  is its own query. EF's performance guide shows one query per blog for a nested `foreach` and
+  says *"it is recommended to avoid it"*. Load related data with `Include` or a `Select`
+  projection, and consider `AsSplitQuery` where several collection includes multiply rows
+  (*"cartesian explosion"*). A query issued inside a loop is the same pattern with no proxy
+  needed. Query design itself is [`sota-databases` rules/03](../../sota-databases/rules/03-queries-and-indexes.md).
+
+## 5. Measuring
+
+- **BenchmarkDotNet** for microbenchmarks — it handles warmup/JIT, isolates
+  runs, and reports allocations (`[MemoryDiagnoser]`). Never `Stopwatch` around a
+  loop. Profile with `dotnet-trace`/`dotnet-counters`/Visual Studio profiler /
+  PerfView for allocation and GC analysis. Report distributions
+  ([`sota-performance`](../../sota-performance/SKILL.md)).
+
+## 6. Native AOT & trimming
+
+- **Native AOT** (`<PublishAot>true`) ahead-of-time compiles to a native binary:
+  fast startup, low memory, small footprint — ideal for CLIs, serverless, and
+  containerized microservices. .NET 10 improves AOT (broader support, smaller/
+  faster). Costs: no JIT/runtime codegen, so **reflection/dynamic loading must be
+  trim-safe** (use source generators); not all libraries are AOT/trim-compatible. Test the
+  published binary. In a library, set the MSBuild property `<IsAotCompatible>true</IsAotCompatible>`:
+  it is not an annotation but a switch that turns on the trim, single-file and AOT analyzers
+  (`IsTrimmable`, `EnableTrimAnalyzer`, `EnableSingleFileAnalyzer`, `EnableAotAnalyzer`). Annotate the
+  code those analyzers flag with `[RequiresUnreferencedCode]`, `[RequiresDynamicCode]` or
+  `[DynamicallyAccessedMembers]` (Microsoft: Native AOT deployment overview).
+- Choose AOT for startup/footprint-bound workloads; stay on the JIT for
+  long-running throughput-bound compute where peak JIT throughput wins.
+
+**Connection pool.** Npgsql and Microsoft.Data.SqlClient both default to `Max Pool Size` 100; SqlClient queues an exhausted pool until its 15 s connect timeout and then throws, and its `Connection Lifetime` defaults to 0, while Npgsql's has been 3600 s since 9.0. Every driver's defaults and the rule: [`sota-databases` rules/04](../../sota-databases/rules/04-transactions-concurrency.md) §5.
+
+## Audit checklist
+
+- [ ] **Allocation/boxing on hot paths (§2) — LOW/MEDIUM (verify with profiler)** —
+      `grep -rnE -A4 '(for|foreach|while)[[:space:]]*\(' --include='*.cs' . | grep -E '\+=[[:space:]]*[^;]*"|\+ ?"'` (string concat
+      in loops); `grep -rnE 'string\.Format|\$"' --include='*.cs' . | head` (hot-path
+      formatting); `grep -rnE '\.ToList\(\)|\.ToArray\(\)' --include='*.cs' . | head` (needless
+      materialization in loops) ; `grep -rnE '(^|[^[:alnum:]_])(ArrayList|Hashtable)([^[:alnum:]_]|$)' --include='*.cs' .`
+      (non-generic collections box value types)
+- [ ] **EF Core N+1 (§4) — MEDIUM, HIGH on a hot path** —
+      `grep -rnE 'UseLazyLoadingProxies|ILazyLoader' --include='*.cs' .` (lazy loading on: every
+      loop over entities needs reading for navigation access) ;
+      `grep -rnE -A6 '(foreach|for)[[:space:]]*\(' --include='*.cs' . | grep -E '\.(FirstOrDefault|SingleOrDefault|First|Single|Find|Any|Count|ToList|ToArray)(Async)?\('`
+      (a query-shaped call within six lines of a loop head; confirm it runs against a
+      `DbSet`/`IQueryable` and not an in-memory list)
+- [ ] **Server GC configured for a server app? (§1)** —
+      `grep -rnE 'ServerGarbageCollection|ConcurrentGarbageCollection|GarbageCollectionAdaptationMode|System\.GC\.(Server|DynamicAdaptationMode)|DOTNET_(gcServer|GCDynamicAdaptationMode)' --include='*.csproj' --include='*.props' --include='runtimeconfig*.json' --include='*.runtimeconfig.json' --include='Dockerfile*' --include='*.yaml' --include='*.yml' .`
+      (Server GC on .NET 9+ runs DATAS unless the adaptation mode is `0`: fine for dense hosting,
+      measure it off for a throughput-bound service)
+- [ ] **Span/pooling opportunities (hot path) (§3) — LOW** —
+      `grep -rnE 'new byte\[|Substring\(|Split\(' --include='*.cs' . | head` (Span/ArrayPool
+      candidates)
+- [ ] **Benchmark hygiene — verify BenchmarkDotNet, not Stopwatch loops (§5)** —
+      `grep -rnE 'Stopwatch' --include='*.cs' . | grep -i bench | head` ;
+      `grep -rnE '\[Benchmark\]|MemoryDiagnoser' --include='*.cs' . || echo "no BenchmarkDotNet benchmarks"`
+- [ ] **Native AOT / trimming used? verify trim-safety (§6)** —
+      `grep -rnE 'PublishAot|PublishTrimmed|IsAotCompatible' --include='*.csproj' --include='*.props' .`
+      (for each AOT or trimmed app: CI tests the published binary; a library meant for AOT consumers
+      sets `IsAotCompatible`, which turns the trim and AOT analyzers on, and what they flag is
+      annotated, not suppressed)

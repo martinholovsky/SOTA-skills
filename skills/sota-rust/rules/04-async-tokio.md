@@ -1,0 +1,349 @@
+# 04 — Async Rust & Tokio
+
+Async Rust's failure modes are quiet: a blocked worker thread, a future dropped
+mid-write, a lock held across `.await`. These rules cover tokio idioms,
+cancellation safety, structured concurrency, channels, and shutdown.
+
+## 1. Never block the runtime
+
+A tokio worker thread running blocking code stalls **every task scheduled on
+it**. Blocking = sync I/O, heavy CPU (>~100µs per poll), `std::thread::sleep`,
+sync DB drivers, `reqwest::blocking`, sync `zip`/compression, big serde on huge
+payloads, `std::sync::Mutex` under contention.
+
+```rust
+// BAD: stalls the worker thread
+async fn load(path: PathBuf) -> Result<Config> {
+    let raw = std::fs::read_to_string(&path)?;          // sync I/O in async
+    let parsed = heavy_parse(&raw);                     // 50ms CPU in async
+    Ok(parsed)
+}
+
+// GOOD
+async fn load(path: PathBuf) -> Result<Config> {
+    let raw = tokio::fs::read_to_string(&path).await?;  // async I/O
+    let parsed = tokio::task::spawn_blocking(move || heavy_parse(&raw))
+        .await?;                                         // CPU off-runtime
+    Ok(parsed)
+}
+```
+
+- `spawn` for async work; `spawn_blocking` for blocking-but-bounded work
+  (file ops via std, sync clients, password hashing); a dedicated **rayon pool
+  or separate runtime** for sustained CPU-parallel work — `spawn_blocking`'s
+  pool (default cap 512 threads) is sized for blocking I/O, not compute.
+- `tokio::time::sleep`, never `std::thread::sleep`, in async fns.
+- Detection: `tokio-console` (task poll times), `RUSTFLAGS` +
+  `tokio_unstable` task dumps; in review, grep for sync APIs inside `async fn`
+  (checklist below). A p99 latency cliff under load with idle CPU is the
+  classic blocked-worker signature.
+- `block_on` inside an async context panics or deadlocks: tokio's
+  `Handle::block_on` and a nested `Runtime::block_on` panic ("Cannot start a
+  runtime from within a runtime", `tokio/src/runtime/context/runtime.rs`), while
+  `futures::executor::block_on` deadlocks a current-thread runtime and parks a
+  worker otherwise.
+  Bridging sync→async from a blocking thread: `Handle::current().block_on`
+  from `spawn_blocking` is legal; document why.
+
+## 2. Decoding Send/Sync bounds errors
+
+"future cannot be sent between threads safely" means a non-`Send` value is
+**held across an `.await`** in a future passed to `tokio::spawn`
+(multi-threaded runtime requires `Send + 'static`).
+
+Fix in priority order:
+
+1. **Shrink the hold**: drop/scope the non-Send value before the await.
+
+```rust
+// BAD: MutexGuard (often non-Send) and Rc held across await
+let guard = state.lock().unwrap();
+let data = guard.compute();
+remote.push(data).await?;        // guard still alive here
+
+// GOOD: scope ends before await
+let data = { state.lock().unwrap().compute() };
+remote.push(data).await?;
+```
+
+2. Replace the type: `Rc`→`Arc`, `RefCell`→`Mutex`/atomics, thread-local /
+   `dyn Trait` without `+ Send` → bounded version.
+3. For genuinely thread-bound libs (e.g. some FFI/GUI handles), as a last
+   resort: `tokio::runtime::LocalRuntime` (stabilized in tokio 1.51, 2026 —
+   a whole runtime whose tasks may be `!Send`) or the older
+   `tokio::task::LocalSet` + `spawn_local`.
+
+- The compiler note "this value is used across an await" points at the exact
+  hold — read it before refactoring.
+- `'static` errors on `spawn`: the future can't borrow from the caller. Move
+  owned/`Arc` data in (`async move`), or restructure so the parent awaits the
+  child directly (no spawn = borrows fine), or use `JoinSet`/scoped patterns.
+- Library code: add `Send` bounds tests (`fn assert_send<T: Send>(t: T)`) so
+  you don't break downstream spawnability silently.
+
+## 3. Cancellation safety
+
+**Every `.await` is a possible end of your function.** Futures are cancelled by
+being dropped — by `select!`, timeouts, dropped `JoinHandle`s being aborted,
+or a client disconnect dropping the request future (hyper/axum do this).
+
+- `select!` pitfall: the non-winning branches' futures are **dropped** each
+  iteration. Recreating a future in a loop loses partial progress:
+
+```rust
+// BAD: on every tick, read_line future is dropped — buffered partial line lost
+loop {
+    tokio::select! {
+        line = read_line(&mut reader) => handle(line?),
+        _ = interval.tick() => flush().await,
+    }
+}
+
+// GOOD: keep the future alive across iterations (pin it once)
+let read_fut = read_line(&mut reader);
+tokio::pin!(read_fut);
+loop {
+    tokio::select! {
+        line = &mut read_fut => { handle(line?); read_fut.set(read_line(&mut reader)); }
+        _ = interval.tick() => flush().await,
+    }
+}
+```
+
+- **Know your cancel-safe primitives — copy the list, do not reason about it.**
+  Tokio classifies each operation itself, and two of the ones people most often
+  assume are safe are *not*. Transcribed from the `select!` docs
+  ([cancellation safety](https://docs.rs/tokio/latest/tokio/macro.select.html#cancellation-safety),
+  read 2026-09-16; it is a per-version list, so re-read it for your pinned tokio):
+
+  | | operation |
+  |---|---|
+  | **cancel-safe** | `mpsc::Receiver::recv`, `mpsc::UnboundedReceiver::recv`, `broadcast::Receiver::recv`, **`watch::Receiver::changed`**, `TcpListener::accept`, `UnixListener::accept`, `signal::unix::Signal::recv`, `AsyncReadExt::read` / `read_buf`, `AsyncWriteExt::write` / `write_buf`, `StreamExt::next` (tokio-stream or futures) |
+  | **NOT safe — partial I/O, data is lost** | `AsyncReadExt::read_exact`, `read_to_end`, `read_to_string`, `AsyncWriteExt::write_all` |
+  | **NOT safe — you lose your place in a fairness queue** | **`Mutex::lock`**, `RwLock::read`, `RwLock::write`, `Semaphore::acquire`, **`Notify::notified`** |
+
+  **The two unsafe rows fail differently and the difference decides the fix.** The
+  first row loses *bytes*: half a frame is gone and the stream is desynchronised,
+  so the repair is to keep the future alive across iterations (`tokio::pin!`,
+  above) or to read into a buffer you own. The second row loses *progress*:
+  nothing is corrupted and no memory is unsound — the docs' wording is that these
+  *"use a queue for fairness and cancellation makes you lose your place in the
+  queue"* — so the symptom is starvation of a task that keeps getting cancelled
+  and re-queued, not a torn value. Do not report the second row as data loss.
+
+  On `watch`: the cancel-safe method is **`changed()`**, not `recv()` — a detail
+  worth stating because the sibling channels *do* use `recv()`.
+- State mutations spanning an await are torn by cancellation. Either make the
+  critical section await-free, or use a **drop guard** to restore/complete
+  invariants:
+
+```rust
+struct InFlightGuard<'a>(&'a Counter);
+impl Drop for InFlightGuard<'_> { fn drop(&mut self) { self.0.dec(); } }
+// guard decrements even if the request future is dropped mid-await
+```
+
+- Cooperative cancellation: `CancellationToken` (tokio-util) +
+  `token.cancelled()` in `select!`, or `JoinHandle::abort()` (abort only stops
+  at await points; CPU loops need explicit checks).
+- Spawned tasks are **not** cancelled when their `JoinHandle` drops — they
+  leak unless tracked (see §4) or aborted. Dropping a `JoinSet` *does* abort
+  its tasks.
+
+**Cancelling a `timeout` around a child process does not kill the process.** The
+future is dropped, the OS process is not — [rules/08](08-external-programs.md) §1 (R9.5) has the measured
+behaviour and `.kill_on_drop(true)`. A spawned process is owned state exactly like a
+spawned task, and cancellation is where that ownership is usually dropped.
+
+## 4. Structured concurrency
+
+Unsupervised `tokio::spawn` is a goto: errors vanish, panics vanish, shutdown
+can't find it.
+
+- **`JoinSet`** for dynamic groups of homogeneous tasks: collects results,
+  propagates panics as `JoinError`, aborts all on drop.
+
+```rust
+let mut set = tokio::task::JoinSet::new();
+for url in urls { set.spawn(fetch(url)); }
+while let Some(res) = set.join_next().await {
+    let body = res??;             // JoinError (panic/abort) then app error
+    process(body);
+}
+```
+
+- **`TaskTracker` + `CancellationToken`** (tokio-util) for service-lifetime
+  tasks: `tracker.spawn(...)`, then `tracker.close(); tracker.wait().await`
+  on shutdown.
+- Concurrency without spawning (no `'static` needed, same task):
+  `join!`/`try_join!` for fixed sets;
+  `futures::stream::iter(items).map(work).buffer_unordered(N)` for bounded
+  fan-out — **always bound N**; unbounded fan-out over request-derived
+  collections is a self-DoS.
+- Every `tokio::spawn` must have an owner that observes its `JoinHandle` (or a
+  comment justifying fire-and-forget + its own error logging). Panics in
+  spawned tasks are silent until joined.
+- **Request-scoped state does not go in a `thread_local!`.** A worker thread runs
+  many tasks, so a value one request stores there is still there for the next one.
+  Measured on tokio 1.53.1 and a current-thread runtime: a task stored `tenant-A`
+  in a `thread_local!` and never reset it. The next task on that thread read
+  `Some("tenant-A")`, which is a cross-tenant leak. Use `tokio::task_local!` with
+  `KEY.scope(value, fut).await`, or `sync_scope` in sync code. The value exists only
+  while that future runs, so no reset is needed and none can be forgotten. Measured:
+  after the scope ended, `try_with` returned `Err`. A `tokio::spawn`ed child does
+  **not** inherit it (measured `None`), so pass the tenant into the child
+  explicitly. Better still, carry tenant and user as a typed argument or request
+  extension. Keep `tracing` spans for log context, not for authorisation decisions.
+  OWASP: Multi-Tenant Security and Session Management cheat sheets.
+
+## 5. Locks across `.await`
+
+- `std::sync::MutexGuard` is non-Send (compile error on spawn) — but on
+  single-future paths it *can* compile and then **deadlock**: task A holds the
+  lock, awaits; task B on the same thread polls and blocks on the lock.
+- Decision rule: **short, await-free critical sections → `std::sync::Mutex`
+  (or `parking_lot`)**, scoped to drop before any await. Need to hold a lock
+  across an await (e.g. exclusive access to a connection through a protocol
+  exchange) → `tokio::sync::Mutex` — accept that it's slower and serializes
+  tasks.
+- Often the real fix is neither: move owned state into a dedicated task and
+  communicate via channels (actor pattern), or use `RwLock`/`arc-swap` for
+  read-mostly config.
+- Clippy: `await_holding_lock`, `await_holding_refcell_ref` — deny in CI.
+
+## 6. Channel selection
+
+| Channel | Shape | Use |
+|---|---|---|
+| `mpsc` | many→one, bounded | work queues, actor inboxes — **default choice** |
+| `oneshot` | one value | request/response, completion signal |
+| `broadcast` | many→many, each gets all | events, pub/sub; lagging receivers get `RecvError::Lagged` — handle it |
+| `watch` | latest-value only | config updates, status, shutdown flag |
+| `mpsc::unbounded` | many→one, unbounded | almost never — unbounded = memory DoS under backpressure |
+
+- **Bounded `mpsc` everywhere by default**; choose capacity deliberately —
+  `send().await` backpressure is the feature. `try_send` + explicit
+  drop/shed policy on latency-critical producers.
+- Request/response over an actor: send `(payload, oneshot::Sender<Reply>)`.
+- `watch` for shutdown signals predates `CancellationToken`; prefer the token
+  in new code.
+- Crossing sync→async: tokio `mpsc::Sender::blocking_send` from sync threads;
+  never `block_on(tx.send(...))` inside the runtime.
+
+## 7. Async traits & API design
+
+- Native `async fn` in traits (stable 1.75): fine for internal/sealed traits;
+  **not dyn-compatible** and leaves `Send` of the returned future
+  unnameable for generic callers. Public traits used as `dyn` or spawned
+  generically: use `#[async_trait]` (boxes, adds `Send` bound by default) or
+  return `impl Future + Send` explicitly / `BoxFuture`. The 2026-era
+  alternative: `trait-variant` to generate `Send` variants.
+- Don't make functions `async` that never await — sync fn returning a value
+  is simpler and callable anywhere (`clippy::unused_async`).
+- Don't expose tokio types in library public APIs unless the crate is
+  tokio-specific by design; abstract over `AsyncRead`/`AsyncWrite`
+  (tokio or futures versions) where feasible.
+- Tokio 1.x designates LTS minors with ≥1 year of backported fixes; the
+  current LTS lines and their end dates are listed in the LTS section of
+  tokio's README — read them there rather than from here. Stability-critical services can pin an LTS line with
+  tilde syntax, e.g. `tokio = { version = "~1.51", features = [...] }`.
+
+## 8. Graceful shutdown
+
+The canonical service shape:
+
+```rust
+let token = CancellationToken::new();
+let tracker = TaskTracker::new();
+
+// signal handling: SIGTERM is what an orchestrator sends, and ctrl_c() never sees it (Unix)
+let t = token.clone();
+let mut term = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+tokio::spawn(async move {
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {}
+        _ = term.recv() => {}
+    }
+    t.cancel();
+});
+
+// accept loop
+loop {
+    tokio::select! {
+        _ = token.cancelled() => break,
+        conn = listener.accept() => {
+            let (stream, _) = conn?;
+            tracker.spawn(handle(stream, token.clone()));
+        }
+    }
+}
+
+// drain: stop accepting, let in-flight finish (with deadline), then exit
+tracker.close();
+tokio::select! {
+    _ = tracker.wait() => {}
+    _ = tokio::time::sleep(DRAIN_TIMEOUT) => warn!("shutdown deadline hit"),
+}
+```
+
+- **Trap SIGTERM, not only Ctrl-C.** `tokio::signal::ctrl_c()` completes on a Ctrl-C
+  notification only. Measured 2026-10-31 (tokio 1.54.1, macOS): a service awaiting just
+  `ctrl_c()` exited with status 143 on SIGTERM and never ran its drain; with the `select!`
+  above it drained on both signals. This example once shipped the `ctrl_c()`-only form.
+  Other runtimes' primitives: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
+- Order: stop intake → signal cancellation → drain with deadline → flush
+  (logs, metrics, WAL) → exit. Dropping the `Runtime` mid-flight cancels
+  everything abruptly — drain first.
+- Handlers must observe the token at long awaits (`select!` with
+  `token.cancelled()`) or be cancel-safe end-to-end.
+- Test shutdown: a service that can't exit cleanly under load hides task leaks.
+
+## Audit checklist
+
+- [ ] Blocking in async (§1): `rg -t rust 'async fn' -A30 | rg 'std::fs::|std::thread::sleep|reqwest::blocking|\.lock\(\)\s*$'`
+      — more reliably, grep each: `rg 'thread::sleep|std::fs::(read|write|File)|blocking::' -t rust`
+      and check enclosing fn for `async`. High severity in request paths.
+- [ ] `rg 'block_on' -t rust` (§1) — any call reachable from async context =
+      HIGH, CRITICAL when it waits on work scheduled on the same runtime
+      (self-deadlock) — the cross-runtime scale is [`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §5.
+- [ ] `rg 'unbounded_channel|UnboundedSender' -t rust` (§6) — each needs a written
+      backpressure argument; attacker-fed unbounded channel = High (DoS). `broadcast`
+      receivers that never handle `RecvError::Lagged` = Low:
+      `grep -rlE 'broadcast::' --include='*.rs' . | while IFS= read -r f; do grep -q 'Lagged' "$f" || echo "$f"; done`.
+- [ ] `rg 'tokio::spawn' -t rust` (§4) — orphaned handles (result never joined, no
+      JoinSet/TaskTracker, no error logging in task) = HIGH: a panic or error in
+      the task is silently lost ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §1).
+- [ ] `select!` loops (§3): any branch future recreated per-iteration that buffers
+      internally (reads, `write_all`, custom combinators) → cancellation data
+      loss = High. Check each `select!` arm against the cancel-safety table above —
+      and **rate the two unsafe rows differently**: partial-I/O (`read_exact`,
+      `write_all`) loses bytes and desynchronises a stream = High; a fairness-queue
+      operation (`Mutex::lock`, `Semaphore::acquire`, `Notify::notified`) loses only
+      its place in the queue = starvation risk, **not** data loss, so reporting it
+      as corruption is a false finding. `Notified` and `Mutex::lock` are the two most
+      often assumed safe; both are on Tokio's unsafe list.
+- [ ] Locks (§5): clippy `await_holding_lock`, `await_holding_refcell_ref`;
+      `rg 'tokio::sync::Mutex' -t rust` — verify each actually needs
+      hold-across-await, else downgrade to std/parking_lot. A lock held across
+      `.await` = HIGH, CRITICAL when deadlock-capable ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §4).
+- [ ] `rg '\.abort\(\)' -t rust` (§3) — aborted tasks: is every shared invariant
+      abort-safe (drop guards present)?
+- [ ] Fan-out (§4): `rg 'buffer_unordered|buffered\(' -t rust` — bound derived from
+      config, not unbounded or request-controlled; loops spawning per item of
+      untrusted-size collections = HIGH ([`sota-async-concurrency` rules/07](../../sota-async-concurrency/rules/07-audit-bug-catalog.md) §8).
+- [ ] **Request-scoped state in a thread-local (§4). High if it holds a tenant, user
+      or permission, else Low.** Run
+      `rg -n -t rust 'thread_local!|\b[A-Z][A-Z0-9_]*\.(set|replace|with_borrow_mut)\(' .`.
+      Each hit set inside a handler or task leaks into the next request on that worker.
+      Use `task_local!` + `.scope(..)` or an explicit argument. Check each
+      `task_local!` read inside a `tokio::spawn` child, which sees none.
+- [ ] Shutdown path exists (§8): a SIGTERM handler (`ctrl_c()` alone misses it, Medium), drain deadline, `tracker.close()`
+      before `wait()` (close-after-wait hangs forever); long-running handlers observe
+      `token.cancelled()` or are cancel-safe end to end; a test exercises shutdown under load.
+- [ ] `rg 'async fn' -t rust` + `clippy::unused_async` (§7); public async traits:
+      dyn-compat and Send bounds checked for downstream spawnability (§2): a library whose
+      futures have no `assert_send`-style compile test can lose `Send` silently = Low. Tokio
+      types in a non-tokio-specific library's public API (§7):
+      `grep -rnE 'pub (async )?fn [^{;]*tokio::' --include='*.rs' .` = Low.
+- [ ] CI lints (§5, §7): `clippy::await_holding_lock`, `clippy::unused_async`,
+      `clippy::large_futures` (oversized futures → stack/box them).

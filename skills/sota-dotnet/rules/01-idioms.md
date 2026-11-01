@@ -1,0 +1,182 @@
+# 01 — Idioms: modern C#, nullability, error handling
+
+Write to the latest stable C# your target framework supports (verify at the link below), not C# 7. The through-line is
+**immutability, the nullable-aware type system, and expression-oriented code**.
+Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/),
+[.NET 10](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-10/overview).
+
+## 1. Records and immutability
+
+- **`record`** (reference) and **`record struct`** for immutable data carriers —
+  value equality, `with` expressions, deconstruction, concise `ToString`.
+  Replace hand-written DTO/value classes. Use `init`-only setters for
+  immutable-after-construction.
+- Prefer immutable by default: `readonly` fields, `init` properties, immutable
+  collections where it matters. Immutable types are thread-safe ([`rules/03`](03-async-concurrency.md)).
+- `record class` for entities with identity-by-value semantics; plain `class` for
+  mutable services/stateful objects; `struct`/`record struct` for small values
+  ([`rules/05`](05-performance.md)).
+- **A timestamp field is `DateTimeOffset` or a UTC `DateTime`, never `DateTime.Now`.** `Now`
+  is *"expressed as the local time"* and returns `Kind` `Local` (measured on the .NET 10 SDK
+  image: `Now.Kind=Local`, `UtcNow.Kind=Utc`), so a stored value depends on the host's zone
+  and shifts across DST. The docs point to `DateTimeOffset` for *"a single point in time"*.
+  Intervals and timeouts are not dates: the same page calls `Now` unsuitable for measuring
+  and names `Stopwatch` instead.
+- **Money is `decimal`, never `double`/`float`.** `decimal` is a built-in 16-byte decimal
+  type of 28-29 digits (measured on the .NET 10 SDK image: `0.1m + 0.2m == 0.3m` is `true`; the `double` sum
+  is not). Three traps remain. `Math.Round` and `decimal.Round` default to
+  `MidpointRounding.ToEven` (the docs: *"By default, the Round method uses the round to
+  nearest even convention"*; measured, `Math.Round(2.5m)` is `2`), so pass the mode the
+  business rule names. `(long)(d * 100)` on a `double` truncates (`19.99` gives `1998`,
+  measured). And a `double`→`decimal` conversion rounds to 15 significant digits (measured:
+  `(decimal)(0.1 + 0.2)` is `0.3`), so converting late hides the binary error instead of
+  removing it: keep the value `decimal` from parse to storage (`decimal.Parse`,
+  `JsonElement.GetDecimal`).
+- **A float from input is checked for finiteness; integer maths at the extremes is `checked`.**
+  All measured on the .NET 10 SDK image. `double.Parse`/`double.TryParse` (and `float`) under
+  the invariant culture accept `"NaN"`, `"nan"`, `"Infinity"` and `"-Infinity"`, and turn
+  `"1e400"` into `Infinity` instead of failing; `decimal.Parse` rejects all of them. Every
+  comparison with `NaN` is false, so `x < min || x > max` lets it through and
+  `Math.Clamp(double.NaN, 0, 100)` returns `NaN`: test `double.IsFinite(x)` first, on the same
+  line as the parse. `System.Text.Json` refuses the string `"NaN"` by default but reads it once
+  `JsonNumberHandling.AllowReadingFromString` is on, and `JsonSerializerOptions.Web` sets
+  exactly that flag. **Division:** `int`, `long` and `decimal` by zero throw
+  `DivideByZeroException`; `double` by zero returns `Infinity` or `NaN` without a sound, so
+  guard a float divisor. **Overflow:** C# arithmetic is unchecked unless you ask, so
+  `int.MaxValue + 1` and `-int.MinValue` both silently yield `int.MinValue`, while
+  `int.MinValue / -1`, `int.MinValue % -1` and `Math.Abs(int.MinValue)` throw
+  `OverflowException` even unchecked. A unit conversion is the quiet case: seconds from input
+  times `TimeSpan.TicksPerSecond` wraps to a negative tick count. Wrap multi-term and
+  unit-conversion expressions in `checked(...)`, narrow with `int.CreateChecked` (throws) or
+  `int.CreateSaturating` (clamps), or set `<CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>`
+  project-wide, after which `int.MaxValue + 1` throws. An `unchecked` block that stays (hash
+  mixing) carries a comment saying wrapping is intended or naming the bound that rules it out.
+  `decimal` arithmetic throws on overflow in either context. (OWASP: Go Secure Coding
+  Practices, general coding practices; OWASP SCSVS, arithmetic.)
+
+## 2. Nullable reference types (NRT)
+
+- Enable `<Nullable>enable</Nullable>` solution-wide. The compiler then tracks
+  null-flow: `string` is non-null, `string?` may be null. This eliminates a huge
+  class of `NullReferenceException` at compile time.
+- **Honor the warnings** — don't silence with the null-forgiving operator `!`
+  unless you've genuinely proven non-null (and comment why). Scattered `!` is a
+  MEDIUM finding: it disables the very safety you enabled.
+- Annotate APIs precisely (`?`, `[NotNullWhen]`, `[MaybeNull]`); guard external/
+  deserialized input at the boundary (it can be null regardless of annotations).
+
+## 3. Pattern matching & expressions
+
+- Prefer `switch` **expressions** and pattern matching (type/property/relational/
+  list patterns) over if-cascades and `switch` statements — exhaustive, concise,
+  value-returning.
+- Use expression-bodied members, target-typed `new`, collection expressions
+  (`[1, 2, 3]`), and `nameof`. Use `var` when the type is obvious from the RHS.
+- **An enum-typed value from input can hold a number no member names.** Measured on .NET 10
+  with `enum Role { User, Admin }`: `(Role)42` compiles and runs, `Enum.Parse<Role>("42")` and
+  `Enum.TryParse` succeed, and `System.Text.Json` reads `42` both by default and through
+  `JsonStringEnumConverter`. So `role != Role.User` is true for 42, and code that treats
+  "not the low value" as the high one grants it. Before an enum from outside drives authz or
+  branching, check `Enum.IsDefined(value)` (a `[Flags]` enum needs a mask check instead), or
+  switch on it with a default arm that rejects. `new JsonStringEnumConverter(allowIntegerValues:
+  false)` refused both `42` and `"42"`. Keep warning CS8524 on: it flags a switch expression
+  over an enum with no arm for unnamed values, and at run time that switch threw
+  `SwitchExpressionException`. *(OWASP: .NET Security cheat sheet.)*
+
+## 4. C# 12–14 niceties
+
+- Primary constructors (classes/structs), collection expressions, file-scoped
+  namespaces (`namespace Foo;`), required members (`required`), raw string
+  literals.
+- C# 14: **extension members** (extension properties/operators/static members),
+  the **`field`** contextual keyword (access the synthesized backing field in an
+  accessor without declaring it), and broader `Span<T>`/`ReadOnlySpan<T>`/`T[]`
+  conversions. Use where they clarify; don't chase novelty.
+
+## 5. LINQ discipline
+
+- LINQ for clarity over hand loops, but beware: multiple enumeration of an
+  `IEnumerable` (materialize with `ToList()` once if iterated repeatedly), hidden
+  N+1 with `IQueryable` and EF Core lazy loading ([`rules/05`](05-performance.md) §4), and allocation/closure cost on hot
+  paths ([`rules/05`](05-performance.md)). Know when a query executes (deferred vs eager).
+
+## 6. Error handling
+
+- Throw the most specific exception type; don't catch `Exception`/`Exception e`
+  just to swallow or log-and-continue on a path that must abort. Preserve stack
+  with `throw;` (not `throw ex;`).
+- Don't use exceptions for control flow. Use the `TryParse`/`Try...` pattern or a
+  result type for expected failures on hot paths. `ArgumentNullException.ThrowIfNull`
+  and `ArgumentException.ThrowIf...` for guard clauses.
+- Exceptions are unchecked in C#; document what a public API throws.
+- **A child process's failure raises nothing.** Read `Process.ExitCode` after
+  `WaitForExit`/`WaitForExitAsync`; its only exceptions are for a process that has not exited,
+  so an unchecked non-zero exit reads as success.
+
+## 7. Strings: ordinal by default, culture only for display
+
+- **The string APIs default to the current culture.** `String.Compare` and `CompareTo` without
+  a `StringComparison`, `StartsWith(string)`/`EndsWith(string)` and the `IndexOf(string)`
+  overloads compare culture-sensitively, and `ToUpper()`/`ToLower()` use the current culture
+  (Microsoft, *Best practices for comparing strings*; CA1311). Identifiers, keys, protocol
+  tokens, file paths and security decisions use `StringComparison.Ordinal` /
+  `OrdinalIgnoreCase` and `ToUpperInvariant()`.
+- **The Turkish-I is a security bug.** Microsoft's own example: a scheme check that is true
+  under en-US and false under tr-TR — *"someone could circumvent security measures"*.
+- **The analyzers that catch it are off by default.** CA1304, CA1305, CA1307, CA1309, CA1310
+  and CA1311 are all *"Enabled by default: No"* in .NET 10; enable them in `.editorconfig`.
+- Since .NET 5 globalization uses ICU by default where it is available; Windows falls back to
+  NLS without it, and `System.Globalization.UseNls` opts back in — so the same comparison can
+  differ by host. Ordinal comparison is the only one that cannot.
+
+## Audit checklist
+
+- [ ] **Child exit status never read (§6) — MEDIUM, HIGH when the output is trusted** —
+      `grep -rlE 'Process\.Start|new Process\(' --include='*.cs' . | while IFS= read -r f; do grep -q 'ExitCode' "$f" || echo "$f"; done`
+- [ ] **Culture-sensitive string comparison on identifiers (§7) — MEDIUM, HIGH on a security
+      decision** — `grep -rnE '\.(StartsWith|EndsWith|IndexOf|LastIndexOf)\("[^"]*"\)|string\.Compare\([^,()]+,[^,()]+\)|\.To(Upper|Lower)\(\)' --include='*.cs' .`
+      ; `grep -rnE 'CA1307|CA1309|CA1310|CA1311' --include='.editorconfig' --include='*.globalconfig' --include='*.props' --include='*.csproj' . || echo "CA1307/CA1309/CA1310/CA1311 not configured: culture-sensitive comparisons go unflagged"` (none: the
+      analyzers that flag these are off — they are not enabled by default)
+
+- [ ] **Null-forgiving overuse (§2) — MEDIUM (defeats NRT)** —
+      `grep -rnE '[]A-Za-z0-9_)]!\.' --include='*.cs' . | grep -v '!=' | head` (x!.Member)
+- [ ] **Is NRT even enabled? (§2)** —
+      `grep -rniE '<Nullable>\s*enable' . --include='*.csproj' --include='Directory.Build.props' || echo "NRT not enabled — HIGH"`
+      ; `grep -rnE 'JsonSerializer\.Deserialize|ReadFromJsonAsync|GetFromJsonAsync' --include='*.cs' .`
+      (a deserialized value can be null whatever its annotation: confirm a guard at the boundary)
+- [ ] **Swallowed exceptions / throw ex — MEDIUM** (§6) —
+      `grep -rnzoE 'catch\s*\([^)]*\)\s*\{\s*\}' --include='*.cs' .` ;
+      `grep -rnE 'throw ex;' --include='*.cs' .` (loses stack trace);
+      `grep -rnE 'catch \(Exception' --include='*.cs' . | head`
+- [ ] **Local time and wall-clock intervals (§1) — MEDIUM** —
+      `grep -rnE 'DateTime\.Now([^[:alnum:]_]|$)' --include='*.cs' .` (local time: read each —
+      stored, compared or sent is the finding; shown to a local user is not) ;
+      `grep -rnE 'DateTime\.(Utc)?Now[[:space:]]*-|-[[:space:]]*[A-Za-z_.]*DateTime\.(Utc)?Now' --include='*.cs' .`
+      (an interval on the wall clock; use `Stopwatch`)
+- [ ] **Money in binary floats, default rounding (§1) — MEDIUM, HIGH in money paths** —
+      `grep -rniE '(double|float)[[:space:]]+[a-z_]*(price|amount|total|balance|cost|fee|tax)' --include='*.cs' .`
+      (money typed as a binary float) ;
+      `grep -rnE '(Math|decimal|Decimal)\.Round\(' --include='*.cs' . | grep -v 'MidpointRounding'`
+      (banker's rounding by default: confirm it is the rule the business names) ;
+      `grep -rnE '\((long|int)\)[[:space:]]*\([^;]*\*[[:space:]]*100' --include='*.cs' .`
+      (scaled to minor units by a truncating cast)
+- [ ] **NaN/Infinity from input, divide-by-zero, unchecked overflow (§1) — MEDIUM, HIGH when
+      the value bounds money, a quota or a timeout** —
+      `grep -rnE '(double|float|Double|Single)\.(Try)?Parse\(|Convert\.To(Double|Single)\(' --include='*.cs' . | grep -v 'IsFinite'`
+      (a parsed float never tested with `double.IsFinite`: read the range check that follows) ;
+      `grep -rnE 'unchecked[[:space:]]*([({]|$)' --include='*.cs' .` (each needs a stated bound or
+      an intended wrap) ;
+      `grep -rlE '<CheckForOverflowUnderflow>[[:space:]]*true' --include='*.csproj' --include='Directory.Build.props' . || echo "overflow checking off project-wide — look for checked() on arithmetic over input"`
+- [ ] **Enum from input used without a defined-value check (§3) — MEDIUM, HIGH when it
+      selects a role or permission** —
+      `grep -rnE '\([A-Z][A-Za-z0-9_]*\)[[:space:]]*(int|long|Convert\.ToInt(32|64)|short)[.(]|Enum\.(Try)?Parse(<[^>]*>)?\(' --include='*.cs' .`
+      (cast or parse of external data into an enum: want `Enum.IsDefined` or a rejecting
+      default arm before use; a cast hit that is not an enum is noise) ;
+      `grep -rnE 'NoWarn[^<]*CS8524|CS8524[^/]*none|pragma warning disable CS8524' --include='*.cs' --include='*.csproj' --include='*.props' --include='.editorconfig' .`
+- [ ] **Legacy idioms (§1, §4) — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
+      should be records?); `grep -rnE '^[[:space:]]*namespace[[:space:]]+[A-Za-z0-9_.]+[[:space:]]*(\{|$)' --include='*.cs' .`
+      (non-file-scoped namespaces)
+- [ ] **Multiple enumeration / LINQ on hot path (§5) — LOW (verify)** —
+      `grep -rnE '\.Where\(|\.Select\(|\.Count\(\)' --include='*.cs' . | head`
+      (a locator: an `IEnumerable` enumerated twice is materialized once with `ToList()`; the EF Core
+      lazy-loading N+1 half is the N+1 item in [rules/05](05-performance.md) §4)

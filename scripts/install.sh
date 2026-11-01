@@ -1,0 +1,1204 @@
+#!/usr/bin/env bash
+#
+# install.sh — link the SOTA skills into Claude Code, and update them later.
+#
+# Installation is symlink-based, so this script is also the updater: re-run it
+# after `git pull` and it links any newly-added skills and prunes links to
+# skills that were removed/renamed. Existing skills update with no action at all
+# (the symlinks already point at the live files).
+#
+# After linking, on a personal install it offers to set up "always-on routing"
+# (a global CLAUDE.md directive + a prompt hook) so the skills apply without
+# trigger words. It is dotfiles-aware: it detects existing/symlinked config and
+# ASKS before touching anything, backing up first and using managed markers so
+# re-runs are idempotent and your own content is preserved. When the directive or
+# hook wording changes in a newer release, re-running (e.g. --update) offers to
+# refresh the managed block in place — only the content between the markers, and
+# only a hook it recognizes as its own; hand edits outside the block are kept.
+#
+# Contributor hygiene: when run from a git checkout it also checks that the
+# repo's pre-commit hook (gitleaks + invariants) is installed — offering to
+# install it if the pre-commit tool is available, or printing a tip if not.
+#
+# Usage:
+#   scripts/install.sh                 # link skills into ~/.claude/skills (all projects)
+#   scripts/install.sh --project DIR   # link into DIR/.claude/skills (one project)
+#   scripts/install.sh --update        # git pull --ff-only first, then re-link
+#                                      #   (scripts/update.sh is an alias for it)
+#   scripts/install.sh --version       # report which release is installed, and where
+#   scripts/install.sh --print-routing-block  # print the managed CLAUDE.md block this
+#                                      #   checkout writes, and change nothing (verify-setup
+#                                      #   2e compares your installed block with it)
+#   scripts/install.sh --target all    # ALSO link into ~/.agents/skills, the directory
+#                                      #   Copilot CLI/VS Code, Codex, Cursor and Gemini
+#                                      #   CLI read, and into Antigravity's own global
+#                                      #   skills dirs where it is installed (claude |
+#                                      #   agents | all; default: Claude only, offering
+#                                      #   the rest when one of those agents is detected)
+#   scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
+#   scripts/install.sh --routing       # also set up always-on routing (force)
+#   scripts/install.sh --no-routing    # skip the routing offer
+#   scripts/install.sh --mcp           # also register the read-only MCP server for every
+#                                      #   detected non-Claude agent (offered otherwise)
+#   scripts/install.sh --no-mcp        # skip the MCP offer
+#   scripts/install.sh --no-verify     # skip the reachability check that ends every run
+#   scripts/install.sh --yes           # assume the recommended answer to prompts
+#   scripts/install.sh --color=WHEN    # always | never | auto (default; --no-color = never)
+#   scripts/install.sh --help
+#
+# Output: colour and emoji are decorative only — every line still says what it
+# means in words. They turn themselves off when the stream is not a terminal, on
+# a non-UTF-8 locale, on TERM=dumb, or when NO_COLOR is set; FORCE_COLOR (or
+# CLICOLOR_FORCE) turns them back on, and --color/--no-color beats both.
+#
+set -euo pipefail
+
+# Repo root = parent of this script's dir, so cwd does not matter.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO="$(cd -- "$SCRIPT_DIR/.." && pwd)"; readonly REPO
+readonly SKILLS_SRC="$REPO/skills"
+
+TARGET="$HOME/.claude/skills"
+# The cross-agent skills directory, and the homes whose presence says an agent that
+# does not document ~/.claude/skills is installed. Each honours its vendor's documented
+# override (COPILOT_HOME, CODEX_HOME), so detection looks where the agent looks.
+AGENTS_TARGET="$HOME/.agents/skills"
+COPILOT_DIR="${COPILOT_HOME:-$HOME/.copilot}"
+CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
+GEMINI_DIR="$HOME/.gemini"
+# Antigravity does NOT read ~/.agents/skills (antigravity.google/docs/skills, fetched
+# 2026-10-06): global skills live in ~/.gemini/config/skills (2.0 app + IDE; legacy
+# ~/.gemini/antigravity/skills) and ~/.gemini/antigravity-cli/skills (CLI). Its
+# workspace path IS .agents/skills, so --project already covers it.
+AG_APP_HOME="$GEMINI_DIR/config"
+AG_CLI_HOME="$GEMINI_DIR/antigravity-cli"
+INSTALL_TARGET=auto   # auto | claude | agents | all  (--target)
+DO_UPDATE=0
+# Every run ends by asking the verifier whether the install actually took.
+# "Linked 42 skills" is what this script DID; reachability is what the agent GETS,
+# and the two diverged silently once already (a pull adds no symlink, so a release
+# that adds a skill leaves a puller short with no symptom).
+DO_VERIFY=1
+DO_VERSION=0
+DO_PRINT_BLOCK=0
+USE_COPY=0
+DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
+DO_MCP=-1       # -1 = offer, 0 = skip, 1 = force  (--mcp / --no-mcp)
+ASSUME_YES=0
+COLOR_MODE=auto # auto | always | never  (--color=WHEN / --no-color)
+
+INTERACTIVE=0
+{ [ -t 0 ] && [ -t 1 ]; } && INTERACTIVE=1
+
+# --- output style ------------------------------------------------------------
+# Colour/emoji policy, in precedence order: --color flag → FORCE_COLOR /
+# CLICOLOR_FORCE (non-empty) → NO_COLOR (non-empty) → auto, meaning "the stream
+# is a terminal and TERM is set and not dumb". Detection is PER STREAM because
+# status goes to stdout and warnings/errors to stderr, and only one of the two
+# may be a pipe (`install.sh > log.txt` must still colour its errors).
+#
+# Decoration never carries meaning on its own: "warning:"/"error:" stay in the
+# text for colourblind and NO_COLOR readers, and the status glyphs degrade to
+# ASCII (+ - ~ ! x) whenever emoji are off — so a CI log or a C-locale box gets
+# readable markers instead of mojibake.
+supports_color() {  # $1 = fd number, or "tty" for a stream that is one by definition
+  case "$COLOR_MODE" in never) return 1 ;; always) return 0 ;; esac
+  [ -n "${FORCE_COLOR:-}${CLICOLOR_FORCE:-}" ] && return 0
+  [ -n "${NO_COLOR:-}" ] && return 1
+  case "${TERM:-}" in ''|dumb) return 1 ;; esac
+  [ "$1" = tty ] || [ -t "$1" ] || return 1
+  return 0
+}
+
+utf8_locale() {
+  case "${LC_ALL:-${LC_CTYPE:-${LANG:-}}}" in
+    *UTF-8*|*utf-8*|*UTF8*|*utf8*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+init_style() {
+  if supports_color 1; then
+    C_RESET=$'\033[0m'; C_BOLD=$'\033[1m'; C_DIM=$'\033[2m'
+    C_GREEN=$'\033[32m'; C_CYAN=$'\033[36m'
+  else
+    C_RESET=''; C_BOLD=''; C_DIM=''; C_GREEN=''; C_CYAN=''
+  fi
+  if supports_color 2; then
+    E_RESET=$'\033[0m'; E_YELLOW=$'\033[33m'; E_RED=$'\033[31m'
+  else
+    E_RESET=''; E_YELLOW=''; E_RED=''
+  fi
+  # The prompt is written to /dev/tty, which is a terminal by definition — the
+  # stream test cannot apply, but the flag/env policy still does.
+  if [ "$INTERACTIVE" -eq 1 ] && supports_color tty; then
+    P_RESET=$'\033[0m'; P_BOLD=$'\033[1m'; P_CYAN=$'\033[36m'
+  else
+    P_RESET=''; P_BOLD=''; P_CYAN=''
+  fi
+  # Emoji ride along with colour, and additionally need a UTF-8 locale.
+  EMOJI=0
+  if [ "$COLOR_MODE" != never ] && utf8_locale && supports_color 1; then EMOJI=1; fi
+  if [ "$EMOJI" -eq 1 ]; then
+    G_OK='✓'; G_CHG='↻'; G_INFO='·'; G_WARN='⚠'; G_ERR='✗'; G_ASK='?'
+  else
+    G_OK='+'; G_CHG='~'; G_INFO='-'; G_WARN='!'; G_ERR='x'; G_ASK='?'
+  fi
+}
+init_style   # provisional, so an early die() is styled; re-run after flag parsing
+
+ok()   { printf '  %s%s%s %s\n' "$C_GREEN" "$G_OK"   "$C_RESET" "$*"; }   # did something
+chg()  { printf '  %s%s%s %s\n' "$C_CYAN"  "$G_CHG"  "$C_RESET" "$*"; }   # changed / act on this
+log()  { printf '  %s%s %s%s\n' "$C_DIM"   "$G_INFO" "$*" "$C_RESET"; }   # no-op / context
+warn() { printf '  %s%s warning:%s %s\n' "$E_YELLOW" "$G_WARN" "$E_RESET" "$*" >&2; }
+die()  { printf '  %s%s error:%s %s\n'   "$E_RED"    "$G_ERR"  "$E_RESET" "$*" >&2; exit 1; }
+
+section() {  # $1 = emoji, $2 = title
+  local mark=""
+  if [ "$EMOJI" -eq 1 ]; then mark="$1  "; fi
+  printf '\n%s%s%s%s\n' "$C_BOLD" "$mark" "$2" "$C_RESET"
+}
+
+usage() { sed -n '2,/^set -euo/p' "$0" | sed 's/^# \{0,1\}//; /^set -euo/d'; exit "${1:-0}"; }
+
+# --- version reporting -------------------------------------------------------
+# Nothing in the library reported which release was in use, so a bug report
+# ("the day-zero check fired wrongly") could not name the version that produced
+# it. VERSION is the single source of truth (invariant 5 keeps it in lockstep
+# with plugin.json and the CHANGELOG top entry), so read it rather than
+# hardcoding a number anywhere.
+read_version() {  # <repo> — prints the release string, or "unknown"
+  local f="$1/VERSION"
+  [ -r "$f" ] && tr -d '[:space:]' <"$f" || printf 'unknown'
+}
+
+report_version() {
+  local v git_desc="" head="" behind=""
+  v="$(read_version "$REPO")"
+  section '🧩' "SOTA-skills $v"
+  if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    # --dirty marks uncommitted local edits, so no separate dirty check is needed.
+    git_desc="$(git -C "$REPO" describe --tags --always --dirty 2>/dev/null || true)"
+    head="$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || true)"
+    log "checkout: ${git_desc:-?} (HEAD $head)"
+    # Is a newer release already fetched? Report it without touching the network.
+    if git -C "$REPO" rev-parse --verify -q '@{upstream}' >/dev/null 2>&1; then
+      behind="$(git -C "$REPO" rev-list --count 'HEAD..@{upstream}' 2>/dev/null || printf '0')"
+      if [ "${behind:-0}" -gt 0 ]; then
+        chg "upstream: $behind commit(s) ahead — run scripts/update.sh"
+      else
+        log "upstream: level as of the last fetch (a fetch is not implied)"
+      fi
+    fi
+  else
+    log "checkout: not a git repository (snapshot or plugin cache)"
+  fi
+  # Where the skills actually resolve from — a --copy snapshot does NOT track VERSION.
+  local probe="$TARGET/sota"
+  if [ -L "$probe" ]; then
+    log "install:  symlinked → $(readlink "$probe") (updates live on git pull)"
+  elif [ -d "$probe" ]; then
+    log "install:  copied snapshot at $probe — pinned, will NOT update; re-run with --copy to refresh"
+  else
+    log "install:  not linked into $TARGET"
+  fi
+}
+
+# --- interactive / routing helpers -------------------------------------------
+readonly RT_BEGIN="<!-- >>> sota-skills routing (managed by install.sh) >>> -->"
+readonly RT_END="<!-- <<< sota-skills routing <<< -->"
+
+# Temp-file registry + EXIT trap. Four mktemp sites were cleaned only on the success
+# path (found 2026-08-16), so any `set -e` abort or Ctrl-C between creation and the
+# trailing `rm -f` leaked a file into $TMPDIR. gen-agents-md.sh already does this.
+TMPFILES=""
+# track() runs in the PARENT shell on purpose. An earlier attempt wrapped mktemp in a
+# function whose output was captured with $( ) — a subshell, so TMPFILES never made it
+# back and the trap cleaned nothing. The test caught it; the shape is the lesson.
+track() { TMPFILES="$TMPFILES $1"; }
+# shellcheck disable=SC2064,SC2154  # expand TMPFILES at trap time; _t is the loop var
+trap 'for _t in $TMPFILES; do rm -f "$_t"; done' EXIT
+# kept on one line; contains "sota" so re-runs detect it and never duplicate
+# Match on a phrase that survives rewording, not on the opening words. The old
+# marker was "sota standing rules:" — the first three words of the message — so a
+# user who reworded the opening (the natural thing to do) silently un-managed
+# their own hook: --update then ADDED A SECOND one instead of refreshing it.
+# Observed on a real install 2026-08-05. "sota-* skills" appears in every version
+# of this hook we have ever shipped and in hand-edited variants of it.
+readonly HOOK_SIG="sota-* skills"          # stable marker identifying our own hook
+readonly HOOK_CMD="echo 'sota standing rules (every answer): (1) VALIDATE — check any claim about code, system state, config, versions or facts against a primary source before asserting it, and label anything unverified. (2) KEEP DOCS CURRENT — update affected docs in the same change. (3) ROUTE BEFORE YOU ACT — if the turn touches code, a diff, a config or a build/CI file, invoke the sota skill FIRST and apply the matching sota-* skills. Reading a file counts. If you have already read code this session without routing, route now. Routing is per task SHAPE, not per session: if the work has changed shape since you last routed — different layer or language, or from building to verifying — route again. Treat ~/.claude/profiles as the stack baseline; stop and ask on security-relevant choices.'"
+
+ask_yn() {  # $1 prompt, $2 default(y|n); honors --yes and non-interactive
+  local def="${2:-y}" ans
+  if [ "$ASSUME_YES" -eq 1 ] || [ "$INTERACTIVE" -eq 0 ]; then
+    [ "$def" = y ] && return 0 || return 1
+  fi
+  local choices
+  choices="$([ "$def" = y ] && printf 'Y/n' || printf 'y/N')"
+  printf '  %s%s%s %s [%s%s%s] ' \
+    "$P_CYAN" "$G_ASK" "$P_RESET" "$1" "$P_BOLD" "$choices" "$P_RESET" >/dev/tty
+  read -r ans </dev/tty || ans=""
+  [ -z "$ans" ] && ans="$def"
+  case "$ans" in [Yy]*) return 0 ;; *) return 1 ;; esac
+}
+
+# Never clobber an existing backup: a second --update would overwrite the ORIGINAL
+# with the already-modified file, losing exactly what the backup exists for.
+backup() {
+  [ -e "$1" ] || return 0
+  if [ -e "$1.bak" ]; then
+    log "backup already exists, keeping it: $1.bak"
+    return 0
+  fi
+  cp -L "$1" "$1.bak" || die "could not back up $1"
+  log "backed up $1 → $1.bak"
+}
+
+emit_routing_block() {
+  # The block is a QUOTED heredoc on purpose: its backticks are Markdown, and an
+  # unquoted heredoc would run them as commands. The one machine-specific line (the
+  # router's absolute path) is printed separately.
+  cat <<'MD'
+<!-- >>> sota-skills routing (managed by install.sh) >>> -->
+## Engineering standing rules
+
+Apply to every answer, regardless of phrasing:
+
+1. **Validate before you assert** — verify any claim about code, system state,
+   config, versions, or facts against a primary source (read the file / run the
+   command / fetch official docs) before answering or proposing; label anything
+   unverified as such.
+2. **Keep docs current** — when you change code/behavior/config, update the
+   affected docs (README, CHANGELOG, comments, runbooks, AGENTS.md) in the same
+   change, unprompted.
+
+For any task that builds, designs, refactors, debugs, reviews, or audits code:
+consult the `sota` router skill first, load the matching `sota-*` skills, and
+apply their rules before acting — even when "SOTA" or "audit" is never said. If a
+stack profile exists (`~/.claude/profiles/*.md`), treat it as the BUILD default
+and AUDIT baseline; stop and ask on security-relevant decisions.
+MD
+  # For an agent with no skills loader, "the sota router skill" names nothing it can
+  # open; give it the file. Every agent that loads SKILL.md folders ignores the line.
+  # shellcheck disable=SC2016  # the backticks are Markdown code spans, meant literally
+  printf 'If your agent cannot load a skill by name, read `%s` first — it lists\n' \
+    "$SKILLS_SRC/sota/SKILL.md"
+  # shellcheck disable=SC2016  # Markdown code spans, not command substitution
+  printf 'which `sota-*/SKILL.md` and `rules/` files to open next.\n'
+  # Shell reflexes that recur with the rule loaded (field reports 2026-10-20..24): reading a
+  # rule does not change a reflex, so they ride in the always-loaded block, by MECHANISM, not
+  # by tool name — a list of tools reads as complete and the next spelling slips past it.
+  cat <<'MD'
+
+## Shell habits a rule re-read does not fix
+
+- **A newline is `;`.** In a multi-line command a failing line does not stop the
+  next one; join a check to the action it gates with `&&`.
+- **Matching a process by its command line matches the selector.** `pkill -f`,
+  `pgrep -f`, `ps | grep` and a `/proc/*/cmdline` loop also select the shell, or the
+  `ssh`/`bash -c`, whose argv carries the pattern; act on PIDs you recorded.
+- **zsh is not bash.** An unquoted `$var` is not word-split (`set -- $p` sets one
+  argument; write `${=p}`), and an unquoted word starting with `=` is rewritten or
+  aborts the list (`echo ===`; separate with `echo ---`).
+
+Detail: `sota-shell-scripting` rules/04 §1b, rules/09 §5c, rules/06 §1.
+MD
+  printf '%s\n' "$RT_END"
+}
+
+# Print the managed routing block (markers inclusive) currently in a file.
+extract_block() {  # $1 file
+  awk -v b="$RT_BEGIN" -v e="$RT_END" '
+    $0 == b { inblk = 1 }
+    inblk   { print; if ($0 == e) exit }
+  ' "$1"
+}
+
+# Replace the managed block in place with the current one, preserving everything
+# outside the markers. Writes through the path (cat, not mv) so a symlinked
+# target keeps its link.
+refresh_block() {  # $1 file
+  local f="$1" blk tmp
+  blk="$(mktemp)"; track "$blk"; tmp="$(mktemp)"; track "$tmp"
+  emit_routing_block >"$blk"
+  awk -v b="$RT_BEGIN" -v e="$RT_END" -v blk="$blk" '
+    $0 == b { while ((getline l < blk) > 0) print l; close(blk); inblk = 1; next }
+    inblk && $0 == e { inblk = 0; next }
+    inblk { next }
+    { print }
+  ' "$f" >"$tmp"
+  cat "$tmp" >"$f"
+  rm -f "$blk" "$tmp"
+}
+
+# setup_directive <file> <display-name>: write/refresh the managed routing block in
+# ONE agent's global instruction file. Claude Code's ~/.claude/CLAUDE.md is the
+# original; the same block goes to each other agent's equivalent (mirror_directives).
+setup_directive() {
+  local f="$1" name="$2" tgt="" where
+  where="$name"
+  [ -L "$f" ] && tgt="$(readlink "$f")"
+  [ -n "$tgt" ] && where="$where (symlink → $tgt; likely managed by your dotfiles — commit it there)"
+
+  if [ -f "$f" ] && grep -qxF "$RT_BEGIN" "$f" 2>/dev/null; then
+    if ! grep -qxF "$RT_END" "$f" 2>/dev/null; then
+      warn "$name has the start marker but no end marker — leaving it untouched; fix by hand or delete the block and re-run"
+      return 0
+    fi
+    if [ "$(extract_block "$f" | tail -n 1)" != "$RT_END" ]; then
+      # extract_block stops at an EXACT end-marker line. If its last line is not
+      # RT_END it ran to EOF, i.e. the end marker was altered/indented — and
+      # refresh_block's awk would then never leave its delete branch and would
+      # erase every user line below the block. 2026-08-16: the previous test was
+      # `[ -z "$(extract_block ...)" ]`, which an altered END passes (the block
+      # extends to EOF, so it is non-empty). Proven to delete user content; the
+      # marker greps above are `-qxF` for the same reason.
+      warn "$name has sota routing markers that are altered (indented?) — leaving it untouched; restore the exact marker lines or delete the block and re-run"
+      return 0
+    fi
+    if [ "$(extract_block "$f")" = "$(emit_routing_block)" ]; then
+      log "routing directive in $name — up to date"; return 0
+    fi
+    if ask_yn "The managed SOTA routing directive in $where is out of date — refresh it in place?" y; then
+      backup "$f"; refresh_block "$f"; ok "refreshed routing directive in $name"
+    else
+      log "left existing directive in $name unchanged"
+    fi
+    return 0
+  fi
+  if [ -L "$f" ] && [ ! -e "$f" ]; then           # dangling symlink
+    ask_yn "$name is a broken symlink — replace it with a real file holding the directive?" y \
+      && { rm -f "$f"; emit_routing_block >"$f"; ok "wrote $name (real file)"; }
+    return 0
+  fi
+  if [ -e "$f" ]; then
+    if ask_yn "Append the SOTA routing directive to $where?" y; then
+      backup "$f"; { printf '\n'; emit_routing_block; } >>"$f"; ok "appended directive to $name"
+    else
+      log "skipped $name — copy the block from README's 'Always-on routing' yourself"
+    fi
+  else
+    ask_yn "Create $name with the SOTA routing directive?" y \
+      && { mkdir -p "$(dirname "$f")"; emit_routing_block >"$f"; ok "created $name"; }
+  fi
+  # Declining any prompt above is a valid outcome, not an error — return
+  # success so `set -e` doesn't abort the installer before pre-commit setup
+  # and the final instructions (2026-07-10 audit Q-MED-4).
+  return 0
+}
+
+setup_claude_md() {
+  # shellcheck disable=SC2088  # ~ here is display text shown to the user, not a path
+  setup_directive "$HOME/.claude/CLAUDE.md" "~/.claude/CLAUDE.md"
+}
+
+# The same managed block in every OTHER agent's global instruction file — but only
+# for an agent actually installed here (its home directory exists): creating
+# ~/.codex on a machine with no Codex would be clutter that looks like an install.
+# An existing file is appended to (after a .bak), never replaced; your content
+# outside the markers is kept, exactly as for CLAUDE.md. Paths per vendor docs,
+# fetched 2026-09-29 (docs/MULTI-AGENT.md):
+#   Copilot CLI + VS Code Agent Host  $COPILOT_HOME|~/.copilot/copilot-instructions.md
+#   Codex                             $CODEX_HOME|~/.codex/AGENTS.md
+#   Gemini CLI                        ~/.gemini/GEMINI.md
+# Cursor keeps User Rules in its settings UI, with no documented file — a hint only.
+mirror_directives() {
+  local any=0
+  if [ -d "$COPILOT_DIR" ]; then any=1; setup_directive "$COPILOT_DIR/copilot-instructions.md" "$COPILOT_DIR/copilot-instructions.md (Copilot)"; fi
+  if [ -d "$CODEX_DIR" ];   then any=1; setup_directive "$CODEX_DIR/AGENTS.md" "$CODEX_DIR/AGENTS.md (Codex)"; fi
+  # One file, two readers: Gemini CLI and Antigravity (CLI, 2.0 app and IDE) all read
+  # ~/.gemini/GEMINI.md as a global rule file (antigravity.google/docs/rules, 2026-10-06).
+  if [ -d "$GEMINI_DIR" ];  then any=1; setup_directive "$GEMINI_DIR/GEMINI.md" "$GEMINI_DIR/GEMINI.md (Gemini CLI, Antigravity)"; fi
+  if [ -d "$HOME/.cursor" ]; then
+    any=1
+    chg "Cursor keeps global rules in its settings (Customize → Rules), not a file — paste the block from README's 'Always-on routing' there"
+  fi
+  [ "$any" -eq 1 ] || log "no other agent detected (~/.copilot, ~/.codex, ~/.gemini, ~/.cursor) — nothing to mirror"
+  # A directive naming a skill the agent cannot see is an instruction to fail.
+  if [ -n "$(detected_agents)" ] && [ ! -e "$AGENTS_TARGET/sota" ]; then
+    warn "the directive names the 'sota' skill, but $AGENTS_TARGET has no skills — Copilot CLI, Codex and Gemini CLI will not find it; re-run with --target all"
+  fi
+  local ag_dir
+  while IFS= read -r ag_dir; do
+    [ -n "$ag_dir" ] || continue
+    [ -e "$ag_dir/sota" ] || warn "Antigravity is installed but $ag_dir has no skills — it reads neither ~/.claude/skills nor ~/.agents/skills; re-run with --target all"
+  done <<EOF_AG
+$(antigravity_skill_dirs)
+EOF_AG
+  return 0
+}
+
+# A SessionStart hook that occasionally reminds the user updates exist. It makes
+# NO network request — see scripts/update-reminder.sh for why that is a design
+# choice and not a gap. This is the clone-install half of the update story:
+# symlinked skills update the moment you `git pull`, but nothing ever told you to
+# pull, and the plugin's first-run notice fires once ever so it is onboarding,
+# not a version channel.
+setup_update_reminder() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="\"$REPO/scripts/update-reminder.sh\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping update-reminder hook"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "update-reminder.sh" \
+      '[.hooks.SessionStart[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota update-reminder hook already present — up to date"; return
+  fi
+  ask_yn "Add a SessionStart hook that reminds you to check for updates every ~14 days (no network calls)?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.SessionStart = ((.hooks.SessionStart // []) + [{hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added SessionStart update-reminder hook (silence it with SOTA_UPDATE_REMINDER_DAYS=0)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{SessionStart:[{hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the update-reminder hook"
+  fi
+  rm -f "$tmp"
+}
+
+# A PostToolUse hook that, after the agent edits code, names the rules file for what that code
+# DOES (an outbound fetch -> SSRF, a CSV writer -> formula injection, ...). ROADMAP 73 (m),
+# measured to move outcomes (sota-agent-evals v7/v10: rule tests 0.698 with no hook -> 0.906; in-sample);
+# on fresh tasks (v14, cases-v5) the hook plus the router table moved nothing: 0.667 in both arms.
+# It costs about +68% per agent run, so it is offered, not forced; the plugin ships the same
+# script, and a session with both copies names each file once (the script claims it atomically).
+setup_code_rules_hook() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="python3 \"$REPO/scripts/code-rules-hook.py\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping the code-rules hook"; return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found — skipping the code-rules hook"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "code-rules-hook.py" \
+      '[.hooks.PostToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota code-rules hook already present — up to date"; return
+  fi
+  ask_yn "Add a hook that names the rules file for what the code you just edited does (about +68% cost per agent task)?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.PostToolUse = ((.hooks.PostToolUse // []) + [{matcher:"Edit|Write|MultiEdit",hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added PostToolUse code-rules hook (silence it with SOTA_CODE_RULES_HOOK=off)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{PostToolUse:[{matcher:"Edit|Write|MultiEdit",hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the code-rules hook"
+  fi
+  rm -f "$tmp"
+}
+
+# A PreToolUse hook on Bash that refuses a zsh command carrying an unquoted `=word` (`echo ===`,
+# `[ a == b ]`), which zsh rewrites to a command path or aborts the list on, so the half after it
+# never runs (sota-shell-scripting rules/06 §1). It adds nothing to the context unless it fires:
+# over 43,875 transcript Bash calls it refused 344, all real, and nothing else (2026-10-21, one
+# operator's corpus). It costs ~85 ms per Bash call, and it does nothing unless the agent's shell (CLAUDE_CODE_SHELL, else $SHELL) is zsh.
+setup_zsh_equals_hook() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="python3 \"$REPO/scripts/zsh-equals-hook.py\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping the zsh EQUALS hook"; return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found — skipping the zsh EQUALS hook"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "zsh-equals-hook.py" \
+      '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota zsh EQUALS hook already present — up to date"; return
+  fi
+  ask_yn "Add a hook that refuses a zsh command with an unquoted =word (echo ===) before it runs (~85 ms per command, zsh only)?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.PreToolUse = ((.hooks.PreToolUse // []) + [{matcher:"Bash",hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added PreToolUse zsh EQUALS hook (silence it with SOTA_ZSH_EQUALS_HOOK=off)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the zsh EQUALS hook"
+  fi
+  rm -f "$tmp"
+}
+
+# Claude Code reserves a per-turn CHARACTER budget for the skill listing and sizes it
+# as `(contextTokens x 4) x skillListingBudgetFraction`, fraction defaulting to 0.01 —
+# so 8,000 characters on a 200k-context model, for every skill from every source. Read
+# out of the shipped binary (2.1.268) on 2026-09-11, not inferred: over budget, entries
+# are RANKED by recent usage and the ones that do not fit render as a bare `- name` with
+# NO description at all. That is the whole trigger classifier gone, while the skill stays
+# installed, correct and invocable-by-name. This library's descriptions need ~38k, so on
+# the default fraction most of them arrive with no trigger text — measured live, ~20 of
+# 42 were name-only in the session that found this.
+#
+# So this is not a tuning nicety, it is whether the skills can be selected at all. It is
+# still OFFERED and never imposed: it writes to the user's GLOBAL settings and reserves a
+# slice of every context window, which is their call, not ours.
+setup_listing_budget() {
+  local s="$HOME/.claude/settings.json" tmp need frac cur dup
+  command -v jq >/dev/null 2>&1 || { warn "jq not found — skipping skill-listing budget"; return; }
+  [ -d "$TARGET" ] || return 0
+
+  # Measure, never assume — and measure what the LISTING holds, not what this run linked.
+  # skill-listing-sources.sh is shared with verify-setup.sh and the plugin hook. Until
+  # 2026-09-29 this summed "$TARGET"/*/SKILL.md alone, so a plugin copy of the same library,
+  # the synced claude.ai skills and every other plugin cost nothing here; field-reported
+  # the day it was fixed, on a machine where the listing held the library twice.
+  local lister="$REPO/scripts/skill-listing-sources.sh" sum n_sk window wsrc budget cur_eff fracw
+  [ -x "$lister" ] || return 0
+  sum="$("$lister" 2>/dev/null || true)"
+  need="$(printf '%s\n' "$sum" | sed -n 's/^total=//p' | head -1)"
+  n_sk="$(printf '%s\n' "$sum" | sed -n 's/^skills=//p' | head -1)"
+  [ -n "${need:-}" ] && [ "$need" -gt 0 ] 2>/dev/null || return 0
+  need=$((need * 125 / 100))   # +25% for built-in skills, compiled in and not on disk
+  dup="$(printf '%s\n' "$sum" | sed -n 's/^duplicate_library=//p' | head -1)"
+  [ -z "$dup" ] || warn "the library is installed TWICE (the '$dup' plugin and these links) — every skill is listed twice; keep one: /plugin uninstall $dup@<marketplace>"
+
+  # The budget is `contextTokens x 4 x fraction`, so it depends on the window — which only
+  # a live session knows. The lister's evidence, in order: what our status line last
+  # observed, CLAUDE_CODE_DISABLE_1M_CONTEXT, a `[1m]` model; else unknown -> 200K.
+  window="$(printf '%s\n' "$sum" | sed -n 's/^window=//p' | head -1)"
+  case "$window" in ''|*[!0-9]*) window=200000 ;; esac
+  wsrc="$(printf '%s\n' "$sum" | sed -n 's/^window_source=//p' | head -1)"
+  cur="$(jq -r '.skillListingBudgetFraction // empty' "$s" 2>/dev/null || true)"
+  cur_eff="${cur:-0.01}"
+  budget="$(jq -n --argjson f "$cur_eff" --argjson w "$window" '$w * 4 * $f | floor')"
+  frac="$(jq -n --argjson n "$need" '($n / 800000 * 100 | ceil) / 100 | if . < 0.02 then 0.02 elif . > 0.10 then 0.10 else . end')"
+  fracw="$(jq -n --argjson n "$need" --argjson w "$window" '($n / ($w * 4) * 100 | ceil) / 100 | if . < 0.01 then 0.01 elif . > 0.10 then 0.10 else . end')"
+
+  printf '  %s%s %s%s\n' "$C_DIM" "$G_INFO" \
+    "$(printf '%s skills need ~%s chars of listing; your budget is %s at a %s-token context (%s)' \
+       "${n_sk:-?}" "$need" "$budget" "$window" \
+       "$(case "$wsrc" in observed) echo 'as your status line last observed it' ;; disabled) echo 'CLAUDE_CODE_DISABLE_1M_CONTEXT=1' ;; model) echo 'your model setting carries [1m]' ;; *) echo 'window unknown, so 200K is assumed' ;; esac)")" "$C_RESET"
+
+  if [ "$need" -le "$budget" ]; then
+    if [ "$wsrc" = unknown ]; then
+      log "fits — skillListingBudgetFraction ${cur:-default 0.01} is enough"
+    else
+      log "fits at your ${window}-token context; a 200K-context session would need ~$frac — set it only if you switch models"
+    fi
+    return 0
+  fi
+  # Over budget. At a KNOWN window, size for it; at an unknown one, size for 200K, which
+  # also fits any larger window because the budget scales with it.
+  [ "$wsrc" = unknown ] || frac="$fracw"
+  if [ -n "$cur" ] && jq -n --argjson a "$cur" --argjson b "$frac" -e '$a >= $b' >/dev/null 2>&1; then
+    log "skillListingBudgetFraction already $cur (needs ~$frac) — leaving it alone"; return
+  fi
+  warn "over budget by $((need - budget)) chars — the least-used skills are listed with NO description, so they cannot be auto-selected"
+  ask_yn "Set skillListingBudgetFraction=$frac so every skill keeps its description (reserves ~$frac of each context window, every turn)?" y || {
+    log "left unset — expect skills beyond the first few to be listed name-only"; return; }
+
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --argjson f "$frac" '.skillListingBudgetFraction = $f' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "set skillListingBudgetFraction=$frac in ~/.claude/settings.json"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --argjson f "$frac" '{skillListingBudgetFraction: $f}' >"$s"
+    ok "created ~/.claude/settings.json with skillListingBudgetFraction=$frac"
+  fi
+  rm -f "$tmp"
+}
+
+setup_hook() {
+  local s="$HOME/.claude/settings.json" tmp
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping hook setup (add the UserPromptSubmit hook manually, or install jq and re-run)"; return
+  fi
+  if [ -f "$s" ]; then
+    # A hook we manage (identified by a stable signature) already present?
+    if jq -e --arg sig "$HOOK_SIG" '[.hooks.UserPromptSubmit[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+      if jq -e --arg c "$HOOK_CMD" '[.hooks.UserPromptSubmit[]?.hooks[]?.command // ""] | any(. == $c)' "$s" >/dev/null 2>&1; then
+        log "sota UserPromptSubmit hook already current — up to date"; return
+      fi
+      ask_yn "The sota UserPromptSubmit reminder hook is out of date — refresh its wording?" y \
+        || { log "left existing hook unchanged"; return; }
+      tmp="$(mktemp)"; track "$tmp"; backup "$s"
+      if jq --arg c "$HOOK_CMD" --arg sig "$HOOK_SIG" \
+          '.hooks.UserPromptSubmit |= map(.hooks |= map(if ((.command // "") | contains($sig)) then .command = $c else . end))' \
+          "$s" >"$tmp" 2>/dev/null; then
+        cat "$tmp" >"$s"; ok "refreshed sota UserPromptSubmit hook to latest wording"
+      else
+        warn "could not parse $s as JSON — left unchanged"
+      fi
+      rm -f "$tmp"; return
+    fi
+    # An unrecognized sota-mentioning hook — could be user-authored; do not touch.
+    if jq -e '[.hooks.UserPromptSubmit[]?.hooks[]?.command // ""] | any(test("sota";"i"))' "$s" >/dev/null 2>&1; then
+      log "a sota UserPromptSubmit hook already exists (custom wording) — left unchanged"; return
+    fi
+  fi
+  ask_yn "Add a UserPromptSubmit hook that re-injects the standing rules each prompt?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$HOOK_CMD" '.hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) + [{hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added UserPromptSubmit hook to ~/.claude/settings.json"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$HOOK_CMD" '{hooks:{UserPromptSubmit:[{hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the hook"
+  fi
+  rm -f "$tmp"
+}
+
+# --- contributor hygiene: the repo's own pre-commit hook ---------------------
+# Non-fatal in every branch: end users who never commit to this checkout just
+# get a one-line tip at most; CI enforces the same checks regardless.
+maybe_setup_precommit() {
+  [ -f "$REPO/.pre-commit-config.yaml" ] || return 0
+  git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  section '🔒' 'Contributor hygiene'
+  local hook
+  hook="$(git -C "$REPO" rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
+  case "$hook" in /*) ;; *) hook="$REPO/$hook" ;; esac
+  if [ -n "$hook" ] && [ -f "$hook" ] && grep -q 'pre-commit' "$hook" 2>/dev/null; then
+    # Installed — but "installed" is per HOOK TYPE, not per repo. An --update can
+    # pull a config that declares a new type (pre-push, commit-msg), and
+    # pre-commit only writes .git/hooks/<type> at install time: declaring a stage
+    # does not create the hook (verified 2026-08-19, pre-commit 4.6.0). Before
+    # this, --update returned here and the new gate silently never ran.
+    # `pre-commit install` is idempotent and honours default_install_hook_types,
+    # so re-running it on update is how the hooks converge with the config. A
+    # first-time install has nothing to converge, so it keeps the cheap path.
+    # Only reconverge a hook pre-commit itself generated. `pre-commit install`
+    # preserves a foreign hook by renaming it to <type>.legacy — non-destructive,
+    # but it is still us silently taking over a hook the user hand-wrote, and this
+    # installer has form there (the 2026-08-16 Critical). The generated shim is
+    # self-identifying on line 2; anything else keeps the old behaviour.
+    if [ "$DO_UPDATE" -eq 1 ] && command -v pre-commit >/dev/null 2>&1 \
+       && grep -q 'generated by pre-commit' "$hook" 2>/dev/null; then
+      if (cd "$REPO" && pre-commit install >/dev/null 2>&1); then
+        ok "pre-commit hooks re-synced with the config (any newly declared hook type is now installed)"
+      else
+        warn "'pre-commit install' failed — run it in $REPO so newly declared hook types take effect"
+      fi
+      return 0
+    fi
+    log "pre-commit hook in this checkout — already installed"
+    return 0
+  fi
+  if ! command -v pre-commit >/dev/null 2>&1; then
+    chg "contributor tip: 'pipx install pre-commit' (or 'brew install pre-commit'), then 'pre-commit install' — runs the gitleaks + invariants gate on each commit (CI enforces it regardless)"
+    return 0
+  fi
+  ask_yn "Install the repo's pre-commit hook (gitleaks + invariants on every commit)?" y || return 0
+  if (cd "$REPO" && pre-commit install >/dev/null); then
+    ok "pre-commit hook installed in this checkout"
+  else
+    warn "pre-commit install failed — run 'pre-commit install' in $REPO manually"
+  fi
+}
+
+# --- the MCP server, for agents that would rather call tools ----------------------
+# scripts/sota-mcp-server.py serves the library read-only over MCP (stdio): list_skills,
+# get_skill, get_rules_file, the commands as prompts. Every agent detected below also loads
+# SKILL.md folders natively, so this is a SECOND path, offered and never imposed (operator
+# decision 2026-10-07, ADOPTION-LOG). Claude Code is not offered it: it reads the skills.
+# File formats per vendor docs fetched 2026-10-07 (docs/MULTI-AGENT.md):
+#   Copilot CLI (+ VS Code's portable file)  $COPILOT_DIR/mcp-config.json  mcpServers, tools REQUIRED
+#   Codex                                    $CODEX_DIR/config.toml        [mcp_servers.<name>]
+#   Gemini CLI                               ~/.gemini/settings.json       mcpServers
+#   Antigravity (app, IDE, CLI)              ~/.gemini/config/mcp_config.json  mcpServers
+#   Cursor                                   ~/.cursor/mcp.json            mcpServers, type stdio
+MCP_NAME="sota-skills"
+MCP_SCRIPT="$REPO/scripts/sota-mcp-server.py"
+# The same path as a TOML basic-string body: `\` and `"` escaped, or a checkout path holding
+# either would end the string early and leave Codex an unparseable config.
+MCP_SCRIPT_TOML="$(printf '%s' "$MCP_SCRIPT" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"
+MCP_BEGIN="# >>> sota-skills mcp (managed by install.sh) >>>"
+MCP_END="# <<< sota-skills mcp <<<"
+
+mcp_targets() {  # one "label|file|kind" per line, only for agents installed here
+  [ -d "$COPILOT_DIR" ] && printf '%s\n' "Copilot|$COPILOT_DIR/mcp-config.json|copilot"
+  [ -d "$CODEX_DIR" ] && printf '%s\n' "Codex|$CODEX_DIR/config.toml|codex"
+  [ -d "$GEMINI_DIR" ] && printf '%s\n' "Gemini CLI|$GEMINI_DIR/settings.json|gemini"
+  { [ -d "$AG_APP_HOME" ] || [ -d "$AG_CLI_HOME" ] || [ -d "$GEMINI_DIR/antigravity" ]; } \
+    && printf '%s\n' "Antigravity|$AG_APP_HOME/mcp_config.json|antigravity"
+  [ -d "$HOME/.cursor" ] && printf '%s\n' "Cursor|$HOME/.cursor/mcp.json|cursor"
+  return 0
+}
+
+mcp_entry() {  # $1 kind -> the JSON value for mcpServers["sota-skills"]
+  case "$1" in
+    copilot) jq -n --arg s "$MCP_SCRIPT" '{type:"local",command:"python3",args:[$s],tools:["*"]}' ;;
+    cursor)  jq -n --arg s "$MCP_SCRIPT" '{type:"stdio",command:"python3",args:[$s]}' ;;
+    *)       jq -n --arg s "$MCP_SCRIPT" '{command:"python3",args:[$s]}' ;;
+  esac
+}
+
+mcp_configured() {  # $1 file, $2 kind -> 0 when it already registers THIS checkout's server
+  local f="$1"
+  [ -f "$f" ] || return 1
+  if [ "$2" = codex ]; then
+    grep -qxF "$MCP_BEGIN" "$f" && grep -qF "$MCP_SCRIPT_TOML" "$f"
+  else
+    jq -e --arg n "$MCP_NAME" --argjson v "$(mcp_entry "$2")" '.mcpServers[$n] == $v' "$f" >/dev/null 2>&1
+  fi
+}
+
+mcp_write() {  # $1 label, $2 file, $3 kind
+  local label="$1" f="$2" kind="$3" tmp
+  if [ "$kind" = codex ]; then
+    if [ -f "$f" ]; then
+      # An unpaired marker: the strip below would skip from the start marker to the END OF
+      # THE FILE, deleting every table after it (measured 2026-10-07: 8 lines -> 1). Every
+      # other managed-block writer here refuses this case; so does this one.
+      if grep -qxF "$MCP_BEGIN" "$f" && ! grep -qxF "$MCP_END" "$f"; then
+        warn "$f has the sota-skills MCP start marker but no end marker — left unchanged; fix it by hand or delete the block and re-run"
+        return 0
+      fi
+      tmp="$(mktemp)"; track "$tmp"
+      awk -v b="$MCP_BEGIN" -v e="$MCP_END" '$0==b{skip=1;next} skip&&$0==e{skip=0;next} !skip' "$f" >"$tmp"
+      # The user's own table (`codex mcp add`, or by hand) outside our markers: appending ours
+      # would declare it twice, which TOML forbids. Leave theirs alone.
+      if grep -qE "^[[:space:]]*\\[mcp_servers\\.\"?${MCP_NAME}\"?\\][[:space:]]*(#.*)?\$" "$tmp"; then
+        warn "$f already defines [mcp_servers.$MCP_NAME] outside install.sh's markers — left unchanged; remove it to let install.sh manage it"
+        rm -f "$tmp"; return 0
+      fi
+      backup "$f"
+      cat "$tmp" >"$f"; rm -f "$tmp"   # cat (not mv) so a symlinked config keeps its link
+    fi
+    mkdir -p "$(dirname "$f")"
+    { printf '\n%s\n[mcp_servers.%s]\ncommand = "python3"\nargs = ["%s"]\n%s\n' \
+        "$MCP_BEGIN" "$MCP_NAME" "$MCP_SCRIPT_TOML" "$MCP_END"; } >>"$f"
+    ok "registered the MCP server for $label ($f)"
+    return 0
+  fi
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$f" ]; then
+    backup "$f"
+    if jq --arg n "$MCP_NAME" --argjson v "$(mcp_entry "$kind")" '.mcpServers[$n] = $v' "$f" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$f"   # cat (not mv) so a symlinked config keeps its link
+      ok "registered the MCP server for $label ($f)"
+    else
+      warn "could not parse $f as JSON — left unchanged; add the entry by hand (docs/MULTI-AGENT.md)"
+    fi
+  else
+    mkdir -p "$(dirname "$f")"
+    jq -n --arg n "$MCP_NAME" --argjson v "$(mcp_entry "$kind")" '{mcpServers:{($n):$v}}' >"$f"
+    ok "created $f with the MCP server for $label"
+  fi
+  rm -f "$tmp"
+}
+
+maybe_setup_mcp() {
+  # Personal installs only, and never a deliberate --copy snapshot (its server path would be
+  # this checkout anyway). --mcp forces, --no-mcp skips; otherwise offered when interactive or
+  # under --yes, on install AND on --update, until every detected agent has it.
+  [ "$TARGET" = "$HOME/.claude/skills" ] || return 0
+  [ "$DO_MCP" -eq 0 ] && return 0
+  local line label f kind todo="" n=0
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    IFS='|' read -r label f kind <<EOF_MCP
+$line
+EOF_MCP
+    if mcp_configured "$f" "$kind"; then log "MCP server for $label — up to date"; else todo="$todo$line
+"; n=$((n + 1)); fi
+  done <<EOF_T
+$(mcp_targets)
+EOF_T
+  [ "$n" -gt 0 ] || return 0
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping MCP registration; docs/MULTI-AGENT.md has each agent's snippet"; return 0
+  fi
+  if [ "$DO_MCP" -ne 1 ]; then
+    if [ "$INTERACTIVE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
+      ask_yn "Register the read-only SOTA MCP server for $n agent(s) without it ($(printf '%s' "$todo" | cut -d'|' -f1 | paste -sd, - | sed 's/,/, /g'))? Optional: they already load the skills directly." n || return 0
+    else
+      chg "the read-only MCP server is not registered for $n agent(s) — re-run with --mcp to add it (optional)"; return 0
+    fi
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    IFS='|' read -r label f kind <<EOF_MCP
+$line
+EOF_MCP
+    mcp_write "$label" "$f" "$kind" || true
+  done <<EOF_T
+$todo
+EOF_T
+  return 0
+}
+
+maybe_setup_routing() {
+  # personal install only; never for --project or a deliberate --copy snapshot. A
+  # copy forced by missing symlink support is still a personal install, so it keeps
+  # the offer — the directive and hook are written as real files either way.
+  [ "$TARGET" = "$HOME/.claude/skills" ] || return 0
+  [ "$USE_COPY" -eq 0 ] || [ "$LINK_FALLBACK" -eq 1 ] || return 0
+  local go=0
+  case "$DO_ROUTING" in
+    1) section '🧭' 'Always-on routing'; go=1 ;;
+    0) return 0 ;;
+    *) if [ "$INTERACTIVE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
+         # Header first: the question and everything it prints belong under it.
+         section '🧭' 'Always-on routing'
+         ask_yn "Set up always-on routing (global directive + prompt hook) so skills apply without trigger words?" y && go=1
+       fi ;;
+  esac
+  [ "$go" -eq 1 ] || return 0
+  # Best-effort routing setup: declining a prompt inside either function is a
+  # valid outcome, so never let it abort the installer before pre-commit setup
+  # and the final instructions (2026-07-10 audit Q-MED-4).
+  setup_claude_md || true
+  mirror_directives || true
+  setup_hook || true
+  setup_update_reminder || true
+  setup_code_rules_hook || true
+  setup_zsh_equals_hook || true
+  return 0
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --update)     DO_UPDATE=1 ;;
+    --version)    DO_VERSION=1 ;;
+    --print-routing-block) DO_PRINT_BLOCK=1 ;;
+    --copy)       USE_COPY=1 ;;
+    --project)    shift; [ $# -gt 0 ] || die "--project needs a directory"
+                  TARGET="$1/.claude/skills"; AGENTS_TARGET="$1/.agents/skills" ;;
+    --target)     shift; [ $# -gt 0 ] || die "--target needs claude|agents|all"; INSTALL_TARGET="$1" ;;
+    --target=*)   INSTALL_TARGET="${1#*=}" ;;
+    --routing)    DO_ROUTING=1 ;;
+    --no-verify)  DO_VERIFY=0 ;;
+    --no-routing) DO_ROUTING=0 ;;
+    --mcp)        DO_MCP=1 ;;
+    --no-mcp)     DO_MCP=0 ;;
+    --yes|-y)     ASSUME_YES=1 ;;
+    --color)      shift; [ $# -gt 0 ] || die "--color needs always|never|auto"; COLOR_MODE="$1" ;;
+    --color=*)    COLOR_MODE="${1#*=}" ;;
+    --no-color)   COLOR_MODE=never ;;
+    -h|--help)    usage 0 ;;
+    *)            die "unknown argument: $1 (try --help)" ;;
+  esac
+  shift
+done
+
+case "$INSTALL_TARGET" in
+  auto|claude|agents|all) ;;
+  *) die "--target takes claude|agents|all (got: $INSTALL_TARGET)" ;;
+esac
+case "$COLOR_MODE" in
+  auto|always|never) ;;
+  *) die "--color takes always|never|auto (got: $COLOR_MODE)" ;;
+esac
+init_style   # now with the flags applied
+
+[ -d "$SKILLS_SRC" ] || die "no skills/ dir at $SKILLS_SRC — run from a SOTA-skills checkout"
+
+# --version is a read-only report: print and exit before touching anything.
+if [ "$DO_VERSION" -eq 1 ]; then
+  report_version
+  exit 0
+fi
+# So is --print-routing-block: the block a refresh would write, for verify-setup 2e to diff.
+if [ "$DO_PRINT_BLOCK" -eq 1 ]; then
+  emit_routing_block
+  exit 0
+fi
+
+# --- optional self-update ----------------------------------------------------
+if [ "$DO_UPDATE" -eq 1 ]; then
+  section '📥' 'Update'
+  if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    was="$(read_version "$REPO")"
+    chg "updating $(basename "$REPO") (git pull --ff-only)…"
+    git -C "$REPO" pull --ff-only || die "pull failed — resolve manually, then re-run"
+    now="$(read_version "$REPO")"
+    # Report the delta explicitly: symlinked skills change under you on a pull,
+    # so "nothing to do" and "you just moved three releases" looked identical.
+    if [ "$was" != "$now" ]; then
+      ok "version:  $was → $now — see CHANGELOG.md for what changed"
+    else
+      log "version:  $now (unchanged)"
+    fi
+  else
+    warn "$REPO is not a git checkout — skipping --update"
+  fi
+fi
+
+# --- can this machine make a symlink at all? ---------------------------------
+# Git Bash and MSYS2 do NOT fail `ln -s` when a real symlink is unavailable: their
+# default makes a COPY and exits 0 (msys2.org/docs/symlinks: `winsymlinks:deepcopy`;
+# gitforwindows.org/symbolic-links: "the ln -s command in Git Bash does not create
+# symbolic links. Instead, it creates copies"). So on Windows without Developer Mode or Administrator the default install
+# became a stale snapshot, `git pull` stopped reaching it, and nothing said so —
+# field-reported 2026-09-29. Two fixes, both needed:
+#   1. ask the runtime for a NATIVE link and to fail rather than copy
+#      (`nativestrict`, documented by MSYS2; Git for Windows' own page says only that
+#      Git Bash's `ln -s` "creates copies" by default). Measured 2026-10-22 on Windows 11
+#      26100.9457, PortableGit 2.56.0.2 (`uname -s` MINGW64_NT), as an elevated
+#      administrator: default `ln -s` copied at exit 0; `MSYS=winsymlinks:nativestrict`
+#      made a real link that `-L` sees; this script linked 43 of 43 skills. A user
+#      WITHOUT the symlink privilege was not measured, so what nativestrict does there
+#      (fail, as documented, so step 2 copies) is still unverified.
+#   2. probe once, and if no symlink results, say so loudly and copy on purpose,
+#      instead of copying by accident. The probe asserts `-L` on the result rather
+#      than trusting ln's exit status, which is exactly what deepcopy lies about.
+case "$(uname -s 2>/dev/null || true)" in
+  MINGW*|MSYS*) export MSYS="${MSYS:+$MSYS }winsymlinks:nativestrict" ;;
+  CYGWIN*)      export CYGWIN="${CYGWIN:+$CYGWIN }winsymlinks:nativestrict" ;;
+esac
+can_symlink() {
+  local d rc=1
+  d="$(mktemp -d 2>/dev/null)" || return 1
+  if mkdir "$d/t" && ln -s "$d/t" "$d/l" 2>/dev/null && [ -L "$d/l" ]; then rc=0; fi
+  rm -rf "$d"
+  return "$rc"
+}
+LINK_FALLBACK=0   # 1 = symlinks were wanted and are impossible here; copying instead
+if [ "$USE_COPY" -eq 0 ] && ! can_symlink; then
+  LINK_FALLBACK=1; USE_COPY=1
+  warn "this machine cannot create symlinks — COPYING the skills instead. A copy is a snapshot: 'git pull' will NOT update it, so re-run install.sh after every pull. On Windows, enable Developer Mode (Settings → System → For developers) or run as Administrator, then re-run install.sh to switch to live links."
+fi
+
+# --- link (or copy) every skill, idempotently --------------------------------
+# install_into <skills-dir>: one destination. Called once for Claude Code's own
+# directory and, with --target agents|all (or a yes to the offer below), once more
+# for the cross-agent one — the same links fanned out, never a second source.
+install_into() {
+  local dir="$1" src name dest tgt linked=0 created=0 pruned=0 copy_note=""
+  mkdir -p "$dir"
+  for src in "$SKILLS_SRC"/*/; do
+    name="$(basename "$src")"
+    dest="$dir/$name"
+    [ -e "$dest" ] || [ -L "$dest" ] || created=$((created + 1))
+    if [ "$USE_COPY" -eq 1 ]; then
+      rm -rf "$dest"
+      cp -R "${src%/}" "$dest"
+    else
+      if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+        # ln -sfn cannot replace a real directory — it would nest the link
+        # INSIDE it and leave the stale copy in place while we report success
+        # (the --copy → default-install switch). Ask, then replace for real.
+        if ask_yn "$name at $dest is a real directory (previous --copy install?) — replace it with a symlink?" y; then
+          rm -rf "$dest"
+        else
+          warn "kept $dest as-is — it is a snapshot and will NOT update; re-run with --copy to refresh it"
+          continue
+        fi
+      fi
+      ln -sfn "${src%/}" "$dest"
+    fi
+    linked=$((linked + 1))
+  done
+
+  # prune stale links: ours (point into this repo) but source now gone. Only OUR
+  # links — ~/.agents/skills is shared by every agent on the machine.
+  if [ "$USE_COPY" -eq 0 ] && [ -d "$dir" ]; then
+    for dest in "$dir"/*; do
+      [ -L "$dest" ] || continue
+      tgt="$(readlink "$dest")"
+      case "$tgt" in
+        "$SKILLS_SRC"/*) [ -e "$tgt" ] || { rm -f "$dest"; pruned=$((pruned + 1)); chg "pruned stale link: $(basename "$dest")"; } ;;
+      esac
+    done
+  fi
+
+  [ "$USE_COPY" -eq 1 ] && copy_note=' [copied]'
+  [ "$LINK_FALLBACK" -eq 1 ] && copy_note=' [COPIED — symlinks unavailable; re-run after each git pull]'
+  # A copy cannot say which release it is: the checkout's VERSION moves on `git pull`
+  # and the copy does not, so anything reading VERSION reports the NEW release over OLD
+  # guidance. Stamp the copy with what it was copied from; update-reminder.sh compares
+  # the stamp with the checkout at session start. A linked install needs no stamp —
+  # it IS the checkout — so a switch back to links removes it.
+  if [ "$USE_COPY" -eq 1 ]; then
+    {
+      printf 'version=%s\n' "$(read_version "$REPO")"
+      printf 'commit=%s\n' "$(git -C "$REPO" rev-parse HEAD 2>/dev/null || printf unknown)"
+      printf 'source=%s\n' "$REPO"
+    } >"$dir/.sota-install"
+  else
+    rm -f "$dir/.sota-install"
+  fi
+  ok "linked $linked skill(s) into $dir ($created new, $pruned pruned)$copy_note"
+}
+
+# --- which agents are on this machine? --------------------------------------
+# Only the path every non-Claude agent documents: ~/.agents/skills is listed as a
+# personal skills directory by Copilot CLI, Copilot in VS Code, Codex, Cursor and
+# Gemini CLI (vendor docs fetched 2026-09-29 — docs/MULTI-AGENT.md has the table and
+# URLs). Deliberately NOT ~/.copilot/skills as well: VS Code reads ~/.copilot,
+# ~/.claude AND ~/.agents, so a third copy of every skill buys nothing.
+# Copilot CLI, Codex and Gemini CLI do not DOCUMENT ~/.claude/skills (Copilot CLI's
+# personal list is ~/.copilot and ~/.agents only; Codex and Gemini never mention it —
+# an absence in docs, not a measured behaviour), so they are the ones whose presence
+# makes the offer; Cursor and VS Code document reading ~/.claude/skills.
+detected_agents() {
+  local out=""
+  [ -d "$COPILOT_DIR" ] && out="$out Copilot"
+  [ -d "$CODEX_DIR" ]   && out="$out Codex"
+  [ -d "$GEMINI_DIR" ]  && out="$out Gemini"
+  [ -n "$(antigravity_skill_dirs)" ] && out="$out Antigravity"
+  printf '%s' "${out# }"
+}
+
+# Antigravity's global skills directories, one per line, for each surface whose home
+# exists here — never created on a machine without it. The 2.0 app/IDE home is
+# ~/.gemini/config (also the legacy ~/.gemini/antigravity); the CLI's is
+# ~/.gemini/antigravity-cli. Detection by directory, the same rule as every agent above.
+antigravity_skill_dirs() {
+  if [ -d "$AG_APP_HOME" ] || [ -d "$GEMINI_DIR/antigravity" ]; then printf '%s\n' "$AG_APP_HOME/skills"; fi
+  if [ -d "$AG_CLI_HOME" ]; then printf '%s\n' "$AG_CLI_HOME/skills"; fi
+  return 0
+}
+
+section '🔗' 'Skills'
+case "$INSTALL_TARGET" in
+  claude|all) install_into "$TARGET" ;;
+esac
+want_agents=0
+case "$INSTALL_TARGET" in
+  agents|all) want_agents=1 ;;
+  auto)
+    install_into "$TARGET"
+    found="$(detected_agents)"
+    if [ -n "$found" ] && [ "$TARGET" = "$HOME/.claude/skills" ]; then
+      if [ "$INTERACTIVE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
+        ask_yn "Found $found, which do not document reading ~/.claude/skills — also link the skills into $AGENTS_TARGET (read by Copilot CLI, VS Code, Codex, Cursor, Gemini CLI) and into Antigravity's own skills directory where it is installed?" y && want_agents=1
+      else
+        # shellcheck disable=SC2088  # ~ is display text in the hint, not a path
+        chg "found $found, which do not document reading ~/.claude/skills — re-run with --target all to link $AGENTS_TARGET too"
+      fi
+    fi ;;
+esac
+if [ "$want_agents" -eq 1 ]; then
+  install_into "$AGENTS_TARGET"
+  # Antigravity reads neither ~/.claude/skills nor ~/.agents/skills globally. Personal
+  # installs only: a --project install lands in <dir>/.agents/skills, which Antigravity
+  # already reads as its workspace path.
+  if [ "$TARGET" = "$HOME/.claude/skills" ]; then
+    while IFS= read -r ag_dir; do
+      [ -n "$ag_dir" ] && install_into "$ag_dir"
+    done <<EOF_AG
+$(antigravity_skill_dirs)
+EOF_AG
+  fi
+fi
+
+# --- profile convenience (personal install only) -----------------------------
+if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then
+  prof="$(find "$REPO/profiles" -maxdepth 1 -name '*.md' ! -name 'example.md.template' 2>/dev/null | head -n1 || true)"
+  if [ -n "$prof" ]; then
+    mkdir -p "$HOME/.claude/profiles"
+    dst="$HOME/.claude/profiles/$(basename "$prof")"
+    if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+      # A real file (not our symlink) already lives there — never clobber it
+      # silently; back up + ask, matching setup_claude_md's contract
+      # (2026-07-10 audit Q-MED-5). Non-interactive default is 'n' (keep it).
+      if ask_yn "$dst is a real file — back it up and replace with a link to the repo profile?" n; then
+        backup "$dst"; ln -sfn "$prof" "$dst"; ok "linked profile: ~/.claude/profiles/$(basename "$prof")"
+      else
+        log "left existing ~/.claude/profiles/$(basename "$prof") untouched"
+      fi
+    else
+      ln -sfn "$prof" "$dst"
+      ok "linked profile: ~/.claude/profiles/$(basename "$prof")"
+    fi
+  else
+    chg "no profile yet — cp profiles/example.md.template profiles/<you>.md, then re-run"
+  fi
+fi
+
+# --- slash commands -----------------------------------------------------------
+# Every file in commands/ is installed, not just one: the set brackets a working session
+# (/sota-resume opens, /sota-close and /sota-report close it), plus /sota-audit and its
+# escalation /sota-deep-audit. `/sota-report` is the load-bearing one for the library
+# itself — it learns nothing from use unless a session that used it reports back (README,
+# "Found a gap?"), which is why verify-setup checks it by name (1c) and the rest by
+# denominator (1d). All of them ship where they are reachable from ANY project rather than
+# only from this repo: a prompt you have to go and find is a prompt nobody runs at the end
+# of a long session.
+#
+# User-level (~/.claude/commands) on purpose, never project-level: the report is written
+# in the OTHER project, about work done there. Symlinked like the skills, so `--update`
+# refreshes the text; `--copy` snapshots it for the same reason it snapshots skills.
+setup_commands() {
+  # $HOME/.claude, matching every other config write in this script. NOT derived from
+  # $TARGET: --project moves the SKILLS to a repo, and a report command belongs to the
+  # person, not the checkout. (CLAUDE_HOME does not exist here — using it wrote to
+  # /commands, caught before it shipped.)
+  local src="$REPO/commands" cmd_dir="$HOME/.claude/commands" n=0
+  [ -d "$src" ] || return 0
+  mkdir -p "$cmd_dir" 2>/dev/null || { warn "could not create $cmd_dir — skipping commands"; return 0; }
+  for f in "$src"/*.md; do
+    [ -e "$f" ] || continue
+    local dest
+    dest="$cmd_dir/$(basename "$f")"
+    # A real file here is either a hand-edit or an older --copy install. Back it up
+    # rather than clobbering: it is in the user's config dir, not ours.
+    if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+      if [ "$USE_COPY" -eq 1 ]; then backup "$dest"; else
+        backup "$dest"; rm -f "$dest"
+      fi
+    fi
+    if [ "$USE_COPY" -eq 1 ]; then cp -f "$f" "$dest"; else ln -sfn "$f" "$dest"; fi
+    n=$((n + 1))
+  done
+  [ "$n" -gt 0 ] && ok "slash command(s) installed: $(cd "$src" && printf '/%s ' *.md | sed 's/\.md//g')— in $cmd_dir"
+  return 0
+}
+section '💬' 'Slash commands'
+setup_commands || true
+
+maybe_setup_routing
+section '🔌' 'MCP server (optional)'
+maybe_setup_mcp || true
+# Independent of the routing opt-in on purpose: the listing budget matters MORE when
+# always-on routing is declined, because that is exactly when per-skill auto-selection
+# is the only path and a name-only entry has nothing to match on.
+section '📏' 'Skill listing budget'
+setup_listing_budget || true
+maybe_setup_precommit
+
+section '✅' 'Done'
+printf '  %sTo update later:%s\n' "$C_DIM" "$C_RESET"
+printf '    git -C "%s" pull   %s# existing skills update live (symlinks); then…%s\n' \
+  "$REPO" "$C_DIM" "$C_RESET"
+printf '    "%s/scripts/install.sh"   %s# …re-link to pick up any new skills%s\n' \
+  "$REPO" "$C_DIM" "$C_RESET"
+printf '  %sOr in one step:%s  %s"%s/scripts/update.sh"%s\n' \
+  "$C_DIM" "$C_RESET" "$C_CYAN" "$REPO" "$C_RESET"
+# Nothing here runs the verifier, and a pull that adds a skill creates no link —
+# so "installed" and "complete" look identical until something compares the two.
+printf '  %sFull check (repo context, gates, CI):%s  %s"%s/scripts/verify-setup.sh"%s\n' \
+  "$C_DIM" "$C_RESET" "$C_CYAN" "$REPO" "$C_RESET"
+
+# --- did it actually take? ---------------------------------------------------
+# Read-only, section A only, and NEVER fatal: this reports on the install, it does
+# not gate it. A non-zero verifier must not abort a successful link run, and
+# `set -e` would do exactly that without the guard.
+if [ "$DO_VERIFY" -eq 1 ] && [ -x "$REPO/scripts/verify-setup.sh" ]; then
+  section '🔎' 'Reachability'
+  vrc=0
+  "$REPO/scripts/verify-setup.sh" --reach-only || vrc=$?
+  if [ "$vrc" -ne 0 ]; then
+    warn "verify-setup reported a problem above — the link step succeeded, the reach did not"
+  fi
+fi

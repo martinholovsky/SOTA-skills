@@ -1,0 +1,364 @@
+# 02 — Security: injection, deserialization, ReDoS, secrets
+
+Ruby-specific rules for input crossing a trust boundary. Primary references:
+[OWASP Ruby on Rails Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Ruby_on_Rails_Cheat_Sheet.html)
+and the framework security guides (e.g.
+[Rails Securing guide](https://guides.rubyonrails.org/security.html)) — the
+patterns below apply to any Ruby codebase, framework or not. Web-surface
+issues (XSS, CSRF, mass assignment) live in [`rules/03`](03-web-hardening.md); generic secure-coding
+depth in [`sota-code-security`](../../sota-code-security/SKILL.md).
+
+## 1. SQL injection — parameterize everywhere
+
+String interpolation into SQL is CRITICAL regardless of where the value
+"comes from" — trust levels change over refactors.
+
+**ActiveRecord** (neutral example):
+
+```ruby
+# BAD — injectable
+User.where("name = '#{params[:name]}'")
+User.order(params[:sort])                       # column-name injection
+User.pluck(Arel.sql(params[:col]))              # attacker-chosen SQL
+
+# GOOD
+User.where(name: params[:name])                  # hash conditions
+User.where("email = ?", params[:email])          # positional placeholder
+User.where("created_at > :since", since: since)  # named placeholder
+User.order(Arel.sql(SORTS.fetch(params[:sort]))) # allowlist -> literal
+```
+
+- `order`, `group`, `select`, `pluck`, `joins`, `having` with raw strings are
+  injection sinks too — anything user-influenced goes through an **allowlist
+  lookup**, never straight in. Rails raises on unrecognized raw SQL in some
+  of these unless wrapped in `Arel.sql` — treat every `Arel.sql` as an audit
+  point.
+- `LIKE` patterns: escape with `sanitize_sql_like(term)` before binding,
+  or `%` / `_` become wildcards (data disclosure, DoS-y scans).
+
+**Sequel** (neutral example): use placeholders (`where("name = ?", n)`) or
+virtual rows (`where { created_at > since }`); every `Sequel.lit`
+with interpolation is the same CRITICAL as raw string SQL.
+
+Raw drivers (`pg`, `mysql2`, `sqlite3`): use `exec_params`/prepared
+statements; never `exec("... #{v}")`.
+
+## 2. Command injection — argv form, never shell strings
+
+The shell-string forms of `system`, backticks/`%x`, `exec`, `spawn`,
+`IO.popen`, and `Open3.*` all pass through `/bin/sh` when given a single
+string with metacharacters.
+
+```ruby
+# BAD — all CRITICAL with external input
+system("convert #{upload_path} out.png")
+`git clone #{repo_url}`
+IO.popen("grep #{pattern} log.txt")
+
+# GOOD — argv form, no shell involved
+system("convert", upload_path, "out.png")
+out, status = Open3.capture2("git", "clone", "--", repo_url)
+IO.popen(["grep", "--", pattern, "log.txt"])
+```
+
+- Prefer `Open3.capture2/capture3` (argv form) when you need output + status;
+  backticks give no status separation and invite interpolation.
+- **Check the result.** `system` returns `true` on exit status zero, `false` on a non-zero
+  status and `nil` when the command could not run — it raises only with `exception: true`
+  (Ruby ≥ 2.6, `Kernel#system` docs). A bare `system(...)` statement discards all three;
+  with `Open3.capture*`, test `status.success?`.
+- `--` before positional user args stops option injection (`-oProxyCommand=`
+  class attacks).
+- `Shellwords.escape` is a last resort for legacy shell-string call sites —
+  argv form is strictly safer.
+- **`Kernel#open` / `URI.open` (open-uri) with an external name** — never.
+  On Ruby ≤ 3.4 a leading `|` spawns a subprocess (RCE); that was deprecated
+  in 3.3 and **removed in 4.0**, where `open("|cmd")` raises `Errno::ENOENT`
+  (measured, 4.0.6). On every version the call is still an arbitrary
+  local-file read for any name that is not a URL. Use `File.open` for files
+  and `Net::HTTP`/an HTTP client for URLs.
+
+## 3. Insecure deserialization
+
+- **`Marshal.load` on external data is CRITICAL** — arbitrary object
+  instantiation leading to RCE gadgets. That includes data from cookies,
+  caches (e.g. a shared Redis/Memcached a less-trusted system can write to),
+  message queues, and files users can influence. Use JSON or MessagePack for
+  interchange. Rails note: cache/cookie serializers default to safer JSON
+  formats in recent versions — flag any explicit `serializer: :marshal`
+  fed by semi-trusted writers.
+- **YAML/Psych**: since Psych 4 (bundled from Ruby 3.1),
+  [`YAML.load` has `safe_load` semantics](https://docs.ruby-lang.org/en/master/Psych.html)
+  — only basic types, **aliases disabled** by default. Rules:
+  - The unsafe surface on external data is CRITICAL (same gadget class as
+    Marshal): `YAML.unsafe_load`, `YAML.unsafe_load_file`,
+    `Psych.parse(s).to_ruby` / `parse_stream(...).to_ruby` (the node API
+    revives `!ruby/object` tags with no allowlist — measured, Psych 5.3.1),
+    and a `permitted_classes:` list widened to classes with side-effecting
+    setters. `load_stream` has no `unsafe:` keyword (`ArgumentError`), and
+    `load_documents` no longer exists.
+  - Extra classes go through `permitted_classes: [Date, Symbol, ...]`, never
+    a switch to `unsafe_load`.
+  - Alias-using config files: `YAML.safe_load(s, aliases: true)` — note
+    aliases enable billion-laughs-style expansion, so only for trusted files.
+  - Code still on Ruby ≤3.0/Psych 3 (EOL anyway): `YAML.load` there is
+    unsafe-by-default — treat every call as `unsafe_load`.
+- **JSON**: `JSON.parse` is safe; `JSON.load` / `create_additions: true`
+  enables object revival via `json_class` — don't use it on external input. Depth limits and
+  `SystemStackError`: [rules/01](01-language-idioms.md) §5.
+- **XML (XXE, entity expansion)** — the class and its fixes are
+  [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §6; the Ruby spelling:
+  - **Nokogiri's defaults are safe**: `DEFAULT_XML` sets `NONET` and leaves
+    `NOENT` and `DTDLOAD` off, so an external entity comes back unexpanded
+    (measured, nokogiri 1.19.4: default parse returned `""`, with `noent` the
+    file's contents). The finding is any option that undoes that: `noent`,
+    `dtdload`, `dtdattr`, `nononet`, `huge` in a config block, or
+    `ParseOptions::NOENT` / `DTDLOAD` / `HUGE` or clearing `NONET` in an
+    options integer — HIGH on untrusted XML (file read, SSRF).
+  - **REXML** (a bundled gem on Ruby 4.0: under Bundler it loads only when
+    the Gemfile lists it, measured) does not fetch `SYSTEM` entities (`&x;`
+    stays literal, measured REXML 3.4.4) and caps expansion through
+    `REXML::Security.entity_expansion_limit` (10 000) and
+    `entity_expansion_text_limit` (10 240 bytes); a billion-laughs document
+    raised `RuntimeError`. Raising either limit on untrusted input is a
+    finding. Keep the gem current — its NEWS records a run of expansion-limit
+    fixes, and bundler-audit covers it once it is in the lockfile.
+- **CSV**: `CSV` with `converters: :all` can build unexpected types; also
+  remember spreadsheet formula injection (`=cmd|...`) when *emitting* CSV
+  from user data — prefix `'` on `=`, `+`, `-`, `@` cells.
+
+## 4. eval, send, and reflection sinks
+
+- `eval`, `instance_eval`/`class_eval` **with string arguments**, and
+  `Binding#eval` on anything user-influenced is CRITICAL. Block forms
+  (`instance_eval { ... }`) don't interpolate input and are fine.
+- `send`/`public_send` with a user-controlled method name lets callers reach
+  any method (`send(params[:action])` → `send(:destroy_all)`). Allowlist:
+  `ACTIONS.fetch(params[:action])`, and prefer `public_send` always.
+- `constantize`/`safe_constantize` (or `Object.const_get`) on user input is
+  unsafe reflection — instantiating an attacker-chosen class is a gadget
+  entry point. Allowlist class names explicitly.
+- The same reach comes through **method objects**, not just `send`:
+  `method(params[:m]).call`, `instance_method(name).bind_call(obj)`, and
+  `items.map(&params[:attr].to_sym)` all let the caller name the method. The
+  fix is the same allowlist, applied before the name becomes a symbol.
+- ERB/template injection: `ERB.new(user_supplied_template).result(binding)`
+  is code execution by design. User-editable templates need a sandboxed
+  engine (e.g. Liquid as a neutral example), never ERB/Haml/Slim. Rails'
+  `render inline: str` is the same sink: the renderer compiles `str` as a
+  template with a handler (`Template::Inline`), so user input there is RCE.
+  `render file:` is the file-read twin, in [`rules/03`](03-web-hardening.md) §7.
+- **No in-process sandbox makes string eval safe.** `$SAFE` is now just an
+  ordinary global: on Ruby 4.0.6, `$SAFE = 1` followed by `File.read` still
+  worked. `BasicObject.new.instance_eval(str)` still reaches `::Kernel` and
+  `::File`, and a `Ractor` block still runs backticks (both measured). When
+  users need formulas or rules, use a dispatch hash of lambdas or a parser for
+  a fixed grammar that you own. Code that really is untrusted runs behind a
+  process or VM boundary ([`sota-sandboxing`](../../sota-sandboxing/SKILL.md)). OWASP: Code Review Guide;
+  Proactive Controls 2024 C3; ASVS 5.0 V1.3.
+
+## 5. ReDoS and regex correctness
+
+- **Anchor validations with `\A` and `\z` — never `^`/`$`.** In Ruby, `^`/`$`
+  match *line* boundaries, so `/^https?:\/\/\S+$/` accepts
+  `"javascript:x\nhttp://ok"` — a validation bypass, HIGH. (`\Z` allows a
+  trailing newline; almost always you want `\z`.)
+- ReDoS: nested quantifiers / overlapping alternations
+  (`/(a+)+$/`, `/(\w+\s?)*$/`) explode on crafted input. Since Ruby 3.2 most
+  patterns are memoized to linear time, and two guards exist
+  ([3.2 release](https://www.ruby-lang.org/en/news/2022/12/25/ruby-3-2-0-released/)):
+  - Set a **global budget**: `Regexp.timeout = 1.0` (seconds) at boot;
+    per-regex override `Regexp.new(src, timeout: 0.1)`.
+  - Check hot, input-facing patterns with `Regexp.linear_time?(re)`.
+- Don't build regexes by interpolating user input; if unavoidable,
+  `Regexp.escape(input)` first.
+- **Escaping, precisely.** `#{}` inside `/.../`, `%r{...}` or
+  `Regexp.new("...#{x}")` splices `x` in as *pattern syntax*: a search
+  term `a.c` matches `abc`, and `.*` or `(a+)+` turns a lookup into a
+  wildcard or a ReDoS. Wrap every untrusted piece: `/\A#{Regexp.escape(x)}\z/`.
+  For an allowlist of literal strings, `Regexp.union(list)` escapes each
+  String element itself (Regexp elements are embedded as-is).
+- **Bounds.** Cap the input length *before* matching (`s.bytesize <= 256`
+  or a model-level length validation), and give quantifiers an upper limit
+  inside the pattern (`\A[a-z0-9_]{3,32}\z`, not `+`). The cap bounds the
+  worst case even for a pattern that is not linear-time.
+- **Engine choice.** Ruby's engine (Onigmo) backtracks; the 3.2+ memoization
+  makes most patterns linear but not all — a **backreference** (`\1`,
+  `\k<name>`) makes `Regexp.linear_time?` return `false`, so that pattern has
+  no linear guarantee and relies on `Regexp.timeout`. `Regexp.timeout` is
+  `nil` (unlimited) until you set it; on expiry the match raises
+  `Regexp::TimeoutError` (a `RegexpError`) — rescue it as *reject*, never as
+  *accept*. Atomic groups `(?>...)` and possessive quantifiers (`a++`) cut
+  backtracking inside a pattern. Where untrusted users supply the *pattern*
+  itself, use a linear-time RE2-class engine (e.g. the `re2` gem:
+  `RE2::Regexp#full_match?`, `RE2.escape`); it has no backreferences or
+  lookaround, which is the price of the guarantee. `linear_time?` is a
+  property of the interpreter binary, not the pattern — re-check after a
+  Ruby upgrade.
+  (OWASP: Input Validation cheat sheet; OWASP Proactive Controls 2024 C3;
+  ASVS 5.0 V1.2.9; OWASP Go-SCP, validation and regular expressions.)
+
+## 6. Secrets, randomness, comparison
+
+- **`SecureRandom`** (`hex`, `uuid`, `urlsafe_base64`, `alphanumeric`) for
+  tokens, nonces, password-reset codes, API keys. `rand`, `Random`,
+  `Array#sample`, `shuffle` are predictable (Mersenne Twister) — HIGH when
+  used for anything security-relevant.
+- Compare secrets in constant time: `OpenSSL.secure_compare(a, b)` (or
+  `Rack::Utils.secure_compare` / `ActiveSupport::SecurityUtils.secure_compare`
+  as neutral examples). `==` on HMACs/tokens is a timing oracle. Do not call
+  `OpenSSL.fixed_length_secure_compare` on attacker-supplied input: it raises
+  `ArgumentError` when the lengths differ (measured), which turns a wrong-length
+  token into a 500 and a length oracle. `secure_compare` hashes both sides
+  first, so any length is safe.
+- Passwords: bcrypt/argon2 via a maintained gem (`has_secure_password` uses
+  bcrypt as a neutral example) — never `Digest::SHA256` of a password.
+- No secrets in code or `ENV`-committed files; load via the deployment
+  platform or an encrypted store (see [`sota-secrets-management`](../../sota-secrets-management/SKILL.md)). Grep
+  targets: `_key = "`, `password = "`, `Aws.config`.
+- **The encrypted-credentials key never enters the repository** (Rails as a neutral example).
+  `config/credentials.yml.enc` is committed on purpose; the key that decrypts it
+  (`config/master.key`, or `config/credentials/<env>.key` for per-environment files) is not,
+  and one leaked key opens every secret in that file, including `secret_key_base`. Rails'
+  credentials help says to keep the key out of source control; its key-file generator writes
+  the key `0600` and appends `/config/*.key` or `/config/credentials/*.key` to `.gitignore`,
+  **but only when a `.gitignore` already exists**; otherwise it only prints a warning (read
+  from `EncryptionKeyFileGenerator`, rails main). Deploys and CI supply the key as
+  `RAILS_MASTER_KEY`, which Rails reads *before* the file (`ActiveSupport::EncryptedFile#key`),
+  from the platform's secret store, never from a committed `.env`, Dockerfile `ENV` or
+  workflow file. The key is 32 hex characters (AES-128-GCM), which is what the grep below
+  matches. A key that was ever committed is burned even after `git rm`: rotate it (re-encrypt
+  with a new key, and rotate the secrets inside, since every committed version of the
+  ciphertext still opens with the old key).
+
+## 7. Files and paths
+
+- Path traversal: anything joining user input into a path needs
+  canonicalize-then-check:
+
+```ruby
+base = File.expand_path("uploads")
+path = File.expand_path(name, base)
+raise SecurityError unless path.start_with?(base + File::SEPARATOR)
+```
+
+- `File.basename(user_name)` before storing uploads; never trust
+  client-supplied filenames or content types (see [`rules/03`](03-web-hardening.md) §7).
+- Archive extraction (zip/tar gems): validate each entry name against the
+  same expand-and-prefix check — zip-slip — and reject link entries
+  ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §4).
+- Temp files: `Tempfile`/`Dir.mktmpdir`, not hand-built `/tmp/#{name}`.
+- **`Pathname#+` and `Pathname#join` discard the base when the argument is
+  absolute.** Measured on Ruby 3.4.10:
+  `Pathname.new("/srv/uploads") + "/etc/passwd"` is `/etc/passwd`, whereas
+  `File.join("/srv/uploads", "/etc/passwd")` is `/srv/uploads/etc/passwd`.
+  Code that treats `base + name` as "inside base" is a traversal. The
+  expand-then-prefix check above catches both.
+
+
+## 8. Fiddle, the `ffi` gem and C extensions
+
+Ruby is memory-safe until it calls C. Fiddle (a libffi wrapper), the `ffi` gem
+(`extend FFI::Library`, `attach_function`) and C extensions all reach raw memory: a pointer
+read past its length, or a struct layout declared wrong, crashes the process or leaks memory
+with no C file in the repository to review. Confine foreign calls to one module, declare
+every signature precisely, and validate lengths before they cross. Native gems count as well:
+a C extension a gem ships is C you are running. The class is [`sota-code-security` rules/06](../../sota-code-security/rules/06-memory-resource-safety.md) §3.
+
+## Audit checklist
+
+Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
+`bundle exec rubocop --only Security` cover several of these mechanically.
+
+- [ ] **Credentials key committed or not ignored (§6) — CRITICAL if a key file or key value is
+      tracked or in history, MEDIUM if only the ignore rule is missing** — first command prints
+      a tracked key file; second prints each key path git would NOT ignore; third prints any
+      commit that ever added one; fourth prints a literal 32-hex master key in a tracked file —
+      `git ls-files | grep -E '(^|/)config/(master|credentials/[^/]+)\.key$'` ;
+      `for k in config/master.key config/credentials/production.key; do git check-ignore -q --no-index "$k" || echo "NOT IGNORED: $k"; done` ;
+      `git log --all --diff-filter=A --format='%h %ad %s' --date=short -- 'config/master.key' 'config/credentials/*.key'` ;
+      `git grep -nE 'RAILS_MASTER_KEY["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[0-9a-f]{32}' -- . ':!vendor' ':!node_modules'`
+      (the fourth searches **tracked** files with `git grep`, so a key in a force-added `.env`
+      is found even where a searcher that honours `.gitignore` skips it; the second is Rails-only: skip it when there is no `config/credentials.yml.enc`)
+- [ ] **Fiddle / `ffi` / C extensions — HIGH where a length or pointer comes from input** (§8) —
+      `grep -rnE "require[[:space:]]+['\"](fiddle|ffi)['\"]|Fiddle::|extend[[:space:]]+FFI::Library|attach_function" --include='*.rb' .`
+      ; `grep -rnE 'ext/.*extconf\.rb|extensions' --include='*.gemspec' .`
+      (both list every FFI binding or C extension; each hit is read, not a finding: does a length
+      or pointer come from input?)
+- [ ] **SQL injection (§1) — CRITICAL on any hit with non-literal interpolation** —
+      `grep -rnE '\.(where|order|group|having|select|joins|pluck|find_by_sql|update_all)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .`
+      ; `grep -rn "Arel.sql" --include='*.rb' .` ;
+      `grep -rn "Sequel.lit" --include='*.rb' . | grep '#{'` ;
+      `grep -rnE '\.(exec|query)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .` ;
+      `grep -rnE '\.(order|group|select|pluck|joins|having)\([[:space:]]*params' --include='*.rb' .` (input as a column or
+      direction with no interpolation: needs the allowlist lookup) ; `grep -rn 'LIKE' --include='*.rb' . | grep -v 'sanitize_sql_like'`
+      (read each: the bound `LIKE` term passes through `sanitize_sql_like`, or `%`/`_` are wildcards)
+- [ ] **Command injection (§2) — CRITICAL with external input** —
+      `grep -rnE '(system|exec|spawn)\s*\(\s*["'"'"'][^,)]*#\{' --include='*.rb' .` ;
+      ``grep -rnE '`[^`]*#\{|%x[({\[][^)}\]]*#\{' --include='*.rb' .`` ;
+      `grep -rnE '^[[:space:]]*system[[:space:](]' --include='*.rb' . | grep -v 'exception:[[:space:]]*true'`
+      (a bare `system` statement: its exit status is discarded with the `false`/`nil` result, so a failed command
+      reads as success — MEDIUM, HIGH when the next step trusts it) ;
+      `grep -rnE 'IO\.popen\s*\(\s*["'"'"']' --include='*.rb' .` ;
+      `grep -rnE '(Kernel#?open|URI\.open|[^.]open)\s*\(\s*(params|.*user|.*input)' --include='*.rb' . | head`
+      ; `grep -rnE 'Open3\.[a-z0-9_]+\([[:space:]]*["'"'"'][^,)]*#\{' --include='*.rb' .` (a single-string `Open3`
+      call goes through the shell) ; `grep -rnE 'Shellwords|shellescape|shelljoin' --include='*.rb' .`
+      (a legacy shell-string call site: convert it to argv form) ; manual: an argv that carries a
+      user value puts `--` before it
+- [ ] **Deserialization — CRITICAL on external data** (§3) —
+      `grep -rn "Marshal.load\|Marshal.restore" --include='*.rb' .` ;
+      `grep -rnE 'unsafe_load(_file)?|\.to_ruby\b|permitted_classes:' --include='*.rb' .`
+      (`to_ruby` after `Psych.parse*` revives objects; review each widened class list) ;
+      `grep -rn "create_additions" --include='*.rb' .` ; `grep -rnE 'JSON\.load[[:space:](]' --include='*.rb' .`
+      (`JSON.load` honours `create_additions`, so external input goes through `JSON.parse`) ;
+      `grep -rnE "YAML\.(safe_)?load[^_]" --include='*.rb' . | grep "aliases: true"`
+- [ ] **CSV or spreadsheet export of user data without a formula guard (§3) — MEDIUM** —
+      `grep -rnE 'CSV\.(generate|open)|to_csv' --include='*.rb' .` — lists every CSV export; each hit
+      is read, not a finding: each one writing user-controlled
+      cells prefixes values starting `=`, `+`, `-`, `@`, tab or CR with `'`
+      ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11)
+- [ ] **XML parser options that re-enable XXE / expansion — HIGH on untrusted XML** (§3) —
+      `grep -rnE '\.(noent|dtdload|dtdattr|nononet|huge)\b|ParseOptions::(NOENT|DTDLOAD|DTDATTR|HUGE)|entity_expansion(_text)?_limit[[:space:]]*=' --include='*.rb' .`
+- [ ] **eval / reflection sinks (§4)** —
+      `grep -rnE '\beval\s*[( ]|(instance|class|module)_eval\s*\(?\s*["'"'"'%]|\$SAFE\b' --include='*.rb' .`
+      (paren-less `class_eval "..."` too; a `$SAFE` hit is a sandbox that no longer exists) ; `grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .` ;
+      `grep -rn "constantize\|const_get" --include='*.rb' . | grep -iE "params|input|name"` ;
+      `grep -rn "ERB.new" --include='*.rb' . | grep -vE "erb\"|template_file|File.read\(\s*Rails"`
+      ; `grep -rnE '\b(method|instance_method)\(\s*params|&params\[[^]]*\]\.to_sym' --include='*.rb' .`
+      (method-object reflection) ;
+      `grep -rnE 'render\s*\(?\s*inline:' --include='*.rb' .` (template RCE if the string is
+      user-influenced)
+- [ ] **Regex: ^/$ anchors in validations — HIGH; ReDoS candidates (§5)** —
+      `grep -rnE 'format:.*(\^|\$)|match\?\(/\^' --include='*.rb' . | grep -v '\\\\A'` ;
+      `grep -rn "Regexp.timeout" --include='*.rb' config/ . 2>/dev/null | head -1` (absent =
+      note it); `grep -rnE '\((\.\*|\\w\+|\[[^]]+\]\+)\)[+*]' --include='*.rb' . | head` (nested
+      quantifiers) ; `grep -rnE '\\[1-9]|\\k<' --include='*.rb' .` (a backreference: no
+      linear-time guarantee, so only `Regexp.timeout` bounds it; a user-supplied pattern needs an
+      RE2-class engine)
+- [ ] **Regex built from data without `Regexp.escape` — HIGH with external input
+      (pattern injection / ReDoS) (§5)** — every hit is a dynamic pattern; confirm each
+      interpolated piece is escaped, the input is length-capped, and a
+      `Regexp::TimeoutError` rejects —
+      `grep -rnE 'Regexp\.(new|compile)\( *([^"'"'"'/ ]|"[^"]*#\{)|%r.*#\{|(=~|match\??\(|scan\(|sub!?\(|split\() */[^/]*#\{' --include='*.rb' . | grep -v 'Regexp\.escape\|Regexp\.union'`
+- [ ] **Randomness / comparison — HIGH for security uses** —
+      `grep -rnE '\brand\(|Random\.(rand|new)|\.sample\b' --include='*.rb' . | grep -viE "spec|test|seed"`
+      ; `grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .` ;
+      `grep -rniE 'Digest::(SHA[0-9]*|MD5|RMD160).*passw|passw.*Digest::(SHA[0-9]*|MD5|RMD160)' --include='*.rb' .`
+      (a password through a fast digest, §6 — HIGH; use bcrypt/argon2) ;
+      `grep -rn 'fixed_length_secure_compare' --include='*.rb' .` (raises on a length
+      mismatch — use `secure_compare` for caller-supplied values)
+- [ ] **Path traversal (§7)** —
+      `grep -rnE 'File\.(open|read|write|join)\([^)]*params' --include='*.rb' .` ;
+      `grep -rnE 'Pathname.*(\+|\.join\()[^)]*params' --include='*.rb' .` (an absolute argument
+      replaces the base; confirm an expand-then-prefix check follows) ;
+      `grep -rnE '["'"'"']/tmp/[^"'"'"']*#\{' --include='*.rb' .` (a hand-built temp path: use
+      `Tempfile`/`Dir.mktmpdir`) ; `grep -rlE 'Zip::|TarReader|Minitar' --include='*.rb' . | xargs -r grep -LE 'expand_path|start_with\?'` (lists archive-handling files with no `expand_path`/`start_with?` in them, a file-level
+      heuristic: each entry name goes through the same expand-and-prefix check; the zip-slip class and its probe are
+      [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §4) ; manual: stored upload names pass `File.basename`
+
+Severity guide: interpolated SQL / shell string with external input,
+`Marshal.load`/`unsafe_load` on external data, string `eval` — CRITICAL.
+`^$` validation anchors, `rand` tokens, `send(params[...])`,
+non-constant-time compare of a MAC, signature or API key a caller can submit
+repeatedly — HIGH (MEDIUM otherwise; [`sota-code-security` rules/22](../../sota-code-security/rules/22-constant-time-comparison.md)). Missing `Regexp.timeout` on an
+input-facing regex service, `aliases: true` on semi-trusted YAML — MEDIUM.

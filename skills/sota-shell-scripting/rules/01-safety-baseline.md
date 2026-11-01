@@ -1,0 +1,500 @@
+# 01 — Safety Baseline
+
+The shebang, the preamble, and quoting — what every bash script gets before any logic. Two
+neighbours were split off as this file filled, both times leaving §3 (quoting) in place
+because it is the most-cited section here: the constructs built on top of quoting — arrays,
+IFS, traps and `mktemp` cleanup, test/printf, globbing — are
+[rules/05](05-constructs-and-cleanup.md), and the commands you *type* rather than commit,
+including the zsh deviations that bite them, are
+[rules/06](06-ad-hoc-commands.md).
+
+## 1. Shebang discipline
+
+- Use `#!/usr/bin/env bash` for bash scripts. `/bin/bash` is absent on NixOS/some BSDs, and
+  on macOS `/bin/bash` is frozen at 3.2 (GPLv2) while users install modern bash (5.x) via
+  Homebrew on PATH — `env` finds it. macOS's *default interactive shell* is zsh; scripts
+  must not assume the login shell.
+- Use `#!/bin/sh` **only** when you commit to strict POSIX (and verify with
+  `shellcheck -s sh`). `sh` is dash on Debian/Ubuntu and busybox ash in minimal containers:
+  no arrays, no `[[ ]]`, no `local` guarantees beyond common practice, no `${var//pat/rep}`,
+  and `pipefail` only *sometimes*: POSIX.1-2024 specifies it and busybox ash has it, but dash
+  gained it only in upstream 0.5.13 (Debian bookworm's 0.5.12-2 rejects it; trixie's
+  0.5.12-12 accepts it — measured 2026-09-26). Probe it, in a subshell ([rules/02](02-robustness-correctness.md) §5).
+- Never mix: a `#!/bin/sh` script containing bashisms is a time bomb that detonates on the
+  first dash/busybox host. ShellCheck's SC3xxx series catches these (SC2039, the old catch-all,
+  was split into them in 0.7.2).
+- If the script needs bash ≥4 features (associative arrays, `mapfile`, `${var,,}`), guard:
+
+```bash
+(( BASH_VERSINFO[0] >= 4 )) || { printf '%s: requires bash >= 4\n' "${0##*/}" >&2; exit 1; }
+```
+
+## 2. The preamble and what `set -e` actually does
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+```
+
+- `-e` exit on command failure, `-u` error on unset variable expansion (default ShellCheck misses
+  an ALL-CAPS one: [rules/03](03-security.md) §7), `-o pipefail` a pipeline fails if any element fails.
+- Optionally `shopt -s inherit_errexit` (bash ≥4.4): makes command substitutions inherit
+  `-e`; without it, `var=$(false; echo ok)` succeeds silently.
+- bash ≥5.3 adds `${ cmd; }` — command substitution run *in the current shell* (no
+  subshell/fork): assignments, `cd`, and `shopt` changes inside **persist** in the parent,
+  unlike `$(cmd)`. The `-e`-masking rules here apply to it unchanged (`inherit_errexit`
+  covers both forms). Guard it as a bash ≥5.3-only feature (§1).
+
+**Where `set -e` does NOT fire — memorize this list; each is a real bug class:**
+
+| Context | Behavior |
+|---|---|
+| Command tested by `if`/`while`/`until` | `-e` suspended for the whole command, including functions it calls |
+| Left of `&&` / `||` | suspended — `cmd && other` swallows `cmd` failure (but see the inverse below the table's examples) |
+| Any command in a function *called from* a condition | `-e` is off inside the entire call tree |
+| `local var=$(cmd)` / `export var=$(cmd)` | exit status of `cmd` is masked by `local`/`export` (SC2155) |
+| Pipeline without `pipefail` | only last element's status counts |
+| Command substitution in a larger command | `echo "$(false)"` succeeds |
+| Subshell `(exit 1) || true` patterns, `! cmd` | negation makes failure "expected" |
+
+**Inside a suspended context you cannot get errexit back, and `$-` lies about it.**
+Re-running `set -e` or `set -o errexit` in the function or subshell does **not**
+restore it, and `case $- in *e*)` still matches — the shell reports the safety flag
+as enabled while it is behaviourally inert, so you cannot detect the suspension by
+inspecting the shell's own state. Verified on GNU bash **5.3.15 and 3.2.57** (macOS
+`/bin/bash`), 2026-08-16:
+
+```bash
+a() ( false; echo RAN )              # inherited -e   -> RAN, exit 0
+b() ( set -e; false; echo RAN )      # re-armed       -> RAN, exit 0   <-- does not work
+c() ( set -o errexit; false; echo RAN )  #             -> RAN, exit 0
+e() ( false && echo RAN )            # explicit &&    -> exit 1        <-- works
+f() ( bash -c 'set -e; false; echo RAN' )  # new process -> exit 1     <-- works
+g() ( case $- in *e*) echo "flag IS set";; esac; false; echo RAN )  # prints BOTH
+```
+
+Only two constructs are reliable there: **explicit `&&` chaining**, or a **fresh
+`bash -c`**. This is an unfalsifiable control inside the shell itself — the
+[`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md) §1 question ("if this were a no-op, would anything
+differ?") applied to bash, and the reason `set -e` is a backstop rather than error
+handling.
+
+Consequences:
+
+```bash
+# BAD — set -e is OFF inside check_all because it's in an if-condition;
+# every failure inside it is silently ignored
+if check_all; then deploy; fi
+
+# BAD — SC2155: rev is always assigned, git failure masked
+local rev=$(git rev-parse HEAD)
+
+# GOOD — separate declaration from command substitution
+local rev
+rev=$(git rev-parse HEAD)
+
+# GOOD — when you need a command's status without -e killing the script:
+status=0
+risky_command || status=$?
+if (( status != 0 )); then
+  printf '%s: risky_command failed with %d\n' "${0##*/}" "$status" >&2
+  exit "$status"
+fi
+```
+
+Rule: treat `set -e` as a backstop, not error handling. Critical steps get explicit
+`|| { err "..."; exit 1; }` or status capture.
+
+**The inverse of the table: a false `&&` tail is exempt only where it stands.** As the *last*
+statement of a function, or of a loop at the end of a pipeline, its status 1 becomes the
+function's or the pipeline's — and `f`, `X=$(f)` or `cmd | while …` then ends the script with
+**no message**. Measured 2026-09-26 on bash 3.2.57 and 5.3.15, dash and busybox (zsh exits for
+the function but not the top-level pipe); the same line at top level, in a `for`, a `case` or a
+redirected `while` carries on, and ShellCheck 0.11.0 flags none of it. End such bodies with
+`if …; then …; fi` or `return 0`, and give the script an EXIT trap that prints a non-zero status.
+
+**`$( )` strips every trailing newline — silently, and it breaks line-oriented
+composition.** The code *reads* as though the newline is there, because the helper that
+produced it emitted one; the newline is removed by the substitution, not by the helper.
+
+```bash
+body="$(printf 'a: 1\nb: 2\n')"     # body is "a: 1\nb: 2" — the trailing \n is GONE
+printf '%s%s\n' "$body" "c: 3"      # BAD  -> "a: 1", "b: 2c: 3"   (two fields glued)
+printf '%s\n%s\n' "$body" "c: 3"    # GOOD -> "a: 1", "b: 2", "c: 3"
+```
+
+This matters most where the bytes are **hashed, signed, or parsed by field**: a writer
+and a verifier that disagree about one byte each look correct in isolation. If the
+composed text feeds a digest, assert the round trip against a **committed known-answer
+vector**. Field-reported twice in one session, the second time by the author who had
+just fixed the first instance.
+
+## 2a. A background job's completion signal is about the launcher
+
+§2 is about `set -e` inside your shell. This is one layer up, where an agent, a CI step or a
+task runner reads *"finished, exit 0"* and believes it describes the work.
+
+```bash
+nohup sh -c 'pytest … > out.txt 2>&1; echo "EXIT=$?" >> out.txt' &
+```
+
+Field-reported: the orchestration layer reported **"completed (exit code 0)"** about
+**17 seconds** into a 41-minute run (measured with `ps -o etime` on the pytest process at
+that moment) — the exit status of `nohup` *detaching*, which is a real and successful event.
+It repeated on a second run and on a waiter loop. On the run that mattered the file said
+`EXIT=1`: a test had failed.
+
+Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
+`cmd; echo` (§2, §3) are about *your* shell's status; here the shell was fine and the
+**reader was a different process**, told about a different subject.
+
+- **Wait on an artefact the job writes, never on the launcher's status.** `until grep -q
+  '^EXIT=' out.txt; do sleep 5; done`, then read the file. A sentinel the job appends *last*
+  is the only thing that means "the job is done".
+- **Never report a background job's outcome from the notification.** Report the sentinel, and
+  quote it.
+- **`pgrep -f 'pattern'` matches the watching shell's own command line**, so a wait loop
+  containing the pattern matches itself and never exits (so does `ps | grep` or a `/proc` loop, and under `ssh`
+  or an agent harness the parent too: [`rules/09`](09-listing-and-selection.md) §5c). Match the process you mean, exclude
+  `$$`, or watch the artefact — which you should be doing anyway. **Platform-scoped, and the
+  scope is the trap**: measured 2026-09-16 as a differential, the identical loop on
+  **procps-ng 4.0.6 (Linux) never exits**, while on **BSD `pgrep` (macOS) it exits
+  immediately** — with a positive control confirming macOS `pgrep -f` does find a *separate*
+  carrier process. So a macOS operator who tests this concludes the trap is imaginary and
+  ships the loop into Linux CI. Same shape as `-r` over symlinked dirs, which this file
+  already states per binary.
+- **And do not read the artefact early.** A live output file is a **buffer**: short,
+  truncated and complete are the same bytes, so *"it produced nothing"* and *"it has not
+  got there yet"* are indistinguishable. Field-reported: a gate task's short log was
+  declared dead — *"silently failed, no output, HEAD never moved"* — while it was still
+  running; it went on to produce full output, commit and push. **A background task is
+  finished when the harness says so and at no other time.**
+- **Do not write to a resource a live task owns** — its worktree, branch or output
+  directory. One writer per worktree. In that case the operator committed on top of the
+  task believed dead, and the still-live task then recorded a ledger entry for the *new*
+  commit while pushing only as far as the old one; untangling it cost more than the work
+  it interrupted.
+- **Grepping a task log for a pass line and getting zero needs a denominator in the same
+  invocation** — total lines, and total lines of the kind you searched for. The same
+  operator later grepped a finished 28-line log for `PASS ebpf_load`, got zero, and nearly
+  reported the gate as never having run; **zero `PASS` lines anywhere in the file** showed
+  the log never held the table at all, and the gate had in fact *failed* — which was the
+  real finding. [`rules/06`](06-ad-hoc-commands.md) §2.
+- **A tool-wrapped command has the same consumer problem, and the fix is different**, in the
+  foreground *or* an agent's own background mode, which reports the command's status when it
+  ends. §2a's remedy above (wait on the artefact) is for a job the launcher *detaches* from.
+  When the harness runs the command and reports *its* status, it is about your command; the defect is that a
+  trailing `echo`, a `|| true` or a final `tail` has already replaced it. Field-reported
+  2026-09-21: `make ci > log 2>&1; echo "EXIT=$?"` announced *"completed (exit code 0)"* for
+  a run in which 2 of 25 gates failed. Capture and re-raise —
+  `cmd > log 2>&1; rc=$?; echo "EXIT=$rc" >> log; exit "$rc"` — and the harness's reported
+  code is the command's. **Either way the artefact outranks the notification**: the same
+  reporter had the true code in the log and believed the harness anyway, which is the half
+  of this rule that is about reading rather than writing.
+- The general form, for any status: [`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2 — name what the OK is about.
+
+## 2b. A non-zero exit is evidence about one attempt, not about the world
+
+§2a is a status about the wrong *subject*. This is a status about the right subject and the
+wrong *scope*: the command failed, and the write it was making had already landed.
+
+Field-reported. A `git push` returned:
+
+```text
+! [remote rejected] main -> main (cannot lock ref 'refs/heads/main':
+  is at 8a93e406d96b but expected bfd516b8c489...)
+PUSH_EXIT=1
+```
+
+`8a93e406d96b` **is the commit that push was sending.** A `git fetch` immediately after
+showed `185e511..8a93e40` — the branch was exactly where it should be. The error text names
+the **success** as the obstacle, which is why it reads so convincingly as a rejection.
+
+**Why this is worse than an ordinary gotcha:** every reflexive remedy for a rejected push —
+re-push, `--force`, `reset --hard`, "let me clean this up" — is **destructive to a branch
+that is fine**. The failure mode converts a non-event into data loss through a
+well-intentioned fix.
+
+- **Before acting on a failed mutation, ask the system whether it happened.** For a push:
+  `git fetch && git rev-list --left-right --count origin/main...HEAD`. For anything else,
+  read the resource back. This costs one command and is unconditional — you do not need to
+  know *why* the exit was non-zero.
+- **The tell is an error quoting your own intended value as the current state.** `is at
+  <the thing you were writing>` is a success report wearing a failure's clothes.
+- **The mechanism, field-reported with both arms** (alpine 3.22, git 2.49.1; reproduced by
+  the reporter, not rebuilt here). A minimal smart-HTTP server running real
+  `git-receive-pack --stateless-rpc`, with the POST delivered twice: the control arm (single
+  delivery) exits 0 and advances the ref; the test arm exits non-zero, **the write lands**,
+  and the error quotes the value just written while naming the stale old-value as expected.
+  All four predicates of the field signature hold. Two earlier attempts had *failed* to
+  reproduce it — both used git's **local** transport, which has no HTTP layer and so no
+  retry, and neither had a control arm ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a). The wider generalisation — *any
+  protocol with an idempotent retry can report failure about its own success* (at-least-once
+  delivery, conditional writes, state locks, idempotency-keyed payment APIs) — remains
+  **plausible and not established**: one protocol was reproduced, not the class. **The rule
+  above depends on none of it.**
+
+## 3. Quoting: quote every expansion (SC2086)
+
+Unquoted expansions undergo word splitting (on `$IFS`) **and** glob expansion. This is the
+single largest shell bug class.
+
+**In zsh they do not** — and that inverts the bug. zsh's `SH_WORD_SPLIT`, *"Causes field
+splitting to be performed on unquoted parameter expansions"*, is **off** in native zsh
+(the manual marks it `<K> <S>` — ksh/sh emulation only; verified 2026-08-14 against the
+zsh Options manual). So `cmd $args` passes the whole string as **one argument**, and the
+same line that is a splitting bug in bash is a *joining* bug in zsh. It matters because
+macOS defaults to zsh, so a snippet pasted from a bash-shaped rule silently changes
+meaning in an interactive shell and in any `#!/bin/zsh` script.
+
+```zsh
+args="gate check --json"
+cmd $args           # zsh: ONE argument "gate check --json" — usually a usage error
+cmd ${=args}        # explicit split — three arguments
+argv=(gate check --json); cmd $argv   # better: an array, correct in both shells
+cmd ${3:+--flag $3}  # zsh: passes "--flag /path" as one argument
+
+files=$(git ls-files '*.md')          # a NEWLINE-separated list — the shape audit sweeps build
+grep -l PATTERN $files                # zsh: ONE impossible filename; searches NOTHING, exit 2
+files=("${(@f)$(git ls-files '*.md')}")   # right: split on NEWLINES only
+```
+
+**The remedy is separator-specific.** `${=var}` above is right for a space-separated flag
+string and *wrong* for a file list — it splits spaces too, so `a b.md` becomes two missing
+paths (measured: 1 hit where 2 were due). Use `${(@f)…}` for anything `$(…)` produced.
+
+The failure mode is what makes this expensive: the callee reports a **usage error
+(exit 2)**, which reads as a bug in the tool being tested rather than in the harness
+calling it. `for x in "a b"; do cmd $x; done` and `${var:+--flag $var}` are where it
+bites hardest. Same family: `$?` after a pipeline is the **last** stage's status —
+`${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash ([rules/02](02-robustness-correctness.md) §4). And zsh's `EQUALS`: an unquoted `=word` becomes a command's path, or aborts the list ([rules/06](06-ad-hoc-commands.md) §1).
+
+**The status-discarding pipe is usually in the scaffolding, not the payload.** `cmd | tail`,
+`cmd | head`, `cmd | grep -q` are typed to shorten output or make a decision; the exit status
+is collateral, and nobody audits collateral. **The mechanical tell is `&&` after a pipeline** —
+if anything is chained onto a piped command, the chain is running on the *formatter's* status:
+
+```console
+$ (exit 1) | tail -1; echo "status=$?"
+status=0
+$ (exit 1) | tail -1 && echo "this runs"
+this runs
+```
+
+Field-reported twice in one session, an hour apart, in separately composed commands:
+`make ci 2>&1 | tail -10 && git push origin main` pushed while the gate was **red**, and the
+push triggered a second concurrent gate run that collided with the first over a shared test
+binary (`Text file busy`). The visible symptom was a conformance test failing to observe an
+event it had caused — indistinguishable from a product race, in a suite that already carried
+four undiagnosed intermittent failures. **The tell that it was the harness and not the product
+was duration: 1599s against ~757s for identical code minutes earlier.**
+
+**Commands you write to *manage* the work get the same scrutiny as commands you write to *do*
+it.** Wait loops, output formatting, status chaining and cleanup are where a shell trap
+survives an otherwise careful session — not because the rules are unknown, but because the
+reflex fires on *"am I about to believe this result?"*, and scaffolding never feels like a
+result. A `pgrep` waiter and a `| tail &&` chain both passed unexamined in one session by an
+operator who had read both rules that morning. Graded as one observation with two instances.
+
+**A consumer at the end of a pipe usually succeeds on empty input, and its output looks
+like a real answer.** `pipefail` fixes the *status*; this is about the **value you keep**.
+A registry guard meant to refuse overwriting a published tag:
+
+```bash
+EXIST=$(skopeo inspect --raw "docker://host/repo:tag" 2>/dev/null | sha256sum | cut -d' ' -f1 || true)
+[ -n "$EXIST" ] && [ "$EXIST" != "$DIGEST" ] && refuse
+```
+
+On a **missing** tag the inspect fails, `sha256sum` reads empty stdin, and `EXIST` becomes
+`e3b0c44298fc…b855` — the hash of nothing. Non-empty, well-formed, and never equal to a
+real digest, so the guard refused **every** publish. Hashers, `wc`, `sort`, `base64` and
+`jq -r //empty` all manufacture a plausible result from nothing, which is why `[ -n "$var" ]`
+after such a pipeline tests almost nothing.
+
+**Test the precondition separately from the transformation:**
+
+```bash
+if producer >/dev/null 2>&1; then value=$(producer | transform); else value=""; fi
+```
+
+**Do not pattern-match the fix.** The same guard written with `--format '{{.Digest}}'` and
+**no pipe** genuinely yields an empty string, so *its* `[ -n "$var" ]` is correct. A grep
+sweep for the shape would "fix" working code; checking which form each site uses is the
+work. The differential-oracle version of the same defect — a comparand that is empty rather
+than a value that is fake — is [`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2a.
+
+**A pipeline is an evidence hazard as well as a status hazard, and `pipefail` only fixes
+the status.** For any command whose output you intend to *reason about* — a test run, a
+benchmark, a profile, a long analysis — **redirect to a file and read the file**:
+
+```bash
+cmd > out.txt 2>&1; rc=$?; echo "EXIT=$rc"   # status RECORDED and output preserved
+grep -nE 'passed|failed|Error' out.txt       # filter AFTER, as often as you like
+exit "$rc"                                   # ...and re-raised, if anything reads it
+```
+
+**"Preserved" means *written down*, not *returned*.** The compound's own status is the
+`echo`'s, which is 0 whatever `cmd` did — so this form is safe for a human reading
+`EXIT=` out of the file, and unsafe the moment a **caller** reads the status instead:
+a CI step, a `&&` chain, or an agent harness announcing *"completed (exit code 0)"*.
+End with `exit "$rc"` wherever a caller exists. Field-reported 2026-09-21: a
+`make ci > log 2>&1; echo "EXIT=$?"` was announced as exit 0 by the harness while the
+log recorded `MAKE_EXIT=2` and 2 of 25 gates had failed — and the announcement, not
+the log, is what the agent read. Who the consumer is, is §2a.
+
+`cmd 2>&1 | tail -12` keeps the summary and destroys the traceback, the warnings and the
+stderr context above the cut — which is **the material that tells you the summary is
+wrong**. That asymmetry is the whole hazard: `tail` is *selected* to keep the summary
+line, so the pipe preserves the number and discards the evidence that the number is not
+to be trusted, and the surviving line is the one most likely to be quoted. Reproduced on a
+pytest-shaped run (200 progress lines, cause at the top, summary last): piped through
+`tail -12` the `AssertionError` was gone while `1 failed, 38265 passed` survived;
+redirected, both were there and the cause was one `grep` away.
+
+The cost is not the pipe, it is that a consumed pipe **cannot be re-read** — recovering
+the output means re-running the job. A 36-minute suite re-run to retrieve output that had
+already been produced once is the reported case; a four-minute mutation harness re-run
+three times over, because each `| tail -N` answered a different question than the one
+asked, is the same failure in miniature.
+
+Two corollaries:
+- **An empty result and a discarded result are the same value.** A backgrounded
+  `... 2>&1 | tail -14` that produced a 22-byte file containing only `[exited with code 0]`
+  is indistinguishable from a run that measured nothing — and the exit status says
+  neither.
+- **Buffering turns this into a lie about the cause.** In long-running Python use
+  `print(..., flush=True)` (or `-u`): a process killed by `timeout` otherwise leaves a
+  file that is empty for a reason unrelated to the result.
+
+**And it is not only `tail` — a `grep` filter is worse, because it looks selective rather
+than lossy.** Reported case: a comparison tool was run as
+`tool compare … | grep -E "baseline|current|LOST|GAINED"`. The tool had correctly detected
+that its input changed between the two runs and printed
+`!! GRAPH CHANGED: 245827 -> 245808 REACHING_DEF edges`. That line matched none of the
+four alternatives, so it was discarded — and the conclusion being formed from what
+survived was that the guard was **inert**, i.e. a defect report about working code.
+
+The general form: **a filter written before you know what the output contains is a filter
+chosen to exclude the surprise.** `head`, `tail`, `grep`, `awk`, `cut` and `jq` all
+destroy output selectively, and the thing you did not think to match is exactly the thing
+worth reading. So **redirect first, filter the file afterwards** — a saved file can be
+re-grepped with a better pattern once the first one proves wrong; a consumed pipe cannot,
+and the second pattern costs a full re-run.
+
+**Scope, deliberately narrow:** this is not "never use `tail`". Piping to `tail` to watch
+a log, sample a file or check a shape is fine and idiomatic. The rule applies where the
+output is **evidence for a claim**, and the tell is whether you would have to re-run the
+job to get it back.
+
+**Arrays are the portable answer.** They mean what they say in both shells; `${=var}` is
+a zsh-only escape hatch for a string you did not build.
+
+```bash
+# BAD — splits on spaces, expands *, ?, [ in the value
+rm -rf $build_dir/$target      # build_dir="my project" → rm -rf my project/...
+cp $files $dest                # files="a b" is two args; files="*" globs
+
+# GOOD
+rm -rf -- "$build_dir/$target"
+cp -- "$files" "$dest"
+```
+
+Word-splitting bug catalog — all are bugs, not style:
+
+```bash
+[ -f $path ]                 # path with space → "[: too many arguments"
+for f in $(ls); do ...       # splits on whitespace, globs results (SC2045/SC2012)
+echo $(<file)                # collapses runs of whitespace, expands globs in content
+ssh host rm $file            # double expansion: once locally, once remotely
+args="--opt val"; cmd $args  # works until val has a space — use an array
+return $?                    # fine — but `exit $code` with code="" under -u errors; quote anyway
+curl -H $auth_header ...     # header with space splits into garbage args
+```
+
+- `"$@"` not `$*` and not `"$*"` to forward arguments — `"$@"` preserves each argument as
+  one word. `"$*"` joins into a single word (legit only for display strings).
+- `"${arr[@]}"` for arrays, same logic.
+- The only sanctioned unquoted expansions: inside `[[ ]]` (no splitting there — but quote
+  the *right-hand side* of `==`/`=~` deliberately: unquoted RHS is a pattern, quoted is
+  literal), and arithmetic `$(( ))`.
+
+## Audit checklist
+
+- [ ] **Does a function or piped loop end in `[ … ] && …`?** (§2) Its false case is the
+      body's status, so the caller dies silently. `grep -nE '\] && [^|]*$' <file>` lists candidates
+      (top-level hits are safe); for each, check whether it is the last statement of the body.
+
+- [ ] **Is anything chained onto a pipeline with `&&`?** (§3) The chain runs on the
+      *formatter's* exit status, not the work's — `make ci | tail -10 && git push` pushes
+      while the gate is red. Audit the scaffolding, not just the payload: `| tail`, `| head`,
+      `| grep -q`, wait loops and cleanup are typed to manage the work, so the
+      "am I about to believe this?" reflex never fires on them. Grep the shape:
+      `grep -nE '\|[^|]+&&' <file>` over scripts and CI run blocks.
+- [ ] **Does any `pgrep -f` waiter match the watcher's own argv?** (§3) It never exits — **on
+      Linux**. Measured as a differential: procps-ng never exits, BSD/macOS exits immediately,
+      so a green local test on macOS proves nothing about the Linux CI that will run it.
+- [ ] **Any `var=$(producer | consumer)` whose emptiness is then tested?** Hashers, `wc`,
+      `sort`, `base64` and `jq -r //empty` succeed on empty stdin and return a well-formed value,
+      so `[ -n "$var" ]` passes on a failed producer. Test the producer separately — and check each
+      site's actual form before sweeping, because the no-pipe spelling is correct as written (§3).
+
+- [ ] **Composed multi-line records** (§2): `grep -rn '="\$(' --include='*.sh'` where the
+      result is concatenated with more lines — `$( )` dropped the trailing newline and
+      the boundary is gone. High where the bytes are hashed, signed or field-parsed;
+      confirm a known-answer vector exists and that writer and verifier agree byte-for-byte.
+
+- [ ] **Measurements piped into `tail`/`head`.** `grep -rnE '(pytest|go test|cargo|bench|profile|timeout)[^|]*\| *(tail|head)' --include='*.sh' --include='*.yml' .` — and the same in any runbook or CI step whose output someone reads. Evidence commands redirect to a file; `pipefail` does not bring destroyed output back (§3).
+
+Run `shellcheck -S style` first; then hunt manually.
+
+**zsh is not covered by shellcheck, and its tooling is thinner — but it is not nothing.**
+Find the zsh files first (`grep -rln '^#!.*zsh' .`), then know what can and cannot check
+them (all verified 2026-08-14):
+
+| Tool | Covers zsh? | Evidence |
+|---|---|---|
+| `shellcheck` | **No** | `SC1071 (error): ShellCheck only supports sh/bash/dash/ksh/'busybox sh' scripts` — run it and see. Note that popular web summaries claim otherwise; they are wrong, and the binary settles it |
+| `zsh -n` | **Syntax only** | catches parse errors and exits 1 (`broken.zsh:4: parse error near '\n'`); it does **not** find quoting or splitting bugs, which is the class this section is about |
+| `zsh -o WARN_CREATE_GLOBAL` / `WARN_NESTED_VAR` | Narrow, runtime | flags accidental globals as the script *runs* — not static analysis |
+| `z-shell/zsh-lint` | Claims to | third-party, ~33 stars, actively pushed as of 2026-08-14. Small and low-adoption — treat as a candidate generator, verify its findings, and re-check maintenance before you depend on it |
+
+So the practical answer is `zsh -n` in CI for syntax, plus a **manual read for the
+splitting/joining class** — no widely-adopted static analyser catches
+`cmd $args` being one argument in zsh.
+
+- [ ] **Measurements piped into a filter — `tail`, `head`, *or* `grep`/`awk`/`jq`.** The `grep` form is the more dangerous one: it reads as selective rather than lossy, and the line it silently drops is the one you did not know to look for (§3).
+- [ ] **Is a VERDICT — pass/fail, not a measurement — read through a pipe or taken from a
+      multi-command block?** (§3) The adjacent items above cover *measurements* piped into a
+      filter and background launchers; this is the pass/fail case, and it is the one that gets
+      reported to a human. A pipeline's `$?` is the **last stage's**; a block's is the **last
+      command's**. So `check.sh | tail -2` and `check.sh` followed by `gh pr checks` both
+      yield a status describing something other than the check — and a green reads as a
+      verdict while being silent about the real one. Field-measured 2026-09-14: both forms
+      reported exit 0 over a failing gate in one session, twice.
+      **The structural fix, not another warning:** the verdict-bearing command runs **alone
+      and unpiped**, its status is captured on the very next line (`rc=$?`), and any filtering
+      is a *separate* invocation afterwards. In committed shell `shellcheck -S style` flags the
+      `$?` form (SC2181); in an **ad-hoc command nothing does**, which is where it happens
+      ([`rules/06`](06-ad-hoc-commands.md) §1). In zsh the producer's status is `${pipestatus[1]}` — `${PIPESTATUS[0]}`
+      reads as empty, which is itself a silent wrong answer.
+- [ ] **Background jobs: is any outcome read from the launcher's status?** (§2a) The
+      completion signal describes `nohup`/the runner detaching; wait on a sentinel the job
+      writes last, and quote it. **And does a retry, rollback or `--force` follow a failed push, deploy or write without reading the resource back first?** (§2b) `grep -rnE '(push|apply|deploy)[^|]*\|\|[^|]*(--force|reset --hard|retry)' scripts/ .github/` lists same-line fallbacks only; also read any CI step that runs after a failed push.
+- [ ] **Does a recorded exit code get re-raised for whoever reads the status?** (§2a, §3)
+      `grep -rnE 'echo "?EXIT=\$\?|; *echo .*\$\?' scripts/ .github/` — a compound ending in
+      `echo`, `|| true` or `tail` returns *that* command's status, so a CI step, a `&&` chain
+      or an agent harness is told 0 for a failed run. Recording `EXIT=` in a log is not
+      returning it: capture with `rc=$?` and end with `exit "$rc"`. And whatever the
+      notification said, **read the code out of the artefact before quoting an outcome**.
+- [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
+      `${var//`, and an unprobed `pipefail` (§1) → bashism-in-sh (SC3xxx series).
+- [ ] **`set -e` believed inside a suspended context** (§2): `set -e`/`set -o errexit`
+      re-armed inside a function called from a condition, or `$-` inspected to prove
+      errexit is live — both are inert there. Probe: `f() ( set -e; false; echo RAN )`
+      called from an `if`; if RAN prints, that whole call tree is unprotected.
+- [ ] Missing preamble (§2): `grep -rLn 'set -euo pipefail\|set -eu' --include='*.sh' .`
+- [ ] SC2086 (unquoted expansion) (§3) — treat every instance in a destructive command
+      (`rm`, `mv`, `cp`, `chmod`, `chown`, `ssh`, `kill`) as HIGH.
+- [ ] SC2155 (§2) — `grep -rn 'local [a-zA-Z_]*=\$(' --include='*.sh'` (masked exit status).
+- [ ] `set -e` false confidence (§2): grep for `if .*&&\|if [a-z_]*;` over functions with
+      critical side effects; check `$(...)` in assignments without `inherit_errexit`.

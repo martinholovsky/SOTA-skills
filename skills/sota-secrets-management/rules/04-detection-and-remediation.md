@@ -1,0 +1,417 @@
+# 04 — Detection & Remediation
+
+Scope: secret scanning (gitleaks, trufflehog), pre-commit hooks, CI gates, git history hygiene,
+the post-leak runbook (rotate-first), and honeytokens. Read this when setting up scanning, when
+running an AUDIT sweep, or the moment a leak is discovered. Pipeline-gate *layering* and
+org-wide push protection are owned by [sota-devsecops rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.2; this file owns tool
+configuration and leak **response** (rotation, history cleanup).
+
+## 1. Scanning layers
+
+Defense in depth — each layer catches what the previous missed:
+
+| Layer | Tool/mechanism | Blocks? |
+|---|---|---|
+| Editor/local | gitleaks pre-commit hook (`gitleaks git --pre-commit --staged`) | Yes — before commit exists |
+| Push | server-side pre-receive hook / GitHub push protection | Yes — before history is shared |
+| CI | gitleaks/trufflehog job on every PR + full-history scan scheduled weekly | Yes — fail the build |
+| Platform | GitHub Advanced Security / GitLab secret detection, partner-program auto-revocation | Detect + sometimes auto-revoke |
+| Runtime | honeytokens (§5), backend access-log anomaly alerts ([rules/03](03-application-patterns.md) §8) | Detect use |
+
+Pre-commit alone is insufficient (devs skip hooks, `--no-verify`); CI alone is too late (the
+secret already left the laptop and entered shared history). Run both. The layers do not share
+rules, so a clean run in one is not a clean run in another: measured 2026-10-27, a provider-shaped
+key inside a JSON string (followed by an escaped quote) passed `gitleaks dir` 8.30.1 and was blocked
+by push protection, while the same key in plain source was flagged by both. Text an agent writes
+(evidence fields, generated fixtures) is where such strings now come from.
+
+### gitleaks
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: vX.Y.Z      # an exact release tag (latest stable: github.com/gitleaks/gitleaks/releases) — pre-commit rejects a wildcard like v8.x
+    hooks:
+      - id: gitleaks   # runs `gitleaks git --pre-commit --redact --staged --verbose`
+```
+
+```toml
+# .gitleaks.toml — extend defaults, add your own token prefixes (rules/01 §1)
+[extend]
+useDefault = true
+[[rules]]
+id = "myapp-api-key"
+description = "MyApp internal API key"
+regex = '''myapp_(sk|pat)_[A-Za-z0-9_\-]{32,}'''
+[[allowlists]]                                  # gitleaks ≥ 8.25.0; the older single [allowlist] table is superseded
+paths = ['''testdata/fake_keys\.json''']     # narrow, path-based; never allowlist by rule id
+```
+
+CI (gitleaks ≥ 8.19 subcommands): `gitleaks git --redact .` on PRs — diff-aware via
+`--log-opts="origin/main.."` for speed — plus a scheduled full-history scan with `--log-opts="--all -m"`
+(needs a `fetch-depth: 0` checkout) so old commits are rechecked as rules improve. The legacy
+`detect`/`protect` spellings still run but are deprecated aliases.
+
+### trufflehog
+
+Complements gitleaks: ~800 detectors **with verification** — it calls the credential's own API
+to check liveness, collapsing false positives.
+
+```bash
+trufflehog git file://. --results=verified --fail       # CI gate: verified-live secrets only
+trufflehog filesystem /path --results=verified,unknown  # audit sweep: include unverifiable
+trufflehog docker --image myorg/app:latest              # images: layers, env, files
+```
+
+Use `--results=verified` for blocking gates (near-zero false positives; it supersedes the
+older `--only-verified`, now a hidden flag); use the broader mode for audits — an
+unverifiable secret is still a finding, just triaged manually. Also point trufflehog at
+non-git surfaces: S3 buckets, container images, CI logs exports — secrets leak there too.
+
+### Scanner hygiene
+
+- **Allowlists are path- and fingerprint-scoped, reviewed in PRs.** A blanket
+  `allowlist regex = '''.*test.*'''` silently exempts `tests/prod_credentials.py` — Medium.
+- **`--redact` everywhere**: scanner output goes to CI logs; unredacted output re-leaks the
+  secret into a new surface.
+- **Inline `# gitleaks:allow` comments require justification** in the same line/commit; audit
+  them — they are where real leaks hide (`grep -rn "gitleaks:allow"`).
+- Scanners miss: secrets in *binary* files, novel formats without rules, encrypted blobs with
+  weak keys, and anything entropy-shaped below thresholds. The manual grep pass in SKILL.md
+  AUDIT mode exists for this reason.
+- **Own the detector set, class by class.** Keep a list of every secret class the org holds
+  and a rule (default or custom) for each: long-lived and hard-to-rotate tokens, connection
+  strings with userinfo, 2FA/TOTP seeds (`otpauth://` URIs, base32 seed fields), session
+  tokens and cookies, private and SSH keys, cloud keys, and whole secret-bearing config
+  files (kubeconfig, `.npmrc`, `credentials.json`). A class with no rule is a class the gate
+  cannot see; review the list when a new vendor or token format arrives.
+- **One standard fake value per type, org-wide**, used in every test, fixture and doc, so an
+  allowlist can name those exact values (or their fingerprints) instead of a path or a regex
+  that also swallows real keys. Vendors' documented example values often work — gitleaks
+  8.30.1's default config, checked here, skipped the AWS documentation key
+  `AKIAIOSFODNN7EXAMPLE` while flagging a random `AKIA…` beside it — but confirm each against
+  your scanner rather than assuming. OWASP: Secrets Management cheat sheet.
+- **The same skip voids a positive control.** A secret-scan gate "proven" by planting a
+  vendor example value or a patterned token proves nothing: exit 0 is what the scanner does
+  with those by design. Plant a freshly generated random value of a real token format.
+  Measured 2026-10-27, gitleaks 8.30.1, one file per arm: the AWS documentation pair and
+  `ghp_` + 36 sequential characters each exited 0; a `ghp_` + 36 `secrets.choice` characters
+  and a random `AKIA…` each exited 1 ([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2).
+- **A working-tree scan is not limited to tracked files, and does not read `.gitignore`.**
+  `gitleaks dir` (and directory scanners generally) treat the path as a plain directory, so an
+  untracked artifact — a log, an editor backup, a crash dump, a tool's scratch output — is in
+  scope for the gate while being **invisible to `git status`**. Verified 2026-09-15 on gitleaks
+  8.30.1 with both arms: the same planted credential in a *visible* untracked file and in a
+  **gitignored** one both reported `leaks found: 1`, with `git status --porcelain` empty
+  throughout. **When a secret gate fails while the history pass is clean, list the findings by
+  file before you read any diff** — the answer is often a file that was never yours, and the
+  first instinct, suspecting the commit, burns the most time. Field-reported: 22 hits, all
+  `generic-api-key` false positives on `key=value` shapes in one daemon log dump, left in the
+  tree by tooling.
+- **The reverse holds too: a git-mode scan never reads uncommitted work.** `gitleaks git .`, and
+  the legacy `gitleaks detect --source .` without `--no-git`, scan **commits**. A file you have
+  not committed is out of scope, and the run still looks healthy. Verified 2026-10-10 on gitleaks
+  8.30.1, with a `generic-api-key`-shaped token in an uncommitted file: both printed `scanned
+  ~1492 bytes` (the history) and `no leaks found`, exit 0; `gitleaks dir .` read the file and
+  reported `leaks found: 1`. The byte count is not a tell, because the history fills it. So an
+  inner-loop "check my working tree" gate must be `gitleaks dir` (or `--no-git`), and the
+  pre-commit `git --pre-commit --staged` sees only what is staged. Field-reported 2026-10-09: a
+  working-tree pass written as `detect --source .` passed, and the pre-push history scan then
+  blocked the same token once it was committed. Read as an entropy difference, it was a scope
+  difference.
+- **A history scan reads no merge commit's own changes unless you ask.** `gitleaks git` runs
+  `git log -p`, and git shows no diff for a merge without a `--diff-merges` variant, so a secret
+  introduced in a conflict resolution is out of scope with or without `--log-opts="--all"`.
+  Verified 2026-10-27 on gitleaks 8.30.1, both arms: an AWS-shaped key in an ordinary commit
+  gave `2 commits scanned`, `leaks found: 2`; the same key added only in a merge resolution gave
+  `3 commits scanned` of 4 and `no leaks found`, exit 0. `--log-opts="--all -m"` and
+  `"--all --diff-merges=first-parent"` scanned 4 and found it; `"--all --cc"` did not. Once a later
+  commit removed the key, `gitleaks dir` was clean as well. Run the history pass with
+  `--log-opts="--all -m"` and reconcile `N commits scanned` with `git rev-list --all --count`:
+  a shortfall equal to `git rev-list --all --merges --count` is this gap.
+
+### Adopting scanning on a legacy repo (baseline workflow)
+
+Turning on a blocking scanner against a repo with years of history floods the team and gets the
+gate disabled within a week. Instead:
+
+1. Full-history scan once; triage every hit (real-and-live / real-but-rotated / false positive).
+2. **Rotate all real-and-live findings now** (§3) — the baseline is an incident list, not an
+   ignore list.
+3. Fingerprint the remainder into a baseline (`gitleaks` `--baseline-path` over a prior
+   report) so the gate only fails on *new* findings; commit the baseline and review changes to
+   it like code. trufflehog has no baseline file: scan only new commits (`--since-commit <base>`)
+   and mark accepted lines with an inline `trufflehog:ignore` comment — `--exclude-detectors`
+   disables a whole detector class, which is a snooze, not a baseline.
+4. Burn the baseline down on a schedule; it should shrink monotonically. A growing baseline
+   file means the gate is being used as a snooze button — Medium finding.
+
+## 2. CI gates and repo hygiene
+
+- **Blocking, not advisory.** A secret-scan job that's `allow_failure: true` is decoration.
+- **Scan the diff on PRs, the full history on schedule**, and **scan built images** before push
+  (`trufflehog docker`) — build args and COPY'd `.env` files surface here.
+- **`.gitignore` preloads** in every repo template: `.env`, `.env.*`, `!.env.example`, `*.pem`,
+  `*.key`, `*.p12`, `*.pfx`, `*.jks`, `id_rsa*`, `*.kubeconfig`, `credentials.json`,
+  `terraform.tfstate*`, `.netrc`. gitignore is a guardrail, not a control — files added with
+  `git add -f` still need the scanner to catch them.
+- **GitHub push protection** (Settings → *Security and quality* → Advanced Security; at
+  repository level it needs GitHub Secret Protection) on for all repos/orgs; it blocks pushes,
+  web-UI commits, uploads and REST API writes containing supported secret patterns server-side,
+  including from devs without hooks. **By default anyone with write access can bypass it** by
+  giving a reason — restrict that with delegated bypass — and it covers only the newest token
+  format of a provider's patterns, never passwords. Coverage expands continuously (GitHub
+  changelog 2026-03-10: 28 new detectors, 39 more push-protected by default; validity checks;
+  owner/expiry metadata for a few token types) — treat alerts marked *active* by validity
+  checks as §3 incidents, not backlog.
+- **Fork PR safety:** secret-bearing workflows never run on `pull_request` from forks; audit
+  any `pull_request_target` usage that checks out PR code (classic exfil vector — High).
+- **Install-time harvesting worms:** the Shai-Hulud npm worms (Sept/Nov 2025, hundreds of
+  packages) ran a bundled TruffleHog on developer machines and CI at install time, exfiltrated
+  hits to newly created public GitHub repos, self-propagated via stolen npm/GitHub tokens, and
+  registered victims as self-hosted Actions runners. Defenses: `--ignore-scripts` (or isolated,
+  token-free install steps) in CI, no long-lived registry/VCS/cloud tokens on laptops or runners
+  ([rules/01](01-lifecycle-and-workload-identity.md) §4 OIDC instead), and treat sudden public-repo creation or self-hosted-runner
+  registration under an org identity as a §3 leak trigger.
+
+## 3. Post-leak runbook: rotate first
+
+A secret that touched a commit, log, ticket, chat, or paste is **compromised** — period.
+Scrapers index public commits in well under a minute; "we force-pushed quickly" is not
+mitigation; private repos only shrink, not eliminate, the audience. Execute in this order:
+
+1. **Rotate/revoke immediately — before any cleanup.** Issue the replacement, deploy consumers,
+   revoke the leaked value ([rules/01](01-lifecycle-and-workload-identity.md) §3). If revocation breaks things, that's an availability
+   bug you fix *after* killing the credential — a live leaked key is worse than downtime.
+   For cloud keys also check for attacker persistence: new keys/users/roles created by the
+   leaked identity, modified trust policies.
+2. **Assess blast radius:** backend access logs (CloudTrail etc.) for use of the leaked
+   credential since the leak timestamp — not since discovery. Unexplained use → escalate to
+   incident response; this is now a breach investigation, not a hygiene task.
+3. **Purge from history (§4)** — only after rotation. Purging an unrotated secret just
+   advertises where it was.
+4. **Close the hole:** which layer (§1) should have caught it? Add the missing rule/hook/gate.
+   Add the leaked secret's *shape* to scanner config so recurrence is caught.
+5. **Record it:** timeline, blast radius, fix. Leak frequency per quarter is the KPI for your
+   scanning posture.
+
+Severity-of-response calibration:
+
+| Leaked | Response tempo |
+|---|---|
+| Cloud root/admin key, signing key, KMS-adjacent creds | Drop everything; rotate within the hour; full IR engagement |
+| Prod service credential (DB, API key with write scope) | Same day; check access logs before and after rotation |
+| Read-only / non-prod / sandbox credential | Within 24h; still rotate — non-prod creds pivot into prod via reused patterns and shared infra |
+| Honeytoken | No rotation needed; treat as breach signal for the planted surface (§5) |
+
+**Key or CA compromise needs a written plan before it happens** — the rotate-first steps
+above assume one credential; a signing key or a CA key invalidates everything it vouched for.
+The plan names: who to contact (internal owners, the CA, relying parties, customers where
+contracts require it); **how to re-key** (new key pair, reissue every certificate or token
+under it — [rules/05](05-credential-types.md) §3–4, [sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) for PKI); a **key/certificate
+inventory linked to where each is deployed**, so reissue is a query, not an archaeology dig;
+**revocation that relying parties actually enforce** — CRL checking switched on, or lifetimes
+short enough to be the revocation; **monitoring that re-keying completed** (no endpoint still
+presenting the old key, no token still verifying under it); and **what the compromised key
+already signed or encrypted** — artifacts to re-sign or distrust, data to re-encrypt, signatures
+made after the compromise time to reject. OWASP: Key Management cheat sheet.
+
+**Leaks outside git** follow the same runbook with a different purge step: secrets pasted into
+CI logs (purge/expire the log retention), chat (delete + rotate; assume exported), issue
+trackers, error trackers (scrub events via API), AI tool transcripts (§7 — the developer's own
+agent-session files, which are a standing credential store rather than only a post-leak
+location), and pastebins (report for takedown). The rotate-first rule is identical — purging is best-effort everywhere; rotation is
+the only reliable mitigation.
+
+## 4. Git history hygiene
+
+Removing a secret from HEAD does nothing — `git log -p`, every clone, and every fork still hold
+it. To actually purge:
+
+```bash
+# Preferred: git-filter-repo (BFG is the older alternative)
+pip install git-filter-repo
+# replacements.txt:  LEAKED_VALUE==>REMOVED
+git filter-repo --replace-text replacements.txt          # rewrites all history
+# or drop whole files everywhere:
+git filter-repo --invert-paths --path config/secrets.yml
+git push --force --all && git push --force --tags
+```
+
+Then, in order of how often it's forgotten:
+
+- **Every collaborator re-clones.** Old clones still contain the secret and will reintroduce
+  the old history on a careless push (protect branches against non-fast-forward from stale
+  clones).
+- **Forks keep the old commits** — you cannot rewrite someone else's fork. On GitHub,
+  dangling/forked commits remain fetchable by SHA even after rewrite; contact support to
+  garbage-collect cached views, and **treat the value as permanently public regardless** —
+  which is why rotation came first.
+- **PRs, issues, CI logs, artifacts, package registries** may quote the secret — search and
+  scrub those surfaces too (`gh api` search, CI log retention purge, yank published packages
+  that embed it).
+- Re-run the full-history scan to confirm zero hits before closing the incident.
+
+```text
+# BAD incident response (common): delete the line, normal commit, move on
+#   -> secret still in history, still valid, now flagged as interesting
+# GOOD: rotate -> verify no abuse -> filter-repo -> force-push -> re-clone fleet -> rescan
+```
+
+### Posture metrics
+
+Track quarterly; these tell you whether the program works:
+
+- **Time-to-detect** (commit → alert) and **time-to-rotate** (alert → leaked cred dead) per
+  incident; the second number is the one that matters and should be hours, not days.
+- **New verified leaks per quarter** (trend down), **baseline size** (trend down),
+  **% repos with pre-commit + CI gate + push protection** (trend to 100%).
+- **Honeytoken alert drill freshness** — last test-fire date per planted surface.
+
+## 5. Honeytokens
+
+Plant credentials that have **no legitimate use** and alarm on *any* use — they detect breaches
+of the surfaces scanners can't watch (stolen laptops, leaked backups, insider snooping, supply
+chain).
+
+- **Sources:** Canarytokens (free: AWS keys, fake DB creds, files), Thinkst Canary, GitGuardian
+  honeytoken, or roll your own — a real but permissionless AWS key whose *use* (CloudTrail
+  `GetCallerIdentity` from an unknown IP) triggers an alert.
+- **Where to plant:** private repos (a fake `.env` in an internal repo detects repo compromise),
+  CI variable groups, wikis/Notion, S3 backup buckets, developer-laptop `~/.aws/credentials`
+  (extra profile), container images, secret-manager entries no app reads (access-log alert).
+- **Make them indistinguishable** from real credentials in naming and placement; document them
+  in a register *outside* the planted surfaces so responders can tell drill from breach.
+- **Alert = assume breach of that surface.** Triage where the token was planted, not the token
+  itself (it has no privileges).
+- AUDIT note: before reporting a "live AWS key" finding, consider it may be a honeytoken —
+  and never *verify* candidate keys by using them against the provider without explicit
+  permission; usage may trip someone's alarm or constitute unauthorized access. Judge liveness
+  from context (key shape, age, references), or hand to the owner to check.
+
+## 6. Audit sweep quick reference
+
+*(advisory)*
+
+Condensed from SKILL.md AUDIT mode — the grep set when tools aren't available:
+
+```bash
+# Known prefixes & key blocks
+grep -rInE '(AKIA|ASIA)[A-Z0-9]{16}|gh[pousr]_[A-Za-z0-9]{36}|github_pat_|xox[bpars]-|sk_live_|rk_live_|(^|[^A-Za-z0-9_-])sk-(proj-|svcacct-|admin-|ant-(api|admin)[0-9]{2}-)?[A-Za-z0-9_-]{20,}|AIza[A-Za-z0-9_\-]{35}|glpat-|npm_[A-Za-z0-9]{36}|dop_v1_|shpat_' .
+grep -rIlE -- '-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----' .   # RSA/EC/OPENSSH/ENCRYPTED/PKCS#8/PGP
+# Assignments & connection strings
+grep -rInE '(password|passwd|pwd|secret|token|api[_-]?key)\s*[:=]\s*["'"'"'][^"'"'"']{6,}' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.rb' --include='*.java' --include='*.yml' --include='*.yaml' --include='*.json' --include='*.tf' --include='*.sh' --include='*.env' --include='*.cfg' --include='*.ini' --include='*.properties' .
+grep -rInE '[a-z+]+://[^/:@[:space:]]+:[^@[:space:]]+@' .
+# Dangerous tracked files
+git ls-files | grep -E '\.env($|\.)|\.pem$|\.key$|\.p12$|\.pfx$|\.jks$|id_rsa|credentials\.json|terraform\.tfstate|kubeconfig|\.npmrc$|\.netrc$'
+# History (HEAD-clean but leaked)
+git log --all -m -p --unified=0 | grep -E '^(\+).*(AKIA|ghp_|PRIVATE KEY|sk_live_)' | head -50
+# Scanner suppressions hiding bodies
+grep -rn 'gitleaks:allow\|nosec\|trufflehog:ignore' .
+```
+
+Triage every hit per SKILL.md severity table; redact values in the report (prefix + length).
+
+## 7. Agent session transcripts are a credential store
+
+Coding-agent harnesses persist the full model context to disk — Claude Code writes
+`~/.claude/projects/<project>/<session>.jsonl`, and every comparable tool has an
+equivalent. **Assume that file holds every secret the agent was ever shown**, including
+files the harness loaded on its own initiative rather than because the repo asked it to.
+
+Field-reported 2026-09-07 and verified clause by clause: a harness loaded a repo's `.env`
+into context under a header reading *"project instructions, checked into the codebase"*.
+`git ls-files --error-unmatch .env` errored (untracked); `git check-ignore -v .env` named
+the `.gitignore` line that excludes it; no `@`-import of it existed in the agent file; the
+mode was `600`. **Every clause of that label was false**, and four live API keys were then
+sitting verbatim, one line each, in the transcript. A harness's account of *why* it read a
+file is a claim, not evidence — check it the way you would any other
+([`sota-skill-security` rules/02](../../sota-skill-security/rules/02-trust-boundary-and-capability.md) §2).
+
+- **A provisioning call's machine-readable output is a common way in.** A `create` or
+  `status` call with `--raw` or `-o json` can return a credential the call just minted, and
+  printing the whole object puts it in the transcript. Select the fields you need
+  (`jq '{id, status}'`) instead. Field-reported 2026-10-22, one cloud GPU CLI: a `create
+  instance … --raw` piped to a pretty-printer showed an instance API key. Its scope and
+  lifetime were not verified, and the case was not re-run, since that would print it again.
+- **Build the output; do not scrub it — personal data included.** A `sed` redaction is a
+  classifier whose misses are the leak, and the lines it did match look redacted. Field-reported
+  2026-10-25: a filter keyed to two shapes of a device serial missed a third
+  (`…USBSTOR#…#<serial>&0#{guid}`); reproduced 2026-10-27, 1 of 3 shapes leaked, while printing
+  only fields split out by construction leaked 0. If you must scrub, run the filter over every
+  shape the value takes and assert each is masked first ([`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §4).
+- **Inventory the path.** It belongs on the same list as `.env`, shell history, IDE
+  settings and CI variables. It is missing from most checklists because it is newer than
+  they are, not because it is safe.
+- **Scope the scan before you run it.** A scanner pointed at that directory returns every
+  secret the agent has seen across *every* project, not only this one — that is a triage
+  budget, not a finding count. Run it with `--redact` (§1) so the scan output is not a
+  third copy of the value.
+- **Any tool that reads it is a secret-processing tool.** Sweeping transcripts as an input
+  corpus — a linter, an analytics script, a differential oracle — puts that tool under
+  [`rules/03`](03-application-patterns.md) §2.1: persist a digest and a skeleton, never the line.
+- **A tool whose input path lies outside the repo has an attack surface that changes with
+  no commit to the repo.** Nothing in the diff tells you the corpus gained four live keys
+  overnight. Re-establish what the location holds before each run; it is not a fixed
+  property of the tool's design.
+- **Calibrate before escalating.** Owner-only file → owner-only file on one machine is an
+  **expanded local surface, not a disclosure**, and not on its own a reason to rotate. The
+  same incident arc that produced this finding had already ordered one unnecessary rotation
+  by reading a scanner's *rule names* instead of its *values*. Read the values; then §3 if
+  they are real.
+
+This section is the after-the-fact inventory; the preventive half — keep secret files out of
+the tree the assistant reads, and out of its editor and terminal context — is [rules/05](05-credential-types.md) §8.
+
+Audit: a repo tool that reads an agent-transcript directory and writes any part of a line
+verbatim = **High**; the same tool emitting digests and skeletons = no finding. A secret
+inventory that does not name the transcript path = **Medium**.
+
+## Audit checklist
+
+- [ ] gitleaks (or equivalent) pre-commit hook in `.pre-commit-config.yaml` (§1) and documented in
+      dev setup; custom rules cover internal token prefixes.
+- [ ] Blocking CI secret-scan on every PR; (§2) scheduled full-history scan; built images scanned;
+      scanner output redacted.
+- [ ] **The history pass reads merge commits (§1):** it runs with `--log-opts="--all -m"` (or `-m` on
+      `git log -p`), and its `N commits scanned` equals `git rev-list --all --count`.
+- [ ] **Every gate described as a working-tree scan really reads uncommitted files** — it is
+      `gitleaks dir` or `--no-git`, not `gitleaks git` / `detect --source .`, which scan commits
+      only and print a healthy byte count while missing the file you just wrote (§1).
+- [ ] **A red working-tree scan against a clean history pass (§1) was triaged by file, not by
+      diff.** Directory scanners do not honour `.gitignore`, so an untracked artifact
+      `git status` never shows is still in scope — confirm whether the finding is even in a
+      file the repo owns before treating it as a leak, and before treating it as noise.
+- [ ] **The agent-session transcript directory is on the secret inventory (§7)** — scanned
+      with scope decided in advance and `--redact` on, and every repo tool that reads it
+      treated as a secret-processing tool ([`rules/03`](03-application-patterns.md) §2.1). Severity calibrated on the
+      values, not on a scanner's rule names: owner-only to owner-only on one machine is an
+      expanded surface, not a disclosure.
+- [ ] GitHub push protection / server-side pre-receive scanning enabled org-wide (§2).
+- [ ] Allowlists narrow (path/fingerprint), justified, and reviewed (§1); all inline
+      `gitleaks:allow` suppressions audited.
+- [ ] `.gitignore` covers (§2) `.env*`, key/cert files, tfstate, kubeconfig, `.netrc`; no such files
+      tracked (`git ls-files` check).
+- [ ] Fork PRs receive no secrets (§2); `pull_request_target` does not execute fork code.
+- [ ] CI installs run with lifecycle scripts disabled (§2) (or in token-free steps); alerts exist
+      for sudden public-repo creation and self-hosted-runner registration under org identities.
+- [ ] Leak runbook exists (§3), is current, and orders rotate → assess (logs since leak time) →
+      purge → harden → record; revocation paths tested per credential class.
+- [ ] **A key/CA-compromise plan exists (§3)** — contacts, re-key method, linked key/cert
+      inventory, enforced revocation, re-key completion monitoring, and triage of what the
+      key signed or encrypted — High where an org runs its own CA or signing keys without one.
+      Runbooks that never mention it: `grep -rLiE 'key compromise|CA compromise|re-?key' runbooks/`
+- [ ] **Detector set covers every secret class held (§1)** and tests use one standard fake
+      per type — Medium. A gitleaks config with no custom rule for your own formats:
+      `grep -q '^\[\[rules\]\]' .gitleaks.toml || echo 'no custom [[rules]] (or no .gitleaks.toml)'`
+- [ ] Past incidents: (§4) history actually rewritten (filter-repo + force-push + re-clone), forks/
+      PR quotes/CI logs scrubbed, full-history rescan clean, and the leaked values rotated.
+- [ ] Legacy-repo adoption used a triaged baseline (§1) (live findings rotated first); baseline file
+      reviewed like code and shrinking over time.
+- [ ] Non-git leak surfaces (CI logs, chat, issue/error trackers) covered by the runbook (§3) with
+      retention/scrub procedures.
+- [ ] Honeytokens (§5) planted in at least repos + CI + one backup surface; register maintained
+      out-of-band; alerts route to incident response and have been test-fired.
+- [ ] No audit practice involves invoking discovered credentials against providers (§5) without
+      explicit owner permission.

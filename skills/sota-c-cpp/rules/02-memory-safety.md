@@ -1,0 +1,180 @@
+# 02 — Memory safety: lifetimes, bounds, use-after-free, sanitizers
+
+C and C++ give you no runtime guard against reading freed memory, walking off
+the end of a buffer, or aliasing storage you no longer own. ~70% of CVEs in
+large C/C++ codebases are memory-safety bugs (per Microsoft and Chromium
+telemetry; see [Chromium memory-safety](https://www.chromium.org/Home/chromium-security/memory-safety/)).
+These are the highest-severity findings in any C/C++ audit: presume
+exploitable. The defense is ownership discipline ([`rules/01`](01-idioms.md)) plus the tools
+below.
+
+## 1. The bug classes
+
+*(advisory)* — a taxonomy that states no rule of its own; each class is probed by the §2–§6
+items and the sanitizer run.
+
+- **Buffer overflow/underflow** — index or pointer outside an object's bounds.
+  Read = info leak; write = corruption/RCE.
+- **Use-after-free (UAF)** — dereferencing a pointer to freed/destroyed
+  storage. Includes use-after-`return` (pointer to a local) and
+  use-after-move-then-reuse-of-internal-buffer.
+- **Double-free / invalid free** — freeing twice or freeing non-heap/offset
+  pointers; corrupts the allocator.
+- **Dangling reference/view** — `T&`, `string_view`, `span`, iterator, or
+  pointer outliving its storage.
+- **Uninitialized read** — using memory before it holds a value (also UB,
+  [`rules/03`](03-undefined-behavior.md)).
+- **Memory leak** — lost ownership; rarely exploitable but a reliability/DoS
+  issue.
+
+## 2. Bounds: never index memory you didn't size-check
+
+- Use containers and views that carry their size: `std::vector`, `std::array`,
+  `std::span<T>` (C++20), `std::string`, `std::string_view`. `span`/`string_
+  view` are *non-owning* — see §4.
+- Index with `.at()` (checked) on cold paths; on hot paths bounds-check once at
+  the boundary then use `operator[]`. Never compute `ptr + n` from
+  attacker-controlled `n` without validating `n` against the real length.
+- In C, always pass length alongside the pointer and check it; prefer
+  `snprintf`/`memcpy_s`-style bounded ops. `-D_FORTIFY_SOURCE=3` adds runtime
+  bounds checks to many libc calls ([`rules/04`](04-security.md)).
+- **`strncpy` is not a safe `strcpy`.** When the source is at least as long as the size it is
+  given, it writes no terminating NUL, and the next string read runs off the buffer. Measured
+  with glibc 2.43: after `strncpy(d, "ABCDEFGHIJ", sizeof d)` into an 8-byte `d`, `strlen(d)`
+  returned 15. Prefer `snprintf(d, sizeof d, "%s", s)`, or `strlcpy` (in glibc since 2.38, the
+  OpenBSD where it began, and macOS) and treat a return `>= sizeof d` as truncation. Where `strncpy` stays, write
+  the terminator yourself at the last byte, `d[sizeof d - 1] = '\0'`: index `sizeof d` is one
+  past the end. GCC's `-Wstringop-truncation` (on with `-Wall`) flags some of these. OWASP:
+  Code Review Guide v2; Secure Coding Practices Quick Reference Guide.
+- Enable hardened standard-library assertions so OOB container access traps
+  instead of corrupting: libstdc++ `-D_GLIBCXX_ASSERTIONS`, libc++
+  `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST` (LLVM 18+ — verify for your
+  toolchain). libc++ documents FAST, or EXTENSIVE for a broader set, as the production
+  modes and DEBUG for test and CI only ([`rules/04`](04-security.md) §5).
+- **Clang Safe Buffers for new or migrating C++.** `-Wunsafe-buffer-usage` warns on raw-pointer
+  indexing, pointer arithmetic and bounds-unsafe calls such as `std::memcpy`; Clang's Safe
+  Buffers docs pair it with libc++ hardening and `std::span`/containers as the adoption path.
+  Make it an error for new code or a converted directory, fence each deliberate exception with
+  `#pragma clang unsafe_buffer_usage begin`/`end` and a comment saying why, and mark a legacy
+  pointer API `[[clang::unsafe_buffer_usage]]` so its callers are warned. Measured with Apple
+  clang 21: `return p[n];` warned, `-Werror=unsafe-buffer-usage` failed the compile, and the
+  pragma pair silenced it. Clang only: GCC 16.2 rejected the flag as unrecognized (measured).
+
+```cpp
+// BAD — trusts len from the wire; OOB read/write
+void parse(const uint8_t* p, size_t len) { uint8_t b = p[off]; /* off unchecked */ }
+
+// GOOD — span carries size; checked access
+void parse(std::span<const uint8_t> buf) {
+  if (off >= buf.size()) throw std::out_of_range("off");
+  uint8_t b = buf[off];
+}
+```
+
+## 3. Lifetimes: own clearly, observe carefully
+
+- Single owner via `unique_ptr`/container ([`rules/01`](01-idioms.md)). The owner's destructor
+  is the one free; observers never free.
+- **Never return a pointer/reference/view to a local or temporary** (CG F.43):
+
+```cpp
+std::string_view bad() { std::string s = make(); return s; }   // dangling on return
+const std::string& worse(std::map<K,V>& m, K k) { return m[k].name; } // ok only while m & entry live
+```
+
+- Beware references/views captured into objects or lambdas that outlive the
+  referent (CG F.50, ES.61). A lambda capturing `[&]` stored past the enclosing
+  scope dangles.
+- `std::string_view`/`std::span` parameters are great for *borrowing within a
+  call*; do not store them unless you control and outlive the backing storage.
+  Binding `string_view` to a temporary `std::string` (e.g. from `+`) dangles.
+
+## 4. Iterator and reference invalidation
+
+- Mutating a container can invalidate iterators, pointers, and references into
+  it: `vector` push/insert/reserve invalidates on reallocation; `erase`
+  invalidates at/after the point; `unordered_*` rehash invalidates iterators.
+  Re-acquire after mutation; don't cache across a modifying call (CG ES.62).
+- The classic bug: iterating and erasing — use the return of `erase`
+  (`it = v.erase(it)`) or `std::erase_if` (C++20).
+
+## 5. Sanitizers — the ground truth
+
+Build a dedicated job with sanitizers and run the full test/fuzz suite. They
+catch what review and `-Wall` cannot. (Clang/GCC; see
+[Clang sanitizers](https://clang.llvm.org/docs/index.html).)
+
+| Sanitizer | Flag | Catches | Notes |
+|---|---|---|---|
+| **ASan** | `-fsanitize=address` | heap/stack/global overflow, UAF, double-free, leaks | ~2x slowdown; not with Valgrind; the workhorse |
+| **UBSan** | `-fsanitize=undefined` | overflow, misalignment, null deref, bad casts, OOB (some) | pair with `-fno-sanitize-recover=all` to abort |
+| **MSan** | `-fsanitize=memory` | uninitialized reads | Clang only; needs instrumented libs |
+| **TSan** | `-fsanitize=thread` | data races, lock-order issues | [`rules/05`](05-concurrency.md); mutually exclusive with ASan |
+
+- ASan and TSan can't run together — use two jobs. MSan needs an instrumented
+  libc++ to avoid false positives.
+- Use of an out-of-scope local (`stack-use-after-scope`) is caught by ASan by default: a
+  pointer to a block-scoped local dereferenced after the block aborted under plain
+  `-fsanitize=address` and ran silently with `-fno-sanitize-address-use-after-scope` (Apple
+  clang 21, measured). The finding is that opt-out in a test build, not a missing flag.
+- **Valgrind/Memcheck** is the no-recompile fallback (catches UAF/leaks/
+  uninit), but slower and misses stack/global overflows ASan catches. Prefer
+  ASan+UBSan in CI; keep Valgrind for third-party binaries you can't rebuild.
+
+## 6. Allocation hygiene
+
+- Check every allocation: `new` throws `std::bad_alloc` (handle or let it
+  propagate to a boundary); `malloc`/`calloc`/`realloc` return NULL — check
+  before use. Unchecked `malloc` of an input-derived size is HIGH.
+- `realloc` returning NULL must not overwrite the original pointer (else leak);
+  use a temp. Free with the matching deallocator (`free`↔`malloc`,
+  `delete`↔`new`, `delete[]`↔`new[]`; mismatches are UB).
+- Prefer not to mix manual allocation with C++ at all — `make_unique`,
+  `vector`, `string` remove the whole class.
+
+## Audit checklist
+
+- [ ] **Banned/dangerous buffer ops (§2) — HIGH/CRITICAL (also [rules/04](04-security.md))** —
+      `grep -rnE '\b(strcpy|strcat|sprintf|gets|stpcpy|vsprintf)\b' --include='*.c' --include='*.cpp' .`
+      ; `grep -rnE '\b(memcpy|memmove|memset|strncpy)\b' --include='*.c' --include='*.cpp' .`
+      (verify size provenance)
+- [ ] **`strncpy` with no terminator at `[size - 1]` (§2) — HIGH where the source is input** —
+      `grep -rn -A1 -E 'strncpy[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | awk '/strncpy[[:space:]]*\(/ { if (p != "") print p; p = $0; if ($0 ~ /\[[^]]*-[[:space:]]*1[[:space:]]*\][[:space:]]*=[[:space:]]*(0|.\\0.)[[:space:]]*;/) p = ""; next } { if (p != "" && $0 !~ /\[[^]]*-[[:space:]]*1[[:space:]]*\][[:space:]]*=[[:space:]]*(0|.\\0.)[[:space:]]*;/) print p; p = "" } END { if (p != "") print p }'`
+      (each line printed is a `strncpy` whose own line and next line write no `[... - 1] = '\0'`:
+      read whether the length leaves room, or replace it with `snprintf`/`strlcpy`)
+- [ ] **Dangling: returning address/ref/view of a local, a stored view, a `[&]` capture (§3) —
+      HIGH** —
+      `grep -rnE 'return &[A-Za-z_]' --include='*.cpp' --include='*.c' .` ;
+      `grep -rnE 'return (std::)?(string_view|span)' --include='*.cpp' .` (verify backing
+      outlives);
+      `clang-tidy --checks='bugprone-dangling-handle,bugprone-use-after-move,clang-analyzer-cplusplus.*' <files>`
+      ; `grep -rnE '\[&\]' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
+      (a `[&]` lambda stored, returned or handed to a thread outlives the scope) ;
+      `grep -rnE 'std::(string_view|span<[^>]*>)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*;' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
+      (a stored view: who owns the bytes, and do they outlive it?)
+- [ ] **Iterator invalidation / erase-in-loop (§4) — MEDIUM** —
+      `grep -rnE 'for *\(.*begin\(\).*\).*\.(erase|push_back|insert|clear)\(' --include='*.cpp' .`
+      ; `grep -rnE '\.erase[[:space:]]*\(' --include='*.cpp' --include='*.cc' . | grep -vE '=[[:space:]]*[A-Za-z_][A-Za-z0-9_.>-]*\.erase'`
+      (an `erase` whose returned iterator is dropped: inside an iterator loop, write
+      `it = v.erase(it)` or use `std::erase_if`)
+- [ ] **Allocation checks (§6) — HIGH** —
+      `grep -rnE '=\s*(malloc|calloc|realloc)\(' --include='*.c' --include='*.cpp' .` (confirm
+      NULL-check follows); `grep -rnE '(new|new\[\])' --include='*.cpp' . | grep -v make_`
+      (confirm RAII ownership) ;
+      `clang-tidy --checks='bugprone-suspicious-realloc-usage,clang-analyzer-unix.MismatchedDeallocator,clang-analyzer-unix.Malloc' <files>`
+      (`p = realloc(p, n)` leaks on failure; a `malloc`/`delete` or `new[]`/`delete` pair is UB)
+- [ ] **Safe Buffers enabled for new C++, and its opt-outs justified (§2) — MEDIUM on a
+      Clang-built C++ tree (INFO where the toolchain is GCC-only)** —
+      `grep -rn -e 'unsafe-buffer-usage' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . || echo "Safe Buffers not enabled"`
+      ; `grep -rnE '#pragma[[:space:]]+clang[[:space:]]+unsafe_buffer_usage[[:space:]]+begin' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
+      (each opt-out region needs a stated reason and should be small)
+- [ ] **Sanitizer/hardening presence in the build (§5, §2) — HIGH if a network binary lacks them** —
+      `grep -rqE 'fsanitize|_GLIBCXX_ASSERTIONS|_LIBCPP_HARDENING|_FORTIFY_SOURCE' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . || echo 'no sanitizer or hardening flags in the build'`
+- [ ] **A check that is on by default, switched off (§2, §5) — MEDIUM (HIGH for a shipped `OBSERVE` or
+      `IGNORE`, which continues past a failed check into UB)** —
+      `grep -rnE -e '-fno-sanitize-address-use-after-scope|_LIBCPP_ASSERTION_SEMANTIC_(OBSERVE|IGNORE)|_LIBCPP_HARDENING_MODE_NONE' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='*.h' --include='*.hpp' .`
+      (libc++ calls `observe` an adoption aid only; `ignore` is not a conforming hardened mode)
+- [ ] **Build & run the suite under sanitizers (§5, ground truth; TSan in its own job, since it
+      cannot share one with ASan; Valgrind only for binaries you cannot rebuild) cmake -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all" ctest # any
+      ASan/UBSan abort == CRITICAL/HIGH finding**

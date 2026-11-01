@@ -1,0 +1,298 @@
+# 09 — Untrusted Data Ingestion
+
+Scope: safely ingesting attacker-authored external data — threat-intel feeds,
+scraped content, user uploads, third-party webhooks/APIs, RAG corpora, email,
+file imports — through parsers into storage and UI. This file is about hostile
+data *feeds and content*, where the bytes themselves are the weapon: hostile
+parsers (image/archive/PDF/Office/XML/CSV), resource-exhaustion at the ingest
+boundary, schema validation, feed provenance, and the render/LLM exits. Maps to
+OWASP A08:2025 (Software or Data Integrity Failures), A05:2025 (Injection),
+A06:2025 (Insecure Design). CWE-409, CWE-776, CWE-434, CWE-22, CWE-502, CWE-1333.
+
+This is **not** [rules/01](01-input-injection.md) (injection at a *sink* — SQL/shell/path/template) nor
+[rules/05](05-web-security.md) (encoding at the *render* sink). Those fix the moment data meets an
+interpreter. This file fixes the moment hostile data *enters the system* — the
+parse and the pipeline before any sink is reached.
+
+Core principle: **all externally-sourced data is attacker-controlled — including
+data from "trusted" partners, paid feeds, and your own collectors.** A partner's
+breach is your poisoned feed; a scraper ingests whatever the page author wrote;
+a webhook claims to be from Stripe until you verify it. Establish a taint mark at
+the ingest boundary and carry provenance forward: who sourced it, was integrity
+verified, has it been validated. Ingested data is **data forever** — it never
+silently becomes instructions (HTML when rendered, SQL when queried, a prompt
+when retrieved). Untrusted in → typed/validated/provenanced out, or quarantined.
+
+## 1. Treat the ingest boundary as a trust boundary
+
+- Every collector, webhook handler, upload endpoint, feed poller, email fetcher,
+  and RAG loader is a trust boundary, on par with an HTTP handler. Apply [rules/01](01-input-injection.md)
+  validation discipline here, plus the parse-and-resource controls below.
+- **Provenance/taint from ingest onward.** Tag each record with `source`,
+  `fetched_at`, `integrity_verified: bool`, `validated: bool`. Downstream code
+  must be able to ask "where did this come from and was it checked" — don't merge
+  untrusted records into the trusted core unlabeled.
+- **"Trusted partner" is not a control.** Authenticate the *transport* (mTLS,
+  signed webhook, API key) but still treat the *payload* as hostile — auth proves
+  who sent it, not that the contents are benign. A compromised partner sends
+  authenticated poison.
+- Never trust client-declared metadata: `Content-Type`, filename extension,
+  `Content-Length`, charset. Determine these from the bytes, then compare.
+
+```python
+# BAD: webhook authenticated, payload trusted blindly
+if hmac_ok(req): db.save(json.loads(req.body))   # unbounded parse, no schema
+
+# GOOD: authenticate transport, then treat payload as hostile
+if not hmac_ok(req): raise Forbidden()
+raw = read_limited(req.stream, MAX_BODY)          # §3 size cap
+rec = WebhookEventDTO.model_validate_json(raw)    # §4 parse-don't-validate
+store(rec, source="stripe-webhook", integrity_verified=True, validated=True)
+```
+
+## 2. Hostile parsers — sandbox them (the big one)
+
+Format parsers are the largest ingest attack surface: complex state machines in
+C/C++ (image codecs, PDF, archive libs) with a long CVE history, plus
+algorithmic-complexity bombs that need no memory-safety bug at all. **Parse
+untrusted formats in a sandboxed subprocess with CPU/mem/wall-time/FD limits and
+a hard recover — never in-process in a long-running service.** See
+[sota-sandboxing](../../sota-sandboxing/SKILL.md) for process/app isolation (seccomp, Landlock, namespaces,
+cgroups, broker pattern); the parser sandbox must reach **no secrets and no
+network** (egress controls per [sota-network-security](../../sota-network-security/SKILL.md)).
+
+- **Images — decompression / pixel bombs (CWE-409).** A 4 KB PNG can declare
+  50000×50000 pixels and explode to gigabytes on decode. **Read dimensions via a
+  header-only decode (`DecodeConfig`) and reject before the full `Decode`.** Cap
+  width×height×bytes-per-pixel against a memory budget. Strip/re-encode through a
+  hardened path; never feed raw uploads to image libs in-process.
+
+```go
+// BAD: decode first, OOM second
+img, _, err := image.Decode(r)
+
+// GOOD: read once (bounded), header-only dimension check, then decode the same bytes.
+// DecodeConfig consumes the reader, so a second Decode on r fails ("unknown format").
+buf, err := io.ReadAll(io.LimitReader(r, maxBytes+1))
+if err != nil { return err }
+if len(buf) > maxBytes { return ErrTooLarge }
+cfg, _, err := image.DecodeConfig(bytes.NewReader(buf))
+if err != nil { return err }
+if cfg.Width*cfg.Height > 24_000_000 { return ErrTooLarge }  // ~24MP cap
+img, _, err := image.Decode(bytes.NewReader(buf))
+```
+
+- **Archives — zip/tar slip, zip bombs, nested amplification (CWE-22, CWE-409).**
+  Validate every entry path post-join and reject absolute/`..`/symlink entries
+  (Zip Slip — see [rules/01](01-input-injection.md) §4). Independently of count, enforce a **decompressed-
+  size cap and a compression-ratio cap** (e.g. reject >100:1 or >total budget) by
+  metering bytes *as you stream the inflate*, not by trusting the header. Cap
+  entry count and recursion depth — a 42 KB zip-of-zips ("42.zip") expands to
+  petabytes; refuse to recurse into nested archives, or bound depth to 1.
+
+```python
+# GOOD: meter decompressed bytes during extraction, cap ratio + total
+total = 0
+with zipfile.ZipFile(fp) as z:
+    if len(z.infolist()) > MAX_ENTRIES: raise Reject("too many entries")
+    for info in z.infolist():
+        dest = safe_join(base, info.filename)        # rejects ../ + absolute
+        written = 0                                  # per-entry, for the ratio
+        with z.open(info) as src, open(dest, "wb") as out:
+            while chunk := src.read(64 * 1024):
+                written += len(chunk); total += len(chunk)
+                if total > MAX_TOTAL: raise Reject("zip bomb")
+                if info.compress_size and written / info.compress_size > 100:
+                    raise Reject("ratio bomb")
+                out.write(chunk)
+```
+
+- **PDF / Office (CWE-434, RCE surface).** These are containers of scripts, fonts,
+  embedded files, and zipped XML. Office docs (DOCX/XLSX/PPTX) are zipped XML —
+  XXE/XEE applies ([rules/01](01-input-injection.md) §6). Disable macro/JS execution; never hand a document
+  to a full renderer in-process. Render/convert in a sandboxed worker; extract
+  only the fields you need; treat embedded objects as new untrusted uploads.
+- **XML (CWE-776, CWE-611).** Disable DTDs and external entities; cap entity
+  expansion (billion-laughs). Full treatment in [rules/01](01-input-injection.md) §6 — applies to every
+  SVG, RSS/Atom feed, SOAP, SAML, and Office part. Entity limits are not structural limits:
+  also cap element nesting depth (thousands of unclosed open tags — "coercive parsing" — exhaust
+  the stack), element and attribute counts, and name and text lengths. Defaults differ widely:
+  lxml 6.1 (libxml2 2.14) refused depth 300 ("Excessive depth in document: 256"), `huge_tree=True`
+  raised that to 2048, and CPython 3.13's `xml.etree` and `minidom` (expat 2.6.3) accepted
+  100,000 levels (measured 2026-09-25). Where the parser has no limit, count depth yourself in
+  a streaming (SAX/iterparse) pass. Validate against a strict XSD (bounded lengths, occurrences
+  and patterns) rather than a DTD, which you disabled above. Choose a parser whose time on a
+  malformed document stays close to its time on the well-formed one, and keep tests that time
+  both, plus one known-bad payload per limit that must be rejected. OWASP: XML Security, Web
+  Service Security cheat sheets.
+- **CSV / JSON / feed formats.** Deeply-nested JSON (`[[[[…]]]]`) is a stack/CPU
+  DoS — set a max nesting depth and document/field size cap; reject unbounded
+  arrays before materializing. Use streaming parsers with limits for large feeds.
+  CSV formula injection (CWE-1236) is an *export* concern handled at the render
+  boundary ([`rules/01`](01-input-injection.md) §11), but neutralize on ingest too if cells round-trip to users.
+- **Fuzzy-hash / similarity libs on hostile input.** ssdeep/tlsh/imagehash and
+  similar are fed exactly the malware/spam they analyze; malformed input crashes
+  or OOMs them. Run them inside the same parser sandbox, time-bounded, with the
+  crash isolated to the worker — never on the request thread of a shared service.
+
+## 3. Resource & DoS controls at the ingest boundary
+
+The cheapest attack on an ingester is volume and amplification. Bound everything.
+
+- **Size caps at every layer**: max request body, max field length, max file size,
+  max decompressed size, max entry count. Use a `LimitReader`/bounded reader on
+  the raw stream — never read an attacker-controlled `Content-Length` into a
+  buffer, and never `read()`/`ReadAll` an unbounded body.
+- **Timeouts and rate/volume limits**: wall-clock timeout per parse; per-source
+  rate and concurrency limits so one feed can't starve others. See
+  [sota-async-concurrency](../../sota-async-concurrency/SKILL.md) for bounded concurrency, backpressure, and task limits.
+- **Backpressure, not buffering**: when downstream is slow, slow the intake;
+  don't accumulate an unbounded in-memory queue (itself a DoS).
+- **Dead-letter / quarantine poison records.** A record that fails parse,
+  validation, or a resource cap goes to a quarantine/DLQ with its provenance —
+  it does not crash the pipeline, retry-loop forever, or get silently dropped.
+- **Idempotent re-ingest.** Key records by a stable source id so replays and
+  retries don't duplicate or corrupt state (cross-ref [sota-data-engineering](../../sota-data-engineering/SKILL.md) data
+  contracts; webhook ingress hardening is [rules/01](01-input-injection.md), idempotent webhook delivery
+  is [sota-api-design rules/06](../../sota-api-design/rules/06-webhooks.md) §4).
+
+```go
+// BAD                              // GOOD
+body, _ := io.ReadAll(r.Body)       body, err := io.ReadAll(io.LimitReader(r.Body, maxBody))
+                                     if err != nil || int64(len(body)) >= maxBody { reject() }
+```
+
+## 4. Schema & content validation at the boundary
+
+- **Parse, don't validate.** Deserialize into a typed object (pydantic / serde /
+  zod / a generated struct) at the boundary, with `extra=forbid` /
+  reject-unknown-fields / `deny_unknown_fields`. Unknown fields are an attack
+  signal and a mass-assignment vector ([rules/07](07-data-exposure.md)) — reject, don't ignore.
+  Validation must reach the whole object graph: Jakarta Bean Validation descends into a nested
+  object or collection only where the reference carries `@Valid` (spec, Graph validation), so an
+  unmarked nested DTO's constraints never run. Pydantic validated a nested model inside a list
+  by default (2.13, measured 2026-09-25). OWASP: Bean Validation cheat sheet.
+- **Allowlist** values, formats, ranges, enums. **Canonicalize then validate**
+  ([rules/01](01-input-injection.md) §1) — normalize unicode/encoding once before checking.
+- **Strip/flag invisible and deceptive Unicode** on text bound for an LLM context
+  or a UI (RAG-corpus and feed text especially): zero-width characters
+  (U+200B–200D, U+FEFF), bidirectional overrides (U+202A–202E, U+2066–2069 —
+  *Trojan-Source*, CVE-2021-42574), and tag characters (U+E0000–E007F) hide
+  injected instructions a reviewer can't see. Normalize (NFKC), drop the
+  format/control categories you don't expect, and flag homoglyph-heavy strings.
+  This is the ingest-side complement to the prompt-injection boundary ([rules/08](08-llm-ai-security.md)).
+  The same code points are rejected in source code in every language, in commit messages and
+  diffs, and in agent-generated code, by a CI gate: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.6 covers changed
+  files; add commit messages to that scan. OWASP: Secure Coding with AI cheat sheet.
+- **Validating XML against a schema.** Load a pinned local copy, never the `xsi:schemaLocation`
+  the document names: Java's no-argument `SchemaFactory.newSchema()` validates by the
+  document's location hints, which its javadoc flags as a denial-of-service risk. Record a
+  digest of each schema file and check it; treat a schema repository or third-party schema
+  host as untrusted (DNS does not authenticate it); keep local schema and DTD files read-only to
+  the service. Write the XSD tight: finite `maxOccurs`, a length bound and pattern on every
+  simple value, no `xs:any` or `lax`/`skip` processing, and co-constraints as XSD 1.1
+  `xs:assert`/`xs:assertion`, which need a 1.1 processor (libxml2 2.14 via lxml 6.1 refused a
+  schema containing `xs:assert`, measured 2026-09-25). An element declared once makes a repeat
+  invalid (lxml rejected a second `<name>`/`<role>` pair, measured), which closes the
+  first-match ambiguity in [rules/01](01-input-injection.md) §11. OWASP: XML Security, Web Service Security, SAML
+  Security cheat sheets.
+- **Determine type from bytes, not declaration.** Sniff the real MIME from magic
+  bytes and reject when it disagrees with the declared/extension type. Beware
+  **polyglot files** (valid GIF *and* valid HTML/JS — "GIFAR"): a file that is two
+  types at once defeats single-type checks and becomes stored XSS when served.
+  Re-encode/normalize through a canonical pipeline so the stored artifact is
+  exactly one known type.
+- **Content scanning for uploads (CWE-434).** Run AV/malware scanning on uploaded
+  files; store under a server-generated id (never the user filename, [rules/01](01-input-injection.md) §4);
+  serve from a separate origin/sandbox domain with `Content-Disposition:
+  attachment` and a correct `Content-Type` (upload pipeline detail in [rules/21](21-file-uploads.md)).
+- Reject before persistence. Invalid data must never reach storage in a form that
+  a later, less-careful reader will trust.
+
+```python
+# GOOD: typed boundary, unknown fields rejected, type from bytes
+class FeedItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str; indicator: IPvAnyAddress; severity: Literal["low","med","high"]
+
+item = FeedItem.model_validate(record)                 # reject-unknown, typed
+if sniff_mime(blob) not in ALLOWED_MIME: raise Reject  # bytes, not declared
+```
+
+## 5. Pipeline trust hygiene
+
+- **Per-feed provenance + integrity.** Where a feed offers signatures/checksums
+  (signed STIX/TAXII, detached signatures, content digests), verify them and
+  record the result; an unsigned feed is lower-trust and labeled as such. A
+  poisoned upstream feed is a **supply-chain attack on your data** — the same
+  class as a malicious dependency (cross-ref [sota-devsecops](../../sota-devsecops/SKILL.md) for provenance, and
+  [sota-data-engineering](../../sota-data-engineering/SKILL.md) for data contracts and quality gates).
+- **Separate ingest/parse from the trusted core (broker pattern).** A small,
+  unprivileged front layer fetches and parses in the sandbox; only typed,
+  validated, provenanced objects cross into the core over a narrow interface. The
+  parser process holds **no secrets, no DB credentials, no network egress** beyond
+  what it strictly needs — apply egress allowlists on collectors per
+  [sota-network-security](../../sota-network-security/SKILL.md).
+- **Detection on the ingest path.** Anomalies — sudden volume spikes, ratio-bomb
+  rejects, schema-violation bursts, AV hits — are signals; emit them as events for
+  [sota-detection-engineering](../../sota-detection-engineering/SKILL.md), don't just drop them. Flag **serialized-payload
+  signatures** on inputs that should be plain data — base64 Python pickle prefixes
+  (`gASV`, `gAJ`, `gAR`), Java serialization magic (`rO0`/`0xACED`), PHP
+  `O:<n>:` object markers, .NET `BinaryFormatter` streams (base64 `AAEAAAD/////`) and a
+  `"$type"` key in JSON (Json.NET type-name handling), both measured 2026-09-25 on .NET 10 with
+  the formatter compatibility package: their presence in a feed/field is a deserialization-RCE
+  probe, not legitimate content. OWASP: Deserialization cheat sheet.
+- **RAG ingestion needs provenance and an approval path.** Each ingested document records
+  the uploader or writer identity and an approval record beside source and timestamp. A new
+  ingestion source is added only through an approval step, bulk uploads are reviewed rather than
+  waved through, and content from external auto-sync lands in staging and is reviewed before it
+  becomes retrievable from the vector store. Connectors get least-privilege, read-only scopes.
+  Cross-ref [rules/08](08-llm-ai-security.md) and [`sota-llm-engineering` rules/03](../../sota-llm-engineering/rules/03-rag-retrieval.md). OWASP: RAG Security cheat sheet;
+  AISVS 12.5.4.
+- **No lateral trust.** Data validated for one purpose isn't validated for
+  another; re-validate at each new boundary it crosses (a value safe for storage
+  may be unsafe for a shell, a query, or a prompt — see §6).
+
+## 6. The exits — render and LLM boundaries
+
+Ingested hostile content is inert in storage; it becomes dangerous at an *exit*.
+Two exits matter beyond [rules/01](01-input-injection.md)'s sinks:
+
+- **Render boundary → stored XSS (CWE-79).** Scraped pages, feed descriptions,
+  uploaded SVGs, webhook payloads displayed in a dashboard are stored-XSS fuel.
+  Encoding/sanitization happens at render time, in the render context — see
+  [rules/05](05-web-security.md) and [sota-frontend-design](../../sota-frontend-design/SKILL.md) / [sota-javascript-typescript](../../sota-javascript-typescript/SKILL.md). Sanitizing on
+  ingest is brittle (you don't know the future render context); store the raw
+  (taint-tagged) value and encode at output. SVG and HTML feed content in
+  particular must be sanitized or served from an isolated origin.
+- **LLM boundary → indirect prompt injection.** Any ingested content that reaches
+  a model's context — RAG corpora, scraped pages, emails, tool outputs — is
+  attacker-controlled instructions to the model. This is [rules/08](08-llm-ai-security.md)'s domain
+  (indirect prompt injection, lethal trifecta, taint gating); the ingest pipeline
+  enforces the *provenance tag* that [rules/08](08-llm-ai-security.md) uses to gate tool calls. Never let
+  ingested text be treated as a trusted system instruction.
+
+## Audit checklist
+
+- [ ] Is every collector/webhook/upload/feed/RAG loader treated as a trust boundary with size cap, timeout, and schema validation (§1)?
+- [ ] Are records tagged with provenance (source, fetched_at, integrity_verified, validated) and is "authenticated transport" not conflated with "trusted payload", with declared `Content-Type`, extension, `Content-Length` and charset re-derived from the bytes on every ingest path (§1)?
+- [ ] Are untrusted formats parsed in a sandboxed subprocess (CPU/mem/time/FD limits, no secrets, no egress) rather than in-process in a long-running service (§2)?
+- [ ] Image decode: header-only dimension check (`DecodeConfig`) and pixel/byte budget *before* full `Decode` (§2)? (grep: `image.Decode`, `Image.open`, `imread` without a preceding dimension/`DecodeConfig` check)
+- [ ] Archive extraction: per-entry path validation (no `..`/absolute/symlink), decompressed-size cap, compression-ratio cap, entry-count cap, bounded nesting depth (§2)? (grep: `zipfile`, `tarfile`, `extractall`, `archive/zip` without a metered byte counter)
+- [ ] PDF/Office parsed in a sandboxed worker with macros/JS disabled, embedded objects treated as new uploads, and zipped-XML parts XXE-hardened (§2)?
+- [ ] XML/SVG/RSS/SAML/Office parsers (§2): DTDs + external entities disabled, entity expansion capped? ([rules/01](01-input-injection.md) §6)
+- [ ] JSON/CSV/feed: max nesting depth, document/field size caps, unbounded arrays rejected, streaming parser for large inputs (§2)?
+- [ ] Fuzzy-hash/similarity libs (ssdeep/tlsh/imagehash) run inside the parser sandbox, time-bounded, crash-isolated (§2)?
+- [ ] Is every raw read bounded by a `LimitReader`/bounded reader, with body, field, file, decompressed-size and entry-count caps at every layer and a wall-clock timeout per parse (§3)? (grep: `io.ReadAll`, `read()` with no limit, `request.body` without size cap, missing `LimitReader`)
+- [ ] Backpressure + bounded concurrency + per-source rate limits, with a dead-letter/quarantine carrying provenance for poison records (no crash, endless retry or silent drop) and idempotent re-ingest keyed by a stable source id (§3)?
+- [ ] Parse-don't-validate into typed objects with reject-unknown-fields, allowlist values, canonicalize-then-validate (§4)?
+- [ ] Upload type determined from magic bytes (not declared Content-Type/extension), polyglots rejected via re-encode/normalize, AV scan, server-generated storage id, isolated serving origin (§4)?
+- [ ] Feed integrity verified where available (signatures/checksums), poisoned-upstream treated as a supply-chain risk, ingest/parse separated from the trusted core (broker pattern) (§5)?
+- [ ] Ingested content stored raw and taint-tagged, encoded at the *render* boundary ([rules/05](05-web-security.md)) not sanitized-on-ingest, with SVG and HTML feed content sanitized or served from an isolated origin, provenance-tagged before reaching an LLM context ([rules/08](08-llm-ai-security.md)), and never placed in a system or instruction role (§6)?
+- [ ] Ingest anomalies (volume spikes, ratio-bomb/schema-violation bursts, AV hits) emitted as detection events (§5)?
+- [ ] XML structural limits (§2): nesting depth, element/attribute counts and name/value lengths capped, strict XSD instead of DTD, and tests for malformed-vs-normal parse time and for each limit? HIGH on an unauthenticated XML endpoint; each hit of `grep -rnE 'huge_tree[[:space:]]*=[[:space:]]*True|XML_PARSE_HUGE|ET\.(fromstring|parse|XMLParser)\(|minidom\.parse(String)?\(|expat\.ParserCreate' --include='*.py' --include='*.c' --include='*.cpp' --include='*.h' .` is a parser with a relaxed or absent depth limit
+- [ ] **Cascading validation (§4)**: does validation reach every nested object and collection (`@Valid` on each nested reference, nested models)? MEDIUM, HIGH when a nested field reaches a query or a decision; each hit of `grep -rlE '(Dto|DTO|Request)>?[[:space:]]+[a-z]' --include='*.java' . | xargs -r awk '/^[[:space:]]*@Valid([^A-Za-z]|$)/{v=1;next} /^[[:space:]]*@/{next} /^[[:space:]]*(private|protected|public)[[:space:]]+([A-Z][A-Za-z]*(Dto|DTO|Request)|(List|Set|Collection)<[A-Z][A-Za-z]*(Dto|DTO|Request)>)[[:space:]]+[a-z]/ && !/@Valid/ && !v {print FILENAME":"FNR":"$0} {v=0}'` is a nested DTO without `@Valid` on its own line or among the annotation lines directly above it
+- [ ] **Invisible code points in code and history (§4)**: does CI reject bidi and zero-width characters in source of every language, agent-generated code and commit messages? MEDIUM, HIGH in reviewed code; each hit of `LC_ALL=C grep -rnE $'\xe2\x80[\x8b-\x8d\xaa-\xae]|\xe2\x81[\xa6-\xa9]|\xef\xbb\xbf|\xf3\xa0[\x80-\x81]' .` is a finding (pipe `git log --format=%B` into the same grep for messages). That byte ERE needs bash/zsh `$'…'` and a BSD or GNU `grep` (10/10 fixtures, 0 false hits, 2026-09-26); ugrep reads it as UTF-8 and caught 1 of 10, so where `grep` is a ugrep wrapper call the binary by path or run `ugrep -rnP '[\x{200B}-\x{200D}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}\x{E0000}-\x{E007F}]' .` (10/10)
+- [ ] **XML schema validation (§4)**: is untrusted XML validated against a pinned, digest-checked, read-only local schema (never document location hints) with finite occurrences, bounded values, no `xs:any`/lax, and an XSD 1.1 processor where assertions are used? HIGH on a SAML or SOAP endpoint; every hit of `grep -rnE 'maxOccurs="unbounded"|<xs:any[[:space:]/>]|processContents="(lax|skip)"|newSchema\(\)' --include='*.xsd' --include='*.java' --include='*.kt' .` is a finding or needs a written reason
+- [ ] **.NET payload signatures (§5)**: do ingest detectors flag `AAEAAAD/////` and a JSON `"$type"` key beside the pickle, Java and PHP markers? MEDIUM; run `grep -rnE 'AAEAAAD/////|rO0AB|gASV|"\$type"[[:space:]]*:' .` over captured samples, and each hit is a deserialization probe
+- [ ] **RAG provenance and staging (§5)**: does every ingested document carry uploader identity and an approval record, with new sources approved, bulk uploads reviewed, auto-synced content staged before retrieval, and read-only connector scopes? HIGH for a shared corpus; each hit of `grep -rnE "\.(add_documents|add_texts|upsert|upsert_points)\(" --include='*.py' --include='*.js' --include='*.ts' . | grep -vE 'metadata|payload|provenance'` writes to the store without provenance

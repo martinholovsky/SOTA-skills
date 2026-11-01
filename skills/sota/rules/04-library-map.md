@@ -1,0 +1,204 @@
+# 04 — Library map: which `rules/` file holds what
+
+The per-skill index of every `rules/NN` file in the library, so a routing decision can
+name the file to open without loading a `SKILL.md` first.
+
+## 0. What this file is, and the gates on it
+
+**This lived in the router until it was offloaded.** It is pure lookup — every entry is a
+condensed second copy of the index inside that skill's own `SKILL.md`, which the BUILD
+workflow ([`rules/02`](02-build-workflow.md) step 2) tells you to read anyway. Keeping it in the router charged
+its tokens to *every* session that loaded the router, including the ones that never
+consult it. The router's length was measured as **not** costing routing accuracy (flat at
+2.6x the length, `evals/results/2026-08-26/ROUTER-LENGTH.md`), so this is a
+tokens-per-load change, not an accuracy one.
+
+Read it when you know the domain but not the file. If you are already opening a skill's
+`SKILL.md`, prefer that skill's own index — it carries "read this when…" guidance this
+map deliberately drops.
+
+**Both directions are gated.** Invariant 7 requires every skill to appear here; invariant
+15 requires every `rules/NN` file that exists to be listed, and every listed file to
+exist. [`sota-code-security/rules/11`](../../sota-code-security/rules/11-dead-path-diagnostics.md) sat unlisted for two releases before 15 existed.
+So adding, splitting or renumbering a `rules/NN` file updates this map and the owning `SKILL.md`
+index (invariant 10) in the same commit.
+
+## 1. Library map (rules files per skill)
+
+- **sota/rules**: 01 audit methodology (scoping, tool matrix, triage, hygiene), 02 build workflow
+  (the four BUILD steps, and the four surfaces a BUILD change must be mirrored into), 03 audit
+  findings (severity & chain closure, evidence, decision ledger, refutation, report template),
+  04 library map (this file — which `rules/NN` holds what, across every skill), 05 audit report &
+  tracking (reproduction steps, finding lifecycle and retest, report provenance)
+- **sota-architecture/rules**: 01 styles & decisions (incl. monorepos), 02 domain modeling, 03 distributed systems &
+  events, 04 resilience, 05 scalability & state, 06 cloud-native config & delivery, 07 anti-
+  patterns catalog, 08 NATS JetStream messaging
+- **sota-code-security/rules**: 01 input & injection, 02 authentication, 03 authorization, 04
+  cryptography, 05 web security, 06 memory & resource safety, 07 data exposure, 08 LLM/AI
+  security, 09 untrusted-data ingestion, 10 silent control failure, 11 dead-path diagnostics, 12
+  verifying the verifier, 13 context-dependent silence, 14 the control that is not in force,
+  15 instruments & guards, 16 where silent no-ops hide (the catalogue split out of 10), 17 sessions
+  & tokens (split out of 02), 18 tamper-evident logs & audit ledgers (split out of 04), 19
+  anti-automation & abuse of value-granting features, 20 browser response hardening (headers on
+  every status, HSTS rollout, Fetch Metadata, stripping diagnostic headers), 21 file uploads (split
+  out of 05), 22 constant-time comparison (split out of 04), 23 LLM platform & supply chain
+  (models, prompts, MCP servers, logging — split out of 08)
+- **sota-skill-security/rules**: 01 provenance & installation, 02 trust boundary & capability,
+  03 authoring & auditing skills
+- **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition, 03 threat catalogs, 04 risk
+  rating & treatment, 05 outputs & operationalization, 06 audit reconstruction
+- **sota-secrets-management/rules**: 01 lifecycle & workload identity, 02 storage backends, 03
+  application patterns, 04 detection & remediation, 05 credential types
+- **sota-sandboxing/rules**: 01 isolation boundaries, 02 Linux/OS hardening, 03 containers &
+  microVMs, 04 process/app sandboxing, 05 AI-agent sandboxing
+- **sota-performance/rules**: 01 methodology, 02 algorithms & data structures, 03 memory, 04 I/O &
+  network, 05 caching, 06 frontend/web
+- **sota-async-concurrency/rules**: 01 models & structure, 02 correctness, 03 primitives, 04
+  event-loop hygiene, 05 cancellation/timeouts/shutdown, 06 backpressure & flow control, 07 audit
+  bug catalog
+- **sota-api-design/rules**: 01 REST/HTTP, 02 versioning & evolution, 03 GraphQL, 04 gRPC &
+  protocols, 05 realtime/websockets/SSE, 06 webhooks, 07 security & operations
+- **sota-devsecops/rules**: 01 pipeline security, 02 provenance & signing, 03 dependencies,
+  04 build & containers, 05 analysis gates, 06 IaC & deployment, 07 runtime & ops,
+  08 registry security, 09 gates that hold, 10 declared-but-not-reached (the inert-dependency
+  sweep, split out of 03 in v1.36.0), 11 after the gate fails (durable verdicts, reproducing the
+  gate's invocation, preserving a red run's log — split out of 09, · v1.43.0), 12 SCM/CI platform
+  governance, 13 vulnerability remediation (triage beyond the score, fixing transitives, backports),
+  14 SBOM content, quality and handling, 15 dependency adoption (selecting, verifying and
+  configuring what you take in), 16 fast CI without blind spots (measure first, cache, change-scope
+  safely, shard under one aggregator)
+- **sota-databases/rules**: 01 choosing & modeling, 02 schema & migrations, 03 queries & indexes,
+  04 transactions & concurrency, 05 reliability & scale, 06 security & compliance, 07 vector & AI,
+  08 SurrealDB & multi-model
+- **sota-frontend-design/rules**: 01 typography & color, 02 layout/spacing/ responsive, 03 design
+  systems & components, 04 UX patterns, 05 accessibility, 06 motion design, 07 visual craft &
+  distinctiveness
+- **sota-web-frameworks/rules**: 01 baseline (versions/support, render modes), 02 React 19 (hooks,
+  Actions, React Compiler), 03 Next.js (App Router, Server Actions, caching, CVEs), 04 Vue 3
+  (Composition API, reactivity, XSS), 05 Nuxt 4 (data fetching, server routes, CVEs), 06 SSR &
+  hydration (mismatches, serialization, caching, CSP), 07 framework security & CVEs
+- **sota-observability/rules**: 01 structured logging, 02 metrics, 03 tracing, 04 SLOs & alerting,
+  05 operational readiness, 06 audit playbook
+- **sota-testing/rules**: 01 strategy & shape, 02 test design & quality, 03 doubles & test data,
+  04 integration/contract/system, 05 e2e & UI, 06 property/fuzzing/mutation, 07 suite health & CI,
+  08 BDD/spec-by-example, 09 security testing
+- **sota-llm-engineering/rules**: 01 evals, 02 prompt & context engineering, 03 RAG & retrieval,
+  04 agents & tools, 05 production engineering, 06 data & lifecycle, 07 code-generation evals
+- **sota-ml-engineering/rules**: 01 ML systems architecture, 02 data & features (leakage/skew), 03
+  training & experimentation, 04 evaluation & validation, 05 deployment & serving, 06 monitoring &
+  drift, 07 security & governance
+- **sota-cloud-infrastructure/rules**: 01 org/accounts/governance, 02 IAM design, 03 networking,
+  04 compute selection, 05 data & storage, 06 cost/FinOps, 07 resilience & DR
+- **sota-kubernetes/rules**: 01 control plane & etcd, 02 RBAC & serviceaccounts, 03 admission &
+  policy, 04 GitOps controllers, 05 operators/CRDs/webhooks, 06 workloads & tenancy, 07 supply
+  chain & audit
+- **sota-identity-access/rules**: 01 federation protocols, 02 IdP operations, 03 authorization
+  models, 04 lifecycle & provisioning, 05 privileged & workload identity, 06
+  MFA/federation/assurance, 07 Active Directory & Kerberos/ADCS hardening
+- **sota-network-security/rules**: 01 zero-trust architecture, 02 segmentation & blast radius, 03
+  K8s network policy, 04 service mesh & mTLS, 05 edge/ingress/egress, 06 DNS/TLS/PKI
+- **sota-confidential-computing/rules**: 01 threat model & selection, 02 TEE technologies, 03
+  remote attestation, 04 confidential Kubernetes, 05 PETs & computing on encrypted data
+- **sota-detection-engineering/rules**: 01 detection-engineering discipline, 02 telemetry & SIEM
+  data layer, 03 rule languages & engines, 04 alerting/ triage/SOC/SOAR, 05
+  hunting/intel/deception, 06 incident response & validation, 07 AD attack detection
+  (Kerberoasting/DCSync/ADCS)
+- **sota-data-engineering/rules**: 01 architecture & modeling, 02 pipelines & orchestration, 03
+  streaming & CDC, 04 data quality & contracts, 05 storage & performance, 06 operations &
+  governance
+- **sota-privacy-compliance/rules**: 01 data inventory & classification, 02 privacy by design, 03
+  consent & user rights, 04 regulatory landscape, 05 audit-ready engineering, 06 incident & breach
+  readiness
+- **sota-security-compliance/rules**: 01 control-frameworks-as-code (CSF 2.0 spine), 02 NIST
+  800-53/800-171/CMMC/FedRAMP, 03 SSDF secure SDLC, 04 EU Cyber Resilience Act, 05 ISA/IEC 62443
+  (OT/ICS)
+- **sota-mobile/rules**: 01 platform & stack, 02 architecture & state, 03 offline/background/push,
+  04 security, 05 performance, 06 release & operations, 07 Swift in apps (UI isolation, SwiftUI
+  task lifetimes, XCTest-only suites; the language itself is [`sota-swift`](../../sota-swift/SKILL.md))
+- **sota-cli-ux/rules**: 01 commands/flags/config, 02 output & interaction, 03 behavior &
+  lifecycle, 04 distribution & docs
+- **sota-shell-scripting/rules**: 01 safety baseline (shebang, `set -e`, quoting, zsh deviations),
+  02 robustness & correctness, 03 security, 04 CI & operational scripts, 05 constructs & cleanup
+  (arrays, IFS, traps/mktemp, tests, globbing, zsh habits that break silently in bash and `sh`: `sota-shell-scripting` rules/05 §5a), 06 ad-hoc commands (zsh deviations,
+  searcher exclusions, patterns parsed as flags, stderr-suppressed absence checks, a hardcoded
+  verdict label, non-portable backslash escapes (`\b` `\s` `\d`) — split out of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
+  `set -euo pipefail`, disagreeing status variables, GitHub Actions shell defaults, execution
+  policy, PSScriptAnalyzer), 08 ad-hoc side effects (blast radius, process-table exhaustion, a bare stdin reader
+  waiting on an agent shell's open socket —
+  split out of 06 in v1.42.2),
+  09 listing & selection (a lister's default page read as a population, a selector answering a
+  neighbouring question, a `--include` filter that drops the file you named, a process selected by
+  command-line substring selecting the selector — split out of 06 · v1.43.1)
+- **sota-docs-workflow/rules**: 01 documentation architecture, 02 API reference & changelogs, 03
+  code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development
+- **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy & components, 03 errors
+  & feedback, 04 accessibility & localization
+- **sota-copywriting/rules**: 01 positioning & value proposition, 02 headlines/landing pages/CTAs,
+  03 SEO content, 04 claims/legal/trust
+- **sota-rust/rules**: 01 ownership & API design, 02 errors & panics, 03 unsafe discipline, 04
+  async/tokio, 05 security & supply chain, 06 performance, 07 tooling & CI, 08 external
+  programs (split out of 05), 09 formal verification (Kani, Flux)
+- **sota-golang/rules**: 01 errors, 02 design, 03 concurrency, 04 HTTP services, 05 security, 06
+  performance, 07 tooling & CI, 08 supply chain (split out of 05)
+- **sota-c-cpp/rules**: 01 idioms (RAII/ownership), 02 memory safety, 03 undefined behavior, 04
+  security (CERT/MISRA/hardening), 05 concurrency, 06 build/tooling & CI, 07 performance
+- **sota-jvm/rules**: 01 idioms (Java/Kotlin), 02 API/null/immutability design, 03 concurrency
+  (virtual threads, JMM, coroutines), 04 security (deserialization/injection/JNDI/crypto), 05
+  performance (GC/JFR/GraalVM), 06 build/tooling & CI, 07 XML (XXE/XSLT, split out of 04), 08 web
+  layer (Actuator, binding, Spring Security, filters — split out of 04)
+- **sota-python/rules**: 01 tooling & project setup, 02 typing & correctness, 03 idioms &
+  pitfalls, 04 async, 05 security, 06 performance, 07 frameworks & testing, 08 supply chain
+  (split out of 05)
+- **sota-javascript-typescript/rules**: 01 tsconfig & types, 02 language idioms, 03 async
+  patterns, 04 Node backend, 05 security, 06 performance, 07 testing & tooling, 08 child
+  processes & outbound requests (split out of 05), 09 browser platform security (service workers,
+  client storage, extensions, Electron)
+- **sota-dotnet/rules**: 01 idioms (records/NRT/patterns), 02 API/disposal/DI design, 03 async &
+  concurrency, 04 security (SQL/deserialization/ASP.NET Core/crypto), 05 performance
+  (GC/Span/AOT), 06 build/tooling & CI
+- **sota-php/rules**: 01 language baseline & idioms, 02 injection (SQL/XSS), 03
+  files/deserialization/SSRF, 04 sessions/auth/web hardening, 05 Composer & tooling, 06
+  performance & runtime
+- **sota-ruby/rules**: 01 language & idioms, 02 security, 03 web hardening, 04 supply chain &
+  tooling, 05 concurrency & performance
+- **sota-swift/rules**: 01 idioms, optionals & errors, 02 API design, 03 concurrency, 04 memory &
+  unsafe, 05 security, 06 server-side (Vapor/Hummingbird/NIO), 07 performance, 08 tooling, CI &
+  testing, 09 supply chain
+
+## 2. A routing gap ends as a test, not just a report
+
+*Moved from the router 2026-10-12 to make room for its "what your code does" table (ROADMAP 73 (o)).*
+
+If the right skill existed
+and the task never reached it, the fix is the *trigger* — the skill's `description` is the
+only auto-loading text and is the whole classifier, provided it survives the listing budget
+(1% of context; the least-invoked skills drop to name-only — `scripts/verify-setup.sh` flags it,
+`/doctor` estimates the listing's cost; check that before calling it a trigger defect) — and the proof is a regression case in
+`evals/cases/desc-routing-regressions.jsonl`, which pins the mis-route so it cannot return.
+**Run that case against the PRE-change tree and watch it fail first.** A case that passes in
+both arms pins nothing, and an absent *string* is not an absent *capability* — a model routes
+on meaning, so grep cannot tell you whether a task is reachable. Measured 2026-09-14: a
+PowerShell task claimed to be a routing gap already routed correctly with **0 of 42
+descriptions naming PowerShell**, and the case written to pin the "fix" scored 1.00 before
+*and* after. Same doctrine as every gate here — watch it fail first, or you have added a
+control that cannot fail.
+
+## Audit checklist
+
+- [ ] Does every `skills/sota-*/rules/NN-*.md` in the tree appear in the map above, and
+      does every number in the map name a file that exists (invariant 15 checks both
+      directions — a missing entry is invisible to a router-driven load, and a stale one
+      sends the model after nothing)? (§1)
+- [ ] (§0) Does every domain skill have a `**<skill>/rules**` entry (invariant 7)?
+- [ ] (§0) When a `rules/NN` file is added, split or renumbered, was this map updated in the
+      **same commit** — and the owning `SKILL.md` index too (invariant 10)?
+- [ ] (§0) Is this file still only a lookup table? Guidance that belongs at the point of use
+      has drifted here if an entry has grown a rule rather than a title.
+- [ ] **Medium** — (§2) Was each routing gap closed by fixing the skill's
+      `description` (after ruling out the listing budget: `scripts/verify-setup.sh`
+      or `/doctor` showing the skill name-only), pinned by a new case in the
+      routing-regressions case file, and that case run against the PRE-change tree
+      and seen to fail there? A case that scores the same in both arms pins nothing.
+      Triage: `git diff --name-only <base>...HEAD | grep -cE '(^|/)SKILL\.md$'`
+      non-zero with `... | grep -c desc-routing-regressions` at 0 is a changed
+      description to read for a missing case.

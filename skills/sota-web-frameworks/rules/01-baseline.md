@@ -1,0 +1,118 @@
+# 01 — Baseline: versions, support windows, render modes
+
+Fast-moving facts. Every version and EOL date below was primary-sourced 2026-07 and re-verified 2026-09-26;
+**re-verify at use time** before pinning — these stacks ship majors yearly and
+security releases weekly.
+
+## 1. Supported versions and EOL (verify before pinning)
+
+| Runtime | Floor for new code | EOL / support note (dated facts, re-verified 2026-09-26) |
+|---|---|---|
+| React | 19.x | 18.x: no release since 18.3.1 (2024-04-26, npm registry) — treat as frozen; React Compiler needs 19 idioms |
+| Next.js | 16.x | **Active LTS 16.x**; **Maintenance LTS 15.x** ends **2026-10-21** (policy: two years from the 2024-10-21 release) — after that date 15.x is a finding like < 15. Everything **< 15 is unsupported** — treat as a finding |
+| Vue | 3.5+ | Vue 2 **EOL 2023-12-31** (paid extended support only). 3.6 (Vapor mode) at release-candidate on npm (`rc` tag, 2026-09-26) — not stable |
+| Nuxt | 4.x | **Nuxt 3 EOL 2026-07-31** — no support commitment since (a stray 3.21.11 on 2026-08-05 does not change that); a Nuxt 3 app is a finding. Nuxt 2 EOL 2024-06-30; Nuxt 5 (unreleased) brings Nitro v3 + h3 v2 |
+| Nitro | 2.x | v3 still beta on npm (`nitro` package); ships with Nuxt 5 |
+| Pinia | 3.x+ | Pinia 3 dropped Vue 2; **Pinia 4 (2026-07-14) is ESM-only** and needs `@vue/devtools-api` installed alongside |
+
+Latest stable of each: check npm (`npm view <pkg> dist-tags`) or the sources below — this
+table deliberately carries no "current" numbers.
+
+Sources: react.dev/versions, nextjs.org/support-policy, github.com/vuejs/core
+releases, nuxt.com/docs/4.x/community/roadmap, the vuejs/pinia CHANGELOG, the npm registry. Running an EOL major (Vue 2, Nuxt 2, Nuxt 3,
+Next < 15, and Next 15 after 2026-10-21) means no security patches — HIGH at minimum for an internet-facing app.
+
+- **React Compiler 1.0 is stable** (2025-10-07): a build-time plugin that
+  auto-memoizes, removing most manual `useMemo`/`useCallback`/`memo`. It requires
+  Rules-of-Hooks-clean code (see [`rules/02`](02-react.md)). Opt-in for Next/Vite today; verify
+  current adoption status for your toolchain. Prefer it over hand-memoization for
+  new code, but it is not a substitute for fixing render-model mistakes.
+
+## 2. Choosing a stack (framework selection)
+
+Both stacks are mature and SSR-first; the choice is usually ecosystem/team, not
+capability. Neutral guidance, not prescription:
+
+- **React + Next.js** — largest ecosystem; React Server Components + Server Actions
+  are the reference implementation of the RSC model; the deepest hosting integration
+  (Vercel and others). Cost: the RSC/client mental model is genuinely hard, and the
+  security surface is large and fast-moving (see the 2025-12 RSC RCE).
+- **Vue + Nuxt** — gentler learning curve, batteries-included conventions (file-based
+  routing, auto-imports, `runtimeConfig`), Nitro gives a portable server runtime.
+  Smaller but healthy ecosystem.
+- **Not every app needs a meta-framework.** A purely client-side app (internal
+  dashboard behind auth, no SEO need) can be a plain Vite SPA — you shed the entire
+  SSR/hydration/RSC attack surface. Reach for Next/Nuxt when you need SSR/SSG for SEO,
+  fast first paint, or server-side data access. Don't adopt SSR for its own sake.
+
+Record the decision as an ADR ([`sota-docs-workflow`](../../sota-docs-workflow/SKILL.md)); it drives everything downstream.
+
+## 3. Render modes — pick per route, not per app
+
+The single most consequential design choice. Modern frameworks let you mix modes
+per route, so match each route to its data:
+
+| Mode | What it is | Use for | Watch out for |
+|---|---|---|---|
+| **CSR** (client only) | JS renders in the browser; empty initial HTML | Highly interactive, auth-gated, no-SEO views (`ssr: false` route in Nuxt) | Blank first paint; not indexable |
+| **SSR** (per request) | HTML rendered on each request | Personalized/authenticated pages, fresh data | Server cost; **must not be cached at a shared CDN if personalized** ([`rules/06`](06-ssr-hydration.md)) |
+| **SSG / prerender** | HTML rendered at build | Marketing, docs, anything static | Rebuild to update; no per-user content |
+| **ISR / SWR** | Static + periodic/on-demand revalidation | Semi-static content (catalogs, blogs) | Stale windows; cache-invalidation correctness |
+| **PPR** (Next, Cache Components) | Static shell + streamed dynamic holes via Suspense | Pages mixing static chrome + dynamic data | Uncached data outside `<Suspense>` is a build error; incompatible with CSP nonces |
+
+- **Next.js**: route-segment config + `"use cache"`; PPR is the default when
+  `cacheComponents: true`. What `fetch` caches by default, and how to opt in:
+  [`rules/03`](03-nextjs.md) §4.
+- **Nuxt**: `routeRules` in `nuxt.config` sets per-route mode (`ssr: false`,
+  `prerender: true`, `swr: <ttl>`, `isr: <ttl>`) — hybrid rendering ([`rules/05`](05-nuxt.md)).
+- **Security corollary:** the more a route is cached and shared, the more a caching
+  bug leaks one user's data to another. Personalized ⇒ SSR + `private` cache. Static
+  ⇒ safe to cache widely. Decide this consciously per route.
+
+## 4. Project setup baseline
+
+- **TypeScript strict** — non-negotiable; details in [`sota-javascript-typescript`
+  rules/01](../../sota-javascript-typescript/rules/01-typescript-config-and-types.md). Frameworks generate a `tsconfig`; extend, don't loosen it.
+- **Lockfile committed**, exact framework versions pinned, Dependabot/Renovate on —
+  framework CVEs are frequent and the fix is almost always "upgrade" ([`rules/07`](07-security.md),
+  [`sota-devsecops`](../../sota-devsecops/SKILL.md)).
+- **Lint the framework rules**: `eslint-plugin-react-hooks` (Rules of Hooks — also
+  what the React Compiler needs) / `eslint-plugin-vue`; Next's and Nuxt's own ESLint
+  configs. A hooks-rule violation is a real bug, not style.
+- **Env discipline from day one**: server secrets in unprefixed env vars; only
+  deliberately-public config in `NEXT_PUBLIC_*` / `runtimeConfig.public` / `VITE_*`
+  ([`rules/07`](07-security.md)). Never commit `.env`.
+- **Production runs the built server, never the dev server.** `next dev` (and a bare
+  `next`, which is an alias for it), `nuxt dev`/`nuxi dev` and `vite` are development
+  servers (hot reloading and error reporting; `nuxt dev` sets `NODE_ENV=development`). Ship
+  `next build` + `next start`, or `nuxt build` + `node .output/server/index.mjs` with
+  `NODE_ENV=production` ([Next.js CLI](https://nextjs.org/docs/app/api-reference/cli/next),
+  [Nuxt deployment](https://nuxt.com/docs/4.x/getting-started/deployment), read
+  2026-09-25). The Node-level rule and the inspector are in [`sota-javascript-typescript`
+  rules/04](../../sota-javascript-typescript/rules/04-node-backend.md). OWASP: Nextjs Security cheat sheet.
+- **CI gates**: typecheck, lint, tests, `npm audit`/`osv-scanner`, and a build. Add a
+  bundle-size check if shipping to the browser ([`sota-performance` rules/06](../../sota-performance/rules/06-frontend-web.md)).
+
+## Audit checklist
+
+- [ ] **Framework majors in use — compare against the support table above** (§1) —
+      `grep -E '"(react|react-dom|next|vue|nuxt|nitropack|pinia)"' package.json` ;
+      `cat package.json | grep -A2 '"dependencies"'` (then read lockfile for exact patch)
+- [ ] **EOL / unsupported runtimes (findings)** (§1) —
+      `node -e "const p=require('./package.json');const d={...p.dependencies,...p.devDependencies};for(const k of ['vue','nuxt','next'])if(d[k])console.log(k,d[k])"`
+      (vue ^2 -> EOL; nuxt ^2 or ^3 -> EOL (Nuxt 3 since 2026-07-31); next <15 -> unsupported, and next <16 after 2026-10-21)
+- [ ] **Render-mode inventory** (§3) —
+      `grep -rnE 'ssr:[[:space:]]*false|routeRules|prerender|export const dynamic|cacheComponents' app pages 2>/dev/null; find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'next.config.*' -o -name 'nuxt.config.*' \) -type f -exec grep -HnE 'ssr:[[:space:]]*false|routeRules|prerender|cacheComponents' {} +`
+- [ ] **Hooks/vue lint present?** (§4) —
+      `find . -maxdepth 2 -path ./node_modules -prune -o \( -name '.eslintrc*' -o -name 'eslint.config.*' -o -name package.json \) -type f -exec grep -HnE 'react-hooks|eslint-plugin-vue|next/core-web-vitals|@nuxt/eslint' {} +`
+- [ ] **Dev server as the production start command (HIGH on an internet-facing host)** (§4) —
+      `grep -rnE '"start":[[:space:]]*"[^"]*((next|nuxt|nuxi) dev|next"|vite( |")|vite preview)|(CMD|ENTRYPOINT).*((next|nuxt|nuxi)"?,?[[:space:]]*"?dev|run"?,?[[:space:]]*"?dev)' --include=package.json --include='Dockerfile*' --include='Containerfile*' --exclude-dir=node_modules .`
+      (also read Procfiles, unit files and platform start settings, which it does not scan)
+
+- [ ] Every framework major is supported and receiving security patches (no Vue 2, Nuxt 2, Nuxt 3, Next < 15; no Next 15 after 2026-10-21), and new code on the table's "floor for new code" majors (§1)?
+- [ ] Exact versions pinned + lockfile committed + automated dependency updates on (§4)?
+- [ ] Production starts the built server (`next start`, `node .output/server/index.mjs`), never `next dev`/`nuxt dev`/`vite` (§4)?
+- [ ] Render mode chosen per route to match its data (personalized ⇒ SSR + private cache) (§3)?
+- [ ] TypeScript strict (the generated `tsconfig` extended, not loosened); hooks/vue lint rules enforced in CI; CI also runs typecheck, tests, `npm audit`/`osv-scanner` and a build (§4)?
+- [ ] Public-env boundary understood: no secrets in `NEXT_PUBLIC_`/`public`/`VITE_`; `.env` not committed (§4)?
+- [ ] For a no-SEO auth-gated app: is a meta-framework actually needed, or would a plain SPA shed the SSR attack surface; is the stack decision recorded as an ADR (§2)?

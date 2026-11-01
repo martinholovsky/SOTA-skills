@@ -1,0 +1,384 @@
+# 01 — Ownership, Borrowing & API Design
+
+Idiomatic ownership is the difference between Rust that fights you and Rust that
+documents itself. These rules cover borrow patterns, smart-pointer selection,
+type-driven design (newtype, typestate, builder), trait design, and code layout.
+
+## 1. Borrowing & clone discipline
+
+**Never clone to satisfy the borrow checker.** A `.clone()` whose only purpose is
+to silence E0502/E0505 is a design smell: restructure scopes, split borrows, or
+take ownership earlier.
+
+```rust
+// BAD: clone because `self.items` is borrowed while mutating
+let names: Vec<String> = self.items.iter().map(|i| i.name.clone()).collect();
+for name in names { self.register(&name); }
+
+// GOOD: split the struct so disjoint fields borrow independently
+let (items, registry) = (&self.items, &mut self.registry);
+for item in items { registry.register(&item.name); }
+```
+
+- Split-borrow via destructuring or accessor methods returning `(&A, &mut B)`.
+- For "clone before loop" patterns over small data, `Copy` types or indices are
+  cheaper than cloning `String`/`Vec`.
+- `std::mem::take` / `mem::replace` extract owned values from `&mut self`
+  without cloning (leave a cheap default behind).
+- Legitimate clones exist: crossing thread/task boundaries, caching, fan-out.
+  Comment intent when a clone looks gratuitous: `// clone: sent to spawned task`.
+
+**Accept the most general borrowed form in APIs:**
+
+```rust
+// BAD: forces callers to own/allocate
+fn process(s: String, items: Vec<u32>) -> usize { ... }
+
+// GOOD: borrow; caller keeps ownership
+fn process(s: &str, items: &[u32]) -> usize { ... }
+```
+
+- Parameters: `&str` over `&String`, `&[T]` over `&Vec<T>`, `&Path` over
+  `&PathBuf`, `impl AsRef<Path>` / `impl Into<String>` when ergonomics matter
+  (but not on hot generic-bloat-sensitive paths — use inner non-generic fn).
+- Take ownership (`String`, `Vec<T>`) only when you store the value. Taking
+  `&str` then immediately `.to_owned()` forces a copy the caller may have been
+  able to move; prefer `impl Into<String>` there.
+- Return `&str`/`&[T]` borrowed from `self` where lifetimes allow; `Cow<'_, str>`
+  when sometimes-owned (see [rules/06](06-performance.md) for perf framing).
+- Gate this file with Clippy: `needless_pass_by_value`, `trivially_copy_pass_by_ref` (pedantic) and
+  `rc_buffer` (restriction) fire only when enabled by name; `large_enum_variant` (perf) and
+  `mutable_key_type` (suspicious) are on by default, so keep them unsilenced.
+
+## 2. Rc/Arc/Box/RefCell: when shared ownership is right
+
+Reach for smart pointers in this order; each step is a justified escalation:
+
+| Need | Tool |
+|---|---|
+| Heap allocation / unsized / recursion | `Box<T>` |
+| Shared ownership, single-threaded | `Rc<T>` |
+| Shared ownership across threads | `Arc<T>` |
+| Shared + interior mutation, single-threaded | `Rc<RefCell<T>>` |
+| Shared + mutation, multi-threaded | `Arc<Mutex<T>>` / `Arc<RwLock<T>>` |
+| Shared, replace-on-write, read-mostly | `Arc<T>` + swap (`arc-swap`) |
+
+- `Arc<Mutex<T>>` everywhere is Java-in-Rust. Prefer **ownership trees**
+  with message passing (channels) for cross-task state; share only what is
+  genuinely shared (config, caches, connection pools).
+- `Rc::clone(&x)` / `Arc::clone(&x)` (associated form) — makes "refcount bump,
+  not deep copy" greppable.
+- Break `Rc`/`Arc` cycles with `Weak` (parent links, observer lists). Audit any
+  graph-shaped `Rc<RefCell<...>>` for leaks.
+- `RefCell` panics at runtime on double-borrow; confine it to module-private
+  state with documented borrow discipline. Never let `RefCell` borrows escape
+  across a callback into user code.
+- Immutable shared config: `Arc<Config>` (no lock). Read-mostly: `RwLock` only
+  if writes are rare AND readers are many; otherwise `Mutex` (simpler, no
+  writer starvation surprises).
+
+## 3. Newtype pattern
+
+Wrap primitives that have semantics. `u64` is not a `UserId`.
+
+```rust
+// BAD
+fn transfer(from: u64, to: u64, amount: u64) -> Result<(), Error>
+
+// GOOD
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AccountId(u64);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Cents(u64);
+fn transfer(from: AccountId, to: AccountId, amount: Cents) -> Result<(), Error>
+```
+
+- Validate at construction: `impl TryFrom<&str> for Email` returning a typed
+  error; keep the field private so the only way in is the validated path
+  ("parse, don't validate").
+- Derive the full expected set (`Debug, Clone, Copy, PartialEq, Eq, Hash`,
+  plus `serde` derives behind a feature) — missing derives are friction that
+  pushes callers back to raw primitives.
+- Implement `Deref` to the inner type **only** for true smart-pointer-like
+  wrappers; for domain newtypes expose explicit `as_str()`/`get()` instead
+  (Deref leaks the abstraction).
+- Newtypes are also the coherence escape hatch: wrap a foreign type to impl a
+  foreign trait (orphan rule).
+- **Money is a newtype over integer minor units (`Cents` above) or a decimal type (e.g.
+  the `rust_decimal` crate), never `f64`.** A float-to-integer `as` cast truncates toward
+  zero, saturates, and never fails. Measured on rustc 1.97: `(19.99_f64 * 100.0) as i64` is
+  `1998`, `f64::NAN as i64` is `0` and `1e20_f64 as i64` is `i64::MAX`. Round on purpose
+  (`round()` is half away from zero, `round_ties_even()` is banker's) and range-check before
+  the cast. An integer above 2^53 that passes through `f64` loses its low bits
+  (`9007199254740993` comes back as `...992`, measured), so deserialize amounts and IDs into
+  integer or decimal fields.
+- **Arithmetic edge cases on numeric input** (adds to the `checked_*` policy in [rules/05](05-security-supply-chain.md) §3).
+  `str::parse::<f64>()` returns `Ok` for `"nan"`, `"inf"`, `"-Infinity"` (any case, per core's
+  float grammar) and `Ok(inf)` for `"1e400"`. NaN compares false to everything, so
+  `if x < min || x > max { reject }` passes it, and `x.clamp(min, max)` returns it: test
+  `!x.is_finite()` first. Integer `/` and `%` panic on a zero divisor **and on `MIN / -1`** in
+  release as well as debug, so a caller-chosen divisor is a panic-DoS ([rules/05](05-security-supply-chain.md) §4): use
+  `checked_div`/`checked_rem`, which return `None` for both. Float `x / 0.0` is `inf`, not an
+  error. `-MIN` and `MIN.abs()` panic in debug but return `MIN` in release: use `checked_neg`,
+  `checked_abs` or `unsigned_abs`. `a * b / c` can overflow in the product when the result
+  fits: chain `checked_mul(b).and_then(|p| p.checked_div(c))` or widen to `i128`. Keep time in
+  `Duration` (`checked_add`, `checked_mul`; `as_nanos()` is `u128`) rather than
+  `secs * 1_000_000_000`, which wraps in release, and convert float seconds with
+  `Duration::try_from_secs_f64` (stable since 1.66). `from_secs_f64` panics on NaN, negative
+  or overflow. All of this was measured on rustc 1.97.1, both `-O` and debug.
+  (OWASP: Go-SCP, general coding practices; OWASP SCSVS, arithmetic)
+
+## 4. Typestate pattern
+
+Encode protocol/state machines in the type system so invalid transitions don't
+compile. Use when misuse is plausible and states are few.
+
+```rust
+pub struct Connection<S> { stream: TcpStream, _state: PhantomData<S> }
+pub struct Unauthenticated;
+pub struct Authenticated;
+
+impl Connection<Unauthenticated> {
+    pub fn authenticate(self, creds: &Creds)
+        -> Result<Connection<Authenticated>, AuthError> { ... }
+}
+impl Connection<Authenticated> {
+    pub fn query(&mut self, q: &str) -> Result<Rows, QueryError> { ... } // only here
+}
+```
+
+- Transitions consume `self` and return the next state — the old state is
+  unusable afterward, enforced at compile time.
+- Don't typestate everything: runtime enums are right when states are dynamic,
+  numerous, or serialized. Typestate shines for build-time-known protocols
+  (request builders, handshakes, init-before-use).
+
+## 5. Builder pattern
+
+Use a builder when a constructor would exceed ~4 params or has many optionals.
+
+```rust
+let server = Server::builder()
+    .bind("0.0.0.0:8080")
+    .worker_threads(8)
+    .tls(tls_config)            // optional
+    .build()?;                  // validation lives here, returns Result
+```
+
+- `build()` returns `Result<T, BuildError>` if any combination can be invalid;
+  infallible builders may return `T`.
+- Owned `self` methods (move-chain) for one-shot builders; `&mut self` methods
+  when the builder is configured conditionally across branches. Pick one style
+  per builder.
+- Required params: take them in `T::builder(required)` rather than failing at
+  `build()` — or use typestate builders for compile-time required-field checks
+  (what `typed-builder`/`bon` generate). Consider `bon` (2024+) before
+  hand-rolling large builders.
+- `#[non_exhaustive]` on config structs + builder is the semver-safe way to add
+  options later.
+
+## 6. Trait design, sealed traits, coherence
+
+- Keep traits **small and capability-shaped** (`Read`, `Write`, not
+  `RepositoryManagerService`). Compose with supertraits sparingly.
+- **Sealed traits** prevent downstream impls so you can add methods without a
+  breaking change:
+
+```rust
+mod sealed { pub trait Sealed {} }
+pub trait Backend: sealed::Sealed {
+    fn run(&self) -> Output;
+    // adding a defaulted method later is non-breaking: no foreign impls exist
+}
+impl sealed::Sealed for Postgres {}
+impl Backend for Postgres { ... }
+```
+
+- Orphan rule: you may impl a trait only if you own the trait or the type.
+  Workarounds: newtype wrapper, or define a local conversion trait. Never
+  paper over it with a blanket `impl<T> From<T>` that will collide later.
+- Prefer generics (`impl Trait` / `<T: Trait>`) for hot paths (monomorphized,
+  inlinable); `dyn Trait` for heterogeneous collections, plugin registries, and
+  to cut compile time/bloat on cold paths. `Box<dyn Error + Send + Sync>` at
+  app boundaries is fine.
+- Return-position `impl Trait` (and RPITIT in traits, stable since 1.75) over
+  boxed returns where the concrete type is single. For public traits needing
+  dyn-compatibility with async, use `async-trait` or hand-rolled
+  `Box<Pin<...>>` returns (see [rules/04](04-async-tokio.md)).
+- Implement standard traits eagerly: `Debug` on everything public (or a manual
+  redacting impl for secrets — [rules/05](05-security-supply-chain.md)), `Default` where a zero-config value
+  exists, `Display` + `std::error::Error` on errors, `From` for infallible
+  conversions, `TryFrom` for fallible ones. Never impl `Into` directly.
+- **`Eq`/`Ord`/`PartialEq`/`PartialOrd`: `#[derive]` them; hand-write only with
+  care.** The std library *assumes* their invariants — `PartialEq` symmetry and
+  transitivity, `Eq` reflexivity, `Ord` a total order consistent with `Eq`, and
+  `PartialOrd`/`Ord` agreement. A manual impl that breaks them is not a compile
+  error but silently corrupts `sort`, `binary_search`, `BinaryHeap`,
+  `BTreeMap`/`Set`, and dedup — wrong results, lost entries, or a panic
+  (`sort_unstable` may panic on a non-total `Ord`). If you must hand-roll,
+  define the minimal method (`Ord::cmp`, then `PartialOrd` via `Some(self.cmp)`)
+  so the others stay consistent, and never derive `Ord` on a type whose `f32`/
+  `f64` field makes the order partial. (ANSSI `LANG-CMP-INV`/`-DERIVE`)
+- **Toolchain bump past 1.98 changes derived `PartialOrd`.** A non-generic type deriving
+  both `PartialOrd` and `Ord` now gets `partial_cmp` = `Some(Ord::cmp(..))`, not a
+  field-wise `partial_cmp`, so a field type whose hand-written `PartialOrd` and `Ord`
+  disagree changes the outer type's `<`/`partial_cmp` silently (measured: `None`/`false`
+  on 1.97.1 became `Some(Less)`/`true` on a 1.99 nightly). Audit such field impls before
+  the bump. (rust-lang/rust RELEASES.md 1.98.0 compatibility notes, PR #155598)
+
+## 7. Exhaustive matching & `#[non_exhaustive]`
+
+- Match exhaustively on **your own** enums; avoid `_ =>` arms so the compiler
+  flags every new variant at each match site:
+
+```rust
+// BAD: silently swallows future variants
+match event { Event::Open => ..., _ => {} }
+
+// GOOD: compiler forces a decision when Event grows
+match event { Event::Open => ..., Event::Close => ..., Event::Ping => {} }
+```
+
+- Mark public enums/structs `#[non_exhaustive]` when variants/fields will grow;
+  downstream is then required to write `_` arms and your additions are
+  non-breaking. Don't mark closed sets (e.g. `Ordering`-like) — it destroys
+  downstream exhaustiveness checking for no gain.
+- `let ... else` for refutable bindings with early return; `matches!()` for
+  boolean checks; `if let` chains (stable since 1.88, edition 2024 only — 2021
+  rejects them) over nested `if let`;
+  `if let` guards in `match` arms (`Some(x) if let Ok(y) = f(x) =>`, stable
+  since 1.95) over guard-then-rematch patterns.
+
+## 8. Iterators & combinators
+
+- Iterator chains over index loops: no bounds-check noise, no off-by-one, fuses
+  and optimizes as well or better than manual indexing.
+
+```rust
+// BAD
+let mut out = Vec::new();
+for i in 0..xs.len() { if xs[i].active { out.push(xs[i].score * 2); } }
+
+// GOOD
+let out: Vec<_> = xs.iter().filter(|x| x.active).map(|x| x.score * 2).collect();
+```
+
+- Know the collect targets: `Vec<_>`, `String`, `HashMap<_,_>`,
+  `Result<Vec<T>, E>` (fail-fast), `itertools::process_results` for streaming.
+- Option/Result combinators over match ladders: `map`, `and_then`, `ok_or_else`,
+  `unwrap_or_else`, `?` with `From` conversions. But: a 5-combinator chain that
+  needs a comment should be a `match` — clarity wins.
+- Use lazy variants on hot/fallible paths: `unwrap_or_else(|| expensive())`,
+  `ok_or_else`, not `unwrap_or(expensive())` (argument always evaluated).
+- Need the index? `.enumerate()`. Need pairs? `.zip()` / `.windows(2)` /
+  `.chunks(n)` — or `array_windows::<N>()` (stable 1.94) when a const-size
+  `&[T; N]` lets you destructure without bounds checks. Early exit with side
+  results: `try_fold` / `find_map`.
+
+## 9. Module & workspace organization
+
+- Module = privacy boundary, not a filing cabinet. Keep invariant-carrying
+  fields private; expose constructors that enforce them. `pub(crate)` over
+  `pub` until something external needs it.
+- Re-export the public API at the crate root (`pub use module::Type;`) so the
+  internal tree can move without breaking users; keep the public surface flat
+  and small.
+- Prefer `foo.rs` + `foo/` subdir over `foo/mod.rs` (one convention per repo).
+- Workspace structure for anything beyond one crate:
+
+```toml
+# /Cargo.toml
+[workspace]
+members = ["crates/*"]
+resolver = "3"                 # edition 2024 default
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]       # single source of version truth
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+```
+
+  Member crates use `serde = { workspace = true }`. Split crates along compile
+  and dependency boundaries (`core` no-heavy-deps, `cli`, `server`), not by
+  "layer" for its own sake — each crate is a compile unit and a semver unit.
+- Binary crates: keep `main.rs` thin (arg parsing + call into `lib.rs`; flag, output and exit-code design: [`sota-cli-ux`](../../sota-cli-ux/SKILL.md)) so the
+  logic is testable.
+
+## Audit checklist
+
+- [ ] `rg '\.clone\(\)' -t rust` (§1) — review each hit near a `for`/borrow error
+      fix; flag clones of `String`/`Vec`/large structs that exist only to
+      appease borrowck. `clippy::redundant_clone` — a **nursery** lint, so
+      enable it explicitly (`all` + `pedantic` leave it off); known false
+      negatives, still run it.
+- [ ] `rg 'fn \w+\((&self, )?\w+: (String|Vec<|PathBuf)' -t rust` — owned params
+      that are only read → should borrow (§1).
+- [ ] `rg '&String|&Vec<|&PathBuf|&Box<' -t rust` — double-indirection params
+      (`clippy::ptr_arg` catches most) (§1).
+- [ ] `rg 'Arc<Mutex<' -t rust` (§2) — each one: is shared mutable state actually
+      required, or would a channel/owner task work? Check for `Weak` where
+      graphs/cycles appear: `rg 'Rc<RefCell<'`. Immutable config behind a lock:
+      `grep -rnE 'Arc<(Mutex|RwLock)<[A-Za-z_]*Config' --include='*.rs' .` — `Arc<Config>` when
+      nothing writes it = Low. A `RefCell` borrow held across a call into a caller-supplied
+      closure or callback = Medium (runtime double-borrow panic). Refcount bumps spelled
+      `Rc::clone(&x)`/`Arc::clone(&x)`: `clippy::clone_on_ref_ptr` (restriction).
+- [ ] `rg '_ =>' -t rust` (§7) — wildcard arms on local enums lose exhaustiveness;
+      `clippy::wildcard_enum_match_arm` (restriction, not pedantic) to enforce.
+- [ ] Public enums likely to grow without `#[non_exhaustive]` (§7):
+      `rg -B2 'pub enum' | rg -v non_exhaustive`. Inversely, `#[non_exhaustive]` on a closed set
+      (an `Ordering`-like enum) removes downstream exhaustiveness checking for no gain = Low.
+- [ ] `rg 'for i in 0\.\.' -t rust` (§8) — index loops; check `clippy::needless_range_loop`.
+- [ ] `rg 'unwrap_or\([a-zA-Z_]+\(' -t rust` (§8) — eager argument evaluation
+      (`clippy::or_fun_call`).
+- [ ] Raw primitive IDs in public signatures (§3): `rg 'fn .*\b(id|user|key)\w*: (u32|u64|i64|String)'`.
+- [ ] **Typestate transition that leaves the old state usable (§4) — Low** —
+      `grep -rlw 'PhantomData' --include='*.rs' . | xargs -r grep -nE 'fn [a-z_][a-z0-9_]*\(&(mut )?self[^)]*\)[[:space:]]*->[^{;]*[A-Z][A-Za-z0-9_]*<[A-Z]'` lists, in files with state-parameterised types, methods that take
+      `&self`/`&mut self` and return a generic type (single-line signatures only; a getter such as
+      `-> Option<String>` prints too). A method returning
+      the same type in another state must take `self` by value; one that takes `&self`/`&mut self`
+      leaves the previous state callable. A runtime `enum` is not a
+      finding where states are dynamic, numerous or serialized.
+- [ ] **Builders (§5) — Low** —
+      `grep -rnE 'fn build\(&?(mut )?self\)' --include='*.rs' . | grep -v 'Result<'` lists
+      infallible `build()`s: one that unwraps, expects or panics on a missing or invalid field
+      should return `Result<T, BuildError>` or take the field in `T::builder(required)`. Also:
+      one builder mixing `self` and `&mut self` setters; a constructor past ~4 parameters with no
+      builder (`clippy::too_many_arguments` with `too-many-arguments-threshold = 4` in `clippy.toml`).
+- [ ] **Money in binary floats (§3) — MEDIUM, HIGH in money paths** —
+      `grep -rniE '(price|amount|total|balance|cost|fee|tax)[a-z0-9_]*[[:space:]]*:[[:space:]]*f(32|64)' --include='*.rs' .`
+      (a money field, parameter or binding typed as a float) ;
+      `grep -rnE '\*[[:space:]]*100(\.0)?(_?f64)?\)?[[:space:]]*as [iu](8|16|32|64|128|size)' --include='*.rs' .`
+      (scaled to minor units by a truncating cast: `(19.99 * 100.0) as i64` is `1998`)
+- [ ] **NaN/Infinity and overflow at the extremes (§3) — MEDIUM, HIGH when the value gates a
+      limit, a price or a timeout** —
+      `grep -rnE '[^_[:alnum:]]from_secs_f(32|64)\(|\*[[:space:]]*1_?000_?000_?000' --include='*.rs' . ; grep -rlE 'parse::<f(32|64)>|:[[:space:]]*f(32|64)[[:space:]]*=[^;]*\.parse\(' --include='*.rs' . | xargs -r grep -L 'is_finite' | xargs -r grep -HnE 'parse::<f(32|64)>|:[[:space:]]*f(32|64)[[:space:]]*=[^;]*\.parse\('`
+      — the first lists panicking `Duration` float constructors and seconds-to-nanoseconds `*`
+      scaling, and the second lists float parses in files that never call `is_finite`. It works
+      at file level, so a file with one `is_finite` hides the rest: read each parse site. Then
+      look by hand for `/`, `%` or unary `-` on a caller-supplied integer that has no
+      `checked_div`/`checked_neg`.
+- [ ] Public trait intended to be closed but unsealed (§6) — can a downstream crate
+      impl it? If yes and that's unintended, seal it.
+- [ ] Hand-written comparison impls: `rg 'impl (PartialEq|Eq|PartialOrd|Ord)' -t rust`
+      — verify invariants (total order, consistency with `Eq`, symmetry); a
+      broken `Ord` corrupts `sort`/`BinaryHeap`/`BTreeMap` or panics. Prefer
+      `#[derive]`. `LANG-CMP-INV`. `clippy::derive_ord_xor_partial_ord`,
+      `clippy::non_canonical_partial_ord_impl`. A hit whose `PartialOrd` and `Ord`
+      disagree, used as a field of a type deriving both, changes behaviour on a 1.98+
+      toolchain (§6) — Medium where the order gates a decision.
+- [ ] **Validation bypassed through a `pub` field** (§3, §9):
+      `grep -rnE '^[[:space:]]*pub [a-z_][a-z0-9_]*:|struct [A-Z][A-Za-z0-9_]*(<[^>]*>)?\(pub ' --include='*.rs' .`
+      — a `pub` field on a type that also has a validating constructor (`new`/`TryFrom`
+      returning `Result`) lets any caller build the invalid value = Medium (High when the
+      invariant is security-relevant, or when `unsafe` code relies on it — [rules/03](03-unsafe-discipline.md) §1).
+      rustc's `unreachable_pub` (allow-by-default) lists `pub` items that should be
+      `pub(crate)`.
+- [ ] Multi-crate repo without `[workspace.dependencies]` (§9) → version drift;
+      `cargo tree -d` to find duplicate dependency versions.
+- [ ] Clippy gates for this file's concerns (§1): `clippy::needless_pass_by_value`,
+      `clippy::trivially_copy_pass_by_ref`, `clippy::large_enum_variant`,
+      `clippy::rc_buffer`, `clippy::mutable_key_type`.

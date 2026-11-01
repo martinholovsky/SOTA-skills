@@ -1,0 +1,147 @@
+# 02 — React 19: components, hooks, Actions, memoization
+
+Scope: React itself (any renderer). Next-specific RSC/Server-Action mechanics are in
+[`rules/03`](03-nextjs.md); hydration in [`rules/06`](06-ssr-hydration.md). TypeScript-with-React lives in
+[`sota-javascript-typescript`](../../sota-javascript-typescript/SKILL.md).
+
+## 1. Component and hook fundamentals
+
+- **Function components + hooks only.** Class components are legacy; no new ones.
+- **Rules of Hooks are load-bearing, not style.** Call hooks unconditionally, at the
+  top level, in the same order every render. Violations are real bugs *and* they
+  break the React Compiler (which refuses to optimize non-conforming components).
+  Enforce with `eslint-plugin-react-hooks`.
+- **`useEffect` is for synchronizing with external systems**, not for deriving data.
+  The react.dev guide "You Might Not Need an Effect" is the reference: compute derived
+  values during render, adjust state during render (not in an effect), fetch via a
+  framework loader or a data library — not a bare `useEffect(fetch)`, which races and
+  double-runs. An effect that only sets state from props/state is a smell.
+- **Every effect that subscribes must clean up** (return a teardown): listeners,
+  timers, sockets, subscriptions. A missing cleanup leaks across Strict Mode's
+  double-invoke and across remounts.
+- **Non-reactive logic an Effect calls goes in `useEffectEvent`** (stable since React 19.2),
+  not an `eslint-disable` of `react-hooks/exhaustive-deps`, which hides stale values. Call it
+  only from Effects (never in render, never passed on), and never to drop a real dependency.
+- **Stable IDs come from `useId`**, never `Math.random()` or a module counter — this
+  is what keeps SSR and client markup matching ([`rules/06`](06-ssr-hydration.md)). For form-field `id`/
+  `htmlFor` pairs and ARIA wiring.
+- **Refs (`useRef`) are escape hatches**: DOM access and mutable non-render values.
+  Don't read/write `ref.current` during render. Prefer state for anything that should
+  trigger a re-render.
+
+## 2. Suspense, transitions, and error boundaries
+
+- **Suspense** declares loading UI for async children (lazy components, RSC/data that
+  suspends). Pair every dynamic boundary with a fallback; in Next PPR, uncached data
+  *must* sit inside a `<Suspense>` or the build fails ([`rules/03`](03-nextjs.md)).
+- **`useTransition` / `startTransition`** mark state updates as non-urgent so input
+  stays responsive; `useDeferredValue` defers re-rendering expensive subtrees. Reach
+  for these on measured jank, not preemptively.
+- **`<Activity mode="hidden">`** (stable since React 19.2) keeps a subtree's state: React
+  hides it with `display: none` and destroys its Effects until it is shown. Hidden is not
+  removed: the markup stays in the DOM, so never use it to withhold unauthorized content.
+  **`<ViewTransition>`** (stable since React 19.3) animates Transition and Suspense updates.
+- **Error boundaries are mandatory around risky subtrees** (lazy loads, third-party
+  widgets, RSC islands). Hooks can't catch render errors — you still need a class
+  boundary or `react-error-boundary`. Server-render errors and hydration errors
+  surface here too. Don't render user-controlled error text as HTML.
+
+## 3. The Actions model (React 19)
+
+React 19 stabilized "Actions" — async functions wired into transitions with built-in
+pending/error/optimistic state.
+
+- **`useActionState(action, initial)`** — wraps an async action, returns
+  `[state, formAction, isPending]`; drive a `<form action={formAction}>`. Replaces
+  hand-rolled `isLoading`/`error` state around form submits.
+- **`useOptimistic`** — show an optimistic value while the action is in flight,
+  auto-reverting on failure.
+- **`use(promise)` / `use(context)`** — unwrap a promise (suspends) or read context,
+  and unlike other hooks `use` may be called conditionally. Feed it a *cached/stable*
+  promise (from an RSC or a cache), never a promise created inline in render — that
+  creates a new promise every render and never resolves.
+- **`ref` is a regular prop** in React 19 (no more `forwardRef` for new code);
+  `ref` cleanup callbacks are supported.
+- These integrate with Next Server Actions ([`rules/03`](03-nextjs.md)): `formAction` can be a
+  `"use server"` function. The client-side pending/optimistic UX is React; the
+  security of the action is server-side and covered in [`rules/03`](03-nextjs.md)/[`rules/07`](07-security.md).
+
+## 4. Memoization and the React Compiler
+
+- **Prefer the React Compiler over manual memoization.** Compiler 1.0 (stable,
+  2025-10) auto-memoizes components and values, making most `useMemo`, `useCallback`,
+  and `React.memo` unnecessary — *if* your code follows the Rules of Hooks and treats
+  props/state as immutable. Don't rip out existing memoization blindly (react.dev: removing it "can change compilation
+  output" — leave it or test before removing), but stop
+  hand-writing new memo wrappers as a reflex.
+- **Where you still memoize by hand** (no compiler, or a proven hot path): memoize the
+  *expensive* computation or a referentially-stable callback passed to a memoized
+  child. Memoizing a cheap value costs more than it saves. Measure ([`sota-performance`](../../sota-performance/SKILL.md)).
+- **Never mutate state or props.** Compiler correctness and React's rendering both
+  assume immutability; mutation causes stale UI and defeats memoization. Use immutable
+  updates (spread, `.map`, or a library).
+- **Keys must be stable and unique** across siblings — never the array index for
+  reorderable/insertable lists (causes state to attach to the wrong row and subtle
+  data-corruption bugs). Use a domain ID.
+
+## 5. React-specific XSS: the injection sinks
+
+Generic XSS theory is in [`sota-code-security` rules/05](../../sota-code-security/rules/05-web-security.md); here are the React sinks.
+
+- **`dangerouslySetInnerHTML` is the one HTML-injection sink** JSX gives you (JSX
+  text is auto-escaped). Only ever feed it sanitizer output (DOMPurify or a server
+  sanitizer with an allowlist), never raw user/CMS HTML. Since React 19.3 (Trusted Types
+  integration) React passes `TrustedHTML` through unstringified, so a CSP
+  `require-trusted-types-for 'script'` makes the browser reject a raw string at this sink:
+  wrap the sanitizer in `trustedTypes.createPolicy`. Earlier versions stringify, and the sink throws.
+
+```jsx
+// BAD — HIGH: stored/reflected XSS
+<div dangerouslySetInnerHTML={{ __html: comment.body }} />
+
+// GOOD — sanitize first (allowlist), or don't use HTML at all
+import DOMPurify from 'dompurify';
+<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.body) }} />
+```
+
+- **URL/`href` injection:** `<a href={userUrl}>` allows `javascript:` and `data:`
+  schemes. Validate the scheme (`https?:`/relative) before rendering; the same applies
+  to `src`, `formAction`, and `<img src>`.
+- **Spreading unknown props** (`<div {...userControlledObject}>`) can inject
+  `dangerouslySetInnerHTML` or event handlers — never spread attacker-influenced
+  objects onto DOM elements.
+- **Rendering into a portal / third-party DOM** you don't control inherits that DOM's
+  trust; don't mount React onto server-rendered nodes that contain user HTML
+  (mirrors the Vue rule in [`rules/04`](04-vue.md); hydration-XSS angle in [`rules/06`](06-ssr-hydration.md)).
+- CSP is defense-in-depth, not a substitute ([`rules/06`](06-ssr-hydration.md), [`rules/07`](07-security.md)).
+
+## Audit checklist
+
+- [ ] **HTML injection sink — every hit needs a sanitizer on the source** (§5) —
+      `grep -rn 'dangerouslySetInnerHTML' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next .`
+- [ ] **javascript:/data: URL sinks** (§5) —
+      `grep -rnE 'href=\{|src=\{|formAction=\{' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next . | grep -iv 'sanitiz'`
+- [ ] **Effect smells: fetch-in-effect, setState-only effects, missing deps** (§1) —
+      `grep -rnE 'useEffect\(' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next . | head` ;
+      `grep -rn 'Math.random()\|Date.now()' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next .` (in render => hydration
+      bug ([rules/06](06-ssr-hydration.md)))
+- [ ] **Rules of Hooks / compiler-blocking violations rely on lint** (§1) —
+      `find . -maxdepth 2 -path ./node_modules -prune -o \( -name '.eslintrc*' -o -name 'eslint.config.*' -o -name package.json \) -type f -exec grep -Hn 'react-hooks' {} +`
+- [ ] **Legacy patterns** —
+      `grep -rn 'forwardRef\|class .* extends .*Component' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next .`
+      (class components: no new ones (§1); forwardRef unneeded in 19 (§3)); `grep -rnE 'key=\{.*index' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next .`
+      (index-as-key on dynamic lists (§4))
+- [ ] **`use()` fed a promise created during render (MEDIUM) (§3)** —
+      `grep -rnE '(^|[^A-Za-z0-9_.$])use\((fetch\(|new Promise|[A-Za-z_$][A-Za-z0-9_$.]*\()' --include='*.tsx' --include='*.jsx' --include='*.ts' --include='*.js' --exclude-dir=node_modules .`
+      — a hit is a candidate: fine when the call returns a cached/stable promise (from an RSC or a
+      cache); a promise made inline is new every render and never resolves
+
+- [ ] Every `dangerouslySetInnerHTML` fed sanitizer output (allowlist), not raw user/CMS HTML? (§5) If the CSP sets `require-trusted-types-for 'script'`, React is 19.3 or later (earlier versions stringify the value and the sink throws)?
+- [ ] `href`/`src`/URL props validated against a scheme allowlist (§5) (no `javascript:`/`data:`)?
+- [ ] No `Math.random()`/`Date.now()`/`window` used *during render* (hydration determinism); element IDs from `useId`, never a random value or a module counter (§1)?
+- [ ] Effects only for external synchronization, each with cleanup; no fetch-in-bare-effect racing; no `ref.current` read or written during render (§1)?
+- [ ] Stable domain IDs as list keys (not array index) for insertable/reorderable lists; state and props never mutated in place (immutable updates) (§4)?
+- [ ] Rules of Hooks enforced by lint (also required for the React Compiler) (§1, §4)?
+- [ ] No suppressed `react-hooks/exhaustive-deps` (§1) — `grep -rn 'eslint-disable.*exhaustive-deps' --include='*.tsx' --include='*.jsx' --exclude-dir=node_modules .`; non-reactive Effect logic uses `useEffectEvent`; no `<Activity mode="hidden">` used to hide unauthorized content (§2)?
+- [ ] Every `<Suspense>` boundary has a fallback; error boundaries around lazy/third-party/RSC subtrees; error text not rendered as HTML (§2)?
+- [ ] No attacker-influenced object spread onto a DOM element (§5)? Probe the call sites where the props are built: [`sota-frontend-design` rules/03](../../sota-frontend-design/rules/03-design-systems-components.md) Audit checklist.

@@ -1,0 +1,281 @@
+# 06 — AUDIT Mode: Reconstructing a Threat Model from an Existing System
+
+Goal: given a codebase (plus IaC, configs, pipelines), rebuild the threat
+model the system IMPLIES, compare it with whatever the team INTENDED, and
+report the gaps as severity-rated, evidence-backed findings. This is gap
+analysis against catalogs — not pentesting (you prove absence of controls,
+not presence of exploits) and not code review (you work at the
+boundary/control level, not line-by-line).
+
+## 1. Audit procedure (ordered; timebox each phase)
+
+1. **Collect artifacts (30 min):** repo(s), lockfiles, IaC, CI configs,
+   Dockerfiles/k8s manifests, any existing threat model/architecture docs,
+   `.env.example`, OpenAPI/proto specs. Note what you were NOT given —
+   un-auditable surface goes in the report as such, never silently skipped.
+2. **Extract the system model** per `02` §B: entry-point sweep, store/asset
+   inventory, actor/privilege table, inferred trust boundaries. Output the
+   reconstructed mermaid DFD — this diagram is deliverable #1 even if you find
+   nothing else; most teams have never seen their real attack surface drawn.
+   **Then look from outside in.** Enumerate the organisation's domains,
+   subdomains and virtual hosts from passive DNS, Certificate Transparency
+   logs and (in scope, with permission) active DNS and vhost probing. Reconcile
+   that list against the hostnames the code and IaC declare. A name that
+   resolves and serves but appears in no repo is a forgotten host: staging,
+   an old admin panel, a decommissioned app still answering. It is a finding
+   rated by what it serves. Declared names that no longer resolve go to the
+   dangling-DNS check ([`sota-network-security` rules/06](../../sota-network-security/rules/06-dns-tls-pki.md)). OWASP: WSTG-INFO-04.
+3. **Reconstruct intent:** read existing docs/ADRs/old models, auth middleware
+   comments, IaC structure. Write down the implied assumptions ("services
+   trust the gateway's headers", "bucket is private"). Each assumption becomes
+   a test target. **Mine version control for past security fixes** — including
+   the silent ones, which carry no CVE or keyword: commits that add a bounds
+   check, an escape, an authorisation check or a size limit. Each fixed class is
+   a variant hunt across the rest of the code. Search the history for the guard
+   idioms themselves (`git log -G'<bounds|escape|authz|limit pattern>'`) and record
+   the query and the number of commits it covered. History is **partial** when the
+   clone is shallow (`git rev-parse --is-shallow-repository` prints `true`) — and also
+   when it is not: an "initial import", a migration from another VCS or a squash-import
+   starts history late, so compare the root commit's date with the project's age.
+   Record partial history as such, never as "no prior vulnerabilities".
+4. **Run the catalogs (`03`)** against each component → control-presence
+   matrix (§2 below). Prioritize components on paths to top-3 assets when
+   time-boxed; record de-scoping explicitly. **Then spend part of the budget on
+   one component the model marks safe or low-risk, or that the time-box de-scoped**
+   — never one excluded by the rules of engagement ([`sota/rules/01`](../../sota/rules/01-audit-methodology.md) §1). Pick it by
+   rule, not by hunch: the lowest-rated component on a path to a top-3 asset. Read it
+   fresh, ignoring the model's assumptions: a threat model's "safe" is its least-tested
+   claim, and an audit steered only by its own model inherits its blind spots.
+5. **Test assumptions from step 3:** for each, find the code/config that makes
+   it true. No evidence = broken assumption = finding (these are usually the
+   Criticals: "gateway-only trust" with services bound to 0.0.0.0).
+6. **Gap analysis (§3):** absent/partial controls → threat sentences → rate in
+   deployment context (`04` §3) → findings (§6).
+7. **Deliver (§7):** findings report + reconstructed model + remediation
+   ordering. Hand the reconstructed model to the team as their new baseline
+   (`05` §4) — the audit's lasting value.
+
+## 2. Control-presence matrix
+
+For every (component × applicable catalog item) record one of:
+
+| State | Meaning | Evidence required |
+|---|---|---|
+| **Present** | Control implemented and reachable on all relevant paths | file:line of the control + how you confirmed coverage |
+| **Partial** | Implemented but bypassable, inconsistent, or covering some paths | both: where it works and where it doesn't |
+| **Absent** | No control found after a genuine search | the searches performed (so reviewers can re-run them) |
+| **N/A** | Catalog item doesn't apply | one-line reason |
+| **Unverifiable** | Outside provided artifacts | what artifact would settle it |
+
+Rules:
+- **Evidence or it didn't happen — in both directions.** "Present" without
+  file:line is as worthless as "Absent" without the search trail. Audits get
+  challenged; the matrix is your defense.
+- **Partial is the most important state.** One authz-checked endpoint proves
+  the team knows the pattern; the seventeen unchecked ones are the finding.
+  Inconsistency also tells you remediation is adoption, not invention.
+- **Sample honestly:** for repetitive surfaces (50 routes), sample ≥20% plus
+  ALL routes touching top assets; state the sampling rule in the report.
+- **Check the negative space:** middleware exclusion lists, `// TODO: auth`,
+  `@SkipAuth`-style decorators, IaC `count = 0`/commented blocks, disabled
+  tests with `security` in the name, `.allowlist` files. Disabled controls are
+  stronger findings than never-built ones (someone decided).
+
+Matrix excerpt (orders-api × API catalog, `03` §2):
+
+| Catalog item | State | Evidence |
+|---|---|---|
+| Object-level authz | **Partial** | tenant check in invoice_repo.py:22, payments.py:31; ABSENT in order_repo.py:18 + 8 of 11 sampled by-id routes |
+| Mass assignment | Present | DTO allowlists via schemas/*.py; no `**request.json` hits |
+| SSRF controls | **Absent** | webhook "test" fetch at hooks.py:77, no allowlist; searches: `requests.get(`, `urlopen`, `httpx` |
+| Rate limiting | **Unverifiable** | nginx config not provided; app-level none found |
+| Deserialization | N/A | JSON only; no pickle/yaml.load hits |
+
+## 3. Gap analysis — from absent control to ranked finding
+
+For each Absent/Partial cell:
+
+1. **Write the threat sentence** the missing control would have addressed
+   (actor → action → asset → impact), using the actual actors and assets from
+   the reconstructed model — never "an attacker could potentially".
+2. **Walk the real path:** can the named actor actually reach the weakness
+   from an entry point in THIS deployment? An unparameterized query fed only
+   by a config constant is hygiene (Low), not injection (Critical).
+   Reachability is what separates an audit from a scanner run.
+3. **Classify the gap:**
+   - **Missing primary control** — nothing stands between actor and asset
+     (no authz check on a reachable endpoint). Rates on raw L×I.
+   - **Missing defense-in-depth** — primary control exists; backstop absent
+     (authz present, but no RLS / no audit log). Cap at one band below what
+     primary-control failure would rate, and say which primary it backstops.
+   - **Posture/hygiene** — weakens future changes rather than today's paths
+     (shared DB superuser in a single-service system). Usually Low/Medium with
+     a "rises to X when Y" note.
+4. **Chain before rating.** Individually-Medium gaps that compose into a
+   Critical path get ONE chained finding rated for the chain (SSRF [M] +
+   IMDSv1 [M] + over-privileged role [M] = metadata-credential takeover [C]),
+   with member gaps listed as remediation points. Report the chain, not three
+   medium tickets nobody connects. A chain's preconditions are the entry step's
+   privilege plus any precondition a later link needs that no earlier link supplies
+   (user interaction, a non-default configuration, a race window) — not the privilege
+   a link *obtains*, which the chain provides. It is "reproduced" only when run end to
+   end, in a non-production environment within the rules of engagement; reproducing
+   each link proves the links, so until then rate it *needs verification*
+   ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §1).
+
+## 4. Severity calibration (audit-specific)
+
+Apply `SKILL.md` conventions + `04` §3 anchors, with these audit rules:
+
+- **Rate what IS, not what might be coded later.** Severity reflects current
+  deployment context; include a "context sensitivity" note when one config
+  change would jump the rating ("Medium today; Critical if this service is
+  ever exposed publicly — see T-7").
+- **Unverifiable ≠ Low.** A control you couldn't verify on a Critical path is
+  reported as "Unverified, potential High" with the artifact request —
+  downgrading for lack of access rewards opacity.
+- **Broken stated assumptions inherit the severity of what relied on them.**
+  If "internal network is trusted" underpins all service authn and is false,
+  that single finding is Critical even though each individual service merely
+  "lacks mTLS".
+- **No severity inflation for volume.** Forty Low hygiene findings do not sum
+  to a High; instead emit one thematic finding ("input validation is not
+  systematic: 40 instances, list attached") so the remediation is a pattern
+  fix, not whack-a-mole.
+
+## 5. Tooling and timeboxing
+
+Tools feed the audit; they are never the audit:
+
+- **Use scanners as input, not output.** SAST/dep-scan/IaC-scan results are
+  candidate Absent/Partial cells — each still needs the reachability walk
+  (§3.2) before it becomes a finding. Forwarding scanner output as an audit
+  is the canonical failure mode of this discipline.
+- **Targeted code sweeps** (opengrep/grep) excel at the matrix's repetitive
+  cells: authz-check presence per route, raw-SQL escape hatches, `verify=False`,
+  skip-auth decorators, `dangerouslySetInnerHTML`. Save the rule set — it
+  becomes the structural regression guard you recommend (`04` §5 VER-2).
+- **Read IaC before code.** Network policy, IAM, and bucket policy answer
+  reachability questions that would take hours to establish from app code.
+- **A call graph or semantic index is never the sole basis for dropping code from
+  the audit.** It misses indirect calls — function pointers, virtual dispatch,
+  macros, reflection, framework routing — so "no callers found" is an absence claim
+  and needs a second, independent method ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2): a text search over
+  the whole tree, *including* config, route tables and annotations, since
+  string-built reflection and declared routes escape a call graph and plain grep
+  alike. Use the index to order reading.
+
+Timebox tiers (state which tier the report represents):
+
+| Tier | Budget | Scope |
+|---|---|---|
+| Rapid | 1 day | DFD + entry-point sweep + assumptions test + top-asset paths only; catalogs for the 2–3 highest-risk components |
+| Standard | 3–5 days | Full matrix on all components on top-3 asset paths; sampled elsewhere |
+| Deep | 2+ weeks | Full matrix everywhere + chain construction + process meta-audit |
+
+A Rapid audit that says so is honest; a Rapid audit formatted like a Deep one
+is malpractice — the un-examined surface must be listed (§1.1).
+
+## 6. Finding format (binding)
+
+Every finding uses the `SKILL.md` format. Worked example:
+
+```
+[HIGH] Cross-tenant order read via unscoped lookup (orders-api, STRIDE-E/I)
+Location: services/orders/handlers/get_order.py:41; absent tenant filter in
+          repositories/order_repo.py:18
+Threat: Any authenticated customer can read any other tenant's orders
+        (PII: names, addresses — asset A1) by iterating sequential order
+        IDs on GET /orders/{id}, because the lookup filters by id only and
+        IDs are sequential (migrations/0042_orders.sql:7).
+Evidence: get_order.py:41 `order = repo.get(order_id)` — no tenant_id in
+          query; confirmed pattern on 9 of 11 by-id endpoints sampled
+          (exceptions: invoices, payments — both filter by tenant).
+Recommendation: enforce tenant scoping in the repository layer (single
+          choke point, pattern already exists in invoice_repo.py:22);
+          random IDs are depth only, never the fix (RFC 9562 Section 8: prefer
+          UUIDv4 over UUIDv7 there). Map to SR-104; add abuse-case test
+          per 05 §3.
+Residual risk if accepted: mass PII enumeration by any self-service
+          signup; likely notifiable breach.
+```
+
+Rules:
+- One finding = one decidable remediation. Split findings the team would
+  assign to different owners; merge instances of one pattern (per §4).
+- The Evidence line must let a skeptic reproduce your conclusion from the
+  repo alone. Quote minimally; cite precisely.
+- Recommendation names WHERE the control goes and reuses the team's existing
+  good patterns when they exist (adoption beats invention, §2).
+- Positive observations (Present controls on critical paths) get a short
+  section — they calibrate trust in the audit and stop teams "fixing" what
+  works.
+
+## 7. Audit report structure
+
+```
+1. Scope & method: artifacts received/withheld, sampling rules, timebox,
+   catalogs applied, un-audited surface.
+2. Reconstructed system model: DFD + entry-point/asset/actor tables (02).
+3. Findings: Critical → Low, chained findings first within band.
+4. Thematic observations: systemic patterns (one per theme) + positives.
+5. Control-presence matrix: appendix, full table with evidence.
+6. Assumption test results: stated/implied assumptions, held or broken.
+7. Proposed baseline: the model handed back for living maintenance (05 §4),
+   pinned to the audited git SHA.
+8. Remediation ordering: chains broken at cheapest link first; pattern
+   fixes over instance fixes; quick wins (config-level Criticals) flagged.
+```
+
+Meta-findings — the audit also rates the team's PROCESS:
+- No threat model existed → Medium process finding (plus the baseline you
+  deliver remediates it).
+- Model existed but drifted (trigger-matching changes since last revision,
+  `05` §4) → finding, with the missed triggers listed.
+- Expired risk acceptances, orphaned threats without dispositions, abuse-case
+  tests deleted/skipped → findings per `04`/`05` checklists.
+
+## Audit checklist (meta — quality bar for the audit itself)
+
+- [ ] **History mined** (§1.3): the guard-idiom query and its commit count recorded, shallow
+      or late-starting history marked partial, and each fixed class hunted across the code?
+- [ ] **One "safe" component swept** (§1.4), chosen by rule and inside the rules of engagement?
+- [ ] **Chains** (§3.4): preconditions stated, and *needs verification* until run end to end?
+- [ ] **No code dropped on a call graph alone** (§5): a second method, config and routes included?
+- [ ] Artifact inventory recorded, including what was NOT provided (§1); nothing
+      silently skipped — unverifiable surface reported as such.
+- [ ] Reconstructed DFD + entry-point sweep (§1) completed per 02 §B before any
+      catalog work; sweep commands/searches reproducible.
+- [ ] Outside-in host list (passive DNS, CT logs) (§1) reconciled against the
+      hostnames the IaC declares; list those with
+      `grep -rn -E "aws_route53_record|google_dns_record_set|azurerm_dns_[a-z]+_record|kind: *Ingress|server_name " .`
+      — a locator: it lists every declared hostname; each hit is read, not a finding.
+      A live host serving an application but absent from every repo → High
+      (Medium when it serves only static content).
+- [ ] Implied assumptions written down and each tested against code/config (§1, §4);
+      broken assumptions rated by what relied on them.
+- [ ] Control-presence matrix complete for in-scope components; every cell
+      Present/Partial/Absent/N-A/Unverifiable with evidence or search trail
+      (§2).
+- [ ] Sampling rules stated (§2); all top-asset paths examined, not sampled.
+- [ ] Negative space checked (§2): exclusion lists, skip-auth decorators, disabled
+      tests, commented-out IaC.
+- [ ] Reachability walked for every finding (§3); hygiene vs. primary-control vs.
+      defense-in-depth gaps distinguished and rated accordingly.
+- [ ] Exploit chains assembled and rated as chains; no severity-by-volume
+      (one thematic finding instead); an unverifiable control on a Critical
+      path reported "Unverified, potential High", never downgraded; a
+      context-sensitivity note where one config change would jump the
+      rating (§4).
+- [ ] Every finding in the binding format with file:line evidence and a
+      located, pattern-reusing recommendation; one decidable remediation
+      per finding (split by owner, merged across instances of a pattern),
+      Evidence reproducible from the repo alone (§6).
+- [ ] Report follows the §7 structure: findings Critical → Low with chains
+      first, thematic observations, matrix appendix, assumption results,
+      remediation ordering. Positive controls acknowledged; process
+      meta-findings (no model → Medium, drifted model with its missed
+      triggers listed, expired acceptances, deleted or skipped abuse-case
+      tests) included.
+- [ ] Baseline model delivered, pinned to the audited SHA (§7), ready for living
+      maintenance per 05.

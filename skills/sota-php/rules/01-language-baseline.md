@@ -1,0 +1,407 @@
+# 01 — Language baseline & idioms
+
+Modern PHP is a strictly-typed language. Most legacy-PHP pain (type juggling,
+register-globals folklore, `@` suppression) is opt-out today — these rules make
+opting out the default.
+
+## 1. Version baseline: know the support windows
+
+Verified against php.net/supported-versions.php and php.net/releases (2026-07):
+
+| Branch | Status | Active support until | Security fixes until |
+|---|---|---|---|
+| 8.2 | security-only | ended 2024-12-31 | **2026-12-31** |
+| 8.3 | security-only | ended 2025-12-31 | 2027-12-31 |
+| 8.4 | active | 2026-12-31 | 2028-12-31 |
+| 8.5 | active (released 2025-11-20) | 2027-12-31 | 2029-12-31 |
+
+- 8.1 and older are **EOL** (8.1's final release was 8.1.34, 2025-12; PHP 7 ended
+  2022-11). Running them is a HIGH finding on internet-facing systems.
+- Each branch gets 2 years active + 2 years security-only (php.net policy). The table is a
+  dated snapshot: re-read php.net/supported-versions.php before quoting a date.
+- **BUILD:** target 8.3+ as the floor for new projects (8.2 exits security support
+  2026-12-31 — months away); use 8.4/8.5 features when the floor allows.
+- **AUDIT:** check `composer.json` `require.php` and `config.platform.php` against
+  the table; flag EOL floors and floors about to lapse.
+- **A supported branch at an old patch is still exploitable.** Compare the running `php -v`
+  with the newest release of its branch (`https://www.php.net/releases/?json&version=8.4`
+  returns it as JSON). Measured 2026-09-25: a local 8.5.9 against 8.5.11, a release tagged
+  `security`. The version string on a distro build can hide a backport (next bullet), so read
+  the vendor advisory before calling a distro package behind. Example of what a patch closes:
+  CVE-2024-4577 (CISA KEV) let a request pass options to `php-cgi` and run code, fixed in
+  8.1.29, 8.2.20 and 8.3.8, but only on **Windows** with Apache and PHP-CGI under certain code
+  pages (NVD); it says nothing about a Linux FPM host, which is why the check is by patch
+  level against php.net, not by recalled CVEs.
+- **Only the php.net window counts.** An OS vendor or paid provider may keep shipping patches
+  for a branch php.net has ended, but those are its own backports, on its own schedule and
+  covering what it chooses to fix; that is not upstream support. An EOL branch on such a
+  package still fails the baseline: report it at the EOL severity, and note the vendor's
+  coverage in the finding rather than downgrading it. A distro's version string can also
+  mislead the other way (a backported fix with no version bump), so read its advisories, not
+  the number ([sota-devsecops `rules/03`](../../sota-devsecops/rules/03-dependencies.md) §3.9). OWASP: PHP Configuration cheat sheet.
+
+Feature timeline for floor decisions: enums, `readonly` properties, fibers,
+first-class callable syntax (8.1); `readonly` classes, DNF types (8.2); typed class
+constants, `#[\Override]`, `json_validate()` (8.3); property hooks, asymmetric
+visibility, `new X()->method()` without parens, bcrypt default cost 10→12 (8.4);
+pipe operator `|>`, `clone with`, `#[\NoDiscard]`, `array_first`/`array_last`,
+closures in constant expressions, URI extension (8.5, per php.net/releases/8.5).
+
+## 2. strict_types and real types, everywhere
+
+Without `declare(strict_types=1)`, scalar type declarations *coerce* ("42abc" may
+pass an `int` parameter with a notice, `"1"` passes `bool`). With it, mismatches
+throw `TypeError`.
+
+```php
+<?php
+
+declare(strict_types=1);   // first statement, every file — no exceptions
+```
+
+- Every property, parameter, and return gets a type. `mixed` is a documented
+  last resort, not a default; `?Type` over implicit-nullable (implicit nullable
+  parameters are deprecated since 8.4).
+- Use union/intersection/DNF types where they model reality
+  (`(Countable&Traversable)|null`), not to paper over unclear design.
+- `array` hides shape: for structured data prefer a small typed class (or at
+  least a PHPDoc `array{id: int, name: string}` shape that PHPStan/Psalm check).
+- Value objects: constructor promotion + `readonly`:
+
+```php
+final class Money
+{
+    public function __construct(
+        public readonly int $amountMinor,
+        public readonly Currency $currency,
+    ) {}
+
+    public function withAmount(int $amountMinor): self
+    {
+        return clone($this, ['amountMinor' => $amountMinor]); // 8.5 clone-with
+        // pre-8.5: return new self($amountMinor, $this->currency);
+    }
+}
+```
+
+- 8.4+ property hooks replace getter/setter boilerplate; asymmetric visibility
+  (`public private(set)`) replaces "public getter, private setter" pairs.
+
+## 3. Enums over constants; match over switch
+
+```php
+enum OrderStatus: string          // backed enum when it's persisted/serialized
+{
+    case Pending = 'pending';
+    case Shipped = 'shipped';
+    case Cancelled = 'cancelled';
+}
+
+$status = OrderStatus::tryFrom($raw) ?? throw new InvalidArgumentException(
+    sprintf('unknown status "%s"', $raw),
+);
+```
+
+- `::from()` throws `ValueError` on unknown input; `::tryFrom()` returns null —
+  choose deliberately at trust boundaries.
+- Enums can carry methods and interfaces; use them instead of parallel
+  `match`/lookup tables scattered around the codebase.
+
+`match` beats `switch`: strict (`===`) comparison, no fallthrough, it's an
+expression, and an unhandled value throws `\UnhandledMatchError` instead of
+silently doing nothing:
+
+```php
+$label = match ($status) {
+    OrderStatus::Pending   => 'In progress',
+    OrderStatus::Shipped   => 'Done',
+    OrderStatus::Cancelled => 'Cancelled',
+};  // adding a case to the enum makes this throw until handled — good
+```
+
+Audit `switch` on security-relevant values as MEDIUM (loose comparison +
+fallthrough hazards).
+
+## 4. Comparison and juggling discipline
+
+- `==` compares after juggling; **always `===`/`!==`** unless a comment justifies
+  otherwise. Classic traps: `0 == "a"` was true before 8.0 (string-to-number
+  comparison changed in PHP 8.0 — saner, but `"1" == "01"` is still true),
+  `null == false == 0 == ""` are all true.
+- `in_array($needle, $arr)` and `array_search` juggle by default — pass
+  `strict: true`. `switch` juggles and cannot be fixed — prefer `match`.
+- `strcmp()`-style return values and `0` are falsy: `if (strpos($s, $p))` is a
+  bug when the needle is at offset 0 — use `str_contains`/`str_starts_with`
+  (8.0+) or `!== false`.
+- Never use `==` on anything security-relevant (tokens, hashes, MACs): juggling
+  plus magic-hash pitfalls (`"0e123..." == "0e456..."`). Use `hash_equals()`
+  (see [`rules/04`](04-sessions-auth-web-hardening.md)).
+- **Money is integer minor units (the `Money` class in §2) or a decimal string through
+  bcmath, never `float`.** Measured on PHP 8.5: `(int)(19.99 * 100)` is `1998`, and
+  `echo 0.1 + 0.2` prints `0.3` (the `precision` ini, 14) while `json_encode` of the same
+  value writes `0.30000000000000004`, so the error hides in one output and surfaces in the
+  next. bcmath takes its scale from `bcscale()` or the `bcmath.scale` ini, which is `0` by
+  default: `bcdiv('1', '3')` is `"0"`. Pass the scale on every call, or use
+  `BcMath\Number` (PHP 8.4+). `round()` defaults to half away from zero; the
+  `RoundingMode` enum (8.4+) and `PHP_ROUND_HALF_EVEN` name the others. `json_decode` turns
+  an integer above `PHP_INT_MAX` into a `float` unless `JSON_BIGINT_AS_STRING` is passed.
+- **Arithmetic edge cases: validate finiteness, guard divisors, never trust int overflow.**
+  Measured on PHP 8.5: the strings `"nan"`/`"INF"`/`"Infinity"` are not numeric (they cast to
+  `0.0`), but `(float)"1e999"` and `floatval()` return `INF` and `is_numeric("1e999")` is true.
+  `FILTER_VALIDATE_FLOAT` rejects `"1e999"`, so parse request floats with `filter_var()` rather
+  than a cast. NaN still arrives from arithmetic (`fmod($x, 0)`, `sqrt(-1)`, `INF - INF`), and
+  every comparison with it is false, so `if ($x < 0 || $x > 100) reject();` lets NaN through:
+  gate on `is_finite($x)` first (false for both NaN and ±INF). `/`, `%` and `intdiv()` throw
+  `DivisionByZeroError` on a zero divisor, even `1.0 / 0`; only `fdiv()` returns INF/NaN.
+  Check the divisor before dividing instead of catching the error.
+  `intdiv(PHP_INT_MIN, -1)` throws `ArithmeticError`, but `PHP_INT_MIN / -1`, `-PHP_INT_MIN`, `abs(PHP_INT_MIN)`, `PHP_INT_MAX + 1` and a
+  seconds-to-nanoseconds `$s * 1_000_000_000` **silently become `float`**, losing precision
+  (php.net). Casting that back with `(int)` gives an undefined result (8.5 warns; measured
+  `(int)1e19` is `-8446744073709551616`). PHP has no checked-int operators, so check the
+  result with `is_int()`, let an `int` parameter reject it (a `float` of that size is a
+  `TypeError` in both typing modes), or do the maths in GMP (`gmp_mul`) or bcmath.
+  Refs: OWASP Go-SCP (general coding practices), OWASP SCSVS (arithmetic).
+
+## 4a. In-band sentinels — `strpos` is the textbook case
+
+PHP's search functions return **`false`** for not-found, and a legitimate match at
+the start returns **`0`** (verified, PHP 8.5.8): `strpos("abc","z")` is `false`,
+`strpos("abc","a")` is `int(0)`. With loose comparison `0 == false` is **true**, so
+`if (strpos($h,$n) == false)` reports "not found" on a match at offset 0 — the
+canonical instance of the class in [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) §8a, and the reason
+§4's identity rule exists.
+
+```php
+if (strpos($h, $n) === false) { /* not found */ }   // === is mandatory, not style
+```
+
+- Same shape: `array_search` (returns `false`; verified), `strrpos`, `stripos`.
+  `str_contains`/`str_starts_with` (8.0+) return real `bool` — prefer them whenever
+  you only need the yes/no, and the trap disappears.
+- Writing your own: return `null` (with a `?int` return type under `strict_types`)
+  or throw. Returning `false` from an `int`-ish function reproduces the stdlib's
+  worst API in code you control.
+- `intval("x")` / `(int)"x"` is `0`, indistinguishable from `(int)"0"` — use
+  `filter_var($s, FILTER_VALIDATE_INT)`, which returns `false` for invalid, and test
+  it with `===`.
+- Audit: `grep -rnE '(strpos|stripos|strrpos|array_search)\s*\(' --include='*.php' src/ | grep -v '==='`
+  — every hit without `===` is a finding.
+
+## 5. Errors and exceptions, not silence
+
+- Production ini: `display_errors=Off`, `log_errors=On`; development:
+  `error_reporting(E_ALL)` and fail on warnings in tests. (OWASP PHP
+  Configuration Cheat Sheet.)
+- **No `@` suppression** — it hides the error *and* costs a handler round-trip.
+  The only near-acceptable uses are APIs with no error-free variant; wrap those
+  once and document.
+- Throw exceptions; don't return `false|string` unions from new APIs. Define a
+  small package-level exception hierarchy (`DomainException` subclasses), chain
+  with `previous:`.
+- `json_decode(..., flags: JSON_THROW_ON_ERROR)` — silent `null` returns are a
+  classic injection/logic hazard. 8.3+ `json_validate()` for validate-only.
+- **Some failures skip every `catch`.** Exhausting `memory_limit` is a fatal error, not an
+  exception: measured on 8.5.9, `str_repeat` past a 16M limit inside `try { } catch
+  (\Throwable)` printed "Allowed memory size … exhausted", skipped the `catch`, ran the
+  `register_shutdown_function` callback and exited 255. A framework's error handler and
+  middleware never see it, and the FPM worker loses the request. Unbounded userland recursion
+  ends the same way (measured: it reached `memory_limit` at ~915,000 frames). Recursion through
+  an internal function (a callback via `array_map`) uses the C stack
+  instead, and since 8.3 `zend.max_allowed_stack_size` (default `0`, auto-detect) turns its
+  overflow into a catchable `Error` ("Maximum call stack size … reached"); measured, `-1`
+  turned the same overflow into a segfault (exit 139). So cap before allocating: check every
+  count or length from input (`str_repeat`, `array_fill`, `str_pad`, `range`, a page size)
+  against a maximum, cap raw body size before `json_decode`, give recursive code over parsed
+  input a depth limit, and pass an explicit `$depth` below the default 512 (measured: 511
+  nested arrays decode, 512 fail with "Maximum stack depth exceeded"). Log fatals from a
+  shutdown function with `error_get_last()`, because nothing else runs.
+- Since 8.5, uncaught fatal errors include backtraces (php.net/releases/8.5) —
+  make sure stack traces still never reach responses ([`rules/04`](04-sessions-auth-web-hardening.md) §5, §5b).
+- `DateTimeImmutable` over `DateTime`; pass an explicit `DateTimeZone`; never
+  parse dates with juggling (`strtotime` on user input needs validation).
+
+## 6. Fibers and concurrency (8.1+)
+
+The cross-runtime model — structured concurrency, cancellation and timeouts, backpressure, the race and deadlock catalogue — is [`sota-async-concurrency`](../../sota-async-concurrency/SKILL.md); this file is the PHP half.
+
+`Fiber` is a *low-level* cooperative-concurrency primitive: full-stack
+interruptible functions (`Fiber::suspend()`/`resume()`). It does **not** make
+code parallel and does not schedule anything by itself.
+
+- Application code should not hand-roll fiber schedulers. Use an event-loop
+  runtime built on fibers (e.g. Revolt/AMPHP v3, ReactPHP) where async I/O
+  concurrency is genuinely needed.
+- Classic FPM request/response code gains nothing from fibers — concurrency
+  there is process-level (see [`rules/06`](06-performance-runtime.md) FPM sizing). Long-running runtimes
+  (CLI workers, e.g. FrankenPHP/Swoole-style servers as neutral examples) are
+  where async PHP pays off; in those, blocking calls (`PDO`, `file_get_contents`)
+  stall the whole loop — same discipline as any event loop.
+- **A CLI worker handles SIGTERM itself:** `pcntl_async_signals(true)` (PHP 7.1+) and
+  `pcntl_signal(SIGTERM, $handler)`, where the handler only sets a flag that the loop checks
+  between jobs. The sequence and the other runtimes: [`sota-async-concurrency` rules/05](../../sota-async-concurrency/rules/05-cancellation-timeouts-shutdown.md) §4.
+- AUDIT: raw `new Fiber(` in application (non-library) code is a MEDIUM design
+  smell; blocking I/O inside an event-loop callback is HIGH in async runtimes.
+
+## 6a. Designing a public surface — what a released class promises
+
+Shared design rules: [`sota-architecture` rules/02](../../sota-architecture/rules/02-domain-modeling-and-boundaries.md) and [`sota-api-design`](../../sota-api-design/SKILL.md). **This is the PHP
+mechanism**, and PHP enforces more of it at *load* time than most languages — several of the
+changes below are a fatal error in the consumer's process, not a subtle bug.
+
+**`final` and `readonly` are API decisions, and both are directional.**
+
+- Adding `final` to a released class **breaks** every consumer that extended it; removing
+  `final` is always safe. Default to `final` on a new class and relax later — the reverse is a
+  major-version change.
+- `readonly` rejects writes after initialisation: measured on PHP 8.5.9, assigning to one
+  raises `Error: Cannot modify readonly property V::$x`. Adding `readonly` to an existing
+  public property is therefore **breaking**; removing it is safe.
+- A promoted constructor property is still a public property — `public readonly` in a
+  signature is part of the API surface, not an implementation detail.
+
+**Interface vs abstract class is a decision about what you can add later.**
+
+| change | effect on existing implementers |
+|---|---|
+| add a method to an **interface** | **fatal** — measured: *"Class Old contains 1 abstract method and must therefore be declared abstract"* |
+| add a **non-abstract** method to an abstract class | safe — implementers inherit it |
+| add an **abstract** method to an abstract class | **fatal**, same as an interface |
+| narrow a parameter type in an implementation | **fatal** — *"must be compatible with"* |
+| widen a parameter type in an implementation | **allowed** (contravariance) |
+
+So: an interface you publish is frozen, and that is the point of choosing one. When a
+contract must be able to grow, publish an abstract class with defaults, or a second
+interface — never add to the released one.
+
+**Variance is enforced, and it runs opposite for arguments and returns.** Parameter types may
+be *widened* by an implementer and not narrowed; return types may be *narrowed* and not
+widened. Both were measured above on 8.5.9 — the narrowing case is a fatal error at class
+declaration, so it fails on load rather than on call.
+
+**BC under semver, concretely.** A major is required to add an interface method, add `final`
+or `readonly`, narrow any accepted type, widen any returned type, rename a public property,
+or make a constructor parameter required. Everything else is a minor. [`rules/05`](05-composer-tooling.md) covers the
+*consumer* half — `^` constraints — which is a different question from what you may ship.
+
+## 7. Deprecations and legacy constructs to remove on sight
+
+- **Removed** (fail on modern PHP): `create_function` (8.0), string-argument
+  `assert()` (8.0), `preg_replace` `/e` modifier (7.0), `mcrypt_*` (7.2),
+  `each()` (8.0), curly-brace string offsets `$s{0}` (8.0).
+- **Deprecated** (fix now): backtick operator `` `cmd` `` (8.5, emits `E_DEPRECATED`);
+  `__sleep`/`__wakeup` are only **soft**-deprecated in 8.5 (php-src PHP-8.5 UPGRADING; measured
+  on 8.5.9: no notice), so migrate to `__serialize`/`__unserialize` before a real deprecation
+  lands; implicit nullable params (8.4), dynamic properties without
+  `#[\AllowDynamicProperties]` (8.2).
+- **Legacy smells:** `extract()` on request data (variable injection),
+  variable-variables `$$name` from input, `global` keyword in new code,
+  `array_merge` in loops (quadratic — use spreads/`array_push`),
+  `register_shutdown_function` as error handling.
+
+## 7a. Multibyte text: the byte functions cut characters
+
+- `strlen`, `substr`, `strtoupper`, `str_split` and friends count and cut **bytes**. Measured on
+  PHP 8.5: `substr("café", 0, 4)` returns `caf` plus half of `é` — an invalid UTF-8 string —
+  while `mb_substr` returns `café`; `strlen("é")` is `2`, `mb_strlen("é")` is `1`. A length limit,
+  a truncation for display or storage, or a case fold on user text uses the `mb_*` function.
+- Validate text at the boundary with `mb_check_encoding($s, 'UTF-8')` (false on `"\xff"`,
+  measured); invalid bytes reaching `htmlspecialchars` or `json_encode` fail at the far end.
+
+## Audit checklist
+
+Run from repo root; verify each hit manually.
+
+- [ ] **Byte functions on user text (§7a) — MEDIUM, HIGH when the cut value is stored or
+      signed** — `grep -rnE '(^|[^_a-z])(substr|strlen|strtoupper|strtolower|ucfirst|str_split|wordwrap)\(' --include='*.php' src/ | grep -iE 'name|title|text|comment|message|body|bio|label'`
+      ; `grep -rq 'mb_check_encoding' --include='*.php' src/ || echo "src/: NO mb_check_encoding (UTF-8 never validated at the boundary)"` (prints a line when nothing validates UTF-8 at the boundary)
+- [ ] **Public surface / BC (§6a) -- PHP fails most of these at LOAD time, in the consumer every
+      method here is frozen: adding one is FATAL for existing implementers ("must therefore be
+      declared abstract"). If the contract must grow, use an abstract class with defaults, or
+      publish a second interface. THE question no linter asks: does any + line add an interface
+      method, add `final` , add `readonly` to an existing property, narrow a parameter type, or
+      widen a return? Each is a MAJOR. Widening a parameter and narrowing a return are safe
+      (variance). non-final released classes: extensible forever, and adding `final` later
+      breaks them promoted constructor properties are PUBLIC API, not implementation detail** —
+      `grep -rn 'interface ' --include='*.php' src/` (lists every interface; each hit is read, not a
+      finding: the BC break is a `+` line in the diff below) ;
+      `git diff <last-release-tag>..HEAD -- '*.php' | grep -nE '^\+.*(function |final |readonly )'`
+      ; `grep -rnE '^\s*(class|abstract class) [A-Z]' --include='*.php' src/ | grep -v 'final'`
+      ; `grep -rn 'public readonly' --include='*.php' src/`
+- [ ] **Missing strict_types (§2) — LOW per file, MEDIUM if project-wide** —
+      `grep -rL --include='*.php' 'declare(strict_types=1)' src/ | head -50`
+- [ ] **EOL / lapsing PHP floor — check require.php against the table in §1** —
+      `grep -nE '"php"[[:space:]]*:[[:space:]]*"([^"]*[^0-9.])?(5\.|7\.|8\.0|8\.1)' composer.json` ; `php -v` (a branch past its php.net end date is EOL
+      even when the package comes from a vendor that still patches it, §1) ;
+      `grep -rnE '"php"[[:space:]]*:[[:space:]]*"([^"]*[^0-9.])?(5\.|7\.|8\.0|8\.1)' --include='composer.json' .`
+      (a floor that still admits an EOL branch; the list is fixed text and misses 8.2 from
+      2027-01-01, so prefer the live php.net lookup in [`rules/05`](05-composer-tooling.md)'s floor item)
+- [ ] **Supported branch, stale patch (§1) — HIGH when the newer release is tagged `security`**
+      — run on the production image:
+      `v=$(php -r 'echo PHP_MAJOR_VERSION, ".", PHP_MINOR_VERSION;'); latest=$(curl -sSf "https://www.php.net/releases/?json&version=$v" | php -r 'echo json_decode(stream_get_contents(STDIN))->version ?? "";'); php -r 'if ($argv[1] === "") { echo "LOOKUP FAILED\n"; exit(2); } if (version_compare(PHP_VERSION, $argv[1], "<")) { echo "BEHIND: ", PHP_VERSION, " < ", $argv[1], "\n"; exit(1); }' "$latest"`
+      (a distro build: read its advisories before reporting, §1)
+- [ ] **Loose comparison on suspicious values — MEDIUM+, verify context** (§4) —
+      `grep -rnE '[^=!<>]==[^=]' --include='*.php' src/ | grep -iE 'token|password|hash|hmac|secret|sig'`
+      ; `grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -v 'true'`
+- [ ] **Money in binary floats (§4) — MEDIUM, HIGH in money paths** —
+      `grep -rniE 'float[[:space:]]+\$[a-z_]*(price|amount|total|balance|cost|fee|tax)' --include='*.php' src/`
+      (a money parameter or property typed `float`) ;
+      `grep -rnE '(\(int\)[[:space:]]*\(|intval\()[^;]*\*[[:space:]]*100' --include='*.php' src/`
+      (scaled to minor units by a truncating cast) ;
+      `grep -rnE 'bc(add|sub|mul|div|mod|pow)\([^,()]*,[^,()]*\)' --include='*.php' src/`
+      (no scale argument: `bcmath.scale` decides, and it is `0` by default)
+- [ ] **Non-finite (NaN/INF) request floats and int overflow (§4) — MEDIUM, HIGH on an
+      amount, limit or quantity** —
+      `grep -rnE '(\(float\)|floatval\()[[:space:]]*\$(_(GET|POST|REQUEST|COOKIE)|request->)' --include='*.php' src/`
+      (a cast accepts `"1e999"` as INF; confirm `FILTER_VALIDATE_FLOAT` plus `is_finite()`
+      before any range check, a divisor check before `/`, `%`, `intdiv()`, and `is_int()` or
+      GMP/bcmath on products that can pass `PHP_INT_MAX`)
+- [ ] **Failures that skip every `catch` (§5) — HIGH when request input sizes the allocation or
+      the stack guard is off** —
+      `grep -rnE '(str_repeat|array_fill|str_pad|range)\([^;]*\$_(GET|POST|REQUEST|COOKIE)|json_decode\([^;]*(,|depth:)[[:space:]]*(PHP_INT_MAX|51[3-9]|5[2-9][0-9]|[6-9][0-9]{2}|[0-9]{4,})[[:space:]]*[,)]' --include='*.php' --exclude-dir=vendor .`
+      (an input-sized allocation with no cap, or a raised JSON depth; a size passed through a
+      variable needs a read) ;
+      `grep -rnE 'zend\.max_allowed_stack_size[[:space:]]*=[[:space:]]*"?-1' --include='*.ini' --include='*.conf' --include='Dockerfile*' .`
+      ; on the runtime, `php -r 'var_dump(ini_get("zend.max_allowed_stack_size"));'` (`"-1"`:
+      deep recursion segfaults the worker instead of throwing)
+- [ ] **strpos truthiness bug and other in-band sentinels (§4a) — MEDIUM, HIGH on a security
+      decision** — `grep -rnE 'if[[:space:]]*\([[:space:]]*!?[[:space:]]*strpos\([^()]*\)[[:space:]]*\)' --include='*.php' src/`
+      ; `grep -rnE '(strpos|stripos|strrpos|array_search)[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -vE '(===|!==)'`
+      (every hit without `===` or `!==` is a finding) ;
+      `grep -rnE '(intval\(|\(int\)[[:space:]]*)\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' --exclude-dir=vendor .`
+      (`0` for garbage and for `"0"` alike: `FILTER_VALIDATE_INT`, tested with `===`)
+- [ ] **Error suppression and silent JSON** (§5) —
+      `grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'` ;
+      `grep -rn 'json_decode' --include='*.php' src/ | grep -v 'JSON_THROW_ON_ERROR'`
+- [ ] **Removed/deprecated constructs (§7)** —
+      `grep -rnE '(create_function|each\(|__sleep|__wakeup|\$\$[a-zA-Z]|extract\s*\(\s*\$_)' --include='*.php' src/`
+      ; ``grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'`` (backtick exec)
+      ; `grep -rnE 'mcrypt_|(^|[^A-Za-z0-9_$>])global[[:space:]]+\$' --include='*.php' --exclude-dir=vendor .`
+      ; `find . -name '*.php' -not -path './vendor/*' -exec php -d error_reporting=-1 -d log_errors=0 -d display_errors=1 -l {} \; 2>&1 | grep -i 'deprecated'`
+      (compile-time deprecations, an implicitly nullable parameter among them (§2); run it on the
+      production PHP version)
+- [ ] **Untyped properties (§2; heuristic; rely on PHPStan level 6+ for the real sweep)** —
+      `grep -rnE '^\s*(public|protected|private)\s+\$' --include='*.php' src/`
+- [ ] **switch on request-derived values — prefer match (§3) — MEDIUM on security-relevant
+      values** —
+      `grep -rn 'switch\s*(' --include='*.php' src/`
+      ; `grep -rnE '::from[[:space:]]*\([[:space:]]*\$' --include='*.php' --exclude-dir=vendor .`
+      (`from()` throws `ValueError` on unknown input, `tryFrom()` returns null: read which each
+      trust-boundary call needs)
+- [ ] **Mutable dates and implicit zones (§5)** —
+      `grep -rnE 'new \\?DateTime\(|date_create\(' --include='*.php' src/` (mutable: measured on
+      PHP 8.5, `$d->modify('+1 day')` returns the SAME object, so every holder of `$d` moves;
+      `DateTimeImmutable` returns a new one) ;
+      `grep -rnE 'new \\?DateTime(Immutable)?\([^)]*\)' --include='*.php' src/ | grep -v 'DateTimeZone'`
+      (no explicit zone: the process default decides) ;
+      `grep -rnE 'strtotime\([[:space:]]*\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' src/`
+      (request input parsed unvalidated; `strtotime` returns `false` on garbage)
+- [ ] **Blocking I/O on an event loop (§6) — HIGH in a long-running async runtime, not a
+      finding in classic FPM** — `grep -rlE 'Revolt\\EventLoop|React\\EventLoop|Amp\\|new Fiber\(' --include='*.php' src/`
+      lists the files that run on a loop;
+      `grep -rlE 'Revolt\\EventLoop|React\\EventLoop|Amp\\|new Fiber\(' --include='*.php' src/ | xargs grep -nHE 'new \\?PDO\(|mysqli_|file_get_contents\(|fopen\(|curl_exec\(|[^a-z_]sleep\('`
+      greps each of them (each hit stalls every request the loop is serving: use the runtime's async client or
+      move the call to a worker; zero files from the first command means no loop, so stop)
+
+Severity guide: EOL PHP in production HIGH; missing strict_types project-wide
+MEDIUM; loose `==` on security decisions HIGH; `@`-suppressed security function
+HIGH; style-level items LOW/INFO.

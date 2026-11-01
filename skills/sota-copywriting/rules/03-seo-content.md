@@ -1,0 +1,200 @@
+# 03 — SEO Content
+
+Search-facing content lives under two masters: the reader and the ranking
+systems' spam policies. The 2026 reality: Google's systems reward demonstrated
+first-hand value ("people-first" content, E-E-A-T signals) and name-and-punish
+the shortcuts — scaled AI-generated filler, borrowed-reputation hosting,
+doorway pages. Writing for the reader *is* the ranking strategy; this file
+makes that operational.
+
+## 1. Search intent before content
+
+- Classify the target query's intent and match the **format**, not just the
+  topic: informational (guide/answer), commercial-investigation (comparison,
+  "best X for Y"), transactional (product/landing page), navigational (leave
+  it alone — that traffic isn't yours).
+- **Read the current SERP as the spec**: what format ranks (listicle? docs
+  page? video?) tells you what searchers accept for that query. Publishing a
+  2,000-word essay against a SERP of quick-answer pages is a format mismatch,
+  not a quality problem.
+- One page per intent; don't split one intent across near-duplicate pages
+  (they cannibalize), don't fuse two intents into one page (it half-serves
+  both).
+- Answer the query in the first screen, then earn the scroll with depth —
+  burying the answer under 800 words of preamble ("what is X?" recipes-blog
+  style) is reader-hostile and increasingly rank-hostile.
+
+## 2. People-first content & E-E-A-T
+
+Google's guidance frames the bar as people-first content with demonstrated
+**experience, expertise, authoritativeness, trust** (E-E-A-T). Operationally:
+
+- **Show first-hand experience**: real screenshots of you using the thing,
+  measured results, edge cases you hit, opinions with reasons. Content
+  assembleable entirely from the top-10 existing results adds nothing and
+  ranks accordingly.
+- **Real authorship**: named authors with verifiable bios for content where
+  expertise matters; fabricated author personas with stock photos are
+  E-E-A-T fraud and a trust time-bomb.
+- **Cite primary sources** for claims — specs, papers, official docs, your
+  own data (methodology included). Citing other blog posts citing other blog
+  posts is the content equivalent of a dependency chain with no source.
+- **Honest dates**: publish date + a true "updated" date when materially
+  revised. Bumping dates without changes to look fresh is a trust dark
+  pattern search systems are wise to.
+- Trust surfaces: contact page, about page, editorial/AI-usage policy for
+  publications — the boring pages are ranking infrastructure.
+
+## 3. Spam policies: the named failure modes
+
+Google's spam policies (developers.google.com/search — spam policies doc)
+name these; violating them risks the page *and* the domain:
+
+- **Scaled content abuse** — many pages generated (by AI or humans) primarily
+  to rank, adding little value: mass "X vs Y" permutation pages, thin
+  location pages, stitched/scraped aggregations. The test is value-added per
+  page, not how it was produced.
+- **Site reputation policy** ("site reputation abuse") — third-party
+  content hosted mainly to ride the host's ranking signals ("parasite SEO":
+  coupon/review sections rented out on a news domain). If you're the host, it's your domain at stake.
+  **In the EEA the manual action no longer demotes** (from 2026-08-30, "following
+  discussion with the European Commission" under the DMA — Search Central blog,
+  2026-08-28): the
+  pages may be classified as separate from the main domain instead. Outside
+  the EEA the demotion still applies — the host's exposure is region-dependent,
+  not gone.
+- **Back button hijacking** (under *malicious practices*) — interfering with
+  browser navigation so Back does not return to the page the user came from —
+  sending them to pages never visited, or to unsolicited recommendations or ads
+  (Search Central blog, 2026-04-13; enforced from 2026-06-15). Google notes it
+  "may originate from the site's included libraries or advertising platform",
+  so third-party scripts are in scope. Audit: test Back from a landing page, and
+  grep the bundle for `history.pushState`/`replaceState` outside the router.
+- **Doorway abuse** — near-duplicate pages funneling to the same destination.
+- **Keyword stuffing** — and its modern denial: there is **no keyword-density
+  target**; that metric is folklore. Use the topic's natural vocabulary
+  (searchers' terms, synonyms, the entities involved) because you're actually
+  covering the topic.
+- **Misleading structured data** — schema.org markup must describe visible
+  page content; review stars on markup the page doesn't show is a manual-
+  action magnet.
+- Expired-domain abuse, link schemes, hidden text: same doc, same answer —
+  don't.
+
+## 4. The mechanical layer: titles, metas, headings, links
+
+- **Title element**: the page's promise, front-loaded, unique per page, and
+  truthful — search engines rewrite titles that don't match content, and the
+  rewrite is worse than your honest version. Length limits are *pixel-based
+  display truncation*, not ranking rules; "~50–60 characters" is a display
+  heuristic only.
+- **Meta description**: doesn't rank; it's your ad copy in the SERP — state
+  the benefit + what the reader gets, and accept engines substitute their own
+  snippet when they think they know better (~155 characters as display
+  heuristic).
+- **Heading hierarchy is the document outline**: one H1 stating the topic,
+  H2s that answer the sub-questions searchers actually ask (they're your
+  skim-test — [`rules/02`](02-headlines-landing-pages.md) §3 — and your featured-snippet candidates).
+- **Internal links with descriptive anchors** ("zero-downtime migration
+  guide", not "read more") from and to related content — orphan pages
+  neither rank nor pass value. External links to your primary sources are a
+  trust signal, not a leak.
+- URL slugs: short, readable, stable — a slug is an API ([`sota-api-design`](../../sota-api-design/SKILL.md)
+  versioning instincts apply: redirects on change, never break inbound
+  links).
+
+## 5. AI-assisted content discipline
+
+- AI assistance is legitimate; **unreviewed AI output published at scale is
+  scaled content abuse** (§3) plus an accuracy liability. The gate: a human
+  with domain knowledge verifies every factual claim, adds first-hand value
+  (experience, data, opinion), and owns the byline.
+- LLMs fabricate specifics — statistics, citations, quotes, product
+  capabilities. **Every number and citation in AI-drafted content gets
+  primary-source verification** before publish ([`rules/04`](04-claims-legal-trust.md) §1 machinery).
+- Don't fabricate the experience signals: fake "we tested this for 3 weeks"
+  framing around untested content is deception, indistinguishable from the
+  fake-review problem ([`rules/04`](04-claims-legal-trust.md) §3).
+- Disclose AI usage where your editorial policy, platform, or jurisdiction
+  requires it; a published AI-usage policy is becoming a standard trust
+  surface for content sites. In the EU, AI Act Art. 50(4) makes it a duty for
+  AI-generated text published to inform the public on matters of public
+  interest — waived only where the text underwent human review or editorial
+  control **and** a person holds editorial responsibility — the human gate in
+  this section's first bullet. Dates and the rest of Art. 50: [`sota-privacy-compliance` rules/04](../../sota-privacy-compliance/rules/04-regulatory-landscape.md) §5.
+
+## 6. Generative AI search surfaces (AI Overviews / AI Mode)
+
+Google's own guidance ("Optimizing your website for generative AI features
+on Google Search", developers.google.com/search, published 2026-05-15) is blunt: AI Overviews and AI Mode are rooted in
+the core Search ranking and quality systems, so **"GEO"/"AEO" is still SEO** —
+§1–§5 of this file *are* the optimization strategy.
+
+- **Debunk the folklore before someone bills you for it**: Google does not
+  read `llms.txt` or other AI text files ("neither harm nor help"); there is
+  no need to chunk content into AI-sized pieces, rewrite "for AI", or add
+  special schema.org markup for AI visibility. Vendors selling these as
+  Google-AI tactics are selling keyword density with a new name (§3).
+- **The controls are the existing ones**: `nosnippet`, `data-nosnippet`,
+  `max-snippet`, and `noindex` govern what AI features may show;
+  Google-Extended governs training/grounding in Google's other systems.
+  Search Console's generative-AI performance reports (announced
+  2026-06-03; rolled out to all sites worldwide as of 2026-08-31, per the
+  Search Central blog) show where you already appear — check them before
+  inventing a blocking scheme. A dedicated Search Console opt-out control:
+  needs verification.
+- Appearing in an AI answer is a snippet-economics question, not a new
+  discipline: the first-screen-answer rule (§1) and primary-source E-E-A-T
+  signals (§2) are what get cited.
+
+## 7. Content lifecycle
+
+- **Content is inventory with a freshness cost**: schedule re-verification
+  for anything with versioned facts (pricing, benchmarks, "as of 2026"
+  claims) — the library's own rule (fast-moving claims re-verified) applies
+  to published content doubly.
+- Update, consolidate, or prune: decayed posts that still get traffic →
+  update (honest updated-date); overlapping posts splitting one intent →
+  merge + redirect; zero-value pages → prune (they drag domain-level quality
+  assessments).
+- Canonicalize deliberately when near-duplicates must exist (print views,
+  UTM variants); one canonical per intent.
+- Redirects preserve equity and readers: renamed/merged content 301s to its
+  successor; a content migration without a redirect map is data loss.
+
+## Audit checklist
+
+- [ ] Each search-targeted page names its query + intent (in brief/frontmatter)
+      and matches the format the current SERP validates; one page per intent —
+      no intent split across near-duplicates, no two intents fused (§1)
+- [ ] The query's answer appears in the first screen; no 800-word preambles (§1)
+- [ ] First-hand value present: original data/screenshots/experience per
+      page; nothing assembleable purely from existing top-10 results (§2)
+- [ ] Real named authors with bios on expertise-sensitive content; no
+      fabricated personas; publish/updated dates truthful (§2)
+- [ ] Claims cite primary sources; no citation chains into blogspam; contact
+      and about pages exist, and publications publish an editorial/AI-usage
+      policy (§2)
+- [ ] Spam-policy sweep: no page sets matching scaled/doorway patterns
+      (mass permutation pages, thin location pages); no rented third-party
+      sections riding the domain; structured data matches visible content; no back-button
+      hijacking — Back from a landing page returns to the referrer, and no
+      `history.pushState`/`replaceState` outside the router, ad and analytics scripts included (§3)
+- [ ] No keyword-density thinking anywhere in the process; natural topic
+      vocabulary only (§3)
+- [ ] Titles unique, front-loaded, truthful; meta descriptions written as
+      SERP ad copy; one H1; H2s carry the argument (skim test) (§4)
+- [ ] Internal links use descriptive anchors; no orphan pages; external
+      links to primary sources present; slugs short and stable, and a changed
+      slug redirects (§4)
+- [ ] AI-assisted content: human domain review recorded, all numbers/
+      citations verified, no fabricated experience framing; AI-usage policy
+      published if applicable; EU public-interest text either disclosed as
+      AI-generated or carries a named editor (AI Act Art. 50(4)) (§5)
+- [ ] No GEO/AEO folklore in the strategy: no llms.txt-for-Google, chunking,
+      AI-rewriting, or special-schema tactics sold as AI-visibility work;
+      AI-surface appearance managed via the standard preview controls /
+      Search Console setting (§6)
+- [ ] Re-verification schedule exists for time-sensitive facts; overlap
+      merged; prune list maintained; every moved URL has a 301; near-duplicates
+      that must exist are canonicalized, one canonical per intent (§7)

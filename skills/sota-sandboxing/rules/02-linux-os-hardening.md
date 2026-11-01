@@ -1,0 +1,392 @@
+# 02 — Linux OS-Level Primitives: namespaces, cgroups, seccomp, Landlock, LSMs, capabilities
+
+Scope: the kernel mechanisms every Linux sandbox is built from. Applies whether you
+assemble them by hand (`clone3`/`unshare`, minijail, bubblewrap, nsjail, systemd) or
+consume them via a container runtime (then also read `03`).
+
+---
+
+## 1. Namespaces
+
+**R1.1 — Unshare every namespace you don't need to share.** A sandboxed process gets
+new `mount`, `pid`, `net`, `ipc`, `uts`, `cgroup`, and (where possible) `user`
+namespaces. Each shared namespace is reachable attack surface: shared `net` = host
+loopback services; shared `pid` = signal/ptrace targets + `/proc/<pid>` of host
+processes; shared `ipc` = SysV shm/semaphore tampering.
+
+**R1.2 — User namespaces: two distinct rules.**
+- *Rootless sandboxing* (good): map sandbox-root to an unprivileged host UID
+  (`unshare -r`, podman rootless, bubblewrap). "root" inside has no host privilege;
+  a container breakout lands as `nobody`-equivalent.
+- *Unprivileged userns as kernel attack surface* (risk): unprivileged userns creation
+  exposes normally-root-only kernel paths (netfilter, etc.) to any local user — a
+  recurring LPE vector. On hosts that run untrusted code, restrict creation to
+  sandboxing helpers: `kernel.unprivileged_userns_clone=0` (Debian),
+  `user.max_user_namespaces` quota, or AppArmor `userns` restriction (Ubuntu 24.04+ —
+  Qualys showed three bypasses, aa-exec/busybox/LD_PRELOAD, oss-security 2025-03-27;
+  also set `kernel.apparmor_restrict_unprivileged_unconfined=1`, and treat it as
+  hardening, not a boundary). Decide deliberately; don't leave the distro default unexamined.
+
+**R1.3 — PID namespace needs a real init.** PID 1 inside must reap zombies and forward
+signals (`tini`, `catatonit`, or `--init`). Combine with new `proc` mount
+(`mount -t proc`) — never bind the host's `/proc` into a PID-namespaced sandbox
+(leaks host process info and `/proc/sys` write paths).
+
+**R1.4 — Mount namespace hygiene.** Build the sandbox filesystem from nothing:
+pivot_root (not chroot) into a minimal tree; mount with `nosuid,nodev,noexec` wherever
+possible; mark propagation `MS_PRIVATE`/`MS_SLAVE` so sandbox mounts can't propagate to
+the host. Mask `/proc/kcore`, `/proc/sys`, `/sys/firmware`, `/proc/sysrq-trigger`.
+
+**R1.5 — Network namespace default: empty.** A new netns has only loopback (down).
+That *is* the network policy for most parsers and codegen sandboxes. Add connectivity
+only via an explicit veth/slirp/proxy with an egress allowlist (see `05` §3).
+
+## 2. cgroups v2
+
+**R2.1 — Every sandbox gets a resource budget.** Unbounded sandboxes convert "escape
+attempt failed" into "host DoS succeeded." Set, at minimum:
+
+```
+# cgroup v2 controllers for an untrusted job
+memory.max=512M  memory.swap.max=0      # hard cap, no swap escape hatch
+pids.max=128                            # fork-bomb stopper
+cpu.max="50000 100000"                  # 0.5 CPU
+io.max="259:0 rbps=10485760 wbps=10485760"
+```
+
+systemd-run equivalent (preferred over hand-rolled cgroup writes):
+`systemd-run --scope -p MemoryMax=512M -p MemorySwapMax=0 -p TasksMax=128 -p CPUQuota=50% cmd`
+
+**R2.2 — `memory.max` + `memory.oom.group=1`** so the OOM kill takes the whole sandbox
+atomically, not one random victim thread that leaves a half-alive job.
+
+**R2.3 — `pids.max` is non-negotiable** for any sandbox that can `fork`/`clone`.
+
+**R2.4 — cgroup v1 is legacy**; on mixed hosts verify which hierarchy actually
+enforces the limits you set. Don't mount the host cgroupfs writable inside a sandbox
+(release_agent-style escapes; mount it read-only or not at all).
+
+## 3. seccomp-bpf
+
+**R3.1 — Deny-by-default (`SCMP_ACT_ERRNO` default action), explicit allowlist.**
+Docker's default profile is a *blocklist-shaped allowlist* of ~350 syscalls tuned for
+compatibility, not least privilege. For a real sandbox, profile the workload
+(`strace -cf`, or `perf trace`) and allow only what it uses — typically 40–80 syscalls.
+
+```json
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "defaultErrnoRet": 1,
+  "architectures": ["SCMP_ARCH_X86_64", "SCMP_ARCH_AARCH64"],
+  "syscalls": [
+    { "names": ["read","write","close","fstat","lseek","mmap","mprotect",
+                "munmap","brk","rt_sigaction","rt_sigreturn","futex",
+                "exit","exit_group","clock_gettime","getrandom"],
+      "action": "SCMP_ACT_ALLOW" },
+    { "names": ["openat"], "action": "SCMP_ACT_ALLOW",
+      "comment": "constrain paths with Landlock; seccomp can't see strings" },
+    { "names": ["clone"], "action": "SCMP_ACT_ALLOW",
+      "args": [{ "index": 0, "op": "SCMP_CMP_MASKED_EQ",
+                 "value": 2114060288, "valueTwo": 0,
+                 "comment": "deny CLONE_NEW* flags" }] },
+    { "names": ["clone3"], "action": "SCMP_ACT_ERRNO", "errnoRet": 38,
+      "comment": "ENOSYS: flags sit behind a pointer, so deny it and let glibc fall back to clone" }
+  ]
+}
+```
+**clone3 must fail with `ENOSYS` (38), not the default `EPERM`.** glibc's `pthread_create`
+tries `clone3` first and falls back to `clone` only on `ENOSYS` (`clone-internal.c`), so
+an `EPERM` default breaks every thread start (measured 2026-09-26, podman+crun: Python
+`can't start new thread`; with the rule above, threads start). Confirm the errno your
+runtime actually delivers: crun before 1.30 caches compiled filters under a checksum that
+omits per-rule `errnoRet`, so a profile differing from an earlier one only in `errnoRet`
+silently reuses the old filter (reproduced 2026-09-27 on crun 1.24 — `errnoRet` 38, then 95,
+on the same rule set both returned 38; fixed in crun 1.30, commit `10b754c`).
+
+**R3.2 — Syscalls that must never appear in an untrusted-workload allowlist** unless
+specifically justified: `ptrace`, `process_vm_readv/writev`, `bpf`, `perf_event_open`,
+`mount`/`move_mount`/`fsmount`, `umount2`, `pivot_root`, `chroot` (post-setup),
+`init_module`/`finit_module`, `kexec_load`, `open_by_handle_at`, `userfaultfd`,
+`keyctl`/`add_key`, `setns`, `unshare` (post-setup), `io_uring_setup` (large,
+fast-moving attack surface — deny for untrusted code), `quotactl`, `reboot`,
+`settimeofday`/`clock_settime`, `acct`, `personality`.
+
+**R3.3 — Seccomp filters argument *values*, never dereferenced pointers.** It cannot
+check the path passed to `openat` — pair seccomp (syscall surface) with Landlock or
+mount namespaces (file scope). Designs that claim path filtering in seccomp are bugs.
+
+**R3.4 — Mechanics that matter:**
+- Set `no_new_privs` before loading the filter (mandatory for unprivileged seccomp;
+  also blocks setuid re-escalation).
+- Cover **all architectures** the kernel can execute (x86-64 *and* x32/i386 entry on
+  amd64 hosts — attackers switch ABI to dodge filters); either list every arch or kill
+  foreign-arch syscalls with `SCMP_ACT_KILL_PROCESS`.
+- Prefer `SCMP_ACT_ERRNO` for compat probing noise, `SCMP_ACT_KILL_PROCESS` for the
+  hard-deny set in R3.2.
+- `seccomp_unotify` (user-space supervisor) is for *emulation/brokering*, not security
+  decisions on pointer args (TOCTOU on memory reads unless using `SECCOMP_IOCTL_NOTIF_ADDFD`
+  and pidfd-based reads carefully).
+
+## 4. Landlock
+
+**R4.1 — Use Landlock for unprivileged filesystem (and 6.7+ network-port) scoping.**
+It is stackable, needs no root, and complements seccomp: seccomp limits *which*
+syscalls, Landlock limits *which objects*. ABI v4 (kernel 6.7) adds TCP bind/connect
+port control; ABI v6 adds IPC scoping (`LANDLOCK_SCOPE_SIGNAL`,
+`LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET`) — close these channels for untrusted code;
+ABI v7 (kernel 6.15+) emits `LANDLOCK_ACCESS` denial records via the audit
+subsystem — wire them into detection; ABI v8 (kernel 7.0) adds
+`LANDLOCK_RESTRICT_SELF_TSYNC` to apply a ruleset across all threads of the
+process; ABI v9 (kernel 7.1) adds pathname-UNIX-socket scoping
+(`LANDLOCK_ACCESS_FS_RESOLVE_UNIX`); mainline (as of 2026-09-26) adds v10 (UDP
+bind/connect-send + quiet rule logging) and v11 (`LANDLOCK_RESTRICT_SELF_NO_NEW_PRIVS`)
+— check the landlock(7) VERSIONS table for the kernels shipping them.
+
+```c
+// HANDLE every right (R4.2) — an unhandled right stays allowed. Then clear the bits the
+// running ABI lacks (landlock.rst's switch on the ABI version) and grant back per path:
+// read-only on /usr, read-write only on the job dir; everything else denied.
+struct landlock_ruleset_attr attr = {
+  .handled_access_fs = LANDLOCK_ACCESS_FS_EXECUTE | LANDLOCK_ACCESS_FS_WRITE_FILE |
+      LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR |
+      LANDLOCK_ACCESS_FS_REMOVE_DIR | LANDLOCK_ACCESS_FS_REMOVE_FILE |
+      LANDLOCK_ACCESS_FS_MAKE_CHAR | LANDLOCK_ACCESS_FS_MAKE_DIR |
+      LANDLOCK_ACCESS_FS_MAKE_REG | LANDLOCK_ACCESS_FS_MAKE_SOCK |
+      LANDLOCK_ACCESS_FS_MAKE_FIFO | LANDLOCK_ACCESS_FS_MAKE_BLOCK |
+      LANDLOCK_ACCESS_FS_MAKE_SYM | LANDLOCK_ACCESS_FS_REFER |          /* v2 */
+      LANDLOCK_ACCESS_FS_TRUNCATE | LANDLOCK_ACCESS_FS_IOCTL_DEV |      /* v3, v5 */
+      LANDLOCK_ACCESS_FS_RESOLVE_UNIX,                                  /* v9 */
+  .handled_access_net = LANDLOCK_ACCESS_NET_BIND_TCP | LANDLOCK_ACCESS_NET_CONNECT_TCP |
+      LANDLOCK_ACCESS_NET_BIND_UDP | LANDLOCK_ACCESS_NET_CONNECT_SEND_UDP, /* v4; UDP v10 */
+  .scoped = LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET | LANDLOCK_SCOPE_SIGNAL, /* v6 */
+};
+```
+Then add rules per path FD and `landlock_restrict_self()` after `prctl(PR_SET_NO_NEW_PRIVS,1)`.
+Check ABI version at runtime and **fail closed** if the kernel lacks the features you need.
+
+**R4.2 — Handled-access completeness:** any access type *not* in `handled_access_fs`
+is implicitly allowed — a classic Landlock misconfiguration. Handle every access
+right the ABI supports, then grant back selectively.
+
+## 5. Capabilities
+
+**R5.1 — Drop ALL, add back the minimum.** Root with all caps split across ~40 bits;
+several are root-equivalent on their own: `CAP_SYS_ADMIN` (catch-all; mounts, etc.),
+`CAP_SYS_PTRACE` (read any process memory), `CAP_SYS_MODULE`, `CAP_DAC_OVERRIDE`/
+`CAP_DAC_READ_SEARCH`, `CAP_SETUID`/`CAP_SETGID`, `CAP_SYS_RAWIO`, `CAP_BPF`+`CAP_PERFMON`,
+`CAP_NET_ADMIN` (in host netns), `CAP_SYS_BOOT`, `CAP_MKNOD`, `CAP_SYS_CHROOT` (escape
+helper). Typical legitimate add-back for a service: `CAP_NET_BIND_SERVICE` — and even
+that is obsolete if you bind ≥1024 or use systemd socket activation /
+`net.ipv4.ip_unprivileged_port_start=0`.
+
+**R5.2 — Clear the *bounding* set, not just effective/permitted**, so execve'd
+children can't reacquire. Also scrub ambient capabilities.
+
+**R5.3 — `no_new_privs` everywhere** (`prctl(PR_SET_NO_NEW_PRIVS,1)`,
+`NoNewPrivileges=yes`, `securityContext.allowPrivilegeEscalation: false`): neutralizes
+setuid/setgid/file-caps binaries inside the sandbox. There is almost no valid reason
+for a sandboxed workload to lack it; absence is a finding.
+
+## 6. LSMs: AppArmor / SELinux
+
+**R6.1 — Run one MAC LSM in enforcing mode on sandbox hosts.** It's the layer that
+holds when DAC and namespaces are misconfigured. SELinux (RHEL-family: containers get
+`container_t` with per-instance MCS categories — sVirt — giving inter-container and
+container↔host file isolation for free) or AppArmor (Debian/Ubuntu:
+`docker-default`-style profile denying `/proc` and `/sys` writes, mount, ptrace peers).
+
+**R6.2 — Never `setenforce 0` / `unconfined` to "fix" a denial.** Diagnose with
+`ausearch -m AVC` / `journalctl` + `audit2allow -w`, then write a *narrow* rule.
+`label=unconfined`, `apparmor=unconfined`, `:Z`-mounting whole host paths, or a
+permissive-everything custom profile are findings, not fixes.
+
+**R6.4 — A shipped profile declared `flags=(unconfined)` is a grant, not a carve-out.** AppArmor
+ships such profiles so that named binaries keep a permission a policy otherwise withholds. The
+documented case is user-namespace creation under `kernel.apparmor_restrict_unprivileged_userns=1`,
+which allows it only to a profile with a `userns,` rule (Ubuntu's rollout, Launchpad #2035315).
+Leave them as shipped, and do not report them under R6.2. That rule is about runtime opt-outs
+(`apparmor=unconfined`, `--security-opt`) and hand-written permissive profiles. Field-measured
+2026-10-22 on apparmor 4.1.8: 78 of 145 shipped profiles carried the flag, and forcing all of them
+into complain mode broke rootless Podman (`failed to reexec: Permission denied`). Toggling the
+`podman` profile alone, with each other change reverted, reproduced and cleared it. Why complain
+mode denied anything there is **unverified**. Count them: `grep -l 'flags=(unconfined)' /etc/apparmor.d/*`.
+
+**R6.3 — LSM is your mount-scope backstop**, not your primary policy. Primary scoping
+comes from mount namespaces/Landlock; LSM catches what they miss (e.g., leaked FDs,
+`/proc/$pid/root` traversals).
+
+## 7. Filesystem & misc hardening
+
+**R7.1 — Read-only root, explicit writable tmpfs.** Rootfs mounted `ro`; writable
+space is `tmpfs` with `size=`, `nosuid,nodev,noexec`, at known mountpoints (`/tmp`,
+job dir). W^X at the filesystem level: nothing both writable and executable unless
+the workload is a JIT (then confine the JIT dir alone).
+
+**R7.2 — rlimits still matter inside cgroups:** `RLIMIT_NOFILE` (fd exhaustion),
+`RLIMIT_CORE=0` (no core dumps of sensitive memory), `RLIMIT_FSIZE` (output bombs),
+`RLIMIT_NPROC` as belt-and-braces with `pids.max`, CPU time via `RLIMIT_CPU` for
+single-process jobs (cgroup `cpu.max` throttles but never terminates — you also need
+a wall-clock kill, see `05` §4).
+
+**R7.2a — never `RLIMIT_AS` for a memory budget; use `RLIMIT_DATA` or the cgroup.**
+`RLIMIT_AS` bounds *reserved address space*, and every modern managed runtime
+reserves gigabytes of it at startup regardless of its resident set — so an AS cap
+anywhere near the real memory need kills the process **at startup**, on legitimate
+input. Measured 2026-08-18 in a container, linux/amd64:
+
+| runtime | `VmSize` at startup | `VmRSS` | under `ulimit -v 512M` |
+|---|---|---|---|
+| Go 1.26, hello world | 1,227,204 kB (~1.17 GiB) | 2,376 kB | `fatal error: failed to reserve page summary memory` |
+| Temurin 25, `-Xmx128m` | 3,937,756 kB (~3.75 GiB) | 112,908 kB | `Could not reserve enough space for 131072 KB object heap` |
+| native C, many shared libs (`ffprobe` 7.1) | — | — | under `ulimit -v 200M`: exit **127**, `error while loading shared libraries: … failed to map segment` |
+
+**Native binaries fail differently, and the code says "missing", not "failed".** The last row
+dies in the dynamic loader before `main`, and **127** is the shell's *command not found* code.
+A caller that maps a non-zero probe to "no output" or "tool unavailable" turns the AS cap into a
+silent skip: the inspection reports **EMPTY**, not FAILED. Reproduced 2026-10-12 on
+`debian:stable-slim` with ffmpeg: `ulimit -d 200M` runs the same probe (rc 0) and still kills a
+400 MiB allocation (rc 12). Field-reported first in a file-inspection worker, where an AS cap
+had already been patched twice at the symptom.
+
+Reported against Go 1.14, whose allocator change introduced the jump
+(golang/go#38010); it has not come back down — the row above is Go 1.26. **`RLIMIT_DATA` is the working knob**: since Linux 4.7 it covers private
+anonymous `mmap` as well as `brk` (`man 2 setrlimit`), so it bounds a Go or JVM heap
+without touching the reservation. Same run, both arms: `ulimit -d 512M` completes a
+200 MiB workload, `ulimit -d 128M` kills a 400 MiB one. On kernels older than 4.7
+`RLIMIT_DATA` bounds only `brk` and will not cap an mmap-backed heap at all — check
+the kernel before relying on it. Testing only the deny arm here is how the AS cap
+survives review: it refuses the runaway allocation exactly as intended, and also
+every legitimate one ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a).
+
+**R7.2b — when you cannot get a cgroup (a child inside an existing container).**
+`memory.max` is the right primitive and is routinely *unavailable* to the process
+that needs it: in a default container the cgroupfs is mounted **`ro`**, so you
+cannot create the child cgroup — while `cgroup.controllers` cheerfully lists `cpu io
+memory pids`. Verified 2026-08-18 (podman, `cgroupns=private`, unprivileged):
+`mkdir /sys/fs/cgroup/probe` → `Read-only file system`; remounting it `rw` →
+`Permission denied`. **Probe with `mkdir`, never by reading `cgroup.controllers`** —
+the controller list describes the hierarchy, not your write access to it (the
+"it's enabled" claim of [`sota-code-security` rules/10](../../sota-code-security/rules/10-silent-control-failure.md), applied to cgroups).
+Fallbacks, best first:
+
+1. **A delegated sub-cgroup** — needs the runtime to hand you a writable subtree
+   (systemd `Delegate=yes`, or a rw cgroupfs mount). Never satisfy this by mounting
+   the *host* cgroupfs writable into the sandbox (R2.4).
+2. **`RLIMIT_DATA`** (R7.2a) — kernel-enforced, per-process, needs no privilege and
+   survives the nesting. The realistic answer for a forked worker.
+3. **Give the child its own container/pod** with its own limits instead of nesting —
+   the only option that also restores `pids.max` and `cpu.max`.
+4. **A parent watchdog** polling the child's RSS and `SIGKILL`-ing it — lossy by the
+   poll interval, so budget headroom; it terminates rather than throttles, which is
+   what a runaway parser needs.
+
+**Not Linux: macOS has no cgroup and accepts no memory rlimit.** `setrlimit` rejects
+`RLIMIT_DATA`, `RLIMIT_AS` and `RLIMIT_RSS` (`EINVAL`; `ulimit -d`/`-v` print "cannot modify
+limit"; CPython's `resource.setrlimit` raises `ValueError` for `EINVAL`, per `Modules/resource.c`),
+and a Python `preexec_fn` that tries aborts the spawn with `SubprocessError`. Measured
+2026-10-23 on macOS 26.7.1 with CPython 3.9.6 and 3.14.8 (control: `RLIMIT_NOFILE` lowers fine);
+the same `preexec_fn` capped a child at 1 GiB on Linux. So only 3 (a container, which on macOS is
+a Linux VM) and 4 remain there.
+
+Runtime knobs are **not** a boundary for untrusted code: `GOMEMLIMIT` is documented
+as a *soft* limit that excludes `syscall.Mmap` and C-allocated memory
+(`runtime/debug.SetMemoryLimit`), `-Xmx` bounds only the Java heap, and the workload
+can raise either. Use them for your own risky parser, never as the cap on code you
+do not trust.
+
+**R7.3 — Scrub inherited state across the boundary:** close all FDs except the
+designed ones (`close_range(3, ~0U, 0)` or `O_CLOEXEC` discipline), reset signal
+handlers/mask, empty environment then set an explicit one, `umask 077`, detach
+controlling TTY (TIOCSTI/ioctl injection — use a pty pair or `TIOCSTI`-blocking
+seccomp if a TTY is required).
+
+**R7.4 — systemd as a sandbox assembler** for services: `DynamicUser=yes`,
+`ProtectSystem=strict`, `ProtectHome=yes`, `PrivateTmp=yes`, `PrivateDevices=yes`,
+`PrivateNetwork=yes` (when no net needed), `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`,
+`RestrictNamespaces=yes`, `LockPersonality=yes`, `MemoryDenyWriteExecute=yes`,
+`SystemCallFilter=@system-service` minus `@privileged @resources @mount`,
+`CapabilityBoundingSet=`, `NoNewPrivileges=yes`, `UMask=0077`. Verify with
+`systemd-analyze security <unit>` — target "OK"/low exposure score; >8.0 on a
+network-facing service is a finding.
+
+## 8. Host kernel attack-surface sysctls (sandbox hosts)
+
+**R8.1 — Baseline for any host running untrusted workloads:**
+
+```bash
+kernel.unprivileged_bpf_disabled=1      # eBPF LPEs; pair w/ JIT hardening below
+net.core.bpf_jit_harden=2
+kernel.yama.ptrace_scope=2              # admin-only ptrace (3 = none, if tolerable)
+kernel.dmesg_restrict=1
+kernel.kptr_restrict=2                  # no kernel pointers in /proc
+kernel.perf_event_paranoid=3            # perf is an LPE+side-channel surface
+kernel.sysrq=0
+kernel.kexec_load_disabled=1
+fs.protected_symlinks=1  fs.protected_hardlinks=1
+fs.protected_regular=2   fs.protected_fifos=2
+fs.suid_dumpable=0
+vm.unprivileged_userfaultfd=0           # userfaultfd = exploit primitive
+user.max_user_namespaces=<quota or 0>   # per R1.2 decision
+```
+
+**R8.2 — Module surface:** `modules_disabled=1` after boot where feasible, or at
+minimum a module blocklist for ancient parsers the kernel auto-loads on demand
+(dccp, sctp, rds, tipc, ax25 …) — `install <mod> /bin/false` in modprobe.d.
+Lockdown mode (`lockdown=confidentiality`) where the platform supports it.
+
+**R8.3 — These are host-wide layers, not per-sandbox substitutes.** They reduce the
+kernel-LPE surface that rank-5/6 sandboxes (per `01`) expose by construction; they
+do not change the boundary class.
+
+---
+
+## Audit checklist
+
+- [ ] All seven namespace types unshared unless a documented need to share; host
+      `/proc` never bind-mounted into PID-namespaced sandboxes; PID 1 inside is a
+      reaping init (`tini`, `catatonit`, `--init`); the root is built with
+      `pivot_root` (not chroot), mount propagation `MS_PRIVATE`/`MS_SLAVE`, and
+      `/proc/kcore`, `/proc/sys`, `/sys/firmware`, `/proc/sysrq-trigger` masked (§1).
+- [ ] Userns posture decided explicitly: rootless mapping used for sandboxes AND
+      unprivileged userns creation restricted on untrusted-code hosts (§1).
+- [ ] cgroup v2 budget present: `memory.max` + `swap.max=0`, `pids.max`, `cpu.max`,
+      `io.max`, `memory.oom.group=1`; host cgroupfs not writable from inside; on mixed
+      hosts the enforcing hierarchy is confirmed v2 (`stat -fc %T /sys/fs/cgroup`
+      with GNU stat on the host prints `cgroup2fs`) (§2).
+- [ ] Memory bounded by cgroup `memory.max` or `RLIMIT_DATA` — **never
+      `RLIMIT_AS`**, which kills Go/JVM workloads at startup (R7.2a); where no
+      cgroup can be created, the fallback is chosen deliberately and write access
+      was probed with `mkdir`, not inferred from `cgroup.controllers` (R7.2b). On a
+      macOS host neither applies (R7.2b, *Not Linux*): `setrlimit` returns `EINVAL`, so
+      require a container or an RSS watchdog and confirm the `setrlimit` return is checked.
+      `GOMEMLIMIT` or `-Xmx` never stands as the memory cap for code you do not trust (§7).
+- [ ] seccomp: deny-by-default allowlist (not the Docker default for high-risk
+      workloads); all ABIs covered; R3.2 hard-deny set absent from allowlist;
+      filter loaded after `no_new_privs`, before untrusted code; a `clone3` deny
+      returns `"errnoRet": 38` (ENOSYS), not the default `EPERM` (§3).
+- [ ] No design relies on seccomp filtering pointer arguments (paths), and no
+      `seccomp_unotify` supervisor makes a security decision on a pointer
+      argument (§3).
+- [ ] Landlock (or mount-ns scoping) restricts file access to enumerated paths;
+      every `handled_access_fs` bit the running ABI supports handled, and
+      `handled_access_net` and `scoped` (abstract-UNIX socket, signal) set where
+      the ABI has them; fails closed on old kernels (§4).
+- [ ] Capabilities: bounding set cleared, ambient scrubbed, add-backs individually
+      justified; no `CAP_SYS_ADMIN`/`CAP_SYS_PTRACE`/`CAP_BPF`, nor any other
+      root-equivalent capability R5.1 lists, for untrusted work (§5).
+- [ ] `no_new_privs` set on every sandboxed process (§5).
+- [ ] One LSM enforcing on hosts; no unconfined/permissive carve-outs **you added** without
+      written justification, no `:Z` relabel of a whole host path, and no `setenforce 0`
+      used to clear a denial. Shipped `flags=(unconfined)` profiles are grants (R6.4): not a
+      finding, and not to be forced into complain or enforce mode (§6).
+- [ ] Read-only rootfs; writable mounts are size-capped tmpfs `nosuid,nodev,noexec`;
+      nothing both writable and executable except a confined JIT dir (§7).
+- [ ] FDs, env, signals, TTY scrubbed at the boundary; `umask 077`; `RLIMIT_CORE=0`,
+      `RLIMIT_NOFILE` and `RLIMIT_FSIZE` set; wall-clock kill exists in addition to
+      CPU quota (§7).
+- [ ] systemd services: `systemd-analyze security` exposure reviewed (above 8.0 on a
+      network-facing service is a finding); the R7.4 set applied or deviations
+      justified (§7).
+- [ ] Sandbox hosts apply the R8.1 sysctl baseline (esp. unprivileged BPF,
+      userfaultfd, ptrace_scope, perf_event_paranoid) and restrict on-demand
+      module autoloading; deviations documented (§8).

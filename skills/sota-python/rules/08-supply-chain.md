@@ -1,0 +1,144 @@
+# 08 — Dependency & Supply-Chain Hygiene, Static-Analysis Gates
+
+Split out of [rules/05](05-security.md) (formerly sections 9 and 10) on 2026-09-25, when [rules/05](05-security.md) neared the
+500-line cap; they are now §1 and §2.
+
+## 1. Dependency & supply-chain hygiene
+
+- **Audit continuously — the project's lock, not the scanner's own venv:** in CI on a
+  schedule, not just on PRs (new CVEs land against old lockfiles), run
+  `uv export --format requirements-txt --no-emit-project | uvx pip-audit --disable-pip -r /dev/stdin`
+  (`--disable-pip` needs the hashes the export writes by default — do not add `--no-hashes`;
+  a failed export makes pip-audit exit 1, so it fails closed) or
+  `osv-scanner --lockfile uv.lock`.
+  **A project with no third-party dependencies false-reds that pipe.** Its export holds only
+  comments, so there are no hashes, and pip-audit exits 1 with "the --disable-pip flag can only
+  be used with a hashed requirements files" (measured, pip-audit 2.10.1; `pip-audit --locked .`
+  on an empty `pylock.toml` likewise exits 1, "missing packages in lockfile"). Do not silence
+  it with `--no-deps`: that also turns a *failed* export into "No known vulnerabilities found",
+  exit 0, unless the shell has `pipefail` (measured). Count first, print the count, and skip
+  by name:
+  `uv export --format requirements-txt --no-emit-project -o audit-req.txt && n=$(grep -cE '^[A-Za-z0-9]' audit-req.txt || true) && echo "pip-audit: $n pinned packages" && { [ "$n" -eq 0 ] && echo 'SKIP: no third-party dependencies'; [ "$n" -eq 0 ] || uvx pip-audit --disable-pip -r audit-req.txt; }`
+  (measured in bash and zsh: exit 0 with a SKIP line on the empty project, 1 on the vulnerable
+  one, 2 where the export fails). `uv audit` reported "0 packages" and exited 0 on the empty
+  project. A committed `pylock.toml` ([rules/01](01-tooling-project-setup.md) §1) is read by `pip-audit --locked .`, which
+  exited 1 on the vulnerable lock.
+  **Bare `uvx pip-audit` is wrong:** with no `-r`, pip-audit audits the environment it runs in,
+  and `uvx` gives it a throwaway venv holding only pip-audit and its own deps — it reports "No
+  known vulnerabilities found" and exits 0 on any project. `uv run pip-audit` fails (exit 2)
+  unless pip-audit is a project dependency, so `uv run pip-audit 2>/dev/null || uvx pip-audit`
+  hides that error and falls through to the wrong scan. `uv run --with pip-audit pip-audit`
+  does audit the project venv (it syncs it first, and the report also covers pip-audit's own
+  deps). Measured 2026-09-25 (uv 0.12.0, osv-scanner 2.6.0) on a uv project locking
+  `requests==2.25.0`: bare `uvx pip-audit` and the `||` fallback exit **0**; the export pipe,
+  `uv run --with`, and `osv-scanner --lockfile` exit **1**; all exit 0 on a clean project. uv
+  also has a native `uv audit` (experimental in 0.12, prints a preview warning), which exited
+  1/0 on the same pair — usable, but its flags may change.
+- **Hash-pinned, locked installs everywhere:** `uv.lock` records hashes; CI/containers use
+  `uv sync --locked`. Exporting for pip: `uv export --format requirements-txt` includes
+  `--hash` entries — keep them.
+- **Typosquatting:** verify package names on first add (`requests` not `request`, `pillow`
+  not `PIL` on PyPI, `python-dateutil` not `dateutil`). New transitive deps in a lockfile
+  diff deserve a glance — lockfile diffs are security-relevant code review.
+- **Adopting a new dependency (yours or an AI assistant's suggestion) is a decision, not a
+  keystroke.** Before `uv add`, confirm the name resolves to the project you meant —
+  `curl -s https://pypi.org/pypi/<name>/json` answers 404 for a name that does not exist, and a
+  model-suggested name that exists but whose earliest `upload_time` under `releases` is
+  only weeks old is a squatting suspect. From the same JSON read `ownership.roles` (how many owners), the
+  release history, `info.project_urls` (does "Source" point at the repo you expect?) and
+  `info.license_expression`; from `https://api.deps.dev/v3/systems/pypi/packages/<name>/versions/<ver>`
+  the `advisoryKeys` and `relatedProjects`; and the repo's OpenSSF Scorecard via
+  `https://api.securityscorecards.dev/projects/github.com/<org>/<repo>`. One owner, no source
+  link, or a repo that does not match is a reason to prefer the stdlib or a better-kept peer.
+- **A library's defaults ship in your code.** Every security-relevant option you pass — or do
+  not pass — is yours to review. Measured this session: `requests` (2.34) defaults to
+  `timeout=None`, so a call with no `timeout=` can hang forever (httpx 0.28 defaults to 5 s);
+  `flask_cors.CORS(app)` (6.0) with no `origins=` reflects **any** `Origin` back; Jinja2
+  (3.1.6) `Environment()` has `autoescape=False` (§1). Set them explicitly, at one factory.
+- **README snippets are demos.** A quick-start copied verbatim brings `verify=False`,
+  `CORS(app)`, `debug=True` ([rules/05](05-security.md) §8a) or a hardcoded key with it; strip each demo setting before
+  it leaves the prototype. (OWASP: Vulnerable Dependency Management, Software Supply Chain
+  Security and Secure Coding with AI cheat sheets; SCVS V1, V6.)
+- **No `pip install` from URLs/git in prod paths** without commit pinning
+  (`package @ git+https://...@<full-sha>`).
+- **Publish via PyPI Trusted Publishing (OIDC), not long-lived API tokens.** The GhostAction
+  campaign (Sept 2025) exfiltrated thousands of CI secrets including PyPI tokens via
+  injected GitHub Actions workflows; PyPI invalidated the stolen tokens and recommends
+  Trusted Publishers (short-lived, repo-scoped). With `pypa/gh-action-pypi-publish` ≥v1.11
+  under a Trusted Publisher, PEP 740 attestations (build provenance) are generated by
+  default — don't disable them. Pin third-party Actions by commit SHA, not tag.
+- **Code that runs at install time.** A wheel install executes nothing, but an **sdist
+  build** runs the package's build backend (`[build-system] requires`/`build-backend`, an
+  in-tree `backend-path`, `setup.py`, a hatchling `hatch_build.py` hook, native-extension
+  compile steps) — with your environment variables. pip and uv both build sdists **by
+  default**. Separately, a `.pth` file a package drops into site-packages runs its `import`
+  lines at **every** interpreter start (`python -S` skips it). Controls: `uv sync --no-build`
+  / `UV_NO_BUILD=1` / `[tool.uv] no-build = true`, or per package `no-build-package = [..]`
+  (`--no-build` refuses the editable root project too — pair it with `--no-install-project`);
+  pip `--only-binary :all:` (it does not stop a local-directory requirement from being built).
+  Review: on a bump that pulls an sdist, diff its `setup.py`/`pyproject.toml`/`hatch_build.py`
+  and any new `.pth` in the lockfile PR; put the repo's own `pyproject.toml`, `setup.py`,
+  `hatch_build.py` and any custom backend under CODEOWNERS review, AI-authored changes
+  included. CI: install without secrets in env (a separate job from publish/deploy), or with
+  builds disabled. (OWASP: CI/CD Security, Software Supply Chain Security and NPM Security
+  cheat sheets.)
+- Each project in its own venv (uv default); never share one env across trust levels, never
+  install into the interpreter that runs your OS tooling.
+- Containers: multi-stage build, `uv sync --locked --no-dev`, run as non-root, no compiler
+  toolchain in the final image, digest-pinned `FROM` ([rules/01](01-tooling-project-setup.md) §9).
+- **A bundled artifact may carry no scanner-readable dependency list.** PyInstaller drops each
+  package's `*.dist-info` unless the spec calls `copy_metadata()`, and a `--onefile` build
+  scanned as 0 packages; a shiv zipapp keeps the metadata, but Syft does not read it. Generate
+  the SBOM from the lock at build time and fail on an empty one
+  ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6).
+
+## 2. Static analysis gates
+
+- Ruff `S` ruleset (bandit port) in the standard select ([rules/01](01-tooling-project-setup.md)) — covers most greps below
+  natively: S301 pickle, S602 shell=True, S608 SQL strings, S324 weak hashes...
+- `bandit -r src/ -ll` as a CI job if you want bandit's full set, plus
+  `opengrep scan --error --config <your-python-rules>` for taint-style findings
+  ([`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1 — the CLI is `scan`, there is no `ci` subcommand,
+  and prefer vendored or `git+`-cloned rulesets over a registry you do not control).
+- Suppressions (`# noqa: S...`, `# nosec`) require a justification comment; bare `# nosec`
+  is itself a finding.
+
+## Audit checklist
+
+- [ ] **One-shot scanners (§2)** — `uvx ruff check --select S --statistics .` ;
+      `uvx bandit -r src/ -ll -q` ;
+      `uv export --format requirements-txt --no-emit-project -o audit-req.txt && uvx pip-audit --disable-pip -r audit-req.txt`
+      (never bare `uvx pip-audit`: it scans its own tool venv and exits 0, §1; exit 1 with
+      "can only be used with a hashed requirements files" on a project with no third-party
+      dependencies is the empty case, not a finding: use §1's counted form) ;
+      `osv-scanner --lockfile uv.lock`
+- [ ] **Supply chain** —
+      `grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"` ;
+      `grep -rn "nosec\|noqa: S" --include="*.py" src/` (lists every security
+      suppression; each hit is read for a justification, not a finding, §2) ;
+      `grep -rnE '#[[:space:]]*nosec[[:space:]]*$' --include='*.py' --exclude-dir=.venv .` (bare `# nosec` [LOW])
+- [ ] **--- Adopting a dependency and its insecure defaults (§1) --- [MEDIUM; HIGH for a
+      name that does not match its intended project]** —
+      `git diff origin/main -- uv.lock | grep -E '^\+name = '` (each new package: vetted on
+      PyPI JSON, deps.dev and Scorecard?) ;
+      `grep -rnE 'requests\.(get|post|put|patch|delete|head|request)\(|CORS\([A-Za-z_][A-Za-z0-9_.]*\)' --include='*.py' src/ | grep -v 'timeout='`
+      (a `requests` call with no timeout, or `CORS(app)` allowing every origin; a call split
+      over lines needs a read, and `Session` methods are not matched)
+- [ ] **--- Code that runs at install time: sdist builds and `.pth` (§1) --- [HIGH where the
+      install step has secrets in env; MEDIUM otherwise]** —
+      `grep -rnE '(uv (sync|pip (install|sync))|pip3? install)' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' . | grep -vE -- '--no-build|--only-binary'`
+      (each hit may build an sdist and run its `setup.py`/backend: builds off, or no secrets
+      in that job?) ; `find . -name setup.py -o -name hatch_build.py -o -name '*.pth' | grep -v '/\.venv/'`
+      (each build-executing file listed in CODEOWNERS?)
+- [ ] **Publishing credentials and provenance (§1) — a long-lived PyPI token in CI [HIGH],
+      provenance switched off [MEDIUM]** —
+      `grep -rnE 'TWINE_PASSWORD|UV_PUBLISH_TOKEN|uv publish.*(--token|-t )' .github/workflows/`
+      (a token where Trusted Publishing would do);
+      `awk '/pypa\/gh-action-pypi-publish/{s=1;next} s&&/^[[:space:]]*- /{s=0} s&&/password:|attestations:[[:space:]]*.?false/{print FILENAME":"FNR": "$0}' .github/workflows/*.y*ml`
+      (scoped to that one step: the action's `password` input is a token, and its `attestations`
+      input defaults to `true`, so only an explicit `false` turns PEP 740 provenance off. A
+      fixed `grep -A` window reached a later step's registry `password:` and reported it)
+- [ ] **Bundled artifact with no build-time SBOM (§1) — MEDIUM, HIGH for a deployed
+      service** — `grep -rlE 'pyinstaller|PyInstaller|shiv[[:space:]]' --include='*.y*ml' --include='*.spec' --include='*.sh' --include='*.toml' . | head -3`
+      (each hit builds a bundle: find the step that writes an SBOM from `uv.lock` and asserts
+      a non-zero component count; an image scan of the bundle alone reads 0 packages)

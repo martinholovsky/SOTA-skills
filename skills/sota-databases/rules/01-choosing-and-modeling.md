@@ -1,0 +1,416 @@
+# 01 — Choosing the Engine & Modeling the Data
+
+## 1. Engine selection
+
+### Rule: Postgres is the default. Deviation requires a written justification.
+Postgres circa 2026 covers relational, document (JSONB), key-value (UNLOGGED
+tables, hstore), pub/sub (LISTEN/NOTIFY), job queues (SKIP LOCKED),
+time-series (native partitioning, BRIN; TimescaleDB extension), full-text
+search, and vectors (pgvector). One engine means one backup story, one
+security model, one operational skillset, and real transactions across all of
+it. Every additional datastore multiplies failure modes and removes
+cross-store transactional consistency.
+
+A second engine is justified only when a concrete, measured requirement
+exceeds what Postgres does, not when a category label sounds appealing.
+
+### Rule: Know the genuine win conditions for each alternative.
+- **Document DB (MongoDB, DynamoDB doc mode):** wins only when the access
+  pattern is truly aggregate-oriented (always read/write whole documents, no
+  cross-document joins or transactions) AND scale exceeds a single Postgres
+  primary. Schema flexibility alone is not a reason — JSONB gives you that.
+- **Key-value (DynamoDB, Redis-as-store):** wins for known-key lookups at
+  extreme throughput with single-digit-ms SLOs and simple access patterns
+  designed up front. DynamoDB punishes access patterns you didn't model.
+- **Columnar/OLAP (ClickHouse, BigQuery, DuckDB):** wins for analytical scans
+  over billions of rows. Do not run analytics on the OLTP primary; do not run
+  OLTP on a columnar store (no fast point updates). DuckDB for embedded/local
+  analytics over files.
+- **Time-series (TimescaleDB, ClickHouse, InfluxDB):** wins at high ingest
+  rates (>~100k rows/s sustained) with time-bucketed queries, retention, and
+  downsampling. Below that, partitioned Postgres tables with BRIN indexes are
+  fine — prefer TimescaleDB (stays in Postgres) over a separate system.
+- **Dedicated vector DB:** see `07-vector-and-ai.md`. Short version: pgvector
+  until >~10–50M vectors or hard multi-tenant isolation/recall requirements.
+- **Redis (or Valkey, the BSD-licensed fork):** cache, ephemeral state, rate
+  limiting, leaderboards, streams. Not a system of record. See
+  `05-reliability-and-scale.md`.
+- **Graph DB:** wins only for deep variable-length traversals (4+ hops) as the
+  core workload. Friend-of-friend (≤2–3 hops) is a recursive CTE in Postgres.
+
+### Rule: Never introduce a datastore to dodge learning the current one.
+"Postgres is slow" is almost always a missing index, a missing partition, an
+N+1, or bloat — audit those (files 03, 05) before proposing migration.
+
+## 2. Normalization vs pragmatic denormalization
+
+### Rule: Model in 3NF first; denormalize only with a measured reason.
+Start normalized: every fact stored once, updates touch one row, constraints
+enforceable. Denormalization is an optimization with a maintenance contract —
+every duplicated value needs a documented owner (trigger, application code, or
+batch job) that keeps it consistent, and an audit query that detects drift.
+
+Acceptable denormalizations:
+- Cached aggregates (`order.total_cents`, `post.comment_count`) maintained by
+  trigger or transactionally in the same write path. Always keep the source
+  rows so the value is recomputable.
+- Snapshot copies where history must not change: `order_items.unit_price_cents`
+  copied from `products.price_cents` at order time. This is not denormalization
+  — it is correct temporal modeling. Never join to current price for an old order.
+- Read-model tables/materialized views for reporting, refreshed on a schedule.
+
+```sql
+-- BAD: customer name duplicated onto orders "to avoid a join"
+CREATE TABLE orders (id ..., customer_name text, customer_email text, ...);
+
+-- GOOD: join for mutable facts, snapshot immutable-at-time facts
+CREATE TABLE orders (id ..., customer_id bigint NOT NULL REFERENCES customers(id),
+                     shipping_address jsonb NOT NULL, ...); -- address frozen at order time
+```
+
+### Rule: Arrays and JSONB do not exempt you from first normal form for relational data.
+If you ever need to query, join, constrain, or update an element individually,
+it is a child table, not an array column.
+
+## 3. JSONB usage rules
+
+### Rule: JSONB is for data whose shape you don't control or don't query relationally.
+Legitimate: external API payloads, webhook bodies, user-defined custom fields,
+sparse per-type attributes, raw event capture. Illegitimate: fields your own
+application defines and queries — those are columns.
+
+Hard rules:
+- Any JSONB key used in a WHERE clause, JOIN, or ORDER BY of a hot query gets
+  promoted to a real (or generated) column:
+  ```sql
+  ALTER TABLE events ADD COLUMN user_id bigint
+    GENERATED ALWAYS AS ((payload->>'user_id')::bigint) STORED;
+  CREATE INDEX ON events (user_id);
+  ```
+- Index JSONB with GIN only for containment (`@>`) / existence queries; use
+  `jsonb_path_ops` opclass for `@>`-only workloads (smaller, faster).
+- Validate shape with CHECK constraints where structure is required:
+  `CHECK (jsonb_typeof(payload->'items') = 'array')`.
+- Never store money, foreign keys, or status enums inside JSONB.
+- JSONB columns are updated by full-value rewrite; high-frequency partial
+  updates to large documents cause write amplification and bloat — split hot
+  mutable fields out.
+
+## 4. Primary key strategy
+
+### Rule: Surrogate keys only. Never natural keys.
+Emails change, SSNs are PII and get corrected, slugs get renamed, "unique"
+business codes collide after the next acquisition. Natural keys also cascade
+into every child table and index. Enforce natural uniqueness with a UNIQUE
+constraint, not the PK.
+
+```sql
+-- BAD
+CREATE TABLE users (email text PRIMARY KEY, ...);
+-- GOOD
+CREATE TABLE users (
+  id   bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  email citext NOT NULL UNIQUE,
+  ...);
+```
+
+### Rule: bigint identity by default; UUIDv7 when IDs leave the system.
+- `bigint GENERATED ALWAYS AS IDENTITY`: 8 bytes, perfectly ordered (dense
+  btree, good locality), human-debuggable. Default for internal tables.
+  Never `serial` (legacy, weaker permissions semantics); never `int` (you will
+  hit 2^31 at the worst time).
+- **UUIDv7** when: IDs are generated client-side/offline, exposed in URLs or
+  APIs (no sequence to walk, no row count to read off), or rows merge across regions.
+  UUIDv7 is time-ordered — it avoids UUIDv4's random-insert btree thrashing
+  and WAL bloat. Postgres 18+: native `uuidv7()`; earlier: generate in app or
+  via extension. **Never UUIDv4 as PK on a high-insert table.**
+- Hybrid pattern is fine: bigint PK internally + `public_id uuid NOT NULL
+  UNIQUE DEFAULT uuidv7()` for the API surface.
+- Note: UUIDv7 encodes creation time and creation order — if either is sensitive,
+  that is an information leak; use UUIDv4 external IDs in that case.
+- **An ID's shape is never the access control.** Object-level authz is the fix
+  for enumeration; a hard-to-guess ID is defence in depth only. RFC 9562 Section 8:
+  "Implementations SHOULD NOT assume that UUIDs are hard to guess", UUIDs "MUST
+  NOT be used as security capabilities", and where a UUID takes part in any
+  security operation "UUIDv4 … SHOULD be utilized" (read 2026-10-26). So a
+  share link or unlisted-resource URL carries a CSPRNG token, never a UUID, and
+  an ID you *rely on* to be unguessable is v4, not v7 ([`sota-threat-modeling`
+  rules/01](../../sota-threat-modeling/rules/01-methodologies.md) §2 applies the same rule to the IDOR case).
+
+### Rule: Composite PKs only on pure join/child tables.
+`(parent_id, child_id)` on a join table is correct and gives you the FK index
+for free in one direction (add the reverse-order index explicitly). Anything
+with its own lifecycle gets a surrogate key.
+
+## 5. Soft delete
+
+### Rule: Don't default to soft delete. Choose per table, and pay the full cost if you do.
+Soft delete (`deleted_at timestamptz`) costs: every query must filter it
+(ORMs forget; raw SQL forgets more), unique constraints break (deleted row
+still holds the email), FKs still point at "deleted" rows, indexes bloat with
+dead-to-the-business rows, and GDPR deletion still requires real deletion.
+
+If you soft delete, all of the following are mandatory:
+```sql
+ALTER TABLE users ADD COLUMN deleted_at timestamptz; -- NULL = live
+-- uniqueness only among live rows:
+CREATE UNIQUE INDEX users_email_live ON users (email) WHERE deleted_at IS NULL;
+-- hot-path indexes are partial:
+CREATE INDEX users_org_live ON users (org_id) WHERE deleted_at IS NULL;
+```
+- Filtering is enforced centrally (ORM default scope / view / RLS policy), not
+  per query.
+- A purge job hard-deletes after the retention window.
+- Decide FK behavior explicitly: does deleting a user soft-delete their posts?
+
+Alternatives that are usually better: hard delete + audit/history table
+(below); move rows to an `archived_*` table; status column when "deleted" is
+really a business state (`cancelled`, `disabled`) — don't conflate the two.
+
+## 6. Audit & history tables (temporal patterns)
+
+### Rule: When "who changed what, when" is a requirement, use an append-only audit table written by trigger.
+Application-level audit logging misses ad hoc fixes, backfills, and other code
+paths. Triggers don't.
+
+```sql
+CREATE TABLE audit_log (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  table_name  text NOT NULL,
+  row_pk      text NOT NULL,
+  action      text NOT NULL CHECK (action IN ('I','U','D')),
+  old_row     jsonb,
+  new_row     jsonb,
+  actor       text NOT NULL DEFAULT current_setting('app.actor', true),
+  at          timestamptz NOT NULL DEFAULT now()
+) PARTITION BY RANGE (at);
+```
+- App sets `SET LOCAL app.actor = '<user-id>'` per transaction so the trigger
+  can attribute changes.
+- Partition by month; retention = drop old partitions (file 05).
+- No UPDATE/DELETE grants on audit tables for the app role.
+
+### Rule: For "what did this row look like at time T" queries, use a history table (SCD2-style), not audit-log archaeology.
+`valid_from`/`valid_to` ranges with an exclusion constraint
+(`EXCLUDE USING gist (id WITH =, validity WITH &&)`) guarantee non-overlap;
+the `=` on a scalar id needs `CREATE EXTENSION btree_gist` first.
+Since PostgreSQL 18 the same rule is a key: `PRIMARY KEY (id, validity WITHOUT OVERLAPS)`
+"behaves like" that exclusion constraint (GiST-backed, still `btree_gist`, no empty
+ranges), and `FOREIGN KEY (id, PERIOD validity) REFERENCES parent (id, PERIOD validity)`
+requires a parent row for the child's "entire duration". A temporal FK supports no
+`CASCADE`, `SET NULL`, `SET DEFAULT` or `RESTRICT`, so parent edits need their own plan.
+Use trigger-maintained history tables or a temporal extension; query with
+`WHERE id = $1 AND validity @> $2::timestamptz`. Reserve full event sourcing
+for domains that genuinely replay events — it is an architecture, not a table
+pattern.
+
+## 7. Ledgers: money and consumable balances
+
+### Rule: The balance is derived from append-only entries, never a column you UPDATE.
+A mutable `accounts.balance` records the result of every past write and the
+reason for none of them. It drifts silently when one side of a transfer fails,
+and a retried `balance = balance - $1` is indistinguishable from a second
+payment (file 04: counters are not idempotent). Model the movement instead:
+
+```sql
+CREATE TABLE journals (              -- one row per movement
+  id          uuid PRIMARY KEY,
+  external_id text UNIQUE,           -- the operation this posts for; a retry conflicts
+  reason      text NOT NULL,
+  posted_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE ledger_entries (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  journal_id  uuid   NOT NULL REFERENCES journals(id),
+  account_id  bigint NOT NULL REFERENCES accounts(id),
+  amount      bigint NOT NULL,       -- signed minor units: negative debit, positive credit
+  currency    text   NOT NULL CHECK (currency ~ '^[A-Z]{3}$')
+);
+CREATE INDEX ledger_balance ON ledger_entries (account_id, currency) INCLUDE (amount);
+```
+- **Every movement posts at least two entries summing to zero**, in one
+  transaction, under one `journal_id`. That is the whole point: a one-sided
+  write becomes an invariant the database rejects, rather than drift you learn
+  about months later from a customer.
+- Nothing UPDATEs or DELETEs an entry. A mistake is corrected by posting the
+  reversing entry, which preserves the history of the mistake.
+- `external_id UNIQUE` on the journal, not the entry, is the idempotency key —
+  one movement, one external operation, however many legs. NULL repeats freely,
+  so internal journals need no synthetic value.
+- Balance = `SUM(amount)`. When that gets slow, add a rollup (or a per-period
+  closing balance and sum only entries since). The rollup is a **cache** — a job
+  that re-derives it from the entries and compares is the cheapest correctness
+  alarm you will ever own; a rollup that cannot be re-derived is just the
+  mutable column again.
+
+### Rule: Enforce sum-zero in the database, not in the service that writes it.
+`CHECK` cannot span rows, so the invariant needs a constraint that runs once the
+whole journal is written. In Postgres that is a deferred constraint trigger —
+per the [CREATE TRIGGER
+reference](https://www.postgresql.org/docs/current/sql-createtrigger.html), a
+constraint trigger may only be `AFTER` and `FOR EACH ROW`, and
+`DEFERRABLE INITIALLY DEFERRED` moves the check from end-of-statement to
+end-of-transaction:
+
+```sql
+CREATE CONSTRAINT TRIGGER ledger_balanced
+  AFTER INSERT ON ledger_entries
+  DEFERRABLE INITIALLY DEFERRED
+  FOR EACH ROW EXECUTE FUNCTION assert_journal_sums_to_zero();
+-- the function: SUM(amount) per (journal_id, currency) must be 0, else RAISE
+```
+Enforced in application code only, the invariant holds for the code paths that
+remembered it. Group by **currency**: a journal netting to zero across two
+currencies is two unbalanced journals: cross-currency movement posts through an
+explicit FX account so both sides balance in their own unit.
+
+## 8. Multi-tenancy
+
+### Rule: Default to shared tables with `tenant_id` + Row-Level Security.
+Scales to millions of tenants, one migration path, normal pooling.
+Requirements (all mandatory — partial implementation is a CRITICAL audit
+finding):
+```sql
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invoices FORCE ROW LEVEL SECURITY;  -- applies to table owner too
+CREATE POLICY tenant_isolation ON invoices
+  USING (tenant_id = current_setting('app.tenant_id')::bigint);
+```
+- `tenant_id bigint NOT NULL` on every tenant-scoped table, FK to tenants.
+- App sets `SET LOCAL app.tenant_id = ...` at transaction start (SET LOCAL,
+  not SET — pooled connections leak session settings; see file 04).
+- App connects as a non-owner, non-BYPASSRLS role.
+- Composite indexes lead with `tenant_id`: `(tenant_id, created_at)`, etc.
+- Wrap `current_setting` policies so the planner inlines them; benchmark RLS
+  overhead on hot queries (usually negligible with correct indexes).
+
+### Rule: Schema-per-tenant only for few (≲100), large, compliance-isolated tenants.
+Per-schema gives stronger isolation, per-tenant restore, and per-tenant
+customization — at the cost of N× migrations, catalog bloat at scale,
+connection/search_path management, and painful cross-tenant analytics. Past a
+few hundred schemas, migrations and `pg_dump` become operational hazards.
+Database-per-tenant is the same tradeoff, stronger and more expensive —
+reserve for regulated enterprise tenants. Hybrid (RLS for the long tail,
+dedicated DB for whale tenants) is a legitimate end state; design IDs and
+migrations so a tenant can be extracted.
+
+The stronger models only isolate if the security plumbing is per tenant too:
+- **Schema-per-tenant:** a role per tenant with `USAGE` on its own schema
+  only (no PUBLIC `CREATE` on any schema — file 06), so a wrong schema name
+  fails with "permission denied" instead of returning another tenant's rows.
+  Pin the path to the tenant (`ALTER ROLE tenant_42 SET search_path =
+  tenant_42`) or set it per transaction with `SET LOCAL`; a session-level
+  `SET search_path` on a pooled connection hands the previous tenant's schema
+  to the next request (file 04). Unqualified names resolve through the path, so
+  a schema writable by someone else earlier in it can shadow tables and
+  functions. Never splice a tenant name into `search_path` unquoted — build it
+  as an identifier (`format('%I')` or the driver's identifier quoting).
+  Verified on PostgreSQL 17 (2026-09-25).
+- **Database-per-tenant:** separate credentials per tenant database, network
+  rules so each tenant's credentials reach only its database, admin access
+  granted per tenant rather than one superuser path to all of them, and
+  per-tenant backups (encrypted, restorable without touching another tenant).
+OWASP: Multi Tenant Security cheat sheet.
+
+### Rule: Tenant isolation is tested, not assumed.
+Ship an automated test that sets tenant A's context and asserts zero rows
+from tenant B across every tenant-scoped table. Missing isolation tests on a
+multi-tenant system: HIGH.
+
+## 9. Modeling hygiene (defaults unless justified)
+
+- `timestamptz`, never `timestamp` (naive timestamps corrupt across zones).
+  Store UTC; convert at the edge.
+- Money: `bigint` minor units (cents) or `numeric(19,4)`. Never `float`/`real`
+  for money or anything summed.
+- Text: `text` with CHECK length limits where needed; `varchar(255)` is cargo
+  cult. `citext` for case-insensitive uniqueness (emails, usernames).
+- Enum-like states: `text` + CHECK constraint, or a lookup table. Native
+  `ENUM` types complicate value removal/rename in migrations.
+- Every table: `created_at timestamptz NOT NULL DEFAULT now()`; `updated_at`
+  maintained by trigger if used.
+- `NOT NULL` by default; a nullable column is a decision with a meaning
+  ("unknown" vs "not applicable") — document it.
+- Every FK column gets an index (Postgres does not create one automatically);
+  every FK declares `ON DELETE` behavior explicitly (RESTRICT default;
+  CASCADE only when the child is meaningless without the parent).
+- Booleans that will grow a third state are status columns; model them as
+  such the first time.
+- **Absence is `NULL` — or, in a document/graph store, an omitted property — never
+  an in-band value.** A `-1`, `0`, `9999-12-31` or `""` standing in for "unknown"
+  is a value the engine will happily compare, sort, index and aggregate as if it
+  were real. `NULL` is the one encoding every engine already knows to exclude from
+  `<`/`>` and from `AVG`; a sentinel pushes that filtering onto every read, and the
+  reads that forget fail **silently and directionally** — a sentinel loses every
+  `<` against a real value and wins every `>`, so an ordering predicate flips one
+  way or the other depending on which operand is missing. Document and
+  schemaless stores make this worse, not better: they have native property absence,
+  so writing a sentinel *discards* information the store would have kept for free,
+  and there is no column definition left for a reviewer to notice it in.
+- If a sentinel is genuinely forced (a fixed-width wire format, an upstream export
+  that cannot express absence), it is **per field with its domain written down**,
+  enforced (`CHECK (col >= 0 OR col = -1)` and a comment saying which is which),
+  and filtered **centrally on the read path** — one view, one repository method —
+  not re-derived in each of the queries that happen to remember. One sentinel
+  constant applied uniformly across a set of fields with *different* domains is the
+  common shape and the unrecoverable one: on a field where the producer also emits
+  that value legitimately, a stored sentinel is ambiguous forever. Producer-side
+  detail: [`sota-python` rules/02](../../sota-python/rules/02-typing-correctness.md) §2a.
+
+## Audit checklist
+
+- [ ] Engine choice justified; no second datastore without a written reason
+      Postgres can't satisfy; no analytics workload on the OLTP primary, no
+      OLTP on a columnar store, no Redis/Valkey as a system of record (§1).
+- [ ] No natural primary keys; no UUIDv4 PKs on high-insert tables; no `int`
+      PKs on growing tables; no `serial`; exposed IDs are non-enumerable
+      (UUIDv7/public_id), with authz — not the ID — deciding access and v4 where
+      unguessability is relied on; composite PKs only on pure join tables, with the
+      reverse-order index added (§4).
+- [ ] No mutable business facts duplicated without a documented sync mechanism
+      and a drift-detecting audit query; cached aggregates keep their source rows;
+      temporal snapshots (prices, addresses) frozen at event time; no array/JSONB
+      element that is queried, joined, constrained or updated individually (it is
+      a child table) (§2).
+- [ ] No JSONB keys used in hot WHERE/JOIN/ORDER BY without a generated column
+      + index; no money/FKs/status inside JSONB; GIN on JSONB only for
+      containment/existence (`jsonb_path_ops` when `@>`-only); required structure
+      enforced by CHECK (`jsonb_typeof`); hot mutable fields split out of large
+      documents (§3).
+- [ ] Soft-delete tables have partial unique + partial hot-path indexes,
+      centralized filtering, and a purge job; "deleted" is not conflated with
+      business states; FK behaviour on soft delete decided explicitly (§5).
+- [ ] Audit/history requirements met by trigger-based append-only tables with
+      actor attribution (`SET LOCAL app.actor`) and partitioned retention — not
+      ad hoc app logging; the app role has no UPDATE/DELETE grant on audit tables;
+      point-in-time history uses `valid_from`/`valid_to` with an
+      `EXCLUDE USING gist` non-overlap constraint, or on PostgreSQL 18+ a `WITHOUT OVERLAPS`
+      key with `PERIOD` foreign keys to it (§6).
+- [ ] Money and consumable balances: append-only entries, at least two per
+      movement summing to zero, with sum-zero enforced by a **deferred DB
+      constraint** rather than app code; balance derived (or a rollup that a job
+      re-derives and compares); corrections posted as reversing entries;
+      idempotency key `external_id UNIQUE` on the journal; sum-zero checked per
+      (journal, currency) (§7). A
+      mutable `balance` column UPDATEd in place on a money path is CRITICAL —
+      `grep -rn "balance *= *balance\|SET balance" migrations/ src/`.
+- [ ] Multi-tenant: RLS enabled AND forced on every tenant-scoped table,
+      `tenant_id NOT NULL` with an FK to tenants, SET LOCAL tenant context,
+      non-owner non-BYPASSRLS app role, tenant_id-leading indexes, automated
+      cross-tenant isolation test (§8).
+- [ ] HIGH: schema-per-tenant uses a role per tenant with USAGE on its own
+      schema only and a pinned or transaction-local `search_path`;
+      DB-per-tenant has per-tenant credentials, network rules, admin path and
+      backups; tenant names never spliced unquoted into `search_path` (§8).
+      Probe for session-level path switching from app code:
+      `grep -rniE "[\"']SET[[:space:]]+(SESSION[[:space:]]+)?search_path" .`
+- [ ] Types: timestamptz everywhere, no float money, FK columns indexed,
+      ON DELETE explicit, NOT NULL default, citext for case-insensitive
+      unique text; `created_at timestamptz NOT NULL DEFAULT now()` on every table;
+      enum-like states as `text` + CHECK or a lookup table, not native `ENUM` (§9).
+- [ ] Absence modeled as `NULL`/omitted property, not an in-band sentinel
+      (`-1`, `0`, `9999-12-31`, `""`). Where one is forced: per-field domain
+      documented, a CHECK constraint distinguishing sentinel from legitimate
+      value, and read-path filtering centralized rather than repeated per query.
+      Check the queries that **order or compare** the column first — that is
+      where a sentinel changes an answer instead of just looking odd (§9).

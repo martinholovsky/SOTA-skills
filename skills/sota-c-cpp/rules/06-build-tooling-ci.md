@@ -1,0 +1,462 @@
+# 06 — Build, tooling, and CI
+
+A C/C++ project's safety is only as good as its build and CI gates. The
+toolchain is where warnings-as-errors, static analysis, sanitizers, fuzzing,
+and supply-chain controls are enforced. This file owns build/test *mechanics*;
+test **strategy** (suite shape, doubles, coverage philosophy) lives in
+[`sota-testing`](../../sota-testing/SKILL.md).
+
+## 1. CMake hygiene (the de-facto standard)
+
+- Use modern, target-based CMake (≥3.20): `target_link_libraries`,
+  `target_compile_features(tgt PUBLIC cxx_std_23)`,
+  `target_compile_options`/`target_include_directories` with `PRIVATE`/
+  `PUBLIC`/`INTERFACE` scoping. Avoid global `include_directories`,
+  `link_libraries`, and `CMAKE_CXX_FLAGS` mutation.
+- Set the standard explicitly and require it:
+  `set(CMAKE_CXX_STANDARD 23)`, `CMAKE_CXX_STANDARD_REQUIRED ON`,
+  `CMAKE_CXX_EXTENSIONS OFF` (no `-std=gnu++23` unless you mean it).
+- **Pin the C dialect too: the compiler default moves.** GCC 15 changed the C default from
+  `gnu17` to `gnu23`, and GCC 16 the C++ default from `gnu++17` to `gnu++20` (their release
+  notes). Measured: under GCC 15.3, `typedef int bool;` built with `-std=gnu17` and failed by
+  default ("'bool' cannot be defined via 'typedef'"); GCC 16.2 with no `-std` reported
+  `__cplusplus` 202002 and `__STDC_VERSION__` 202311. Set `CMAKE_C_STANDARD` and
+  `CMAKE_C_STANDARD_REQUIRED ON` beside the C++ pair, or `-std=` in every Makefile.
+- **`-fpermissive` in a C build is a finding, not a porting fix.** GCC 14 made implicit
+  function declarations, implicit `int`, int-conversion, incompatible-pointer-types, return
+  mismatches and missing parameter types errors; its porting guide names `-fpermissive` (or
+  `-std=gnu89`/`c89`) as the way back to warnings. Measured with GCC 15.3: an undeclared call
+  plus `int *p = 5;` failed with two errors by default and produced an object file under
+  `-fpermissive`. Each is a call or pointer with the wrong type at run time: fix the code.
+- Treat compiler/linker warnings as errors in CI builds. Generate
+  `compile_commands.json` (`CMAKE_EXPORT_COMPILE_COMMANDS ON`) so clang-tidy/
+  clang-analyzer see exact flags.
+- Pin the toolchain (compiler version) in CI; build with multiple compilers
+  (GCC + Clang, and MSVC if you ship Windows) — each finds different bugs.
+- CMake 4.x removed compatibility with policy versions <3.5:
+  `cmake_minimum_required(<3.5)` now errors (`CMAKE_POLICY_VERSION_MINIMUM` is
+  the escape hatch). Audit legacy subprojects and FetchContent deps for old
+  floors before a CMake 4 toolchain bump.
+
+## 1a. Build configurations: Debug, Release, and what NDEBUG means
+
+- **Name the configurations and keep their flags apart.** *Debug*: `-O0` or `-O1`, `-g3`, `-fno-omit-frame-pointer`, `DEBUG` defined and
+  `NDEBUG` not; MSVC `/Od`. *Release*: `-O2` (MSVC `/O2`), `NDEBUG` defined, `DEBUG` not, plus
+  the hardened set in [`rules/04`](04-security.md) §5 and §5a. Sanitizer and fuzz builds are further Debug
+  variants (§3, §4), never the shipped artifact.
+- **Make a mixed or empty configuration fail loudly, or fall back to release.** CMake with no
+  `CMAKE_BUILD_TYPE` passes neither `-O` nor `-DNDEBUG` ([`rules/04`](04-security.md) §5). Default it for
+  single-config generators with `if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)` →
+  `set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)`. Measured with CMake 3.31.6, the compile
+  line then gained `-O3 -DNDEBUG`. In the source, a shared header refuses both at once and treats
+  neither as release:
+  `#if defined(NDEBUG) && defined(DEBUG)` → `#error`, then
+  `#if !defined(NDEBUG) && !defined(DEBUG)` → `#define NDEBUG` followed by `#include <assert.h>`
+  again, because `assert` follows the `NDEBUG` in force at each inclusion. Measured with Apple clang
+  21: `-DNDEBUG -DDEBUG` stopped at the `#error`, a plain build ran `assert(0)` as a no-op, and
+  `-DDEBUG` aborted. The `APP_RELEASE` guard in [`rules/04`](04-security.md) §5 is the check the release pipeline adds.
+- **No "test" configuration that turns private members public** (`-Dprivate=public` and similar).
+  The C++ standard forbids a macro named like a keyword ([cpp.replace.general]), and the build
+  tests an access model you never ship. Test through the public interface. Where an
+  internal really needs a direct test, move it into its own unit with a real interface.
+  ([`sota-testing`](../../sota-testing/SKILL.md) owns test strategy.)
+- **Flags must reach every compiled unit.** Plain Make does not rebuild when only the flags change.
+  Measured with GNU Make 4.4.1: after a `make CFLAGS=-O0`, `make CFLAGS="-O2 -D_FORTIFY_SOURCE=3"`
+  printed "Nothing to be done", so a release can link objects built for debug. Clean between
+  configurations, or keep one build directory per configuration. CMake's Makefile and Ninja
+  generators both recompiled when `CMAKE_C_FLAGS` changed (measured, CMake 3.31.6).
+- **User flags add to the project's, never replace them.** A command-line `make CFLAGS=-O2`
+  replaced a Makefile's `CFLAGS += -fstack-protector-strong` outright, while the same value from
+  the environment was appended to (measured, GNU Make 4.4.1). Keep hardening in a variable of its own
+  and write `override CFLAGS += $(HARDEN_CFLAGS)`, or in Automake use `AM_CFLAGS` ([`rules/04`](04-security.md) §5).
+- **Vendored and bundled libraries get the same hardening.** A third-party tree built by its own
+  build system (`ExternalProject_Add`, a vendored Makefile, a prebuilt `.a`) gets none of your
+  target's `target_compile_options`. Pass the flags through explicitly (its `CMAKE_ARGS`, its
+  `CFLAGS`). Then check the linked result with `checksec`/`annocheck`/BinSkim, since the binary is
+  where the flags either arrived or did not. OWASP: C-Based Toolchain Hardening cheat sheet.
+
+## 2. Warnings and static analysis
+
+- Baseline flags: `-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion
+  -Wshadow -Wcast-align -Wnull-dereference -Wdouble-promotion
+  -Wimplicit-fallthrough -Werror`. MSVC: `/W4 /permissive- /WX`.
+- **A periodic `-Weverything` sweep, never a gate.** Clang's manual advises against building with
+  `-Weverything` routinely, since it includes experimental diagnostics and makes compiler upgrades
+  painful. So run it as a scheduled, non-blocking job. Triage the output, and promote a warning
+  that finds real bugs to the gating set by name. For example, `-Wmissing-prototypes` fired under
+  `-Weverything` and not under `-Wall -Wextra` on the same file (Apple clang 21, measured).
+- **Suppress at the site, with a reason, not for the whole project.** A project-wide `-Wno-<x>`
+  or MSVC `/wd<n>` hides every future instance too. Silence one site instead: C23/C++17
+  `[[maybe_unused]]` on an unused parameter, or `#pragma GCC diagnostic push` / `ignored "-W<x>"`
+  / `pop` around the few lines, with a comment saying why. A per-file `-Wno-` for generated or
+  third-party code is the widest acceptable scope. This is the C/C++ form of Rust's per-site
+  `#[allow(..., reason = "...")]`. OWASP: C-Based Toolchain Hardening cheat sheet.
+- **clang-tidy** with a curated set is the primary linter:
+  `bugprone-*, cppcoreguidelines-*, cert-*, performance-*, modernize-*,
+  clang-analyzer-*, misc-*` (tune noisy checks). Commit a `.clang-tidy`.
+- **A clang-tidy suppression names its checks and carries a reason, and nothing expires it.** General contract: [`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.1.
+  Write `// NOLINT(check-name)` or `// NOLINTNEXTLINE(check-name)` with the reason in an adjacent
+  comment. A bare `NOLINT`, `NOLINTNEXTLINE` or `NOLINTBEGIN` silences every check there, and the
+  check list takes globs (the docs' own `NOLINT(google*)` silences a whole module), so `NOLINT(*)`
+  is the bare form spelled differently. clang-tidy has **no unused-NOLINT report**: LLVM issue
+  #69674 ("clang-tidy: warn on unnecessary `NOLINT`") is open, and its `clang-tidy-nolint`
+  diagnostic covers only unpaired or mismatched `NOLINTBEGIN`/`NOLINTEND`. So no CI gate catches a
+  stale one, and a gate written to expect that checks nothing. The substitute is the blanket probe
+  (checklist) plus a reviewer re-reading every `NOLINT` on a line the change touches.
+- **Test code is exempted in config, never by weakening the root.** A check the rules allow in
+  tests (e.g. `readability-magic-numbers` on expected values) is removed in a `tests/.clang-tidy`
+  that sets `InheritParentConfig: true`. clang-tidy reads the `.clang-tidy` closest to each
+  source file, so a nested file without that key replaces the root's checks instead of narrowing
+  them. A check dropped from the root config because the tests failed it is a finding.
+- **cppcheck** (`--enable=warning,performance,portability`) and the
+  **Clang Static Analyzer** (`scan-build` or via clang-tidy) catch path-
+  sensitive bugs the compiler misses. Commercial: Coverity, PVS-Studio for
+  deeper interprocedural analysis. Do not pass cppcheck `--addon=cert`: 2.21 ships no such
+  addon, prints "Did not find addon cert.py" and exits 1 having analysed nothing (measured).
+  SEI CERT coverage comes from clang-tidy `cert-*` or a commercial tool. An inline
+  `// cppcheck-suppress <id>` is read only under `--inline-suppr`; without that flag it is inert.
+- **clang-format** with a committed `.clang-format`; enforce in CI
+  (`--dry-run --Werror`) so style never enters review.
+
+## 3. Sanitizers in CI (non-negotiable)
+
+- A dedicated job builds Debug with `-fsanitize=address,undefined
+  -fno-sanitize-recover=all` and runs the full test suite; any abort fails CI
+  ([`rules/02`](02-memory-safety.md), [`rules/03`](03-undefined-behavior.md)). A second job runs `-fsanitize=thread` for
+  concurrent code ([`rules/05`](05-concurrency.md)). MSan optionally (needs instrumented libs).
+- Set `ASAN_OPTIONS=detect_leaks=1:strict_string_checks=1` and
+  `UBSAN_OPTIONS=print_stacktrace=1` in CI.
+- Sanitizer builds are for test/CI, not production; production uses the
+  hardened flag set ([`rules/04`](04-security.md) §5).
+- **One exception: a trap-mode UBSan subset may ship as hardening.** Clang's UBSan docs say its
+  full runtime is for testing and may weaken a production executable, and point production at
+  trap mode (`-fsanitize-trap=`, no runtime) or the minimal runtime
+  (`-fsanitize-minimal-runtime`). A cheap set: `-fsanitize=bounds,signed-integer-overflow
+  -fsanitize-trap=bounds,signed-integer-overflow`. Measured on the same overflow-plus-OOB file:
+  Apple clang 21 and GCC 15.3 both died with SIGILL (exit 132) and linked no `ubsan` symbol;
+  Fedora's Clang 22.1 minimal runtime printed one line per check (`ubsan: add-overflow by
+  0x…`); Apple clang 21 does not support the minimal runtime (warned, then failed to link).
+  Benchmark it, and list every check of `-fsanitize=` in `-fsanitize-trap=` too. ASan, TSan
+  and MSan stay out of production ([`rules/04`](04-security.md) §5's `#error` guard refuses them at compile time).
+
+## 4. Fuzzing for input parsers
+
+- Any code parsing untrusted bytes (network, file formats, decoders) gets a
+  fuzz target: prefer **AFL++** or **FuzzTest**/Centipede for new targets —
+  libFuzzer is in maintenance mode (bug fixes only, per the LLVM docs; its
+  authors moved to Centipede), though the `-fsanitize=fuzzer` interface and
+  existing libFuzzer targets remain supported. Run continuously; enroll
+  high-value OSS in [OSS-Fuzz](https://google.github.io/oss-fuzz/).
+- Keep a seed corpus and regression corpus in-repo; a new crash is a CRITICAL
+  finding. Pair fuzzing with ASan/UBSan so memory/UB bugs surface.
+- A target whose guard (`if (size < N) return 0;`) rejects nearly every input stays green and
+  reaches nothing: require evidence of reach ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.6). libFuzzer's
+  `-print_final_stats=1` prints statistics; it fails nothing.
+- **Mutation testing: Mull**, a clang plugin matched to the compiler's LLVM major version; its
+  `--mutation-score-threshold` defaults to 100 ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
+
+## 4a. Bounded model checking for parsers and bounded functions (CBMC)
+
+Where a unit's input space is bounded (a header parser, a length-prefixed decoder, a ring-buffer
+index), CBMC checks **every** input up to the bound rather than a sample. It is the engine under
+Kani ([`sota-rust` rules/09](../../sota-rust/rules/09-formal-verification.md), which carries the same discipline for Rust). The result holds only up
+to the bound and unwind depth you chose, so it complements fuzzing (§4) and does not replace it.
+Measured with CBMC 6.11.0 unless cited.
+
+**When to prove, and with which tool.** Opt-in per unit, by criticality: nothing here is a default
+for every function. Each line adds to the ones above it, it does not replace them:
+
+- **Untrusted-input parser or decoder** → a fuzz target always (§4); a CBMC harness as well when
+  the input can be bounded and the unit is security-critical.
+- **Index, length and offset arithmetic, ring buffers, bit tricks** → CBMC: the bug sits at one
+  boundary value, which a sampler rarely draws and a bounded check cannot miss.
+- **A contract every caller relies on, or input with no useful bound (C)** → Frama-C WP over ACSL
+  contracts (below): a deductive proof, not a bounded one.
+- **No run-time error anywhere in a C module** → Frama-C Eva, which reports every operation that
+  could fail; per its plugin page it does not handle recursion and analyses sequential code only.
+- **Threads and atomics** → not this section: TSan (§3) and [rules/05](05-concurrency.md).
+- **None of these is feasible for a security-critical unit** → fuzzing plus property tests, and
+  write the residual down where the next reader sees it.
+
+- **Harness.** A `main` (or `--function`) makes the inputs nondeterministic (an uninitialised
+  local, or a body-less `nondet_*()` function), constrains them with `__CPROVER_assume`, calls the
+  unit, and states each property with `__CPROVER_assert`. Bound: the smallest that covers every
+  structural case, one element past each limit. The default checks already include bounds,
+  pointer, signed-overflow and unwinding assertions (`cbmc --help`; a planted out-of-bounds read
+  failed with no flags). **Never pass `--no-unwinding-assertions`**: it turned that failing
+  harness into `VERIFICATION SUCCESSFUL`, exit 0, by cutting the loop before the bug.
+- **An `assume` that excludes every input passes vacuously.** Guard it with `__CPROVER_cover`:
+  one inside each intended path, plus `__CPROVER_cover(1)` at the end after every assume. Covers
+  need their own run, so the gate is **two passes**:
+  1. **Safety:** `cbmc harness.c --unwind N`, covers compiled out (`#ifdef CBMC_COVER`); require
+     exit 0 and `VERIFICATION SUCCESSFUL`. A cover left in fails this pass (`no body for callee
+     __CPROVER_cover`, exit 10), and `--no-standard-checks` plus explicit check flags did not
+     change that.
+  2. **Reach:** `cbmc harness.c -DCBMC_COVER --cover cover --unwind N` through the script below.
+     It **exits 0 at `0 of 3 covered`**, and a harness with no covers reads `0 of 0 covered
+     (100.0%)`, so parse the per-cover `SATISFIED`/`FAILED` lines. Cover mode turns every
+     assertion, the default checks included, into an assumption (the planted out-of-bounds harness
+     read `3 of 3 covered`, exit 0) and refuses `--unwinding-assertions` (exit 1). It answers only
+     "was each path reachable", never "is it safe".
+
+```bash
+#!/usr/bin/env bash
+# cbmc-cover-gate: the reach pass. Exit 1 on any unreached cover, 2 if no cover line parsed.
+# Usage: cbmc-cover-gate.sh harness.c -DCBMC_COVER --unwind N [more cbmc args]
+set -uo pipefail
+out=$(cbmc --cover cover "$@" 2>&1); rc=$?
+if (( rc != 0 )); then printf '%s\n' "$out" >&2; echo "cbmc-cover-gate: cbmc exited $rc" >&2; exit "$rc"; fi
+sat=$(grep -cE '^\[[^]]*coverage\.[0-9]+\] .*: SATISFIED$' <<<"$out")
+bad=$(grep -cE '^\[[^]]*coverage\.[0-9]+\] .*: FAILED$' <<<"$out")
+echo "cbmc-cover-gate: $sat satisfied, $bad not reached" >&2
+if (( sat + bad == 0 )); then echo "cbmc-cover-gate: no cover lines; none in the harness, or the format changed" >&2; exit 2; fi
+if (( bad > 0 )); then grep -E ': FAILED$' <<<"$out" >&2; exit 1; fi
+```
+
+Measured: exit 0 on a good harness (3 satisfied), 1 with a contradictory `assume` (3 not reached),
+2 on a harness with no covers. **Prove the safety pass can fail**: plant a bug in a scratch copy,
+require `VERIFICATION FAILED` naming the broken check, revert, and record the run.
+
+- **Other tools.** Frama-C, for C, is industrial: WP proves ACSL contracts deductively, Eva finds
+  runtime errors by abstract interpretation. ESBMC is a further bounded model checker (C/C++, and
+  Python and Kotlin/Java frontends). The same three rules apply: state the bound, show
+  non-vacuity, watch it fail.
+
+## 5. Dependencies and supply chain
+
+- Use a real package/dependency manager: **vcpkg** or **Conan** with a
+  *manifest* and a **lockfile** (`vcpkg.json`+baseline / `conan.lock`) so
+  builds are reproducible and versions are pinned. Avoid vendoring random
+  source or system-package drift.
+- **What silently unfreezes the pin.** vcpkg: a `vcpkg.json` with no `builtin-baseline` (and no
+  registry `baseline` in `vcpkg-configuration.json`) "operates according to the Classic mode
+  algorithm and ignores all versioning information" (vcpkg versioning reference), so it builds
+  whatever ports the runner's vcpkg checkout carries. Conan 2: a `conan.lock` beside the
+  conanfile is applied automatically and a requirement missing from it fails (`not in lockfile`);
+  `--lockfile-partial` accepted that requirement, and an empty `--lockfile=` resolved a newer
+  version than the lock (measured, Conan 2.33.0). CMake: a branch or tag in `GIT_TAG` follows
+  upstream; pin the 40-hex commit (checklist).
+- Pin versions; review and update deliberately (Dependabot/Renovate where
+  supported). Verify checksums/signatures of fetched artifacts. Generate an
+  **SBOM** (CycloneDX/SPDX) for releases and scan dependencies for known CVEs.
+  See [`sota-devsecops`](../../sota-devsecops/SKILL.md). **Generate it at build time**: a C/C++
+  binary carries no dependency list a scanner can read unless you opt into the ELF
+  `.note.package` note (UAPI package-metadata spec; Syft reads it), so take it from the Conan
+  lock or vcpkg manifest and the link inputs ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6).
+- Minimize the dependency tree; each header-only or binary dep is attack
+  surface and a build-integrity risk. Prefer the standard library.
+- **Before adding a dependency** (typed by a person or proposed by an AI assistant),
+  confirm it is the project you meant, not a lookalike or a name that only sounds right:
+  `vcpkg search <name>` lists the ports your baseline actually knows, and
+  `conan search <name> -r conancenter` the recipes ConanCenter carries (measured with
+  Conan 2.32). A port or recipe is a packaging of an upstream repository, so check that
+  the port's source URL points at the upstream you expected, then judge the upstream
+  itself: maintainer count and recent commits, release cadence, open advisories, licence.
+  deps.dev's package API does not index Conan or vcpkg, but its project endpoint
+  (`https://api.deps.dev/v3/projects/github.com%2F<owner>%2F<repo>`) returns the
+  repository's OpenSSF Scorecard; the `scorecard --repo=github.com/<owner>/<repo>` CLI
+  computes it directly (needs `GITHUB_AUTH_TOKEN`). Record the result in the PR that adds
+  the manifest line.
+- **A library's insecure defaults become your code's defaults.** Every security-relevant
+  option you do not set is a decision the library made for you. Verified examples:
+  OpenSSL leaves peer verification at `SSL_VERIFY_NONE` unless `SSL_CTX_set_verify` or
+  `SSL_set_verify` changes it (and checks no host name without `SSL_set1_host`);
+  libcurl's `CURLOPT_TIMEOUT` defaults to 0, "never times out", and
+  `CURLOPT_CONNECTTIMEOUT` to 300 s, so a stalled peer holds the thread; libcurl's
+  `CURLOPT_PROTOCOLS_STR` allows every compiled-in scheme ([`rules/04`](04-security.md) §3). Audit every
+  option passed to a library at a trust boundary, and the ones *not* passed.
+- **Sample code is not production code.** curl's own `docs/examples/https.c` carries
+  `CURLOPT_SSL_VERIFYPEER, 0L` behind `SKIP_PEER_VERIFICATION`; a copied README snippet
+  brings its demo switches (verification off, no timeouts, debug logging) with it. Strip
+  them on paste. *(OWASP: Vulnerable Dependency Management cheat sheet; Software Supply
+  Chain Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)*
+- **Treat dependency build scripts as code that runs at install/build time, on the
+  developer's machine and the CI runner, with their credentials, before any test.**
+  C/C++ has no `--ignore-scripts`: building a dependency from source *is* running its
+  build system. Know every execution point:
+  - `FetchContent_MakeAvailable` calls `add_subdirectory` on the fetched tree, so the
+    dependency's `CMakeLists.txt` (any `execute_process`, `file(DOWNLOAD)`) runs at
+    **configure** time. Measured with CMake 4.4: a dependency pinned to a full commit
+    hash ran its `execute_process` on a plain `cmake -S . -B build`. Pinning fixes
+    *which* code runs, not *whether*.
+  - `ExternalProject_Add` runs the dependency's own configure/build/install steps at
+    build time; `find_package` in config mode includes the installed
+    `<Name>Config.cmake`, which is CMake code too.
+  - `CMAKE_PROJECT_TOP_LEVEL_INCLUDES` (CMake 3.24+) injects files at the first
+    `project()` call, often from `CMakePresets.json` or a CI command line.
+  - vcpkg: each port's `portfile.cmake` is the build script, including any overlay port
+    listed under `overlay-ports` in `vcpkg-configuration.json` or passed with
+    `--overlay-ports`.
+  - Conan: every recipe `conanfile.py` is Python, and hooks are `hook_*.py` files under
+    `<CONAN_HOME>/extensions/hooks`. `conan install --build=never` forbids source
+    builds but does **not** stop recipe code. Measured with Conan 2.32: module-level
+    code in an exported recipe ran under `--build=never`, and the install then failed
+    for want of a binary.
+- **Controls.** No switch turns this off, so narrow it and review it. Set
+  `FETCHCONTENT_TRY_FIND_PACKAGE_MODE=ALWAYS` (3.24+; the default `OPT_IN` only tries
+  `find_package` when the declaration passes `FIND_PACKAGE_ARGS`) so a reviewed,
+  package-manager-provided build wins over fetching. Use
+  `FETCHCONTENT_SOURCE_DIR_<NAME>` to point at a reviewed local checkout.
+  `FETCHCONTENT_FULLY_DISCONNECTED` is **not** a control: CMake's docs say it is for use
+  only after the first run. On every dependency bump, diff the executed files
+  (`CMakeLists.txt`, `*.cmake`, `portfile.cmake`, `conanfile.py`) between the old and
+  new pins, not just the C/C++ sources. Put the repo's **own** build-executing files
+  (`CMakeLists.txt`, `cmake/`, `CMakePresets.json`, `vcpkg.json`,
+  `vcpkg-configuration.json`, overlay ports, `conanfile.*`, CI workflows) under
+  CODEOWNERS (or your forge's equivalent) with required review. That applies
+  to a change an AI agent authored too.
+- **CI placement.** Run dependency resolution and the first configure in a job that has
+  no deploy/publish secrets and no write token, or in an isolated job whose output is
+  a cached, hashed artifact. Credentials belong only to the later job that needs them.
+  Details in [`sota-devsecops`](../../sota-devsecops/SKILL.md). *(OWASP: CI/CD Security cheat sheet; Software Supply
+  Chain Security cheat sheet; NPM Security cheat sheet, for the `ignore-scripts`
+  analogue.)*
+
+## 6. Reproducible, deterministic builds
+
+A compiler cache in CI (ccache, sccache) is a shared build cache: who may write it, what its key
+must name and how to count its hits are [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2a.
+
+- Avoid timestamps/paths leaking into binaries (`-ffile-prefix-map`,
+  `SOURCE_DATE_EPOCH`); enable LTO for release (`-flto`) but verify it doesn't
+  mask UBSan. Keep debug info (`-g`) and ship split symbols.
+
+## Audit checklist
+
+- [ ] **What has been SILENCED? -- the analyser's escape hatch (ROADMAP 60) clang-tidy (syntax
+      from its own docs): NOLINT silences the SAME line, NOLINTNEXTLINE the NEXT one,
+      NOLINTBEGIN/END a range whose markers must pair and match. A bare form with no (check)
+      list silences EVERY check there. No tool reports an unused NOLINT (llvm/llvm-project#69674, open): re-read each check-listed hit, delete it and re-run clang-tidy; one whose removal changes nothing is stale. the `|$` is load-bearing: a bare `// NOLINT` at END OF
+      LINE has no character after it, so `[^(]` alone silently misses the most common blanket
+      form (measured: 1 of 2).** —
+      `grep -rn 'NOLINT' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' .`
+      ; `grep -rnE 'NOLINT(NEXTLINE|BEGIN)?([^(A-Z]|$|\([^)]*\*)' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' --include='*.hpp' .`
+      (§2: no check list, or a glob in it = blanket, MEDIUM. The `A-Z` stops `NOLINTNEXTLINE(check)`
+      and `NOLINTEND` matching through the optional group, which the earlier `[^(]` form did:
+      measured, it flagged all three check-listed forms in a clean file and missed `NOLINT(*)`) ;
+      `grep -rn 'NOLINTBEGIN' . | wc -l ; grep -rn 'NOLINTEND' . | wc -l` (must be equal). No tool
+      reports a stale `NOLINT(check)` (§2): read each one on a changed line
+- [ ] **cppcheck (§2): `// cppcheck-suppress <id>` on the line BEFORE the reported line -- and it is
+      INERT unless --inline-suppr is passed. Measured with cppcheck 2.21.0: without that flag
+      both planted warnings still fired; with it, one was suppressed and the other was NOT,
+      because the comment sat above the wrong line. So check the FLAG before reading the
+      comments.** —
+      `grep -rn 'cppcheck-suppress' --include='*.c' --include='*.cpp' --include='*.h' .` ;
+      `err=$(grep -rn 'inline-suppr' --include='CMakeLists.txt' --include='*.cmake' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "cppcheck-suppress comments present but --inline-suppr never passed: every one is decoration" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+- [ ] **compiler-level, which no lint grep finds** (§2) —
+      `grep -rn '#pragma GCC diagnostic ignored\|#pragma clang diagnostic ignored\|#pragma warning(disable' --include='*.c' --include='*.cpp' --include='*.h' .`
+      ; `grep -rn 'suppressions' --include='CMakeLists.txt' --include='*.cmake' .` (cppcheck
+      --suppressions-list=)
+- [ ] **Warning silenced project-wide, or a pragma with no scope (§2) — MEDIUM** —
+      `grep -rnE '(-Wno-[a-z]|/wd[[:space:]]*[0-9])' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' . | grep -v 'set_source_files_properties'`
+      (a global disable: move it to the sites, or to the one generated file) ;
+      `grep -rlE 'pragma[[:space:]]+(GCC|clang)[[:space:]]+diagnostic[[:space:]]+ignored' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' . | xargs -r grep -LE 'diagnostic[[:space:]]+push'`
+      (a file that ignores a warning with no `push`/`pop`: it stays off for the rest of the unit)
+- [ ] **Build configuration: empty build type, a keyword redefined for tests (§1a) — MEDIUM, HIGH
+      when it builds the shipped artifact** —
+      `grep -rnE '(-D|#[[:space:]]*define[[:space:]]+)(private|protected)[[:space:]=]+public' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' .` ;
+      `err=$(grep -rE 'NOT[[:space:]]+CMAKE_BUILD_TYPE' --include='CMakeLists.txt' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no default CMAKE_BUILD_TYPE: an unset one compiles with no -O and no -DNDEBUG" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+- [ ] **Hardening flags dropped on the way to a unit (§1a) — HIGH on a network-facing binary** —
+      `grep -rnE '^[[:space:]]*(C|CXX|CPP|LD)FLAGS[[:space:]]*(\+|:|\?)?=' --include='Makefile' --include='GNUmakefile' --include='*.mk' .`
+      (no `override`: a `make CFLAGS=...` on the command line replaces the line) ;
+      `grep -rn 'ExternalProject_Add' --include='CMakeLists.txt' --include='*.cmake' .` (read
+      whether its `CMAKE_ARGS` pass the hardening flags) ; then `checksec` the linked artifact
+- [ ] **Warnings-as-errors and standard pinned?** (§2, §1) —
+      `err=$(grep -rE 'Werror|/WX' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no -Werror or /WX in any build file" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; `grep -rqE 'CXX_STANDARD|cxx_std_|std=c\+\+' --include='CMakeLists.txt' --include='*.cmake' . || echo 'C++ standard not pinned'`
+      ; `err=$(grep -E 'C_STANDARD|c_std_|std=(gnu|c)[0-9]' CMakeLists.txt 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "C dialect not pinned" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      (§1: the default moved to `gnu23` in GCC 15 and `gnu++20` in GCC 16)
+- [ ] **GCC 14 C errors downgraded (§1) — MEDIUM, HIGH if the code then warns about
+      int-conversion or implicit declarations** —
+      `grep -rnE -e '-fpermissive|-std=(gnu|c)89' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='configure.ac' --include='meson.build' .`
+- [ ] **UBSan in a production build is trap-only or minimal-runtime (§3) — HIGH for ASan, TSan
+      or MSan in the shipped artifact** —
+      `grep -rnE -e '-fsanitize=' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . | awk '/fsanitize=([a-z-]+,)*(address|thread|memory|leak|hwaddress|kernel-address)([^a-z-]|$)/ || !/fsanitize-trap=|fsanitize-minimal-runtime/'`
+      (prints every line whose `-fsanitize=` list names a runtime sanitizer — even beside a
+      trap flag, which covers only UBSan — plus any UBSan line with neither trap nor minimal
+      runtime. Each line left: is it the release configuration? then it ships a sanitizer runtime)
+- [ ] **clang-tidy / clang-format / cppcheck configs present?** (§2, §1) —
+      `out=$(find . -maxdepth 1 \( -name .clang-tidy -o -name .clang-format \) -print 2>&1); rc=$?` ;
+      `case $rc in 0) [ -n "$out" ] || echo "missing lint/format config" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
+      (`find` exits non-zero only on an error, so an empty list at exit 0 is the absence)
+      ; `test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt`
+- [ ] **Test code linted to a different standard, scoped in config (§2) — LOW, MEDIUM when the
+      root config lost a security check to make tests pass** —
+      `find . -name .clang-tidy -not -path './.clang-tidy' -not -path './build/*' -exec grep -LE 'InheritParentConfig:[[:space:]]*true' {} +`
+      (each file printed replaces the root checks for its subtree: read what it drops) ; then
+      `git log -p -- .clang-tidy | grep -E '^\+([^+].*)?[^a-z0-9_-]-[a-z*]'` (an added `-check`
+      removal at the root: was it the tests?)
+- [ ] **Sanitizer & fuzzing jobs in CI?** —
+      `err=$(grep -rniE 'fsanitize|asan|ubsan|tsan|libfuzzer|oss-fuzz|scan-build' --include='*.yml' --include='*.yaml' --include='Jenkinsfile' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no sanitizer/fuzz job in CI config — HIGH for input-parsing code" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; each fuzz target with an early-return guard has reach evidence (§4), not only `-print_final_stats`
+- [ ] **CBMC harnesses gated in two passes (§4a) — MEDIUM: a one-pass gate proves nothing** —
+      `grep -rlE '__CPROVER_(assume|assert)' --include='*.c' --include='*.cpp' . | xargs -r grep -L '__CPROVER_cover'` (harnesses with no `__CPROVER_cover`) ;
+      `grep -rnE 'cbmc[^|]*--no-unwinding-assertions' --include='*.yml' --include='*.yaml' --include='Makefile*' --include='*.sh' .`
+      — `--no-unwinding-assertions` anywhere = MEDIUM; a `--cover` run (read each one by hand:
+      the probe does not list them, since §4a's own script runs one) whose exit code is the
+      verdict (outside a per-line parse like §4a's script) = MEDIUM, since it exits 0 at 0 covered; harnesses with no
+      `__CPROVER_cover`, or with covers and no separate safety pass = MEDIUM
+- [ ] **Dependency manager + lockfile?** (§5) —
+      `out=$(find . -maxdepth 1 \( -name vcpkg.json -o -name conan.lock -o -name 'conanfile.*' \) -print 2>&1); rc=$?` ;
+      `case $rc in 0) [ -n "$out" ] || echo "no pinned dependency manifest/lockfile" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
+      ;
+      `grep -rniE 'FetchContent|ExternalProject|submodule' --include='CMakeLists.txt' --include='*.cmake' --include='.gitmodules' .`
+      (verify pinning)
+- [ ] **Something unfreezes the pin (§5) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** —
+      `test -f vcpkg.json && ! find . -maxdepth 1 \( -name vcpkg.json -o -name vcpkg-configuration.json \) -exec grep -qE '"(builtin-)?baseline"' {} + && echo "vcpkg.json with no baseline: classic-mode resolution"` ;
+      `find . \( -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name Jenkinsfile -o -name '*.sh' \) -type f -not -path './build/*' -exec grep -nE -e '--lockfile-partial|--lockfile=([[:space:]]|$|"")' /dev/null {} +`
+      (a Conan step that accepts or ignores what the lock does not hold)
+- [ ] **Shipped binary scanned with no build-time SBOM (§5) — MEDIUM, HIGH for a deployed service ([`sota-devsecops` rules/14](../../sota-devsecops/rules/14-sbom-component-inventory.md) §14.6)** — an image or binary
+      scan step with no SBOM generated from the lock/manifest: the scanner finds no C/C++
+      components and reports clean
+- [ ] **Fetched sources verified, and dependencies scanned (§5) — HIGH for a shipped
+      binary** —
+      `grep -rlE 'URL[[:space:]]+[^[:space:]]*(https?|ftp)://' --include='CMakeLists.txt' --include='*.cmake' . | xargs -r grep -L 'URL_HASH'`
+      (files with a `URL` download and no `URL_HASH` anywhere in them; a file with several
+      downloads needs each read: CMake's ExternalProject docs call the hash "strongly
+      recommended ... as it ensures the integrity of the downloaded content") ;
+      `grep -rnE 'GIT_TAG[[:space:]]+[^[:space:])]+' --include='CMakeLists.txt' --include='*.cmake' . | grep -vE 'GIT_TAG[[:space:]]+[0-9a-f]{40}'`
+      (a branch or tag, not a commit: the same docs prefer the hash, and an omitted `GIT_TAG`
+      defaults to `master`) ;
+      `grep -rqiE 'osv-scanner|dependency-track|grype|trivy|cyclonedx|spdx' --include='*.yml' --include='*.yaml' . || echo 'no CVE-scan or SBOM step in CI config'`
+      (no CVE-scan or SBOM step at all leaves §5 unenforced. OSV-Scanner's own table lists
+      `conan.lock` for C/C++, plus commit-level scanning of submoduled or vendored code, and
+      no vcpkg lockfile)
+- [ ] **New dependency: selection recorded, and the library's insecure defaults
+      overridden (§5) — HIGH for a TLS context with no verify mode, MEDIUM for a curl
+      handle with no transfer timeout** —
+      `git diff "$BASE" -- vcpkg.json 'conanfile.*' | grep -E '^\+[^+]'` (each added or reformatted
+      line needs a selection note: exact name, upstream, Scorecard) ;
+      `grep -rlE 'SSL_CTX_new' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -LE 'SSL_(CTX_)?set_verify'`
+      (OpenSSL's default is `SSL_VERIFY_NONE`) ;
+      `grep -rlE 'curl_easy_init' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -LE 'CURLOPT_(TIMEOUT|LOW_SPEED_TIME)'`
+      (libcurl's transfer timeout defaults to never; each hit is a file to read)
+- [ ] **Dependency code that runs at build time (configure/install) is inventoried and
+      owner-reviewed (§5) — HIGH if these files have no CODEOWNERS entry, since a
+      dependency bump or an agent-authored edit then executes unreviewed on CI** —
+      `grep -rnE 'FetchContent_MakeAvailable|FetchContent_Populate|ExternalProject_Add|CMAKE_PROJECT_TOP_LEVEL_INCLUDES|overlay-ports' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='vcpkg-configuration.json' .`
+      (each hit: diff the fetched tree's build files on every bump) ;
+      `find . -name conanfile.py -not -path './build/*'` (Python that runs on every
+      `conan install`, even with `--build=never`) ;
+      `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -qE 'CMakeLists|\.cmake|conanfile|vcpkg' || echo "no CODEOWNERS entry for build-executing files"`
+- [ ] **Global (non-target) CMake anti-patterns — LOW/MEDIUM** (§1) —
+      `grep -rnE '(^|[^_[:alnum:]])(include_directories|link_libraries)\(|^set\(CMAKE_CXX_FLAGS' --include='CMakeLists.txt' --include='*.cmake' .`
+- [ ] **Build paths and times reach the binary (§6) — LOW, MEDIUM where releases claim
+      reproducibility** —
+      `grep -rnE '__(DATE|TIME|TIMESTAMP)__' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' --include='*.hpp' .`
+      ; `err=$(grep -rnE -e '-f(file|debug|macro)-prefix-map|SOURCE_DATE_EPOCH' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' --include='*.yml' --include='*.yaml' --include='Dockerfile*' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no -ffile-prefix-map or SOURCE_DATE_EPOCH: build paths and times reach the binary" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; then read the release job: LTO on, the suite still run under UBSan, and split debug
+      symbols kept for each shipped binary
+- [ ] (§2) **Broad idiom enforcement for [rules/01](01-idioms.md) (the canonical config)** —
+      `clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>`
+- [ ] **Static + safety-standard analysis** (§2) —
+      `clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>` ;
+      `cppcheck --enable=warning,portability <src>` (cppcheck 2.21 ships no `cert` addon:
+      `--addon=cert` prints "Did not find addon cert.py" and exits 1 without analysing, measured.
+      CERT coverage comes from clang-tidy's `cert-*` checks or a commercial analyser)

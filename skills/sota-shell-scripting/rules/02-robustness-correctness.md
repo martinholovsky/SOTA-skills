@@ -1,0 +1,497 @@
+# 02 — Robustness & Correctness
+
+Interfaces, failure handling, portability, concurrency, idempotency.
+
+## 1. Argument parsing
+
+Every script ≥ one option gets structured parsing; every script gets `--help`; distributed
+tools get `--version`.
+
+- `getopts` (builtin, POSIX) for short options only — simple, portable, handles clustering
+  (`-abc`). It does **not** do long options. Do not use external `getopt` unless you can
+  guarantee GNU getopt (`getopt -T`; BSD/macOS getopt is broken for quoting).
+- Manual `while/case` for long options — the SOTA default for nontrivial scripts:
+
+```bash
+usage() {
+  cat <<EOF
+Usage: ${0##*/} [-v] [--region REGION] TARGET
+Deploy TARGET to the given region.
+
+  -v, --verbose     verbose output
+      --region R    target region (default: ${DEFAULT_REGION})
+  -h, --help        show this help
+EOF
+}
+
+verbose=0 region=$DEFAULT_REGION target=""
+while (( $# > 0 )); do
+  case $1 in
+    -v|--verbose) verbose=1 ;;
+    --region)     [[ ${2:-} ]] || die "--region requires a value"; region=$2; shift ;;
+    --region=*)   region=${1#*=} ;;
+    -h|--help)    usage; exit 0 ;;
+    --)           shift; break ;;
+    -*)           die "unknown option: $1 (see --help)" ;;
+    *)            break ;;
+  esac
+  shift
+done
+(( $# == 1 )) || { usage >&2; exit 64; }   # EX_USAGE
+target=$1
+```
+
+Rules: unknown option is an error, never silently ignored; `--` stops option parsing;
+options taking values handle both `--opt val` and `--opt=val` or document which;
+`usage` goes to stdout on `--help` (exit 0), stderr on misuse (exit 64).
+
+## 2. Input validation
+
+Validate before acting, fail with a message naming the bad value:
+
+```bash
+[[ $region =~ ^[a-z]{2}-[a-z]+-[0-9]$ ]] || die "invalid region: '$region'"
+[[ -d $src ]] || die "source directory not found: $src"
+[[ $count =~ ^[0-9]+$ ]] || die "count must be a non-negative integer, got: '$count'"
+```
+
+- Validate *types* of things shell is bad at (numbers, enums, paths) with `[[ =~ ]]` or
+  case patterns; reject rather than sanitize.
+- **Validate captured output, not just arguments.** The `=~ ^[0-9]+$` guard above is
+  routinely applied to CLI arguments and skipped for values captured from a command —
+  where it matters *more*, because a failed command yields an empty or error string that
+  silently satisfies **string** comparisons:
+
+  ```bash
+  # BAD — an empty or error value is != "0", so a failed read reads as "yes"
+  n=$(some-cli get thing --format '{{.count}}')
+  if [ "$n" != "0" ]; then echo "done"; fi
+
+  # GOOD — validate first, compare numerically, give "unreadable" its own branch
+  n=$(some-cli get thing --format '{{.count}}' 2>/dev/null) || n=""
+  case $n in
+    ''|*[!0-9]*) echo "cannot tell" ;;            # NOT the same as zero
+    *)           [ "$n" -ge 1 ] && echo "done" ;;
+  esac
+  ```
+
+  **Assert the condition you want, not its negation.** `!= "0"` is satisfied by `""`,
+  `error`, `null`, and every usage message a broken invocation prints — verified. For a
+  check that runs repeatedly until something completes, "cannot tell" must stay distinct
+  from "not yet": [`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2a.
+- Required environment variables: check up front, all at once, not at first use:
+
+```bash
+: "${DEPLOY_TOKEN:?DEPLOY_TOKEN must be set}"   # -u-style with custom message
+```
+
+## 3. Errors to stderr, exit codes, die()
+
+```bash
+err() { printf '%s: %s\n' "${0##*/}" "$*" >&2; }
+die() { err "$@"; exit 1; }
+```
+
+- Every diagnostic to stderr (`>&2`) — stdout is for *output* that callers pipe. A script
+  that prints errors to stdout corrupts downstream consumers.
+- Messages carry context: what was attempted, on what object, what the underlying error
+  was. `die "failed to upload $artifact to $bucket: $curl_err"` not `die "error"`.
+- Exit codes: 0 success only; 1 generic failure; usage error 2 (what bash builtins and argparse
+  return) or sysexits 64 — one per tool, documented ([`sota-cli-ux` rules/02](../../sota-cli-ux/rules/02-output-interaction.md) §3 owns
+  the table); 64–78 for more granularity (69 unavailable, 77 permission); 126/127 (not executable /
+  not found) are shell-reserved — don't emit them; 128+N means death by signal N, so after a trapped
+  signal re-raise it ([rules/05](05-constructs-and-cleanup.md) §3), never `exit 128+N`. Document non-trivial codes in `--help`.
+- Never `exit` from inside a function where the caller might want to continue — `return`
+  a status and let the top level decide; `exit` in sourced files kills the caller's shell.
+
+### 3a. `$?` describes the *immediately* preceding command, and everything overwrites it
+
+`$?` is not a record of "the last thing that mattered" — it is overwritten by **every**
+command, including the ones that do not look like commands. Capture it on the very next
+line or not at all:
+
+```bash
+cmd > out.log 2>&1; rc=$?          # correct: nothing between cmd and the capture
+cmd > out.log 2>&1
+echo "checking..."; rc=$?          # WRONG: rc is the echo's 0, and cmd's status is gone
+```
+
+Measured (bash 5.3.15): an intervening `echo` gives **0** where the command exited **7**; so
+does a bare `[ -n "x" ]`. The failure is silent and the variable is named `rc`, so it reads
+as a status forever after.
+
+**The trap inside the trap — the habit that fixes one bug causes this one.** SC2155
+(*"Declare and assign separately to avoid masking return values"*) is correct for command
+substitution, where `local out=$(cmd)` hides `cmd`'s status behind `local`'s. Applying that
+same split to a `$?` capture **breaks** it, because the declaration is itself a command:
+
+```bash
+local rc=$?                        # 7  — $? expands BEFORE local runs
+local rc; rc=$?                    # 0  — the `local rc;` statement reset $?
+```
+
+Same mechanism (`local` has its own exit status), opposite remedy. Measured 2026-09-21 on
+**bash 5.3.15, zsh, dash and sh** — all four agree, so this is the rule and not a dialect
+quirk. Declare on a separate *earlier* line if you want both: `local rc; cmd; rc=$?`.
+
+**Prefer the forms that never read `$?`.** `if cmd; then`, `cmd || die "…"`, and
+`if ! cmd; then` test the status directly and cannot be clobbered. Reach for `$?` only when
+you need to *keep* the number — to report it, to re-raise it with `exit "$rc"`, or to branch
+on several values.
+
+## 4. Pipelines: pipefail awareness and PIPESTATUS
+
+- `set -o pipefail` makes the pipeline status the rightmost nonzero status. Two follow-ups:
+  - **zsh spells it differently and indexes from 1**: `${pipestatus[1]}` is the first
+    stage (`${PIPESTATUS[0]}` in bash). `cmd | tail -1; echo $?` reports `tail`'s status
+    in both shells — when the exit code is the thing under test, drop the pipe.
+  - To know *which* element failed: `"${PIPESTATUS[@]}"` (bash; copy it immediately — any
+    next command overwrites it):
+
+```bash
+dump_db | gzip > "$out"
+status=("${PIPESTATUS[@]}")
+(( status[0] == 0 )) || die "dump failed (${status[0]})"
+(( status[1] == 0 )) || die "gzip failed (${status[1]})"
+```
+
+  - Expected-failure producers break under pipefail: `grep` exits 1 on no match
+    (`grep pattern file | wc -l` "fails" on zero matches); a consumer like `head` closing
+    early makes the producer die of SIGPIPE (141). Handle deliberately:
+
+```bash
+matches=$(grep -c pattern file || true)       # no-match is not an error here
+yes | head -n 3                               # SIGPIPE on `yes` → status 141; guard:
+out=$(produce | head -n 3) || (( $? == 141 ))  # accept SIGPIPE only
+```
+
+- **Any substitution whose producer can legitimately find nothing aborts silently.** A
+  count is the form that ships first: `n=$(… | grep -c .)` under `set -euo pipefail` is fine
+  while the count is positive, but on zero `grep -c` prints `0` **and exits 1**, the
+  assignment fails, and `-e` ends the script with no error message: the log just stops. The
+  same holds for an *extraction* — `grep -o`, `grep -m1`, `git grep`, `pgrep`, `jq -e` (a
+  plain `jq` select that matches nothing exits 0; `-e` exits 4) — and most of all as the last
+  command of an `&&` list, which `-e` does not exempt: `[ -f "$f" ] && url=$(grep -o PAT "$f"
+  | head -n 1)` ended a setup checker silently when the file existed without the match. It
+  sits on a path only an *empty* input reaches, so a run with data passes and the next run
+  without data dies ([`sota-devsecops` rules/09](../../sota-devsecops/rules/09-gates-that-hold.md) §2c). This library's own gates had 7 such
+  sites in 2 scripts; the worst killed its checker mid-run with 16 checks unreached. Close every
+  such substitution with `|| true` (or test it in an `if`), never bare inside `$( )`.
+
+- Prefer process substitution over pipes into `while read` — the pipe runs the loop in a
+  subshell, so variable updates vanish (SC2031):
+
+```bash
+# BAD — count is always 0 after the loop
+cmd | while read -r line; do (( ++count )); done
+# GOOD
+while IFS= read -r line; do (( ++count )); done < <(cmd)
+```
+
+**Name the trade you just made: a process substitution's exit status is unreachable.**
+`$?` reflects the redirection, not the producer; `pipefail` does not apply and
+`inherit_errexit` does not help. A producer that fails yields **zero lines**, so the loop
+completes over an empty set and the function reports success — the vacuous-pass shape
+([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md)), now silent. Measured: a `git rev-list` usage error exits
+**129**, the loop sees nothing, and a coverage check announces "nothing to check" and
+exits 0.
+
+Capture the status explicitly wherever *no output* and *the command failed* mean
+different things:
+
+```bash
+# GOOD — status captured; empty and failed are distinguished
+local out status=0
+out="$(git rev-list "$range" 2>&1)" || status=$?
+(( status == 0 )) || { printf 'rev-list failed: %s\n' "$out" >&2; return 2; }
+while IFS= read -r line; do [[ -n $line ]] && arr+=("$line"); done <<<"$out"
+```
+
+Two caveats on that remedy, because it is not free: `$( )` **strips trailing newlines**
+([rules/01](01-safety-baseline.md) §2) — here `<<<` puts one back, but do not carry the pattern somewhere it
+matters — and it buffers the whole output in memory, which is wrong for an unbounded
+producer. Use bare `< <(cmd)` only where the producer cannot meaningfully fail, or where
+empty and failed are genuinely the same outcome. **Say which, in a comment.**
+
+**`head -1` over unordered output is a coin flip with one side visible in development.**
+Tools that emit *sets* promise no order — `git notes list`, `git for-each-ref` without
+`--sort`, `find`, `ls` on some filesystems, `kubectl get` without sorting. Code that
+takes "the" element is correct while exactly one exists and silently picks wrong
+afterwards. Sort by the field that defines *latest*/*best* and select explicitly, or fail
+when the count is not 1. **Test with two elements, never one** — a single-element fixture
+cannot tell correct selection from arbitrary selection. High when it selects a security
+control's input, where "stale" and "current" then read alike.
+
+## 5. Portability: bash vs POSIX sh
+
+Decide per script and enforce with the shebang + `shellcheck -s sh`.
+
+- POSIX sh required: busybox/alpine and dash-based containers without bash, initramfs,
+  `system()`-invoked snippets, packaging hooks. Then: no arrays (use `set -- args...`
+  to reuse positional params), `[ ]` not `[[ ]]`, `. file` not `source`, no `${var//}`, no
+  `<<<`/`<( )`, `printf` always (dash `echo` interprets escapes). dash fails three of these
+  **silently**: `{1..3}` and `$'\t'` stay literal, and `source f` prints `not found` and the script
+  runs on without it at rc 0 (measured 2026-10-21, dash 0.5.12). zsh-tested habits: [`rules/05`](05-constructs-and-cleanup.md) §5a.
+- `pipefail` in sh is **version-dependent**, not absent: POSIX.1-2024 specifies it, busybox
+  ash accepts it, dash only from upstream 0.5.13 (Debian bookworm's 0.5.12-2 rejects it,
+  trixie's 0.5.12-12 accepts it). Probe **in a subshell** — `set` is a special builtin, so a
+  bare `set -o pipefail 2>/dev/null` *exits* bookworm dash with status 2 before line 2 runs:
+  `if (set -o pipefail) 2>/dev/null; then set -o pipefail; else echo 'no pipefail' >&2; fi`
+  (measured 2026-09-26: bash, zsh, busybox 1.38 and trixie dash enable it; bookworm dash
+  reaches the `else`). Only in the `else` branch do you need the old workaround: run each
+  stage to a temp file, or a fifo/status-file trick.
+- `--` (end of options) is **not universal**. GNU coreutils accept it nearly everywhere,
+  and so do the uutils (Rust) coreutils that Ubuntu ships since 26.04 LTS for `chmod` and
+  `mkdir` (measured 2026-10-09 in the `ubuntu:26.04` image: `chmod (uutils coreutils)
+  0.10.0`; 24.04 and Debian trixie still ship GNU — check `chmod --version`, never assume);
+  BSD/macOS `chmod` does not — `chmod 700 -- dir` fails with `chmod: --: No such file or
+  directory`, which names the wrong thing and reads as a path bug. Adjacent calls mislead
+  further: `mkdir -p -- dir` succeeds on the same system (both verified on macOS
+  2026-08-26). Where the path is a literal you control, drop the `--`; where it is
+  untrusted, prefer `./"$path"` for a relative path — portable, and it defeats
+  leading-dash injection without depending on the flag. ([`sota-golang` rules/05](../../sota-golang/rules/05-security.md) already
+  hedges this as "where the tool supports it"; it was unreachable from a shell task.)
+- bash-targeted: use bash properly (arrays, `[[ ]]`, `mapfile`) — half-POSIX bash is the
+  worst of both. But remember macOS = bash 3.2: no associative arrays, no `mapfile`, no
+  `${var,,}`, no `inherit_errexit`. If macOS devs run the script, either stay 3.2-clean
+  or version-check ([rules/01](01-safety-baseline.md) §1). CI containers: confirm bash exists
+  (`docker run --rm --entrypoint sh image -c 'command -v bash'`; the bare form
+  `docker run image which bash` hands `which bash` to the image's ENTRYPOINT as arguments,
+  and many images have no `which`) before writing `#!/usr/bin/env bash` entrypoints —
+  alpine base images have only busybox ash unless bash is installed.
+
+## 6. Command existence and invocation
+
+- `command -v tool >/dev/null 2>&1 || die "tool is required"` — never `which` (SC2230:
+  external, non-portable output and exit codes).
+- Check all dependencies up front in one place:
+
+```bash
+for cmd in jq curl flock; do
+  command -v "$cmd" >/dev/null 2>&1 || die "missing required command: $cmd"
+done
+```
+
+- Don't hardcode tool paths except in privileged scripts with a sanitized PATH ([rules/03](03-security.md)).
+
+### A missing tool is a decision, not automatically a failure
+
+`|| die` above is right for a tool the script cannot be correct without. It is wrong
+for everything else, and the difference matters most in **gates and checks**, where
+"the tool isn't installed" must never be reported as "the check passed".
+
+Classify each dependency once, and make the behaviour match:
+
+| The tool is… | Do | Never |
+|---|---|---|
+| **required for correctness** (the script's whole job) | `die` with the install command for this platform | proceed with a degraded result |
+| **required for one check** inside a larger run | run the rest, **SKIP that check with a named note** — `SKIPPED: python3 not found (CI enforces this check)` — and make the skip visible in the summary | print `ok`, or count the skip as a pass |
+| **optional / an enhancement** | proceed, note the reduced capability once | fail the run |
+| **missing on an interactive run** | **stop and ask the human to install it**, naming the exact command, then continue or exit on their answer | silently install it, or `sudo` anything unasked |
+
+```bash
+need() {  # need <cmd> <what it is for> <install hint>
+  command -v "$1" >/dev/null 2>&1 && return 0
+  if [ -t 0 ] && [ -t 1 ]; then          # a human is present: ask, do not guess
+    printf 'Missing %s (needed for %s). Install with: %s\n' "$1" "$2" "$3" >&2
+    printf 'Install it now and press Enter to continue, or Ctrl-C to abort: ' >&2
+    read -r _
+    command -v "$1" >/dev/null 2>&1 && return 0
+  fi
+  return 1
+}
+
+need shellcheck "shell linting" "brew install shellcheck" \
+  || note "SKIPPED: shellcheck not found — shell lint did not run"
+```
+
+Two rules that make this safe rather than sloppy:
+
+- **A skipped check is not a passed check.** Print the skip on the same line the check
+  would have used, count skips separately, and never let the summary read clean when a
+  check did not execute ([`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §4 — a control that never runs).
+  This repo does exactly that: four invariants print `SKIPPED: python3 not found` and CI,
+  where python3 always exists, enforces them for real.
+- **Never auto-install.** Installing software is a change to the user's machine; on a
+  non-interactive run there is no one to consent, so degrade or fail loudly instead.
+  Ask, print the command, and let the human run it — a script that quietly installs a
+  package manager's worth of dependencies is a supply-chain event, not a convenience.
+
+## 7. Network calls: timeouts and bounded retries
+
+A network call without a timeout is a hang waiting to happen; without retry discipline it
+is flaky CI.
+
+```bash
+# GOOD — fail on HTTP errors, bound total time, retry transient failures with backoff
+curl --fail --silent --show-error --location \
+     --connect-timeout 5 --max-time 60 \
+     --retry 3 --retry-delay 2 --retry-all-errors \
+     -o "$tmpfile" -- "$url" || die "download failed: $url"
+```
+
+- `--fail` (or `--fail-with-body` when you need the error payload): otherwise curl exits 0
+  on HTTP 500 and you process an error page as data.
+- `--max-time` always; `--retry-all-errors` only for idempotent GETs — never blind-retry
+  POSTs that aren't idempotent.
+- Non-curl commands: wrap with `timeout 60 cmd ...` (coreutils). Generic retry wrapper:
+
+```bash
+retry() { # retry N CMD...
+  local -i n=$1 i; shift
+  for (( i = 1; i <= n; i++ )); do
+    "$@" && return 0
+    (( i < n )) && { err "attempt $i/$n failed: $*; retrying"; sleep $(( i * 2 )); }
+  done
+  return 1
+}
+```
+
+## 8. Concurrency: flock, background jobs, wait
+
+- Concurrent invocation (cron + manual run, parallel CI jobs) corrupts state. Mutual
+  exclusion via `flock` on Linux:
+
+```bash
+exec 9>"/var/lock/${0##*/}.lock"
+flock -n 9 || die "another instance is running"
+# lock held for the life of fd 9 (process lifetime); released automatically on exit/crash
+```
+
+  Never the `[ -f pidfile ]` dance — it races and leaks stale locks. macOS lacks `flock(1)`;
+  use `mkdir`-as-lock (atomic) with trap cleanup if portable locking is needed, and write PID +
+  start time into it: no trap runs on SIGKILL, so the directory outlives a killed run (measured
+  2026-10-26) and needs the staleness check of [`sota-cli-ux` rules/03](../../sota-cli-ux/rules/03-behavior-lifecycle.md) §4.
+- Background jobs: every `&` is owned — record the PID, `wait` on it, check its status.
+
+```bash
+# GOOD — bounded parallelism with per-job status (bash ≥4.3 wait -n; 5.1 adds -p)
+pids=()
+for host in "${hosts[@]}"; do
+  deploy_one "$host" & pids+=($!)
+done
+fail=0
+for pid in "${pids[@]}"; do
+  wait "$pid" || { fail=1; err "job $pid failed"; }
+done
+(( fail == 0 )) || die "one or more deploys failed"
+```
+
+- Plain `wait` with no args returns 0 regardless of children's failures (pre-5.x semantics
+  vary) — always wait per-PID when status matters. Never leave an unmanaged `&` (orphaned
+  work continues after the script "succeeds" or dies).
+- For real parallel fan-out with output grouping, prefer `xargs -P` or GNU parallel over
+  hand-rolled job pools.
+
+## 9. Idempotency and atomic writes
+
+Scripts get re-run: after partial failure, by retries, by impatient operators. Design for it.
+
+- Check-before-create, tolerate already-done:
+
+```bash
+mkdir -p -- "$dir"                       # not mkdir (fails if exists)
+[[ -L $link ]] || ln -s -- "$target" "$link"
+grep -qxF "$line" "$file" || printf '%s\n' "$line" >> "$file"
+```
+
+- **"Append" to a keyed store is an upsert.** Where the key comes from content or context
+  rather than from the record — a commit SHA, a request id, a date bucket — running twice
+  does not append twice, it **overwrites** (`git notes add -f`, `PUT`, `kubectl apply`).
+  If records are *linked* (hash chain, sequence numbers, prev-pointers) the overwrite
+  silently deletes the link target, and the corruption arrives from the ordinary act of
+  re-running. Detect an existing record for the same key **and** the same content and
+  return success without writing. **Test the second run, not just the first** — re-running
+  is the common path in any hook, retry or CI re-trigger.
+- **Atomic writes via mv**: never write a config/output file in place — a crash mid-write
+  leaves a torn file that consumers read.
+
+```bash
+tmp=$(mktemp -- "${out}.XXXXXX")         # same directory → same filesystem → mv is atomic rename
+generate > "$tmp"
+chmod 0644 -- "$tmp"                     # mktemp creates 0600; fix perms before publishing
+mv -f -- "$tmp" "$out"
+```
+
+- Downloads: download to temp, verify (checksum, `--fail` already ensured non-error body),
+  then `mv` into place. Never let a consumer see a half-downloaded artifact.
+- Deletions/migrations: make them no-ops on second run (`rm -f`, guarded `ALTER`s via the
+  real tool, not shell).
+
+## 10. Filenames are hostile input
+
+Filenames may contain spaces, newlines, leading `-`, glob chars, non-UTF-8 bytes.
+
+```bash
+# BAD — splits on whitespace, breaks on newlines, -dashfile becomes an option
+for f in $(find . -name '*.log'); do rm $f; done
+
+# GOOD — NUL-delimited end to end
+find . -name '*.log' -print0 | xargs -0 rm -f --
+# or no pipe at all:
+find . -name '*.log' -exec rm -f -- {} +
+# or into an array (bash ≥4.4):
+mapfile -d '' logs < <(find . -name '*.log' -print0)
+```
+
+- `--` before any operand that comes from a variable/glob, for every command that supports
+  it (`rm`, `cp`, `mv`, `grep`, `git checkout`, ...). For commands without `--`, prefix
+  relative paths: `rm "./$f"`.
+- `while IFS= read -r -d '' f` to consume `-print0` streams in-loop.
+- Never embed filenames in command strings passed to `ssh`/`bash -c` without proper
+  quoting — use `printf '%q'` (bash) or pass as positional args to a remote script.
+
+## Audit checklist
+
+- [ ] **No-match substitutions survive an empty input** (§4) — under `set -e`, any
+      `$(… grep …)` or `$(… jq -e …)` without `|| true` aborts the script silently when
+      nothing matches. Each hit is a *candidate*: a defect only if the script runs with `-e`
+      **and** the producer can find nothing there (a non-empty guard, a heredoc, which
+      discards the status, or an `if` condition cannot). The probe is line-based, so read
+      a hit's continuation lines for a trailing `|| true`. Tested on a labelled set of 8
+      bad and 10 good lines (8/8 caught, 0/10 flagged) with BSD grep and ugrep:
+      `grep -rnE '[$][(][^)]*(grep|jq -e)' --include='*.sh' . | grep -vE '[|][|]|^[^:]*:[0-9]+:[[:space:]]*(#|if[[:space:]]|elif[[:space:]]|while[[:space:]]|until[[:space:]])'`
+- [ ] **Missing-tool behaviour classified** (§6): does every `command -v` failure `die`,
+      skip-with-a-named-note, or ask an interactive human — and does the summary ever
+      read clean while a check did not execute? Probe:
+      `PATH=/usr/bin:/bin <script>` with a dependency removed, and confirm the run
+      reports a SKIP rather than an `ok`. No script may auto-install a dependency.
+- [ ] **`$?` read anywhere other than immediately after the command it describes** (§3a):
+      `grep -rnB2 '=\$?' --include='*.sh' .` — a **locator, not a verdict**: it hits every
+      capture including the correct ones, so read the two lines above each — if any
+      command sits between, the captured status is *that* command's. The bash mirror of the
+      PowerShell probe in [`rules/07`](07-powershell.md). Two shapes to flag specifically: a capture after a
+      diagnostic `echo`, and **`local rc; rc=$?`**, where the declaration itself resets `$?`
+      (measured 0 vs 7 on bash/zsh/dash/sh — and it is the SC2155 "declare separately" habit
+      applied where it does not belong). Silent, and the variable is still named `rc`.
+- [ ] **Process substitution with a fallible producer** (§4): `grep -rn '< <(' --include='*.sh'`
+      — for each, can the producer fail? If yes and the status is not captured, a failure
+      is indistinguishable from an empty result. High when the loop's emptiness decides a
+      pass/fail verdict.
+- [ ] **Arbitrary selection** (§4): `grep -rnE '\|\s*head -1|\| head -n ?1' --include='*.sh'`
+      over set-emitting commands with no `--sort`/`sort`. Confirm a two-element fixture
+      exists; a one-element test cannot fail.
+- [ ] **Second-run safety** (§9): re-run the script on unchanged inputs and diff the store.
+      Any write keyed by commit/id/date must be an upsert that preserves linked records.
+- [ ] No `--help` (§1): `grep -rLn -- '--help\|-h)' --include='*.sh'` → MEDIUM for any operator-facing script, and for a distributed tool with no `--version`.
+- [ ] Unknown options silently ignored (§1): `case` parse loops missing a `-*)` error arm or a `--)` arm; misuse that prints `usage` to stdout or exits 0 (only `--help` goes to stdout with 0); external `getopt` with no `getopt -T` check for GNU getopt.
+- [ ] **A captured value compared as a string against `0`** (§2): `grep -rnE '\[\[?[[:space:]]+"?\$\{?[A-Za-z_][A-Za-z0-9_]*\}?"?[[:space:]]+!=[[:space:]]+"?0"?[[:space:]]+\]' --include='*.sh' .`
+      is a locator: where the value came from `$( )`, an empty or error string satisfies `!= "0"` → MEDIUM. Also flag values used without a `[[ =~ ]]`/`case` check, and required env vars not checked up front with `: "${VAR:?…}"`. (4/4 bad, 0/4 good, BSD grep and ugrep.)
+- [ ] SC2230 (§6) — `grep -rn 'which ' --include='*.sh'` → replace with `command -v`; dependencies checked at first use rather than up front in one place; hard-coded tool paths outside a privileged script with a sanitized `PATH`.
+- [ ] Errors to stdout (§3): `grep -rn 'echo.*[Ee]rror\|echo.*[Ff]ail' --include='*.sh'` lacking `>&2`; context-free messages (`die "error"`) naming no object or cause.
+- [ ] `exit 0` at end of failure paths; functions calling `exit` where `return` is right (§3); the shell-reserved 126/127 emitted by the script itself: `grep -rnE 'exit[[:space:]]+12[67]([^0-9]|$)' --include='*.sh' .` (3/3 bad, 0/5 good, BSD grep and ugrep).
+- [ ] Bare curl/wget (§7): no timeout, `grep -rn 'curl ' --include='*.sh' . | grep -v -e '--max-time'`; no `--fail`,
+      `grep -rn 'curl ' --include='*.sh' . | grep -v -e '--fail' -e ' -[a-zA-Z]*f'` → MEDIUM (no timeout) / HIGH if output is piped to a shell or parsed as data. One `grep -v` of both flags passes a line holding either. Non-curl network commands not under `timeout`.
+- [ ] Retries on non-idempotent operations (`--retry` + POST) → HIGH (§7).
+- [ ] SC2031/SC2030 (§4) — `| while read` subshell variable loss.
+- [ ] Pipeline status ignored where producer matters (§4) and no `pipefail`/PIPESTATUS check.
+- [ ] Lock discipline (§8): cron-invoked or deploy scripts without `flock`/lock dir → MEDIUM;
+      test-then-create pidfile locks (`[ -f … ]`) → MEDIUM (racy).
+- [ ] Unmanaged `&` (§8): `grep -rn ' &$' --include='*.sh'` without matching `wait` on PID; a bare `wait` with no PID where job status matters: `grep -rnE '(^|[;&|])[[:space:]]*wait[[:space:]]*($|[;&|#])' --include='*.sh' .` (4/4 bad, 0/5 good, BSD grep and ugrep).
+- [ ] In-place writes of consumed files: `grep -rn '> */etc/\|> *.*\.conf' --include='*.sh'`
+      without mktemp+mv → HIGH for configs read by daemons (§9); a `mktemp`+`mv` that publishes without `chmod` ships a 0600 file; a download moved into place before it is verified.
+- [ ] `for .* in \$(find\|in \$(ls` and `xargs` without `-0` paired with `-print0` → HIGH
+      in destructive contexts (SC2044, SC2011; §10).
+- [ ] Missing `--` before variable operands of `rm/mv/cp/chown/chmod/git` (§10); not BSD/macOS `chmod`, which rejects `--` (§5): use `./"$f"`; filenames embedded in a `ssh`/`bash -c` string without `printf '%q'` or positional args.
+- [ ] Bashisms in `#!/bin/sh` files destined for alpine/busybox images (cross-check
+      Dockerfiles for base image) (§5): run `shellcheck -s sh` on each. A bare `set -o pipefail` there exits bookworm dash unless probed in a subshell first: `grep -nE '^[[:space:]]*set[[:space:]]+-[a-zA-Z]*o[[:space:]]+pipefail' <file>` (3/3 bad, 0/4 good, BSD grep and ugrep). In bash run on macOS: bash ≥ 4 features (`declare -A`, `mapfile`, `${var,,}`, `inherit_errexit`) with no version check.
