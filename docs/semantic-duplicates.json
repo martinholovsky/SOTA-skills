@@ -2986,6 +2986,17 @@
     "sota-web-frameworks/rules/03-nextjs.md#dc2bcad5e5be",
     "sota-web-frameworks/rules/07-security.md#709b29847a0f"
    ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "Re-matched 2026-11-03 after the expiry-alert rule moved from fixed days to each certificate's renewal point (#680). Same family as the 2026-10-30 consolidation: network-security rules/06 §1 owns the text and its checklist row; cloud-infrastructure rules/03 §7 is a pointer; network-security SKILL.md non-negotiable 9 and secrets-management rules/05 summarise it.",
+   "sample": "- **Every cert is issued and renewed automatically**, with expiry alerts as a backstop: the CA/B lifetime schedule, ACME",
+   "members": [
+    "sota-cloud-infrastructure/rules/03-networking.md#92f46175ac05",
+    "sota-network-security/SKILL.md#12c2a26ce62b",
+    "sota-network-security/rules/06-dns-tls-pki.md#a2fa7841f5e7",
+    "sota-secrets-management/rules/05-credential-types.md#fa0bbf79a6b0"
+   ]
   }
  ],
  "model": "qwen3-embedding:8b",
