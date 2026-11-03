@@ -5,6 +5,20 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **The plugin directory listing had no icon to read.** v1.54.0 shipped `.claude-plugin/icon.png`
+  but no `icon` field in `plugin.json`, which is where the directory reads it from (manifest
+  reference, "Directory listing fields"). The field is added, and `scripts/check-plugin-dist.py`
+  `[icon]` now requires it: the v1.54.0 tree fails, this tree passes, and two new known-bads
+  (field absent, field naming another file) bring `--selftest` to 23/23. `claude plugin validate
+  --profile directory` (Claude Code 2.1.317) passes the built tree; pointed at a missing file it
+  prints ICON_INVALID and still exits 0.
+- **Two key-shaped placeholders neutralised** (`sota-identity-access` rules/05, `sota-sandboxing`
+  rules/03). `sk_live_8f3...permanent` and `sk-live-abc123` matched gitleaks' default
+  `generic-api-key` rule (the repo's own config disables it). A directory submission runs its own
+  safety scan, so the examples now read `EXAMPLE_NOT_A_REAL_KEY`. Prose only.
+
 ## [1.54.0] - 2026-11-01
 
 A MINOR: the library can now be listed in the Claude plugin directory — each release tag builds a slim plugin tree and publishes it to a generated `plugin-dist` branch — and a release step finds instructions stated twice by meaning (`scripts/semantic-dup-scan.py`). Thirty-four PRs since v1.53.0: #639–#673 (#670 was closed unmerged).

@@ -264,7 +264,7 @@ jobs:
 
       - name: Prove the plugin-dist checker and publisher still refuse their known-bads
         # plugin-dist.yml runs both at release; here they run on every PR so a broken gate is found
-        # before a tag needs it. The checker's 21 known-bads each fail their own check and nothing
+        # before a tag needs it. The checker's 23 known-bads each fail their own check and nothing
         # else, and the publisher's 16 cases assert the refusal's reason, not only its exit code.
         # Mutation-checked 2026-11-01: a silent icon check fails 4 of 18; a routing control loosened
         # to "sota anywhere in stdout or stderr" fails 1; a publisher with the downgrade refusal

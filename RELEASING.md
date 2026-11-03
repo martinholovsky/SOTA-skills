@@ -323,7 +323,12 @@ workflow from the Actions tab with that tag; an unchanged tree is a no-op.
 - **The listing icon is taken once**, the first time the plugin is saved or submitted in the
   portal (`claude plugin validate`, ICON_MISSING). `.claude-plugin/icon.png` is on the build
   allowlist and checked (square PNG, 512–2048 px, under 2 MB), so it must exist before the first
-  submission. Changing the file later does not change the listing.
+  submission. Changing the file later does not change the listing. **The directory finds the file
+  through `plugin.json`'s `icon` field** (manifest reference, "Directory listing fields", fetched
+  2026-11-04), not by its path: v1.54.0 shipped the file without the field, so `[icon]` now also
+  requires `"icon": "./.claude-plugin/icon.png"`. `claude plugin validate` reports a field naming a
+  missing file as ICON_INVALID **and still prints "Validation passed", exit 0**, so read its advice
+  lines rather than its verdict.
 - **Plan B — DEFERRED.** Revisit trigger: the portal refuses `plugin-dist` with "Repository too
   large to validate" although the branch holds 465 entries, 374 of them files (built from 1.53.0 content plus an icon, 2026-11-01), meaning it counts the whole
   repository, not the tracked branch). Then publish to a separate repository instead

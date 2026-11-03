@@ -373,10 +373,19 @@ def check(dist: Path, rep: Report) -> None:
     except OSError as e:
         rep.fail("helpers", f"could not read a hook script: {e}")
 
-    # icon: the listing icon is taken once, at the first portal save, and cannot change later
+    # icon: the listing icon is taken once, at the first portal save, and cannot change later.
+    # The directory reads it from plugin.json's `icon` (code.claude.com/docs/en/plugins/
+    # manifest-reference, "Directory listing fields", fetched 2026-11-04): a file with no field
+    # pointing at it is not an icon to the listing, and v1.54.0 shipped exactly that.
     ic = dist / ICON_PATH
+    try:
+        field = json.loads((dist / ".claude-plugin/plugin.json").read_text(encoding="utf-8")).get("icon")
+    except (OSError, ValueError):
+        field = None  # the manifest check reports an unreadable plugin.json
     if not ic.is_file() or ic.is_symlink():
         rep.fail("icon", f"{ICON_PATH} missing")
+    elif not isinstance(field, str) or field.removeprefix("./") != ICON_PATH:
+        rep.fail("icon", f"plugin.json icon is {field!r}, not \"./{ICON_PATH}\"")
     else:
         size = ic.stat().st_size
         wh = png_size(ic)
@@ -389,7 +398,7 @@ def check(dist: Path, rep: Report) -> None:
         elif not ICON_MIN <= wh[0] <= ICON_MAX:
             rep.fail("icon", f"{ICON_PATH} is {wh[0]}x{wh[1]} (need {ICON_MIN} to {ICON_MAX} px a side)")
         else:
-            rep.ok("icon", f"{ICON_PATH} PNG {wh[0]}x{wh[1]}, {size} bytes")
+            rep.ok("icon", f"{ICON_PATH} PNG {wh[0]}x{wh[1]}, {size} bytes, named by plugin.json")
 
     # routing + hook-refs: run the hooks themselves, in a scratch config dir
     with tempfile.TemporaryDirectory() as t:
@@ -449,7 +458,8 @@ SHIP_SCRIPTS = ["plugin-budget-check.sh", "plugin-notice.sh", "update-reminder.s
 def good_tree(repo: Path, d: Path) -> None:
     (d / ".claude-plugin").mkdir(parents=True)
     (d / ".claude-plugin/plugin.json").write_text(json.dumps(
-        {"name": "fixture-plugin", "version": "1.2.3", "description": "fixture", "license": "MIT"}))
+        {"name": "fixture-plugin", "version": "1.2.3", "description": "fixture", "license": "MIT",
+         "icon": f"./{ICON_PATH}"}))
     make_png(d / ICON_PATH, 512, 512)
     (d / "VERSION").write_text("1.2.3\n")
     (d / "LICENSE").write_text("MIT fixture licence text\n")
@@ -479,6 +489,17 @@ def m_files(d: Path) -> None:
     (d / "many").mkdir()
     for i in range(MAX_FILES + 1):
         (d / "many" / f"f{i}.md").write_text("x\n")
+
+
+def m_manifest(d: Path, **fields: object) -> None:
+    p = d / ".claude-plugin/plugin.json"
+    man = json.loads(p.read_text(encoding="utf-8"))
+    for k, v in fields.items():
+        if v is None:
+            man.pop(k, None)
+        else:
+            man[k] = v
+    p.write_text(json.dumps(man), encoding="utf-8")
 
 
 def m_install_line(d: Path) -> None:
@@ -513,6 +534,8 @@ MUTATIONS = [
     ("helpers", "plugin-budget-check.sh's lister does not ship, so the hook would go silent",
      lambda d: (d / "scripts/skill-listing-sources.sh").unlink()),
     ("icon", "icon missing", lambda d: (d / ICON_PATH).unlink()),
+    ("icon", "plugin.json has no icon field, so the listing has no icon", lambda d: m_manifest(d, icon=None)),
+    ("icon", "plugin.json icon names another file", lambda d: m_manifest(d, icon="./logo.png")),
     ("icon", "icon not square (600x512)", lambda d: make_png(d / ICON_PATH, 600, 512)),
     ("icon", "icon too small (256x256)", lambda d: make_png(d / ICON_PATH, 256, 256)),
     ("icon", "icon is a JPEG named .png",
