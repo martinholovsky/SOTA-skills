@@ -108,7 +108,7 @@ API key or service-account key file baked into config). Replace it:
 
 ```
 # BAD: static, long-lived, broadly-scoped machine credential
-SVC_API_KEY="sk_live_8f3...permanent"        # in env/config, never rotates, shared
+SVC_API_KEY="EXAMPLE_NOT_A_REAL_KEY"         # in env/config, never rotates, shared
 
 # GOOD: short-lived federated/attested identity
 #   pod presents projected SA token -> exchanged for a 15m, single-service token
