@@ -148,6 +148,14 @@ run_gate() {
   to a known-intermittent list, check whether its first occurrence was ever preserved. A list
   of "unexplained intermittent failures" is frequently a list of runs whose evidence was
   overwritten.
+- **Fetching a CI job's log can return nothing and still read as a log.** Measured 2026-11-03 on gh
+  2.103.2: `gh api repos/O/R/actions/jobs/<id>/logs` refuses any log that contains terminal escape
+  codes (coloured compiler output, or GitHub's own coloured step echo) unless given
+  `--allow-escape-sequences`: exit 1, nothing on stdout, the refusal only on stderr, so with
+  `2>/dev/null` the saved log is empty. And `gh run view <run> --log-failed` prints "is still in
+  progress; logs will be available when it is complete" while any other job of the run is running,
+  even for a job that already failed (seen twice, in two sessions); `gh run view --job <id> --log`
+  after the run ends is the fallback. Print the byte count beside every saved log.
 - **A red *mutating* step is a claim about one attempt, not about the world.** Before a
   pipeline retries, rolls back or reports a failed push, deploy or tag, read the resource
   back: the write may have landed and the error may be about the attempt, not the state.

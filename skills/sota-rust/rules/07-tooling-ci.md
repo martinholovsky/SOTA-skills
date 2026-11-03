@@ -292,7 +292,7 @@ full = ["serde", "metrics"]            # convenience aggregate, still additive
   consumers opting in.
 - **Test the matrix**: `cargo hack check --feature-powerset --depth 2` (or at
   minimum: `--no-default-features`, default, `--all-features`) in CI — feature
-  combinations nobody compiles are broken combinations.
+  combinations nobody compiles are broken combinations. **So is code under a `cfg` for another OS**: `cfg(target_os = …)`, `cfg(unix)`/`cfg(windows)` or `target_arch` code is compiled only on that target, so a clippy, test or doc run on any other host neither lints nor type-checks it and still exits 0 (`--all-targets` means lib, bins, tests, examples and benches, not operating systems). Measured 2026-11-03, clippy 0.1.97: the same `useless_conversion` in a Linux-only and in a non-Linux function, and `cargo clippy --all-targets` on macOS reported only the non-Linux one (field-reported: the Linux one failed CI twice after a green host run). Run clippy and the tests once per OS the code is gated for, as a CI OS matrix (or `cargo clippy --target <triple>` once that target's std is installed; not measured here), and never report "clippy clean" from a host the gated code does not build on.
 - Don't gate public API breaking-ly (a feature that changes a type's layout or
   a function's signature = non-additive = ecosystem breakage).
 - Keep default features lean; heavyweight integrations (TLS stacks, runtimes)
@@ -402,7 +402,7 @@ this skill:
 
 ```yaml
 jobs:
-  check:   # fmt + clippy + doc, pinned stable toolchain
+  check:   # fmt + clippy + doc, pinned stable toolchain; once per OS the crate has cfg(target_os) code for (§5)
     - cargo fmt --check
     - cargo clippy --workspace --all-targets --all-features -- -D warnings
     - RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
@@ -475,7 +475,7 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`, keyed an
       deploy target triple is tier 1, or tier 2 by a recorded decision.
 - [ ] Features (§5): `rg 'no[-_](std|default)' Cargo.toml` style negative features
       = Medium (non-additive); optional deps using `dep:`; feature matrix job
-      (`cargo hack`) present; `--no-default-features` builds.
+      (`cargo hack`) present; `--no-default-features` builds; clippy and tests run on every OS the code has `cfg(target_os)` arms for, not only the host's.
 - [ ] Docs (§6): `missing_docs` on lib crates; `# Errors`/`# Panics`/`# Safety`
       sections present (`clippy::missing_errors_doc`, `missing_panics_doc`,
       `missing_safety_doc`); docs.rs metadata for feature-gated crates;

@@ -230,6 +230,7 @@ capability check, a Terraform plan that renders and is refused by admission.
   request keeps its head-ref name, so it stays published. List what each publishing step emits and scan each
   one **before** it leaves (a pre-push hook), since CI runs after the text is public. A gate that
   reports a hit in a public CI log names *where*, never *what*, or it republishes the leak.
+- **And across configurations: code a host build never compiles is outside every gate run on that host.** An OS- or architecture-gated arm (Rust `cfg(target_os = …)`, Go `//go:build linux`, C `#ifdef __linux__`) is removed before the compiler, linter or type checker sees it, so the host run is green over code it never read. Measured 2026-11-03: clippy on macOS reported a lint only in the non-Linux function of a pair that both carried it ([`sota-rust` rules/07](../../sota-rust/rules/07-tooling-ci.md) §5). Run the lint and the tests once per gated target (a CI OS matrix) and never quote a host-only green for code it cannot build.
 - The mirror-image trap is a gate whose reach is bounded by what the **subject** checks
   first — a runner that exits at a credential check in CI never reaches the code under
   test. Injecting a **dummy** credential makes CI and a laptop measure the same depth.
@@ -350,6 +351,9 @@ release tag directly is the finding.
       (`--manifest-path`, a path arg, an ignore file) narrows coverage without changing how
       the green looks. `type` + `--version` beside the result; for a pin, compare
       against `rustup run <channel> …`, not `rustup show active-toolchain`.
+- [ ] **Does every lint and test job run on each OS the code has gated arms for?** (§2a) A
+      `cfg(target_os)`, `//go:build` or `#ifdef` arm for another OS is never compiled on the host, so a
+      host-only job is green over it.
 - [ ] **Where do the gates stop, and what runs after?** (§2a) Name each gate's terminal
       artifact. If a loader, verifier, dynamic linker, capability check, admission
       controller or kernel runs after it, at least one gate must **execute** the artifact
