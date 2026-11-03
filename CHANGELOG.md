@@ -5,9 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.54.1] - 2026-11-04
 
-- **The plugin directory listing had no icon to read.** v1.54.0 shipped `.claude-plugin/icon.png`
+A PATCH: the plugin manifest gains the `icon` field the Claude directory reads its listing icon from, so the next `plugin-dist` publish carries it; the rest is rule text, gates and intakes inside surfaces that already exist. Eight PRs since v1.54.0: #675–#682.
+
+**Front door checked:** plugin-dist · Claude directory · NOMATCH
+
+- **The plugin directory listing had no icon to read** (#682). v1.54.0 shipped `.claude-plugin/icon.png`
   but no `icon` field in `plugin.json`, which is where the directory reads it from (manifest
   reference, "Directory listing fields"). The field is added, and `scripts/check-plugin-dist.py`
   `[icon]` now requires it: the v1.54.0 tree fails, this tree passes, and two new known-bads
@@ -17,7 +21,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Two key-shaped placeholders neutralised** (`sota-identity-access` rules/05, `sota-sandboxing`
   rules/03). `sk_live_8f3...permanent` and `sk-live-abc123` matched gitleaks' default
   `generic-api-key` rule (the repo's own config disables it). A directory submission runs its own
-  safety scan, so the examples now read `EXAMPLE_NOT_A_REAL_KEY`. Prose only.
+  safety scan, so the examples now read `EXAMPLE_NOT_A_REAL_KEY`. Prose only (#682).
+- **Invariant 29 compares descriptions against the previous release tag**, not the merge base
+  (#675), so a description edited in an earlier PR of the same release still needs a routing run.
+  Probe 29d replays the miss; negative controls are 131 probes, 129 live. CONTRIBUTING's copy of
+  the old baseline, and RELEASING §2c's size of the routing run (24 calls, not about 12), were
+  corrected in #677.
+- **PostgreSQL 18's `NOT NULL ... NOT VALID` path** (`sota-databases` rules/02, #678), measured
+  on PostgreSQL 18.6: a new NULL is refused while the constraint is NOT VALID, `VALIDATE` is
+  refused until the backfill finishes, and the catalog already reports the column NOT NULL
+  (`attnotnull`, `is_nullable`, `\d`) while an old NULL row remains.
+- **Intakes** (#676, #679, #680), every claim labelled verified, corrected, refuted or not
+  reproducible: `git log --since=<bare date>` drops that day's morning at exit 0
+  (`sota-shell-scripting` rules/09, `/sota-resume`); a heredoc to `podman exec` without `-i` runs
+  nothing and exits 0, and a zsh glob that matches nothing aborts the whole command, valid
+  operands included (rules/06; the NOMATCH habit now also sits in `install.sh`'s always-on
+  block); `git stash` keeps untracked files, so it cannot scope a sweep to HEAD (rules/06 §2);
+  re-running a failed hardware-key signature spends a PIN attempt (`sota-cli-ux` rules/03 §9,
+  `sota-devsecops` rules/02); after a stacked PR's base squash-merges, replay with
+  `--onto` and predict with `merge-tree --merge-base` (`sota-docs-workflow` rules/03); an unknown
+  lint name in a lint level is only a warning, so the control is inert (`sota-rust` rules/07);
+  certificate expiry alerts keyed to the renewal point (`sota-network-security` rules/06 §1);
+  redact a provider-mandated URL key before wrapping an error (`sota-secrets-management`
+  rules/03, `sota-golang` rules/01); plus `sota-devsecops` rules/09 and rules/11 and
+  `sota-testing` rules/07.
+- **Closure passes** (#677, #681): the duplicate scan's verdict for the certificate-expiry
+  family, re-matched after #680 changed its block ids.
+- **Counts:** 44 invariants; 131 negative-control probes, 129 live; 1,900 checklist probes
+  proven by fixtures; `check-plugin-dist.py` 18 checks, 23 known-bads. ROADMAP open: item 5
+  (dormant).
 
 ## [1.54.0] - 2026-11-01
 
@@ -11749,6 +11781,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.54.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.1
 [1.54.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.0
 [1.53.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.53.0
 [1.52.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.52.0
