@@ -298,8 +298,10 @@ MD
   `pgrep -f`, `ps | grep` and a `/proc/*/cmdline` loop also select the shell, or the
   `ssh`/`bash -c`, whose argv carries the pattern; act on PIDs you recorded.
 - **zsh is not bash.** An unquoted `$var` is not word-split (`set -- $p` sets one
-  argument; write `${=p}`), and an unquoted word starting with `=` is rewritten or
-  aborts the list (`echo ===`; separate with `echo ---`).
+  argument; write `${=p}`), an unquoted word starting with `=` is rewritten or
+  aborts the list (`echo ===`; separate with `echo ---`), and an unquoted glob that
+  matches nothing aborts the whole command, valid operands included, so
+  `rg x tools corpus/*.py | wc -l` prints 0 (quote it, or check the path exists).
 
 Detail: `sota-shell-scripting` rules/04 §1b, rules/09 §5c, rules/06 §1.
 MD

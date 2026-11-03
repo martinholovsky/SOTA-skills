@@ -136,7 +136,7 @@ scope you searched passes whether or not that scope excludes the answer. Field-r
 'positive control' skills/ --glob '**/rules/*.md'` returned 4 files, the real query returned 0
 and was reported as a gap, and the answer sat in `skills/sota/SKILL.md`, which that glob never
 matches. **Draw the control from where your scope is least likely to reach**, and print the file
-count beside the zero: a denominator that is implausibly small for the corpus is the tell.
+count beside the zero: a denominator that is implausibly small for the corpus is the tell. **A control scoped to HEAD reads HEAD, never the working tree after `git stash`**: stash keeps untracked (and ignored) files, so the file you just added, the one the control must exclude, is still searched (reproduced 2026-11-03, git 2.55.0: after `git stash` the untracked file was still there; a sweep over `git ls-files` found 0 hits, the working tree 1; field-reported the same day). Iterate `git ls-files <pathspec>`, read `git show HEAD:<path>`, or search a throwaway `git worktree add --detach <dir> HEAD`.
 
 **Where you have nothing to control *with*, print a denominator instead.** A positive control
 needs a term you already know is present — unavailable exactly where this fails most: an
@@ -406,7 +406,7 @@ n=$(ps -axo command= | grep -c "[m]y-job")
 That is [`sota-code-security` rules/14](../../sota-code-security/rules/14-control-not-in-force.md) §1 applied to your own scrollback: a claim is sited in
 the **consumer**, derived from the value it actually received. **The tell on review** is a
 line beginning `^`, `(` or `<-` that asserts a *state* rather than naming a *quantity*. Read
-the output above it before believing it — including your own. **A script's failure message is the same label on the failure path**, which is exactly when someone acts on it: print what was observed (`last status: ''; empty = the probe never ran`), never a guessed cause (field-reported 2026-11-01: "a model file is likely missing" sent the reader to the wrong subsystem when the probe itself had not run).
+the output above it before believing it — including your own. **A script's failure message is the same label on the failure path**, which is exactly when someone acts on it: print what was observed (`last status: ''; empty = the probe never ran`), never a guessed cause (field-reported 2026-11-01: "a model file is likely missing" sent the reader to the wrong subsystem when the probe itself had not run). **A transcript filtered to the lines you expect is the same label, assembled by `grep`**: `git commit … 2>&1 | grep -E 'passed|FAIL'` can show only the outcomes you listed, so a hook that aborts **silently** prints nothing and the success lines that did print become the whole picture (field-reported 2026-11-03: five `passed` lines, no commit; reproduced, zsh 5.9: `sh -c 'echo "a passed"; exit 3' 2>&1 | grep passed` printed the line with `$?` 0 and `${pipestatus[1]}` 3). Read the verdict from the exit status and the end state (`git log -1`, the artifact), never from a filtered transcript.
 
 ## 2f. A backslash escape (`\b` `\<` `\s` `\w` `\d`), or a `^`/`$` inside a pattern, is a property of the machine, not of the tool
 
@@ -472,7 +472,7 @@ thing** — index it by what it is *for*.
       trailing `; echo "^ 0 = ..."` is a prediction typed before the run, and `;` cannot
       propagate a contradiction. Sweep your own scripts and scrollback for `; *echo` beside
       a counting command; print the value and derive any verdict from the variable the
-      command produced
+      command produced. And is any verdict read from a transcript filtered to expected lines (`| grep -E 'passed|FAIL'`)? A silent abort prints nothing; read the exit status and the end state
 - [ ] **Does any search rely on `\b`, `\<`, `\s`, `\w` or `\d`?** (§2f) — absent from BSD/macOS regex, and
       `git grep` inherits the platform's, so the same pattern silently returns zero on one
       machine and matches on another. There is no version to pin. Use `-P`, the POSIX

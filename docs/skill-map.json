@@ -3475,6 +3475,14 @@
     },
     {
       "from": "sota-golang",
+      "to": "sota-secrets-management",
+      "weight": 1,
+      "targets": [
+        "rules/03 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-golang",
       "to": "sota-architecture",
       "weight": 1,
       "targets": [
@@ -4523,12 +4531,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1913,
+    "md link, other skill": 1914,
     "md link, outside skills/": 3,
     "md link, same skill": 2860,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 903,
+    "name+file (backticked)": 904,
     "name+file (bare)": 180,
     "own rules/NN": 3081
   },
@@ -4540,7 +4548,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 899,
+    "name+file (backticked)": 900,
     "name+file (bare)": 168,
     "own rules/NN": 2978
   },
@@ -8599,6 +8607,7 @@
         "sota-cloud-infrastructure/rules/04-compute-selection.md",
         "sota-cloud-infrastructure/rules/05-data-storage.md",
         "sota-confidential-computing/rules/03-remote-attestation.md",
+        "sota-golang/rules/01-errors.md",
         "sota-php/rules/04-sessions-auth-web-hardening.md"
       ]
     },
