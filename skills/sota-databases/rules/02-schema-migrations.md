@@ -82,6 +82,17 @@ COLUMN, SET/DROP DEFAULT, most type widenings that are binary-coercible
 - `SET NOT NULL` (scans): add `CHECK (col IS NOT NULL) NOT VALID`, then
   `VALIDATE CONSTRAINT` (takes only SHARE UPDATE EXCLUSIVE), then `SET NOT
   NULL` (PG12+ uses the validated check to skip the scan), then drop the check.
+  **From PostgreSQL 18 the not-null constraint itself can be `NOT VALID`**, with no CHECK detour:
+  `ALTER TABLE t ADD CONSTRAINT t_col_nn NOT NULL col NOT VALID;` (no scan; it takes ACCESS
+  EXCLUSIVE briefly, so `lock_timeout` still applies), backfill, then
+  `ALTER TABLE t VALIDATE CONSTRAINT t_col_nn;` (SHARE UPDATE EXCLUSIVE). Measured 2026-11-03 on
+  PostgreSQL 18.6: the invalid constraint already rejects new NULLs, and VALIDATE refuses while
+  an old one remains. **Trap: the catalog says NOT NULL before it is true.** With a NULL row
+  still present, `pg_attribute.attnotnull` is `t`, `information_schema.columns.is_nullable` is
+  `NO` and `\d` shows `not null`, so an ORM, code generator or schema-diff tool that reads them
+  treats the column as non-null between the add and the VALIDATE. Keep that window short, and
+  check `pg_constraint.convalidated` for the truth (PostgreSQL 18 docs: ALTER TABLE, release
+  notes "Allow ALTER TABLE to set the NOT VALID attribute of NOT NULL constraints").
 - `ADD FOREIGN KEY` / `ADD CHECK`: always `NOT VALID` first, `VALIDATE
   CONSTRAINT` in a later migration.
 - `ADD COLUMN ... DEFAULT <volatile fn>` (e.g. `uuidv7()`): rewrites. Add
@@ -179,7 +190,7 @@ WHERE events.user_id = u.id
 | Drop column | Stop reading in code → deploy → DROP COLUMN (lock_timeout) |
 | Rename column/table | Expand/contract dual-write (never RENAME on hot path); views can bridge reads |
 | Change type | New column + trigger dual-write + backfill + swap |
-| Add NOT NULL | CHECK NOT VALID → VALIDATE → SET NOT NULL |
+| Add NOT NULL | CHECK NOT VALID → VALIDATE → SET NOT NULL; from PG18, `ADD CONSTRAINT … NOT NULL col NOT VALID` → VALIDATE (the catalog reports NOT NULL before VALIDATE) |
 | Add FK/CHECK | NOT VALID → VALIDATE CONSTRAINT |
 | Add index | CREATE INDEX CONCURRENTLY (non-transactional migration) |
 | Add unique | UNIQUE INDEX CONCURRENTLY → ADD CONSTRAINT USING INDEX |
@@ -276,7 +287,9 @@ The expand/contract and lock-timeout doctrines are identical; mechanics differ:
       `statement_timeout` set for the DDL too (§2).
 - [ ] No table-rewrite DDL (type change, volatile default, naive SET NOT
       NULL) on hot tables; NOT VALID → VALIDATE used for new constraints; `int`
-      sequences alerted before exhaustion (`last_value / 2147483647`) (§2).
+      sequences alerted before exhaustion (`last_value / 2147483647`) (§2). On PostgreSQL 18, a
+      not-null constraint added `NOT VALID` is VALIDATEd soon after, and nothing reads
+      `is_nullable`/`attnotnull` in between: both report NOT NULL while NULL rows remain (§2).
 - [ ] All index builds on live tables use CONCURRENTLY in non-transactional
       migrations; no INVALID indexes present in the catalog, and a re-run drops
       an invalid leftover before re-creating; unique constraints added via
