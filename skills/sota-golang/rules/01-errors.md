@@ -68,6 +68,11 @@ Context rules:
   (staticcheck ST1005).
 - Wrap at each layer that adds information; pass through (`return err`)
   when you have nothing to add. Mechanical wrapping at every return is noise.
+- **The wrapped text is frozen when `fmt.Errorf` runs**, so scrub a secret from an error *before*
+  wrapping it. A `net/http` error is a `*url.Error` that prints the full request URL, so a key in
+  the URL reaches every log of every wrapper; redacting `ue.URL` via `errors.As` after the wrap
+  left the key in the message (measured 2026-11-03, go 1.27.3). The pattern and its test:
+  [`sota-secrets-management` rules/03](../../sota-secrets-management/rules/03-application-patterns.md) §3.
 
 ```go
 // BAD — no chain (%v), redundant phrasing, capitalized

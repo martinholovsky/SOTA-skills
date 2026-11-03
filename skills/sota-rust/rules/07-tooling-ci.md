@@ -94,6 +94,8 @@ scopes test code with `#![cfg_attr(test, allow(clippy::arithmetic_side_effects, 
   rejects `#[allow]` that macros emit: measured for both lints, a proc-macro derive's and another
   crate's `macro_rules!` `#[allow(…)]` failed with E0453 under `forbid` and compiled under `deny`. `unsafe_code = "forbid"` is still right in crates that need no unsafe (rules/03 §5);
   check that its derives compile.
+- **A lint level that names a lint the toolchain does not know is only a warning (E0602)**, so the control is inert at exit 0: measured 2026-11-01 on clippy 0.1.97, a misspelled `-F clippy::float_compare`, `[lints.clippy] float_compare = "forbid"` and `#![forbid(clippy::float_compare)]` each exited 0, and adding `unknown_lints = "deny"` (or `-D unknown_lints`, or `#![deny(unknown_lints)]`) in the same place made each exit 101. Set it beside every lint list. Diagnostics print lint names hyphenated (`-F clippy::float-cmp`, `-F dead-code`), so a count of which lints fired matches `[a-z_-]`, never `[a-z_]` (field-reported 2026-11-01: 4 of 16 counted, all 16 had fired).
+  Of the inner allows above, `#![allow(dead_code)]` is the one that hides an uncalled function, a cleanup or drop path included, so read what it covers before rating it.
 - Run clippy on the same pinned toolchain as the build (lint sets drift across
   versions).
 
@@ -290,7 +292,7 @@ full = ["serde", "metrics"]            # convenience aggregate, still additive
   consumers opting in.
 - **Test the matrix**: `cargo hack check --feature-powerset --depth 2` (or at
   minimum: `--no-default-features`, default, `--all-features`) in CI — feature
-  combinations nobody compiles are broken combinations.
+  combinations nobody compiles are broken combinations. **So is code under a `cfg` for another OS**: `cfg(target_os = …)`, `cfg(unix)`/`cfg(windows)` or `target_arch` code is compiled only on that target, so a clippy, test or doc run on any other host neither lints nor type-checks it and still exits 0 (`--all-targets` means lib, bins, tests, examples and benches, not operating systems). Measured 2026-11-03, clippy 0.1.97: the same `useless_conversion` in a Linux-only and in a non-Linux function, and `cargo clippy --all-targets` on macOS reported only the non-Linux one (field-reported: the Linux one failed CI twice after a green host run). Run clippy and the tests once per OS the code is gated for, as a CI OS matrix (or `cargo clippy --target <triple>` once that target's std is installed; not measured here), and never report "clippy clean" from a host the gated code does not build on.
 - Don't gate public API breaking-ly (a feature that changes a type's layout or
   a function's signature = non-additive = ecosystem breakage).
 - Keep default features lean; heavyweight integrations (TLS stacks, runtimes)
@@ -400,7 +402,7 @@ this skill:
 
 ```yaml
 jobs:
-  check:   # fmt + clippy + doc, pinned stable toolchain
+  check:   # fmt + clippy + doc, pinned stable toolchain; once per OS the crate has cfg(target_os) code for (§5)
     - cargo fmt --check
     - cargo clippy --workspace --all-targets --all-features -- -D warnings
     - RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
@@ -473,7 +475,7 @@ gate ([rules/06](06-performance.md)). Cache with `Swatinem/rust-cache`, keyed an
       deploy target triple is tier 1, or tier 2 by a recorded decision.
 - [ ] Features (§5): `rg 'no[-_](std|default)' Cargo.toml` style negative features
       = Medium (non-additive); optional deps using `dep:`; feature matrix job
-      (`cargo hack`) present; `--no-default-features` builds.
+      (`cargo hack`) present; `--no-default-features` builds; clippy and tests run on every OS the code has `cfg(target_os)` arms for, not only the host's.
 - [ ] Docs (§6): `missing_docs` on lib crates; `# Errors`/`# Panics`/`# Safety`
       sections present (`clippy::missing_errors_doc`, `missing_panics_doc`,
       `missing_safety_doc`); docs.rs metadata for feature-gated crates;

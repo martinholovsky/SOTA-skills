@@ -16,7 +16,7 @@ misconfig (or one kernel bug) away from root-on-host.
 FROM ubuntu:latest
 COPY . /app
 RUN apt-get update && apt-get install -y python3 curl wget vim
-ENV API_KEY=sk-live-abc123
+ENV API_KEY=EXAMPLE_NOT_A_REAL_KEY
 CMD ["python3", "/app/server.py"]
 ```
 

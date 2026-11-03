@@ -244,7 +244,7 @@ Docs are now read by agents as well as humans. Same content, two consumers.
   row that earns its place is the one **contradicting** the default: the test
   runner that isn't the framework's, the port that isn't the documented one.
 - **Agent docs decay like all docs** — review them when commands change; a wrong
-  test command in AGENTS.md silently corrupts every agent run.
+  test command in AGENTS.md silently corrupts every agent run. **Shrinking one demotes explanation, never a trap**: when content moves to on-demand topic files, every trap ("X looks fine and breaks Y") keeps a one-line imperative in the always-loaded file, because the task that needs a trap rarely gives the cue to open the file that holds it. Check it mechanically: list the moved blocks that hold an imperative (`never`, `must`, `don't`, `kill`) and confirm each still has a line in the index (field-reported 2026-11-01: a verbatim split kept 3 of 4 traps in a topic's pointer line, and the dropped one, killing a server by PID orphans its GPU workers, is the one a script hit hours later: an out-of-memory failure, causation plausible rather than proven).
 - **Check the file's *claims*, not just that its commands exist.** The two rot
   at different rates and only the first is ever noticed. A verification that
   confirms every named target resolves passes happily while the file asserts a

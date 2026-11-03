@@ -162,7 +162,8 @@ resource "aws_security_group_rule" "db_in" {
 ## 7. TLS and certificate automation
 
 - **Every cert is issued and renewed automatically**, with expiry alerts as a
-  backstop: the CA/B lifetime schedule, ACME and the 30/14/7-day alerts are
+  backstop: the CA/B lifetime schedule, ACME and expiry alerts set from each
+  certificate's renewal point are
   [sota-network-security rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) §1 R1.
 - Prefer **provider-managed certs** terminated on managed LBs/CDN (ACM, Google-managed
   certs, Azure-managed) — auto-renewed, no private key you can leak. Where you must

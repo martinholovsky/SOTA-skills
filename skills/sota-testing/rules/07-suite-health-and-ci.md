@@ -230,6 +230,7 @@ true of a working tree that predated a later commit by ~50 minutes. Arithmetic p
 - **Record the revision beside the number**, always: `git rev-parse HEAD` at start, printed
   in the same line as the result. "Green" is not a fact about your branch; "green at `<sha>`"
   is ([`sota/rules/03`](../../sota/rules/03-audit-findings.md) §2).
+- **A working tree is not a revision.** `git rev-parse HEAD` names a commit, not your uncommitted edits, and a background job that copies or mounts the tree reads whatever is there when it starts, which may be after you switched branch or half-way through an edit. Run such a job from a frozen tree, `git worktree add --detach <dir> <sha>`, and print that sha with its result (field-reported 2026-11-03: a container verification started later than its launch, after the tree had moved on, and its result could not be attributed to any commit).
 - **Reconcile the count against the diff.** An unexplained ±1 is a signal, not noise — the
   case above was only visible because the delta was *attributed* rather than accepted. Off
   by one in the other direction is a test that silently stopped being collected, which

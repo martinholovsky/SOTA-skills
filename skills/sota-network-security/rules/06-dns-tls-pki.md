@@ -29,8 +29,22 @@ human cannot reliably re-issue every ~6 weeks across a fleet. Therefore:
   (Issuer/ClusterIssuer + Certificate) for both public and internal.
 - **Provider-managed certs** on managed LB/CDN/Cloudflare where applicable (no private key you can
   leak).
-- **Expiry monitoring as a backstop** (alert at 30/14/7 days) *even with* automation — automation
-  fails silently. (Alert wiring: [sota-observability](../../sota-observability/SKILL.md).)
+- **Expiry monitoring as a backstop** *even with* automation — automation fails silently. (Alert
+  wiring: [sota-observability](../../sota-observability/SKILL.md).) **Set the threshold from each certificate's own renewal point, not in
+  fixed days.** Fixed 30/14/7-day thresholds fit ~90-day public certificates only: on a 7-day
+  internal certificate all three fire from issuance, and at a 47-day public lifetime a 30-day alert
+  fires from day 17 until a 2/3 renewal replaces the certificate near day 31. With cert-manager, alert when renewal is overdue,
+  `time() > certmanager_certificate_renewal_timestamp_seconds + <grace>`, plus a last-resort
+  `certmanager_certificate_expiration_timestamp_seconds - time() < <margin>` where the margin is
+  shorter than every certificate's renewal lead and long enough to repair the issuer (metric names:
+  cert-manager `pkg/metrics/metrics.go`). **Check any fixed threshold against the live population,
+  not your manifests**: every Certificate's `status.renewalTime` must fall before it. A Helm- or
+  operator-generated Certificate often sets no `renewBefore`, and cert-manager then renews at 2/3
+  of the lifetime (`desiredRenewalTime` returns `duration / 3`); a `renewBefore` not shorter than
+  the duration is ignored the same way, and an ACME ARI suggested window overrides `renewBefore`
+  altogether (cert-manager `pkg/util/pki/renewaltime.go`, read 2026-11-03). Field-reported
+  2026-11-03: an alert at <72h assumed every certificate renewed at 120h, one chart-generated
+  168h certificate renewed at 56h, and the alert would have fired on it for ~16h every week.
 - Any cert renewed by hand, or living past the current CA/B cap, is a finding (High on a public
   endpoint — guaranteed future outage).
 
@@ -301,7 +315,9 @@ reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, no
 ## Audit checklist
 
 - [ ] Are all public certs ACME/managed and auto-renewed, with expiry alerts as backstop? Any
-      manual renewal or cert older than the current CA/B cap (200d in 2026) → finding (§1).
+      manual renewal or cert older than the current CA/B cap (200d in 2026) → finding (§1). Is each
+      expiry alert set from the certificate's renewal point (renewal overdue), not in fixed days,
+      and does every live certificate's `status.renewalTime` fall before any fixed threshold (§1)?
 - [ ] TLS 1.2 minimum (1.3 preferred), weak ciphers/protocols disabled across edge, ingress, mesh,
       internal (§2)? (`nmap --script ssl-enum-ciphers`.)
 - [ ] **High — incomplete chain (§2, R2.1).** Per endpoint, from a client with no AIA fetching:

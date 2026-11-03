@@ -187,6 +187,15 @@ name.
   benefit.
 - Each PR in a stack must stand alone: green CI, coherent description, no
   forward references that make it unreviewable without reading the whole stack.
+- **When the PR below squash-merges, the next one still carries its original commits**, and
+  `main` holds them only as one new commit. Replay only the upper PR's own commits:
+  `git rebase --onto origin/main <old base tip> <branch>`, and predict the result first with
+  `git merge-tree --write-tree --merge-base=<old base tip> origin/main <branch>`. A plain
+  `git merge-tree origin/main <branch>` takes the old fork point as the base and reports the
+  squashed commits as conflicts the rebase will not hit (reproduced 2026-11-01, git 2.55.0: rc 1
+  plain, rc 0 with `--merge-base`, the upper change kept); the same root cause makes
+  `merge-base --is-ancestor` call the lower branch unmerged
+  ([`sota-shell-scripting` rules/09](../../sota-shell-scripting/rules/09-listing-and-selection.md) §5a). After the force-push, check that CI ran for the new head.
 
 ## §5a The change surface is a design decision, not a side effect
 
