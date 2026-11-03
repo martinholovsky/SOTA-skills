@@ -172,6 +172,20 @@ curl -H @/run/secrets/auth_header https://api...
 PGPASSWORD unset; use ~/.pgpass (0600) or peer/IAM auth
 ```
 
+**When a provider requires the key in the URL** (a path segment or query parameter, no header
+option): the integration is not a self-inflicted High, but the **URL is now the secret**. Build it
+in one function, never log it, and record the provider's requirement beside that code so the next
+audit does not re-flag it. The leak a server-side list misses is the **client's own error text**:
+HTTP clients put the request URL in their errors (Go's `*url.Error` prints `Get "<full URL>": …`),
+so every wrapped and logged error carries the key. Redact the URL on the error *before* it is
+wrapped: `fmt.Errorf("…: %w", err)` freezes the text when it is called, so a redaction applied
+through `errors.As` afterwards leaves the key in the message (measured 2026-11-03, go 1.27.3:
+redact-then-wrap removed it and kept `errors.Is(context.Canceled)`, wrap-then-redact did not). Test it
+with a control arm that asserts the unredacted error *does* contain the key. To probe such an
+endpoint by hand, keep the URL out of argv: `curl -K -` with `url = "…"` on stdin (measured on curl
+8.7.1; its connect error names host and port, not the path). Field-reported 2026-11-03: a
+threat-intel provider retired keyless downloads for a `/exports/<KEY>/recent.csv` path.
+
 When *writing* CLIs: accept secrets via `--token-file`, stdin (`--token-stdin`) or a no-echo
 prompt, and an env var only as the documented last resort (every child process inherits it) —
 never as a positional/flag value. A flag kept for backward compatibility warns on use and is
@@ -339,7 +353,9 @@ Every credential answers: who uses it, for which actions, on which resources, un
 - [ ] Exceptions and error-tracker payloads carry no secret values (§2); PII/data scrubbers
       configured; debug pages and Spring actuator env/heapdump endpoints disabled or
       authenticated in prod.
-- [ ] No secrets in URLs/query strings (except short-lived signed URLs); (§3) none passed as CLI
+- [ ] No secrets in URLs/query strings (except short-lived signed URLs, or a provider that requires it,
+      recorded beside the code, with the URL built in one place, never logged, and redacted from client
+      errors before they are wrapped); (§3) none passed as CLI
       arguments (in code, scripts, CI, and docs); subprocesses get explicit env/files, not
       inherited environments or interpolated command strings.
 - [ ] No build-time secret injection (§4) (`--build-arg`, Dockerfile ENV); runtime injection only.
