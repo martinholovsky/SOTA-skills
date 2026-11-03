@@ -136,7 +136,7 @@ scope you searched passes whether or not that scope excludes the answer. Field-r
 'positive control' skills/ --glob '**/rules/*.md'` returned 4 files, the real query returned 0
 and was reported as a gap, and the answer sat in `skills/sota/SKILL.md`, which that glob never
 matches. **Draw the control from where your scope is least likely to reach**, and print the file
-count beside the zero: a denominator that is implausibly small for the corpus is the tell.
+count beside the zero: a denominator that is implausibly small for the corpus is the tell. **A control scoped to HEAD reads HEAD, never the working tree after `git stash`**: stash keeps untracked (and ignored) files, so the file you just added, the one the control must exclude, is still searched (reproduced 2026-11-03, git 2.55.0: after `git stash` the untracked file was still there; a sweep over `git ls-files` found 0 hits, the working tree 1; field-reported the same day). Iterate `git ls-files <pathspec>`, read `git show HEAD:<path>`, or search a throwaway `git worktree add --detach <dir> HEAD`.
 
 **Where you have nothing to control *with*, print a denominator instead.** A positive control
 needs a term you already know is present — unavailable exactly where this fails most: an
