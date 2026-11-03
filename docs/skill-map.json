@@ -1116,6 +1116,17 @@
     },
     {
       "from": "sota-devsecops",
+      "to": "sota-rust",
+      "weight": 6,
+      "targets": [
+        "rules/05 \u00a72",
+        "rules/07",
+        "rules/07 \u00a71a",
+        "rules/07 \u00a75"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
       "to": "sota-golang",
       "weight": 6,
       "targets": [
@@ -1274,17 +1285,6 @@
       "to": "sota-privacy-compliance",
       "weight": 5,
       "targets": []
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-rust",
-      "weight": 5,
-      "targets": [
-        "rules/05 \u00a72",
-        "rules/07",
-        "rules/07 \u00a71a",
-        "rules/07 \u00a75"
-      ]
     },
     {
       "from": "sota-docs-workflow",
@@ -4523,12 +4523,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1912,
+    "md link, other skill": 1913,
     "md link, outside skills/": 3,
     "md link, same skill": 2860,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 902,
+    "name+file (backticked)": 903,
     "name+file (bare)": 180,
     "own rules/NN": 3081
   },
@@ -4540,7 +4540,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 898,
+    "name+file (backticked)": 899,
     "name+file (bare)": 168,
     "own rules/NN": 2978
   },
