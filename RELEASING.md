@@ -189,7 +189,7 @@ python3 evals/run-desc-routing.py --samples 3 \
     --cases evals/cases/desc-routing-regressions.jsonl
 ```
 
-It is about **12 live calls** — 2 cases × 3 samples × 2 arms — which is why this is a
+It is about **two dozen live calls** — each case × 3 samples × 2 arms; 4 cases and 24 calls at the v1.54.0 cut — which is why this is a
 release-time step and *not* a CI gate. A gate expensive enough to be disabled is worse
 than none ([docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)), so what CI checks
 is the **declaration**, exactly as invariant 14 checks the front-door one:
@@ -317,8 +317,9 @@ commit itself, on its schedule or through the GitHub push webhook, and publishes
 the listing's auto-publish setting. To publish a tag again (a failed run, a portal fix), run the
 workflow from the Actions tab with that tag; an unchanged tree is a no-op.
 
-- **Never push `plugin-dist` by hand**, and never force it. A hand edit would reach every user
-  on the next scan, and the next release would build on it.
+- **Never push `plugin-dist` by hand**, and never force it. The directory scans every new commit
+  and, with auto-publish on, serves it to every user; with it off, a hand edit still waits in the
+  portal to be published, and the next release would build on it either way.
 - **The listing icon is taken once**, the first time the plugin is saved or submitted in the
   portal (`claude plugin validate`, ICON_MISSING). `.claude-plugin/icon.png` is on the build
   allowlist and checked (square PNG, 512–2048 px, under 2 MB), so it must exist before the first

@@ -482,7 +482,9 @@ the "what it means for your PR" version; that table is the index.
     *"instruction file"* twice and neither *"token"* nor *"budget"*, and took the
     `r1_token_count` regression case from `sota-llm-engineering` 3/3 to 0/3. It was live
     for a day; invariants 4, 7 and 15 were all green throughout. This fires **only on a
-    release** whose extracted `(name, description)` map differs from the merge base's —
+    release** whose extracted `(name, description)` map differs from the **previous release's**
+    (the newest `vX.Y.Z` tag reachable from the merge base; until 2026-11-01 it compared against
+    the merge base, which already holds every description edit merged before the release) —
     never on an ordinary PR, because routing costs live API calls. The escape is a
     `**Routing checked:**` line in that release's CHANGELOG section naming an artifact
     that must exist **and** mention `desc-routing-regressions`, so a declaration
