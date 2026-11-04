@@ -73,6 +73,7 @@ after this instruction's literal form cost it a red gate.
     What happened        — the concrete sequence, with the command, error or diff
     Why it happened      — the mechanism, not the emotion. "I was careless" is not a mechanism
     Evidence             — a transcript, exit code, file:line, or measurement someone can re-run
+    Loaded?              — which rules were in context when it happened, with the search (E)
     What caught it       — the control, the gate, the reader, or "nothing; the user did"
     Proposed change      — target skill + section, and the rule as you would write it
     Confidence           — and what would falsify it
@@ -113,6 +114,43 @@ that never engaged. Report it as "did not reproduce here", not "refuted".
 D. State a claim at the granularity of its evidence. One observation licenses "this happened
 once". Words like always, every, by design, is truncated assert a MECHANISM, and a mechanism
 is established by reading the code that implements it — never by an artifact, however clean.
+
+## Hand over what the intake cannot re-create
+
+The intake re-checks every claim and labels it verified, corrected, refuted or not reproducible.
+It can re-run your commands against the library, but **it cannot see your session**, so for
+anything only your session holds, give it the means to re-check, not your conclusion.
+Field-reported 2026-11-04: a report's highest-value claim, "rule X was in context, rule Y was never
+opened", could not be checked without hunting down the transcript, and its appendix had been
+retyped (`copied=no` under a command that prints `NO`).
+
+E. **"Was it loaded?": cite the transcript, in both directions.** Give the transcript path
+(Claude Code: `~/.claude/projects/<working dir, every / replaced by ->/<session-id>.jsonl`) and,
+for every rules file you call loaded or not loaded, the search over it that shows this: the unique
+`tool_use` ids that name the file, each with its **timestamp relative to the incident**. A read
+made *after* the incident, while writing the report, does not count as loaded. That 2026-11-04 report's
+"never opened" file had in fact been read, minutes after the incident, to write the report.
+"Never opened" is an absence claim: add a positive control (a file you know you read) and the
+total id count.
+
+F. **Quote the text you propose to change, and find every copy.** Give `file:line` at the stamped
+commit, before and after. Then `git grep -nF '<a distinctive phrase>'` across the checkout and
+print the hit count. The same sentence often lives in a rules file, a generated block **and the
+installed copy that block was written into** (an agent file outside the repo), and a gate or probe
+may match its exact words. List every hit, and say which ones you expect to change.
+
+G. **Has it happened before?** Search the intake ledger (`docs/ADOPTION-LOG.md`), `git log -S`
+on the key phrase, and **your own memory or notes store** for the same mechanism. A repeat with the
+rule already written down is evidence about the rule's *shape*, which is category 2 above. Print
+the commands and their hits, including zero.
+
+H. **The appendix is verbatim or marked.** Paste tool output exactly as the tool printed it. If you
+trimmed, reordered or retyped anything, mark it `[edited: …]`. A retyped transcript cannot be
+told apart from a fabricated one, so a re-run becomes the only evidence.
+
+When a proposal adds text to something **every session loads** (an agent-file block, the
+router), give its current size and the number of lines you would add. That is the budget judgement
+you are handing to the maintainer, so hand over the numbers with it.
 
 ## Three sections that make a report land
 

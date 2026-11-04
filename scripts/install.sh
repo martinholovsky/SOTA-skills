@@ -288,12 +288,17 @@ MD
   # Shell reflexes that recur with the rule loaded (field reports 2026-10-20..24): reading a
   # rule does not change a reflex, so they ride in the always-loaded block, by MECHANISM, not
   # by tool name — a list of tools reads as complete and the next spelling slips past it.
+  # The pipe caveat on the first bullet (field report 2026-11-04): this block sold `&&` as the
+  # remedy without it, and `rsync … | tail -1 && …` ran on after rsync exited 1. rules/04 §1b
+  # already said so, but was not loaded; this block is the only text resident at the reflex.
   cat <<'MD'
 
 ## Shell habits a rule re-read does not fix
 
 - **A newline is `;`.** In a multi-line command a failing line does not stop the
-  next one; join a check to the action it gates with `&&`.
+  next one; join a check to the action it gates with `&&`. **A pipe defeats that
+  gate**: `check | tail -1 && act` runs `act` on `tail`'s 0, so set `pipefail`, read
+  `${pipestatus[1]}` (zsh) / `${PIPESTATUS[0]}` (bash), or drop the pipe.
 - **Matching a process by its command line matches the selector.** `pkill -f`,
   `pgrep -f`, `ps | grep` and a `/proc/*/cmdline` loop also select the shell, or the
   `ssh`/`bash -c`, whose argv carries the pattern; act on PIDs you recorded.
