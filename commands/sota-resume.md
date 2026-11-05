@@ -98,8 +98,8 @@ the commit, never the header that summarises them.
 premise is an absence ("unbuilt", "untried", "not implemented", "no prior art", "never
 measured") was only true on the day it was written. Before classifying it READY, or
 recommending it, search the code for the mechanism it names, with a control you know is there.
-Field-reported 2026-11-04: a plan line called a lever "zero in-repo prior art", but its module had
-been in the tree for 137 days, and a recommendation built on that line was withdrawn the same session.
+Field-reported 2026-11-04: a plan line called two levers "zero in-repo prior art", but both modules
+had been in the tree for 137 days, and a recommendation built on that line was withdrawn the same session.
 
 **OBVIATED is the half that lands in READY by default**, because the item itself really is
 untouched. Before classifying as READY anything that adds a *new* control — an alert, a check,

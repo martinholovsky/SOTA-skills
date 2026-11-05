@@ -129,7 +129,7 @@ E. **"Was it loaded?": cite the transcript, in both directions.** Give the trans
 for every rules file you call loaded or not loaded, the search over it that shows this: the unique
 `tool_use` ids that name the file, each with its **timestamp relative to the incident**. A read
 made *after* the incident, while writing the report, does not count as loaded. That 2026-11-04 report's
-"never opened" file had in fact been read, minutes after the incident, to write the report.
+"never opened" file had in fact been read, about 22 hours after the incident, to write the report.
 "Never opened" is an absence claim: add a positive control (a file you know you read) and the
 total id count.
 

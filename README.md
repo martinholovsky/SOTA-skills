@@ -1614,8 +1614,9 @@ one-line note when the library lets you down, rather than papering over it.
 in your own project. It asks that session to write up where the guidance failed, in the shape
 this library can act on, to a gitignored `FIELD-REPORT-*.local.md` — a field report carries a
 **reproducer** rather than a citation, which is why it is the highest-yield input here. The
-prompt front-loads the four checks that decide whether a report is actionable, each one a
-mistake actually made during intake.
+prompt front-loads the four checks that decide whether a report is actionable, and four more
+that hand over what only the session holds (its transcript, every copy of the text it would
+change, prior occurrences, a verbatim appendix). Each one is a mistake actually made during intake.
 
 It stamps the report with **the version that produced it** (report against what you actually
 used — never update and re-run, since that puts a fresh stamp on old behaviour), writes a
