@@ -508,6 +508,16 @@
       ]
     },
     {
+      "from": "sota-detection-engineering",
+      "to": "sota-observability",
+      "weight": 11,
+      "targets": [
+        "rules/01 \u00a77",
+        "rules/04",
+        "rules/04 \u00a74"
+      ]
+    },
+    {
       "from": "sota-dotnet",
       "to": "sota-code-security",
       "weight": 11,
@@ -567,15 +577,6 @@
         "rules/05",
         "rules/07 \u00a72.1",
         "rules/14 \u00a76a"
-      ]
-    },
-    {
-      "from": "sota-detection-engineering",
-      "to": "sota-observability",
-      "weight": 10,
-      "targets": [
-        "rules/04",
-        "rules/04 \u00a74"
       ]
     },
     {
@@ -2554,6 +2555,14 @@
       "targets": []
     },
     {
+      "from": "sota-observability",
+      "to": "sota-detection-engineering",
+      "weight": 2,
+      "targets": [
+        "rules/02 \u00a76"
+      ]
+    },
+    {
       "from": "sota-performance",
       "to": "sota-async-concurrency",
       "weight": 2,
@@ -3805,12 +3814,6 @@
     },
     {
       "from": "sota-observability",
-      "to": "sota-detection-engineering",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-observability",
       "to": "sota-python",
       "weight": 1,
       "targets": [
@@ -4531,12 +4534,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1914,
+    "md link, other skill": 1916,
     "md link, outside skills/": 3,
     "md link, same skill": 2860,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 904,
+    "name+file (backticked)": 906,
     "name+file (bare)": 180,
     "own rules/NN": 3081
   },
@@ -4548,7 +4551,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 900,
+    "name+file (backticked)": 902,
     "name+file (bare)": 168,
     "own rules/NN": 2978
   },
@@ -6124,6 +6127,7 @@
         "sota-code-security/rules/08-llm-ai-security.md",
         "sota-code-security/rules/18-tamper-evident-logs.md",
         "sota-llm-engineering/rules/05-production-engineering.md",
+        "sota-observability/rules/01-structured-logging.md",
         "sota-sandboxing/rules/05-ai-agent-sandboxing.md"
       ]
     },
@@ -7799,6 +7803,7 @@
         "sota-c-cpp/rules/04-security.md",
         "sota-detection-engineering/SKILL.md",
         "sota-detection-engineering/rules/01-detection-engineering-discipline.md",
+        "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md",
         "sota-dotnet/rules/04-security.md",
         "sota-javascript-typescript/rules/04-node-backend.md",
         "sota-jvm/rules/04-security.md",
