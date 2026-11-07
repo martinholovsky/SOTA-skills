@@ -153,6 +153,13 @@ with someone disabling sources — re-opening blind spots. Discipline:
 - **Filter at the edge,** not by dropping sources. Drop known-noise event types
   (verbose health checks, debug chatter) before ingest; keep the security-
   relevant fields.
+- **A noise filter is a detection change.** Match it on a parsed field, never
+  on a substring of the serialized message, which also matches key names and
+  enum values. Prove it at the sink: send one event of each security type in,
+  and count each one out, before it ships. A liveness-probe filter written
+  as `contains(.message, "probe")` dropped every eBPF `process_kprobe` event
+  (field-reported 2026-11-07). Detail and probe:
+  [`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §7.
 - **Tier by value.** Route high-value/low-volume (auth, cloud audit) to the
   expensive hot SIEM; route high-volume/low-value (verbose proxy logs) to the
   cheap lake.
@@ -366,7 +373,10 @@ cheat sheet.
 - [ ] **Cost cuts (§6) — Critical:** has any security source been dropped or
       sampled purely for cost without documenting the resulting blind spot in the
       affected detections' ADS? Is noise filtered at the edge by event type, and
-      high-volume/low-value sources routed to the cheap tier, instead?
+      high-volume/low-value sources routed to the cheap tier, instead? Is each
+      edge filter matched on a parsed field rather than a substring of the
+      serialized message, and was it proven at the sink with one event per
+      security type?
 - [ ] Are logs shipped off-host promptly (§2) so a compromised host can't erase its
       own evidence?
 - [ ] **App-login attacks (§7) — High:** do application/IdP login logs feed a

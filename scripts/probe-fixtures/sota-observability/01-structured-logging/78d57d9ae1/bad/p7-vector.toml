@@ -1,0 +1,1 @@
+condition = '!starts_with(string!(.message), "GET /ping")'

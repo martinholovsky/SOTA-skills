@@ -116,6 +116,11 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
     ("builds a command-line interface",
      r"ArgumentParser|add_argument\(|@click\.command|typer\.Typer|clap::|cobra\.Command",
      [("sota-cli-ux", "02", "§1 the stream contract, §3 exit codes, §5 line-buffered stdout when piped")]),
+    # 2026-11-07 field report: `done < <(select_items)` exited 0 on a failing producer, and a .sh
+    # Write matched no row. `< <(` is the redirect-from-process-substitution form (while, mapfile, read).
+    ("reads from a process substitution, whose exit status is unreachable",
+     r"<\s*<\(",
+     [("sota-shell-scripting", "02", "§4, a process substitution's exit status is unreachable")]),
     ("calls a model API: output cap, stop reason and spend",
      r"max_(completion_|output_)?tokens|finish_reason|stop_reason|chat\.completions",
      [("sota-llm-engineering", "02", "§6, stop_reason before parsing and an explicit max_tokens"),
@@ -177,6 +182,7 @@ HOOK_ONLY = {
     "runs or configures a container or sandbox (seccomp, capabilities, namespaces)",
     "sets or disables an LSM profile (AppArmor, SELinux)",
     "builds a command-line interface",
+    "reads from a process substitution, whose exit status is unreachable",
     "configures PAM, a login stack",
     "calls a model API: output cap, stop reason and spend",
 }
@@ -524,6 +530,8 @@ def self_test() -> int:
     check("no HOOK_ONLY row reaches the router table", not any(w.split(", which")[0] in rt for w in HOOK_ONLY))
     for what, sample in (("builds a command-line interface", 'p = argparse.ArgumentParser(prog="x")'),
                          ("builds a command-line interface", "#[derive(clap::Parser)]"),
+                         ("reads from a process substitution", 'done < <(select_items "$1")'),
+                         ("reads from a process substitution", "mapfile -t rows < <(git rev-list -3 HEAD)"),
                          ("runs or configures a container", 'cmd = ["podman", "run", "--cap-drop=ALL", img]'),
                          ("runs or configures a container", "ctx.add_rule(SCMP_ACT_ERRNO(38), clone3)"),
                          ("configures PAM", 'line = "auth required pam_faillock.so preauth"'),

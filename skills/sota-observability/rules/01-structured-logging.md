@@ -348,6 +348,15 @@ OWASP: Logging cheat sheet, Proactive Controls 2024 C9.
   security and audit events and tag them instead (`actor.class=monitor`,
   `actor.class=pentest` with the engagement ID), so dashboards can exclude
   them and investigations can still see them. OWASP: Logging cheat sheet.
+- **Match a noise filter on a parsed field, never on the serialized record.**
+  `!contains(string!(.message), "probe")`, written for liveness probes, also
+  drops every event whose JSON merely contains the word, key names included:
+  an eBPF sensor's `process_kprobe` events all went, while the node's own
+  export file still held them (field-reported 2026-11-07: 0 kprobe events at
+  the sink against 386k exec events in 6 h). Match the field that carries the
+  meaning (the parsed request path, the User-Agent), and prove a new filter at
+  the sink with one event of each security type
+  ([`sota-detection-engineering` rules/02](../../sota-detection-engineering/rules/02-telemetry-siem-data-layer.md) §6).
 - Duplicate error reports up the call stack (§2).
 - Anything you wouldn't show a contractor with log access: logs are your
   widest-read datastore with your weakest access control.
@@ -442,6 +451,11 @@ OWASP: Logging cheat sheet, ASVS 5.0 V16.4.2 and V16.4.3.
       form, where the drop is a bare list item; run this too (hits under a
       `filter` processor are the finding):
       `grep -rniE '^[[:space:]]*-[[:space:]]*.?(IsMatch|not |[a-z_.]*attributes\[)[^#]*(user.?agent|kube-probe|healthchecker|pingdom|uptimerobot|scanner|pentest)' --include='*.y*ml' .`
+      Neither one sees a filter matched against the whole serialized record
+      (§7), which drops whatever happens to contain the word, key names too.
+      Every hit of this one is a review point, and a finding when the record is
+      structured and the stream carries security events:
+      `grep -rniE '(contains|includes|starts_with|ends_with|match|match_any|IsMatch)\([[:space:]]*(string!?\([[:space:]]*)?\.?(log\.)?(message|body|_raw|log)[[:space:]]*[),]|^[[:space:]]*Exclude[[:space:]]+(log|message)[[:space:]]|"[^"]*"[[:space:]]+in[[:space:]]+\[(message|log)\]' --include='*.y*ml' --include='*.toml' --include='*.vrl' --include='*.conf' .`
 - [ ] (**Medium**) Events that are emitted late (queue consumers, offline
       clients, uploads, replays) carry the time the action happened, with the
       emit/receive time as a separate field; no pipeline overwrites event time

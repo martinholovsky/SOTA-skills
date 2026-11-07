@@ -82,7 +82,8 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
 harder to see: nothing truncated, nothing silent, no rule broken. The selector was reasonable
 and answered a question one step to the left of the one asked. Three in one session, a
 fourth field-reported 2026-09-26, a fifth 2026-10-22, a sixth and seventh from another
-report the same day, and an eighth from the session that took those in:
+report the same day, an eighth from the session that took those in, a ninth on 2026-11-01 and a
+tenth on 2026-11-07:
 
 | the question | the selector typed | what it actually returns |
 |---|---|---|
@@ -95,6 +96,7 @@ report the same day, and an eighth from the session that took those in:
 | "has *this* job already run" | an existence check by prefix glob, `compgen -G "r_${name}_*"` | **any** name that extends it: `r_short_*` also matches `r_short_regression_*`, so a 236-case job logged `HAVE` and never ran (field-reported 2026-10-22; reproduced in bash 5.3). Anchor the next character (`r_${name}_[0-9]*`) or test the exact path |
 | "is this branch still on the remote, and in sync" | `git branch -vv`, `%(upstream:track)` | your **local remote-tracking ref**, which a branch deleted on the remote leaves behind until `git fetch --prune`: an empty track reads as "in sync" for a branch that no longer exists. Ask the remote, `git ls-remote --heads origin <b>` (reproduced on git 2.55.0: `track=[]` with 0 remote refs, `[gone]` only after a prune; field-reported 2026-10-22: 8 of 10 "in sync" branches were gone). And a squash-merged branch's tip is never an ancestor of `main`, so `merge-base --is-ancestor` says "not merged" for every one: use the PR's state. A branch stacked on it has the same blind spot: `git merge-tree origin/main <child>` takes the old fork point as the base and reports the squashed commits as conflicts; pass `--merge-base=<old parent tip>` (reproduced 2026-11-01, git 2.55.0: rc 1 plain, rc 0 with it; [`sota-docs-workflow` rules/03](../../sota-docs-workflow/rules/03-code-review-pr-workflow.md) §5) |
 | "the commits since that day" | `git log --since=2026-10-24` | the commits since **that date at the current clock time**: git attaches the time of day you run it to a bare date, so the morning silently drops out, exit 0. Reproduced 2026-11-01, git 2.55.0, run at 22:23 over four commits made that day: 0 with the bare date, 4 with `'2026-10-24 00:00'` or `2026-10-24T00:00:00` (field-reported the same day: 2 of 19, read as "no work since the handoff"). Write the time, or select by commit: `<last-known-sha>..HEAD` |
+| "the distinct commits" (any distinct lines) | `sort -u -k2,3` | one line per distinct **key**: with `-k`, `-u` judges uniqueness on the key fields only, so two different lines whose keys match collapse into one, exit 0. Reproduced 2026-11-07 on BSD sort 2.3-Apple and GNU coreutils 9.7: 4 lines, 3 distinct, came out as 2 (field-reported the same day: two commits made in the same minute, 16 rows listed as 14). To dedupe whole lines in key order, sort with `sort -k2,3` and pipe the result into `uniq`. That works only because sort breaks a key tie on the whole line, which puts identical lines next to each other; add `-s` and a duplicate that was not adjacent in the input survives |
 
 `sort -V | tail -1` is the obvious way to get "the latest" and it is simply not "the
 default". Each of the three is the correct answer to a question nobody asked.
@@ -224,7 +226,7 @@ your ancestors, and anything whose command line is your own command. Then act on
       matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`), *the
       process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), *a
       path* is not *the volume* (`pwd -P`), a *prefix glob* is not *this name* (`X_*` matches `X_other_*`), and a
-      *remote-tracking ref* is not *the remote* (`git ls-remote --heads`, not `%(upstream:track)`), and a *bare date* is not *midnight* (`git log --since=YYYY-MM-DD` takes the current clock time: write `'YYYY-MM-DD 00:00'` or a commit range). Nothing is
+      *remote-tracking ref* is not *the remote* (`git ls-remote --heads`, not `%(upstream:track)`), and a *bare date* is not *midnight* (`git log --since=YYYY-MM-DD` takes the current clock time: write `'YYYY-MM-DD 00:00'` or a commit range), and a *distinct key* is not *a distinct line* (`sort -u -k…` keeps one line per key: dedupe with `sort -k… | uniq`, never with `-s`). Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to
       the subject; read one full record before trusting the aggregate.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/
