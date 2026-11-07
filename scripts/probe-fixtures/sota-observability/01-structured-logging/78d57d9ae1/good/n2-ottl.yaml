@@ -1,0 +1,1 @@
+        - IsMatch(attributes["http.target"], "^/healthz$")

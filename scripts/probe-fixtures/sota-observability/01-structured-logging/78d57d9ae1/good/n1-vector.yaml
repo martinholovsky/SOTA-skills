@@ -1,0 +1,1 @@
+    condition: '!contains(string!(.http.path), "/healthz")'
