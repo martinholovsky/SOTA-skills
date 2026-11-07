@@ -154,8 +154,9 @@ with someone disabling sources — re-opening blind spots. Discipline:
   (verbose health checks, debug chatter) before ingest; keep the security-
   relevant fields.
 - **A noise filter is a detection change.** Match it on a parsed field, never
-  on a substring of the serialized message, and prove it at the sink with one
-  event of each security type before it ships. A liveness-probe filter written
+  on a substring of the serialized message, which also matches key names and
+  enum values. Prove it at the sink: send one event of each security type in,
+  and count each one out, before it ships. A liveness-probe filter written
   as `contains(.message, "probe")` dropped every eBPF `process_kprobe` event
   (field-reported 2026-11-07). Detail and probe:
   [`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §7.
