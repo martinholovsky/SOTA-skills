@@ -2997,6 +2997,15 @@
     "sota-network-security/rules/06-dns-tls-pki.md#a2fa7841f5e7",
     "sota-secrets-management/rules/05-credential-types.md#fa0bbf79a6b0"
    ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "Detection rules/02 §6 states the noise-filter rule in short as a detection change and links to observability rules/01 §7, which holds the field case, the measured counts and the audit probe (2026-11-07 platform intake, #687).",
+   "sample": "- **A noise filter is a detection change.** Match it on a parsed field, never on a substring of the serialized message, ",
+   "members": [
+    "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md#477bd1bac2d0",
+    "sota-observability/rules/01-structured-logging.md#4cb104879968"
+   ]
   }
  ],
  "model": "qwen3-embedding:8b",
