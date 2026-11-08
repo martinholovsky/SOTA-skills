@@ -232,7 +232,7 @@ corpus, and we have no instrument that would.
 ### What the audit hunts that a scanner can't
 
 <!-- count-check: ^- \*\* -->
-Thirty classes of defect survive every linter, SAST rule, and CVE scanner, because in
+Thirty-two classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes
 (this said "Eleven" for seventeen days — correct when written on 2026-08-27 and **fifteen
 classes** behind by the time anyone recounted at the v1.41.2 cut. Recount the list, never
@@ -603,6 +603,20 @@ because the same change added three more classes below):
   with it — and who can change one without the other, and would I find out?* A control that
   is **correctly enforcing the wrong predicate** is not inert, so "would anything observable
   differ?" answers *yes* while the control is still wrong.
+- **A filter that matches more than it names** — a noise filter tested against a substring
+  of the whole serialized record also matches key names and enum values:
+  `contains(.message, "probe")`, written for liveness probes, dropped every eBPF
+  `process_kprobe` event while the sensor kept emitting them (field-reported 2026-11-07).
+  Its shell twin is a key-restricted dedupe: `sort -u -k2,3` keeps one line per *key*, so a
+  distinct record vanishes at exit 0. Both pass any check that reads the filter instead of
+  counting what came out; the audit counts at the sink, one event per type
+  ([observability rules/01](skills/sota-observability/rules/01-structured-logging.md) §7,
+  [shell rules/09](skills/sota-shell-scripting/rules/09-listing-and-selection.md) §5a).
+- **A command that is right on the rendered page and wrong in the raw file** — escaping `|`
+  as `\|` keeps a Markdown table intact on GitHub, but an agent, `cat` or a diff reads the
+  raw bytes, and a single-quoted ERE reads `\|` as a literal pipe, so the copied search
+  matches nothing (2 lines intended, 0 copied, on four searchers;
+  [docs-workflow rules/02](skills/sota-docs-workflow/rules/02-api-reference-changelogs.md) §1).
 
 **Where this is *not* backed by a number:** the measured lift is in BUILD
 (completeness, freshness). **Nine audit instruments across four designs sit at

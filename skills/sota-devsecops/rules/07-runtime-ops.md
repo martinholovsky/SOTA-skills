@@ -381,7 +381,10 @@ found nothing** — the second reading being a conclusion about the target
   0 bytes. **Prefer the narrow command, whose failure mode is freeing nothing.** On a
   shared machine, narrow is still store-wide. `podman image prune` removes every dangling
   image in local storage, other projects' too (podman 5.8.9 `--help`: "from local storage",
-  with no scope but `--filter label=…`). Scope it with that filter, or `podman rmi` the IDs
+  with no scope but `--filter label=…`). Reproduced 2026-11-08 on podman 5.7.1, in a throwaway
+  store holding one dangling image each from two "projects": `image prune -f --filter
+  label=owner=a` removed only a's, and the unscoped `image prune -f` then removed b's as
+  well. Scope it with that filter, or `podman rmi` the IDs
   you recorded, and keep its output, which is the only record of what it removed. In the
   2026-11-07 field case the prune ran on a shared VM with output sent to `/dev/null`, so
   what it deleted is unknown.
