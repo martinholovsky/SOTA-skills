@@ -5,6 +5,48 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.54.2] - 2026-11-08
+
+A PATCH: rule text, one new trigger row inside the existing code-rules hook, and three field-report intakes, all inside surfaces that already exist. Four PRs since v1.54.1: #685–#688.
+
+**Front door checked:** serialized record · key-restricted dedupe · rendered page · HOOK_ONLY · prune
+
+- **A noise filter matched against the serialized record drops a whole event class** (#687,
+  `sota-observability` rules/01 §7, `sota-detection-engineering` rules/02 §6).
+  `contains(.message, "probe")`, written for liveness probes, also matched the key
+  `process_kprobe` and dropped every eBPF sensor event. The rule: match a parsed field, and prove a
+  filter at the sink with one event per security type. There is a new audit probe for match functions over
+  `message`/`body`/`_raw`/`log`, Fluent Bit `Exclude log` and Logstash `in [message]`, built from a labelled
+  corpus (7/7 positives, 0/6 near-misses on BSD grep, ugrep and GNU grep 3.11), with fixtures.
+  Over 131,452 local config files it hit 2 real lines, both nuclei `contains(body, …)` response
+  matchers, which are now named as a known false hit. The corpus held no log-pipeline config, so
+  precision on real shipper configs is unmeasured (#688).
+- **A key-restricted dedupe keeps one line per key** (#687, `sota-shell-scripting` rules/09 §5a):
+  `sort -u -k2,3` dropped a distinct commit at exit 0 (BSD sort and GNU coreutils 9.7: 4 lines, 3
+  distinct, out 2). Dedupe whole lines by sorting on the key and piping into `uniq`. That works
+  through sort's whole-line tiebreak, and `-s` breaks it.
+- **An escaped `\|` is right on the rendered page and wrong in the raw file** (#687,
+  `sota-docs-workflow` rules/02 §1). A raw reader copies `\|`, which a single-quoted ERE reads as a
+  literal pipe, so the copied search matches nothing (2 lines against 0 on four searchers; GitHub's
+  GFM API renders the cell as `|`). A table cell must not hold a pattern someone will copy. The
+  audit item gained a span walker for search patterns in table cells.
+- **A process substitution in a new shell script now names its rule** (#687,
+  `scripts/code-rules-hook.py`). A hook-only row (`HOOK_ONLY`) for `< <(` points at
+  `sota-shell-scripting` rules/02 §4; `--self-test` 68/68. Replayed offline over 479 local
+  transcripts, it would have fired on 7 of 217 shell edits. Whether a fire changes what ships is
+  not measured.
+- **Even the narrow `image prune` is store-wide on a shared machine** (#687, #688,
+  `sota-devsecops` rules/07 §7.7): reproduced on podman 5.7.1 in a throwaway store, where the
+  label-scoped prune removed one project's dangling image and the unscoped one then removed the
+  other's. Scope it with `--filter label=…`, and keep its output.
+- **A tracker's "not built" is an absence claim** (#685, router principle 7, `/sota-resume`). A
+  lever recommended as untried had shipped 137 days earlier. `/sota-report` now hands over what an
+  intake cannot re-create (the transcript, every copy of the target text, prior occurrences, a
+  verbatim appendix), and `install.sh`'s always-on block says that a pipe defeats an `&&` gate
+  (#685, #686).
+- **Intakes** (#685, #687) with every claim labelled; two wrong claims of the #687 ledger entry
+  were superseded in #688.
+
 ## [1.54.1] - 2026-11-04
 
 A PATCH: the plugin manifest gains the `icon` field the Claude directory reads its listing icon from, so the next `plugin-dist` publish carries it; the rest is rule text, gates and intakes inside surfaces that already exist. Eight PRs since v1.54.0: #675–#682.
@@ -11781,6 +11823,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.54.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.2
 [1.54.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.1
 [1.54.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.0
 [1.53.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.53.0
