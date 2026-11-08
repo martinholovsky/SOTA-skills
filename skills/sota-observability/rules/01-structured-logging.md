@@ -454,7 +454,11 @@ OWASP: Logging cheat sheet, ASVS 5.0 V16.4.2 and V16.4.3.
       Neither one sees a filter matched against the whole serialized record
       (§7), which drops whatever happens to contain the word, key names too.
       Every hit of this one is a review point, and a finding when the record is
-      structured and the stream carries security events:
+      structured and the stream carries security events. A matcher on an HTTP
+      *response* body, such as a nuclei template's `contains(body, …)`, is a
+      known false hit: 2 of the 2 hits over 131,452 local config files
+      (2026-11-08) were that, and the corpus held no log-pipeline config at all,
+      so precision on real shipper configs is still unmeasured:
       `grep -rniE '(contains|includes|starts_with|ends_with|match|match_any|IsMatch)\([[:space:]]*(string!?\([[:space:]]*)?\.?(log\.)?(message|body|_raw|log)[[:space:]]*[),]|^[[:space:]]*Exclude[[:space:]]+(log|message)[[:space:]]|"[^"]*"[[:space:]]+in[[:space:]]+\[(message|log)\]' --include='*.y*ml' --include='*.toml' --include='*.vrl' --include='*.conf' .`
 - [ ] (**Medium**) Events that are emitted late (queue consumers, offline
       clients, uploads, replays) carry the time the action happened, with the
