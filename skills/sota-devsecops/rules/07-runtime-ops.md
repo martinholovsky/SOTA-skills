@@ -378,7 +378,16 @@ found nothing** — the second reading being a conclusion about the target
   image and pinned toolchain reads as garbage ([`sota-shell-scripting` rules/09](../../sota-shell-scripting/rules/09-listing-and-selection.md) §5a).
   Field-reported: 22 GB "reclaimable (93%)", where `image prune -a` would have deleted the
   toolchain images three CI gates build from, and the narrow `image prune` correctly freed
-  0 bytes. **Prefer the narrow command, whose failure mode is freeing nothing.**
+  0 bytes. **Prefer the narrow command, whose failure mode is freeing nothing.** On a
+  shared machine, narrow is still store-wide. `podman image prune` removes every dangling
+  image in local storage, other projects' too (podman 5.8.9 `--help`: "from local storage",
+  with no scope but `--filter label=…`). Reproduced 2026-11-08 on podman 5.7.1, in a throwaway
+  store holding one dangling image each from two "projects": `image prune -f --filter
+  label=owner=a` removed only a's, and the unscoped `image prune -f` then removed b's as
+  well. Scope it with that filter, or `podman rmi` the IDs
+  you recorded, and keep its output, which is the only record of what it removed. In the
+  2026-11-07 field case the prune ran on a shared VM with output sent to `/dev/null`, so
+  what it deleted is unknown.
 - **Pruning a cached image whose tag moves is a version bump, not a cleanup.** `podman build`
   pulls a base image only when it is missing (`--pull` defaults to `missing`), so the cache
   was the only thing holding a `FROM …:rawhide`/`:latest`/bare-major image still. Remove it
@@ -416,5 +425,7 @@ found nothing** — the second reading being a conclusion about the target
 - [ ] **Would a prune change what the next build compiles against?** (§7.7) Any
       `FROM` on a moving tag (`latest`, `rawhide`, `stable`, a bare major) is pinned only by
       the cache the prune deletes. And is the narrow command (`image prune`) used rather than
-      `-a`, with "reclaimable" not read as "unused by us"?
+      `-a`, with "reclaimable" not read as "unused by us"? On a shared machine, is even the
+      narrow command scoped (`--filter label=…`, or `rmi` of recorded IDs), with its output kept
+      rather than sent to `/dev/null`?
 

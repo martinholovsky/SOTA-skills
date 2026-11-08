@@ -94,6 +94,13 @@ direction.** The summary is always the stale half, and it is the half people rea
 priorities table pointing at work its own ledger closed. Check the *ledger row*, the code, or
 the commit, never the header that summarises them.
 
+**A tracker's "not built" is a claim too, so run the same check in reverse.** An item whose
+premise is an absence ("unbuilt", "untried", "not implemented", "no prior art", "never
+measured") was only true on the day it was written. Before classifying it READY, or
+recommending it, search the code for the mechanism it names, with a control you know is there.
+Field-reported 2026-11-04: a plan line called two levers "zero in-repo prior art", but both modules
+had been in the tree for 137 days, and a recommendation built on that line was withdrawn the same session.
+
 **OBVIATED is the half that lands in READY by default**, because the item itself really is
 untouched. Before classifying as READY anything that adds a *new* control — an alert, a check,
 a guard, a gate — name what covers that failure mode today and why it is not enough. If the

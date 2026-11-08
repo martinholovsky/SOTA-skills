@@ -27,6 +27,15 @@ baseline is generation from the artifact of record:
   dropped** to fit the header — silent data loss, not a wider table. Escape as
   `\|`. When a script writes rows, count cells against the header, splitting on
   *unescaped* pipes only, or the check flags the correct `\|` rows.
+  **The escape is for the rendered page; a reader of the raw file copies `\|`.**
+  An agent's Read, `cat` and a diff all see raw bytes, and in a single-quoted
+  ERE `\|` is a literal pipe, so a copied `grep -E '(a\|b)'` matches nothing,
+  silently: 2 lines intended, 0 copied, on BSD grep, GNU grep 3.11, ugrep and
+  rg (measured 2026-11-07; GitHub's GFM API rendered the same cell as `|`, in
+  2 cells). A copied shell pipeline fails loudly instead (`sort f \| uniq`:
+  `sort: No such file`, rc 2). So a cell must not hold a pattern someone will
+  copy: put it in a fenced block under the table and point at it, or write it
+  without `|` (field-reported 2026-11-07).
 - Generated reference is necessary, not sufficient: it gives you *what*; §2
   makes it useful.
 
@@ -193,6 +202,7 @@ Behavior change: POSTs are no longer retried by default — opt in per call.
 - [ ] Doc examples compile/run in CI (doctests/Example funcs/extracted blocks); every non-trivial public entry point has at least one example, the first per page showing the intended call pattern with realistic values and error handling; quickstarts and tutorials run in CI too, on a schedule if per-PR execution is too slow (§3).
 - [ ] OpenAPI examples validate against their schemas in CI (§3).
 - [ ] No unescaped `|` inside a table cell's code span (§1) — GFM drops the overflow cell silently. A regex cannot pair backticks (adjacent spans `` `a` | `b` `` false-positive); walk the spans: ``perl -ne 'if (/^\|/) { while (/`([^`]*)`/g) { if ($1 =~ /(?<!\\)\|/) { print "$ARGV:$.\n"; last } } } close ARGV if eof' *.md``
+      The reverse check: no table cell holds an escaped search pattern someone will copy (§1), since the raw `\|` is a literal pipe and the copy matches nothing. Every hit moves to a fenced block: ``perl -ne 'if (/^\|/) { while (/`([^`]*)`/g) { if ($1 =~ /^(grep|egrep|rg|ugrep)\b.*\\\|/) { print "$ARGV:$.\n"; last } } } close ARGV if eof' *.md``
 - [ ] Every operation documents its failure modes and the caller's correct reaction (§4); HTTP error responses enumerated with body schema.
 - [ ] **(Medium) Rate limits, CORS and redirects documented** (§4): the reference states quota and scope, the throttled response, allowed origins and credentials, and redirecting operations. Probe: locate the specs with `git ls-files '*openapi*' '*swagger*'` (zero files is itself a finding, not a pass), then `grep -L -E "[\"']?429[\"']?:|Retry-After" <each spec>` prints a spec that documents no throttled response at all.
 - [ ] Published docs are versioned to match releases; default view is latest stable; pages state the version they describe; changed or removed behavior is marked inline with its version ("Since v2.3", "Removed in v3.0 — use X") (§5).
