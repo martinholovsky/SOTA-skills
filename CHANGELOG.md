@@ -5,6 +5,36 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **The status line shows prompt-cache, plan usage, worktree and scratchpad, and runs under
+  Antigravity CLI too** (`scripts/statusline.sh`). New segments, each shown only when its data is
+  present: a context bar, a countdown to the prompt cache expiring (hidden when a cold cache would
+  re-send fewer than 50,000 tokens), the plan-usage window closest to its limit with `↑` when usage
+  runs ahead of the clock and the time to reset, a linked-worktree marker (the host's field, else a
+  `git rev-parse` check that works for `git worktree add` checkouts) and the session scratchpad.
+  The project name links to its folder (OSC 8). Segments are shortened, then dropped from the lowest
+  priority up, to fit `COLUMNS`. Antigravity CLI sends `quota` buckets instead of `rate_limits` and
+  a `product` field; the script reads both and **never records Antigravity's context window as
+  Claude Code's** in `~/.claude/sota-skills-data/context-window`. The fields were checked against a
+  payload captured from Claude Code 2.1.321; `scratchpad_dir` arrives there but is not in the
+  documented schema, so its segment disappears if it stops arriving.
+- **Every input is untrusted.** Control characters from the payload, git and the transcript are
+  shown escaped (`^[`), bidi and zero-width characters replaced, link targets percent-encoded,
+  numbers type-checked and clamped, paths used only when absolute, skill names held to an
+  allow-list, and data passed to jq only through `--arg` (CWE-150, `sota-cli-ux` rules/02 §4).
+  A wrongly typed payload still prints a line and exits 0.
+- **The transcript scan is incremental**: a full scan of a 43 MB transcript measured 0.46 s, so a
+  private per-transcript cache keeps the byte offset already read.
+- `SOTA_STATUSLINE_PLAIN=1` (no colour, no links), `NO_COLOR`, `SOTA_STATUSLINE_LINKS=0`,
+  `SOTA_STATUSLINE_CACHE_MIN_TOKENS`, and an opt-in `SOTA_STATUSLINE_DUMP=<dir>` that saves each
+  payload (mode 600, "dump on" shown in the line) for mapping a host whose schema is unpublished.
+- **`scripts/test-statusline.sh`**, run in CI: 55 fixture assertions, run locally under bash 5.3
+  and macOS's bash 3.2. Mutation-checked 2026-11-09: each of 8 security controls removed in turn
+  (control-character escaping, DEL, bidi, the product guard, the skill-name allow-list, link
+  encoding, the absolute-path guard, the dump symlink check) fails it; the first run caught 6 of
+  8, and the two tests that could not fail were rebuilt.
+
 ## [1.54.2] - 2026-11-08
 
 A PATCH: rule text, one new trigger row inside the existing code-rules hook, and three field-report intakes, all inside surfaces that already exist. Four PRs since v1.54.1: #685–#688.

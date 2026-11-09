@@ -51,7 +51,7 @@ The plugin data dir is `$CLAUDE_PLUGIN_DATA`, which Claude Code sets. Set the va
 ## Also in this tree
 
 - `scripts/statusline.sh`, `scripts/init-gates.sh`, `scripts/gen-agents-md.sh`: optional
-  extras the first-run notice offers (a status line showing which skills ran, pre-commit gates
+  extras the first-run notice offers (a status line showing which skills ran, plan usage and the prompt cache, pre-commit gates
   for a repository, an `AGENTS.md` for other agents). Nothing runs them unless you do.
 - `scripts/install.sh` ships only because the routing hook reads its reminder text from it. It
   is the installer for a git checkout and is not meant to be run from this tree; it names
