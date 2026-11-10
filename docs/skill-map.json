@@ -257,11 +257,12 @@
     {
       "from": "sota-devsecops",
       "to": "sota-code-security",
-      "weight": 26,
+      "weight": 27,
       "targets": [
         "rules/01 \u00a76",
         "rules/01 \u00a78",
         "rules/08",
+        "rules/09 \u00a74",
         "rules/10",
         "rules/11 \u00a72.2",
         "rules/12",
@@ -1480,6 +1481,15 @@
     },
     {
       "from": "sota-cli-ux",
+      "to": "sota-shell-scripting",
+      "weight": 4,
+      "targets": [
+        "rules/03 \u00a75",
+        "rules/05 \u00a74a"
+      ]
+    },
+    {
+      "from": "sota-cli-ux",
       "to": "sota-code-security",
       "weight": 4,
       "targets": [
@@ -1733,14 +1743,6 @@
         "rules/03",
         "rules/04",
         "rules/04 \u00a75"
-      ]
-    },
-    {
-      "from": "sota-cli-ux",
-      "to": "sota-shell-scripting",
-      "weight": 3,
-      "targets": [
-        "rules/03 \u00a75"
       ]
     },
     {
@@ -4534,12 +4536,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1916,
+    "md link, other skill": 1918,
     "md link, outside skills/": 3,
     "md link, same skill": 2860,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 906,
+    "name+file (backticked)": 908,
     "name+file (bare)": 180,
     "own rules/NN": 3081
   },
@@ -4551,7 +4553,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 902,
+    "name+file (backticked)": 904,
     "name+file (bare)": 168,
     "own rules/NN": 2978
   },
@@ -5459,6 +5461,7 @@
         "sota/SKILL.md"
       ],
       "other": [
+        "sota-devsecops/rules/05-analysis-gates.md",
         "sota-javascript-typescript/rules/05-security.md",
         "sota-llm-engineering/rules/02-prompt-context-engineering.md",
         "sota-sandboxing/rules/05-ai-agent-sandboxing.md",
@@ -8813,6 +8816,7 @@
         "sota/rules/04-library-map.md"
       ],
       "other": [
+        "sota-cli-ux/rules/02-output-interaction.md",
         "sota-javascript-typescript/rules/07-testing-and-tooling.md"
       ]
     },
