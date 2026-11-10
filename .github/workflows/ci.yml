@@ -262,13 +262,14 @@ jobs:
         # server that silently drops a reply (which printed 35/35 before) or a deleted check fails.
         run: python3 scripts/test-mcp-server.py
 
-      - name: Prove the status line renders every host's payload and neutralises hostile input
-        # scripts/statusline.sh reads untrusted text (repository and branch names, the model
-        # name, the transcript) and prints it to a terminal. The fixtures cover Claude Code and
-        # Antigravity payloads, wrongly typed and non-JSON input, CWE-150 escape injection, link
-        # encoding, width fitting, the worktree fallback, the incremental skills cache, the
-        # context-window file guard and the dump mode. Mutation-checked 2026-11-09: removing any
-        # of 8 security controls fails it (6 of 8 on the first draft; the 2 vacuous tests were rebuilt).
+      - name: Prove the status line neutralises hostile input and keeps its output format
+        # scripts/statusline.sh prints untrusted text (repository and branch names, the model
+        # name, transcript skill names) to a terminal. The fixtures check CWE-150 escape
+        # injection, wrongly typed and non-JSON payloads, the field-shift guard, the
+        # context-window file guard for non-Claude hosts, the skill-name allow-list and relative
+        # paths, plus a differential against the previous script on ordinary payloads.
+        # Mutation-checked 2026-11-10: removing any of 6 controls fails it; the previous script
+        # fails 12 of 23.
         run: scripts/test-statusline.sh
 
       - name: Prove the plugin-dist checker and publisher still refuse their known-bads

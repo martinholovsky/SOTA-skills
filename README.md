@@ -1414,63 +1414,31 @@ Claude Code (under *Memory files*), `/memory show` in Gemini CLI.
 
 ### Status line (optional)
 
-`scripts/statusline.sh` is a status line for **Claude Code and Antigravity CLI** that shows
-**which skills you've actually used this session** — not just how many are installed — beside
-the context, the prompt cache, your plan usage and where you are working:
+`scripts/statusline.sh` is a Claude Code status line that shows **which skills
+you've actually used this session** — not just how many are installed:
 
 ```text
-Opus 5.5 │ ████░░░░░░ 42% │ cache 12m │ 5h 73%↑ 1h48m │ my-service ⎇ main │ wt fix-x │ scratch │ skills▸ testing (1)
+Opus 4.8 │ ctx 63% │ my-service ⎇ main │ skills▸ code-security, testing (2)
 ```
 
-| Segment | Shown when | Source |
-|---|---|---|
-| context bar | always, once known | `context_window.used_percentage` — green under 50%, yellow under 80%, then red |
-| `cache 12m` | the prompt cache is warm and a cold one would re-send ≥ 50,000 tokens | `prompt_cache` (Claude Code) |
-| `5h 73%↑ 1h48m` | a plan window is reported | the window closest to its limit: `rate_limits` (Claude Code subscribers) or `quota` (Antigravity); `↑` = used faster than the window has elapsed |
-| `my-service ⎇ main` | in a directory | the repository's name (the main checkout's, inside a worktree), linked to the folder |
-| `wt fix-x` | in a linked worktree | the host's worktree field, else `git rev-parse`, so `git worktree add` checkouts count |
-| `scratch` | the session scratchpad is not empty | `scratchpad_dir` — sent by Claude Code but **not in its documented schema**, so it may stop arriving |
-| `skills▸ …` | always | `Skill` calls in the transcript, else a count of installed skills |
-
 Claude Code's status-line input doesn't expose loaded skills, but it passes the
-transcript path; the script reads back the `Skill` invocations recorded there (incrementally,
-so a long transcript costs only its new tail), falling back to a count of installed skills
-before any are used. Segments are shortened, then dropped from the lowest priority up, to fit
-the terminal. It also records the
+transcript path; the script reads back the `Skill` invocations recorded there,
+falling back to a count of installed skills before any are used. It also records the
 context window Claude Code reports (`context_window.context_window_size`) in
 `~/.claude/sota-skills-data/context-window`, rewriting it only when the value changes. That
 is the one exact source for the skill-listing budget checks, since nothing outside a live
 session can know the window. Wire it up in `settings.json` (requires `jq`):
 
 ```json
-"statusLine": { "type": "command", "command": "/path/to/SOTA-skills/scripts/statusline.sh", "refreshInterval": 30 }
+"statusLine": { "type": "command", "command": "/path/to/SOTA-skills/scripts/statusline.sh" }
 ```
 
-`refreshInterval` is optional: without it Claude Code redraws only on events, so the cache
-countdown moves only when something happens. **Antigravity CLI** takes the same block in
-`~/.gemini/antigravity-cli/settings.json` (no `refreshInterval`; it redraws on agent-state
-changes). Only Claude Code's window is recorded — Antigravity sends `"product": "antigravity"`
-and the script skips the write.
-
-**Where it works.** Measured or documented, 2026-11-09:
-
-- **Claude Code in a terminal** — the documented surface. Whether the VS Code / JetBrains panels,
-  the desktop app or claude.ai/code render a custom status line is **not documented**; cloud
-  sessions do not read `~/.claude/settings.json` at all. In an IDE, run `claude` in its terminal.
-- **Windows** needs Git Bash: Claude Code falls back to PowerShell without it, and Antigravity
-  runs the command through `cmd /c`, so the `.sh` does not run there.
-- **Links** (OSC 8) work in iTerm2, Kitty, WezTerm and Ghostty (Cmd/Ctrl+click); Terminal.app
-  shows plain text, and SSH or tmux may strip them. Set `SOTA_STATUSLINE_PLAIN=1` for no colour
-  and no links, `NO_COLOR=1` for no colour, `SOTA_STATUSLINE_LINKS=0` for no links.
-- **Copilot CLI** has a command status line too, but its payload is not documented; the script
-  shows whatever fields match. To map one, set `SOTA_STATUSLINE_DUMP=<dir>`: each payload is saved
-  there (mode 600, and the line shows `dump on`). Payloads hold paths, session names and, on
-  Antigravity, your email — never commit them. Codex and Cursor CLI offer only built-in items.
-
-**Untrusted input.** Directory and branch names, the model name and the transcript are shown
-with control characters escaped (`^[`) and bidi / zero-width characters replaced, so a hostile
-repository name cannot clear the screen, retitle the window or write the clipboard
-(CWE-150). `scripts/test-statusline.sh` checks this and every segment.
+**Untrusted input.** The directory and branch names, the model name and the transcript are
+printed with control characters shown escaped (`^[`) and bidi / zero-width characters replaced,
+so a hostile repository name cannot clear the screen, retitle the window or write the clipboard
+(CWE-150). Skill names must match `[A-Za-z0-9:._-]`, and the context window is recorded only when
+the payload carries no `product` field: Antigravity CLI sends `"product": "antigravity"`, and its
+window must not be recorded as Claude Code's. `scripts/test-statusline.sh` checks each of these.
 
 ### Optional extras (for plugin users)
 
