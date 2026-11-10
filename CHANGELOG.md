@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   character** (`sota-devsecops` rules/05 §5.6): build fixtures from escapes at test time, and run
   the gate on the agent's own repository too.
 - **This repository now runs that gate on itself**: `scripts/check-invisible-chars.py` in
-  pre-commit and CI over every tracked text file (5,500 at landing), with a two-path allow-list
+  pre-commit and CI over every tracked text file (5,501 at landing, as CI printed it), with a two-path allow-list
   that fails when stale and a self-test (16 cases; 6 of 6 mutations caught).
 - **The code-rules hook skips hyphenated test files** (`test-*`, `*-test.*`), this repository's
   own convention, which it had read as shipped code. Two more known false triggers were pinned in
