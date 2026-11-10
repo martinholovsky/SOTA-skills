@@ -232,6 +232,18 @@ jobs:
         # hook fails 7 of 58, one that drops the paths 2, one that counts dot dirs 1.
         run: python3 scripts/skill-depth-hook.py --self-test
 
+      - name: Reject invisible and bidi code points in tracked text, and prove the check can fail
+        # sota-devsecops rules/05 §5.6 tells every reader to gate these in agent-written code; this
+        # repository did not, until a field report (2026-11-10) found an agent had written a literal
+        # U+202E into a test fixture twice in one session. The scan covers every tracked text file
+        # with a two-path allow-list that must stay non-stale; the self-test covers each range's
+        # endpoints, near-misses, binaries, the allow-list both ways and an empty scope. Mutation-
+        # checked 2026-11-10: 6 of 6 caught (the first draft's empty-scope case passed for the wrong
+        # reason, a stale allow-list entry, and was rebuilt).
+        run: |
+          python3 scripts/check-invisible-chars.py --self-test
+          python3 scripts/check-invisible-chars.py
+
       - name: Prove the code-rules hook names the rules file for what written code does
         # A PostToolUse hook on Edit|Write|MultiEdit (scripts/code-rules-hook.py, ROADMAP 73 option
         # h), on by default since option m: the plugin and install.sh --routing register it. The self-test drives it over stdin and checks that every file the trigger

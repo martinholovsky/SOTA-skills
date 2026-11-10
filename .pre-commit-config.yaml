@@ -38,6 +38,13 @@ repos:
 
   - repo: local
     hooks:
+      - id: invisible-chars
+        name: No invisible or bidi code points in tracked text (sota-devsecops rules/05 §5.6)
+        entry: python3 scripts/check-invisible-chars.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
       - id: sota-invariants
         name: SOTA-skills invariants (skill files <=500 lines, audit checklists, no internal refs)
         entry: scripts/check-invariants.sh

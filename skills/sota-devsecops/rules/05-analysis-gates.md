@@ -227,6 +227,11 @@ An agent's PR declares a scope (the issue, the task prompt). Two checks hold it 
   reads. Homoglyphs (a Cyrillic letter that renders as a Latin one) need a confusables check, not a
   character-range grep. Language-level detail: [`sota-javascript-typescript` rules/05](../../sota-javascript-typescript/rules/05-security.md).
   (OWASP: Secure Coding with AI cheat sheet)
+  **The agent writing a test for this very check is a likely author.** Field-reported
+  2026-11-10: an agent wrote a literal U+202E into a fixture, beside a correctly escaped
+  `\u0007`, and again into its own report about it, minutes after the bidi rule ([`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md) §4) was on screen. Build
+  such fixtures from escapes at test time (`chr(0x202E)`, `printf '\342\200\256'`) so the source
+  stays ASCII, and run the gate on the agent's own repository, not only on the ones it reviews.
 
 ## 5.7 Test discipline — no flaky-mute culture
 

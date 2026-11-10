@@ -285,6 +285,21 @@ readonly SCRIPT_NAME=${0##*/}
 readonly DEFAULT_REGION=${REGION:-eu-central-1}
 ```
 
+## 4a. jq inside a script: two traps that exit 0
+
+- **A code point in a jq regex is `\x{HHHH}`, never `\uHHHH`.** jq's regex engine (Oniguruma)
+  does not read `\u0000` in a pattern as a code point: `gsub("[\\u0000-\\u001f]"; "")`
+  turned `x`, ESC, `[31my` into `x`, ESC, `y`, keeping the ESC and deleting the harmless text,
+  and `"[\\u0080-\\u009f]"` rewrote the plain text `Opus 5.5` as `???? ?.?` (jq 1.7.1 and
+  1.8.2, measured 2026-11-10). `"[\\x{0000}-\\x{001f}]"` matches the intended range. A
+  `\uHHHH` in a jq *string literal* is fine; only the pattern misreads it.
+- **`x?` on a wrong type yields no value, and no value ends the program at exit 0.**
+  `jq -n '{a:"s"} | (.a.b?) as $x | "LINE"'` prints nothing; inside an array the slot vanishes
+  and every later field shifts left (`[(.cw.size? | tostring), .product]` gave
+  `["antigravity"]` for `{"cw":"x","product":"antigravity"}`). Give every optional access that
+  feeds `as $v` or an array slot a fallback: `(.a.b? // null)`. Both measured on jq 1.7.1 and
+  1.8.2, field-reported 2026-11-10: a status line printed a blank line on a wrongly typed payload.
+
 ## 5. Globbing pitfalls and never parsing ls
 
 - A glob that matches nothing stays **literal**: `rm ./*.tmp` with no matches tries to
@@ -341,6 +356,10 @@ not tested for another.** Run it in the shell that will run it: `bash -c '…'` 
 reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces dash.
 
 ## Audit checklist
+
+- [ ] **jq regexes and optional accesses** (§4a): a `\uHHHH` inside a `test`/`match`/`sub`/`gsub`
+      pattern is a finding (write `\x{HHHH}`); an `x?` feeding `as $v` or an array slot with no
+      `// fallback` is a finding wherever the input can carry a wrong type.
 
 - [ ] **A heredoc whose payload contains its own delimiter?** (§3e) The nested shape — a second
       opener of the same delimiter before the first one closed — is mechanical:
