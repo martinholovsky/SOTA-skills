@@ -9554,6 +9554,10 @@
         "sota-report"
       ],
       [
+        "sota-report",
+        "sota-audit"
+      ],
+      [
         "sota-resume",
         "sota-close"
       ]
