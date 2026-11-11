@@ -135,8 +135,9 @@ pt = box.decrypt(ct, aad=record_id)
 - Findings on sight: `Math.random()`, `random.random()`, `rand()`, Java
   `java.util.Random`, time-seeded PRNGs, or UUIDv1/v4-from-non-crypto-PRNG used
   for any credential-like value.
-- Token entropy ≥ 128 bits; compare tokens constant-time ([rules/22](22-constant-time-comparison.md) §1); store long-lived
-  tokens hashed (SHA-256) so a DB leak isn't a credential leak.
+- Token entropy: **128 bits is the floor** (short-lived, rate-limited tokens); long-lived opaque
+  secrets (API keys, HMAC and webhook secrets) default to **256** ([`sota-secrets-management` rules/01](../../sota-secrets-management/rules/01-lifecycle-and-workload-identity.md) §1).
+  Compare tokens constant-time ([rules/22](22-constant-time-comparison.md) §1); store long-lived ones hashed (SHA-256).
 - Entropy is destroyed by post-processing: `random_string[:6]`, modulo into a
   small alphabet with bias, or "human-friendly" filtering can collapse 128
   bits to brute-forceable space — generate directly in the target alphabet
@@ -147,7 +148,18 @@ pt = box.decrypt(ct, aad=record_id)
   `random(7)` recommends (`getrandom()` without `GRND_RANDOM`, or `/dev/urandom`) and keep
   blocking sources off hot paths — Java `SecureRandom.getInstanceStrong()` returns
   `NativePRNGBlocking` on Linux where `new SecureRandom()` returns `NativePRNG` (measured
-  JDK 25). OWASP: ASVS 5.0 V11.5.2.
+  JDK 25). OWASP: ASVS 5.0 V11.5.2. At early boot call `getrandom()` with no flags: it blocks
+  until the pool is initialized, where `/dev/urandom` "may return data prior" to that
+  (`random(4)`); `GRND_NONBLOCK`'s `EAGAIN` is a failure, never a cue to fall back.
+- **Fork, snapshot and clone duplicate any RNG state held in user space.** A pool of
+  pre-drawn bytes or a generator object created before `fork()` hands every child the same
+  output (measured, Python 3.14: a pre-fork `os.urandom` buffer and `random.Random` instance
+  repeated across children; module-level `random` and `os.urandom` calls did not), and a VM
+  restored twice from one snapshot replays it. Draw per use from the kernel, which holds no
+  state in your process and since Linux 5.18 reseeds on a VM Generation ID change where the
+  hypervisor exposes one (`vmgenid`); else reseed after fork and restore. Images: [`sota-secrets-management` rules/05](../../sota-secrets-management/rules/05-credential-types.md) §5.
+- **Seeded generators stay in tests** (CWE-336/337). Inject the RNG; production wiring builds the
+  CSPRNG and has no switch — env var, flag or config key — that swaps in a seeded one.
 - **Randomness a participant can steer** (lotteries, on-chain games, winner or leader
   selection among parties who distrust each other) must resist manipulation, not only
   prediction. `block.timestamp`, `blockhash` and `block.prevrandao` are seen or chosen by
@@ -424,7 +436,10 @@ KeyAgreement/KeyGenerator | createCipheriv/Hash/Hmac/Sign | crypto.subtle | hash
 - [ ] Are all symmetric encryptions AEAD (GCM/ChaCha20-Poly1305 family), with no ECB/unauthenticated-CBC/custom modes anywhere (§1)?
 - [ ] Is nonce generation per-key safe (counter or XChaCha/SIV for random), never hardcoded or derived from predictable values (§2)?
 - [ ] Is AAD used to bind ciphertexts to their context (§2)?
-- [ ] Do all security tokens/keys come from the OS CSPRNG with ≥128-bit entropy (§3)?
+- [ ] Do all security tokens/keys come from the OS CSPRNG with ≥128-bit entropy, 256 for long-lived opaque secrets (§3)?
+- [ ] **Is a fixed seed or a seed switch reachable outside tests, or is RNG state drawn before a
+      `fork()` (§3)? HIGH when it feeds a secret**: `grep -rnE 'random\.seed\([0-9]|(mt_)?srand\([0-9]|seed_from_u64\(|new Random\([0-9]|Random\.new\([0-9]|rand\.NewSource\(|rand\.NewPCG\(' . | grep -vE '(^|/)(tests?|spec|__tests__|testdata)/|_test\.go:|test_[^/]*\.py:|_spec\.rb:|\.(test|spec)\.[jt]sx?:' ; grep -rniE '(getenv|environ|process\.env|ENV\[)[^;]{0,40}seed' .` ; then read what each
+      `fork()` or pre-fork server hook inherits.
 - [ ] Are there zero hardcoded secrets in source, git history, or client bundles, with CI secret scanning blocking merges and every hit rotated before history is scrubbed, no secret in a URL or query string, log line, error message, client-visible config or CI log (CI using OIDC-federated short-lived credentials, not static keys), and each secret class held in its own store (signing keys non-exportable in KMS, service credentials in a secrets manager with TTL, per-user tokens hashed) (§9)?
 - [ ] Are keys separated per purpose/environment, versioned, and rotatable without downtime (§4)?
 - [ ] Is every TLS client verifying certificates and hostnames (no skip-verify flags), TLS ≥1.2 AEAD-only (§5)?

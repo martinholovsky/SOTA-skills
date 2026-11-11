@@ -159,6 +159,9 @@ A test may consume only inputs it controls. The big three leaks:
 - **Randomness.** Inject the RNG or seed it per test. For property-based
   tests, the framework owns the seed and prints it on failure ([`rules/06`](06-property-fuzzing-mutation.md)).
   UUIDs in assertions: inject the generator or assert on shape, not value.
+  The seed is set **from the test**, never through a production seam: an env var, flag or
+  config key that makes the shipped binary deterministic is a security finding
+  ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §3).
 - **Network.** Unit tests touch no sockets. Integration tests touch only
   dependencies the test started itself ([`rules/04`](04-integration-contract-system.md)). Tests against
   third-party live endpoints belong in a separate, non-blocking suite.

@@ -114,6 +114,12 @@ Usually irreplaceable by federation — manage the static secret well:
   stored in CI secret store, rotated ≤90d.
 - **Deploy keys / repo SSH keys:** read-only unless write is proven necessary; one per
   consumer.
+- **Host keys and machine IDs are generated per instance, never baked into an image.** A VM or
+  container image cloned N times with `/etc/ssh/ssh_host_*_key` inside gives N machines one
+  host identity: one leak impersonates all, and `known_hosts` cannot tell them apart. Ship the
+  image without them and generate at first boot — cloud-init's `ssh_deletekeys` defaults to
+  `true` for exactly this; `machine-id(5)` says images keep `/etc/machine-id` "missing or an
+  empty file". The same holds for any pre-drawn random state ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §3).
 - **Agent hygiene:** `ForwardAgent no` by default (a compromised host can use your agent);
   prefer `ProxyJump`. `IdentitiesOnly yes` to avoid spraying every loaded key.
 - AUDIT: `id_rsa`/`id_ed25519` files in repos or images are Critical (even passphrase-protected

@@ -344,7 +344,8 @@ account takeover).
 // BAD — predictable; applies to math/rand and math/rand/v2 alike
 token := strconv.FormatInt(mrand.Int63(), 36)
 
-// GOOD — Go 1.24+: ready-made secret string (RFC 4648 base32, ≥128 bits)
+// GOOD — Go 1.24+: ready-made secret string (26 base32 chars, 130 bits: the
+// short-lived-token floor; long-lived API keys take the 32-byte Read below)
 token := rand.Text()                  // crypto/rand.Text
 
 // GOOD — raw bytes; Read never errors and always fills b entirely
