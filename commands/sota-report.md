@@ -124,14 +124,30 @@ Field-reported 2026-11-04: a report's highest-value claim, "rule X was in contex
 opened", could not be checked without hunting down the transcript, and its appendix had been
 retyped (`copied=no` under a command that prints `NO`).
 
-E. **"Was it loaded?": cite the transcript, in both directions.** Give the transcript path
-(Claude Code: `~/.claude/projects/<working dir, every / replaced by ->/<session-id>.jsonl`) and,
-for every rules file you call loaded or not loaded, the search over it that shows this: the unique
-`tool_use` ids that name the file, each with its **timestamp relative to the incident**. A read
-made *after* the incident, while writing the report, does not count as loaded. That 2026-11-04 report's
-"never opened" file had in fact been read, about 22 hours after the incident, to write the report.
-"Never opened" is an absence claim: add a positive control (a file you know you read) and the
-total id count.
+E. **"Was it loaded?": run the session-load audit, paste it verbatim, then cite it in both
+directions.** It ships with the library:
+
+    python3 <library>/scripts/session-load-audit.py --cwd "$PWD"
+    python3 <library>/scripts/session-load-audit.py ~/.claude/projects/<dir>/<session-id>.jsonl
+
+`<library>` is two levels above `readlink ~/.claude/skills/sota` for a symlink install, or the
+plugin's root under `~/.claude/plugins` (look for `scripts/session-load-audit.py`). `--cwd` picks
+the newest transcript recorded for that directory; pass the `.jsonl` (and any subagent files) when
+that is not this session. Paste its output **unedited** as the report's first appendix. It lists,
+by unique `tool_use` id with timestamps: the skills invoked; every library file read, searched or
+edited and **by which tool** (a rules file read with `cat`, `sed` or `grep` counts); whether each
+file's Audit checklist was inside a range you read, and re-read after your last edit; and which of
+its runnable probes you ran as published. It prints no command text and no project paths. **It
+proves process, never compliance**: a checklist re-read is not a rule applied.
+
+Then, for every rules file a finding calls loaded or not loaded, cite the id from that table and
+its **timestamp relative to the incident**. A read made *after* the incident, while writing the
+report, does not count as loaded. That 2026-11-04 report's "never opened" file had in fact been
+read, about 22 hours after the incident, to write the report. "Never opened" is an absence claim:
+the file must be missing from the table **and** the audit's "Not resolved" counts must be read, since
+a path built from a variable or a directory-wide search is counted there rather than named. If
+the script is missing or exits 2, say so and fall back to a manual search: unique `tool_use` ids
+naming the file, a positive control (a file you know you read), and the total id count.
 
 F. **Quote the text you propose to change, and find every copy.** Give `file:line` at the stamped
 commit, before and after. Then `git grep -nF '<a distinctive phrase>'` across the checkout and

@@ -192,6 +192,25 @@ ledger entry, with the command that produced the label: **verified** (reproduced
    hidden directory (it needed `--hidden` as well), its "`git check-ignore` does not reveal it"
    was false with `--no-index`, and its unexplained macOS non-reproduction had a documented cause
    (BSD `pgrep` excludes ancestors by default). All three were caught only by re-running.
+6. **The session-load audit is checked like every other claim, and it bounds what can be
+   verified.** `/sota-report` check E has the reporter paste `scripts/session-load-audit.py`
+   output verbatim. At intake:
+   - **No appendix, or one that does not parse as that script's output** (header, table, the
+     "Proves process only" footer): every "loaded / not loaded" claim in the report is unverified.
+   - **Re-run it when the transcript is on this machine** (your own sessions, a report from a
+     second working tree): the `sha256` in the header must match the file, and the output must
+     match the paste. Otherwise label the appendix's own content **not reproducible here
+     (transcript not available)** and check it for internal consistency only.
+   - **Cross-check each finding's "Loaded?" against the table.** "In context and broken" needs
+     a read of that file *before* the incident's timestamp. "Never opened" needs the file absent
+     *and* non-zero "Not resolved" counts explained, since those are reads it could not name.
+   - **Process gaps are findings about rule shape** (category 2): a rules file governing the
+     work whose checklist was never read or never re-read after the last edit (BUILD step 4),
+     or an audit session that ran none of a loaded file's probes. Record them even when the
+     report did not.
+   - **It cannot show a rule was applied.** "Followed correctly and fully" is verified only by
+     reproducing the artifact (step 4): the code, the diff, the gate output. A transcript proves
+     what was read and run, not what was done with it.
 
 Then run the intake the way [ADOPTION-LOG.md](ADOPTION-LOG.md) records it:
 
