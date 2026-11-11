@@ -55,8 +55,9 @@ The plugin data dir is `$CLAUDE_PLUGIN_DATA`, which Claude Code sets. Set the va
   for a repository, an `AGENTS.md` for other agents). Nothing runs them unless you do.
 - `scripts/session-load-audit.py` (needs `python3`), with the two modules it imports
   (`check-checklist-probes.py`, `check-probe-fixtures.py`): `/sota-report` runs it to list
-  what the session loaded from the library, read from your local transcript. It reads only,
-  writes nothing, and prints no command text or project paths.
+  what the session loaded from the library, read from your local transcript, and with `--diff`
+  to run the checklist probes over what the session changed. It writes nothing but a temporary
+  copy of the changed files, removed on exit, and prints no command text or project paths.
 - `scripts/install.sh` ships only because the routing hook reads its reminder text from it. It
   is the installer for a git checkout and is not meant to be run from this tree; it names
   scripts that are not here.

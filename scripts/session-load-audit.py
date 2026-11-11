@@ -6,6 +6,8 @@ were executed.
 
   python3 scripts/session-load-audit.py TRANSCRIPT.jsonl [MORE.jsonl ...]  # one session (+ subagents)
   python3 scripts/session-load-audit.py --cwd /path/to/project            # newest session for that dir
+  python3 scripts/session-load-audit.py --cwd DIR --diff BASE [--repo R]  # + probes over the built code
+  python3 scripts/session-load-audit.py --diff BASE --show-hits           # PRIVATE: where each new hit is
   python3 scripts/session-load-audit.py --json ...                        # machine-readable
   python3 scripts/session-load-audit.py --self-test
 
@@ -14,10 +16,13 @@ directions, and the intake cannot see the session (docs/FIELD-REPORT-PROMPT.md).
 went wrong twice: a "never opened" file had been read 22 hours later to write the report, and an
 appendix was retyped. This makes the answer a re-runnable artifact.
 
-WHAT IT CAN AND CANNOT SAY. It proves PROCESS: a file was read, its checklist lines were inside
-the range read, a probe's pattern appeared in a command that ran. It cannot prove a rule was
-APPLIED — a re-read is not compliance. That half stays with the report's per-finding evidence and
-the intake's reproduction.
+WHAT IT CAN AND CANNOT SAY. The transcript half proves PROCESS: a file was read, its checklist
+lines were inside the range read, a probe ran as published. A re-read is not compliance. The
+--diff half looks at the ARTIFACT: every runnable checklist probe over the files changed since
+BASE, hits counted on added lines only, joined with the transcript into loaded x new-hit. A hit is
+a lead (first real run: 4 of 9 sampled were real), no hit is not compliance (only the items with a
+runnable probe can hit; the count is printed), and the per-item "was it followed" is the bounded
+verdict walk /sota-report check E2 asks for.
 
 THREE INSTRUMENT TRAPS IT HANDLES (each would otherwise lie):
   1. A tool call is written more than once (subagent and resumed-session copies; measured
@@ -28,6 +33,8 @@ THREE INSTRUMENT TRAPS IT HANDLES (each would otherwise lie):
   3. Checklist line positions come from THIS checkout, which may differ from the text the session
      loaded. The library commit is printed so the reader can tell.
 
+ENVIRONMENT. --cwd looks under $CLAUDE_CONFIG_DIR/projects (default ~/.claude/projects).
+
 PRIVACY (default, deliberate). Output carries library-relative paths, tool names, tool_use ids,
 timestamps, counts and the EXTENSIONS of edited non-library files. Never command text, project
 paths, file contents or the transcript's directory. It is meant to be pasted into a field report.
@@ -37,6 +44,7 @@ Exit: 0 report written, 2 usage error or unreadable transcript.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import hashlib
 import importlib.util
 import json
@@ -46,6 +54,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -82,7 +91,7 @@ EXT_SKILL = {
 }
 
 
-@dataclass
+@dataclass(slots=True)
 class Call:
     """One unique tool_use, validated at the boundary: only the fields this script reads."""
     id: str
@@ -97,7 +106,7 @@ class Call:
     is_error: bool | None = None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Access:
     call_id: str
     ts: str
@@ -108,7 +117,7 @@ class Access:
     whole: bool = False
 
 
-@dataclass
+@dataclass(slots=True)
 class Session:
     calls: list[Call] = field(default_factory=list)
     prompts: int = 0
@@ -135,7 +144,7 @@ def _int(v) -> int | None:
     return v if isinstance(v, int) and not isinstance(v, bool) else None
 
 
-def parse(paths: list[Path]) -> Session:
+def parse(paths: Sequence[Path]) -> Session:
     s = Session()
     seen: dict[str, Call] = {}
     errors: dict[str, bool] = {}
@@ -145,6 +154,9 @@ def parse(paths: list[Path]) -> Session:
         data = p.read_bytes()
         s.files.append(p.name)
         s.sha256.append(hashlib.sha256(data).hexdigest()[:16])
+        # Lenient on purpose (code-security rules/01 §1 asks for strict decoding of untrusted input):
+        # a transcript is local, harness-written JSONL, and one bad byte must cost one record, not
+        # the whole audit. A replaced character cannot create a library path that was not there.
         for raw in data.decode("utf-8", "replace").splitlines():
             try:
                 e = json.loads(raw)
@@ -217,7 +229,7 @@ def _segments(cmd: str) -> list[tuple[list[str], str]]:
     return segs
 
 
-def _downstream(seg: list[str], rng: tuple[int, int] | None, whole: bool, nlines: int
+def _downstream(seg: Sequence[str], rng: tuple[int, int] | None, whole: bool, nlines: int
                 ) -> tuple[str, tuple[int, int] | None, bool]:
     """A reader piped into another command: `| head -n N` bounds it, `| grep` makes it a search,
     anything else makes the range unknown. `cat f | head -400` is NOT a whole-file read."""
@@ -234,7 +246,7 @@ def _downstream(seg: list[str], rng: tuple[int, int] | None, whole: bool, nlines
     return "read", None, False
 
 
-def _verb(seg: list[str]) -> str:
+def _verb(seg: Sequence[str]) -> str:
     words = [w for w in seg if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", w)]
     while words and words[0] in {"command", "env", "sudo", "time", "nice", "xargs", "do", "then",
                                  "else", "elif", "if", "while", "until", "!", "(", "{", "$("}:
@@ -242,7 +254,7 @@ def _verb(seg: list[str]) -> str:
     return os.path.basename(words[0]) if words else ""
 
 
-def _range(verb: str, seg: list[str], nlines: int) -> tuple[tuple[int, int] | None, bool]:
+def _range(verb: str, seg: Sequence[str], nlines: int) -> tuple[tuple[int, int] | None, bool]:
     """Line range a reader printed, as far as it can be known statically."""
     text = " ".join(seg)
     if verb in {"cat", "less", "more", "bat", "nl", "view"}:
@@ -380,7 +392,7 @@ def _probe_body(span: str) -> str:
     return re.sub(r"\s+", "", _SCOPE.sub(" ", span))
 
 
-def probe_runs(rel: str, lib: Path, bash: list[Call]) -> list[tuple[str, list[str]]]:
+def probe_runs(rel: str, lib: Path, bash: Sequence[Call]) -> list[tuple[str, list[str]]]:
     try:
         text = (lib / rel).read_text(encoding="utf-8")
     except OSError:
@@ -394,6 +406,137 @@ def probe_runs(rel: str, lib: Path, bash: list[Call]) -> list[tuple[str, list[st
         ran = [cid for cid, cmd in squashed if body and body in cmd]
         out.append((cpf.probe_id(rel, span), ran))
     return out
+
+
+# ------------------------------------------------------------------ diff mode: probes over the built code
+
+MAX_FILES, MAX_BYTES_EACH = 500, 1_000_000
+_HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
+_HIT = re.compile(r"^(?:\./)?(.+?):(\d+):")
+_INCLUDE = re.compile(r"--include=(?:'([^']+)'|\"([^\"]+)\"|(\S+))")
+
+
+def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=False)
+
+
+def diff_scope(repo: Path, base: str) -> tuple[dict[str, set[int]], str]:
+    """{path: added line numbers} for the working tree against BASE, untracked files whole.
+    The base is resolved and GUARDED first: an empty comparand silently answers 'clean'."""
+    r = _git(repo, "rev-parse", "--verify", "--quiet", f"{base}^{{commit}}")
+    if r.returncode != 0 or not r.stdout.strip():
+        why = _git(repo, "rev-parse", "--verify", f"{base}^{{commit}}").stderr.strip()
+        return {}, f"base {base!r} does not resolve to a commit in {repo}: {why or 'no output'}"
+    sha = r.stdout.strip()
+    d = _git(repo, "diff", "-U0", "--no-color", "--no-ext-diff", sha, "--")
+    if d.returncode != 0:
+        return {}, f"git diff failed: {d.stderr.strip()}"
+    added: dict[str, set[int]] = {}
+    cur = None
+    for line in d.stdout.split("\n"):
+        if line.startswith("+++ "):
+            cur = line[6:] if line.startswith("+++ b/") else None
+        elif cur and (m := _HUNK.match(line)):
+            start, count = int(m.group(1)), int(m.group(2) if m.group(2) is not None else 1)
+            if count:
+                added.setdefault(cur, set()).update(range(start, start + count))
+    u = _git(repo, "ls-files", "--others", "--exclude-standard", "-z")
+    for path in filter(None, u.stdout.split("\0")):
+        try:
+            n = (repo / path).read_bytes().count(b"\n") + 1
+        except OSError:
+            continue
+        added[path] = set(range(1, n + 1))
+    return added, ""
+
+
+def _stage(repo: Path, added: dict[str, set[int]], into: Path) -> tuple[list[str], int]:
+    """Copy each changed REGULAR file (no symlink followed) under a size cap. Returns staged, skipped."""
+    staged, skipped = [], 0
+    for rel in sorted(added):
+        src = repo / rel
+        if src.is_symlink() or not src.is_file() or src.stat().st_size > MAX_BYTES_EACH:
+            skipped += 1
+            continue
+        dst = into / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(src.read_bytes())
+        staged.append(rel)
+    return staged, skipped
+
+
+def _applies(span: str, names: Sequence[str]) -> bool:
+    globs = [next(g for g in m.groups() if g) for m in _INCLUDE.finditer(span)]
+    return not globs or any(fnmatch.fnmatch(os.path.basename(n), g) for n in names for g in globs)
+
+
+def probe_coverage(lib: Path) -> tuple[int, int]:
+    """(checklist items, items carrying >= 1 runnable probe), counted live: the bound on what a
+    mechanical pass can say. Measured 2026-11-11: 1,296 of 4,304."""
+    items = runnable = 0
+    for p in (lib / "skills").glob("*/rules/*.md"):
+        t = p.read_text(encoding="utf-8")
+        i = t.find("\n## Audit checklist")
+        if i < 0:
+            continue
+        for it in re.split(r"\n(?=- \[ \])", t[i:])[1:]:
+            items += 1
+            runnable += any(ccp.skip_reason(s) is None for s in ccp.probes_in("\n## Audit checklist\n" + it))
+    return items, runnable
+
+
+def diff_probes(repo: Path, base: str, lib: Path) -> tuple[dict, str]:
+    added, err = diff_scope(repo, base)
+    if err:
+        return {}, err
+    if len(added) > MAX_FILES:
+        return {}, f"{len(added)} changed files exceeds {MAX_FILES}: pass a nearer --diff base"
+    out = {"base": base, "changed_files": len(added), "added_lines": sum(map(len, added.values())),
+           "staged_files": 0, "skipped_files": 0, "probes_total": 0, "probes_not_applicable": 0,
+           "probes_missing_path": 0, "probes_run": 0, "probes_broken": [], "hits": []}
+    out["checklist_items"], out["checklist_items_with_probe"] = probe_coverage(lib)
+    with tempfile.TemporaryDirectory() as tmp:
+        stage = Path(tmp) / "diff"
+        stage.mkdir()
+        staged, out["skipped_files"] = _stage(repo, added, stage)
+        out["staged_files"] = len(staged)
+        if not staged:
+            return out, ""
+        for rel in sorted(str(p.relative_to(lib)) for p in (lib / "skills").glob("*/rules/*.md")):
+            text = (lib / rel).read_text(encoding="utf-8")
+            for span in ccp.probes_in(text):
+                if ccp.skip_reason(span) is not None:
+                    continue
+                out["probes_total"] += 1
+                if not _applies(span, staged):
+                    out["probes_not_applicable"] += 1
+                    continue
+                rc, stdout, stderr = cpf.run_case(span, str(stage))
+                pid = cpf.probe_id(rel, span)
+                errs = [ln for ln in stderr.splitlines() if ln.strip()]
+                only_missing = rc in (2, 123) and errs and all(ccp.MISSING.search(ln) for ln in errs)
+                if only_missing and not stdout.strip():
+                    # the probe names a path (a workflow dir, package.json) this diff does not touch
+                    out["probes_missing_path"] += 1
+                    continue
+                out["probes_run"] += 1
+                if rc not in (0, 1, 123) and not only_missing:
+                    out["probes_broken"].append(pid)
+                    continue
+                new, pre, unattributed, where = 0, 0, 0, []
+                for line in stdout.splitlines():
+                    m = _HIT.match(line)
+                    if not m:
+                        unattributed += bool(line.strip())
+                    elif int(m.group(2)) in added.get(m.group(1), set()):
+                        new += 1
+                        where.append(f"{m.group(1)}:{m.group(2)}")
+                    else:
+                        pre += 1
+                if new or pre or unattributed:
+                    out["hits"].append({"probe": pid, "rules_file": rel, "new": new, "pre_existing": pre,
+                                        "unattributed": unattributed, "where": where})
+    return out, ""
 
 
 # ------------------------------------------------------------------ report
@@ -540,6 +683,63 @@ def newest_for_cwd(cwd: str) -> list[Path]:
     return [main, *subs]
 
 
+def loaded_rules(r: dict | None) -> set[str] | None:
+    if r is None:
+        return None
+    return {f["file"] for f in r["files"] if "/rules/" in f["file"]
+            and set(f["kinds"]) & {"read", "search", "invoke"}}
+
+
+def join(r: dict | None, d: dict) -> dict:
+    """The 2x2 per rules file: loaded (transcript) x new probe hits (built code), and the bounded
+    verdict-walk set /sota-report asks for: every loaded rules file plus every file with a new hit."""
+    loaded = loaded_rules(r)
+    hit_files = sorted({h["rules_file"] for h in d["hits"] if h["new"]})
+    rows = []
+    for rel in hit_files:
+        state = "unknown (no transcript)" if loaded is None else (
+            "loaded + new hit: rule shape, if the walk confirms it" if rel in loaded
+            else "not loaded + new hit: routing gap, if the walk confirms it")
+        rows.append({"rules_file": rel, "quadrant": state,
+                     "new_hits": sum(h["new"] for h in d["hits"] if h["rules_file"] == rel)})
+    for rel in sorted(loaded or ()):
+        if rel not in hit_files:
+            rows.append({"rules_file": rel, "quadrant": "loaded, no new mechanical hit", "new_hits": 0})
+    walk = sorted((loaded or set()) | set(hit_files))
+    return {"quadrants": rows, "verdict_walk": walk}
+
+
+def diff_markdown(d: dict, j: dict, show_hits: bool) -> str:
+    d, j = _sanitize(d), _sanitize(j)
+    L = ["", f"## Diff probe audit (working tree vs `{d['base']}`)", "",
+         f"- Changed files: {d['changed_files']} ({d['added_lines']} added lines); staged "
+         f"{d['staged_files']}, skipped {d['skipped_files']} (symlink, non-regular or > {MAX_BYTES_EACH} bytes)",
+         f"- Probes: {d['probes_run']} run of {d['probes_total']} runnable "
+         f"({d['probes_not_applicable']} not applicable: their --include matches no changed file; "
+         f"{d['probes_missing_path']} name a path the diff does not contain); "
+         f"broken: {len(d['probes_broken'])}" + (" — " + ", ".join(d["probes_broken"]) if d["probes_broken"] else ""),
+         "", "| Probe | Rules file | New (added lines) | Pre-existing | Unattributed |", "|---|---|---|---|---|"]
+    shown = [h for h in d["hits"] if h["new"] or h["pre_existing"]]
+    for h in shown:
+        L.append(f"| `{h['probe']}` | `{h['rules_file']}` | {h['new']} | {h['pre_existing']} | {h['unattributed']} |")
+    if not shown:
+        L.append("| none | | | | |")
+    only_file = len(d["hits"]) - len(shown)
+    L.append(f"\n{only_file} more probe(s) printed only file-level or absence output (`grep -l`, "
+             f"`|| echo 'no …'`): written for a whole repository, not attributable to added lines; in --json.")
+    if show_hits:
+        L += ["", "New hits (PRIVATE, local use only; never paste into a report):"]
+        L += [f"- `{h['probe']}` {w}" for h in d["hits"] for w in h["where"]]
+    L += ["", "| Rules file | Loaded x new hit |", "|---|---|"]
+    L += [f"| `{q['rules_file']}` | {q['quadrant']} |" for q in j["quadrants"]] or ["| none | |"]
+    L += ["", "Verdict walk (met / not met / not applicable with reason / not checked, per checklist item):"]
+    L += [f"- `{w}`" for w in j["verdict_walk"]] or ["- none"]
+    L += ["", f"A hit is a lead, not a verdict: read it. No hit is not compliance: "
+              f"{d['checklist_items_with_probe']} of {d['checklist_items']} checklist items carry a runnable "
+              f"probe, and each probe is proven on one fixture, not on all code."]
+    return "\n".join(L) + "\n"
+
+
 def _fail(msg: str, as_json: bool) -> int:
     if as_json:
         print(json.dumps({"code": "usage", "message": msg}), file=sys.stderr)
@@ -548,18 +748,39 @@ def _fail(msg: str, as_json: bool) -> int:
     return 2
 
 
-def main(argv: list[str]) -> int:
+def main(argv: Sequence[str]) -> int:
     ap = argparse.ArgumentParser(
         description=__doc__.split("\n\n")[0],
         epilog="exit codes: 0 report written, 2 usage error, unreadable or empty transcript")
     ap.add_argument("transcripts", nargs="*", type=Path)
     ap.add_argument("--cwd", help="audit the newest session recorded for this working directory")
     ap.add_argument("--library", type=Path, default=ROOT, help="library checkout (default: this one)")
+    ap.add_argument("--diff", metavar="BASE", help="also run every applicable probe over the working "
+                    "tree's changes since BASE, counting hits on added lines only")
+    ap.add_argument("--repo", type=Path, default=Path.cwd(), help="repository for --diff (default: cwd)")
+    ap.add_argument("--show-hits", action="store_true", help="print new hits as path:line (PRIVATE; "
+                    "for checking a hit locally, never for a report)")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args(argv)
     if a.self_test:
         return self_test()
+    lib = a.library.resolve()
+    d = j = None
+    if a.diff:
+        top = _git(a.repo, "rev-parse", "--show-toplevel")
+        if top.returncode != 0:
+            return _fail(f"--repo {a.repo} is not inside a git repository: {top.stderr.strip()}", a.json)
+        d, err = diff_probes(Path(top.stdout.strip()), a.diff, lib)
+        if err:
+            return _fail(err, a.json)
+        if not a.transcripts and not a.cwd:
+            j = join(None, d)
+            if not a.show_hits:
+                for h in d["hits"]:
+                    h.pop("where")
+            out = json.dumps(_sanitize({"diff": d, "join": j}), indent=2) + "\n" if a.json else diff_markdown(d, j, a.show_hits)
+            return _write(out)
     paths = list(a.transcripts)
     if a.cwd:
         found = newest_for_cwd(a.cwd)
@@ -579,9 +800,21 @@ def main(argv: list[str]) -> int:
     if not s.calls:
         return _fail(f"0 tool calls in {len(paths)} transcript(s): not a session transcript, or the "
                      f"format changed; refusing to report an empty audit", a.json)
-    r = build(s, a.library.resolve())
+    r = build(s, lib)
+    if d is not None:
+        j = join(r, d)
+        if not a.show_hits:
+            for h in d["hits"]:
+                h.pop("where")
+        if a.json:
+            return _write(json.dumps(_sanitize({**r, "diff": d, "join": j}), indent=2) + "\n")
+        return _write(markdown(r) + diff_markdown(d, j, a.show_hits))
+    return _write(json.dumps(_sanitize(r), indent=2) + "\n" if a.json else markdown(r))
+
+
+def _write(text: str) -> int:
     try:
-        sys.stdout.write(json.dumps(_sanitize(r), indent=2) + "\n" if a.json else markdown(r))
+        sys.stdout.write(text)
         sys.stdout.flush()
     except BrokenPipeError:
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
@@ -686,6 +919,51 @@ def self_test() -> int:
                       encoding="utf-8")
         md4 = markdown(build(parse([p4]), ROOT))
         check("\x1b" not in md4, "an ESC from a transcript id reached the output")
+    # ---- diff mode, in a throwaway repo: one pre-existing hit, two new ones (modified + untracked)
+    crypto = "skills/sota-golang/rules/05-security.md"
+    seed_probe = [s for s in ccp.probes_in((ROOT / crypto).read_text(encoding="utf-8"))
+                  if ccp.skip_reason(s) is None and s == "grep -rn 'math/rand' --include='*.go' ."]
+    check(len(seed_probe) == 1, "fixture premise: the math/rand probe in golang rules/05")
+    if seed_probe:
+        pid = cpf.probe_id(crypto, seed_probe[0])
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d) / "r"
+            (repo / "app").mkdir(parents=True)
+            g = ["git", "-C", str(repo), "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
+                 "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
+            subprocess.run(g + ["init", "-q"], check=True)
+            (repo / "app/old.go").write_text("package app\nimport \"math/rand\"\n", encoding="utf-8")
+            subprocess.run(g + ["add", "-A"], check=True)
+            subprocess.run(g + ["commit", "-q", "-m", "base"], check=True)
+            (repo / "app/old.go").write_text("package app\nimport \"math/rand\"\nvar _ = \"math/rand\"\n", encoding="utf-8")
+            (repo / "app/new.go").write_text("package app\nimport \"math/rand\"\n", encoding="utf-8")
+            (repo / "app/link.go").symlink_to("/etc/hosts")
+            dp, err = diff_probes(repo, "HEAD", ROOT)
+            check(not err, f"diff mode errored: {err}")
+            h = next((x for x in dp.get("hits", []) if x["probe"] == pid), None)
+            check(h is not None and h["new"] == 2 and h["pre_existing"] == 1,
+                  f"math/rand probe: want new=2 pre=1, got {h and (h['new'], h['pre_existing'])}")
+            check(dp.get("skipped_files", 0) >= 1, "an untracked symlink must be skipped, not followed")
+            check(dp.get("probes_not_applicable", 0) > 0, "a --include='*.py' probe applies to no .go change")
+            check(not dp.get("probes_broken"), f"probes broke on the staged tree: {dp.get('probes_broken')}")
+            check(dp.get("probes_missing_path", 0) > 0,
+                  "a probe naming a path the diff lacks (a workflow dir) is counted as such, not as run")
+            _, bad = diff_probes(repo, "no-such-ref", ROOT)
+            check("does not resolve" in bad, "an unresolvable base must be refused, never read as clean")
+            j_none = join(None, dp)
+            check(any(q["quadrant"].startswith("unknown") for q in j_none["quadrants"]), "no transcript -> unknown")
+            fake = {"files": [{"file": crypto, "kinds": ["read"]}]}
+            j_in = join(fake, dp)
+            check(any(q["rules_file"] == crypto and q["quadrant"].startswith("loaded + new hit")
+                      for q in j_in["quadrants"]), "loaded + new hit -> rule shape")
+            check(crypto in j_in["verdict_walk"], "a loaded file is in the verdict walk")
+            j_out = join({"files": []}, dp)
+            check(any(q["rules_file"] == crypto and "routing gap" in q["quadrant"] for q in j_out["quadrants"]),
+                  "not loaded + new hit -> routing gap")
+            for x in dp["hits"]:
+                x.pop("where", None)
+            md5 = diff_markdown(dp, j_in, False)
+            check("app/" not in md5 and "old.go" not in md5, "privacy: a hit path leaked without --show-hits")
     if fails:
         print(f"FAIL self-test: {len(fails)} of {ran[0]} checks\n  " + "\n  ".join(fails))
         return 1

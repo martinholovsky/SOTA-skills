@@ -208,9 +208,16 @@ ledger entry, with the command that produced the label: **verified** (reproduced
      work whose checklist was never read or never re-read after the last edit (BUILD step 4),
      or an audit session that ran none of a loaded file's probes. Record them even when the
      report did not.
-   - **It cannot show a rule was applied.** "Followed correctly and fully" is verified only by
-     reproducing the artifact (step 4): the code, the diff, the gate output. A transcript proves
-     what was read and run, not what was done with it.
+   - **The transcript cannot show a rule was applied; the diff section and the walk are the
+     reporter's evidence that it was.** Check that every file under "Verdict walk" has a verdict
+     per checklist item, with a reason for each "not applicable". Treat `loaded + new hit` and
+     `not loaded + new hit` rows as leads: a row the walk confirmed is a rule-shape finding or a
+     routing gap respectively; for a routing gap, read the owning skill's description to see why
+     it did not fire. Each probe id must resolve at the stamped commit: since invariant 44 gives
+     every runnable probe fixtures, `scripts/probe-fixtures/<skill>/<rules-file>/<hash>/` exists.
+     The code itself is private to the reporter, so "followed correctly and fully" is verified
+     only where you can reproduce the artifact (step 4: your own repos, a public diff). Elsewhere
+     the verdicts are labelled **not reproducible here**, like any other claim you cannot re-run.
 
 Then run the intake the way [ADOPTION-LOG.md](ADOPTION-LOG.md) records it:
 

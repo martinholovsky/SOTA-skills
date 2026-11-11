@@ -237,7 +237,9 @@ jobs:
         # runs synthetic transcripts against this checkout's rules text. Mutation-checked 2026-11-11:
         # dedupe off, the pipe fix off (`cat f | head` read as whole), pattern-only probe matching,
         # command text leaked, control characters unescaped, an empty transcript accepted and the
-        # re-read ordering broken each fail it.
+        # re-read ordering broken each fail it. The --diff half (a throwaway git repo) was mutated
+        # the same way: all hits read as new, the base unguarded, a symlink followed, a missing-path
+        # probe counted as run, and the --include filter removed each fail it.
         run: python3 scripts/session-load-audit.py --self-test
 
       - name: Prove the code-rules hook names the rules file for what written code does

@@ -149,6 +149,27 @@ a path built from a variable or a directory-wide search is counted there rather 
 the script is missing or exits 2, say so and fall back to a manual search: unique `tool_use` ids
 naming the file, a positive control (a file you know you read), and the total id count.
 
+E2. **Then check what the session built: mechanically first, then by walking.** The transcript says
+what you read; only the code says what you did with it. Re-run with `--diff <base>`, where the base
+is the commit the session started from (the SHA before your first edit, or
+`git merge-base HEAD origin/HEAD`). The script refuses a base that does not resolve, because an
+empty comparand reads as a clean diff. It runs every runnable checklist probe over the files
+changed since the base, counts hits on **added lines only**, and joins them with the transcript:
+
+- `loaded + new hit`: a rule you had in context, and the code still trips it. Category 2 above,
+  once the walk confirms it.
+- `not loaded + new hit`: a rule that never reached you. A routing gap (category 4), once confirmed.
+
+Then **walk every file listed under "Verdict walk"**: each Audit-checklist item marked met, not
+met, not applicable with the reason, or not checked. **Verdict only: fix nothing during the
+report**, because a fix changes the artifact the report describes. `/sota-audit` is the command
+that fixes, before or after this one, and if it already ran this session over the same diff,
+cite its verdicts instead of repeating them. A hit is a lead to read, not a finding: in the first
+real run, 4 of 9 sampled hits were real deviations and the rest were probes from a domain the code
+was not in. No hit is not compliance either; the script prints how few checklist items carry a
+runnable probe at all. Paste the diff section verbatim beside the session table. Per-item verdicts
+go in the private report, and the hit locations (`--show-hits`) stay on your machine.
+
 F. **Quote the text you propose to change, and find every copy.** Give `file:line` at the stamped
 commit, before and after. Then `git grep -nF '<a distinctive phrase>'` across the checkout and
 print the hit count. The same sentence often lives in a rules file, a generated block **and the
