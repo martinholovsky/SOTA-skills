@@ -294,6 +294,9 @@ token; [rules/01](01-lifecycle-and-workload-identity.md) §4) and treat any resi
 - [ ] SSH (§5): Ed25519 per-person per-device or SSH CA certs; `authorized_keys` inventoried and
       pruned on offboarding; no private keys in repos/images; no unrestricted CI SSH keys;
       agent forwarding off.
+- [ ] **Are SSH host keys and the machine ID generated per instance, never baked into an image
+      (§5)? HIGH when the image is cloned**: `grep -rnE '^(COPY|ADD)[^#]*(ssh_host_|machine-id)|ssh-keygen[^#]*[[:space:]]-A|systemd-machine-id-setup|dbus-uuidgen[^#]*--ensure' --include='Dockerfile*' --include='Containerfile*' --include='*.pkr.hcl' .`
+      ; then confirm the image build ends with `ssh_host_*` removed and `/etc/machine-id` empty.
 - [ ] JWT (§6): asymmetric alg for multi-verifier setups, algorithm pinned, no `none`/confusion
       paths, `kid`-based JWKS rotation with refresh-on-unknown-`kid`, ≤15m access-token TTL,
       no JWT secrets with defaults, no real JWTs in fixtures.
