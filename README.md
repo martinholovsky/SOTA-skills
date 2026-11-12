@@ -42,7 +42,7 @@ fails open (an error is one line on stderr, and the hook exits 0) except where s
 | SessionStart | `scripts/plugin-notice.sh` | nothing | a marker in the plugin data dir, so it speaks once | a one-time first-run notice | it runs once |
 | SessionStart | `scripts/update-reminder.sh` | this tree's `VERSION`; `.sota-install` stamps left by a copied install of the same library; for a git-checkout install, that checkout's branch and settings | a timestamp in the plugin data dir | at most one short notice every 14 days saying an update *may* exist (it never checks), plus a notice if a copied install of the library is older than its checkout | `SOTA_UPDATE_REMINDER_DAYS=0` |
 | UserPromptSubmit | `scripts/plugin-routing-hook.sh` | your user and project `settings.json`, to stay silent if the same reminder is already installed; `scripts/install.sh`, read as text for the reminder's wording | nothing | the "sota standing rules" reminder (validate claims, keep docs current, route to the skills) added to every prompt | `SOTA_ROUTING_HOOK=off` |
-| PostToolUse (Edit, Write, MultiEdit) | `scripts/code-rules-hook.py` (needs `python3`) | the text Claude just wrote | per-session claim files in your temp dir, so each rules file is named once | names the rules file for what that code does (an outbound fetch, a CSV writer, an archive, a handler) | `SOTA_CODE_RULES_HOOK=off` |
+| PostToolUse (Edit, Write, MultiEdit) | `scripts/code-rules-hook.py` (needs `python3`) | the text Claude just wrote | per-session claim files in your temp dir, so each rules file is named once | names the rules file for what that code does (an outbound fetch, a CSV writer, an archive, a handler), with the line that matched | `SOTA_CODE_RULES_HOOK=off` |
 | PreToolUse (Bash) | `scripts/zsh-equals-hook.py` (needs `python3`) | the Bash command Claude is about to run | nothing | **can block the command** (exit 2, with the reason) when zsh would silently rewrite or cut it, such as an unquoted `===` separator; acts only when the agent's shell is zsh | `SOTA_ZSH_EQUALS_HOOK=off` |
 
 The plugin data dir is `$CLAUDE_PLUGIN_DATA`, which Claude Code sets. Set the variables in
@@ -53,6 +53,11 @@ The plugin data dir is `$CLAUDE_PLUGIN_DATA`, which Claude Code sets. Set the va
 - `scripts/statusline.sh`, `scripts/init-gates.sh`, `scripts/gen-agents-md.sh`: optional
   extras the first-run notice offers (a status line showing which skills ran, pre-commit gates
   for a repository, an `AGENTS.md` for other agents). Nothing runs them unless you do.
+- `scripts/session-load-audit.py` (needs `python3`), with the two modules it imports
+  (`check-checklist-probes.py`, `check-probe-fixtures.py`): `/sota-report` runs it to list
+  what the session loaded from the library, read from your local transcript, and with `--diff`
+  to run the checklist probes over what the session changed. It writes nothing but a temporary
+  copy of the changed files, removed on exit, and prints no command text or project paths.
 - `scripts/install.sh` ships only because the routing hook reads its reminder text from it. It
   is the installer for a git checkout and is not meant to be run from this tree; it names
   scripts that are not here.
