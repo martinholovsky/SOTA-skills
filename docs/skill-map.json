@@ -277,13 +277,14 @@
     {
       "from": "sota-testing",
       "to": "sota-code-security",
-      "weight": 23,
+      "weight": 24,
       "targets": [
         "rules/01 \u00a711",
         "rules/03 \u00a71",
         "rules/03 \u00a74",
         "rules/03 \u00a77",
         "rules/04 \u00a72",
+        "rules/04 \u00a73",
         "rules/05",
         "rules/07 \u00a72",
         "rules/10",
@@ -1062,6 +1063,18 @@
     },
     {
       "from": "sota-code-security",
+      "to": "sota-secrets-management",
+      "weight": 6,
+      "targets": [
+        "rules/01 \u00a71",
+        "rules/02 \u00a77",
+        "rules/04 \u00a77",
+        "rules/05 \u00a75",
+        "rules/05 \u00a77"
+      ]
+    },
+    {
+      "from": "sota-code-security",
       "to": "sota-network-security",
       "weight": 6,
       "targets": [
@@ -1220,6 +1233,18 @@
       "to": "sota-secrets-management",
       "weight": 6,
       "targets": []
+    },
+    {
+      "from": "sota-secrets-management",
+      "to": "sota-code-security",
+      "weight": 6,
+      "targets": [
+        "rules/02 \u00a75",
+        "rules/04",
+        "rules/04 \u00a73",
+        "rules/15 \u00a72.2",
+        "rules/17 \u00a73"
+      ]
     },
     {
       "from": "sota-security-compliance",
@@ -1383,17 +1408,6 @@
       ]
     },
     {
-      "from": "sota-secrets-management",
-      "to": "sota-code-security",
-      "weight": 5,
-      "targets": [
-        "rules/02 \u00a75",
-        "rules/04",
-        "rules/15 \u00a72.2",
-        "rules/17 \u00a73"
-      ]
-    },
-    {
       "from": "sota-security-compliance",
       "to": "sota-threat-modeling",
       "weight": 5,
@@ -1494,16 +1508,6 @@
       "to": "sota-observability",
       "weight": 4,
       "targets": []
-    },
-    {
-      "from": "sota-code-security",
-      "to": "sota-secrets-management",
-      "weight": 4,
-      "targets": [
-        "rules/02 \u00a77",
-        "rules/04 \u00a77",
-        "rules/05 \u00a77"
-      ]
     },
     {
       "from": "sota-code-security",
@@ -4534,12 +4538,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 21,
-    "md link, other skill": 1916,
+    "md link, other skill": 1920,
     "md link, outside skills/": 3,
     "md link, same skill": 2860,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 906,
+    "name+file (backticked)": 908,
     "name+file (bare)": 180,
     "own rules/NN": 3081
   },
@@ -4551,7 +4555,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 902,
+    "name+file (backticked)": 904,
     "name+file (bare)": 168,
     "own rules/NN": 2978
   },
@@ -5313,6 +5317,7 @@
         "sota-secrets-management/rules/05-credential-types.md",
         "sota-shell-scripting/rules/09-listing-and-selection.md",
         "sota-swift/rules/05-security.md",
+        "sota-testing/rules/02-test-design-quality.md",
         "sota-testing/rules/06-property-fuzzing-mutation.md"
       ]
     },
@@ -8567,6 +8572,7 @@
       "router": [],
       "other": [
         "sota-architecture/rules/01-architecture-styles-and-decisions.md",
+        "sota-code-security/rules/04-cryptography.md",
         "sota-confidential-computing/rules/03-remote-attestation.md",
         "sota-confidential-computing/rules/05-pets-coed.md",
         "sota-devsecops/rules/01-pipeline-security.md",
