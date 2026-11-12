@@ -452,7 +452,8 @@ def make_png(path: Path, w: int, h: int) -> None:
 SHIP_SCRIPTS = ["plugin-budget-check.sh", "plugin-notice.sh", "update-reminder.sh",
                 "plugin-routing-hook.sh", "code-rules-hook.py", "zsh-equals-hook.py",
                 "skill-listing-sources.sh", "install.sh", "statusline.sh", "init-gates.sh",
-                "gen-agents-md.sh"]
+                "gen-agents-md.sh", "session-load-audit.py", "check-checklist-probes.py",
+                "check-probe-fixtures.py"]
 
 
 def good_tree(repo: Path, d: Path) -> None:
