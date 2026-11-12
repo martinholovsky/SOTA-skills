@@ -759,6 +759,8 @@ are load-bearing, because the ones that aren't are labelled.
 
 Every garbage-collected language skill also covers its **escape hatch into raw memory**: JNI/FFM/`Unsafe`, `ctypes`/`cffi`, native addons, `unsafe`/P/Invoke, PHP FFI, Fiddle. The class is stated once in `sota-code-security` rules/06 §3, and each language skill carries its own detectors.
 
+Every language skill also says how a **secret printed by value** leaks there, and which **redacting type** stops it: `repr`, `toString`, `Debug`, `inspect`, `description` and `%v` all print a plain field by default, and C/C++ leak it through an explicit format call. Each row was reproduced on a named version, and three rules that shipped the leak (Go, Python, Ruby) were corrected that way (v1.55.1). Among them, Go's `slog.LogValuer` alone still printed through `fmt`, JSON and XML, and FastAPI's default 422 body returned a `SecretStr` password. The cross-language table is `sota-secrets-management` rules/02 §7. It is pinned in the **universal floor**, so CI holds every language skill, including the next one added, to a rule and a probe for it.
+
 Several hazards recur in every language, so each is **stated once as a shared class** in `sota-code-security`, with a detector for each language in that shared rule:
 - SSH host-key verification;
 - temp-file and permission hygiene;

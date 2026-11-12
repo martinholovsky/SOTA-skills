@@ -5,6 +5,21 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.55.1] - 2026-11-12
+
+A PATCH: rule text, probes and a gate fix inside surfaces that already exist. One PR since v1.55.0: #695.
+
+**Front door checked:** secret printed by value · redacting type · universal floor
+
+- **A secret printed by value, aligned across all ten language skills** (#695). Every language skill now has a rule naming what prints a plain field by default (`repr`, `toString`, `Debug`, `inspect`, `description`, `%v`, or, in C/C++, an explicit format call) and the redacting type that stops each path, reproduced on a named version. Each also has an audit probe with fixtures. The cross-language table is `sota-secrets-management` rules/02 §7. The concept is the 39th in the universal floor and in `docs/SKILL-TEMPLATE.md`, so CI holds every language skill, including the next one added, to it.
+- **Three rules corrected that shipped the leak they meant to prevent**, each reproduced first:
+  - **Go:** `slog.LogValuer` alone still printed through `%+v`, `fmt.Errorf`, JSON, `encoding/xml` and slog of a parent struct. The type now needs `String`, `GoString`, `MarshalJSON`, `MarshalText` and `LogValue`.
+  - **Python:** `SecretStr` leaked into validation errors. `hide_input_in_errors=True` cleans only `str`/`repr` and only on the outermost model, and FastAPI's default 422 body returned the password (pydantic 2.14.3, FastAPI 0.162.5). The rule now carries a measured handler.
+  - **Ruby:** an `inspect`-only override leaked through interpolation and `pp`, and `alias_method :to_s, :inspect` placed before `def inspect` copies the built-in one. The rule now says `def to_s = inspect`, plus `pretty_print`.
+- **PHP, JS/TS and Swift gain the rule.** PHP's `var_export` and an `(array)` cast bypass `__debugInfo`; JS/TS and Swift redacting types were measured on Node 26.7 and Swift 6.3.2. C/C++ and Rust probes were added or made fixture-proven.
+- **The floor can now hold a new language.** The concept matrix read its own copy of the language list while invariant 36 checked another, so a newly registered language passed every gate unchecked. `scripts/lib/extract_items.py` now reads `scripts/gen-skill-map.py`'s list. A later `LANGS +=` fails loudly, and `semantic-dup-scan.py` reads the same source.
+- **Reviewed by four independent auditors**, three refuting the first pass and a fourth refuting part of the fixes. **Open, not patched:** probe precision (measured false positives such as `TokenURL` and `PasswordHash`, and some missed names), recorded in `docs/LANGUAGE-TIER.md` with a labelled set as the next step.
+
 ## [1.55.0] - 2026-11-12
 
 A MINOR: a new script someone can run (`scripts/session-load-audit.py`), wired into `/sota-report` and the intake procedure, plus randomness rules and a measured fix to the code-rules hook. Three PRs since v1.54.2: #691–#693.
@@ -11849,6 +11864,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.55.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.1
 [1.55.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.0
 [1.54.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.2
 [1.54.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.1
