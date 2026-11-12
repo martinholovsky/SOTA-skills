@@ -140,9 +140,12 @@ class Money:
 - `kw_only=True` for >3 fields or any boolean field — positional booleans are unreadable.
 - `field(default_factory=...)` for mutable defaults; `field(repr=False)` for secrets so they
   don't hit logs (pydantic: `SecretStr`). **Neither hides the value in a pydantic
-  `ValidationError`**: measured on pydantic 2.14.3, a `SecretStr` field failing `min_length` printed
-  `input_value='hunter2'`, and `model_config = ConfigDict(hide_input_in_errors=True)` removed it. Set
-  it on every model that carries a secret.
+  `ValidationError`.** Measured on pydantic 2.14.3, a `SecretStr` field failing `min_length` printed
+  `input_value='hunter2'`. `ConfigDict(hide_input_in_errors=True)` cleans `str(e)` and `repr(e)` only,
+  and only when set on the **outermost** model validated (a parent without it printed a nested
+  model's secret); `e.errors()` and `e.json()` still carried the value until called with
+  `include_input=False`. Anything that serialises errors (an API response, an error tracker) must
+  use that form: FastAPI's default 422 body echoed the password (0.162.5) — [rules/07](07-frameworks-testing.md) §1.
 
 ## 8. Enums
 

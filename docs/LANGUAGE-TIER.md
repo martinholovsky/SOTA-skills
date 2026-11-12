@@ -489,6 +489,28 @@ by the author before fixing:
   reproduced on a current toolchain", was true of the rows written that day and not of the four
   carried over; the table now says which rows are measured.
 
+**A fourth reviewer then verified round 2, and refuted part of it** (each High item reproduced by
+the author again):
+
+- **The Python fix was itself incomplete.** `hide_input_in_errors=True` cleans `str(e)` and `repr(e)`
+  only, and only on the outermost model; `e.errors()` and `e.json()` keep the value unless called with
+  `include_input=False`, and **FastAPI's default 422 body returned the password to the client**
+  (pydantic 2.14.3, FastAPI 0.162.5). Rules/03 §7 and rules/07 §1 now say so, with a measured handler.
+- **Ruby: `alias_method :to_s, :inspect` written before `def inspect` copies the built-in one** and
+  leaks; the rule now says `def to_s = inspect`. The probe now asks for each override separately and
+  covers bare instance variables, `credential` and `passphrase`.
+- **`LANGS` read from source was silently wrong under `LANGS +=`**; `extract_items.py` now requires a
+  single assignment. A third hand-kept copy, in `semantic-dup-scan.py`, now reads the same source.
+
+**Open, measured, not patched: probe precision.** The same reviewer ran every widened probe on fresh
+cases. Common benign names are flagged (`TokenURL`, `TokenType`, `PasswordHash`, `SecretName` in Go,
+JS/TS, Python and PHP); some shapes are still missed (`credential`/`passphrase`/`signing_key` names in
+Go, Python, Swift, JS/TS and Rust; `SPDLOG_INFO`, `qDebug()` in C++; a fully qualified `@lombok.Data`,
+and the Lombok probe reports `@ToString.Exclude` fields it recommends; the .NET probe is file-level and
+reports a non-record class). Patching each regex against one reviewer's cases is how these probes got
+here. The next step is the one the code-rules hook took on 2026-11-12: a labelled set of real
+declarations per language, then the patterns. Every item already tells the reader to read each hit.
+
 **Not changed, deliberately:** the top-10 lists of the four skills that lack a redacting-type line.
 The floor now carries the concept for every language, and the top-10 lists are curated per skill.
 

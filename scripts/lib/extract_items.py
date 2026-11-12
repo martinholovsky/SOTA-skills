@@ -36,6 +36,11 @@ ROOT = Path(__file__).resolve().parents[2]
 def _registered_langs():
     import ast
     src = (ROOT / "scripts" / "gen-skill-map.py").read_text(encoding="utf-8")
+    # Exactly one top-level assignment: a later `LANGS += [...]` or a second `LANGS =` (even in a
+    # docstring) was silently ignored or read instead -- shown on a disposable copy, 2026-11-12.
+    if len(re.findall(r'^LANGS\s*(\+?=)', src, re.M)) != 1:
+        raise SystemExit("extract_items: scripts/gen-skill-map.py must assign LANGS exactly once, "
+                         "as one list literal")
     m = re.search(r'^LANGS\s*=\s*(\[[^\]]*\])', src, re.M)
     if not m:
         raise SystemExit("extract_items: LANGS not found in scripts/gen-skill-map.py")
