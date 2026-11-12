@@ -24,7 +24,11 @@ async def create_user(payload: UserIn, svc: UserService = Depends(get_user_servi
 - Distinct request/response models. Returning ORM objects without `response_model` leaks
   columns you forgot existed (password hashes, internal flags) — recurring HIGH finding.
 - `extra="forbid"` on inputs; `SecretStr` for credentials (won't repr into logs).
-- Validation errors are FastAPI's job — don't pre-validate manually then re-wrap.
+- Validation errors are FastAPI's job — don't pre-validate manually then re-wrap. **But its
+  default 422 body echoes the input**: measured on FastAPI 0.162.5, a `SecretStr` field failing
+  `min_length` returned `"input":"hunter2"` to the client, with `hide_input_in_errors=True` set.
+  Register a `RequestValidationError` handler that drops `input` and `ctx` from each of
+  `exc.errors()` (measured: the same request then carried no value); [rules/03](03-idioms-pitfalls.md) §7.
 
 ### Dependency injection done right
 
