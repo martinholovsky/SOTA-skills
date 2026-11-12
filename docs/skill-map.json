@@ -4630,12 +4630,12 @@
     "generic ('the language skill')": 22,
     "md link, other skill": 1933,
     "md link, outside skills/": 3,
-    "md link, same skill": 2861,
+    "md link, same skill": 2863,
     "name (backticked)": 455,
     "name (bare)": 240,
     "name+file (backticked)": 921,
     "name+file (bare)": 180,
-    "own rules/NN": 3082
+    "own rules/NN": 3084
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4647,7 +4647,7 @@
     "name (bare)": 196,
     "name+file (backticked)": 917,
     "name+file (bare)": 168,
-    "own rules/NN": 2979
+    "own rules/NN": 2981
   },
   "rules_index_style": {
     "link": 42
@@ -8286,7 +8286,8 @@
         "sota-python/rules/02-typing-correctness.md",
         "sota-python/rules/04-async.md",
         "sota-python/rules/05-security.md",
-        "sota-python/rules/06-performance.md"
+        "sota-python/rules/06-performance.md",
+        "sota-python/rules/07-frameworks-testing.md"
       ],
       "router": [],
       "other": [
@@ -8348,6 +8349,7 @@
       ],
       "same": [
         "sota-python/rules/02-typing-correctness.md",
+        "sota-python/rules/03-idioms-pitfalls.md",
         "sota-python/rules/04-async.md",
         "sota-python/rules/05-security.md",
         "sota-python/rules/06-performance.md"
