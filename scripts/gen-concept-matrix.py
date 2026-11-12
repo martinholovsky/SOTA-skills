@@ -160,6 +160,13 @@ CONCEPTS = [
      r"csprng|secure random|\brand\b|nonce|\biv\b|constant[- ]time"),
     ("secrets handling", "universal",
      r"secret|credential|api key|password|token\b|\.env\b|hardcoded|vault|keyring"),
+    # 2026-11-12: a secret printed BY VALUE. Nine languages print a field implicitly (repr,
+    # toString, Debug, inspect, description, %v); C/C++ only through an explicit format call.
+    # Each language's item was written or verified the same day, every mechanism reproduced
+    # on a current toolchain (sota-secrets-management rules/02 §7 holds the table).
+    ("secret printed by value (repr / toString / Debug / format)", "universal",
+     r"repr=false|secretstr|def inspect|\btostring\b.{0,40}print|printmembers|gostring|logvalue|"
+     r"plain string field|stored property|secret as a plain string|derives `?debug|by value to a format"),
     ("input validation & untrusted data", "universal",
      r"(?<!in)validat|untrusted|maxbytesreader|disallowunknownfields|(?<![-f])sanitiz(e|ed|es|ing|ation)\b|allowlist|whitelist|bounds check|schema|"
      r"decompress|zip bomb|size limit|max size"),
@@ -422,6 +429,8 @@ UNIVERSAL_FLOOR = [
     # a stale NOLINT that no tool reports) and were closed before pinning.
     "unused suppression reported in CI",
     "failures that bypass catch / recover",
+    # 2026-11-12: pinned the day it reached every language (see its CONCEPTS entry).
+    "secret printed by value (repr / toString / Debug / format)",
 ]
 
 

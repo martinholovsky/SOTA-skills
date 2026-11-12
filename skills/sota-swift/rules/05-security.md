@@ -57,6 +57,12 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
   headers or PII as message text or metadata; log identifiers, not values.
 - Apple's `os.Logger` redacts dynamic strings by default; `privacy: .public` on a secret undoes
   that and is a finding.
+- **A struct prints every stored property**, so a `String` secret leaks wherever the value is
+  printed. Measured on Swift 6.3.2: `print`, string interpolation, `String(reflecting:)`, `dump` and
+  `JSONEncoder` all wrote `password: "hunter2"`. A `Secret` type conforming to
+  `CustomStringConvertible` and `CustomDebugStringConvertible` (both `"[REDACTED]"`), with an empty
+  `customMirror` and an `encode(to:)` that writes `"[REDACTED]"`, printed `[REDACTED]` in all five.
+  Read it through one named accessor (`reveal()`); encode the real value only at its destination.
 - Query-string tokens end up in access and error logs (Vapor's error middleware logs the request
   URL): send credentials in headers.
 
@@ -104,6 +110,10 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
 
 ## Audit checklist
 
+- [ ] **Is a secret a plain `String` stored property (§4)? MEDIUM, HIGH when the value is printed,
+      logged, interpolated, dumped or encoded**:
+      `grep -rnE '^[[:space:]]*((public|private|internal|fileprivate|package)[[:space:]]+)?(let|var)[[:space:]]+[A-Za-z0-9_]*([Pp]assw|[Ss]ecret|[Tt]oken|[Aa][Pp][Ii][Kk]ey|[Pp]rivate[Kk]ey)[A-Za-z0-9_]*[[:space:]]*:[[:space:]]*String[?!]?([[:space:]].*)?$' --include='*.swift' .`
+      — read each hit: a local `let` is fine, a stored property of a type that is printed is not.
 - [ ] Input validation (§1): untrusted input becomes typed values at the boundary; request bodies are size-capped before decoding (no unlimited `maxSize`).
 - [ ] Regex escaping, anchoring & engine (§1): input is validated with the anchored `wholeMatch` (not `firstMatch`); no user-supplied pattern is compiled (grep `try +Regex\(`); interpolated text goes through `escapedPattern(for:)`; input length is capped because the engine backtracks and is not linear-time; patterns run on input bound backtracking with `Local { }` or possessive quantifiers.
 - [ ] Deserialization (§2): no `unarchiveObject(with:`, `NSUnarchiver` or `requiresSecureCoding = false` on untrusted data; `shouldResolveExternalEntities` never `true`; `XMLDocument` always given `.nodeLoadExternalEntitiesNever`; XML input size-capped; `PropertyListDecoder`/`PropertyListSerialization` on untrusted data decode into concrete `Codable` types, never `NSObject` graphs.

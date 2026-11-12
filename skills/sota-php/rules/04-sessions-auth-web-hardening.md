@@ -279,6 +279,12 @@ function connect(string $dsn, string $user, #[\SensitiveParameter] string $passw
 - Measured on 8.5.9 with `zend.exception_ignore_args=0`: `getTraceAsString()` printed
   `login2('bob', 'hunter2')`. With `#[\SensitiveParameter]` (8.2+) the same frame printed
   `Object(SensitiveParameterValue)`. Mark every password, key and token parameter.
+- **The attribute protects the trace, not the object.** Measured on 8.5.9: `print_r`, `var_dump`,
+  `var_export` and `serialize` all printed a **private** `$password`, and only `json_encode` hid it.
+  Hold a secret in a class with `__debugInfo`, `jsonSerialize` and `__toString` returning
+  `'[REDACTED]'`, a `__serialize` that throws, and one named reader. That redacts the first three
+  of those and JSON, but **`var_export` ignores `__debugInfo`** and still printed the value:
+  never `var_export` an object into a log or response.
 - `zend.exception_ignore_args = On` drops arguments from traces entirely. Its **built-in default
   is Off** and only `php.ini-production` sets it On, along with
   `zend.exception_string_param_max_len = 0`.
@@ -365,6 +371,10 @@ Set centrally (middleware or webserver), not per-page:
 
 ## Audit checklist
 
+- [ ] **Does an object property hold a secret as a plain string (§5a)? MEDIUM, HIGH when the object
+      reaches `print_r`, `var_dump`, `var_export`, `serialize` or an error page**:
+      `grep -rniE '(public|protected|private)[[:space:]]+(readonly[[:space:]]+)?[?]?string[[:space:]]+[$][a-z0-9_]*(pass(word|wd)?|secret|token|api_?key|private_?key)' --include='*.php' .`
+      — read each hit: `#[\SensitiveParameter]` on a promoted property protects the trace only.
 Run from repo root; verify each hit manually.
 
 - [ ] **Session config — effective values, not file greps alone** (§1) —

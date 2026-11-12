@@ -349,11 +349,18 @@ log.InfoContext(ctx, "payment processed",
 - Fan-out to several sinks (e.g. JSON to stdout + a file handler):
   `slog.NewMultiHandler(h1, h2)` (1.26+) replaces hand-rolled multi-handler
   wrappers and third-party equivalents.
-- Never log secrets/PII: implement `slog.LogValuer` on sensitive types to
-  redact by construction:
+- Never log secrets/PII, and redact by **type**. **`LogValue` alone does not redact**: measured
+  on Go 1.27.3, a field whose type had only `LogValue` still printed in `%+v`, `fmt.Errorf`,
+  `json.Marshal`, and in slog itself when the enclosing struct was logged
+  (`login="{User:u Password:hunter2}"`). A secret type implements all four, and code reads the
+  value only through an explicit conversion (`string(s)`), which is greppable:
 
 ```go
-func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
+type Secret string
+func (Secret) String() string               { return "[REDACTED]" } // %v %+v %s, errors
+func (Secret) GoString() string             { return "[REDACTED]" } // %#v
+func (Secret) MarshalJSON() ([]byte, error) { return []byte(`"[REDACTED]"`), nil }
+func (Secret) LogValue() slog.Value         { return slog.StringValue("[REDACTED]") }
 ```
 
 - Levels: Debug (dev diagnosis), Info (state changes worth auditing), Warn
@@ -374,6 +381,11 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
 
 ## Audit checklist
 
+- [ ] **Does a secret live in a plain `string` or `[]byte` struct field (§5)? HIGH when the struct
+      is logged, wrapped into an error or marshalled**:
+      `grep -rnE '^[[:space:]]+[A-Za-z0-9_]*([Pp]ass(word|wd)?|[Ss]ecret|[Tt]oken|[Aa][Pp][Ii][Kk]ey|[Pp]rivate[Kk]ey)[A-Za-z0-9_]*[[:space:]]+(string|\[\]byte)([[:space:]].*)?$' --include='*.go' .`
+      — read each hit. The fix is a type with `String`, `GoString`, `MarshalJSON` and `LogValue`;
+      `LogValue` alone still leaks through `fmt`, errors, JSON and a logged parent struct.
 - [ ] **Invalid UTF-8 stored or forwarded (§1; [rules/05](05-security.md) §1) — MEDIUM, HIGH when the text feeds
       another parser** — files that turn a body into a string and never validate it:
       `grep -rlE 'string\((body|b|buf|data|raw)\)|io\.ReadAll' --include='*.go' . | while IFS= read -r f; do grep -qE 'utf8\.(Valid|ValidString)' "$f" || echo "$f"; done`

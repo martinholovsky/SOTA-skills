@@ -263,6 +263,13 @@ logger.error({ err }, 'payment failed');   // `err` key serializes stack + cause
 
 - One child logger per request with a request ID: `req.log = logger.child({ reqId })` (Fastify does this automatically). Propagate the ID to downstream calls (`AsyncLocalStorage` for context without parameter drilling).
 - Redact secrets at the logger, not by hoping call sites remember.
+- **And redact by type, because most leaks never pass the logger.** `console.log`, `util.inspect`,
+  `JSON.stringify`, a template string and a thrown error's message all print a plain field, and
+  pino's paths miss a field at another depth. Measured on Node 26.7: a plain object printed
+  `password: 'hunter2'` through all of them. A class that keeps the value in a `#private` field,
+  returns `'[REDACTED]'` from `toString`, `toJSON` and `[util.inspect.custom]`, and exposes one
+  named reader (`reveal()`, greppable) printed `[REDACTED]` in each; a `#private` field alone was
+  already hidden from all three, even with `showHidden: true`.
 - Never log: tokens, passwords, full card numbers, raw request bodies on auth routes, PII beyond need.
 - `pino-pretty` is a dev dependency/CLI, not production config. Production emits raw JSON to stdout; the platform ships it.
 
@@ -397,6 +404,10 @@ channel.
 
 ## Audit checklist
 
+- [ ] **Is a secret held as a plain string field (§9)? MEDIUM, HIGH when the object reaches
+      `console.log`, a thrown error, a response or `JSON.stringify`**:
+      `grep -rniE '^[[:space:]]*((public|private|protected|readonly)[[:space:]]+)*[a-z0-9_]*(passw|secret|token|api_?key|private_?key)[a-z0-9_]*[?]?[[:space:]]*:[[:space:]]*string[[:space:]]*[;,]?[[:space:]]*(//.*)?$' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules . ; grep -rniE 'this\.[a-z0-9_]*(passw|secret|token|api_?key|private_?key)[a-z0-9_]*[[:space:]]*=[^=>]' --include='*.js' --include='*.mjs' --include='*.cjs' --include='*.ts' --exclude-dir=node_modules .`
+      — read each hit: pino path redaction does not cover these routes.
 - [ ] `grep -rn "process.env" src/ --include="*.ts" | grep -v "config\|env.ts"` — env access outside the config module (MEDIUM); no schema validation of env at boot (HIGH). `git ls-files | grep -E '(^|/)\.env(\.(local|production|prod))?$'` lists a committed `.env` (HIGH if it holds secrets); `grep -rnE 'NODE_ENV *[!=]==' --include='*.ts' --include='*.js' --exclude-dir=node_modules . | grep -vE '(^|/)(config|env)\.[jt]s:'` lists `NODE_ENV` branches outside config, which belong in named config flags (LOW) (§3).
 - [ ] **Dev server, debug mode or inspector in production (§"Env and config") (§3) — HIGH for a
       public `--inspect`, MEDIUM otherwise** —

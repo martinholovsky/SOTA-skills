@@ -75,6 +75,7 @@ grew the same day as ROADMAP 66 added concepts; `UNIVERSAL_FLOOR` is the count, 
 - [ ] **data race / shared mutable state** — the language's concurrency hazard, named
 - [ ] **cryptography & randomness** — CSPRNG, hashing, and the delegation to `sota-code-security` rules/04
 - [ ] **secrets handling** — hardcoded credentials, `.env`, what reaches a log
+- [ ] **secret printed by value (repr / toString / Debug / format)** — what prints a field by default in this language (repr, `toString`, `Debug`, `inspect`, `description`, `%v`, or only an explicit format call), the redacting type that defeats each path, measured on a named version, and a probe for a secret held as a plain string field
 - [ ] **input validation & untrusted data** — the trust boundary in this language's idiom
 - [ ] **dependency pinning & lockfiles** — the lockfile's name, and whether CI uses the frozen form
 - [ ] **vulnerability scanning of dependencies** — the ecosystem's advisory tool, by name

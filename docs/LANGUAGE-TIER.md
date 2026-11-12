@@ -434,6 +434,36 @@ on purpose, so that a later sweep does not "fix" the absence:
 | **Escape-hatch runtime checking** | Rust (Miri, sanitizers) and C/C++ (sanitizers by design) are complete. The others name the checker their ecosystem has. There is no documented MSBuild property that turns on ASan for a .NET app, and on macOS `DYLD_INSERT_LIBRARIES` is stripped for protected and hardened binaries, so the Node-addon ASan recipe is Linux-only |
 | **Parser depth defaults** | They differ by design and are quoted per language, not unified. Go `encoding/json` hard-codes 10,000 (json/v2 has no depth option). Node `JSON.parse` has been iterative since V8 7.6 with no limit. .NET is 64. Ruby `JSON.parse`/`JSON.load` default to 100 (since json 2.8.0 for `load`). PHP is 512. Darwin Foundation is about 512. Jackson nesting is 1000. CPython's C scanner is bounded by its C-stack guard, not the recursion limit |
 
+### Aligned 2026-11-12: a secret printed by value, now a universal concept (39th)
+
+**Asked:** whether security-sensitive values should be typed, and whether that holds across every
+language. **Survey, then fixes, then a floor.** Every row was reproduced on a current toolchain
+before it was written: Go 1.27.3, Node 26.7, Swift 6.3.2, PHP 8.5.9, pydantic 2.14.3, and Temurin
+25.0.5 plus Kotlin 2.4.21 in a disposable container. The table is in
+[`sota-secrets-management` rules/02](../skills/sota-secrets-management/rules/02-storage-backends.md) §7.
+
+| Language | Before | After |
+|---|---|---|
+| Python, Ruby, JVM, .NET | rule and probe | unchanged |
+| Rust | rule; the item's search was `rg`, so no fixture ever ran it | `grep` pipeline with fixtures |
+| Go | **a wrong rule**: `slog.LogValuer` "to redact by construction". Measured: a LogValuer-only field still printed in `%+v`, `fmt.Errorf`, `json.Marshal`, and in slog when the parent struct was logged | `String`, `GoString`, `MarshalJSON` and `LogValue`; probe |
+| JS/TS | logger path redaction only | the redacting class (`#private`, `toString`, `toJSON`, `util.inspect.custom`); probe |
+| Swift | `os.Logger` privacy only | the redacting type (`description`, `debugDescription`, empty `customMirror`, `encode`); probe |
+| PHP | `#[\SensitiveParameter]`, which covers traces only | object properties, and `var_export` ignoring `__debugInfo`; probe |
+| C/C++ | the rule (§3: no secret to `syslog`/`fprintf`), no probe | probe for a secret passed by value to a format or log call |
+
+**Why universal, not conditional.** C and C++ print nothing implicitly, which first read as "not
+applicable". The concept is a secret printed **by value**, and C/C++ do that through an explicit
+format call: a real hazard with a real probe. Universal is also what makes the floor enforce it on
+a language added later; a `conditional` concept is never asserted.
+
+**The survey's own miss.** The first sweep reported JVM as having no rule. Its §5 had one, worded
+"a record logs its secrets for you", which none of the searched terms (`toString`, `redact`,
+`SecretString`) matched. Every cell was then read in its file before being called a gap.
+
+**The gate was watched failing.** With the Swift item removed, `--assert-universal` printed
+`REGRESSED: secret printed by value … now absent from: swift`, exit 1; the file was restored.
+
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
 ### Depth, measured 2026-09-23: breadth is uniform, depth is not
