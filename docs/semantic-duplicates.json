@@ -3006,6 +3006,33 @@
     "sota-detection-engineering/rules/02-telemetry-siem-data-layer.md#477bd1bac2d0",
     "sota-observability/rules/01-structured-logging.md#4cb104879968"
    ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "code-security rules/04 §3 states both entropy floors and links secrets-management rules/01 §1, which owns them; reconciled on purpose in v1.55.0 after the two read as 128 vs 256 with no cross-reference.",
+   "sample": "- Token entropy: **128 bits is the floor** (short-lived, rate-limited tokens); long-lived opaque secrets (API keys, HMAC",
+   "members": [
+    "sota-code-security/rules/04-cryptography.md#2e2ba495aba4",
+    "sota-secrets-management/rules/01-lifecycle-and-workload-identity.md#e409e4179d0f"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "Audit items in each file a fanned-out rule touched (v1.55.0): rules/04 probes fixed seeds and pre-fork state, testing rules/02 probes production seed seams. Kept in both because BUILD step 4 re-reads only the loaded file's checklist.",
+   "sample": "- [ ] **Is a fixed seed or a seed switch reachable outside tests, or is RNG state drawn before a `fork()` (§3)? HIGH whe",
+   "members": [
+    "sota-code-security/rules/04-cryptography.md#454803d76fe3",
+    "sota-testing/rules/02-test-design-quality.md#da0212c307cf"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "rules/04 says production has no seed switch; testing rules/02 §2.6 says seed from the test, never through a production seam, and links rules/04. Two halves of one boundary, each in the skill its reader loads.",
+   "sample": "- **Seeded generators stay in tests** (CWE-336/337). Inject the RNG; production wiring builds the CSPRNG and has no swit",
+   "members": [
+    "sota-code-security/rules/04-cryptography.md#c051ddc62c7b",
+    "sota-testing/rules/02-test-design-quality.md#6dc7c9ecef7a"
+   ]
   }
  ],
  "model": "qwen3-embedding:8b",

@@ -5,6 +5,32 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.55.0] - 2026-11-12
+
+A MINOR: a new script someone can run (`scripts/session-load-audit.py`), wired into `/sota-report` and the intake procedure, plus randomness rules and a measured fix to the code-rules hook. Three PRs since v1.54.2: #691–#693.
+
+**Front door checked:** session-load-audit · verdict walk · line that matched
+
+- **What a session loaded, and what it built** (#692, new `scripts/session-load-audit.py`). It reads a Claude Code transcript and lists, by unique `tool_use` id with timestamps:
+  - the skills invoked;
+  - every library file read, searched or edited, and by which tool (shell `cat`/`sed`/`head`/`tail`/`grep` parsed, pipes bounded);
+  - whether each rules file's Audit checklist was read, and re-read after the last edit;
+  - which runnable probes ran as published.
+
+  `--diff BASE` runs every applicable checklist probe over the files changed since BASE, counts hits on added lines only, and joins them with the transcript: "loaded + new hit" points at a rule's wording, "not loaded + new hit" at routing. `/sota-report` gains check E (paste it verbatim, cite ids) and E2, a bounded verdict walk over just those rules files that fixes nothing during the report. Intake step 6 checks both. It proves process and finds leads, never compliance. In its first real run, 4 of 9 sampled hits were real: three from rules files that session never loaded, and four came from domains the code is not in. It prints no command text or project paths, and ships in the plugin with the two modules it imports.
+- **Randomness** (#691, `sota-code-security` rules/04 §3). The token entropy floors are reconciled: 128 bits for short-lived, rate-limited tokens and 256 for long-lived opaque secrets, matching `sota-secrets-management` rules/01 §1. Further rules:
+  - **Early boot:** `getrandom()` with no flags waits until the pool is ready.
+  - **Duplicated state:** user-space RNG state is duplicated by `fork()` and replayed from a twice-restored snapshot. On Python 3.14.8 a pre-fork buffer and a `random.Random` instance repeated across children. The kernel reseeds on a VM Generation ID change since Linux 5.18.
+  - **Seeds:** seeded generators stay in tests (CWE-336/337).
+  - **Images:** SSH host keys and the machine ID are generated per instance, never baked into an image (`sota-secrets-management` rules/05 §5; `sota-testing` rules/02 §2.6 for the seed seam).
+
+  Three new probes, each with fixtures, one in every file the change touched.
+- **The code-rules hook's session/token row, measured** (#693). The hook named the login and session rules for a transcript parser. A labelled set of 254 local files (52 auth, two hold-outs labelled before scoring) put the row at recall 1.00 and precision 0.20. An allow-list of auth phrasings was rejected: recall 0.59 and 0.69 on the hold-outs. What shipped:
+  - non-auth senses are skipped: recall 52/52, with 15% of noise lines removed against 1% of auth lines;
+  - every named file now comes with the line that matched.
+
+  The read-in-full and APPLY wording is unchanged. This resolves the 2026-10-20 false-trigger deferral for that row only.
+
 ## [1.54.2] - 2026-11-08
 
 A PATCH: rule text, one new trigger row inside the existing code-rules hook, and three field-report intakes, all inside surfaces that already exist. Four PRs since v1.54.1: #685–#688.
@@ -11823,6 +11849,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.55.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.0
 [1.54.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.2
 [1.54.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.1
 [1.54.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.0
