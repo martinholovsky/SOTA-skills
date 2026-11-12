@@ -1447,7 +1447,9 @@ installed the installer's hook, the plugin's stays silent, so the reminder is ne
 writes code, it names the rules file for what that code does: an outbound fetch → SSRF, a CSV
 writer → formula injection, an archive → Zip Slip, a handler → rate limiting. It tells the agent
 those rules are part of the task, so it builds them instead of handing them back as a question.
-It moved outcomes when measured: rule tests 0.698 with no hook → 0.906 with it
+Each named file comes with the line that matched, so the agent can see why the hook fired; the
+session/token row skips non-auth senses (LLM and macro tokens, database and process sessions),
+built against a labelled set of 254 files that kept every auth file (v1.55.0). It moved outcomes when measured: rule tests 0.698 with no hook → 0.906 with it
 ([sota-agent-evals v10](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v10/REPORT.md)).
 It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigger table was written by an author who had read the
 cases that measured it (in-sample), and it needs `python3`. **On fresh tasks it did not move outcomes**: on
@@ -1631,6 +1633,16 @@ this library can act on, to a gitignored `FIELD-REPORT-*.local.md` — a field r
 prompt front-loads the four checks that decide whether a report is actionable, and four more
 that hand over what only the session holds (its transcript, every copy of the text it would
 change, prior occurrences, a verbatim appendix). Each one is a mistake actually made during intake.
+
+**What the session loaded, and what it built, are measured, not remembered** (v1.55.0).
+`scripts/session-load-audit.py` reads the session's transcript and lists the skills invoked and
+every rules file read, searched or edited (shell `cat`/`sed`/`grep` included), whether each Audit
+checklist was read and re-read after the last edit, and which probes ran. With `--diff BASE` it
+also runs the checklist probes over the code the session changed, counting hits on added lines
+only, and joins the two: a rule that was loaded and still hit points at its wording, one that was
+never loaded points at routing. The report then does a verdict walk over just those rules files,
+fixing nothing. It proves process and finds leads; it does not prove a rule was applied (in its
+first real run 4 of 9 sampled hits were real), and it prints no command text or project paths.
 
 It stamps the report with **the version that produced it** (report against what you actually
 used — never update and re-run, since that puts a fresh stamp on old behaviour), writes a
