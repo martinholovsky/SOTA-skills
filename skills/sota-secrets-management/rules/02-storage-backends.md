@@ -255,21 +255,22 @@ trackers serializing objects, language-runtime introspection. Proportionate meas
   `[REDACTED]` (Pydantic `SecretStr`, Rust `secrecy::SecretBox`, your own 20-line wrapper).
   This converts whole classes of log/trace leaks into non-events. (Examples: [rules/03](03-application-patterns.md) §2.)
 - **Every language prints a plain field somewhere by default**, so the redacting type is needed
-  everywhere, but what it must override differs. Each row was reproduced on the version named;
-  the language skill holds the rule and an audit probe.
+  everywhere, but what it must override differs. Each measured row was reproduced on the version
+  named (the C/C++ row is a property of the languages); the language skill holds the rule and an
+  audit probe.
 
   | Language | Prints a plain secret through | The redacting type overrides | Rule |
   |---|---|---|---|
-  | Python | dataclass and pydantic `repr`, validation errors | `field(repr=False)` or `SecretStr` (pydantic 2.14) | [`sota-python` rules/03](../../sota-python/rules/03-idioms-pitfalls.md) §7 |
-  | Go | `%v`/`%+v`/`%#v`, `fmt.Errorf`, `encoding/json`, slog of an enclosing struct | `String`, `GoString`, `MarshalJSON` **and** `LogValue`; `LogValue` alone leaks (Go 1.27) | [`sota-golang` rules/04](../../sota-golang/rules/04-http-services.md) §5 |
+  | Python | dataclass and pydantic `repr`; pydantic validation errors print the input even for `SecretStr` | `field(repr=False)` or `SecretStr`, plus `hide_input_in_errors=True` (pydantic 2.14) | [`sota-python` rules/03](../../sota-python/rules/03-idioms-pitfalls.md) §7 |
+  | Go | `%v`/`%+v`/`%#v`, `fmt.Errorf`, `encoding/json`, `encoding/xml`, slog of an enclosing struct | `String`, `GoString`, `MarshalJSON`, `MarshalText` **and** `LogValue`; `LogValue` alone leaks; map keys and `gob` stay raw (Go 1.27) | [`sota-golang` rules/04](../../sota-golang/rules/04-http-services.md) §5 |
   | JS/TS | `console.log`, `util.inspect`, `JSON.stringify`, templates | `#private` value, `toString`, `toJSON`, `util.inspect.custom` (Node 26) | [`sota-javascript-typescript` rules/04](../../sota-javascript-typescript/rules/04-node-backend.md) §9 |
-  | Java, Kotlin | record and data class `toString`, exception messages | `toString` on the component type (Temurin 25, Kotlin 2.4) | [`sota-jvm` rules/04](../../sota-jvm/rules/04-security.md) §5 |
-  | C# | record `ToString` | `PrintMembers` | [`sota-dotnet` rules/04](../../sota-dotnet/rules/04-security.md) §4 |
-  | PHP | `print_r`, `var_dump`, `var_export`, `serialize`, private properties included | `__debugInfo`, `jsonSerialize`, `__toString`, a throwing `__serialize`; `var_export` ignores them (8.5) | [`sota-php` rules/04](../../sota-php/rules/04-sessions-auth-web-hardening.md) §5a |
-  | Ruby | `inspect` of `Data` and `Struct` | `inspect` | [`sota-ruby` rules/03](../../sota-ruby/rules/03-web-hardening.md) §8 |
-  | Rust | `#[derive(Debug)]`, `Display`, `Serialize` | `secrecy::SecretString`, or a manual `Debug` | [`sota-rust` rules/05](../../sota-rust/rules/05-security-supply-chain.md) §5 |
+  | Java, Kotlin | record and data class `toString`, exception messages built from them, Lombok `@Data`/`@ToString` | `toString` on the record, or a component type whose `toString` redacts; `@ToString.Exclude` (Temurin 25, Kotlin 2.4) | [`sota-jvm` rules/04](../../sota-jvm/rules/04-security.md) §5 |
+  | C# | record `ToString`, positional and nominal | `PrintMembers` (.NET 10 SDK) | [`sota-dotnet` rules/04](../../sota-dotnet/rules/04-security.md) §4 |
+  | PHP | `print_r`, `var_dump`, `var_export`, `serialize`, private properties included | `__debugInfo`, `jsonSerialize`, `__toString`, a throwing `__serialize`; `var_export` and an `(array)` cast bypass them (8.5) | [`sota-php` rules/04](../../sota-php/rules/04-sessions-auth-web-hardening.md) §5a |
+  | Ruby | `inspect`, `to_s` (interpolation) and `pp` of `Data`, `Struct` and plain classes | `inspect`, `to_s` as its alias, and `pretty_print` (Ruby 4.0) | [`sota-ruby` rules/03](../../sota-ruby/rules/03-web-hardening.md) §8 |
+  | Rust | `#[derive(Debug)]`, `#[derive(Serialize)]` | `secrecy::SecretString`, or a manual `Debug` (rustc 1.97, secrecy 0.10) | [`sota-rust` rules/05](../../sota-rust/rules/05-security-supply-chain.md) §5 |
   | Swift | `print`, interpolation, `String(reflecting:)`, `dump`, `Codable` | `description`, `debugDescription`, `customMirror`, `encode(to:)` (Swift 6.3) | [`sota-swift` rules/05](../../sota-swift/rules/05-security.md) §4 |
-  | C, C++ | nothing prints a struct implicitly; only an explicit format call or the memory itself | not applicable: wipe the buffer instead | [`sota-c-cpp` rules/04](../../sota-c-cpp/rules/04-security.md) §4 |
+  | C, C++ | nothing prints a struct implicitly; a secret reaches output only through an explicit format or log call (`printf`, `syslog`, streams, `std::format`, `fmt`) | nothing to override: never pass the secret to one, and wipe the buffer after use (§4) | [`sota-c-cpp` rules/04](../../sota-c-cpp/rules/04-security.md) §3 |
 - **Zeroization** (overwriting buffers after use) is best-effort in GC languages — strings are
   immutable and copied; use `byte[]`/`bytearray` and wipe where the runtime allows (JVM
   `Arrays.fill`, .NET `CryptographicOperations.ZeroMemory`). In Rust/C use `zeroize`/

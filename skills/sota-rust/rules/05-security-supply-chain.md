@@ -453,8 +453,8 @@ Running external programs (formerly section 9) moved to
 - [ ] Panic surface in handlers (§4): run [rules/02](02-errors-and-panics.md) checklist scoped to
       request-reachable code; `rg 'with_capacity\(' -t rust` where the arg
       derives from input = High.
-- [ ] `grep -rlE '#\[derive\([^]]*Debug' --include='*.rs' . | xargs -r grep -nE '^[[:space:]]*(pub([(][^)]*[)])?[[:space:]]+)?[a-z0-9_]*(passw|secret|token|api_?key|private_?key)[a-z0-9_]*[[:space:]]*:[[:space:]]*(String|&[^,]*str|Vec<u8>)'`
-      (a raw secret in a file that derives `Debug`); `rg '==' -t rust` comparing MACs/tokens (want `ct_eq`);
+- [ ] `grep -rlE '#\[derive\(([^]]*(Debug|Serialize)|[[:space:]]*$)' --include='*.rs' . | xargs -r grep -nE '[a-z0-9_]*(passw|pwd|secret|token|api_?key|private_?key)[a-z0-9_]*[[:space:]]*:[[:space:]]*(Option<)?(String|&[^,]*str|Vec<u8>|\[u8;)|[A-Za-z0-9_]*(Passw|Pwd|Secret|Token|ApiKey|PrivateKey)[A-Za-z0-9_]*[(](pub[[:space:]]+)?(String|Vec<u8>)'`
+      (a raw secret, named or tuple field, in a file deriving `Debug` or `Serialize`); `rg '==' -t rust` comparing MACs/tokens (want `ct_eq`);
       secrets not in `SecretString`/`Zeroizing` = Medium-High (§5).
 - [ ] `rg 'thread_rng|rand::rng\(|SmallRng|StdRng::seed|seed_from_u64' -t rust` in
       key/nonce/token generation paths → require the OS RNG (`SysRng` in rand

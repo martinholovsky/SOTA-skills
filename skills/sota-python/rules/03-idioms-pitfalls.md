@@ -139,7 +139,10 @@ class Money:
   needs `__dict__` — use `slots=True` + a manual cache or drop slots there).
 - `kw_only=True` for >3 fields or any boolean field — positional booleans are unreadable.
 - `field(default_factory=...)` for mutable defaults; `field(repr=False)` for secrets so they
-  don't hit logs.
+  don't hit logs (pydantic: `SecretStr`). **Neither hides the value in a pydantic
+  `ValidationError`**: measured on pydantic 2.14.3, a `SecretStr` field failing `min_length` printed
+  `input_value='hunter2'`, and `model_config = ConfigDict(hide_input_in_errors=True)` removed it. Set
+  it on every model that carries a secret.
 
 ## 8. Enums
 
@@ -395,9 +398,13 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       `grep -rniE '(log|logger|logging)\.(debug|info|warning|error|exception|critical|log)\([^)]*(passw|secret|token|api_?key|credential)' --include="*.py" src/`
       (read the arguments: a credential passed to the call is the finding, while message
       text that only *names* one, such as "password reset for %s", also matches) ;
-      `grep -rniE '^[[:space:]]+[a-z_]*(passw|secret|token|api_?key)[a-z_]*[[:space:]]*:[[:space:]]*(str|bytes)([^[:alnum:]_]|$)' --include="*.py" src/ | grep -v 'repr=False'`
+      `grep -rniE '^[[:space:]]+[a-z_]*(passw|pwd|secret|token|api_?key|private_?key)[a-z_]*[[:space:]]*:[[:space:]]*(str|bytes|Optional\[str\]|Annotated\[str|"str"|str[[:space:]]*\|[[:space:]]*None)([^[:alnum:]_]|$)' --include="*.py" src/ | grep -v 'repr=False'`
       (a class field typed plain `str`: a dataclass `repr` prints it — measured,
-      `Creds(user='bob', password='hunter2')` — so use `field(repr=False)` or `SecretStr`)
+      `Creds(user='bob', password='hunter2')` — so use `field(repr=False)` or `SecretStr`;
+      line-based, so a `field(` split over lines reads as a hit) ;
+      `grep -rlE 'SecretStr' --include="*.py" src/ | xargs -r grep -L 'hide_input_in_errors'`
+      (a pydantic model file with a `SecretStr` and no `hide_input_in_errors`: its validation
+      errors print the value, §7)
 - [ ] **Resource handling (§4)** — `grep -rn "= open(" --include="*.py" src/ | grep -v "with "`
       (unmanaged file handles [MEDIUM]); `grep -rn "\.close()" --include="*.py" src/ | head`
       (manual close → with-able?) ; `grep -rnE '\.acquire\(\)' --include='*.py' --exclude-dir=.venv .`

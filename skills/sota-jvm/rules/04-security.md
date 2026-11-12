@@ -295,8 +295,11 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
   `toString` holds *"the names of components of the record, and string representations of
   component values"* (`java.lang.Record`). Measured on Temurin 25, a `record Creds(String
   user, String password)` printed `Creds[user=bob, password=hunter2]`, so `log.info("{}",
-  creds)` leaks it. Override `toString` on any record or Kotlin `data class` that carries a
-  credential. Redaction at the logger is [`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §4.
+  creds)` leaks it, as does an exception message built from it. Override `toString` on any record
+  or Kotlin `data class` that carries a credential, or hold the credential in a type whose own
+  `toString` redacts: measured on Temurin 25.0.5 and Kotlin 2.4.21, such a component printed
+  `[REDACTED]` inside the record. Lombok `@Data` and `@ToString` print *"all non-static fields"* by
+  default (Lombok docs): mark the field `@ToString.Exclude`. Redaction at the logger is [`sota-observability` rules/01](../../sota-observability/rules/01-structured-logging.md) §4.
 - **Spring/framework**: keep dependencies patched (Spring4Shell, Log4Shell were
   dependency CVEs — [`rules/06`](06-build-tooling-ci.md)); the web layer itself is in [`rules/08`](08-web-layer.md).
 - **`assert` is not a control**: assertions are **disabled by default** at
@@ -481,4 +484,7 @@ cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under 
       text that only *names* one, such as "password reset for {}", also matches) ;
       `grep -rniE '(record|data class)[[:space:]]+[a-z0-9_]+[[:space:]]*(<[^>]*>)?[[:space:]]*\([^)]*(passw|secret|token|api_?key|credential)' --include='*.java' --include='*.kt' .`
       (a record or data class holding a credential: the generated `toString` prints it
-      unless overridden)
+      unless overridden; a declaration split over lines is missed, so read every record and data
+      class in a file that names a credential) ;
+      `grep -rlE '@(Data|ToString|Value)([^A-Za-z]|$)' --include='*.java' . | xargs -r grep -niE '(private|protected|public)?[[:space:]]*(final[[:space:]]+)?String[[:space:]]+[a-z0-9_]*(passw|secret|token|api_?key|credential)'`
+      (a Lombok class whose generated `toString` prints the field: needs `@ToString.Exclude`)

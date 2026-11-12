@@ -283,8 +283,8 @@ function connect(string $dsn, string $user, #[\SensitiveParameter] string $passw
   `var_export` and `serialize` all printed a **private** `$password`, and only `json_encode` hid it.
   Hold a secret in a class with `__debugInfo`, `jsonSerialize` and `__toString` returning
   `'[REDACTED]'`, a `__serialize` that throws, and one named reader. That redacts the first three
-  of those and JSON, but **`var_export` ignores `__debugInfo`** and still printed the value:
-  never `var_export` an object into a log or response.
+  of those and JSON, but **`var_export` ignores `__debugInfo`** and still printed the value, as did
+  an `(array)` cast: never `var_export` an object, or log one cast to an array.
 - `zend.exception_ignore_args = On` drops arguments from traces entirely. Its **built-in default
   is Off** and only `php.ini-production` sets it On, along with
   `zend.exception_string_param_max_len = 0`.
@@ -371,12 +371,12 @@ Set centrally (middleware or webserver), not per-page:
 
 ## Audit checklist
 
-- [ ] **Does an object property hold a secret as a plain string (§5a)? MEDIUM, HIGH when the object
-      reaches `print_r`, `var_dump`, `var_export`, `serialize` or an error page**:
-      `grep -rniE '(public|protected|private)[[:space:]]+(readonly[[:space:]]+)?[?]?string[[:space:]]+[$][a-z0-9_]*(pass(word|wd)?|secret|token|api_?key|private_?key)' --include='*.php' .`
-      — read each hit: `#[\SensitiveParameter]` on a promoted property protects the trace only.
 Run from repo root; verify each hit manually.
 
+- [ ] **Does an object property hold a secret as a plain string (§5a)? MEDIUM, HIGH when the object
+      reaches `print_r`, `var_dump`, `var_export`, `serialize` or an error page**:
+      `grep -rniE '((readonly|static)[[:space:]]+)?(public|protected|private|var)([[:space:]]+(readonly|static))*([[:space:]]+[?]?(string|mixed)([|]null)?)?[[:space:]]+[$][a-z0-9_]*(pass(word|wd)?|pwd|secret|token|api_?key|private_?key)' --include='*.php' .`
+      — read each hit: `#[\SensitiveParameter]` on a promoted property protects the trace only.
 - [ ] **Session config — effective values, not file greps alone** (§1) —
       `php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
       ; `grep -rl 'password_verify' --include='*.php' src/ | xargs -r grep -L 'session_regenerate_id'` (lists files that call `password_verify` but never regenerate the ID: HIGH);

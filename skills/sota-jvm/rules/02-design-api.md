@@ -55,7 +55,8 @@ such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the cla
 
 ## 3. equals / hashCode / toString
 
-- Override them as a set or none. Records and Kotlin `data class` generate a
+- Override them as a set or none (one exception: `toString` alone on a type that carries a
+  secret, [rules/04](04-security.md) §5). Records and Kotlin `data class` generate a
   consistent set — prefer them over hand-written equality.
 - Hand-written `equals` must be reflexive/symmetric/transitive/consistent and
   match `hashCode`; an object used as a `HashMap` key with `equals` but no

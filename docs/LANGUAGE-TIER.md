@@ -464,6 +464,34 @@ a language added later; a `conditional` concept is never asserted.
 **The gate was watched failing.** With the Swift item removed, `--assert-universal` printed
 `REGRESSED: secret printed by value … now absent from: swift`, exit 1; the file was restored.
 
+**Then three independent auditors refuted "consistent"** (2026-11-12, each told to break the claim,
+read-only, re-running every mechanism they could). What they found, every High item reproduced again
+by the author before fixing:
+
+- **Two rules the library already had shipped the leak.** Ruby's `inspect` override left
+  interpolation (`to_s`) and `pp` printing the value (Ruby 4.0.6); the rule now overrides all three.
+  pydantic `SecretStr` still printed the value in a `ValidationError` (pydantic 2.14.3); the rule now
+  requires `hide_input_in_errors=True`.
+- **The Go fix was incomplete, and the old Go advice survived twice.** `encoding/xml` leaked through
+  the four-method type (`MarshalText` closes it); a wrong verb, a map key and `gob` stay raw and are
+  now named. A stale checklist line still said "implement `slog.LogValuer`", and it alone kept Go's
+  floor cell lit: deleting the real item would have passed. The matcher now rests on the new item.
+- **The floor could not hold a new language.** `gen-concept-matrix.py` read its own copy of `LANGS`
+  while invariant 36 checks `gen-skill-map.py`'s. `scripts/lib/extract_items.py` now reads that list;
+  registering a dummy language on a copy then failed `--assert-universal`, as it should.
+- **Every probe missed common shapes**: TS parameter properties and initialisers, untyped PHP
+  properties, Go `User, Password string` and `*string`, Swift `private(set)` and `@Published`, Rust
+  tuple structs and `Serialize`, Lombok, nominal C# records, C++ `std::format`/`std::print`/`LOG()`.
+  Each regex was widened and re-proven on fixtures that contain those shapes; what a line-based grep
+  still cannot see (a declaration split over lines) is stated in the item.
+- **The table disagreed with its skills** (Python, JVM, C/C++ "not applicable" against the universal
+  decision, rows with no version). Fixed row by row. The earlier sentence above, "every row was
+  reproduced on a current toolchain", was true of the rows written that day and not of the four
+  carried over; the table now says which rows are measured.
+
+**Not changed, deliberately:** the top-10 lists of the four skills that lack a redacting-type line.
+The floor now carries the concept for every language, and the top-10 lists are curated per skill.
+
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
 ### Depth, measured 2026-09-23: breadth is uniform, depth is not

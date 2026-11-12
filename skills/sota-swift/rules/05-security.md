@@ -112,7 +112,7 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
 
 - [ ] **Is a secret a plain `String` stored property (§4)? MEDIUM, HIGH when the value is printed,
       logged, interpolated, dumped or encoded**:
-      `grep -rnE '^[[:space:]]*((public|private|internal|fileprivate|package)[[:space:]]+)?(let|var)[[:space:]]+[A-Za-z0-9_]*([Pp]assw|[Ss]ecret|[Tt]oken|[Aa][Pp][Ii][Kk]ey|[Pp]rivate[Kk]ey)[A-Za-z0-9_]*[[:space:]]*:[[:space:]]*String[?!]?([[:space:]].*)?$' --include='*.swift' .`
+      `grep -rnE '^[[:space:]]*(@[A-Za-z]+[[:space:]]+)*((public|private|internal|fileprivate|package|open|static|nonisolated|lazy)([(]set[)])?[[:space:]]+)*(let|var)[[:space:]]+[A-Za-z0-9_]*([Pp]assw|[Pp]wd|[Ss]ecret|[Tt]oken|[Aa][Pp][Ii][Kk]ey|[Pp]rivate[Kk]ey)[A-Za-z0-9_]*[[:space:]]*(:[[:space:]]*String[?!]?|=[[:space:]]*"[^"]*")([[:space:]]*[,=].*|[[:space:]].*)?$' --include='*.swift' .`
       — read each hit: a local `let` is fine, a stored property of a type that is printed is not.
 - [ ] Input validation (§1): untrusted input becomes typed values at the boundary; request bodies are size-capped before decoding (no unlimited `maxSize`).
 - [ ] Regex escaping, anchoring & engine (§1): input is validated with the anchored `wholeMatch` (not `firstMatch`); no user-supplied pattern is compiled (grep `try +Regex\(`); interpolated text goes through `escapedPattern(for:)`; input length is capped because the engine backtracks and is not linear-time; patterns run on input bound backtracking with `Local { }` or possessive quantifiers.
