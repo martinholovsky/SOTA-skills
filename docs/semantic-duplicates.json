@@ -3033,6 +3033,15 @@
     "sota-code-security/rules/04-cryptography.md#c051ddc62c7b",
     "sota-testing/rules/02-test-design-quality.md#6dc7c9ecef7a"
    ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "secrets-management rules/02 §7 is the cross-language table that summarises each language's rule and links it; sota-swift rules/05 §4 is the Swift rule it summarises (v1.55.1).",
+   "sample": "| Language | Prints a plain secret through | The redacting type overrides | Rule | |---|---|---|---| | Python | dataclas",
+   "members": [
+    "sota-secrets-management/rules/02-storage-backends.md#2cf72197082d",
+    "sota-swift/rules/05-security.md#d68a1ca078ef"
+   ]
   }
  ],
  "model": "qwen3-embedding:8b",
