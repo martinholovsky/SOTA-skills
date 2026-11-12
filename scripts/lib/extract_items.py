@@ -23,12 +23,34 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# The nine language skills, plus shell as a SEPARATE population. LANGUAGE-TIER.md is
+# The language skills, plus shell as a SEPARATE population. LANGUAGE-TIER.md is
 # explicit that sota-shell-scripting is not a peer of the tier (different spine), so it
-# is carried here as its own group rather than a tenth column -- mixing them would
+# is carried here as its own group rather than another column -- mixing them would
 # manufacture "gaps" that are just a different spine.
-LANGS = ["rust", "golang", "c-cpp", "jvm", "python", "javascript-typescript",
-         "dotnet", "php", "ruby", "swift"]
+#
+# LANGS is READ from scripts/gen-skill-map.py, never restated here. Until 2026-11-12 this file
+# kept its own copy while invariant 36 checks only gen-skill-map.py's, so a language added to
+# that list and the router passed invariant 36 while gen-concept-matrix.py (which reads THIS
+# module) never held it to UNIVERSAL_FLOOR: adding "zig" to gen-skill-map.py on a disposable
+# copy left --assert-universal at ten columns, exit 0. One source makes the gap impossible.
+def _registered_langs():
+    import ast
+    src = (ROOT / "scripts" / "gen-skill-map.py").read_text(encoding="utf-8")
+    # Exactly one top-level assignment: a later `LANGS += [...]` or a second `LANGS =` (even in a
+    # docstring) was silently ignored or read instead -- shown on a disposable copy, 2026-11-12.
+    if len(re.findall(r'^LANGS\s*(\+?=)', src, re.M)) != 1:
+        raise SystemExit("extract_items: scripts/gen-skill-map.py must assign LANGS exactly once, "
+                         "as one list literal")
+    m = re.search(r'^LANGS\s*=\s*(\[[^\]]*\])', src, re.M)
+    if not m:
+        raise SystemExit("extract_items: LANGS not found in scripts/gen-skill-map.py")
+    langs = ast.literal_eval(m.group(1))
+    if not langs or not all(isinstance(x, str) for x in langs):
+        raise SystemExit("extract_items: LANGS in scripts/gen-skill-map.py is empty or malformed")
+    return langs
+
+
+LANGS = _registered_langs()
 SHELL = ["shell-scripting"]
 
 LABEL = {"javascript-typescript": "js/ts", "c-cpp": "c/c++", "dotnet": ".NET",

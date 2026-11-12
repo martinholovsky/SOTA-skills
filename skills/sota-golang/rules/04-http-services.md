@@ -349,12 +349,25 @@ log.InfoContext(ctx, "payment processed",
 - Fan-out to several sinks (e.g. JSON to stdout + a file handler):
   `slog.NewMultiHandler(h1, h2)` (1.26+) replaces hand-rolled multi-handler
   wrappers and third-party equivalents.
-- Never log secrets/PII: implement `slog.LogValuer` on sensitive types to
-  redact by construction:
+- Never log secrets/PII, and redact by **type**. **`LogValue` alone does not redact**: measured
+  on Go 1.27.3, a field whose type had only `LogValue` still printed in `%+v`, `fmt.Errorf`,
+  `json.Marshal`, and in slog itself when the enclosing struct was logged
+  (`login="{User:u Password:hunter2}"`). A secret type implements all five, and code reads the
+  value only through an explicit conversion (`string(s)`), which is greppable:
 
 ```go
-func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
+type Secret string
+func (Secret) String() string               { return "[REDACTED]" } // %v %+v %s, errors
+func (Secret) GoString() string             { return "[REDACTED]" } // %#v
+func (Secret) MarshalJSON() ([]byte, error) { return []byte(`"[REDACTED]"`), nil }
+func (Secret) LogValue() slog.Value         { return slog.StringValue("[REDACTED]") }
+func (Secret) MarshalText() ([]byte, error) { return []byte("[REDACTED]"), nil } // encoding/xml
 ```
+
+  Without `MarshalText`, `encoding/xml` wrote the value (measured). Three paths no method closes:
+  a wrong verb such as `%d` prints `%!d(main.Secret=hunter2)` (`go vet` reports it: keep vet in
+  CI), a JSON map key bypasses `MarshalJSON`, and `encoding/gob` encodes the raw value. Never key a
+  map by a secret or gob-encode one.
 
 - Levels: Debug (dev diagnosis), Info (state changes worth auditing), Warn
   (degraded, self-healed), Error (failed operation, human may act). Don't log
@@ -374,6 +387,12 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
 
 ## Audit checklist
 
+- [ ] **Does a secret live in a plain `string` or `[]byte` struct field (§5)? HIGH when the struct
+      is logged, wrapped into an error or marshalled**:
+      `grep -rnE '^[[:space:]]+([A-Za-z0-9_]+[[:space:]]*,[[:space:]]*)*[A-Za-z0-9_]*([Pp]ass(word|wd)?|[Pp]wd|[Ss]ecret|[Tt]oken|[Aa][Pp][Ii][Kk]ey|[Pp]rivate[Kk]ey)[A-Za-z0-9_]*([[:space:]]*,[[:space:]]*[A-Za-z0-9_]+)*[[:space:]]+(\*?string|\[\]byte|\[\]string)([[:space:]].*)?$' --include='*.go' .`
+      — read each hit. The fix is a type with `String`, `GoString`, `MarshalJSON`, `MarshalText`
+      and `LogValue`; `LogValue` alone still leaks through `fmt`, errors, JSON and a logged parent
+      struct. A field inside an anonymous struct literal on one line is missed.
 - [ ] **Invalid UTF-8 stored or forwarded (§1; [rules/05](05-security.md) §1) — MEDIUM, HIGH when the text feeds
       another parser** — files that turn a body into a string and never validate it:
       `grep -rlE 'string\((body|b|buf|data|raw)\)|io\.ReadAll' --include='*.go' . | while IFS= read -r f; do grep -qE 'utf8\.(Valid|ValidString)' "$f" || echo "$f"; done`
@@ -404,7 +423,7 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       *Context);
       `grep -rnE '(password|token|secret|authorization|api_?key)' --include='*.go' . | grep -i 'slog\|log\.'`
       (PII in logs — HIGH) ; manual: client mistakes (4xx) logged at Info/Warn, not Error;
-      sensitive types implement `slog.LogValuer`
+      secret fields use §5's redacting type, never `slog.LogValuer` alone
 - [ ] **Middleware ResponseWriter wrappers missing Flush/Hijack passthrough** (§4) —
       `grep -rlE '^[[:space:]]*http\.ResponseWriter$' --include='*.go' . | xargs -r grep -LE 'func \([^)]*\) (Unwrap\(\) http\.ResponseWriter|Flush\(\))'`
 - [ ] **Path-based authorization on the raw request path (§4) — HIGH when the router behind
