@@ -22,7 +22,10 @@
 #     so the reminder has one source). It is not an installer here: it names files that do not
 #     ship (update.sh, verify-setup.sh), and plugin/README.md says so;
 #   - the three extras plugin-notice.sh tells the user "ship with the plugin":
-#     statusline.sh, init-gates.sh and gen-agents-md.sh.
+#     statusline.sh, init-gates.sh and gen-agents-md.sh;
+#   - scripts/session-load-audit.py, which /sota-report check E tells the agent to run, with the
+#     two modules it imports for probe extraction and probe ids (check-checklist-probes.py,
+#     check-probe-fixtures.py). Without them it fails at import in a plugin install.
 # plugin/README.md becomes the tree's README.md (the listing text), and SOURCE_COMMIT records
 # the commit the tree was built from. .claude-plugin/marketplace.json does not ship: the
 # directory is the marketplace for this tree.
@@ -60,6 +63,9 @@ readonly ALLOW=(
   scripts/statusline.sh
   scripts/init-gates.sh
   scripts/gen-agents-md.sh
+  scripts/session-load-audit.py
+  scripts/check-checklist-probes.py
+  scripts/check-probe-fixtures.py
 )
 
 repo=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git repository"

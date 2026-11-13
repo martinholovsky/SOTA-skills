@@ -143,7 +143,9 @@ Rules:
 ## 4. Redaction at the logger — secrets and PII never reach the sink
 
 Call-site vigilance fails; the 200th engineer will log the request object.
-Enforce centrally, fail closed.
+Enforce centrally, fail closed. The logger sees only what reaches it: a secret printed by `repr`,
+`toString` or `inspect` on the way (an exception message, a stdout dump) also needs a redacting
+type ([`sota-secrets-management` rules/02](../../sota-secrets-management/rules/02-storage-backends.md) §7).
 
 **Bad:**
 

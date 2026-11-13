@@ -379,6 +379,8 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
 
 ## Audit checklist
 
+- [ ] **Is a secret passed by value to a format or log call (§3)? HIGH**: `grep -rniE '(printf|fprintf|snprintf|syslog|std::(cout|cerr|clog|format|print)|fmt::(print|format)|spdlog::[a-z]+|LOG[(][a-z]+[)])[^;]*(passw|pwd|secret|token|api_?key|private_?key|credential)' --include='*.c' --include='*.h' --include='*.cc' --include='*.cpp' --include='*.cxx' --include='*.hpp' .`
+      — read each hit: a message that only names one ("token expired") is fine, a call split over lines is missed, and a variable named only `key` is not matched (too common to read); C and C++ print nothing implicitly, so this call site is the whole control.
 - [ ] **Banned functions (§1) — HIGH/CRITICAL** —
       `grep -rnwE '(gets|strcpy|strcat|sprintf|vsprintf|stpcpy|scanf|system|popen|strtok|atoi|atol)' --include='*.c' --include='*.cpp' --include='*.h' .`
       ; `grep -rnE '\balloca[[:space:]]*\(|^[[:space:]]*((const|unsigned|signed|struct)[[:space:]]+)*(char|short|int|long|float|double|bool|[A-Za-z_][A-Za-z0-9_]*_t)[[:space:]]+\**[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\[[^]]*[a-z][^]]*\][[:space:]]*;' --include='*.c' .` (VLA/alloca on dynamic

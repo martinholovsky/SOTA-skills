@@ -244,6 +244,16 @@ jobs:
           python3 scripts/check-invisible-chars.py --self-test
           python3 scripts/check-invisible-chars.py
 
+      - name: Prove the session-load audit reads a transcript truthfully
+        # /sota-report check E pastes its output as evidence of what a session loaded. The self-test
+        # runs synthetic transcripts against this checkout's rules text. Mutation-checked 2026-11-11:
+        # dedupe off, the pipe fix off (`cat f | head` read as whole), pattern-only probe matching,
+        # command text leaked, control characters unescaped, an empty transcript accepted and the
+        # re-read ordering broken each fail it. The --diff half (a throwaway git repo) was mutated
+        # the same way: all hits read as new, the base unguarded, a symlink followed, a missing-path
+        # probe counted as run, and the --include filter removed each fail it.
+        run: python3 scripts/session-load-audit.py --self-test
+
       - name: Prove the code-rules hook names the rules file for what written code does
         # A PostToolUse hook on Edit|Write|MultiEdit (scripts/code-rules-hook.py, ROADMAP 73 option
         # h), on by default since option m: the plugin and install.sh --routing register it. The self-test drives it over stdin and checks that every file the trigger
@@ -273,6 +283,16 @@ jobs:
         # since the same day's audit it also counts one reply per request and pins its total, so a
         # server that silently drops a reply (which printed 35/35 before) or a deleted check fails.
         run: python3 scripts/test-mcp-server.py
+
+      - name: Prove the status line neutralises hostile input and keeps its output format
+        # scripts/statusline.sh prints untrusted text (repository and branch names, the model
+        # name, transcript skill names) to a terminal. The fixtures check CWE-150 escape
+        # injection, wrongly typed and non-JSON payloads, the field-shift guard, the
+        # context-window file guard for non-Claude hosts, the skill-name allow-list and relative
+        # paths, plus a differential against the previous script on ordinary payloads.
+        # Mutation-checked 2026-11-10: removing any of 6 controls fails it; the previous script
+        # fails 12 of 23.
+        run: scripts/test-statusline.sh
 
       - name: Prove the plugin-dist checker and publisher still refuse their known-bads
         # plugin-dist.yml runs both at release; here they run on every PR so a broken gate is found

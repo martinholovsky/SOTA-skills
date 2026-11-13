@@ -43,6 +43,9 @@ JSON is never read.
 
 The triggers are a table of regular expressions over the written text, and they are crude on
 purpose: a false trigger costs one file read, a missed one costs the rule.
+Each named row carries the line that matched it (`matched: "..."`, printable, at most ~72
+characters), so an agent can see why it fired. A row may have EXCLUDE senses, blanked before it
+is matched; only the session/token row has them, built against a labelled set (2026-11-12).
 
 IT NEVER BLOCKS: any error prints one line to stderr and exits 0 with no output.
 SOTA_CODE_RULES_HOOK=off (or 0 / false / no) disables it.
@@ -176,6 +179,54 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
 ]
 COMPILED = [(what, re.compile(rx, re.I), refs) for what, rx, refs in TRIGGERS]
 
+# Senses of a row's words that are NOT what the row is about, removed from the text before that row
+# is matched. Recall-safe by construction: an edit still fires if any match survives, so only an edit
+# whose EVERY match is one of these senses goes quiet. Built against a labelled set (2026-11-12,
+# ADOPTION-LOG, resolving the 2026-10-20 false-trigger deferral for this row): 254 local code files,
+# 52 labelled as issuing or checking a session, cookie or auth token, including two blind hold-outs.
+# An allow-list of auth phrasings scored recall 0.59 and 0.69 on the hold-outs and was rejected;
+# this list kept 52/52 and removed 190 of 1,270 matching lines in the non-auth files (15%) against 5
+# of 483 in the auth files, whose files still fired. Bare `session` and `token` in a generic sense
+# are most of what remains, and no word list separates them: the matched evidence printed with each
+# row is the remedy for those.
+EXCLUDE = {
+    "issues or checks a session or token": re.compile(
+        r"TokenStream\w*|proc_macro\w*|Token!\[[^\]\n]*\]|\bto_tokens\b|\btoken::\w+"
+        r"|\btokens?\.(extend|append\w*)\b|rustc_session\w*"
+        r"|\b(max|input|output|prompt|completion|reasoning|thinking|total|cached?|cache_\w+)_?tokens?\b"
+        r"|\btokens?_?(count|usage|used|budget|limits?|logprob\w*)\b|\btokens? (count|usage|budget|limits?|bucket|per)\b"
+        r"|token[- ]bucket|\btokeni[sz]\w*|\b\d[\d,.]*k?\+?\s*tokens?\b|tokens?/s\b|\bper[- ](\w+ )?tokens?\b|chars?/token"
+        r"|\b(special|control|sentinel|canary|inert|benign|unique)[ _-](\w+[ _-])?tokens?\b"
+        r"|design[- ]system tokens?|\bDS tokens\b|tokens/[\w-]+\.css"
+        r"|\bClientSession\b|requests\.Session\(\)|\bAsyncSession\b|\w*sessionmaker\b|\bget_session\(\)|\bdb\.session\b"
+        r"|\bsession\.(add|commit|rollback|execute|query|flush|scalars?|begin|run)\(|\.session\(\)"
+        r"|\bprocess[_ ]groups?\b|\bsession leader\b|AVAudioSession\w*|\baudio ?session\w*|\bsession[- ]bus\b"
+        r"|\bstack[ _]?cookies?\w*|\bStackCookie\b"
+        r"|\b(next|prior|previous|working|debugging|chat|LLM|agent|coding|training|interactive|knowledge[- ]sharing) sessions?\b"
+        r"|\bSession(Start|End)\b",
+        re.I),
+}
+
+
+def row_match(what: str, rx: re.Pattern, text: str) -> re.Match | None:
+    """The row's first match in `text` after its EXCLUDE senses are blanked, or None. Blanking keeps
+    offsets, so the match indexes the original text."""
+    ex = EXCLUDE.get(what)
+    return rx.search(ex.sub(lambda m: " " * len(m.group(0)), text) if ex else text)
+
+
+def evidence(text: str, m: re.Match) -> str:
+    """The matched word in its line, so the agent can see WHY a row fired: one printable,
+    backtick-free line of at most about 72 characters."""
+    start = text.rfind("\n", 0, m.start()) + 1
+    end = text.find("\n", m.end())
+    line = text[start:end if end != -1 else len(text)]
+    col = m.start() - start
+    if len(line) > 72:
+        lo = max(0, col - 30)
+        line = ("…" if lo else "") + line[lo:lo + 70] + ("…" if lo + 70 < len(line) else "")
+    return re.sub(r"[\x00-\x1f\x7f-\x9f`]", " ", line).strip()
+
 # Rows the hook fires on that --router-table does NOT render (operator decision 2026-10-22,
 # ADOPTION-LOG). The router is at its 500-line cap, and its rows are the evidence base v12 measured
 # reach from, so a new trigger starts here, in the hook only, and is promoted into the router once
@@ -258,18 +309,20 @@ def select(text: str, already: set[str], rows: set[str] | None = None) -> list[t
     for what, rx, refs in COMPILED:
         if rows is not None and what not in rows:
             continue
-        if not rx.search(text):
+        m = row_match(what, rx, text)
+        if not m:
             continue
+        why = '%s (matched: "%s")' % (what, evidence(text, m))
         for skill, num, section in refs:
             p = rules_file(skill, num)
             if p is None or str(p) in already:
                 continue
             if p in picked:
-                if what not in picked[p][0]:
-                    picked[p][0].append(what)
+                if why not in picked[p][0]:
+                    picked[p][0].append(why)
                 picked[p][1].append(section)
             elif len(picked) < PER_EVENT:
-                picked[p] = ([what], [section])
+                picked[p] = ([why], [section])
     return [("; ".join(w), p, "; ".join(s)) for p, (w, s) in picked.items()]
 
 
@@ -480,7 +533,7 @@ def self_test() -> int:
     # Labelled trigger cases from three field reports of 2026-10-20 (ADOPTION-LOG). Checked on the
     # compiled table directly, because the once-per-session rule would hide a second fire.
     def fires(what, text):
-        return any(w.startswith(what) and rx.search(text) for w, rx, _ in COMPILED)
+        return any(w.startswith(what) and row_match(w, rx, text) for w, rx, _ in COMPILED)
 
     for text in ('@require_role("editor")', "if not current_user.roles: deny()",
                  "SELECT * FROM user_roles", 'if not has_role(u, "ops"): deny()', "role_required(x)"):
@@ -526,6 +579,32 @@ def self_test() -> int:
                        ("issues or checks a session or token", 'key="$(printf %s "$session_id" | cksum)"')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
               fires(what, text))
+
+    # 2026-11-12 session/token EXCLUDE (resolves the deferral for that row): text made only of the
+    # excluded senses goes quiet; any auth sense beside them still fires (a miss costs the rule).
+    sess = "issues or checks a session or token"
+    for text in ("let ts = TokenStream::new();", "resp = client.create(max_tokens=256)",
+                 "db.session.commit()", "let s = AVAudioSession.sharedInstance()",
+                 "fn configure(stack_cookie: u64)", "async with aiohttp.ClientSession() as s:"):
+        check("excluded sense alone does not fire the session row: %s" % text, not fires(sess, text))
+    for text in ("resp = client.create(max_tokens=256)\nsession_start()",
+                 "let ts = TokenStream::new();\nif token != expected { deny() }",
+                 "db.session.commit()\n$_SESSION['uid'] = $id", "jwt.verify(token, key)",
+                 "res.cookie('sid', sid, { httpOnly: true })"):
+        check("an auth sense beside an excluded one still fires: %s" % text.split(chr(10))[-1], fires(sess, text))
+    # 2026-11-11 (this hook on a transcript parser): a class named Session for a Claude Code session.
+    # A known false trigger that must still fire: no word list separates it, the evidence line does.
+    check("known false trigger still fires: transcript Session class",
+          fires(sess, 'class Session:\n    """One Claude Code session, read from its transcript."""'))
+    # The evidence line: what matched, in its line, printable and backtick-free.
+    ev = [w for w, _, _ in select("x = 1\nreq.session['uid'] = u  # `x`\x1b[2J", set())]
+    check("the message names what matched, in its line: %s" % ev,
+          any('matched: "' in w and "req.session" in w for w in ev))
+    check("the evidence carries no backtick or control character",
+          all("`" not in w and "\x1b" not in w for w in ev))
+    long = "y = " + "a" * 200 + " session_id " + "b" * 200
+    ev2 = [w for w, _, _ in select(long, set())]
+    check("long-line evidence is cut around the match", any("session_id" in w and len(w) < 200 for w in ev2))
 
     # The real checkout: every file a trigger names exists, and every pattern compiles and fires on
     # at least one sample of its own (no dead row).

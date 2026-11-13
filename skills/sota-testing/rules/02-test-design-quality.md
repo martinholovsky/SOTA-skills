@@ -159,6 +159,9 @@ A test may consume only inputs it controls. The big three leaks:
 - **Randomness.** Inject the RNG or seed it per test. For property-based
   tests, the framework owns the seed and prints it on failure ([`rules/06`](06-property-fuzzing-mutation.md)).
   UUIDs in assertions: inject the generator or assert on shape, not value.
+  The seed is set **from the test**, never through a production seam: an env var, flag or
+  config key that makes the shipped binary deterministic is a security finding
+  ([`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §3).
 - **Network.** Unit tests touch no sockets. Integration tests touch only
   dependencies the test started itself ([`rules/04`](04-integration-contract-system.md)). Tests against
   third-party live endpoints belong in a separate, non-blocking suite.
@@ -395,6 +398,8 @@ More precise *and* more sensitive, not a trade.
       was passing because a real call succeeded → High each; then re-read those
       tests' names against their assertions, and check whether the config they
       construct is the config the SUT actually reads (§2.6).
+- [ ] **Can a seed reach the shipped code through an env var, flag or config key (§2.6)?
+      High when the RNG feeds anything secret**: `grep -rniE '(getenv|environ|process\.env|ENV\[|add_argument|flag\.(Int|String))[^;]{0,40}seed' . | grep -vE '(^|/)(tests?|spec|__tests__|testdata)/|_test\.go:|test_[^/]*\.py:|conftest\.py:|_spec\.rb:|\.(test|spec)\.[jt]sx?:'`
 - [ ] **Resource optimism, the host half** (§2.7): tests that read absolute host paths or
       mounts without creating them or skipping with a host-derived reason → High each.
       Lead list (lang-adjust the test path):

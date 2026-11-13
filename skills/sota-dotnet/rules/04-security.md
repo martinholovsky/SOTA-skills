@@ -447,7 +447,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       text that only *names* one, such as "password reset for {User}", also matches) ;
       `grep -rniE 'record[[:space:]]+(struct[[:space:]]+|class[[:space:]]+)?[a-z0-9_]+[[:space:]]*\([^)]*(passw|secret|token|api_?key|credential)' --include='*.cs' .`
       (a positional record holding a credential: its `ToString` prints it unless
-      `PrintMembers` is overridden)
+      `PrintMembers` is overridden) ; `grep -rlE '(^|[^A-Za-z0-9_])record[[:space:]]' --include='*.cs' . | xargs -r grep -niE 'public[[:space:]]+(required[[:space:]]+)?string[?]?[[:space:]]+[a-z0-9_]*(passw|secret|token|api_?key|credential)'` (a nominal record's public property prints the same way)
 - [ ] **JWT validation switched off — HIGH** (§7) —
       `grep -rnE '(RequireExpirationTime|RequireSignedTokens|ValidateAudience|ValidateIssuer|ValidateLifetime)[[:space:]]*=[[:space:]]*false|(AudienceValidator|LifetimeValidator|IssuerValidator|SignatureValidator)[[:space:]]*=' --include='*.cs' .` (a custom validator delegate must be read: `=> true` is CA5405)
 - [ ] **SSRF: outbound request to a caller-chosen URL — HIGH (CRITICAL where the cloud

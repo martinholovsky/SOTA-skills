@@ -55,8 +55,11 @@ OLLAMA = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
 if "://" not in OLLAMA:  # Ollama's own convention allows a bare host:port
     OLLAMA = "http://" + OLLAMA
 MINW, LEX_PARALLEL = 25, 0.45
-LANGS = {"sota-" + s for s in
-         "rust golang c-cpp jvm python javascript-typescript dotnet php ruby swift".split()}
+# Read from scripts/gen-skill-map.py through extract_items, never restated (2026-11-12: this was
+# the third hand-kept copy of the language list).
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+import extract_items as _E  # noqa: E402
+LANGS = {"sota-" + s for s in _E.LANGS}
 INSTRUCT = ("Instruct: Represent this engineering guideline so that guidelines giving the same "
             "instruction are close\nQuery:")
 
