@@ -13,7 +13,7 @@ plus an unbalanced bracket. They exited 2 on BSD grep, ugrep and GNU grep alike 
 2026-10-21, the field report on this session).
 
 WHAT IT DOES. Every code span after `## Audit checklist` in skills/*/rules/*.md that starts with
-`grep ` is a probe. Each runs under bash in an empty temporary directory, with `<file>`-style
+`grep `, optionally after `LC_ALL=C ` and/or `command ` (PROBE_START), is a probe. Each runs under bash in an empty temporary directory, with `<file>`-style
 placeholders replaced by an empty file and `2>/dev/null` removed so the error is visible:
   rc 0 or 1                                  -> ran (a match, or none)
   rc 2 and stderr names a missing path       -> ran far enough to look for its target
