@@ -443,7 +443,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
 - [ ] **Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]** (§13) —
       `grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning' | grep -vE 'import[^#]*deprecated'`
 - [ ] **Does the suite fail on warnings? [MEDIUM if absent]** (§13) —
-      `grep -qE 'filterwarnings|-W ?error' pyproject.toml setup.cfg pytest.ini tox.ini || echo "suite does not fail on warnings"`;
+      `command grep -qE 'filterwarnings|-W ?error' pyproject.toml setup.cfg pytest.ini tox.ini || echo "suite does not fail on warnings"`;
       a category-scoped `error::DeprecationWarning` with no blanket `"error"` misses `UserWarning`s
 - [ ] **__slots__ added to a class that subclasses something unslotted — no saving [INFO]** (§13) —
       `grep -rn -B3 '__slots__' --include="*.py" src/ | grep 'class .*('`

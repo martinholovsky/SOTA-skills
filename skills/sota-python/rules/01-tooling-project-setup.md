@@ -353,13 +353,13 @@ Run from repo root. Severity guidance in brackets.
 - [ ] **Competing lint/format config [MEDIUM — consolidate to ruff]** (§3) —
       `ls .flake8 .isort.cfg .pylintrc 2>/dev/null; grep -n "\[tool.black\]\|\[tool.isort\]" pyproject.toml`
 - [ ] **Type checking actually enforced?** (§4) —
-      `grep -qE 'mypy|pyright|basedpyright| ty ' .github/workflows/*.yml .gitlab-ci.yml || echo "no type checker in CI"`
+      `command grep -qE 'mypy|pyright|basedpyright| ty ' .github/workflows/*.yml .gitlab-ci.yml || echo "no type checker in CI"`
       ; `grep -rnE 'type: ignore([[:space:]]|$)' --include="*.py" src/ | grep -v "ignore\["`
       (bare ignores [LOW])
 - [ ] **Suppressions that never expire (§3, §4) [LOW each, MEDIUM in aggregate or where they silence `S` rules]** —
       `uvx ruff check --extend-select PGH003,PGH004,RUF100 --statistics .` (bare and stale
       `noqa`/`type: ignore`; `--extend-select` keeps the project's rules, §3) ;
-      `grep -qE 'reportUnnecessaryTypeIgnoreComment|warn_unused_ignores|strict[[:space:]]*=' pyproject.toml pyrightconfig.json || echo "no unused-ignore gate configured"`
+      `command grep -qE 'reportUnnecessaryTypeIgnoreComment|warn_unused_ignores|strict[[:space:]]*=' pyproject.toml pyrightconfig.json || echo "no unused-ignore gate configured"`
       (the message = an unused ignore never fails; silence still needs the setting to belong to
       the checker that gates CI, not the other one) ;
       `grep -rnE '#[[:space:]]*(noqa(:[[:space:]]*[A-Z]+[0-9]+([[:space:]]*,[[:space:]]*[A-Z]+[0-9]+)*)?|type:[[:space:]]*ignore(\[[^]]*\])?|pyright:[[:space:]]*ignore(\[[^]]*\])?)[[:space:]]*$' --include='*.py' .`

@@ -232,6 +232,9 @@ An agent's PR declares a scope (the issue, the task prompt). Two checks hold it 
   `\u0007`, and again into its own report about it, minutes after the bidi rule ([`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md) §4) was on screen. Build
   such fixtures from escapes at test time (`chr(0x202E)`, `printf '\342\200\256'`) so the source
   stays ASCII, and run the gate on the agent's own repository, not only on the ones it reviews.
+  **A compiler or formatter is not this gate.** Measured 2026-11-13 on Go 1.27.4: `gofmt`, `go vet`
+  and `go build` reject U+FEFF ("illegal byte order mark") and accept U+200B, U+200D, U+2060,
+  U+202E, U+2066, U+2069 and a tag character inside a string literal, so a clean build proves nothing.
 
 ## 5.7 Test discipline — no flaky-mute culture
 

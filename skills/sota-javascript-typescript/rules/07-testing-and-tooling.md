@@ -285,7 +285,7 @@ steps:
       Then `npx eslint --print-config <file>` on one test file of each naming shape the repo uses (`.spec.ts`, `.test.tsx`, `tests/…`): a shape the exemption misses gets the full set, which breeds per-line disables in tests.
 - [ ] `grep -rnE --include='*.test.tsx' 'querySelector|container\.' src/` and `getByTestId` density — implementation-coupled tests (§2) (LOW/MEDIUM).
 - [ ] `grep -rn "fireEvent" src/` in component tests — should be `userEvent` (LOW). Arbitrary `setTimeout` sleeps instead of `findBy…`/`waitFor` in component tests are MEDIUM (§2).
-- [ ] `grep -rn "waitForTimeout\|setTimeout" --include='*.ts' --include='*.js' --exclude-dir=node_modules . | grep -E '^\./(e2e|tests?)/'` — sleep-based waits = flake (MEDIUM). `grep -rnE "locator\( *['\"](\.|#|//|xpath=|css=)" --include='*.spec.ts' --include='*.test.ts' --include='*.e2e.ts' --exclude-dir=node_modules .` — CSS/XPath locators where `getByRole`/`getByLabel` would do (LOW) (§4).
+- [ ] `command grep -rn "waitForTimeout\|setTimeout" --include='*.ts' --include='*.js' --exclude-dir=node_modules . | command grep -E '^\./(e2e|tests?)/'` — sleep-based waits = flake (MEDIUM). `grep -rnE "locator\( *['\"](\.|#|//|xpath=|css=)" --include='*.spec.ts' --include='*.test.ts' --include='*.e2e.ts' --exclude-dir=node_modules .` — CSS/XPath locators where `getByRole`/`getByLabel` would do (LOW) (§4).
 - [ ] **Parsers and serializers with no property-based test (Practices: `fast-check`) (§1) — LOW,
       MEDIUM for a parser of untrusted input** —
       `grep -qE '"(fast-check|@fast-check/[a-z]+)"' package.json || echo 'package.json: no fast-check'` (printed: no property test can

@@ -92,9 +92,26 @@ def probes_in(text):
         # join a span that Markdown wrapped, but keep spaces inside a line: collapsing every run turned
         # the ruby probe `'^    json \('` (four spaces, a Gemfile.lock dependency) into `'^ json \('`
         span = LINE_BREAK.sub(" ", m.group(2)).strip()
-        if span.startswith("grep "):
+        if PROBE_START.match(span):
             out.append(span)
     return out
+
+
+# A probe may open with `LC_ALL=C` and/or `command` before `grep` (2026-11-13: a field report showed
+# an agent's shell defining `grep` as a function running ugrep, which turned a byte-ERE probe into a
+# false zero; `command` bypasses it). Before that date only spans starting `grep ` were probes, so
+# `LC_ALL=C grep …` was never run or proven: widen the extractor rather than lose those probes.
+PROBE_START = re.compile(r"(?:LC_ALL=C\s+)?(?:command\s+)?grep ")
+
+
+def _stage_words(seg):
+    """A stage's words with leading `NAME=value` assignments and a leading `command` removed."""
+    i = 0
+    while i < len(seg) and re.match(r"[A-Za-z_][A-Za-z0-9_]*=", seg[i]):
+        i += 1
+    if i < len(seg) and seg[i] == "command":
+        i += 1
+    return seg[i:]
 
 
 def _tokens(cmd):
@@ -124,7 +141,7 @@ def skip_reason(span):
         else:
             cur.append(t)
     segments.append(cur)
-    if not [w for w in segments[0][1:] if not w.startswith("-") and w not in {"<", ">", "2"}]:
+    if not [w for w in _stage_words(segments[0])[1:] if not w.startswith("-") and w not in {"<", ">", "2"}]:
         return "no pattern argument"
     for seg in segments:
         for i, t in enumerate(seg):
@@ -132,7 +149,10 @@ def skip_reason(span):
                 return "writes a file"
         if not seg:
             continue
-        name = seg[0]
+        words = _stage_words(seg)
+        if not words:
+            return "a stage with no command"
+        name = words[0]
         if name == "xargs":
             name = next((w for w in seg[1:] if not w.startswith("-")), "")
         if name not in SAFE:

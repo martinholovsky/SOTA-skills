@@ -32,6 +32,8 @@ ALLOW = {
         "a known-bad fixture: a zero-width space inside a role comparison",
     "skills/sota-javascript-typescript/rules/02-language-idioms.md":
         "the str.length example counts a zero-width joiner sequence",
+    "scripts/probe-fixtures/sota-code-security/09-untrusted-data-ingestion/d4a6ea96ee/bad/role.go":
+        "a known-bad fixture: a zero-width space alone, the case an agent's ugrep wrapper missed",
 }
 
 
