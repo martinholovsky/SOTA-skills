@@ -344,7 +344,7 @@ Run from repo root; verify each hit manually.
       suppressions pass). Then read `level`, `paths` and each `ignoreErrors` entry without a
       `path`: a level lowered or `tests` dropped to get the suite green is the finding.
 - [ ] **CI gates actually wired (adjust path to CI system)** (§5) —
-      `grep -rqsE 'composer[[:space:]]+audit' .github/workflows/ .gitlab-ci.yml || echo "CI: NO composer audit GATE" ; grep -rqsE 'phpstan|psalm' .github/workflows/ .gitlab-ci.yml || echo "CI: NO STATIC ANALYSIS GATE" ; grep -rqsE 'phpunit|pest' .github/workflows/ .gitlab-ci.yml || echo "CI: NO TEST GATE" ; grep -rqsE 'php-cs-fixer|phpcs' .github/workflows/ .gitlab-ci.yml || echo "CI: NO STYLE GATE"`
+      `command grep -rqsE 'composer[[:space:]]+audit' .github/workflows/ .gitlab-ci.yml || echo "CI: NO composer audit GATE" ; command grep -rqsE 'phpstan|psalm' .github/workflows/ .gitlab-ci.yml || echo "CI: NO STATIC ANALYSIS GATE" ; command grep -rqsE 'phpunit|pest' .github/workflows/ .gitlab-ci.yml || echo "CI: NO TEST GATE" ; command grep -rqsE 'php-cs-fixer|phpcs' .github/workflows/ .gitlab-ci.yml || echo "CI: NO STYLE GATE"`
 - [ ] **PHP floor out of support, or no Rector gate to move it (§5) — HIGH when the floor
       branch is `eol`, LOW when it is security-only; MEDIUM for no gate once a bump is due** —
       live lookup of the lowest `X.Y` in `require.php` against php.net (prints the floor's

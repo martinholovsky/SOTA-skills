@@ -50,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--null` to `xargs -0`, checked on BSD grep, ugrep and GNU grep; each fixture holds a path with a
   space. Invariant 33 had the same bug (`git ls-files` split on whitespace) and now reads `-z`.
   The rest of the library: ROADMAP 94.
+- **Probes under an agent's `grep` wrapper** (field report, 2026-11-13). In a Claude Code shell `grep`
+  is a function running ugrep; run on their own fixtures through it, 12 of 1,914 checklist probes gave
+  a wrong verdict (3 silent on a known-bad tree, 9 reporting a missing gate that was there), and the
+  `sota-code-security` rules/09 byte-ERE probe found 0 of 1 planted U+200B. Those 13 now say
+  `command grep`; measured again, 0 wrong verdicts. Whether to do it library-wide: ROADMAP 95.
+- **`check-checklist-probes.py` ran only probes starting `grep `**, so `LC_ALL=C grep …` was never
+  run or proven by invariant 44. It now accepts a leading `LC_ALL=C` and `command` (1,915 probes).
+- **A compiler is not an invisible-character gate** (`sota-devsecops` rules/05 §5.6): `gofmt`,
+  `go vet` and `go build` (Go 1.27.4) reject only U+FEFF in a string literal.
 
 ## [1.55.1] - 2026-11-12
 
