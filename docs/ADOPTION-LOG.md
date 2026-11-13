@@ -3285,7 +3285,7 @@ APIs, hardened flags) and what no skill here owns — ISRs and reentrancy, DMA c
 and `volatile` against a peripheral, RTOS scheduling and priority inversion, WCET, linker
 scripts. Cost: one paragraph. It converts a silent mis-route into a stated limit.
 
-**DEFERRED — CUDA / GPU engineering. Revisit trigger: a field brief from a session that actually hit GPU work, or a second independent request.** *Considered 2026-11-13, not fired: the ContextIPS report of 2026-11-01 mentions a CUDA OOM, caused by orphaned worker processes holding GPU memory. That is process lifecycle, which the report's own intake covered, not GPU engineering.*
+**DEFERRED — CUDA / GPU engineering. Revisit trigger: a field brief from a session that actually hit GPU work, or a second independent request.** *Considered 2026-11-13, not fired: the LLM security proxy report taken in on 2026-11-01 mentions a CUDA OOM, caused by orphaned worker processes holding GPU memory. That is process lifecycle, which the report's own intake covered, not GPU engineering.*
 It is a real discipline (occupancy,
 coalescing, warp divergence, host/device sync) and we have one incidental sentence, but doing
 it badly is worse than not doing it, and its freshness cost is high against a stamp that
