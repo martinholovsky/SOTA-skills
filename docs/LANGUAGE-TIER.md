@@ -538,7 +538,7 @@ was never searched); the four items with that pipe now use `--null` and `xargs -
 grep 2.6.0, ugrep and GNU grep 3.11 (ROADMAP 94 for the rest of the library). Each shell probe was
 proven equal, line for line, to the frozen candidate on every sampled file; one equivalence failure
 (an exclusion matching the PATH `Tokens/` in `path:line:` output) was fixed by anchoring every
-exclusion on the content, and a fixture now pins it.
+exclusion on the content, and a fixture now pins it. *Corrected 2026-11-13: the JS/TS row's shipped probe drops the backtick from the frozen candidate's value class (it cannot sit inside a Markdown code span); scored after the hold-out, it gave the same counts on both sets.*
 
 **Not changed, deliberately:** the top-10 lists of the four skills that lack a redacting-type line.
 The floor now carries the concept for every language, and the top-10 lists are curated per skill.
