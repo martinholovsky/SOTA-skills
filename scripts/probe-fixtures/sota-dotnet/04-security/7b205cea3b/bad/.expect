@@ -1,0 +1,2 @@
+./Creds.cs:4:    public required string Password { get; init; }
+./Web App/Login.cs:3:    public string ApiKey { get; init; } = "";

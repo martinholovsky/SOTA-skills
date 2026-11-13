@@ -511,6 +511,35 @@ reports a non-record class). Patching each regex against one reviewer's cases is
 here. The next step is the one the code-rules hook took on 2026-11-12: a labelled set of real
 declarations per language, then the patterns. Every item already tells the reader to read each hit.
 
+**Measured 2026-11-13 (ROADMAP 92), superseding the paragraph above's "not patched".** Each
+probe was scored on a labelled set built from local code (36 repositories, vendored directories
+skipped): a population of the probe's hits plus a broader per-language candidate regex, sampled by
+stratum (hit / miss) round-robin across repositories, labelled blind (the labellers never saw which
+lines the probe matched) against one written definition: a secret value, held as a plain printable
+type, where the language's default printer reaches it (for C/C++, passed to the print call). 466
+design and 278 hold-out lines; 30 of 30 labels re-checked by hand agreed. Recall is recall within that
+candidate population, not absolute. Candidates were designed on the design set, frozen, and run once
+on the hold-out:
+
+| language | hold-out precision / recall, before → after | verdict |
+|---|---|---|
+| Python | .30 / 1.00 → .75 / 1.00 | shipped: a parameter on its own signature line (ends in `,`) and `_type`/`_env`/`_hash`/`_url`/`_id` names filtered; `credential`, `passphrase`, `signing_key` added |
+| Go | .60 / .90 → .77 / 1.00 | shipped: `…ID`, `…Name`, `…Namespace`, `…URL`, `…Hash` names filtered; `SigningKey`, `Credential`, `map[string]string` added |
+| Rust | .33 / .26 → .43 / .26 | shipped: `fn` signatures, tokenizer words, `_path`/`_file` names filtered; recall stays low because real positives are mostly struct-literal initialisers |
+| JS/TS | .15 / .15 → .53 / .79 | shipped: a type or initialiser required (imports and destructured names no longer match); object-literal keys with a string or `process.env` value added |
+| PHP | .35 / 1.00 → .50 / 1.00 | shipped: comments, generated query-filter properties, length/expiry/history/hash names filtered; `credential`, `auth_key` added (design said .93: overfit to one generated file) |
+| C/C++ | .05 / .23, candidate .00 / .00 | **not confirmed**, unchanged: most hits only name a secret in the message; the "argument after the last quote" fix broke on a later string literal |
+| Ruby | design .77 / .98 | not tuned |
+| JVM, .NET, Swift | no positive in local code | not measurable here: ROADMAP 93 |
+
+Hold-out samples are 20 to 40 lines per language, so the numbers carry direction, not decimals. On
+the way, the .NET run exposed `grep -rl | xargs grep` splitting a path on its space (`DNN Platform/`
+was never searched); the four items with that pipe now use `--null` and `xargs -0`, checked on BSD
+grep 2.6.0, ugrep and GNU grep 3.11 (ROADMAP 94 for the rest of the library). Each shell probe was
+proven equal, line for line, to the frozen candidate on every sampled file; one equivalence failure
+(an exclusion matching the PATH `Tokens/` in `path:line:` output) was fixed by anchoring every
+exclusion on the content, and a fixture now pins it.
+
 **Not changed, deliberately:** the top-10 lists of the four skills that lack a redacting-type line.
 The floor now carries the concept for every language, and the top-10 lists are curated per skill.
 

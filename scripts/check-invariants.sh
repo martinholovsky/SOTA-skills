@@ -2868,8 +2868,10 @@ if command -v python3 >/dev/null 2>&1; then
   cov_out=$(python3 - <<'COVPY'
 import re, subprocess, pathlib
 LEDGER = "docs/CONVENTIONS-LEDGER.md"
+# -z, never .split(): a tracked path holding a space ("src main/Login.java", a probe fixture since
+# 2026-11-13) split into two words, and "main/" was reported as an undeclared area.
 areas = sorted({p.split("/")[0] for p in
-                subprocess.run(["git","ls-files"],capture_output=True,text=True).stdout.split()
+                subprocess.run(["git","ls-files","-z"],capture_output=True,text=True).stdout.split("\0")
                 if "/" in p})
 print("SCOPE %d" % len(areas))
 try:

@@ -1,0 +1,9 @@
+./Tokens/box.ts:2:  token?: string;
+./client.js:3:    this.apiKey = key;
+./config.ts:2:  apiKey: process.env.FIREBASE_API_KEY,
+./config.ts:3:  clientSecret: 'dev-only-placeholder',
+./inferred.ts:2:  secretToken = process.env.TOKEN;
+./service.ts:2:  constructor(private readonly token: string, private name: string) {}
+./service.ts:3:  private password: string = process.env.PW!;
+./service.ts:4:  apiKey!: string;
+./service.ts:5:  refreshToken: string | undefined;

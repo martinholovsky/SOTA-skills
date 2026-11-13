@@ -378,12 +378,12 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
 - [ ] **Secrets reaching logs (§8) — HIGH** —
       `grep -rniE 'logger\.(debug|info|warn|error|fatal|unknown).*#\{[^}]*(passw|secret|token|api_?key|credential)' --include='*.rb' .`
       (a credential interpolated into a log line) ;
-      `grep -rliE '(Data\.define|Struct\.new)\([^)]*:[a-z_]*(passw|secret|token|api_?key|credential|passphrase)' --include='*.rb' . | xargs -r grep -LE 'def to_s'`
-      ; the same with `xargs -r grep -L 'def pretty_print'` (a credential-carrying value object
+      `grep -rliE --null '(Data\.define|Struct\.new)\([^)]*:[a-z_]*(passw|secret|token|api_?key|credential|passphrase)' --include='*.rb' . | xargs -0 -r grep -LE 'def to_s'`
+      ; the same with `xargs -0 -r grep -L 'def pretty_print'` (a credential-carrying value object
       without one of the overrides prints through interpolation or `pp`; file-level, so an
       unrelated `def to_s` in the same file hides it, and a declaration split over lines is
       missed) ;
-      `grep -rliE '(attr_(reader|accessor)[^#]*:|@)[a-z_]*(passw|secret|token|api_?key|credential|passphrase)' --include='*.rb' . | xargs -r grep -L 'def pretty_print'`
+      `grep -rliE --null '(attr_(reader|accessor)[^#]*:|@)[a-z_]*(passw|secret|token|api_?key|credential|passphrase)' --include='*.rb' . | xargs -0 -r grep -L 'def pretty_print'`
       (a plain class holding one, whose default `inspect` and `pp` print every instance variable) ;
       Rails apps: `grep -rn 'filter_parameters' config/` — exit 1 means no parameter is
       filtered from the logs (HIGH); exit 2 means there is no `config/` to read. A list

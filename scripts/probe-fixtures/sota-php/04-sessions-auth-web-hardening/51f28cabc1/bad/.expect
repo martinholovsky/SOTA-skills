@@ -1,0 +1,5 @@
+./Legacy.php:3:    private $password;
+./Legacy.php:4:    var $secret;
+./Legacy.php:5:    readonly private string|null $token;
+./Mailer.php:3:    public $credentials = [];
+./Mailer.php:4:    protected $auth_key = null;
