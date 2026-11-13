@@ -69,7 +69,7 @@ code that runs at build time, adopting a dependency, and GODEBUG overrides (§2)
 - Don't `replace` to forks silently — audit `replace` directives (MEDIUM:
   hidden fork drift; CRITICAL if pointing at an unreviewed repo).
 - Secrets: never in code/env-committed files; load via env/secret manager at
-  start; `slog.LogValuer` redaction (`rules/04 §5`).
+  start; a redacting type for secret fields (`rules/04 §5`; `slog.LogValuer` alone still leaks).
 
 ## 2. GODEBUG: security behaviour set by go.mod
 

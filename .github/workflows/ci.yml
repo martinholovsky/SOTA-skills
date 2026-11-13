@@ -232,6 +232,16 @@ jobs:
         # hook fails 7 of 58, one that drops the paths 2, one that counts dot dirs 1.
         run: python3 scripts/skill-depth-hook.py --self-test
 
+      - name: Prove the session-load audit reads a transcript truthfully
+        # /sota-report check E pastes its output as evidence of what a session loaded. The self-test
+        # runs synthetic transcripts against this checkout's rules text. Mutation-checked 2026-11-11:
+        # dedupe off, the pipe fix off (`cat f | head` read as whole), pattern-only probe matching,
+        # command text leaked, control characters unescaped, an empty transcript accepted and the
+        # re-read ordering broken each fail it. The --diff half (a throwaway git repo) was mutated
+        # the same way: all hits read as new, the base unguarded, a symlink followed, a missing-path
+        # probe counted as run, and the --include filter removed each fail it.
+        run: python3 scripts/session-load-audit.py --self-test
+
       - name: Prove the code-rules hook names the rules file for what written code does
         # A PostToolUse hook on Edit|Write|MultiEdit (scripts/code-rules-hook.py, ROADMAP 73 option
         # h), on by default since option m: the plugin and install.sh --routing register it. The self-test drives it over stdin and checks that every file the trigger

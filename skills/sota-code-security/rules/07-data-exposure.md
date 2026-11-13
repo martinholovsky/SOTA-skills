@@ -80,7 +80,7 @@ def handle(e):
   - secrets wrapped in types whose `toString`/`repr` is masked and whose value is reachable
     only through one explicitly named accessor (Pydantic `SecretStr.get_secret_value()`,
     Rust `secrecy`'s `expose_secret()`), so every read of the secret is greppable
-    (in-memory handling: [`sota-secrets-management` rules/02](../../sota-secrets-management/rules/02-storage-backends.md) §7). OWASP: Code Review Guide v2.
+    (in-memory handling, and what each language prints by default: [`sota-secrets-management` rules/02](../../sota-secrets-management/rules/02-storage-backends.md) §7). OWASP: Code Review Guide v2.
 - **Log injection (CWE-117)**: strip/escape CR/LF and control chars from
   user-controlled values before logging (forged entries, log-parser exploits —
   and never let user input reach a log4j-style lookup/format string: log

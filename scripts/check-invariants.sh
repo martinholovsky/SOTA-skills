@@ -3045,7 +3045,8 @@ if [ "$v35" -ne 0 ]; then fail=1; fi
 
 # --- 36. Every language skill is registered in LANGS ---------------------------------
 # gen-concept-matrix.py and gen-skill-map.py only check the languages listed in LANGS
-# (scripts/gen-skill-map.py). A tenth language skill added to the router but not to LANGS
+# (scripts/gen-skill-map.py; scripts/lib/extract_items.py READS that list since 2026-11-12,
+# so the concept matrix cannot drift from it). A language skill added to the router but not to LANGS
 # would never be held to UNIVERSAL_FLOOR -- no error, just an unchecked skill that reads
 # as checked. The router's own wording is the independent source: every language row reads
 # "Any <language> code --". Both directions, so a stale LANGS entry for a removed skill

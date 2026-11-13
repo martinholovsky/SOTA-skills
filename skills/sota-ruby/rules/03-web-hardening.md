@@ -302,7 +302,12 @@ minimums:
 - **Secrets stay out of logs, including through `inspect`.** `Data` and `Struct` print every
   member: measured on Ruby 4.0, `Data.define(:user, :password)` inspects as
   `#<data Creds user="bob", password="hunter2">`, and interpolating one into a `Logger` line
-  writes it out. Override `inspect` on a value object that carries a credential. In Rails (a
+  writes it out. Override `inspect`, define `def to_s = inspect`, and define `pretty_print`: measured
+  on Ruby 4.0.6, an `inspect` override alone still printed `password="hunter2"` through
+  `"login #{c}"` (which calls `to_s`) and `pp`; all three printed `[REDACTED]`. Not
+  `alias_method :to_s, :inspect`: written before `def inspect` it copies the built-in one and leaks.
+  A plain class inspects its instance variables the same way, through `inspect` and `pp` (its
+  `to_s` does not), so it needs `inspect` and `pretty_print`. In Rails (a
   neutral example), `config.filter_parameters` filters *"the parameters that you don't want
   shown in the logs"* and also masks those columns in Active Record `#inspect` (Rails
   configuring guide). The generated `config/initializers/filter_parameter_logging.rb` starts
@@ -373,9 +378,13 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
 - [ ] **Secrets reaching logs (§8) — HIGH** —
       `grep -rniE 'logger\.(debug|info|warn|error|fatal|unknown).*#\{[^}]*(passw|secret|token|api_?key|credential)' --include='*.rb' .`
       (a credential interpolated into a log line) ;
-      `grep -rliE '(Data\.define|Struct\.new)\([^)]*:[a-z_]*(passw|secret|token|api_?key)' --include='*.rb' . | xargs -r grep -L 'def inspect'`
-      (files with a credential-carrying value object and no `def inspect` override: its
-      `inspect` prints the credential; a file-level heuristic) ;
+      `grep -rliE '(Data\.define|Struct\.new)\([^)]*:[a-z_]*(passw|secret|token|api_?key|credential|passphrase)' --include='*.rb' . | xargs -r grep -LE 'def to_s'`
+      ; the same with `xargs -r grep -L 'def pretty_print'` (a credential-carrying value object
+      without one of the overrides prints through interpolation or `pp`; file-level, so an
+      unrelated `def to_s` in the same file hides it, and a declaration split over lines is
+      missed) ;
+      `grep -rliE '(attr_(reader|accessor)[^#]*:|@)[a-z_]*(passw|secret|token|api_?key|credential|passphrase)' --include='*.rb' . | xargs -r grep -L 'def pretty_print'`
+      (a plain class holding one, whose default `inspect` and `pp` print every instance variable) ;
       Rails apps: `grep -rn 'filter_parameters' config/` — exit 1 means no parameter is
       filtered from the logs (HIGH); exit 2 means there is no `config/` to read. A list
       narrower than the generated default needs a reason
