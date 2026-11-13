@@ -5,6 +5,24 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **`scripts/statusline.sh` neutralises untrusted text** (CWE-150, `sota-cli-ux` rules/02 §4). It
+  printed the directory and branch names, the model name and transcript skill names raw, so a
+  repository whose directory name holds `ESC[2J` or an OSC 52 sequence cleared the screen or wrote
+  the clipboard. Control characters are now shown escaped (`^[`), bidi and zero-width characters
+  replaced, skill names held to `[A-Za-z0-9:._-]`, paths used only when absolute, and a wrongly
+  typed field can no longer shift the extracted fields. The output format is unchanged:
+  byte-identical to the previous script on ordinary payloads (checked differentially).
+- **The context window is recorded only for Claude Code.** A host that sends a `product` field
+  (Antigravity CLI sends `"antigravity"`) would have overwritten
+  `~/.claude/sota-skills-data/context-window`, which `verify-setup.sh` reads as Claude Code's window.
+- **`scripts/test-statusline.sh`**, run in CI: 23 assertions, run locally under bash 5.3 and macOS's
+  bash 3.2. On the previous script it fails 12 of 23. Mutation-checked: removing any of 6 controls
+  fails it. A seventh (an object-type guard) changed nothing observable and was deleted. The status
+  line stays in maintenance mode (ROADMAP: bug-fix only). The new segments drafted in this PR
+  (prompt-cache countdown, plan usage, worktree, scratchpad, links) were parked on that rule.
+
 ## [1.55.1] - 2026-11-12
 
 A PATCH: rule text, probes and a gate fix inside surfaces that already exist. One PR since v1.55.0: #695.

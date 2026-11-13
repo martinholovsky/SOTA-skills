@@ -272,6 +272,16 @@ jobs:
         # server that silently drops a reply (which printed 35/35 before) or a deleted check fails.
         run: python3 scripts/test-mcp-server.py
 
+      - name: Prove the status line neutralises hostile input and keeps its output format
+        # scripts/statusline.sh prints untrusted text (repository and branch names, the model
+        # name, transcript skill names) to a terminal. The fixtures check CWE-150 escape
+        # injection, wrongly typed and non-JSON payloads, the field-shift guard, the
+        # context-window file guard for non-Claude hosts, the skill-name allow-list and relative
+        # paths, plus a differential against the previous script on ordinary payloads.
+        # Mutation-checked 2026-11-10: removing any of 6 controls fails it; the previous script
+        # fails 12 of 23.
+        run: scripts/test-statusline.sh
+
       - name: Prove the plugin-dist checker and publisher still refuse their known-bads
         # plugin-dist.yml runs both at release; here they run on every PR so a broken gate is found
         # before a tag needs it. The checker's 23 known-bads each fail their own check and nothing

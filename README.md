@@ -1435,6 +1435,13 @@ session can know the window. Wire it up in `settings.json` (requires `jq`):
 "statusLine": { "type": "command", "command": "/path/to/SOTA-skills/scripts/statusline.sh" }
 ```
 
+**Untrusted input.** The directory and branch names, the model name and the transcript are
+printed with control characters shown escaped (`^[`) and bidi / zero-width characters replaced,
+so a hostile repository name cannot clear the screen, retitle the window or write the clipboard
+(CWE-150). Skill names must match `[A-Za-z0-9:._-]`, and the context window is recorded only when
+the payload carries no `product` field: Antigravity CLI sends `"product": "antigravity"`, and its
+window must not be recorded as Claude Code's. `scripts/test-statusline.sh` checks each of these.
+
 ### Optional extras (for plugin users)
 
 The plugin installs the skills **and, since 2026-10-08, the always-on routing reminder** as its
