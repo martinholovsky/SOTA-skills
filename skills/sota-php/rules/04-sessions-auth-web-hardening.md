@@ -375,8 +375,10 @@ Run from repo root; verify each hit manually.
 
 - [ ] **Does an object property hold a secret as a plain string (§5a)? MEDIUM, HIGH when the object
       reaches `print_r`, `var_dump`, `var_export`, `serialize` or an error page**:
-      `grep -rniE '((readonly|static)[[:space:]]+)?(public|protected|private|var)([[:space:]]+(readonly|static))*([[:space:]]+[?]?(string|mixed)([|]null)?)?[[:space:]]+[$][a-z0-9_]*(pass(word|wd)?|pwd|secret|token|api_?key|private_?key)' --include='*.php' .`
+      `grep -rniE '((readonly|static)[[:space:]]+)?(public|protected|private|var)([[:space:]]+(readonly|static))*([[:space:]]+[?]?(string|mixed)([|]null)?)?[[:space:]]+[$][a-z0-9_]*(pass(word|wd|phrase)?|pwd|secret|token|api_?key|private_?key|credential|auth_?key|signing_?key)' --include='*.php' . | grep -viE '(:[0-9]+:([[:space:]]*([*]|//|#)))|(:[0-9]+:.*([$][a-z0-9_]*(pass(word|wd|phrase)?|pwd|secret|token|api_?key|private_?key|credential|auth_?key|signing_?key)[a-z0-9_]*_(is|equals|not|less|greater|in|ends|begins|bitwise|contains|between)[a-z]*))|(:[0-9]+:.*([$][a-z0-9_]*(pass(word|wd|phrase)?|pwd|secret|token|api_?key|private_?key|credential|auth_?key|signing_?key)[a-z0-9_]*(length|len|expir[a-z]*|date|history[0-9]*|hash|hashed|url|uri|id|name|type|field|file|path)[[:space:]]*[;=]))|(:[0-9]+:.*([$](_?(md5|sha[0-9]*|hashed?)[a-z0-9_]*(pass(word|wd|phrase)?|pwd|secret|token|api_?key|private_?key|credential|auth_?key|signing_?key))))|(:[0-9]+:.*([$]pass(cookies|thru|through|ive)))'`
       — read each hit: `#[\SensitiveParameter]` on a promoted property protects the trace only.
+      Comments, generated query-filter properties (`$Password_IsLike`) and names ending in a length,
+      date, expiry, history, hash, id or path are filtered out.
 - [ ] **Session config — effective values, not file greps alone** (§1) —
       `php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
       ; `grep -rl 'password_verify' --include='*.php' src/ | xargs -r grep -L 'session_regenerate_id'` (lists files that call `password_verify` but never regenerate the ID: HIGH);

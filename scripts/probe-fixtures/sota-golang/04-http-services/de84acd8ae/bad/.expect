@@ -1,0 +1,6 @@
+./config.go:4:	User, Password string
+./config.go:5:	DBPassword    *string `yaml:"db_password"`
+./config.go:6:	Pwd           string
+./signer.go:4:	SigningKey  string `json:",omitempty"`
+./signer.go:5:	Credential  []byte
+./signer.go:6:	TenantTokens map[string]string

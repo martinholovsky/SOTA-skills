@@ -1,0 +1,7 @@
+src/creds.py:10:    pwd: str = ''
+src/creds.py:7:    password: Optional[str] = None
+src/creds.py:8:    api_key: str | None = None
+src/creds.py:9:    private_key: Annotated[str, 'pem']
+src/signing.py:6:    signing_key: str
+src/signing.py:7:    credential: bytes
+src/signing.py:8:    passphrase: str = ''

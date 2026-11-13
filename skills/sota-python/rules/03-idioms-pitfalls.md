@@ -401,10 +401,13 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       `grep -rniE '(log|logger|logging)\.(debug|info|warning|error|exception|critical|log)\([^)]*(passw|secret|token|api_?key|credential)' --include="*.py" src/`
       (read the arguments: a credential passed to the call is the finding, while message
       text that only *names* one, such as "password reset for %s", also matches) ;
-      `grep -rniE '^[[:space:]]+[a-z_]*(passw|pwd|secret|token|api_?key|private_?key)[a-z_]*[[:space:]]*:[[:space:]]*(str|bytes|Optional\[str\]|Annotated\[str|"str"|str[[:space:]]*\|[[:space:]]*None)([^[:alnum:]_]|$)' --include="*.py" src/ | grep -v 'repr=False'`
+      `grep -rniE '^[[:space:]]+[a-z_]*(passw|pwd|secret|token|api_?key|private_?key|credential|passphrase|signing_?key)[a-z_]*[[:space:]]*:[[:space:]]*(str|bytes|Optional\[str\]|Annotated\[str|"str"|str[[:space:]]*\|[[:space:]]*None)([^[:alnum:]_]|$)' --include='*.py' src/ | grep -v 'repr=False' | grep -viE '(:[0-9]+:.*(,[[:space:]]*(#.*)?$))|(:[0-9]+:([[:space:]]+[a-z_]*(passw|pwd|secret|token|api_?key|private_?key|credential|passphrase|signing_?key)[a-z_]*_(type|kind|env|var|alphabet|hash|hashed|digest|url|uri|endpoint|id|ids|name|names|path|file|dir|count|len|length|limit|ttl|expiry|expires|expires_at|header|prefix|field|scope|scopes|format|regex|pattern)[[:space:]]*:))'`
       (a class field typed plain `str`: a dataclass `repr` prints it — measured,
       `Creds(user='bob', password='hunter2')` — so use `field(repr=False)` or `SecretStr`;
-      line-based, so a `field(` split over lines reads as a hit) ;
+      line-based, so a `field(` split over lines reads as a hit; a parameter on its own line of a
+      multi-line signature (it ends in `,`) and a name ending `_type`, `_env`, `_hash`, `_url`, `_id`,
+      `_path` or the like are filtered out, while an annotated local such as `token: str = params[…]`
+      still matches) ;
       `grep -rlE 'SecretStr' --include="*.py" src/ | xargs -r grep -L 'hide_input_in_errors'`
       (a pydantic model file with a `SecretStr` and no `hide_input_in_errors`: its validation
       errors print the value, §7)

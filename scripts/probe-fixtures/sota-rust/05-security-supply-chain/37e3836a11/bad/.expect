@@ -1,0 +1,5 @@
+./src/auth.rs:13:pub struct Out { token: String }
+./src/auth.rs:2:pub struct Token(String);
+./src/auth.rs:8:    pub api_key: Option<String>,
+./src/signer.rs:3:    pub signing_key: String,
+./src/signer.rs:4:    passphrase: Vec<u8>,

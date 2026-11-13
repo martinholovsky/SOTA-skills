@@ -38,6 +38,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fails it. A seventh (an object-type guard) changed nothing observable and was deleted. The status
   line stays in maintenance mode (ROADMAP: bug-fix only). The new segments drafted in this PR
   (prompt-cache countdown, plan usage, worktree, scratchpad, links) were parked on that rule.
+- **The "secret printed by value" probes, measured and tightened (ROADMAP 92).** Each language's
+  probe was scored on a labelled set of local code (466 design and 278 hold-out lines, labelled blind),
+  and changed only where the frozen candidate gained on the hold-out. Precision / recall on the
+  hold-out, before → after: Python .30/1.00 → .75/1.00, Go .60/.90 → .77/1.00, Rust .33/.26 → .43/.26,
+  JS/TS .15/.15 → .53/.79, PHP .35/1.00 → .50/1.00. C/C++ (.05) is unchanged: its candidate failed the
+  hold-out. JVM, .NET and Swift had no positive in local code (ROADMAP 93). Method and table:
+  `docs/LANGUAGE-TIER.md`.
+- **A probe stage that split paths on spaces** (`grep -rl | xargs grep`) never searched a directory
+  such as `DNN Platform/`, at a normal exit status. The Rust, Ruby, JVM and .NET items now pass
+  `--null` to `xargs -0`, checked on BSD grep, ugrep and GNU grep; each fixture holds a path with a
+  space. Invariant 33 had the same bug (`git ls-files` split on whitespace) and now reads `-z`.
+  The rest of the library: ROADMAP 94.
 
 ## [1.55.1] - 2026-11-12
 
