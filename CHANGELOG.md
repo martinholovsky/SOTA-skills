@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Verify a terminal-escape neutraliser on bytes, never on the screen** (`sota-cli-ux` rules/02 §4
+  + checklist). A jq neutraliser whose output showed as `xyz` really still held ESC and a C1 `NEL`
+  (`78 1b 79 85 7a`), and was read as a pass.
+- **jq inside a script: two traps that exit 0** (`sota-shell-scripting` rules/05 §4a + checklist).
+  A code point in a jq regex is `\x{HHHH}`: `"[\\u0000-\\u001f]"` kept ESC and deleted `[31m`
+  on jq 1.7.1 and 1.8.2. And `x?` on a wrong type yields no value, which ends the program at
+  exit 0 or drops an array slot and shifts every later field.
+- **The agent writing a test for the invisible-character gate is a likely author of the
+  character** (`sota-devsecops` rules/05 §5.6): build fixtures from escapes at test time, and run
+  the gate on the agent's own repository too.
+- **This repository now runs that gate on itself**: `scripts/check-invisible-chars.py` in
+  pre-commit and CI over every tracked text file (5,501 at landing, as CI printed it), with a two-path allow-list
+  that fails when stale and a self-test (16 cases; 6 of 6 mutations caught).
+- **The code-rules hook skips hyphenated test files** (`test-*`, `*-test.*`), this repository's
+  own convention, which it had read as shipped code. Two more known false triggers were pinned in
+  its self-test (jq `select(`, a read of `session_id`).
 - **`scripts/statusline.sh` neutralises untrusted text** (CWE-150, `sota-cli-ux` rules/02 §4). It
   printed the directory and branch names, the model name and transcript skill names raw, so a
   repository whose directory name holds `ESC[2J` or an OSC 52 sequence cleared the screen or wrote

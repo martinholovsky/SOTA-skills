@@ -115,12 +115,13 @@ exactly the blind spot that let it recur — the count was right both times. **T
 | **An ablation arm must actually differ from its baseline** (2026-09-01) | `run-prompt-independence.py` diffs each case's `pre` and `post` bundles and **aborts** when none differ — otherwise the ablation arm is a duplicate of the treatment wearing a different label, and reports a delta of zero as a result. Cases that *do* match are kept and read as the run's sampling-noise control instead of being dropped |
 | **A probe must assert its own mutation landed** (2026-08-16) | `check-negative-controls.sh probe()`: a stale hardcoded literal used to make the harness report the *gate* inert |
 
-### Gated in CI and pre-push, outside the invariant script (3, added 2026-10-21; the third 2026-10-28)
+### Gated in CI and pre-commit/pre-push, outside the invariant script (4, added 2026-10-21; the third 2026-10-28, the fourth 2026-11-10)
 
 | Convention | Where enforced |
 |---|---|
 | **Every audit-checklist `grep` probe runs** | `scripts/check-checklist-probes.py`, in CI's executable-claims job on both runners (BSD and GNU grep): an exit 2 that is not a missing path fails. Three filters: it had failed (two probes dead four weeks, four earlier); it was silent (`2>/dev/null`); it is mechanical (1,620 probes on 2026-10-21, 0 artefacts once double-backtick spans were parsed). It cannot tell a probe that runs and asks the wrong question |
 | **What a push publishes besides the tree carries no internal name** | `scripts/check-published-names.sh`: pre-push (branch name, unpushed commit messages) and CI on pull requests (plus title and body). Invariant 3's list, loaded the same way; in CI it names where a hit is, never the text |
+| **No invisible or bidi code point in tracked text** (2026-11-10) | `scripts/check-invisible-chars.py`, pre-commit and CI: every tracked text file, a two-path allow-list that fails when stale, and a `--self-test` CI also runs. Three filters: it had failed (an agent wrote a literal U+202E into a test fixture twice in one session, field report 2026-11-10); it was silent (the character renders as nothing, and nothing here scanned for it); it is mechanical (a code-point range). The library had told every reader to run this gate (`sota-devsecops` rules/05 §5.6) while this repository did not |
 | **A push does not reach CI with a stale skill map, shell lint below CI's severity, or a failing concept matrix** | `scripts/pre-push-ci-mirror.sh`, pre-push: CI's own three commands. Three filters: it had failed (red in CI after a local green on #608, 2026-10-25, #613, 2026-10-25, and #644, 2026-10-28), silently until CI, and mechanically. Limit: a local shellcheck may be older than CI's, so CI still decides |
 
 ### Judgment — correctly ungateable (≈18)
