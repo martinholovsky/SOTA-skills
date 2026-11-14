@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **ugrep's refused patterns, corrected** (`sota-shell-scripting` rules/06 §2f + checklist). An
+  unbounded `*`/`+` before the needle, when its class can match the needle's characters, counts as
+  the second side: `[a-z_]*_tp.{0,200}` is refused at exit 2. The threshold depends on the needle's
+  length (about `{0,16}` for one character, `{0,46}` for seven), not the single `{0,45}` stated
+  before. And `ugrep` called by name reads a BRE `\{0,200\}` as literal braces: exit 1, no error.
+- **A test can miss an over-read when the bytes after its input never change**
+  (`sota-testing` rules/02 §2.6 + checklist): send each case from a buffer whose tail differs.
+- **`scripts/session-load-audit.py` no longer counts a heredoc body as a read.** A rules file named
+  only in text being written (a report through `cat > r.md <<'EOF'`) appeared as read by the body
+  line's first word; it now shows as `Bash:heredoc`. New self-test case, watched failing first.
 - **Verify a terminal-escape neutraliser on bytes, never on the screen** (`sota-cli-ux` rules/02 §4
   + checklist). A jq neutraliser whose output showed as `xyz` really still held ESC and a C1 `NEL`
   (`78 1b 79 85 7a`), and was read as a pass.
