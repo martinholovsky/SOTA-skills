@@ -389,10 +389,12 @@ func (Secret) MarshalText() ([]byte, error) { return []byte("[REDACTED]"), nil }
 
 - [ ] **Does a secret live in a plain `string` or `[]byte` struct field (§5)? HIGH when the struct
       is logged, wrapped into an error or marshalled**:
-      `grep -rnE '^[[:space:]]+([A-Za-z0-9_]+[[:space:]]*,[[:space:]]*)*[A-Za-z0-9_]*([Pp]ass(word|wd)?|[Pp]wd|[Ss]ecret|[Tt]oken|[Aa][Pp][Ii][Kk]ey|[Pp]rivate[Kk]ey)[A-Za-z0-9_]*([[:space:]]*,[[:space:]]*[A-Za-z0-9_]+)*[[:space:]]+(\*?string|\[\]byte|\[\]string)([[:space:]].*)?$' --include='*.go' .`
+      `grep -rnE '^[[:space:]]+([A-Za-z0-9_]+[[:space:]]*,[[:space:]]*)*[A-Za-z0-9_]*([Pp]ass(word|wd|phrase)?|[Pp]wd|[Ss]ecret|[Tt]oken|[Aa][Pp][Ii][Kk]ey|[Pp]rivate[Kk]ey|[Ss]igning[Kk]ey|[Cc]redential)[A-Za-z0-9_]*([[:space:]]*,[[:space:]]*[A-Za-z0-9_]+)*[[:space:]]+(\*?string|\[\]byte|\[\]string|map\[string\]string)([[:space:]].*)?$' --include='*.go' . | grep -vE '(:[0-9]+:([[:space:]]+([A-Za-z0-9_]+[[:space:]]*,[[:space:]]*)*[A-Za-z0-9_]*([Pp]ass(word|wd|phrase)?|[Pp]wd|[Ss]ecret|[Tt]oken|[Aa][Pp][Ii][Kk]ey|[Pp]rivate[Kk]ey|[Ss]igning[Kk]ey|[Cc]redential)[A-Za-z0-9_]*(ID|Id|IDs|Name|Names|Namespace|Group|URL|Url|URI|Uri|Endpoint|Type|Kind|Path|File|Dir|Ref|Selector|Env|Header|Prefix|Count|Len|Length|TTL|Expiry|ExpiresAt|Field|Hash|Key[Ii][Dd]|Format|Scope|Scopes)[[:space:]]))'`
       — read each hit. The fix is a type with `String`, `GoString`, `MarshalJSON`, `MarshalText`
       and `LogValue`; `LogValue` alone still leaks through `fmt`, errors, JSON and a logged parent
-      struct. A field inside an anonymous struct literal on one line is missed.
+      struct. A field inside an anonymous struct literal on one line is missed. The second stage drops
+      names that refer to a secret rather than hold it (`…ID`, `…Name`, `…Namespace`, `…URL`, `…Type`,
+      `…Path`, `…Hash`); a package-level `var` in a `var (…)` block still matches and is read the same way.
 - [ ] **Invalid UTF-8 stored or forwarded (§1; [rules/05](05-security.md) §1) — MEDIUM, HIGH when the text feeds
       another parser** — files that turn a body into a string and never validate it:
       `grep -rlE 'string\((body|b|buf|data|raw)\)|io\.ReadAll' --include='*.go' . | while IFS= read -r f; do grep -qE 'utf8\.(Valid|ValidString)' "$f" || echo "$f"; done`

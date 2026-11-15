@@ -486,5 +486,5 @@ cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under 
       (a record or data class holding a credential: the generated `toString` prints it
       unless overridden; a declaration split over lines is missed, so read every record and data
       class in a file that names a credential) ;
-      `grep -rlE '@(Data|ToString|Value)([^A-Za-z]|$)' --include='*.java' . | xargs -r grep -niE '(private|protected|public)?[[:space:]]*(final[[:space:]]+)?String[[:space:]]+[a-z0-9_]*(passw|secret|token|api_?key|credential)'`
+      `grep -rlE --null '@(Data|ToString|Value)([^A-Za-z]|$)' --include='*.java' . | xargs -0 -r grep -HniE '(private|protected|public)?[[:space:]]*(final[[:space:]]+)?String[[:space:]]+[a-z0-9_]*(passw|secret|token|api_?key|credential)'`
       (a Lombok class whose generated `toString` prints the field: needs `@ToString.Exclude`)

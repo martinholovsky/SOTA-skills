@@ -199,6 +199,13 @@ shell running the loop, and the session died with exit 255 (field-reported 2026-
   the shell running it after the identical line passed locally — the mechanism behind
   [`rules/01`](01-safety-baseline.md) §3's platform split (field-reported 2026-10-24; that
   session's remote failure stays unconfirmed, since its retry changed two things at once).
+- **The opposite failure: the command line you match is the one the kernel shows, not the one
+  you typed.** Homebrew's framework Python on macOS re-execs through `Python.app`, so `python3
+  -I job.py` is listed as `…/Resources/Python.app/Contents/MacOS/Python -I job.py`. Then
+  `pgrep -f 'python3 -I'` prints nothing for a running job, while `pgrep -f 'job.py'` finds
+  it. `exec -a NAME` does the same to argv[0]. Measured 2026-11-15, python@3.14.8. An empty
+  `pgrep` is an absence claim ([rules/06](06-ad-hoc-commands.md) §2): a field session read one
+  as "not running" and started a second writer.
 
 Kill by an identity you obtained **without** substring matching: `$!` saved at launch, a PID
 file, or the port's owner (`ss -lptn 'sport = :PORT'`, `lsof -ti :PORT`). If you must match,
@@ -212,7 +219,8 @@ your ancestors, and anything whose command line is your own command. Then act on
       matches the selecting shell, and in an agent harness or under `ssh host '…'` its parent
       too, whenever the plain pattern appears in their argv. Sweep for the shape with
       `grep -nE '(pkill|pgrep) -f|/proc/\*/cmdline|ps [^|]*\| *grep' <file>`, and act on PIDs taken
-      from `$!`, a PID file or a port.
+      from `$!`, a PID file or a port. The same selection also misses a target whose argv[0]
+      was rewritten (framework Python, `exec -a`), so an empty result never means "not running".
 
 - [ ] **A search filter next to a named file** (§5b): does any `grep` command combine
       `--include` with an explicitly named file the glob does not match? The named file

@@ -453,8 +453,10 @@ Running external programs (formerly section 9) moved to
 - [ ] Panic surface in handlers (§4): run [rules/02](02-errors-and-panics.md) checklist scoped to
       request-reachable code; `rg 'with_capacity\(' -t rust` where the arg
       derives from input = High.
-- [ ] `grep -rlE '#\[derive\(([^]]*(Debug|Serialize)|[[:space:]]*$)' --include='*.rs' . | xargs -r grep -nE '[a-z0-9_]*(passw|pwd|secret|token|api_?key|private_?key)[a-z0-9_]*[[:space:]]*:[[:space:]]*(Option<)?(String|&[^,]*str|Vec<u8>|\[u8;)|[A-Za-z0-9_]*(Passw|Pwd|Secret|Token|ApiKey|PrivateKey)[A-Za-z0-9_]*[(](pub[[:space:]]+)?(String|Vec<u8>)'`
-      (a raw secret, named or tuple field, in a file deriving `Debug` or `Serialize`); `rg '==' -t rust` comparing MACs/tokens (want `ct_eq`);
+- [ ] `grep -rlE --null '#\[derive\(([^]]*(Debug|Serialize)|[[:space:]]*$)' --include='*.rs' . | xargs -0 -r grep -HnE '[a-z0-9_]*(passw|pwd|secret|token|api_?key|private_?key|credential|passphrase|signing_?key)[a-z0-9_]*[[:space:]]*:[[:space:]]*(Option<)?(String|&[^,]*str|Vec<u8>|\[u8;)|[A-Za-z0-9_]*(Passw|Pwd|Secret|Token|ApiKey|PrivateKey|Credential|Passphrase|SigningKey)[A-Za-z0-9_]*[(](pub[[:space:]]+)?(String|Vec<u8>)' | grep -vE '(:[0-9]+:(.*[^A-Za-z0-9_])?fn[[:space:]])|(:[0-9]+:.*([Tt]okeni[sz]|token_to_id|special_tokens))|(:[0-9]+:.*([a-z0-9_]*(passw|pwd|secret|token|api_?key|private_?key|credential|passphrase|signing_?key)[a-z0-9_]*_(path|paths|file|files|dir|class|url|uri|id|ids|name|names|type|kind|len|count|hash|env|var)[[:space:]]*:))|(:[0-9]+:.*((Passw|Pwd|Secret|Token|ApiKey|PrivateKey)[A-Za-z0-9_]*Hash[(]))'`
+      (a raw secret, named or tuple field, in a file deriving `Debug` or `Serialize`; `fn` signatures,
+      tokenizer words and names ending `_path`, `_file`, `_name`, `_id` or `_hash` are filtered out, and a
+      struct-literal initialiser `token: value,` is not a declaration and is missed); `rg '==' -t rust` comparing MACs/tokens (want `ct_eq`);
       secrets not in `SecretString`/`Zeroizing` = Medium-High (§5).
 - [ ] `rg 'thread_rng|rand::rng\(|SmallRng|StdRng::seed|seed_from_u64' -t rust` in
       key/nonce/token generation paths → require the OS RNG (`SysRng` in rand

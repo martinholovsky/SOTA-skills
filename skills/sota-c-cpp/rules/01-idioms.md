@@ -401,7 +401,7 @@ existing parameter means.
       `grep -rnE -e '-Wno-(error=)?reorder' --include='CMakeLists.txt' --include='*.cmake' . ; grep -rqE -e '-Wall|-Wreorder' --include='CMakeLists.txt' --include='*.cmake' . || echo "no -Wall/-Wreorder in the CMake build: member-init order is unchecked"`
 - [ ] **Virtual call from a ctor/dtor dispatches to the BASE (measured) (§8a), and a pure one is UB:
       each hand-written operator= must be self-assignment safe (copy-and-swap, or a guard)** —
-      `grep -rnE '^\s*(virtual |[A-Z][A-Za-z0-9_]*::)?~?[A-Z][A-Za-z0-9_]*\s*\([^)]*\)\s*(:|\{)' --include='*.cpp' . | head`
+      `command grep -rnE '^\s*(virtual |[A-Z][A-Za-z0-9_]*::)?~?[A-Z][A-Za-z0-9_]*\s*\([^)]*\)\s*(:|\{)' --include='*.cpp' . | head`
       lists out-of-line ctors/dtors; each hit is read, not a finding (read each body for a virtual call);
       `grep -rn 'operator=' --include='*.cpp' --include='*.h' . | grep -v 'delete\|default'`
 - [ ] **Public surface / ABI (§9) — layout is part of a released header's contract THE question,

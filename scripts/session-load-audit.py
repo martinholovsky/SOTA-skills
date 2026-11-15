@@ -54,7 +54,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -207,6 +207,61 @@ def lib_rel(token: str) -> str | None:
     return m.group(0).rstrip("/") if m else None
 
 
+def _lib_cwd(seg: Sequence[str]) -> str | None:
+    """The library directory a `cd` segment enters, as a `skills/...` prefix, else None.
+    `cd ~/.claude/skills` carries no `skills/` token, so before 2026-11-15 every read made
+    relative to it (`cd ~/.claude/skills && awk … sota-rust/rules/03-….md`) was neither listed
+    nor counted as unresolved (field report 2026-11-15, F2)."""
+    args = list(seg[seg.index("cd") + 1:]) if "cd" in seg else []
+    args = [a for a in args if not a.startswith("-")]
+    if not args:
+        return None
+    arg = args[0].rstrip("/")
+    if re.search(r"(^|/)skills$", arg):
+        return "skills"
+    return lib_rel(arg + "/")
+
+
+def _lib_candidate(tok: str, cwd: str | None) -> str | None:
+    """A token naming a library path: as written when it carries `skills/`, or relative to a
+    library directory entered with `cd` earlier in the same command."""
+    if "skills/" in tok:
+        return tok
+    if not cwd or tok.startswith(("/", "~", "$", "-")) or "/" not in tok and not tok.endswith(".md"):
+        return None
+    cand = cwd + "/" + (tok[2:] if tok.startswith("./") else tok)
+    return cand if lib_rel(cand) else None
+
+
+_HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+
+
+def _split_heredocs(cmd: str) -> tuple[str, list[str]]:
+    """(the command without its heredoc bodies, the bodies). A path inside a body is text fed to a
+    command (a report being written, a script's source), not a read by the word that starts the
+    body's line: before 2026-11-14 a report written through `cat > r.md <<'EOF'` listed every rules
+    file it named as an access by `Bash:<its first word>`. `<<<` here-strings are not heredocs."""
+    out: list[str] = []
+    bodies: list[str] = []
+    pending: list[tuple[bool, str]] = []
+    cur: list[str] = []
+    for ln in cmd.split("\n"):
+        if pending:
+            dash, delim = pending[0]
+            if (ln.lstrip("\t") if dash else ln) == delim:
+                bodies.append("\n".join(cur))
+                cur = []
+                pending.pop(0)
+            else:
+                cur.append(ln)
+            continue
+        out.append(ln)
+        pending += [(m.group(1) == "-", m.group(3)) for m in _HEREDOC.finditer(ln)]
+    if cur:
+        bodies.append("\n".join(cur))
+    return "\n".join(out), bodies
+
+
 def _segments(cmd: str) -> list[tuple[list[str], str]]:
     """Each simple command with the operator that follows it ('|' means its output is filtered)."""
     lex = shlex.shlex(cmd.replace("\n", " ; "), posix=True, punctuation_chars=True)
@@ -319,15 +374,39 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                     Access(c.id, c.ts, c.turn, "Read", "read", (start, end), start <= 1 and end >= n > 0))
         elif c.name == "Bash":
             bash.append(c)
-            if "skills/" not in c.command:
+            if "skills" not in c.command:
                 continue
-            segs = _segments(c.command)
+            outside, bodies = _split_heredocs(c.command)
+            for body in bodies:
+                for tok in sorted(set(re.findall(r"\S*skills/\S+", body))):
+                    rel = lib_rel(tok.strip("`'\"()[]{},;:."))
+                    if rel and rel.endswith(".md") and "*" not in rel and (lib / rel).is_file():
+                        by_file.setdefault(rel, []).append(
+                            Access(c.id, c.ts, c.turn, "Bash:heredoc", "other", None, False))
+            segs = _segments(outside)
+            cwd: str | None = None              # a `cd` into the library earlier in this command
+            loops: dict[str, list[str]] = {}    # `for VAR in <library paths>` -> those paths
+            used: set[str] = set()
+            entered = resolved = False
             for i, (seg, op) in enumerate(segs):
                 verb = _verb(seg)
-                for tok in seg:
-                    if "skills/" not in tok:
-                        continue
+                if verb == "cd":
+                    cwd = _lib_cwd(seg)
+                    entered = entered or cwd is not None
+                    continue
+                if verb == "for" and len(seg) >= 3 and seg[seg.index("for") + 2:seg.index("for") + 3] == ["in"]:
+                    k = seg.index("for")
+                    loops[seg[k + 1]] = [p for p in (_lib_candidate(t, cwd) for t in seg[k + 3:]) if p]
+                    continue
+                toks = [p for p in (_lib_candidate(t, cwd) for t in seg) if p]
+                for var, paths in loops.items():
+                    if any(t in (f"${var}", f"${{{var}}}") for t in seg):
+                        toks += paths
+                        used.add(var)
+                for tok in toks:
                     rel = lib_rel(tok)
+                    if rel and (lib / rel).is_file():
+                        resolved = True
                     if not rel:
                         other["unresolved library mentions"] += 1
                         continue
@@ -354,6 +433,17 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                         kind, rng, whole = "other", None, False
                     by_file.setdefault(rel, []).append(
                         Access(c.id, c.ts, c.turn, f"Bash:{verb or '?'}", kind, rng, whole))
+            for var, paths in loops.items():           # a loop whose body named no reader of $VAR
+                if var in used:
+                    continue
+                for p in paths:
+                    rel = lib_rel(p)
+                    if rel and rel.endswith(".md") and "*" not in rel and (lib / rel).is_file():
+                        resolved = True
+                        by_file.setdefault(rel, []).append(
+                            Access(c.id, c.ts, c.turn, "Bash:for", "other", None, False))
+            if entered and not resolved:               # went into the library, named nothing we resolve
+                other["unresolved library mentions"] += 1
     return by_file, other, edits, bash
 
 
@@ -690,23 +780,56 @@ def loaded_rules(r: dict | None) -> set[str] | None:
             and set(f["kinds"]) & {"read", "search", "invoke"}}
 
 
-def join(r: dict | None, d: dict) -> dict:
+def first_load(r: dict, rel: str) -> str:
+    """Earliest read/search/invoke of REL; "" when the row carries no per-access timestamps."""
+    f = next((x for x in r["files"] if x["file"] == rel), None)
+    ts = [a["ts"] for a in (f or {}).get("accesses", [])
+          if a.get("kind") in {"read", "search", "invoke"} and a.get("ts")]
+    return min(ts, default="")
+
+
+def code_edit_cutoff(s: Session, repo: Path, changed: Iterable[str]) -> str:
+    """The last Edit/Write the transcript records on a file in the diff. A rules file first read after
+    it was not in front of the session while the code was written. 2026-11-15 field report: five rules
+    files read while WRITING THE REPORT were tabled as 'loaded', which turned a routing gap into 'rule
+    shape'. "" when no such edit is recorded (code written by Bash, or in another session)."""
+    targets = {str((repo / c).resolve()) for c in changed}
+    hits = [c.ts for c in s.calls if c.name in EDIT_TOOLS and c.ts and c.file_path
+            and str(Path(c.file_path).resolve()) in targets]
+    return max(hits, default="")
+
+
+def join(r: dict | None, d: dict, cutoff: str = "") -> dict:
     """The 2x2 per rules file: loaded (transcript) x new probe hits (built code), and the bounded
-    verdict-walk set /sota-report asks for: every loaded rules file plus every file with a new hit."""
+    verdict-walk set /sota-report asks for: every loaded rules file plus every file with a new hit.
+    With CUTOFF (code_edit_cutoff), a file first read after it counts as read too late, not loaded."""
     loaded = loaded_rules(r)
+    late: set[str] = set()
+    if loaded is not None and cutoff:
+        late = {rel for rel in loaded if (t := first_load(r, rel)) and t > cutoff}
+        loaded -= late
     hit_files = sorted({h["rules_file"] for h in d["hits"] if h["new"]})
     rows = []
     for rel in hit_files:
-        state = "unknown (no transcript)" if loaded is None else (
-            "loaded + new hit: rule shape, if the walk confirms it" if rel in loaded
-            else "not loaded + new hit: routing gap, if the walk confirms it")
+        if loaded is None:
+            state = "unknown (no transcript)"
+        elif rel in loaded:
+            state = "loaded + new hit: rule shape, if the walk confirms it"
+        elif rel in late:
+            state = "read only after the code was written + new hit: routing gap, if the walk confirms it"
+        else:
+            state = "not loaded + new hit: routing gap, if the walk confirms it"
         rows.append({"rules_file": rel, "quadrant": state,
                      "new_hits": sum(h["new"] for h in d["hits"] if h["rules_file"] == rel)})
     for rel in sorted(loaded or ()):
         if rel not in hit_files:
             rows.append({"rules_file": rel, "quadrant": "loaded, no new mechanical hit", "new_hits": 0})
-    walk = sorted((loaded or set()) | set(hit_files))
-    return {"quadrants": rows, "verdict_walk": walk}
+    for rel in sorted(late):
+        if rel not in hit_files:
+            rows.append({"rules_file": rel, "new_hits": 0,
+                         "quadrant": "read only after the code was written, no new mechanical hit"})
+    walk = sorted((loaded or set()) | late | set(hit_files))
+    return {"quadrants": rows, "verdict_walk": walk, "code_edit_cutoff": cutoff}
 
 
 def diff_markdown(d: dict, j: dict, show_hits: bool) -> str:
@@ -730,6 +853,11 @@ def diff_markdown(d: dict, j: dict, show_hits: bool) -> str:
     if show_hits:
         L += ["", "New hits (PRIVATE, local use only; never paste into a report):"]
         L += [f"- `{h['probe']}` {w}" for h in d["hits"] for w in h["where"]]
+    if "code_edit_cutoff" in j:
+        L += ["", f"Loaded = first read at or before the last Edit/Write of a changed file "
+                  f"({j['code_edit_cutoff']})." if j["code_edit_cutoff"] else
+              "No Edit/Write of a changed file in the transcript (written by Bash, or elsewhere): "
+              "loaded counts every read, including any made after the code was written."]
     L += ["", "| Rules file | Loaded x new hit |", "|---|---|"]
     L += [f"| `{q['rules_file']}` | {q['quadrant']} |" for q in j["quadrants"]] or ["| none | |"]
     L += ["", "Verdict walk (met / not met / not applicable with reason / not checked, per checklist item):"]
@@ -767,11 +895,13 @@ def main(argv: Sequence[str]) -> int:
         return self_test()
     lib = a.library.resolve()
     d = j = None
+    repo_top: Path | None = None
     if a.diff:
         top = _git(a.repo, "rev-parse", "--show-toplevel")
         if top.returncode != 0:
             return _fail(f"--repo {a.repo} is not inside a git repository: {top.stderr.strip()}", a.json)
-        d, err = diff_probes(Path(top.stdout.strip()), a.diff, lib)
+        repo_top = Path(top.stdout.strip())
+        d, err = diff_probes(repo_top, a.diff, lib)
         if err:
             return _fail(err, a.json)
         if not a.transcripts and not a.cwd:
@@ -801,8 +931,9 @@ def main(argv: Sequence[str]) -> int:
         return _fail(f"0 tool calls in {len(paths)} transcript(s): not a session transcript, or the "
                      f"format changed; refusing to report an empty audit", a.json)
     r = build(s, lib)
-    if d is not None:
-        j = join(r, d)
+    if d is not None and repo_top is not None:
+        changed, _ = diff_scope(repo_top, a.diff)
+        j = join(r, d, code_edit_cutoff(s, repo_top, changed))
         if not a.show_hits:
             for h in d["hits"]:
                 h.pop("where")
@@ -919,6 +1050,38 @@ def self_test() -> int:
                       encoding="utf-8")
         md4 = markdown(build(parse([p4]), ROOT))
         check("\x1b" not in md4, "an ESC from a transcript id reached the output")
+        # a path inside a heredoc body is text being written, not a read (field report 2026-11-14);
+        # the command after the heredoc operator on the same line is still a read (control)
+        p5 = Path(d) / "heredoc.jsonl"
+        p5.write_text(json.dumps(asst("2026-01-01T00:00:01Z", tu("t_hd", "Bash", {"command":
+            f"cat > /x/r.md <<'EOF' && cat {other}\nI never opened {rules} here.\nEOF\npython3 - <<-X\n\tsee {rules}\n\tX"}))) + "\n",
+            encoding="utf-8")
+        f5 = {x["file"]: x for x in build(parse([p5]), ROOT)["files"]}
+        tools5 = {a["tool"] for a in f5.get(rules, {}).get("accesses", [])}
+        check(tools5 == {"Bash:heredoc"} and f5[rules]["checklist_read"] != "yes",
+              f"a heredoc body's path must read as Bash:heredoc, never a read: {tools5}")
+        check(f5.get(other, {}).get("checklist_read") == "yes", "the cat after the heredoc operator is still a read")
+        # a read relative to a `cd` into the library (field report 2026-11-15, F2): listed, through
+        # a `for` loop too; a `cd` that names nothing is unresolved; a `cd` elsewhere resolves nothing
+        rel_rules, rel_other = rules.removeprefix("skills/"), other.removeprefix("skills/")
+        third = "skills/sota-testing/rules/02-test-design-quality.md"
+        check((ROOT / third).is_file(), "fixture premise: the third library file exists")
+        p6 = Path(d) / "cd.jsonl"
+        p6.write_text("\n".join(json.dumps(x) for x in (
+            asst("2026-01-01T00:00:01Z", tu("t_cd1", "Bash", {"command":
+                f"cd ~/.claude/skills && for f in {rel_rules}; do awk '/^## Audit/{{p=1}} p' \"$f\" | head -40; done"})),
+            asst("2026-01-01T00:00:02Z", tu("t_cd2", "Bash", {"command": f"cd /x/skills/ && cat {rel_other}"})),
+            asst("2026-01-01T00:00:03Z", tu("t_cd3", "Bash", {"command": "cd ~/.claude/skills && ls"})),
+            asst("2026-01-01T00:00:04Z", tu("t_cd4", "Bash", {"command": f"cd /elsewhere && cat {third.removeprefix('skills/')}"})),
+        )) + "\n", encoding="utf-8")
+        r6 = build(parse([p6]), ROOT)
+        f6 = {x["file"]: x for x in r6["files"]}
+        check({a["tool"] for a in f6.get(rules, {}).get("accesses", [])} == {"Bash:awk"},
+              f"a for-loop read relative to `cd skills` must list the file as Bash:awk: {sorted(f6)}")
+        check(f6.get(other, {}).get("checklist_read") == "yes", "cat relative to `cd …/skills/` is a whole-file read")
+        check(r6["other"]["unresolved library mentions"] == 1,
+              f"`cd skills && ls` is one unresolved mention: {r6['other']['unresolved library mentions']}")
+        check(len(f6) == 2, f"a relative path after `cd /elsewhere` is not a library read: {sorted(f6)}")
     # ---- diff mode, in a throwaway repo: one pre-existing hit, two new ones (modified + untracked)
     crypto = "skills/sota-golang/rules/05-security.md"
     seed_probe = [s for s in ccp.probes_in((ROOT / crypto).read_text(encoding="utf-8"))
@@ -960,6 +1123,21 @@ def self_test() -> int:
             j_out = join({"files": []}, dp)
             check(any(q["rules_file"] == crypto and "routing gap" in q["quadrant"] for q in j_out["quadrants"]),
                   "not loaded + new hit -> routing gap")
+            # a read made only after the code was written (e.g. while writing the report) is not "loaded"
+            timed = {"files": [{"file": crypto, "kinds": ["read"],
+                                "accesses": [{"ts": "2026-11-15T21:38:00Z", "kind": "read"}]}]}
+            j_late = join(timed, dp, "2026-11-15T19:35:00Z")
+            check(any(q["rules_file"] == crypto and q["quadrant"].startswith("read only after")
+                      and "routing gap" in q["quadrant"] for q in j_late["quadrants"]),
+                  "read after the last code edit + new hit -> routing gap, not rule shape")
+            check(crypto in j_late["verdict_walk"], "a file read too late stays in the verdict walk")
+            j_early = join(timed, dp, "2026-11-15T22:00:00Z")
+            check(any(q["rules_file"] == crypto and q["quadrant"].startswith("loaded + new hit")
+                      for q in j_early["quadrants"]), "read before the last code edit -> loaded")
+            sess = Session(calls=[Call("e1", "Edit", "2026-11-15T19:35:00Z", 1, file_path=str(repo / "app/new.go")),
+                                  Call("e2", "Edit", "2026-11-15T21:40:00Z", 2, file_path=str(repo / "REPORT.md"))])
+            check(code_edit_cutoff(sess, repo, ["app/new.go", "app/old.go"]) == "2026-11-15T19:35:00Z",
+                  "cutoff is the last edit of a CHANGED file; a later edit to the report is ignored")
             for x in dp["hits"]:
                 x.pop("where", None)
             md5 = diff_markdown(dp, j_in, False)
@@ -969,7 +1147,7 @@ def self_test() -> int:
         return 1
     print(f"ok self-test: {ran[0]} checks over synthetic transcripts (dedupe, Bash readers and pipes, "
           "checklist range, re-read ordering, probe match, language heuristic, privacy, control chars, "
-          "empty refusal)")
+          "empty refusal, heredoc bodies)")
     return 0
 
 

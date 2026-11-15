@@ -78,7 +78,9 @@ CODE_EXT = {"py", "pyi", "go", "rs", "c", "h", "cc", "cpp", "cxx", "hpp", "java"
 # generic rows almost always falsely, while these three rows held 28/30, 13/14 and 9/9 on YAML,
 # .conf and friends. JSON stays out: its hits were i18n strings and LLM transcripts.
 CONFIG_EXT = {"yml", "yaml", "j2", "conf", "service", "toml"}
-TEST_PATH = re.compile(r"(^|/)(tests?|spec|__tests__)/|(^|/)test_[^/]*$|_test\.\w+$|\.(test|spec)\.\w+$")
+# `test_x` and `test-x`, `x_test` and `x-test`: the hyphenated forms are this repository's own
+# convention (scripts/test-*.sh), which the underscore-only pattern missed (field report 2026-11-10).
+TEST_PATH = re.compile(r"(^|/)(tests?|spec|__tests__)/|(^|/)test[_-][^/]*$|[_-]test\.\w+$|\.(test|spec)\.\w+$")
 # An agent's scratchpad holds proofs of concept and probes, not shipped code: the same reason tests
 # are skipped. Operator decision 2026-10-23, after 5 false triggers there and none useful.
 SCRATCH_PATH = re.compile(r"(^|/)scratchpad/")
@@ -492,6 +494,11 @@ def self_test() -> int:
         check("MultiEdit edits are read", "Zip Slip" in c)
         for label, e in (("test file is silent", ev("s6", "/w/tests/test_export.py", "import csv")),
                          ("test_ prefix is silent", ev("s6", "/w/test_export.py", "import csv")),
+                         # hyphenated names, this repository's own convention (scripts/test-*.sh);
+                         # field-reported 2026-11-10: every test here was read as shipped code
+                         # (own sessions: in s6 a first fire would hide the second, once per session)
+                         ("test- prefix is silent", ev("s6a", "/w/scripts/test-export.sh", "import csv")),
+                         ("-test suffix is silent", ev("s6b", "/w/scripts/export-test.sh", "import csv")),
                          ("scratchpad file is silent", ev("s6", "/tmp/claude-1/x/scratchpad/poc.py", "import csv")),
                          ("markdown is silent", ev("s6", "/w/README.md", "export as csv")),
                          ("no trigger is silent", ev("s6", "/w/a.py", "x = 1 + 2\n")),
@@ -507,6 +514,10 @@ def self_test() -> int:
         check("config: JSON is not read", rc == 0 and c == "")
         rc, c, _ = run(ev("s12", "/w/app/scratchpad_utils.py", "import csv\n"))
         check("a shipped file NAMED like scratchpad still fires (segment, not substring)", "01-" in c)
+        # The test-name filter must not swallow shipped files that merely contain "test".
+        for i, path in enumerate(("/w/scripts/latest.sh", "/w/app/contest_x.py", "/w/app/testimony.py")):
+            rc, c, _ = run(ev("s13-%d" % i, path, "import csv\n"))
+            check("a shipped file containing 'test' still fires: %s" % path.rsplit("/", 1)[1], "01-" in c)
         rc, c, _ = run(ev("s7", "/w/a.py", "import csv"), {"SOTA_CODE_RULES_HOOK": "off"})
         check("opt-out is silent", rc == 0 and c == "")
         # Two copies on one edit (plugin + installer, run in parallel) must not both name a file.
@@ -561,7 +572,11 @@ def self_test() -> int:
                        # 2026-11-01 field reports: a lint name containing "circuit", and a probe of a
                        # hard-coded loopback URL inside a --network none container
                        ("calls something that can fail or hang", 'LINTS = ["clippy::short_circuit_statement"]'),
-                       ("fetches a URL", 'r = urllib.request.urlopen("http://127.0.0.1:8080/readyz")')):
+                       ("fetches a URL", 'r = urllib.request.urlopen("http://127.0.0.1:8080/readyz")'),
+                       # 2026-11-10 field report: jq's select() in a shell script (re.I), and a status
+                       # line that only reads session_id from its input
+                       ("builds a database query", "jq -r '.items[] | select(.ok)' <in.json"),
+                       ("issues or checks a session or token", 'key="$(printf %s "$session_id" | cksum)"')):
         check("known false trigger still fires (see the deferral before changing): %s" % what,
               fires(what, text))
 

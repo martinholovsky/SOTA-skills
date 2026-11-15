@@ -306,8 +306,8 @@ testpaths = ["tests"]
       (N+1 candidates); `grep -rn "count() > 0\|len(.*objects" --include="*.py" src/` (exists()
       instead); `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` ([HIGH if
       interpolated]); `git log --oneline -- '**/migrations/*.py' | head` (edited-after-merge
-      migrations?); `grep -rq "makemigrations --check" .github/ .gitlab-ci.yml || echo "no makemigrations --check gate"`
-      (the message = no drift gate); `grep -rq "check --deploy" .github/ .gitlab-ci.yml || echo "no check --deploy gate"`
+      migrations?); `command grep -rq "makemigrations --check" .github/ .gitlab-ci.yml || echo "no makemigrations --check gate"`
+      (the message = no drift gate); `command grep -rq "check --deploy" .github/ .gitlab-ci.yml || echo "no check --deploy gate"`
       (the message → LOW, no deploy-settings gate, §2)
 - [ ] **--- App-set cookies: Secure / HttpOnly / SameSite flags (§2 cookies) --- [HIGH for an
       auth or identity token; MEDIUM for a preference]** —

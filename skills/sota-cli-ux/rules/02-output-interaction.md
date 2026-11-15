@@ -106,6 +106,12 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   Escape C0 (except `\n`, `\t`), `DEL`, C1 and `ESC` in data you did not
   produce (e.g. as `\x1b` or `^[`); the tool's own styling is added after. The
   log-file path of the same flaw is CWE-117 ([`sota-code-security` rules/07](../../sota-code-security/rules/07-data-exposure.md)).
+- **Verify the neutraliser on bytes, never on the screen.** A terminal interprets the very
+  bytes under test, so output that still carries `ESC` renders as clean text: a jq
+  neutraliser whose result showed as `xyz` was really `78 1b 79 85 7a`, with `ESC` and C1 `NEL`
+  intact, and was read as a pass (field-reported 2026-11-10; the cause was jq regex syntax,
+  [`sota-shell-scripting` rules/05](../../sota-shell-scripting/rules/05-constructs-and-cleanup.md) §4a). Pipe the result through `od -c` (or print a
+  `repr`), with a fixture holding `ESC`, a C1 code point and a bidi override, and assert none survives.
 
 ## 5. Streaming & progress
 
@@ -223,6 +229,7 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
 - [ ] Data on stdout only; logs/progress/prompts/errors on stderr; verified by `tool cmd >out 2>err` inspection (§1).
 - [ ] `tool list | jq .` works: no ANSI, no banner, no log lines in the stream (§1).
 - [ ] Untrusted strings (filenames, remote fields, commit text) printed to a TTY have control characters and `ESC` escaped — try a name containing `\x1b[2J` (CWE-150) (§4).
+- [ ] The neutraliser's test reads its output as bytes (`od -c`, `repr`), never as rendered text, with a fixture holding `ESC`, a C1 code point and a bidi override (§4).
 - [ ] `--json` (or `-o json`) on every list/read command; NDJSON for streams; JSON-mode errors are JSON with `code`/`message` fields and a nonzero exit; fields treated as versioned API (§2).
 - [ ] Human tables: no borders; `--plain`/`--no-header` or auto-plain when piped (§2).
 - [ ] Exit codes: 0 only on full success; usage errors = 2 (or a documented `64`, consistently); distinct documented codes for failure classes; partial failure ≠ 0; no `exit 0` in catch-all handlers (§3).

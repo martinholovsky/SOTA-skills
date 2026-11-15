@@ -422,7 +422,7 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
 - [ ] **Install-time code execution re-enabled or unreviewed (§"npm supply chain") (§5) — HIGH** —
       `grep -rnE 'dangerously-allow-all-scripts|no-allow-scripts-pin|allow-scripts-pin *= *false|ignore-scripts *= *false|enableScripts: *true|approve-scripts +--all|install-scripts +approve +--all|dangerouslyAllowAllBuilds: *true|allow-(git|remote) *= *all|bun pm trust +--all' --include='package.json' --include='.npmrc' --include='.yarnrc.yml' --include='*.yml' --include='*.yaml' --exclude-dir=node_modules .`
       — each hit turns lifecycle scripts back on wholesale, or approves them unread. Then
-      `grep -sqE 'package\.json|\.npmrc|\.yarnrc|pnpmfile|pnpm-workspace' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS || echo 'CODEOWNERS: no owner for package.json/.npmrc/pnpm config'`
+      `command grep -sqE 'package\.json|\.npmrc|\.yarnrc|pnpmfile|pnpm-workspace' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS || echo 'CODEOWNERS: no owner for package.json/.npmrc/pnpm config'`
       — no owner for these files is MEDIUM. A workflow whose install step can read a
       registry/cloud secret or `id-token: write` needs a read (HIGH if it can).
 - [ ] **New dependency vetted, insecure defaults configured (§"npm supply chain") (§5) — MEDIUM, HIGH on a request path** —

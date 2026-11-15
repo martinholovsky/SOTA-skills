@@ -352,7 +352,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       (v1 keys a v2 binary rejects, or tests not linted at all) ; `golangci-lint config verify` ;
       read every `exclusions.rules` entry: no `path:` means it applies to production code too
 - [ ] **Escape hatch without its runtime checker (§1) — HIGH** —
-      `grep -rqE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null || grep -rlE 'unsafe\.Pointer|^import "C"' --include='*.go' .`
+      `command grep -rqE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null || command grep -rlE 'unsafe\.Pointer|^import "C"' --include='*.go' .`
       (lists the unsafe/cgo files only when no CI line runs a checker: nothing checks them) ; the checker
       lines themselves: `grep -rnE -- '-race|-asan|-msan|cgocheck2|checkptr' .github/workflows/ Makefile 2>/dev/null`
 - [ ] **Suppression hygiene** (§2) — `grep -rnE '//[[:space:]]+nolint' --include='*.go' .`
