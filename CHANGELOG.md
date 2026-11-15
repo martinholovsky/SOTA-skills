@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`/sota-audit` cites what was read, not what was planned.** Step 2's coverage table must be
+  printed, and step 9 marks a rules file "walked" only where `scripts/session-load-audit.py`
+  shows its checklist read. A field audit reported nine files walked; four were read, two of
+  them cut at 40 lines.
+- **`scripts/session-load-audit.py` sees reads made after `cd` into the library.** `cd
+  ~/.claude/skills && awk … sota-rust/rules/03-….md` was neither listed nor counted as
+  unresolved, so the audit under-reported what a session loaded. Relative paths, `for` loops
+  over them and a `cd` that resolves nothing are handled; five self-test checks, two mutants
+  watched failing.
+- **A derived reference disarms the probes that edited its subject** (`sota-code-security`
+  rules/12 §1d + checklist): swapping a gate's hand-kept list for one derived from the code
+  removes an independent witness, so keep a check between two independently written sources.
 - **ugrep's refused patterns, corrected** (`sota-shell-scripting` rules/06 §2f + checklist). An
   unbounded `*`/`+` before the needle, when its class can match the needle's characters, counts as
   the second side: `[a-z_]*_tp.{0,200}` is refused at exit 2. The threshold depends on the needle's

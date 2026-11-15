@@ -23,7 +23,8 @@
 #     ship (update.sh, verify-setup.sh), and plugin/README.md says so;
 #   - the three extras plugin-notice.sh tells the user "ship with the plugin":
 #     statusline.sh, init-gates.sh and gen-agents-md.sh;
-#   - scripts/session-load-audit.py, which /sota-report check E tells the agent to run, with the
+#   - scripts/session-load-audit.py, which /sota-report check E and /sota-audit step 9 tell the
+#     agent to run, with the
 #     two modules it imports for probe extraction and probe ids (check-checklist-probes.py,
 #     check-probe-fixtures.py). Without them it fails at import in a plugin install.
 # plugin/README.md becomes the tree's README.md (the listing text), and SOURCE_COMMIT records

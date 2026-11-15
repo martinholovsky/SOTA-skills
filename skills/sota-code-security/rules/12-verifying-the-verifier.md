@@ -392,6 +392,15 @@ one?** Construct it: inject a package with a live advisory, write the violating 
 banned crate. A sibling `cargo deny` probe was already immune, because it banned a crate the
 workspace certainly uses: a fact about the project, not about its current problems.
 
+**A third construction with the same decay: the reference that moves with the subject.** Replacing a gate's hand-kept expected
+list with one derived from the code it checks (§1c's advice, and the right fix for drift) also
+removes an independent witness. Every probe that edits the code, such as renaming the thing the
+list names, now changes both sides at once and passes by construction: the gate is a
+[tautological test](../../sota-testing/rules/02-test-design-quality.md) for that fault. Before
+the swap, list the faults the hand list was the only witness for, and move each to a check
+between two sources written independently (what a loader asks for against what the source
+declares), watched to fail. Field-reported 2026-11-15, caught before the swap.
+
 Otherwise, **pin the mutation to the threshold**: measure the subject at probe time, compute
 what it takes to cross from wherever it is, clamp, and print both numbers so a later reader
 sees what the probe did.
@@ -435,6 +444,9 @@ n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
       ignore list, dropping an exclusion or re-enabling a failing test proves something only
       while a real problem is suppressed, and silently stops proving anything the day it is
       fixed. Inject the bad state the probe needs.
+- [ ] **Did a gate's expected list become derived from the code it checks?** (§1d) Then every
+      probe that edits that code now passes by construction. Name the faults the hand list
+      witnessed and give each a check between two independently written sources, watched to fail.
 
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
       with the permissive no-op, with the dependency forced present and the
