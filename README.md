@@ -1645,7 +1645,7 @@ change, prior occurrences, a verbatim appendix). Each one is a mistake actually 
 
 **What the session loaded, and what it built, are measured, not remembered** (v1.55.0).
 `scripts/session-load-audit.py` reads the session's transcript and lists the skills invoked and
-every rules file read, searched or edited (shell `cat`/`sed`/`grep` included), whether each Audit
+every rules file read, searched or edited (shell `cat`/`sed`/`grep` included; a path written inside a heredoc shows as `Bash:heredoc`, not a read), whether each Audit
 checklist was read and re-read after the last edit, and which probes ran. With `--diff BASE` it
 also runs the checklist probes over the code the session changed, counting hits on added lines
 only, and joins the two: a rule that was loaded and still hit points at its wording, one that was

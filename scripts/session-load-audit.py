@@ -207,6 +207,35 @@ def lib_rel(token: str) -> str | None:
     return m.group(0).rstrip("/") if m else None
 
 
+_HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+
+
+def _split_heredocs(cmd: str) -> tuple[str, list[str]]:
+    """(the command without its heredoc bodies, the bodies). A path inside a body is text fed to a
+    command (a report being written, a script's source), not a read by the word that starts the
+    body's line: before 2026-11-14 a report written through `cat > r.md <<'EOF'` listed every rules
+    file it named as an access by `Bash:<its first word>`. `<<<` here-strings are not heredocs."""
+    out: list[str] = []
+    bodies: list[str] = []
+    pending: list[tuple[bool, str]] = []
+    cur: list[str] = []
+    for ln in cmd.split("\n"):
+        if pending:
+            dash, delim = pending[0]
+            if (ln.lstrip("\t") if dash else ln) == delim:
+                bodies.append("\n".join(cur))
+                cur = []
+                pending.pop(0)
+            else:
+                cur.append(ln)
+            continue
+        out.append(ln)
+        pending += [(m.group(1) == "-", m.group(3)) for m in _HEREDOC.finditer(ln)]
+    if cur:
+        bodies.append("\n".join(cur))
+    return "\n".join(out), bodies
+
+
 def _segments(cmd: str) -> list[tuple[list[str], str]]:
     """Each simple command with the operator that follows it ('|' means its output is filtered)."""
     lex = shlex.shlex(cmd.replace("\n", " ; "), posix=True, punctuation_chars=True)
@@ -321,7 +350,14 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
             bash.append(c)
             if "skills/" not in c.command:
                 continue
-            segs = _segments(c.command)
+            outside, bodies = _split_heredocs(c.command)
+            for body in bodies:
+                for tok in sorted(set(re.findall(r"\S*skills/\S+", body))):
+                    rel = lib_rel(tok.strip("`'\"()[]{},;:."))
+                    if rel and rel.endswith(".md") and "*" not in rel and (lib / rel).is_file():
+                        by_file.setdefault(rel, []).append(
+                            Access(c.id, c.ts, c.turn, "Bash:heredoc", "other", None, False))
+            segs = _segments(outside)
             for i, (seg, op) in enumerate(segs):
                 verb = _verb(seg)
                 for tok in seg:
@@ -919,6 +955,17 @@ def self_test() -> int:
                       encoding="utf-8")
         md4 = markdown(build(parse([p4]), ROOT))
         check("\x1b" not in md4, "an ESC from a transcript id reached the output")
+        # a path inside a heredoc body is text being written, not a read (field report 2026-11-14);
+        # the command after the heredoc operator on the same line is still a read (control)
+        p5 = Path(d) / "heredoc.jsonl"
+        p5.write_text(json.dumps(asst("2026-01-01T00:00:01Z", tu("t_hd", "Bash", {"command":
+            f"cat > /x/r.md <<'EOF' && cat {other}\nI never opened {rules} here.\nEOF\npython3 - <<-X\n\tsee {rules}\n\tX"}))) + "\n",
+            encoding="utf-8")
+        f5 = {x["file"]: x for x in build(parse([p5]), ROOT)["files"]}
+        tools5 = {a["tool"] for a in f5.get(rules, {}).get("accesses", [])}
+        check(tools5 == {"Bash:heredoc"} and f5[rules]["checklist_read"] != "yes",
+              f"a heredoc body's path must read as Bash:heredoc, never a read: {tools5}")
+        check(f5.get(other, {}).get("checklist_read") == "yes", "the cat after the heredoc operator is still a read")
     # ---- diff mode, in a throwaway repo: one pre-existing hit, two new ones (modified + untracked)
     crypto = "skills/sota-golang/rules/05-security.md"
     seed_probe = [s for s in ccp.probes_in((ROOT / crypto).read_text(encoding="utf-8"))
@@ -969,7 +1016,7 @@ def self_test() -> int:
         return 1
     print(f"ok self-test: {ran[0]} checks over synthetic transcripts (dedupe, Bash readers and pipes, "
           "checklist range, re-read ordering, probe match, language heuristic, privacy, control chars, "
-          "empty refusal)")
+          "empty refusal, heredoc bodies)")
     return 0
 
 

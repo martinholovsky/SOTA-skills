@@ -182,6 +182,14 @@ A test may consume only inputs it controls. The big three leaks:
   too short on a loaded CI runner, pure waste everywhere else.
 - **Iteration order.** Don't assert ordered equality on values harvested from
   unordered structures (hash maps/sets); sort first or compare as sets.
+- **Memory past the input.** Code that reads a fixed-width window from a caller's
+  buffer can read past the input and still pass, because the bytes after it are
+  the same on every run: an input the test does not control. Send each case from
+  a longer buffer whose tail differs per case, so an over-read changes the result.
+  A sanitizer reports a read past the allocation, not one past a length inside a
+  larger buffer, and none instruments a read across a boundary (a kernel reading
+  user memory, FFI). Field-reported 2026-11-14: a 48-byte key read past short
+  datagrams passed for weeks on glibc; under musl 5 identical repeats were 5 events.
 
 ```python
 # BAD — breaks at year boundaries, untestable for the interesting cases
@@ -400,6 +408,9 @@ More precise *and* more sensitive, not a trade.
       construct is the config the SUT actually reads (§2.6).
 - [ ] **Can a seed reach the shipped code through an env var, flag or config key (§2.6)?
       High when the RNG feeds anything secret**: `grep -rniE '(getenv|environ|process\.env|ENV\[|add_argument|flag\.(Int|String))[^;]{0,40}seed' . | grep -vE '(^|/)(tests?|spec|__tests__|testdata)/|_test\.go:|test_[^/]*\.py:|conftest\.py:|_spec\.rb:|\.(test|spec)\.[jt]sx?:'`
+- [ ] **Does code under test read a fixed-width window from a caller's buffer (§2.6)?**
+      Then does each test vary the bytes after its input? Identical tails hide an
+      over-read → Medium each, High when the window's bytes leave the process.
 - [ ] **Resource optimism, the host half** (§2.7): tests that read absolute host paths or
       mounts without creating them or skipping with a host-derived reason → High each.
       Lead list (lang-adjust the test path):
