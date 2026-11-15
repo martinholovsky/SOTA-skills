@@ -207,6 +207,32 @@ def lib_rel(token: str) -> str | None:
     return m.group(0).rstrip("/") if m else None
 
 
+def _lib_cwd(seg: Sequence[str]) -> str | None:
+    """The library directory a `cd` segment enters, as a `skills/...` prefix, else None.
+    `cd ~/.claude/skills` carries no `skills/` token, so before 2026-11-15 every read made
+    relative to it (`cd ~/.claude/skills && awk … sota-rust/rules/03-….md`) was neither listed
+    nor counted as unresolved (field report 2026-11-15, F2)."""
+    args = list(seg[seg.index("cd") + 1:]) if "cd" in seg else []
+    args = [a for a in args if not a.startswith("-")]
+    if not args:
+        return None
+    arg = args[0].rstrip("/")
+    if re.search(r"(^|/)skills$", arg):
+        return "skills"
+    return lib_rel(arg + "/")
+
+
+def _lib_candidate(tok: str, cwd: str | None) -> str | None:
+    """A token naming a library path: as written when it carries `skills/`, or relative to a
+    library directory entered with `cd` earlier in the same command."""
+    if "skills/" in tok:
+        return tok
+    if not cwd or tok.startswith(("/", "~", "$", "-")) or "/" not in tok and not tok.endswith(".md"):
+        return None
+    cand = cwd + "/" + (tok[2:] if tok.startswith("./") else tok)
+    return cand if lib_rel(cand) else None
+
+
 _HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
 
 
@@ -348,7 +374,7 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                     Access(c.id, c.ts, c.turn, "Read", "read", (start, end), start <= 1 and end >= n > 0))
         elif c.name == "Bash":
             bash.append(c)
-            if "skills/" not in c.command:
+            if "skills" not in c.command:
                 continue
             outside, bodies = _split_heredocs(c.command)
             for body in bodies:
@@ -358,12 +384,29 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                         by_file.setdefault(rel, []).append(
                             Access(c.id, c.ts, c.turn, "Bash:heredoc", "other", None, False))
             segs = _segments(outside)
+            cwd: str | None = None              # a `cd` into the library earlier in this command
+            loops: dict[str, list[str]] = {}    # `for VAR in <library paths>` -> those paths
+            used: set[str] = set()
+            entered = resolved = False
             for i, (seg, op) in enumerate(segs):
                 verb = _verb(seg)
-                for tok in seg:
-                    if "skills/" not in tok:
-                        continue
+                if verb == "cd":
+                    cwd = _lib_cwd(seg)
+                    entered = entered or cwd is not None
+                    continue
+                if verb == "for" and len(seg) >= 3 and seg[seg.index("for") + 2:seg.index("for") + 3] == ["in"]:
+                    k = seg.index("for")
+                    loops[seg[k + 1]] = [p for p in (_lib_candidate(t, cwd) for t in seg[k + 3:]) if p]
+                    continue
+                toks = [p for p in (_lib_candidate(t, cwd) for t in seg) if p]
+                for var, paths in loops.items():
+                    if any(t in (f"${var}", f"${{{var}}}") for t in seg):
+                        toks += paths
+                        used.add(var)
+                for tok in toks:
                     rel = lib_rel(tok)
+                    if rel and (lib / rel).is_file():
+                        resolved = True
                     if not rel:
                         other["unresolved library mentions"] += 1
                         continue
@@ -390,6 +433,17 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                         kind, rng, whole = "other", None, False
                     by_file.setdefault(rel, []).append(
                         Access(c.id, c.ts, c.turn, f"Bash:{verb or '?'}", kind, rng, whole))
+            for var, paths in loops.items():           # a loop whose body named no reader of $VAR
+                if var in used:
+                    continue
+                for p in paths:
+                    rel = lib_rel(p)
+                    if rel and rel.endswith(".md") and "*" not in rel and (lib / rel).is_file():
+                        resolved = True
+                        by_file.setdefault(rel, []).append(
+                            Access(c.id, c.ts, c.turn, "Bash:for", "other", None, False))
+            if entered and not resolved:               # went into the library, named nothing we resolve
+                other["unresolved library mentions"] += 1
     return by_file, other, edits, bash
 
 
@@ -966,6 +1020,27 @@ def self_test() -> int:
         check(tools5 == {"Bash:heredoc"} and f5[rules]["checklist_read"] != "yes",
               f"a heredoc body's path must read as Bash:heredoc, never a read: {tools5}")
         check(f5.get(other, {}).get("checklist_read") == "yes", "the cat after the heredoc operator is still a read")
+        # a read relative to a `cd` into the library (field report 2026-11-15, F2): listed, through
+        # a `for` loop too; a `cd` that names nothing is unresolved; a `cd` elsewhere resolves nothing
+        rel_rules, rel_other = rules.removeprefix("skills/"), other.removeprefix("skills/")
+        third = "skills/sota-testing/rules/02-test-design-quality.md"
+        check((ROOT / third).is_file(), "fixture premise: the third library file exists")
+        p6 = Path(d) / "cd.jsonl"
+        p6.write_text("\n".join(json.dumps(x) for x in (
+            asst("2026-01-01T00:00:01Z", tu("t_cd1", "Bash", {"command":
+                f"cd ~/.claude/skills && for f in {rel_rules}; do awk '/^## Audit/{{p=1}} p' \"$f\" | head -40; done"})),
+            asst("2026-01-01T00:00:02Z", tu("t_cd2", "Bash", {"command": f"cd /x/skills/ && cat {rel_other}"})),
+            asst("2026-01-01T00:00:03Z", tu("t_cd3", "Bash", {"command": "cd ~/.claude/skills && ls"})),
+            asst("2026-01-01T00:00:04Z", tu("t_cd4", "Bash", {"command": f"cd /elsewhere && cat {third.removeprefix('skills/')}"})),
+        )) + "\n", encoding="utf-8")
+        r6 = build(parse([p6]), ROOT)
+        f6 = {x["file"]: x for x in r6["files"]}
+        check({a["tool"] for a in f6.get(rules, {}).get("accesses", [])} == {"Bash:awk"},
+              f"a for-loop read relative to `cd skills` must list the file as Bash:awk: {sorted(f6)}")
+        check(f6.get(other, {}).get("checklist_read") == "yes", "cat relative to `cd …/skills/` is a whole-file read")
+        check(r6["other"]["unresolved library mentions"] == 1,
+              f"`cd skills && ls` is one unresolved mention: {r6['other']['unresolved library mentions']}")
+        check(len(f6) == 2, f"a relative path after `cd /elsewhere` is not a library read: {sorted(f6)}")
     # ---- diff mode, in a throwaway repo: one pre-existing hit, two new ones (modified + untracked)
     crypto = "skills/sota-golang/rules/05-security.md"
     seed_probe = [s for s in ccp.probes_in((ROOT / crypto).read_text(encoding="utf-8"))

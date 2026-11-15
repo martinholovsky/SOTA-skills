@@ -121,6 +121,9 @@ Print the coverage table **per rules file**, not per skill, before reading any o
 A skill marked "covered" because one of its files was opened is the hole this table exists to
 expose: the file you did not open is the checklist nobody walked. Take each applicable skill's
 rules index ("read this when…") and mark every file **walked** or **not applicable, because…**.
+**Print it, do not just plan it**: step 9 checks this table against what the session actually
+read, and a table that was never printed is rebuilt from the plan, which is how files nobody
+opened get reported as walked.
 
 **An unexamined domain is not a clean one.** A domain with no matching surface is a legitimate
 skip and says so in the table; a domain nobody opened is a hole in the audit and must be
@@ -330,7 +333,12 @@ Then three things a findings table cannot carry, and which are the point of this
 
 - **Coverage** — the per-rules-file table from step 2, as it ended: what was walked, what was
   skipped, why; the yardstick asserted (step 1); which threat model ran (step 3); which scanners
-  ran, at which versions, and whether history was partial (step 4).
+  ran, at which versions, and whether history was partial (step 4). **A row marked walked cites
+  the read, not the plan.** Before writing this section run `python3 <library>/scripts/session-load-audit.py
+  --cwd "$PWD"` (`<library>` as `/sota-report` step E finds it) and mark a file walked only
+  where its row says `Checklist read: yes`. `unknown` (an `awk` or a piped range) means read the
+  checklist again, whole; a file with no row was not walked. Field-reported 2026-11-15: nine
+  files reported "walked, item by item", four read, two of those cut at 40 lines.
 - **Depth reached** — for anything you checked by running something, what the check could
   actually see.
 - **Not reached** — scope you did not cover, scanners that were not installed, assumptions

@@ -3196,7 +3196,7 @@
         <mxCell id="lk6" value="md link, other skill" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="434" width="224" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="ln6" value="1935" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="ln6" value="1936" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;align=right;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="270" y="434" width="104" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="le6" value="[...](../../sota-x/rules/NN-....md)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#bbbbbb;align=left;spacingLeft=8;fontFamily=Courier New;fontSize=9;" vertex="1" parent="1">
