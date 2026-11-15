@@ -67,6 +67,15 @@ malformed URL, one row for 40 keys). Of the 18 whose list word is the bare varia
 ran right only because a list-producing command (`grep -rl … | head -3`, `find`) happened to
 return one item; `${(f)v}` is correct for all 18. The operator accepted that rate (2026-11-15).
 
+ALSO FLAGS (2026-11-15, NOMATCH): an unquoted glob word with an `=` before its first glob character,
+`--include=*.rs` or `-o custom-columns=N:.x[0]`. zsh matches the WHOLE word against file names, none
+is called `--include=…`, so NOMATCH aborts the command (`no matches found`) and the search never ran.
+Exempt: quotes, `[[ ]]`, `case` patterns, assignments, words starting with `=` (the EQUALS check),
+a `noglob` command, and a command that sets `nonomatch`/`nullglob`. MEASURED over 38,283 unique
+local agent Bash calls (labels written first; data git-ignored): 159 such words, every one that
+zsh reached aborted (123 of 123; the other 36 sat after an abort in the same command). A glob
+OPERAND (`ls *.md`) was measured too and is NOT refused: 4,445 of 4,632 ran fine.
+
 ONLY UNDER zsh: it works out the shell Claude Code runs Bash commands in the way Claude Code does
 (CLAUDE_CODE_SHELL, then $SHELL, then the first zsh or bash on PATH; see agent_shell) and acts only
 when that is zsh. Under bash `echo ===` is harmless and the hook allows everything.
@@ -233,6 +242,46 @@ def _dequote(w):
     return "".join(out)
 
 
+NOMATCH_OFF = re.compile(r"(?:^|[\s;&|(])(?:setopt\s[^;\n]*\b(?:no_?nomatch|null_?glob|csh_?null_?glob)"
+                         r"|unsetopt\s[^;\n]*\bnomatch)\b", re.IGNORECASE)
+ASSIGN_LIKE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\[[^\]]*\])?\+?=")
+
+
+def _nomatch_word(word):
+    """True when zsh would glob `word` and an `=` comes before its first unquoted glob character
+    (`--include=*.rs`, `custom-columns=N:.x[0]`): no file is named like that, so NOMATCH aborts.
+    Quoted text, `\\x`, `${…}` and `$?`/`$*` carry no glob; an assignment and a word starting
+    with `=` (the EQUALS check) are not this check's."""
+    if word.startswith("=") or ASSIGN_LIKE.match(word):
+        return False
+    i, seen_eq = 0, False
+    while i < len(word):
+        c = word[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c in "'\"":
+            i = _skip_quoted(word, i + 1, c)
+            continue
+        if word.startswith("${", i):
+            depth, i = 0, i + 1
+            while i < len(word):
+                depth += {"{": 1, "}": -1}.get(word[i], 0)
+                i += 1
+                if depth == 0:
+                    break
+            continue
+        if c == "$":
+            i += 2 if i + 1 < len(word) and word[i + 1] in "?*#@!$-" else 1
+            continue
+        if c == "=":
+            seen_eq = True
+        elif c in "*?[":
+            return seen_eq
+        i += 1
+    return False
+
+
 def _bash_vars(word):
     """`$PIPESTATUS` / `${BASH_REMATCH…}` references zsh would expand in this raw word: unquoted or
     inside double quotes, not escaped, not in single quotes (a `$( )` inside "" is lexed on its own)."""
@@ -370,8 +419,11 @@ def _special_names(w):
 
 def _analyze(words, st, hits):
     """Run the per-simple-command checks over one command's raw words."""
+    pending, st["nm_pending"] = st["nm_pending"], []
     while words and words[0] in RESERVED:
         words = words[1:]
+    if pending and not (words and _dequote(words[0]) == "noglob"):
+        hits["nomatch"].extend(pending)
     hits["split"].extend(_set_split(words, st["arrays"]))
     if not words:
         return
@@ -438,7 +490,7 @@ def _set_split(words, arrays):
     return out
 
 
-CHECKS = ("equals", "split", "special", "argv", "bashvar", "gitgrep", "cmdsub")
+CHECKS = ("equals", "split", "special", "argv", "bashvar", "gitgrep", "cmdsub", "nomatch")
 
 
 def _lex(cmd, darwin=None):
@@ -450,7 +502,9 @@ def _lex(cmd, darwin=None):
     s, i = cmd, 0
     at_start, cond, heredocs = True, 0, []
     words = []
-    st = {"arrays": set(ARRAY_ASSIGN.findall(cmd)), "spaced": set(), "cmdsub": set(), "darwin": darwin}
+    st = {"arrays": set(ARRAY_ASSIGN.findall(cmd)), "spaced": set(), "cmdsub": set(), "darwin": darwin,
+          "nm_pending": [], "case": 0}
+    nomatch_off = NOMATCH_OFF.search(cmd) is not None
     rematch_on = re.search(r"setopt\s[^;\n]*bash_?rematch", cmd, re.IGNORECASE) is not None
 
     def sub(inner):
@@ -515,6 +569,12 @@ def _lex(cmd, darwin=None):
                                    if not (rematch_on and "BASH_REMATCH" in v))
             for inner in subs:
                 sub(inner)
+            if word == "case":
+                st["case"] += 1
+            elif word == "esac" and st["case"]:
+                st["case"] -= 1
+            elif not cond and not st["case"] and not nomatch_off and _nomatch_word(word):
+                st["nm_pending"].append(word)
             if word == "[[":
                 cond += 1
             elif word == "]]" and cond:
@@ -616,8 +676,20 @@ def cmdsub_reason(hits):
     )
 
 
+def nomatch_reason(hits):
+    shown = ", ".join(f"`{w}`" for w in hits[:5])
+    return (
+        f"zsh NOMATCH: {shown} is an unquoted glob, and zsh matches the whole word against file "
+        "names; none is called that, so zsh aborts the command with `no matches found` and the "
+        "tool never runs (measured over local agent sessions: 123 of 123 such words zsh reached "
+        "aborted). Quote the pattern so the tool gets it: `--include='*.rs'`. Not run. "
+        "(sota-shell-scripting rules/06 §1, the glob-in-a-flag-value row; this hook: scripts/zsh-equals-hook.py)"
+    )
+
+
 REASONS = {"equals": reason, "split": split_reason, "special": special_reason, "argv": argv_reason,
-           "bashvar": bashvar_reason, "gitgrep": gitgrep_reason, "cmdsub": cmdsub_reason}
+           "bashvar": bashvar_reason, "gitgrep": gitgrep_reason, "cmdsub": cmdsub_reason,
+           "nomatch": nomatch_reason}
 
 
 def active():
@@ -774,6 +846,20 @@ TRAP_CASES = [
     ("cmdsub", 'v=$(printf "a b"); c=0; for x in "$v"; do c=$((c+1)); done; echo N=$c', [], "N=1"),
     ("cmdsub", 'v=$(printf "a b"); n(){ echo N=$#; }; n $v', [], "N=1"),
     ("cmdsub", "bash -c 'v=$(printf \"a b\"); c=0; for x in $v; do c=$((c+1)); done; echo N=$c'", [], "N=2"),
+    # nomatch (2026-11-15): a flagged word aborts its command in real zsh, so its line never prints;
+    # an exempt one prints it (cwd is / in the self-test, where no such file exists)
+    ("nomatch", "printf '%s\\n' --include=*.zzqq; echo AFTER", ["--include=*.zzqq"], "!--include=*.zzqq"),
+    ("nomatch", "printf '%s\\n' custom-columns=N:.x[0]", ["custom-columns=N:.x[0]"], "!custom-columns=N:.x[0]"),
+    ("nomatch", "printf '%s\\n' --exclude-dir={a,b*}", ["--exclude-dir={a,b*}"], "!--exclude-dir=b*"),
+    ("nomatch", "printf '%s\\n' '--include=*.zzqq'", [], "--include=*.zzqq"),
+    ("nomatch", "printf '%s\\n' --include=\\*.zzqq", [], "--include=*.zzqq"),
+    ("nomatch", "noglob printf '%s\\n' --include=*.zzqq", [], "--include=*.zzqq"),
+    ("nomatch", "setopt nonomatch; printf '%s\\n' --include=*.zzqq", [], "--include=*.zzqq"),
+    ("nomatch", "case --x=1 in --x=*) echo C;; esac", [], "C"),
+    ("nomatch", "[[ --x=1 == --x=* ]] && echo M", [], "M"),
+    ("nomatch", "a=--include=*.zzqq; echo OK", [], "OK"),
+    ("nomatch", "printf '%s\\n' --rc=$?", [], "--rc=0"),
+    ("nomatch", "ls /zz*qq-none 2>/dev/null; echo AFTER", [], "AFTER"),   # an operand: measured, not refused
 ]
 
 # (command, hits on macOS, hits elsewhere). Run in zsh inside a scratch repo whose one file holds
@@ -1002,6 +1088,8 @@ def check(paths):
             print(f"{path}: git grep '{pat}' ({' '.join(sorted(set(bad)))} not honoured here)")
         for w in h["cmdsub"]:
             print(f"{path}: for … in {w} (assigned from $(…); zsh loops once)")
+        for w in h["nomatch"]:
+            print(f"{path}: {w} (unquoted glob in a flag value; zsh aborts: no matches found)")
         if any(h.values()):
             rc = 1
     print(f"checked {len(paths)} file(s), {total} bytes: {'HITS' if rc else 'clean'}")
