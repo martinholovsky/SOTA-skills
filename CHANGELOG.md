@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The zsh hook refuses an unquoted glob in a flag value** (`--include=*.rs`,
+  `-o custom-columns=…[0]`; `scripts/zsh-equals-hook.py`, `sota-shell-scripting` rules/06 §1). zsh
+  matches the whole word against file names and aborts with `no matches found`, so the search never
+  runs. Measured first over 38,283 local agent Bash calls: 123 of 123 such words that zsh reached
+  aborted, and the shipped check refuses 111 calls, all of which aborted. A glob **operand**
+  (`ls *.md`) is not refused: 4,445 of 4,632 ran fine.
 - **The zsh hook refuses `v=$(cmd); for x in $v`** (`scripts/zsh-equals-hook.py`, `sota-shell-scripting`
   rules/06 §1). zsh loops once over the whole output. Measured first over 38,118 local agent Bash
   calls: of 18 such loops, 11 ran once over a joined list and 7 worked only because the command
