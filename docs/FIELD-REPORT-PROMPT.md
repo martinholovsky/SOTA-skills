@@ -204,6 +204,9 @@ ledger entry, with the command that produced the label: **verified** (reproduced
    - **Cross-check each finding's "Loaded?" against the table.** "In context and broken" needs
      a read of that file *before* the incident's timestamp. "Never opened" needs the file absent
      *and* non-zero "Not resolved" counts explained, since those are reads it could not name.
+     A diff section run after the session also counts the reporter's **report-writing reads**.
+     Before 2026-11-15 it tabled them as `loaded`; it now prints a cutoff and marks them
+     `read only after the code was written`. Check first-read times in an older paste by hand.
    - **Process gaps are findings about rule shape** (category 2): a rules file governing the
      work whose checklist was never read or never re-read after the last edit (BUILD step 4),
      or an audit session that ran none of a loaded file's probes. Record them even when the

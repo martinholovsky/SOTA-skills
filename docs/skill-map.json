@@ -2465,6 +2465,14 @@
     },
     {
       "from": "sota-golang",
+      "to": "sota-async-concurrency",
+      "weight": 2,
+      "targets": [
+        "rules/05"
+      ]
+    },
+    {
+      "from": "sota-golang",
       "to": "sota-databases",
       "weight": 2,
       "targets": [
@@ -3513,12 +3521,6 @@
       "targets": [
         "rules/02 \u00a78a"
       ]
-    },
-    {
-      "from": "sota-golang",
-      "to": "sota-async-concurrency",
-      "weight": 1,
-      "targets": []
     },
     {
       "from": "sota-golang",
@@ -4632,12 +4634,12 @@
     "generic ('the language skill')": 22,
     "md link, other skill": 1936,
     "md link, outside skills/": 3,
-    "md link, same skill": 2863,
+    "md link, same skill": 2866,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 923,
+    "name+file (backticked)": 924,
     "name+file (bare)": 180,
-    "own rules/NN": 3084
+    "own rules/NN": 3087
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4649,7 +4651,7 @@
     "name (bare)": 196,
     "name+file (backticked)": 919,
     "name+file (bare)": 168,
-    "own rules/NN": 2981
+    "own rules/NN": 2984
   },
   "rules_index_style": {
     "link": 42
@@ -4966,6 +4968,7 @@
       "other": [
         "sota-c-cpp/rules/05-concurrency.md",
         "sota-dotnet/rules/03-async-concurrency.md",
+        "sota-golang/rules/02-design.md",
         "sota-jvm/rules/03-concurrency.md",
         "sota-php/rules/01-language-baseline.md",
         "sota-ruby/rules/05-concurrency-performance.md",
@@ -7971,6 +7974,7 @@
       ],
       "same": [
         "sota-observability/rules/01-structured-logging.md",
+        "sota-observability/rules/02-metrics.md",
         "sota-observability/rules/04-slos-alerting.md",
         "sota-observability/rules/06-audit-playbook.md"
       ],

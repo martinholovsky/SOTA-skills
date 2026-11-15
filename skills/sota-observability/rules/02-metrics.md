@@ -156,6 +156,16 @@ histogram_quantile(0.99,
   you compute "fraction of requests under 300ms" exactly:
   `sum(rate(..._bucket{le="0.3"}[5m])) / sum(rate(..._count[5m]))` — this is
   your latency SLI, more robust than thresholding a quantile estimate.
+- **A quantile in the `+Inf` bucket is not a measurement.** `histogram_quantile`
+  returns the upper bound of the second-highest bucket when the quantile falls in
+  the highest one (Prometheus `querying/functions.md`), so a p99 that reads exactly
+  your top finite boundary means "at least that", possibly much more. Never log it
+  or compare it as a latency. At low volume one request **is** the p99: 1 slow
+  call among 44 in 5 min crosses any p99 threshold. Anything that acts on a quantile,
+  above all an automated restart ([rules/05](05-operational-readiness.md) §1), also needs a count: requests in the
+  window ≥ N, or the count above the threshold (a bucket ratio, as above) ≥ K.
+  Field-reported 2026-11-15: a watchdog logged `p99=75000ms`, its 75 s top bucket,
+  for calls that had hung 3,600 s, and restarted the database 15 times in 24 h.
 - Report p50/p95/p99, not the average; keep max/p99.9 visible for tail
   debugging. Track tail latency per dependency, not just at the edge.
 
@@ -317,6 +327,9 @@ Rules:
       bucket sums across instances; summaries not aggregated (§4).
 - [ ] Histogram buckets chosen around SLO thresholds (or native/exponential
       histograms in use); latency SLI computed from a bucket boundary (§4).
+- [ ] Nothing reads a quantile at the top finite bucket boundary as a latency, and
+      no alert or automated action fires on a quantile without a minimum-count
+      guard on the same window (§4).
 - [ ] Exemplars flow end-to-end (SDK → exposition → TSDB → dashboard), or
       spanmetrics provides the metric↔trace bridge (§5).
 - [ ] (**Medium**) OTel metrics (§6): instruments carry semantic-convention

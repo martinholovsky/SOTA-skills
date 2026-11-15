@@ -72,6 +72,16 @@ db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.i
   renamed from 2.x's `type::thing`, a parse error since 3.0.0 — or a
   bound record id), and whitelist table names — identifiers can't be bound,
   same rule as dynamic SQL identifiers in file 06.
+- **Bind the id in the form that keeps the index.** JSON has no record type, so over
+  a JSON transport (HTTP `/rpc`, `/sql`) a bound id arrives as a **string**. Compared
+  with an indexed record field, `out = $p`, `out = <record> $p`, `out =
+  type::record($p)` and even `WITH INDEX … WHERE out = $p` all plan a **`TableScan`**,
+  while `out = type::record($table, $id)` (both parts bound) plans **`IndexScan`**,
+  as do a literal and a `LET $p = table:id` record. Measured 2026-11-15 on 3.2.6,
+  3.3.5 and 4.0.1, 60,000 edges: about 70 ms against 4 ms. The rows match either
+  way, so only `EXPLAIN` shows it (§8). Do not "fix" it by inlining the id: use
+  the two-argument form. Whether a typed record id from an SDK's CBOR
+  transport keeps the index was **not measured** here: EXPLAIN it before relying on it.
 
 ## 4. Schema enforcement
 
@@ -198,8 +208,17 @@ surreal start --deny-all \
   from file 07 (recall measurement, model versioning) apply unchanged.
 - Build indexes on live tables with `CONCURRENTLY`; monitor via
   `INFO FOR INDEX`.
-- Verify usage with `EXPLAIN` / `EXPLAIN FULL` — look for `Iterate Index`
-  rather than table scans on hot paths.
+- Verify usage with `EXPLAIN` / `EXPLAIN FULL` on hot paths. **The plan vocabulary
+  depends on the statement and the version.** On 3.2.6 and 3.3.5 a `SELECT` reports
+  `IndexScan` / `TableScan`, while an `UPDATE` reports `Iterate Index` / `Iterate
+  Table`; on 4.0.1 both report `IndexScan` (measured 2026-11-15). A check that greps
+  for one word reads the other as "no index". EXPLAIN the statement with the
+  transport and bind form the application uses (§3).
+- **3.x `UPDATE` scans where the same `SELECT` does not.** `UPDATE t SET … WHERE key
+  = 'k' AND (a != 1 OR b != 2)` iterates the whole table on 3.2.6 and 3.3.5, with
+  every value literal, while `key = 'k' AND a != 1` and the equivalent `SELECT`
+  use the index. `UPDATE (SELECT VALUE id FROM t WHERE key = $k LIMIT 1) SET …
+  WHERE …` does not scan. 4.0.1 indexes both forms (measured 2026-11-15, 60,000 rows).
 
 ## 9. Multi-model modeling
 
@@ -249,7 +268,8 @@ surreal start --deny-all \
       record users; credentials from secret manager, rotatable (§2).
 - [ ] All queries use bound `$params`; no string-built SurrealQL anywhere
       (grep SDK call sites for interpolation); record IDs from input bound
-      (`type::record($table, $id)`); dynamic identifiers whitelisted (§3).
+      (`type::record($table, $id)`, not a string `$id` compared with a record
+      field, which scans); dynamic identifiers whitelisted (§3).
 - [ ] Integrity-critical tables SCHEMAFULL with TYPE/ASSERT/READONLY fields;
       record links checked for orphans where it matters; no untyped critical
       fields on SCHEMALESS tables; server-computed fields use `VALUE`/`DEFAULT`
@@ -265,7 +285,9 @@ surreal start --deny-all \
 - [ ] Not publicly reachable; TLS on all client connections; no credentials
       in compose files/CI logs; system credentials and JWT signing keys from
       the secret manager, per service and rotatable (§7).
-- [ ] Hot-path queries EXPLAIN-verified (`Iterate Index`); uniqueness via
+- [ ] Hot-path queries EXPLAIN-verified in the application's own bind form
+      (`IndexScan`, or `Iterate Index` for a 3.x `UPDATE`); 3.x `UPDATE`s whose
+      `WHERE` adds an `OR` group drive from an indexed subselect; uniqueness via
       UNIQUE indexes; index builds on live tables use CONCURRENTLY; vector
       indexes follow file 07 rules (§8).
 - [ ] Modeling: embed/reference/edge choices match access patterns; edge
