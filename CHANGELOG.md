@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The zsh hook refuses `v=$(cmd); for x in $v`** (`scripts/zsh-equals-hook.py`, `sota-shell-scripting`
+  rules/06 §1). zsh loops once over the whole output. Measured first over 38,118 local agent Bash
+  calls: of 18 such loops, 11 ran once over a joined list and 7 worked only because the command
+  printed one item; the hint is `${(f)v}`, `${=v}` or `for x in $(cmd)`. The same shape as a
+  command operand was right 27 times in 30 and is not refused.
 - **`/sota-audit` cites what was read, not what was planned.** Step 2's coverage table must be
   printed, and step 9 marks a rules file "walked" only where `scripts/session-load-audit.py`
   shows its checklist read. A field audit reported nine files walked; four were read, two of
