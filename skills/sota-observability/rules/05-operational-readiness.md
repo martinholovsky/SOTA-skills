@@ -40,6 +40,13 @@ startupProbe:
 Rules:
 - Restarting a process does not fix its database. Liveness restarts must
   only fire for conditions a restart actually fixes.
+- **A watchdog that restarts on a metric is a liveness probe** and gets the same
+  rules, plus the guards a probe has built in and a cron job does not: a
+  minimum-count guard (one slow request at night *is* the p99, and a p99 in the
+  `+Inf` bucket reads as the top bucket edge: [rules/02](02-metrics.md) §4), a
+  cooldown, a restart budget per day, and an alert on every restart it performs.
+  Field-reported 2026-11-15: 15 database restarts in 24 h, each triggered by one to
+  four hung requests out of 44 to 52 in the window.
 - Readiness checks only **required** dependencies (without which serving is
   impossible). Optional dependencies (cache, recommendations) degrade
   gracefully (§2) and must NOT fail readiness — or a Redis blip removes
@@ -320,6 +327,8 @@ distinguishable from telemetry production writes, at the point of collection.**
       dependency checks; readiness fails only on required deps; probes are
       cheap, cached, and bounded; health endpoints are not internet-exposed
       and are excluded from access logs and request metrics (§1).
+- [ ] Every metric-triggered restart (watchdog, cron, operator) has a
+      minimum-count guard, a cooldown, a daily budget and an alert per restart (§1).
 - [ ] Optional-dependency failure degrades service without failing
       readiness; shared-dependency behavior (fail vs degrade) is a
       documented decision (§1).

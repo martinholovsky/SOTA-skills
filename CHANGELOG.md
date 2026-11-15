@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **SurrealQL: bind a record id in the form that keeps the index** (`sota-databases` rules/08 §3, §8).
+  Over a JSON transport a bound id is a string, and comparing it with a record field plans a
+  `TableScan` even with `<record>` or `WITH INDEX`. `type::record($table, $id)` plans an
+  `IndexScan`, fully bound. 3.x `UPDATE`s with an `OR` group scan even with literals, and on 3.x
+  the plan words differ between `SELECT` and `UPDATE`. Measured on 3.2.6, 3.3.5 and 4.0.1.
+- **Go: apply a per-call default timeout unconditionally** (`sota-golang` rules/02 §8, checklist
+  probe with fixtures). Skipping it when the caller has a deadline hands a query an 8 h job's deadline.
+- **A quantile in the `+Inf` bucket is not a measurement, and a restart watchdog is a liveness
+  probe** (`sota-observability` rules/02 §4, rules/05 §1): minimum-count guard, cooldown, daily
+  budget, alert per restart.
+- **`pgrep -f` misses a target whose argv[0] was rewritten** (`sota-shell-scripting` rules/09 §5c):
+  framework Python on macOS, `exec -a`.
+- **`scripts/session-load-audit.py --diff` no longer counts reads made after the code was written
+  as "loaded".** A report's own reads had turned a routing gap into "rule shape"; the table now
+  prints a cutoff (the last Edit/Write of a changed file) and a `read only after the code was
+  written` row.
 - **The zsh hook refuses an unquoted glob in a flag value** (`--include=*.rs`,
   `-o custom-columns=…[0]`; `scripts/zsh-equals-hook.py`, `sota-shell-scripting` rules/06 §1). zsh
   matches the whole word against file names and aborts with `no matches found`, so the search never
