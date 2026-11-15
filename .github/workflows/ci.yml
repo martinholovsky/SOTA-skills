@@ -269,6 +269,7 @@ jobs:
         # Since 2026-10-27 it also refuses a variable named path/status, a spaced literal expanded
         # unquoted as arguments, $PIPESTATUS/$BASH_REMATCH, and git grep escapes the platform reads as
         # letters; the self-test checks each against real zsh and, for git grep, this runner's git.
+        # Since 2026-11-15, a `for` list `$v` that the same command assigned from $(…) (zsh loops once).
         run: |
           command -v zsh >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends zsh; }
           python3 scripts/zsh-equals-hook.py --self-test --require-zsh

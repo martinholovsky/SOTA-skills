@@ -56,6 +56,17 @@ its joined result; the ADOPTION-LOG 2026-10-27 rows carry the method and the exa
     count at today's HEAD, 23 could not be re-run, and 3 were deliberate reproductions of this trap.
   The git grep failure is not zsh's: bash on macOS has it too, but the hook acts only under zsh.
 
+ALSO FLAGS (2026-11-15): `for x in $v` or `${v}` where the same command assigned `v` from a command
+substitution (`v=$(…)`, `v="$(…)"`, ``v=`…` ``, also after `local`/`export`/…). zsh loops ONCE over
+the whole output; `${(f)v}`, `${=v}` and `for x in $(cmd)` are exempt, as are a name reassigned or
+assigned an array. Only the `for` list: as a command operand the same shape was right 27 times in
+a sample of 30 (one-word values: an id, a sha, `head -1`). MEASURED over 38,118 unique local agent
+Bash calls in 434 transcripts (labels written first; data git-ignored): 20 `for` hits, every one
+read against its result, 11 ran once over a joined list (`No such file` naming several paths, a
+malformed URL, one row for 40 keys). Of the 18 whose list word is the bare variable, the other 7
+ran right only because a list-producing command (`grep -rl … | head -3`, `find`) happened to
+return one item; `${(f)v}` is correct for all 18. The operator accepted that rate (2026-11-15).
+
 ONLY UNDER zsh: it works out the shell Claude Code runs Bash commands in the way Claude Code does
 (CLAUDE_CODE_SHELL, then $SHELL, then the first zsh or bash on PATH; see agent_shell) and acts only
 when that is zsh. Under bash `echo ===` is harmless and the hook allows everything.
@@ -386,8 +397,15 @@ def _analyze(words, st, hits):
             name = m and (m.group(1) or m.group(2))
             if name and name in st["spaced"] and name not in st["arrays"]:
                 hits["argv"].append((head, x))
+            elif name and head == "for" and name in st["cmdsub"] and name not in st["arrays"]:
+                hits["cmdsub"].append(x)
         for pat, bad in _git_grep(dw[k:], st["darwin"]):
             hits["gitgrep"].append((pat, bad))
+        if head in DECLARE:                     # `local v=$(…)`: the assignment follows the head
+            for x in words[k + 1:]:             # (cmdsub only: argv was calibrated without these)
+                m = ASSIGN.fullmatch(x)
+                if m:
+                    _track_cmdsub(st, m.group(1), m.group(2))
     for name, val in assigns:
         q = val[:1]
         if q in "'\"" and len(val) > 1 and val.endswith(q) and " " in val and \
@@ -395,6 +413,15 @@ def _analyze(words, st, hits):
             st["spaced"].add(name)
         else:
             st["spaced"].discard(name)
+        _track_cmdsub(st, name, val)
+
+
+def _track_cmdsub(st, name, val):
+    """Remember a name whose value came from a command substitution; forget it on any other value."""
+    if val in ("$(", "`") or val.startswith(('"$(', '"`')):
+        st["cmdsub"].add(name)
+    else:
+        st["cmdsub"].discard(name)
 
 
 def _set_split(words, arrays):
@@ -411,7 +438,7 @@ def _set_split(words, arrays):
     return out
 
 
-CHECKS = ("equals", "split", "special", "argv", "bashvar", "gitgrep")
+CHECKS = ("equals", "split", "special", "argv", "bashvar", "gitgrep", "cmdsub")
 
 
 def _lex(cmd, darwin=None):
@@ -423,7 +450,7 @@ def _lex(cmd, darwin=None):
     s, i = cmd, 0
     at_start, cond, heredocs = True, 0, []
     words = []
-    st = {"arrays": set(ARRAY_ASSIGN.findall(cmd)), "spaced": set(), "darwin": darwin}
+    st = {"arrays": set(ARRAY_ASSIGN.findall(cmd)), "spaced": set(), "cmdsub": set(), "darwin": darwin}
     rematch_on = re.search(r"setopt\s[^;\n]*bash_?rematch", cmd, re.IGNORECASE) is not None
 
     def sub(inner):
@@ -473,8 +500,17 @@ def _lex(cmd, darwin=None):
             while end < len(s) and s[end] not in " \t" and s[end] not in OPERATORS:
                 end = _skip_quoted(s, end + 1, s[end], subs) if s[end] in "'\"" else end + 1
             word = s[i:end]
-            # `name=(…)`: the `(` is an operator to this lexer, so mark the assignment as an array one
-            words.append(word + "(" if word.endswith("=") and s.startswith("(", end) else word)
+            # `name=(…)`: the `(` is an operator to this lexer, so mark the assignment as an array one;
+            # `name=$(…)` and ``name=`…` `` also end at an operator, so keep a marker for _analyze
+            # (`name=$((…))` is arithmetic, not a command substitution)
+            if word.endswith("=") and s.startswith("(", end):
+                words.append(word + "(")
+            elif word.endswith("=$") and s.startswith("(", end) and not s.startswith("((", end):
+                words.append(word + "(")
+            elif word.endswith("=") and s.startswith("`", end):
+                words.append(word + "`")
+            else:
+                words.append(word)
             hits["bashvar"].extend(v for v in _bash_vars(word)
                                    if not (rematch_on and "BASH_REMATCH" in v))
             for inner in subs:
@@ -567,8 +603,21 @@ def gitgrep_reason(hits):
     )
 
 
+def cmdsub_reason(hits):
+    shown = ", ".join(f"`for … in {w}`" for w in hits[:5])
+    return (
+        f"zsh word splitting: {shown} loops ONCE in zsh when the variable holds a list, because zsh "
+        "does not split an unquoted scalar and this command assigned it from `$(…)`. Measured over "
+        "local agent sessions: 11 of 18 such loops ran once over a joined list (`No such file` naming "
+        "several paths); the rest only because the command happened to print one item. Write "
+        "`${(f)v}` (one item per line) or `${=v}` (split on whitespace), or loop over the command "
+        "itself: `for x in $(cmd)`, which zsh does split. Not run. "
+        "(sota-shell-scripting rules/06 §1, the unquoted `$var` row; this hook: scripts/zsh-equals-hook.py)"
+    )
+
+
 REASONS = {"equals": reason, "split": split_reason, "special": special_reason, "argv": argv_reason,
-           "bashvar": bashvar_reason, "gitgrep": gitgrep_reason}
+           "bashvar": bashvar_reason, "gitgrep": gitgrep_reason, "cmdsub": cmdsub_reason}
 
 
 def active():
@@ -710,6 +759,21 @@ TRAP_CASES = [
     ("bashvar", "bash -c 'false | true; echo p=${PIPESTATUS[0]}'", [], "p=1"),
     ("bashvar", 'echo "p=\\${PIPESTATUS[0]}"', [], "p=${PIPESTATUS[0]}"),
     ("bashvar", "setopt bash_rematch; [[ ab =~ (a)(b) ]] && echo \"m=${BASH_REMATCH[2]}\"", [], "m=a"),
+    # cmdsub (2026-11-15): flagged cases loop once in real zsh (N=1); exempt ones split (N=2) or
+    # are deliberately one word
+    ("cmdsub", 'v=$(printf "a\\nb"); c=0; for x in $v; do c=$((c+1)); done; echo N=$c', ["$v"], "N=1"),
+    ("cmdsub", 'v="$(printf "a b")"; c=0; for x in ${v}; do c=$((c+1)); done; echo N=$c', ["${v}"], "N=1"),
+    ("cmdsub", 'v=`printf "a b"`; c=0; for x in $v; do c=$((c+1)); done; echo N=$c', ["$v"], "N=1"),
+    ("cmdsub", 'f(){ local v=$(printf "a b"); c=0; for x in $v; do c=$((c+1)); done; echo N=$c; }; f',
+     ["$v"], "N=1"),
+    ("cmdsub", 'v=$(printf "a\\nb"); c=0; for x in ${(f)v}; do c=$((c+1)); done; echo N=$c', [], "N=2"),
+    ("cmdsub", 'v=$(printf "a b"); c=0; for x in ${=v}; do c=$((c+1)); done; echo N=$c', [], "N=2"),
+    ("cmdsub", 'c=0; for x in $(printf "a b"); do c=$((c+1)); done; echo N=$c', [], "N=2"),
+    ("cmdsub", 'v=$(printf "a b"); v=x; c=0; for x in $v; do c=$((c+1)); done; echo N=$c', [], "N=1"),
+    ("cmdsub", 'v=$((1+2)); c=0; for x in $v; do c=$((c+1)); done; echo N=$c', [], "N=1"),
+    ("cmdsub", 'v=$(printf "a b"); c=0; for x in "$v"; do c=$((c+1)); done; echo N=$c', [], "N=1"),
+    ("cmdsub", 'v=$(printf "a b"); n(){ echo N=$#; }; n $v', [], "N=1"),
+    ("cmdsub", "bash -c 'v=$(printf \"a b\"); c=0; for x in $v; do c=$((c+1)); done; echo N=$c'", [], "N=2"),
 ]
 
 # (command, hits on macOS, hits elsewhere). Run in zsh inside a scratch repo whose one file holds
@@ -936,6 +1000,8 @@ def check(paths):
             print(f"{path}: {w} (unset in zsh)")
         for pat, bad in h["gitgrep"]:
             print(f"{path}: git grep '{pat}' ({' '.join(sorted(set(bad)))} not honoured here)")
+        for w in h["cmdsub"]:
+            print(f"{path}: for … in {w} (assigned from $(…); zsh loops once)")
         if any(h.values()):
             rc = 1
     print(f"checked {len(paths)} file(s), {total} bytes: {'HITS' if rc else 'clean'}")
