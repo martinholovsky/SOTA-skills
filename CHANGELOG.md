@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Three overstatements from the 2026-11-15 intake corrected** (session close, 2026-11-16).
+  `sota-observability` rules/05 §1 said a probe has a daily restart budget and an alert per
+  restart built in; it has neither, so the rule now says a cron job lacks these guards unless
+  they are written. Rules/05 also generalised two measured restart windows to all 15
+  restarts. Rules/02 §4 said one slow call in 44 "crosses any p99 threshold"; it puts the p99
+  in that call's bucket. `sota-databases` rules/08 §3 gave 3.2.6's timings as all three
+  versions'; it now gives each version's range. Ledger rows carry dated corrections.
 - **`scripts/semantic-dup-scan.py` sees a reviewed group that is only partly stale.** It counted a
   group as gone only when none of its members was found, so an edit to one block of a reviewed
   group printed "0 no longer found" and the group came back as NEW, with nothing linking the two.

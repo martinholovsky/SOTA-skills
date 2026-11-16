@@ -792,7 +792,11 @@ def code_edit_cutoff(s: Session, repo: Path, changed: Iterable[str]) -> str:
     """The last Edit/Write the transcript records on a file in the diff. A rules file first read after
     it was not in front of the session while the code was written. 2026-11-15 field report: five rules
     files read while WRITING THE REPORT were tabled as 'loaded', which turned a routing gap into 'rule
-    shape'. "" when no such edit is recorded (code written by Bash, or in another session)."""
+    shape'. "" when no such edit is recorded (code written by Bash, or in another session).
+    OPEN (2026-11-16, not measured): a session that edits the diff's files partly through Bash
+    (`sed -i`, a heredoc) gets a cutoff from its Edit/Write calls alone, which can be too EARLY, and
+    a read made between that edit and a later Bash edit is then tabled as 'read only after the code
+    was written'. Resolving a Bash command's target files is what `accesses()` does for reads."""
     targets = {str((repo / c).resolve()) for c in changed}
     hits = [c.ts for c in s.calls if c.name in EDIT_TOOLS and c.ts and c.file_path
             and str(Path(c.file_path).resolve()) in targets]
