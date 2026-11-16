@@ -90,7 +90,7 @@ db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.i
   `type::record($table, $id)` above, `<string> $v`, a `LET` copy, and a bound **integer**
   too, so this is not the JSON string problem. A range keeps it (`n > 39990`), but
   adding `n != NONE AND` loses it. 4.0.1 keeps `IndexCountScan` for all of these.
-  Measured 2026-11-16 over `/rpc`; row counts matched in every form. Field-reported on a
+  Measured 2026-11-16 over `/rpc`; the counts agreed in every form whose value was read. Field-reported on a
   production 3.2.6: the bound count took 8.09 s against 2.76 s, and it planned through a
   different index that returned 139,863 rows against 189,042 (not reproduced here). On
   3.x, either upgrade or inline the value through an **allow-list builder**: a fixed enum
