@@ -41,12 +41,12 @@ Rules:
 - Restarting a process does not fix its database. Liveness restarts must
   only fire for conditions a restart actually fixes.
 - **A watchdog that restarts on a metric is a liveness probe** and gets the same
-  rules, plus the guards a probe has built in and a cron job does not: a
+  rules, plus guards a cron job does not have unless you write them: a
   minimum-count guard (one slow request at night *is* the p99, and a p99 in the
   `+Inf` bucket reads as the top bucket edge: [rules/02](02-metrics.md) §4), a
   cooldown, a restart budget per day, and an alert on every restart it performs.
-  Field-reported 2026-11-15: 15 database restarts in 24 h, each triggered by one to
-  four hung requests out of 44 to 52 in the window.
+  Field-reported 2026-11-15: 15 database restarts in 24 h; two of the windows that
+  triggered one held 1 of 44 and 4 of 52 updates above 50 s.
 - Readiness checks only **required** dependencies (without which serving is
   impossible). Optional dependencies (cache, recommendations) degrade
   gracefully (§2) and must NOT fail readiness — or a Redis blip removes

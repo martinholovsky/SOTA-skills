@@ -77,8 +77,9 @@ db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.i
   with an indexed record field, `out = $p`, `out = <record> $p`, `out =
   type::record($p)` and even `WITH INDEX … WHERE out = $p` all plan a **`TableScan`**,
   while `out = type::record($table, $id)` (both parts bound) plans **`IndexScan`**,
-  as do a literal and a `LET $p = table:id` record. Measured 2026-11-15 on 3.2.6,
-  3.3.5 and 4.0.1, 60,000 edges: about 70 ms against 4 ms. The rows match either
+  as do a literal and a `LET $p = table:id` record. Plans measured 2026-11-15 on
+  3.2.6, 3.3.5 and 4.0.1, 60,000 edges; scans took 68–85 ms on 3.x and 77–119 ms on
+  4.0.1, the two-argument form 4.2–7.6 ms. The rows match either
   way, so only `EXPLAIN` shows it (§8). Do not "fix" it by inlining the id: use
   the two-argument form. Whether a typed record id from an SDK's CBOR
   transport keeps the index was **not measured** here: EXPLAIN it before relying on it.
