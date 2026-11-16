@@ -4,7 +4,8 @@ Scope: the sibling of [`rules/06`](06-ad-hoc-commands.md). That file is about a 
 **wrong answer**; this one is about a verification command with **side effects** — it
 destroys what it was inspecting, or exhausts a resource nobody budgets. Split out of
 [`rules/06`](06-ad-hoc-commands.md) at v1.42.2 when that file reached its 500-line cap; §3 and §4 keep their
-numbers so every existing citation still names the right section. [`rules/06`](06-ad-hoc-commands.md) §2's
+numbers so every existing citation still names the right section. §6 covers a command
+you hand someone else to paste, whose side effects land in their shell. [`rules/06`](06-ad-hoc-commands.md) §2's
 discipline — state the traversal, print the denominator, control the sweep — is assumed.
 
 **The unifying property:** "I am only checking something" bounds nothing. A read-only
@@ -189,6 +190,40 @@ agent shells may give a closed stdin instead, so check `ls -l /dev/fd/0` rather 
 - **A command that hangs with no CPU is waiting for input until shown otherwise.** Read the
   command for a bare reader before blaming the work.
 
+## 6. A command you hand to a human is a new command
+
+A block written for someone else to paste has not been run, even when every command in it
+has been run. Field-reported 2026-11-16 (one hand-off, two defects). The agent's own probes
+used `wget -q -T 5` and failed fast. The block it wrote for the operator used `wget -qO-` with
+no timeout, and the operator was left with no output and no exit code. It was **retyped for a
+human** rather than copied. Retyping rebuilds the command from memory, dropping the flags that
+were learned the hard way and adding affordances that are hazards of their own:
+
+**A `#` is not a comment in interactive zsh** unless `setopt interactivecomments` is set, and
+zsh leaves it off by default. Some configurations turn it on, so the author's own terminal may
+not show the problem. Measured 2026-11-16 with zsh 5.9 (`PS1= zsh -f -i < block`), on this
+library's maintainer machine, whose login zsh also has the option off:
+
+| pasted line | interactive zsh, option off |
+|---|---|
+| `# pick a pod, then:` | `command not found: #` |
+| `# pick a pod (e.g. pod-0), then:` | `no matches found: (e.g. pod-0),` |
+| `# note: first check; echo RAN` | `command not found: #`, then **`RAN`**: the text after `;` executes |
+| `echo a # trailing note; echo RAN` | prints `a # trailing note`, then **`RAN`**: a trailing note becomes arguments |
+| `ls /missing # (why)` | `unknown file attribute: h`: `(why)` is a glob qualifier, and `ls` never ran |
+
+Controls: the same text run as a script (`zsh -f file`), or with `setopt interactivecomments`
+first, gives no errors, and bash 3.2 `--norc -i` treats every line as a comment. So a
+handed-over line like `# then; kubectl delete …` **runs the delete** in a stock interactive zsh.
+
+- **Copy the command you ran and verified; never retype it.** Keep its timeouts, its
+  `</dev/null` (§5) and its flags, and give each step a visible exit status (`; echo "rc=$?"`).
+  If you could not run it yourself, say so in the hand-off. When a failed attempt is
+  expensive, rehearse first ([`sota-cli-ux` rules/03](../../sota-cli-ux/rules/03-behavior-lifecycle.md) §9).
+- **No `#` inside a block meant for pasting**, neither on its own line nor after a command. Put
+  the prose outside the fence. Failing that, make the block's first line
+  `setopt interactivecomments 2>/dev/null` (a silent no-op in bash).
+
 ## Audit checklist
 
 - [ ] **Crash reproductions announced, and their artifacts attributed** (§3b): before a session
@@ -216,3 +251,7 @@ agent shells may give a closed stdin instead, so check `ls -l /dev/fd/0` rather 
       (`cat >`, `read` without `-t`, a tool with an empty file argument) with nothing
       redirected in? In an agent shell whose stdin is an open socket it blocks until the
       timeout. Add `</dev/null`.
+- [ ] **Commands handed to a human** (§6): each one is copied from a command that was run,
+      with its timeouts and flags intact and an exit status per step, or is marked as not
+      run. The paste block holds no `#` text, on its own line or after a command, unless its
+      first line sets `interactivecomments`.

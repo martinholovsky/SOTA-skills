@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
+  `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
+  on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule
+  prescribes, and a bound integer too. Every bound form fetches the matching rows instead.
+  Measured on 3.2.6 and 3.3.5. On 4.0.1 every bound form keeps the count scan. "Do not
+  inline" is now scoped to lookups, and counts on 3.x get an allow-list builder exception.
+  This corrects the previous day's rejection of that builder. New `sota-shell-scripting`
+  rules/08 §6: a command handed to a human is copied from the one you ran, not retyped, and
+  a paste block holds no `#`. Interactive zsh without `interactivecomments` runs a `#` line
+  as a command, and runs the text after a `;` in it, measured on zsh 5.9.
+  `sota-devsecops` rules/03 §3.7.1: before moving a pin, look for the project's own recorded
+  hold, and write a hold at the pin. `sota-code-security` rules/10 §1: a measured gap between
+  a proxy and the real quantity is not a margin to subtract. The router's `sota-devsecops`
+  row now names version upgrades.
 - **Three overstatements from the 2026-11-15 intake corrected** (session close, 2026-11-16).
   `sota-observability` rules/05 §1 said a probe has a daily restart budget and an alert per
   restart built in; it has neither, so the rule now says a cron job lacks these guards unless

@@ -208,7 +208,8 @@ irreversible, rate-limited, paid, or requiring physical presence you cannot repe
 Find the substitution that exercises the same code path at zero cost — a file-based key
 instead of a hardware one, a dry-run flag, a throwaway target, `--help` parsed against the
 **installed** binary rather than remembered (and see [`sota-code-security` rules/16](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.15:
-a flag that parses is not a feature that works). Run it. *Then* hand over the real command.
+a flag that parses is not a feature that works). Run it. *Then* hand over the real command,
+copied from the one you ran rather than retyped, with no `#` lines in the paste block ([`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §6).
 
 Field-reported: a YubiKey PIV PIN allows **three** consecutive attempts before it blocks
 (corrected 2026-10-30 against Yubico's PIV admin-access page: the PUK unblocks it, and only

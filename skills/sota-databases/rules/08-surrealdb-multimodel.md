@@ -80,9 +80,24 @@ db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.i
   as do a literal and a `LET $p = table:id` record. Plans measured 2026-11-15 on
   3.2.6, 3.3.5 and 4.0.1, 60,000 edges; scans took 68–85 ms on 3.x and 77–119 ms on
   4.0.1, the two-argument form 4.2–7.6 ms. The rows match either
-  way, so only `EXPLAIN` shows it (§8). Do not "fix" it by inlining the id: use
-  the two-argument form. Whether a typed record id from an SDK's CBOR
+  way, so only `EXPLAIN` shows it (§8). For a **lookup**, do not "fix" it by inlining
+  the id: use the two-argument form. Whether a typed record id from an SDK's CBOR
   transport keeps the index was **not measured** here: EXPLAIN it before relying on it.
+- **A count is the exception on 3.x: no bound form keeps `IndexCountScan`.** `SELECT
+  count() … WHERE f = <literal> GROUP ALL` plans `IndexCountScan`, which counts index
+  keys. On 3.2.6 and 3.3.5 every bound form plans `Aggregate > IndexScan` or `> TableScan`,
+  which **fetches every matching row** to count it: `$v`, the two-argument
+  `type::record($table, $id)` above, `<string> $v`, a `LET` copy, and a bound **integer**
+  too, so this is not the JSON string problem. A range keeps it (`n > 39990`), but
+  adding `n != NONE AND` loses it. 4.0.1 keeps `IndexCountScan` for all of these.
+  Measured 2026-11-16 over `/rpc`; row counts matched in every form. Field-reported on a
+  production 3.2.6: the bound count took 8.09 s against 2.76 s, and it planned through a
+  different index that returned 139,863 rows against 189,042 (not reproduced here). On
+  3.x, either upgrade or inline the value through an **allow-list builder**: a fixed enum
+  or a strict charset (`^[A-Za-z0-9_.:-]{1,64}$` inside quotes for a string;
+  alphanumeric only for an unquoted record key, where `-` would parse as minus). Bind
+  anything that fails it, and never take an identifier from input. That is the one sanctioned string-built query, and it needs tests
+  with hostile values. EXPLAIN every count over a large table.
 
 ## 4. Schema enforcement
 
@@ -270,7 +285,10 @@ surreal start --deny-all \
 - [ ] All queries use bound `$params`; no string-built SurrealQL anywhere
       (grep SDK call sites for interpolation); record IDs from input bound
       (`type::record($table, $id)`, not a string `$id` compared with a record
-      field, which scans); dynamic identifiers whitelisted (§3).
+      field, which scans); dynamic identifiers whitelisted (§3). The one
+      exception is a `count() … GROUP ALL` on 3.x: it EXPLAINs as
+      `IndexCountScan`, and any inlined value passes an allow-list builder
+      that has hostile-value tests (§3).
 - [ ] Integrity-critical tables SCHEMAFULL with TYPE/ASSERT/READONLY fields;
       record links checked for orphans where it matters; no untyped critical
       fields on SCHEMALESS tables; server-computed fields use `VALUE`/`DEFAULT`
