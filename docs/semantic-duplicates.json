@@ -130,7 +130,6 @@
    "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: api-design §7 restates the same structural tenant-scoping rule with identical SET LOCAL/set_config/pooling detail; code-security §5 owns it with the SQL example, api-design should keep a one-line link. Owner: skills/sota-code-security/rules/03-authorization.md §5",
    "sample": "- **Scope every query structurally**: tenant filter applied by a repository layer/ORM global scope or Postgres RLS (`SET",
    "members": [
-    "sota-api-design/rules/07-security-operations.md#7576e9f45294",
     "sota-code-security/rules/03-authorization.md#5adfed90762d"
    ]
   },
@@ -163,8 +162,7 @@
    "sample": "2. **Asymmetric guard** — the highest-yield tell. A comparison where **one operand is filtered against the sentinel and ",
    "members": [
     "sota-architecture/rules/02-domain-modeling-and-boundaries.md#23b19b86e5ee",
-    "sota-python/rules/02-typing-correctness.md#1024f5ffdee6",
-    "sota-python/rules/02-typing-correctness.md#dbf854836c91"
+    "sota-python/rules/02-typing-correctness.md#1024f5ffdee6"
    ]
   },
   {
@@ -530,7 +528,6 @@
    "note": "Log injection with language-specific mechanics: C syslog call sites, Python formatter, Rust tracing fields.",
    "sample": "- **Logs carry neither secrets nor raw input.** C has no standard logger, so every `syslog`/`fprintf(stderr, ...)` call ",
    "members": [
-    "sota-c-cpp/rules/04-security.md#1281c24881bb",
     "sota-code-security/rules/07-data-exposure.md#5d87a36e0be4",
     "sota-python/rules/05-security.md#5a956fdbd889",
     "sota-rust/rules/05-security-supply-chain.md#cfa4e2238ea7"
@@ -720,11 +717,7 @@
    "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Cloud-infra rules/03 §7 restates R1 (CA/B lifetime schedule, ACME, provider-managed, 30/14/7 expiry backstop) and secrets rules/05 §4 restates the schedule with a conflicting severity (Medium vs High); network-security owns TLS posture, the others should link, network-security SKILL.md summary stays. Owner: skills/sota-network-security/rules/06-dns-tls-pki.md §1",
    "sample": "- **Certificate lifetimes are collapsing by CA/Browser Forum schedule: max 200 days from 2026-03-15, 100 days from 2027-",
    "members": [
-    "sota-cloud-infrastructure/rules/03-networking.md#006d7035d15a",
-    "sota-cloud-infrastructure/rules/03-networking.md#8534b2c52b8f",
-    "sota-network-security/SKILL.md#12c2a26ce62b",
-    "sota-network-security/rules/06-dns-tls-pki.md#36e9fe319987",
-    "sota-secrets-management/rules/05-credential-types.md#627405792268"
+    "sota-network-security/SKILL.md#12c2a26ce62b"
    ]
   },
   {
@@ -744,10 +737,6 @@
    "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Both state 'reference SGs/tags not CIDRs; no 0.0.0.0/0 ingress except 80/443 on the edge'. network-security §5 R8 says it owns the posture (cloud-infra owns setup), so cloud-infra §1 and its checklist should keep the SSM/IAP note and link the rest. Owner: skills/sota-network-security/rules/02-segmentation-blast-radius.md §5",
    "sample": "- Security groups / firewall rules: deny-by-default, reference **security groups (or tags/service accounts in GCP), not ",
    "members": [
-    "sota-cloud-infrastructure/rules/03-networking.md#38e8318d54e8",
-    "sota-cloud-infrastructure/rules/03-networking.md#74de115389d3",
-    "sota-network-security/rules/02-segmentation-blast-radius.md#35608bb48866",
-    "sota-network-security/rules/02-segmentation-blast-radius.md#5735c38dd296",
     "sota-network-security/rules/02-segmentation-blast-radius.md#add349256759"
    ]
   },
@@ -1271,7 +1260,6 @@
    "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: code-security rules/10 §4 restates the router's negative-claim evidence rule nearly verbatim; keep a one-line link plus its unique search-vs-durable-guard addendum. Owner: skills/sota/rules/03-audit-findings.md §2",
    "sample": "- **A negative claim needs more proof than a positive one.** \"There are no swallowed exceptions on the enforcement path\"",
    "members": [
-    "sota-code-security/rules/10-silent-control-failure.md#24cb20584881",
     "sota/rules/03-audit-findings.md#088ea6dd4247"
    ]
   },
@@ -1317,7 +1305,6 @@
    "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: Both files state the same lesson 'one gate's green does not cover another gate's scope' as a standalone corollary; rules/11 should keep its incident and link to rules/15 §3. Owner: skills/sota-code-security/rules/15-instruments-and-guards.md §3",
    "sample": "A neighbouring check that recounted the tree did **not** catch it, because the count it recounted (`SKILL.md` files) was",
    "members": [
-    "sota-code-security/rules/11-dead-path-diagnostics.md#9671892a0b2d",
     "sota-code-security/rules/15-instruments-and-guards.md#c6e77287550d"
    ]
   },
@@ -1410,8 +1397,7 @@
    "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: secrets rules/05 §6 repeats the JWT alg-pinning rule and an Ed25519/RFC 9864 library-support claim that already differs from code-security's measured one; code-security owns JWT verification, secrets should link. Owner: skills/sota-code-security/rules/17-sessions-and-tokens.md §3",
    "sample": "- **Pin the algorithm at verification.** Pass an explicit allowlist (`algorithms=[\"ES256\"]`); never trust the header's `",
    "members": [
-    "sota-code-security/rules/17-sessions-and-tokens.md#10bc17acd124",
-    "sota-secrets-management/rules/05-credential-types.md#c5e612a6fbca"
+    "sota-code-security/rules/17-sessions-and-tokens.md#10bc17acd124"
    ]
   },
   {
@@ -1511,9 +1497,7 @@
    "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: The Gmail/Yahoo/Microsoft bulk-sender facts are restated in full and have already drifted (Microsoft 'May 2025' vs 'from 2025', Yahoo 2-day unsubscribe); network-security owns SPF/DKIM/DMARC, and copywriting §5 keeps its 'stricter than CAN-SPAM' line plus a link. Owner: skills/sota-network-security/rules/06-dns-tls-pki.md §5 R14",
    "sample": "- [ ] Bulk sends (Gmail: 5,000+/day; Yahoo: no published number): SPF + DKIM + DMARC aligned, RFC 8058 one-click-unsubsc",
    "members": [
-    "sota-copywriting/rules/04-claims-legal-trust.md#bef3d22a25f8",
-    "sota-copywriting/rules/04-claims-legal-trust.md#dbae69cc7a13",
-    "sota-network-security/rules/06-dns-tls-pki.md#bad1ed04a7f9"
+    "sota-copywriting/rules/04-claims-legal-trust.md#bef3d22a25f8"
    ]
   },
   {
@@ -1719,9 +1703,6 @@
    "sample": "- **Immutable releases**: never re-publish an existing version with different bytes (no re-tagging, no overwriting GitHu",
    "members": [
     "sota-devsecops/rules/02-provenance-signing.md#aad9aca17be5",
-    "sota-devsecops/rules/04-build-containers.md#2d2220bd7ae6",
-    "sota-devsecops/rules/04-build-containers.md#f957cbeaa554",
-    "sota-devsecops/rules/08-registry-security.md#3a3364f25aa9",
     "sota-devsecops/rules/08-registry-security.md#9fc485d62c2f",
     "sota-docs-workflow/rules/04-commits-branches-releases.md#a72c473124a4"
    ]
@@ -1796,7 +1777,6 @@
    "note": "devsecops CI-gate quarantine rule and checklist vs testing SKILL non-negotiable summary with root-cause labels.",
    "sample": "- [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recor",
    "members": [
-    "sota-devsecops/rules/05-analysis-gates.md#bb345771817a",
     "sota-devsecops/rules/05-analysis-gates.md#f000aa7157ea",
     "sota-testing/SKILL.md#f92a96f04d87"
    ]
@@ -1855,7 +1835,6 @@
     "sota-devsecops/rules/07-runtime-ops.md#2422bae2df3d",
     "sota-kubernetes/rules/03-admission-policy.md#0ae8f3b62825",
     "sota-privacy-compliance/rules/05-audit-ready-engineering.md#e99a85edfa20",
-    "sota-security-compliance/rules/01-control-frameworks-as-code.md#8ea695722963",
     "sota-security-compliance/rules/01-control-frameworks-as-code.md#ed6b8d5f0d58"
    ]
   },
@@ -2152,8 +2131,6 @@
    "members": [
     "sota-javascript-typescript/rules/01-typescript-config-and-types.md#07b9f80ae294",
     "sota-javascript-typescript/rules/01-typescript-config-and-types.md#82ef31c5f32d",
-    "sota-javascript-typescript/rules/01-typescript-config-and-types.md#ae196e5fe09b",
-    "sota-javascript-typescript/rules/07-testing-and-tooling.md#043ca3f131bd",
     "sota-javascript-typescript/rules/07-testing-and-tooling.md#c4383797b171"
    ]
   },
@@ -2237,10 +2214,6 @@
    "sample": "- Protect node metadata endpoints: block pod access to the cloud metadata service (169.254.169.254); workload identity o",
    "members": [
     "sota-kubernetes/rules/01-control-plane-etcd.md#23b6bfdcd538",
-    "sota-network-security/rules/03-k8s-network-policy.md#3e4ac771b9a3",
-    "sota-network-security/rules/03-k8s-network-policy.md#bf98a359a1e1",
-    "sota-network-security/rules/05-edge-ingress-egress.md#cacb0d31d9fe",
-    "sota-network-security/rules/05-edge-ingress-egress.md#dd23fb826343",
     "sota-threat-modeling/rules/03-threat-catalogs.md#43823a92aeb2"
    ]
   },
@@ -2525,8 +2498,6 @@
    "sample": "- [ ] **Memory cap via `RLIMIT_AS` (§2) [HIGH when it gates an inspection]** — `grep -rn \"RLIMIT_AS\" --include=\"*.py\" sr",
    "members": [
     "sota-python/rules/05-security.md#28c8752379c0",
-    "sota-python/rules/05-security.md#7aeaca5190a4",
-    "sota-sandboxing/rules/02-linux-os-hardening.md#46592d5422d7",
     "sota-sandboxing/rules/02-linux-os-hardening.md#b946e5196ef0",
     "sota-shell-scripting/rules/08-ad-hoc-side-effects.md#256ee7ebf480",
     "sota-shell-scripting/rules/08-ad-hoc-side-effects.md#fd8b523ba7e9"
@@ -2574,10 +2545,8 @@
    "note": "Different probes: rules/05 counts fuzz targets and Kani harness files separately, rules/09 checks a crate has neither; the severity now lives only in rules/09 (2026-10-30).",
    "sample": "- [ ] Fuzz targets exist for each untrusted-input parser; absent on a network-facing parser = Medium. Count both kinds o",
    "members": [
-    "sota-rust/rules/05-security-supply-chain.md#1e5bd53a55cd",
     "sota-rust/rules/05-security-supply-chain.md#1f2de42453e2",
-    "sota-rust/rules/09-formal-verification.md#89d08d77d1e1",
-    "sota-rust/rules/09-formal-verification.md#bdee7717e3c2"
+    "sota-rust/rules/09-formal-verification.md#89d08d77d1e1"
    ]
   },
   {
@@ -2677,7 +2646,6 @@
    "note": "Different probes: rules/03's grep also matches sqlite::memory: and lowercase jdbc:h2, which rules/04's does not; rules/03 cites rules/04 §4.1 for scope (2026-10-30).",
    "sample": "- [ ] In-memory DB standing in for the real engine? Grep `sqlite::memory:|:memory:|H2|jdbc:h2` in integration config of ",
    "members": [
-    "sota-testing/rules/03-doubles-and-test-data.md#0d050ce0eccc",
     "sota-testing/rules/04-integration-contract-system.md#220eb1596d82"
    ]
   },
@@ -2825,7 +2793,6 @@
    "note": "After the 2026-10-30 consolidation: an owner and a short pointer that restates the action beside its link, or a language-specific line beside the general rule.",
    "sample": "- **Every cert is issued and renewed automatically**, with expiry alerts as a backstop: the CA/B lifetime schedule, ACME",
    "members": [
-    "sota-cloud-infrastructure/rules/03-networking.md#dc410a706379",
     "sota-network-security/SKILL.md#12c2a26ce62b",
     "sota-secrets-management/rules/05-credential-types.md#fa0bbf79a6b0"
    ]
