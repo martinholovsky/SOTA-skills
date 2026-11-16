@@ -54,7 +54,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -780,23 +780,56 @@ def loaded_rules(r: dict | None) -> set[str] | None:
             and set(f["kinds"]) & {"read", "search", "invoke"}}
 
 
-def join(r: dict | None, d: dict) -> dict:
+def first_load(r: dict, rel: str) -> str:
+    """Earliest read/search/invoke of REL; "" when the row carries no per-access timestamps."""
+    f = next((x for x in r["files"] if x["file"] == rel), None)
+    ts = [a["ts"] for a in (f or {}).get("accesses", [])
+          if a.get("kind") in {"read", "search", "invoke"} and a.get("ts")]
+    return min(ts, default="")
+
+
+def code_edit_cutoff(s: Session, repo: Path, changed: Iterable[str]) -> str:
+    """The last Edit/Write the transcript records on a file in the diff. A rules file first read after
+    it was not in front of the session while the code was written. 2026-11-15 field report: five rules
+    files read while WRITING THE REPORT were tabled as 'loaded', which turned a routing gap into 'rule
+    shape'. "" when no such edit is recorded (code written by Bash, or in another session)."""
+    targets = {str((repo / c).resolve()) for c in changed}
+    hits = [c.ts for c in s.calls if c.name in EDIT_TOOLS and c.ts and c.file_path
+            and str(Path(c.file_path).resolve()) in targets]
+    return max(hits, default="")
+
+
+def join(r: dict | None, d: dict, cutoff: str = "") -> dict:
     """The 2x2 per rules file: loaded (transcript) x new probe hits (built code), and the bounded
-    verdict-walk set /sota-report asks for: every loaded rules file plus every file with a new hit."""
+    verdict-walk set /sota-report asks for: every loaded rules file plus every file with a new hit.
+    With CUTOFF (code_edit_cutoff), a file first read after it counts as read too late, not loaded."""
     loaded = loaded_rules(r)
+    late: set[str] = set()
+    if loaded is not None and cutoff:
+        late = {rel for rel in loaded if (t := first_load(r, rel)) and t > cutoff}
+        loaded -= late
     hit_files = sorted({h["rules_file"] for h in d["hits"] if h["new"]})
     rows = []
     for rel in hit_files:
-        state = "unknown (no transcript)" if loaded is None else (
-            "loaded + new hit: rule shape, if the walk confirms it" if rel in loaded
-            else "not loaded + new hit: routing gap, if the walk confirms it")
+        if loaded is None:
+            state = "unknown (no transcript)"
+        elif rel in loaded:
+            state = "loaded + new hit: rule shape, if the walk confirms it"
+        elif rel in late:
+            state = "read only after the code was written + new hit: routing gap, if the walk confirms it"
+        else:
+            state = "not loaded + new hit: routing gap, if the walk confirms it"
         rows.append({"rules_file": rel, "quadrant": state,
                      "new_hits": sum(h["new"] for h in d["hits"] if h["rules_file"] == rel)})
     for rel in sorted(loaded or ()):
         if rel not in hit_files:
             rows.append({"rules_file": rel, "quadrant": "loaded, no new mechanical hit", "new_hits": 0})
-    walk = sorted((loaded or set()) | set(hit_files))
-    return {"quadrants": rows, "verdict_walk": walk}
+    for rel in sorted(late):
+        if rel not in hit_files:
+            rows.append({"rules_file": rel, "new_hits": 0,
+                         "quadrant": "read only after the code was written, no new mechanical hit"})
+    walk = sorted((loaded or set()) | late | set(hit_files))
+    return {"quadrants": rows, "verdict_walk": walk, "code_edit_cutoff": cutoff}
 
 
 def diff_markdown(d: dict, j: dict, show_hits: bool) -> str:
@@ -820,6 +853,11 @@ def diff_markdown(d: dict, j: dict, show_hits: bool) -> str:
     if show_hits:
         L += ["", "New hits (PRIVATE, local use only; never paste into a report):"]
         L += [f"- `{h['probe']}` {w}" for h in d["hits"] for w in h["where"]]
+    if "code_edit_cutoff" in j:
+        L += ["", f"Loaded = first read at or before the last Edit/Write of a changed file "
+                  f"({j['code_edit_cutoff']})." if j["code_edit_cutoff"] else
+              "No Edit/Write of a changed file in the transcript (written by Bash, or elsewhere): "
+              "loaded counts every read, including any made after the code was written."]
     L += ["", "| Rules file | Loaded x new hit |", "|---|---|"]
     L += [f"| `{q['rules_file']}` | {q['quadrant']} |" for q in j["quadrants"]] or ["| none | |"]
     L += ["", "Verdict walk (met / not met / not applicable with reason / not checked, per checklist item):"]
@@ -857,11 +895,13 @@ def main(argv: Sequence[str]) -> int:
         return self_test()
     lib = a.library.resolve()
     d = j = None
+    repo_top: Path | None = None
     if a.diff:
         top = _git(a.repo, "rev-parse", "--show-toplevel")
         if top.returncode != 0:
             return _fail(f"--repo {a.repo} is not inside a git repository: {top.stderr.strip()}", a.json)
-        d, err = diff_probes(Path(top.stdout.strip()), a.diff, lib)
+        repo_top = Path(top.stdout.strip())
+        d, err = diff_probes(repo_top, a.diff, lib)
         if err:
             return _fail(err, a.json)
         if not a.transcripts and not a.cwd:
@@ -891,8 +931,9 @@ def main(argv: Sequence[str]) -> int:
         return _fail(f"0 tool calls in {len(paths)} transcript(s): not a session transcript, or the "
                      f"format changed; refusing to report an empty audit", a.json)
     r = build(s, lib)
-    if d is not None:
-        j = join(r, d)
+    if d is not None and repo_top is not None:
+        changed, _ = diff_scope(repo_top, a.diff)
+        j = join(r, d, code_edit_cutoff(s, repo_top, changed))
         if not a.show_hits:
             for h in d["hits"]:
                 h.pop("where")
@@ -1082,6 +1123,21 @@ def self_test() -> int:
             j_out = join({"files": []}, dp)
             check(any(q["rules_file"] == crypto and "routing gap" in q["quadrant"] for q in j_out["quadrants"]),
                   "not loaded + new hit -> routing gap")
+            # a read made only after the code was written (e.g. while writing the report) is not "loaded"
+            timed = {"files": [{"file": crypto, "kinds": ["read"],
+                                "accesses": [{"ts": "2026-11-15T21:38:00Z", "kind": "read"}]}]}
+            j_late = join(timed, dp, "2026-11-15T19:35:00Z")
+            check(any(q["rules_file"] == crypto and q["quadrant"].startswith("read only after")
+                      and "routing gap" in q["quadrant"] for q in j_late["quadrants"]),
+                  "read after the last code edit + new hit -> routing gap, not rule shape")
+            check(crypto in j_late["verdict_walk"], "a file read too late stays in the verdict walk")
+            j_early = join(timed, dp, "2026-11-15T22:00:00Z")
+            check(any(q["rules_file"] == crypto and q["quadrant"].startswith("loaded + new hit")
+                      for q in j_early["quadrants"]), "read before the last code edit -> loaded")
+            sess = Session(calls=[Call("e1", "Edit", "2026-11-15T19:35:00Z", 1, file_path=str(repo / "app/new.go")),
+                                  Call("e2", "Edit", "2026-11-15T21:40:00Z", 2, file_path=str(repo / "REPORT.md"))])
+            check(code_edit_cutoff(sess, repo, ["app/new.go", "app/old.go"]) == "2026-11-15T19:35:00Z",
+                  "cutoff is the last edit of a CHANGED file; a later edit to the report is ignored")
             for x in dp["hits"]:
                 x.pop("where", None)
             md5 = diff_markdown(dp, j_in, False)

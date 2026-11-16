@@ -1649,7 +1649,9 @@ every rules file read, searched or edited (shell `cat`/`sed`/`grep` included, al
 checklist was read and re-read after the last edit, and which probes ran. With `--diff BASE` it
 also runs the checklist probes over the code the session changed, counting hits on added lines
 only, and joins the two: a rule that was loaded and still hit points at its wording, one that was
-never loaded points at routing. The report then does a verdict walk over just those rules files,
+never loaded points at routing. A rules file first read after the session's last edit to the
+changed code, while the report was being written for example, counts as not loaded (v1.55.2).
+The report then does a verdict walk over just those rules files,
 fixing nothing. It proves process and finds leads; it does not prove a rule was applied (in its
 first real run 4 of 9 sampled hits were real), and it prints no command text or project paths.
 

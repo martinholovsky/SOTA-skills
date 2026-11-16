@@ -5,11 +5,31 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.55.2] - 2026-11-15
 
+A PATCH: rule text, probes, hook checks, gates and script fixes inside surfaces that already exist. Thirteen PRs since v1.55.1: #684, #689, #690, #697, #698, #699, #700, #701, #702, #703, #704, #705, #707.
+
+**Front door checked:** NOMATCH · invisible · statusline · session-load-audit
+
+- **SurrealQL: bind a record id in the form that keeps the index** (`sota-databases` rules/08 §3, §8).
+  Over a JSON transport a bound id is a string, and comparing it with a record field plans a
+  `TableScan` even with `<record>` or `WITH INDEX`. `type::record($table, $id)` plans an
+  `IndexScan`, fully bound. 3.x `UPDATE`s with an `OR` group scan even with literals, and on 3.x
+  the plan words differ between `SELECT` and `UPDATE`. Measured on 3.2.6, 3.3.5 and 4.0.1.
+- **Go: apply a per-call default timeout unconditionally** (`sota-golang` rules/02 §8, checklist
+  probe with fixtures). Skipping it when the caller has a deadline hands a query an 8 h job's deadline.
+- **A quantile in the `+Inf` bucket is not a measurement, and a restart watchdog is a liveness
+  probe** (`sota-observability` rules/02 §4, rules/05 §1): minimum-count guard, cooldown, daily
+  budget, alert per restart.
+- **`pgrep -f` misses a target whose argv[0] was rewritten** (`sota-shell-scripting` rules/09 §5c):
+  framework Python on macOS, `exec -a`.
+- **`scripts/session-load-audit.py --diff` no longer counts reads made after the code was written
+  as "loaded".** A report's own reads had turned a routing gap into "rule shape"; the table now
+  prints a cutoff (the last Edit/Write of a changed file) and a `read only after the code was
+  written` row.
 - **The zsh hook refuses an unquoted glob in a flag value** (`--include=*.rs`,
   `-o custom-columns=…[0]`; `scripts/zsh-equals-hook.py`, `sota-shell-scripting` rules/06 §1). zsh
-  matches the whole word against file names and aborts with `no matches found`, so the search never
+  matches the whole word against file names and aborts with `no matches found` (its `NOMATCH` option), so the search never
   runs. Measured first over 38,283 local agent Bash calls: 123 of 123 such words that zsh reached
   aborted, and the shipped check refuses 111 calls, all of which aborted. A glob **operand**
   (`ls *.md`) is not refused: 4,445 of 4,632 ran fine. *Corrected 2026-11-15 (session close):
@@ -11954,6 +11974,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.55.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.2
 [1.55.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.1
 [1.55.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.0
 [1.54.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.54.2
