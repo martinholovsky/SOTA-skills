@@ -187,8 +187,9 @@ A test may consume only inputs it controls. The big three leaks:
   the same on every run: an input the test does not control. Send each case from
   a longer buffer whose tail differs per case, so an over-read changes the result.
   A sanitizer reports a read past the allocation, not one past a length inside a
-  larger buffer, and none instruments a read across a boundary (a kernel reading
-  user memory, FFI). Field-reported 2026-11-14: a 48-byte key read past short
+  larger buffer (ASan, Apple clang 21, 2026-11-15: silent at rc 0 inside 512 bytes,
+  `heap-buffer-overflow` past a 10-byte allocation), and a read the kernel makes of
+  user memory is not a userspace load at all (not measured). Field-reported 2026-11-14: a 48-byte key read past short
   datagrams passed for weeks on glibc; under musl 5 identical repeats were 5 events.
 
 ```python

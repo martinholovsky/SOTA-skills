@@ -54,7 +54,7 @@ The plugin data dir is `$CLAUDE_PLUGIN_DATA`, which Claude Code sets. Set the va
   extras the first-run notice offers (a status line showing which skills ran, pre-commit gates
   for a repository, an `AGENTS.md` for other agents). Nothing runs them unless you do.
 - `scripts/session-load-audit.py` (needs `python3`), with the two modules it imports
-  (`check-checklist-probes.py`, `check-probe-fixtures.py`): `/sota-report` runs it to list
+  (`check-checklist-probes.py`, `check-probe-fixtures.py`): `/sota-report` (and `/sota-audit`, to back its coverage table) runs it to list
   what the session loaded from the library, read from your local transcript, and with `--diff`
   to run the checklist probes over what the session changed. It writes nothing but a temporary
   copy of the changed files, removed on exit, and prints no command text or project paths.
