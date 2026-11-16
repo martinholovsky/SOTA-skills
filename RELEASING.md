@@ -224,7 +224,10 @@ threshold stored in `docs/semantic-duplicates.json` into groups, and fails (exit
 with a block that has no verdict yet. Give each new group a verdict there: `deliberate` (a gated
 canonical line, or a template chosen per skill), `consolidate` (keep one copy, link from the other)
 or `distinct` (looks alike, says different things). `untriaged` entries are the backlog recorded
-when the file was created; they may only shrink. Exit 2 means the instrument did not run or failed
+when the file was created; they may only shrink. **A NEW group is often an old one whose text was
+edited**: the edit changes a block's id. The scan says `partly reviewed … member id(s) no longer
+found` under such a group; replace the ids in that reviewed group, do not add a second one (v1.55.2
+cut: the summary read "0 no longer found" over two outdated ids). Exit 2 means the instrument did not run or failed
 its built-in control (the model no longer separates 12 paraphrase pairs from 12 same-topic
 neighbours), so it is not a result. A cold run embeds about 13,000 blocks (14.5 hours on 2026-10-30, 52,227 s, on the maintainer's machine);
 later runs embed only changed blocks, from a git-ignored cache in the main checkout's

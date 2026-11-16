@@ -5,6 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **`scripts/semantic-dup-scan.py` sees a reviewed group that is only partly stale.** It counted a
+  group as gone only when none of its members was found, so an edit to one block of a reviewed
+  group printed "0 no longer found" and the group came back as NEW, with nothing linking the two.
+  The summary now counts partly stale groups and their outdated ids, a NEW group that overlaps a
+  reviewed one says so, and rewriting the file drops outdated ids. Replaying the v1.55.2 cut's
+  case: `partly reviewed: 1 of these blocks belong to a 'deliberate' group …; it has 2 member
+  id(s) no longer found`. First rewrite: 33 outdated ids removed from 18 groups, check still exit 0.
+
 ## [1.55.2] - 2026-11-15
 
 A PATCH: rule text, probes, hook checks, gates and script fixes inside surfaces that already exist. Thirteen PRs since v1.55.1: #684, #689, #690, #697, #698, #699, #700, #701, #702, #703, #704, #705, #707.

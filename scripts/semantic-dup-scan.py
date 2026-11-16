@@ -21,7 +21,10 @@ Every other group must carry a verdict in docs/semantic-duplicates.json:
   distinct     the texts look alike and say different things
   untriaged    present when the file was first written (2026-10-30); debt that only shrinks
 A group whose blocks are all covered by reviewed groups passes. A NEW block in a group, or a new
-group, fails the check (exit 1) until it is given a verdict.
+group, fails the check (exit 1) until it is given a verdict. Editing a reviewed block changes its
+id, so its group comes back as NEW: the summary counts reviewed groups that are partly stale, and a
+NEW group that overlaps one says so. Update that group's member ids rather than adding a second
+group. Rewriting the file (--add-new-as-untriaged) drops ids that are no longer found.
 
 WHY THIS MODEL. Picked 2026-10-30 on 12 library rules, each paired with a paraphrase (same
 instruction, other words) and a hard negative (same topic, different instruction). Only the larger
@@ -294,15 +297,37 @@ def main():
     new_groups = [v for v in groups if any(bid[i] not in known for i in v)]
     current = {bid[i] for v in groups for i in v}
     stale = [g for g in reviewed.get("groups", []) if not any(m in current for m in g["members"])]
+    # PARTLY stale: some members still found, some not. A whole-group test cannot see these, and they
+    # are the common case: an edit to one block of a reviewed group changes that block's id, the group
+    # reappears as NEW, and --add-new-as-untriaged would add an untriaged copy beside the reviewed one.
+    # Seen at the v1.55.2 cut: two of three ids of a 'deliberate' group were outdated, the scan printed
+    # "0 no longer found", and only reading the NEW group's text showed it was the same group.
+    dangling = {id(g): [m for m in g["members"] if m not in current]
+                for g in reviewed.get("groups", []) if g not in stale}
+    dangling = {k: v for k, v in dangling.items() if v}
     verdicts = collections.Counter(g["verdict"] for g in reviewed.get("groups", []))
-    print("reviewed file: %d groups (%s); %d no longer found (fixed or edited: remove them)"
-          % (len(reviewed.get("groups", [])), ", ".join("%s %d" % kv for kv in sorted(verdicts.items())) or "none", len(stale)))
+    print("reviewed file: %d groups (%s); %d no longer found (fixed or edited: remove them); "
+          "%d partly stale (%d member ids no longer found)"
+          % (len(reviewed.get("groups", [])), ", ".join("%s %d" % kv for kv in sorted(verdicts.items())) or "none",
+             len(stale), len(dangling), sum(len(v) for v in dangling.values())))
 
     def show(v, verdict=""):
         fl = sorted({fpath[i] for i in v})
         print("\n[%s] %d blocks in %d files: %s" % (verdict or "NEW", len(v), len(fl), ", ".join(fl[:6]) + (" ..." if len(fl) > 6 else "")))
         for i in v[:3]:
             print("   %s: %s" % (fpath[i], items[i][1][:160]))
+        if not verdict:
+            seen = []
+            for i in v:
+                g = known.get(bid[i])
+                if g is not None and all(g is not s for s in seen):
+                    seen.append(g)
+            for g in seen:
+                out = dangling.get(id(g), [])
+                print("   partly reviewed: %d of these blocks belong to a '%s' group (%s)%s"
+                      % (sum(1 for i in v if known.get(bid[i]) is g), g["verdict"], g["note"][:80] or g["sample"][:80],
+                         "; it has %d member id(s) no longer found: if the new blocks are edits of those, "
+                         "replace the ids in that group rather than adding a new one" % len(out) if out else ""))
 
     if args.report:
         for v in groups:
@@ -317,6 +342,8 @@ def main():
         reviewed.update({"model": model, "digest": digest, "threshold": threshold,
                          "control_threshold": control_threshold})
         reviewed["groups"] = [g for g in reviewed.get("groups", []) if g not in stale]
+        for g in reviewed["groups"]:
+            g["members"] = [m for m in g["members"] if m not in dangling.get(id(g), [])]
         REVIEWED.write_text(json.dumps(reviewed, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         print("wrote %s" % REVIEWED.relative_to(ROOT))
         return
