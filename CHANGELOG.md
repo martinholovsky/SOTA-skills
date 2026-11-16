@@ -32,7 +32,9 @@ A PATCH: rule text, probes, hook checks, gates and script fixes inside surfaces 
   matches the whole word against file names and aborts with `no matches found` (its `NOMATCH` option), so the search never
   runs. Measured first over 38,283 local agent Bash calls: 123 of 123 such words that zsh reached
   aborted, and the shipped check refuses 111 calls, all of which aborted. A glob **operand**
-  (`ls *.md`) is not refused: 4,445 of 4,632 ran fine.
+  (`ls *.md`) is not refused: 4,445 of 4,632 ran fine. *Corrected 2026-11-15 (session close):
+  4,445 is the count that did not abort, not that ran fine; 69 of them were never reached. Only
+  187 of 4,632 aborted.*
 - **The zsh hook refuses `v=$(cmd); for x in $v`** (`scripts/zsh-equals-hook.py`, `sota-shell-scripting`
   rules/06 §1). zsh loops once over the whole output. Measured first over 38,118 local agent Bash
   calls: of 18 such loops, 11 ran once over a joined list and 7 worked only because the command

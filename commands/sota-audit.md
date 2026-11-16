@@ -336,7 +336,7 @@ Then three things a findings table cannot carry, and which are the point of this
   ran, at which versions, and whether history was partial (step 4). **A row marked walked cites
   the read, not the plan.** Before writing this section run `python3 <library>/scripts/session-load-audit.py
   --cwd "$PWD"` (`<library>` as `/sota-report` step E finds it) and mark a file walked only
-  where its row says `Checklist read: yes`. `unknown` (an `awk` or a piped range) means read the
+  where its row says `Checklist read: yes`. `unknown` (an `awk`, or a read piped into anything but `head`) means read the
   checklist again, whole; a file with no row was not walked. Field-reported 2026-11-15: nine
   files reported "walked, item by item", four read, two of those cut at 40 lines.
 - **Depth reached** — for anything you checked by running something, what the check could
