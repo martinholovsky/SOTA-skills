@@ -1289,6 +1289,16 @@
       ]
     },
     {
+      "from": "sota-cli-ux",
+      "to": "sota-shell-scripting",
+      "weight": 5,
+      "targets": [
+        "rules/03 \u00a75",
+        "rules/05 \u00a74a",
+        "rules/08 \u00a76"
+      ]
+    },
+    {
       "from": "sota-cloud-infrastructure",
       "to": "sota-secrets-management",
       "weight": 5,
@@ -1492,15 +1502,6 @@
       "targets": [
         "rules/01",
         "rules/02"
-      ]
-    },
-    {
-      "from": "sota-cli-ux",
-      "to": "sota-shell-scripting",
-      "weight": 4,
-      "targets": [
-        "rules/03 \u00a75",
-        "rules/05 \u00a74a"
       ]
     },
     {
@@ -2135,6 +2136,16 @@
       ]
     },
     {
+      "from": "sota-shell-scripting",
+      "to": "sota-cli-ux",
+      "weight": 3,
+      "targets": [
+        "rules/02 \u00a73",
+        "rules/03 \u00a74",
+        "rules/03 \u00a79"
+      ]
+    },
+    {
       "from": "sota-skill-security",
       "to": "sota-devsecops",
       "weight": 3,
@@ -2763,15 +2774,6 @@
       "weight": 2,
       "targets": [
         "rules/05"
-      ]
-    },
-    {
-      "from": "sota-shell-scripting",
-      "to": "sota-cli-ux",
-      "weight": 2,
-      "targets": [
-        "rules/02 \u00a73",
-        "rules/03 \u00a74"
       ]
     },
     {
@@ -4632,14 +4634,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1936,
+    "md link, other skill": 1938,
     "md link, outside skills/": 3,
-    "md link, same skill": 2866,
+    "md link, same skill": 2867,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 924,
+    "name+file (backticked)": 926,
     "name+file (bare)": 180,
-    "own rules/NN": 3087
+    "own rules/NN": 3088
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4649,9 +4651,9 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 919,
+    "name+file (backticked)": 921,
     "name+file (bare)": 168,
-    "own rules/NN": 2984
+    "own rules/NN": 2985
   },
   "rules_index_style": {
     "link": 42
@@ -5149,7 +5151,8 @@
       "router": [],
       "other": [
         "sota-devsecops/rules/02-provenance-signing.md",
-        "sota-shell-scripting/rules/02-robustness-correctness.md"
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
+        "sota-shell-scripting/rules/08-ad-hoc-side-effects.md"
       ]
     },
     "sota-cli-ux/rules/04-distribution-docs.md": {
@@ -8980,6 +8983,7 @@
       ],
       "router": [],
       "other": [
+        "sota-cli-ux/rules/03-behavior-lifecycle.md",
         "sota-devsecops/rules/07-runtime-ops.md",
         "sota-testing/rules/06-property-fuzzing-mutation.md",
         "sota-testing/rules/07-suite-health-and-ci.md"
