@@ -225,6 +225,14 @@ jobs:
         # mtime (the racy-git false allow found 2026-10-02) fails every run (measured 20 of 20).
         run: python3 scripts/verified-done-hook.py --self-test
 
+      - name: Prove the completion gate still blocks a request-reason hand-back
+        # An opt-in Stop hook (scripts/completion-gate-hook.py, ROADMAP 96) that blocks once
+        # when the final message declines a security control with the request as the reason.
+        # Its self-test pairs real recorded wording that must fire with additions, non-security
+        # declines and gateway hand-offs that must not. Measured 2026-11-17: a mutant that never
+        # blocks fails 3 of 20 checks, and a mutant whose detector never fires fails 9 of 20.
+        run: python3 scripts/completion-gate-hook.py --self-test
+
       - name: Prove the skill-depth hook names the rules files after a skill loads
         # An opt-in PostToolUse hook on the Skill tool (scripts/skill-depth-hook.py, ROADMAP 73
         # option c). The self-test drives it over stdin as Claude Code does and sizes every
