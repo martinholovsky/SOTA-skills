@@ -37,6 +37,10 @@ hand-back runs with other reasons, and 34 of 216 other runs — most of those 34
 real request-reason declines of controls no hidden test covered. The next blind measurement is
 the A/B's shadow arm. Change the patterns only with a new labelled check.
 
+MEASURED (sota-agent-evals v18, 2026-11-17, pre-registered, 20 tasks x 2 arms): INCONCLUSIVE with no
+harm. Rule tests 25/32 -> 26/32, spec tests 20/20 in both, never-mentioned 2 -> 1, +6% cost. Five of
+six blocks produced a code change, one a reasoned refusal. It stays opt-in: no sentinel tasks were run.
+
 MODES: SOTA_COMPLETION_GATE = on (default) | shadow (record, never block) | off.
 RECORD: one JSON line per Stop under <git dir>/sota-completion-gate/<session hash>.jsonl (never
 in the worktree; nothing recorded outside a git repo). Every internal error allows and says so on

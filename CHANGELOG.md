@@ -45,7 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   finish legitimately (explicit prohibition, a user-owned design decision, an existing layer),
   and records every Stop under the git dir; `shadow` mode records without blocking. Its detector's
   measured recall and precision, and what a text-reading gate cannot catch, are in its header. Not
-  in `hooks/hooks.json`: whether it helps is an A/B still to run. Router routing rows now name
+  in `hooks/hooks.json`: its pre-registered A/B (sota-agent-evals v18, 20 tasks × 2 arms) read
+  INCONCLUSIVE with no harm — rule tests 25/32 → 26/32, spec 20/20 in both, +6% cost — and no
+  sentinel tasks were run, so it stays opt-in. Router routing rows now name
   PowerShell, Active Directory and MCP/tool-poisoning coverage that two reviews inferred was
   missing; README carries v16, v17 and the hand-back result after v15; `run-completeness.py`
   records a hash of the live-read principle 5 it sent. `code-rules-hook.py` stops firing on two
