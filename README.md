@@ -1109,7 +1109,10 @@ anything". Three corrections, each re-checked 2026-10-02:
   [Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) exposes the same loop with
   hooks and permissions programmatically. **`scripts/verified-done-hook.py`** uses that: an
   opt-in Stop hook that refuses "done" on a changed tree until a verification command has
-  passed on exactly that tree (router principle 6, enforced). **`scripts/zsh-equals-hook.py`**, on by
+  passed on exactly that tree (router principle 6, enforced). **`scripts/completion-gate-hook.py`**,
+  also opt-in, blocks once when the final message declines a security control and gives the
+  request as the reason ("your spec didn't set a maximum, so I didn't add one"); its header
+  states what its detector catches and misses (ROADMAP 96). **`scripts/zsh-equals-hook.py`**, on by
   default in the plugin, is a PreToolUse hook that refuses a zsh command carrying an unquoted `=word`, or a `set -- $scalar` zsh will not split, before it runs
   (`sota-shell-scripting` rules/06 §1), a reflex the written rule did not stop. Since 2026-10-27 it also refuses a variable named `path` or `status`, a spaced literal expanded unquoted as arguments, `PIPESTATUS`/`BASH_REMATCH`, and a `git grep` escape the platform reads as a plain letter (rules/06 §2f); since 2026-11-15, `for x in $v` where `v` came from `$(…)` in the same command, which zsh loops over once, and an unquoted glob in a flag value (`--include=*.rs`), which zsh aborts with `no matches found`. The git hooks from
   `scripts/init-gates.sh` and CI are enforcement on every host, whatever the agent.
@@ -1469,7 +1472,10 @@ cases-v5, 20 tasks sampled from OWASP ASVS and written blind to the library, the
 table left cited rule tests at 0.667 in both arms while reach rose 8/20 → 13/20 ([v14](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-13-v14/REPORT.md), NULL,
 +38% cost). Agents read the named rule and handed it back as a decision, citing the precise spec. With one sentence of
 competing pressure added to every prompt ("internal demo tomorrow … skip the extras"), the same two arms read 0.567 → 0.767
-([v15](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-17-v15/REPORT.md), INCONCLUSIVE: 3 cases up, 0 down, p = 0.125, +49% cost). Turn it off with `SOTA_CODE_RULES_HOOK=off`.
+([v15](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-17-v15/REPORT.md), INCONCLUSIVE: 3 cases up, 0 down, p = 0.125, +49% cost). What came after: v16 read INCONCLUSIVE and a reworded router read NULL in v17 (12/20 rule tests in both arms). Rescoring the
+recorded runs' final messages showed what the hook does change: with the library a failed rule test is named and handed back
+in 131 of 145 cases, against 10 of 17 never mentioned without it; 48% of those hand-backs give the request as the reason
+(ROADMAP 73 and 96). Turn it off with `SOTA_CODE_RULES_HOOK=off`.
 `install.sh --routing` offers the same hook to clone installs; with both, each file is named once.
 **The router carries the same table as text** ("What your code does: the rules file to read"), for
 hosts that cannot run a hook. Measured without the hook, it got agents to the right rules file in

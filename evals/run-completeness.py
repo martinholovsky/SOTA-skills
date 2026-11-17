@@ -42,6 +42,7 @@ verdict, recall and the build/judge call metadata (served model, finish reason, 
 case records `arm_order`; `_meta.shuffle_arms_seed` is null unless --shuffle-arms was given.
 """
 import argparse
+import hashlib
 import json
 import os
 import random
@@ -514,6 +515,9 @@ def main():
                              "placebo_arm": a.placebo_arm, "placebo_only": a.placebo_only,
                              "placebo_instruction": PLACEBO_INSTRUCTION if (a.placebo_arm or a.placebo_only) else None,
                              "router_build_sha": ROUTER_BUILD_SHA,
+                             # principle5() is read live and ROUTER_BUILD_SHA does not cover it, so a
+                             # principle-5 edit changes the with-arm with no abort; record which text ran.
+                             "principle5_sha": hashlib.sha256(principle5().encode("utf-8")).hexdigest()[:16],
                              "shuffle_arms_seed": a.shuffle_arms},
                    **scrub_secrets(results)}
         json.dump(out_obj, open(a.out, "w"), indent=1)

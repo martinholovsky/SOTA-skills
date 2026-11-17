@@ -36,6 +36,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `evals/run-completeness.py` keeps every sample's artifact, verdict and call metadata instead of
   the last one only, and gains an opt-in seeded `--shuffle-arms`. Refuted and deferred items are
   in the ADOPTION-LOG entry.
+- **New opt-in `scripts/completion-gate-hook.py`: one bounded repair when an agent hands a control
+  back because "the request didn't ask for it" (ROADMAP 96).** Rescoring the 138 recorded
+  hand-backs by the reason each final message gives (sota-agent-evals, pre-registered, zero API
+  spend) found 48% of library hand-backs cite the request, 22% another layer, 15% a design
+  decision and 3% a missing number, so the gate targets the first. It blocks once per turn when
+  the final message declines a security control with the request as the reason, says how to
+  finish legitimately (explicit prohibition, a user-owned design decision, an existing layer),
+  and records every Stop under the git dir; `shadow` mode records without blocking. Its detector's
+  measured recall and precision, and what a text-reading gate cannot catch, are in its header. Not
+  in `hooks/hooks.json`: whether it helps is an A/B still to run. Router routing rows now name
+  PowerShell, Active Directory and MCP/tool-poisoning coverage that two reviews inferred was
+  missing; README carries v16, v17 and the hand-back result after v15; `run-completeness.py`
+  records a hash of the live-read principle 5 it sent.
 - **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
   `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
   on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule
