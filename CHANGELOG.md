@@ -48,7 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in `hooks/hooks.json`: whether it helps is an A/B still to run. Router routing rows now name
   PowerShell, Active Directory and MCP/tool-poisoning coverage that two reviews inferred was
   missing; README carries v16, v17 and the hand-back result after v15; `run-completeness.py`
-  records a hash of the live-read principle 5 it sent.
+  records a hash of the live-read principle 5 it sent. `code-rules-hook.py` stops firing on two
+  measured kinds of false trigger: a regex-shaped raw string (a pattern table that names
+  `subprocess` or `upload`; 60 of 60 sampled such lines were pattern source, and on 5,000 random
+  local Python files the 24 files that went quiet were all lexer or detector tables, with no file
+  newly firing), and "per session" as a quota or scope (`MAX_LOOPS_PER_SESSION`; 129 lines read).
+  Raw strings holding SQL, `||` included, still fire.
 - **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
   `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
   on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule
