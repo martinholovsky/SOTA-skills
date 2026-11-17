@@ -121,6 +121,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Terraform (open ingress, wildcard IAM, public or unencrypted storage), Vue/Svelte raw HTML, server
   template escape hatches, EJS unescaped output, PowerShell `Invoke-Expression`/policy bypass and
   table-locking SQL DDL; those files get only their own rows, never the code rows (self-test 131/131).
+- **Session close 2026-11-17.** `sota-databases` rules/08 §3's headline rule still said
+  "never string-built" with no exception, contradicting the 3.x `count()` exception added below it
+  the same day. It now names the exception. The library map's entry for
+  `sota-shell-scripting` rules/08 now lists §6. One ledger verdict from the 2026-11-16 intake
+  overstated the search behind it: the bare `held` search covered one skill, not all of them. It
+  was re-run across `skills/` and the verdict stands. Another ledger row's mechanism, now
+  verified against the hook's state directory, is marked as verified.
 - **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
   `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
   on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule
