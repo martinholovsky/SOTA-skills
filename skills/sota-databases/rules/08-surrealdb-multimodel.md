@@ -56,7 +56,7 @@ ROLES OWNER | EDITOR | VIEWER`) are the analogue of file 06's roles:
 
 ## 3. Parameterized SurrealQL
 
-### Rule: All SurrealQL goes through bound $parameters — never string-built queries.
+### Rule: All SurrealQL goes through bound $parameters — never string-built queries, except an allow-listed `count()` on 3.x (below).
 ```js
 // Correct: value bound server-side
 db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.id",
