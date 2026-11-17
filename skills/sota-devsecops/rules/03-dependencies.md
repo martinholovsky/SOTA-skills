@@ -379,6 +379,14 @@ Dockerfile. Unpinned it drifts to latest on every rebuild; pinned it is frozen f
 - Otherwise **accept the freeze in writing**: an owner and a review date beside the pin —
   unwritten, it decays like an experiment with no scheduled read-back ([`sota-architecture`
   rules/01](../../sota-architecture/rules/01-architecture-styles-and-decisions.md) §4).
+- **Before you move any pin, find out why it is where it is.** Upstream release notes cannot
+  show a project's own hold. Search the repo's backlog, ADRs and agent notes for the
+  component's name and for words like `held`, `hold`, `blocked` or `do not upgrade`, then
+  read what comes back. A hold written only in a backlog is invisible at the pin: field-reported
+  2026-11-16, a secrets store went from 2.4.4 to 2.7.2 with the hold ("deliberately HELD on
+  an auto-unseal bug", with a required isolated test) in the backlog and a bare
+  `tag: "2.4.4"` in the values file. The hold was stale and the upgrade worked, but by luck.
+  So write the hold **at the pin**: a comment naming the reason and its tracker entry.
 - **Pin while the pinned version is already what resolves.** The pin is then provably inert
   — determinism at zero behaviour change — so no later regression can be blamed on it; an
   SBOM diff (§3.5) showing the artifact component-for-component identical is the receipt.
@@ -481,7 +489,7 @@ So require a second value that **cannot** be produced from plausibility:
 - [ ] SBOM (one format org-wide, CycloneDX or SPDX) regenerated per build for each artifact from lockfile + image, with component hashes and PURLs, attached to the digest, queryable centrally (§3.5); none = Medium
 - [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
 - [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`) (§3.7), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned; hand-run installs also cooled down by the package manager's native setting where it has one (pnpm `minimumReleaseAge` set explicitly, npm `min-release-age`, Yarn `npmMinimalAgeGate`, uv `exclude-newer` duration, Bundler `cooldown`)
-- [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
+- [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade; a hold is written at the pin, and before a pin moves the repo's own trackers and notes were searched for a hold on that component
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream) (§3.8)
 - [ ] **Does any support-matrix row infer a capability from a version number? (§3.9)** That
       holds only where the distro tracks upstream and is **false for backporting enterprise

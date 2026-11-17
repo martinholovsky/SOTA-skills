@@ -77,6 +77,15 @@ the direction each error fails in** — the two directions are rarely symmetric:
 above blocked legitimate work when strict, and would have spent one of three PIN attempts
 on a token that blocks at zero when loose. The class entry is [`rules/14`](14-control-not-in-force.md) §4a.
 
+**A measured gap between the proxy and the real quantity is not a margin to subtract. It
+answers the proxy question.** Field-reported 2026-11-16: a database's memory threshold
+aborts a query once its *tracked* allocation passes the limit. It was set "1 GiB under" a
+3 GiB container limit, because tracked memory had been measured at roughly a tenth of RSS.
+A pod was then OOM-killed with tracked memory at 0.02–0.12 GiB throughout, so the spike was
+in memory the server does not track, and the guard never engaged. Its presence check passed
+on every pod. If the comparand and the thing that fails differ by a ratio you have
+measured, the control guards the comparand.
+
 Three follow-ups that make it concrete:
 
 - **What would I grep for at 3am** to prove this ran on request X?
@@ -213,7 +222,8 @@ what will that caller do instead*. Both answers belong in the commit that adds t
 - [ ] **The proxy question asked of every control's predicate** (§1): is the tested
       condition the dependency itself, or something that currently agrees with it? Name who
       can change one without the other. A proxy with no signal on divergence is a finding
-      even while it currently works.
+      even while it currently works. So is a threshold set on a comparand measured to
+      diverge from the quantity that actually fails, with the gap subtracted as margin.
 - [ ] For each security control in scope (§1): if it were a no-op, would any log,
       metric, response, or test differ? No → finding, regardless of current
       correctness.
