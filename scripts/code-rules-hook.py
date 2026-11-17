@@ -46,6 +46,8 @@ purpose: a false trigger costs one file read, a missed one costs the rule.
 Each named row carries the line that matched it (`matched: "..."`, printable, at most ~72
 characters), so an agent can see why it fired. A row may have EXCLUDE senses, blanked before it
 is matched; only the session/token row has them, built against a labelled set (2026-11-12).
+Every row skips a raw string shaped like a regular expression (2026-11-17): a pattern table that
+NAMES `subprocess` or `upload` describes text and does not run a process or accept a file.
 
 IT NEVER BLOCKS: any error prints one line to stderr and exits 0 with no output.
 SOTA_CODE_RULES_HOOK=off (or 0 / false / no) disables it.
@@ -203,14 +205,36 @@ EXCLUDE = {
         r"|\bprocess[_ ]groups?\b|\bsession leader\b|AVAudioSession\w*|\baudio ?session\w*|\bsession[- ]bus\b"
         r"|\bstack[ _]?cookies?\w*|\bStackCookie\b"
         r"|\b(next|prior|previous|working|debugging|chat|LLM|agent|coding|training|interactive|knowledge[- ]sharing) sessions?\b"
-        r"|\bSession(Start|End)\b",
+        r"|\bSession(Start|End)\b"
+        # a quota or scope, not session management: MAX_LOOPS_PER_SESSION, max_messages_per_session,
+        # "per-session sliding window". 129 local lines read 2026-11-17, all quota or scope but one: "a
+        # per-session token printed at startup", which the older `per[- ](\w+ )?tokens?` sense above
+        # already blanked (a pre-existing miss, not this line's). Only the phrase is blanked, so a
+        # session word beside it still fires ("the per-session cookie").
+        r"|(?:\b|_)per[_ -]sessions?\b",
         re.I),
 }
 
 
+# A raw string that IS a regular expression describes text; it does not do what its words say. A
+# detector's own pattern table (`r"subprocess|os\.system|..."`) fired "runs a process", and a
+# Stop hook's word list fired "accepts a file". Of 60 sampled lines over 67,524 local Python files
+# whose every match of a row sat inside a raw string, 60 were pattern source (2026-11-17). Only
+# regex-shaped raw strings are blanked (an escape class, a group or an unspaced `a|b`), so a raw
+# string holding SQL, including `a || b`, still fires.
+RAW_STRING = re.compile(r"""(?<![A-Za-z0-9_])[rR][bB]?("[^"\n]*"|'[^'\n]*')""")
+REGEX_SHAPED = re.compile(r"\\[bBdDsSwW.]|\(\?|\w\|\w")
+
+
+def blank_regex_literals(text: str) -> str:
+    return RAW_STRING.sub(lambda m: " " * len(m.group(0)) if REGEX_SHAPED.search(m.group(0))
+                          else m.group(0), text)
+
+
 def row_match(what: str, rx: re.Pattern, text: str) -> re.Match | None:
-    """The row's first match in `text` after its EXCLUDE senses are blanked, or None. Blanking keeps
-    offsets, so the match indexes the original text."""
+    """The row's first match in `text` after regex-shaped raw strings and its EXCLUDE senses are
+    blanked, or None. Blanking keeps offsets, so the match indexes the original text."""
+    text = blank_regex_literals(text)
     ex = EXCLUDE.get(what)
     return rx.search(ex.sub(lambda m: " " * len(m.group(0)), text) if ex else text)
 
@@ -539,6 +563,19 @@ def self_test() -> int:
                  "SELECT * FROM user_roles", 'if not has_role(u, "ops"): deny()', "role_required(x)"):
         check("authorization form fires (a missed one costs the rule): %s" % text,
               fires("decides who may do what", text))
+    # 2026-11-17: a detector's regex table and a quota name are not the behaviour they mention ...
+    for what, text in (("runs a process", 'ROW = r"subprocess|os\\.system|shell=True"'),
+                       ("accepts a file or image from outside", 'CONTROL = re.compile(r"(?:zip|archive|upload|tls)")'),
+                       ("issues or checks a session or token", 'MAX_PER_SESSION = int(os.environ.get("X", "3"))'),
+                       ("issues or checks a session or token", "max_messages_per_session: int = 1000")):
+        check("quiet: %s" % text, not fires(what, text))
+    # ... and the same words still fire where they are code or a real session
+    for what, text in (("builds a database query", 'q = r"SELECT name FROM users WHERE id = " + uid'),
+                       ("builds a database query", 'q = r"SELECT a || b FROM t WHERE id = " + uid'),
+                       ("runs a process", 'subprocess.run(["ls", r"C:\\tmp"])'),
+                       ("issues or checks a session or token", "the per-session cookie is set HttpOnly"),
+                       ("issues or checks a session or token", 'response.set_cookie("session", sid)')):
+        check("still fires: %s" % text, fires(what, text))
     # KNOWN false triggers, kept firing ON PURPOSE until a labelled set exists to tighten against
     # (ADOPTION-LOG 2026-10-20 deferral). If one of these stops firing, resolve that deferral.
     for what, text in (("logs, returns errors", "git -c user.email=t@example.invalid commit"),
