@@ -54,6 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   local Python files the 24 files that went quiet were all lexer or detector tables, with no file
   newly firing), and "per session" as a quota or scope (`MAX_LOOPS_PER_SESSION`; 129 lines read).
   Raw strings holding SQL, `||` included, still fire.
+  Negative-control probe 39d no longer aborts the whole harness on a branch that already edits
+  every file a path-named deferral waits on (this one: the router, `code-rules-hook.py`,
+  `check-invariants.sh`); it prints why it skipped, and a resolver that lists no such file at
+  all is still fatal.
 - **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
   `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
   on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule

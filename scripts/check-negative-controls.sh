@@ -1346,21 +1346,37 @@ probe 39c "the trigger detector regresses against its own corpus" \
 # five deferrals were UNRESOLVED and an edit to their file passed silently. Same shape as 39:
 # the target is ASKED of the detector, restricted to paths outside skills/*/rules/, so this
 # probe exercises the literal-path route and not the skill route 39 already covers.
-t39=$( cd "$WT" && b=$(for r in origin/main main; do git merge-base HEAD "$r" 2>/dev/null && break; done) \
+# Every path-guarded row is listed, each marked whether this branch already edits its file. A branch
+# that edits ALL of them (2026-11-17: the router, code-rules-hook.py and check-invariants.sh in one
+# intake) leaves no file the probe can fire fresh: its premise does not hold, so it skips with the
+# reason, as 11 does on a sweep. A resolver that lists NO path-guarded row is the regression this
+# probe exists for and stays FATAL. Invariant 39 is still probed by 39, 39b and 39c, so it is not
+# added to SKIPPED_IDS (that would count it twice in the declaration check).
+l39=$( cd "$WT" && b=$(for r in origin/main main; do git merge-base HEAD "$r" 2>/dev/null && break; done) \
       && [ -n "$b" ] && git show "$b:docs/ADOPTION-LOG.md" > docs/ADOPTION-LOG.md \
       && python3 scripts/lib/check-deferral-triggers.py --list docs/ADOPTION-LOG.md \
          | while IFS="$(printf '\t')" read -r f n; do
              case "$f" in skills/*/rules/*) continue ;; esac
-             git diff --quiet "$b" HEAD -- "$f" && { printf '%s\t%s\n' "$f" "$n"; break; }
+             if git diff --quiet "$b" HEAD -- "$f"; then printf 'free\t%s\t%s\n' "$f" "$n"
+             else printf 'taken\t%s\t%s\n' "$f" "$n"; fi
            done )
-f39=${t39%%"$(printf '\t')"*}; n39=${t39##*"$(printf '\t')"}
-if [ -z "$f39" ] || [ ! -f "$WT/$f39" ]; then
+t39=$(printf '%s\n' "$l39" | awk -F '\t' '$1 == "free" { print $2 "\t" $3; exit }')
+if [ -z "$l39" ]; then
   echo "FATAL: probe 39d found no path-guarded file — no deferral trigger names a tracked path."; exit 1
+elif [ -z "$t39" ]; then
+  echo "  [39d] SKIPPED -- this branch already edits every file a path-named deferral waits on"
+  echo "        ($(printf '%s\n' "$l39" | cut -f2 | sort -u | tr '\n' ' ')), so no file is left to fire fresh."
+  echo "        39, 39b and 39c still probe invariant 39."
+else
+f39=${t39%%"$(printf '\t')"*}; n39=${t39##*"$(printf '\t')"}
+if [ ! -f "$WT/$f39" ]; then
+  echo "FATAL: probe 39d's path-guarded file $f39 is not in the tree."; exit 1
 fi
 ( cd "$WT" && perl -pi -e 's/$/ (probe 39d)/ if $. == 1' "$f39" )
 wt_commit "probe: edit a file a path-triggered deferral waits on, leave the row untouched"
 probe_committed 39d "a branch fires a path-named deferral trigger and ignores the row" \
   "the deferral at docs/ADOPTION-LOG.md:$n39 waits on it"
+fi
 
 # 40 — a command cites a skill's rules file and never says to load it. Remove /sota-resume's
 # step-0 instruction: its six rules/06 citations are then pointers that load nothing.
