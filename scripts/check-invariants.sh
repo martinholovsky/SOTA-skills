@@ -2940,12 +2940,31 @@ if [ "$v33" -ne 0 ]; then fail=1; fi
 #
 # The fix when this fires is NOT to invent a number: write "· unreleased" and let the
 # release cut fill it in, which RELEASING.md step 1 already sweeps for.
+#
+# WHAT COUNTS AS RELEASED: a git tag OR a dated CHANGELOG heading (`## [X.Y.Z] - date`,
+# CHANGELOG.md and docs/CHANGELOG-archive*.md). Until 2026-11-17 it read tags only, so in
+# any clone without tags (`--no-tags`, a shallow CI checkout, a tarball) it failed ~58
+# legitimate claims -- and since the negative-control harness's positive control runs this
+# suite, the harness then ran no probe at all. Found by an external review (2026-11-17),
+# reproduced in a `--no-tags` clone. The union does not weaken CI: invariant 21 requires
+# every CHANGELOG version below the top one to be tagged, so where tags exist a heading
+# without one is already a failure there. Only a dated HEADING counts -- a version merely
+# mentioned in a CHANGELOG body is not a release (probe 34c).
 echo "[34/44] A version this repo claims for itself exists"
 v34=0
 if command -v python3 >/dev/null 2>&1; then
   ver_out=$(python3 - <<'VERPY'
 import re, subprocess, pathlib
 tags = set(subprocess.run(["git","tag","-l"],capture_output=True,text=True).stdout.split())
+# A released version is a tag OR a dated CHANGELOG heading (`## [1.55.2] - 2026-11-15`), so
+# the check also works in a clone without tags. Only a HEADING counts: a version merely
+# mentioned in a CHANGELOG body is not a release (probe 34c).
+HEAD_RE = re.compile(r'^## \[(\d+\.\d+\.\d+)\] - \d{4}-\d{2}-\d{2}', re.M)
+for cl in ["CHANGELOG.md"] + sorted(str(p) for p in pathlib.Path("docs").glob("CHANGELOG-archive*.md")):
+    try:
+        tags |= {"v" + v for v in HEAD_RE.findall(pathlib.Path(cl).read_text(encoding="utf-8"))}
+    except OSError:
+        pass
 cur = "v" + pathlib.Path("VERSION").read_text(encoding="utf-8").strip()
 PAT = re.compile(r'(?:\bat|\bin|\bsince|\buntil|\bshipped in|·)\s+(v1\.\d+\.\d+)')
 RECORDS = {"CHANGELOG.md", "docs/ADOPTION-LOG.md"}
@@ -2961,7 +2980,7 @@ for f in files:
     for m in PAT.finditer(t):
         v = m.group(1)
         if v not in tags and v != cur:
-            print("%s:%d  claims %s, which is not a tag and is not the current VERSION"
+            print("%s:%d  claims %s, which is not a tag, not a dated CHANGELOG heading, and not the current VERSION"
                   % (f, t[:m.start()].count("\n") + 1, v))
             bad += 1
 if bad:

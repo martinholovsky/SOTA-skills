@@ -74,8 +74,8 @@ rules files that match the code in front of you. Never load all skills at once.
    skipped. **Record the end-of-life date beside the version**, every time. A
    version can be recalled fluently and with no felt uncertainty; an EOL date
    effectively cannot, so requiring it forces the lookup that "check this is
-   current" does not. A version with no EOL date beside it has not been looked
-   up. Detail, and what to do with a lapsed one: [`sota-devsecops` rules/03](../sota-devsecops/rules/03-dependencies.md) §3.9.
+   current" does not. A version with no EOL value beside it has not been looked
+   up; where none is published, write that and where you looked — never invent one. Detail: [`sota-devsecops` rules/03](../sota-devsecops/rules/03-dependencies.md) §3.9.
 2. **Stop-and-ask on security-relevant decisions.** When a choice materially
    affects security posture (authn/z model, crypto primitive, trust boundary,
    secrets handling, network exposure), present the options with a
@@ -120,13 +120,13 @@ rules files that match the code in front of you. Never load all skills at once.
 5. **Universal build non-negotiables (apply regardless of routing).** On **any
    network-reachable endpoint or handler** (HTTP, RPC, queue, webhook, upload),
    always include: **(a)** abuse control — rate limiting / quotas keyed to the
-   caller; **(b)** transport enforcement — TLS, HSTS, no plaintext fallback;
-   **(c)** tests for the logic; **(d)** structured logging without secrets/PII.
-   These are cross-cutting, so they get silently dropped under a long, dense
-   task even when a rules file covers them — a measured attention effect, not a
-   coverage gap. Keep this list short and **re-check it last, before you ship**
-   (BUILD step 4). If one is deliberately handled elsewhere (e.g. rate limiting
-   at the gateway), say so — don't silently omit it.
+   caller; **(b)** transport enforcement — confidentiality, integrity and peer authentication,
+   no plaintext fallback: TLS + HSTS for HTTP to browsers, TLS/mTLS for internal RPC, an encrypted,
+   client-authenticated broker link, socket permissions or peer credentials for a local socket;
+   **(c)** tests for the logic; **(d)** structured logging without secrets/PII. Cross-cutting, so
+   silently dropped under a long, dense task even when a rules file covers them (a measured
+   attention effect, not a coverage gap): keep this list short, **re-check it last, before you
+   ship** (BUILD step 4), and if one is handled elsewhere (e.g. at the gateway), say so.
 6. **Claim "done" only with evidence.** Never report a task complete or a fix
    working from plausibility — "should work", "this fixes it", "Done!" are not
    evidence. State the check you actually ran and its result: test output with
@@ -460,7 +460,7 @@ read with [`rules/03`](rules/03-audit-findings.md).
 
 ## Context budget discipline
 
-Rules files run **52–500 lines, median 262.5** (over all 294 on 2026-09-26; dated because the
+Rules files run **43–500 lines, median 271.5** (over all 306 on 2026-11-17; dated because the
 figure has gone stale before). So budget by the file you are actually opening, not by an
 average: 2–5 files is a typical focused task and can be 400 lines or 2,000. A full audit pass
 should load one skill at a time, finish its findings, then move on. If context is tight, prefer

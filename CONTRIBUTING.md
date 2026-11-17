@@ -962,7 +962,7 @@ issue first if you want to discuss scope.
 binding, not advisory: register the language in `LANGS` (`scripts/gen-skill-map.py`, which
 invariant 36 checks against the router's "Any … code" rows) and cover every universal
 concept (`gen-concept-matrix.py --assert-universal`). And when you add a rule to **one**
-language skill, the template's cross-language rule applies: all nine plus the floor, some
+language skill, the template's cross-language rule applies: every language skill plus the floor, some
 plus a `conditional:` concept, or a recorded reason in `LANGUAGE-TIER.md`.
 
 ## Questions

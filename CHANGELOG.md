@@ -17,6 +17,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   audit. It also lists the five slash commands and answers common questions. It is linked
   from the top of the README, from the README's "Deeper docs" line, and from the first row of
   `docs/INDEX.md`.
+- **Intake: three external reviews of the whole repository (2026-11-17), every claim labelled.**
+  Invariant 34 failed about 60 legitimate claims in any clone without tags, and the
+  negative-control harness then ran no probe. It now also counts a dated CHANGELOG heading as
+  released (invariant 21 still requires the tag in CI), and new probe 34c proves a version
+  only *mentioned* in a CHANGELOG body still fails. Four SKILL.md freshness notes named a month
+  older than the last sweep; they now point at the root `LAST-VERIFIED` stamp. Refreshed: the
+  router's rules-file statistics (306 files, 43–500 lines, median 271.5) and the Dependabot
+  comment (no count). WHY-IT-WORKS's defect-avoidance section is superseded by the 2026-10-17
+  rerun (+0.000 as scored). The "nine language skills" rule lines in INDEX, SKILL-TEMPLATE and
+  CONTRIBUTING no longer carry a count, and INDEX no longer calls the routing manifests a
+  two-skill pilot. `check-checklist-probes.py --help` no longer crashes. From the third review:
+  router principle 5(b) states the transport objective (confidentiality, integrity, peer
+  authentication, no plaintext fallback) with the mechanism per protocol, since HSTS is an
+  HTTP user-agent mechanism (RFC 6797) and the principle covers RPC and queues. Principle 1 and
+  `sota-devsecops` rules/03 §3.9 allow "rolling / latest-only", "no published lifecycle policy"
+  (with where you looked) or "unverified" beside a version, and never an invented date.
+  `evals/run-completeness.py` keeps every sample's artifact, verdict and call metadata instead of
+  the last one only, and gains an opt-in seeded `--shuffle-arms`. Refuted and deferred items are
+  in the ADOPTION-LOG entry.
 - **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
   `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
   on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule

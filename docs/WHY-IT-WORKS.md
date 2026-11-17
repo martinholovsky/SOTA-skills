@@ -84,7 +84,16 @@ most for *building* software are the two that are large:
   paste-simulation artifact: seven **live** agents driven through the real router
   BUILD workflow scored **0.99 (6/7 perfect)**, matching the simulation (0.987 vs 0.988)
   ([live-agent validation](../evals/results/2026-07-13/LIVE-BUILD.md)).
-- **Defects avoided — the result that changes the argument.**
+- **Defects avoided — a pilot result that did not reproduce.** *Superseded 2026-10-17:
+  the same model re-run under the fixed scorer (both arms, temp 0.7, 3× each, builds kept)
+  reads Δ avoided **+0.000** as scored (0.857 → 0.857) and **+0.048** after reading the
+  builds by hand; only the stricter positive-evidence measure still moves, **+0.190**
+  (0.286 → 0.476). The guided prompt had grown to 149k characters by then, so it measured
+  today's library, not the one below, and the hand reading found two scorer defects of its
+  own ([BUILD-SAFE-RERUN](../evals/results/2026-10-17/BUILD-SAFE-RERUN.md)). The 2026-08-21
+  account below is kept as the dated record; this section was headed "the result that
+  changes the argument" until 2026-11-17.*
+
   Every other lift here measures what a model *puts into* code. This measures what it
   **leaves out**. The setup is deliberately adversarial to the library: a build spec
   states the operational pressure that makes each unsafe shortcut attractive — *"cache

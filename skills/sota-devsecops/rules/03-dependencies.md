@@ -431,10 +431,10 @@ consulted.
 
 So require a second value that **cannot** be produced from plausibility:
 
-- **Every versioned third-party row carries its EOL date.** A version with no EOL beside
-  it has not been looked up — that is the whole mechanism, and it is checkable by eye in
-  review. `endoflife.date`'s API covers most OS, distro, runtime and database cycles in
-  one request; cross-check anything load-bearing against the vendor's own page.
+- **Every versioned third-party row carries its EOL value.** A version with nothing beside it has not been looked up — that is
+  the whole mechanism, checkable by eye in review. The value is one of: an EOL date (with its source); "rolling / latest-only
+  support" (with its source); "no published lifecycle policy" (with where you looked); or "unverified". **Never invent a date.**
+  `endoflife.date`'s API covers most OS, distro, runtime and database cycles in one request; cross-check anything load-bearing against the vendor's own page.
 - **A row whose EOL has passed is removed from the matrix, not corrected.** Testing an
   unsupported branch does not produce a slightly-stale answer, it produces an answer about
   a different system. Field-reported: Alpine **3.20** (EOL 2026-04-01) reports
@@ -497,4 +497,4 @@ So require a second value that **cannot** be produced from plausibility:
       upstream 5.7/5.8. Probe the capability, say which you measured, and write down the
       assumption the method rests on plus the members that violate it
 - [ ] **Scheduled EOL detection over the inventory (§3.9), Medium:** `grep -rln -E 'endoflife\.date|xeol' .github/workflows` (or the scheduler's config) names a scheduled job, and its alerts have an owner
-- [ ] **Every versioned third-party row carries an EOL date (§3.9)** — base images, OS/distro releases, runtimes, supported-platform matrices. A version with no EOL beside it has not been looked up, and a row past its EOL is **removed**, not corrected: an unsupported branch can answer the *opposite* of the current one, not merely a staler version of it. When one row is found stale, re-run the lookup across **all** rows in the same pass
+- [ ] **Every versioned third-party row carries an EOL date (§3.9)** — base images, OS/distro releases, runtimes, supported-platform matrices. A version with no EOL value beside it has not been looked up (a date, "rolling / latest-only", "no published lifecycle policy" with where you looked, or "unverified"; never an invented date), and a row past its EOL is **removed**, not corrected: an unsupported branch can answer the *opposite* of the current one, not merely a staler version of it. When one row is found stale, re-run the lookup across **all** rows in the same pass
