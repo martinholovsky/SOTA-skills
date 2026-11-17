@@ -14,7 +14,8 @@ skill by invariants 6, 10 and 15, and would have to satisfy the 500-line cap and
 **This file is not the gate, and cannot be.** A template is read *once*, when a skill is
 created; the drift happens on every edit afterwards. The enforcement is
 `scripts/gen-concept-matrix.py --assert-universal`, which runs in CI and pins the concepts
-below at 9/9. Read this to author; rely on that to stay honest.
+below in every language skill registered in `LANGS` (it prints `N/N`). Read this to author;
+rely on that to stay honest.
 
 ---
 
@@ -120,7 +121,7 @@ const/freeze or generics) are declared with their condition in the same script's
 When a change adds a section or rule to **one** language skill, decide in the same change
 whether the hazard exists in the other languages:
 
-- **It does (all nine):** add it to every language skill in the same change set, add the
+- **It does (all of them):** add it to every language skill in the same change set, add the
   concept (with its matchers) to `UNIVERSAL_FLOOR`, and add its bullet above. CI then holds
   every current and future language skill to it.
 - **It does in some:** add it to those skills and declare it `conditional:` in `CONCEPTS`,

@@ -267,7 +267,18 @@ def self_test():
     return 1 if fails else 0
 
 
+USAGE = "usage: check-checklist-probes.py [-h | --help] [--self-test] [RULES_FILE ...]"
+
+
 if __name__ == "__main__":
+    if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
+        print(USAGE + "\n\n" + (__doc__ or "").strip())
+        sys.exit(0)
     if "--self-test" in sys.argv:
         sys.exit(self_test())
+    # An unknown flag used to reach main() as a FILE name and crash with FileNotFoundError.
+    unknown = [a for a in sys.argv[1:] if a.startswith("-")]
+    if unknown:
+        print("unknown option: %s\n%s" % (" ".join(unknown), USAGE), file=sys.stderr)
+        sys.exit(2)
     sys.exit(main(sys.argv[1:]))

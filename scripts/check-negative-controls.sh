@@ -1160,6 +1160,27 @@ wt_commit "probe: a placeholder image tag in the v1.* namespace"
 probe_committed_green 34b "a placeholder image tag is not a self-version claim" \
   "every self-claimed version resolves"
 
+# 34c — the CHANGELOG half of "released" (added 2026-11-17, when 34 began accepting dated
+# CHANGELOG headings so it works in a clone without tags). Only a dated `## [X.Y.Z] - date`
+# heading may count: a version merely MENTIONED in a CHANGELOG body is the shape a loose
+# `vX.Y.Z in CHANGELOG` match would accept, and it is exactly a pre-cut guess. Mention
+# v1.99.8 in the [Unreleased] body (not a heading, so invariant 21 is untouched) and claim
+# it in a rules file; 34 must still fire.
+( cd "$WT" && python3 -c "
+import pathlib
+c = pathlib.Path('CHANGELOG.md')
+t = c.read_text(encoding='utf-8')
+anchor = '## [Unreleased]' + chr(10)
+assert anchor in t, 'probe stale: no [Unreleased] heading'
+c.write_text(t.replace(anchor, anchor + chr(10) + '- Probe fixture: planned for v1.99.8.' + chr(10), 1), encoding='utf-8')
+p = pathlib.Path('skills/sota-golang/rules/07-tooling-ci.md')
+t = p.read_text(encoding='utf-8')
+head = t.index(chr(10) + '## ')
+p.write_text(t[:head] + chr(10) + chr(10) + 'Split out of rules/06 at v1.99.8.' + chr(10) + t[head:], encoding='utf-8')
+" )
+probe 34c "a version only mentioned in a CHANGELOG body is not a release" \
+  "claims v1.99.8, which is not a tag"
+
 # 35 — the template's concept list must equal UNIVERSAL_FLOOR. Delete one bullet, which is
 # the original defect (the template sat 13 concepts behind the floor).
 ( cd "$WT" && python3 -c "

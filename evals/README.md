@@ -328,6 +328,17 @@ audit STRAT-HIGH-2).
   logging, rate limits, TLS…, which would make it a weak treatment arm), and **refuses one
   byte-identical to the bare prompt**. Pre-registration, frozen wording and falsifiers:
   [results/2026-10-07/PLACEBO-PREREG.md](results/2026-10-07/PLACEBO-PREREG.md).
+- **`run-completeness.py` keeps every sample, and `--shuffle-arms SEED`** — added 2026-11-17
+  from an external review. Before, at `--samples N` an arm kept `recalls` for all N but
+  `present`/`artifact` for the **last** sample only, so N−1 artifacts and judge verdicts were
+  discarded and no recall could be re-scored. Each arm now also carries `samples`: per sample
+  its artifact, present ids, judge verdict, recall, and the build and judge call's served model,
+  finish reason and usage. The old keys are unchanged (`evals/_stats.py` reads `recall`). Arms
+  run in a fixed order (`without` first) by default, so recorded runs stay comparable;
+  `--shuffle-arms SEED` runs each case's arms in a seeded random order, and the output records
+  `_meta.shuffle_arms_seed` and each case's `arm_order`. Verified without spend by a stubbed
+  `call()`: 7 cases × 2 arms × 3 samples stored 3 distinct artifacts per arm, and seed 42 gave
+  the same orders on two runs and differed from the fixed order.
 - `cases/prompt-independence.jsonl` (6) + `run-prompt-independence.py` — **the only
   instrument that varies the prompt against the rule.** Every other set here asks the model
   to do the right thing under a *neutral* prompt; this one renders the same task at three

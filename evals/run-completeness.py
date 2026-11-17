@@ -34,12 +34,17 @@ so a base model that "just knew" to do them would score high too.
 
 Auth: OPENROUTER_API_KEY (env or ./.env). Never printed/committed.
 Usage: python3 evals/run-completeness.py [--build-model M] [--judge-model M]
-       [--samples N] [--temp T] [--out FILE]
+       [--samples N] [--temp T] [--shuffle-arms SEED] [--out FILE]
        (--samples>1 needs --temp>0 for real variance; default 1 sample at temp 0.)
+Output: each arm keeps `recall`, `recalls`, `present`, `missing` and `artifact` (the LAST
+sample, as before) plus `samples`, one entry per sample with its artifact, present ids, judge
+verdict, recall and the build/judge call metadata (served model, finish reason, usage). Each
+case records `arm_order`; `_meta.shuffle_arms_seed` is null unless --shuffle-arms was given.
 """
 import argparse
 import json
 import os
+import random
 import sys
 import time
 import urllib.request
@@ -59,6 +64,12 @@ def key():
             if ln.strip().startswith("OPENROUTER_API_KEY="):
                 return ln.split("=", 1)[1].strip().strip("'\"")
     sys.exit("OPENROUTER_API_KEY not found")
+
+
+# Metadata of the most recent successful call(): the served model id, finish reason and usage.
+# call() still returns only the text, so every existing caller is unchanged; main() reads this
+# right after each build/judge call to keep it per sample (added 2026-11-17, see main()).
+_LAST_CALL = {}
 
 
 def call(model, prompt, k, max_tokens=8000, temp=0.0):
@@ -88,6 +99,10 @@ def call(model, prompt, k, max_tokens=8000, temp=0.0):
             if ch.get("finish_reason") == "length":
                 print(f"      WARNING: {model} hit max_tokens ({max_tokens}) — artifact "
                       f"is TRUNCATED, the score for it is a floor, not a measurement")
+            _LAST_CALL.clear()
+            _LAST_CALL.update({"model": d.get("model", model), "id": d.get("id"),
+                               "finish_reason": ch.get("finish_reason"),
+                               "usage": d.get("usage")})
             return content
         except Exception as e:  # noqa: BLE001 — retry any transient failure
             last = e
@@ -347,8 +362,14 @@ def main():
     ap.add_argument("--placebo-only", action="store_true",
                     help="run ONLY the placebo arm (cheapest); compare its mean against a recorded "
                          "run at the same build model, judge, samples and temp")
+    ap.add_argument("--shuffle-arms", type=int, default=None, metavar="SEED",
+                    help="run each case's arms in a seeded random order instead of the fixed "
+                         "without -> with -> ... order (a drifting provider or a warming cache "
+                         "then cannot favour one arm). Opt-in so recorded runs stay comparable; "
+                         "the seed and each case's order are written to the --out JSON.")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
+    rng = random.Random(a.shuffle_arms) if a.shuffle_arms is not None else None
     _assert_mirror_fresh()   # never measure a workflow that isn't shipped
     if a.placebo_arm or a.placebo_only:
         leaked = [w for w in PLACEBO_FORBIDDEN if w in PLACEBO_INSTRUCTION.lower()]
@@ -395,29 +416,41 @@ def main():
             arms.append((False, 0, True, True))
         if a.placebo_only:
             arms = [(False, 0, True, True)]
+        if rng is not None:
+            rng.shuffle(arms)
+        row["arm_order"] = []
         for with_lib, pad, gate, placebo in arms:
             arm = ("with+pad" if pad else "with") if with_lib else "without"
             if not gate:
                 arm = "pad-nogate"
             if placebo:
                 arm = "placebo"
-            recalls, last_present, last_art = [], [], ""
+            row["arm_order"].append(arm)
+            # PER SAMPLE (added 2026-11-17, from an external review): `present`/`artifact` below keep
+            # only the LAST sample, so at --samples N the other N-1 artifacts and verdicts were
+            # discarded and a recall could not be re-scored. `samples` keeps every one; the old keys
+            # stay for existing readers (evals/_stats.py and recorded results use `recall`).
+            recalls, last_present, last_art, samples = [], [], "", []
             for s in range(a.samples):
                 print(f"  {c['id']:16s} {arm:8s} generating… (sample {s+1}/{a.samples})", flush=True)
                 # 32k: the self-audit with-arm emits substantially longer output;
                 # 16k truncated tests/logging off the end and scored them absent.
                 art = call(a.build_model, gen_prompt(c, with_lib, pad, gate, placebo), k,
                            max_tokens=a.max_tokens, temp=a.temp)
+                build_meta = dict(_LAST_CALL)
                 verdict = judge(art, c["rubric"], a.judge_model, k)
+                judge_meta = dict(_LAST_CALL)
                 last_present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
                 recalls.append(len(last_present) / len(c["rubric"]))
                 last_art = art
+                samples.append({"artifact": art, "present": last_present, "verdict": verdict,
+                                "recall": recalls[-1], "build": build_meta, "judge": judge_meta})
             recall = sum(recalls) / len(recalls)
             spread = f"  (min {min(recalls):.2f} max {max(recalls):.2f} n={len(recalls)})" if a.samples > 1 else ""
             print(f"  {c['id']:16s} {arm:8s} recall={recall:.2f}{spread}  len={len(last_art)}", flush=True)
             row["arms"][arm] = {"recall": recall, "recalls": recalls, "present": last_present,
                                 "missing": [r["id"] for r in c["rubric"] if r["id"] not in last_present],
-                                "artifact": last_art}
+                                "artifact": last_art, "samples": samples}
         if "placebo" in row["arms"]:
             tot_pl += row["arms"]["placebo"]["recall"]
         if a.placebo_only:
@@ -480,7 +513,8 @@ def main():
                              "no_gate_arm": a.no_gate_arm,
                              "placebo_arm": a.placebo_arm, "placebo_only": a.placebo_only,
                              "placebo_instruction": PLACEBO_INSTRUCTION if (a.placebo_arm or a.placebo_only) else None,
-                             "router_build_sha": ROUTER_BUILD_SHA},
+                             "router_build_sha": ROUTER_BUILD_SHA,
+                             "shuffle_arms_seed": a.shuffle_arms},
                    **scrub_secrets(results)}
         json.dump(out_obj, open(a.out, "w"), indent=1)
         print(f"saved {a.out}")
