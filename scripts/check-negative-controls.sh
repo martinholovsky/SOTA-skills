@@ -1164,15 +1164,18 @@ probe_committed_green 34b "a placeholder image tag is not a self-version claim" 
 # CHANGELOG headings so it works in a clone without tags). Only a dated `## [X.Y.Z] - date`
 # heading may count: a version merely MENTIONED in a CHANGELOG body is the shape a loose
 # `vX.Y.Z in CHANGELOG` match would accept, and it is exactly a pre-cut guess. Mention
-# v1.99.8 in the [Unreleased] body (not a heading, so invariant 21 is untouched) and claim
-# it in a rules file; 34 must still fire.
+# v1.99.8 in the body of the top CHANGELOG section (not a heading, so invariant 21 is untouched)
+# and claim it in a rules file; 34 must still fire. The top section is [Unreleased] on a normal
+# branch and the new version on a release commit, which has no [Unreleased] (fixed 2026-11-18,
+# when this probe failed every shard of the v1.56.0 release PR).
 ( cd "$WT" && python3 -c "
 import pathlib
 c = pathlib.Path('CHANGELOG.md')
 t = c.read_text(encoding='utf-8')
-anchor = '## [Unreleased]' + chr(10)
-assert anchor in t, 'probe stale: no [Unreleased] heading'
-c.write_text(t.replace(anchor, anchor + chr(10) + '- Probe fixture: planned for v1.99.8.' + chr(10), 1), encoding='utf-8')
+import re
+m = re.search(r'^## \[[^]]+\][^\n]*\n', t, re.M)
+assert m, 'probe stale: no CHANGELOG section heading'
+c.write_text(t[:m.end()] + chr(10) + '- Probe fixture: planned for v1.99.8.' + chr(10) + t[m.end():], encoding='utf-8')
 p = pathlib.Path('skills/sota-golang/rules/07-tooling-ci.md')
 t = p.read_text(encoding='utf-8')
 head = t.index(chr(10) + '## ')
