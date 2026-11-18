@@ -74,8 +74,8 @@ rules files that match the code in front of you. Never load all skills at once.
    skipped. **Record the end-of-life date beside the version**, every time. A
    version can be recalled fluently and with no felt uncertainty; an EOL date
    effectively cannot, so requiring it forces the lookup that "check this is
-   current" does not. A version with no EOL date beside it has not been looked
-   up. Detail, and what to do with a lapsed one: [`sota-devsecops` rules/03](../sota-devsecops/rules/03-dependencies.md) §3.9.
+   current" does not. A version with no EOL value beside it has not been looked
+   up; where none is published, write that and where you looked — never invent one. Detail: [`sota-devsecops` rules/03](../sota-devsecops/rules/03-dependencies.md) §3.9.
 2. **Stop-and-ask on security-relevant decisions.** When a choice materially
    affects security posture (authn/z model, crypto primitive, trust boundary,
    secrets handling, network exposure), present the options with a
@@ -120,13 +120,13 @@ rules files that match the code in front of you. Never load all skills at once.
 5. **Universal build non-negotiables (apply regardless of routing).** On **any
    network-reachable endpoint or handler** (HTTP, RPC, queue, webhook, upload),
    always include: **(a)** abuse control — rate limiting / quotas keyed to the
-   caller; **(b)** transport enforcement — TLS, HSTS, no plaintext fallback;
-   **(c)** tests for the logic; **(d)** structured logging without secrets/PII.
-   These are cross-cutting, so they get silently dropped under a long, dense
-   task even when a rules file covers them — a measured attention effect, not a
-   coverage gap. Keep this list short and **re-check it last, before you ship**
-   (BUILD step 4). If one is deliberately handled elsewhere (e.g. rate limiting
-   at the gateway), say so — don't silently omit it.
+   caller; **(b)** transport enforcement — confidentiality, integrity and peer authentication,
+   no plaintext fallback: TLS + HSTS for HTTP to browsers, TLS/mTLS for internal RPC, an encrypted,
+   client-authenticated broker link, socket permissions or peer credentials for a local socket;
+   **(c)** tests for the logic; **(d)** structured logging without secrets/PII. Cross-cutting, so
+   silently dropped under a long, dense task even when a rules file covers them (a measured
+   attention effect, not a coverage gap): keep this list short, **re-check it last, before you
+   ship** (BUILD step 4), and if one is handled elsewhere (e.g. at the gateway), say so.
 6. **Claim "done" only with evidence.** Never report a task complete or a fix
    working from plausibility — "should work", "this fixes it", "Done!" are not
    evidence. State the check you actually ran and its result: test output with
@@ -167,7 +167,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | Skill | Use when the task involves... |
 |---|---|
 | [`sota-architecture`](../sota-architecture/SKILL.md) | System design, service boundaries, monolith vs microservices, DDD, event-driven design, sagas/outbox, reconciliation against a third party that holds authoritative state, resilience (timeouts/retries/circuit breakers), scalability, multi-tenancy, 12-factor/cloud-native, architectural anti-patterns |
-| [`sota-code-security`](../sota-code-security/SKILL.md) | Writing or reviewing code that touches untrusted input, authn/authz, sessions/JWT/OAuth, crypto, XSS/CSRF/CORS, file uploads, deserialization, error/log hygiene, LLM/agent app security, silent control failure (a safeguard that looks enabled and does nothing) |
+| [`sota-code-security`](../sota-code-security/SKILL.md) | Writing or reviewing code that touches untrusted input, authn/authz, sessions/JWT/OAuth, crypto, XSS/CSRF/CORS, file uploads, deserialization, error/log hygiene, LLM/agent app security (incl. MCP servers, tool poisoning, LLM supply chain), silent control failure (a safeguard that looks enabled and does nothing) |
 | [`sota-threat-modeling`](../sota-threat-modeling/SKILL.md) | Designing a new system/feature with security in mind, drawing trust boundaries and DFDs, STRIDE/LINDDUN, risk rating, reconstructing a threat model from an existing codebase |
 | [`sota-skill-security`](../sota-skill-security/SKILL.md) | Installing, authoring, reviewing or auditing anything an **agent loads as instructions** — skills, plugins, rulesets, `AGENTS.md`/`CLAUDE.md`/`.cursorrules`: provenance and pinning, review-before-install, the instruction trust boundary (a PR that edits an agent file changes what your agent does), precedence and shadowing between overlapping skills, capability minimisation, and guidance that is confidently wrong |
 | [`sota-secrets-management`](../sota-secrets-management/SKILL.md) | API keys, passwords, tokens, signing/TLS/SSH keys, .env files, Vault/cloud secret managers, workload identity (OIDC), secret rotation, leak detection and remediation |
@@ -175,7 +175,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | [`sota-performance`](../sota-performance/SKILL.md) | Latency, throughput, profiling, memory usage, caching (incl. stampede protection), I/O and network efficiency, Core Web Vitals, performance regression in CI |
 | [`sota-async-concurrency`](../sota-async-concurrency/SKILL.md) | async/await, threads, goroutines, channels, races, deadlocks, event-loop blocking, cancellation/timeouts, graceful shutdown, backpressure, bounded queues |
 | [`sota-api-design`](../sota-api-design/SKILL.md) | REST/HTTP semantics, pagination, idempotency, versioning/deprecation, GraphQL, gRPC/proto evolution, websockets/SSE/realtime, webhooks, API rate limiting and tenant isolation |
-| [`sota-devsecops`](../sota-devsecops/SKILL.md) | CI/CD pipelines, GitHub Actions hardening, supply chain (SLSA, Sigstore, SBOM, dependency confusion), unused/inert dependencies and upstream-health checks, container builds, SAST/secret-scanning gates, slow CI and caching (measure first, cache keys, change-scoping, sharding), Terraform/GitOps, admission control |
+| [`sota-devsecops`](../sota-devsecops/SKILL.md) | CI/CD pipelines, GitHub Actions hardening, supply chain (SLSA, Sigstore, SBOM, dependency confusion), unused/inert dependencies and upstream-health checks, upgrading or bumping a pinned version (read why it is pinned first), container builds, SAST/secret-scanning gates, slow CI and caching (measure first, cache keys, change-scoping, sharding), Terraform/GitOps, admission control |
 | [`sota-databases`](../sota-databases/SKILL.md) | Schema design, Postgres/NoSQL choice, migrations (zero-downtime), indexes/EXPLAIN, transactions/isolation, ledgers & account balances, connection pooling, replication/backups, Redis, RLS/DB security, pgvector |
 | [`sota-frontend-design`](../sota-frontend-design/SKILL.md) | UI/UX, visual design, typography/color/layout, design systems and tokens, components, forms, accessibility (WCAG 2.2), motion/animation design, modern CSS, responsive design |
 | [`sota-web-frameworks`](../sota-web-frameworks/SKILL.md) | React/Next.js and Vue/Nuxt engineering — Server Components & Server Actions, the RSC/client trust boundary, Next caching (`use cache`/PPR/ISR), Nitro server routes, hydration correctness, SSR state serialization, and framework-specific security & CVEs |
@@ -185,16 +185,16 @@ rules files that match the code in front of you. Never load all skills at once.
 | [`sota-ml-engineering`](../sota-ml-engineering/SKILL.md) | Production ML/MLOps (classical/predictive, *not* LLM apps) — training→serving→monitoring lifecycle, feature stores & registries, data leakage & train/serve skew, evaluation (ML Test Score, slices), deployment (canary/shadow/rollback), drift monitoring (PSI/KS) & retraining, ML security/governance (poisoning, MITRE ATLAS, NIST AI RMF) |
 | [`sota-cloud-infrastructure`](../sota-cloud-infrastructure/SKILL.md) | Cloud accounts/landing zones, cloud IAM, VPC/subnet/DNS/CDN setup, compute selection (serverless vs containers vs K8s), object storage, FinOps/cost, RTO/RPO and disaster recovery |
 | [`sota-kubernetes`](../sota-kubernetes/SKILL.md) | Kubernetes platform security & ops — RBAC & escalation paths, admission control (PSA/Kyverno/Gatekeeper/VAP, Audit→Enforce), GitOps controllers (Argo CD/Flux, AppProject scoping), operators/CRDs/webhooks, control plane & etcd encryption, Helm supply chain, multi-tenancy, cluster lifecycle, K8s audit logging; self-hosted (Talos/k3s) and managed |
-| [`sota-identity-access`](../sota-identity-access/SKILL.md) | Identity infrastructure & access management — OIDC/OAuth2.1/SAML/SCIM protocols, running an IdP (Kanidm/Keycloak/etc.), RBAC/ABAC/ReBAC authorization design, group→role mapping, joiner-mover-leaver lifecycle, deprovisioning, privileged access & break-glass, SPIFFE/workload identity, phishing-resistant MFA/passkeys, federation risk |
+| [`sota-identity-access`](../sota-identity-access/SKILL.md) | Identity infrastructure & access management — OIDC/OAuth2.1/SAML/SCIM protocols, running an IdP (Kanidm/Keycloak/etc.), RBAC/ABAC/ReBAC authorization design, group→role mapping, joiner-mover-leaver lifecycle, deprovisioning, privileged access & break-glass, SPIFFE/workload identity, phishing-resistant MFA/passkeys, federation risk, Active Directory (Kerberos, ADCS, LAPS, gMSA) |
 | [`sota-network-security`](../sota-network-security/SKILL.md) | Network security as a discipline — zero-trust (NIST 800-207), segmentation & blast-radius, the `world`/`any` over-broad-rule trap, Kubernetes NetworkPolicy depth (Cilium L7, default-deny egress), service mesh & mTLS / internal encryption, edge/ingress/WAF, egress control & metadata-endpoint blocking, DNS/TLS/PKI & cert lifecycle, email auth (SPF/DKIM/DMARC) |
 | [`sota-confidential-computing`](../sota-confidential-computing/SKILL.md) | Protecting workloads/data from the infrastructure operator — TEEs (AMD SEV-SNP, Intel TDX, ARM CCA, SGX enclaves, Nitro Enclaves, confidential GPUs), remote attestation (RATS, attest-then-release), confidential VMs/nodes/containers on K8s (CoCo/Kata/Trustee), and cryptographic PETs (FHE, MPC, ZKP, PSI) when hardware trust is off the table |
-| [`sota-detection-engineering`](../sota-detection-engineering/SKILL.md) | Detective controls, SOC & IR — detection-as-code, Sigma/YARA/Suricata/Falco/Tetragon rules, ATT&CK coverage, SIEM & telemetry coverage, alert tuning/SOAR, threat hunting & intel (STIX/TAXII), deception/honeytokens, incident response (NIST 800-61), detection validation (Atomic Red Team/Caldera) |
+| [`sota-detection-engineering`](../sota-detection-engineering/SKILL.md) | Detective controls, SOC & IR — detection-as-code, Sigma/YARA/Suricata/Falco/Tetragon rules, ATT&CK coverage, SIEM & telemetry coverage, alert tuning/SOAR, threat hunting & intel (STIX/TAXII), deception/honeytokens, incident response (NIST 800-61), detection validation (Atomic Red Team/Caldera), Active Directory attack detection |
 | [`sota-data-engineering`](../sota-data-engineering/SKILL.md) | Data pipelines, ELT/orchestration, dbt, Kafka/streaming, CDC, schema registry, lakehouse (Iceberg/Delta/Parquet), data quality/contracts, warehouse modeling |
 | [`sota-privacy-compliance`](../sota-privacy-compliance/SKILL.md) | PII inventory/classification, privacy by design, consent, DSAR/deletion architecture, retention, GDPR/CCPA/HIPAA/PCI/AI Act engineering obligations, SOC 2/ISO 27001 audit readiness, breach response |
 | [`sota-security-compliance`](../sota-security-compliance/SKILL.md) | Cybersecurity control frameworks & product-security regulations as engineering — NIST CSF 2.0, SP 800-53, 800-171/CMMC, SSDF (800-218), FedRAMP, EU Cyber Resilience Act (SBOM/CVD/signed updates), ISA/IEC 62443 (OT zones & conduits, Security Levels); control-framework-as-code crosswalks, CUI boundaries, FIPS-validated crypto |
 | [`sota-mobile`](../sota-mobile/SKILL.md) | iOS/Android/cross-platform apps — stack choice, offline-first/sync, push, mobile security (Keychain/Keystore, attestation), performance budgets, store requirements, staged rollouts |
 | [`sota-cli-ux`](../sota-cli-ux/SKILL.md) | CLI/developer-tool design — flags/subcommands, config precedence, stdout/stderr and --json contracts, exit codes, TTY detection, signals, completions, distribution |
-| [`sota-shell-scripting`](../sota-shell-scripting/SKILL.md) | Bash/sh scripts, CI run blocks, entrypoints, Makefiles — safety baseline (quoting, set -euo pipefail, traps), injection, secrets in scripts, shellcheck/shfmt |
+| [`sota-shell-scripting`](../sota-shell-scripting/SKILL.md) | Bash/sh and PowerShell scripts, CI run blocks, entrypoints, Makefiles — safety baseline (quoting, set -euo pipefail, traps), injection, secrets in scripts, shellcheck/shfmt |
 | [`sota-docs-workflow`](../sota-docs-workflow/SKILL.md) | Documentation (Diátaxis, READMEs, runbooks, API docs, changelogs, AGENTS.md), spec-driven development (specs, acceptance criteria, steering files), code review/PR workflow, commit/branch/release discipline |
 | [`sota-ux-writing`](../sota-ux-writing/SKILL.md) | Any user-facing interface text — microcopy, button/label wording, error messages, empty states, onboarding copy, notifications, tone of voice, terminology, alt text, i18n-ready strings |
 | [`sota-copywriting`](../sota-copywriting/SKILL.md) | Outward-facing content — landing pages, headlines/CTAs, value propositions, SEO content, testimonials/social proof, claim substantiation, email marketing, app-store listings |
@@ -460,7 +460,7 @@ read with [`rules/03`](rules/03-audit-findings.md).
 
 ## Context budget discipline
 
-Rules files run **52–500 lines, median 262.5** (over all 294 on 2026-09-26; dated because the
+Rules files run **43–500 lines, median 271.5** (over all 306 on 2026-11-17; dated because the
 figure has gone stale before). So budget by the file you are actually opening, not by an
 average: 2–5 files is a typical focused task and can be 400 lines or 2,000. A full audit pass
 should load one skill at a time, finish its findings, then move on. If context is tight, prefer

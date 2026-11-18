@@ -63,7 +63,7 @@ assigned an array. Only the `for` list: as a command operand the same shape was 
 a sample of 30 (one-word values: an id, a sha, `head -1`). MEASURED over 38,118 unique local agent
 Bash calls in 434 transcripts (labels written first; data git-ignored): 20 `for` hits, every one
 read against its result, 11 ran once over a joined list (`No such file` naming several paths, a
-malformed URL, one row for 40 keys). Of the 18 whose list word is the bare variable, the other 7
+malformed URL, one row for 45 keys). Of the 18 whose list word is the bare variable, the other 7
 ran right only because a list-producing command (`grep -rl … | head -3`, `find`) happened to
 return one item; `${(f)v}` is correct for all 18. The operator accepted that rate (2026-11-15).
 
@@ -74,7 +74,7 @@ Exempt: quotes, `[[ ]]`, `case` patterns, assignments, words starting with `=` (
 a `noglob` command, and a command that sets `nonomatch`/`nullglob`. MEASURED over 38,283 unique
 local agent Bash calls (labels written first; data git-ignored): 159 such words, every one that
 zsh reached aborted (123 of 123; the other 36 sat after an abort in the same command). A glob
-OPERAND (`ls *.md`) was measured too and is NOT refused: 4,445 of 4,632 ran fine.
+OPERAND (`ls *.md`) was measured too and is NOT refused: only 187 of 4,632 aborted.
 
 ONLY UNDER zsh: it works out the shell Claude Code runs Bash commands in the way Claude Code does
 (CLAUDE_CODE_SHELL, then $SHELL, then the first zsh or bash on PATH; see agent_shell) and acts only

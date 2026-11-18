@@ -542,6 +542,45 @@ setup_zsh_equals_hook() {
   rm -f "$tmp"
 }
 
+# A PreToolUse hook on Bash keyed on the ACTION a command takes (ROADMAP 98). A command that signs
+# or unlocks with a person's key (`git commit -S`, `git tag -s`, a commit when commit.gpgSign is
+# set, `gpg --sign`, `ykman`, ...) is refused once per session with what to settle first, because
+# each failed attempt can spend one of their PIN tries; issued again it runs. An image push or
+# retag, a CI file written from the shell, and a vulnerability scan get the owning rules files as
+# context, once per session each, and are never blocked. Replayed over 39,464 transcript Bash
+# calls (2026-11-18, one operator's corpus): signing fired 13 times in 2 sessions, all real. It
+# costs ~60 ms per Bash call.
+setup_action_rules_hook() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="python3 \"$REPO/scripts/action-rules-hook.py\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping the action-rules hook"; return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found — skipping the action-rules hook"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "action-rules-hook.py" \
+      '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota action-rules hook already present — up to date"; return
+  fi
+  ask_yn "Add a hook that stops the first signing command of each session (git commit -S, gpg --sign) until the agent has checked the PIN counter and told you every prompt; issued again, it runs. It also names the rules files for CI, image-push and scan commands (~60 ms per command)?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.PreToolUse = ((.hooks.PreToolUse // []) + [{matcher:"Bash",hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added PreToolUse action-rules hook (silence it with SOTA_ACTION_RULES_HOOK=off)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the action-rules hook"
+  fi
+  rm -f "$tmp"
+}
+
 # Claude Code reserves a per-turn CHARACTER budget for the skill listing and sizes it
 # as `(contextTokens x 4) x skillListingBudgetFraction`, fraction defaulting to 0.01 —
 # so 8,000 characters on a 200k-context model, for every skill from every source. Read
@@ -879,6 +918,7 @@ maybe_setup_routing() {
   setup_update_reminder || true
   setup_code_rules_hook || true
   setup_zsh_equals_hook || true
+  setup_action_rules_hook || true
   return 0
 }
 

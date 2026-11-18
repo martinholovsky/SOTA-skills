@@ -36,7 +36,8 @@ Resilience Act, and ISA/IEC 62443 for OT.
 > **This is engineering guidance, not legal, certification, or assessment advice.**
 > Framework versions, regulation dates, and conformity routes move — every date
 > and version below was verified against a primary source (NIST CSRC, EUR-Lex, the
-> Federal Register, ISA/IEC) as of **July 2026** and each rules file cites it.
+> Federal Register, ISA/IEC) as of the library's last full sweep (the root
+> `LAST-VERIFIED` stamp; a section may carry a later date) and each rules file cites it.
 > Re-verify before you rely on a deadline, and route scoping/attestation decisions
 > (is this system in CUI scope? which CMMC level? is our product "important" under
 > the CRA?) to your assessor, sponsor, or counsel. This skill tells you how to

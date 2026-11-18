@@ -118,6 +118,9 @@ mutable pointer instead of the digest.
     2026-10-30, [permissions](https://jfrog.com/help/r/jfrog-platform-administration-documentation/permissions)).
   - **Zot**: enforce immutability at the consumer (digest pinning) + retention/policy; Zot does
     not ship a Harbor-style immutable-tag rule engine — do not assume one.
+    With per-node stores and peer sync, a re-pushed tag can come back at an older digest
+    (field-reported 2026-11-18): treat every tag as write-once, your own build candidates
+    included ([rules/09](09-gates-that-hold.md), requirement 4 of the candidate pattern).
 - **Consumers pin by digest.** Deploy manifests reference `image@sha256:...`, not tags (this is
   the build-once-promote-many invariant from [rules/04](04-build-containers.md) §4.5 and is *enforced* at admission by
   [sota-kubernetes](../../sota-kubernetes/SKILL.md)). A digest is content-addressed: it cannot be mutated under you. Tags are for

@@ -15,7 +15,8 @@ lives in wiki pages does not.
 
 > **This is engineering guidance, not legal advice.** Regulations change, vary by
 > jurisdiction, and turn on facts about your business that code review cannot see.
-> Regulatory facts below were verified against primary sources as of June 2026 —
+> Regulatory facts below were verified against primary sources as of the library's
+> last full sweep (the root `LAST-VERIFIED` stamp; a section may carry a later date) —
 > re-verify deadlines and statuses before relying on them, and route legal
 > interpretation (lawful basis selection, contract terms, breach reportability
 > decisions) to qualified counsel or your DPO. This skill tells you how to build

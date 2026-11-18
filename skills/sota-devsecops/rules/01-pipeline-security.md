@@ -107,7 +107,9 @@ did not.
   — needs a GitHub API token) in CI, and review external PRs that add/bump a pinned
   SHA by confirming the commit on the claimant repo.
 - Keep pins fresh with Renovate (`helpers:pinGitHubActionDigests` preset) or Dependabot —
-  a stale pin is a vuln-management problem, an unpinned action is a supply chain hole.
+  a stale pin is a vuln-management problem, an unpinned action is a supply chain hole. Give the
+  bot a cooldown in the same file ([rules/03](03-dependencies.md) §3.7): a pin bumped the day an
+  action is released is the hijacked-release window the pin was meant to close.
 - `actions/*` (GitHub first-party) at a tag is tolerable (Low) but pin anyway for
   consistency; everything else unpinned is High.
 - Enforce org-wide: Settings → Actions → "Allow specified actions" with an allowlist, plus the
@@ -480,7 +482,7 @@ durable verdict everywhere ([`rules/11`](11-after-the-gate-fails.md) §4), not j
       execute the jobs locally against a fresh clone (committed state, not the working tree) before trusting any gate it claims; a local harness that skips a step for missing tooling counts that step as not run (§1.11).
 - [ ] Every workflow has a top-level `permissions:` block; no `write-all`; `id-token: write` only in federating jobs; the repo/org default token is read-only (`gh api repos/O/R/actions/permissions/workflow --jq .default_workflow_permissions` prints `read`) and no `repo`/`api`-scoped PAT sits in CI secrets where a GitHub App installation token suffices (§1.1)
 - [ ] No long-lived cloud keys in secrets; OIDC trust policies pin `aud` and an exact `sub` (repo + ref/environment, no wildcards; the numeric `@id` form where the repo carries immutable subject claims); one cloud role per repo × purpose, a shared role spanning prod write = Critical (§1.2)
-- [ ] All third-party actions pinned to full commit SHAs with version comments (§1.3); pins maintained by Renovate/Dependabot; org actions-allowlist enabled
+- [ ] All third-party actions pinned to full commit SHAs with version comments (§1.3); pins maintained by Renovate/Dependabot with a cooldown (rules/03 §3.7); org actions-allowlist enabled
 - [ ] No `pull_request_target`/`workflow_run` job checks out or executes PR head content while secrets/write token are present (§1.4); label gates (if any) re-applied per push and SHA-pinned at approval
 - [ ] No untrusted context (`title`, `body`, `head_ref`, commit message, comment) interpolated into `run:`/`github-script`/shell-reaching inputs — all via `env:` (§1.5); zizmor/actionlint run in CI
 - [ ] Self-hosted runners: none on public repos; ephemeral; egress monitored; caches not shared across trust boundaries; release/publish/signing jobs restore no build cache (`cache-mode: none`, or no cache step) (§1.6)

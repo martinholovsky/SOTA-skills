@@ -27,7 +27,8 @@ live in [`sota-code-security` rules/08](../sota-code-security/rules/08-llm-ai-se
 [`sota-privacy-compliance`](../sota-privacy-compliance/SKILL.md). Reference them; don't re-derive them.
 
 **Freshness rule:** model names, prices, context limits, and spec revisions in
-these files were verified June 2026 and rot fast. When a decision hinges on a
+these files were verified as of the library's last full sweep (the root `LAST-VERIFIED`
+stamp; a section may carry a later date) and rot fast. When a decision hinges on a
 specific model/price/limit, re-verify against provider docs (or the project's
 `claude-api`-style reference skill) before encoding it. Write code
 version-agnostically: model IDs and parameters in config, never inline.

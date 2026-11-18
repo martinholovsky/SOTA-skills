@@ -124,7 +124,7 @@ index (invariant 10) in the same commit.
   verdict label, non-portable backslash escapes (`\b` `\s` `\d`) — split out of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
   `set -euo pipefail`, disagreeing status variables, GitHub Actions shell defaults, execution
   policy, PSScriptAnalyzer), 08 ad-hoc side effects (blast radius, process-table exhaustion, a bare stdin reader
-  waiting on an agent shell's open socket —
+  waiting on an agent shell's open socket, a command handed to a human (copied, not retyped; no `#` lines) —
   split out of 06 in v1.42.2),
   09 listing & selection (a lister's default page read as a population, a selector answering a
   neighbouring question, a `--include` filter that drops the file you named, a process selected by

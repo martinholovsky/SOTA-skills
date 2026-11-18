@@ -14,7 +14,7 @@ Expert-level rules for building new mobile apps and auditing existing ones. Mobi
 2. **The device is hostile territory.** The attacker owns the hardware, can decompile the binary, and can read anything you store insecurely. Client-side checks are deterrents, not controls; enforcement lives on the server.
 3. **Resources are budgeted, not abundant.** Main thread, battery, memory, radio, and background execution time are all rationed by the OS. Apps that overspend get janked, killed, or throttled.
 
-Facts in this skill (OS versions, store policies, framework status) were verified against primary sources in June 2026. Mobile platforms move fast — when a specific deadline or version matters, re-verify against Apple/Google developer docs before relying on it.
+Facts in this skill (OS versions, store policies, framework status) were verified against primary sources as of the library's last full sweep (the root `LAST-VERIFIED` stamp; a section may carry a later date). Mobile platforms move fast — when a specific deadline or version matters, re-verify against Apple/Google developer docs before relying on it.
 
 ## BUILD mode
 

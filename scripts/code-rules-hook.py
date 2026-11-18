@@ -39,15 +39,28 @@ names it.
 Test files and an agent's scratchpad (a `scratchpad/` path segment) are skipped: what matters is
 what the shipped code does. Config files (CONFIG_EXT: YAML,
 .j2, .conf, .service, .toml) are read by the host-config rows only (CONFIG_ROWS), since 2026-10-22;
-JSON is never read.
+JSON is never read. Since 2026-11-18 a Dockerfile/Containerfile (no extension) is read as config too,
+and CONFIG_ROWS gained a CI workflow, a Dockerfile and a Dependabot row, which fire on config files
+only (CONFIG_ONLY), never on code: before that, writing a workflow or a Dockerfile named no rules
+file at all. Terraform, Vue/Svelte, server templates, PowerShell and SQL get per-file-type rows
+(TYPED_ROWS) instead of the code rows, which misfire on them. `rows_for(path)` decides which rows a
+written file is tried against.
 
 The triggers are a table of regular expressions over the written text, and they are crude on
 purpose: a false trigger costs one file read, a missed one costs the rule.
 Each named row carries the line that matched it (`matched: "..."`, printable, at most ~72
 characters), so an agent can see why it fired. A row may have EXCLUDE senses, blanked before it
 is matched; only the session/token row has them, built against a labelled set (2026-11-12).
+Every row skips a raw string shaped like a regular expression (2026-11-17): a pattern table that
+NAMES `subprocess` or `upload` describes text and does not run a process or accept a file.
 
 IT NEVER BLOCKS: any error prints one line to stderr and exits 0 with no output.
+LANGUAGE NOTE (ROADMAP 99, 2026-11-18). The first edit of code in a language whose skill no tool call
+in the session has named (a Skill call, a read, a command; the stored skills listing does not count)
+also gets one note per session naming that skill's SKILL.md. Replayed with `--replay-language` over
+one operator's 432 transcripts: 77 notes in 67 of the 91 that edited code; a median of 6 edits of the
+language followed each note, 9 notes had none after them; the skill was named later anyway 17 times.
+
 SOTA_CODE_RULES_HOOK=off (or 0 / false / no) disables it.
 
 Registered by the plugin; install.sh --routing adds it to ~/.claude/settings.json. By hand
@@ -113,6 +126,56 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
     ("runs or configures a container or sandbox (seccomp, capabilities, namespaces)",
      r"seccomp|SCMP_|--security-opt|--cap-(drop|add)\b|--userns\b|\bunshare\b|\b(podman|docker) run\b",
      [("sota-sandboxing", "02", "§1 namespaces, §3 seccomp-bpf, §5 capabilities"),
+      ("sota-sandboxing", "03", "§1 Docker / OCI hardening checklist")]),
+    # 2026-11-18, per-file-type rows: file types the library has rules for but the code rows misfire
+    # on (about half of 150 local .vue/.svelte/.ps1 files fired a code row, almost all falsely). Each
+    # matches only its language's own construct and fires only for its extensions (TYPED_ROWS).
+    # Measured on random local files (rg --hidden over ~/Github, 400 per type): Terraform network 11,
+    # IAM 5, storage 3 of 400; v-html 3/400, {@html} 6/400; template escape hatches 3/400; EJS `<%-`
+    # 9/88 (partial `include` excluded); PowerShell 35/400; SQL DDL 52/400 (comment lines excluded).
+    ("opens network access in infrastructure code (Terraform)",
+     r'"0\.0\.0\.0/0"|"::/0"',
+     [("sota-cloud-infrastructure", "03", "§1 deny-by-default network design")]),
+    ("grants wildcard IAM permissions in infrastructure code (Terraform)",
+     r'"Action"\s*:\s*"\*"|actions\s*=\s*\[\s*"\*"\s*\]|"\*:\*"',
+     [("sota-cloud-infrastructure", "02", "§3 policy authoring")]),
+    ("makes storage public or unencrypted in infrastructure code (Terraform)",
+     r'acl\s*=\s*"public-read(?:-write)?"|block_public_(?:acls|policy)\s*=\s*false|'
+     r'restrict_public_buckets\s*=\s*false|publicly_accessible\s*=\s*true|\b(?:encrypted|storage_encrypted)\s*=\s*false',
+     [("sota-cloud-infrastructure", "05", "§1 public access, §4 encryption defaults")]),
+    ("renders raw HTML in a component (v-html, {@html})",
+     r"\bv-html\s*=|\{@html\s",
+     [("sota-web-frameworks", "04", "§4 Vue-specific XSS"), ("sota-code-security", "05", "§1 XSS")]),
+    ("turns template escaping off",
+     r"\|\s*safe\b|\{%-?\s*autoescape\s+(?:false|off)\b|<%==|\{\{\{|\bmark_safe\(|\.html_safe\b|\|\s*raw\b",
+     [("sota-code-security", "05", "§1 XSS, context-aware output encoding")]),
+    ("writes unescaped output in an EJS template",
+     r"<%-(?!\s*include\b)",
+     [("sota-code-security", "05", "§1 XSS, context-aware output encoding")]),
+    ("evaluates a string as code or bypasses execution policy (PowerShell)",
+     r"\bInvoke-Expression\b|\biex\s|\bDownloadString\s*\(|\[scriptblock\]::Create\(|-ExecutionPolicy\s+(?:Bypass|Unrestricted)",
+     [("sota-shell-scripting", "07", "§5 Invoke-Expression and string-built commands, §6 execution policy")]),
+    ("changes a schema in a way that locks or rewrites a table (SQL DDL)",
+     r"(?im)^(?!\s*--)[^\n]*?\b(?:CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?!CONCURRENTLY)|DROP\s+COLUMN\b|"
+     r"ALTER\s+COLUMN\b[^;\n]*\bTYPE\b|ADD\s+COLUMN\b[^;\n]*\bNOT\s+NULL\b(?![^;\n]*\bDEFAULT\b))",
+     [("sota-databases", "02", "§2 lock-aware DDL on hot tables")]),
+    # 2026-11-18: an agent wrote .github/dependabot.yml from rules/01's "keep pins fresh with Dependabot"
+    # and never reached the cooldown in rules/03. `package-ecosystem:` is Dependabot's own key: 80 of 80
+    # local YAML files carrying it were Dependabot configs (rg --hidden over ~/Github, 2026-11-18).
+    ("configures a dependency-update bot (Dependabot)",
+     r"(?m)^\s*-?\s*package-ecosystem:\s",
+     [("sota-devsecops", "03", "§3.7 cooldown, grouping, automerge")]),
+    # 2026-11-18: workflows and Dockerfiles reached no row at all (YAML reads only config rows; a
+    # Dockerfile has no extension). Measured over ~/Github with rg --hidden: `runs-on:` is in 1,966
+    # YAML files, 1,891 under a workflow directory and the other 75 GitHub Actions templates; a FROM
+    # line is in 64,913 of 64,916 Dockerfile-named files and in no YAML file. Both are CONFIG_ONLY:
+    # a FROM line also opens SQL inside code.
+    ("writes a CI workflow (GitHub Actions)",
+     r"(?m)^\s*runs-on:\s",
+     [("sota-devsecops", "01", "§1.1 token permissions, §1.3 pinned actions, §1.4 untrusted triggers, §1.5 expression injection")]),
+    ("writes a container image (Dockerfile)",
+     r"(?m)^\s*FROM\s+\S",
+     [("sota-devsecops", "04", "§4.2 multi-stage, §4.3 base image pinned by digest"),
       ("sota-sandboxing", "03", "§1 Docker / OCI hardening checklist")]),
     ("sets or disables an LSM profile (AppArmor, SELinux)",
      r"\baa-(complain|enforce|disable)\b|force-complain|apparmor_parser|\bsetenforce\b|\bsetsebool\b|"
@@ -203,14 +266,36 @@ EXCLUDE = {
         r"|\bprocess[_ ]groups?\b|\bsession leader\b|AVAudioSession\w*|\baudio ?session\w*|\bsession[- ]bus\b"
         r"|\bstack[ _]?cookies?\w*|\bStackCookie\b"
         r"|\b(next|prior|previous|working|debugging|chat|LLM|agent|coding|training|interactive|knowledge[- ]sharing) sessions?\b"
-        r"|\bSession(Start|End)\b",
+        r"|\bSession(Start|End)\b"
+        # a quota or scope, not session management: MAX_LOOPS_PER_SESSION, max_messages_per_session,
+        # "per-session sliding window". 129 local lines read 2026-11-17, all quota or scope but one: "a
+        # per-session token printed at startup", which the older `per[- ](\w+ )?tokens?` sense above
+        # already blanked (a pre-existing miss, not this line's). Only the phrase is blanked, so a
+        # session word beside it still fires ("the per-session cookie").
+        r"|(?:\b|_)per[_ -]sessions?\b",
         re.I),
 }
 
 
+# A raw string that IS a regular expression describes text; it does not do what its words say. A
+# detector's own pattern table (`r"subprocess|os\.system|..."`) fired "runs a process", and a
+# Stop hook's word list fired "accepts a file". Of 60 sampled lines over 67,524 local Python files
+# whose every match of a row sat inside a raw string, 60 were pattern source (2026-11-17). Only
+# regex-shaped raw strings are blanked (an escape class, a group or an unspaced `a|b`), so a raw
+# string holding SQL, including `a || b`, still fires.
+RAW_STRING = re.compile(r"""(?<![A-Za-z0-9_])[rR][bB]?("[^"\n]*"|'[^'\n]*')""")
+REGEX_SHAPED = re.compile(r"\\[bBdDsSwW.]|\(\?|\w\|\w")
+
+
+def blank_regex_literals(text: str) -> str:
+    return RAW_STRING.sub(lambda m: " " * len(m.group(0)) if REGEX_SHAPED.search(m.group(0))
+                          else m.group(0), text)
+
+
 def row_match(what: str, rx: re.Pattern, text: str) -> re.Match | None:
-    """The row's first match in `text` after its EXCLUDE senses are blanked, or None. Blanking keeps
-    offsets, so the match indexes the original text."""
+    """The row's first match in `text` after regex-shaped raw strings and its EXCLUDE senses are
+    blanked, or None. Blanking keeps offsets, so the match indexes the original text."""
+    text = blank_regex_literals(text)
     ex = EXCLUDE.get(what)
     return rx.search(ex.sub(lambda m: " " * len(m.group(0)), text) if ex else text)
 
@@ -238,13 +323,69 @@ HOOK_ONLY = {
     "reads from a process substitution, whose exit status is unreachable",
     "configures PAM, a login stack",
     "calls a model API: output cap, stop reason and spend",
+    "configures a dependency-update bot (Dependabot)",
+    "writes a CI workflow (GitHub Actions)",
+    "writes a container image (Dockerfile)",
+    "opens network access in infrastructure code (Terraform)",
+    "grants wildcard IAM permissions in infrastructure code (Terraform)",
+    "makes storage public or unencrypted in infrastructure code (Terraform)",
+    "renders raw HTML in a component (v-html, {@html})",
+    "turns template escaping off",
+    "writes unescaped output in an EJS template",
+    "evaluates a string as code or bypasses execution policy (PowerShell)",
+    "changes a schema in a way that locks or rewrites a table (SQL DDL)",
 }
 # The only rows that also read CONFIG_EXT files. Each name must be a trigger row (--self-test).
 CONFIG_ROWS = {
+    "configures a dependency-update bot (Dependabot)",
+    "writes a CI workflow (GitHub Actions)",
+    "writes a container image (Dockerfile)",
     "runs or configures a container or sandbox (seccomp, capabilities, namespaces)",
     "sets or disables an LSM profile (AppArmor, SELinux)",
     "configures PAM, a login stack",
 }
+# Rows that fire on config files only, never on code: their words also occur in code (SQL's FROM).
+CONFIG_ONLY = {
+    "configures a dependency-update bot (Dependabot)",
+    "writes a CI workflow (GitHub Actions)",
+    "writes a container image (Dockerfile)",
+}
+# Per-file-type rows: they fire only for these extensions, and these files get no ordinary code row.
+_TEMPLATE = {"turns template escaping off"}
+_TF = {"opens network access in infrastructure code (Terraform)",
+       "grants wildcard IAM permissions in infrastructure code (Terraform)",
+       "makes storage public or unencrypted in infrastructure code (Terraform)"}
+_RAW = {"renders raw HTML in a component (v-html, {@html})"}
+_PS = {"evaluates a string as code or bypasses execution policy (PowerShell)"}
+TYPED_ROWS = {
+    "tf": _TF, "vue": _RAW, "svelte": _RAW,
+    "html": _TEMPLATE, "htm": _TEMPLATE, "jinja": _TEMPLATE, "jinja2": _TEMPLATE, "j2": _TEMPLATE,
+    "erb": _TEMPLATE, "hbs": _TEMPLATE, "njk": _TEMPLATE,
+    "ejs": {"writes unescaped output in an EJS template"},
+    "ps1": _PS, "psm1": _PS,
+    "sql": {"changes a schema in a way that locks or rewrites a table (SQL DDL)"},
+}
+CONFIG_ONLY |= set().union(*TYPED_ROWS.values())   # typed rows never fire on ordinary code
+DOCKERFILE_NAME = re.compile(r"^(?:dockerfile|containerfile)(?:\..+)?$|\.(?:dockerfile|containerfile)$", re.I)
+
+
+def rows_for(path: str) -> set[str] | None:
+    """The trigger names to try for a written file: config rows for config files and Dockerfiles,
+    every row but the config-only ones for code, and None to skip the file."""
+    name = path.rsplit("/", 1)[-1]
+    if DOCKERFILE_NAME.search(name):
+        return set(CONFIG_ROWS)
+    # The Dockerfile row reads Dockerfile-named files only: matched case-blind, its FROM line is
+    # Python's `from __future__` in a `.py.j2` template (15 of 17 .j2 hits, measured 2026-11-18).
+    config = set(CONFIG_ROWS) - {"writes a container image (Dockerfile)"}
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if ext in TYPED_ROWS:   # .j2 is a config file too: it keeps the config rows
+        return set(TYPED_ROWS[ext]) | (config if ext in CONFIG_EXT else set())
+    if ext in CODE_EXT:
+        return {w for w, _, _ in TRIGGERS} - CONFIG_ONLY
+    if ext in CONFIG_EXT:
+        return config
+    return None
 
 
 def skill_dir(name: str) -> Path | None:
@@ -326,6 +467,58 @@ def select(text: str, already: set[str], rows: set[str] | None = None) -> list[t
     return [("; ".join(w), p, "; ".join(s)) for p, (w, s) in picked.items()]
 
 
+# ROADMAP 99 (2026-11-18): the language skill for code the session writes. The router's cross-cutting
+# rule 1 says to load it; over one operator's 94 sessions (436 transcripts), 66 of 116 (session,
+# language) pairs had no tool call naming the skill before the first edit (2026-11-18). So the first edit of a
+# language whose skill no TOOL CALL has named gets one note per session, naming the skill's SKILL.md
+# (its index), not its rules files: v14 measured whole rules-file reads as ~90% of a +38% cost.
+LANG_SKILL = {"py": "sota-python", "pyi": "sota-python", "go": "sota-golang", "rs": "sota-rust",
+              "c": "sota-c-cpp", "h": "sota-c-cpp", "cc": "sota-c-cpp", "cpp": "sota-c-cpp",
+              "cxx": "sota-c-cpp", "hpp": "sota-c-cpp", "java": "sota-jvm", "kt": "sota-jvm",
+              "kts": "sota-jvm", "cs": "sota-dotnet", "php": "sota-php", "rb": "sota-ruby",
+              "swift": "sota-swift", "js": "sota-javascript-typescript", "jsx": "sota-javascript-typescript",
+              "mjs": "sota-javascript-typescript", "cjs": "sota-javascript-typescript",
+              "ts": "sota-javascript-typescript", "tsx": "sota-javascript-typescript",
+              "sh": "sota-shell-scripting", "bash": "sota-shell-scripting"}
+
+
+def lang_skill(path: str) -> str:
+    name = path.rsplit("/", 1)[-1]
+    return LANG_SKILL.get(name.rsplit(".", 1)[-1].lower(), "") if "." in name else ""
+
+
+def skill_named(transcript: str, skill: str) -> bool:
+    """True when a TOOL CALL in the transcript names the skill (a Skill call, a read, a command).
+    Raw text is not enough: the transcript also stores the skills listing, which names every skill
+    (measured 2026-11-18: `skill_listing` and `instructions` attachments)."""
+    try:
+        with open(transcript, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                if skill not in line or '"tool_use"' not in line:
+                    continue
+                try:
+                    o = json.loads(line)
+                except ValueError:
+                    continue
+                c = (o.get("message") or {}).get("content") if isinstance(o, dict) else None
+                for b in c if isinstance(c, list) else []:
+                    if isinstance(b, dict) and b.get("type") == "tool_use" and skill in json.dumps(b.get("input")):
+                        return True
+    except (OSError, TypeError):
+        return False
+    return False
+
+
+def language_note(path: str, skill: str) -> str:
+    d = skill_dir(skill)
+    if d is None:
+        return ""
+    return ("SOTA: this session writes %s code (%s), and no tool call in it has loaded the language "
+            "skill yet. Its index is %s: its Top-10 non-negotiables and its rules index (which rules "
+            "file to read for what this code does) apply to this and every later edit in the language. "
+            "Read it before the next edit." % (skill.removeprefix("sota-"), path, d / "SKILL.md"))
+
+
 APPLY = ("These rules apply to this change: they are part of what was asked, not extras beyond the spec. "
          "Build what each one requires now, with a conservative default (a cap, a limit, an allow-list, a "
          "guard). Do not hand it back as a question or a note instead of building it, unless the user's "
@@ -350,21 +543,23 @@ def respond(event: dict) -> str:
         return ""
     ti = event.get("tool_input") or {}
     path = str(ti.get("file_path") or "")
-    ext = path.rsplit(".", 1)[-1].lower() if "." in path.rsplit("/", 1)[-1] else ""
-    if ext in CODE_EXT:
-        rows = None
-    elif ext in CONFIG_EXT:
-        rows = CONFIG_ROWS
-    else:
+    rows = rows_for(path)
+    if rows is None:
         return ""
     if TEST_PATH.search(path) or SCRATCH_PATH.search(path):
         return ""
     sd = state_dir(str(event.get("session_id") or ""))
     picks = [x for x in select(written_text(ti), named_before(sd), rows) if claim(sd, x[1])]
-    if not picks:
+    lang = ""
+    skill = lang_skill(path)
+    # claimed once per session even when the skill is loaded, so the transcript is read at most once
+    if skill and claim(sd, Path("lang:" + skill)) and not skill_named(str(event.get("transcript_path") or ""), skill):
+        lang = language_note(path, skill)
+    if not picks and not lang:
         return ""
+    text = "\n\n".join(x for x in (message(path, picks) if picks else "", lang) if x)
     return json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse",
-                                              "additionalContext": message(path, picks)[:LIMIT]}})
+                                              "additionalContext": text[:LIMIT]}})
 
 
 TABLE_HEADING = "## What your code does: the rules outside this skill"
@@ -429,6 +624,72 @@ def router_section(text: str) -> str:
     return text[i:j + 1 if j >= 0 else len(text)].rstrip("\n") + "\n"
 
 
+def replay_language(root: str) -> int:
+    """Where the language note would have fired in local transcripts, with this hook's own filters:
+    per transcript, in time order, the first non-test, non-scratchpad edit of a language whose skill
+    no earlier tool call named. Prints notes, the edits of that language after each note (what the
+    note could still reach), and how often the skill was named later anyway."""
+    files = with_edits = with_note = notes = zero_after = named_later = 0
+    after: list[int] = []
+    per: dict[str, int] = {}
+    for dp, _dn, fn in os.walk(os.path.expanduser(root), followlinks=True):
+        for f in fn:
+            if not f.endswith(".jsonl"):
+                continue
+            calls: dict[str, tuple[str, str, dict]] = {}
+            with open(os.path.join(dp, f), encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    if '"tool_use"' not in line:
+                        continue
+                    try:
+                        o = json.loads(line)
+                    except ValueError:
+                        continue
+                    c = (o.get("message") or {}).get("content") if isinstance(o, dict) else None
+                    for b in c if isinstance(c, list) else []:
+                        if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("id") not in calls:
+                            calls[b["id"]] = (str(o.get("timestamp") or ""), str(b.get("name")), b.get("input") or {})
+            seq = sorted(calls.values(), key=lambda x: x[0])
+            if not seq:
+                continue
+            files += 1
+            named: set[str] = set()
+            noted: dict[str, int] = {}
+            edited = False
+            for i, (_ts, name, inp) in enumerate(seq):
+                text = json.dumps(inp)
+                named |= {sk for sk in set(LANG_SKILL.values()) if sk in text}
+                if name not in {"Edit", "Write", "MultiEdit"}:
+                    continue
+                path = str(inp.get("file_path") or "")
+                sk = lang_skill(path)
+                if not sk or TEST_PATH.search(path) or SCRATCH_PATH.search(path):
+                    continue
+                edited = True
+                if sk in noted or sk in named:
+                    continue
+                noted[sk] = i
+            with_edits += edited
+            with_note += bool(noted)
+            for sk, i in noted.items():
+                notes += 1
+                per[sk] = per.get(sk, 0) + 1
+                later = seq[i + 1:]
+                n_after = sum(1 for _t, nm, inp in later if nm in {"Edit", "Write", "MultiEdit"}
+                              and lang_skill(str(inp.get("file_path") or "")) == sk
+                              and not TEST_PATH.search(str(inp.get("file_path") or "")))
+                after.append(n_after)
+                zero_after += n_after == 0
+                named_later += any(sk in json.dumps(inp) for _t, _n, inp in later)
+    after.sort()
+    print("transcripts %d; with a code edit %d; with a note %d; notes %d" % (files, with_edits, with_note, notes))
+    print("  by skill: " + ", ".join("%s %d" % kv for kv in sorted(per.items(), key=lambda kv: -kv[1])))
+    if after:
+        print("  edits of the language after the note: median %d; none after %d; skill named later anyway %d"
+              % (after[len(after) // 2], zero_after, named_later))
+    return 0 if files else 1
+
+
 def main() -> int:
     if os.environ.get("SOTA_CODE_RULES_HOOK", "on").lower() in {"off", "0", "false", "no"}:
         return 0
@@ -465,9 +726,17 @@ def self_test() -> int:
             c = json.loads(p.stdout)["hookSpecificOutput"]["additionalContext"] if p.stdout.strip() else ""
             return p.returncode, c, p.stderr
 
-        def ev(sid, path, text, tool="Write"):
+        # A transcript in which the Python skill was loaded by a tool call: the rules-trigger checks
+        # below use it, so the language note (ROADMAP 99) stays out of their way.
+        loaded = Path(t) / "loaded.jsonl"
+        loaded.write_text(json.dumps({"type": "assistant", "message": {"role": "assistant", "content": [
+            {"type": "tool_use", "id": "x1", "name": "Skill", "input": {"skill": "sota-python"}}]}}) + "\n",
+            encoding="utf-8")
+
+        def ev(sid, path, text, tool="Write", transcript=None):
             ti = {"file_path": path, "content": text} if tool == "Write" else {"file_path": path, "new_string": text}
-            return {"tool_name": tool, "session_id": sid, "tool_input": ti}
+            return {"tool_name": tool, "session_id": sid, "tool_input": ti,
+                    "transcript_path": str(transcript if transcript is not None else loaded)}
 
         cs01 = str(ROOT / "skills" / "sota-code-security" / "rules")
         rc, c, _ = run(ev("s1", "/w/shop/export.py", "import csv\nw = csv.writer(f)\n"))
@@ -518,6 +787,31 @@ def self_test() -> int:
         for i, path in enumerate(("/w/scripts/latest.sh", "/w/app/contest_x.py", "/w/app/testimony.py")):
             rc, c, _ = run(ev("s13-%d" % i, path, "import csv\n"))
             check("a shipped file containing 'test' still fires: %s" % path.rsplit("/", 1)[1], "01-" in c)
+        # ROADMAP 99: the language note, once per session, only when no tool call loaded the skill
+        listing = Path(t) / "listing.jsonl"
+        listing.write_text(json.dumps({"type": "attachment", "attachment": {"type": "skill_listing",
+                           "content": "sota-python: ... sota-rust: ..."}}) + "\n" + json.dumps(
+            {"type": "assistant", "message": {"role": "assistant", "content": [
+                {"type": "tool_use", "id": "y", "name": "Bash", "input": {"command": "ls"}}]}}) + "\n", encoding="utf-8")
+        # joinpath, not `ROOT / "skills" / …`: check-plugin-dist.py reads that shape as a file the hook
+        # loads at run time and requires it in its minimal known-good tree
+        py_md = str(ROOT.joinpath("skills", "sota-python", "SKILL.md"))
+        rc, c, _ = run(ev("L1", "/w/app/core.py", "x = 1\n", transcript=listing))
+        check("language note: fires when only the skills listing names the skill", py_md in c and "rules index" in c)
+        rc, c, _ = run(ev("L1", "/w/app/other.py", "y = 2\n", transcript=listing))
+        check("language note: once per session", c == "")
+        rc, c, _ = run(ev("L1", "/w/app/lib.rs", "fn f() {}\n", transcript=listing))
+        check("language note: a second language gets its own note", "sota-rust" in c and "SKILL.md" in c)
+        rc, c, _ = run(ev("L2", "/w/app/core.py", "x = 1\n"))
+        check("language note: silent when a tool call loaded the skill", c == "")
+        rc, c, _ = run(ev("L3", "/w/app/core.py", "x = 1\n", transcript=Path(t) / "missing.jsonl"))
+        check("language note: an unreadable transcript still reminds", py_md in c)
+        rc, c, _ = run(ev("L4", "/w/tests/test_core.py", "x = 1\n", transcript=listing))
+        check("language note: a test file is silent", c == "")
+        rc, c, _ = run(ev("L5", "/w/app/export.py", "import csv\nw = csv.writer(f)\n", transcript=listing))
+        check("language note: combined with a rules note in one message", "01-" in c and py_md in c)
+        rc, c, _ = run(ev("L6", "/w/README.md", "python code", transcript=listing))
+        check("language note: markdown is silent", c == "")
         rc, c, _ = run(ev("s7", "/w/a.py", "import csv"), {"SOTA_CODE_RULES_HOOK": "off"})
         check("opt-out is silent", rc == 0 and c == "")
         # Two copies on one edit (plugin + installer, run in parallel) must not both name a file.
@@ -539,6 +833,77 @@ def self_test() -> int:
                  "SELECT * FROM user_roles", 'if not has_role(u, "ops"): deny()', "role_required(x)"):
         check("authorization form fires (a missed one costs the rule): %s" % text,
               fires("decides who may do what", text))
+    # 2026-11-17: a detector's regex table and a quota name are not the behaviour they mention ...
+    for what, text in (("runs a process", 'ROW = r"subprocess|os\\.system|shell=True"'),
+                       ("accepts a file or image from outside", 'CONTROL = re.compile(r"(?:zip|archive|upload|tls)")'),
+                       ("issues or checks a session or token", 'MAX_PER_SESSION = int(os.environ.get("X", "3"))'),
+                       ("issues or checks a session or token", "max_messages_per_session: int = 1000")):
+        check("quiet: %s" % text, not fires(what, text))
+    # 2026-11-18: a Dependabot config names the cooldown rule; a CI workflow does not
+    check("Dependabot config fires the update-bot row",
+          fires("configures a dependency-update bot", "version: 2\nupdates:\n  - package-ecosystem: pip\n"))
+    check("a workflow does not fire the update-bot row",
+          not fires("configures a dependency-update bot", "on: push\njobs:\n  t:\n    runs-on: ubuntu-latest\n"))
+    # 2026-11-18: workflows and Dockerfiles route to config rows; code never fires config-only rows
+    def picks_for(path, text):
+        r = rows_for(path)
+        return [] if r is None else [w for w, _, _ in COMPILED if w in r and row_match(w, _rx(w), text)]
+    def _rx(w):
+        return next(rx for x, rx, _ in COMPILED if x == w)
+    wf = "on: push\npermissions: {}\njobs:\n  t:\n    runs-on: ubuntu-latest\n"
+    df = "FROM python:3.14-slim\nRUN pip install x\nUSER 1000\n"
+    sql = 'Q = """\nSELECT id\nFROM users\nWHERE id = ?\n"""\n'
+    check("a workflow fires the CI-workflow row", "writes a CI workflow (GitHub Actions)" in picks_for(".github/workflows/ci.yml", wf))
+    check("Dockerfile routes to config rows and fires", "writes a container image (Dockerfile)" in picks_for("Dockerfile", df))
+    check("Dockerfile.prod and app.containerfile route too",
+          rows_for("Dockerfile.prod") is not None and rows_for("app.containerfile") is not None)
+    check("SQL's FROM in Python never fires the Dockerfile row",
+          "writes a container image (Dockerfile)" not in picks_for("app/db.py", sql))
+    check("a file with no extension that is not a Dockerfile is skipped", rows_for("Makefile") is None)
+    # 2026-11-18 per-file-type rows: each fires on its construct, stays quiet on the near miss, and
+    # never on ordinary code that happens to contain the same words.
+    typed_cases = [
+        ("main.tf", 'ingress {\n  cidr_blocks = ["0.0.0.0/0"]\n}', 'ingress {\n  cidr_blocks = ["10.0.0.0/8"]\n}',
+         "opens network access in infrastructure code (Terraform)"),
+        ("iam.tf", 'actions = ["*"]', 'actions = ["s3:GetObject"]',
+         "grants wildcard IAM permissions in infrastructure code (Terraform)"),
+        ("s3.tf", 'block_public_acls = false', 'block_public_acls = true',
+         "makes storage public or unencrypted in infrastructure code (Terraform)"),
+        ("Comment.vue", '<div v-html="body"></div>', '<div v-text="body"></div>',
+         "renders raw HTML in a component (v-html, {@html})"),
+        ("Note.svelte", '{@html note}', '{note}', "renders raw HTML in a component (v-html, {@html})"),
+        ("page.html", '{{ bio|safe }}', '{{ bio }}', "turns template escaping off"),
+        ("show.html.erb", '<%== user.bio %>', '<%- if admin? %>', "turns template escaping off"),
+        ("bio.ejs", '<div><%- user.bio %></div>', "<%- include('header') %>",
+         "writes unescaped output in an EJS template"),
+        ("run.ps1", 'Invoke-Expression $cmd', 'Get-Content $path', 
+         "evaluates a string as code or bypasses execution policy (PowerShell)"),
+        ("0002_add.sql", 'CREATE INDEX users_email ON users (email);',
+         'CREATE INDEX CONCURRENTLY users_email ON users (email);\n-- CREATE INDEX old ON t (x);',
+         "changes a schema in a way that locks or rewrites a table (SQL DDL)"),
+    ]
+    for path, bad, good, row in typed_cases:
+        check("typed row fires on %s" % path, row in picks_for(path, bad))
+        check("typed row quiet on the near miss in %s" % path, row not in picks_for(path, good))
+    check("a .py.j2 template's `from __future__` never fires the Dockerfile row",
+          "writes a container image (Dockerfile)" not in picks_for("roles/x/templates/mod.py.j2", "from __future__ import annotations\n"))
+    check("Dockerfile.j2 still fires the Dockerfile row",
+          "writes a container image (Dockerfile)" in picks_for("templates/Dockerfile.j2", "FROM python:3.14-slim\n"))
+    check("ordinary code never fires a typed row",
+          not any(w in picks_for("app/models.py", 'Q = "CREATE INDEX i ON t (x)"  # v-html {@html x}')
+                  for w in set().union(*TYPED_ROWS.values())))
+    check("a typed file gets no ordinary code row",
+          picks_for("Comment.vue", "setTimeout(() => refresh(), 1000) // Permission granted") == [])
+    check("every typed row names a rules file that exists",
+          all(rules_file(sk, n) is not None for w, _, refs in TRIGGERS
+              if w in set().union(*TYPED_ROWS.values()) for sk, n, _ in refs))
+    # ... and the same words still fire where they are code or a real session
+    for what, text in (("builds a database query", 'q = r"SELECT name FROM users WHERE id = " + uid'),
+                       ("builds a database query", 'q = r"SELECT a || b FROM t WHERE id = " + uid'),
+                       ("runs a process", 'subprocess.run(["ls", r"C:\\tmp"])'),
+                       ("issues or checks a session or token", "the per-session cookie is set HttpOnly"),
+                       ("issues or checks a session or token", 'response.set_cookie("session", sid)')):
+        check("still fires: %s" % text, fires(what, text))
     # KNOWN false triggers, kept firing ON PURPOSE until a labelled set exists to tighten against
     # (ADOPTION-LOG 2026-10-20 deferral). If one of these stops firing, resolve that deferral.
     for what, text in (("logs, returns errors", "git -c user.email=t@example.invalid commit"),
@@ -644,6 +1009,8 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["--router-table"]:
         sys.stdout.write(router_table())
         sys.exit(0)
+    if sys.argv[1:2] == ["--replay-language"]:
+        sys.exit(replay_language(sys.argv[2] if len(sys.argv) > 2 else "~/.claude/projects"))
     if sys.argv[1:] == ["--table"]:
         sys.stdout.write(table())
         sys.exit(0)

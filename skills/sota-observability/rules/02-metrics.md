@@ -160,8 +160,9 @@ histogram_quantile(0.99,
   returns the upper bound of the second-highest bucket when the quantile falls in
   the highest one (Prometheus `querying/functions.md`), so a p99 that reads exactly
   your top finite boundary means "at least that", possibly much more. Never log it
-  or compare it as a latency. At low volume one request **is** the p99: 1 slow
-  call among 44 in 5 min crosses any p99 threshold. Anything that acts on a quantile,
+  or compare it as a latency. At low volume one request **is** the p99: with 44
+  calls in 5 min, 1 slow call is more than 1 %, so the p99 lands in its bucket, and a
+  call that never finished reads as your top edge. Anything that acts on a quantile,
   above all an automated restart ([rules/05](05-operational-readiness.md) §1), also needs a count: requests in the
   window ≥ N, or the count above the threshold (a bucket ratio, as above) ≥ K.
   Field-reported 2026-11-15: a watchdog logged `p99=75000ms`, its 75 s top bucket,

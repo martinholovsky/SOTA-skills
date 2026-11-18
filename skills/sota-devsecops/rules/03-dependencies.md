@@ -310,9 +310,9 @@ rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2, wher
 Unmanaged: drift until a CVE forces a terrifying 40-major-version jump. Unthrottled: you
 auto-install malware minutes after it's published. The strategy:
 
-- **Cooldown**: Renovate `minimumReleaseAge: "5 days"` (Dependabot: cooldown config) for
-  public packages — most malicious versions are yanked within days. Exception: security
-  updates bypass cooldown.
+- **Cooldown**: Renovate `minimumReleaseAge: "5 days"`, Dependabot `cooldown: {default-days: 5}` per
+  `updates:` entry (it defaults to 3 days unset; read 2026-11-18) for public packages — most malicious
+  versions are yanked within days. Exception: security updates bypass cooldown.
   The bot gates only its own PRs; a hand-run `add`/`install` is gated by the package
   manager's own setting (read 2026-10-26): pnpm `minimumReleaseAge` (minutes, since 10.16;
   the 1440 default since 11 falls back when unmet, so set it explicitly), npm `min-release-age`
@@ -379,6 +379,14 @@ Dockerfile. Unpinned it drifts to latest on every rebuild; pinned it is frozen f
 - Otherwise **accept the freeze in writing**: an owner and a review date beside the pin —
   unwritten, it decays like an experiment with no scheduled read-back ([`sota-architecture`
   rules/01](../../sota-architecture/rules/01-architecture-styles-and-decisions.md) §4).
+- **Before you move any pin, find out why it is where it is.** Upstream release notes cannot
+  show a project's own hold. Search the repo's backlog, ADRs and agent notes for the
+  component's name and for words like `held`, `hold`, `blocked` or `do not upgrade`, then
+  read what comes back. A hold written only in a backlog is invisible at the pin: field-reported
+  2026-11-16, a secrets store went from 2.4.4 to 2.7.2 with the hold ("deliberately HELD on
+  an auto-unseal bug", with a required isolated test) in the backlog and a bare
+  `tag: "2.4.4"` in the values file. The hold was stale and the upgrade worked, but by luck.
+  So write the hold **at the pin**: a comment naming the reason and its tracker entry.
 - **Pin while the pinned version is already what resolves.** The pin is then provably inert
   — determinism at zero behaviour change — so no later regression can be blamed on it; an
   SBOM diff (§3.5) showing the artifact component-for-component identical is the receipt.
@@ -423,10 +431,10 @@ consulted.
 
 So require a second value that **cannot** be produced from plausibility:
 
-- **Every versioned third-party row carries its EOL date.** A version with no EOL beside
-  it has not been looked up — that is the whole mechanism, and it is checkable by eye in
-  review. `endoflife.date`'s API covers most OS, distro, runtime and database cycles in
-  one request; cross-check anything load-bearing against the vendor's own page.
+- **Every versioned third-party row carries its EOL value.** A version with nothing beside it has not been looked up — that is
+  the whole mechanism, checkable by eye in review. The value is one of: an EOL date (with its source); "rolling / latest-only
+  support" (with its source); "no published lifecycle policy" (with where you looked); or "unverified". **Never invent a date.**
+  `endoflife.date`'s API covers most OS, distro, runtime and database cycles in one request; cross-check anything load-bearing against the vendor's own page.
 - **A row whose EOL has passed is removed from the matrix, not corrected.** Testing an
   unsupported branch does not produce a slightly-stale answer, it produces an answer about
   a different system. Field-reported: Alpine **3.20** (EOL 2026-04-01) reports
@@ -481,7 +489,7 @@ So require a second value that **cannot** be produced from plausibility:
 - [ ] SBOM (one format org-wide, CycloneDX or SPDX) regenerated per build for each artifact from lockfile + image, with component hashes and PURLs, attached to the digest, queryable centrally (§3.5); none = Medium
 - [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
 - [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`) (§3.7), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned; hand-run installs also cooled down by the package manager's native setting where it has one (pnpm `minimumReleaseAge` set explicitly, npm `min-release-age`, Yarn `npmMinimalAgeGate`, uv `exclude-newer` duration, Bundler `cooldown`)
-- [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
+- [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade; a hold is written at the pin, and before a pin moves the repo's own trackers and notes were searched for a hold on that component
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream) (§3.8)
 - [ ] **Does any support-matrix row infer a capability from a version number? (§3.9)** That
       holds only where the distro tracks upstream and is **false for backporting enterprise
@@ -489,4 +497,4 @@ So require a second value that **cannot** be produced from plausibility:
       upstream 5.7/5.8. Probe the capability, say which you measured, and write down the
       assumption the method rests on plus the members that violate it
 - [ ] **Scheduled EOL detection over the inventory (§3.9), Medium:** `grep -rln -E 'endoflife\.date|xeol' .github/workflows` (or the scheduler's config) names a scheduled job, and its alerts have an owner
-- [ ] **Every versioned third-party row carries an EOL date (§3.9)** — base images, OS/distro releases, runtimes, supported-platform matrices. A version with no EOL beside it has not been looked up, and a row past its EOL is **removed**, not corrected: an unsupported branch can answer the *opposite* of the current one, not merely a staler version of it. When one row is found stale, re-run the lookup across **all** rows in the same pass
+- [ ] **Every versioned third-party row carries an EOL date (§3.9)** — base images, OS/distro releases, runtimes, supported-platform matrices. A version with no EOL value beside it has not been looked up (a date, "rolling / latest-only", "no published lifecycle policy" with where you looked, or "unverified"; never an invented date), and a row past its EOL is **removed**, not corrected: an unsupported branch can answer the *opposite* of the current one, not merely a staler version of it. When one row is found stale, re-run the lookup across **all** rows in the same pass

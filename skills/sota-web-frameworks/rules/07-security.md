@@ -90,8 +90,9 @@ their own. Full detail in [`rules/03`](03-nextjs.md) (Next/React) and [`rules/05
   (CVE-2025-66478 was REJECTED as a duplicate of CVE-2025-55182) fixed on every 15.x/16.x
   line (e.g. 15.5.7 / 16.0.7); **rotate secrets if it ran unpatched.** Follow-up
   DoS/exposure: CVE-2025-55184/-55183/-67779, CVE-2026-23864/-23869/-23870/-44907 —
-  react-server-dom-* floor 19.0.8 / 19.1.9 / 19.2.8 (Next ships its own compiled copy, so
-  a Next app follows the Next floor below).
+  react-server-dom-* fixed 19.0.8 / 19.1.9 / 19.2.8; since CVE-2026-126187 (below) the floor is
+  19.0.9 / 19.1.10 / 19.2.9 / 19.3.1 (Next ships its own compiled copy, so a Next app follows
+  the Next floor below and checks the copy it bundles).
 - **CVE-2025-29927** — middleware auth bypass, CVSS 9.1; fixed
   12.3.5/13.5.9/14.2.25/15.2.3.
 - Cache poisoning: CVE-2024-46982 (13.5.7/14.2.10), CVE-2025-49005 (15.3.3),
@@ -102,7 +103,14 @@ their own. Full detail in [`rules/03`](03-nextjs.md) (Next/React) and [`rules/05
   (14.2.31/15.4.5). DoS: CVE-2024-56332.
 - **Unauthenticated RCE (critical, 2026-09-08)**: GHSA-2xp9-vwfh-vxw4 (Image Optimization
   API + AVIF) and CVE-2026-75604 (Windows-hosted servers), fixed 15.5.24 / 16.3.3 — the
-  Next floor as of 2026-09-26 is **≥ 15.5.24 / ≥ 16.3.3** ([`rules/03`](03-nextjs.md) §5 has the batches).
+  Next floor was **≥ 15.5.24 / ≥ 16.3.3** on 2026-09-26.
+- **Three more unauthenticated RCEs (critical, 2026-09-30 → 2026-10-22)**: `next/og` `ImageResponse`
+  (16.3.6), the Image Optimization API with SVG (15.5.28 / 16.4.1) and a `use cache` function
+  returning typed arrays (16.4.1); with the `use cache` leaks fixed in 16.4.5, the floor as of
+  2026-11-18 is **Next ≥ 15.5.28 / ≥ 16.4.5** ([`rules/03`](03-nextjs.md) §5 has the batches).
+- **CVE-2026-126187** (2026-11-10): an RSC unauthenticated RCE, react-server-dom-* fixed 19.0.9 /
+  19.1.10 / 19.2.9 / 19.3.1. Next's feed has no entry for it, so check the copy your Next release
+  bundles (needs verification per release).
 
 **Vue / Nuxt / Nitro / h3 / IPX / devalue**
 
@@ -110,7 +118,9 @@ their own. Full detail in [`rules/03`](03-nextjs.md) (Next/React) and [`rules/05
   **CVE-2026-53721** (4.4.7/3.21.7), incompletely fixed — **CVE-2026-71315** needs 4.5.1;
   `<NuxtLink>` XSS CVE-2026-53722; island authz CVE-2026-47200 (4.4.6); 2026-08-05 batch
   (server-island props **RCE** CVE-2026-71320, payload-cache cross-user leak
-  CVE-2026-71316, island DoS) — Nuxt floor **≥ 4.5.1** ([`rules/05`](05-nuxt.md) §6).
+  CVE-2026-71316, island DoS); route-rule bypasses through encoded segments, case variants and
+  dot segments, and unhandled SSR errors sent to the client (2026-10-22 → 2026-11-16, no Nuxt 3 fix
+  for several) — Nuxt floor **≥ 4.6.4** as of 2026-11-18, devalue **≥ 5.9.3** ([`rules/05`](05-nuxt.md) §6).
 - Nitro `routeRules` proxy scope bypass **CVE-2026-44373** + open redirect CVE-2026-44372
   (nitropack 2.13.4).
 - IPX path traversal **CVE-2025-54387** (1.3.2/2.1.1/3.1.1).
@@ -118,7 +128,8 @@ their own. Full detail in [`rules/03`](03-nextjs.md) (Next/React) and [`rules/05
   (1.15.6 / 2.0.1-rc.15), then the SSE-fix bypass GHSA-4hxc-9384-m385 and serveStatic
   double-decode GHSA-72gr-qfp7-vwhw — h3 floor **1.15.9 / 2.0.1-rc.18**.
 - devalue prototype pollution **CVE-2025-57820** (5.3.2), **CVE-2026-30226** (5.6.4) +
-  DoS advisories (CVE-2026-42570, CVE-2026-81176) — floor **5.9.2**. serialize-javascript
+  DoS advisories (CVE-2026-42570, CVE-2026-81176) and the 2026-10-01 batch (CVE-2026-92708 +
+  six) — floor **5.9.3** as of 2026-11-18. serialize-javascript
   CVE-2024-11831 (6.0.2), GHSA-5c6j-r48x-rmvq RCE (7.0.3), CVE-2026-34043 DoS — floor
   **7.0.5**.
 

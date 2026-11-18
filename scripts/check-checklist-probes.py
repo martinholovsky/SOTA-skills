@@ -43,6 +43,41 @@ SPAN = re.compile(r"(`+)(?!`)(.+?)(?<!`)\1(?!`)", re.S)
 PLACEHOLDER = re.compile(r"<[A-Za-z][\w.-]*>")
 PROSE_PLACEHOLDER = re.compile(r"<[^<>]*\s[^<>]*>")
 DEVNULL_ERR = re.compile(r"\s*2>\s*/dev/null")
+
+
+def strip_devnull_err(cmd):
+    """Drop `2>/dev/null` redirections outside quotes; a quoted one is part of a pattern.
+
+    A plain `DEVNULL_ERR.sub` also deleted it from inside `grep -rn '2>/dev/null ||'`, so the
+    probe ran as `grep -rn ' ||'` and matched every `||` (field report 2026-11-18, reproduced).
+    """
+    out, i, quote = [], 0, None
+    while i < len(cmd):
+        c = cmd[i]
+        if quote:
+            if c == quote:
+                quote = None
+            elif c == "\\" and quote == '"' and i + 1 < len(cmd):
+                out.append(cmd[i:i + 2])
+                i += 2
+                continue
+            out.append(c)
+            i += 1
+            continue
+        if c in "'\"":
+            quote = c
+        elif c == "\\" and i + 1 < len(cmd):
+            out.append(cmd[i:i + 2])
+            i += 2
+            continue
+        else:
+            m = DEVNULL_ERR.match(cmd, i)
+            if m:
+                i = m.end()
+                continue
+        out.append(c)
+        i += 1
+    return "".join(out)
 LINE_BREAK = re.compile(r"[ \t]*\n[ \t]*")
 MISSING = re.compile(r"No such file or directory|cannot open|can't open")
 # each pipeline stage must start with one of these (read-only filters); `xargs` only before one
@@ -161,7 +196,7 @@ def skip_reason(span):
 
 
 def run_probe(span, workdir, env):
-    cmd = DEVNULL_ERR.sub("", fill_placeholders(span))
+    cmd = strip_devnull_err(fill_placeholders(span))
     r = subprocess.run(["bash", "-c", cmd], cwd=workdir, env=env, capture_output=True, text=True,
                        timeout=20, stdin=subprocess.DEVNULL, check=False)
     if r.returncode in (0, 1):
@@ -267,7 +302,18 @@ def self_test():
     return 1 if fails else 0
 
 
+USAGE = "usage: check-checklist-probes.py [-h | --help] [--self-test] [RULES_FILE ...]"
+
+
 if __name__ == "__main__":
+    if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
+        print(USAGE + "\n\n" + (__doc__ or "").strip())
+        sys.exit(0)
     if "--self-test" in sys.argv:
         sys.exit(self_test())
+    # An unknown flag used to reach main() as a FILE name and crash with FileNotFoundError.
+    unknown = [a for a in sys.argv[1:] if a.startswith("-")]
+    if unknown:
+        print("unknown option: %s\n%s" % (" ".join(unknown), USAGE), file=sys.stderr)
+        sys.exit(2)
     sys.exit(main(sys.argv[1:]))

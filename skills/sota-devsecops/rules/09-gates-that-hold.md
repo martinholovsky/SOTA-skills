@@ -308,10 +308,10 @@ or test failure reliably sends them to the signing path.
 **Build to a candidate identifier; promote after the last gate.**
 
 ```
-build(:candidate) → scan(:candidate) → sign(:candidate) → promote(:candidate → :release)
+build(:candidate-<build-id>) → scan → sign → promote(:candidate-<build-id> → :release)
 ```
 
-Three requirements, ordered by how often they are got wrong:
+Four requirements, ordered by how often they are got wrong:
 
 1. **The candidate must be structurally invisible to the watcher, not merely
    different.** Check it against the watcher's own allow-pattern and assert it does
@@ -326,6 +326,14 @@ Three requirements, ordered by how often they are got wrong:
    with a per-node registry or a multi-region mirror, a partial promotion makes
    admission a coin-flip. If one artifact of a coupled set cannot be promoted, promote
    none.
+4. **The candidate is unique per build and never re-pushed.** A reused candidate
+   (`:candidate`, `:rc`, `:<version>-rc`) is state every build shares: two concurrent
+   builds race it, and a replicated registry (per-node stores with peer sync, a mirror, a
+   pull-through cache) can serve an older copy after your push. Field-reported 2026-11-18,
+   twice: on a three-node registry with peer sync, a fresh push of a reused candidate was
+   served at the previous build's digest by all three nodes, the pushing node included,
+   about two minutes later (the sync mechanism is inferred; the registry logged no sync).
+   Derive the name from the build (`candidate-<run-id>`) and still select by digest.
 
 **The state-advance trap that makes this self-amplifying.** If the step recording
 "last built commit" also sits behind the failing gate, the marker never advances, so
@@ -366,7 +374,8 @@ release tag directly is the finding.
 - [ ] **Does failing a gate make the artifact unconsumable, or merely unannotated?** For each
       pipeline, confirm the *consumable* identifier is published only after every gate: the
       pre-gate identifier **provably fails the deploy watcher's allow-pattern**, promotion is a
-      same-digest retag with the digest read back, and build-state advance depends on the final
+      same-digest retag with the digest read back, the candidate name is unique per build (a
+      run id, never a reused `:rc`), and build-state advance depends on the final
       promotion — not an intermediate step (§3, [`rules/11`](11-after-the-gate-fails.md) §4). A verification error at the consumer for a
       scan/test cause is the symptom.
 - [ ] Every security gate ships a **negative control** (§1, §2) — a committed known-bad it must reject on every run, and it is reachable as a **mode of the runner** (`--self-test`) rather than only as a fixture beside it, so a newly added check with no known-bad fails rather than passing unprobed ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1b). No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md))

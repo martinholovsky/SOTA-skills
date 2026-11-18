@@ -103,6 +103,17 @@ Content-Type: application/problem+json
   per identity is only as strong as the cost of a new identity: tie API and agent
   identities to a verified operator or account, so minting many keys does not
   multiply the allowance.
+- **"Per source" means the client's address, and behind your own proxy that is not
+  `REMOTE_ADDR`.** A reverse proxy, load balancer or CDN makes every request arrive from
+  its own address, so a per-IP bucket keyed on the socket peer becomes ONE bucket for all
+  users: a login limit of 30 per 5 minutes then locks everyone out, and an attacker trips
+  it on purpose. Take the client address from the header your proxy sets, and only when the
+  peer is that proxy (rightmost untrusted `X-Forwarded-For` hop, or the CDN's own header):
+  [`sota-network-security` rules/05](../../sota-network-security/rules/05-edge-ingress-egress.md)
+  R6 is the other half, a header trusted from anyone being forged. Write down which
+  deployment the key assumes (direct, or behind which proxy), and make the trusted-proxy
+  list a setting, not a guess. Field-reported 2026-11-18: a build keyed login limits on
+  `REMOTE_ADDR` while its own README told operators to put a reverse proxy in front.
 - **A per-route override that weakens the global limit is a finding.** Framework
   defaults are often empty: Django REST Framework's `DEFAULT_THROTTLE_CLASSES`
   is empty unless configured, and a view setting `throttle_classes = []` or
@@ -425,6 +436,7 @@ OWASP: WSTG-APIT-01; Django REST Framework cheat sheet.
       `grep -rniE 'remaining[_ -]?attempts|attempts[_ -]?(left|remaining)' .`
 - [ ] **Throttle overrides (§2) — HIGH on auth or expensive routes**: a global default is configured and no view disables it:
       `grep -rnE 'throttle_classes[[:space:]]*=[[:space:]]*(\[[[:space:]]*\]|\([[:space:]]*\)|None)|@throttle_classes\([[:space:]]*(\[[[:space:]]*\]|\([[:space:]]*\))[[:space:]]*\)' --include='*.py' .`
+- [ ] **Per-source keys behind a proxy (§2) — HIGH on login/signup, MEDIUM elsewhere**: an IP-keyed limit uses the client address the trusted proxy recorded, not the proxy's socket address, and the deployment it assumes is written down; `grep -rnE 'REMOTE_ADDR|remote_addr|getRemoteAddr|RemoteAddr|request\.ip\b|req\.ip\b' src/` and confirm each hit that keys a limiter knows whether a proxy is in front.
 - [ ] Rate-limit keys include session and ASN/geo where relevant (§2); login uses separate per-account and per-source buckets; anomalous clients auto-downgraded; new identities cost a verified operator. Bot defence layered (edge, app, business), with minimum-realistic-interval checks on business flows and reputation plus delayed publishing for UGC — MEDIUM.
 - [ ] Audit events (§6) include token issuance with scopes, logout (hashed session ref), file deletion, imports, system-object create/delete, UGC processing, sequence and fraud signals, and WebSocket open/close, decisions and violations; high-risk operations log intent before and outcome after — MEDIUM.
 - [ ] Log records carry app ID, hostname, protocol/port, method/URI, region and client port (§6); nodes time-synced with drift alerting; anti-bot decisions logged with their signals and hashed fingerprints — MEDIUM.

@@ -208,7 +208,8 @@ irreversible, rate-limited, paid, or requiring physical presence you cannot repe
 Find the substitution that exercises the same code path at zero cost — a file-based key
 instead of a hardware one, a dry-run flag, a throwaway target, `--help` parsed against the
 **installed** binary rather than remembered (and see [`sota-code-security` rules/16](../../sota-code-security/rules/16-where-no-ops-hide.md) §2.15:
-a flag that parses is not a feature that works). Run it. *Then* hand over the real command.
+a flag that parses is not a feature that works). Run it. *Then* hand over the real command,
+copied from the one you ran rather than retyped, with no `#` lines in the paste block ([`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §6).
 
 Field-reported: a YubiKey PIV PIN allows **three** consecutive attempts before it blocks
 (corrected 2026-10-30 against Yubico's PIV admin-access page: the PUK unblocks it, and only
@@ -222,6 +223,12 @@ twice more for free, and the third form worked first time on the real device.
 device is stateful and the attempts are theirs. The CTAP 2.1 specification (section 6.5.2.2) allows at most **8** PIN
 retries, requires a power cycle after 3 consecutive mismatches, and disables the PIN at 0
 until an authenticator reset. So:
+- **First ask whether the step needs the key at all.** Read the project's policy and its
+  config (`git config --get commit.gpgSign`, `tag.gpgSign`) before adding `-S` or `-s`, and
+  never sign what the project does not ask to have signed. Decide before the first prompt:
+  dropping a signature mid-task looks like disabling a control. Field-reported 2026-11-18: a
+  repository that signs only release tags got `-S` on every commit; one attempt failed
+  `Bad PIN`, two timed out, and the later `--no-gpg-sign` was refused as weakening a control.
 - **Read the counter without spending an attempt** before any step that can prompt:
   `fido2-token -I <device>` prints `pin retries: N` (libfido2 `tools/token.c`); CTAP's
   `getPINRetries` has no decrement step. On an **OpenPGP card** (a YubiKey's OpenPGP applet, a

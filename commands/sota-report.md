@@ -174,6 +174,17 @@ was not in. No hit is not compliance either; the script prints how few checklist
 runnable probe at all. Paste the diff section verbatim beside the session table. Per-item verdicts
 go in the private report, and the hit locations (`--show-hits`) stay on your machine.
 
+E3. **Did the hooks act, and did you act on them?** The same audit ends with "Hooks that acted":
+every refusal, context note and Stop block a library hook produced, by `tool_use` id and time. For a
+note that names rules files it says whether each was **read after the note**, only before it, or
+never; for a signing refusal, whether you read the PIN counter or the signing config, or asked the
+person, before the retry. Paste it with E's appendix, then for **every note marked `followed no` or
+`partly`, and every refusal retried without a check, say why**: you judged the file irrelevant (say
+why), it was already in context (cite the earlier read), or you missed it. That answer is the
+evidence on whether a hook changes behaviour; the replay that justified each hook could only show
+where it fires. A hook that ran and printed nothing leaves no record, so a row of zeros is not
+evidence the hook was installed: check the settings before calling it absent.
+
 F. **Quote the text you propose to change, and find every copy.** Give `file:line` at the stamped
 commit, before and after. Then `git grep -nF '<a distinctive phrase>'` across the checkout and
 print the hit count. The same sentence often lives in a rules file, a generated block **and the
