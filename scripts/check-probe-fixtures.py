@@ -79,7 +79,7 @@ HARNESS_FILES = (".expect", ".keep")  # the harness's own files: a `grep -r .` m
 
 
 def run_case(span, case_dir):
-    cmd = ccp.DEVNULL_ERR.sub("", ccp.fill_placeholders(span))
+    cmd = ccp.strip_devnull_err(ccp.fill_placeholders(span))
     # A shell is the point: the probes ARE shell pipelines. Their text is repo-tracked and has
     # already passed ccp.skip_reason()'s read-only allowlist (no writes, no rm/curl/-exec), the
     # same trust model as check-checklist-probes.py. 20 s per case: a fixture is a few files.
@@ -275,6 +275,14 @@ def self_test():
         fails += 1; print("FAIL a quoted <… …> in a pattern was skipped as a prose placeholder")
     if ccp.skip_reason("grep -c x <managed settings.json>") != "prose placeholder":
         fails += 1; print("FAIL an unquoted prose placeholder was treated as runnable")
+    # `2>/dev/null` is stripped as a redirection only: inside quotes it is the pattern itself
+    # (field report 2026-11-18: `grep -rn '2>/dev/null ||'` ran as `grep -rn ' ||'`)
+    for given, want in (("grep -rn '2>/dev/null ||'", "grep -rn '2>/dev/null ||'"),
+                        ("grep -rn x . 2>/dev/null | wc -l", "grep -rn x . | wc -l"),
+                        ('grep "a 2>/dev/null" f 2> /dev/null', 'grep "a 2>/dev/null" f'),
+                        ("grep x $(ls a b 2>/dev/null)", "grep x $(ls a b)")):
+        if ccp.strip_devnull_err(given) != want:
+            fails += 1; print("FAIL strip_devnull_err(%r) gave %r" % (given, ccp.strip_devnull_err(given)))
     print("self-test:", "ok" if not fails else "FAILED %d" % fails)
     return 1 if fails else 0
 

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Intake: two field reports (2026-11-18), every claim labelled.** The probe runner no longer
+  strips `2>/dev/null` from inside a quoted pattern: `grep -rn '2>/dev/null ||'` had run as
+  `grep -rn ' ||'` and flagged every `||` (new `strip_devnull_err()`, four self-test cases, and a
+  near-miss in the fixture, which made the fixture gate fail before the fix). New rules:
+  a build candidate is unique per build and never re-pushed (`sota-devsecops` rules/09, with a
+  rules/08 §8.3 note on peer-synced registries); an alert's `for:` must be able to fire on the
+  events it is for (`sota-observability` rules/04 rule 6, from Prometheus's own source); a CVE
+  "fixed version" is checked against the base's package channel before a rebuild is promised
+  (rules/13 §13.6); a build cache must not be able to fail the build, and is measured net of its
+  restore and save (rules/16 §16.2a); a bound string that parses as a UUID arrives as a `uuid`
+  in SurrealDB, measured identical on 3.2.6, 3.3.5 and 4.0.1, with a checklist probe and its
+  fixtures (`sota-databases` rules/08 §3); ask whether a step needs the person's hardware key
+  at all (`sota-cli-ux` rules/03 §9); a source silent on a question is not a source for "no"
+  (`sota/rules/03` §2). ROADMAP 98 opens the routing question both reports raise: steps taken
+  through Bash reach no owning rules file.
 - **Pull requests are now rebase-merged, not squash-merged.** `AGENTS.md` step 4,
   `RELEASING.md` §3–4, `CONTRIBUTING.md`, `docs/CONVENTIONS-LEDGER.md` and the invariant-21
   comment in `scripts/check-invariants.sh` now say `gh pr merge <N> --rebase`. Because a

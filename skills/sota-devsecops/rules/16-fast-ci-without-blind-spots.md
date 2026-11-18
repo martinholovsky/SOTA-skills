@@ -134,6 +134,13 @@ wins.
 - **Absolute paths stop hits across checkouts.** ccache's `base_dir` and sccache's
   `SCCACHE_BASEDIRS` strip a base directory before hashing; without them two runners with
   different workspace paths never share an entry.
+- **A cache is not a dependency: prove it, and count its cost.** Run the build once with
+  the cache store unreachable and once with the save failing (an upload error, the uploader
+  killed); both must leave the build green. An "optional" artifact flag covers absence: Argo's
+  field reference describes `optional` as "Make Artifacts optional, if Artifacts doesn't
+  generate or exist". Field-reported 2026-11-18: the upload sidecar was OOM-killed and the
+  step failed. Measure the net: in the same report a warm 11-second compile carried about
+  62 s of restore and 122 s of archive and upload.
 - **A poisoned cache is rebuilt, not repaired.** Bazel lists "Create a clean cache after a cache
   was poisoned" as a reason to delete its contents. Know how to empty each shared cache, and do
   it after any write by an untrusted party.
@@ -219,6 +226,7 @@ A speed change is a change to the gates, and it is reviewed as one:
 - [ ] **A shared build cache (compiler, layer or remote) that untrusted code can write** (§16.2a) — list each cache and the credential that writes it: a pull request, fork or developer machine able to write a cache that a release, publish or deploy build reads = High, assuming review gates what merges (Critical where any fork PR can write without review): it chooses what ships, as in CVE-2025-36852; a key that omits the compiler or relies on the host's toolchain = Low, Medium where a release build reads that cache; no hit statistics in the job log = Low
 - [ ] **Workflows with no `timeout-minutes`** (§16.5) — `find .github/workflows -name '*.y*ml' -exec grep -L -e 'timeout-minutes' {} +` — each file printed runs every job at the 360-minute default = Low (a hung job holds a runner for six hours)
 - [ ] **A cache restore that skips the install** (§16.2) — `grep -rnE --include='*.yml' --include='*.yaml' -e "cache-hit (!=|==) '(true|false)'" .github/workflows` — each hit: confirm the key covers every input and that a `restore-keys` partial match still runs the frozen install; a skipped verification on a partial match = Medium
+- [ ] **A cache outage cannot fail the build** (§16.2a) — one run with the cache store unreachable and one with the save failing both ended green, and the cache's restore plus save time is less than the work it skips.
 - [ ] **A path-filtered workflow that is a required check** (§16.3) — `grep -rnE --include='*.yml' --include='*.yaml' -e '^[[:space:]]+(paths|paths-ignore):' .github/workflows` — each hit whose workflow's job names appear in the branch's required contexts = Medium (it blocks PRs it skips); a required job gated by `if:` with no in-job reason = High (it reports Success without running)
 - [ ] **Every change-scoped check has an unscoped run behind it** (§16.3) — the full suite on the default branch, in the merge queue (`merge_group`) or on an owned schedule; a whole-tree check (links, generated files, cross-file invariants) scoped by path = High
 - [ ] **A sharded check's verdict is an `always()` aggregator under the required name** (§16.4) — it fails unless every shard succeeded, proves the union ran each unit once, and ships known-bads for a missing shard, a gap and an overlap; a required check set on the individual shards, or an aggregator without `always()` = High
