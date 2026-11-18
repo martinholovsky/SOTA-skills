@@ -83,6 +83,16 @@ db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.i
   way, so only `EXPLAIN` shows it (§8). For a **lookup**, do not "fix" it by inlining
   the id: use the two-argument form. Whether a typed record id from an SDK's CBOR
   transport keeps the index was **not measured** here: EXPLAIN it before relying on it.
+- **A bound string that parses as a UUID arrives as a `uuid`.** Over JSON `/rpc`,
+  `type::of($v)` on a plain string such as `"639f1c2e-…"` returns `uuid` on 3.2.6, 3.3.5 and
+  4.0.1 alike (measured 2026-11-18). So writing it into a `TYPE string` field errors
+  (*"Expected `string` but found `u'…'`"*), and `value = $v` against the stored string plans
+  an `IndexScan` on a uuid key and **returns no rows**, silently. Write `<string> $v`; for an
+  indexed lookup cast once, `LET $s = <string> $v; … WHERE value = $s`, which keeps the
+  `IndexScan` (the inline `= <string> $v` planned a `TableScan` on 3.x; 4.0.1 kept the index).
+  Likewise `<array<string>> $v` errors on `NULL` (a Go nil slice) on all three: write
+  `<array<string>> ($v ?? [])`. Field-reported as a 3.2→3.3 upgrade break; all three behaviours
+  were identical on 3.2.6 and 3.3.5, so that break had another trigger (not reproduced).
 - **A count is the exception on 3.x: no bound form keeps `IndexCountScan`.** `SELECT
   count() … WHERE f = <literal> GROUP ALL` plans `IndexCountScan`, which counts index
   keys. On 3.2.6 and 3.3.5 every bound form plans `Aggregate > IndexScan` or `> TableScan`,
@@ -289,6 +299,9 @@ surreal start --deny-all \
       exception is a `count() … GROUP ALL` on 3.x: it EXPLAINs as
       `IndexCountScan`, and any inlined value passes an allow-list builder
       that has hostile-value tests (§3).
+- [ ] Values that can look like a UUID are cast before a string field sees them
+      (`<string> $v`; a `LET` copy for an indexed lookup), and array casts of a
+      nullable parameter default it: `grep -rnE '<array<[a-z]+>>[[:space:]]*\$[A-Za-z_]' --include='*.go' --include='*.ts' --include='*.py' .` (§3).
 - [ ] Integrity-critical tables SCHEMAFULL with TYPE/ASSERT/READONLY fields;
       record links checked for orphans where it matters; no untyped critical
       fields on SCHEMALESS tables; server-computed fields use `VALUE`/`DEFAULT`

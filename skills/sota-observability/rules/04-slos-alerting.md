@@ -124,6 +124,15 @@ Every alert must pass ALL of these or be deleted/demoted:
      channels should not exist.
 5. **Owned**: an alert routes to the team that can fix it. Unowned alerts
    are deleted, not muted.
+6. **Able to fire on the events it is for.** `for: D` needs the expression true at every
+   evaluation for D: one evaluation that drops the series removes a pending alert, and
+   the next one starts the clock again (Prometheus `rules/alerting.go`, read 2026-11-18;
+   `keep_firing_for` applies only once an alert fires). So `rate(x[W]) > 0` with `for:`
+   longer than the gap between events stays `pending` forever: field-reported 2026-11-18,
+   four build failures about 75 minutes apart under `[1h]` and `for: 2h`, pending all night
+   while deploys were blocked. Count events over a window wider than their spacing with a
+   short `for:` (`increase(x[3h]) >= 2`, `for: 5m`), and backtest the expression over a
+   window that holds a known incident before shipping it.
 
 **Bad:**
 
@@ -267,6 +276,10 @@ For SLO target T over window W, with budget B = 1 − T:
       an independent channel.
 - [ ] Every scheduled job alerts on the age of its last success (and on
       the gauge's absence), so a job that never ran pages (§5).
+- [ ] Every alert whose `for:` is longer than its expression's range window has
+      been backtested over a known incident, or has left `pending` at least once
+      (`ALERTS{alertstate="firing"}` over 30 days); an event-count alert fires
+      on events spaced wider than its window (§4).
 - [ ] Low-traffic journeys covered by synthetic probes feeding SLIs (§1, §3).
 - [ ] Alert definitions in version control, code-reviewed, deployed like
       code (no hand-edited live alerts); each SLO is a versioned spec beside

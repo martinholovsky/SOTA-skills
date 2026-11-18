@@ -4639,12 +4639,12 @@
     "generic ('the language skill')": 22,
     "md link, other skill": 1941,
     "md link, outside skills/": 3,
-    "md link, same skill": 2868,
+    "md link, same skill": 2869,
     "name (backticked)": 455,
     "name (bare)": 240,
     "name+file (backticked)": 929,
     "name+file (bare)": 180,
-    "own rules/NN": 3090
+    "own rules/NN": 3091
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4656,7 +4656,7 @@
     "name (bare)": 196,
     "name+file (backticked)": 924,
     "name+file (bare)": 168,
-    "own rules/NN": 2986
+    "own rules/NN": 2987
   },
   "rules_index_style": {
     "link": 42
@@ -6542,6 +6542,7 @@
         "sota-devsecops/rules/03-dependencies.md",
         "sota-devsecops/rules/05-analysis-gates.md",
         "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-devsecops/rules/08-registry-security.md",
         "sota-devsecops/rules/11-after-the-gate-fails.md",
         "sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
       ],

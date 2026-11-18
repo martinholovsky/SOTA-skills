@@ -118,7 +118,9 @@ Two asymmetries the evidence standard has to carry:
   vendored trees, config as well as code) and confirm with a **second
   independent method** (grep *and* AST/call-graph *and* a dynamic or mutation
   probe). Then state the search performed, so the reader can judge its reach.
-  An unqualified absence claim is the one finding-type nobody can falsify.
+  An unqualified absence claim is the one finding-type nobody can falsify. A source silent on
+  the question supports "the docs do not say", never "it does not": field-reported 2026-11-18,
+  twice in one session a page's silence became a policy line and was merged.
 - **A status can be TRUE and still be about the wrong subject.** The evidence standard
   above catches *wrong* answers. This one is not wrong: the value is correct, unambiguous,
   and describes **a different subject than the reader assumes** — so no amount of care

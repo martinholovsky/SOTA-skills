@@ -223,6 +223,12 @@ twice more for free, and the third form worked first time on the real device.
 device is stateful and the attempts are theirs. The CTAP 2.1 specification (section 6.5.2.2) allows at most **8** PIN
 retries, requires a power cycle after 3 consecutive mismatches, and disables the PIN at 0
 until an authenticator reset. So:
+- **First ask whether the step needs the key at all.** Read the project's policy and its
+  config (`git config --get commit.gpgSign`, `tag.gpgSign`) before adding `-S` or `-s`, and
+  never sign what the project does not ask to have signed. Decide before the first prompt:
+  dropping a signature mid-task looks like disabling a control. Field-reported 2026-11-18: a
+  repository that signs only release tags got `-S` on every commit; one attempt failed
+  `Bad PIN`, two timed out, and the later `--no-gpg-sign` was refused as weakening a control.
 - **Read the counter without spending an attempt** before any step that can prompt:
   `fido2-token -I <device>` prints `pin retries: N` (libfido2 `tools/token.c`); CTAP's
   `getPINRetries` has no decrement step. On an **OpenPGP card** (a YubiKey's OpenPGP applet, a
