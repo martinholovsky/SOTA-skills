@@ -387,7 +387,7 @@ the "what it means for your PR" version; that table is the index.
     `VERSION` bump and a merge to `main`, with no tag and no release. A version that ships
     in the CHANGELOG and never gets tagged is unreachable: `git tag -l` skips it and the
     notes live only in a file nobody clones for that. **The top entry is exempt** — the tag
-    is pushed *after* the squash-merge ([RELEASING.md](RELEASING.md) §4 forbids chaining
+    is pushed *after* the rebase-merge ([RELEASING.md](RELEASING.md) §4 forbids chaining
     them), so on a release PR the current version legitimately has no tag yet. The check
     **skips with a note** when the checkout has no tags at all (shallow CI clones do not
     fetch them) rather than failing every version at once.

@@ -24,9 +24,11 @@ enforcement is on). Every change goes through a pull request:
    against the internal-name denylist (`scripts/check-published-names.sh`), and mirrors CI's skill-map, shellcheck and concept-matrix steps
    (`scripts/pre-push-ci-mirror.sh`; a local shellcheck can be older than CI's). **It runs none of CI's other steps** (probes, claims, the harness)
 3. push the branch and open a PR
-4. **every** required check must pass, then squash-merge — invariants, secret scan, shell
+4. **every** required check must pass, then **rebase-merge** (`gh pr merge <N> --rebase`;
+   never squash or a merge commit) — invariants, secret scan, shell
    lint, executable claims, and the negative-control harness that proves the gates can
-   still fail. The count is deliberately not written here: it rotted once when a job was
+   still fail. A rebase-merge lands **every** commit on the branch, so each one must stand on
+   its own; tidy fixups before merging. The count is deliberately not written here: it rotted once when a job was
    added and never made required, so read it from
    `gh api repos/OWNER/REPO/branches/main/protection --jq '.required_status_checks.contexts'`
 

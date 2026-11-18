@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Pull requests are now rebase-merged, not squash-merged.** `AGENTS.md` step 4,
+  `RELEASING.md` §3–4, `CONTRIBUTING.md`, `docs/CONVENTIONS-LEDGER.md` and the invariant-21
+  comment in `scripts/check-invariants.sh` now say `gh pr merge <N> --rebase`. Because a
+  rebase-merge lands every commit on the branch, `AGENTS.md` adds that each commit must stand
+  on its own.
 - **A beginner's guide, `docs/GETTING-STARTED.md`.** It explains in plain language what the
   library is, what it gives you, and how to install it, make a first request and run a first
   audit. It also lists the five slash commands and answers common questions. It is linked
