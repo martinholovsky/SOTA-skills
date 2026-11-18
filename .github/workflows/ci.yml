@@ -269,7 +269,9 @@ jobs:
         # A PostToolUse hook on Edit|Write|MultiEdit (scripts/code-rules-hook.py, ROADMAP 73 option
         # h), on by default since option m: the plugin and install.sh --routing register it. The self-test drives it over stdin and checks that every file the trigger
         # table names exists. Mutation-checked 2026-10-12: a per-edit cap of 3, a dropped same-file
-        # merge and a test-file filter removed each fail it.
+        # merge and a test-file filter removed each fail it. Since 2026-11-18 it also checks the
+        # language note (ROADMAP 99); mutation-checked: the skills listing counted as loaded, no
+        # once-per-session claim, and a loaded skill ignored each fail it.
         run: python3 scripts/code-rules-hook.py --self-test
 
       - name: Prove the zsh EQUALS hook refuses what zsh would cut, and only that

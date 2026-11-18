@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The code-rules hook names the language skill a session writes code in without loading it
+  (ROADMAP 99).** The first non-test edit of a language whose skill no tool call has named gets one
+  note per session naming that skill's `SKILL.md`; the skills listing stored in the transcript does
+  not count as loaded. Replayed first with the shipped logic (`--replay-language`): 77 notes in 67 of
+  the 91 transcripts that edited code. The session-load audit's "Hooks that acted" counts a named
+  `SKILL.md`, so field reports show whether the note was followed.
 - **`sota-web-frameworks` is current with the advisories published since 2026-09-26.** None of 22
   Next.js and Nuxt advisories was in the skill, among them three critical unauthenticated RCEs in
   Next.js and one in React Server Components (CVE-2026-126187). New floors: **Next ≥ 15.5.28 /

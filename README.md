@@ -1464,7 +1464,10 @@ writer → formula injection, an archive → Zip Slip, a handler → rate limiti
 those rules are part of the task, so it builds them instead of handing them back as a question.
 Each named file comes with the line that matched, so the agent can see why the hook fired; the
 session/token row skips non-auth senses (LLM and macro tokens, database and process sessions),
-built against a labelled set of 254 files that kept every auth file (v1.55.0). It moved outcomes when measured: rule tests 0.698 with no hook → 0.906 with it
+built against a labelled set of 254 files that kept every auth file (v1.55.0). Since 2026-11-18 (ROADMAP 99) the first
+edit of a language whose skill no tool call has loaded also names that skill's `SKILL.md`, once per session: replayed
+over one operator's 94 sessions, 66 of 116 (session, language) pairs had not loaded it before the first edit, and
+`--replay-language` puts the note in 67 of the 91 transcripts that edited code (77 notes). It moved outcomes when measured: rule tests 0.698 with no hook → 0.906 with it
 ([sota-agent-evals v10](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v10/REPORT.md)).
 It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigger table was written by an author who had read the
 cases that measured it (in-sample), and it needs `python3`. **On fresh tasks it did not move outcomes**: on
