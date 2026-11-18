@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The session-load audit reports what the library's hooks did, and `/sota-report` asks why a note
+  was not followed (new check E3).** `scripts/session-load-audit.py` ends with "Hooks that acted":
+  each refusal, context note, Stop block and error from a `scripts/*-hook.py`, by `tool_use` id. For
+  a note naming rules files, whether each was read after it, only before it, or never; for a
+  signing refusal, whether the PIN counter or signing config was read, or the person asked, before
+  the retry. Claude Code records a hook run only when the hook printed something (every one of
+  1,121 records in a session had output), so the section counts acts, not runs, and says so.
+  Self-test 65 checks; four mutants each fail it.
 - **The installer's question for the action-rules hook now says what it does.** It asked to add a
   hook that "pauses a hardware-key signing command once per session", which an operator found
   confusing: the hook refuses the first signing command of each session, for any key, until the

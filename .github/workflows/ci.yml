@@ -259,7 +259,10 @@ jobs:
         # command text leaked, control characters unescaped, an empty transcript accepted and the
         # re-read ordering broken each fail it. The --diff half (a throwaway git repo) was mutated
         # the same way: all hits read as new, the base unguarded, a symlink followed, a missing-path
-        # probe counted as run, and the --include filter removed each fail it.
+        # probe counted as run, and the --include filter removed each fail it. Since 2026-11-18 it also
+        # reports what each library hook did and whether the session acted on it; mutation-checked:
+        # follow-through always "yes", the signing check ignored, duplicate records counted and a
+        # non-library hook counted each fail it.
         run: python3 scripts/session-load-audit.py --self-test
 
       - name: Prove the code-rules hook names the rules file for what written code does

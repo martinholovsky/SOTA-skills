@@ -24,6 +24,14 @@ a lead (first real run: 4 of 9 sampled were real), no hit is not compliance (onl
 runnable probe can hit; the count is printed), and the per-item "was it followed" is the bounded
 verdict walk /sota-report check E2 asks for.
 
+HOOKS (2026-11-18). A "Hooks that acted" section counts what each library hook (scripts/*-hook.py)
+did: refusals (a tool result carrying "hook error:"), context notes and Stop blocks (an attachment
+whose stdout holds the hook's JSON), and errors. For a note that names rules files it says whether
+each was read after the note, only before it, or never; for a signing refusal by the action-rules
+hook, whether the PIN counter or signing config was read, or the person asked, before the retry.
+Claude Code records a hook run only when the hook printed something, so a silent hook leaves no
+trace: a row of zeros cannot tell "never triggered" from "not registered".
+
 THREE INSTRUMENT TRAPS IT HANDLES (each would otherwise lie):
   1. A tool call is written more than once (subagent and resumed-session copies; measured
      2026-10-22 over 1,840 transcripts, ~2x). Everything is keyed by unique tool_use id.
@@ -72,6 +80,7 @@ def _load(name: str, file: str):
 
 ccp = _load("ccp", "check-checklist-probes.py")          # probe extraction, same as the gates
 cpf = _load("cpf", "check-probe-fixtures.py")            # probe ids, same as the fixture tree
+arh = _load("arh", "action-rules-hook.py")               # the signing classifier, same as the hook
 
 LIB_PATH = re.compile(r"skills/sota[\w-]*(?:/[\w.*-]+)*/?")
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
@@ -117,9 +126,20 @@ class Access:
     whole: bool = False
 
 
+@dataclass(frozen=True, slots=True)
+class HookEvent:
+    """One act of a library hook, read from the transcript (attachments and tool results)."""
+    ts: str
+    hook: str          # script name, e.g. action-rules-hook.py
+    kind: str          # ran | refused | context | block | error
+    tool_use_id: str
+    text: str          # what the hook said (refusal reason or context); never printed in full
+
+
 @dataclass(slots=True)
 class Session:
     calls: list[Call] = field(default_factory=list)
+    hooks: list[HookEvent] = field(default_factory=list)
     prompts: int = 0
     raw_tool_use_blocks: int = 0
     files: list[str] = field(default_factory=list)
@@ -144,8 +164,53 @@ def _int(v) -> int | None:
     return v if isinstance(v, int) and not isinstance(v, bool) else None
 
 
+# The library's own hooks: every scripts/*-hook.py. A hook's run is an attachment that carries its
+# command; a refusal by exit 2 carries "[<command>]" in the tool result, and a refusal by JSON
+# decision carries only its reason, which for the action-rules hook starts "sota action-rules:".
+LIB_HOOKS = sorted(p.name for p in (ROOT / "scripts").glob("*-hook.py"))
+HOOK_IN = re.compile(r"([\w-]+-hook\.py)")
+# Claude Code records a hook_success only when the hook printed something (measured 2026-11-18:
+# every one of 1,121 hook_success records in a session had stdout, and a hook that ran on every Bash
+# call silently left none), so a silent run is invisible: acts and errors are countable, runs are not.
+HOOK_ATTACH = {"hook_success": "ran", "hook_non_blocking_error": "error", "hook_cancelled": "error",
+               "hook_blocking_error": "refused"}
+
+
+def _hook_name(text: str) -> str:
+    m = HOOK_IN.search(text or "")
+    if m and m.group(1) in LIB_HOOKS:
+        return m.group(1)
+    return "action-rules-hook.py" if "sota action-rules:" in (text or "") else ""
+
+
+def _hook_attachment(e: dict, ts: str) -> list[HookEvent]:
+    a = e.get("attachment")
+    if not isinstance(a, dict) or a.get("type") not in HOOK_ATTACH:
+        return []
+    hook = _hook_name(str(a.get("command") or ""))
+    if not hook:
+        return []
+    tid = str(a.get("toolUseID") or "")
+    kind = HOOK_ATTACH[a["type"]]
+    out = [] if kind == "ran" else [HookEvent(ts, hook, kind, tid, "")]
+    try:
+        o = json.loads(a.get("stdout") or "")
+    except (TypeError, ValueError):
+        o = None
+    if isinstance(o, dict):
+        hso = o.get("hookSpecificOutput") if isinstance(o.get("hookSpecificOutput"), dict) else {}
+        if hso.get("permissionDecision") == "deny":
+            out.append(HookEvent(ts, hook, "refused", tid, str(hso.get("permissionDecisionReason") or "")))
+        if isinstance(hso.get("additionalContext"), str) and hso["additionalContext"].strip():
+            out.append(HookEvent(ts, hook, "context", tid, hso["additionalContext"]))
+        if o.get("decision") == "block":
+            out.append(HookEvent(ts, hook, "block", tid, str(o.get("reason") or "")))
+    return out
+
+
 def parse(paths: Sequence[Path]) -> Session:
     s = Session()
+    hook_seen: dict[tuple[str, str, str, str], HookEvent] = {}
     seen: dict[str, Call] = {}
     errors: dict[str, bool] = {}
     prompt_ts: set[str] = set()
@@ -167,6 +232,12 @@ def parse(paths: Sequence[Path]) -> Session:
             ts = e.get("timestamp") if isinstance(e.get("timestamp"), str) else ""
             if _is_prompt(e) and ts:
                 prompt_ts.add(ts)
+            for ev in _hook_attachment(e, ts):
+                # a refusal is keyed like the tool result that also records it, so it counts once
+                key = (ev.hook, ev.kind, ev.tool_use_id or ts,
+                       "" if ev.kind == "refused" else str(e.get("attachment", {}).get("hookName")))
+                if key not in hook_seen or (ts and (not hook_seen[key].ts or ts < hook_seen[key].ts)):
+                    hook_seen[key] = ev
             content = (e.get("message") or {}).get("content") if isinstance(e.get("message"), dict) else None
             if not isinstance(content, list):
                 continue
@@ -179,6 +250,14 @@ def parse(paths: Sequence[Path]) -> Session:
                 elif c.get("type") == "tool_result" and isinstance(c.get("tool_use_id"), str):
                     if isinstance(c.get("is_error"), bool):
                         errors[c["tool_use_id"]] = c["is_error"]
+                    body = c.get("content")
+                    text = body if isinstance(body, str) else json.dumps(body)
+                    if "hook error:" in text[:200]:
+                        hook = _hook_name(text[:400])
+                        if hook:
+                            key = (hook, "refused", c["tool_use_id"], "")
+                            if key not in hook_seen or (ts and (not hook_seen[key].ts or ts < hook_seen[key].ts)):
+                                hook_seen[key] = HookEvent(ts, hook, "refused", c["tool_use_id"], text[:4000])
     prompts = sorted(prompt_ts)
     s.prompts = len(prompts)
     for ts, c in pending:
@@ -197,6 +276,7 @@ def parse(paths: Sequence[Path]) -> Session:
         call.turn = sum(1 for t in prompts if t <= call.ts) if call.ts else 0
         call.is_error = errors.get(call.id)
     s.calls = sorted(seen.values(), key=lambda c: (c.ts, c.id))
+    s.hooks = sorted(hook_seen.values(), key=lambda h: (h.ts, h.hook, h.kind))
     return s
 
 
@@ -631,6 +711,67 @@ def diff_probes(repo: Path, base: str, lib: Path) -> tuple[dict, str]:
 
 # ------------------------------------------------------------------ report
 
+NOTE_CLASS = (("sign", "signs or unlocks with a person's key"), ("registry", "pushes, copies or retags an image"),
+              ("ci_edit", "writes a CI pipeline definition"), ("scan", "runs a vulnerability scan"))
+SIGN_CHECK = re.compile(r"card-status|fido2-token\s+-I|gpgsign", re.I)
+
+
+def _named_rules(text: str) -> list[str]:
+    out: list[str] = []
+    for tok in LIB_PATH.findall(text or ""):
+        rel = lib_rel(tok.rstrip(".,;:)"))
+        if rel and "/rules/" in rel and rel.endswith(".md") and rel not in out:
+            out.append(rel)
+    return out
+
+
+def hook_report(s: Session, by_file: dict[str, list[Access]], edits: list[Call], bash: list[Call]) -> dict:
+    """What each library hook did, and whether the session acted on it.
+
+    A note that names rules files is FOLLOWED when every named file is read (a read, not a search)
+    after the note; a signing refusal is FOLLOWED when, before the command is issued again, the
+    session read the PIN counter or the signing config, or asked the person (AskUserQuestion).
+    Follow-through is process, as everything here: a file read is not a rule applied.
+    """
+    per: dict[str, dict] = {h: {"refused": 0, "context": 0, "block": 0, "error": 0} for h in LIB_HOOKS}
+    acts: list[dict] = []
+    calls = {c.id: c for c in s.calls}
+    for ev in s.hooks:
+        per.setdefault(ev.hook, {"refused": 0, "context": 0, "block": 0, "error": 0})[ev.kind] += 1
+        if ev.kind not in {"refused", "context", "block"}:
+            continue
+        act: dict = {"ts": ev.ts, "hook": ev.hook, "kind": ev.kind, "tool_use_id": ev.tool_use_id}
+        if ev.hook == "action-rules-hook.py":
+            act["classes"] = [k for k, phrase in NOTE_CLASS if phrase in ev.text]
+        named = _named_rules(ev.text)
+        if named and ev.kind == "context":
+            read = [rel for rel in named if any(a.kind in {"read", "invoke"} and a.ts > ev.ts
+                                                for a in by_file.get(rel, []))]
+            before = [rel for rel in named if rel not in read and any(
+                a.kind in {"read", "invoke"} and a.ts <= ev.ts for a in by_file.get(rel, []))]
+            act["named"] = named
+            act["read_after"] = read
+            act["read_before_only"] = before
+            act["followed"] = "yes" if len(read) == len(named) else ("partly" if read else "no")
+        if ev.kind == "refused" and ev.hook == "action-rules-hook.py":
+            refused = calls.get(ev.tool_use_id)
+            later = [c for c in s.calls if c.ts > ev.ts and c.id != ev.tool_use_id]
+            retry = next((c for c in later if c.name == "Bash" and "sign" in arh.classify(c.command, None, lambda *_: False)), None)
+            window = [c for c in later if not retry or c.ts < retry.ts]
+            checked = any(c.name == "Bash" and SIGN_CHECK.search(c.command) for c in window)
+            asked = any(c.name == "AskUserQuestion" for c in window)
+            act["retried"] = "yes" if retry else "no"
+            act["followed"] = ("yes" if (checked or asked) else "no") if retry else "n/a (not retried)"
+            act["refused_call_known"] = refused is not None
+        if ev.kind == "refused" and ev.hook == "zsh-equals-hook.py":
+            refused = calls.get(ev.tool_use_id)
+            act["same_command_refused_again"] = bool(refused) and any(
+                o.kind == "refused" and o.hook == ev.hook and o.ts > ev.ts and calls.get(o.tool_use_id)
+                and calls[o.tool_use_id].command == refused.command for o in s.hooks)
+        acts.append(act)
+    return {"per_hook": per, "acts": acts}
+
+
 def library_commit(lib: Path) -> str:
     r = subprocess.run(["git", "-C", str(lib), "rev-parse", "--short", "HEAD"],
                        capture_output=True, text=True, check=False)
@@ -685,6 +826,7 @@ def build(s: Session, lib: Path) -> dict:
         "expected_language_skills_missing": [k for k in expected if k not in loaded],
         "other": other,
         "files": files,
+        "hooks": hook_report(s, by_file, edits, bash),
     }
 
 
@@ -738,7 +880,40 @@ def markdown(r: dict) -> str:
         L.append("- none")
     L += ["", "Proves process only (read, checklist in range, probe pattern executed), never that a rule "
               "was applied. `unknown` = a reader whose range cannot be known statically (awk, a computed sed)."]
+    L += hooks_markdown(r.get("hooks") or {})
     return "\n".join(L) + "\n"
+
+
+def hooks_markdown(h: dict) -> list[str]:
+    per, acts = h.get("per_hook") or {}, h.get("acts") or []
+    L = ["", "### Hooks that acted", "",
+         "| Library hook | Refused | Context notes | Stop blocks | Errors |", "|---|---|---|---|---|"]
+    for name, n in sorted(per.items()):
+        L.append(f"| `{name}` | {n['refused']} | {n['context']} | {n['block']} | {n['error']} |")
+    L += ["", "Each act (tool_use id; a note's named rules files and whether each was read afterwards):"]
+    if not acts:
+        L.append("- none")
+    for a in acts:
+        bits = [f"{a['ts']} `{a['hook']}` {a['kind']}"]
+        if a.get("classes"):
+            bits.append("class " + "+".join(a["classes"]))
+        if a.get("tool_use_id"):
+            bits.append(a["tool_use_id"])
+        if "named" in a:
+            bits.append(f"named {len(a['named'])}, read after {len(a['read_after'])}: followed {a['followed']}"
+                        + "".join(f"; `{x}`" + ("" if x in a["read_after"] else
+                                                   " (read only before the note)" if x in a.get("read_before_only", [])
+                                                   else " (never read)") for x in a["named"]))
+        if "retried" in a:
+            bits.append(f"retried {a['retried']}; checked the counter or config, or asked, before it: {a['followed']}")
+        if a.get("same_command_refused_again"):
+            bits.append("the same command was refused again")
+        L.append("- " + " · ".join(bits))
+    L += ["", "A hook that ran and said nothing leaves no record, so a row of zeros cannot tell \"never "
+              "triggered\" from \"not registered\": check the settings for that. A note is followed when "
+              "every rules file it names was read after it; a signing refusal is followed when the counter "
+              "or config was read, or the person asked, before the retry. Process, not compliance."]
+    return L
 
 
 # ------------------------------------------------------------------ discovery + main
@@ -1086,6 +1261,95 @@ def self_test() -> int:
         check(r6["other"]["unresolved library mentions"] == 1,
               f"`cd skills && ls` is one unresolved mention: {r6['other']['unresolved library mentions']}")
         check(len(f6) == 2, f"a relative path after `cd /elsewhere` is not a library read: {sorted(f6)}")
+    # ---- hooks: what a library hook did, and whether the session acted on it (2026-11-18)
+    ci16 = "skills/sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
+    cs21 = "skills/sota-code-security/rules/21-file-uploads.md"
+    check(all((ROOT / f).is_file() for f in (ci16, cs21, other)), "fixture premise: the hook-note files exist")
+
+    def attach(ts, kind, hook_name, command, stdout="", tid="t_x"):
+        return {"type": "attachment", "timestamp": ts, "attachment": {
+            "type": kind, "hookName": hook_name, "hookEvent": hook_name.split(":")[0], "toolUseID": tid,
+            "command": command, "stdout": stdout, "exitCode": 0}}
+
+    def refusal(ts, cid, text):
+        return {"type": "user", "timestamp": ts, "message": {"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": cid, "content": text, "is_error": True}]}}
+
+    ar = 'python3 "/private/acme-corp/lib/scripts/action-rules-hook.py"'
+    note = json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext":
+        "sota action-rules: this command writes a CI pipeline definition or a container build file from "
+        f"the shell. Owning rules: /private/acme-corp/lib/{ci16} §16.2a."}})
+    cr_note = json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext":
+        f"read /x/{cs21} §1 and /x/{other} §2"}})
+    sign_reason = ("PreToolUse:Bash hook error: sota action-rules: this command signs or unlocks with a "
+                   "person's key, and each failed or timed-out attempt can spend one of their PIN tries.")
+    zsh_reason = 'PreToolUse:Bash hook error: [python3 "/private/acme-corp/lib/scripts/zsh-equals-hook.py"]: zsh EQUALS'
+    hl = [
+        {"type": "user", "timestamp": "2026-01-02T00:00:00Z", "message": {"role": "user", "content": "go"}},
+        asst("2026-01-02T00:00:01Z", tu("h_read_before", "Read", {"file_path": f"/x/{other}"})),
+        asst("2026-01-02T00:00:02Z", tu("h_ci", "Bash", {"command": "sed -i 's/a/b/' .github/workflows/ci.yml"})),
+        attach("2026-01-02T00:00:02Z", "hook_success", "PreToolUse:Bash", ar, note, "h_ci"),
+        attach("2026-01-02T00:00:02Z", "hook_success", "PreToolUse:Bash", ar, note, "h_ci"),        # duplicate
+        attach("2026-01-02T00:00:02Z", "hook_success", "PreToolUse:Bash", "if [ -n x ]; then cmux; fi", "{}", "h_ci"),
+        attach("2026-01-02T00:00:02Z", "hook_success", "PreToolUse:Bash", 'python3 "/home/u/my-own-hook.py"', note, "h_ci"),
+        asst("2026-01-02T00:00:03Z", tu("h_read16", "Bash", {"command": f"cat /x/{ci16}"})),
+        asst("2026-01-02T00:00:04Z", tu("h_edit", "Edit", {"file_path": "/private/acme-corp/app/up.py", "old_string": "a", "new_string": "b"})),
+        attach("2026-01-02T00:00:04Z", "hook_success", "PostToolUse:Edit", 'python3 "/x/scripts/code-rules-hook.py"', cr_note, "h_edit"),
+        attach("2026-01-02T00:00:04Z", "hook_non_blocking_error", "PostToolUse:Edit", 'python3 "/x/scripts/code-rules-hook.py"', "", "h_edit"),
+        asst("2026-01-02T00:00:05Z", tu("h_sign1", "Bash", {"command": "git commit -S -m release"})),
+        refusal("2026-01-02T00:00:05Z", "h_sign1", sign_reason),
+        asst("2026-01-02T00:00:06Z", tu("h_card", "Bash", {"command": "gpg --card-status | grep -i retry"})),
+        asst("2026-01-02T00:00:07Z", tu("h_sign2", "Bash", {"command": "git commit -S -m release"})),
+        asst("2026-01-02T00:00:08Z", tu("h_z1", "Bash", {"command": "echo ===; ls"})),
+        refusal("2026-01-02T00:00:08Z", "h_z1", zsh_reason),
+        asst("2026-01-02T00:00:09Z", tu("h_z2", "Bash", {"command": "echo ===; ls"})),
+        refusal("2026-01-02T00:00:09Z", "h_z2", zsh_reason),
+        attach("2026-01-02T00:00:10Z", "hook_success", "Stop", 'python3 "/x/scripts/completion-gate-hook.py"',
+               json.dumps({"decision": "block", "reason": "you declined a control"}), "h_stop"),
+    ]
+    with tempfile.TemporaryDirectory() as d:
+        ph = Path(d) / "hooks.jsonl"
+        ph.write_text("\n".join(json.dumps(x) for x in hl) + "\n", encoding="utf-8")
+        rh = build(parse([ph]), ROOT)
+        hk = rh["hooks"]
+        per = hk["per_hook"]
+        check(per["action-rules-hook.py"] == {"refused": 1, "context": 1, "block": 0, "error": 0},
+              f"action-rules counts (a duplicate record counts once): {per['action-rules-hook.py']}")
+        check(per["code-rules-hook.py"]["context"] == 1 and per["code-rules-hook.py"]["error"] == 1,
+              f"code-rules note and error: {per['code-rules-hook.py']}")
+        check(per["zsh-equals-hook.py"]["refused"] == 2, f"two zsh refusals: {per['zsh-equals-hook.py']}")
+        check(per["completion-gate-hook.py"]["block"] == 1, "a Stop hook's decision:block is a block")
+        check(sum(sum(v.values()) for v in per.values()) == 7, "a hook outside the library is not counted")
+        acts = {(a["hook"], a["kind"]): a for a in hk["acts"]}
+        ci = acts.get(("action-rules-hook.py", "context"), {})
+        check(ci.get("classes") == ["ci_edit"] and ci.get("followed") == "yes" and ci.get("named") == [ci16],
+              f"a CI note followed by a read of its file: {ci}")
+        cr = acts.get(("code-rules-hook.py", "context"), {})
+        check(cr.get("followed") == "no" and cr.get("read_before_only") == [other],
+              f"a note whose files were read only before it, or never, is not followed: {cr}")
+        sg = acts.get(("action-rules-hook.py", "refused"), {})
+        check(sg.get("retried") == "yes" and sg.get("followed") == "yes",
+              f"a signing retry after reading the counter is followed: {sg}")
+        zs = [a for a in hk["acts"] if a["hook"] == "zsh-equals-hook.py"]
+        check(any(a.get("same_command_refused_again") for a in zs), "the same zsh command refused twice is flagged")
+        # known-bad: a retry with no check in between is not followed; no retry is not a verdict
+        hl2 = [x for x in hl if not (x.get("message", {}).get("content") and isinstance(x["message"]["content"], list)
+                                    and any(b.get("id") == "h_card" for b in x["message"]["content"] if isinstance(b, dict)))]
+        ph2 = Path(d) / "hooks2.jsonl"
+        ph2.write_text("\n".join(json.dumps(x) for x in hl2) + "\n", encoding="utf-8")
+        sg2 = next(a for a in build(parse([ph2]), ROOT)["hooks"]["acts"] if a["kind"] == "refused" and a["hook"] == "action-rules-hook.py")
+        check(sg2.get("followed") == "no", f"a signing retry with no check before it is not followed: {sg2}")
+        hl3 = [x for x in hl if not (x.get("message", {}).get("content") and isinstance(x["message"]["content"], list)
+                                    and any(b.get("id") == "h_sign2" for b in x["message"]["content"] if isinstance(b, dict)))]
+        ph3 = Path(d) / "hooks3.jsonl"
+        ph3.write_text("\n".join(json.dumps(x) for x in hl3) + "\n", encoding="utf-8")
+        sg3 = next(a for a in build(parse([ph3]), ROOT)["hooks"]["acts"] if a["kind"] == "refused" and a["hook"] == "action-rules-hook.py")
+        check(sg3.get("retried") == "no" and sg3.get("followed", "").startswith("n/a"), f"no retry is not a verdict: {sg3}")
+        mdh = markdown(rh)
+        check("### Hooks that acted" in mdh and "followed yes" in mdh, "the hooks section is printed")
+        for leak in ("acme", "/private", "git commit -S -m release", "you declined a control"):
+            check(leak not in mdh and leak not in json.dumps({k: v for k, v in rh.items() if k != "hooks"} | {
+                "hooks": {"per_hook": hk["per_hook"], "acts": hk["acts"]}}), f"privacy: {leak!r} leaked into the hooks output")
     # ---- diff mode, in a throwaway repo: one pre-existing hit, two new ones (modified + untracked)
     crypto = "skills/sota-golang/rules/05-security.md"
     seed_probe = [s for s in ccp.probes_in((ROOT / crypto).read_text(encoding="utf-8"))
@@ -1151,7 +1415,7 @@ def self_test() -> int:
         return 1
     print(f"ok self-test: {ran[0]} checks over synthetic transcripts (dedupe, Bash readers and pipes, "
           "checklist range, re-read ordering, probe match, language heuristic, privacy, control chars, "
-          "empty refusal, heredoc bodies)")
+          "empty refusal, heredoc bodies, hook acts and follow-through)")
     return 0
 
 
