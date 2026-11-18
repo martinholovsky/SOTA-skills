@@ -1232,6 +1232,17 @@
     },
     {
       "from": "sota-network-security",
+      "to": "sota-api-design",
+      "weight": 6,
+      "targets": [
+        "rules/05",
+        "rules/07",
+        "rules/07 \u00a72",
+        "rules/07 \u00a76"
+      ]
+    },
+    {
+      "from": "sota-network-security",
       "to": "sota-secrets-management",
       "weight": 6,
       "targets": []
@@ -1309,6 +1320,18 @@
     },
     {
       "from": "sota-code-security",
+      "to": "sota-api-design",
+      "weight": 5,
+      "targets": [
+        "rules/02",
+        "rules/02 \u00a73",
+        "rules/06 \u00a74",
+        "rules/07 \u00a72",
+        "rules/07 \u00a78"
+      ]
+    },
+    {
+      "from": "sota-code-security",
       "to": "sota-shell-scripting",
       "weight": 5,
       "targets": [
@@ -1367,16 +1390,6 @@
       "targets": [
         "rules/02 \u00a72.4",
         "rules/03"
-      ]
-    },
-    {
-      "from": "sota-network-security",
-      "to": "sota-api-design",
-      "weight": 5,
-      "targets": [
-        "rules/05",
-        "rules/07",
-        "rules/07 \u00a76"
       ]
     },
     {
@@ -1520,17 +1533,6 @@
       "to": "sota-observability",
       "weight": 4,
       "targets": []
-    },
-    {
-      "from": "sota-code-security",
-      "to": "sota-api-design",
-      "weight": 4,
-      "targets": [
-        "rules/02",
-        "rules/02 \u00a73",
-        "rules/06 \u00a74",
-        "rules/07 \u00a78"
-      ]
     },
     {
       "from": "sota-copywriting",
@@ -1693,6 +1695,16 @@
         "rules/01 \u00a71",
         "rules/03 \u00a73",
         "rules/05 \u00a77a"
+      ]
+    },
+    {
+      "from": "sota-api-design",
+      "to": "sota-network-security",
+      "weight": 3,
+      "targets": [
+        "rules/04",
+        "rules/05",
+        "rules/05 \u00a71"
       ]
     },
     {
@@ -2194,15 +2206,6 @@
       "weight": 3,
       "targets": [
         "rules/03"
-      ]
-    },
-    {
-      "from": "sota-api-design",
-      "to": "sota-network-security",
-      "weight": 2,
-      "targets": [
-        "rules/04",
-        "rules/05 \u00a71"
       ]
     },
     {
@@ -4634,14 +4637,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1938,
+    "md link, other skill": 1941,
     "md link, outside skills/": 3,
-    "md link, same skill": 2867,
+    "md link, same skill": 2868,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 926,
+    "name+file (backticked)": 929,
     "name+file (bare)": 180,
-    "own rules/NN": 3088
+    "own rules/NN": 3090
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4651,9 +4654,9 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 921,
+    "name+file (backticked)": 924,
     "name+file (bare)": 168,
-    "own rules/NN": 2985
+    "own rules/NN": 2986
   },
   "rules_index_style": {
     "link": 42
@@ -4770,6 +4773,7 @@
         "sota/SKILL.md"
       ],
       "other": [
+        "sota-code-security/rules/02-authentication.md",
         "sota-code-security/rules/04-cryptography.md",
         "sota-docs-workflow/rules/02-api-reference-changelogs.md",
         "sota-dotnet/rules/02-design-api.md",
@@ -6373,6 +6377,7 @@
         "sota-devsecops/SKILL.md"
       ],
       "same": [
+        "sota-devsecops/rules/01-pipeline-security.md",
         "sota-devsecops/rules/02-provenance-signing.md",
         "sota-devsecops/rules/04-build-containers.md",
         "sota-devsecops/rules/05-analysis-gates.md",
