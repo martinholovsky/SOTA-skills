@@ -1257,18 +1257,10 @@
   },
   {
    "verdict": "deliberate",
-   "note": "Consolidated 2026-10-30 (ROADMAP 89): the owner keeps the text, the other copy is a pointer; this group still matches through members that stayed by design. Was: code-security rules/10 §4 restates the router's negative-claim evidence rule nearly verbatim; keep a one-line link plus its unique search-vs-durable-guard addendum. Owner: skills/sota/rules/03-audit-findings.md §2",
-   "sample": "- **A negative claim needs more proof than a positive one.** \"There are no swallowed exceptions on the enforcement path\"",
-   "members": [
-    "sota/rules/03-audit-findings.md#088ea6dd4247"
-   ]
-  },
-  {
-   "verdict": "deliberate",
    "note": "rules/10 §1 asks the general proxy question; rules/14 §4a adds the neighbouring-setting grep and severity.",
    "sample": "- [ ] **The proxy question asked of every control's predicate** (§1): is the tested condition the dependency itself, or ",
    "members": [
-    "sota-code-security/rules/10-silent-control-failure.md#3f31bfda8166",
+    "sota-code-security/rules/10-silent-control-failure.md#87e1a4a681f1",
     "sota-code-security/rules/14-control-not-in-force.md#9c3889740122"
    ]
   },
@@ -1721,7 +1713,7 @@
    "note": "devsecops owns cooldown across ecosystems; JS adds npm/Yarn/pnpm fail-open detail specific to its ecosystem.",
    "sample": "- **Cooldown**: Renovate `minimumReleaseAge: \"5 days\"` (Dependabot: cooldown config) for public packages — most maliciou",
    "members": [
-    "sota-devsecops/rules/03-dependencies.md#17f2b3885abb",
+    "sota-devsecops/rules/03-dependencies.md#2ce562a65799",
     "sota-javascript-typescript/rules/05-security.md#fbaafb26dfe0"
    ]
   },
@@ -2812,7 +2804,7 @@
    "sample": "- **A negative claim needs more proof than a positive one** (\"no swallowed exceptions on the enforcement path\"): widen t",
    "members": [
     "sota-code-security/rules/10-silent-control-failure.md#fa2dc3a76cb2",
-    "sota/rules/03-audit-findings.md#088ea6dd4247"
+    "sota/rules/03-audit-findings.md#c47db94a25c1"
    ]
   },
   {
@@ -2859,7 +2851,7 @@
     "sota-devsecops/rules/02-provenance-signing.md#aad9aca17be5",
     "sota-devsecops/rules/04-build-containers.md#5c2e00255f7c",
     "sota-devsecops/rules/04-build-containers.md#9e2969f66fc7",
-    "sota-devsecops/rules/08-registry-security.md#40b04a9c3578",
+    "sota-devsecops/rules/08-registry-security.md#c7e3c0a3a2e9",
     "sota-devsecops/rules/08-registry-security.md#9fc485d62c2f",
     "sota-docs-workflow/rules/04-commits-branches-releases.md#a72c473124a4"
    ]
@@ -3008,6 +3000,25 @@
    "members": [
     "sota-secrets-management/rules/02-storage-backends.md#2cf72197082d",
     "sota-swift/rules/05-security.md#d68a1ca078ef"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "rules/07 §4 is the consolidated framework CVE reference that summarises rules/03 §5 and rules/05 §6 by design (\"Full detail in rules/03 … and rules/05\"); each checklist states its own file's floor. Reviewed at the 2026-11-18 release cut after the advisory update (#720).",
+   "sample": "- [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182 (Next: GHSA-9qr9-h5gf-34mp), CVE-2025-29927,",
+   "members": [
+    "sota-web-frameworks/rules/03-nextjs.md#ff1df3565fbc",
+    "sota-web-frameworks/rules/07-security.md#06c8dcc4fcf9",
+    "sota-web-frameworks/rules/07-security.md#7f54387299b2"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "rules/07 §4 is the consolidated framework CVE reference that summarises rules/03 §5 and rules/05 §6 by design (\"Full detail in rules/03 … and rules/05\"); each checklist states its own file's floor. Reviewed at the 2026-11-18 release cut after the advisory update (#720).",
+   "sample": "- [ ] Nuxt/Nitro/h3/IPX/devalue versions patched against the table (Nuxt ≥ 4.6.4 as of 2026-11-18; h3 ≥ 1.15.9; nitropac",
+   "members": [
+    "sota-web-frameworks/rules/05-nuxt.md#4a075e857034",
+    "sota-web-frameworks/rules/07-security.md#90b39007f726"
    ]
   }
  ],
