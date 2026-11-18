@@ -283,6 +283,16 @@ jobs:
           command -v zsh >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends zsh; }
           python3 scripts/zsh-equals-hook.py --self-test --require-zsh
 
+      - name: Prove the action-rules hook pauses a signing step once and names rules for CI commands
+        # A PreToolUse hook on Bash, on by default (scripts/action-rules-hook.py, ROADMAP 98): a
+        # command that signs with a person's key is refused once per session, and an image push, a
+        # CI file written from the shell and a vulnerability scan get the owning rules as context.
+        # The self-test classifies 35 labelled commands (pickaxe `git log -S`, a commit message
+        # and a heredoc body that only mention signing must not fire) and drives the once-per-
+        # session state. Mutation-checked 2026-11-18: `--no-gpg-sign` ignored, an unquoted CI path
+        # accepted and heredoc bodies parsed as commands each fail it.
+        run: python3 scripts/action-rules-hook.py --self-test
+
       - name: Prove the MCP server answers correctly and refuses hostile input
         # scripts/sota-mcp-server.py serves the library read-only to agents without a skills
         # loader. The test drives it over real stdio: lifecycle, version negotiation, every
