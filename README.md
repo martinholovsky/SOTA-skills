@@ -14,6 +14,9 @@
 
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
+**New to this?** Read the [beginner's guide](docs/GETTING-STARTED.md) first. In about ten
+minutes it explains what the library is, what you get from it, and how to start.
+
 Your assistant is brilliant — it just doesn't know your standards, and it forgets the
 ones it does know as the task grows long. SOTA-skills fixes both, and the fix is
 **measured**: from a bare "build X" prompt, best-practice coverage climbs from **~59%
@@ -98,7 +101,7 @@ They take free-text arguments (`/sota-close focus on the migration branch`). Ful
 - [Structure](#structure) · [How it works](#how-it-works) · [Conventions](#conventions)
 - [Found a gap? Tell us](#found-a-gap-tell-us--its-the-only-signal-we-get) · [Contributing](#contributing) · [License](#license)
 
-**Deeper docs:** [Find it fast (docs index)](docs/INDEX.md) · [Does it work? (measured results)](evals/results/RESULTS.md) · [Why it works](docs/WHY-IT-WORKS.md) · [Why some lifts expire and others don't](docs/WHY-SALIENCE-LASTS.md) · [Keeping rules applied as context fills](docs/CONTEXT-MANAGEMENT.md) · [Roadmap](docs/ROADMAP.md) · **[Agent-loop evals — tools, hidden tests, no model judge (separate repo)](https://github.com/martinholovsky/sota-agent-evals)**
+**Deeper docs:** [New here? Beginner's guide](docs/GETTING-STARTED.md) · [Find it fast (docs index)](docs/INDEX.md) · [Does it work? (measured results)](evals/results/RESULTS.md) · [Why it works](docs/WHY-IT-WORKS.md) · [Why some lifts expire and others don't](docs/WHY-SALIENCE-LASTS.md) · [Keeping rules applied as context fills](docs/CONTEXT-MANAGEMENT.md) · [Roadmap](docs/ROADMAP.md) · **[Agent-loop evals — tools, hidden tests, no model judge (separate repo)](https://github.com/martinholovsky/sota-agent-evals)**
 
 ## Standards & practices baked in
 

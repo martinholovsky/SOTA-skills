@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **A beginner's guide, `docs/GETTING-STARTED.md`.** It explains in plain language what the
+  library is, what it gives you, and how to install it, make a first request and run a first
+  audit. It also lists the five slash commands and answers common questions. It is linked
+  from the top of the README, from the README's "Deeper docs" line, and from the first row of
+  `docs/INDEX.md`.
 - **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
   `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
   on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule
