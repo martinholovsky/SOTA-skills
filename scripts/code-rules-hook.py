@@ -55,6 +55,12 @@ Every row skips a raw string shaped like a regular expression (2026-11-17): a pa
 NAMES `subprocess` or `upload` describes text and does not run a process or accept a file.
 
 IT NEVER BLOCKS: any error prints one line to stderr and exits 0 with no output.
+LANGUAGE NOTE (ROADMAP 99, 2026-11-18). The first edit of code in a language whose skill no tool call
+in the session has named (a Skill call, a read, a command; the stored skills listing does not count)
+also gets one note per session naming that skill's SKILL.md. Replayed with `--replay-language` over
+one operator's 432 transcripts: 77 notes in 67 of the 91 that edited code; a median of 6 edits of the
+language followed each note, 9 notes had none after them; the skill was named later anyway 17 times.
+
 SOTA_CODE_RULES_HOOK=off (or 0 / false / no) disables it.
 
 Registered by the plugin; install.sh --routing adds it to ~/.claude/settings.json. By hand
@@ -461,6 +467,58 @@ def select(text: str, already: set[str], rows: set[str] | None = None) -> list[t
     return [("; ".join(w), p, "; ".join(s)) for p, (w, s) in picked.items()]
 
 
+# ROADMAP 99 (2026-11-18): the language skill for code the session writes. The router's cross-cutting
+# rule 1 says to load it; over one operator's 94 sessions (436 transcripts), 66 of 116 (session,
+# language) pairs had no tool call naming the skill before the first edit (2026-11-18). So the first edit of a
+# language whose skill no TOOL CALL has named gets one note per session, naming the skill's SKILL.md
+# (its index), not its rules files: v14 measured whole rules-file reads as ~90% of a +38% cost.
+LANG_SKILL = {"py": "sota-python", "pyi": "sota-python", "go": "sota-golang", "rs": "sota-rust",
+              "c": "sota-c-cpp", "h": "sota-c-cpp", "cc": "sota-c-cpp", "cpp": "sota-c-cpp",
+              "cxx": "sota-c-cpp", "hpp": "sota-c-cpp", "java": "sota-jvm", "kt": "sota-jvm",
+              "kts": "sota-jvm", "cs": "sota-dotnet", "php": "sota-php", "rb": "sota-ruby",
+              "swift": "sota-swift", "js": "sota-javascript-typescript", "jsx": "sota-javascript-typescript",
+              "mjs": "sota-javascript-typescript", "cjs": "sota-javascript-typescript",
+              "ts": "sota-javascript-typescript", "tsx": "sota-javascript-typescript",
+              "sh": "sota-shell-scripting", "bash": "sota-shell-scripting"}
+
+
+def lang_skill(path: str) -> str:
+    name = path.rsplit("/", 1)[-1]
+    return LANG_SKILL.get(name.rsplit(".", 1)[-1].lower(), "") if "." in name else ""
+
+
+def skill_named(transcript: str, skill: str) -> bool:
+    """True when a TOOL CALL in the transcript names the skill (a Skill call, a read, a command).
+    Raw text is not enough: the transcript also stores the skills listing, which names every skill
+    (measured 2026-11-18: `skill_listing` and `instructions` attachments)."""
+    try:
+        with open(transcript, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                if skill not in line or '"tool_use"' not in line:
+                    continue
+                try:
+                    o = json.loads(line)
+                except ValueError:
+                    continue
+                c = (o.get("message") or {}).get("content") if isinstance(o, dict) else None
+                for b in c if isinstance(c, list) else []:
+                    if isinstance(b, dict) and b.get("type") == "tool_use" and skill in json.dumps(b.get("input")):
+                        return True
+    except (OSError, TypeError):
+        return False
+    return False
+
+
+def language_note(path: str, skill: str) -> str:
+    d = skill_dir(skill)
+    if d is None:
+        return ""
+    return ("SOTA: this session writes %s code (%s), and no tool call in it has loaded the language "
+            "skill yet. Its index is %s: its Top-10 non-negotiables and its rules index (which rules "
+            "file to read for what this code does) apply to this and every later edit in the language. "
+            "Read it before the next edit." % (skill.removeprefix("sota-"), path, d / "SKILL.md"))
+
+
 APPLY = ("These rules apply to this change: they are part of what was asked, not extras beyond the spec. "
          "Build what each one requires now, with a conservative default (a cap, a limit, an allow-list, a "
          "guard). Do not hand it back as a question or a note instead of building it, unless the user's "
@@ -492,10 +550,16 @@ def respond(event: dict) -> str:
         return ""
     sd = state_dir(str(event.get("session_id") or ""))
     picks = [x for x in select(written_text(ti), named_before(sd), rows) if claim(sd, x[1])]
-    if not picks:
+    lang = ""
+    skill = lang_skill(path)
+    # claimed once per session even when the skill is loaded, so the transcript is read at most once
+    if skill and claim(sd, Path("lang:" + skill)) and not skill_named(str(event.get("transcript_path") or ""), skill):
+        lang = language_note(path, skill)
+    if not picks and not lang:
         return ""
+    text = "\n\n".join(x for x in (message(path, picks) if picks else "", lang) if x)
     return json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse",
-                                              "additionalContext": message(path, picks)[:LIMIT]}})
+                                              "additionalContext": text[:LIMIT]}})
 
 
 TABLE_HEADING = "## What your code does: the rules outside this skill"
@@ -560,6 +624,72 @@ def router_section(text: str) -> str:
     return text[i:j + 1 if j >= 0 else len(text)].rstrip("\n") + "\n"
 
 
+def replay_language(root: str) -> int:
+    """Where the language note would have fired in local transcripts, with this hook's own filters:
+    per transcript, in time order, the first non-test, non-scratchpad edit of a language whose skill
+    no earlier tool call named. Prints notes, the edits of that language after each note (what the
+    note could still reach), and how often the skill was named later anyway."""
+    files = with_edits = with_note = notes = zero_after = named_later = 0
+    after: list[int] = []
+    per: dict[str, int] = {}
+    for dp, _dn, fn in os.walk(os.path.expanduser(root), followlinks=True):
+        for f in fn:
+            if not f.endswith(".jsonl"):
+                continue
+            calls: dict[str, tuple[str, str, dict]] = {}
+            with open(os.path.join(dp, f), encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    if '"tool_use"' not in line:
+                        continue
+                    try:
+                        o = json.loads(line)
+                    except ValueError:
+                        continue
+                    c = (o.get("message") or {}).get("content") if isinstance(o, dict) else None
+                    for b in c if isinstance(c, list) else []:
+                        if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("id") not in calls:
+                            calls[b["id"]] = (str(o.get("timestamp") or ""), str(b.get("name")), b.get("input") or {})
+            seq = sorted(calls.values(), key=lambda x: x[0])
+            if not seq:
+                continue
+            files += 1
+            named: set[str] = set()
+            noted: dict[str, int] = {}
+            edited = False
+            for i, (_ts, name, inp) in enumerate(seq):
+                text = json.dumps(inp)
+                named |= {sk for sk in set(LANG_SKILL.values()) if sk in text}
+                if name not in {"Edit", "Write", "MultiEdit"}:
+                    continue
+                path = str(inp.get("file_path") or "")
+                sk = lang_skill(path)
+                if not sk or TEST_PATH.search(path) or SCRATCH_PATH.search(path):
+                    continue
+                edited = True
+                if sk in noted or sk in named:
+                    continue
+                noted[sk] = i
+            with_edits += edited
+            with_note += bool(noted)
+            for sk, i in noted.items():
+                notes += 1
+                per[sk] = per.get(sk, 0) + 1
+                later = seq[i + 1:]
+                n_after = sum(1 for _t, nm, inp in later if nm in {"Edit", "Write", "MultiEdit"}
+                              and lang_skill(str(inp.get("file_path") or "")) == sk
+                              and not TEST_PATH.search(str(inp.get("file_path") or "")))
+                after.append(n_after)
+                zero_after += n_after == 0
+                named_later += any(sk in json.dumps(inp) for _t, _n, inp in later)
+    after.sort()
+    print("transcripts %d; with a code edit %d; with a note %d; notes %d" % (files, with_edits, with_note, notes))
+    print("  by skill: " + ", ".join("%s %d" % kv for kv in sorted(per.items(), key=lambda kv: -kv[1])))
+    if after:
+        print("  edits of the language after the note: median %d; none after %d; skill named later anyway %d"
+              % (after[len(after) // 2], zero_after, named_later))
+    return 0 if files else 1
+
+
 def main() -> int:
     if os.environ.get("SOTA_CODE_RULES_HOOK", "on").lower() in {"off", "0", "false", "no"}:
         return 0
@@ -596,9 +726,17 @@ def self_test() -> int:
             c = json.loads(p.stdout)["hookSpecificOutput"]["additionalContext"] if p.stdout.strip() else ""
             return p.returncode, c, p.stderr
 
-        def ev(sid, path, text, tool="Write"):
+        # A transcript in which the Python skill was loaded by a tool call: the rules-trigger checks
+        # below use it, so the language note (ROADMAP 99) stays out of their way.
+        loaded = Path(t) / "loaded.jsonl"
+        loaded.write_text(json.dumps({"type": "assistant", "message": {"role": "assistant", "content": [
+            {"type": "tool_use", "id": "x1", "name": "Skill", "input": {"skill": "sota-python"}}]}}) + "\n",
+            encoding="utf-8")
+
+        def ev(sid, path, text, tool="Write", transcript=None):
             ti = {"file_path": path, "content": text} if tool == "Write" else {"file_path": path, "new_string": text}
-            return {"tool_name": tool, "session_id": sid, "tool_input": ti}
+            return {"tool_name": tool, "session_id": sid, "tool_input": ti,
+                    "transcript_path": str(transcript if transcript is not None else loaded)}
 
         cs01 = str(ROOT / "skills" / "sota-code-security" / "rules")
         rc, c, _ = run(ev("s1", "/w/shop/export.py", "import csv\nw = csv.writer(f)\n"))
@@ -649,6 +787,31 @@ def self_test() -> int:
         for i, path in enumerate(("/w/scripts/latest.sh", "/w/app/contest_x.py", "/w/app/testimony.py")):
             rc, c, _ = run(ev("s13-%d" % i, path, "import csv\n"))
             check("a shipped file containing 'test' still fires: %s" % path.rsplit("/", 1)[1], "01-" in c)
+        # ROADMAP 99: the language note, once per session, only when no tool call loaded the skill
+        listing = Path(t) / "listing.jsonl"
+        listing.write_text(json.dumps({"type": "attachment", "attachment": {"type": "skill_listing",
+                           "content": "sota-python: ... sota-rust: ..."}}) + "\n" + json.dumps(
+            {"type": "assistant", "message": {"role": "assistant", "content": [
+                {"type": "tool_use", "id": "y", "name": "Bash", "input": {"command": "ls"}}]}}) + "\n", encoding="utf-8")
+        # joinpath, not `ROOT / "skills" / …`: check-plugin-dist.py reads that shape as a file the hook
+        # loads at run time and requires it in its minimal known-good tree
+        py_md = str(ROOT.joinpath("skills", "sota-python", "SKILL.md"))
+        rc, c, _ = run(ev("L1", "/w/app/core.py", "x = 1\n", transcript=listing))
+        check("language note: fires when only the skills listing names the skill", py_md in c and "rules index" in c)
+        rc, c, _ = run(ev("L1", "/w/app/other.py", "y = 2\n", transcript=listing))
+        check("language note: once per session", c == "")
+        rc, c, _ = run(ev("L1", "/w/app/lib.rs", "fn f() {}\n", transcript=listing))
+        check("language note: a second language gets its own note", "sota-rust" in c and "SKILL.md" in c)
+        rc, c, _ = run(ev("L2", "/w/app/core.py", "x = 1\n"))
+        check("language note: silent when a tool call loaded the skill", c == "")
+        rc, c, _ = run(ev("L3", "/w/app/core.py", "x = 1\n", transcript=Path(t) / "missing.jsonl"))
+        check("language note: an unreadable transcript still reminds", py_md in c)
+        rc, c, _ = run(ev("L4", "/w/tests/test_core.py", "x = 1\n", transcript=listing))
+        check("language note: a test file is silent", c == "")
+        rc, c, _ = run(ev("L5", "/w/app/export.py", "import csv\nw = csv.writer(f)\n", transcript=listing))
+        check("language note: combined with a rules note in one message", "01-" in c and py_md in c)
+        rc, c, _ = run(ev("L6", "/w/README.md", "python code", transcript=listing))
+        check("language note: markdown is silent", c == "")
         rc, c, _ = run(ev("s7", "/w/a.py", "import csv"), {"SOTA_CODE_RULES_HOOK": "off"})
         check("opt-out is silent", rc == 0 and c == "")
         # Two copies on one edit (plugin + installer, run in parallel) must not both name a file.
@@ -846,6 +1009,8 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["--router-table"]:
         sys.stdout.write(router_table())
         sys.exit(0)
+    if sys.argv[1:2] == ["--replay-language"]:
+        sys.exit(replay_language(sys.argv[2] if len(sys.argv) > 2 else "~/.claude/projects"))
     if sys.argv[1:] == ["--table"]:
         sys.stdout.write(table())
         sys.exit(0)

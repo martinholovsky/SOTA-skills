@@ -720,7 +720,8 @@ def _named_rules(text: str) -> list[str]:
     out: list[str] = []
     for tok in LIB_PATH.findall(text or ""):
         rel = lib_rel(tok.rstrip(".,;:)"))
-        if rel and "/rules/" in rel and rel.endswith(".md") and rel not in out:
+        # a rules file, or a skill's SKILL.md (the code-rules hook's language note, ROADMAP 99)
+        if rel and rel.endswith(".md") and ("/rules/" in rel or rel.endswith("/SKILL.md")) and rel not in out:
             out.append(rel)
     return out
 
@@ -1345,6 +1346,18 @@ def self_test() -> int:
         ph3.write_text("\n".join(json.dumps(x) for x in hl3) + "\n", encoding="utf-8")
         sg3 = next(a for a in build(parse([ph3]), ROOT)["hooks"]["acts"] if a["kind"] == "refused" and a["hook"] == "action-rules-hook.py")
         check(sg3.get("retried") == "no" and sg3.get("followed", "").startswith("n/a"), f"no retry is not a verdict: {sg3}")
+        # ROADMAP 99: a language note names a SKILL.md; a later Skill call for it is the follow-through
+        lang_note = json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext":
+            "SOTA: this session writes python code (/x/a.py). Its index is /x/skills/sota-python/SKILL.md."}})
+        hl4 = hl[:1] + [
+            asst("2026-01-03T00:00:01Z", tu("L_edit", "Edit", {"file_path": "/w/a.py", "old_string": "a", "new_string": "b"})),
+            attach("2026-01-03T00:00:01Z", "hook_success", "PostToolUse:Edit", 'python3 "/x/scripts/code-rules-hook.py"', lang_note, "L_edit"),
+            asst("2026-01-03T00:00:02Z", tu("L_skill", "Skill", {"skill": "sota-skills:sota-python"}))]
+        ph4 = Path(d) / "hooks4.jsonl"
+        ph4.write_text("\n".join(json.dumps(x) for x in hl4) + "\n", encoding="utf-8")
+        ln = next((a for a in build(parse([ph4]), ROOT)["hooks"]["acts"] if a["hook"] == "code-rules-hook.py"), {})
+        check(ln.get("named") == ["skills/sota-python/SKILL.md"] and ln.get("followed") == "yes",
+              f"a language note naming SKILL.md is followed by a later Skill call: {ln}")
         mdh = markdown(rh)
         check("### Hooks that acted" in mdh and "followed yes" in mdh, "the hooks section is printed")
         for leak in ("acme", "/private", "git commit -S -m release", "you declined a control"):
