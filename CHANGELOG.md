@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`/sota-audit` reports what the hooks did during the audit.** Its coverage section now pastes
+  the session-load audit's "Hooks that acted" beside the coverage table and asks, as `/sota-report`
+  check E3 does, why each note was not followed. A missed note on a file in the audit's scope means
+  that file was not walked.
 - **The code-rules hook names the language skill a session writes code in without loading it
   (ROADMAP 99).** The first non-test edit of a language whose skill no tool call has named gets one
   note per session naming that skill's `SKILL.md`; the skills listing stored in the transcript does
