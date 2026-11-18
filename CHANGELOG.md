@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Negative-control probe 34c works on a release commit.** It wrote its test line under
+  `## [Unreleased]` and asserted that heading existed, so on the v1.56.0 release PR, which by
+  convention has no `[Unreleased]` section, it failed all four harness shards. It now writes under
+  whatever section is at the top of the CHANGELOG.
 - **`/sota-audit` reports what the hooks did during the audit.** Its coverage section now pastes
   the session-load audit's "Hooks that acted" beside the coverage table and asks, as `/sota-report`
   check E3 does, why each note was not followed. A missed note on a file in the audit's scope means
