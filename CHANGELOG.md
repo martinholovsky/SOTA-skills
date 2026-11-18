@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The installer's question for the action-rules hook now says what it does.** It asked to add a
+  hook that "pauses a hardware-key signing command once per session", which an operator found
+  confusing: the hook refuses the first signing command of each session, for any key, until the
+  agent has checked, and the command runs when issued again. The INDEX row says the same.
 - **A PreToolUse hook keyed on the action a Bash command takes, on by default (ROADMAP 98).**
   `scripts/action-rules-hook.py` refuses, once per session, a command that signs or unlocks with
   a person's key (`git commit -S`, `git tag -s`, a commit when `commit.gpgSign` is set,
