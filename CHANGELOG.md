@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a note naming rules files, whether each was read after it, only before it, or never; for a
   signing refusal, whether the PIN counter or signing config was read, or the person asked, before
   the retry. Claude Code records a hook run only when the hook printed something (every one of
-  1,121 records in a session had output), so the section counts acts, not runs, and says so.
+  1,121 records in a session had output; *corrected at the session close: 966 of 966, recounted —
+  1,121 had not come from a count*), so the section counts acts, not runs, and says so.
   Self-test 65 checks; four mutants each fail it.
 - **The installer's question for the action-rules hook now says what it does.** It asked to add a
   hook that "pauses a hardware-key signing command once per session", which an operator found

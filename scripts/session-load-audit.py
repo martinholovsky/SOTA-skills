@@ -170,8 +170,8 @@ def _int(v) -> int | None:
 LIB_HOOKS = sorted(p.name for p in (ROOT / "scripts").glob("*-hook.py"))
 HOOK_IN = re.compile(r"([\w-]+-hook\.py)")
 # Claude Code records a hook_success only when the hook printed something (measured 2026-11-18:
-# every one of 1,121 hook_success records in a session had stdout, and a hook that ran on every Bash
-# call silently left none), so a silent run is invisible: acts and errors are countable, runs are not.
+# all 966 hook_success records in a session had stdout, and a hook that ran on every Bash call
+# silently left none), so a silent run is invisible: acts and errors are countable, runs are not.
 HOOK_ATTACH = {"hook_success": "ran", "hook_non_blocking_error": "error", "hook_cancelled": "error",
                "hook_blocking_error": "refused"}
 

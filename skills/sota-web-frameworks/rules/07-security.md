@@ -90,8 +90,9 @@ their own. Full detail in [`rules/03`](03-nextjs.md) (Next/React) and [`rules/05
   (CVE-2025-66478 was REJECTED as a duplicate of CVE-2025-55182) fixed on every 15.x/16.x
   line (e.g. 15.5.7 / 16.0.7); **rotate secrets if it ran unpatched.** Follow-up
   DoS/exposure: CVE-2025-55184/-55183/-67779, CVE-2026-23864/-23869/-23870/-44907 —
-  react-server-dom-* floor 19.0.8 / 19.1.9 / 19.2.8 (Next ships its own compiled copy, so
-  a Next app follows the Next floor below).
+  react-server-dom-* fixed 19.0.8 / 19.1.9 / 19.2.8; since CVE-2026-126187 (below) the floor is
+  19.0.9 / 19.1.10 / 19.2.9 / 19.3.1 (Next ships its own compiled copy, so a Next app follows
+  the Next floor below and checks the copy it bundles).
 - **CVE-2025-29927** — middleware auth bypass, CVSS 9.1; fixed
   12.3.5/13.5.9/14.2.25/15.2.3.
 - Cache poisoning: CVE-2024-46982 (13.5.7/14.2.10), CVE-2025-49005 (15.3.3),
@@ -127,7 +128,8 @@ their own. Full detail in [`rules/03`](03-nextjs.md) (Next/React) and [`rules/05
   (1.15.6 / 2.0.1-rc.15), then the SSE-fix bypass GHSA-4hxc-9384-m385 and serveStatic
   double-decode GHSA-72gr-qfp7-vwhw — h3 floor **1.15.9 / 2.0.1-rc.18**.
 - devalue prototype pollution **CVE-2025-57820** (5.3.2), **CVE-2026-30226** (5.6.4) +
-  DoS advisories (CVE-2026-42570, CVE-2026-81176) — floor **5.9.2**. serialize-javascript
+  DoS advisories (CVE-2026-42570, CVE-2026-81176) and the 2026-10-01 batch (CVE-2026-92708 +
+  six) — floor **5.9.3** as of 2026-11-18. serialize-javascript
   CVE-2024-11831 (6.0.2), GHSA-5c6j-r48x-rmvq RCE (7.0.3), CVE-2026-34043 DoS — floor
   **7.0.5**.
 
