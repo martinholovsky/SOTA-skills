@@ -310,9 +310,9 @@ rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2, wher
 Unmanaged: drift until a CVE forces a terrifying 40-major-version jump. Unthrottled: you
 auto-install malware minutes after it's published. The strategy:
 
-- **Cooldown**: Renovate `minimumReleaseAge: "5 days"` (Dependabot: cooldown config) for
-  public packages — most malicious versions are yanked within days. Exception: security
-  updates bypass cooldown.
+- **Cooldown**: Renovate `minimumReleaseAge: "5 days"`, Dependabot `cooldown: {default-days: 5}` per
+  `updates:` entry (it defaults to 3 days unset; read 2026-11-18) for public packages — most malicious
+  versions are yanked within days. Exception: security updates bypass cooldown.
   The bot gates only its own PRs; a hand-run `add`/`install` is gated by the package
   manager's own setting (read 2026-10-26): pnpm `minimumReleaseAge` (minutes, since 10.16;
   the 1440 default since 11 falls back when unmet, so set it explicitly), npm `min-release-age`

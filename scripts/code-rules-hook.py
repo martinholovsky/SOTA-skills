@@ -39,7 +39,10 @@ names it.
 Test files and an agent's scratchpad (a `scratchpad/` path segment) are skipped: what matters is
 what the shipped code does. Config files (CONFIG_EXT: YAML,
 .j2, .conf, .service, .toml) are read by the host-config rows only (CONFIG_ROWS), since 2026-10-22;
-JSON is never read.
+JSON is never read. Since 2026-11-18 a Dockerfile/Containerfile (no extension) is read as config too,
+and CONFIG_ROWS gained a CI workflow, a Dockerfile and a Dependabot row, which fire on config files
+only (CONFIG_ONLY), never on code: before that, writing a workflow or a Dockerfile named no rules
+file at all. `rows_for(path)` decides which rows a written file is tried against.
 
 The triggers are a table of regular expressions over the written text, and they are crude on
 purpose: a false trigger costs one file read, a missed one costs the rule.
@@ -115,6 +118,24 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
     ("runs or configures a container or sandbox (seccomp, capabilities, namespaces)",
      r"seccomp|SCMP_|--security-opt|--cap-(drop|add)\b|--userns\b|\bunshare\b|\b(podman|docker) run\b",
      [("sota-sandboxing", "02", "§1 namespaces, §3 seccomp-bpf, §5 capabilities"),
+      ("sota-sandboxing", "03", "§1 Docker / OCI hardening checklist")]),
+    # 2026-11-18: an agent wrote .github/dependabot.yml from rules/01's "keep pins fresh with Dependabot"
+    # and never reached the cooldown in rules/03. `package-ecosystem:` is Dependabot's own key: 80 of 80
+    # local YAML files carrying it were Dependabot configs (rg --hidden over ~/Github, 2026-11-18).
+    ("configures a dependency-update bot (Dependabot)",
+     r"(?m)^\s*-?\s*package-ecosystem:\s",
+     [("sota-devsecops", "03", "§3.7 cooldown, grouping, automerge")]),
+    # 2026-11-18: workflows and Dockerfiles reached no row at all (YAML reads only config rows; a
+    # Dockerfile has no extension). Measured over ~/Github with rg --hidden: `runs-on:` is in 1,966
+    # YAML files, 1,891 under a workflow directory and the other 75 GitHub Actions templates; a FROM
+    # line is in 64,913 of 64,916 Dockerfile-named files and in no YAML file. Both are CONFIG_ONLY:
+    # a FROM line also opens SQL inside code.
+    ("writes a CI workflow (GitHub Actions)",
+     r"(?m)^\s*runs-on:\s",
+     [("sota-devsecops", "01", "§1.1 token permissions, §1.3 pinned actions, §1.4 untrusted triggers, §1.5 expression injection")]),
+    ("writes a container image (Dockerfile)",
+     r"(?m)^\s*FROM\s+\S",
+     [("sota-devsecops", "04", "§4.2 multi-stage, §4.3 base image pinned by digest"),
       ("sota-sandboxing", "03", "§1 Docker / OCI hardening checklist")]),
     ("sets or disables an LSM profile (AppArmor, SELinux)",
      r"\baa-(complain|enforce|disable)\b|force-complain|apparmor_parser|\bsetenforce\b|\bsetsebool\b|"
@@ -262,13 +283,40 @@ HOOK_ONLY = {
     "reads from a process substitution, whose exit status is unreachable",
     "configures PAM, a login stack",
     "calls a model API: output cap, stop reason and spend",
+    "configures a dependency-update bot (Dependabot)",
+    "writes a CI workflow (GitHub Actions)",
+    "writes a container image (Dockerfile)",
 }
 # The only rows that also read CONFIG_EXT files. Each name must be a trigger row (--self-test).
 CONFIG_ROWS = {
+    "configures a dependency-update bot (Dependabot)",
+    "writes a CI workflow (GitHub Actions)",
+    "writes a container image (Dockerfile)",
     "runs or configures a container or sandbox (seccomp, capabilities, namespaces)",
     "sets or disables an LSM profile (AppArmor, SELinux)",
     "configures PAM, a login stack",
 }
+# Rows that fire on config files only, never on code: their words also occur in code (SQL's FROM).
+CONFIG_ONLY = {
+    "configures a dependency-update bot (Dependabot)",
+    "writes a CI workflow (GitHub Actions)",
+    "writes a container image (Dockerfile)",
+}
+DOCKERFILE_NAME = re.compile(r"^(?:dockerfile|containerfile)(?:\..+)?$|\.(?:dockerfile|containerfile)$", re.I)
+
+
+def rows_for(path: str) -> set[str] | None:
+    """The trigger names to try for a written file: config rows for config files and Dockerfiles,
+    every row but the config-only ones for code, and None to skip the file."""
+    name = path.rsplit("/", 1)[-1]
+    if DOCKERFILE_NAME.search(name):
+        return set(CONFIG_ROWS)
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if ext in CODE_EXT:
+        return {w for w, _, _ in TRIGGERS} - CONFIG_ONLY
+    if ext in CONFIG_EXT:
+        return set(CONFIG_ROWS)
+    return None
 
 
 def skill_dir(name: str) -> Path | None:
@@ -374,12 +422,8 @@ def respond(event: dict) -> str:
         return ""
     ti = event.get("tool_input") or {}
     path = str(ti.get("file_path") or "")
-    ext = path.rsplit(".", 1)[-1].lower() if "." in path.rsplit("/", 1)[-1] else ""
-    if ext in CODE_EXT:
-        rows = None
-    elif ext in CONFIG_EXT:
-        rows = CONFIG_ROWS
-    else:
+    rows = rows_for(path)
+    if rows is None:
         return ""
     if TEST_PATH.search(path) or SCRATCH_PATH.search(path):
         return ""
@@ -569,6 +613,27 @@ def self_test() -> int:
                        ("issues or checks a session or token", 'MAX_PER_SESSION = int(os.environ.get("X", "3"))'),
                        ("issues or checks a session or token", "max_messages_per_session: int = 1000")):
         check("quiet: %s" % text, not fires(what, text))
+    # 2026-11-18: a Dependabot config names the cooldown rule; a CI workflow does not
+    check("Dependabot config fires the update-bot row",
+          fires("configures a dependency-update bot", "version: 2\nupdates:\n  - package-ecosystem: pip\n"))
+    check("a workflow does not fire the update-bot row",
+          not fires("configures a dependency-update bot", "on: push\njobs:\n  t:\n    runs-on: ubuntu-latest\n"))
+    # 2026-11-18: workflows and Dockerfiles route to config rows; code never fires config-only rows
+    def picks_for(path, text):
+        r = rows_for(path)
+        return [] if r is None else [w for w, _, _ in COMPILED if w in r and row_match(w, _rx(w), text)]
+    def _rx(w):
+        return next(rx for x, rx, _ in COMPILED if x == w)
+    wf = "on: push\npermissions: {}\njobs:\n  t:\n    runs-on: ubuntu-latest\n"
+    df = "FROM python:3.14-slim\nRUN pip install x\nUSER 1000\n"
+    sql = 'Q = """\nSELECT id\nFROM users\nWHERE id = ?\n"""\n'
+    check("a workflow fires the CI-workflow row", "writes a CI workflow (GitHub Actions)" in picks_for(".github/workflows/ci.yml", wf))
+    check("Dockerfile routes to config rows and fires", "writes a container image (Dockerfile)" in picks_for("Dockerfile", df))
+    check("Dockerfile.prod and app.containerfile route too",
+          rows_for("Dockerfile.prod") is not None and rows_for("app.containerfile") is not None)
+    check("SQL's FROM in Python never fires the Dockerfile row",
+          "writes a container image (Dockerfile)" not in picks_for("app/db.py", sql))
+    check("a file with no extension that is not a Dockerfile is skipped", rows_for("Makefile") is None)
     # ... and the same words still fire where they are code or a real session
     for what, text in (("builds a database query", 'q = r"SELECT name FROM users WHERE id = " + uid'),
                        ("builds a database query", 'q = r"SELECT a || b FROM t WHERE id = " + uid'),
