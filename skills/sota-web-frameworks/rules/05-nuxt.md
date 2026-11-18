@@ -87,7 +87,8 @@ export default defineEventHandler(async (event) => {
   `headers`, `cors`, `noScripts`. **Security:** an `swr`/`isr`/cached route must not
   serve personalized content — the cache is shared ([`rules/06`](06-ssr-hydration.md)). A `routeRules`
   matcher that doesn't match the actual (case-sensitive) route can bypass an intended
-  rule — the class behind CVE-2026-53721 and its incomplete-fix follow-up CVE-2026-71315 below.
+  rule — the class behind CVE-2026-53721 and its incomplete-fix follow-up CVE-2026-71315 below, and again
+  behind CVE-2026-114132 (case variants) and CVE-2026-114131 / CVE-2026-128071 (encoded segments).
 - **Server components / islands are experimental** in Nuxt 4 (enable component
   islands; `.server.vue` rendered via `<NuxtIsland>`): single root element, props
   travel as URL query params (keep them small), no route middleware inside an island.
@@ -113,8 +114,12 @@ export default defineEventHandler(async (event) => {
 | CVE-2025-57820 (GHSA-vj54-72f3-p5jv) | **devalue prototype pollution** on `parse` (the Nuxt payload deserializer), High | devalue **5.3.2** |
 | CVE-2026-30226 (GHSA-cfw5-2vxh-hr84) + DoS advisories | devalue prototype pollution / parse DoS | devalue 5.6.4 |
 | CVE-2026-42570 (GHSA-77vg-94rm-hx3p), CVE-2026-81176 (GHSA-9rgm-9g3h-6x36) | devalue sparse-array DoS (High); DoS via malformed input | devalue **5.9.2** |
+| **2026-10-22 → 2026-11-16** route-rule bypasses (GitHub advisory database, read 2026-11-18): CVE-2026-114131 (GHSA-6gq8-jgmh-3ffp) and its incomplete fix CVE-2026-128071 (GHSA-f3x9-2chm-73c8); CVE-2026-114132 (GHSA-vjh5-4x84-xrqp); CVE-2026-119200 (GHSA-9v7c-q64q-vv33) | Route rules matched against the raw path, so a percent-encoded segment, then a `%2F` on a catch-all route, skips them; case variants skip `redirect`/`headers`/`proxy`/`ssr` rules; dot segments bypass `server/middleware` path checks. Medium | 4.4.4 / 3.21.4, then **4.6.4**; 4.6.2; 4.6.3. **No Nuxt 3 fix** for the `%2F` and case-variant ones |
+| CVE-2026-128075 (GHSA-96x6-fvhx-49hg) | Unhandled SSR errors send their `message` and `data` to the client (for a failed `$fetch`, the URL requested), Medium | **4.6.4**; no Nuxt 3 fix |
+| CVE-2026-114133 (GHSA-xfq5-w38q-pc2x); CVE-2026-114130 (GHSA-jjm6-p2m9-9w4x); CVE-2026-128076 (GHSA-hf59-9xwc-2g4p); CVE-2026-128074 (GHSA-r9jc-w898-3fv6) | Server islands render `useHeadSafe` input unsanitised (Medium); a `javascript:` URL behind a control character, an incomplete fix for CVE-2026-53722 (Low); colliding island props share one `/__nuxt_island` path (Low); quadratic payload-URL cost for repeated slashes (Medium DoS) | 4.6.2; 4.6.0; 4.6.4; 4.6.4 |
+| devalue 2026-10-01 batch: CVE-2026-92708 (GHSA-j22f-vq7h-c4qm) + six GHSAs | `stringify`/`uneval` serialize shared memory (High); quadratic and sparse-array amplification, a typed-array reviver that bypasses allocation checks, an unhandled rejection from `stringifyAsync`, `__proto__` rejection bypassed through null-prototype keys | devalue **5.9.3** |
 
-Floors as of 2026-09-26 ("fixed in", not "current"): **Nuxt ≥ 4.5.1**, **h3 ≥ 1.15.9**, **nitropack ≥ 2.13.4**, **devalue ≥ 5.9.2**. Newer advisories: the [nuxt](https://github.com/nuxt/nuxt/security/advisories), [h3](https://github.com/h3js/h3/security/advisories) and [nitro](https://github.com/nitrojs/nitro/security/advisories) feeds.
+Floors as of 2026-11-18 ("fixed in", not "current"): **Nuxt ≥ 4.6.4**, **h3 ≥ 1.15.9**, **nitropack ≥ 2.13.4**, **devalue ≥ 5.9.3** (on 2026-09-26: Nuxt 4.5.1, devalue 5.9.2; no new h3 or nitropack advisory since then). Newer advisories: the [nuxt](https://github.com/nuxt/nuxt/security/advisories), [h3](https://github.com/h3js/h3/security/advisories) and [nitro](https://github.com/nitrojs/nitro/security/advisories) feeds.
 
 - **`nuxt-security` module** is the maintained hardening layer: OWASP-pattern security
   headers, CSP (with nonce support for SSR — verify the CSP docs for your mode), rate
@@ -138,7 +143,7 @@ Floors as of 2026-09-26 ("fixed in", not "current"): **Nuxt ≥ 4.5.1**, **h3 �
 - [ ] **NuxtLink / URL sinks** (§6) —
       `grep -rn ':to=\|:href=' --include='*.vue' pages components | grep -iv 'sanitiz'`
 
-- [ ] Nuxt/Nitro/h3/IPX/devalue versions patched against the table (Nuxt ≥ 4.5.1 for CVE-2026-71315/-71320/-71316; h3 ≥ 1.15.9; nitropack ≥ 2.13.4; devalue ≥ 5.9.2) and not on EOL Nuxt 3 (§6)?
+- [ ] Nuxt/Nitro/h3/IPX/devalue versions patched against the table (Nuxt ≥ 4.6.4 as of 2026-11-18; h3 ≥ 1.15.9; nitropack ≥ 2.13.4; devalue ≥ 5.9.3) and not on EOL Nuxt 3 (§6)?
 - [ ] No secret under `runtimeConfig.public`; server secrets at the root only; every `NUXT_*` override has a matching key in `nuxt.config`, and production gets real env vars (the built server does not read `.env`) (§3)?
 - [ ] No module-level `ref`/`reactive` state outside `setup` (cross-request leak); `useState`/Pinia used instead, holding only serializable values (§2)?
 - [ ] Every `server/api` handler authenticates, authorizes (ownership), and schema-validates input; errors via `createError({ statusCode })`; responses filtered (§4)?

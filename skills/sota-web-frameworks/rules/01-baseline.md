@@ -9,7 +9,7 @@ security releases weekly.
 | Runtime | Floor for new code | EOL / support note (dated facts, re-verified 2026-09-26) |
 |---|---|---|
 | React | 19.x | 18.x: no release since 18.3.1 (2024-04-26, npm registry) — treat as frozen; React Compiler needs 19 idioms |
-| Next.js | 16.x | **Active LTS 16.x**; **Maintenance LTS 15.x** ends **2026-10-21** (policy: two years from the 2024-10-21 release) — after that date 15.x is a finding like < 15. Everything **< 15 is unsupported** — treat as a finding |
+| Next.js | 16.x | **Active LTS 16.x**; **Maintenance LTS 15.x**: security releases through **2027-01-31** (extended from 2026-10-21; nextjs.org/support-policy, read 2026-11-18) — after that date 15.x is a finding like < 15. Everything **< 15 is unsupported** — treat as a finding |
 | Vue | 3.5+ | Vue 2 **EOL 2023-12-31** (paid extended support only). 3.6 (Vapor mode) at release-candidate on npm (`rc` tag, 2026-09-26) — not stable |
 | Nuxt | 4.x | **Nuxt 3 EOL 2026-07-31** — no support commitment since (a stray 3.21.11 on 2026-08-05 does not change that); a Nuxt 3 app is a finding. Nuxt 2 EOL 2024-06-30; Nuxt 5 (unreleased) brings Nitro v3 + h3 v2 |
 | Nitro | 2.x | v3 still beta on npm (`nitro` package); ships with Nuxt 5 |
@@ -20,7 +20,7 @@ table deliberately carries no "current" numbers.
 
 Sources: react.dev/versions, nextjs.org/support-policy, github.com/vuejs/core
 releases, nuxt.com/docs/4.x/community/roadmap, the vuejs/pinia CHANGELOG, the npm registry. Running an EOL major (Vue 2, Nuxt 2, Nuxt 3,
-Next < 15, and Next 15 after 2026-10-21) means no security patches — HIGH at minimum for an internet-facing app.
+Next < 15, and Next 15 after 2027-01-31) means no security patches — HIGH at minimum for an internet-facing app.
 
 - **React Compiler 1.0 is stable** (2025-10-07): a build-time plugin that
   auto-memoizes, removing most manual `useMemo`/`useCallback`/`memo`. It requires
@@ -100,7 +100,7 @@ per route, so match each route to its data:
       `cat package.json | grep -A2 '"dependencies"'` (then read lockfile for exact patch)
 - [ ] **EOL / unsupported runtimes (findings)** (§1) —
       `node -e "const p=require('./package.json');const d={...p.dependencies,...p.devDependencies};for(const k of ['vue','nuxt','next'])if(d[k])console.log(k,d[k])"`
-      (vue ^2 -> EOL; nuxt ^2 or ^3 -> EOL (Nuxt 3 since 2026-07-31); next <15 -> unsupported, and next <16 after 2026-10-21)
+      (vue ^2 -> EOL; nuxt ^2 or ^3 -> EOL (Nuxt 3 since 2026-07-31); next <15 -> unsupported, and next <16 after 2027-01-31)
 - [ ] **Render-mode inventory** (§3) —
       `grep -rnE 'ssr:[[:space:]]*false|routeRules|prerender|export const dynamic|cacheComponents' app pages 2>/dev/null; find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'next.config.*' -o -name 'nuxt.config.*' \) -type f -exec grep -HnE 'ssr:[[:space:]]*false|routeRules|prerender|cacheComponents' {} +`
 - [ ] **Hooks/vue lint present?** (§4) —
@@ -109,7 +109,7 @@ per route, so match each route to its data:
       `grep -rnE '"start":[[:space:]]*"[^"]*((next|nuxt|nuxi) dev|next"|vite( |")|vite preview)|(CMD|ENTRYPOINT).*((next|nuxt|nuxi)"?,?[[:space:]]*"?dev|run"?,?[[:space:]]*"?dev)' --include=package.json --include='Dockerfile*' --include='Containerfile*' --exclude-dir=node_modules .`
       (also read Procfiles, unit files and platform start settings, which it does not scan)
 
-- [ ] Every framework major is supported and receiving security patches (no Vue 2, Nuxt 2, Nuxt 3, Next < 15; no Next 15 after 2026-10-21), and new code on the table's "floor for new code" majors (§1)?
+- [ ] Every framework major is supported and receiving security patches (no Vue 2, Nuxt 2, Nuxt 3, Next < 15; no Next 15 after 2027-01-31), and new code on the table's "floor for new code" majors (§1)?
 - [ ] Exact versions pinned + lockfile committed + automated dependency updates on (§4)?
 - [ ] Production starts the built server (`next start`, `node .output/server/index.mjs`), never `next dev`/`nuxt dev`/`vite` (§4)?
 - [ ] Render mode chosen per route to match its data (personalized ⇒ SSR + private cache) (§3)?

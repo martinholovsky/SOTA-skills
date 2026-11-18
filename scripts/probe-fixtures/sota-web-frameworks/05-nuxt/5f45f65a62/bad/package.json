@@ -7,8 +7,8 @@
     "start": "node .output/server/index.mjs"
   },
   "dependencies": {
-    "nuxt": "3.17.7",
-    "h3": "1.15.1",
-    "devalue": "5.1.1"
+    "nuxt": "4.6.4",
+    "h3": "1.15.9",
+    "devalue": "5.9.3"
   }
 }

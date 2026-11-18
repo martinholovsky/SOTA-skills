@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`sota-web-frameworks` is current with the advisories published since 2026-09-26.** None of 22
+  Next.js and Nuxt advisories was in the skill, among them three critical unauthenticated RCEs in
+  Next.js and one in React Server Components (CVE-2026-126187). New floors: **Next ≥ 15.5.28 /
+  ≥ 16.4.5**, **Nuxt ≥ 4.6.4**, **devalue ≥ 5.9.3**, react-server-dom 19.0.9 / 19.1.10 / 19.2.9 /
+  19.3.1. Next 15's support no longer ends 2026-10-21: Vercel extended its security releases to
+  2027-01-31, and the five lines that called 15.x unsupported are corrected. Two probe fixtures
+  that tripped six Dependabot alerts now name patched versions; neither probe reads a version.
 - **The session-load audit reports what the library's hooks did, and `/sota-report` asks why a note
   was not followed (new check E3).** `scripts/session-load-audit.py` ends with "Hooks that acted":
   each refusal, context note, Stop block and error from a `scripts/*-hook.py`, by `tool_use` id. For
