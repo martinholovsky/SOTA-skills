@@ -226,7 +226,10 @@ verify: take the token from the header/form field, split it, recompute the HMAC
   from server config, never from `Host`/`X-Forwarded-Host`. Trust
   `X-Forwarded-Proto`/`-Host` only when your own proxy sets them and strips
   client copies ([sota-network-security rules/05](../../sota-network-security/rules/05-edge-ingress-egress.md) R6) — e.g. Django
-  `SECURE_PROXY_SSL_HEADER`/`USE_X_FORWARDED_HOST`, Express `trust proxy`.
+  `SECURE_PROXY_SSL_HEADER`/`USE_X_FORWARDED_HOST`, Express `trust proxy`. The inverse
+  fails too: behind a TLS-terminating proxy an app that ignores its proxy's header sees
+  `http`, so a Secure cookie, HSTS or HTTPS-only check keyed on the request scheme silently
+  switches off; behind the proxy, read the header from the proxy.
   Proxies, gateways and load balancers must pass `Origin` and `Sec-Fetch-*`
   through unchanged; one that strips them sends every request down the
   fallback path. OWASP: CSRF Prevention, Django Security cheat sheets.

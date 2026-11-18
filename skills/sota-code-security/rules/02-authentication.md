@@ -68,7 +68,9 @@ finding until proven otherwise.
   "no such user" or a step-specific error tells the attacker which half was wrong.
   - **Write the lockout parameters down**: threshold (failures), observation window,
     lockout duration. Prefer a delay that doubles with each failure over a fixed lock, and
-    count failures per account as well as per IP, because stuffing rotates addresses.
+    count failures per account as well as per IP, because stuffing rotates addresses. "Per IP"
+    is the client's address: behind a proxy the socket peer is the proxy, and a per-IP lock
+    keyed on it locks every user at once ([`sota-api-design` rules/07](../../sota-api-design/rules/07-security-operations.md) §2).
   - **A hard lock is a denial-of-service tool.** Anyone who knows a username can lock its
     owner out. Keep a way in while locked (the reset flow, or a lock the real user clears
     with a second factor), log every lockout, and never lock on a reset *request* (§5).

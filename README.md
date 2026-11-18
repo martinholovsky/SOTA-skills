@@ -1487,8 +1487,14 @@ router is at its 500-line cap, and its rows are what the reach numbers were meas
 Three host-config rows (containers and seccomp, AppArmor/SELinux, PAM) also read YAML, `.j2`,
 `.conf`, `.service` and `.toml` files, so an Ansible role or a Compose file is covered. Every other
 row reads code only: over 161,783 local config files, all rows together fired on 40%, almost
-always falsely. Test files and an agent's `scratchpad/` are skipped: what matters is the shipped
-code (scratchpad since 2026-10-23, after five false triggers there).
+always falsely. Since 2026-11-18 three more config rows fire on config files only: a GitHub
+Actions workflow (`runs-on:`), a Dockerfile (a `FROM` line; a Dockerfile has no extension and was
+not read at all before) and a Dependabot config (`package-ecosystem:`), so writing a workflow, an
+image or an update bot names the pipeline, container and cooldown rules. `.ps1`, `.vue`, `.svelte`,
+`.tf`, `.sql` and HTML templates are still not read: on 150 local files each, the code rows fired on
+about half, almost all falsely, so they wait for rows of their own. Test files and an agent's
+`scratchpad/` are skipped: what matters is the shipped code (scratchpad since 2026-10-23, after five
+false triggers there).
 
 **Since 2026-10-21 it also ships the zsh EQUALS hook**, on by default (`scripts/zsh-equals-hook.py`,
 a `PreToolUse` hook on `Bash`). zsh rewrites an unquoted word starting with `=` to a command's path

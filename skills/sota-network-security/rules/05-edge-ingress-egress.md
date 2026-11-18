@@ -185,6 +185,11 @@ spoof client identity.** Behind a CDN → edge proxy → app (e.g. Cloudflare �
   reaches the app directly (bypassing Cloudflare) can forge any client IP — breaking IP allowlists,
   rate limits, and logs. Configure the proxy to trust XFF only from the upstream's known ranges, and
   prefer Cloudflare's `CF-Connecting-IP` validated against current Cloudflare IP ranges.
+- **Collapsed identity (the inverse):** an app that ignores the header behind its own proxy sees
+  every request from the proxy's address, so per-IP rate limits, lockouts and allowlists act on
+  everyone at once and logs record the proxy, not the client
+  ([`sota-api-design` rules/07](../../sota-api-design/rules/07-security-operations.md) §2).
+  The fix is the same setting read from the other side: trust the proxy's header from the proxy.
 - **Origin exposure (the bypass):** if the origin is reachable on its public IP, an attacker skips
   Cloudflare and the WAF entirely. **Lock the origin to Cloudflare:** firewall/SG allow only
   Cloudflare IP ranges (or use **Cloudflare Tunnel** so the origin has *no* inbound public IP at
@@ -333,7 +338,8 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
 - [ ] Is the public cert terminated at the edge and traffic re-encrypted (not plaintext) to
       backends across the cluster network (§3)?
 - [ ] Does the app trust `X-Forwarded-For`/`CF-Connecting-IP` **only** from known proxy ranges
-      (not spoofable)? Is the origin locked to Cloudflare (IP allowlist or Tunnel — verify the
+      (not spoofable), and DOES read it there, so per-IP limits and logs see clients, not the
+      proxy? Is the origin locked to Cloudflare (IP allowlist or Tunnel — verify the
       origin isn't directly reachable) (§4)?
 - [ ] Internal/admin surfaces behind an identity-aware proxy / tunnel, not a public origin (§4)?
 - [ ] Is egress **default-deny** with an FQDN/IP allowlist for app tiers and none for data tiers?

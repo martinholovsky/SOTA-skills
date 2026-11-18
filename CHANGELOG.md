@@ -60,6 +60,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every file a path-named deferral waits on (this one: the router, `code-rules-hook.py`,
   `check-invariants.sh`); it prints why it skipped, and a resolver that lists no such file at
   all is still fatal.
+- **Two gaps the multi-skill local trial exposed (2026-11-18), and the same shapes elsewhere.** A
+  build that had the library keyed its login limit on `REMOTE_ADDR` while its README put a reverse
+  proxy in front, so behind it one bucket holds every user: `sota-api-design` rules/07 §2 now says
+  which address "per source" means (with a checklist probe and fixtures), and `sota-network-security`
+  rules/05 R6 and `sota-code-security` rules/02 §1 gained the inverse of the forged-header warning.
+  The same inverse for the scheme is in `sota-code-security` rules/05 (a TLS-terminating proxy makes
+  the app see `http`). The build also wrote a Dependabot config with no cooldown because rules/01
+  §1.3 said "keep pins fresh with Dependabot" and the cooldown lived only in rules/03 §3.7: §1.3 and
+  its checklist now carry it, and §3.7 gives the exact key (`cooldown: {default-days: 5}`) and notes
+  Dependabot's 3-day default (read 2026-11-18). Looking for the same reachability gap found that the
+  code-rules hook never read a Dockerfile and read workflows only through host-config rows; it now
+  has workflow, Dockerfile and Dependabot rows that fire on config files only, each measured for
+  precision before it was added (self-test 106/106).
 - **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
   `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
   on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule
