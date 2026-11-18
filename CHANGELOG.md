@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **A PreToolUse hook keyed on the action a Bash command takes, on by default (ROADMAP 98).**
+  `scripts/action-rules-hook.py` refuses, once per session, a command that signs or unlocks with
+  a person's key (`git commit -S`, `git tag -s`, a commit when `commit.gpgSign` is set,
+  `gpg --sign`, `ykman`, …), with what to settle first; issued again, it runs. An image push or
+  retag, a CI file written from the shell (including a `python3 - <<EOF` script that opens one)
+  and a vulnerability scan get the owning `sota-devsecops` rules files as context, once per
+  session each. Replayed over 39,464 local agent Bash calls before it shipped: signing 13 calls
+  in 2 sessions, all real; the CI note caught all 11 template edits of the incident that opened
+  ROADMAP 98. The plugin registers it, `install.sh --routing` offers it, the update reminder names
+  it when missing, CI runs its self-test, and the plugin build ships it.
 - **Intake: two field reports (2026-11-18), every claim labelled.** The probe runner no longer
   strips `2>/dev/null` from inside a quoted pattern: `grep -rn '2>/dev/null ||'` had run as
   `grep -rn ' ||'` and flagged every `||` (new `strip_devnull_err()`, four self-test cases, and a

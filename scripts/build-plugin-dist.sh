@@ -59,6 +59,7 @@ readonly ALLOW=(
   scripts/plugin-routing-hook.sh
   scripts/code-rules-hook.py
   scripts/zsh-equals-hook.py
+  scripts/action-rules-hook.py
   scripts/skill-listing-sources.sh
   scripts/install.sh
   scripts/statusline.sh

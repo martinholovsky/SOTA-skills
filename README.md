@@ -1522,6 +1522,26 @@ pattern with `\b`, `\s`, `\w` or `\d`, which macOS git reads as plain letters (`
 glibc too). Re-run in their repositories, 25 of those 72 `git grep` calls had silently dropped
 matches, 21 returned the same count at today's HEAD, and 3 were deliberate reproductions.
 
+**Since 2026-11-18 it also ships the action-rules hook**, on by default (`scripts/action-rules-hook.py`,
+a second `PreToolUse` hook on `Bash`, ROADMAP 98). It keys on what a command *does*, because two
+field reports found steps taken through Bash that reached no owning rules file: a release signed
+commits with an OpenPGP card without `sota-cli-ux` rules/03 §9 (one `Bad PIN`, two timeouts), and a
+CI redesign edited pipeline templates through `python3 - <<EOF` scripts with the owning
+`sota-devsecops` files never opened. A command that signs or unlocks with a person's key
+(`git commit -S`, `git tag -s`, a commit when `commit.gpgSign` is set, `gpg --sign`, `ykman`, …) is
+refused **once per session** with what to settle first (does the project ask for this signature,
+the retry counter, every prompt in order); issued again, it runs. It refuses rather than adding a
+note because Claude Code places a PreToolUse note beside the tool *result*, after an attempt is
+spent. An image push or retag, a CI file written from the shell and a vulnerability scan get the
+owning rules files as context, once per session each, and are never blocked. Commands are parsed
+into argv, so a commit message, a grep pattern or `git log -S` does not fire it. Replayed over one
+operator's 39,464 agent Bash calls before it shipped: signing fired on 13 calls in 2 sessions, all
+real, including all 7 signed commits of the incident; the CI note caught all 11 edits of the
+incident's pipeline templates and would appear in 36 of 94 sessions; scans in 5; image pushes in
+none (re-run it: `scripts/action-rules-hook.py --replay`). It costs about 60 ms per Bash call and
+needs `python3`. Turn it off with `SOTA_ACTION_RULES_HOOK=off`; `install.sh --routing` offers it to
+clone installs. Whether it changes outcomes is not measured yet: the replay shows where it fires.
+
 The plugin does **not** touch your global config or status line. To match the clone experience,
 opt in to any of these; the scripts ship *with* the plugin, under its cache dir:
 

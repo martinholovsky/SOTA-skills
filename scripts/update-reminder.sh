@@ -121,10 +121,11 @@ if [ -n "$repo" ] && [ -z "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   case "${CLAUDE_CODE_SHELL:-}" in */zsh | */bash) [ -x "$CLAUDE_CODE_SHELL" ] && agent_shell=${CLAUDE_CODE_SHELL##*/} ;; esac
   [ -n "$agent_shell" ] || { agent_shell=${SHELL:-}; agent_shell=${agent_shell##*/}; }
   missing=""
-  for h in code-rules-hook.py zsh-equals-hook.py; do
+  for h in code-rules-hook.py zsh-equals-hook.py action-rules-hook.py; do
     [ -f "$repo/scripts/$h" ] || continue
     case "$h" in
       code-rules-hook.py) case "${SOTA_CODE_RULES_HOOK:-}" in off | OFF | 0 | false | FALSE | no) continue ;; esac ;;
+      action-rules-hook.py) case "${SOTA_ACTION_RULES_HOOK:-}" in off | OFF | 0 | false | FALSE | no) continue ;; esac ;;
       zsh-equals-hook.py)
         [ "$agent_shell" = zsh ] || continue
         case "${SOTA_ZSH_EQUALS_HOOK:-}" in off | OFF | 0 | false | FALSE | no) continue ;; esac ;;
