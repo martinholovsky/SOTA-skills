@@ -1696,6 +1696,11 @@ changed code, while the report was being written for example, counts as not load
 The report then does a verdict walk over just those rules files,
 fixing nothing. It proves process and finds leads; it does not prove a rule was applied (in its
 first real run 4 of 9 sampled hits were real), and it prints no command text or project paths.
+Since v1.56.0 it ends with **Hooks that acted**: every refusal, note and Stop block a library hook
+produced, and whether each file a note named was read after it. `/sota-report` (check E3) and
+`/sota-audit` paste it and ask why each note was not followed, which is the evidence on whether a
+hook changes behaviour; a hook that ran silently leaves no record, so zeros prove nothing about
+registration.
 
 It stamps the report with **the version that produced it** (report against what you actually
 used — never update and re-run, since that puts a fresh stamp on old behaviour), writes a
