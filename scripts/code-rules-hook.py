@@ -42,7 +42,9 @@ what the shipped code does. Config files (CONFIG_EXT: YAML,
 JSON is never read. Since 2026-11-18 a Dockerfile/Containerfile (no extension) is read as config too,
 and CONFIG_ROWS gained a CI workflow, a Dockerfile and a Dependabot row, which fire on config files
 only (CONFIG_ONLY), never on code: before that, writing a workflow or a Dockerfile named no rules
-file at all. `rows_for(path)` decides which rows a written file is tried against.
+file at all. Terraform, Vue/Svelte, server templates, PowerShell and SQL get per-file-type rows
+(TYPED_ROWS) instead of the code rows, which misfire on them. `rows_for(path)` decides which rows a
+written file is tried against.
 
 The triggers are a table of regular expressions over the written text, and they are crude on
 purpose: a false trigger costs one file read, a missed one costs the rule.
@@ -119,6 +121,38 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
      r"seccomp|SCMP_|--security-opt|--cap-(drop|add)\b|--userns\b|\bunshare\b|\b(podman|docker) run\b",
      [("sota-sandboxing", "02", "§1 namespaces, §3 seccomp-bpf, §5 capabilities"),
       ("sota-sandboxing", "03", "§1 Docker / OCI hardening checklist")]),
+    # 2026-11-18, per-file-type rows: file types the library has rules for but the code rows misfire
+    # on (about half of 150 local .vue/.svelte/.ps1 files fired a code row, almost all falsely). Each
+    # matches only its language's own construct and fires only for its extensions (TYPED_ROWS).
+    # Measured on random local files (rg --hidden over ~/Github, 400 per type): Terraform network 11,
+    # IAM 5, storage 3 of 400; v-html 3/400, {@html} 6/400; template escape hatches 3/400; EJS `<%-`
+    # 9/88 (partial `include` excluded); PowerShell 35/400; SQL DDL 52/400 (comment lines excluded).
+    ("opens network access in infrastructure code (Terraform)",
+     r'"0\.0\.0\.0/0"|"::/0"',
+     [("sota-cloud-infrastructure", "03", "§1 deny-by-default network design")]),
+    ("grants wildcard IAM permissions in infrastructure code (Terraform)",
+     r'"Action"\s*:\s*"\*"|actions\s*=\s*\[\s*"\*"\s*\]|"\*:\*"',
+     [("sota-cloud-infrastructure", "02", "§3 policy authoring")]),
+    ("makes storage public or unencrypted in infrastructure code (Terraform)",
+     r'acl\s*=\s*"public-read(?:-write)?"|block_public_(?:acls|policy)\s*=\s*false|'
+     r'restrict_public_buckets\s*=\s*false|publicly_accessible\s*=\s*true|\b(?:encrypted|storage_encrypted)\s*=\s*false',
+     [("sota-cloud-infrastructure", "05", "§1 public access, §4 encryption defaults")]),
+    ("renders raw HTML in a component (v-html, {@html})",
+     r"\bv-html\s*=|\{@html\s",
+     [("sota-web-frameworks", "04", "§4 Vue-specific XSS"), ("sota-code-security", "05", "§1 XSS")]),
+    ("turns template escaping off",
+     r"\|\s*safe\b|\{%-?\s*autoescape\s+(?:false|off)\b|<%==|\{\{\{|\bmark_safe\(|\.html_safe\b|\|\s*raw\b",
+     [("sota-code-security", "05", "§1 XSS, context-aware output encoding")]),
+    ("writes unescaped output in an EJS template",
+     r"<%-(?!\s*include\b)",
+     [("sota-code-security", "05", "§1 XSS, context-aware output encoding")]),
+    ("evaluates a string as code or bypasses execution policy (PowerShell)",
+     r"\bInvoke-Expression\b|\biex\s|\bDownloadString\s*\(|\[scriptblock\]::Create\(|-ExecutionPolicy\s+(?:Bypass|Unrestricted)",
+     [("sota-shell-scripting", "07", "§5 Invoke-Expression and string-built commands, §6 execution policy")]),
+    ("changes a schema in a way that locks or rewrites a table (SQL DDL)",
+     r"(?im)^(?!\s*--)[^\n]*?\b(?:CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?!CONCURRENTLY)|DROP\s+COLUMN\b|"
+     r"ALTER\s+COLUMN\b[^;\n]*\bTYPE\b|ADD\s+COLUMN\b[^;\n]*\bNOT\s+NULL\b(?![^;\n]*\bDEFAULT\b))",
+     [("sota-databases", "02", "§2 lock-aware DDL on hot tables")]),
     # 2026-11-18: an agent wrote .github/dependabot.yml from rules/01's "keep pins fresh with Dependabot"
     # and never reached the cooldown in rules/03. `package-ecosystem:` is Dependabot's own key: 80 of 80
     # local YAML files carrying it were Dependabot configs (rg --hidden over ~/Github, 2026-11-18).
@@ -286,6 +320,14 @@ HOOK_ONLY = {
     "configures a dependency-update bot (Dependabot)",
     "writes a CI workflow (GitHub Actions)",
     "writes a container image (Dockerfile)",
+    "opens network access in infrastructure code (Terraform)",
+    "grants wildcard IAM permissions in infrastructure code (Terraform)",
+    "makes storage public or unencrypted in infrastructure code (Terraform)",
+    "renders raw HTML in a component (v-html, {@html})",
+    "turns template escaping off",
+    "writes unescaped output in an EJS template",
+    "evaluates a string as code or bypasses execution policy (PowerShell)",
+    "changes a schema in a way that locks or rewrites a table (SQL DDL)",
 }
 # The only rows that also read CONFIG_EXT files. Each name must be a trigger row (--self-test).
 CONFIG_ROWS = {
@@ -302,6 +344,22 @@ CONFIG_ONLY = {
     "writes a CI workflow (GitHub Actions)",
     "writes a container image (Dockerfile)",
 }
+# Per-file-type rows: they fire only for these extensions, and these files get no ordinary code row.
+_TEMPLATE = {"turns template escaping off"}
+_TF = {"opens network access in infrastructure code (Terraform)",
+       "grants wildcard IAM permissions in infrastructure code (Terraform)",
+       "makes storage public or unencrypted in infrastructure code (Terraform)"}
+_RAW = {"renders raw HTML in a component (v-html, {@html})"}
+_PS = {"evaluates a string as code or bypasses execution policy (PowerShell)"}
+TYPED_ROWS = {
+    "tf": _TF, "vue": _RAW, "svelte": _RAW,
+    "html": _TEMPLATE, "htm": _TEMPLATE, "jinja": _TEMPLATE, "jinja2": _TEMPLATE, "j2": _TEMPLATE,
+    "erb": _TEMPLATE, "hbs": _TEMPLATE, "njk": _TEMPLATE,
+    "ejs": {"writes unescaped output in an EJS template"},
+    "ps1": _PS, "psm1": _PS,
+    "sql": {"changes a schema in a way that locks or rewrites a table (SQL DDL)"},
+}
+CONFIG_ONLY |= set().union(*TYPED_ROWS.values())   # typed rows never fire on ordinary code
 DOCKERFILE_NAME = re.compile(r"^(?:dockerfile|containerfile)(?:\..+)?$|\.(?:dockerfile|containerfile)$", re.I)
 
 
@@ -311,11 +369,16 @@ def rows_for(path: str) -> set[str] | None:
     name = path.rsplit("/", 1)[-1]
     if DOCKERFILE_NAME.search(name):
         return set(CONFIG_ROWS)
+    # The Dockerfile row reads Dockerfile-named files only: matched case-blind, its FROM line is
+    # Python's `from __future__` in a `.py.j2` template (15 of 17 .j2 hits, measured 2026-11-18).
+    config = set(CONFIG_ROWS) - {"writes a container image (Dockerfile)"}
     ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if ext in TYPED_ROWS:   # .j2 is a config file too: it keeps the config rows
+        return set(TYPED_ROWS[ext]) | (config if ext in CONFIG_EXT else set())
     if ext in CODE_EXT:
         return {w for w, _, _ in TRIGGERS} - CONFIG_ONLY
     if ext in CONFIG_EXT:
-        return set(CONFIG_ROWS)
+        return config
     return None
 
 
@@ -634,6 +697,43 @@ def self_test() -> int:
     check("SQL's FROM in Python never fires the Dockerfile row",
           "writes a container image (Dockerfile)" not in picks_for("app/db.py", sql))
     check("a file with no extension that is not a Dockerfile is skipped", rows_for("Makefile") is None)
+    # 2026-11-18 per-file-type rows: each fires on its construct, stays quiet on the near miss, and
+    # never on ordinary code that happens to contain the same words.
+    typed_cases = [
+        ("main.tf", 'ingress {\n  cidr_blocks = ["0.0.0.0/0"]\n}', 'ingress {\n  cidr_blocks = ["10.0.0.0/8"]\n}',
+         "opens network access in infrastructure code (Terraform)"),
+        ("iam.tf", 'actions = ["*"]', 'actions = ["s3:GetObject"]',
+         "grants wildcard IAM permissions in infrastructure code (Terraform)"),
+        ("s3.tf", 'block_public_acls = false', 'block_public_acls = true',
+         "makes storage public or unencrypted in infrastructure code (Terraform)"),
+        ("Comment.vue", '<div v-html="body"></div>', '<div v-text="body"></div>',
+         "renders raw HTML in a component (v-html, {@html})"),
+        ("Note.svelte", '{@html note}', '{note}', "renders raw HTML in a component (v-html, {@html})"),
+        ("page.html", '{{ bio|safe }}', '{{ bio }}', "turns template escaping off"),
+        ("show.html.erb", '<%== user.bio %>', '<%- if admin? %>', "turns template escaping off"),
+        ("bio.ejs", '<div><%- user.bio %></div>', "<%- include('header') %>",
+         "writes unescaped output in an EJS template"),
+        ("run.ps1", 'Invoke-Expression $cmd', 'Get-Content $path', 
+         "evaluates a string as code or bypasses execution policy (PowerShell)"),
+        ("0002_add.sql", 'CREATE INDEX users_email ON users (email);',
+         'CREATE INDEX CONCURRENTLY users_email ON users (email);\n-- CREATE INDEX old ON t (x);',
+         "changes a schema in a way that locks or rewrites a table (SQL DDL)"),
+    ]
+    for path, bad, good, row in typed_cases:
+        check("typed row fires on %s" % path, row in picks_for(path, bad))
+        check("typed row quiet on the near miss in %s" % path, row not in picks_for(path, good))
+    check("a .py.j2 template's `from __future__` never fires the Dockerfile row",
+          "writes a container image (Dockerfile)" not in picks_for("roles/x/templates/mod.py.j2", "from __future__ import annotations\n"))
+    check("Dockerfile.j2 still fires the Dockerfile row",
+          "writes a container image (Dockerfile)" in picks_for("templates/Dockerfile.j2", "FROM python:3.14-slim\n"))
+    check("ordinary code never fires a typed row",
+          not any(w in picks_for("app/models.py", 'Q = "CREATE INDEX i ON t (x)"  # v-html {@html x}')
+                  for w in set().union(*TYPED_ROWS.values())))
+    check("a typed file gets no ordinary code row",
+          picks_for("Comment.vue", "setTimeout(() => refresh(), 1000) // Permission granted") == [])
+    check("every typed row names a rules file that exists",
+          all(rules_file(sk, n) is not None for w, _, refs in TRIGGERS
+              if w in set().union(*TYPED_ROWS.values()) for sk, n, _ in refs))
     # ... and the same words still fire where they are code or a real session
     for what, text in (("builds a database query", 'q = r"SELECT name FROM users WHERE id = " + uid'),
                        ("builds a database query", 'q = r"SELECT a || b FROM t WHERE id = " + uid'),
