@@ -242,7 +242,7 @@ Why that model and threshold, and how the control set was built: the script's he
 ./scripts/check-invariants.sh        # same checks as CI
 git checkout -b <branch> && git commit && git push
 # (in a worktree instead if your installed skills link into this checkout: AGENTS.md step 1)
-# open the PR; every required check green → squash-merge
+# open the PR; every required check green → rebase-merge (gh pr merge <N> --rebase)
 ```
 
 **Branch naming:** avoid dots. The assistant's permission rule `Bash(git checkout *.*)`
@@ -250,7 +250,7 @@ git checkout -b <branch> && git commit && git push
 dots, so `release/v1.19.7` is denied while `chore/release-v1-19-7` works. This bites
 at almost every cut (it did again at v1.19.7); a human shell is unaffected.
 
-## 4. Tag and publish (after the squash-merge)
+## 4. Tag and publish (after the rebase-merge)
 
 **Never put the tag or the release in the same command as the merge.** On 2026-08-27 one
 chained command ran `gh pr merge` → checkout → invariants → `git tag` → `gh release create`.

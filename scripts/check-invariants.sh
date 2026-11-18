@@ -1571,7 +1571,7 @@ if [ "$v20" -ne 0 ]; then fail=1; else echo "    ok (router §AUDIT matches pin 
 # it, and the release notes exist only inside a file nobody clones for that.
 #
 # THE TOP ENTRY IS EXEMPT, and that is not a loophole -- the tag is pushed AFTER
-# the squash-merge (RELEASING.md section 4 forbids chaining them), so on a release
+# the rebase-merge (RELEASING.md section 4 forbids chaining them), so on a release
 # PR the current version legitimately has no tag yet. Everything BELOW it has had
 # its chance.
 #
