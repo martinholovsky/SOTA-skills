@@ -68,7 +68,7 @@ const safe = JSON.stringify(state).replace(/</g,'\\u003c').replace(/>/g,'\\u003e
   - **Nuxt** serializes the payload with **devalue** (handles `Date`/`Map`/`Set`/refs
     and escapes `</script>` + line separators). But devalue's *parse* side has had
     prototype-pollution CVEs (CVE-2025-57820, CVE-2026-30226) and DoS advisories — keep
-    it patched (≥ 5.9.2 as of 2026-09-26, [`rules/05`](05-nuxt.md)).
+    it patched (≥ 5.9.3 as of 2026-11-18, [`rules/05`](05-nuxt.md)).
   - **Next** embeds the RSC/flight payload via `self.__next_f.push([...])`.
   - **`serialize-javascript`** (used to embed functions/regex): CVE-2020-7660 (RCE,
     fixed 3.1.0), CVE-2024-11831 (XSS via unescaped URL objects, fixed 6.0.2),
@@ -160,7 +160,7 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
 
 - [ ] Render deterministic — no `Date`/random/`window`/locale branching outside effects/`onMounted`; stable `useId` (§1)?
 - [ ] Mismatch suppression scoped to individual unavoidable nodes, never blanket, never patched with injected user HTML (§1)?
-- [ ] SSR state serialized via the framework serializer or `<`-escaped JSON (no naked `JSON.stringify` into `<script>`); `serialize-javascript` ≥ 7.0.5; devalue ≥ 5.9.2 (§2)?
+- [ ] SSR state serialized via the framework serializer or `<`-escaped JSON (no naked `JSON.stringify` into `<script>`); `serialize-javascript` ≥ 7.0.5; devalue ≥ 5.9.3 (§2)?
 - [ ] No secret/token/full row in the serialized payload (`useState`/client props) (§2)? Confirm it on the running app too — capture HTML, flight and `_payload.json` responses and search them ([`rules/07`](07-security.md) Audit checklist, "Runtime: what the browser actually receives").
 - [ ] No module-level mutable state in server-reachable code (cross-request leak) (§3)?
 - [ ] Personalized responses `Cache-Control: private`/uncached; not relying on `Vary` at the CDN; framework patched against cache-poisoning CVEs (§4)?
