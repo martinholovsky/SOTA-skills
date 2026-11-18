@@ -563,7 +563,7 @@ setup_action_rules_hook() {
       '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
     log "sota action-rules hook already present — up to date"; return
   fi
-  ask_yn "Add a hook that pauses a hardware-key signing command once per session and names the rules for CI, registry and scan commands (~60 ms per command)?" y || return
+  ask_yn "Add a hook that stops the first signing command of each session (git commit -S, gpg --sign) until the agent has checked the PIN counter and told you every prompt; issued again, it runs. It also names the rules files for CI, image-push and scan commands (~60 ms per command)?" y || return
   tmp="$(mktemp)"; track "$tmp"
   if [ -e "$s" ]; then
     backup "$s"
