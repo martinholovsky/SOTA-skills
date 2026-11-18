@@ -221,6 +221,11 @@ ledger entry, with the command that produced the label: **verified** (reproduced
      The code itself is private to the reporter, so "followed correctly and fully" is verified
      only where you can reproduce the artifact (step 4: your own repos, a public diff). Elsewhere
      the verdicts are labelled **not reproducible here**, like any other claim you cannot re-run.
+   - **The hooks section is the outcome evidence for a hook** (check E3, since 2026-11-18). Every
+     note marked `followed no` or `partly`, and every signing refusal retried without a check, needs
+     the reporter's reason. A missing reason is unverified; a pattern of unfollowed notes on one
+     hook is a finding about that hook's text or trigger, not about the session. A row of zeros
+     says nothing about registration: a silent hook leaves no record.
 
 Then run the intake the way [ADOPTION-LOG.md](ADOPTION-LOG.md) records it:
 
