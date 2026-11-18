@@ -1490,9 +1490,13 @@ row reads code only: over 161,783 local config files, all rows together fired on
 always falsely. Since 2026-11-18 three more config rows fire on config files only: a GitHub
 Actions workflow (`runs-on:`), a Dockerfile (a `FROM` line; a Dockerfile has no extension and was
 not read at all before) and a Dependabot config (`package-ecosystem:`), so writing a workflow, an
-image or an update bot names the pipeline, container and cooldown rules. `.ps1`, `.vue`, `.svelte`,
-`.tf`, `.sql` and HTML templates are still not read: on 150 local files each, the code rows fired on
-about half, almost all falsely, so they wait for rows of their own. Test files and an agent's
+image or an update bot names the pipeline, container and cooldown rules. Terraform, Vue/Svelte,
+server templates (`.html`, `.jinja`, `.j2`, `.erb`, `.hbs`, `.njk`, `.ejs`), PowerShell and SQL get
+rows of their own instead of the code rows, which fired on about half of 150 such local files, almost
+all falsely: an open `0.0.0.0/0`, a wildcard IAM action, public or unencrypted storage, `v-html` or
+`{@html}`, a template escape hatch, `Invoke-Expression` or an execution-policy bypass, and DDL that
+locks a table. Each fires on its construct only (measured on local files first), and never on
+ordinary code. Test files and an agent's
 `scratchpad/` are skipped: what matters is the shipped code (scratchpad since 2026-10-23, after five
 false triggers there).
 

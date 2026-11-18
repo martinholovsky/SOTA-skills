@@ -72,7 +72,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Dependabot's 3-day default (read 2026-11-18). Looking for the same reachability gap found that the
   code-rules hook never read a Dockerfile and read workflows only through host-config rows; it now
   has workflow, Dockerfile and Dependabot rows that fire on config files only, each measured for
-  precision before it was added (self-test 106/106).
+  precision before it was added (self-test 106/106). The hook also gained per-file-type rows for
+  Terraform (open ingress, wildcard IAM, public or unencrypted storage), Vue/Svelte raw HTML, server
+  template escape hatches, EJS unescaped output, PowerShell `Invoke-Expression`/policy bypass and
+  table-locking SQL DDL; those files get only their own rows, never the code rows (self-test 131/131).
 - **Intake: a second CTI-platform field report (2026-11-16), every claim labelled.**
   `sota-databases` rules/08 §3: on SurrealDB 3.x no bound form keeps a `count() … GROUP ALL`
   on `IndexCountScan`. That includes the two-argument `type::record($table, $id)` the rule
