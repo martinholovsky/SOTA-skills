@@ -5,6 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Invariant 27 sees a deferral written as a bare `**deferred**` (ROADMAP 97).** Its converse flagged only
+  rows saying "revisit trigger", so a cell reading just `**deferred**` passed unseen; 8 had stood since
+  2026-10-23. Six now carry a marker and trigger, two are resolved (T0 and T4, done by sota-agent-evals
+  PR #1), and the check flags any cell opening with a bare `**deferred`. Negative-control probe 27d.
+
 ## [1.56.1] - 2026-11-19
 
 **Front door checked:** check 2f · verify-setup

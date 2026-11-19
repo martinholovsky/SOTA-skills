@@ -2109,8 +2109,12 @@ for l in marks:
 MARK = re.compile(r'(?:^|\|)\s*(?:-\s+)?\*\*DEFERRED\s+—')
 RESOLVED = re.compile(r'implemented|trigger fired|RESOLVED|was deferred|obviated|superseded|'
                       r'built (the same day|that day)', re.I)
+# A cell that OPENS with a bare `**deferred` (any case, e.g. "**deferred**" or "**deferred →
+# repo**") is a deferral too, and the line above never sees one that names no trigger: the shape
+# of the 2026-10-23 incident. ROADMAP 97 (2026-11-19): 8 such rows had stood unseen since then.
+BARE = re.compile(r'\|\s*\*\*deferred\b', re.I)
 for n, l in enumerate(t.splitlines(), 1):
-    if re.search(r'revisit trigger', l, re.I) and not MARK.search(l) and not RESOLVED.search(l):
+    if (re.search(r'revisit trigger', l, re.I) or BARE.search(l)) and not MARK.search(l) and not RESOLVED.search(l):
         bad = 1
         print("deferral without the **DEFERRED — marker at line %d (write the marker, or say it was resolved): %s"
               % (n, l.strip()[:90]))
