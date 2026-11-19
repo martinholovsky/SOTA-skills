@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The JVM, .NET and Swift secret-printing probes measured on a public corpus (ROADMAP 93).** Nine
+  pinned public repositories, item 92's harness unchanged, 180 blind labels. Precision / recall
+  within the population: .NET .73 / 1.00, Swift .66 / 1.00, JVM .44 / .02. The JVM probe misses
+  Kotlin `data class` properties declared one per line and reads Spring's `@Value` as Lombok's;
+  ROADMAP 102 carries the fix. Recorded in `docs/LANGUAGE-TIER.md`; no probe text changed.
 - **A release-time check that probes answer the same under an agent's `grep` (ROADMAP 95, option b).**
   `scripts/check-probes-under-agent-grep.py` runs every probe's fixtures with the real grep and
   under the shell snapshot's ugrep function (bash and zsh), and exits 1 on a changed verdict;

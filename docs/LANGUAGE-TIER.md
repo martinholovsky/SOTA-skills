@@ -540,6 +540,29 @@ proven equal, line for line, to the frozen candidate on every sampled file; one 
 (an exclusion matching the PATH `Tokens/` in `path:line:` output) was fixed by anchoring every
 exclusion on the content, and a fixture now pins it. *Corrected 2026-11-13: the JS/TS row's shipped probe drops the backtick from the frozen candidate's value class (it cannot sit inside a Markdown code span); scored after the hold-out, it gave the same counts on both sets.*
 
+**Measured 2026-11-19 (ROADMAP 93), on a public corpus, for the three languages the table above
+could not measure.** Nine public repositories, three per language, shallow-cloned and pinned (JVM:
+`elunez/eladmin` 646c58c, `bitwarden/android` 6542cdc, `keycloak/keycloak` 994ee7e; .NET:
+`bitwarden/server` b70d03d, `DuendeArchive/IdentityServer4` 1ce0d95, `dotnet/eShop` ab10e4c; Swift:
+`bitwarden/ios` 6d95aad, `mastodon/mastodon-ios` 2c165fc, `home-assistant/iOS` ac2896d). Item 92's
+harness, its labelling guide and its population regexes, unchanged; the probes as the skills ship
+them today (item 92's text plus `--null`/`-0`). One stratified sample per language, 30 probe hits
+and 30 misses, labelled blind against the same definition (one labeller per language, which saw
+neither the stratum nor the probe); UNSURE excluded. Recall is within the candidate population:
+
+| language | population · probe hits | precision (labelled hits) | recall within population | what the labels show |
+|---|---|---|---|---|
+| JVM | 3,652 · 48 | .44 (12 of 27) | **.02** (9 of 30 misses POS) | 8 of the 9 missed positives are Kotlin `data class` properties declared one per line: the probe needs `data class X(` and the secret name on one line. 6 of the 15 false hits are in two files that match the Lombok stage only through Spring's `@Value("${…}")` |
+| .NET | 378 · 47 | .73 (19 of 26) | 1.00 (0 of 30) | false hits are names, hashes and non-string types; the file-level stage gave 1 (a plain class beside a record) |
+| Swift | 1,136 · 243 | .66 (19 of 29) | 1.00 (0 of 30) | false hits are names (4), computed properties (2), a hash, a local, a lexer-sense token |
+
+The JVM probe is the one that fails: it misses nearly every Kotlin positive in this corpus, and
+the Lombok stage reads Spring's `@Value` as Lombok's (7 of its 12 hits came from such files).
+Fixing it is ROADMAP 102. Three of the reviewer's points still have no positive to test: the corpus
+holds no fully qualified `@lombok.Data`, no `@ToString.Exclude`, and no Lombok `char[]` secret field
+(0 each, counted directly), so they remain unmeasured, not refuted. ActiveSupport `as_json` is Ruby
+and outside this corpus. Samples are 60 lines per language: the numbers carry direction, not decimals.
+
 **Not changed, deliberately:** the top-10 lists of the four skills that lack a redacting-type line.
 The floor now carries the concept for every language, and the top-10 lists are curated per skill.
 
