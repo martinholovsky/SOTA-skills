@@ -63,7 +63,7 @@ import extract_items as E  # noqa: E402
 # row can ever show it. The fourth pass (2026-09-24) printed the substring behind every
 # present cell (`--explain all all`) and tightened what it found: `slog` in `syslog`,
 # `import` in `DllImport` and in `python3 -c "import json"`, `n+1` in `n=$((n+1))`, `clock`
-# in "a wall-clock bound", `null` in `/dev/null`, `lock` in lockfile/blocking/`uv.lock`,
+# in "a wall-clock bound", `null` in `/dev/null` and in grep's `--null` (2026-11-19: 87 NUL-separated probes inflated it, 8 to 20), `lock` in lockfile/blocking/`uv.lock`,
 # `safety` in rust's `// SAFETY:` (vulnerability scanning, a PINNED concept, was 9/9 on that
 # and on c/c++'s "safety-standard analysis"), `currency` in "concurrency", `lts` in
 # "results"/"defaults", `validat` in "iterator invalidation", `sanitiz` in `-fsanitize`, `rsa` in "traversal", `erb` in "verbose", `sanitiz` in "sanitizer", `leak` in
@@ -76,7 +76,7 @@ CONCEPTS = [
      r"error handl|wrap(ped|ping)? error|error type|swallow|empty catch|catch \(|"
      r"\brescue\b|on_error|error code|errors\.(is|as)|unwrap|expect\(|panic"),
     ("absence / null / in-band sentinel", "universal",
-     r"in-band|sentinel|(?<!/dev/)null|\bnil\b|\bnone\b|optional|nullable|"
+     r"in-band|sentinel|(?<!/dev/)(?<!--)null|\bnil\b|\bnone\b|optional|nullable|"
      r"(?<!head )(?<!tail )(?<![\w-])-1\b|magic (number|value)|truthiness"),
     ("public API surface & evolution", "universal",
      r"public (api|surface)|semver|breaking change|deprecat|__all__|\babi\b|"

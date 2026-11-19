@@ -464,7 +464,7 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
 - [ ] **Publishing with a long-lived token instead of trusted publishing (npm supply chain) (§5) —
       HIGH for a published package** —
       `grep -rnE 'NODE_AUTH_TOKEN|NPM_TOKEN|_authToken' .github/workflows/ .npmrc` (a token
-      where trusted publishing would do) ; `grep -rl 'npm publish' .github/workflows/ | xargs -r grep -L 'id-token: *write'` lists the
+      where trusted publishing would do) ; `grep --null -rl 'npm publish' .github/workflows/ | xargs -0 -r grep -L 'id-token: *write'` lists the
       publishing workflows with no `id-token: write` (npm's docs: trusted publishing needs it, and publishing
       that way from GitHub Actions or GitLab CI/CD generates provenance automatically, for a
       public package from a public repository)

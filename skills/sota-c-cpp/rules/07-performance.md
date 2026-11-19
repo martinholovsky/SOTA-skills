@@ -94,7 +94,7 @@ regression gates); this file is the C/C++ specifics.
 - [ ] **Benchmark hygiene (§1, §6) — verify release build + DoNotOptimize, and a distribution
       reported rather than one number** —
       `grep -rn 'chrono::' --include='*.cpp' . | grep -i bench` (prefer Google Benchmark);
-      `grep -rlE 'benchmark::State' --include='*.cpp' --include='*.cc' . | xargs -r grep -LE 'DoNotOptimize|ClobberMemory'`
+      `grep --null -rlE 'benchmark::State' --include='*.cpp' --include='*.cc' . | xargs -0 -r grep -LE 'DoNotOptimize|ClobberMemory'`
       (benchmark files using neither: the optimizer may delete the measured work)
 - [ ] **Optimization flags for release (§5)? A `-march=native` in a build shipped to CPUs you do
       not control is the finding** —

@@ -387,7 +387,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
 ## Audit checklist
 
 - [ ] **`ctypes` / `cffi` — HIGH where a size or pointer comes from input** (§11) —
-      `grep -rlE '^[[:space:]]*(import|from)[[:space:]]+(ctypes|cffi)' --include='*.py' . | xargs -r grep -L 'argtypes'`
+      `grep --null -rlE '^[[:space:]]*(import|from)[[:space:]]+(ctypes|cffi)' --include='*.py' . | xargs -0 -r grep -L 'argtypes'`
       (a file listed declares no `argtypes`, or is `cffi`: read its `cdef`; each foreign function declares `argtypes`/`restype`; lengths validated before the call)
 - [ ] **Code execution / deserialization [CRITICAL on untrusted data]** (§1) —
       `grep -rn "pickle.loads\|pickle.load\|read_pickle\|joblib.load\|marshal.loads\|dill" --include="*.py" src/`
@@ -416,7 +416,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
 - [ ] **SQL (§3) [CRITICAL]** —
       `grep -rn 'execute(f"\|execute(".*%s" *%\|execute(.*+ ' --include="*.py" src/` ;
       `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` (Django edges);
-      `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string) ; `grep -rlE '(^|[^A-Za-z_])I?LIKE[[:space:]]|\.i?like\(' --include='*.py' --exclude-dir=.venv . | xargs -r grep -LE 'escape[_=]|autoescape|ESCAPE|replace\(.[%_]'` (each file listed builds a `LIKE` and escapes nothing: a bound value escapes `%` and `_` first [MEDIUM]; a file that escapes one query and not another is not listed, so read the rest)
+      `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string) ; `grep --null -rlE '(^|[^A-Za-z_])I?LIKE[[:space:]]|\.i?like\(' --include='*.py' --exclude-dir=.venv . | xargs -0 -r grep -LE 'escape[_=]|autoescape|ESCAPE|replace\(.[%_]'` (each file listed builds a `LIKE` and escapes nothing: a bound value escapes `%` and `_` first [MEDIUM]; a file that escapes one query and not another is not listed, so read the rest)
 - [ ] **--- t-string consumers that render values raw (§3a) --- [CRITICAL where the value
       is request-derived and the output is SQL or a shell string; HIGH for HTML]** —
       `grep -rlE 'string\.templatelib' --include='*.py' . | while IFS= read -r f; do grep -nE '\.values?([^A-Za-z0-9_]|$)|str\((t|tmpl|template)\)' "$f" | grep -vE 'escape|quote|param|bind' | while IFS= read -r l; do printf '%s:%s\n' "$f" "$l"; done; done`
@@ -424,7 +424,7 @@ foreign function, and validate lengths before they cross. The class is [`sota-co
       searched; each hit is a value or a whole `Template` used with no escape or binding on that line;
       read it — a value escaped a line earlier is a false positive, `str(template)` is a repr)
 - [ ] **Path traversal & archives (§4, §5) [HIGH]** —
-      `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ; `grep -rlE 'zipfile' --include='*.py' --exclude-dir=.venv . | xargs -r grep -LE 'file_size'` (no uncompressed-size budget) ;
+      `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ; `grep --null -rlE 'zipfile' --include='*.py' --exclude-dir=.venv . | xargs -0 -r grep -LE 'file_size'` (no uncompressed-size budget) ;
       `grep -rn "request.*filename\|\.filename" --include="*.py" src/` (lists every upload filename use; each hit is read for containment, not a finding);
       `grep -rqE 'is_relative_to|realpath' --include='*.py' src/ || echo "no path-containment check in src/"` (no mitigation anywhere)
 - [ ] **Randomness & secrets (§6) [HIGH]** —

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Checklist probes no longer split paths on blanks (ROADMAP 94).** 87 probes piped a `grep -l/-L`
+  file list into a blank-splitting `xargs`: a path containing a space reached the next grep as two
+  words, "No such file" went to the discarded stderr, and that file read as clean. All 87 now use
+  `grep --null … | xargs -0`; 85 fixtures hold their hit under a directory with a space, each
+  shown to fail on the old text. `check-checklist-probes.py` fails the old shape as `SPLIT`
+  (differential: main's rules give 87, exit 1). The three `git ls-files … .split()` sites in
+  `check-invariants.sh` are `-z`. ROADMAP 101 opened for the 214 unanchored `grep -v` stages.
+  `gen-concept-matrix.py`'s "absence / null" concept no longer counts grep's `--null` flag as a
+  mention: the 87 conversions would have raised eight language cells (one from 8 to 20), and the
+  four item-92 probes had already inflated four cells by one, now corrected.
 - **Invariant 27 sees a deferral written as a bare `**deferred**` (ROADMAP 97).** Its converse flagged only
   rows saying "revisit trigger", so a cell reading just `**deferred**` passed unseen; 8 had stood since
   2026-10-23. Six now carry a marker and trigger, two are resolved (T0 and T4, done by sota-agent-evals

@@ -351,7 +351,7 @@ must name and how to count its hits are [`sota-devsecops` rules/16](../../sota-d
 - [ ] **Warning silenced project-wide, or a pragma with no scope (§2) — MEDIUM** —
       `grep -rnE '(-Wno-[a-z]|/wd[[:space:]]*[0-9])' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' . | grep -v 'set_source_files_properties'`
       (a global disable: move it to the sites, or to the one generated file) ;
-      `grep -rlE 'pragma[[:space:]]+(GCC|clang)[[:space:]]+diagnostic[[:space:]]+ignored' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' . | xargs -r grep -LE 'diagnostic[[:space:]]+push'`
+      `grep --null -rlE 'pragma[[:space:]]+(GCC|clang)[[:space:]]+diagnostic[[:space:]]+ignored' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' . | xargs -0 -r grep -LE 'diagnostic[[:space:]]+push'`
       (a file that ignores a warning with no `push`/`pop`: it stays off for the rest of the unit)
 - [ ] **Build configuration: empty build type, a keyword redefined for tests (§1a) — MEDIUM, HIGH
       when it builds the shipped artifact** —
@@ -395,7 +395,7 @@ must name and how to count its hits are [`sota-devsecops` rules/16](../../sota-d
       `case $rc in 0) ;; 1) echo "no sanitizer/fuzz job in CI config — HIGH for input-parsing code" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ; each fuzz target with an early-return guard has reach evidence (§4), not only `-print_final_stats`
 - [ ] **CBMC harnesses gated in two passes (§4a) — MEDIUM: a one-pass gate proves nothing** —
-      `grep -rlE '__CPROVER_(assume|assert)' --include='*.c' --include='*.cpp' . | xargs -r grep -L '__CPROVER_cover'` (harnesses with no `__CPROVER_cover`) ;
+      `grep --null -rlE '__CPROVER_(assume|assert)' --include='*.c' --include='*.cpp' . | xargs -0 -r grep -L '__CPROVER_cover'` (harnesses with no `__CPROVER_cover`) ;
       `grep -rnE 'cbmc[^|]*--no-unwinding-assertions' --include='*.yml' --include='*.yaml' --include='Makefile*' --include='*.sh' .`
       — `--no-unwinding-assertions` anywhere = MEDIUM; a `--cover` run (read each one by hand:
       the probe does not list them, since §4a's own script runs one) whose exit code is the
@@ -416,7 +416,7 @@ must name and how to count its hits are [`sota-devsecops` rules/16](../../sota-d
       components and reports clean
 - [ ] **Fetched sources verified, and dependencies scanned (§5) — HIGH for a shipped
       binary** —
-      `grep -rlE 'URL[[:space:]]+[^[:space:]]*(https?|ftp)://' --include='CMakeLists.txt' --include='*.cmake' . | xargs -r grep -L 'URL_HASH'`
+      `grep --null -rlE 'URL[[:space:]]+[^[:space:]]*(https?|ftp)://' --include='CMakeLists.txt' --include='*.cmake' . | xargs -0 -r grep -L 'URL_HASH'`
       (files with a `URL` download and no `URL_HASH` anywhere in them; a file with several
       downloads needs each read: CMake's ExternalProject docs call the hash "strongly
       recommended ... as it ensures the integrity of the downloaded content") ;
@@ -432,9 +432,9 @@ must name and how to count its hits are [`sota-devsecops` rules/16](../../sota-d
       handle with no transfer timeout** —
       `git diff "$BASE" -- vcpkg.json 'conanfile.*' | grep -E '^\+[^+]'` (each added or reformatted
       line needs a selection note: exact name, upstream, Scorecard) ;
-      `grep -rlE 'SSL_CTX_new' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -LE 'SSL_(CTX_)?set_verify'`
+      `grep --null -rlE 'SSL_CTX_new' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -0 -r grep -LE 'SSL_(CTX_)?set_verify'`
       (OpenSSL's default is `SSL_VERIFY_NONE`) ;
-      `grep -rlE 'curl_easy_init' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -LE 'CURLOPT_(TIMEOUT|LOW_SPEED_TIME)'`
+      `grep --null -rlE 'curl_easy_init' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -0 -r grep -LE 'CURLOPT_(TIMEOUT|LOW_SPEED_TIME)'`
       (libcurl's transfer timeout defaults to never; each hit is a file to read)
 - [ ] **Dependency code that runs at build time (configure/install) is inventoried and
       owner-reviewed (§5) — HIGH if these files have no CODEOWNERS entry, since a

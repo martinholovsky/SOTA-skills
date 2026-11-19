@@ -372,7 +372,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       (library left at, or copied to, a permissive default) ; the gofmt multi-line
       `CheckOrigin` (body's first line `return true`):
       `grep -rnA1 -E 'CheckOrigin:[[:space:]]*func\([^)]*\)[[:space:]]*bool[[:space:]]*\{[[:space:]]*$' --include='*.go' . | grep -E -- '-[0-9]+-[[:space:]]*return[[:space:]]+true[[:space:]]*$'` ;
-      `grep -rlE 'gin\.(Default|New)\(' --include='*.go' . | xargs -r grep -L 'SetTrustedProxies'`
+      `grep --null -rlE 'gin\.(Default|New)\(' --include='*.go' . | xargs -0 -r grep -L 'SetTrustedProxies'`
       (gin engine trusting every proxy). Single-line shapes only: a multi-line `cors.Options{`
       or `jwt.Parse(` call needs reading
 - [ ] **Fuzz targets prove reach (§3) — MEDIUM for a parser of untrusted bytes** — each

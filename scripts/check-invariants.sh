@@ -2770,7 +2770,7 @@ SPAN = re.compile(r'``(.+?)``|`([^`]+)`')
 PLACEHOLDER = re.compile(r'^\s*cmd\s')
 def hit(code):
     return BAD.search(code) or DEAD.search(code)
-files = [f for f in subprocess.run(["git","ls-files"],capture_output=True,text=True).stdout.split()
+files = [f for f in subprocess.run(["git","ls-files","-z"],capture_output=True,text=True).stdout.split("\0")
          if (f.startswith("skills/") or f.startswith("commands/")) and f.endswith(".md")]
 print("SCOPE %d" % len(files))
 bad = 0
@@ -2972,7 +2972,7 @@ for cl in ["CHANGELOG.md"] + sorted(str(p) for p in pathlib.Path("docs").glob("C
 cur = "v" + pathlib.Path("VERSION").read_text(encoding="utf-8").strip()
 PAT = re.compile(r'(?:\bat|\bin|\bsince|\buntil|\bshipped in|·)\s+(v1\.\d+\.\d+)')
 RECORDS = {"CHANGELOG.md", "docs/ADOPTION-LOG.md"}
-files = [f for f in subprocess.run(["git","ls-files"],capture_output=True,text=True).stdout.split()
+files = [f for f in subprocess.run(["git","ls-files","-z"],capture_output=True,text=True).stdout.split("\0")
          if f.endswith(".md") and f not in RECORDS and not f.startswith("docs/CHANGELOG-archive")]
 print("SCOPE %d" % len(files))
 bad = 0
@@ -3133,7 +3133,7 @@ v37=0
 if command -v python3 >/dev/null 2>&1; then
   in_out=$(python3 - <<'INPY'
 import re, shlex, subprocess, fnmatch, posixpath
-files = subprocess.check_output(["git", "ls-files", "skills/*.md"]).decode().split()
+files = [f for f in subprocess.check_output(["git", "ls-files", "-z", "skills/*.md"]).decode().split("\0") if f]
 TAKES = {"-e", "-f", "--include", "--exclude", "--exclude-dir", "-m", "-A", "-B", "-C", "--regexp"}
 cmds = unparsed = bad = 0
 for f in files:

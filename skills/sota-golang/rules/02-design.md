@@ -315,7 +315,7 @@ func UserFrom(ctx context.Context) (*User, bool) {
       `Z07`, `-0700` or `MST` element the result is UTC, so local input needs `ParseInLocation`)
 - [ ] **NaN/Infinity accepted from input; divide-by-zero and overflow at MinInt (§4) — MEDIUM,
       HIGH where the value gates money, limits or allocation** —
-      `grep -rlE 'strconv\.ParseFloat\(' --include='*.go' . | xargs grep -LE 'math\.Is(NaN|Inf)\('`
+      `grep --null -rlE 'strconv\.ParseFloat\(' --include='*.go' . | xargs -0 grep -LE 'math\.Is(NaN|Inf)\('`
       (files that parse floats and never test for non-finite values) ; then read integer
       `/`, `%`, negation and `time.Duration(n) *` sites on untrusted values for a guard
 - [ ] **Index or slice bound taken from a decoded field without a `len()` check (§4) — HIGH

@@ -208,7 +208,7 @@ from the lockfile and compare.
       `grep -rnE "use cache|cacheComponents|force-cache|revalidate|Cache-Control" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next .; find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "use cache|cacheComponents|force-cache|revalidate|Cache-Control" {} +`
 - [ ] **Credential used as a `use cache` key (HIGH)** (§4) — list files with the directive, then
       cached-function signatures that take a credential:
-      `grep -rlE "[\"']use cache" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next . | xargs grep -HniE 'async[^(]*\([^)]*(token|session|cookie|authorization|bearer|jwt)'`
+      `grep --null -rlE "[\"']use cache" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next . | xargs -0 grep -HniE 'async[^(]*\([^)]*(token|session|cookie|authorization|bearer|jwt)'`
       (single-line signatures only; a hit is a candidate — confirm the argument is the raw
       credential, not an id derived from it)
 - [ ] **Draft Mode enable handler: plain `!=` secret check or redirect to a request value (§3)
@@ -226,7 +226,7 @@ from the lockfile and compare.
       multi-line one by eye) — each `*`/`**` entry must be a zone only you can create hosts in
 - [ ] **Route Handlers that only feed your own Server Components (LOW, surface)** (§3) — server
       files fetching the app's own `/api/`:
-      `grep -rLE "^.use client" --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.next . | xargs grep -HnE 'fetch\(.(https?://(localhost|127\.0\.0\.1)[^/]*|\$\{[^}]*\})/api/'`
+      `grep --null -rLE "^.use client" --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.next . | xargs -0 grep -HnE 'fetch\(.(https?://(localhost|127\.0\.0\.1)[^/]*|\$\{[^}]*\})/api/'`
       — if no browser or third party calls that handler, replace it with a DAL call
 
 - [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182 (Next: GHSA-9qr9-h5gf-34mp), CVE-2025-29927, the 2026-09-08 and 2026-10-22 RCEs (Next ≥ 15.5.28 / ≥ 16.4.5 as of 2026-11-18) and CVE-2026-126187 (react-server-dom ≥ 19.0.9 / 19.1.10 / 19.2.9 / 19.3.1) (§5)?
