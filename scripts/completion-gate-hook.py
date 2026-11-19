@@ -41,6 +41,12 @@ MEASURED (sota-agent-evals v18, 2026-11-17, pre-registered, 20 tasks x 2 arms): 
 harm. Rule tests 25/32 -> 26/32, spec tests 20/20 in both, never-mentioned 2 -> 1, +6% cost. Five of
 six blocks produced a code change, one a reasoned refusal. It stays opt-in: no sentinel tasks were run.
 
+MEASURED AGAIN (sota-agent-evals v19, 2026-11-19, pre-registered, the same 20 tasks plus 4 sentinel tasks
+where not building is correct): INCONCLUSIVE, no harm on any guard. Rule tests 22/32 -> 24/32 (2 tasks up,
+0 down), spec 20/20 both, never-mentioned 3 -> 2, cost equal; two of three blocks converted. Sentinels:
+0 of 8 violations per arm, but the detector fired on none of the 16 sentinel runs, so they show no push
+without testing one. Across both runs no task ever went down. It stays opt-in.
+
 MODES: SOTA_COMPLETION_GATE = on (default) | shadow (record, never block) | off.
 RECORD: one JSON line per Stop under <git dir>/sota-completion-gate/<session hash>.jsonl (never
 in the worktree; nothing recorded outside a git repo). Every internal error allows and says so on

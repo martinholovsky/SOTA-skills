@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The completion gate measured again, with sentinel tasks (ROADMAP 96 closed).** sota-agent-evals v19,
+  pre-registered: rule tests 22/32 → 24/32 on the same 20 tasks (2 up, 0 down, p = 0.25), spec equal,
+  never-mentioned 3 → 2, cost equal; INCONCLUSIVE with no harm, as v18. Four new sentinel tasks, where
+  not building is correct, gave 0 violations per arm, but the gate's detector fired on none of them.
+  The gate stays opt-in; its header carries the result.
 - **A sixth slash command, `/sota-auto`: work the open items unattended.** For a run nobody will be
   there to answer. It takes `/sota-resume`'s inventory and classification, then decides what is
   reversible inside the repository and queues what is not: merges (unless the operator's own agent
