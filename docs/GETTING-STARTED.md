@@ -140,20 +140,21 @@ Your profile stays on your machine. Git ignores it, so it is never committed. Th
 then uses your choices as defaults when it builds, and flags code that departs from them
 when it audits.
 
-## The five slash commands
+## The six slash commands
 
-Slash commands are shortcuts you type into Claude Code. The library ships five. You do not
+Slash commands are shortcuts you type into Claude Code. The library ships six. You do not
 need any of them to get value from the library, but they help as your sessions get longer:
 
 | Type this | When | What happens |
 |---|---|---|
 | `/sota-resume` | Starting a session | Finds the open work in the project (TODOs, checklists, trackers) and offers to do it |
+| `/sota-auto` | Nobody will be around to answer, e.g. overnight | Works through the open items without asking, holds back anything it cannot undo (merges, releases, spending without a `budget=$N`), and ends with a report of every decision it made for you |
 | `/sota-audit` | Finishing a piece of work | Reviews the code against the library's checklists |
 | `/sota-close` | Ending a session | Corrects anything that turned out wrong, records what is unfinished, and updates the docs |
 | `/sota-report` | Ending a session | Writes a report, kept out of git, on where the library's guidance helped or fell short |
 | `/sota-deep-audit` | Big moments: a release, inheriting a codebase | A thorough, multi-agent review. It costs much more to run, so it is not for routine use |
 
-All five accept extra words, for example `/sota-close focus on the login changes`.
+All six accept extra words, for example `/sota-close focus on the login changes`.
 
 ## Common questions
 

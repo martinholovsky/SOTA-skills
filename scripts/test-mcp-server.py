@@ -149,7 +149,7 @@ r = run([INIT, {"jsonrpc": "2.0", "id": 1, "method": "prompts/list"},
          {"jsonrpc": "2.0", "id": 3, "method": "prompts/get", "params": {"name": "../sota-audit"}},
          {"jsonrpc": "2.0", "id": 4, "method": "prompts/get", "params": {"name": []}}])
 pnames = {p["name"] for p in r[1]["result"]["prompts"]}
-check("five command prompts", pnames == {"sota-audit", "sota-close", "sota-deep-audit", "sota-report", "sota-resume"}, str(pnames))
+check("six command prompts", pnames == {"sota-audit", "sota-auto", "sota-close", "sota-deep-audit", "sota-report", "sota-resume"}, str(pnames))
 body = r[2]["result"]["messages"][0]["content"]["text"]
 check("prompt body substitutes $ARGUMENTS", "STEER-TOKEN" in body and "$ARGUMENTS" not in body and not body.startswith("---"))
 check("unknown prompt rejected", r[3].get("error", {}).get("code") == -32602)
