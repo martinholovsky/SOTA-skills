@@ -236,6 +236,23 @@ later runs embed only changed blocks, from a git-ignored cache in the main check
 Why that model and threshold, and how the control set was built: the script's header, and
 [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) (2026-10-30 entry).
 
+## 2e. Checklist probes under an agent's `grep` (every release) — local, not gated
+
+An agent's shell can define `grep` as a function: Claude Code's shell snapshot runs ugrep with
+`-G --ignore-files --hidden -I`. CI proves each probe on its fixtures with the real grep only, so a
+probe an agent pastes can answer differently there with nothing to show it (12 did on 2026-11-13).
+Each cut runs every probe's fixtures three ways and lists any case whose verdict changes:
+
+```sh
+python3 scripts/check-probes-under-agent-grep.py     # ~2 minutes; --self-test checks the instrument
+```
+
+Exit 1 names the flipped probe: prefix its `grep` stages with `command`, or use a pattern both read
+alike, and re-key its fixture. Exit 2 means nothing was compared (no snapshot under
+`${CLAUDE_CONFIG_DIR:-~/.claude}/shell-snapshots/` defines `function grep`), so it is not a pass;
+run it from a machine with a recent Claude Code session. CI cannot run it: the function calls the
+agent's own binary. Cases that differ only by a leading `./` are counted apart and do not fail.
+
 ## 3. Land the PR
 
 ```sh
@@ -372,6 +389,8 @@ workflow from the Actions tab with that tag; an unchanged tree is a no-op.
       check left open until 2026-09-20
 - [ ] **Duplicate scan run (§2d)** — `scripts/semantic-dup-scan.py` exits 0, or every new group
       it printed now has a verdict in `docs/semantic-duplicates.json`. Exit 2 is not a pass
+- [ ] **Agent-grep check run (§2e)** — `scripts/check-probes-under-agent-grep.py` exits 0. Exit 2
+      (no snapshot) is not a pass
 - [ ] GitHub Settings social-preview re-upload — only if the PNG changed
 - [ ] **After the tag: the `plugin-dist` run is green (§4b)** — `gh run list --workflow
       plugin-dist.yml --limit 1`, then `git show origin/plugin-dist:SOURCE_COMMIT` equals the
