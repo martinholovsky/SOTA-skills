@@ -226,7 +226,7 @@ Run from repo root; verify each hit manually.
 - [ ] **Enqueue inside transactions — race, MEDIUM+ (§4)** —
       `grep -rn -B3 "perform_later\|perform_async" --include='*.rb' app/ lib/ 2>/dev/null | grep "transaction do" | head`
 - [ ] **Idempotency signals absent (manual: look for guards/upserts in job bodies) (§4)** —
-      `grep -rl "def perform" app/jobs/ | xargs -r grep -LE 'find_or_create_by|upsert|insert_all|unique_by|idempoten|with_lock|lock!'`
+      `grep --null -rl "def perform" app/jobs/ | xargs -0 -r grep -LE 'find_or_create_by|upsert|insert_all|unique_by|idempoten|with_lock|lock!'`
       (lists job files with none of these idempotency keywords, a keyword heuristic; also manual:
       retries bounded with backoff, a dead-letter queue someone monitors, alerts on
       queue depth and oldest-job age)

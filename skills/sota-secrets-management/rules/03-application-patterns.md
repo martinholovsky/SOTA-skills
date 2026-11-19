@@ -377,4 +377,4 @@ Every credential answers: who uses it, for which actions, on which resources, un
       (judgment: read the alert rules against this list).
 - [ ] **Local secrets-endpoint clients (§4)** send the runtime token, URL-encode the id, set
       a timeout and check status — Medium. Callers with no timeout at all:
-      `grep -rlE 'localhost:2773|127\.0\.0\.1:2773|port: *2773' . | xargs -r grep -LiE 'timeout'`
+      `grep --null -rlE 'localhost:2773|127\.0\.0\.1:2773|port: *2773' . | xargs -0 -r grep -LiE 'timeout'`

@@ -84,7 +84,10 @@ AGENTS.md                     # guidance for AI assistants working on the repo
   clean codebase. Inside a code span a backslash is literal: write `\[`, never `\\[` (two
   probes were dead for four weeks that way). A probe containing a backtick goes in a
   ``` ``double-backtick`` ``` span, or the span ends early. Running is not correctness: also
-  run it once on a fixture it should match.
+  run it once on a fixture it should match. **A probe that hands a file list to `xargs` NUL-separates
+  it** (`grep --null -rl … | xargs -0 …`): a blank-split path with a space reaches the next grep as
+  two words and reads as clean. The same job fails the blank-split shape as `SPLIT`, and the
+  fixture keeps its hit under a directory whose name holds a space, so it proves the separation.
 - **The two halves must correspond, in both directions.** Invariant 2 checks the
   checklist *exists*; nothing checks that it matches the guidance above it, and the
   mismatch is silent either way:

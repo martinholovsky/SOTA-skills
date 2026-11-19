@@ -409,7 +409,7 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
       `grep -rnE 'SSL_VERIFY_NONE|CURLOPT_SSL_VERIFY(PEER|HOST)[^;]*,[[:space:]]*0L?[[:space:]]*\)|SSL_get_verify_result' --include='*.c' --include='*.cpp' --include='*.h' .`
       (verification disabled, or a verify-result check that must be paired with a non-NULL
       `SSL_get1_peer_certificate()`, §4) ;
-      `grep -rlE 'SSL_get_verify_result[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -r grep -LE 'SSL_get1?_peer_certificate[[:space:]]*\('`
+      `grep --null -rlE 'SSL_get_verify_result[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -0 -r grep -LE 'SSL_get1?_peer_certificate[[:space:]]*\('`
       (a file that reads the verify result and never fetches the peer certificate: a peer
       that sent none passes as `X509_V_OK`)
 - [ ] **Format string — CRITICAL (user-controlled fmt)** (§3) —
@@ -446,13 +446,13 @@ a sandbox over running as root at all ([`sota-sandboxing`](../../sota-sandboxing
       (§3) — HIGH, CRITICAL where a caller-supplied URL reaches cloud metadata** —
       `grep -rnE 'CURLOPT_FOLLOWLOCATION[^;]*,[[:space:]]*(1L?|CURLFOLLOW_[A-Z]+)[[:space:]]*\)|inet_(aton|addr)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
       (redirects followed, or a lenient IP parser used for a check) ; then
-      `grep -rlE 'CURLOPT_(URL|CURLU)' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -L 'CURLOPT_OPENSOCKETFUNCTION'`
+      `grep --null -rlE 'CURLOPT_(URL|CURLU)' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -0 -r grep -L 'CURLOPT_OPENSOCKETFUNCTION'`
       (a file that sets a URL with no connect-time address check: read whether the destination
       is caller-influenced, and look for `CURLOPT_PROTOCOLS_STR` beside it)
 - [ ] **App-set cookie attribute defaults: Secure flag, HttpOnly, SameSite, Path (§3) — HIGH
       for a cookie that carries an identifier or preference used for authorisation, MEDIUM
       otherwise** —
-      `grep -rlE 'addCookie[[:space:]]*\(|set_cookie[[:space:]]*\(|"Set-Cookie"' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -r grep -LE 'setSecure[[:space:]]*\([[:space:]]*true|\.secure[[:space:]]*\([[:space:]]*\)|;[[:space:]]*Secure'`
+      `grep --null -rlE 'addCookie[[:space:]]*\(|set_cookie[[:space:]]*\(|"Set-Cookie"' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -0 -r grep -LE 'setSecure[[:space:]]*\([[:space:]]*true|\.secure[[:space:]]*\([[:space:]]*\)|;[[:space:]]*Secure'`
       (each listed file sets a cookie and never marks one `Secure`. Drogon defaults it off and Crow
       defaults every attribute off. In the files that do set it, read each cookie for `HttpOnly`,
       an explicit `SameSite`, `Path=/` and a `__Host-` name)

@@ -212,7 +212,7 @@ mutex. Build threaded code under TSan.
       (scaled to minor units by a truncating cast; use `llround`)
 - [ ] **NaN/infinity from parsed input, divide by zero, INT_MIN / -1 (§2) — HIGH on size,
       price or limit paths** —
-      `grep -rLE 'isfinite|isnan' --include='*.c' --include='*.cc' --include='*.cpp' . | xargs grep -nE '(strto(d|f|ld)|sto(d|f|ld)|atof)[[:space:]]*\(' /dev/null`
+      `grep --null -rLE 'isfinite|isnan' --include='*.c' --include='*.cc' --include='*.cpp' . | xargs -0 grep -nE '(strto(d|f|ld)|sto(d|f|ld)|atof)[[:space:]]*\(' /dev/null`
       (float parsed in a file that never checks finiteness); then review each `/` and `%`
       by an input-derived divisor for the zero and MIN/-1 guards
 - [ ] **Build with conversion warnings (§6): -Wconversion -Wsign-conversion -Wshadow -Wcast-align

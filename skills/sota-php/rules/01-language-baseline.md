@@ -398,7 +398,7 @@ Run from repo root; verify each hit manually.
 - [ ] **Blocking I/O on an event loop (§6) — HIGH in a long-running async runtime, not a
       finding in classic FPM** — `grep -rlE 'Revolt\\EventLoop|React\\EventLoop|Amp\\|new Fiber\(' --include='*.php' src/`
       lists the files that run on a loop;
-      `grep -rlE 'Revolt\\EventLoop|React\\EventLoop|Amp\\|new Fiber\(' --include='*.php' src/ | xargs grep -nHE 'new \\?PDO\(|mysqli_|file_get_contents\(|fopen\(|curl_exec\(|[^a-z_]sleep\('`
+      `grep --null -rlE 'Revolt\\EventLoop|React\\EventLoop|Amp\\|new Fiber\(' --include='*.php' src/ | xargs -0 grep -nHE 'new \\?PDO\(|mysqli_|file_get_contents\(|fopen\(|curl_exec\(|[^a-z_]sleep\('`
       greps each of them (each hit stalls every request the loop is serving: use the runtime's async client or
       move the call to a worker; zero files from the first command means no loop, so stop)
 

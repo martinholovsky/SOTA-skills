@@ -236,7 +236,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
 - [ ] **Wrapper pinned? LTS targeted?** (§1) —
       `ls mvnw gradlew 2>/dev/null | grep -q . || echo "no build wrapper (version not pinned)"`
       ;
-      `grep -rlE 'sourceCompatibility|targetCompatibility|[<]source[>]|[<]target[>]|maven\.compiler\.(source|target)' --include='pom.xml' --include='build.gradle*' . | xargs -r grep -LE '[<]release[>]|maven\.compiler\.release|options\.release|release\.set|toolchain|languageVersion'`
+      `grep --null -rlE 'sourceCompatibility|targetCompatibility|[<]source[>]|[<]target[>]|maven\.compiler\.(source|target)' --include='pom.xml' --include='build.gradle*' . | xargs -0 -r grep -LE '[<]release[>]|maven\.compiler\.release|options\.release|release\.set|toolchain|languageVersion'`
       (each file printed sets `sourceCompatibility`/`targetCompatibility` or a source/target with no
       `release` or toolchain: newer APIs compile against an older bytecode target)
 - [ ] **Dependency CVE scan + locking in CI?** (§2) —
@@ -248,7 +248,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       (unpinned ranges)
 - [ ] **Lock that leaves something unlocked (§2) — HIGH for the plugin classpath, MEDIUM
       otherwise** — with project locking on, is the buildscript locked and the mode strict?
-      `grep -rlE 'lockAllConfigurations|activateDependencyLocking' --include='*.gradle' --include='*.gradle.kts' . | xargs -r grep -LE 'LockMode\.STRICT'`
+      `grep --null -rlE 'lockAllConfigurations|activateDependencyLocking' --include='*.gradle' --include='*.gradle.kts' . | xargs -0 -r grep -LE 'LockMode\.STRICT'`
       (each file printed turns locking on and never sets `LockMode.STRICT`)
       ; `ls buildscript-gradle.lockfile */buildscript-gradle.lockfile 2>/dev/null` (none: plugins
       float) ; CI commands that regenerate the lock:

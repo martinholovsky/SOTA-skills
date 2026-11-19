@@ -434,8 +434,8 @@ Supply chain and vulnerability management (formerly section 8) moved to
 - [ ] **Directory listing from an unwrapped `FileServer` (§4) — MEDIUM** —
       `grep -rnE 'http\.FileServer(FS)?\((http\.(Dir|FS)|os\.DirFS)\(' --include='*.go' .`
 - [ ] **Unpinged pool; pool-level prepared statements (§2) — LOW, MEDIUM behind a
-      transaction-mode pooler** — `grep -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs grep -L 'Ping'` ;
-      `grep -rnE '(db|DB|pool)\.Prepare(Context)?\(' --include='*.go' .` ; pool limits left at the unlimited default (§2): `grep -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs -r grep -L 'SetMaxOpenConns'` — read each hit, the setter may live in another file
+      transaction-mode pooler** — `grep --null -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs -0 grep -L 'Ping'` ;
+      `grep -rnE '(db|DB|pool)\.Prepare(Context)?\(' --include='*.go' .` ; pool limits left at the unlimited default (§2): `grep --null -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs -0 -r grep -L 'SetMaxOpenConns'` — read each hit, the setter may live in another file
 - [ ] **SSRF: outbound request to a caller-chosen URL (§4c) — HIGH, CRITICAL on a cloud host
       with a metadata endpoint** —
       `grep -rnE '(Get|Post|Head|PostForm|NewRequest|NewRequestWithContext)\(.*(r\.(URL|Form|PostForm|Header)|FormValue\(|Query\(\))' --include='*.go' .`
@@ -445,7 +445,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
 - [ ] **Regex escaping, anchoring & engine (§1) — HIGH** —
       ``grep -rnE 'regexp2?\.(MustCompile|Compile|MatchString|Match)\((fmt\.Sprintf|.*["`] \+ [A-Za-z_]|.*[A-Za-z0-9_)] \+ ["`])' --include='*.go' . | grep -v QuoteMeta``
       (pattern built from data, not escaped) ; ``grep -rnE 'Compile\(`\^[^(`]*\|' --include='*.go' .``
-      (`^a|b$` — alternation escapes the anchors) ; `grep -rl 'regexp2\.' --include='*.go' . | xargs -r grep -L 'MatchTimeout'`
+      (`^a|b$` — alternation escapes the anchors) ; `grep --null -rl 'regexp2\.' --include='*.go' . | xargs -0 -r grep -L 'MatchTimeout'`
       (files on the backtracking engine that never set `MatchTimeout`)
 - [ ] **TLS (§6) — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
       `grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .` ;

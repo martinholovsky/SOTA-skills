@@ -19,6 +19,12 @@ placeholders replaced by an empty file and `2>/dev/null` removed so the error is
   rc 2 and stderr names a missing path       -> ran far enough to look for its target
   anything else                              -> BROKEN, printed with the file and the error
   rc 123 from `xargs` with no error but a missing path -> ran (see run_probe)
+  a `| xargs` stage without `-0`             -> SPLIT, a failure without running it: xargs splits
+                                               its input on blanks, so a path with a space reaches
+                                               the next grep as two words, "No such file" goes to
+                                               the stderr a probe discards, and that file reads as
+                                               clean. Write `grep --null -rl … | xargs -0 …`
+                                               (ROADMAP 94, 2026-11-19: 87 probes had this shape)
 WHAT IT SKIPS, counted and printed (skip rather than guess):
   - a span whose last word is a flag, or that has no pattern argument (`grep -r`, prose)
   - a placeholder with a space in it (`<runner provisioning: Dockerfiles>`), which is prose
@@ -43,6 +49,7 @@ SPAN = re.compile(r"(`+)(?!`)(.+?)(?<!`)\1(?!`)", re.S)
 PLACEHOLDER = re.compile(r"<[A-Za-z][\w.-]*>")
 PROSE_PLACEHOLDER = re.compile(r"<[^<>]*\s[^<>]*>")
 DEVNULL_ERR = re.compile(r"\s*2>\s*/dev/null")
+XARGS_STAGE = re.compile(r"\|\s*(xargs\b[^|;]*)")
 
 
 def strip_devnull_err(cmd):
@@ -212,8 +219,13 @@ def run_probe(span, workdir, env):
     return "BROKEN", f"rc={r.returncode} {(err.splitlines() or [''])[-1][:160]}"
 
 
+def splits_paths(span):
+    """True when some `| xargs` stage reads whitespace-separated input (no -0 / --null)."""
+    return any(not re.search(r"(?:^|\s)(?:-0|--null)(?:\s|$)", st) for st in XARGS_STAGE.findall(span))
+
+
 def scan(files):
-    counts = {"ran": 0, "missing path": 0, "skipped": 0, "BROKEN": 0}
+    counts = {"ran": 0, "missing path": 0, "skipped": 0, "BROKEN": 0, "SPLIT": 0}
     broken, skipped = [], {}
     with tempfile.TemporaryDirectory() as d:
         open(os.path.join(d, "empty"), "w").close()
@@ -227,6 +239,11 @@ def scan(files):
                     counts["skipped"] += 1
                     skipped[why] = skipped.get(why, 0) + 1
                     continue
+                if splits_paths(span):
+                    counts["SPLIT"] += 1
+                    broken.append((f, span, "SPLIT: a `| xargs` stage without -0 splits a path "
+                                            "containing a space; use grep --null … | xargs -0"))
+                    continue
                 verdict, detail = run_probe(span, d, env)
                 counts[verdict] += 1
                 if verdict == "BROKEN":
@@ -238,20 +255,21 @@ def main(argv):
     if argv:
         files = argv
     else:
-        r = subprocess.run(["git", "ls-files", "skills/*/rules/*.md"], capture_output=True,
+        r = subprocess.run(["git", "ls-files", "-z", "skills/*/rules/*.md"], capture_output=True,
                            text=True, check=False)
-        files = r.stdout.split()
+        files = [f for f in r.stdout.split("\0") if f]
     if not files:
         print("FAIL: no rules files found (an empty scope verifies nothing)")
         return 2
     counts, broken, skipped = scan(files)
-    total = counts["ran"] + counts["missing path"] + counts["BROKEN"]
+    total = counts["ran"] + counts["missing path"] + counts["BROKEN"] + counts["SPLIT"]
     grep_v = subprocess.run(["bash", "-c", "grep --version 2>&1 | head -1"], capture_output=True,
                             text=True, check=False).stdout.strip()
     print(f"grep: {grep_v}")
     print(f"{len(files)} rules files · {total} probes run · {counts['ran']} ran · "
           f"{counts['missing path']} looked for a missing path · {counts['skipped']} skipped "
-          f"({', '.join(f'{k}: {v}' for k, v in sorted(skipped.items()))}) · {counts['BROKEN']} BROKEN")
+          f"({', '.join(f'{k}: {v}' for k, v in sorted(skipped.items()))}) · {counts['BROKEN']} BROKEN"
+          f" · {counts['SPLIT']} SPLIT")
     if total == 0:
         print("FAIL: no probe ran (an empty scope verifies nothing)")
         return 2
@@ -271,7 +289,7 @@ def self_test():
             "- [ ] `grep -nE 'x' <file>` placeholder\n"
             "- [ ] ``grep -rn 'a`b' src/`` a backtick inside a double span\n"
             "- [ ] `grep -r` a flag mention\n"
-            "- [ ] `grep -rl x . | xargs grep -L y` xargs: BSD skips, GNU runs once and exits 123\n"
+            "- [ ] `grep --null -rl x . | xargs -0 grep -L y` xargs: BSD skips, GNU runs once, exits 123\n"
             "- [ ] `grep -rl x . | xargs rm` not read-only\n")
     bad = "x\n## Audit checklist\n- [ ] `grep -rnE 'export (\\\\[|\\\\{)' src/` doubled backslash\n"
     fails = 0
@@ -289,6 +307,17 @@ def self_test():
         if c["BROKEN"] != 1:
             fails += 1
             print(f"FAIL bad fixture not caught: counts={c}")
+        sp = os.path.join(d, "split.md")
+        with open(sp, "w", encoding="utf-8") as fh:
+            fh.write("x\n## Audit checklist\n- [ ] `grep -rl x . | xargs grep -L y` blank-split\n"
+                     "- [ ] `grep --null -rl x . | xargs -0 -r grep -l y | xargs grep -n z` 2nd stage\n")
+        c, _, _ = scan([sp])
+        if c["SPLIT"] != 2:
+            fails += 1
+            print(f"FAIL a | xargs stage without -0 was not flagged SPLIT: counts={c}")
+        if main([sp]) != 1:
+            fails += 1
+            print("FAIL main() did not exit 1 on a SPLIT probe")
         if main([b]) != 1:
             fails += 1
             print("FAIL main() did not exit 1 on the bad fixture")

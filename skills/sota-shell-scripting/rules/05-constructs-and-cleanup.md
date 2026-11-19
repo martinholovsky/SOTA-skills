@@ -398,7 +398,7 @@ reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces da
       `$$`-suffixed paths → HIGH (race), must be `mktemp`.
 - [ ] Cleanup (§3): every `mktemp` has a reachable `trap ... EXIT`; cleanup function is
       idempotent and preserves `$?`.
-- [ ] ERR trap without errtrace (§3): `grep -rlE "trap .*ERR" --include='*.sh' . | xargs grep -LE
+- [ ] ERR trap without errtrace (§3): `grep --null -rlE "trap .*ERR" --include='*.sh' . | xargs -0 grep -LE
       'set -[a-zA-Z]*E|set -o errtrace'` lists files whose ERR trap misses function failures
       (bash; in a `#!/bin/sh` script the ERR trap itself is the defect).
 - [ ] `grep -rn 'echo .*\$' --include='*.sh'` — variable data through `echo` (SC2028 area);
@@ -408,4 +408,4 @@ reproduces a Linux agent, and `docker run --rm debian sh -c '…'` reproduces da
 - [ ] Glob loops without nullglob/failglob or `[[ -e $f ]]` guard (§5); `for f in *` without the `./` prefix, so a file named `-rf` becomes an option.
 - [ ] A pasteable command with an unquoted glob as a flag value (`--include=*.sh`, `-name *.py`), or an absence never positive-controlled (§5) — zsh `NOMATCH` aborts it and it reads as no-match.
 - [ ] **A bare `**` in a bash script or a pasteable command** (§5a): `grep -nE "(^|[[:space:]=])[^[:space:]'\"]*[*][*](/|\$|[[:space:]])" <file>` — bash matches one level unless `shopt -s globstar` (bash ≥ 4.0) is set; use `find`, `git ls-files` or `grep -r --include`.
-- [ ] **Zero-padded numbers in arithmetic** (§5a): `grep -lE 'date \+%[mdHMSj]' <file> | xargs -r grep -LE '10#|#0[}]'` names a script that reads a zero-padded field and never strips (`${v#0}`) or bases (`10#$v`) one — file-level, so where it does, still check each value reaching `$(( ))`; it fails only on `08` and `09`.
+- [ ] **Zero-padded numbers in arithmetic** (§5a): `grep --null -lE 'date \+%[mdHMSj]' <file> | xargs -0 -r grep -LE '10#|#0[}]'` names a script that reads a zero-padded field and never strips (`${v#0}`) or bases (`10#$v`) one — file-level, so where it does, still check each value reaching `$(( ))`; it fails only on `08` and `09`.

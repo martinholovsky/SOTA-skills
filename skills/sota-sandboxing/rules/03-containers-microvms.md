@@ -434,7 +434,7 @@ is good for security but plan checkpointing/image capture for incident response
 - [ ] **Medium** — Runtime sensor alerts on device-node opens and metadata-endpoint (§4)
       attempts (R4.1). For Falco, find configs that load only the default ruleset,
       and overrides that switch the stock rules off:
-      `grep -rlE 'falco_rules\.yaml' . | xargs -r grep -LE 'falco-(incubating|sandbox)_rules'`
+      `grep --null -rlE 'falco_rules\.yaml' . | xargs -0 -r grep -LE 'falco-(incubating|sandbox)_rules'`
       and `grep -rnE -A2 -- '- rule: (Contact cloud metadata service from container|Contact EC2 Instance Metadata Service From Container|Privileged Container Device Access|Container Accessing GPU Device)' . | grep -E 'enabled:[[:space:]]*false'`
       — a hit on either is a finding unless custom rules cover both classes. Also read
       any `rules:` selection in `falco.yaml` (`- disable:` by `rule:` wildcard or `tag:`):

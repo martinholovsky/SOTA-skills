@@ -316,7 +316,7 @@ failed to hide, not what you exported:
       The first probe prints `file:line: NAME` for each constant with no `private_constant :NAME`
       anywhere in its file — file-scoped, so a same-named constant privatised in another class of
       that file reads as private; the counts below are a cross-check.** —
-      `grep -rlE '^[[:space:]]*[A-Z][A-Z0-9_]+ *=' lib/ | xargs -r awk '/private_constant/ { s = $0; while (match(s, /:[A-Z][A-Z0-9_]*/)) { p[FILENAME, substr(s, RSTART + 1, RLENGTH - 1)] = 1; s = substr(s, RSTART + RLENGTH) } } /^[ \t]*[A-Z][A-Z0-9_]+ *=/ { n = $0; sub(/^[ \t]*/, "", n); sub(/[ \t]*=.*/, "", n); c[FILENAME, n] = FILENAME ":" FNR ": " n } END { for (k in c) if (!(k in p)) print c[k] }'` ;
+      `grep --null -rlE '^[[:space:]]*[A-Z][A-Z0-9_]+ *=' lib/ | xargs -0 -r awk '/private_constant/ { s = $0; while (match(s, /:[A-Z][A-Z0-9_]*/)) { p[FILENAME, substr(s, RSTART + 1, RLENGTH - 1)] = 1; s = substr(s, RSTART + RLENGTH) } } /^[ \t]*[A-Z][A-Z0-9_]+ *=/ { n = $0; sub(/^[ \t]*/, "", n); sub(/[ \t]*=.*/, "", n); c[FILENAME, n] = FILENAME ":" FNR ": " n } END { for (k in c) if (!(k in p)) print c[k] }'` ;
       `grep -rncE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ ; grep -rnc 'private_constant' lib/` ;
       `grep -rn 'private_constant' lib/` (the mechanism, if used at all)
 - [ ] **Handles opened without the block form (§7) — MEDIUM, HIGH in a long-lived process** —
@@ -384,7 +384,7 @@ conversion and from hand-rolled returns:
 - [ ] **Monkey patches on core classes — MEDIUM in app code** (§7) —
       `grep -rnE "^\s*class (String|Array|Hash|Integer|Symbol|Object)\b" --include='*.rb' app/ lib/ 2>/dev/null`
 - [ ] **method_missing without respond_to_missing?** (§7) —
-      `grep -rln "def method_missing" --include='*.rb' . | xargs grep -L "respond_to_missing?" 2>/dev/null`
+      `grep --null -rln "def method_missing" --include='*.rb' . | xargs -0 grep -L "respond_to_missing?" 2>/dev/null`
 - [ ] **Wall-clock durations — LOW** (§7) —
       `grep -rnE 'Time\.now[[:space:]]*-[[:space:]]*[A-Za-z_@(]|(elapsed|duration)[a-z_]*[[:space:]]*=[[:space:]]*Time\.now' --include='*.rb' . | head`
 - [ ] **Typing posture (§6) — INFO** —
