@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **A sixth slash command, `/sota-auto`: work the open items unattended.** For a run nobody will be
+  there to answer. It takes `/sota-resume`'s inventory and classification, then decides what is
+  reversible inside the repository and queues what is not: merges (unless the operator's own agent
+  file grants them), force-pushes, deletes, releases, anything speaking for the operator outside the
+  repository, settings or credential changes, and any spend not covered by `budget=$N`. A security
+  decision is taken only when it is the more secure option by the library's rules and costs nothing
+  the operator owns. A refused command is retried only when its form was the problem; a refused
+  action is never re-encoded. It ends with `/sota-close` and a report of every decision taken on the
+  operator's behalf (security decisions first, each with how to reverse it), also saved under the
+  git directory. It cannot suppress Claude Code's permission prompts, and says so.
 - **The JVM, .NET and Swift secret-printing probes measured on a public corpus (ROADMAP 93).** Nine
   pinned public repositories, item 92's harness unchanged, 180 blind labels. Precision / recall
   within the population: .NET .73 / 1.00, Swift .66 / 1.00, JVM .44 / .02. The JVM probe misses

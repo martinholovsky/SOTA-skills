@@ -9655,6 +9655,7 @@
   "surfaces": {
     "commands": [
       "sota-audit",
+      "sota-auto",
       "sota-close",
       "sota-deep-audit",
       "sota-report",
@@ -9675,6 +9676,14 @@
       ],
       [
         "sota-audit",
+        "sota-resume"
+      ],
+      [
+        "sota-auto",
+        "sota-close"
+      ],
+      [
+        "sota-auto",
         "sota-resume"
       ],
       [
