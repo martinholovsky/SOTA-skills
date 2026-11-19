@@ -141,6 +141,11 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    2026-10-25) reaches no machine until `install.sh --routing` runs again. The router's absolute
    path is the one line left out of the comparison and checked on its own: PARTIAL when it no
    longer exists. N/A when no managed block exists; a hand-written directive is check 2's row.
+   2f. action-rules hook (Claude Code only): does `~/.claude/settings.json` register
+   `action-rules-hook.py` as a `PreToolUse` hook on Bash, or does the plugin? It ships on by default
+   (v1.56.0); a `git pull` on a clone install brings the script and registers nothing, so missing is
+   PARTIAL: a signing command then runs before anyone reads the PIN counter, and a CI file written
+   from the shell gets no pointer to its rules. INFO only when `SOTA_ACTION_RULES_HOOK=off`.
 3. Stack profile: does `~/.claude/profiles/*.md` exist and resolve (not a
    dangling symlink)? Report the filename only, not its contents.
 

@@ -570,6 +570,55 @@ else
     "not installed — below the default setup. What it costs: in measured agent runs without it, agents applied the security rules a task needed in 0.698 of rule tests, against 0.906 with it; the misses cluster in SSRF checks, CSV formula guards, login throttling, rate limits and session lifetimes (sota-agent-evals v7/v10; clusters from its cases-v4 calibration; in-sample; on fresh tasks, v14, it plus the router table moved nothing). Having it costs about +68% per agent run. Add it: $cr_fix"
 fi
 
+# --- 2f. the action-rules hook (ROADMAP 98, on by default since v1.56.0) ---
+# A PreToolUse hook on Bash keyed on what a command does: it refuses a signing command once per
+# session, so the person's PIN attempts are planned, and names the owning rules for a CI file
+# written from the shell, an image push and a vulnerability scan. The plugin registers it;
+# install.sh --routing offers it, and a `git pull` on a clone install registers nothing, so a
+# missing registration is PARTIAL (ROADMAP 100). INFO only when turned off on purpose
+# (SOTA_ACTION_RULES_HOOK=off). A registration whose script is gone runs nothing, so PARTIAL too.
+ar_have=""; ar_stale=""
+for s in "$CLAUDE_HOME/settings.json" "$CLAUDE_HOME/settings.local.json"; do
+  [ -f "$s" ] || continue
+  grep -q 'action-rules-hook\.py' "$s" 2>/dev/null || continue
+  ar_have="${ar_have:+$ar_have, }$(basename "$s")"
+  while IFS= read -r ar_p; do
+    [ -n "$ar_p" ] && [ ! -f "$ar_p" ] && ar_stale="${ar_stale:+$ar_stale, }$ar_p"
+  done <<EOF_AR
+$(grep -o '/[^"]*action-rules-hook\.py' "$s" 2>/dev/null || true)
+EOF_AR
+done
+ar_oldplugin=0
+if [ -d "$CLAUDE_HOME/plugins" ]; then
+  if find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*hooks/hooks.json' \
+       -exec grep -l 'action-rules-hook\.py' {} + 2>/dev/null | grep -q .; then
+    ar_have="${ar_have:+$ar_have, }the plugin"
+  elif find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*sota-skills*/hooks/hooks.json' 2>/dev/null | grep -q .; then
+    ar_oldplugin=1   # the sota-skills plugin is here, in a version from before the hook (< v1.56.0)
+  fi
+fi
+case "${SOTA_ACTION_RULES_HOOK:-on}" in
+  off | OFF | 0 | false | FALSE | no) ar_off=1 ;;
+  *) ar_off=0 ;;
+esac
+if [ -n "$ar_stale" ]; then
+  row "PARTIAL" "2f. action-rules hook" \
+    "registered but the script is gone: $ar_stale — re-run scripts/install.sh --routing from your current checkout"
+elif [ -n "$ar_have" ] && [ "$ar_off" -eq 1 ]; then
+  row "INFO" "2f. action-rules hook" "registered ($ar_have) but turned off by SOTA_ACTION_RULES_HOOK=${SOTA_ACTION_RULES_HOOK}"
+elif [ -n "$ar_have" ] && ! command -v python3 >/dev/null 2>&1; then
+  row "PARTIAL" "2f. action-rules hook" "registered ($ar_have) but python3 is not on PATH — it cannot run"
+elif [ -n "$ar_have" ]; then
+  row "PASS" "2f. action-rules hook" "registered by: $ar_have"
+elif [ "$ar_off" -eq 1 ]; then
+  row "INFO" "2f. action-rules hook" "not installed, and turned off by SOTA_ACTION_RULES_HOOK=${SOTA_ACTION_RULES_HOOK} — a deliberate opt-out"
+else
+  ar_fix="scripts/install.sh --routing"
+  [ "$ar_oldplugin" -eq 1 ] && ar_fix="$ar_fix, or update the plugin (your copy predates the hook): /plugin update sota-skills@sota-skills"
+  row "PARTIAL" "2f. action-rules hook" \
+    "not installed — below the default setup. Without it a signing command (git commit -S, git tag -s, gpg --sign) runs before anyone has read the PIN counter or named the prompts, so a failed or timed-out attempt spends one of the person's tries, and a CI file written from the shell or an image push gets no pointer to its rules. Add it: $ar_fix"
+fi
+
 # --- 2d. the zsh EQUALS hook (on by default since 2026-10-21) ---
 # A PreToolUse hook on Bash that refuses a command zsh would cut short: an unquoted `=word`
 # expands to a command path or aborts the whole list (`echo =====` -> "==== not found", and
