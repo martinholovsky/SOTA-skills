@@ -5,8 +5,14 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.56.1] - 2026-11-19
 
+**Front door checked:** check 2f · verify-setup
+
+- **Negative-control probe 14b rewrites the cut's own version claims.** It stood in for a release by
+  overwriting `VERSION` and only then read `VERSION` as the release whose claims to rewrite, so a cut
+  that wrote "since v<its own version>" failed the probe (found at this cut, locally, before push).
+  It now reads the real version first and rewrites claims about both.
 - **`verify-setup.sh` checks that the action-rules hook is registered (check 2f, ROADMAP 100).** The hook
   ships on by default since v1.56.0, but a clone install registers it only through
   `install.sh --routing`, and a `git pull` registers nothing. The check reads PASS when settings or the
@@ -12150,6 +12156,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.56.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.56.1
 [1.56.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.56.0
 [1.55.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.2
 [1.55.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.1

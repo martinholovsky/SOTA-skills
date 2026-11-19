@@ -1543,7 +1543,7 @@ real, including all 7 signed commits of the incident; the CI note caught all 11 
 incident's pipeline templates and would appear in 36 of 94 sessions; scans in 5; image pushes in
 none (re-run it: `scripts/action-rules-hook.py --replay`). It costs about 60 ms per Bash call and
 needs `python3`. Turn it off with `SOTA_ACTION_RULES_HOOK=off`; `install.sh --routing` offers it to
-clone installs. Whether it changes outcomes is not measured yet: the replay shows where it fires.
+clone installs, and `scripts/verify-setup.sh` reports whether it is registered (check 2f, since v1.56.1). Whether it changes outcomes is not measured yet: the replay shows where it fires.
 
 The plugin does **not** touch your global config or status line. To match the clone experience,
 opt in to any of these; the scripts ship *with* the plugin, under its cache dir:
