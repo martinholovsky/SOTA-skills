@@ -493,6 +493,20 @@ MUT
 git add docs/ADOPTION-LOG.md >/dev/null 2>&1 )
 probe 27b "a live deferral without the marker" "without the **DEFERRED — marker"
 
+# 27d — a bare "**deferred**" cell with NO trigger text at all: 27b's row says "revisit trigger",
+# so it passes through the old converse; this row does not, and only the BARE pattern (ROADMAP 97,
+# 2026-11-19) catches it. Eight such rows had stood unseen in the ledger since 2026-10-23.
+( cd "$WT" && python3 - <<'MUT'
+import re, pathlib
+p = pathlib.Path("docs/ADOPTION-LOG.md")
+row = "| CUDA-like probe | an incidental sentence | **deferred** |"
+assert not re.search(r'(?:^|\|)\s*(?:-\s+)?\*\*DEFERRED\s+—', row), "fixture drift: the row carries the marker"
+assert not re.search(r'revisit trigger', row, re.I), "fixture drift: the old converse would catch this row"
+p.write_text(p.read_text().rstrip("\n") + "\n" + row + "\n")
+MUT
+git add docs/ADOPTION-LOG.md >/dev/null 2>&1 )
+probe 27d "a bare **deferred** cell with no trigger and no marker" "without the **DEFERRED — marker"
+
 # 28 — an eval case set that never says how its cases were chosen. This is
 # prompt-independence.jsonl's own defect replayed: the rule lived in the results doc
 # and not in the case file, in the set backing the +0.509 headline.
