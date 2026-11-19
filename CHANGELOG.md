@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **A release-time check that probes answer the same under an agent's `grep` (ROADMAP 95, option b).**
+  `scripts/check-probes-under-agent-grep.py` runs every probe's fixtures with the real grep and
+  under the shell snapshot's ugrep function (bash and zsh), and exits 1 on a changed verdict;
+  RELEASING §2e and the pre-tag checklist. First run: 1,918 probes, 3,836 cases, 0 flips (80 differ
+  only by a leading `./`, counted apart). Controls: a self-test watched failing on a mutant, and the
+  13 probes carrying `command grep` all flip once `command` is removed.
 - **Checklist probes no longer split paths on blanks (ROADMAP 94).** 87 probes piped a `grep -l/-L`
   file list into a blank-splitting `xargs`: a path containing a space reached the next grep as two
   words, "No such file" went to the discarded stderr, and that file read as clean. All 87 now use
