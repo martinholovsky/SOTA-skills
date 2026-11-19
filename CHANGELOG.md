@@ -5,6 +5,14 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **`verify-setup.sh` checks that the action-rules hook is registered (check 2f, ROADMAP 100).** The hook
+  ships on by default since v1.56.0, but a clone install registers it only through
+  `install.sh --routing`, and a `git pull` registers nothing. The check reads PASS when settings or the
+  plugin register it, PARTIAL when it is missing or its script is gone, and INFO when it is turned off on
+  purpose; three negative-control probes, and `docs/VERIFY-SETUP.md` 2f.
+
 ## [1.56.0] - 2026-11-19
 
 **Front door checked:** action-rules-hook · completion-gate-hook · Hooks that acted · replay-language
