@@ -848,6 +848,11 @@ cut = '1.97.0'                     # untagged by construction, and inside 34's `
 assert subprocess.run(['git', 'rev-parse', '-q', '--verify', 'refs/tags/v' + cut],
                       capture_output=True).returncode != 0, \
     'v%s must not be a tag, or this fixture stops exercising the rewrite' % cut
+# The REAL current version, read before VERSION is overwritten: the cut's own claims about it
+# ("since v<current>") must be rewritten below as well. Reading VERSION only after writing `cut`
+# rewrote claims about 1.97.0 alone, so the v1.56.1 cut's "since v1.56.1" failed this probe
+# (2026-11-19); v1.56.0 escaped only because its README sentence began with a capital "Since".
+real_release = open('VERSION').read().strip()
 open('VERSION', 'w').write(cut + '\n')
 with open('docs/MAINTENANCE.md', 'a', encoding='utf-8') as fh:
     fh.write('\nNegative-control fixture line, rewritten by probe 14b (\u00b7 v%s).\n' % cut)
@@ -862,7 +867,8 @@ with open('docs/MAINTENANCE.md', 'a', encoding='utf-8') as fh:
 # removes them from 34's scope entirely (its pattern matches only `v1.*`).
 old_release = open('VERSION').read().strip()
 open('VERSION', 'w').write(ver + '\n')
-claim = re.compile(r'((?:\bat|\bin|\bsince|\buntil|\bshipped in|·)\s+)v' + re.escape(old_release) + r'\b')
+claim = re.compile(r'((?:\bat|\bin|\bsince|\buntil|\bshipped in|·)\s+)v(?:' + re.escape(old_release)
+                   + '|' + re.escape(real_release) + r')\b')
 for f in subprocess.run(['git', 'ls-files', '*.md'],
                         capture_output=True, text=True).stdout.split():
     try:
