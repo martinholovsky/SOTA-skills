@@ -131,7 +131,7 @@ Audit for these (Sculley et al.) — each is real ML debt:
       training data? Is model behaviour monitored after any input change (CACE)?**
 - [ ] **Unused features kept in infra; data sources unversioned (§7) — LOW (Rules of ML: drop them)**
 - [ ] **Trust-domain separation (§6) — HIGH** — trackers started without auth:
-      `grep -rnE 'mlflow (server|ui)' . | grep -v 'app-name'`
+      `grep -rnE 'mlflow (server|ui)' . | grep -vE '^[^:]+:[0-9]+:.*(app-name)'`
       (each hit is a tracker with no authentication); manual: do training jobs hold
       credentials that can write serving or feature-store namespaces they don't own?
 - [ ] **Control planes reachable outside their trust domain (§6) — HIGH** — Ray dashboards,

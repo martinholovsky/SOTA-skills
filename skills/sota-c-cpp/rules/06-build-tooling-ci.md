@@ -349,7 +349,7 @@ must name and how to count its hits are [`sota-devsecops` rules/16](../../sota-d
       ; `grep -rn 'suppressions' --include='CMakeLists.txt' --include='*.cmake' .` (cppcheck
       --suppressions-list=)
 - [ ] **Warning silenced project-wide, or a pragma with no scope (§2) — MEDIUM** —
-      `grep -rnE '(-Wno-[a-z]|/wd[[:space:]]*[0-9])' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' . | grep -v 'set_source_files_properties'`
+      `grep -rnE '(-Wno-[a-z]|/wd[[:space:]]*[0-9])' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' . | grep -vE '^[^:]+:[0-9]+:.*(set_source_files_properties)'`
       (a global disable: move it to the sites, or to the one generated file) ;
       `grep --null -rlE 'pragma[[:space:]]+(GCC|clang)[[:space:]]+diagnostic[[:space:]]+ignored' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' . | xargs -0 -r grep -LE 'diagnostic[[:space:]]+push'`
       (a file that ignores a warning with no `push`/`pop`: it stays off for the rest of the unit)
@@ -420,7 +420,7 @@ must name and how to count its hits are [`sota-devsecops` rules/16](../../sota-d
       (files with a `URL` download and no `URL_HASH` anywhere in them; a file with several
       downloads needs each read: CMake's ExternalProject docs call the hash "strongly
       recommended ... as it ensures the integrity of the downloaded content") ;
-      `grep -rnE 'GIT_TAG[[:space:]]+[^[:space:])]+' --include='CMakeLists.txt' --include='*.cmake' . | grep -vE 'GIT_TAG[[:space:]]+[0-9a-f]{40}'`
+      `grep -rnE 'GIT_TAG[[:space:]]+[^[:space:])]+' --include='CMakeLists.txt' --include='*.cmake' . | grep -vE '^[^:]+:[0-9]+:.*(GIT_TAG[[:space:]]+[0-9a-f]{40})'`
       (a branch or tag, not a commit: the same docs prefer the hash, and an omitted `GIT_TAG`
       defaults to `master`) ;
       `grep -rqiE 'osv-scanner|dependency-track|grype|trivy|cyclonedx|spdx' --include='*.yml' --include='*.yaml' . || echo 'no CVE-scan or SBOM step in CI config'`

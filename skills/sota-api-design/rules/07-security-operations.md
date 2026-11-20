@@ -441,7 +441,7 @@ OWASP: WSTG-APIT-01; Django REST Framework cheat sheet.
 - [ ] Audit events (§6) include token issuance with scopes, logout (hashed session ref), file deletion, imports, system-object create/delete, UGC processing, sequence and fraud signals, and WebSocket open/close, decisions and violations; high-risk operations log intent before and outcome after — MEDIUM.
 - [ ] Log records carry app ID, hostname, protocol/port, method/URI, region and client port (§6); nodes time-synced with drift alerting; anti-bot decisions logged with their signals and hashed fingerprints — MEDIUM.
 - [ ] **Shared audit store (§7) — HIGH**: reads tenant-filtered, cross-tenant reads need a platform-auditor permission no tenant admin has, and writes cannot target another tenant's stream. Audit-table reads with no tenant term on the line (a lead to read):
-      `grep -rniE 'from[[:space:]]+audit_?(log|events?|trail)' . | grep -viE 'tenant'`
+      `grep -rniE 'from[[:space:]]+audit_?(log|events?|trail)' . | grep -viE '^[^:]+:[0-9]+:.*(tenant)'`
 - [ ] Gateway does coarse route/scope authz as a first layer only; service-level and object checks still present (§8) — MEDIUM.
 - [ ] **Plaintext on API hosts (§8) — MEDIUM**: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://<api-host>/<path>` returns an error or refuses the connection; a 301/302/307/308 to `https://` is the finding.
 - [ ] JSON responses a browser can reach (§8) carry `default-src 'none'; frame-ancestors 'none'`, empty-allowlist `Permissions-Policy`, `Referrer-Policy: no-referrer`, `nosniff` (check with `curl -sI`) — LOW.

@@ -261,16 +261,16 @@ Run from repo root; verify each hit manually.
       `grep -rn 'php://filter' --include='*.php' src/` ;
       `php -r 'echo ini_get("allow_url_include"), "|", ini_get("allow_url_fopen"), PHP_EOL;'`
 - [ ] **Deserialization (§3) — CRITICAL on external data** —
-      `grep -rn 'unserialize(' --include='*.php' src/ | grep -v 'allowed_classes'` ;
+      `grep -rn 'unserialize(' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(allowed_classes)'` ;
       `grep -rnE 'unserialize\s*\(\s*\$_(GET|POST|COOKIE|REQUEST)' --include='*.php' src/` ;
-      `grep -rn 'getMetadata(' --include='*.php' src/ | grep -v 'allowed_classes'` ;
+      `grep -rn 'getMetadata(' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(allowed_classes)'` ;
       `grep -rnE '__(destruct|wakeup|toString)' --include='*.php' src/` (gadget surface
       inventory: lists every magic method; each hit is read, not a finding) ; a `serialize()`d blob from a cache or queue is verified with `hash_equals()`
       against a `hash_hmac()` before it is deserialized
 - [ ] **XML (§4) — HIGH** — `grep -rnE 'LIBXML_(NOENT|DTDLOAD)' --include='*.php' src/` ;
       `grep -rn 'libxml_disable_entity_loader' --include='*.php' src/` (deprecated; check PHP<8
       paths) ;
-      `grep -rnE -e '->loadXML[[:space:]]*\(|simplexml_load_(string|file)[[:space:]]*\(|XMLReader::(open|XML)' --include='*.php' --exclude-dir=vendor . | grep -v 'LIBXML_NONET'`
+      `grep -rnE -e '->loadXML[[:space:]]*\(|simplexml_load_(string|file)[[:space:]]*\(|XMLReader::(open|XML)' --include='*.php' --exclude-dir=vendor . | grep -vE '^[^:]+:[0-9]+:.*(LIBXML_NONET)'`
       (each untrusted parse: `LIBXML_NONET`, and the document rejected when `doctype` is not null)
 - [ ] **SSRF — user URLs fetched server-side** (§5) —
       `grep -rnE '(curl_init|file_get_contents|fopen|getimagesize|get_headers|get_meta_tags|->request|->get)[[:space:]]*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`

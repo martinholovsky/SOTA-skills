@@ -88,6 +88,11 @@ AGENTS.md                     # guidance for AI assistants working on the repo
   it** (`grep --null -rl … | xargs -0 …`): a blank-split path with a space reaches the next grep as
   two words and reads as clean. The same job fails the blank-split shape as `SPLIT`, and the
   fixture keeps its hit under a directory whose name holds a space, so it proves the separation.
+  **A `| grep -v` that excludes by line content anchors past the `path:line:` prefix**
+  (`grep -vE '^[^:]+:[0-9]+:.*(PAT)'`): unanchored, a hit inside `sanitizers/` or `record/` is dropped
+  because its *path* matches, and the item reads clean (ROADMAP 101 anchored 142). Leave it unanchored
+  only when the path match is the point (`grep -v test`), and give the fixture a hit under a
+  directory the pattern matches.
 - **The two halves must correspond, in both directions.** Invariant 2 checks the
   checklist *exists*; nothing checks that it matches the guidance above it, and the
   mismatch is silent either way:

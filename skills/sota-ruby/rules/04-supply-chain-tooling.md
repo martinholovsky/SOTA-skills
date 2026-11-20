@@ -312,7 +312,7 @@ Run from repo root; verify each hit manually.
 - [ ] **Installs outside the frozen lock (§1) — HIGH in CI, an image build or a deploy, MEDIUM on a developer-only path ([`sota-devsecops` rules/03](../../sota-devsecops/rules/03-dependencies.md) §3.1)** — first command prints each
       unversioned `gem install` in CI or images; second prints each `bundle update`
       (a finding where frozen is off) —
-      `grep -rnE 'gem[[:space:]]+install[[:space:]]' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' . | grep -vE -e '(-v|--version)[[:space:]=]'` ;
+      `grep -rnE 'gem[[:space:]]+install[[:space:]]' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' . | grep -vE -e '^[^:]+:[0-9]+:.*((-v|--version)[[:space:]=])'` ;
       `grep -rnE 'bundle[[:space:]]+update' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' .`
 - [ ] **Code that runs at install time (Bundler plugins, extconf builds) without an
       owner — MEDIUM (HIGH if the install step holds secrets)** (§1.1) — each hit is a Bundler
@@ -353,7 +353,7 @@ Run from repo root; verify each hit manually.
       LOW; MEDIUM for a `Security/*` or `Lint/*` cop** — first command prints each directive
       lacking a ` -- ` reason; second prints nothing when reasons are not enforced; third
       prints each cop disabled outright (exempt specs by `Exclude` instead) —
-      `grep -rnE '#[[:space:]]*rubocop:(disable|todo)[[:space:]]' --include='*.rb' . | grep -v ' -- '` ;
+      `grep -rnE '#[[:space:]]*rubocop:(disable|todo)[[:space:]]' --include='*.rb' . | grep -vE '^[^:]+:[0-9]+:.*( -- )'` ;
       `grep -n 'AllowWithReason' .rubocop.yml` ;
       `awk '/^[A-Z][A-Za-z]*\/[A-Za-z]+:/ { c = $1 } /^[[:space:]]+Enabled:[[:space:]]*false/ { print FILENAME ": " c " disabled" }' .rubocop.yml`
 - [ ] **Static security analysis: Brakeman gates CI, every ignore is explained (§5)** —
@@ -364,7 +364,7 @@ Run from repo root; verify each hit manually.
       `rubocop:disable Security` hits in the lint-posture item. Secret scanning on every push and
       once over full history is probed in [`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §2
 - [ ] **CI gates incomplete, or CI Ruby version drift (§7) — MEDIUM for a missing audit gate** —
-      `grep -rn "ruby-version\|ruby:" .github/workflows/ 2>/dev/null | grep -v -F ".ruby-version" | head` ;
+      `grep -rn "ruby-version\|ruby:" .github/workflows/ 2>/dev/null | grep -vE '^[^:]+:[0-9]+:.*(\.ruby-version)' | head` ;
       `grep -rhoE 'BUNDLE_FROZEN|frozen true|rubocop|standardrb|bundle(-| )audit|brakeman|rspec|rails test|rake test|srb tc|steep check' --include='*.yml' --include='*.yaml' . | sort -u`
       (which of the five gates CI runs: frozen install, lint, `bundle audit`/Brakeman, tests, and
       `srb tc`/`steep check` on typed projects; a missing one is the finding)

@@ -309,7 +309,7 @@ The expand/contract and lock-timeout doctrines are identical; mechanics differ:
       `ALGORITHM=INSTANT` (no `LOCK` clause) or `ALGORITHM=INPLACE, LOCK=NONE` —
       so a would-be rewrite fails loudly; one DDL statement per migration file;
       hot-table rewrites go through gh-ost/pt-online-schema-change (§6). Probe:
-      `grep -rniE --include='*.sql' 'ALTER[[:space:]]+TABLE' . | grep -viE 'ALGORITHM[[:space:]]*='`
+      `grep -rniE --include='*.sql' 'ALTER[[:space:]]+TABLE' . | grep -viE '^[^:]+:[0-9]+:.*(ALGORITHM[[:space:]]*=)'`
       (an ALTER whose ALGORITHM clause sits on a later line hits too — read it).
 - [ ] ORM-generated migrations reviewed as SQL, not as DSL; Rails projects run
       `strong_migrations`; Django CONCURRENTLY migrations set `atomic = False`;

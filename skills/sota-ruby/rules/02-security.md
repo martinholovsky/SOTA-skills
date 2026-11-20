@@ -291,7 +291,7 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rn "Sequel.lit" --include='*.rb' . | grep '#{'` ;
       `grep -rnE '\.(exec|query)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .` ;
       `grep -rnE '\.(order|group|select|pluck|joins|having)\([[:space:]]*params' --include='*.rb' .` (input as a column or
-      direction with no interpolation: needs the allowlist lookup) ; `grep -rn 'LIKE' --include='*.rb' . | grep -v 'sanitize_sql_like'`
+      direction with no interpolation: needs the allowlist lookup) ; `grep -rn 'LIKE' --include='*.rb' . | grep -vE '^[^:]+:[0-9]+:.*(sanitize_sql_like)'`
       (read each: the bound `LIKE` term passes through `sanitize_sql_like`, or `%`/`_` are wildcards)
 - [ ] **Command injection (§2) — CRITICAL with external input** —
       `grep -rnE '(system|exec|spawn)\s*\(\s*["'"'"'][^,)]*#\{' --include='*.rb' .` ;
@@ -323,7 +323,7 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rnE '\beval\s*[( ]|(instance|class|module)_eval\s*\(?\s*["'"'"'%]|\$SAFE\b' --include='*.rb' .`
       (paren-less `class_eval "..."` too; a `$SAFE` hit is a sandbox that no longer exists) ; `grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .` ;
       `grep -rn "constantize\|const_get" --include='*.rb' . | grep -iE "params|input|name"` ;
-      `grep -rn "ERB.new" --include='*.rb' . | grep -vE "erb\"|template_file|File.read\(\s*Rails"`
+      `grep -rn "ERB.new" --include='*.rb' . | grep -vE "^[^:]+:[0-9]+:.*(erb\"|template_file|File.read\(\s*Rails)"`
       ; `grep -rnE '\b(method|instance_method)\(\s*params|&params\[[^]]*\]\.to_sym' --include='*.rb' .`
       (method-object reflection) ;
       `grep -rnE 'render\s*\(?\s*inline:' --include='*.rb' .` (template RCE if the string is
@@ -339,7 +339,7 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       (pattern injection / ReDoS) (§5)** — every hit is a dynamic pattern; confirm each
       interpolated piece is escaped, the input is length-capped, and a
       `Regexp::TimeoutError` rejects —
-      `grep -rnE 'Regexp\.(new|compile)\( *([^"'"'"'/ ]|"[^"]*#\{)|%r.*#\{|(=~|match\??\(|scan\(|sub!?\(|split\() */[^/]*#\{' --include='*.rb' . | grep -v 'Regexp\.escape\|Regexp\.union'`
+      `grep -rnE 'Regexp\.(new|compile)\( *([^"'"'"'/ ]|"[^"]*#\{)|%r.*#\{|(=~|match\??\(|scan\(|sub!?\(|split\() */[^/]*#\{' --include='*.rb' . | grep -vE '^[^:]+:[0-9]+:.*(Regexp\.escape|Regexp\.union)'`
 - [ ] **Randomness / comparison — HIGH for security uses** —
       `grep -rnE '\brand\(|Random\.(rand|new)|\.sample\b' --include='*.rb' . | grep -viE "spec|test|seed"`
       ; `grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .` ;

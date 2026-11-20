@@ -351,4 +351,4 @@ them follows the same pipeline:
       likeness or voice generation gated on a recorded authorisation (§8).
       **High** for unconsented likeness. Probe — media generation with no
       provenance step on the line:
-      `grep -rnE 'images\.generate\(|generate_images\(|audio\.speech\.create\(' . | grep -viE 'c2pa|credential|watermark'`
+      `grep -rnE 'images\.generate\(|generate_images\(|audio\.speech\.create\(' . | grep -viE '^[^:]+:[0-9]+:.*(c2pa|credential|watermark)'`

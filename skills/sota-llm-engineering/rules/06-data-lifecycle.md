@@ -242,7 +242,7 @@ stores: [sota-code-security rules/07](../../sota-code-security/rules/07-data-exp
 - [ ] Sensitive fields masked, tokenised or dropped before embedding and
       indexing; tenant-trained embedding models never shared across tenants
       (§5). **High**. Probe — embedding calls with no redaction step on the
-      line: `grep -rnE 'embed(_documents|_query|_content|Content|dings\.create)?\(' . | grep -vE 'redact|mask|scrub'`
+      line: `grep -rnE 'embed(_documents|_query|_content|Content|dings\.create)?\(' . | grep -vE '^[^:]+:[0-9]+:.*(redact|mask|scrub)'`
 - [ ] Calls to external AI services leave through one scanning egress
       gateway with an audit trail; coding-assistant uploads logged or
       proxied; regulated code only on self-hosted/air-gapped models with an

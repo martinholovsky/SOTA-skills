@@ -216,7 +216,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       `find . -name 'spotbugs-exclude*.xml' -o -name 'checkstyle-suppressions.xml' 2>/dev/null`
 - [ ] **Suppressions with no reason, blanket forms, and the stale-suppression report switched
       off (§3) — MEDIUM** —
-      `grep -rn '@SuppressFBWarnings' --include='*.java' --include='*.kt' . | grep -v 'justification'`
+      `grep -rn '@SuppressFBWarnings' --include='*.java' --include='*.kt' . | grep -vE '^[^:]+:[0-9]+:.*(justification)'`
       (no reason; a multi-line annotation needs a read) ;
       `grep -rnE '//[[:space:]]*NOPMD[[:space:]]*$' --include='*.java' --include='*.kt' .` (whole line
       ignored, no reason) ;

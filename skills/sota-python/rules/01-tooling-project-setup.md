@@ -347,14 +347,14 @@ Run from repo root. Severity guidance in brackets.
       [MEDIUM]; a committed `pylock.toml`/`pylock.<name>.toml` is a hashed lock too (§1), not a
       missing one: `find . -name 'pylock*.toml' -not -path '*/.venv/*'`); `ls setup.py setup.cfg Pipfile poetry.lock 2>/dev/null` (legacy/competing
       toolchains [LOW-MEDIUM]);
-      `grep -rn "pip install" --include="*.yml" --include="*.yaml" --include="Dockerfile*" . | grep -v "uv pip"`
+      `grep -rn "pip install" --include="*.yml" --include="*.yaml" --include="Dockerfile*" . | grep -vE '^[^:]+:[0-9]+:.*(uv pip)'`
       (unlocked installs in CI/images [MEDIUM]); `grep -n "sudo pip" -r .` (system-interpreter
       installs [HIGH])
 - [ ] **Competing lint/format config [MEDIUM — consolidate to ruff]** (§3) —
       `ls .flake8 .isort.cfg .pylintrc 2>/dev/null; grep -n "\[tool.black\]\|\[tool.isort\]" pyproject.toml`
 - [ ] **Type checking actually enforced?** (§4) —
       `command grep -qE 'mypy|pyright|basedpyright| ty ' .github/workflows/*.yml .gitlab-ci.yml || echo "no type checker in CI"`
-      ; `grep -rnE 'type: ignore([[:space:]]|$)' --include="*.py" src/ | grep -v "ignore\["`
+      ; `grep -rnE 'type: ignore([[:space:]]|$)' --include="*.py" src/ | grep -vE '^[^:]+:[0-9]+:.*(ignore\[)'`
       (bare ignores [LOW])
 - [ ] **Suppressions that never expire (§3, §4) [LOW each, MEDIUM in aggregate or where they silence `S` rules]** —
       `uvx ruff check --extend-select PGH003,PGH004,RUF100 --statistics .` (bare and stale

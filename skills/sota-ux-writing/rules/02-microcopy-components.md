@@ -163,7 +163,7 @@ Buttons: [Cancel]  [Delete project]         Buttons: [No]  [Yes]
 - [ ] Relative timestamps switch to absolute past ~1 week and expose exact
       time; truncation never hides the distinguishing segment (§7)
 - [ ] Link text stands alone:
-      `grep -rniE '>(click here|here|learn more)</a>' --include='*.html' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --exclude-dir=node_modules . | grep -viE 'aria-label(ledby)?='`
+      `grep -rniE '>(click here|here|learn more)</a>' --include='*.html' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --exclude-dir=node_modules . | grep -viE '^[^:]+:[0-9]+:.*(aria-label(ledby)?=)'`
       returns nothing unlabeled — a "Learn more" passes only with an
       accessible extension naming its object; links name the action, not a
       vague noun (§8)

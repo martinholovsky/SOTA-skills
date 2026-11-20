@@ -269,7 +269,7 @@ corrupts the next run.
 - [ ] Run `actionlint` (embeds ShellCheck) and `zizmor` on workflows; `hadolint` on
       Dockerfiles (DL4006 pipefail-in-RUN, SC-rules inside RUN). `run: "…"` double-quoted YAML, or a `run:` body beyond ~30
       lines not moved to a committed script (§1) → LOW.
-- [ ] Entrypoints (§2): `grep -rn --include='*entrypoint*' -e '"\$@"' . | grep -v 'exec '` — final command lacking
+- [ ] Entrypoints (§2): `grep -rn --include='*entrypoint*' -e '"\$@"' . | grep -vE '^[^:]+:[0-9]+:.*(exec )'` — final command lacking
       `exec` → HIGH (signal loss); `su -c`/`sudo` for privilege drop instead of
       gosu/su-exec/USER → HIGH. A resident entrypoint with no `trap … TERM` forwarding and re-`wait`; a forking app with no init (`--init`, tini).
 - [ ] `#!/usr/bin/env bash` entrypoint with alpine/busybox base image in Dockerfile (§2) → HIGH.

@@ -388,12 +388,12 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `grep -rnE 'AllowAnyOrigin|AllowAnyHeader|AllowAnyMethod' --include='*.cs' .` ;
       `grep -rn 'FallbackPolicy' --include='*.cs' . || echo "no FallbackPolicy: an endpoint without [Authorize] is public"` ;
       `grep -rLE '\[Authorize|\[AllowAnonymous' --include='*Controller.cs' .` (no attribute at all) ;
-      `grep -rnE '\.Map(Get|Post|Put|Delete|Patch|Methods|Group)?\(' --include='*.cs' . | grep -vE 'RequireAuthorization|AllowAnonymous'`
+      `grep -rnE '\.Map(Get|Post|Put|Delete|Patch|Methods|Group)?\(' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(RequireAuthorization|AllowAnonymous)'`
       (minimal APIs; a `.RequireAuthorization()` on a later line or the parent `MapGroup` is unseen) ;
       `grep -rnE 'PersistKeysTo|ProtectKeysWith' --include='*.cs' . || echo "key ring not shared or protected (§5) — MEDIUM with >1 instance"`
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'` ; `grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .` ;
-      `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head` ; non-constant-time MAC/token compare (§5, MEDIUM; HIGH on webhook/HMAC verification or an API key a caller can submit repeatedly — [`sota-code-security` rules/22](../../sota-code-security/rules/22-constant-time-comparison.md)): `grep -rniE '(hmac|signature|digest|token|mac)[A-Za-z0-9_]*([[:space:]]*[!=]=|\.(SequenceEqual|Equals)\()|([!=]=[[:space:]]*|(SequenceEqual|Equals)\([^;]*)[A-Za-z0-9_.]*(hmac|signature|digest|token|mac)' --include='*.cs' . | grep -viE '[!=]=[[:space:]]*null|null[[:space:]]*[!=]=|FixedTimeEquals'`
+      `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head` ; non-constant-time MAC/token compare (§5, MEDIUM; HIGH on webhook/HMAC verification or an API key a caller can submit repeatedly — [`sota-code-security` rules/22](../../sota-code-security/rules/22-constant-time-comparison.md)): `grep -rniE '(hmac|signature|digest|token|mac)[A-Za-z0-9_]*([[:space:]]*[!=]=|\.(SequenceEqual|Equals)\()|([!=]=[[:space:]]*|(SequenceEqual|Equals)\([^;]*)[A-Za-z0-9_.]*(hmac|signature|digest|token|mac)' --include='*.cs' . | grep -viE '^[^:]+:[0-9]+:.*([!=]=[[:space:]]*null|null[[:space:]]*[!=]=|FixedTimeEquals)'`
 - [ ] **Secrets in config/source — HIGH** (§4) —
       `grep -rniE '"?(password|pwd|secret|apikey|api_key|connectionstrings?)"?[[:space:]]*[=:]' --include='appsettings*.json' --include='*.cs' .` (a `"ConnectionStrings":` hit: read the section for `Password=`/`Pwd=`)
 - [ ] **Data Protection package patch level — HIGH** (§5) —
@@ -413,10 +413,10 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       later argument discards the root: for each call fed by a request, is the result passed
       through `GetFullPath` and prefix-checked against root + separator?)
 - [ ] **Regex without a timeout on untrusted input — MEDIUM (ReDoS)** (§3) —
-      `grep -rnE 'new Regex\(|Regex\.(IsMatch|Match|Matches|Replace|Split)\(|\[GeneratedRegex\(' --include='*.cs' . | grep -vE 'TimeSpan|matchTimeout|NonBacktracking'` ; `grep -rn 'REGEX_DEFAULT_MATCH_TIMEOUT' . || echo "no REGEX_DEFAULT_MATCH_TIMEOUT: every Regex on input needs its own timeout"` (a hit sets a process-wide default and
+      `grep -rnE 'new Regex\(|Regex\.(IsMatch|Match|Matches|Replace|Split)\(|\[GeneratedRegex\(' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(TimeSpan|matchTimeout|NonBacktracking)'` ; `grep -rn 'REGEX_DEFAULT_MATCH_TIMEOUT' . || echo "no REGEX_DEFAULT_MATCH_TIMEOUT: every Regex on input needs its own timeout"` (a hit sets a process-wide default and
       covers the rest); a pattern built from input without `Regex.Escape` is HIGH
 - [ ] **Validation regex with a `$` anchor instead of `\z` — MEDIUM** (§3) —
-      `grep -rnE '[^@(,[:space:]$]\$"' --include='*.cs' . | grep -v 'RegularExpression('`
+      `grep -rnE '[^@(,[:space:]$]\$"' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(RegularExpression\()'`
       (a literal ending in `$` also accepts a trailing `\n`, so for a validator the fix is `\A…\z`;
       `[RegularExpression]` requires the match to span the whole value, so it is excluded). Also read
       every `IsMatch` used as an allowlist for a missing anchor or `RegexOptions.Multiline`
@@ -467,7 +467,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `AddValue` for a secret)
 - [ ] **Cookie attribute scope: `Domain` set, or a `__Host-` cookie that breaks the prefix rules
       — MEDIUM** (§7) —
-      `grep -rnE '(^|[^[:alnum:]_])Domain[[:space:]]*=[[:space:]]*[^=[:space:]]|"__Host-' --include='*.cs' . | grep -vE '(^|[^[:alnum:]_])Domain[[:space:]]*=[[:space:]]*null'`
+      `grep -rnE '(^|[^[:alnum:]_])Domain[[:space:]]*=[[:space:]]*[^=[:space:]]|"__Host-' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*((^|[^[:alnum:]_])Domain[[:space:]]*=[[:space:]]*null)'`
       (confirm a `Domain` hit is a cookie and must really span subdomains; every `__Host-`
       cookie needs `Secure = true`, `Path = "/"` and no `Domain`, since ASP.NET Core emits it either way)
 - [ ] **`ASPNETCORE_ENVIRONMENT=Development` or `UseDeveloperExceptionPage` in production — HIGH** (§7) —
@@ -489,7 +489,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `grep -rnE 'ObjectDataProvider|ResourceDictionary|System\.Management\.Automation|Microsoft\.PowerShell\.SDK|AssemblyInstaller|WorkflowDesigner|BindingSource|DataViewManager|<UseWPF>true|<UseWindowsForms>true' --include='*.cs' --include='*.csproj' --include='*.xaml' .`
       (a finding only in a service that deserializes type-named input)
 - [ ] **Untrusted JSON on lenient `System.Text.Json` defaults — MEDIUM** (§2) —
-      `grep -rnE '(JsonSerializer\.Deserialize|ReadFromJson|GetFromJson)(Async)?(<[^>]*>)?\(' --include='*.cs' . | grep -vE 'Strict|AllowDuplicateProperties|UnmappedMemberHandling'` (named options instance: read how it was built)
+      `grep -rnE '(JsonSerializer\.Deserialize|ReadFromJson|GetFromJson)(Async)?(<[^>]*>)?\(' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(Strict|AllowDuplicateProperties|UnmappedMemberHandling)'` (named options instance: read how it was built)
 - [ ] **Spoofable client IP via forwarded headers — HIGH where the IP gates access, limits or audit** (§7) —
       `grep -rnE '(KnownProxies|KnownIPNetworks|KnownNetworks)\.Clear\(\)|ForwardLimit[[:space:]]*=[[:space:]]*null|FORWARDEDHEADERS_ENABLED[^=:]{0,3}[=:[:space:]][[:space:]]*"?[Tt]rue' --include='*.cs' --include='*.json' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='*.env' --include='.env*' .`
       (a `Clear()` needs the real proxy `Add`ed after it; read each `UseForwardedHeaders` setup for its proxy list and `AllowedHosts`)

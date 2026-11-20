@@ -121,7 +121,7 @@ Split out of [rules/05](05-security.md) (formerly sections 9 and 10) on 2026-09-
       name that does not match its intended project]** —
       `git diff origin/main -- uv.lock | grep -E '^\+name = '` (each new package: vetted on
       PyPI JSON, deps.dev and Scorecard?) ;
-      `grep -rnE 'requests\.(get|post|put|patch|delete|head|request)\(|CORS\([A-Za-z_][A-Za-z0-9_.]*\)' --include='*.py' src/ | grep -v 'timeout='`
+      `grep -rnE 'requests\.(get|post|put|patch|delete|head|request)\(|CORS\([A-Za-z_][A-Za-z0-9_.]*\)' --include='*.py' src/ | grep -vE '^[^:]+:[0-9]+:.*(timeout=)'`
       (a `requests` call with no timeout, or `CORS(app)` allowing every origin; a call split
       over lines needs a read, and `Session` methods are not matched)
 - [ ] **--- Code that runs at install time: sdist builds and `.pth` (§1) --- [HIGH where the
