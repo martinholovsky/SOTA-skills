@@ -420,7 +420,7 @@ label it as such.
       write, tested only by a roundtrip and never through that reader or its schema → Medium (§6.1).
 - [ ] Encryption wrappers with a round-trip test that is **never run concurrently**
       (§6.1)? List crypto test files with no concurrency:
-      `grep -rliE '(en|de)crypt' tests | xargs -r grep -LE 'ThreadPool|concurrent\.futures|asyncio\.gather|go func|t\.Parallel|Promise\.all|parallelStream|Executors|thread::(spawn|scope)|rayon'`
+      `grep --null -rliE '(en|de)crypt' tests | xargs -0 -r grep -LE 'ThreadPool|concurrent\.futures|asyncio\.gather|go func|t\.Parallel|Promise\.all|parallelStream|Executors|thread::(spawn|scope)|rayon'`
       A listed file for a wrapper that manages its own nonces → Medium.
 - [ ] Are properties real or tautological (§6.1)? Read each: does the expected side
       re-derive via the SUT's own logic → Critical (verifies nothing).

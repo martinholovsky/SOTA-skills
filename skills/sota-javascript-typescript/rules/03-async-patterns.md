@@ -251,7 +251,7 @@ return promise;
       the happy path only leaks on the first throw (MEDIUM; a pooled client never released is
       lost to the pool, so repeated throws drain it). `await using` needs runtime or compiler support: Node 22.22.1 rejected
       it with a SyntaxError. A browser `unhandledrejection` handler that calls `preventDefault()` without reporting `e.reason` hides failures (LOW).
-- [ ] `grep -rlE 'setInterval\(' src/ | xargs -r grep -L 'clearInterval('` — lists files whose `setInterval` is never cleared on teardown; then read async `setInterval`/`setTimeout` callbacks for a try/catch (§2)
+- [ ] `grep --null -rlE 'setInterval\(' src/ | xargs -0 -r grep -L 'clearInterval('` — lists files whose `setInterval` is never cleared on teardown; then read async `setInterval`/`setTimeout` callbacks for a try/catch (§2)
 - [ ] `grep -rn "forEach(async\|map(async" src/ | grep -v "Promise\.all\(Settled\)\{0,1\}("` — `map(async` without surrounding `Promise.all` = floating (HIGH) (§2); `forEach(async` always wrong.
 - [ ] `grep -rn "process.nextTick" src/` — app-code use is a smell (LOW). Read the same modules for Zalgo APIs (sometimes sync, sometimes a Promise: declare them `async`) and for long loops that yield only with `await Promise.resolve()`, which never lets timers, I/O or rendering run (MEDIUM) (§4).
 - [ ] `grep -rn "\.pipe(" src/` — Node pipes without `pipeline()` error handling (MEDIUM). Whole bodies or files buffered (`await res.json()`/`.text()`, `readFile`) where the input is unbounded and the output is a stream risk OOM (MEDIUM) (§7).

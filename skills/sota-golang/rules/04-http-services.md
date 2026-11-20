@@ -427,7 +427,7 @@ func (Secret) MarshalText() ([]byte, error) { return []byte("[REDACTED]"), nil }
       (PII in logs — HIGH) ; manual: client mistakes (4xx) logged at Info/Warn, not Error;
       secret fields use §5's redacting type, never `slog.LogValuer` alone
 - [ ] **Middleware ResponseWriter wrappers missing Flush/Hijack passthrough** (§4) —
-      `grep -rlE '^[[:space:]]*http\.ResponseWriter$' --include='*.go' . | xargs -r grep -LE 'func \([^)]*\) (Unwrap\(\) http\.ResponseWriter|Flush\(\))'`
+      `grep --null -rlE '^[[:space:]]*http\.ResponseWriter$' --include='*.go' . | xargs -0 -r grep -LE 'func \([^)]*\) (Unwrap\(\) http\.ResponseWriter|Flush\(\))'`
 - [ ] **Path-based authorization on the raw request path (§4) — HIGH when the router behind
       it is not `http.ServeMux`** —
       `grep -rnE 'strings\.(HasPrefix|HasSuffix|Contains)\([A-Za-z_]+\.URL\.(Path|RawPath)|\.URL\.EscapedPath\(\)' --include='*.go' .`
@@ -441,7 +441,7 @@ func (Secret) MarshalText() ([]byte, error) { return []byte("[REDACTED]"), nil }
       a widened exception — MEDIUM unless justified) ; `gosec -include=G121 ./...`
 - [ ] **JSON duplicate keys on privilege-bearing input (§1; [`rules/05`](05-security.md) §1) — HIGH when a proxy,
       validator or signer parses the same body first** —
-      `grep -rlE '"encoding/json"' --include='*.go' . | xargs -r grep -lE 'json\.(Unmarshal|NewDecoder)\(' | xargs -r grep -nHE '^[[:space:]]*(Role|Roles|Admin|IsAdmin|Scopes?|Permissions?|Tenant(ID)?|Owner(ID)?|UserID|Price|Amount)[[:space:]].*json:"'`
+      `grep --null -rlE '"encoding/json"' --include='*.go' . | xargs -0 -r grep --null -lE 'json\.(Unmarshal|NewDecoder)\(' | xargs -0 -r grep -nHE '^[[:space:]]*(Role|Roles|Admin|IsAdmin|Scopes?|Permissions?|Tenant(ID)?|Owner(ID)?|UserID|Price|Amount)[[:space:]].*json:"'`
       (v1 decoder in a file declaring a privilege field; v1 keeps the last duplicate and
       `DisallowUnknownFields` does not reject it — measured go1.27.1; on 1.27+ decode with
       `encoding/json/v2`, which errors on duplicates)
@@ -466,14 +466,14 @@ func (Secret) MarshalText() ([]byte, error) { return []byte("[REDACTED]"), nil }
       (single-line literals only; multi-line ones need reading, and gin needs `SetSameSite`)
 - [ ] **Debug mode / debug endpoints reachable in production (§4c) — HIGH when the public
       server uses the default mux, MEDIUM otherwise** —
-      `grep -rlE '"(net/http/pprof|expvar|golang\.org/x/net/trace)"' --include='*.go' . | xargs -r grep -L '^//go:build'`
+      `grep --null -rlE '"(net/http/pprof|expvar|golang\.org/x/net/trace)"' --include='*.go' . | xargs -0 -r grep -L '^//go:build'`
       (debug import compiled into every build) ;
       `grep -rnE 'gin\.SetMode\((gin\.DebugMode|"debug")\)|\.Debug[[:space:]]*=[[:space:]]*true|GIN_MODE[=:"[:space:]]+debug' --include='*.go' --include='*.y*ml' --include='Dockerfile*' --include='*.env' .`
       (single-line forms; a Kubernetes `name: GIN_MODE` / `value:` pair needs reading, and a
       gin service with no `GIN_MODE=release` anywhere is in debug mode by default)
 - [ ] **Response type left to sniffing (§4d) — HIGH when the body is user-stored or echoed,
       LOW otherwise** —
-      `grep -rlE 'w\.Write\(|io\.Copy\(w,|fmt\.Fprint[a-z]*\(w,' --include='*.go' . | xargs -r grep -L 'Content-Type'`
+      `grep --null -rlE 'w\.Write\(|io\.Copy\(w,|fmt\.Fprint[a-z]*\(w,' --include='*.go' . | xargs -0 -r grep -L 'Content-Type'`
       (file-level: writes a body and never names `Content-Type`; a file that sets it on one
       path only still needs reading) ;
       `grep -rnE 'http\.Serve(File|Content)\([^)]*r\.(URL|PathValue|FormValue|Form|PostFormValue)' --include='*.go' .` (a request-derived served name

@@ -139,7 +139,7 @@ coroutines. References:
 
 - [ ] **Data-race smells — MEDIUM/HIGH (verify happens-before)** (§1) —
       `grep -rnE '^[[:space:]]*((public|private|protected)[[:space:]]+)?static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[a-z][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' . | grep -vwE 'final|class|interface|enum|record'` (mutable shared
-      static; the old `(?!final)` form exited 2, POSIX ERE has no lookahead); `grep -rlE 'volatile[[:space:]]|@Volatile' --include='*.java' --include='*.kt' . | xargs -r awk 'FNR==1{split("",v)} /volatile[[:space:]]|@Volatile/ {if (match($0,/(volatile[[:space:]]+[A-Za-z_][A-Za-z0-9_<>]*|var)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*/)) {n=split(substr($0,RSTART,RLENGTH),a,/[[:space:]]+/); v[a[n]]=1}; next} {for (k in v) if ($0 ~ ("(^|[^A-Za-z0-9_])" k "[[:space:]]*([+][+]|--|[-+*/]=)") || $0 ~ ("([+][+]|--)" k "([^A-Za-z0-9_]|$)")) print FILENAME ":" FNR ":" $0}'` (compound op
+      static; the old `(?!final)` form exited 2, POSIX ERE has no lookahead); `grep --null -rlE 'volatile[[:space:]]|@Volatile' --include='*.java' --include='*.kt' . | xargs -0 -r awk 'FNR==1{split("",v)} /volatile[[:space:]]|@Volatile/ {if (match($0,/(volatile[[:space:]]+[A-Za-z_][A-Za-z0-9_<>]*|var)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*/)) {n=split(substr($0,RSTART,RLENGTH),a,/[[:space:]]+/); v[a[n]]=1}; next} {for (k in v) if ($0 ~ ("(^|[^A-Za-z0-9_])" k "[[:space:]]*([+][+]|--|[-+*/]=)") || $0 ~ ("([+][+]|--)" k "([^A-Za-z0-9_]|$)")) print FILENAME ":" FNR ":" $0}'` (compound op
       on volatile = race);
       `grep -rnE '(^|[^A-Za-z0-9_])(HashMap|ArrayList)|mutable(Map|List|Set)Of' --include='*.java' --include='*.kt' . | grep -iE 'static|shared|object|companion'`
       (non-concurrent shared coll) ;

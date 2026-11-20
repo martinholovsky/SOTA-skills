@@ -199,11 +199,11 @@ Run from repo root / against the runtime; verify each hit manually.
       worker mode, RoadRunner or Swoole (check `composer.json` and the container `CMD`). Each
       write to a static property, `$GLOBALS` or `$_ENV` must be cleared in a `finally` or a
       `kernel.reset` service:
-      `grep -rlE '(self|static|[A-Z][A-Za-z0-9_]*)::\$[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\[[^]]*\])?[[:space:]]*(\?\?)?=[^=>]|\$GLOBALS[[:space:]]*\[|\$_ENV[[:space:]]*\[[^]]*\][[:space:]]*=[^=]|putenv[[:space:]]*\(' --include='*.php' src/ | xargs -r grep -L 'finally'`
+      `grep --null -rlE '(self|static|[A-Z][A-Za-z0-9_]*)::\$[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\[[^]]*\])?[[:space:]]*(\?\?)?=[^=>]|\$GLOBALS[[:space:]]*\[|\$_ENV[[:space:]]*\[[^]]*\][[:space:]]*=[^=]|putenv[[:space:]]*\(' --include='*.php' src/ | xargs -0 -r grep -L 'finally'`
       (lists the files that write such state with no `finally`; a reset in a `kernel.reset` service needs reading). Singletons built from the request or
       container need reading
 - [ ] **Session lock hygiene on slow endpoints (§4)** —
-      `grep -rl 'session_start' --include='*.php' src/ | xargs -r grep -L 'session_write_close'`
+      `grep --null -rl 'session_start' --include='*.php' src/ | xargs -0 -r grep -L 'session_write_close'`
 - [ ] **Performance claims without measurements (§6) — check PR/commit rationale** —
       `git log --oneline --grep='perf\|optimi' -10`
 

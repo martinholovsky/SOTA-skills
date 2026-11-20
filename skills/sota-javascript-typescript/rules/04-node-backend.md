@@ -444,7 +444,7 @@ channel.
       anywhere (read the rest). Then, if `grep -nE '"express": *"[~^]?4\.' package.json` hits:
       `grep -rnE "\.(get|post|put|patch|delete|all|use)\([^)]*async *(\(|function|[[:alnum:]_]+ *=>)" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -vE "[Hh]andler\(|wrap\(|catch\(next"`
       — an unwrapped async handler on Express 4 hangs the request on a rejection (HIGH).
-- [ ] `grep -rl "uncaughtException" src/ | xargs -r grep -L "process\.exit"` — lists files with an `uncaughtException` handler and no `process.exit`: a handler that doesn't exit (HIGH) (§8); no `unhandledRejection` policy at all (MEDIUM).
+- [ ] `grep --null -rl "uncaughtException" src/ | xargs -0 -r grep -L "process\.exit"` — lists files with an `uncaughtException` handler and no `process.exit`: a handler that doesn't exit (HIGH) (§8); no `unhandledRejection` policy at all (MEDIUM).
 - [ ] **Allocation or recursion sized by the request (§"Process-level error policy", failures no handler sees) (§8) — HIGH on a request path: one request kills the process** —
       `grep -rnE '(Array|Buffer\.(alloc|allocUnsafe)|\.repeat)\( *([^)]*[^[:alnum:]_])?(req\.|body|query|params|headers|length|size|count)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules .`
       — each hit needs a maximum checked before the call. Then read each recursive function that walks parsed request data (validators, deep merge, sanitizers) for a depth limit.
@@ -472,7 +472,7 @@ channel.
       (no `--include`: env files, Dockerfiles and CI YAML carry the variable). Read the
       value on each `NODE_TLS_REJECT_UNAUTHORIZED` hit, and read what each
       `checkServerIdentity` returns. Then list the `ssh2` users that never name a `hostVerifier`:
-      `grep -rlE 'require\(.ssh2.\)|from .ssh2.' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' . | xargs -r grep -L 'hostVerifier'`
+      `grep --null -rlE 'require\(.ssh2.\)|from .ssh2.' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' . | xargs -0 -r grep -L 'hostVerifier'`
       Every `connect({...})` in a listed file accepts any host key. A file that names it once can
       still hold a second `connect` without it, so read the other `ssh2` users' calls too.
 - [ ] **Server-side headless browser inputs (§16)** —

@@ -330,7 +330,7 @@ Operational rules for dynamic/leased credentials:
 - [ ] Rotation uses overlap (dual-secret / versioned), not in-place swap (§3).
 - [ ] **Rotation tests the pending credential before promoting it (§3)** — High for a rotation
       function that promotes without a test step. Handlers with a finish step but no test step:
-      `grep -rlE 'finish_?[Ss]ecret' . | xargs -r grep -LE 'test_?[Ss]ecret'`
+      `grep --null -rlE 'finish_?[Ss]ecret' . | xargs -0 -r grep -LE 'test_?[Ss]ecret'`
       (an empty test body passes this probe — read the hits and the non-hits' test step).
 - [ ] Secret metadata carries type, purpose, consumers, readers, rotation dependencies,
       incident contact, classification/exposure impact, with lifecycle timestamps and actors
@@ -340,7 +340,7 @@ Operational rules for dynamic/leased credentials:
       `grep -rniE '\{\{[[:space:]]*[a-z_.]*(password|passwd|pwd)[a-z_]*[[:space:]]*\}\}' templates/ | grep -viE '(url|link)[[:space:]]*\}\}'`
 - [ ] **CI access to the store/cloud is attributable to the triggering person (§5)** and the
       federation config is re-read on a schedule — Low for AWS OIDC jobs left on the constant
-      default session name: `grep -rlE 'configure-aws-credentials' .github/workflows | xargs -r grep -L 'role-session-name'`
+      default session name: `grep --null -rlE 'configure-aws-credentials' .github/workflows | xargs -0 -r grep -L 'role-session-name'`
 - [ ] Rotation runbooks and the offboarding checklist trigger rotation of every shared secret a
       leaver or role-changer could read, not only on a schedule or confirmed compromise (§3) —
       Medium. Runbooks that never mention it:

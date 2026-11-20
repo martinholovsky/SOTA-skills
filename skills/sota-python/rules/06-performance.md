@@ -241,7 +241,7 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
       for CPU-bound work? [MEDIUM]);
       `grep -rn "multiprocessing\|ProcessPoolExecutor" --include="*.py" src/ | head` (lists
       process-pool use; each hit is read for CPU-bound work, not a finding) ;
-      `grep -rl ProcessPoolExecutor --include='*.py' src/ | xargs -r grep -L '__name__'`
+      `grep --null -rl ProcessPoolExecutor --include='*.py' src/ | xargs -0 -r grep -L '__name__'`
       (each file listed starts worker processes with no `__main__` guard)
 - [ ] **Import-time cost (CLIs/lambdas) (§6)** —
       `python -X importtime -c "import mypkg" 2>&1 | sort -t'|' -k2 -rn | head -15` ;

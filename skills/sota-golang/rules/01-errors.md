@@ -315,7 +315,7 @@ Run from repo root; verify each hit manually.
       `grep -rn '_ = ' --include='*.go' . | grep -vE '(test|//)'` (each kept discard says why it
       cannot fail) ; `grep -rnE -A2 '(log|slog)\.[A-Za-z]+\(.*err' --include='*.go' . | grep -E -- '-[0-9]+-[[:space:]]*return .*err'`
       (log-and-return: the caller handles it a second time — LOW) ;
-      `grep -rlE 'os\.(Create|OpenFile)\(' --include='*.go' . | xargs -r grep -nHE 'defer [A-Za-z_][A-Za-z0-9_.]*\.Close\(\)'`
+      `grep --null -rlE 'os\.(Create|OpenFile)\(' --include='*.go' . | xargs -0 -r grep -nHE 'defer [A-Za-z_][A-Za-z0-9_.]*\.Close\(\)'`
       (a writer's `Close` error discarded; capture it in a deferred func — HIGH on a write/commit path)
 - [ ] **String matching on errors (§3) — MEDIUM+** —
       `grep -rnE 'strings\.(Contains|HasPrefix|HasSuffix)\(\s*err\.Error\(\)' --include='*.go' .`
@@ -328,7 +328,7 @@ Run from repo root; verify each hit manually.
       not restate the callee)** —
       `grep -rnE 'fmt\.Errorf\([^)]*%v[^)]*err\s*\)' --include='*.go' .`
 - [ ] **Panics outside main/init/Must/tests — HIGH if reachable from input** (§5) —
-      `grep -rl 'panic(' --include='*.go' . | grep -v '_test\.go$' | xargs -r awk '/^func /{f=$0} /panic\(/ && f !~ /(Must|^func init\()/ {print FILENAME":"FNR": "$0}'`
+      `grep --null -rl 'panic(' --include='*.go' --exclude='*_test.go' . | xargs -0 -r awk '/^func /{f=$0} /panic\(/ && f !~ /(Must|^func init\()/ {print FILENAME":"FNR": "$0}'`
 - [ ] **Limits before allocation and recursion (§5) — HIGH when the input is untrusted** —
       `grep -rnE 'make\(\[\][^,]+,[[:space:]]*(int(32|64)?\()?[a-z][A-Za-z0-9_]*\.[A-Z][A-Za-z0-9_]*' --include='*.go' .`
       (a slice sized by a decoded field: read back for a cap against a constant) ;
@@ -345,7 +345,7 @@ Run from repo root; verify each hit manually.
 - [ ] **log.Fatal / os.Exit outside main package; library logging; leaked error chains (§6, §7)
       — HIGH in libraries** —
       `grep -rnE '(log\.Fatal|os\.Exit)' --include='*.go' . | grep -v 'main\.go'` ;
-      `grep -rLE '^package main' --include='*.go' . | grep -v '_test\.go$' | xargs -r grep -nHE '(^|[^A-Za-z0-9_.])s?log\.(Print|Fatal|Panic|Info|Warn|Error|Debug)'`
+      `grep --null -rLE '^package main' --include='*.go' --exclude='*_test.go' . | xargs -0 -r grep -nHE '(^|[^A-Za-z0-9_.])s?log\.(Print|Fatal|Panic|Info|Warn|Error|Debug)'`
       (a non-main package that logs instead of returning) ;
       `grep -rnE 'http\.Error\([^,]+,[[:space:]]*err\.Error\(\)' --include='*.go' .` (an error chain
       echoed to a client: only a validation error's message may go out) ; manual: errors map to
@@ -359,8 +359,8 @@ Run from repo root; verify each hit manually.
       (exported sentinel without the `Err` prefix) ; manual: each exported sentinel or type has a
       caller that branches on it (exports are API forever); wrapper types are in the next item
 - [ ] **recover outside defer; missing Unwrap on wrapper types (§4, §5) (manual)** —
-      `grep -rl 'recover()' --include='*.go' . | xargs -r awk 'FNR==1{d=-99} /defer func/{d=FNR} /recover\(\)/ && FNR-d>3 {print FILENAME":"FNR": "$0}'` ;
-      `grep -rln 'type .*Error struct' --include='*.go' . | xargs grep -L 'func (.*) Unwrap()'`
+      `grep --null -rl 'recover()' --include='*.go' . | xargs -0 -r awk 'FNR==1{d=-99} /defer func/{d=FNR} /recover\(\)/ && FNR-d>3 {print FILENAME":"FNR": "$0}'` ;
+      `grep --null -rln 'type .*Error struct' --include='*.go' . | xargs -0 grep -L 'func (.*) Unwrap()'`
 - [ ] **Tooling** (§1, §2) — `go vet ./...` ;
       `golangci-lint run --enable-only errcheck,errorlint,err113,wrapcheck,nilerr ./...` ;
       `staticcheck ./...` (ST1005 error strings, SA4006 unused err, SA1019)

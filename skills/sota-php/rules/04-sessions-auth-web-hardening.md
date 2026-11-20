@@ -381,7 +381,7 @@ Run from repo root; verify each hit manually.
       date, expiry, history, hash, id or path are filtered out.
 - [ ] **Session config — effective values, not file greps alone** (§1) —
       `php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
-      ; `grep -rl 'password_verify' --include='*.php' src/ | xargs -r grep -L 'session_regenerate_id'` (lists files that call `password_verify` but never regenerate the ID: HIGH);
+      ; `grep --null -rl 'password_verify' --include='*.php' src/ | xargs -0 -r grep -L 'session_regenerate_id'` (lists files that call `password_verify` but never regenerate the ID: HIGH);
       `grep -rnE 'session_id\s*\(\s*\$' --include='*.php' src/` (attacker-settable ID)
 - [ ] **Session ini overrides (§1) — MEDIUM (HIGH for `use_trans_sid` on)** — each hit sets
       URL IDs, auto-start, the default name or a shared temp dir:
@@ -400,7 +400,7 @@ Run from repo root; verify each hit manually.
       `grep -rnE '\b(md5|sha1|crypt)\s*\(' --include='*.php' src/ | grep -iE 'pass|pwd'` ;
       `grep -rn 'password_hash' --include='*.php' src/` (lists every use of the recommended API; each
       hit is read, not a finding) ;
-      `grep -rl 'password_verify' --include='*.php' src/ | xargs -r grep -L 'password_needs_rehash'` (lists files that verify passwords but never rehash: MEDIUM (stuck costs)) ;
+      `grep --null -rl 'password_verify' --include='*.php' src/ | xargs -0 -r grep -L 'password_needs_rehash'` (lists files that verify passwords but never rehash: MEDIUM (stuck costs)) ;
       `grep -rnE 'PASSWORD_(DEFAULT|BCRYPT)' --include='*.php' src/` (bcrypt, §2: confirm the
       input is rejected above 72 bytes by `strlen`, else MEDIUM)
 - [ ] **Weak randomness / timing-unsafe compares — HIGH where security-relevant** —

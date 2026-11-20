@@ -136,7 +136,7 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
       where it carries a tenant or user id (a cross-tenant leak on a reused thread)** —
       `grep -rnE '(thread_local|__thread)[^;]*(tenant|user|request|locale|session|ctx|context)' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
       (each hit: who resets it, and is it read after a `co_await`?) ;
-      `grep -rlE '(MDC|mdc)::put[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -r grep -LE '(MDC|mdc)::(remove|clear)[[:space:]]*\('`
+      `grep --null -rlE '(MDC|mdc)::put[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -0 -r grep -LE '(MDC|mdc)::(remove|clear)[[:space:]]*\('`
       (a file that puts MDC keys and never removes them)
 - [ ] **Relaxed/weak memory order without justification (§3) — MEDIUM** —
       `grep -rnE 'memory_order_(relaxed|acquire|release|consume)' --include='*.cpp' .`

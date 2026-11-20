@@ -361,7 +361,7 @@ existing parameter means.
 - [ ] **Process-fatal failures a `catch (...)` cannot stop (§7) — HIGH on input-facing code** —
       `clang-tidy --checks='misc-no-recursion,bugprone-exception-escape' <files>` (each recursive
       cycle over input needs a depth bound) ;
-      `grep -rlE 'json::parse[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.hpp' . | xargs -r grep -LE 'parser_callback_t'`
+      `grep --null -rlE 'json::parse[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.hpp' . | xargs -0 -r grep -LE 'parser_callback_t'`
       (files with an nlohmann parse and no `parser_callback_t`: depth unbounded; for every parse
       of untrusted bytes also confirm the input size is capped first)
 - [ ] **Ignored error returns — the C half of §7, and the one nobody greps then ask the §7
@@ -370,7 +370,7 @@ existing parameter means.
       any one of them.** —
       `clang-tidy --checks='bugprone-unused-return-value,cert-err33-c' <files>` (cert-err33-c
       aliases the former);
-      `grep -rlE 'std::expected|absl::Status|tl::expected' --include='*.cpp' --include='*.hpp' . | xargs -r grep -lwE 'throw'`
+      `grep --null -rlE 'std::expected|absl::Status|tl::expected' --include='*.cpp' --include='*.hpp' . | xargs -0 -r grep -lwE 'throw'`
       (files where expected<>/Status and `throw` meet: read whether the two models cross a boundary)
 - [ ] **In-band sentinels (§7/§7a/§8) — absence encoded as a value — MEDIUM** —
       `grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*(getchar|fgetc|getc)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' .`

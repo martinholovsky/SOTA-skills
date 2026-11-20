@@ -384,7 +384,7 @@ cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under 
       `grep -rnE 'Runtime\.getRuntime\(\)\.exec\(\s*"' --include='*.java' --include='*.kt' .`
 - [ ] **waitFor(t,unit) reaps nothing (§2): a destroy() with no descendants() sweep orphans
       grandchildren** —
-      `grep -rlE 'waitFor\(' --include='*.java' --include='*.kt' . | xargs -r grep -L 'descendants'`
+      `grep --null -rlE 'waitFor\(' --include='*.java' --include='*.kt' . | xargs -0 -r grep -L 'descendants'`
       (each file printed calls `waitFor(` and never `descendants()`) ;
       `grep -rnE 'ctx\.lookup|InitialContext|new InitialDirContext' --include='*.java' --include='*.kt' .`
       (JNDI/Log4Shell-class);
@@ -432,7 +432,7 @@ cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under 
       path must be resolved against the target dir and re-checked with startsWith.** —
       `grep -rnE 'new File\(|Paths\.get\(|Path\.of\(' --include='*.java' --include='*.kt' . | grep -vE 'normalize|toRealPath'`
       ;
-      `grep -rlE 'ZipEntry|TarArchiveEntry|JarEntry|ArchiveEntry|getNextEntry\(' --include='*.java' --include='*.kt' . | xargs -r grep -LE 'startsWith\('`
+      `grep --null -rlE 'ZipEntry|TarArchiveEntry|JarEntry|ArchiveEntry|getNextEntry\(' --include='*.java' --include='*.kt' . | xargs -0 -r grep -LE 'startsWith\('`
       (each file printed handles archive entries and never calls `startsWith(`)
 - [ ] **Client-supplied upload filenames — HIGH if they reach a path** (§5) —
       `grep -rnE 'getSubmittedFileName\(|getOriginalFilename\(' --include='*.java' --include='*.kt' .`

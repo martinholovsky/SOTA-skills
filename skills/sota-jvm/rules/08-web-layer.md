@@ -150,14 +150,14 @@ All Spring facts below were checked against Spring's own docs, advisories and so
 - [ ] **Mass assignment — HIGH** (§1) — list binding targets and confirm none is an entity:
       `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` (lists every
       binding target; each hit is read, not a finding) ;
-      `grep -rlE '@ModelAttribute' --include='*.java' --include='*.kt' . | xargs -r grep -LE 'setAllowedFields'`
+      `grep --null -rlE '@ModelAttribute' --include='*.java' --include='*.kt' . | xargs -0 -r grep -LE 'setAllowedFields'`
       (each file printed binds a `@ModelAttribute` and never calls `setAllowedFields`: on an
       entity, the finding; a
       disallow-list is weaker than an allow-list) ;
       `grep -rnE 'BeanUtils\.populate\(' --include='*.java' --include='*.kt' .`
       (the non-Spring spelling: every request parameter name becomes a setter call)
 - [ ] **Authorization rules — HIGH** (§1) —
-      `grep -rlE 'authorizeHttpRequests' --include='*.java' --include='*.kt' . | xargs -r grep -L 'anyRequest'`
+      `grep --null -rlE 'authorizeHttpRequests' --include='*.java' --include='*.kt' . | xargs -0 -r grep -L 'anyRequest'`
       (each file printed has a chain that never reaches `anyRequest()`; still read each chain
       top-down: first match wins;
       `web.ignoring()` on a non-static path is a finding)
@@ -187,7 +187,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
       `grep -rnE -A1 'sendRedirect\(|\.forward\(|setHeader\("Location"' --include='*.java' --include='*.kt' . | grep -E '^[^:]+-[0-9]+-' | grep -vE '^[^:]+-[0-9]+-[[:space:]]*(return|throw|\}|$)'`
       (prints the statement after each call; a status set after `Location` is expected)
 - [ ] **CORS: wildcard origin pattern with credentials — HIGH** (§1) —
-      `grep -rlE '[aA]llowedOriginPatterns\([^)]*"\*"|[aA]ddAllowedOriginPattern\("\*"\)|originPatterns[[:space:]]*=[[:space:]]*"\*"' --include='*.java' --include='*.kt' . | xargs -r grep -nHE '[aA]llowCredentials[[:space:]]*(\(|=)[[:space:]]*"?true'`
+      `grep --null -rlE '[aA]llowedOriginPatterns\([^)]*"\*"|[aA]ddAllowedOriginPattern\("\*"\)|originPatterns[[:space:]]*=[[:space:]]*"\*"' --include='*.java' --include='*.kt' . | xargs -0 -r grep -nHE '[aA]llowCredentials[[:space:]]*(\(|=)[[:space:]]*"?true'`
       (a `*` pattern and `allowCredentials` true on the same mapping reflect every origin;
       Spring's own `*` + credentials guard does not cover patterns)
 - [ ] **Session IDs in URLs; app-set cookies without Secure/HttpOnly/SameSite — MEDIUM** (§1) —

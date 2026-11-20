@@ -408,7 +408,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       multi-line signature (it ends in `,`) and a name ending `_type`, `_env`, `_hash`, `_url`, `_id`,
       `_path` or the like are filtered out, while an annotated local such as `token: str = params[…]`
       still matches) ;
-      `grep -rlE 'SecretStr' --include="*.py" src/ | xargs -r grep -L 'hide_input_in_errors'`
+      `grep --null -rlE 'SecretStr' --include="*.py" src/ | xargs -0 -r grep -L 'hide_input_in_errors'`
       (a pydantic model file with a `SecretStr` and no `hide_input_in_errors`: its validation
       errors print the value, §7)
 - [ ] **Resource handling (§4)** — `grep -rn "= open(" --include="*.py" src/ | grep -v "with "`
@@ -455,7 +455,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       (a money value typed or parsed as `float`)
 - [ ] **NaN/Infinity accepted from input, divide-by-zero unguarded (§12) — MEDIUM, HIGH where
       the number is a limit, price or quota** —
-      `grep -rlE '(float|Decimal)\([a-z_]' --include='*.py' src/ | xargs -r grep -LE 'isfinite|is_finite'`
+      `grep --null -rlE '(float|Decimal)\([a-z_]' --include='*.py' src/ | xargs -0 -r grep -LE 'isfinite|is_finite'`
       (files parsing numbers with no finiteness check) ;
       `grep -rn 'json\.loads(' --include='*.py' src/ | grep -v 'parse_constant'`
       (JSON that accepts bare `NaN`) — then read each `/`, `//`, `%` on a caller value

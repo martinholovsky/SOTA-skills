@@ -248,7 +248,7 @@ Run from repo root; verify each hit manually.
 - [ ] **Uploads — client-trusted name/type, executable destinations (§1) — HIGH** —
       `grep -rnE "\\\$_FILES\[[^]]+\]\['(name|type)'\]" --include='*.php' src/` ;
       `grep -rnE 'move_uploaded_file[[:space:]]*\([^;]*(\[.name.\]|/public/|/web/|/htdocs/|DOCUMENT_ROOT)' --include='*.php' src/` (flags a client-supplied name or a webroot-looking destination; trace the rest: webroot? renamed?);
-      `grep -rlE 'move_uploaded_file|\$_FILES' --include='*.php' src/ | xargs -r grep -L 'is_uploaded_file'` (lists upload-handling files with no `is_uploaded_file`: MEDIUM) ;
+      `grep --null -rlE 'move_uploaded_file|\$_FILES' --include='*.php' src/ | xargs -0 -r grep -L 'is_uploaded_file'` (lists upload-handling files with no `is_uploaded_file`: MEDIUM) ;
       `grep -rnE -e '->extractTo[[:space:]]*\(|new[[:space:]]+\\?(ZipArchive|PharData)' --include='*.php' --exclude-dir=vendor .`
       (lists every archive extraction; each hit is read, not a finding. §1: each entry name checked against the target directory, entry count
       and sizes capped; the generic checks are the archive item in
@@ -275,7 +275,7 @@ Run from repo root; verify each hit manually.
 - [ ] **SSRF — user URLs fetched server-side** (§5) —
       `grep -rnE '(curl_init|file_get_contents|fopen|getimagesize|get_headers|get_meta_tags|->request|->get)[[:space:]]*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`
       ; `grep -rnE 'CURLOPT_SSL_VERIFYPEER[[:space:]]*(,|=>)[[:space:]]*(false|0)' --include='*.php' src/` (false = HIGH);
-      `grep -rlE 'CURLOPT_FOLLOWLOCATION[^;]*(true|1)' --include='*.php' src/ | xargs -r grep -L 'CURLOPT_REDIR_PROTOCOLS'` (lists files that follow redirects with no `CURLOPT_REDIR_PROTOCOLS`)
+      `grep --null -rlE 'CURLOPT_FOLLOWLOCATION[^;]*(true|1)' --include='*.php' src/ | xargs -0 -r grep -L 'CURLOPT_REDIR_PROTOCOLS'` (lists files that follow redirects with no `CURLOPT_REDIR_PROTOCOLS`)
 - [ ] **SSRF — no connect-time check of the dialled address (DNS rebinding) / redirects
       unchecked — HIGH (§5)** — prints each file that makes outbound requests with no
       connect-time IP check, then its redirect-following lines:
