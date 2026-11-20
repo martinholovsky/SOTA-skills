@@ -5,6 +5,15 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **The JVM secret-printing probe finds multi-line Kotlin data classes and no longer reads Spring's
+  `@Value` as Lombok's (ROADMAP 102).** Redesigned with item 92's method on the public corpus:
+  designed on 60 labels, frozen by hash, then scored once on a blind-labelled hold-out of 48: precision
+  .56 → .62, recall .03 → .72. New fixtures show the old probe failing each case. Limits stated in
+  the item: a field under `@ToString.Exclude` is still reported; a record's last component is missed
+  when it has no trailing comma.
+
 ## [1.57.0] - 2026-11-20
 
 **Front door checked:** sota-auto · check-probes-under-agent-grep · incrementally

@@ -483,8 +483,15 @@ cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under 
       (read the arguments: a credential passed to the call is the finding, while message
       text that only *names* one, such as "password reset for {}", also matches) ;
       `grep -rniE '(record|data class)[[:space:]]+[a-z0-9_]+[[:space:]]*(<[^>]*>)?[[:space:]]*\([^)]*(passw|secret|token|api_?key|credential)' --include='*.java' --include='*.kt' .`
-      (a record or data class holding a credential: the generated `toString` prints it
-      unless overridden; a declaration split over lines is missed, so read every record and data
-      class in a file that names a credential) ;
-      `grep -rlE --null '@(Data|ToString|Value)([^A-Za-z]|$)' --include='*.java' . | xargs -0 -r grep -HniE '(private|protected|public)?[[:space:]]*(final[[:space:]]+)?String[[:space:]]+[a-z0-9_]*(passw|secret|token|api_?key|credential)'`
-      (a Lombok class whose generated `toString` prints the field: needs `@ToString.Exclude`)
+      (a record or data class declared on one line with a credential: the generated `toString`
+      prints it unless overridden) ;
+      `grep --null -rlE '(^|[^A-Za-z0-9_])(record|data[[:space:]]+class)[[:space:]]+[A-Za-z0-9_]+' --include='*.java' --include='*.kt' . | xargs -0 -r grep -HniE '(^|[(,[:space:]])((private|protected|public|internal|override)[[:space:]]+)*(val|var)[[:space:]]+[a-z0-9_]*(passw|secret|token|api_?key|credential)[a-z0-9_]*[[:space:]]*:[[:space:]]*(String|CharArray|ByteArray)'`
+      (a Kotlin property declared on its own line in a file with a `data class` or `record`) ;
+      `grep --null -rlE '(^|[^A-Za-z0-9_])(record|data[[:space:]]+class)[[:space:]]+[A-Za-z0-9_]+' --include='*.java' --include='*.kt' . | xargs -0 -r grep -HniE '^[[:space:]]*(final[[:space:]]+)?(String|char[[:space:]]*\[\]|byte[[:space:]]*\[\])[[:space:]]+[a-z0-9_]*(passw|secret|token|api_?key|credential)[a-z0-9_]*[[:space:]]*[,)]'`
+      (a record component on its own line; the last component, with no trailing comma, is
+      missed, and both file-level stages also report a plain class in the same file) ;
+      `grep --null -rlE '^import lombok\.|@lombok\.(Data|ToString|Value)' --include='*.java' . | xargs -0 -r grep --null -lE '@(lombok\.)?(Data|ToString|Value)([^A-Za-z(.]|$)' | xargs -0 -r grep -HniE '^[[:space:]]*((private|protected|public)[[:space:]]+)?(final[[:space:]]+)?(String|char[[:space:]]*\[\])[[:space:]]+[a-z0-9_]*(passw|secret|token|api_?key|credential)[a-z0-9_]*[[:space:]]*[;=]'`
+      (a Lombok class whose generated `toString` prints the field: needs `@ToString.Exclude`. Only
+      files that use Lombok are read, so Spring's `@Value("${…}")` no longer selects one; a field
+      already under `@ToString.Exclude` on the line above is still reported, so read the line above
+      each hit. Precision and recall: `docs/LANGUAGE-TIER.md`, ROADMAP 102)
