@@ -505,13 +505,13 @@
    "note": "Per-language NaN/overflow checklist items, each with its own language-specific probe; code-security holds the generic one.",
    "sample": "- [ ] **NaN/infinity from parsed input, divide by zero, INT_MIN / -1 (§2) — HIGH on size, price or limit paths** — `grep",
    "members": [
-    "sota-c-cpp/rules/03-undefined-behavior.md#872dc36d14a6",
+    "sota-c-cpp/rules/03-undefined-behavior.md#b16ef74c98fd",
     "sota-code-security/rules/06-memory-resource-safety.md#a35ae8793669",
     "sota-dotnet/rules/01-idioms.md#51dfb8d13e59",
-    "sota-golang/rules/02-design.md#f4b7682230dc",
+    "sota-golang/rules/02-design.md#1193213c7dbb",
     "sota-jvm/rules/01-idioms.md#01fc70f89296",
-    "sota-python/rules/03-idioms-pitfalls.md#92cf9311104c",
-    "sota-rust/rules/01-ownership-and-api-design.md#be272d9a0184"
+    "sota-python/rules/03-idioms-pitfalls.md#c2803f1fcda4",
+    "sota-rust/rules/01-ownership-and-api-design.md#f4ad622be09b"
    ]
   },
   {
@@ -519,7 +519,7 @@
    "note": "Different checks: C OpenSSL/curl verify-result probe vs a cross-language probe for absent/implicit TLS verification.",
    "sample": "- [ ] **TLS / transport verification (§4) — HIGH when a peer certificate is never checked, CRITICAL in a client on user ",
    "members": [
-    "sota-c-cpp/rules/04-security.md#10a9bdf03c80",
+    "sota-c-cpp/rules/04-security.md#78893283b252",
     "sota-code-security/rules/04-cryptography.md#38f16200080f"
    ]
   },
@@ -892,7 +892,7 @@
     "sota-jvm/SKILL.md#eb9fc89f49a0",
     "sota-jvm/rules/06-build-tooling-ci.md#1c4473e94b88",
     "sota-jvm/rules/07-xml.md#1c04ef437112",
-    "sota-jvm/rules/07-xml.md#8a079738fad9"
+    "sota-jvm/rules/07-xml.md#2f47e7f2f6d0"
    ]
   },
   {
@@ -2048,7 +2048,7 @@
    "note": "Go checklist probe, observability rule, and performance pointer to observability rules/05 §3.",
    "sample": "- [ ] **Profiling wired up? (§1) (absence in a latency-sensitive service = LOW gap)** — `grep -rn 'net/http/pprof' --inc",
    "members": [
-    "sota-golang/rules/06-performance.md#71051d6cf656",
+    "sota-golang/rules/06-performance.md#e8e9dc23e7ae",
     "sota-observability/rules/05-operational-readiness.md#0ed5e078a308",
     "sota-performance/rules/01-methodology.md#fbd97869ca2d"
    ]
@@ -2528,7 +2528,7 @@
    "sample": "- **FFI**: a Rust panic that reaches an `extern \"C\"` boundary **aborts the process** — since Rust 1.81; before that it w",
    "members": [
     "sota-rust/rules/02-errors-and-panics.md#c3d8b4ff8d58",
-    "sota-rust/rules/02-errors-and-panics.md#f824ddca822e",
+    "sota-rust/rules/02-errors-and-panics.md#416d2010ff38",
     "sota-rust/rules/03-unsafe-discipline.md#66dda7a63a3d"
    ]
   },
