@@ -1541,12 +1541,17 @@ refused **once per session** with what to settle first (does the project ask for
 the retry counter, every prompt in order); issued again, it runs. It refuses rather than adding a
 note because Claude Code places a PreToolUse note beside the tool *result*, after an attempt is
 spent. An image push or retag, a CI file written from the shell and a vulnerability scan get the
-owning rules files as context, once per session each, and are never blocked. Commands are parsed
+owning rules files as context, once per session each, and are never blocked. **A source file
+written from the shell** (`cat > x.go <<EOF`, `sed -i`, a heredoc script that writes it) gets the
+code-rules hook's own note, as if it had been written with Edit, since 2026-11-20: a field report
+counted 126 shell writes of Go files against 20 Edit/Write in one session, none of them seen by the
+code-rules hook. Commands are parsed
 into argv, so a commit message, a grep pattern or `git log -S` does not fire it. Replayed over one
 operator's 39,464 agent Bash calls before it shipped: signing fired on 13 calls in 2 sessions, all
 real, including all 7 signed commits of the incident; the CI note caught all 11 edits of the
 incident's pipeline templates and would appear in 36 of 94 sessions; scans in 5; image pushes in
-none (re-run it: `scripts/action-rules-hook.py --replay`). It costs about 60 ms per Bash call and
+none; source writes (replayed 2026-11-20 over 43,405 calls) would show 352 notes in 73 sessions,
+2 to 6 in most (re-run it: `scripts/action-rules-hook.py --replay`). It costs about 60 ms per Bash call and
 needs `python3`. Turn it off with `SOTA_ACTION_RULES_HOOK=off`; `install.sh --routing` offers it to
 clone installs, and `scripts/verify-setup.sh` reports whether it is registered (check 2f, since v1.56.1). Whether it changes outcomes is not measured yet: the replay shows where it fires.
 
