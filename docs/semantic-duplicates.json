@@ -515,15 +515,6 @@
    ]
   },
   {
-   "verdict": "distinct",
-   "note": "Different checks: C OpenSSL/curl verify-result probe vs a cross-language probe for absent/implicit TLS verification.",
-   "sample": "- [ ] **TLS / transport verification (§4) — HIGH when a peer certificate is never checked, CRITICAL in a client on user ",
-   "members": [
-    "sota-c-cpp/rules/04-security.md#78893283b252",
-    "sota-code-security/rules/04-cryptography.md#38f16200080f"
-   ]
-  },
-  {
    "verdict": "deliberate",
    "note": "Log injection with language-specific mechanics: C syslog call sites, Python formatter, Rust tracing fields.",
    "sample": "- **Logs carry neither secrets nor raw input.** C has no standard logger, so every `syslog`/`fprintf(stderr, ...)` call ",
