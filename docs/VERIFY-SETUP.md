@@ -144,8 +144,9 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    2f. action-rules hook (Claude Code only): does `~/.claude/settings.json` register
    `action-rules-hook.py` as a `PreToolUse` hook on Bash, or does the plugin? It ships on by default
    (v1.56.0); a `git pull` on a clone install brings the script and registers nothing, so missing is
-   PARTIAL: a signing command then runs before anyone reads the PIN counter, and a CI file written
-   from the shell gets no pointer to its rules. INFO only when `SOTA_ACTION_RULES_HOOK=off`.
+   PARTIAL: a signing command then runs before anyone reads the PIN counter, a CI file written
+   from the shell gets no pointer to its rules, and source written from the shell gets no code-rules
+   note (v1.57.1). INFO only when `SOTA_ACTION_RULES_HOOK=off`.
 3. Stack profile: does `~/.claude/profiles/*.md` exist and resolve (not a
    dangling symlink)? Report the filename only, not its contents.
 
