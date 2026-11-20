@@ -395,7 +395,7 @@ Run from repo root; verify each hit manually.
 - [ ] **App-set cookies (§1a)** — each hit lacks SameSite; the positional form cannot set it, so
       rewrite it to the options array with `secure`, `httponly` and `samesite` (a multi-line
       options array also shows up here: read it):
-      `grep -rnE 'set(raw)?cookie[[:space:]]*\(' --include='*.php' src/ | grep -vi 'samesite'`
+      `grep -rnE 'set(raw)?cookie[[:space:]]*\(' --include='*.php' src/ | grep -viE '^[^:]+:[0-9]+:.*(samesite)'`
 - [ ] **Password handling** —
       `grep -rnE '\b(md5|sha1|crypt)\s*\(' --include='*.php' src/ | grep -iE 'pass|pwd'` ;
       `grep -rn 'password_hash' --include='*.php' src/` (lists every use of the recommended API; each
@@ -452,7 +452,7 @@ Run from repo root; verify each hit manually.
       box: `php --ini | grep 'Loaded Configuration'` ;
       `php -r 'foreach (["zend.exception_ignore_args","zend.exception_string_param_max_len","display_errors"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`
       ; `grep -rnE 'phpinfo[[:space:]]*\(' --include='*.php' .` ;
-      `grep -rniE 'function[^(]*\([^)]*\$(pass(word)?|secret|token|api_?key|credentials?)' --include='*.php' src/ | grep -v 'SensitiveParameter'`
+      `grep -rniE 'function[^(]*\([^)]*\$(pass(word)?|secret|token|api_?key|credentials?)' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(SensitiveParameter)'`
       (one-line signatures only: a signature split across lines, as PER-CS formats long ones,
       needs reading)
 

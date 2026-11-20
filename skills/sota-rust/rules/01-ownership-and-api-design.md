@@ -343,7 +343,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       leaves the previous state callable. A runtime `enum` is not a
       finding where states are dynamic, numerous or serialized.
 - [ ] **Builders (§5) — Low** —
-      `grep -rnE 'fn build\(&?(mut )?self\)' --include='*.rs' . | grep -v 'Result<'` lists
+      `grep -rnE 'fn build\(&?(mut )?self\)' --include='*.rs' . | grep -vE '^[^:]+:[0-9]+:.*(Result<)'` lists
       infallible `build()`s: one that unwraps, expects or panics on a missing or invalid field
       should return `Result<T, BuildError>` or take the field in `T::builder(required)`. Also:
       one builder mixing `self` and `&mut self` setters; a constructor past ~4 parameters with no

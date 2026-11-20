@@ -198,7 +198,7 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
       (a two-argument `SAXParser.parse(src, handler)` discards the reader's resolver)
 - [ ] **Wrapper or binding library building its own reader — HIGH on untrusted input** (§4:
       dom4j and JDOM defaults both fetched) —
-      `grep -rnE 'new SAXReader\(|SAXReader\.createDefault\(|new SAXBuilder\(|XMLReaderFactory\.createXMLReader\(|\.unmarshal\([[:space:]]*[^)[:space:]]' --include='*.java' --include='*.kt' . | grep -vE 'unmarshal\([[:space:]]*(new SAXSource|[A-Za-z_.]*(streamReader|StreamReader|saxSource|SAXSource))'`
+      `grep -rnE 'new SAXReader\(|SAXReader\.createDefault\(|new SAXBuilder\(|XMLReaderFactory\.createXMLReader\(|\.unmarshal\([[:space:]]*[^)[:space:]]' --include='*.java' --include='*.kt' . | grep -vE '^[^:]+:[0-9]+:.*(unmarshal\([[:space:]]*(new SAXSource|[A-Za-z_.]*(streamReader|StreamReader|saxSource|SAXSource)))'`
       (each `SAXReader` needs `setEntityResolver`; each `unmarshal` argument must be a hardened
       `XMLStreamReader` or `SAXSource`)
 - [ ] **XXE in the parsers the grep above does not name — CRITICAL on reachable input** (§1;

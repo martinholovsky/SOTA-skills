@@ -337,7 +337,7 @@ Operational rules for dynamic/leased credentials:
       traceable in the store's audit log (§3) — Low per missing field class.
 - [ ] **Initial human passwords never travel with the username (§2)** — Medium for a
       notification template that renders a password value:
-      `grep -rniE '\{\{[[:space:]]*[a-z_.]*(password|passwd|pwd)[a-z_]*[[:space:]]*\}\}' templates/ | grep -viE '(url|link)[[:space:]]*\}\}'`
+      `grep -rniE '\{\{[[:space:]]*[a-z_.]*(password|passwd|pwd)[a-z_]*[[:space:]]*\}\}' templates/ | grep -viE '^[^:]+:[0-9]+:.*((url|link)[[:space:]]*\}\})'`
 - [ ] **CI access to the store/cloud is attributable to the triggering person (§5)** and the
       federation config is re-read on a schedule — Low for AWS OIDC jobs left on the constant
       default session name: `grep --null -rlE 'configure-aws-credentials' .github/workflows | xargs -0 -r grep -L 'role-session-name'`

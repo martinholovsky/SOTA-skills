@@ -354,9 +354,9 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       (`secret:` on an unrelated client is a false hit; then confirm each `Rack::Session::Cookie`
       call sets `serialize_json: true`) ;
       `grep -rn "reset_session" --include='*.rb' . | head -1` (absent around login = HIGH: session fixation, rated as [`sota-code-security`](../../sota-code-security/SKILL.md) rates it);
-      `grep -rn "secret_key_base\|SESSION_SECRET" --include='*.rb' --include='*.yml' . | grep -vE "ENV|credentials"`
+      `grep -rn "secret_key_base\|SESSION_SECRET" --include='*.rb' --include='*.yml' . | grep -vE '^[^:]+:[0-9]+:.*(ENV|credentials)'`
 - [ ] **App-set cookie without HttpOnly (§4) — MEDIUM; HIGH when it carries a token or
-      identity** — `grep -rnE 'cookies(\.[a-z]+)*\[[^]]+\]\s*=[^=~]|set_cookie\(' --include='*.rb' . | grep -v 'httponly'`
+      identity** — `grep -rnE 'cookies(\.[a-z]+)*\[[^]]+\]\s*=[^=~]|set_cookie\(' --include='*.rb' . | grep -vE '^[^:]+:[0-9]+:.*(httponly)'`
       (a hash split across lines is a false hit; then confirm `secure:`/`same_site:` are
       set, or `force_ssl` is on)
 - [ ] **Redirects / SSRF** (§6) — `grep -rnE 'redirect(_to)?\s*\(?\s*params' --include='*.rb' .` ;
@@ -364,7 +364,7 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rnE '(Net::HTTP|URI\.open|Faraday|HTTParty)[^#]*params' --include='*.rb' .`
 - [ ] **SSRF: outbound request not pinned to a vetted address (§6) — HIGH when the
       destination is caller-influenced** —
-      `grep -rnE 'URI\.open|Net::HTTP\.(get|get_response|post|post_form|start|new)|HTTParty\.|Faraday\.(new|get|post)|RestClient\.' --include='*.rb' . | grep -v 'ipaddr'`
+      `grep -rnE 'URI\.open|Net::HTTP\.(get|get_response|post|post_form|start|new)|HTTParty\.|Faraday\.(new|get|post)|RestClient\.' --include='*.rb' . | grep -vE '^[^:]+:[0-9]+:.*(ipaddr)'`
       (every hit connects to whatever the name resolves to at connect time — a
       check done earlier is a DNS-rebinding window; confirm the destination is
       fixed, or that the call pins with `ipaddr:` and a `nil` proxy argument)
@@ -406,7 +406,7 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH, CRITICAL on user networks or a code channel: [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md) §5) ;
       `grep -rnE 'verify_host_key:\s*(:never|:accept_new|false|true)|paranoid:\s*(false|true)' --include='*.rb' .`
       (SSH host key not verified — HIGH) ;
-      `grep -rnE 'Net::(SSH|SCP|SFTP)\.start' --include='*.rb' . | grep -v 'verify_host_key'`
+      `grep -rnE 'Net::(SSH|SCP|SFTP)\.start' --include='*.rb' . | grep -vE '^[^:]+:[0-9]+:.*(verify_host_key)'`
       (the default is not `:always` — confirm the options hash sets it)
 
 Severity guide: `send_file params` — CRITICAL. `html_safe`/`raw` on user input

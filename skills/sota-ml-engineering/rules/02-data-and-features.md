@@ -144,13 +144,13 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       careful" is not a mechanism ([`rules/01`](01-ml-systems-architecture.md) §3).
 
 - [ ] **Preprocessing leakage (§1) — CRITICAL** —
-      `grep -rnE '\.fit(_transform)?\(' --include='*.py' . | grep -vE 'Pipeline|fit\(X_train|fit\(train'`
+      `grep -rnE '\.fit(_transform)?\(' --include='*.py' . | grep -vE '^[^:]+:[0-9]+:.*(Pipeline|fit\(X_train|fit\(train)'`
       (fit on full data?);
       `grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?`
       — a locator: it lists every resampling/scaling/selection site; each hit is read, not a
       finding (is it fit before the split, or inside a Pipeline on the training fold?)
 - [ ] **Split correctness (§1, §3) — CRITICAL/HIGH** —
-      `grep -rnE 'train_test_split\(' --include='*.py' . | grep -v 'stratify\|TimeSeries\|Group'`
+      `grep -rnE 'train_test_split\(' --include='*.py' . | grep -vE '^[^:]+:[0-9]+:.*(stratify|TimeSeries|Group)'`
       (temporal/group needed?);
       `grep -rniE 'TimeSeriesSplit|GroupKFold|GroupShuffle' --include='*.py' . || echo "no temporal/group split — verify IID"`
       ; manual: is the held-out test set touched only for the final evaluation, with model selection
@@ -175,13 +175,13 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       `grep -rqiE 'lawful_?basis|legal_?basis|consent_?(code|reason|basis)|tc_?string' . || echo "no per-row consent or lawful-basis code"`
 - [ ] **Auto-label QA and labeling roles (§7) — MEDIUM** — auto-labels with no threshold on
       the same line:
-      `grep -rniE '(pseudo|weak|auto)_?label' --include='*.py' . | grep -viE 'confidence|threshold|min_score'`
+      `grep -rniE '(pseudo|weak|auto)_?label' --include='*.py' . | grep -viE '^[^:]+:[0-9]+:.*(confidence|threshold|min_score)'`
       ; manual: create/modify/approve separated on the labeling platform
 - [ ] **Adjudication-window quarantine (§7) — HIGH where outcomes can be reversed** —
       `grep -rniE 'quarantine|adjudicat|chargeback|holdback' --include='*.py' --include='*.sql' . || echo "no quarantine before outcome events reach training"`
 - [ ] **Feature documentation and identical missing/unseen handling (§4) — MEDIUM** — encoders left on
       the default that raises on an unseen category:
-      `grep -rnE '(OneHotEncoder|OrdinalEncoder)\(' --include='*.py' . | grep -v 'handle_unknown'`
+      `grep -rnE '(OneHotEncoder|OrdinalEncoder)\(' --include='*.py' . | grep -vE '^[^:]+:[0-9]+:.*(handle_unknown)'`
       (scikit-learn defaults to `handle_unknown='error'`; read multi-line calls by hand, and read an
       explicit setting for silent mis-encoding); manual: each feature's source, semantics and
       freshness documented, unused features dropped, and missing values and categoricals encoded by

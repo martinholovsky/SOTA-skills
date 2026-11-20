@@ -228,7 +228,7 @@ record ([`rules/04`](04-security.md) §4).
       (options read without start-up validation fail on first use instead of at boot; a
       `Configure<T>(o => ...)` set in code is a false hit)
 - [ ] **Mutable static state (§5) — MEDIUM** —
-      `grep -rnE '^[[:space:]]*((public|private|protected|internal)[[:space:]]+)*static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(=|;|\{)' --include='*.cs' . | grep -vwE 'readonly|const|class|struct|record|interface|enum|delegate'`
+      `grep -rnE '^[[:space:]]*((public|private|protected|internal)[[:space:]]+)*static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(=|;|\{)' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:(.*[^A-Za-z0-9_])?(readonly|const|class|struct|record|interface|enum|delegate)([^A-Za-z0-9_]|$)'`
       (static fields and properties. The earlier one-pattern form used a `(?!` lookahead, which
       POSIX ERE rejects: exit 2 under BSD grep and ugrep alike, measured 2026-09-24)
 - [ ] **Exception handler not first in the pipeline (§4) — MEDIUM** — per file, the first
@@ -248,7 +248,7 @@ record ([`rules/04`](04-security.md) §4).
       is 0 on failure)
 - [ ] **Authentication endpoints with no rate limit — HIGH** (§7) — auth-looking routes with no
       limiter on the same line:
-      `grep -rniE 'MapIdentityApi|(Map(Post|Get|Put|Group)|Http(Post|Get|Put)|Route)\("[^"]*(login|signin|sign-in|token|register|signup|password|otp|mfa|2fa)' --include='*.cs' . | grep -vE 'RequireRateLimiting|EnableRateLimiting'`
+      `grep -rniE 'MapIdentityApi|(Map(Post|Get|Put|Group)|Http(Post|Get|Put)|Route)\("[^"]*(login|signin|sign-in|token|register|signup|password|otp|mfa|2fa)' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(RequireRateLimiting|EnableRateLimiting)'`
       (a policy on the parent `MapGroup`, on the next line, on the controller class, or a
       `GlobalLimiter` is invisible to this, so confirm each hit) ; and whether anything is
       limited at all:

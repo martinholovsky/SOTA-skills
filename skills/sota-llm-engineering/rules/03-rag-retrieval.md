@@ -293,7 +293,7 @@ queries needing tool choice (search vs SQL vs API).
       retention; deletion log kept; orphan-chunk sweep scheduled (§7).
       **High** (Critical if a revoked document's answer is still served).
       Probe — cache writes with no expiry:
-      `grep -rnE '(semantic_cache|answer_cache|response_cache)\.(set|put|add)\(' . | grep -vE 'ttl|ex=|expire'`
+      `grep -rnE '(semantic_cache|answer_cache|response_cache)\.(set|put|add)\(' . | grep -vE '^[^:]+:[0-9]+:.*(ttl|ex=|expire)'`
 - [ ] Agentic retrieval (§8) only where one-shot demonstrably fails on the
       eval; a verify-and-retry pass capped at one iteration; trajectories judged,
       not only answers; bounded per [rules/04](04-agents-tools.md).
@@ -301,7 +301,7 @@ queries needing tool choice (search vs SQL vs API).
       selection, and anchor chunks (k of n, else a rules path) for restricted
       policy categories (§4). **Medium** (High where retrieved text drives an
       action). Probe — retrievers with neither a floor nor MMR:
-      `grep -rnE 'similarity_search\(|as_retriever\(' . | grep -vE 'score_threshold|mmr'`
+      `grep -rnE 'similarity_search\(|as_retriever\(' . | grep -vE '^[^:]+:[0-9]+:.*(score_threshold|mmr)'`
 - [ ] ACL/tenant/source tags write-once; outliers quarantined before
       promotion; `expires_at` filtered in-engine; re-embedding drift reviewed
       (§7a). **High** for mutable ACL/tenant tags. Probe — payload updates

@@ -369,7 +369,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
 ## Audit checklist
 
 - [ ] **Text I/O without an explicit encoding (§5, below a 3.15 floor) — MEDIUM** —
-      `grep -rnE '(open|read_text|write_text)\(' --include="*.py" src/ | grep -v 'encoding=' | grep -vE "['\"](rb|wb|ab|r\+b|w\+b)['\"]"`
+      `grep -rnE '(open|read_text|write_text)\(' --include="*.py" src/ | grep -vE '^[^:]+:[0-9]+:.*(encoding=)' | grep -vE "['\"](rb|wb|ab|r\+b|w\+b)['\"]"`
       (each hit reads or writes text in the locale encoding: cp1252 on many Windows hosts)
 - [ ] **Ruff covers most of this file — run first (§3: C4)** —
       `uvx ruff check --select B006,B008,B023,B904,E722,BLE,G,T20,DTZ,PTH,SIM,A,C4 --statistics .` ;
@@ -411,7 +411,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       `grep --null -rlE 'SecretStr' --include="*.py" src/ | xargs -0 -r grep -L 'hide_input_in_errors'`
       (a pydantic model file with a `SecretStr` and no `hide_input_in_errors`: its validation
       errors print the value, §7)
-- [ ] **Resource handling (§4)** — `grep -rn "= open(" --include="*.py" src/ | grep -v "with "`
+- [ ] **Resource handling (§4)** — `grep -rn "= open(" --include="*.py" src/ | grep -vE '^[^:]+:[0-9]+:.*(with )'`
       (unmanaged file handles [MEDIUM]); `grep -rn "\.close()" --include="*.py" src/ | head`
       (manual close → with-able?) ; `grep -rnE '\.acquire\(\)' --include='*.py' --exclude-dir=.venv .`
       (a lock taken by hand, not `with lock:` [MEDIUM])
@@ -420,11 +420,11 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
 - [ ] **Identity misuse & list.pop(0)** (§12, §9) —
       `grep -rn 'is "" \|is "\| is [0-9]' --include="*.py" src/` ;
       `grep -rn "\.pop(0)" --include="*.py" src/` (O(n) dequeue [perf])
-- [ ] **groupby without sort; hand-rolled itertools (§9) (manual review)** — `grep -rn "groupby(" --include="*.py" src/ | grep -v "sorted("` ;
+- [ ] **groupby without sort; hand-rolled itertools (§9) (manual review)** — `grep -rn "groupby(" --include="*.py" src/ | grep -vE '^[^:]+:[0-9]+:.*(sorted\()'` ;
       `grep -rnE 'def [a-z_]*(chunk|batch|flatten|window|pairwise)[a-z_]*\(' --include='*.py' --exclude-dir=.venv .`
       (a utils helper that itertools/`batched`/`pairwise` replaces [LOW])
 - [ ] **Dataclasses that are not frozen and slotted (§7) [LOW]** —
-      `grep -rnE '^[[:space:]]*@(dataclasses\.)?dataclass' --include='*.py' --exclude-dir=.venv . | grep -vE 'frozen=True.*slots=True|slots=True.*frozen=True'`
+      `grep -rnE '^[[:space:]]*@(dataclasses\.)?dataclass' --include='*.py' --exclude-dir=.venv . | grep -vE '^[^:]+:[0-9]+:.*(frozen=True.*slots=True|slots=True.*frozen=True)'`
       (each opt-out needs a reason, such as `cached_property` needing `__dict__`) ; a boolean field, or
       more than three fields, without `kw_only=True` is a read of the class
 - [ ] **Magic strings and enums compared to raw strings (§8) [LOW]** —
@@ -441,7 +441,7 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
 - [ ] **Boolean/optional parameters frozen positionally — no `*` in the signature [MEDIUM]** (§13) —
       `grep -rnE 'def [a-z_]+\([^*)]*(flag|force|strict|verbose|dry_run)[^)]*\)' --include="*.py" src/`
 - [ ] **Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]** (§13) —
-      `grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning' | grep -vE 'import[^#]*deprecated'`
+      `grep -rn -i 'deprecated' --include="*.py" src/ | grep -vE '^[^:]+:[0-9]+:.*(@deprecated)' | grep -v 'DeprecationWarning' | grep -vE 'import[^#]*deprecated'`
 - [ ] **Does the suite fail on warnings? [MEDIUM if absent]** (§13) —
       `command grep -qE 'filterwarnings|-W ?error' pyproject.toml setup.cfg pytest.ini tox.ini || echo "suite does not fail on warnings"`;
       a category-scoped `error::DeprecationWarning` with no blanket `"error"` misses `UserWarning`s
@@ -457,5 +457,5 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       the number is a limit, price or quota** —
       `grep --null -rlE '(float|Decimal)\([a-z_]' --include='*.py' src/ | xargs -0 -r grep -LE 'isfinite|is_finite'`
       (files parsing numbers with no finiteness check) ;
-      `grep -rn 'json\.loads(' --include='*.py' src/ | grep -v 'parse_constant'`
+      `grep -rn 'json\.loads(' --include='*.py' src/ | grep -vE '^[^:]+:[0-9]+:.*(parse_constant)'`
       (JSON that accepts bare `NaN`) — then read each `/`, `//`, `%` on a caller value

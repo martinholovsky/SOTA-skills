@@ -439,12 +439,12 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
       write; store encrypted, versioned for rollback, reviewed or reset on a
       schedule; writes checked for contradiction with stored facts (§5).
       **High**. Probe — memory writes with no seal on the line:
-      `grep -rnE '(memory|memories|agent_state)[A-Za-z_]*\.(write|save|put|add|store)\(' . | grep -viE 'hmac|sign|seal'`
+      `grep -rnE '(memory|memories|agent_state)[A-Za-z_]*\.(write|save|put|add|store)\(' . | grep -viE '^[^:]+:[0-9]+:.*(hmac|sign|seal)'`
 - [ ] Scheduled, event-driven and self-initiated agent runs pass a trigger
       allowlist and the same risk tiers as user requests, trigger recorded per
       action, novel trigger patterns held for review (§4). **High**. Probe —
       agent entry points on a scheduler or bus with no trigger check:
-      `grep -rniE '(cron|schedule|add_job|on_event|subscribe).{0,60}agent' . | grep -viE 'trigger_polic|allowed_trigger|authori[sz]e_trigger'`
+      `grep -rniE '(cron|schedule|add_job|on_event|subscribe).{0,60}agent' . | grep -viE '^[^:]+:[0-9]+:.*(trigger_polic|allowed_trigger|authori[sz]e_trigger)'`
 - [ ] Coding agents: failing checks recorded before the run and the result
       judged against that baseline; agent edits to tests, check/CI config or
       thresholds routed to human review (§3a; detector in [sota-testing

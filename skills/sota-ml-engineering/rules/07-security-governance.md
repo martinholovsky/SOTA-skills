@@ -244,7 +244,7 @@ rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-e
 - [ ] **Model signing verified at admission and load (§2) — HIGH** —
       `grep -rqE 'model_signing[ .](verify|verifying)|from model_signing import .*verifying|verifying\.Config\(' . || echo "no model signature verification at admission/load"` ;
       unsigned files waved through:
-      `grep -rnE 'ignore[-_]unsigned[-_]files' . | grep -vE 'no-ignore[-_]unsigned|unsigned_files\((False|0)\)'`
+      `grep -rnE 'ignore[-_]unsigned[-_]files' . | grep -vE '^[^:]+:[0-9]+:.*(no-ignore[-_]unsigned|unsigned_files\((False|0)\))'`
       (every hit is a finding). Manual: are tokenizers, adapters and guard models in the signed set?
 - [ ] **Untrusted model code / worker isolation (§2) — HIGH** —
       `grep -rnE 'trust_remote_code *= *True' --include='*.py' .` (each hit must run in an

@@ -179,6 +179,13 @@ WHERE events.user_id = u.id
 - Batch by PK range (keyset), not OFFSET.
 - Idempotent predicate so a crashed backfill resumes safely.
 - Monitor replica lag and bloat during the run; pause when lag grows.
+- **Know which node absorbs the batches.** With several stateless frontends over one store (e.g.
+  TiDB servers over TiKV, Vitess `vtgate`, SurrealDB nodes over TiKV), the client's route decides
+  which frontend does every batch's work: `kubectl port-forward svc/<db>` binds one pod for the whole
+  session (its `--help`: "a pod will be selected automatically"). Spread the batches over per-pod
+  forwards, or run the job in the cluster through the application's pool, and throttle on each
+  node's own pressure (refusals, memory, lag), never on a cluster-wide sum: a sum stays low while
+  one node runs out of memory.
 - Run as a script/job with progress logging — not as a "migration" that a
   deploy pipeline times out on.
 
@@ -295,7 +302,8 @@ The expand/contract and lock-timeout doctrines are identical; mechanics differ:
       an invalid leftover before re-creating; unique constraints added via
       `CREATE UNIQUE INDEX CONCURRENTLY` + `ADD CONSTRAINT … USING INDEX` (§2).
 - [ ] Backfills batched by keyset, idempotent, resumable, throttled against
-      replication lag; never inside the DDL migration's transaction; run as a
+      replication lag and each node's own pressure (spread over the frontends
+      when there are several); never inside the DDL migration's transaction; run as a
       script/job with progress logging, not as a deploy-pipeline migration (§3).
 - [ ] One migration tool owns the schema; CI detects drift vs prod; migration
       linter (squawk/strong_migrations) wired in; no hand-applied DDL in prod (§5).
@@ -309,7 +317,7 @@ The expand/contract and lock-timeout doctrines are identical; mechanics differ:
       `ALGORITHM=INSTANT` (no `LOCK` clause) or `ALGORITHM=INPLACE, LOCK=NONE` —
       so a would-be rewrite fails loudly; one DDL statement per migration file;
       hot-table rewrites go through gh-ost/pt-online-schema-change (§6). Probe:
-      `grep -rniE --include='*.sql' 'ALTER[[:space:]]+TABLE' . | grep -viE 'ALGORITHM[[:space:]]*='`
+      `grep -rniE --include='*.sql' 'ALTER[[:space:]]+TABLE' . | grep -viE '^[^:]+:[0-9]+:.*(ALGORITHM[[:space:]]*=)'`
       (an ALTER whose ALGORITHM clause sits on a later line hits too — read it).
 - [ ] ORM-generated migrations reviewed as SQL, not as DSL; Rails projects run
       `strong_migrations`; Django CONCURRENTLY migrations set `atomic = False`;

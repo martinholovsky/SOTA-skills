@@ -380,7 +380,7 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       ; `grep -rnE 'node-addon-api|node-gyp|"gypfile"|\.node([^a-zA-Z0-9]|$)|node:ffi|--allow-ffi' --include='package.json' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --include='Dockerfile*' --include='*.yml' --include='*.yaml' .`
       — a `node:ffi` import or `--allow-ffi` grant is native code to audit as C (HIGH if its arguments are request-derived). `grep -rqE 'fsanitize=(address|undefined)' --include='binding.gyp' --include='*.yml' --include='*.yaml' --exclude-dir=node_modules . || grep -rl --include='binding.gyp' --exclude-dir=node_modules . .` lists the repo's own `binding.gyp` files when no sanitizer job exists (MEDIUM, §13).
 - [ ] `grep -rn "innerHTML\|outerHTML\|insertAdjacentHTML\|document.write" --exclude-dir=node_modules .` — each with non-constant input is HIGH (§1), CRITICAL where script can read a session token or secret; constant strings LOW.
-- [ ] `grep -rn "dangerouslySetInnerHTML\|v-html\|{@html}\|bypassSecurityTrust" --exclude-dir=node_modules . | grep -v "DOMPurify\.sanitize("` — lists sinks with no `DOMPurify.sanitize(` on the line: sanitized upstream? Unsanitized user/db content = HIGH (stored XSS), CRITICAL where script can read a session token or secret. Server-embedded state: `grep -rnE '<script[^>]*>[^<]*\$\{ *JSON\.stringify\(' --include='*.ts' --include='*.js' --include='*.tsx' --exclude-dir=node_modules . | grep -v 'u003c'` — `JSON.stringify` inside a `<script>` without escaping `<` allows `</script>` breakout (HIGH) (§1).
+- [ ] `grep -rn "dangerouslySetInnerHTML\|v-html\|{@html}\|bypassSecurityTrust" --exclude-dir=node_modules . | grep -vE '^[^:]+:[0-9]+:.*(DOMPurify\.sanitize\()'` — lists sinks with no `DOMPurify.sanitize(` on the line: sanitized upstream? Unsanitized user/db content = HIGH (stored XSS), CRITICAL where script can read a session token or secret. Server-embedded state: `grep -rnE '<script[^>]*>[^<]*\$\{ *JSON\.stringify\(' --include='*.ts' --include='*.js' --include='*.tsx' --exclude-dir=node_modules . | grep -vE '^[^:]+:[0-9]+:.*(u003c)'` — `JSON.stringify` inside a `<script>` without escaping `<` allows `</script>` breakout (HIGH) (§1).
 - [ ] ``grep -rn "eval(\|new Function(\|setTimeout(['\"\`]\|setInterval(['\"\`]" --exclude-dir=node_modules .`` — CRITICAL with dynamic input (§1).
 - [ ] **Dynamic code evaluation beyond `eval(` (§"XSS", the `node:vm` bullet) (§1) — CRITICAL
       when request data reaches it** —
@@ -403,11 +403,11 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       ``grep -rnE "(window|globalThis|self)\[ *[^]'\"\` ][^]]*\] *=[^=]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' .``
       — then read shared escapers and security config for a runtime `Object.freeze` (unfrozen and exported: MEDIUM).
 - [ ] Deep-merge of request data (§4): `grep -rnE "(merge|deepmerge|Object\.assign)\([^()]*req\.(body|query)" --exclude-dir=node_modules .` (request data passed straight in; read merges of parsed `json()` too) — prototype pollution exposure (HIGH); `grep -rn "__proto__" --exclude-dir=node_modules .` lists every `__proto__` reference; each hit is read, not a finding (one in tests/guards is good signal of awareness).
-- [ ] `grep -rn "jwt.verify\|jwtVerify" --exclude-dir=node_modules . | grep -v "algorithms"` — lists verify calls with no `algorithms` option on the line: algorithm not pinned = HIGH (§8); read a multi-line call before rating it. `aud`/`iss` checked?
+- [ ] `grep -rn "jwt.verify\|jwtVerify" --exclude-dir=node_modules . | grep -vE '^[^:]+:[0-9]+:.*(algorithms)'` — lists verify calls with no `algorithms` option on the line: algorithm not pinned = HIGH (§8); read a multi-line call before rating it. `aud`/`iss` checked?
 - [ ] Regex on user input (§7): `grep -rn "new RegExp(" --exclude-dir=node_modules .` (dynamic patterns = ReDoS + injection risk, HIGH); run `eslint-plugin-regexp`/recheck over static patterns.
 - [ ] **Regex escaping, anchoring and engine (§7, the four control failures) — HIGH on a
       validator or allowlist** —
-      ``grep -rnE 'new RegExp\( *[[:alpha:]_$`]|/[dgimsuvy]*[gmy][dgimsuvy]*\.test\(|/\^[^(/|]*\|[^/]*\$/' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' . | grep -v 'RegExp\.escape('``
+      ``grep -rnE 'new RegExp\( *[[:alpha:]_$`]|/[dgimsuvy]*[gmy][dgimsuvy]*\.test\(|/\^[^(/|]*\|[^/]*\$/' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' . | grep -vE '^[^:]+:[0-9]+:.*(RegExp\.escape\()'``
       — hits are a pattern built from a variable without `RegExp.escape`, a `.test()` on a
       literal carrying `m`/`g`/`y`, and a `/^a|b$/` alternation outside a group. A request value
       in an unescaped pattern is HIGH (pattern injection plus ReDoS). An `m`/`g` validator or an
@@ -426,7 +426,7 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       — no owner for these files is MEDIUM. A workflow whose install step can read a
       registry/cloud secret or `id-token: write` needs a read (HIGH if it can).
 - [ ] **New dependency vetted, insecure defaults configured (§"npm supply chain") (§5) — MEDIUM, HIGH on a request path** —
-      `grep -rnE 'cors\(\)|keyboard cat|axios\.create\(\)|marked\.parse\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -v 'DOMPurify\.sanitize('`
+      `grep -rnE 'cors\(\)|keyboard cat|axios\.create\(\)|marked\.parse\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -vE '^[^:]+:[0-9]+:.*(DOMPurify\.sanitize\()'`
       — each hit is a default or README sample left in place (open CORS, no timeout, unsanitized Markdown, the demo session secret).
       For each name the PR adds to `package.json`, run `npm view <name> time.created maintainers repository.url`: E404 or a days-old package is HIGH until explained.
 - [ ] `grep -n "git+\|git://\|github:\|https://.*\.tgz" package.json` — git-URL or remote-tarball dependencies (§5): unauditable, refused by npm ≥12 unless `allow-git`/`allow-remote` is `root` or `all` (MEDIUM).

@@ -109,7 +109,7 @@ progressive rollout validated on live traffic.
       ; manual: load-tested against the latency budget before launch, and a versioned,
       backward-compatible serving API
 - [ ] **Full-state rollback and isolated caches (§4) — MEDIUM/HIGH** — cache keys with no
-      model version: `grep -rniE 'cache_?key\s*=' --include='*.py' . | grep -viE 'model_?(version|id)'`
+      model version: `grep -rniE 'cache_?key\s*=' --include='*.py' . | grep -viE '^[^:]+:[0-9]+:.*(model_?(version|id))'`
       ; manual: does the rollback bundle pin tokenizer, config, features, prompts and index?
 - [ ] **Model decommissioning (§6) — MEDIUM** —
       `grep -rqiE 'decommission|retire|delete_model_version|delete_registered_model' . || echo "no model retirement path"`
