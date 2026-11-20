@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.57.0] - 2026-11-20
+
+**Front door checked:** sota-auto · check-probes-under-agent-grep · incrementally
 
 - **`statusline.sh` reads the transcript incrementally.** It re-read the whole session transcript on
   every render: 415 ms per render on a 33 MB transcript, almost all of it BSD `grep` scanning
@@ -12209,6 +12211,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.57.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.57.0
 [1.56.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.56.1
 [1.56.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.56.0
 [1.55.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.55.2
