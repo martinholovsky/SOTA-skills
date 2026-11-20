@@ -10,6 +10,13 @@
 # Skill tool call (`"name":"Skill" … "skill":"<name>"`), so we read them back.
 # When nothing's been invoked yet, it falls back to the count of available skills.
 #
+# Cost: the transcript grows for the whole session (33 MB, 13,400 lines measured
+# 2026-11-20), and re-reading it on every render cost 415 ms per render with BSD grep, which
+# `cat` reads in 9 ms. So the scan is incremental: a per-transcript cache under
+# $CLAUDE_CONFIG_DIR/sota-skills-data/statusline/ holds the byte offset already scanned and
+# the skills found, and each render reads only the bytes appended since. Forks are kept
+# down too (about 4 ms each on macOS): stdin and the cache are read with builtins.
+#
 # Untrusted input: the directory and branch names, the model name and the
 # transcript can carry terminal control sequences (a cloned repository picks its
 # own directory name). Every string is printed with C0/DEL/C1 control characters
@@ -24,7 +31,10 @@
 #
 set -euo pipefail
 
-input="$(cat)"
+# A builtin read: `$(</dev/stdin)` is reported to read empty under Claude Code's stdin
+# pipe, `read -d ''` does not (it returns 1 at end of input, hence `|| true`).
+input=""
+IFS= read -r -d '' input || true
 
 if ! command -v jq >/dev/null 2>&1; then
   printf 'statusline: jq not found — install it (e.g. brew install jq)\n'
@@ -70,7 +80,9 @@ if [ -z "$product" ]; then
     *)
       cw_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sota-skills-data"
       cw_file="$cw_dir/context-window"
-      if [ "$(cut -d' ' -f1 "$cw_file" 2>/dev/null || true)" != "$ctxsize" ]; then
+      cw_have=""
+      if [ -f "$cw_file" ]; then read -r cw_have _ <"$cw_file" 2>/dev/null || true; fi
+      if [ "$cw_have" != "$ctxsize" ]; then
         { mkdir -p "$cw_dir" && printf '%s %s\n' "$ctxsize" "$(date +%s)" >"$cw_file"; } 2>/dev/null || true
       fi
       ;;
@@ -85,16 +97,53 @@ fi
 
 # skills used this session = distinct Skill tool invocations in the transcript. The
 # transcript holds model and tool output, so a name is accepted only if it matches the
-# skill-name alphabet.
+# skill-name alphabet, both when it is read from the transcript and from the cache.
 skills=""
 if [ -n "$transcript" ] && [ -f "$transcript" ]; then
-  used="$(LC_ALL=C grep -F '"name":"Skill"' "$transcript" 2>/dev/null |
-    LC_ALL=C grep -o '"skill":"[A-Za-z0-9:._-]\{1,64\}"' |
-    sed 's/.*:"//; s/"$//' |
-    awk 'NF && !seen[$0]++' || true)"
+  sc_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sota-skills-data/statusline"
+  sc_key="${transcript//[!A-Za-z0-9._-]/_}"
+  [ "${#sc_key}" -le 200 ] || sc_key="${sc_key:$((${#sc_key} - 200))}"
+  sc_file="$sc_dir/$sc_key"
+  off=0 used=""
+  if [ -f "$sc_file" ]; then
+    { read -r off && read -r used; } <"$sc_file" 2>/dev/null || true
+  fi
+  # A cache that is not exactly "<digits>" then "<name>,<name>…" is discarded: rescan.
+  case "$off" in '' | *[!0-9]*) off=0 used="" ;; esac
+  case "$used" in *[!A-Za-z0-9:._,-]*) off=0 used="" ;; esac
+  size="$(wc -c <"$transcript" 2>/dev/null || true)"
+  size="${size//[!0-9]/}"
+  [ -n "$size" ] || size=0
+  # Smaller than the offset: the file was replaced or truncated, so start again.
+  if [ "$size" -lt "$off" ]; then off=0 used=""; fi
+  # Scan from off, and only when byte size-1 is a newline: the writer may be in the middle
+  # of a line, and a Skill record split across two renders would be lost. Bytes are
+  # skipped with a seek on the shared descriptor (dd skip, count=0), not `tail -c +N`,
+  # which BSD tail ran in 2.2 s on the 33 MB transcript against 16 ms for the seek. Bytes
+  # appended after `size` was read are scanned now and again next time: names are
+  # de-duplicated, so a re-read is harmless and only a skipped byte would not be.
+  if [ "$size" -gt "$off" ] &&
+    [ -z "$({ dd bs=1 skip="$((size - 1))" count=0 2>/dev/null && head -c 1; } <"$transcript" 2>/dev/null)" ]; then
+    new="$({ dd bs=1 skip="$off" count=0 2>/dev/null && cat; } <"$transcript" 2>/dev/null |
+      LC_ALL=C grep -F '"name":"Skill"' |
+      LC_ALL=C grep -o '"skill":"[A-Za-z0-9:._-]\{1,64\}"' |
+      sed 's/.*:"//; s/"$//' || true)"
+    for s in $new; do
+      case ",$used," in *",$s,"*) ;; *) used="${used:+$used,}$s" ;; esac
+    done
+    off="$size"
+    { [ -d "$sc_dir" ] || mkdir -p "$sc_dir"; } 2>/dev/null || true
+    { printf '%s\n%s\n' "$off" "$used" >"$sc_file.$$" && mv -f "$sc_file.$$" "$sc_file"; } 2>/dev/null || true
+  fi
   if [ -n "$used" ]; then
-    n="$(printf '%s\n' "$used" | grep -c . || true)"
-    list="$(printf '%s' "$used" | paste -sd, - | sed 's/,/, /g')"
+    n=0 list=""
+    old_ifs="$IFS"
+    IFS=,
+    for s in $used; do
+      n=$((n + 1))
+      list="${list:+$list, }$s"
+    done
+    IFS="$old_ifs"
     skills="skills▸ ${list} (${n})"
   fi
 fi

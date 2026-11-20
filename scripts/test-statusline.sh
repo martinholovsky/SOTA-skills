@@ -124,6 +124,38 @@ eq "relative cwd ignored" "$(run '{"workspace":{"current_dir":"scripts"}}')" "?"
 out="$(run "$(base "$T/proj" "scripts/test-statusline.sh")")"
 hasnt "relative transcript ignored" "$out" "skills▸"
 
+# 8. The incremental scan (2026-11-20): only bytes appended since the last render are read.
+inc="$T/inc.jsonl"
+sk() { printf '{"message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"%s"}}]}}\n' "$1"; }
+sk sota-a >"$inc"
+eq "first render scans the file" "$(run "$(base "$T/proj" "$inc")")" "Opus 5.5 │ ctx 42% │ proj ⎇ main │ skills▸ sota-a (1)"
+sk sota-b >>"$inc"
+sk sota-a >>"$inc"
+eq "appended skills added, duplicates kept once, order kept" "$(run "$(base "$T/proj" "$inc")")" "Opus 5.5 │ ctx 42% │ proj ⎇ main │ skills▸ sota-a, sota-b (2)"
+# A line the writer has not finished: held back, then counted once it is complete.
+sk sota-c | head -c 40 >>"$inc"
+out="$(run "$(base "$T/proj" "$inc")")"
+has "a half-written line does not lose the cached list" "$out" "skills▸ sota-a, sota-b (2)"
+sk sota-c | tail -c +41 >>"$inc"
+has "the completed line is counted" "$(run "$(base "$T/proj" "$inc")")" "skills▸ sota-a, sota-b, sota-c (3)"
+# Bytes already scanned are not read again: rewrite a scanned line in place at the same
+# size (transcripts are append-only, so this only happens here). A full rescan, as the
+# script did before 2026-11-20, would print sota-z; the incremental scan keeps sota-b.
+sed 's/sota-b/sota-z/' "$inc" >"$inc.tmp" && cat "$inc.tmp" >"$inc" && rm -f "$inc.tmp"
+has "already-scanned bytes are not re-read" "$(run "$(base "$T/proj" "$inc")")" "skills▸ sota-a, sota-b, sota-c (3)"
+# Replaced by a shorter file: the cached list is dropped and the file rescanned.
+sk sota-d >"$inc"
+has "a truncated transcript starts again" "$(run "$(base "$T/proj" "$inc")")" "skills▸ sota-d (1)"
+# A tampered cache is not trusted: a name outside the alphabet makes it a rescan.
+cache="$(find "$T/home/.claude/sota-skills-data/statusline" -type f -name '*inc.jsonl' 2>/dev/null | head -n 1 || true)"
+if [ -n "$cache" ]; then ok; else bad "no cache file was written"; fi
+printf '%s\n%s\n' "0" 'evil;rm -rf ~,sota-x' >"$cache"
+out="$(run "$(base "$T/proj" "$inc")")"
+hasnt "a tampered cache's names are not printed" "$out" "rm -rf"
+has "and the transcript is rescanned instead" "$out" "skills▸ sota-d (1)"
+printf '%s\n%s\n' "999999999" "sota-x" >"$cache"
+has "an offset past the end is a rescan" "$(run "$(base "$T/proj" "$inc")")" "skills▸ sota-d (1)"
+
 total=$((pass + fail))
 # shellcheck disable=SC2016  # $BASH_VERSION is meant to expand in the bash under test
 printf 'statusline: %d/%d passed under %s (%s)\n' "$pass" "$total" "$SH" "$("$SH" -c 'echo "$BASH_VERSION"')"
