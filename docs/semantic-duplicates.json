@@ -507,10 +507,10 @@
    "members": [
     "sota-c-cpp/rules/03-undefined-behavior.md#b16ef74c98fd",
     "sota-code-security/rules/06-memory-resource-safety.md#a35ae8793669",
-    "sota-dotnet/rules/01-idioms.md#51dfb8d13e59",
+    "sota-dotnet/rules/01-idioms.md#14849ed10c93",
     "sota-golang/rules/02-design.md#1193213c7dbb",
     "sota-jvm/rules/01-idioms.md#01fc70f89296",
-    "sota-python/rules/03-idioms-pitfalls.md#c2803f1fcda4",
+    "sota-python/rules/03-idioms-pitfalls.md#dfb0b43b093f",
     "sota-rust/rules/01-ownership-and-api-design.md#f4ad622be09b"
    ]
   },
@@ -891,9 +891,9 @@
    "note": "code-security owns the LDAP distinguished-name vs search-filter encoders; JVM and PHP give language-specific escaping APIs and probes.",
    "sample": "- [ ] **LDAP DN vs filter (§11)**: is each LDAP value escaped with the encoder for where it lands (RFC 4514 for DN compo",
    "members": [
-    "sota-code-security/rules/01-input-injection.md#7066a945b1bf",
+    "sota-code-security/rules/01-input-injection.md#139af48183c3",
     "sota-code-security/rules/01-input-injection.md#d26fa8cd2c75",
-    "sota-jvm/rules/04-security.md#86b6276f2009",
+    "sota-jvm/rules/04-security.md#6514c3080804",
     "sota-php/rules/02-injection.md#210ce81d4cbc"
    ]
   },
@@ -923,7 +923,7 @@
    "note": "Cross-language regex checklist vs Python-specific probe (fullmatch, re.escape, MULTILINE).",
    "sample": "- [ ] **Validation regexes (§10)**: are validators full-match with an absolute end anchor, bounded inside the pattern, a",
    "members": [
-    "sota-code-security/rules/01-input-injection.md#9f76137ea080",
+    "sota-code-security/rules/01-input-injection.md#b0640194330d",
     "sota-python/rules/05-security.md#96a680096e96"
    ]
   },
@@ -1451,7 +1451,7 @@
    "sample": "- Any comparison where one side is secret (MACs, tokens, API keys, OTP codes, signatures) must be constant-time: `hmac.c",
    "members": [
     "sota-code-security/rules/22-constant-time-comparison.md#00c637666361",
-    "sota-code-security/rules/22-constant-time-comparison.md#6f88c668ae5c",
+    "sota-code-security/rules/22-constant-time-comparison.md#b6574b59f725",
     "sota-performance/rules/05-caching.md#e5620382b36a",
     "sota-ruby/rules/02-security.md#49f56858e41b",
     "sota-rust/rules/05-security-supply-chain.md#502c5e21096a"
@@ -2122,7 +2122,7 @@
    "note": "Different probes: JS checks that verify pins algorithms; secrets-management greps for leaked JWT literals and default secrets.",
    "sample": "- [ ] `grep -rn \"jwt.verify\\|jwtVerify\" --exclude-dir=node_modules . | grep -v \"algorithms\"` — lists verify calls with n",
    "members": [
-    "sota-javascript-typescript/rules/05-security.md#27f80572d5e0",
+    "sota-javascript-typescript/rules/05-security.md#9503525607bf",
     "sota-secrets-management/rules/05-credential-types.md#0af1e7d83c5b"
    ]
   },
@@ -2273,8 +2273,7 @@
    "members": [
     "sota-ml-engineering/SKILL.md#d0bcddfd3d18",
     "sota-ml-engineering/rules/07-security-governance.md#15bddb8de7e4",
-    "sota-python/rules/05-security.md#b465f80e6fce",
-    "sota-python/rules/05-security.md#fe9f249c77b3"
+    "sota-python/rules/05-security.md#b465f80e6fce"
    ]
   },
   {
@@ -2330,7 +2329,7 @@
    "sample": "- **Parse untrusted XML with external entities off.** `XMLParser` has `shouldResolveExternalEntities` = `false` by defau",
    "members": [
     "sota-mobile/rules/04-security.md#cf7d0ad7c6e2",
-    "sota-mobile/rules/04-security.md#fd24daedff80",
+    "sota-mobile/rules/04-security.md#6db277a89c42",
     "sota-swift/rules/05-security.md#a839040b3942"
    ]
   },
@@ -2933,7 +2932,7 @@
    "note": "Each item keeps its own env grep (Next-only vs cross-framework); the server-only grep is byte-identical in both and must be edited together. Removing it from rules/03 changes that probe's hash and needs new invariant-44 fixtures (2026-10-30).",
    "sample": "- [ ] **Server->client data exposure: whole objects as props, env on client** (§1; the cross-framework item is [rules/07",
    "members": [
-    "sota-web-frameworks/rules/03-nextjs.md#dc2bcad5e5be",
+    "sota-web-frameworks/rules/03-nextjs.md#c908566be181",
     "sota-web-frameworks/rules/07-security.md#709b29847a0f"
    ]
   },
@@ -2998,7 +2997,7 @@
    "note": "rules/07 §4 is the consolidated framework CVE reference that summarises rules/03 §5 and rules/05 §6 by design (\"Full detail in rules/03 … and rules/05\"); each checklist states its own file's floor. Reviewed at the 2026-11-18 release cut after the advisory update (#720).",
    "sample": "- [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182 (Next: GHSA-9qr9-h5gf-34mp), CVE-2025-29927,",
    "members": [
-    "sota-web-frameworks/rules/03-nextjs.md#ff1df3565fbc",
+    "sota-web-frameworks/rules/03-nextjs.md#835e72c020f2",
     "sota-web-frameworks/rules/07-security.md#06c8dcc4fcf9",
     "sota-web-frameworks/rules/07-security.md#7f54387299b2"
    ]
