@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`statusline.sh` reads the transcript incrementally.** It re-read the whole session transcript on
+  every render: 415 ms per render on a 33 MB transcript, almost all of it BSD `grep` scanning
+  bytes it had already seen (`cat` reads the file in 9 ms). A per-transcript cache now keeps the
+  byte offset and the skills found, so a render reads only appended bytes, skipped with a seek
+  (BSD `tail -c +N` took 2.2 s on the same file). Measured on that transcript: 441 → 54 ms warm,
+  432 → 78 ms after a new message, the same line printed. A half-written last line is held back
+  until it completes; a shorter file or a malformed cache means a rescan. Fewer forks too: stdin and
+  the cache are read with builtins, as a dev.to write-up on status-line latency found. Tests:
+  33/33 under bash 5.3, macOS bash 3.2 and Debian bash 5.2; the two cache-only tests fail on the
+  previous script.
 - **The completion gate measured again, with sentinel tasks (ROADMAP 96 closed).** sota-agent-evals v19,
   pre-registered: rule tests 22/32 → 24/32 on the same 20 tasks (2 up, 0 down, p = 0.25), spec equal,
   never-mentioned 3 → 2, cost equal; INCONCLUSIVE with no harm, as v18. Four new sentinel tasks, where

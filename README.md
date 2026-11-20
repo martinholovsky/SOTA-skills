@@ -1437,7 +1437,10 @@ falling back to a count of installed skills before any are used. It also records
 context window Claude Code reports (`context_window.context_window_size`) in
 `~/.claude/sota-skills-data/context-window`, rewriting it only when the value changes. That
 is the one exact source for the skill-listing budget checks, since nothing outside a live
-session can know the window. Wire it up in `settings.json` (requires `jq`):
+session can know the window. The transcript is read **incrementally**: a per-transcript cache in
+`~/.claude/sota-skills-data/statusline/` keeps the byte offset already scanned and the skills
+found, so a render reads only what was appended (on a 33 MB transcript, 441 ms → 54 ms per
+render, measured 2026-11-20). Wire it up in `settings.json` (requires `jq`):
 
 ```json
 "statusLine": { "type": "command", "command": "/path/to/SOTA-skills/scripts/statusline.sh" }

@@ -1396,7 +1396,9 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
 - **Optional-extras scripts** (`statusline.sh`, `init-gates.sh`,
   `gen-agents-md.sh`): highest defect density found by the audit, and plugin
   users don't get them by default. Bug-fix only; no new extras until the
-  plugin path can deliver them natively.
+  plugin path can deliver them natively. *2026-11-20, operator-requested:* `statusline.sh`'s
+  render time grew with the session (415 ms per render on a 33 MB transcript); the incremental
+  transcript scan that fixes it is treated as a bug fix, not a new extra.
 
 ## Explicitly rejected (with reasons, so they aren't re-litigated)
 
