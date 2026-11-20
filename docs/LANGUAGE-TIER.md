@@ -563,6 +563,18 @@ holds no fully qualified `@lombok.Data`, no `@ToString.Exclude`, and no Lombok `
 (0 each, counted directly), so they remain unmeasured, not refuted. ActiveSupport `as_json` is Ruby
 and outside this corpus. Samples are 60 lines per language: the numbers carry direction, not decimals.
 
+**Measured 2026-11-20 (ROADMAP 102), superseding the paragraph above's "Fixing it is ROADMAP 102".**
+The JVM probe was redesigned with item 92's method on the same pinned corpus: candidates run as
+the real shell commands (the shipped probe reproduced .44 / .02 on the design labels exactly),
+designed on 93's 60 labels (best: .86 / .78), frozen by hash, then scored once on a disjoint
+hold-out (seed 2, 48 lines, labelled blind afterwards): **precision .56 → .62, recall .03 → .72**.
+The design precision was overfit; the recall gain held. The shipped item adds a file-level stage
+for Kotlin data-class properties and Java record components declared one per line, and keys the
+Lombok stage on a Lombok import, so Spring's `@Value("${…}")` no longer selects a file. Still
+reported: a field already under `@ToString.Exclude`; still missed: a record's last component
+when it has no trailing comma. A fully qualified `@lombok.Data` is now matched, but the corpus
+holds none, so that case remains unmeasured.
+
 **Not changed, deliberately:** the top-10 lists of the four skills that lack a redacting-type line.
 The floor now carries the concept for every language, and the top-10 lists are curated per skill.
 
