@@ -245,7 +245,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       a list-less pragma** (§2) — no CLI gate finds a stale suppression, so inventory:
       `grep -rnE '#pragma warning disable[[:space:]]*(//.*)?$' --include='*.cs' .` (no list: every
       warning off to the `restore` or end of file) ;
-      `grep -rn 'SuppressMessage(' --include='*.cs' . | grep -v 'Justification'` (no reason;
+      `grep -rn 'SuppressMessage(' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(Justification)'` (no reason;
       multi-line attributes need a read) ;
       `grep -rn 'IDE0079' --include='*.yml' --include='*.yaml' --include='*.props' --include='*.csproj' --include='.editorconfig' .`
       (a build gate on IDE0079 is dead: it never runs outside the IDE)
@@ -344,7 +344,7 @@ lives in [`sota-testing`](../../sota-testing/SKILL.md).
       explicit TLS opt-outs and Npgsql modes that do not verify the certificate:
       `grep -rniE 'TrustServerCertificate *= *(true|yes)|SSL ?Mode *= *(Disable|Allow|Prefer|Require)' --include='*.cs' --include='*.json' --include='*.config' .` ;
       Npgsql strings left on the `Prefer` default (also try `Server=`):
-      `grep -rniE 'Host *= *[^;"]+;' --include='*.cs' --include='*.json' --include='*.config' . | grep -viE 'SSL ?Mode *='` ;
+      `grep -rniE 'Host *= *[^;"]+;' --include='*.cs' --include='*.json' --include='*.config' . | grep -viE '^[^:]+:[0-9]+:.*(SSL ?Mode *=)'` ;
       MessagePack deserialization in a file that never opts into `UntrustedData`:
       `grep -rlE 'MessagePackSerializer[.]Deserialize' --include='*.cs' . | while IFS= read -r f; do grep -q 'UntrustedData' "$f" || echo "$f: MessagePack on TrustedData default"; done`
 - [ ] **Parsers of untrusted bytes have fuzz / property-based tests (§4) — LOW, MEDIUM for a

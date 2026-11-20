@@ -154,7 +154,7 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
       (a stored view: who owns the bytes, and do they outlive it?)
 - [ ] **Iterator invalidation / erase-in-loop (§4) — MEDIUM** —
       `grep -rnE 'for *\(.*begin\(\).*\).*\.(erase|push_back|insert|clear)\(' --include='*.cpp' .`
-      ; `grep -rnE '\.erase[[:space:]]*\(' --include='*.cpp' --include='*.cc' . | grep -vE '=[[:space:]]*[A-Za-z_][A-Za-z0-9_.>-]*\.erase'`
+      ; `grep -rnE '\.erase[[:space:]]*\(' --include='*.cpp' --include='*.cc' . | grep -vE '^[^:]+:[0-9]+:.*(=[[:space:]]*[A-Za-z_][A-Za-z0-9_.>-]*\.erase)'`
       (an `erase` whose returned iterator is dropped: inside an iterator loop, write
       `it = v.erase(it)` or use `std::erase_if`)
 - [ ] **Allocation checks (§6) — HIGH** —

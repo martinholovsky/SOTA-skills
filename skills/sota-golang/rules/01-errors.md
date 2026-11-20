@@ -307,7 +307,7 @@ Run from repo root; verify each hit manually.
 `strings.Index` is documented and fine when tested immediately; yours is not:
 
 - [ ] `grep -rnE 'return -1$|return -1,' --include='*.go' .` (§3) (producer — prefer (T, bool)
-      comma-ok); `grep -rnE ':?= .*strconv\.Atoi\(' --include='*.go' . | grep -v 'err'` (the 0
+      comma-ok); `grep -rnE ':?= .*strconv\.Atoi\(' --include='*.go' . | grep -vE '^[^:]+:[0-9]+:.*(err)'` (the 0
       is in-band if err is dropped)
 
 - [ ] **Discarded or double-handled errors (§1) (also rely on errcheck via golangci-lint)** —
@@ -355,7 +355,7 @@ Run from repo root; verify each hit manually.
       `grep -rn 'failed to' --include='*.go' . | grep -E '(errors\.New|fmt\.Errorf)'`
 - [ ] **Typed-nil hazard; error kinds and names (§4)** —
       `grep -rnE 'func .*\) \*\w+Error( |$)' --include='*.go' .` (functions return `error`) ;
-      `grep -rnE '^(var[[:space:]]+|[[:space:]]+)[A-Z][A-Za-z0-9_]*[[:space:]]+=[[:space:]]+errors\.New\(' --include='*.go' . | grep -vE '[[:space:]]Err[A-Z]'`
+      `grep -rnE '^(var[[:space:]]+|[[:space:]]+)[A-Z][A-Za-z0-9_]*[[:space:]]+=[[:space:]]+errors\.New\(' --include='*.go' . | grep -vE '^[^:]+:[0-9]+:.*([[:space:]]Err[A-Z])'`
       (exported sentinel without the `Err` prefix) ; manual: each exported sentinel or type has a
       caller that branches on it (exports are API forever); wrapper types are in the next item
 - [ ] **recover outside defer; missing Unwrap on wrapper types (§4, §5) (manual)** —

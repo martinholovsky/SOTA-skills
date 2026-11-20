@@ -376,12 +376,12 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       literal; `disable_functions` does not cover `eval`
 - [ ] **XSS — echo/print of request data, raw template sinks (§3) — HIGH** —
       `grep -rnE '(echo|print|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' . | grep -vE '(htmlspecialchars|htmlentities|esc_(html|attr|url|js))[[:space:]]*\([[:space:]]*\$_'`
-      ; `grep -rnE '<\?=[[:space:]]*\$' --include='*.php' templates/ | grep -vE '<\?=[[:space:]]*\$this'`
+      ; `grep -rnE '<\?=[[:space:]]*\$' --include='*.php' templates/ | grep -vE '^[^:]+:[0-9]+:.*(<\?=[[:space:]]*\$this)'`
       (a `(?!this)` lookahead here exited 2 with its stderr discarded, so it reported nothing) ;
       `grep -rn '{!!' --include='*.blade.php' resources/ 2>/dev/null` ;
       `grep -rn '|raw' --include='*.twig' templates/ 2>/dev/null` ;
       `grep -rn 'strip_tags' --include='*.php' src/` (not an XSS defense) ;
-      `grep -rn 'htmlspecialchars(' --include='*.php' --exclude-dir=vendor . | grep -v 'ENT_QUOTES'`
+      `grep -rn 'htmlspecialchars(' --include='*.php' --exclude-dir=vendor . | grep -vE '^[^:]+:[0-9]+:.*(ENT_QUOTES)'`
       (single-quoted attributes left open) ;
       `grep -rnE 'href=["'"'"']?<\?(=|php[[:space:]]+echo)[[:space:]]*\$' --include='*.php' --exclude-dir=vendor .`
       (a user URL in `href` needs the `https?` scheme allowlist)
@@ -398,7 +398,7 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       file wrote an embedded `\n` through, so one call produced two log lines). Strip CR/LF or
       log it as a structured field. Values that reach the call via a variable need tracing
 - [ ] **json_encode into <script> without hex flags (§3) — MEDIUM** —
-      `grep -rn 'json_encode' --include='*.php' src/ | grep -v 'JSON_HEX'`
+      `grep -rn 'json_encode' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(JSON_HEX)'`
 - [ ] **Attacker-chosen class, session key or property (§5)** — trace each name to a literal or
       an allowlist:
       `grep -rnE 'new[[:space:]]+\$|fetchObject[[:space:]]*\([[:space:]]*\$|FETCH_CLASS' --include='*.php' src/`
@@ -408,18 +408,18 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       as a login, and is every filter/DN value escaped with the right flag?
       `grep -rnE 'ldap_(bind|search|list|read)[[:space:]]*\(' --include='*.php' src/` (lists every
       LDAP call; each hit is read, not a finding: an empty-password check, an escaped value) ;
-      `grep -rn 'ldap_escape' --include='*.php' src/ | grep -v 'LDAP_ESCAPE_'` ;
+      `grep -rn 'ldap_escape' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(LDAP_ESCAPE_)'` ;
       `grep -rnE '(->query|->evaluate|->xpath)[[:space:]]*\([[:space:]]*["'"'"'](/|\.)[^;]*\$' --include='*.php' src/ | grep -v 'DOMXPath::quote'`
 - [ ] **Regex escaping, anchoring and engine limits (§7) — HIGH** — a variable spliced into a
       `preg_*` pattern without `preg_quote($v, $delim)`:
-      `grep -rnE 'preg_[a-z_]+[[:space:]]*\([[:space:]]*("[^"]*\$[A-Za-z_{]|'"'"'[^'"'"']*'"'"'[[:space:]]*\.)' --include='*.php' src/ | grep -v 'preg_quote'`
+      `grep -rnE 'preg_[a-z_]+[[:space:]]*\([[:space:]]*("[^"]*\$[A-Za-z_{]|'"'"'[^'"'"']*'"'"'[[:space:]]*\.)' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(preg_quote)'`
       ; a `$`-anchored `/`-delimited validator without the `D` modifier (or under `m`), which
       accepts a trailing newline:
       `grep -rnE 'preg_match(_all)?[[:space:]]*\([[:space:]]*["'"'"'][^"'"'"']*\$/[a-zA-Z]*["'"'"']' --include='*.php' src/ | grep -vE '\$/[a-ln-zA-Z]*D[a-ln-zA-Z]*["'"'"']'`
       . Patterns held in variables or constants, and other delimiters, need tracing. For each
       security `preg_*` call, check that `false`/`null` (backtrack limit) is treated as a rejection
 - [ ] **WordPress SQL outside `prepare()` (§8) — CRITICAL with request data** —
-      `grep -rnE '\$wpdb->(query|get_results|get_row|get_var|get_col)[[:space:]]*\([[:space:]]*("[^"]*\$|[^;]*\.[[:space:]]*\$)' --include='*.php' --exclude-dir=vendor . | grep -v 'prepare'`
+      `grep -rnE '\$wpdb->(query|get_results|get_row|get_var|get_col)[[:space:]]*\([[:space:]]*("[^"]*\$|[^;]*\.[[:space:]]*\$)' --include='*.php' --exclude-dir=vendor . | grep -vE '^[^:]+:[0-9]+:.*(prepare)'`
 - [ ] **WordPress handler with no capability or nonce check (§8) — HIGH, CRITICAL when it
       mutates** — prints each file that registers an AJAX, admin-post or REST handler and never
       calls the check (a file not printed still needs its handlers read one by one):
@@ -427,8 +427,8 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       ; REST routes open to anyone (read each: a public read-only route is fine):
       `grep -rnE "permission_callback['\"]?[[:space:]]*=>[[:space:]]*['\"]__return_true" --include='*.php' --exclude-dir=vendor .`
 - [ ] **WordPress unescaped output and deserialization (§8)** —
-      `grep -rnE '(echo|<\?=)[[:space:]]*(\$|get_)' --include='*.php' --exclude-dir=vendor . | grep -vE 'esc_(html|attr|url|js|textarea|xml)|wp_kses|absint|intval'`
-      ; `grep -rnE '(maybe_)?unserialize[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -v 'allowed_classes'`
+      `grep -rnE '(echo|<\?=)[[:space:]]*(\$|get_)' --include='*.php' --exclude-dir=vendor . | grep -vE '^[^:]+:[0-9]+:.*(esc_(html|attr|url|js|textarea|xml)|wp_kses|absint|intval)'`
+      ; `grep -rnE '(maybe_)?unserialize[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -vE '^[^:]+:[0-9]+:.*(allowed_classes)'`
       (trace each argument: a request, cookie or remote value is CRITICAL)
 
 Severity guide: interpolated SQL or shell with user input CRITICAL; unescaped

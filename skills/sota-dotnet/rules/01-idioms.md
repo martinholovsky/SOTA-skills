@@ -139,7 +139,7 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       analyzers that flag these are off — they are not enabled by default)
 
 - [ ] **Null-forgiving overuse (§2) — MEDIUM (defeats NRT)** —
-      `grep -rnE '[]A-Za-z0-9_)]!\.' --include='*.cs' . | grep -v '!=' | head` (x!.Member)
+      `grep -rnE '[]A-Za-z0-9_)]!\.' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(!=)' | head` (x!.Member)
 - [ ] **Is NRT even enabled? (§2)** —
       `grep -rniE '<Nullable>\s*enable' . --include='*.csproj' --include='Directory.Build.props' || echo "NRT not enabled — HIGH"`
       ; `grep -rnE 'JsonSerializer\.Deserialize|ReadFromJsonAsync|GetFromJsonAsync' --include='*.cs' .`
@@ -156,13 +156,13 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
 - [ ] **Money in binary floats, default rounding (§1) — MEDIUM, HIGH in money paths** —
       `grep -rniE '(double|float)[[:space:]]+[a-z_]*(price|amount|total|balance|cost|fee|tax)' --include='*.cs' .`
       (money typed as a binary float) ;
-      `grep -rnE '(Math|decimal|Decimal)\.Round\(' --include='*.cs' . | grep -v 'MidpointRounding'`
+      `grep -rnE '(Math|decimal|Decimal)\.Round\(' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(MidpointRounding)'`
       (banker's rounding by default: confirm it is the rule the business names) ;
       `grep -rnE '\((long|int)\)[[:space:]]*\([^;]*\*[[:space:]]*100' --include='*.cs' .`
       (scaled to minor units by a truncating cast)
 - [ ] **NaN/Infinity from input, divide-by-zero, unchecked overflow (§1) — MEDIUM, HIGH when
       the value bounds money, a quota or a timeout** —
-      `grep -rnE '(double|float|Double|Single)\.(Try)?Parse\(|Convert\.To(Double|Single)\(' --include='*.cs' . | grep -v 'IsFinite'`
+      `grep -rnE '(double|float|Double|Single)\.(Try)?Parse\(|Convert\.To(Double|Single)\(' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(IsFinite)'`
       (a parsed float never tested with `double.IsFinite`: read the range check that follows) ;
       `grep -rnE 'unchecked[[:space:]]*([({]|$)' --include='*.cs' .` (each needs a stated bound or
       an intended wrap) ;

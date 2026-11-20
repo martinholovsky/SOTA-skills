@@ -161,7 +161,7 @@ the type system, and expression-oriented code**. References:
       ; `grep -rn 'newDecoder()' --include='*.java' --include='*.kt' . || echo "no newDecoder(): every decode replaces invalid bytes with U+FFFD"` (none: every decode replaces
       invalid bytes with U+FFFD)
 - [ ] **Kotlin !! (non-null assertion) — MEDIUM (latent NPE)** (§2) —
-      `grep -rnE '!!' --include='*.kt' . | grep -v '!!='`
+      `grep -rnE '!!' --include='*.kt' . | grep -vE '^[^:]+:[0-9]+:.*(!!=)'`
 - [ ] **Java↔Kotlin boundary with unchecked platform types (§3) — MEDIUM (the #1 interop NPE
       source)** — in a module with Kotlin sources, each Java package with no `@NullMarked`
       `package-info.java`:

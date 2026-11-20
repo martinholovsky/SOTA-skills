@@ -194,7 +194,7 @@ from the lockfile and compare.
 - [ ] **Authz only in middleware/layout? (finding)** (§3) —
       `find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'middleware.*' -o -name 'proxy.*' \) -type f -print; grep -rnE 'getServerSession|auth\(\)|requireUser' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.next . | head`
 - [ ] **Server->client data exposure: whole objects as props, env on client** (§1; the cross-framework item is [rules/07](07-security.md) §1) —
-      `grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next . | grep -v 'NEXT_PUBLIC_'`
+      `grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next . | grep -vE '^[^:]+:[0-9]+:.*(NEXT_PUBLIC_)'`
       (no negative lookahead: POSIX ERE has none, so `(?!...)` is a syntax error or a literal —
       list the env reads, then exclude the public prefix with a second pass). **NB this is a
       CANDIDATE list, not an absence proof**: it greps text, not the Client Component module

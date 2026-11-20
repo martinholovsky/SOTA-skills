@@ -473,12 +473,12 @@ Supply chain and vulnerability management (formerly section 8) moved to
 - [ ] **Output encoding / XSS — HIGH** (§1) —
       `grep -rn 'text/template' --include='*.go' . | grep -iv _test` (HTML rendered via
       text/template?);
-      `grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . | grep -viE 'saniti[sz]e'` (escaping bypass with no sanitizer on the same line)
+      `grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . | grep -viE '^[^:]+:[0-9]+:.*(saniti[sz]e)'` (escaping bypass with no sanitizer on the same line)
 - [ ] **Dynamic code evaluation from input (§4d) — CRITICAL when the text is caller-supplied,
       HIGH otherwise** —
       `grep -rnE '(template\.New\([^)]*\)|[Tt]mpl|[Tt]emplate)\.Parse\([A-Za-z_]|interp\.New\(|goja\.New\(|plugin\.Open\(|MethodByName\(|expr\.Eval\(' --include='*.go' .`
       (template text or a call target from a variable; embedded interpreter) ;
-      `grep -rn 'expr\.Compile(' --include='*.go' . | grep -v 'expr\.Env('` (no declared env)
+      `grep -rn 'expr\.Compile(' --include='*.go' . | grep -vE '^[^:]+:[0-9]+:.*(expr\.Env\()'` (no declared env)
 - [ ] **unsafe / cgo (§7) — HIGH for new `unsafe.Pointer` arithmetic** — `grep -rn 'unsafe.Pointer\|go:linkname\|reflect.SliceHeader\|reflect.StringHeader' --include='*.go' .` ;
       `grep -rln 'import "C"' --include='*.go' .` ; `git grep -n 'CGO_ENABLED=1'` (each cgo use justified, in one package)
 - [ ] **--- Temp files and permissions (§4a) ---** —

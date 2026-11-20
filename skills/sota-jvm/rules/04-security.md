@@ -403,7 +403,7 @@ cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under 
       (objects rebuilt from LDAP entries; where the JDK's documented default is "allowed",
       as at jdk-17-ga and jdk-19-ga, an unset `trustSerialData` also allows it)
 - [ ] **LDAP DN built from a raw value — HIGH** (§2) —
-      `grep -rnE '(uid|cn|ou|dc|mail|sAMAccountName)=([^"]*"[[:space:]]*\+|[^"]*\$)' --include='*.java' --include='*.kt' . | grep -vE 'escapeValue|encodeForDN'`
+      `grep -rnE '(uid|cn|ou|dc|mail|sAMAccountName)=([^"]*"[[:space:]]*\+|[^"]*\$)' --include='*.java' --include='*.kt' . | grep -vE '^[^:]+:[0-9]+:.*(escapeValue|encodeForDN)'`
       (a DN concatenated or templated from a variable; the `{0}` filter overload does not
       protect the base DN. Use `Rdn.escapeValue` or `LdapName`/`Rdn`)
 - [ ] **XPath injection — HIGH** (§2) —
@@ -430,7 +430,7 @@ cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under 
       startsWith(root) AFTER normalize/toRealPath -- normalizing without comparing is a no-op.
       ZIP SLIP: an archive entry name is attacker-controlled and may contain ../ ; the extracted
       path must be resolved against the target dir and re-checked with startsWith.** —
-      `grep -rnE 'new File\(|Paths\.get\(|Path\.of\(' --include='*.java' --include='*.kt' . | grep -vE 'normalize|toRealPath'`
+      `grep -rnE 'new File\(|Paths\.get\(|Path\.of\(' --include='*.java' --include='*.kt' . | grep -vE '^[^:]+:[0-9]+:.*(normalize|toRealPath)'`
       ;
       `grep --null -rlE 'ZipEntry|TarArchiveEntry|JarEntry|ArchiveEntry|getNextEntry\(' --include='*.java' --include='*.kt' . | xargs -0 -r grep -LE 'startsWith\('`
       (each file printed handles archive entries and never calls `startsWith(`)
@@ -469,7 +469,7 @@ cache-free CI job as well ([`rules/05`](05-performance.md) §2). Test JNI under 
       `grep -rliE 'hkdf' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE 'KDF\.getInstance\(' "$f" || echo "$f"; done`
       (a file that names HKDF and never calls the JDK 25+ `KDF` API: a hand-built
       extract/expand or a third-party one; below JDK 25 a vetted library is the fix) ;
-      `grep -rnE 'jdk\.tls\.namedGroups|setNamedGroups\(' --include='*.java' --include='*.kt' --include='*.properties' --include='*.security' --include='Dockerfile*' --include='*.sh' --include='jvm.config' . | grep -v 'MLKEM'`
+      `grep -rnE 'jdk\.tls\.namedGroups|setNamedGroups\(' --include='*.java' --include='*.kt' --include='*.properties' --include='*.security' --include='Dockerfile*' --include='*.sh' --include='jvm.config' . | grep -vE '^[^:]+:[0-9]+:.*(MLKEM)'`
       (a pinned list with no ML-KEM hybrid switches JDK 27's default off; a list split over
       several lines also prints, so read it)
 - [ ] **Mail hostname check and SSH host keys — HIGH** (§4; host keys are

@@ -202,7 +202,7 @@ mutex. Build threaded code under TSan.
       storage is reused) ; build with `-Wcast-align` and run the suite under UBSan, which traps
       misalignment
 - [ ] **Bad shifts / conversions — MEDIUM/HIGH** (§1, §2) —
-      `grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '(cout|cerr|<<=|stream)'`
+      `grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '^[^:]+:[0-9]+:.*((cout|cerr|<<=|stream))'`
       lists every shift (and every `>>` closing a nested template); each hit is read, not a
       finding (verify the shift amount is range-checked)
 - [ ] **Money in binary floats, truncating float-to-int (§2) — MEDIUM, HIGH in money paths** —

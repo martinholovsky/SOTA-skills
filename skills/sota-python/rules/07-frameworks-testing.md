@@ -302,7 +302,7 @@ testpaths = ["tests"]
       `grep -rn "\.objects\.all()\|\.objects\.filter" --include="*.py" src/ | wc -l` ;
       `grep -rln "select_related\|prefetch_related" --include="*.py" src/ | wc -l` (ratio sanity
       check);
-      `grep -rnE 'for .* in .*\.objects\.' --include='*.py' src/ | grep -vE 'select_related|prefetch_related'`
+      `grep -rnE 'for .* in .*\.objects\.' --include='*.py' src/ | grep -vE '^[^:]+:[0-9]+:.*(select_related|prefetch_related)'`
       (N+1 candidates); `grep -rn "count() > 0\|len(.*objects" --include="*.py" src/` (exists()
       instead); `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` ([HIGH if
       interpolated]); `git log --oneline -- '**/migrations/*.py' | head` (edited-after-merge
@@ -311,7 +311,7 @@ testpaths = ["tests"]
       (the message → LOW, no deploy-settings gate, §2)
 - [ ] **--- App-set cookies: Secure / HttpOnly / SameSite flags (§2 cookies) --- [HIGH for an
       auth or identity token; MEDIUM for a preference]** —
-      `grep -rnE '\.set_(signed_)?cookie\(' --include='*.py' src/ | grep -vE 'secure[[:space:]]*=[[:space:]]*True.*httponly[[:space:]]*=[[:space:]]*True|httponly[[:space:]]*=[[:space:]]*True.*secure[[:space:]]*=[[:space:]]*True'`
+      `grep -rnE '\.set_(signed_)?cookie\(' --include='*.py' src/ | grep -vE '^[^:]+:[0-9]+:.*(secure[[:space:]]*=[[:space:]]*True.*httponly[[:space:]]*=[[:space:]]*True|httponly[[:space:]]*=[[:space:]]*True.*secure[[:space:]]*=[[:space:]]*True)'`
       (every hit relies on a framework default that is off; a multi-line call is listed too —
       read it; `samesite` is checked by hand)
 - [ ] **pytest** (§3) — `grep -rn "def setUp\|TestCase" --include="*.py" tests/` (legacy style

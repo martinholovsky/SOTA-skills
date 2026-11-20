@@ -325,7 +325,7 @@ func UserFrom(ctx context.Context) (*User, bool) {
 - [ ] **Context violations (§8)** —
       `grep -rnE '^[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+context\.Context[[:space:]]*(//.*)?$|struct[[:space:]]*\{.*[[:space:]]context\.Context' --include='*.go' .`
       (ctx in struct — MEDIUM);
-      `grep -rnE 'func [^(]*\([^)]*\bctx context\.Context' --include='*.go' . | grep -vE '\(ctx context\.Context'`
+      `grep -rnE 'func [^(]*\([^)]*\bctx context\.Context' --include='*.go' . | grep -vE '^[^:]+:[0-9]+:.*(\(ctx context\.Context)'`
       (ctx not first param); `grep -rnE 'context\.WithValue\([^,]+,[[:space:]]*("|[0-9]|(string|int)\()' --include='*.go' .` (a string, number or
       built-in-typed key; payloads stay manual); `grep -rn 'context.TODO()' --include='*.go' .` (LOW, should be tracked);
       `grep -rnE 'context\.Background\(\)' --include='*.go' . | grep -v 'main\|_test'`

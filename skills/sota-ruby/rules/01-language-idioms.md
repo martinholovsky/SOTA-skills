@@ -327,11 +327,11 @@ failed to hide, not what you exported:
       (a money value parsed as a `Float`) ;
       `grep -rnE '\*[[:space:]]*100(\.0)?\)?\.(to_i|floor|truncate)' --include='*.rb' app/ lib/`
       (scaled to cents by truncation) ;
-      `grep -rn 'JSON\.parse' --include='*.rb' app/ lib/ | grep -v 'decimal_class'`
+      `grep -rn 'JSON\.parse' --include='*.rb' app/ lib/ | grep -vE '^[^:]+:[0-9]+:.*(decimal_class)'`
       (decimals arrive as `Float`: read the call sites on money paths)
 - [ ] **NaN/Infinity, division by zero and fixed-width overflow (§7) — MEDIUM, HIGH on
       limits, money or wire formats** —
-      `grep -rnE '(Float|BigDecimal)\(|\.to_f([^a-z0-9_]|$)|\.pack\(' --include='*.rb' app/ lib/ | grep -vE 'finite\?|between\?'`
+      `grep -rnE '(Float|BigDecimal)\(|\.to_f([^a-z0-9_]|$)|\.pack\(' --include='*.rb' app/ lib/ | grep -vE '^[^:]+:[0-9]+:.*(finite\?|between\?)'`
       (a locator: each hit parses a float/decimal with no `finite?` or packs an integer with
       no range check on that line; read the next lines before calling it a finding)
 - [ ] **Load-path hacks instead of `require_relative` (§7) — LOW, MEDIUM in a gem** —

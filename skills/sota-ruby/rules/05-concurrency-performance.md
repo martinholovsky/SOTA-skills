@@ -215,14 +215,14 @@ Run from repo root; verify each hit manually.
       automatically)
 - [ ] **Request-scoped tenant/user in thread-local or fiber storage without an `ensure`
       reset (§2) — HIGH in multi-tenant code** —
-      `grep -rnE '(Thread\.current|Fiber)\[:[a-z_]*(tenant|user|account|locale|org)[a-z_]*\]\s*=[^=]|thread_variable_set\(:[a-z_]*(tenant|user|account|locale|org)|RequestStore\.(store\[|write)' --include='*.rb' . | grep -vE '\]\s*=\s*(nil|prev|previous|old|saved)\b'`
+      `grep -rnE '(Thread\.current|Fiber)\[:[a-z_]*(tenant|user|account|locale|org)[a-z_]*\]\s*=[^=]|thread_variable_set\(:[a-z_]*(tenant|user|account|locale|org)|RequestStore\.(store\[|write)' --include='*.rb' . | grep -vE '^[^:]+:[0-9]+:.*(\]\s*=\s*(nil|prev|previous|old|saved)\b)'`
       (each hit needs a restore in `ensure`, or it should move to `CurrentAttributes`)
 - [ ] **Threads without exception handling / join (manual review)** (§2) —
       `grep -rn "Thread.new" --include='*.rb' . | grep -v join | head`
 - [ ] **Ractor use (§3) — verify experimental caveats & removed APIs (Ractor.yield/#take gone in
       4.0)** — `grep -rnE 'Ractor\.yield|\.take[[:space:]]*$' --include='*.rb' . | head`
 - [ ] **Jobs: object args (GlobalID mitigates for AR models; raw objects = MEDIUM) (§4)** —
-      `grep -rnE "perform_(async|later)\(" --include='*.rb' . | grep -vE "\(\s*[a-z_]*id|\(\s*\d|\(\s*\)" | head`
+      `grep -rnE "perform_(async|later)\(" --include='*.rb' . | grep -vE '^[^:]+:[0-9]+:.*(\(\s*[a-z_]*id|\(\s*\d|\(\s*\))' | head`
 - [ ] **Enqueue inside transactions — race, MEDIUM+ (§4)** —
       `grep -rn -B3 "perform_later\|perform_async" --include='*.rb' app/ lib/ 2>/dev/null | grep "transaction do" | head`
 - [ ] **Idempotency signals absent (manual: look for guards/upserts in job bodies) (§4)** —
@@ -244,9 +244,9 @@ Run from repo root; verify each hit manually.
       `grep -rn "strict_loading" --include='*.rb' app/ config/ 2>/dev/null | head -2` ;
       `grep -rnE "\.all\.each\b" --include='*.rb' . | head`
 - [ ] **Unbounded scans (§7)** —
-      `grep -rnE "\.(map|each)\b" --include='*.rb' app/ 2>/dev/null | grep -vE "find_each|in_batches" | grep -E "\.(all|where\([^)]*\))\." | head`
+      `grep -rnE "\.(map|each)\b" --include='*.rb' app/ 2>/dev/null | grep -vE '^[^:]+:[0-9]+:.*(find_each|in_batches)' | grep -E "\.(all|where\([^)]*\))\." | head`
 - [ ] **Unbounded producer/consumer queue (§2) — MEDIUM, HIGH when the producer is external
-      input** — `grep -rnE 'Queue\.new' --include='*.rb' app/ lib/ | grep -v 'SizedQueue'`
+      input** — `grep -rnE 'Queue\.new' --include='*.rb' app/ lib/ | grep -vE '^[^:]+:[0-9]+:.*(SizedQueue)'`
 - [ ] **Process-global client not drawn from a pool (§2) — MEDIUM–HIGH** —
       `grep -rnE '(\$|@@|[A-Z_]+ *=).*(Redis\.new|Net::HTTP\.new|PG\.connect|Faraday\.new)' --include='*.rb' . | grep -v ConnectionPool`
       (each hit shared across threads needs a pool sized ≥ thread count; a local inside a method is not listed)

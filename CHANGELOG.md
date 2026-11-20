@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Content exclusions in checklist probes no longer match the path (ROADMAP 101).** 142 `| grep -v`
+  stages that filter `path:line:` output by line content dropped any hit whose path happened to match
+  (a finding inside `sanitizers/`, `record/` or `template_file.rb` read as clean). Each is now anchored
+  past the `path:line:` prefix, and each fixture holds its hit under a directory the pattern matches,
+  so the old text fails it. All 216 such stages are classified in ROADMAP 101: 32 path-shaped and 4
+  more where the path match is the point were left alone, as were 29 that no real path can match.
+  CONTRIBUTING gains the rule.
 - **The JVM secret-printing probe finds multi-line Kotlin data classes and no longer reads Spring's
   `@Value` as Lombok's (ROADMAP 102).** Redesigned with item 92's method on the public corpus:
   designed on 60 labels, frozen by hash, then scored once on a blind-labelled hold-out of 48: precision

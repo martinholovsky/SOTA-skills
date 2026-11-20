@@ -176,7 +176,7 @@ All Spring facts below were checked against Spring's own docs, advisories and so
 - [ ] **CSRF disabled, or a write reachable by GET — HIGH on a cookie-session app** (§1) —
       `grep -rnE 'csrf\(\)\.disable\(|csrf\([[:space:]]*AbstractHttpConfigurer::disable|csrf\([^)]*->[^)]*\.disable\(|csrf[[:space:]]*\{[[:space:]]*disable\(' --include='*.java' --include='*.kt' .`
       (needs a written reason naming the non-cookie credential) ;
-      `grep -rnE '^[[:space:]]+@RequestMapping' --include='*.java' --include='*.kt' . | grep -v 'method'`
+      `grep -rnE '^[[:space:]]+@RequestMapping' --include='*.java' --include='*.kt' . | grep -vE '^[^:]+:[0-9]+:.*(method)'`
       (an indented, method-level mapping with no `method` answers GET, which `CsrfFilter`
       never checks; read the handler: does it write?)
 - [ ] **View names and dispatch targets from request data — HIGH** (§1) —

@@ -325,7 +325,7 @@ Run from repo root; verify each hit manually.
       `grep -rn 'interface ' --include='*.php' src/` (lists every interface; each hit is read, not a
       finding: the BC break is a `+` line in the diff below) ;
       `git diff <last-release-tag>..HEAD -- '*.php' | grep -nE '^\+.*(function |final |readonly )'`
-      ; `grep -rnE '^\s*(class|abstract class) [A-Z]' --include='*.php' src/ | grep -v 'final'`
+      ; `grep -rnE '^\s*(class|abstract class) [A-Z]' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(final)'`
       ; `grep -rn 'public readonly' --include='*.php' src/`
 - [ ] **Missing strict_types (§2) — LOW per file, MEDIUM if project-wide** —
       `grep -rL --include='*.php' 'declare(strict_types=1)' src/ | head -50`
@@ -341,7 +341,7 @@ Run from repo root; verify each hit manually.
       (a distro build: read its advisories before reporting, §1)
 - [ ] **Loose comparison on suspicious values — MEDIUM+, verify context** (§4) —
       `grep -rnE '[^=!<>]==[^=]' --include='*.php' src/ | grep -iE 'token|password|hash|hmac|secret|sig'`
-      ; `grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -v 'true'`
+      ; `grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(true)'`
 - [ ] **Money in binary floats (§4) — MEDIUM, HIGH in money paths** —
       `grep -rniE 'float[[:space:]]+\$[a-z_]*(price|amount|total|balance|cost|fee|tax)' --include='*.php' src/`
       (a money parameter or property typed `float`) ;
@@ -365,13 +365,13 @@ Run from repo root; verify each hit manually.
       deep recursion segfaults the worker instead of throwing)
 - [ ] **strpos truthiness bug and other in-band sentinels (§4a) — MEDIUM, HIGH on a security
       decision** — `grep -rnE 'if[[:space:]]*\([[:space:]]*!?[[:space:]]*strpos\([^()]*\)[[:space:]]*\)' --include='*.php' src/`
-      ; `grep -rnE '(strpos|stripos|strrpos|array_search)[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -vE '(===|!==)'`
+      ; `grep -rnE '(strpos|stripos|strrpos|array_search)[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -vE '^[^:]+:[0-9]+:.*((===|!==))'`
       (every hit without `===` or `!==` is a finding) ;
       `grep -rnE '(intval\(|\(int\)[[:space:]]*)\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' --exclude-dir=vendor .`
       (`0` for garbage and for `"0"` alike: `FILTER_VALIDATE_INT`, tested with `===`)
 - [ ] **Error suppression and silent JSON** (§5) —
       `grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'` ;
-      `grep -rn 'json_decode' --include='*.php' src/ | grep -v 'JSON_THROW_ON_ERROR'`
+      `grep -rn 'json_decode' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(JSON_THROW_ON_ERROR)'`
 - [ ] **Removed/deprecated constructs (§7)** —
       `grep -rnE '(create_function|each\(|__sleep|__wakeup|\$\$[a-zA-Z]|extract\s*\(\s*\$_)' --include='*.php' src/`
       ; ``grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'`` (backtick exec)
@@ -391,7 +391,7 @@ Run from repo root; verify each hit manually.
       `grep -rnE 'new \\?DateTime\(|date_create\(' --include='*.php' src/` (mutable: measured on
       PHP 8.5, `$d->modify('+1 day')` returns the SAME object, so every holder of `$d` moves;
       `DateTimeImmutable` returns a new one) ;
-      `grep -rnE 'new \\?DateTime(Immutable)?\([^)]*\)' --include='*.php' src/ | grep -v 'DateTimeZone'`
+      `grep -rnE 'new \\?DateTime(Immutable)?\([^)]*\)' --include='*.php' src/ | grep -vE '^[^:]+:[0-9]+:.*(DateTimeZone)'`
       (no explicit zone: the process default decides) ;
       `grep -rnE 'strtotime\([[:space:]]*\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' src/`
       (request input parsed unvalidated; `strtotime` returns `false` on garbage)

@@ -442,7 +442,7 @@ channel.
       `grep -rlE "createClient\(|new (EventEmitter|WebSocket|net\.Socket)\(|net\.connect\(|createConnection\(|\.pipe\(" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | while IFS= read -r f; do grep -qE "on\(['\"]error['\"]|pipeline\(" "$f" || echo "$f"; done`
       — files that create an emitter or pipe streams with no `'error'` listener or `pipeline`
       anywhere (read the rest). Then, if `grep -nE '"express": *"[~^]?4\.' package.json` hits:
-      `grep -rnE "\.(get|post|put|patch|delete|all|use)\([^)]*async *(\(|function|[[:alnum:]_]+ *=>)" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -vE "[Hh]andler\(|wrap\(|catch\(next"`
+      `grep -rnE "\.(get|post|put|patch|delete|all|use)\([^)]*async *(\(|function|[[:alnum:]_]+ *=>)" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -vE '^[^:]+:[0-9]+:.*([Hh]andler\(|wrap\(|catch\(next)'`
       — an unwrapped async handler on Express 4 hangs the request on a rejection (HIGH).
 - [ ] `grep --null -rl "uncaughtException" src/ | xargs -0 -r grep -L "process\.exit"` — lists files with an `uncaughtException` handler and no `process.exit`: a handler that doesn't exit (HIGH) (§8); no `unhandledRejection` policy at all (MEDIUM).
 - [ ] **Allocation or recursion sized by the request (§"Process-level error policy", failures no handler sees) (§8) — HIGH on a request path: one request kills the process** —
