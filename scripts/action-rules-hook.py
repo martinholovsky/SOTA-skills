@@ -8,7 +8,7 @@ pipeline templates through `python3 - <<EOF` scripts with `sota-devsecops` invok
 rules/09, 13 and 16 never opened. The code-rules hook sees Edit/Write only, and a description
 or a router row only helps when routing fires; this fires on the command itself.
 
-Four classes, each acted on at most once per session:
+Five classes, each acted on at most once per session (src_edit once per rules file and language):
 
   sign      a command that signs or unlocks with a person's key (`git commit -S`, `git tag -s`,
             a commit or annotated tag when `commit.gpgSign`/`tag.gpgSign` is set, `gpg --sign`,
@@ -22,8 +22,15 @@ Four classes, each acted on at most once per session:
             script in a heredoc that opens one for writing, or a heredoc that writes a CI object
             (`kind: Workflow`, `WorkflowTemplate`, a Tekton `PipelineRun`).
   scan      an image or filesystem vulnerability scan (`trivy image`, `grype`).
+  src_edit  a write to a source file from the shell (`cat > x.go <<EOF`, `tee`, `sed -i`, a heredoc
+            script that opens a quoted source path for writing). The code-rules hook keys on
+            Edit/Write, so a source file written through Bash reached no rules file: a field report
+            (2026-11-20, ADOPTION-LOG) counted 126 Bash writes of Go files against 20 Edit/Write in
+            one session, and a fail-open defect in one of the 126. The command text (heredoc body
+            included) goes to the code-rules hook's own `respond()` as a Write event, so the same
+            triggers, language note and once-per-session state apply as for an Edit.
 
-The last three add the owning rules files as context and never block.
+The last four add context and never block.
 
 The command is parsed into segments and argv, not grepped: a commit message, a grep pattern or
 `git log -S` (a pickaxe search) is not a signing step. Replay over one operator's transcripts
@@ -31,6 +38,14 @@ The command is parsed into segments and argv, not grepped: a commit message, a g
 including all 7 `git commit -S` calls of the incident; `ci_edit` caught all 11 edits of the
 incident's pipeline templates and fires in 36 of 94 sessions, at most once each; `scan` in 5;
 `registry` in none. Re-run it with `--replay` (default root ~/.claude/projects).
+src_edit, replayed 2026-11-20 over 472 transcripts (43,405 Bash calls): it matches 4,070 calls in 77
+sessions, but the note shown is the code-rules hook's, which skips tests and the scratchpad and names
+each rules file once per session: 352 notes in 73 sessions, 2 to 6 in most, 18 at most. Of 30 sampled
+notes, at least 21 named a file the command writes; 4 named a file a script only read (`importlib`,
+`read_text`, a glob in a listing), and 5 named a scratchpad path first, their note coming from
+another path in the same command. On the field report's own defect the note names the language
+skill and four `sota-code-security` files, not `sota-golang` rules/01: that session had already
+read the SKILL.md, so it is not shown to have prevented that one.
 
 Off with SOTA_ACTION_RULES_HOOK=off. Any internal error lets the command run (exit 0, no output):
 a hook must never break the shell. `--self-test` runs the labelled cases.
@@ -86,6 +101,8 @@ NOTES = {
         "Owning rules: %s §13.6." % rf("sota-devsecops", "13-vulnerability-remediation.md")
     ),
 }
+
+CLASSES = ("sign", "registry", "ci_edit", "scan", "src_edit")
 
 # ---------------------------------------------------------------- parsing
 
@@ -296,6 +313,69 @@ def is_ci_edit(argv: list[str], seg: str) -> bool:
     return False
 
 
+SRC_EXT = r"pyi?|go|rs|c|h|cc|cpp|cxx|hpp|java|kts?|cs|php|rb|swift|jsx?|mjs|cjs|tsx?|sh|bash"
+SRC_PATH = re.compile(r"(?:^|/)[^/\s'\"]+\.(?:%s)$" % SRC_EXT)
+SRC_PATH_QUOTED = re.compile(r"(['\"])([^'\"\s]+\.(?:%s))\1" % SRC_EXT)
+
+
+ASSIGN_VALUE = re.compile(r"(?:^|[\s;&(])([A-Za-z_][A-Za-z0-9_]*)=['\"]?([^'\"\s;&|)]+)")
+VAR_PREFIX = re.compile(r"^\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
+
+
+def src_paths(cmd: str) -> list[str]:
+    """Source files this command writes: a redirect, tee, sed -i / perl -pi, cp/mv/install to one,
+    or a script (usually a heredoc) that names a quoted source path and writes a file."""
+    out: list[str] = []
+    if SCRIPT_WRITE.search(cmd):
+        out += [m.group(2) for m in SRC_PATH_QUOTED.finditer(cmd)]
+    for seg in segments(cmd):
+        for m in REDIRECT.finditer(seg):
+            if SRC_PATH.search(m.group(2)):
+                out.append(m.group(2))
+        argv = argv_of(seg)
+        if not argv:
+            continue
+        tool, args = argv[0], argv[1:]
+        files = [a for a in args if SRC_PATH.search(a)]
+        if not files:
+            continue
+        if tool == "sed" and any(a.startswith("-i") or a.startswith("--in-place") for a in args):
+            out += files
+        elif tool == "perl" and any(a.startswith("-") and not a.startswith("--") and "i" in a[1:] for a in args):
+            out += files
+        elif tool == "tee":
+            out += files
+        elif tool in ("cp", "mv", "install") and SRC_PATH.search(args[-1]):
+            out.append(args[-1])
+    # a path named through a variable assigned in the same command (`S=/…/scratchpad; cat > $S/x.py`)
+    # resolves to its value, so the code-rules hook's scratchpad and test exemptions can see it
+    env = dict(ASSIGN_VALUE.findall(cmd))
+    out = [VAR_PREFIX.sub(lambda m: env.get(m.group(1) or m.group(2), m.group(0)), x) for x in out]
+    seen: set[str] = set()
+    return [x for x in out if not (x in seen or seen.add(x))]
+
+
+def code_rules_note(paths: list[str], cmd: str, event: dict) -> str:
+    """The code-rules hook's own note for these paths, as if each had been written with Write."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "sota_code_rules_hook", os.path.join(os.path.dirname(os.path.realpath(__file__)), "code-rules-hook.py"))
+    if spec is None or spec.loader is None:
+        return ""
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    notes = []
+    for path in paths:
+        out = mod.respond({"tool_name": "Write", "tool_input": {"file_path": path, "content": cmd},
+                           "session_id": event.get("session_id"), "transcript_path": event.get("transcript_path")})
+        if out:
+            notes.append(json.loads(out)["hookSpecificOutput"]["additionalContext"])
+    if not notes:
+        return ""
+    return ("sota action-rules: this command writes source from the shell, which the code-rules hook "
+            "(Edit/Write) does not see; its note follows.\n" + "\n\n".join(notes))
+
+
 def is_scan(argv: list[str]) -> bool:
     if not argv or set(argv) & {"--help", "-h", "--version"}:
         return False
@@ -309,6 +389,8 @@ def classify(cmd: str, cwd: str | None = None, config=git_config_true) -> set[st
     found: set[str] = set()
     if ci_edit_in_text(cmd):
         found.add("ci_edit")
+    if src_paths(cmd):
+        found.add("src_edit")
     here = cwd
     for seg in segments(cmd):
         argv = argv_of(seg)
@@ -362,6 +444,10 @@ def decide(event: dict, sd: str | None = None, config=git_config_true) -> dict |
         return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
                                        "permissionDecisionReason": NOTES["sign"]}}
     notes = [NOTES[c] for c in ("registry", "ci_edit", "scan") if c in classes and claim(sd, c)]
+    if "src_edit" in classes:
+        cr = code_rules_note(src_paths(cmd), cmd, event)  # code-rules' own state: once per rules file
+        if cr:
+            notes.append(cr)
     if not notes:
         return None
     return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": "\n".join(notes)}}
@@ -384,8 +470,8 @@ def main() -> int:
 
 def replay(root: str) -> int:
     """Count, per class, the Bash calls and sessions this hook would act on in local transcripts."""
-    calls = {c: 0 for c in NOTES}
-    sessions: dict[str, set[str]] = {c: set() for c in NOTES}
+    calls = {c: 0 for c in CLASSES}
+    sessions: dict[str, set[str]] = {c: set() for c in CLASSES}
     total, files = 0, 0
     for dp, _dn, fn in os.walk(os.path.expanduser(root), followlinks=True):
         for f in fn:
@@ -416,7 +502,7 @@ def replay(root: str) -> int:
                             calls[c] += 1
                             sessions[c].add(str(o.get("sessionId")))
     print("transcripts %d, Bash calls %d (git signing config not read: explicit flags only)" % (files, total))
-    for c in NOTES:
+    for c in CLASSES:
         print("  %-9s %5d calls in %3d sessions" % (c, calls[c], len(sessions[c])))
     return 0 if files else 1
 
@@ -461,6 +547,16 @@ CASES = [
     ("actionlint .github/workflows/ci.yml", (), set()),
     ("trivy image --scanners vuln app:1", (), {"scan"}),
     ("trivy --version", (), set()),
+    # src_edit (2026-11-20 field report): a source file written through Bash
+    ("cat > internal/intel/fetch.go <<'EOF'\npackage intel\nEOF", (), {"src_edit"}),
+    ("cat >> cmd/api/main.go <<'EOF'\nfunc x() {}\nEOF", (), {"src_edit"}),
+    ("printf 'x' | tee src/app.ts", (), {"src_edit"}),
+    ("sed -i '' 's/a/b/' pkg/store/user.go", (), {"src_edit"}),
+    ("python3 - <<'EOF'\np='internal/worker/tasks/report_sources.go'\ns=open(p).read()\nopen(p,'w').write(s)\nEOF", (), {"src_edit"}),
+    ("grep -rn 'io.ReadAll' --include='*.go' .", (), set()),
+    ("cat internal/intel/fetch.go | head", (), set()),
+    ("git commit -m 'fix internal/intel/fetch.go'", (), set()),
+    ("go test ./internal/... > test-output.txt", (), set()),
 ]
 
 
@@ -495,6 +591,26 @@ def self_test() -> int:
         if decide({"tool_name": "Edit", "tool_input": {"command": "git commit -S"}}, sd) is not None:
             fails += 1
             print("FAIL a non-Bash tool was acted on")
+    with tempfile.TemporaryDirectory() as d:
+        import uuid
+        ev3 = {"tool_name": "Bash", "session_id": "t-" + uuid.uuid4().hex, "transcript_path": "",
+               "tool_input": {"command": "cat > internal/intel/fetch.go <<'EOF'\npackage intel\n"
+                              "func get(c *http.Client, u string) { resp, _ := c.Get(u); "
+                              "body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20)); _ = body }\nEOF"}}
+        ctx = ((decide(ev3, os.path.join(d, "s")) or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
+        if "code-rules hook" not in ctx or "rules/" not in ctx:
+            fails += 1
+            print("FAIL a Go file written by a heredoc did not get the code-rules note: %r" % ctx[:160])
+    # the extension list must match the code-rules hook's language map, or a language falls through
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("crh", os.path.join(os.path.dirname(os.path.realpath(__file__)), "code-rules-hook.py"))
+    crh = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(crh)
+    exts = {e for e in crh.LANG_SKILL}
+    covered = {e for e in exts if SRC_PATH.search("a." + e)}
+    if covered != exts:
+        fails += 1
+        print("FAIL src_edit misses code-rules languages: %s" % sorted(exts - covered))
     for cls, text in NOTES.items():
         for path in re.findall(r"(/\S+?\.md)", text):
             if not Path(path).is_file():

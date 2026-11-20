@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Source written from the shell now gets the code-rules note (field report, 2026-11-20).** A session
+  wrote 126 Go files through Bash and 20 through Edit/Write, and the code-rules hook (Edit/Write only)
+  saw none of the 126. `action-rules-hook.py` gains a fifth class, `src_edit`: a command that writes a
+  source file (a redirect, `tee`, `sed -i`, a heredoc script) is handed to the code-rules hook's own
+  `respond()` as a Write event. Replayed over 43,405 local Bash calls: 352 notes in 73 sessions.
+  `sota-databases` rules/02 §3: a backfill through `kubectl port-forward svc/…` lands on one pod;
+  spread it and throttle on each node's own pressure. Intake in ADOPTION-LOG, every claim labelled.
 - **Content exclusions in checklist probes no longer match the path (ROADMAP 101).** 142 `| grep -v`
   stages that filter `path:line:` output by line content dropped any hit whose path happened to match
   (a finding inside `sanitizers/`, `record/` or `template_file.rb` read as clean). Each is now anchored
