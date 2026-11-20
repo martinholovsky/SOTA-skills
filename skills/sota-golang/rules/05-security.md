@@ -16,7 +16,8 @@ misconfiguration are entirely yours.
 - **Regexes as a control** (allowlist, routing, redaction). Stdlib `regexp` is RE2: matching
   is linear in input length, and backreferences/lookaround do not compile. Four rules:
   **escape** caller text spliced into a pattern with `regexp.QuoteMeta` (stdlib since Go 1) —
-  unescaped, `.`/`|` rewrite the rule, and `MustCompile` panics on a pattern that fails to parse;
+  unescaped, `.`/`|` rewrite the rule, and `MustCompile` panics on a pattern that fails to parse
+  (staticcheck SA1000 flags a constant one at lint time, before it panics at startup);
   **anchor** — `MatchString`/`Match` find a match *anywhere* and there is no full-match method,
   so wrap as `^(?:…)$` (`^a|b$` accepts `a…` and `…b`). `$` is end-of-text (`\z`-like) with no
   trailing-newline slack, but `(?m)` makes `^`/`$` line anchors, so `"ok\n;evil"` passes;
