@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Next.js floor moves to ≥ 15.5.29 / ≥ 16.4.5 (`sota-web-frameworks` rules/03 §5, rules/07).** Two
+  medium advisories published 2026-11-19 (GHSA-7qx7-33qx-rqx2: `/_next/image` processes an attacker
+  SVG despite `dangerouslyAllowSVG: false`; GHSA-f3mh-rxg3-f5g2: Edge-runtime cookies repeated in a
+  public `x-middleware-set-cookie` header). Their four Dependabot alerts were on deliberately
+  vulnerable probe fixtures and were dismissed as `not_used`, as ROADMAP 83 prescribes.
 - **Source written from the shell now gets the code-rules note (field report, 2026-11-20).** A session
   wrote 126 Go files through Bash and 20 through Edit/Write, and the code-rules hook (Edit/Write only)
   saw none of the 126. `action-rules-hook.py` gains a fifth class, `src_edit`: a command that writes a

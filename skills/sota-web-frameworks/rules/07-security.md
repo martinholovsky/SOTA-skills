@@ -108,6 +108,10 @@ their own. Full detail in [`rules/03`](03-nextjs.md) (Next/React) and [`rules/05
   (16.3.6), the Image Optimization API with SVG (15.5.28 / 16.4.1) and a `use cache` function
   returning typed arrays (16.4.1); with the `use cache` leaks fixed in 16.4.5, the floor as of
   2026-11-18 is **Next ≥ 15.5.28 / ≥ 16.4.5** ([`rules/03`](03-nextjs.md) §5 has the batches).
+- **Two more (medium, 2026-11-19)**: `/_next/image` processing an attacker-supplied SVG despite
+  `dangerouslyAllowSVG: false`, and cookies set on Edge runtime routes repeated in a public
+  `x-middleware-set-cookie` header (an HttpOnly session cookie readable by same-origin script),
+  fixed 15.5.29 / 16.4.5: the floor as of 2026-11-20 is **Next ≥ 15.5.29 / ≥ 16.4.5**.
 - **CVE-2026-126187** (2026-11-10): an RSC unauthenticated RCE, react-server-dom-* fixed 19.0.9 /
   19.1.10 / 19.2.9 / 19.3.1. Next's feed has no entry for it, so check the copy your Next release
   bundles (needs verification per release).
