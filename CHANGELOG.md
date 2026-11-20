@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.57.1] - 2026-11-20
+
+**Front door checked:** written from the shell
 
 - **Next.js floor moves to ≥ 15.5.29 / ≥ 16.4.5 (`sota-web-frameworks` rules/03 §5, rules/07).** Two
   medium advisories published 2026-11-19 (GHSA-7qx7-33qx-rqx2: `/_next/image` processes an attacker
@@ -32,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   .56 → .62, recall .03 → .72. New fixtures show the old probe failing each case. Limits stated in
   the item: a field under `@ToString.Exclude` is still reported; a record's last component is missed
   when it has no trailing comma.
+
+- **`sota-golang` rules/05: staticcheck SA1000 flags a constant regular expression that fails to parse**
+  at lint time, before `MustCompile` panics at startup (verified with `golangci-lint` 2.15.0 on
+  `regexp.MustCompile("a{1,2048}")`). Also corrects the 2026-11-20 intake's ledger row, which had
+  first called this unreproducible after running a stale second copy of the linter.
+- **Duplicate scan:** the one reviewed group that no longer forms was removed from
+  `docs/semantic-duplicates.json` (311 groups, 0 stale).
 
 ## [1.57.0] - 2026-11-20
 
@@ -12239,6 +12248,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.57.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.57.1
 [1.57.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.57.0
 [1.56.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.56.1
 [1.56.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.56.0
