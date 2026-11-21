@@ -194,7 +194,8 @@ while IFS= read -r line; do (( ++count )); done < <(cmd)
 completes over an empty set and the function reports success — the vacuous-pass shape
 ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md)), now silent. Measured: a `git rev-list` usage error exits
 **129**, the loop sees nothing, and a coverage check announces "nothing to check" and
-exits 0.
+exits 0. An argument `<(…)` or an output `>(…)` loses it the same way: `diff <(false) <(false)`
+says "same" at 0, under `pipefail` too (measured 2026-11-21, bash 3.2 and 5.3).
 
 Capture the status explicitly wherever *no output* and *the command failed* mean
 different things:
@@ -464,7 +465,7 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
       diagnostic `echo`, and **`local rc; rc=$?`**, where the declaration itself resets `$?`
       (measured 0 vs 7 on bash/zsh/dash/sh — and it is the SC2155 "declare separately" habit
       applied where it does not belong). Silent, and the variable is still named `rc`.
-- [ ] **Process substitution with a fallible producer** (§4): `grep -rn '< <(' --include='*.sh'`
+- [ ] **Process substitution with a fallible producer** (§4): `grep -rnE '<\(|>\(' --include='*.sh' --include='*.bash'`
       — for each, can the producer fail? If yes and the status is not captured, a failure
       is indistinguishable from an empty result. High when the loop's emptiness decides a
       pass/fail verdict.

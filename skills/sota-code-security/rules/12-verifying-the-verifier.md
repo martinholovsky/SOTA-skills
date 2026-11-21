@@ -50,8 +50,10 @@ fail) own the general doctrine. What this file adds is the targeted procedure
 for a **security control**:
 
 1. Replace the control's body with the permissive no-op — `return []`,
-   `return True`, `pass`.
-2. Run the suite.
+   `return True`, `pass`. Do it as a file edit in a disposable copy or worktree, and revert by edit:
+   an inject-and-revert shell chain sent to the background can leave the mutant in place
+   ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
+2. Run the suite, in the foreground.
 3. **Nothing fails ⇒ that control is untested**, regardless of how many tests
    name it. Report it as a finding, not as a coverage note.
 
@@ -179,7 +181,10 @@ produce *an* outcome at all. With it, the mechanism reproduced on the first run.
   proof's control first showed a session still held after its peer died. The cause was the
   harness's own pending request, which re-opened it. Without the control, the write-up would have
   claimed a stronger leak than the code has. A second control, a fresh scheduler reaching a live
-  peer, had to pass before "the legitimate peer received nothing" counted.
+  peer, had to pass before "the legitimate peer received nothing" counted. **And the arms share
+  nothing the first one spends** — a deadline, a quota, a cache, a counter, a token: measured
+  2026-11-21, a .NET timeout pair built on one 8 s job token read 0 ms in its second arm because
+  the first had used up the 8 s; with a token per arm it read 301 ms. Build each arm's inputs fresh.
 
 ### 1a.2 A reproduction has three outcomes, and only the sink proves the second
 

@@ -29,6 +29,8 @@
 #   scripts/install.sh --print-routing-block  # print the managed CLAUDE.md block this
 #                                      #   checkout writes, and change nothing (verify-setup
 #                                      #   2e compares your installed block with it)
+#   scripts/install.sh --check-tools   # list the tools the hooks and status line need, with
+#                                      #   versions and install commands; exit 1 if one is missing
 #   scripts/install.sh --target all    # ALSO link into ~/.agents/skills, the directory
 #                                      #   Copilot CLI/VS Code, Codex, Cursor and Gemini
 #                                      #   CLI read, and into Antigravity's own global
@@ -81,6 +83,7 @@ DO_UPDATE=0
 DO_VERIFY=1
 DO_VERSION=0
 DO_PRINT_BLOCK=0
+DO_CHECK_TOOLS=0
 USE_COPY=0
 DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
 DO_MCP=-1       # -1 = offer, 0 = skip, 1 = force  (--mcp / --no-mcp)
@@ -296,9 +299,10 @@ MD
 ## Shell habits a rule re-read does not fix
 
 - **A newline is `;`.** In a multi-line command a failing line does not stop the
-  next one; join a check to the action it gates with `&&`. **A pipe defeats that
-  gate**: `check | tail -1 && act` runs `act` on `tail`'s 0, so set `pipefail`, read
-  `${pipestatus[1]}` (zsh) / `${PIPESTATUS[0]}` (bash), or drop the pipe.
+  next one; join a check to the action it gates with `&&`. A merge, push, checkout
+  or apply whose success the next command assumes is a gate too. **A pipe defeats
+  that gate**: `check | tail -1 && act` runs `act` on `tail`'s 0, so set `pipefail`,
+  read `${pipestatus[1]}` (zsh) / `${PIPESTATUS[0]}` (bash), or drop the pipe.
 - **Matching a process by its command line matches the selector.** `pkill -f`,
   `pgrep -f`, `ps | grep` and a `/proc/*/cmdline` loop also select the shell, or the
   `ssh`/`bash -c`, whose argv carries the pattern; act on PIDs you recorded.
@@ -484,6 +488,9 @@ setup_code_rules_hook() {
   if ! command -v python3 >/dev/null 2>&1; then
     warn "python3 not found — skipping the code-rules hook"; return
   fi
+  if ! py_at_least "$PY_HOOK_MIN"; then
+    warn "python3 is older than $PY_HOOK_MIN — skipping the code-rules hook (it would fail silently on every call)"; return
+  fi
   if [ -f "$s" ] && jq -e --arg sig "code-rules-hook.py" \
       '[.hooks.PostToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
     log "sota code-rules hook already present — up to date"; return
@@ -519,6 +526,9 @@ setup_zsh_equals_hook() {
   fi
   if ! command -v python3 >/dev/null 2>&1; then
     warn "python3 not found — skipping the zsh EQUALS hook"; return
+  fi
+  if ! py_at_least "$PY_HOOK_MIN"; then
+    warn "python3 is older than $PY_HOOK_MIN — skipping the zsh EQUALS hook (it would fail silently on every call)"; return
   fi
   if [ -f "$s" ] && jq -e --arg sig "zsh-equals-hook.py" \
       '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
@@ -558,6 +568,9 @@ setup_action_rules_hook() {
   fi
   if ! command -v python3 >/dev/null 2>&1; then
     warn "python3 not found — skipping the action-rules hook"; return
+  fi
+  if ! py_at_least "$PY_HOOK_MIN"; then
+    warn "python3 is older than $PY_HOOK_MIN — skipping the action-rules hook (it would fail silently on every call)"; return
   fi
   if [ -f "$s" ] && jq -e --arg sig "action-rules-hook.py" \
       '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
@@ -927,6 +940,7 @@ while [ $# -gt 0 ]; do
     --update)     DO_UPDATE=1 ;;
     --version)    DO_VERSION=1 ;;
     --print-routing-block) DO_PRINT_BLOCK=1 ;;
+    --check-tools) DO_CHECK_TOOLS=1 ;;
     --copy)       USE_COPY=1 ;;
     --project)    shift; [ $# -gt 0 ] || die "--project needs a directory"
                   TARGET="$1/.claude/skills"; AGENTS_TARGET="$1/.agents/skills" ;;
@@ -969,6 +983,87 @@ if [ "$DO_PRINT_BLOCK" -eq 1 ]; then
   emit_routing_block
   exit 0
 fi
+
+# --- required tools ----------------------------------------------------------
+# Every tool the installed pieces call, checked once before anything changes (operator
+# request 2026-11-21). Each installer below still checks its own tool and skips with a
+# warning, but those warnings were scattered through a long run and read as noise; a
+# missing python3 meant three hooks never installed, and an old one is worse.
+# Python floor, measured 2026-11-21 in podman (python:3.8/3.9/3.10-slim): the hooks need
+# 3.9 (`str.removeprefix`; on 3.8 the action-rules self-test errors and code-rules fails 8 of
+# 160, and a hook catches every exception and exits 0, so it would install and do nothing);
+# the session-load audit `/sota-report` runs needs 3.10 (`dataclass(slots=True)`).
+readonly PY_MIN=3.10 PY_HOOK_MIN=3.9
+
+py_at_least() {  # $1 = "3.N" -> 0 when python3 is at least that
+  python3 -c "import sys; sys.exit(0 if sys.version_info[:2] >= tuple(map(int, '$1'.split('.'))) else 1)" 2>/dev/null
+}
+
+pkg_hint() {  # $1 = brew formula, $2 = name elsewhere (defaults to $1)
+  local other="${2:-$1}"
+  if command -v brew >/dev/null 2>&1; then printf 'brew install %s' "$1"
+  elif command -v apt-get >/dev/null 2>&1; then printf 'sudo apt-get install %s' "$other"
+  elif command -v dnf >/dev/null 2>&1; then printf 'sudo dnf install %s' "$other"
+  elif command -v pacman >/dev/null 2>&1; then printf 'sudo pacman -S %s' "$other"
+  elif command -v apk >/dev/null 2>&1; then printf 'sudo apk add %s' "$other"
+  else printf 'install %s with your package manager' "$other"; fi
+}
+
+TOOLS_MISSING=""
+check_tool() {  # $1 tool, $2 required|optional, $3 what it enables, $4 install hint
+  local path ver
+  if path="$(command -v "$1" 2>/dev/null)"; then
+    # the first line with a version number (shellcheck's first line is its banner)
+    ver="$("$1" --version 2>&1 | grep -m 1 -E '[0-9]+[.][0-9]+' || true)"
+    ok "$1 — ${ver:-version unknown} ($path): $3"
+    return 0
+  fi
+  if [ "$2" = required ]; then
+    warn "$1 NOT FOUND — $3 will be skipped. Install: $4"
+    TOOLS_MISSING="${TOOLS_MISSING:+$TOOLS_MISSING, }$1"
+  else
+    log "$1 not found (optional) — $3. Install: $4"
+  fi
+}
+
+check_tools() {
+  section '🧰' 'Required tools'
+  check_tool git required "--update, the version report, verify-setup" "$(pkg_hint git)"
+  check_tool jq required "every hook installer and the status line" "$(pkg_hint jq)"
+  check_tool python3 required "the code-rules, action-rules and zsh hooks, the session-load audit" \
+    "$(pkg_hint python python3)"
+  if command -v python3 >/dev/null 2>&1; then
+    local pyv
+    pyv="$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || true)"
+    if ! py_at_least "$PY_HOOK_MIN"; then
+      warn "python3 is ${pyv:-unknown}, below $PY_HOOK_MIN — the hooks would fail on every call and, exiting 0" \
+        "on any error, say nothing, so they will not be installed. Install a newer one: $(pkg_hint python python3)"
+      TOOLS_MISSING="${TOOLS_MISSING:+$TOOLS_MISSING, }python3>=$PY_MIN"
+    elif ! py_at_least "$PY_MIN"; then
+      warn "python3 is ${pyv:-unknown}: the hooks work, the session-load audit (/sota-report) needs $PY_MIN." \
+        "Install a newer one: $(pkg_hint python python3)"
+      TOOLS_MISSING="${TOOLS_MISSING:+$TOOLS_MISSING, }python3>=$PY_MIN"
+    fi
+  fi
+  check_tool zsh optional "the zsh hook's checks apply only when the agent's shell is zsh" "$(pkg_hint zsh)"
+  check_tool gh optional "verify-setup's CI history rows and the merge workflow" "$(pkg_hint gh)"
+  if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    check_tool pre-commit optional "this checkout's commit gates (contributors)" "pipx install pre-commit"
+    check_tool shellcheck optional "the shell lint gate (contributors)" "$(pkg_hint shellcheck)"
+    check_tool gitleaks optional "the secret-scan gate (contributors)" "$(pkg_hint gitleaks gitleaks)"
+  fi
+  if [ -n "$TOOLS_MISSING" ]; then
+    warn "missing or too old: $TOOLS_MISSING — skills still link; the features named above will not work"
+    return 1
+  fi
+  return 0
+}
+
+if [ "$DO_CHECK_TOOLS" -eq 1 ]; then
+  check_tools && exit 0
+  exit 1
+fi
+check_tools || true
 
 # --- optional self-update ----------------------------------------------------
 if [ "$DO_UPDATE" -eq 1 ]; then
@@ -1225,6 +1320,11 @@ setup_listing_budget || true
 maybe_setup_precommit
 
 section '✅' 'Done'
+# The summary must not read clean while a feature was skipped for a missing tool
+# (sota-shell-scripting rules/02 §6): the preflight's list, again, where it is read.
+if [ -n "$TOOLS_MISSING" ]; then
+  warn "done WITHOUT: $TOOLS_MISSING — see Required tools above; re-run after installing"
+fi
 printf '  %sTo update later:%s\n' "$C_DIM" "$C_RESET"
 printf '    git -C "%s" pull   %s# existing skills update live (symlinks); then…%s\n' \
   "$REPO" "$C_DIM" "$C_RESET"

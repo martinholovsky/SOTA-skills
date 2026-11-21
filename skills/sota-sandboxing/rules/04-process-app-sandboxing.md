@@ -98,6 +98,22 @@ rest — the "initialize broad, then lock down before processing input" sequenci
 the essence. Structure `main()` so the lockdown line is grep-ably obvious and any
 code path that processes input after `main` without passing lockdown fails review.
 
+**R2.4 — A desktop broker behind polkit: what the front-end grants.** A root helper started
+through `pkexec` or a D-Bus method is a broker whose authorization is polkit's, and three of its
+semantics decide the design (polkit 128, read in its source and man pages 2026-11-21; field
+report). (1) A kept authorization (`auth_admin_keep`) is stored **per action id and subject**
+(`polkitbackendinteractiveauthority.c`, the temporary-authorization lookup compares both), so
+unlocking one action authorizes no other; `org.freedesktop.policykit.imply` on the unlocking
+action is what extends it. On Linux the subject also matches another process with the same
+UID, parent, cgroup and controlling terminal, when pidfds are available. (2) `allow_active`
+covers clients in an active session **on a local console** only: an SSH session gets
+`allow_any`, often `no`, and is refused without a prompt. (3) `pkexec` uses the agent
+registered for the caller's session and starts its own textual agent only when none exists, so
+under a graphical session it does not prompt on the terminal; `pkttyagent --process <pid>`
+registers one for that subject. Test it in the session type users run: a negative test over SSH
+passes because SSH is refused, not because the password was wrong ([`sota-testing`
+rules/09](../../sota-testing/rules/09-security-testing.md) §1: the refusal must be the control's own).
+
 ## 3. WASM as a sandbox
 
 **R3.1 — Why WASM is a good in-process boundary:** linear memory is bounds-checked
@@ -284,6 +300,10 @@ building block, not a per-process sandbox API.
       policy from worker input (§2).
 - [ ] Lockdown sequencing visible in code: privileged init → irrevocable restrict →
       then and only then process untrusted input (§2).
+- [ ] A polkit-fronted helper: one action per verb, kept authorizations extended only
+      through `imply` on purpose, the action's `allow_any`/`allow_inactive`/`allow_active`
+      chosen per session type, and every deny test paired with an allow test in the same
+      session type, one users actually run (§2).
 - [ ] WASM: WASI preopens scoped to the job dir only; fuel/epoch + memory limits
       set; host imports audited (no exec or raw-path fs import; copy-then-validate
       guest memory); engine itself process-sandboxed for untrusted modules (§3).

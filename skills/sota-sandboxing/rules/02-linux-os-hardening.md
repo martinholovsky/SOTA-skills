@@ -331,7 +331,10 @@ user.max_user_namespaces=<quota or 0>   # per R1.2 decision
 
 **R8.2 — Module surface:** `modules_disabled=1` after boot where feasible, or at
 minimum a module blocklist for ancient parsers the kernel auto-loads on demand
-(dccp, sctp, rds, tipc, ax25 …) — `install <mod> /bin/false` in modprobe.d.
+(dccp, sctp, rds, tipc, ax25 …) — `install <mod> /bin/false` in modprobe.d. A line for a
+module compiled into the kernel does nothing: `modinfo -F filename <mod>` prints `(builtin)` for
+one, and a dry run loads nothing to replace (measured 2026-11-21, Fedora 6.17 kernel and kmod:
+`ext4` built in, `sctp` loadable, whose dependencies still load). Check each name you block.
 Lockdown mode (`lockdown=confidentiality`) where the platform supports it.
 
 **R8.3 — These are host-wide layers, not per-sandbox substitutes.** They reduce the

@@ -18,7 +18,11 @@ go build ./...                           # catches main-package breakage tests m
 ```
 
 Pin tool versions (see §4); cache `~/go/pkg/mod` and golangci-lint cache, keyed and counted per [`sota-devsecops` rules/16](../../sota-devsecops/rules/16-fast-ci-without-blind-spots.md) §16.2.
-A repo missing `-race` or govulncheck in CI: HIGH audit finding.
+A repo missing `-race` or govulncheck in CI: HIGH audit finding. Files gated to another OS
+(`//go:build`, or a `_windows.go`/`_darwin.go` name with no build line) are never compiled on the
+host: run `GOOS=<os> go vet ./...` and `golangci-lint run` once per such OS (measured 2026-11-21,
+go1.27.3: host vet reported only the darwin file's error, `GOOS=windows` only the windows one;
+[`sota-devsecops` rules/09](../../sota-devsecops/rules/09-gates-that-hold.md) §2a).
 
 **Code that uses the escape hatch (`unsafe`, cgo) runs its tests under the runtime checker.**
 `-race`, `-msan` and `-asan` imply `-gcflags=all=-d=checkptr` unless it is set explicitly

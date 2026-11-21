@@ -302,6 +302,20 @@ def _lib_cwd(seg: Sequence[str]) -> str | None:
     return lib_rel(arg + "/")
 
 
+# A path assigned to a variable and read through it (`F=<rules file>; sed -n 1,80p "$F"`, `S=<dir>; sed
+# $S/09-x.md`) was a mention without a reader before 2026-11-21: two field reports that day read rules
+# files this way, and the audit listed one as `Bash:?` while its hooks table said "never read".
+_ASSIGN_WORD = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+_VAR_REF = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
+
+
+def _script_reads(text: str, path: str) -> bool:
+    """A script reads PATH: `open('<path>')` without a write mode, `Path('<path>').read_text()`,
+    `readFileSync('<path>')`."""
+    q = re.escape(path)        # matched as the END of the quoted argument (`'/home/u/.claude/skills/…'`)
+    return re.search(r"(?:open|Path|readFileSync)\(\s*[rbf]?['\"][^'\"\n]*%s['\"]\s*(?:\)|,\s*['\"]r)" % q, text) is not None
+
+
 def _lib_candidate(tok: str, cwd: str | None) -> str | None:
     """A token naming a library path: as written when it carries `skills/`, or relative to a
     library directory entered with `cd` earlier in the same command."""
@@ -314,6 +328,16 @@ def _lib_candidate(tok: str, cwd: str | None) -> str | None:
 
 
 _HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+
+
+def _unquoted_at(line: str, pos: int) -> bool:
+    quote = None
+    for ch in line[:pos]:
+        if quote:
+            quote = None if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+    return quote is None
 
 
 def _split_heredocs(cmd: str) -> tuple[str, list[str]]:
@@ -336,7 +360,9 @@ def _split_heredocs(cmd: str) -> tuple[str, list[str]]:
                 cur.append(ln)
             continue
         out.append(ln)
-        pending += [(m.group(1) == "-", m.group(3)) for m in _HEREDOC.finditer(ln)]
+        # only an unquoted `<<WORD` opens a heredoc: `grep -n '<<EOF' a.sh` does not (sibling sweep
+        # 2026-11-21: every later line, real reads included, was taken as a body)
+        pending += [(m.group(1) == "-", m.group(3)) for m in _HEREDOC.finditer(ln) if _unquoted_at(ln, m.start())]
     if cur:
         bodies.append("\n".join(cur))
     return "\n".join(out), bodies
@@ -461,17 +487,25 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                 for tok in sorted(set(re.findall(r"\S*skills/\S+", body))):
                     rel = lib_rel(tok.strip("`'\"()[]{},;:."))
                     if rel and rel.endswith(".md") and "*" not in rel and (lib / rel).is_file():
+                        # a script that opens the file reads it whole (sibling sweep 2026-11-21: a
+                        # `python3 - <<EOF … open(<rules file>).read()` counted as "not loaded")
+                        read = _script_reads(body, rel)
                         by_file.setdefault(rel, []).append(
-                            Access(c.id, c.ts, c.turn, "Bash:heredoc", "other", None, False))
+                            Access(c.id, c.ts, c.turn, "Bash:heredoc", "read" if read else "other",
+                                   (1, _nlines(rel, lib)) if read else None, read))
             segs = _segments(outside)
             cwd: str | None = None              # a `cd` into the library earlier in this command
             loops: dict[str, list[str]] = {}    # `for VAR in <library paths>` -> those paths
             used: set[str] = set()
             entered = resolved = False
+            env: dict[str, str] = {}            # `F=<path>` earlier in this command -> `$F`, `${F}`
             for i, (seg, op) in enumerate(segs):
+                seg = [_VAR_REF.sub(lambda m: env.get(m.group(1) or m.group(2), m.group(0)), t) for t in seg]
+                if seg and all(_ASSIGN_WORD.match(t) for t in seg):
+                    env.update(t.split("=", 1) for t in seg)
                 verb = _verb(seg)
-                if verb == "cd":
-                    cwd = _lib_cwd(seg)
+                if verb in ("cd", "pushd"):
+                    cwd = _lib_cwd([("cd" if w == "pushd" else w) for w in seg])
                     entered = entered or cwd is not None
                     continue
                 if verb == "for" and len(seg) >= 3 and seg[seg.index("for") + 2:seg.index("for") + 3] == ["in"]:
@@ -479,6 +513,11 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                     loops[seg[k + 1]] = [p for p in (_lib_candidate(t, cwd) for t in seg[k + 3:]) if p]
                     continue
                 toks = [p for p in (_lib_candidate(t, cwd) for t in seg) if p]
+                if verb == "git" and "-C" in seg and seg.index("-C") + 1 < len(seg):
+                    gcwd = _lib_cwd(["cd", seg[seg.index("-C") + 1]])     # `git -C <lib> show HEAD:<file>`
+                    if gcwd:
+                        entered = True
+                        toks += [gcwd + "/" + t.split(":", 1)[1] for t in seg if re.match(r"^[^:/\s-][^:\s]*:[^\s]+\.md$", t)]
                 for var, paths in loops.items():
                     if any(t in (f"${var}", f"${{{var}}}") for t in seg):
                         toks += paths
@@ -505,8 +544,16 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                         rng, whole = _range(verb, seg, n)
                         if op in {"|", "|&"} and i + 1 < len(segs):
                             kind, rng, whole = _downstream(segs[i + 1][0], rng, whole, n)
+                    elif verb == "git" and ("show" in seg or "cat-file" in seg):
+                        kind, rng, whole = "read", (1, _nlines(rel, lib)), True    # `git show REV:<file>`
                     elif verb in SEARCHERS:
                         kind, rng, whole = "search", None, False
+                    elif verb.startswith("python") and _script_reads(" ".join(seg), rel):
+                        kind, rng, whole = "read", (1, _nlines(rel, lib)), True    # `python3 -c "open(<file>)…"`
+                    elif op == "|" and i + 1 < len(segs) and segs[i + 1][0][:1] == ["xargs"] \
+                            and _verb(segs[i + 1][0]) in READERS:
+                        n = _nlines(rel, lib)                                       # `echo <file> | xargs cat`
+                        kind, rng, whole = "read", *_range(_verb(segs[i + 1][0]), segs[i + 1][0], n)
                     elif verb == "wc":
                         kind, rng, whole = "count", None, False
                     else:
@@ -660,7 +707,17 @@ def diff_probes(repo: Path, base: str, lib: Path) -> tuple[dict, str]:
     if err:
         return {}, err
     if len(added) > MAX_FILES:
-        return {}, f"{len(added)} changed files exceeds {MAX_FILES}: pass a nearer --diff base"
+        # Untracked files are counted whole (they are what an uncommitted session added), so a repo
+        # holding scan output or caches outgrows the cap with no base near enough to help: a field
+        # report (2026-11-21) had 78,778 untracked against a 127-file committed diff, and `--diff HEAD`
+        # was refused too. Say which part dominates, and the way round it that keeps committed work.
+        untracked = len(_git(repo, "ls-files", "--others", "--exclude-standard", "-z").stdout.split("\0")) - 1
+        hint = "pass a nearer --diff base"
+        if untracked * 2 > len(added):
+            hint = (f"{untracked} of them are untracked files, which no base excludes: commit what the session "
+                    f"wrote, then run from a clean worktree (git worktree add --detach <dir> HEAD; it sees "
+                    f"committed work only), or ignore the generated files")
+        return {}, f"{len(added)} changed files exceeds {MAX_FILES}: {hint}"
     out = {"base": base, "changed_files": len(added), "added_lines": sum(map(len, added.values())),
            "staged_files": 0, "skipped_files": 0, "probes_total": 0, "probes_not_applicable": 0,
            "probes_missing_path": 0, "probes_run": 0, "probes_broken": [], "hits": []}
@@ -712,7 +769,9 @@ def diff_probes(repo: Path, base: str, lib: Path) -> tuple[dict, str]:
 # ------------------------------------------------------------------ report
 
 NOTE_CLASS = (("sign", "signs or unlocks with a person's key"), ("registry", "pushes, copies or retags an image"),
-              ("ci_edit", "writes a CI pipeline definition"), ("scan", "runs a vulnerability scan"))
+              ("ci_edit", "writes a CI pipeline definition"), ("scan", "runs a vulnerability scan"),
+              ("gate_chain", "is followed by a command that moves the checkout"),
+              ("cmdline_kill", "signals processes selected by their command line"))
 SIGN_CHECK = re.compile(r"card-status|fido2-token\s+-I|gpgsign", re.I)
 
 
@@ -753,8 +812,20 @@ def hook_report(s: Session, by_file: dict[str, list[Access]], edits: list[Call],
             act["named"] = named
             act["read_after"] = read
             act["read_before_only"] = before
+            # named, never read, but the transcript does touch it (a search, a mention, a reader we
+            # cannot parse): "never read" beside a file-table row for it reads as a contradiction
+            act["touched_only"] = [rel for rel in named if rel not in read and rel not in before
+                                   and by_file.get(rel)]
             act["followed"] = "yes" if len(read) == len(named) else ("partly" if read else "no")
-        if ev.kind == "refused" and ev.hook == "action-rules-hook.py":
+        shape = [k for k in act.get("classes", []) if k in ("gate_chain", "cmdline_kill")]
+        if ev.kind == "refused" and ev.hook == "action-rules-hook.py" and shape:
+            # Followed when the next command no longer has the refused shape (rewritten with `&&`, or
+            # signalled by PID); re-sent as it was, it runs, and that is what the refusal allows.
+            nxt = next((c for c in s.calls if c.ts > ev.ts and c.id != ev.tool_use_id and c.name == "Bash"), None)
+            again = bool(nxt) and shape[0] in arh.classify(nxt.command, None, lambda *_: False)
+            act["retried"] = "yes" if nxt else "no"
+            act["followed"] = ("no (re-sent with the same shape)" if again else "yes") if nxt else "n/a (not retried)"
+        elif ev.kind == "refused" and ev.hook == "action-rules-hook.py":
             refused = calls.get(ev.tool_use_id)
             later = [c for c in s.calls if c.ts > ev.ts and c.id != ev.tool_use_id]
             retry = next((c for c in later if c.name == "Bash" and "sign" in arh.classify(c.command, None, lambda *_: False)), None)
@@ -904,6 +975,8 @@ def hooks_markdown(h: dict) -> list[str]:
             bits.append(f"named {len(a['named'])}, read after {len(a['read_after'])}: followed {a['followed']}"
                         + "".join(f"; `{x}`" + ("" if x in a["read_after"] else
                                                    " (read only before the note)" if x in a.get("read_before_only", [])
+                                                   else " (not read; searched or mentioned only)"
+                                                   if x in a.get("touched_only", [])
                                                    else " (never read)") for x in a["named"]))
         if "retried" in a:
             bits.append(f"retried {a['retried']}; checked the counter or config, or asked, before it: {a['followed']}")
@@ -1262,6 +1335,35 @@ def self_test() -> int:
         check(r6["other"]["unresolved library mentions"] == 1,
               f"`cd skills && ls` is one unresolved mention: {r6['other']['unresolved library mentions']}")
         check(len(f6) == 2, f"a relative path after `cd /elsewhere` is not a library read: {sorted(f6)}")
+        # a path assigned to a variable, then read through it (two field reports, 2026-11-21)
+        p7 = Path(d) / "var.jsonl"
+        p7.write_text("\n".join(json.dumps(x) for x in (
+            asst("2026-01-01T00:00:01Z", tu("t_v1", "Bash", {"command": f'F=/x/{rules}; wc -l "$F"; cat "$F"'})),
+            asst("2026-01-01T00:00:02Z", tu("t_v2", "Bash", {"command":
+                f"S=/x/{other.rsplit('/', 1)[0]}; sed -n '1,9999p' ${{S}}/{other.rsplit('/', 1)[1]}"})),
+        )) + "\n", encoding="utf-8")
+        f7 = {x["file"]: x for x in build(parse([p7]), ROOT)["files"]}
+        check("Bash:cat" in {a["tool"] for a in f7.get(rules, {}).get("accesses", [])}
+              and f7[rules]["checklist_read"] == "yes", f'`F=<file>; cat "$F"` is a whole-file read: {f7.get(rules)}')
+        check(f7.get(other, {}).get("checklist_read") == "yes", f"`S=<dir>; sed ${{S}}/<file>` is a read: {f7.get(other)}")
+        # sibling sweep 2026-11-21: other readers that were invisible or not counted as reads
+        lib_dir = rules.rsplit("/", 1)[0]
+        forms = {"t_pushd": f"pushd /x/{lib_dir} >/dev/null && cat {rules.rsplit('/', 1)[1]}",
+                 "t_gitc": f"git -C /x/skills show HEAD:{rules.removeprefix('skills/')}",
+                 "t_pyhd": f"python3 - <<'EOF'\nprint(open('/x/{rules}').read())\nEOF",
+                 "t_pyc": f"python3 -c \"print(open('/x/{rules}').read())\"",
+                 "t_xargs": f"echo /x/{rules} | xargs cat",
+                 "t_qhd": f"grep -n '<<EOF' a.sh\ncat /x/{rules}"}
+        for cid, cmd in forms.items():
+            p8 = Path(d) / f"{cid}.jsonl"
+            p8.write_text(json.dumps(asst("2026-01-01T00:00:01Z", tu(cid, "Bash", {"command": cmd}))) + "\n", encoding="utf-8")
+            f8 = {x["file"]: x for x in build(parse([p8]), ROOT)["files"]}
+            check(f8.get(rules, {}).get("checklist_read") == "yes", f"{cid} reads the whole file: {cmd!r} -> {f8.get(rules)}")
+        p9 = Path(d) / "t_pyw.jsonl"
+        p9.write_text(json.dumps(asst("2026-01-01T00:00:01Z", tu("t_pyw", "Bash", {"command":
+            f"python3 - <<'EOF'\nopen('/x/{rules}', 'w').write('x')\nEOF"}))) + "\n", encoding="utf-8")
+        f9 = {x["file"]: x for x in build(parse([p9]), ROOT)["files"]}
+        check(f9.get(rules, {}).get("checklist_read") != "yes", f"a script that writes the file is not a read: {f9.get(rules)}")
     # ---- hooks: what a library hook did, and whether the session acted on it (2026-11-18)
     ci16 = "skills/sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
     cs21 = "skills/sota-code-security/rules/21-file-uploads.md"
@@ -1358,6 +1460,32 @@ def self_test() -> int:
         ln = next((a for a in build(parse([ph4]), ROOT)["hooks"]["acts"] if a["hook"] == "code-rules-hook.py"), {})
         check(ln.get("named") == ["skills/sota-python/SKILL.md"] and ln.get("followed") == "yes",
               f"a language note naming SKILL.md is followed by a later Skill call: {ln}")
+        # 2026-11-21: the refusing shapes (gate_chain, cmdline_kill) are followed when the next command
+        # no longer has the shape; each class phrase must be in the hook's live note, or no act is classed
+        for k, phrase in NOTE_CLASS:
+            check(phrase in " ".join(arh.NOTES.get(k, "").split()), f"NOTE_CLASS phrase for {k} is in the hook's note")
+        gc_reason = "PreToolUse:Bash hook error: " + arh.NOTES["gate_chain"]
+        for label, nxt, want in (("rewritten with &&", "gh pr merge 9 --rebase && git switch -q main", "yes"),
+                                 ("re-sent unchanged", "gh pr merge 9 --rebase | tail -1; git switch -q main",
+                                  "no (re-sent with the same shape)")):
+            hl5 = hl[:1] + [
+                asst("2026-01-04T00:00:01Z", tu("g1", "Bash", {"command": "gh pr merge 9 --rebase | tail -1; git switch -q main"})),
+                refusal("2026-01-04T00:00:01Z", "g1", gc_reason),
+                asst("2026-01-04T00:00:02Z", tu("g2", "Bash", {"command": nxt}))]
+            ph5 = Path(d) / "hooks5.jsonl"
+            ph5.write_text("\n".join(json.dumps(x) for x in hl5) + "\n", encoding="utf-8")
+            gc = next((a for a in build(parse([ph5]), ROOT)["hooks"]["acts"] if a["kind"] == "refused"), {})
+            check(gc.get("classes") == ["gate_chain"] and gc.get("followed") == want,
+                  f"a gate_chain refusal {label} is followed={want}: {gc}")
+        # a named file the session only searched is "searched or mentioned only", not "never read"
+        hl6 = hl + [asst("2026-01-02T00:00:11Z", tu("h_grep21", "Bash", {"command": f"grep -n upload /x/{cs21}"}))]
+        ph6 = Path(d) / "hooks6.jsonl"
+        ph6.write_text("\n".join(json.dumps(x) for x in hl6) + "\n", encoding="utf-8")
+        r6h = build(parse([ph6]), ROOT)
+        crn = next((a for a in r6h["hooks"]["acts"] if a["hook"] == "code-rules-hook.py" and a["kind"] == "context"), {})
+        check(crn.get("touched_only") == [cs21] and f"`{cs21}` (not read; searched or mentioned only)" in markdown(r6h),
+              f"a named file only searched is labelled so: {crn}")
+        check(f"`{cs21}` (never read)" in markdown(rh), "a named file the session never touched still reads never read")
         mdh = markdown(rh)
         check("### Hooks that acted" in mdh and "followed yes" in mdh, "the hooks section is printed")
         for leak in ("acme", "/private", "git commit -S -m release", "you declined a control"):

@@ -49,7 +49,7 @@ paths = ['''testdata/fake_keys\.json''']     # narrow, path-based; never allowli
 ```
 
 CI (gitleaks ≥ 8.19 subcommands): `gitleaks git --redact .` on PRs — diff-aware via
-`--log-opts="origin/main.."` for speed — plus a scheduled full-history scan with `--log-opts="--all -m"`
+`--log-opts="origin/main.. --diff-merges=first-parent"` for speed (a merge's own diff is out of scope without it, below) — plus a scheduled full-history scan with `--log-opts="--all -m"`
 (needs a `fetch-depth: 0` checkout) so old commits are rechecked as rules improve. The legacy
 `detect`/`protect` spellings still run but are deprecated aliases.
 
@@ -129,7 +129,10 @@ non-git surfaces: S3 buckets, container images, CI logs exports — secrets leak
   `"--all --diff-merges=first-parent"` scanned 4 and found it; `"--all --cc"` did not. Once a later
   commit removed the key, `gitleaks dir` was clean as well. Run the history pass with
   `--log-opts="--all -m"` and reconcile `N commits scanned` with `git rev-list --all --count`:
-  a shortfall equal to `git rev-list --all --merges --count` is this gap.
+  a shortfall equal to `git rev-list --all --merges --count` is this gap. **`trufflehog git` has the
+  same gap and no flag for it** (measured 2026-11-21, trufflehog 3.100.0, `--no-verification`: a
+  `ghp_` token in an ordinary commit, 1 finding; the same token only in a merge resolution, 0; its
+  `git --help` lists no merge option): pair it with the gitleaks `-m` pass, or scan merges another way.
 
 ### Adopting scanning on a legacy repo (baseline workflow)
 

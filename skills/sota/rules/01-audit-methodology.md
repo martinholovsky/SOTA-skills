@@ -191,7 +191,7 @@ command line (needed for §4 reproducibility).
   marked deprecated is unmaintained surface with a known replacement; report it, and check
   CI fails on it rather than printing a warning nobody reads — verified 2026-09-25:
   `javac -Xlint:deprecation -Werror`, `clang -Werror=deprecated-declarations`,
-  `rustc -D deprecated`, `python -W error::DeprecationWarning` each exit non-zero on a use;
+  `rustc -D deprecated`, `python -W error::DeprecationWarning -W error::FutureWarning` (that one filter alone passes `FutureWarning`, 2026-11-21) each exit non-zero on a use;
   Go's staticcheck reports it as SA1019. Suppressing the warning is the suppression case
   above. Per-language banned lists live in the language skills (e.g. [`sota-c-cpp`
   rules/04](../../sota-c-cpp/rules/04-security.md) §1). Source: CWE-477 (Use of Obsolete Function); also OWASP Smart Contract SVS S2.1.A2.

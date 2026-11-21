@@ -128,7 +128,9 @@ def test_sort_invariants(xs):
 Coverage-guided fuzzing mutates inputs, keeps mutants that reach new code
 paths, and runs for hours/days hunting crashes, hangs, and sanitizer
 violations. It is PBT's brute-force cousin: no properties needed beyond
-"doesn't crash/violate sanitizers" (plus any assertions you embed).
+"doesn't crash/violate sanitizers" (plus any assertions you embed). Run locally on macOS, every
+crash also writes an OS crash report (`abort_on_error=0` in `ASAN_OPTIONS` stops it, measured
+2026-11-21; [`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §3b).
 
 **Fuzz anything that parses untrusted bytes**: file formats, network
 protocols, deserializers, decompressors, query languages, anything reachable

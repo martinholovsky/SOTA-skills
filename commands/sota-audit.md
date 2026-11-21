@@ -205,7 +205,8 @@ partial, never as clean.
   advisories, and all reported "128 advisories, 4 Critical" plus a few examples — 2 to 6 of the
   19 vulnerable modules named, none by full path.
 - **No secret value leaves the scanner — enforce it with a flag, not with intent.** gitleaks
-  prints the raw value unless run with `--redact` (`gitleaks git --redact .`), and anything it
+  prints the raw value unless run with `--redact` (`gitleaks git --redact --log-opts="--all --diff-merges=first-parent" .`
+  for history, which otherwise skips every merge's own diff; `gitleaks dir --redact .` for the working tree), and anything it
   prints lands in this transcript. A scanner that **verifies** credentials against the provider
   (trufflehog's verification does) is contacting a live system: run it with verification off,
   or ask. A found secret is reported by location, type and commit, with rotation first in the

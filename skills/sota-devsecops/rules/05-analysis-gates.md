@@ -101,7 +101,7 @@ Layered — each layer catches what the previous missed:
 2. **Push protection** (GitHub secret scanning push protection / pre-receive): blocks the
    push server-side. Turn it ON org-wide; bypasses require a reason and generate an
    auditable event — review those events.
-3. **CI scan on full history** for new repos/audits (`gitleaks git`), diff scan per PR.
+3. **CI scan on full history** for new repos/audits (`gitleaks git --log-opts="--all --diff-merges=first-parent"`: without the flag a merge's own diff is never read, [`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §1), diff scan per PR.
 4. **Provider-side detection** (GitHub partner program auto-revokes some token types) —
    nice backstop, not a plan.
 
@@ -223,7 +223,7 @@ An agent's PR declares a scope (the issue, the task prompt). Two checks hold it 
   catch. Route those paths to a required reviewer ([rules/01](01-pipeline-security.md) §1.8) rather than warning.
 - **Reject invisible and bidirectional characters in changed files**, whatever the
   language: bidi controls (U+202A–202E, U+2066–2069), zero-width characters
-  (U+200B–200D) and U+FEFF. They make the reviewed text differ from what the compiler
+  (U+200B–200D, and the word joiner and invisible operators U+2060–2064) and U+FEFF. They make the reviewed text differ from what the compiler
   reads. Homoglyphs (a Cyrillic letter that renders as a Latin one) need a confusables check, not a
   character-range grep. Language-level detail: [`sota-javascript-typescript` rules/05](../../sota-javascript-typescript/rules/05-security.md).
   (OWASP: Secure Coding with AI cheat sheet)

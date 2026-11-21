@@ -117,7 +117,7 @@ absence of use and nothing about absence of need.
 ## 4. Leverage ratio — what you use vs what you inherit
 
 For each *live* dependency, count the API surface you actually call against the transitive
-modules it pulls in (`go mod graph`, `cargo tree`, `npm ls --all`, the lockfile). **Fewer
+modules it pulls in (`go mod graph`, `cargo tree` — in a checkout you do not trust, pin first: `RUSTC_WRAPPER= RUSTC="$(rustup which rustc)" cargo tree …` — `cargo tree` runs the checkout's `rustc-wrapper` (measured 2026-11-21), [`sota-rust` rules/07](../../sota-rust/rules/07-tooling-ci.md) §4a —, `npm ls --all`, the lockfile). **Fewer
 than ~5 symbols used while inheriting more than ~10 modules** is a replace-in-house
 candidate — flag it, with both numbers.
 

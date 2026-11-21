@@ -8,7 +8,7 @@ pipeline templates through `python3 - <<EOF` scripts with `sota-devsecops` invok
 rules/09, 13 and 16 never opened. The code-rules hook sees Edit/Write only, and a description
 or a router row only helps when routing fires; this fires on the command itself.
 
-Five classes, each acted on at most once per session (src_edit once per rules file and language):
+Seven classes, each acted on at most once per session (src_edit once per rules file and language):
 
   sign      a command that signs or unlocks with a person's key (`git commit -S`, `git tag -s`,
             a commit or annotated tag when `commit.gpgSign`/`tag.gpgSign` is set, `gpg --sign`,
@@ -29,8 +29,19 @@ Five classes, each acted on at most once per session (src_edit once per rules fi
             one session, and a fail-open defect in one of the 126. The command text (heredoc body
             included) goes to the code-rules hook's own `respond()` as a Write event, so the same
             triggers, language note and once-per-session state apply as for an Edit.
+  gate_chain  a merge, push, rebase, pull, cherry-pick or apply (`gh pr merge` too) followed by a
+            step that moves the checkout or sets work aside (`switch`, `checkout`, `stash`,
+            `reset`, `clean`, `branch -D`, `worktree remove`) with only `;`, a newline or a pipe
+            between them. REFUSED once. Field report 2026-11-21: `gh pr merge 42 --rebase 2>&1 |
+            tail -2; git stash push … && git switch main && … git switch -c new` ran on after the
+            merge failed and cut the branch from the wrong base; the always-loaded block already
+            said to gate with `&&`, and it was in context.
+  cmdline_kill  `pkill -f`/`--full`, or `kill` over `pgrep -f`, not limited by `-P`. REFUSED
+            once: the pattern matches every shell whose arguments carry it, the issuing one
+            included on Linux (field reports 2026-10-24 and 2026-11-21; rules/09 §5c).
 
-The last four add context and never block.
+sign, gate_chain and cmdline_kill refuse; the other four add context and never block. A note
+would not do for the refusing three: it arrives after the command has run.
 
 The command is parsed into segments and argv, not grepped: a commit message, a grep pattern or
 `git log -S` (a pickaxe search) is not a signing step. Replay over one operator's transcripts
@@ -46,6 +57,26 @@ notes, at least 21 named a file the command writes; 4 named a file a script only
 another path in the same command. On the field report's own defect the note names the language
 skill and four `sota-code-security` files, not `sota-golang` rules/01: that session had already
 read the SKILL.md, so it is not shown to have prevented that one.
+gate_chain and cmdline_kill, replayed 2026-11-21 over 464 transcripts (42,507 Bash calls), nested commands
+(`ssh host '…'`, `bash -c '…'`, `podman exec`, `kubectl exec --`) included: gate_chain matches 30 calls in
+11 sessions, each the real shape on reading all 30 (most `gh pr merge … | tail -N; git switch -q main`,
+`… | tail -2 && git switch …`, whose `&&` tests tail, or `git pull … | tail -1; git switch -q -c <new>`);
+three `bash -c 'set -euo pipefail; …'` harnesses that matched before errexit was read are now exempt.
+cmdline_kill matches 7 calls in 6 sessions, among them the incident and `ssh root@vm '…; pkill -f
+unattended-upgrade …'`, which on Linux matches the remote shell itself; two `pkill -P <ppid> -f` calls
+are exempt. The managed block had already cut the cmdline rate from 5.30 to 1.26 per 1,000 Bash calls
+(pkill -f and pgrep -f, before and after 2026-10-25).
+Sibling sweep, same day (every intake re-read for the same mechanism elsewhere): inner commands now
+include a heredoc fed to `ssh host`/`bash`, and pass up `sign` and `registry` too (explicit flags only:
+a remote command reads no local git config); wrapper flags that take a value (`sudo -u root`, `nice -n
+10`, `timeout -s KILL 10`) are skipped with their value; `command -v` is a lookup; a heredoc opener
+keeps its redirect (`cat <<'EOF' > a.go`); `>|`, `dd of=`, `install -t DIR`, `rsync` and `writeFile`
+are writes; `pgrep -f … | xargs kill` and `for p in $(pgrep -f …)` are cmdline kills; and a script
+that names what it writes is credited with those files only, not with every quoted path it reads.
+Re-replayed over 471 transcripts (43,107 Bash calls; ids now counted once across files, where a forked
+or resumed transcript had counted them again): gate_chain 30 calls in 11 sessions, cmdline_kill 8 in
+6, sign 14 in 3, src_edit 4,003 in 73 (136 calls fewer: scripts that only read the named file, 8 of 8
+sampled correct).
 
 Off with SOTA_ACTION_RULES_HOOK=off. Any internal error lets the command run (exit 0, no output):
 a hook must never break the shell. `--self-test` runs the labelled cases.
@@ -100,20 +131,51 @@ NOTES = {
         "carries it, for each architecture, is a separate check before a rebuild is promised. "
         "Owning rules: %s §13.6." % rf("sota-devsecops", "13-vulnerability-remediation.md")
     ),
+    "gate_chain": (
+        "sota action-rules: in this command a merge, push, rebase, pull or apply is followed by a "
+        "command that moves the checkout or sets work aside (switch, checkout, stash, reset, branch "
+        "deletion), joined so that it runs even when the merge failed: `;` or a newline, or a pipe, "
+        "after which `&&` tests `tail`, not the merge. A step whose success the next command assumes is a gate. It was not run; this "
+        "happens once per session, and the same command runs if it is issued again. Join the step to "
+        "what depends on it with `&&`, and read its status directly, not through `| tail` (which "
+        "returns tail's 0). Owning rules: %s §1b." % rf("sota-shell-scripting", "04-ci-and-operational.md")
+    ),
+    "cmdline_kill": (
+        "sota action-rules: this command signals processes selected by their command line (`pkill "
+        "-f`, or `kill` over `pgrep -f`). The pattern also matches every shell whose own arguments "
+        "carry it: on Linux that includes the shell running this command, or an ssh session's, and "
+        "BSD/macOS `pkill` spares only its own ancestors. It was not run; this happens once per "
+        "session, and the same command runs if it is issued again. Signal the PIDs you recorded at "
+        "launch (`$!`, a pid file), or list the matches first and pick by PID. Owning rules: %s §5c."
+        % rf("sota-shell-scripting", "09-listing-and-selection.md")
+    ),
 }
 
-CLASSES = ("sign", "registry", "ci_edit", "scan", "src_edit")
+CLASSES = ("sign", "registry", "ci_edit", "scan", "src_edit", "gate_chain", "cmdline_kill")
+# Classes that refuse the first matching command of a session; the rest add context only.
+REFUSE_ONCE = ("sign", "gate_chain", "cmdline_kill")
 
 # ---------------------------------------------------------------- parsing
 
-HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n.*?\n[ \t]*\2[ \t]*(?=\n|$)", re.S)
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1([^\n]*)\n(.*?)\n?[ \t]*\2[ \t]*(?=\n|$)", re.S)
+
+
+def drop_bodies(cmd: str) -> str:
+    """The command with heredoc bodies removed and the rest of each opener line KEPT:
+    `cat <<'EOF' > a.go` still redirects to a.go (sibling sweep 2026-11-21: the old form ate it)."""
+    return HEREDOC.sub(lambda m: "<<HEREDOC" + m.group(3) + "\n", cmd)
 ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 WRAPPERS = {"sudo", "env", "command", "exec", "time", "nice", "nohup", "xargs", "!"}
+# A wrapper flag that takes a value: `sudo -u root pkill -f x` is pkill, not `root` (sibling sweep).
+WRAPPER_ARG_FLAGS = {"sudo": {"-u", "-g", "-C", "-D", "-h", "-p", "-r", "-t", "-U"},
+                     "env": {"-u", "-C", "-S", "--unset", "--chdir"}, "nice": {"-n"},
+                     "timeout": {"-s", "-k", "--signal", "--kill-after"},
+                     "xargs": {"-I", "-n", "-P", "-L", "-d", "-s", "-E", "-a"}}
 
 
 def segments(cmd: str) -> list[str]:
     """Split on ; && || | & newlines and subshell brackets outside quotes, heredoc bodies removed."""
-    cmd = HEREDOC.sub("<<HEREDOC\n", cmd)
+    cmd = drop_bodies(cmd)
     out: list[str] = []
     buf: list[str] = []
     quote = None
@@ -133,6 +195,8 @@ def segments(cmd: str) -> list[str]:
         elif c == "\\" and i + 1 < len(cmd):
             buf.append(cmd[i:i + 2])
             i += 1
+        elif c == "|" and buf and buf[-1].endswith(">"):
+            buf.append(c)                                   # >| (clobber): a redirect
         elif c in ";|&\n(){}":
             out.append("".join(buf))
             buf = []
@@ -149,9 +213,14 @@ def argv_of(seg: str) -> list[str]:
     except ValueError:
         return []
     while words and (ASSIGN.match(words[0]) or words[0] in WRAPPERS or words[0] == "timeout"):
-        skip = 2 if words[0] == "timeout" and len(words) > 1 else 1
-        words = words[skip:]
+        wrapper = words[0]
+        words = words[1:]
+        if wrapper == "command" and words[:1] in (["-v"], ["-V"]):
+            return []                                                 # a lookup, not a run
         while words and words[0].startswith("-") and len(words) > 1:  # a wrapper's own flags
+            takes = words[0] in WRAPPER_ARG_FLAGS.get(wrapper, ())
+            words = words[2:] if takes else words[1:]
+        if wrapper == "timeout" and words:                            # its duration
             words = words[1:]
     if words:
         words[0] = words[0].rsplit("/", 1)[-1]
@@ -274,11 +343,11 @@ CI_NAME = (r"\.github/workflows/[^/\s'\"]+\.ya?ml|\.gitlab-ci\.ya?ml|Jenkinsfile
 CI_PATH = re.compile(r"(?:^|/)(?:%s)$" % CI_NAME)
 # the CI path as a whole quoted string, the way a script names a file it opens, not a word in prose
 CI_PATH_QUOTED = re.compile(r"(['\"])[^'\"\s]*?(?:%s)\1" % CI_NAME)
-SCRIPT_WRITE = re.compile(r"open\([^)]*['\"][wa]\+?['\"]|\.write_text\(|\bwrite\(")
+SCRIPT_WRITE = re.compile(r"open\([^)]*['\"][wa]\+?['\"]|\.write_text\(|\bwrite\(|\bwriteFile(?:Sync)?\(")
 CI_KIND = re.compile(r"^\s*kind:\s*(?:Workflow|WorkflowTemplate|ClusterWorkflowTemplate|CronWorkflow"
                      r"|Pipeline|PipelineRun|TaskRun)\s*$", re.M)
 WRITE_TO_FILE = re.compile(r"(?:cat|tee)\b[^\n|;&]*<<|>\s*['\"]?[^\s'\"&|;]+\.ya?ml")
-REDIRECT = re.compile(r">>?\s*(['\"]?)([^\s'\"&|;]+)\1")
+REDIRECT = re.compile(r">[>|]?\s*(['\"]?)([^\s'\"&|;]+)\1")
 
 
 def ci_edit_in_text(cmd: str) -> bool:
@@ -322,21 +391,75 @@ ASSIGN_VALUE = re.compile(r"(?:^|[\s;&(])([A-Za-z_][A-Za-z0-9_]*)=['\"]?([^'\"\s
 VAR_PREFIX = re.compile(r"^\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
 
 
+WRITE_CALL = re.compile(
+    r"open\(\s*(?:(['\"])([^'\"\n]+)\1|([A-Za-z_]\w*))\s*,\s*(?:mode\s*=\s*)?['\"][wax]\+?b?['\"]"
+    r"|(?:Path\(\s*(['\"])([^'\"\n]+)\4\s*\)|([A-Za-z_]\w*))\.write_(?:text|bytes)\("
+    r"|writeFile(?:Sync)?\(\s*(?:(['\"])([^'\"\n]+)\7|([A-Za-z_]\w*))")
+NAME_VALUE = re.compile(r"(?m)(?:^|[\s;(])([A-Za-z_]\w*)\s*=\s*(?:Path\(\s*|pathlib\.Path\(\s*)?(['\"])([^'\"\n]+)\2")
+
+
+def script_write_targets(cmd: str) -> list[str] | None:
+    """What a script writes, when every write names a literal or a variable assigned a literal; None when
+    any target is computed. Sibling sweep 2026-11-21: a heredoc that wrote one file had every quoted
+    source path in its text (test strings, files it read) named as written."""
+    names = {m.group(1): m.group(3) for m in NAME_VALUE.finditer(cmd)}
+    out = []
+    for m in WRITE_CALL.finditer(cmd):
+        lit = m.group(2) or m.group(5) or m.group(8)
+        var = m.group(3) or m.group(6) or m.group(9)
+        if lit:
+            out.append(lit)
+        elif var in names:
+            out.append(names[var])
+        else:
+            return None
+    return out or None
+
+
+def read_only_use(cmd: str, path: str) -> bool:
+    """True when every quoted use of PATH in the command reads it."""
+    q = re.escape(path)
+    uses = len(re.findall(r"['\"]%s['\"]" % q, cmd))
+    reads = len(re.findall(r"open\(\s*['\"]%s['\"]\s*(?:,\s*['\"]r[bt]?['\"]\s*)?\)|['\"]%s['\"]\s*\)\.read(?:_text|_bytes)?\("
+                           r"|spec_from_file_location\([^)]*['\"]%s['\"]|readFileSync\(\s*['\"]%s['\"]" % (q, q, q, q), cmd))
+    return uses > 0 and reads >= uses
+
+
 def src_paths(cmd: str) -> list[str]:
     """Source files this command writes: a redirect, tee, sed -i / perl -pi, cp/mv/install to one,
     or a script (usually a heredoc) that names a quoted source path and writes a file."""
     out: list[str] = []
     if SCRIPT_WRITE.search(cmd):
-        out += [m.group(2) for m in SRC_PATH_QUOTED.finditer(cmd)]
+        # A path the script only READS (`open(p).read()`, `read_text`, an import by path) is not a
+        # write target: the note named `scripts/check-checklist-probes.py` for a heredoc that loaded
+        # it and wrote a scratchpad file (sibling sweep 2026-11-21), and the exemption never applied.
+        targets = script_write_targets(cmd)
+        if targets is not None:          # the script names what it writes: only those count
+            env0 = dict(ASSIGN_VALUE.findall(cmd))           # `"$F"` in an unquoted heredoc is the shell's $F
+            targets = [VAR_PREFIX.sub(lambda m: env0.get(m.group(1) or m.group(2), m.group(0)), t) for t in targets]
+            out += [t for t in targets if SRC_PATH.search(t)]
+        else:                            # a computed target (f-string, argv): every quoted path not only read
+            out += [m.group(2) for m in SRC_PATH_QUOTED.finditer(cmd) if not read_only_use(cmd, m.group(2))]
+    # A relative path written after a `cd` in the same command is under that directory, so the
+    # scratchpad and test exemptions see `cd "$S/x"; cat > a.py` (2026-11-21, the intake's own
+    # probe: the note named `a.py` and the scratchpad exemption missed it).
+    here = ""
+
+    def at(p: str) -> str:
+        return p if not here or p.startswith(("/", "$", "~")) else here.rstrip("/") + "/" + p
+
     for seg in segments(cmd):
+        argv = argv_of(seg)
+        if argv[:1] == ["cd"] and len(argv) > 1:
+            here = at(argv[1])
+            continue
         for m in REDIRECT.finditer(seg):
             if SRC_PATH.search(m.group(2)):
-                out.append(m.group(2))
-        argv = argv_of(seg)
+                out.append(at(m.group(2)))
         if not argv:
             continue
         tool, args = argv[0], argv[1:]
-        files = [a for a in args if SRC_PATH.search(a)]
+        files = [at(a) for a in args if SRC_PATH.search(a)]
         if not files:
             continue
         if tool == "sed" and any(a.startswith("-i") or a.startswith("--in-place") for a in args):
@@ -345,8 +468,14 @@ def src_paths(cmd: str) -> list[str]:
             out += files
         elif tool == "tee":
             out += files
-        elif tool in ("cp", "mv", "install") and SRC_PATH.search(args[-1]):
-            out.append(args[-1])
+        elif tool in ("cp", "mv", "install") and ("-t" in args or any(a.startswith("--target-directory") for a in args)):
+            i = args.index("-t") + 1 if "-t" in args else -1      # `-t DIR src…`: each source lands in DIR
+            tdir = args[i] if i > 0 and i < len(args) else next(a.split("=", 1)[1] for a in args if a.startswith("--target-directory="))
+            out += [at(tdir.rstrip("/") + "/" + f.rsplit("/", 1)[-1]) for f in files if f != at(tdir)]
+        elif tool in ("cp", "mv", "install", "rsync") and SRC_PATH.search(args[-1]):
+            out.append(at(args[-1]))
+        elif tool == "dd":
+            out += [at(a[3:]) for a in args if a.startswith("of=") and SRC_PATH.search(a)]
     # a path named through a variable assigned in the same command (`S=/…/scratchpad; cat > $S/x.py`)
     # resolves to its value, so the code-rules hook's scratchpad and test exemptions can see it
     env = dict(ASSIGN_VALUE.findall(cmd))
@@ -385,8 +514,218 @@ def is_scan(argv: list[str]) -> bool:
     return tool == "grype" and bool(args)
 
 
-def classify(cmd: str, cwd: str | None = None, config=git_config_true) -> set[str]:
+def chain(cmd: str) -> list[tuple[str, str]]:
+    """(segment, the separator after it) outside quotes, heredoc bodies removed. `&&`, `||`, `|`,
+    `;` and a newline are told apart; the `&` of a redirect (`2>&1`, `&>`) is not a separator, so
+    `git push 2>&1 | tail -1` stays one pipeline whose status `pipefail` can carry."""
+    cmd = drop_bodies(cmd)
+    out: list[tuple[str, str]] = []
+    buf: list[str] = []
+    quote = None
+    depth = 0          # inside `$( … )` or backticks a separator belongs to the inner command
+    tick = False
+    i = 0
+    while i < len(cmd):
+        c = cmd[i]
+        if not quote and c == "$" and cmd[i + 1:i + 2] == "(":
+            depth += 1
+            buf.append("$(")
+            i += 2
+            continue
+        if not quote and depth and c == ")":
+            depth -= 1
+            buf.append(c)
+            i += 1
+            continue
+        if not quote and c == "`":
+            tick = not tick
+            buf.append(c)
+            i += 1
+            continue
+        if (depth or tick) and not quote and c not in "'\"":
+            buf.append(c)
+            i += 1
+            continue
+        if quote:
+            buf.append(c)
+            if c == quote:
+                quote = None
+            elif c == "\\" and quote == '"' and i + 1 < len(cmd):
+                buf.append(cmd[i + 1])
+                i += 1
+        elif c in "'\"":
+            quote = c
+            buf.append(c)
+        elif c == "\\" and i + 1 < len(cmd):
+            buf.append(cmd[i:i + 2])
+            i += 1
+        elif c == "&" and ((buf and buf[-1].endswith(">")) or cmd[i + 1:i + 2] == ">"):
+            buf.append(c)                                   # 2>&1, >&2, &>file: a redirect
+        elif c == "|" and buf and buf[-1].endswith(">"):
+            buf.append(c)                                   # >| (clobber): a redirect
+        elif c in ";|&\n":
+            op = cmd[i:i + 2] if cmd[i:i + 2] in ("&&", "||") else c
+            out.append(("".join(buf).strip(), op))
+            buf = []
+            i += len(op) - 1
+        else:
+            buf.append(c)
+        i += 1
+    out.append(("".join(buf).strip(), ""))
+    return [(s, op) for s, op in out if s]
+
+
+def _git_step(argv: list[str]) -> str:
+    """'gate' for a step whose failure later commands must not ignore, 'move' for one that moves
+    the checkout or sets work aside, '' otherwise."""
+    if argv[:3] == ["gh", "pr", "merge"]:
+        return "gate"
+    if not argv or argv[0] != "git":
+        return ""
+    sub, rest, _ = git_sub(argv)
+    if sub in ("merge", "rebase", "pull", "push", "cherry-pick", "am", "apply") and not (
+            set(rest) & {"--abort", "--quit", "--help", "-h", "--dry-run", "-n"} if sub != "push" else
+            set(rest) & {"--help", "-h", "--dry-run", "-n"}):
+        return "gate"
+    if sub in ("switch", "checkout", "reset", "clean"):
+        return "move"
+    if sub == "stash":
+        return "" if rest[:1] and rest[0] in ("list", "show") else "move"
+    if sub == "branch" and set(rest) & {"-D", "-d", "--delete", "-f", "--force"}:
+        return "move"
+    if sub == "worktree" and rest[:1] == ["remove"]:
+        return "move"
+    return ""
+
+
+def is_gate_chain(cmd: str) -> bool:
+    """A gate (a merge, push, rebase, pull, apply) whose exit status does not reach a later step that
+    moves the checkout. The status reaches it through `&&`/`||`, or `;` under `set -e`; a pipe hands
+    on the last command's status unless `pipefail` is set, so `merge | tail -1 && switch` matches.
+    A fresh `&&`/`||` after the gate's own pipeline means something else was checked (field report
+    2026-11-21: a failed `gh pr merge … | tail -2;` went on to stash, switch and cut a branch from
+    the wrong base)."""
+    # Under `set -e` a failing step stops the script at `;` and a newline, and with `pipefail` at a
+    # pipe too: three `bash -c 'set -euo pipefail; …'` harnesses matched before this (2026-11-21).
+    errexit = bool(re.search(r"\bset\s+-[A-Za-z]*e|\bset\s+-o\s+errexit", cmd))
+    steps = [(_git_step(argv_of(s)), op) for s, op in chain(cmd)]
+    pipefail = bool(re.search(r"\bpipefail\b", cmd))
+    for i, (kind, _op) in enumerate(steps):
+        if kind != "gate":
+            continue
+        j, masked = i, False
+        while steps[j][1] == "|" and j + 1 < len(steps):   # the gate's own pipeline
+            j += 1
+            masked = masked or not pipefail                 # its status is now the last command's
+        end = steps[j][1]
+        if not masked and (end in ("&&", "||") or (errexit and end in (";", "\n"))):
+            continue                                        # the gate's status reaches what follows
+        for later, later_op in steps[j + 1:]:
+            if later == "move":
+                return True
+            if later_op in ("&&", "||"):                    # a fresh check gates the rest
+                break
+    return False
+
+
+PGREP_F = r"pgrep\s+(?:-[A-Za-z]*\s+)*-[A-Za-z]*f"
+PS_GREP = r"ps\b[^|)]*\|\s*grep\b"
+
+
+def pgrep_feeds_kill(cmd: str) -> bool:
+    """`pgrep -f x | xargs kill`, `for p in $(pgrep -f x); do kill $p; done` (sibling sweep 2026-11-21)."""
+    steps = chain(cmd)
+    for i, (seg, op) in enumerate(steps):
+        argv = argv_of(seg)
+        if argv[:1] == ["pgrep"] and "-P" not in argv and ("--full" in argv or "f" in short_flags(argv[1:])) \
+                and op == "|" and i + 1 < len(steps) and argv_of(steps[i + 1][0])[:1] == ["kill"]:
+            return True
+    text = drop_bodies(cmd)           # a heredoc body is text unless a shell runs it (heredoc_inners)
+    return bool(re.search(r"\bfor\s+\w+\s+in\s+\$\(\s*(?:%s|%s)" % (PGREP_F, PS_GREP), text)
+                and re.search(r"(?:^|[\s;&|(])kill\s", text))
+
+
+def is_cmdline_kill(argv: list[str], seg: str) -> bool:
+    """`pkill` selecting by the full command line, or `kill` fed by `pgrep -f`."""
+    if not argv:
+        return False
+    tool, args = argv[0], argv[1:]
+    if set(args) & {"--help", "-h"}:
+        return False
+    if tool == "pkill":
+        # `-P <ppid>` limits the match to that parent's children, which the issuing shell is not
+        if "-P" in args or any(a.startswith("--parent") for a in args):
+            return False
+        return "--full" in args or "f" in short_flags([a for a in args if not a[1:2].isdigit()])
+    if tool == "kill":
+        return bool(re.search(r"(?:\$\(|`)\s*(?:%s|%s)" % (PGREP_F, PS_GREP), seg))
+    return False
+
+
+SSH_OPT_ARG = set("bcDEeFIiJLlmOoPpQRSWw")
+EXEC_OPT_ARG = {"-u", "--user", "-e", "--env", "-w", "--workdir", "--env-file", "-c", "--container", "-n", "--namespace"}
+
+
+def inner_command(argv: list[str]) -> str:
+    """The command another command runs: `ssh host '…'`, `bash -c '…'`, `podman exec ctr …`,
+    `kubectl exec pod -- …`. The 2026-10-24 incident was a `pkill -f` inside `ssh vm '…'`,
+    the case where it kills the remote shell (Linux), and the first cut of cmdline_kill missed it."""
+    if not argv:
+        return ""
+    tool, args = argv[0], argv[1:]
+    if tool in ("ssh", "autossh"):
+        i = 0
+        while i < len(args) and args[i].startswith("-"):
+            i += 2 if args[i][-1:] in SSH_OPT_ARG and len(args[i]) == 2 else 1
+        return " ".join(args[i + 1:])
+    if tool in ("sh", "bash", "zsh", "dash", "ksh"):
+        for i, a in enumerate(args):
+            if a.startswith("-") and not a.startswith("--") and "c" in a[1:]:
+                return args[i + 1] if i + 1 < len(args) else ""
+        return ""
+    if tool == "kubectl" and "exec" in args and "--" in args:
+        return " ".join(args[args.index("--") + 1:])
+    if tool in ("docker", "podman", "nerdctl") and args[:1] == ["exec"]:
+        i = 1
+        while i < len(args) and args[i].startswith("-"):
+            i += 2 if args[i] in EXEC_OPT_ARG else 1
+        return " ".join(args[i + 1:])
+    return ""
+
+
+SHELLS = ("sh", "bash", "zsh", "dash", "ksh")
+# Classes an inner command passes up. Inner commands read no local git config (a remote
+# `git commit` is not this machine's commit.gpgSign): explicit flags only.
+INNER_CLASSES = {"cmdline_kill", "gate_chain", "sign", "registry"}
+
+
+def heredoc_inners(cmd: str) -> list[str]:
+    """Heredoc bodies that a shell executes: `ssh host <<EOF`, `ssh host bash -s <<EOF`,
+    `bash <<EOF` (sibling sweep 2026-11-21: `ssh vm <<'EOF'\npkill -f x\nEOF` classified as nothing)."""
+    out = []
+    for m in HEREDOC.finditer(cmd):
+        opener = cmd[cmd.rfind("\n", 0, m.start()) + 1:m.start()]
+        segs = chain(opener)
+        argv = argv_of(segs[-1][0]) if segs else []
+        if not argv:
+            continue
+        if argv[0] in SHELLS and not any(a.startswith("-") and "c" in a[1:] for a in argv[1:]):
+            out.append(m.group(4))
+        elif argv[0] in ("ssh", "autossh"):
+            rest = inner_command(argv).split()
+            if not rest or rest[0].rsplit("/", 1)[-1] in SHELLS:
+                out.append(m.group(4))
+    return out
+
+
+def classify(cmd: str, cwd: str | None = None, config=git_config_true, depth: int = 0) -> set[str]:
     found: set[str] = set()
+    if depth < 2:
+        inners = [inner_command(argv_of(seg)) for seg, _op in chain(cmd)] + heredoc_inners(cmd)
+        for inner in filter(None, inners):
+            found |= classify(inner, None, lambda *_: False, depth + 1) & INNER_CLASSES
+    if is_gate_chain(cmd):
+        found.add("gate_chain")
     if ci_edit_in_text(cmd):
         found.add("ci_edit")
     if src_paths(cmd):
@@ -405,6 +744,9 @@ def classify(cmd: str, cwd: str | None = None, config=git_config_true) -> set[st
             found.add("ci_edit")
         if is_scan(argv):
             found.add("scan")
+    # chain() keeps `$( … )` inside its segment, so `kill $(pgrep -f x)` is seen whole
+    if any(is_cmdline_kill(argv_of(seg), seg) for seg, _op in chain(cmd)) or pgrep_feeds_kill(cmd):
+        found.add("cmdline_kill")
     return found
 
 # ---------------------------------------------------------------- once per session
@@ -440,9 +782,10 @@ def decide(event: dict, sd: str | None = None, config=git_config_true) -> dict |
         return None
     if sd is None:
         sd = state_dir(str(event.get("session_id") or ""))
-    if "sign" in classes and claim(sd, "sign"):
-        return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
-                                       "permissionDecisionReason": NOTES["sign"]}}
+    for c in REFUSE_ONCE:
+        if c in classes and claim(sd, c):
+            return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                           "permissionDecisionReason": NOTES[c]}}
     notes = [NOTES[c] for c in ("registry", "ci_edit", "scan") if c in classes and claim(sd, c)]
     if "src_edit" in classes:
         cr = code_rules_note(src_paths(cmd), cmd, event)  # code-rules' own state: once per rules file
@@ -473,12 +816,14 @@ def replay(root: str) -> int:
     calls = {c: 0 for c in CLASSES}
     sessions: dict[str, set[str]] = {c: set() for c in CLASSES}
     total, files = 0, 0
+    # One set across files: a forked subagent or a resumed session repeats the parent's tool_use ids
+    # in another transcript, and a per-file set counted each again (sibling sweep 2026-11-21).
+    seen: set[str] = set()
     for dp, _dn, fn in os.walk(os.path.expanduser(root), followlinks=True):
         for f in fn:
             if not f.endswith(".jsonl"):
                 continue
             files += 1
-            seen: set[str] = set()
             with open(os.path.join(dp, f), encoding="utf-8", errors="replace") as fh:
                 for line in fh:
                     try:
@@ -503,7 +848,7 @@ def replay(root: str) -> int:
                             sessions[c].add(str(o.get("sessionId")))
     print("transcripts %d, Bash calls %d (git signing config not read: explicit flags only)" % (files, total))
     for c in CLASSES:
-        print("  %-9s %5d calls in %3d sessions" % (c, calls[c], len(sessions[c])))
+        print("  %-12s %5d calls in %3d sessions" % (c, calls[c], len(sessions[c])))
     return 0 if files else 1
 
 
@@ -557,6 +902,74 @@ CASES = [
     ("cat internal/intel/fetch.go | head", (), set()),
     ("git commit -m 'fix internal/intel/fetch.go'", (), set()),
     ("go test ./internal/... > test-output.txt", (), set()),
+    ('S=/x/scratchpad; cd "$S/ans"\ncat > j.py <<\'EOF\'\nimport os\nEOF', (), {"src_edit"}),
+    # sibling sweep 2026-11-21: heredoc opener before the redirect, other write forms, read-only paths
+    ("cat <<'EOF' > .github/workflows/ci.yml\non: push\nEOF", (), {"ci_edit"}),
+    ("cat <<'EOF' > internal/a.go\npackage a\nEOF", (), {"src_edit"}),
+    ("echo x >| internal/a.go", (), {"src_edit"}),
+    ("install -m 644 /tmp/x.go -t internal/", (), {"src_edit"}),
+    ("dd if=/tmp/x of=internal/a.go", (), {"src_edit"}),
+    ("node -e \"require('fs').writeFileSync('src/a.ts','x')\"", (), {"src_edit"}),
+    ("python3 - <<'EOF'\nsrc = open('scripts/lib.py').read()\nopen('/tmp/out.txt', 'w').write(src)\nEOF", (), set()),
+    # wrappers with flag values, and inner commands through heredocs and -c
+    ("sudo -u root pkill -f worker", (), {"cmdline_kill"}),
+    ("nice -n 10 pkill -f worker", (), {"cmdline_kill"}),
+    ("timeout -s KILL 10 pkill -f worker", (), {"cmdline_kill"}),
+    ("ssh vm <<'EOF'\npkill -f worker\nEOF", (), {"cmdline_kill"}),
+    ("ssh vm bash -s <<'EOF'\ngh pr merge 1 | tail -1; git switch main\nEOF", (), {"gate_chain"}),
+    ("ssh vm 'cat > /tmp/notes.txt' <<'EOF'\npkill -f worker\nEOF", (), set()),
+    ("ssh host 'git tag -s v1 -m x'", (), {"sign"}),
+    ("bash -c 'git commit -m x'", ("commit.gpgSign",), set()),
+    ("pgrep -f worker | xargs -r kill -9", (), {"cmdline_kill"}),
+    ("for p in $(pgrep -f worker); do kill $p; done", (), {"cmdline_kill"}),
+    ("kill $(ps aux | grep worker | awk '{print $2}')", (), {"cmdline_kill"}),
+    ("pgrep -f worker | wc -l", (), set()),
+    ("F=internal/a.go; python3 - <<EOF\nopen(\"$F\", 'w').write('package a')\nEOF", (), {"src_edit"}),
+    ("python3 - <<'EOF'\np = 'scripts/hook.py'; s = open(p).read()\ncases = ['/w/Tests/A.swift', 'internal/a.go']\n"
+     "open(p, 'w').write(s)\nEOF", (), {"src_edit"}),
+    ("python3 - <<'EOF'\np = 'docs/notes.md'; s = open(p).read()\ncases = ['internal/a.go']\nopen(p, 'w').write(s)\nEOF",
+     (), set()),
+    ("command -v fido2-token ykman", (), set()),
+    ("ssh vm 'command -v ykman; fido2-token -L'", (), set()),
+    ("python3 - <<'EOF'\ncases = ['for p in $(pgrep -f w); do kill $p; done']\nEOF", (), set()),
+    # gate_chain (2026-11-21 field report): the incident, verbatim apart from the names
+    ("gh pr merge 42 --rebase 2>&1 | tail -2; git stash push -u -q -m wip && git switch -q main && "
+     "git pull -q --ff-only && git switch -q -c feat/x && git stash pop -q", (), {"gate_chain"}),
+    ("gh pr merge 47 --squash 2>&1 | tail -1; git switch -q main && git pull -q --ff-only", (), {"gate_chain"}),
+    ("git push -q origin feat\ngit switch main", (), {"gate_chain"}),
+    ("git pull --ff-only; git branch -D old", (), {"gate_chain"}),
+    ("gh pr merge 42 --rebase && git switch -q main && git pull -q --ff-only", (), set()),
+    ("gh pr merge 709 --squash; echo \"rc=$?\"; gh pr view 709 --json state; git pull -q --ff-only", (), set()),
+    ("gh pr merge 1; gh pr view 1 -q .state | grep -q MERGED && git switch main", (), set()),
+    ("git merge --abort; git switch main", (), set()),
+    ("git stash list; git switch main", (), set()),
+    ("git log --oneline -3; git switch main", (), set()),
+    ("echo 'gh pr merge 1; git switch main' > notes.txt", (), set()),
+    # cmdline_kill (2026-11-21 field report; rules/09 §5c)
+    ("pkill -INT -f 'pytest tests/ -q'; sleep 1", (), {"cmdline_kill"}),
+    ("pkill --full 'node server.js'", (), {"cmdline_kill"}),
+    ("kill $(pgrep -f 'python3 run.py')", (), {"cmdline_kill"}),
+    ("pkill -9 firefox", (), set()),
+    ("pkill -P $$ -f 'sleep 3000'", (), set()),
+    # nested and remote: the 2026-10-24 incident's shape (a remote shell carrying the pattern)
+    ("ssh vm 'pkill -f run_vllm.sh'", (), {"cmdline_kill"}),
+    ("ssh -p 2222 -o BatchMode=yes u@vm \"pkill -f 'python3 app.py'\"", (), {"cmdline_kill"}),
+    ("bash -lc 'pkill -f worker'", (), {"cmdline_kill"}),
+    ("podman exec -u root ctr pkill -f server", (), {"cmdline_kill"}),
+    ("kubectl exec pod-0 -- pkill -f server", (), {"cmdline_kill"}),
+    ("ssh vm 'cd repo && git pull; git switch -c x'", (), {"gate_chain"}),
+    ("ssh vm 'pgrep -f run_vllm.sh'", (), set()),
+    ("bash -c 'set -euo pipefail; git push -q origin x | tail -1; git switch main'", (), set()),
+    ("set -e; git pull --ff-only; git switch -c x", (), set()),
+    ("set -e; git pull --ff-only | tail -1; git switch -c x", (), {"gate_chain"}),
+    ("gh pr merge 5 --squash 2>&1 | tail -1 && git switch -q main", (), {"gate_chain"}),
+    ("set -euo pipefail; git push 2>&1 | tail -1; git switch main", (), set()),
+    ("set -o pipefail; git push | tail -1 && git switch main", (), set()),
+    ("ssh vm uptime", (), set()),
+    ("bash -c 'echo pkill -f x'", (), set()),
+    ("pgrep -f 'python3 run.py'", (), set()),
+    ("kill -INT \"$PID\"", (), set()),
+    ("grep -n 'pkill -f' docs/notes.md", (), set()),
 ]
 
 
@@ -591,6 +1004,17 @@ def self_test() -> int:
         if decide({"tool_name": "Edit", "tool_input": {"command": "git commit -S"}}, sd) is not None:
             fails += 1
             print("FAIL a non-Bash tool was acted on")
+        for cls, cmd in (("gate_chain", "gh pr merge 3 --rebase | tail -1; git switch -q main"),
+                         ("cmdline_kill", "pkill -f 'pytest tests/'")):
+            evk = {"tool_name": "Bash", "tool_input": {"command": cmd}, "session_id": "t"}
+            first, second = decide(evk, sd), decide(evk, sd)
+            reason = ((first or {}).get("hookSpecificOutput") or {}).get("permissionDecisionReason", "")
+            if not (first and first["hookSpecificOutput"].get("permissionDecision") == "deny" and reason == NOTES[cls]):
+                fails += 1
+                print("FAIL the first %s command of a session was not refused with its note" % cls)
+            if second is not None:
+                fails += 1
+                print("FAIL a repeated %s command was refused again" % cls)
     with tempfile.TemporaryDirectory() as d:
         import uuid
         ev3 = {"tool_name": "Bash", "session_id": "t-" + uuid.uuid4().hex, "transcript_path": "",
@@ -601,6 +1025,15 @@ def self_test() -> int:
         if "code-rules hook" not in ctx or "rules/" not in ctx:
             fails += 1
             print("FAIL a Go file written by a heredoc did not get the code-rules note: %r" % ctx[:160])
+    got = src_paths("python3 - <<'EOF'\np = 'scripts/hook.py'; s = open(p).read()\ncases = ['/w/Tests/A.swift']\n"
+                    "open(p, 'w').write(s)\nEOF")
+    if got != ["scripts/hook.py"]:
+        fails += 1
+        print("FAIL a script's named write target was not the only path: %s" % got)
+    got = src_paths('S=/x/scratchpad; cd "$S/ans"\ncat > j.py <<\'EOF\'\nimport os\nEOF')
+    if got != ["/x/scratchpad/ans/j.py"]:
+        fails += 1
+        print("FAIL a relative write after cd did not resolve under that directory: %s" % got)
     # the extension list must match the code-rules hook's language map, or a language falls through
     import importlib.util
     spec = importlib.util.spec_from_file_location("crh", os.path.join(os.path.dirname(os.path.realpath(__file__)), "code-rules-hook.py"))

@@ -38,6 +38,12 @@ The cross-runtime model — structured concurrency, cancellation and timeouts, b
   calls (I/O, EF Core, HttpClient); honor it (`ThrowIfCancellationRequested`,
   or the token-aware API). Endpoints should bind the request-aborted token.
   Ignoring cancellation wastes work and delays shutdown.
+- **A per-call timeout is applied unconditionally**, linked to the caller's token:
+  `using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct); cts.CancelAfter(d);`
+  gives `min(d, remaining)`. The anti-pattern is `if (ct.CanBeCanceled) return ct;`: any
+  cancellable caller token skips the call's own budget, however far off its deadline is.
+  Measured 2026-11-21 (.NET 10.0.404, a job token of 8 s, a 300 ms budget): 8,016 ms against
+  301 ms. Same shape in Go: [`sota-golang` rules/02](../../sota-golang/rules/02-design.md).
 
 ## 5. Concurrency primitives
 
@@ -110,6 +116,9 @@ The cross-runtime model — structured concurrency, cancellation and timeouts, b
 - [ ] **Missing ConfigureAwait(false) in libraries (§2) — MEDIUM** —
       `grep -rnE 'await ' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(ConfigureAwait)' | head` (in library
       projects)
+- [ ] **A per-call timeout skipped because the caller's token is cancellable (§4) — MEDIUM** —
+      every outbound call links the caller's token and sets its own `CancelAfter`; no
+      `CanBeCanceled` shortcut stands in for a budget
 - [ ] **Cancellation not flowed (§4) — MEDIUM** —
       `grep -rnE 'async Task[<A-Za-z, >]* [A-Za-z]+\([^)]*\)' --include='*.cs' . | grep -vE '^[^:]+:[0-9]+:.*(CancellationToken)' | head`
 - [ ] **await inside lock — HIGH (won't compile for lock, but SemaphoreSlim misuse /
