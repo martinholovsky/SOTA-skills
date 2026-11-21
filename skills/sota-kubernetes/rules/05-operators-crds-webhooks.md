@@ -100,7 +100,8 @@ The hard tradeoffs and traps:
 - **TLS**: the `caBundle` must be valid and **rotated before expiry** — an expired webhook
   cert with `failurePolicy: Fail` is a self-inflicted outage; with `Ignore` it silently
   disables your control. Use cert-manager (and its CA-injector) to manage and rotate
-  webhook certs; alert on cert expiry.
+  webhook certs; alert on cert expiry from each certificate's renewal point, not fixed days
+  ([`sota-network-security` rules/06](../../sota-network-security/rules/06-dns-tls-pki.md) §1).
 - **Scope (`rules`/`namespaceSelector`/`objectSelector`)**: match only what you must. An
   over-broad webhook intercepting every resource is latency + blast radius. A *malicious or
   compromised* webhook scoped to `pods`/`*` can read every spec (data exfil) and a mutating

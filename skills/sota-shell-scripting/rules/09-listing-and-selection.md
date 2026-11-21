@@ -203,7 +203,11 @@ shell running the loop, and the session died with exit 255 (field-reported 2026-
   you typed.** Homebrew's framework Python on macOS re-execs through `Python.app`, so `python3
   -I job.py` is listed as `…/Resources/Python.app/Contents/MacOS/Python -I job.py`. Then
   `pgrep -f 'python3 -I'` prints nothing for a running job, while `pgrep -f 'job.py'` finds
-  it. `exec -a NAME` does the same to argv[0]. Measured 2026-11-15, python@3.14.8. An empty
+  it. `exec -a NAME` does the same to argv[0]. Measured 2026-11-15, python@3.14.8. A process can
+  also rewrite its command line **after** it starts (Perl `$0 = …`, `setproctitle`, the
+  `postgres:`/`nginx: worker` titles), and then a `while pgrep -f job.pl` waiter returns at once
+  while the job still runs (measured 2026-11-21, procps-ng on Debian: 0 matches, waiter back in
+  0 s, process alive): wait on its PID (`wait "$pid"`, `kill -0`) or its artefact. An empty
   `pgrep` is an absence claim ([rules/06](06-ad-hoc-commands.md) §2): a field session read one
   as "not running" and started a second writer.
 

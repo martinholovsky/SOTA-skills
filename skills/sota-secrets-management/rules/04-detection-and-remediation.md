@@ -129,7 +129,10 @@ non-git surfaces: S3 buckets, container images, CI logs exports — secrets leak
   `"--all --diff-merges=first-parent"` scanned 4 and found it; `"--all --cc"` did not. Once a later
   commit removed the key, `gitleaks dir` was clean as well. Run the history pass with
   `--log-opts="--all -m"` and reconcile `N commits scanned` with `git rev-list --all --count`:
-  a shortfall equal to `git rev-list --all --merges --count` is this gap.
+  a shortfall equal to `git rev-list --all --merges --count` is this gap. **`trufflehog git` has the
+  same gap and no flag for it** (measured 2026-11-21, trufflehog 3.100.0, `--no-verification`: a
+  `ghp_` token in an ordinary commit, 1 finding; the same token only in a merge resolution, 0; its
+  `git --help` lists no merge option): pair it with the gitleaks `-m` pass, or scan merges another way.
 
 ### Adopting scanning on a legacy repo (baseline workflow)
 

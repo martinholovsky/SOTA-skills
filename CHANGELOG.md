@@ -52,7 +52,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the install command for the machine's package manager), plus optional `zsh`, `gh`, and the
   contributor gates; `--check-tools` prints only that and exits 1 when one is missing or too old.
   Python floor measured in podman: the hooks need 3.9 (on 3.8 they fail and, exiting 0 on any error,
-  say nothing, so the installer now skips them), the session-load audit 3.10.
+  say nothing, so the installer now skips them), the session-load audit 3.10. The closing summary
+  repeats what was skipped.
+- **Leads the sweep could not run, now run (podman and local tools).** Adopted, each measured:
+  `requests` and `httpx` print a URL's query in their errors (`sota-python`, secrets rules/03);
+  a modprobe.d blocklist line does nothing for a built-in module (`sota-sandboxing`); a process that
+  rewrites its argv ends a `pgrep -f` waiter at once (shell rules/09); `trufflehog git` misses a
+  secret added only in a merge resolution (secrets rules/04); a macOS sanitizer abort leaves a crash
+  report per run (`sota-c-cpp`, `sota-testing`); `.NET`'s `if (ct.CanBeCanceled) return ct;`
+  waited 8,016 ms against a 300 ms budget (`sota-dotnet`); and `kubectl exec deploy/X` picks one pod
+  by label selector (network rules/03, from source). Refuted: `/sota-resume`'s merge-tree check
+  after a squash.
 
 ## [1.57.1] - 2026-11-20
 

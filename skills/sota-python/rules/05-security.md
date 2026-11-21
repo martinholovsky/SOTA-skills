@@ -192,7 +192,9 @@ code  = f"{secrets.randbelow(1_000_000):06d}"
 - Compare secrets with `secrets.compare_digest` / `hmac.compare_digest`, never `==` (timing).
 - Passwords: argon2 (`argon2-cffi`) or bcrypt — never raw sha256/md5, never homemade salting.
 - Secrets come from env/secret manager, not source. `.env` is gitignored; values never appear
-  in `repr`/logs (dataclass `field(repr=False)`, pydantic `SecretStr`).
+  in `repr`/logs (dataclass `field(repr=False)`, pydantic `SecretStr`). A key in a URL is in the error
+  text: `requests` prints the query on a refused connection and both it and `httpx` on
+  `raise_for_status()` (measured 2026-11-21); redact before logging ([`sota-secrets-management` rules/03](../../sota-secrets-management/rules/03-application-patterns.md) §3).
 - TLS: never ship `verify=False` (requests/httpx) or `ssl._create_unverified_context`;
   pin an internal CA bundle instead.
 - `hashlib.md5/sha1` only for non-security checksums — and mark it:
