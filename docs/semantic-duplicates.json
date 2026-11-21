@@ -1241,8 +1241,8 @@
    "note": "Cross-language checklist, devsecops CI gate and JS-specific grep.",
    "sample": "- [ ] **Invisible code points in code and history (§4)**: does CI reject bidi and zero-width characters in source of eve",
    "members": [
-    "sota-code-security/rules/09-untrusted-data-ingestion.md#bb27b307cdb9",
-    "sota-devsecops/rules/05-analysis-gates.md#7a254d3e4d0c",
+    "sota-code-security/rules/09-untrusted-data-ingestion.md#45469196c009",
+    "sota-devsecops/rules/05-analysis-gates.md#d2481286029f",
     "sota-javascript-typescript/rules/05-security.md#6aa4535831ae"
    ]
   },
@@ -3009,6 +3009,16 @@
    "members": [
     "sota-web-frameworks/rules/05-nuxt.md#4a075e857034",
     "sota-web-frameworks/rules/07-security.md#90b39007f726"
+   ]
+  },
+  {
+   "verdict": "deliberate",
+   "note": "The merge-commit scan flag: secrets rules/04 owns it (the measurement and the per-PR range); devsecops rules/05's one-line CI step carries the flag and points there (2026-11-21 sibling sweep).",
+   "sample": "3. **CI scan on full history** for new repos/audits (`gitleaks git --log-opts=\"--all --diff-merges=first-parent\"`",
+   "members": [
+    "sota-devsecops/rules/05-analysis-gates.md#47823954df02",
+    "sota-secrets-management/rules/04-detection-and-remediation.md#0d0fea221087",
+    "sota-secrets-management/rules/04-detection-and-remediation.md#6e8d08b451cb"
    ]
   }
  ],
