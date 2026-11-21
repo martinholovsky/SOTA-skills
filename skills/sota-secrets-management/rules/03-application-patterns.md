@@ -176,7 +176,9 @@ PGPASSWORD unset; use ~/.pgpass (0600) or peer/IAM auth
 option): the integration is not a self-inflicted High, but the **URL is now the secret**. Build it
 in one function, never log it, and record the provider's requirement beside that code so the next
 audit does not re-flag it. The leak a server-side list misses is the **client's own error text**:
-HTTP clients put the request URL in their errors (Go's `*url.Error` prints `Get "<full URL>": …`),
+HTTP clients put the request URL in their errors (Go's `*url.Error` prints `Get "<full URL>": …`;
+Python's `requests` on a refused connection and `requests`/`httpx` on `raise_for_status()`, query
+string included — while `urllib`, `urllib3` and `aiohttp` connection errors did not, 2026-11-21),
 so every wrapped and logged error carries the key. Redact the URL on the error *before* it is
 wrapped: `fmt.Errorf("…: %w", err)` freezes the text when it is called, so a redaction applied
 through `errors.As` afterwards leaves the key in the message (measured 2026-11-03, go 1.27.3:

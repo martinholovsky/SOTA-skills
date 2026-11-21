@@ -1320,6 +1320,11 @@ setup_listing_budget || true
 maybe_setup_precommit
 
 section '✅' 'Done'
+# The summary must not read clean while a feature was skipped for a missing tool
+# (sota-shell-scripting rules/02 §6): the preflight's list, again, where it is read.
+if [ -n "$TOOLS_MISSING" ]; then
+  warn "done WITHOUT: $TOOLS_MISSING — see Required tools above; re-run after installing"
+fi
 printf '  %sTo update later:%s\n' "$C_DIM" "$C_RESET"
 printf '    git -C "%s" pull   %s# existing skills update live (symlinks); then…%s\n' \
   "$REPO" "$C_DIM" "$C_RESET"

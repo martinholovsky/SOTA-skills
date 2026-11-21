@@ -102,7 +102,10 @@ const std::string& worse(std::map<K,V>& m, K k) { return m[k].name; } // ok only
 
 Build a dedicated job with sanitizers and run the full test/fuzz suite. They
 catch what review and `-Wall` cannot. (Clang/GCC; see
-[Clang sanitizers](https://clang.llvm.org/docs/index.html).)
+[Clang sanitizers](https://clang.llvm.org/docs/index.html).) On macOS each ASan report ends in
+`abort()` and leaves a crash report in `~/Library/Logs/DiagnosticReports/` (measured 2026-11-21:
+exit 134, one `.ips` per run; `ASAN_OPTIONS=abort_on_error=0` exits 1 and leaves none), so a local
+fuzz or sanitizer loop piles them up: [`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §3b.
 
 | Sanitizer | Flag | Catches | Notes |
 |---|---|---|---|

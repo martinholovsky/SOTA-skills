@@ -187,7 +187,8 @@ lenses 2 and 3; a scanner that could not run is reported as not reached.
 4. **Strategy and forward plan.** Is the current plan sound given what you found? Which levers
    are exhausted or dead ends, and is the plan still chasing them? Which promising directions
    were never explored? Where do the stated priorities diverge from where the real risk and
-   value sit?
+   value sit? Test each deferral's revisit trigger against the current state: one whose
+   condition is already true schedules nothing (`/sota-resume`, DELIBERATELY DEFERRED).
 
 ## Orchestration
 

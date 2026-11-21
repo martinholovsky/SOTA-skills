@@ -42,6 +42,9 @@ kubectl -n scratch run probe --rm -it --image=nicolaka/netshoot --restart=Never 
 # rc=28 (timeout) is a drop by the policy; 7 is a refusal at the port or no route; 6 is a broken
 # probe (DNS). Run the same probe from a pod the policy ALLOWS first: it must connect.
 # Egress test: can a pod reach the internet when it shouldn't? (same reading of rc)
+# `exec deploy/api` runs in ONE pod, the first by kubectl's ActivePods sort among pods matching the
+# Deployment's label selector, not its owned pods (kubectl attachablePodForObject, read 2026-11-21):
+# with an overlapping selector it can be another workload's pod. Exec a named pod when it matters.
 kubectl -n payments exec deploy/api -- sh -c 'curl -sS -m3 -o /dev/null -w "%{http_code}\n" https://example.com; echo "rc=$?"'
 ```
 
