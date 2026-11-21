@@ -891,6 +891,13 @@ uncommitted changes, so the session is loading unreleased text (the cue for a ma
 registered with no matcher, again on resume, `/clear` and compaction (Claude Code's hooks reference
 lists those as SessionStart sources). It does not re-check between compactions in a long session.
 
+**What does it need?** Every run starts with a required-tools list: `git`, `jq` (every hook
+installer and the status line) and `python3` 3.10 or newer (the hooks need 3.9: below it a
+hook would fail on every call and, since a hook exits 0 on any error, say nothing, so the
+installer skips it; the session-load audit needs 3.10). Each line names what the tool
+enables and the install command for your package manager; `scripts/install.sh --check-tools`
+prints only that list and exits 1 when something required is missing or too old.
+
 **Which version am I on?** `scripts/install.sh --version` reports the release, the
 checkout (`git describe`), whether your remote is ahead as of the last fetch, and
 whether the skills are symlinked (update live) or a pinned `--copy` snapshot. Quote
@@ -1475,7 +1482,7 @@ over one operator's 94 sessions, 66 of 116 (session, language) pairs had not loa
 `--replay-language` puts the note in 67 of the 91 transcripts that edited code (77 notes). It moved outcomes when measured: rule tests 0.698 with no hook → 0.906 with it
 ([sota-agent-evals v10](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-12-v10/REPORT.md)).
 It costs about **+68% per agent task** (v10: $0.615 vs $0.366 a run), its trigger table was written by an author who had read the
-cases that measured it (in-sample), and it needs `python3`. **On fresh tasks it did not move outcomes**: on
+cases that measured it (in-sample), and it needs `python3` 3.9+. **On fresh tasks it did not move outcomes**: on
 cases-v5, 20 tasks sampled from OWASP ASVS and written blind to the library, the hook plus the router's
 table left cited rule tests at 0.667 in both arms while reach rose 8/20 → 13/20 ([v14](https://github.com/martinholovsky/sota-agent-evals/blob/main/reports/2026-10-13-v14/REPORT.md), NULL,
 +38% cost). Agents read the named rule and handed it back as a decision, citing the precise spec. With one sentence of
@@ -1517,7 +1524,7 @@ rules/06 §1). A written rule did not stop the habit: a field report records the
 broken 60 seconds later. Over one operator's 43,875 agent Bash calls, it refused the 344 that zsh
 had cut and nothing else (in-sample: the lexer was corrected on that corpus). It adds nothing to
 the context unless it fires, does nothing unless the agent's shell is zsh (`CLAUDE_CODE_SHELL`, else `$SHELL`), costs about 85 ms per Bash call
-and needs `python3`. Turn it off with `SOTA_ZSH_EQUALS_HOOK=off`; `install.sh --routing` offers it
+and needs `python3` 3.9+. Turn it off with `SOTA_ZSH_EQUALS_HOOK=off`; `install.sh --routing` offers it
 to clone installs. Since 2026-10-25 it also refuses `set -- $p` on a scalar, which zsh does not
 word-split, so `$2` is empty (`ssh -p "$2"` → `Bad port ''`); over 66,195 local agent Bash calls it
 matched 13, every one an intended split, and in the zsh sessions whose outcome is visible each
@@ -1558,7 +1565,7 @@ real, including all 7 signed commits of the incident; the CI note caught all 11 
 incident's pipeline templates and would appear in 36 of 94 sessions; scans in 5; image pushes in
 none; source writes (replayed 2026-11-20 over 43,405 calls) would show 352 notes in 73 sessions,
 2 to 6 in most (re-run it: `scripts/action-rules-hook.py --replay`). It costs about 60 ms per Bash call and
-needs `python3`. Turn it off with `SOTA_ACTION_RULES_HOOK=off`; `install.sh --routing` offers it to
+needs `python3` 3.9+. Turn it off with `SOTA_ACTION_RULES_HOOK=off`; `install.sh --routing` offers it to
 clone installs, and `scripts/verify-setup.sh` reports whether it is registered (check 2f, since v1.56.1). Whether it changes outcomes is not measured yet: the replay shows where it fires.
 
 The plugin does **not** touch your global config or status line. To match the clone experience,

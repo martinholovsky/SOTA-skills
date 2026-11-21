@@ -47,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   VERIFY-SETUP control no longer plants the allowlisted AWS example key; network probes require the
   control's own refusal; `cd "${dir:?}"`; Go filename suffixes; `cargo tree` runs a checkout's wrapper;
   a broken `-> Any` probe; and nine more (ADOPTION-LOG lists them).
+- **`install.sh` checks the tools it needs before changing anything** (operator request). A
+  `Required tools` section lists `git`, `jq` and `python3` (with what each enables, its version and
+  the install command for the machine's package manager), plus optional `zsh`, `gh`, and the
+  contributor gates; `--check-tools` prints only that and exits 1 when one is missing or too old.
+  Python floor measured in podman: the hooks need 3.9 (on 3.8 they fail and, exiting 0 on any error,
+  say nothing, so the installer now skips them), the session-load audit 3.10.
 
 ## [1.57.1] - 2026-11-20
 
