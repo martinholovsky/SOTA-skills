@@ -1026,7 +1026,9 @@ you install more skills.
 **To check your own install:** `scripts/verify-setup.sh` reports it as check **1b**, with the
 arithmetic, the per-source breakdown and the window it used, and a double install as **1g**. By hand: look at the skill
 list Claude is given and count entries that are a bare name with no text after the colon.
-Any such skill is installed, correct, and unreachable except by name.
+Any such skill is installed, correct, and unreachable except by name. (Check **1**, whether every
+skill is reachable at all, reads a plugin-only install through the same lister since v1.58.0;
+before, its directory walk stopped three levels short of a plugin's skills and read FAIL.)
 
 ### Always-on routing (recommended)
 
@@ -1547,7 +1549,7 @@ CI redesign edited pipeline templates through `python3 - <<EOF` scripts with the
 refused **once per session** with what to settle first (does the project ask for this signature,
 the retry counter, every prompt in order); issued again, it runs. It refuses rather than adding a
 note because Claude Code places a PreToolUse note beside the tool *result*, after an attempt is
-spent. Since 2026-11-21 two more shapes are refused once per session on the same reasoning (two
+spent. Since 2026-11-21 two more shapes, `gate_chain` and `cmdline_kill`, are refused once per session on the same reasoning (two
 field reports): a merge, push, rebase or pull joined to a later `switch`, `checkout`, `stash`,
 `reset` or branch deletion by `;`, a newline or a pipe (`gh pr merge 42 --rebase | tail -2; git
 stash push … && git switch main …` ran on after the merge failed and cut a branch from the wrong
