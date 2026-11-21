@@ -503,6 +503,13 @@ def _analyze(words, st, hits):
         k += 1
     if k < len(words):
         head = dw[k]
+        # The scalar AS the command (`G='git -c user.email=t@t'; $G commit`): zsh looks up one word,
+        # "command not found: git -c user.email=t@t" (this session's own reproduction, 2026-11-21:
+        # the plain control repo got no commit, and only the control showed it).
+        m = SCALAR_REF.fullmatch(words[k])
+        name = m and (m.group(1) or m.group(2))
+        if name and name in st["spaced"] and name not in st["arrays"]:
+            hits["argv"].append(("(as the command)", words[k]))
         if head == "for" and "in" in dw[k:]:
             args = words[k + dw[k:].index("in") + 1:]
         elif head in {"echo", "print", "[", "test", "[[", "set", "export", "local", "typeset",
@@ -706,7 +713,7 @@ def special_reason(hits):
 
 
 def argv_reason(hits):
-    shown = ", ".join(f"`{cmd} {w}`" for cmd, w in hits[:5])
+    shown = ", ".join(f"`{w}` {cmd}" if cmd.startswith("(") else f"`{cmd} {w}`" for cmd, w in hits[:5])
     return (
         f"zsh word splitting: {shown} passes the variable as ONE argument in zsh, which does not "
         "split an unquoted scalar, and this command assigned it a value with a space. bash would "
@@ -898,6 +905,10 @@ TRAP_CASES = [
     ("argv", N + "T='-x -y'; n ${T}", [("n", "${T}")], "N=1"),
     ("argv", 'T="a b"; c=0; for x in $T; do c=$((c+1)); done; echo N=$c', [("for", "$T")], "N=1"),
     ("argv", N + 'T="a b"; n ${=T}', [], "N=2"),
+    ("argv", "G='echo hi there'; $G; echo AFTER", [("(as the command)", "$G")], "!hi there"),
+    ("argv", "G='echo hi there'; f(){ ls / >/dev/null && $G; }; f", [("(as the command)", "$G")], "!hi there"),
+    ("argv", "G='echo hi there'; ${=G}", [], "hi there"),
+    ("argv", "G=(echo hi there); $G", [], "hi there"),
     ("argv", N + 'T="a b"; n "$T"', [], "N=1"),
     ("argv", N + "T=(a b); n $T", [], "N=2"),
     ("argv", N + 'T="a b"; T=x; n $T', [], "N=1"),
