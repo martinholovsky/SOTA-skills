@@ -375,7 +375,8 @@ cheat sheet.
       affected detections' ADS? Is noise filtered at the edge by event type, and
       high-volume/low-value sources routed to the cheap tier, instead? Is each
       edge filter matched on a parsed field rather than a substring of the
-      serialized message, and was it proven at the sink with one event per
+      serialized message (the runnable probe is [`sota-observability`
+      rules/01](../../sota-observability/rules/01-structured-logging.md)'s §7 checklist item), and was it proven at the sink with one event per
       security type?
 - [ ] Are logs shipped off-host promptly (§2) so a compromised host can't erase its
       own evidence?

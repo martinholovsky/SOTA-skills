@@ -309,6 +309,13 @@ _ASSIGN_WORD = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 _VAR_REF = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
 
 
+def _script_reads(text: str, path: str) -> bool:
+    """A script reads PATH: `open('<path>')` without a write mode, `Path('<path>').read_text()`,
+    `readFileSync('<path>')`."""
+    q = re.escape(path)        # matched as the END of the quoted argument (`'/home/u/.claude/skills/…'`)
+    return re.search(r"(?:open|Path|readFileSync)\(\s*[rbf]?['\"][^'\"\n]*%s['\"]\s*(?:\)|,\s*['\"]r)" % q, text) is not None
+
+
 def _lib_candidate(tok: str, cwd: str | None) -> str | None:
     """A token naming a library path: as written when it carries `skills/`, or relative to a
     library directory entered with `cd` earlier in the same command."""
@@ -321,6 +328,16 @@ def _lib_candidate(tok: str, cwd: str | None) -> str | None:
 
 
 _HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+
+
+def _unquoted_at(line: str, pos: int) -> bool:
+    quote = None
+    for ch in line[:pos]:
+        if quote:
+            quote = None if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+    return quote is None
 
 
 def _split_heredocs(cmd: str) -> tuple[str, list[str]]:
@@ -343,7 +360,9 @@ def _split_heredocs(cmd: str) -> tuple[str, list[str]]:
                 cur.append(ln)
             continue
         out.append(ln)
-        pending += [(m.group(1) == "-", m.group(3)) for m in _HEREDOC.finditer(ln)]
+        # only an unquoted `<<WORD` opens a heredoc: `grep -n '<<EOF' a.sh` does not (sibling sweep
+        # 2026-11-21: every later line, real reads included, was taken as a body)
+        pending += [(m.group(1) == "-", m.group(3)) for m in _HEREDOC.finditer(ln) if _unquoted_at(ln, m.start())]
     if cur:
         bodies.append("\n".join(cur))
     return "\n".join(out), bodies
@@ -468,8 +487,12 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                 for tok in sorted(set(re.findall(r"\S*skills/\S+", body))):
                     rel = lib_rel(tok.strip("`'\"()[]{},;:."))
                     if rel and rel.endswith(".md") and "*" not in rel and (lib / rel).is_file():
+                        # a script that opens the file reads it whole (sibling sweep 2026-11-21: a
+                        # `python3 - <<EOF … open(<rules file>).read()` counted as "not loaded")
+                        read = _script_reads(body, rel)
                         by_file.setdefault(rel, []).append(
-                            Access(c.id, c.ts, c.turn, "Bash:heredoc", "other", None, False))
+                            Access(c.id, c.ts, c.turn, "Bash:heredoc", "read" if read else "other",
+                                   (1, _nlines(rel, lib)) if read else None, read))
             segs = _segments(outside)
             cwd: str | None = None              # a `cd` into the library earlier in this command
             loops: dict[str, list[str]] = {}    # `for VAR in <library paths>` -> those paths
@@ -481,8 +504,8 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                 if seg and all(_ASSIGN_WORD.match(t) for t in seg):
                     env.update(t.split("=", 1) for t in seg)
                 verb = _verb(seg)
-                if verb == "cd":
-                    cwd = _lib_cwd(seg)
+                if verb in ("cd", "pushd"):
+                    cwd = _lib_cwd([("cd" if w == "pushd" else w) for w in seg])
                     entered = entered or cwd is not None
                     continue
                 if verb == "for" and len(seg) >= 3 and seg[seg.index("for") + 2:seg.index("for") + 3] == ["in"]:
@@ -490,6 +513,11 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                     loops[seg[k + 1]] = [p for p in (_lib_candidate(t, cwd) for t in seg[k + 3:]) if p]
                     continue
                 toks = [p for p in (_lib_candidate(t, cwd) for t in seg) if p]
+                if verb == "git" and "-C" in seg and seg.index("-C") + 1 < len(seg):
+                    gcwd = _lib_cwd(["cd", seg[seg.index("-C") + 1]])     # `git -C <lib> show HEAD:<file>`
+                    if gcwd:
+                        entered = True
+                        toks += [gcwd + "/" + t.split(":", 1)[1] for t in seg if re.match(r"^[^:/\s-][^:\s]*:[^\s]+\.md$", t)]
                 for var, paths in loops.items():
                     if any(t in (f"${var}", f"${{{var}}}") for t in seg):
                         toks += paths
@@ -516,8 +544,16 @@ def accesses(s: Session, lib: Path) -> tuple[dict[str, list[Access]], dict[str, 
                         rng, whole = _range(verb, seg, n)
                         if op in {"|", "|&"} and i + 1 < len(segs):
                             kind, rng, whole = _downstream(segs[i + 1][0], rng, whole, n)
+                    elif verb == "git" and ("show" in seg or "cat-file" in seg):
+                        kind, rng, whole = "read", (1, _nlines(rel, lib)), True    # `git show REV:<file>`
                     elif verb in SEARCHERS:
                         kind, rng, whole = "search", None, False
+                    elif verb.startswith("python") and _script_reads(" ".join(seg), rel):
+                        kind, rng, whole = "read", (1, _nlines(rel, lib)), True    # `python3 -c "open(<file>)…"`
+                    elif op == "|" and i + 1 < len(segs) and segs[i + 1][0][:1] == ["xargs"] \
+                            and _verb(segs[i + 1][0]) in READERS:
+                        n = _nlines(rel, lib)                                       # `echo <file> | xargs cat`
+                        kind, rng, whole = "read", *_range(_verb(segs[i + 1][0]), segs[i + 1][0], n)
                     elif verb == "wc":
                         kind, rng, whole = "count", None, False
                     else:
@@ -1310,6 +1346,24 @@ def self_test() -> int:
         check("Bash:cat" in {a["tool"] for a in f7.get(rules, {}).get("accesses", [])}
               and f7[rules]["checklist_read"] == "yes", f'`F=<file>; cat "$F"` is a whole-file read: {f7.get(rules)}')
         check(f7.get(other, {}).get("checklist_read") == "yes", f"`S=<dir>; sed ${{S}}/<file>` is a read: {f7.get(other)}")
+        # sibling sweep 2026-11-21: other readers that were invisible or not counted as reads
+        lib_dir = rules.rsplit("/", 1)[0]
+        forms = {"t_pushd": f"pushd /x/{lib_dir} >/dev/null && cat {rules.rsplit('/', 1)[1]}",
+                 "t_gitc": f"git -C /x/skills show HEAD:{rules.removeprefix('skills/')}",
+                 "t_pyhd": f"python3 - <<'EOF'\nprint(open('/x/{rules}').read())\nEOF",
+                 "t_pyc": f"python3 -c \"print(open('/x/{rules}').read())\"",
+                 "t_xargs": f"echo /x/{rules} | xargs cat",
+                 "t_qhd": f"grep -n '<<EOF' a.sh\ncat /x/{rules}"}
+        for cid, cmd in forms.items():
+            p8 = Path(d) / f"{cid}.jsonl"
+            p8.write_text(json.dumps(asst("2026-01-01T00:00:01Z", tu(cid, "Bash", {"command": cmd}))) + "\n", encoding="utf-8")
+            f8 = {x["file"]: x for x in build(parse([p8]), ROOT)["files"]}
+            check(f8.get(rules, {}).get("checklist_read") == "yes", f"{cid} reads the whole file: {cmd!r} -> {f8.get(rules)}")
+        p9 = Path(d) / "t_pyw.jsonl"
+        p9.write_text(json.dumps(asst("2026-01-01T00:00:01Z", tu("t_pyw", "Bash", {"command":
+            f"python3 - <<'EOF'\nopen('/x/{rules}', 'w').write('x')\nEOF"}))) + "\n", encoding="utf-8")
+        f9 = {x["file"]: x for x in build(parse([p9]), ROOT)["files"]}
+        check(f9.get(rules, {}).get("checklist_read") != "yes", f"a script that writes the file is not a read: {f9.get(rules)}")
     # ---- hooks: what a library hook did, and whether the session acted on it (2026-11-18)
     ci16 = "skills/sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
     cs21 = "skills/sota-code-security/rules/21-file-uploads.md"

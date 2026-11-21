@@ -296,7 +296,7 @@ Keep overload sets small (2–4); a 10-overload function wants a redesign. Typed
 ## Audit checklist
 
 - [ ] **Any leakage (§3) [MEDIUM where it crosses module boundaries]** —
-      `grep -rn "-> Any\|: Any" --include="*.py" src/ | grep -v "test_" | head -50` ;
+      `grep -rn -e '-> Any' -e ': Any' --include="*.py" src/ | grep -v "test_" | head -50` ;
       `grep -rn "dict\[str, Any\]" --include="*.py" src/ | wc -l` (boundary-only is OK;
       everywhere is not); `grep -rn "Callable\[\.\.\., " --include="*.py" src/`
       (signature-erasing decorators: `ParamSpec`, §8) ;

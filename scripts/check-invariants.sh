@@ -904,6 +904,7 @@ if [ ! -f "$BOARD" ]; then
 else
   s13=$(awk -F'|' '
     /^\|/ {
+      gsub(/\\\|/, "\001"); $0 = $0      # an escaped \| inside a cell is not a column (as in 27 and 39)
       if (!intable) {
         for (i = 1; i <= NF; i++) {
           g = $i; gsub(/^[ \t]+|[ \t]+$/, "", g)

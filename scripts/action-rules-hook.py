@@ -66,6 +66,17 @@ cmdline_kill matches 7 calls in 6 sessions, among them the incident and `ssh roo
 unattended-upgrade …'`, which on Linux matches the remote shell itself; two `pkill -P <ppid> -f` calls
 are exempt. The managed block had already cut the cmdline rate from 5.30 to 1.26 per 1,000 Bash calls
 (pkill -f and pgrep -f, before and after 2026-10-25).
+Sibling sweep, same day (every intake re-read for the same mechanism elsewhere): inner commands now
+include a heredoc fed to `ssh host`/`bash`, and pass up `sign` and `registry` too (explicit flags only:
+a remote command reads no local git config); wrapper flags that take a value (`sudo -u root`, `nice -n
+10`, `timeout -s KILL 10`) are skipped with their value; `command -v` is a lookup; a heredoc opener
+keeps its redirect (`cat <<'EOF' > a.go`); `>|`, `dd of=`, `install -t DIR`, `rsync` and `writeFile`
+are writes; `pgrep -f … | xargs kill` and `for p in $(pgrep -f …)` are cmdline kills; and a script
+that names what it writes is credited with those files only, not with every quoted path it reads.
+Re-replayed over 471 transcripts (43,107 Bash calls; ids now counted once across files, where a forked
+or resumed transcript had counted them again): gate_chain 30 calls in 11 sessions, cmdline_kill 8 in
+6, sign 14 in 3, src_edit 4,003 in 73 (136 calls fewer: scripts that only read the named file, 8 of 8
+sampled correct).
 
 Off with SOTA_ACTION_RULES_HOOK=off. Any internal error lets the command run (exit 0, no output):
 a hook must never break the shell. `--self-test` runs the labelled cases.
@@ -146,14 +157,25 @@ REFUSE_ONCE = ("sign", "gate_chain", "cmdline_kill")
 
 # ---------------------------------------------------------------- parsing
 
-HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n.*?\n[ \t]*\2[ \t]*(?=\n|$)", re.S)
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1([^\n]*)\n(.*?)\n?[ \t]*\2[ \t]*(?=\n|$)", re.S)
+
+
+def drop_bodies(cmd: str) -> str:
+    """The command with heredoc bodies removed and the rest of each opener line KEPT:
+    `cat <<'EOF' > a.go` still redirects to a.go (sibling sweep 2026-11-21: the old form ate it)."""
+    return HEREDOC.sub(lambda m: "<<HEREDOC" + m.group(3) + "\n", cmd)
 ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 WRAPPERS = {"sudo", "env", "command", "exec", "time", "nice", "nohup", "xargs", "!"}
+# A wrapper flag that takes a value: `sudo -u root pkill -f x` is pkill, not `root` (sibling sweep).
+WRAPPER_ARG_FLAGS = {"sudo": {"-u", "-g", "-C", "-D", "-h", "-p", "-r", "-t", "-U"},
+                     "env": {"-u", "-C", "-S", "--unset", "--chdir"}, "nice": {"-n"},
+                     "timeout": {"-s", "-k", "--signal", "--kill-after"},
+                     "xargs": {"-I", "-n", "-P", "-L", "-d", "-s", "-E", "-a"}}
 
 
 def segments(cmd: str) -> list[str]:
     """Split on ; && || | & newlines and subshell brackets outside quotes, heredoc bodies removed."""
-    cmd = HEREDOC.sub("<<HEREDOC\n", cmd)
+    cmd = drop_bodies(cmd)
     out: list[str] = []
     buf: list[str] = []
     quote = None
@@ -173,6 +195,8 @@ def segments(cmd: str) -> list[str]:
         elif c == "\\" and i + 1 < len(cmd):
             buf.append(cmd[i:i + 2])
             i += 1
+        elif c == "|" and buf and buf[-1].endswith(">"):
+            buf.append(c)                                   # >| (clobber): a redirect
         elif c in ";|&\n(){}":
             out.append("".join(buf))
             buf = []
@@ -189,9 +213,14 @@ def argv_of(seg: str) -> list[str]:
     except ValueError:
         return []
     while words and (ASSIGN.match(words[0]) or words[0] in WRAPPERS or words[0] == "timeout"):
-        skip = 2 if words[0] == "timeout" and len(words) > 1 else 1
-        words = words[skip:]
+        wrapper = words[0]
+        words = words[1:]
+        if wrapper == "command" and words[:1] in (["-v"], ["-V"]):
+            return []                                                 # a lookup, not a run
         while words and words[0].startswith("-") and len(words) > 1:  # a wrapper's own flags
+            takes = words[0] in WRAPPER_ARG_FLAGS.get(wrapper, ())
+            words = words[2:] if takes else words[1:]
+        if wrapper == "timeout" and words:                            # its duration
             words = words[1:]
     if words:
         words[0] = words[0].rsplit("/", 1)[-1]
@@ -314,11 +343,11 @@ CI_NAME = (r"\.github/workflows/[^/\s'\"]+\.ya?ml|\.gitlab-ci\.ya?ml|Jenkinsfile
 CI_PATH = re.compile(r"(?:^|/)(?:%s)$" % CI_NAME)
 # the CI path as a whole quoted string, the way a script names a file it opens, not a word in prose
 CI_PATH_QUOTED = re.compile(r"(['\"])[^'\"\s]*?(?:%s)\1" % CI_NAME)
-SCRIPT_WRITE = re.compile(r"open\([^)]*['\"][wa]\+?['\"]|\.write_text\(|\bwrite\(")
+SCRIPT_WRITE = re.compile(r"open\([^)]*['\"][wa]\+?['\"]|\.write_text\(|\bwrite\(|\bwriteFile(?:Sync)?\(")
 CI_KIND = re.compile(r"^\s*kind:\s*(?:Workflow|WorkflowTemplate|ClusterWorkflowTemplate|CronWorkflow"
                      r"|Pipeline|PipelineRun|TaskRun)\s*$", re.M)
 WRITE_TO_FILE = re.compile(r"(?:cat|tee)\b[^\n|;&]*<<|>\s*['\"]?[^\s'\"&|;]+\.ya?ml")
-REDIRECT = re.compile(r">>?\s*(['\"]?)([^\s'\"&|;]+)\1")
+REDIRECT = re.compile(r">[>|]?\s*(['\"]?)([^\s'\"&|;]+)\1")
 
 
 def ci_edit_in_text(cmd: str) -> bool:
@@ -362,12 +391,55 @@ ASSIGN_VALUE = re.compile(r"(?:^|[\s;&(])([A-Za-z_][A-Za-z0-9_]*)=['\"]?([^'\"\s
 VAR_PREFIX = re.compile(r"^\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
 
 
+WRITE_CALL = re.compile(
+    r"open\(\s*(?:(['\"])([^'\"\n]+)\1|([A-Za-z_]\w*))\s*,\s*(?:mode\s*=\s*)?['\"][wax]\+?b?['\"]"
+    r"|(?:Path\(\s*(['\"])([^'\"\n]+)\4\s*\)|([A-Za-z_]\w*))\.write_(?:text|bytes)\("
+    r"|writeFile(?:Sync)?\(\s*(?:(['\"])([^'\"\n]+)\7|([A-Za-z_]\w*))")
+NAME_VALUE = re.compile(r"(?m)(?:^|[\s;(])([A-Za-z_]\w*)\s*=\s*(?:Path\(\s*|pathlib\.Path\(\s*)?(['\"])([^'\"\n]+)\2")
+
+
+def script_write_targets(cmd: str) -> list[str] | None:
+    """What a script writes, when every write names a literal or a variable assigned a literal; None when
+    any target is computed. Sibling sweep 2026-11-21: a heredoc that wrote one file had every quoted
+    source path in its text (test strings, files it read) named as written."""
+    names = {m.group(1): m.group(3) for m in NAME_VALUE.finditer(cmd)}
+    out = []
+    for m in WRITE_CALL.finditer(cmd):
+        lit = m.group(2) or m.group(5) or m.group(8)
+        var = m.group(3) or m.group(6) or m.group(9)
+        if lit:
+            out.append(lit)
+        elif var in names:
+            out.append(names[var])
+        else:
+            return None
+    return out or None
+
+
+def read_only_use(cmd: str, path: str) -> bool:
+    """True when every quoted use of PATH in the command reads it."""
+    q = re.escape(path)
+    uses = len(re.findall(r"['\"]%s['\"]" % q, cmd))
+    reads = len(re.findall(r"open\(\s*['\"]%s['\"]\s*(?:,\s*['\"]r[bt]?['\"]\s*)?\)|['\"]%s['\"]\s*\)\.read(?:_text|_bytes)?\("
+                           r"|spec_from_file_location\([^)]*['\"]%s['\"]|readFileSync\(\s*['\"]%s['\"]" % (q, q, q, q), cmd))
+    return uses > 0 and reads >= uses
+
+
 def src_paths(cmd: str) -> list[str]:
     """Source files this command writes: a redirect, tee, sed -i / perl -pi, cp/mv/install to one,
     or a script (usually a heredoc) that names a quoted source path and writes a file."""
     out: list[str] = []
     if SCRIPT_WRITE.search(cmd):
-        out += [m.group(2) for m in SRC_PATH_QUOTED.finditer(cmd)]
+        # A path the script only READS (`open(p).read()`, `read_text`, an import by path) is not a
+        # write target: the note named `scripts/check-checklist-probes.py` for a heredoc that loaded
+        # it and wrote a scratchpad file (sibling sweep 2026-11-21), and the exemption never applied.
+        targets = script_write_targets(cmd)
+        if targets is not None:          # the script names what it writes: only those count
+            env0 = dict(ASSIGN_VALUE.findall(cmd))           # `"$F"` in an unquoted heredoc is the shell's $F
+            targets = [VAR_PREFIX.sub(lambda m: env0.get(m.group(1) or m.group(2), m.group(0)), t) for t in targets]
+            out += [t for t in targets if SRC_PATH.search(t)]
+        else:                            # a computed target (f-string, argv): every quoted path not only read
+            out += [m.group(2) for m in SRC_PATH_QUOTED.finditer(cmd) if not read_only_use(cmd, m.group(2))]
     # A relative path written after a `cd` in the same command is under that directory, so the
     # scratchpad and test exemptions see `cd "$S/x"; cat > a.py` (2026-11-21, the intake's own
     # probe: the note named `a.py` and the scratchpad exemption missed it).
@@ -396,8 +468,14 @@ def src_paths(cmd: str) -> list[str]:
             out += files
         elif tool == "tee":
             out += files
-        elif tool in ("cp", "mv", "install") and SRC_PATH.search(args[-1]):
+        elif tool in ("cp", "mv", "install") and ("-t" in args or any(a.startswith("--target-directory") for a in args)):
+            i = args.index("-t") + 1 if "-t" in args else -1      # `-t DIR src…`: each source lands in DIR
+            tdir = args[i] if i > 0 and i < len(args) else next(a.split("=", 1)[1] for a in args if a.startswith("--target-directory="))
+            out += [at(tdir.rstrip("/") + "/" + f.rsplit("/", 1)[-1]) for f in files if f != at(tdir)]
+        elif tool in ("cp", "mv", "install", "rsync") and SRC_PATH.search(args[-1]):
             out.append(at(args[-1]))
+        elif tool == "dd":
+            out += [at(a[3:]) for a in args if a.startswith("of=") and SRC_PATH.search(a)]
     # a path named through a variable assigned in the same command (`S=/…/scratchpad; cat > $S/x.py`)
     # resolves to its value, so the code-rules hook's scratchpad and test exemptions can see it
     env = dict(ASSIGN_VALUE.findall(cmd))
@@ -440,13 +518,34 @@ def chain(cmd: str) -> list[tuple[str, str]]:
     """(segment, the separator after it) outside quotes, heredoc bodies removed. `&&`, `||`, `|`,
     `;` and a newline are told apart; the `&` of a redirect (`2>&1`, `&>`) is not a separator, so
     `git push 2>&1 | tail -1` stays one pipeline whose status `pipefail` can carry."""
-    cmd = HEREDOC.sub("<<HEREDOC\n", cmd)
+    cmd = drop_bodies(cmd)
     out: list[tuple[str, str]] = []
     buf: list[str] = []
     quote = None
+    depth = 0          # inside `$( … )` or backticks a separator belongs to the inner command
+    tick = False
     i = 0
     while i < len(cmd):
         c = cmd[i]
+        if not quote and c == "$" and cmd[i + 1:i + 2] == "(":
+            depth += 1
+            buf.append("$(")
+            i += 2
+            continue
+        if not quote and depth and c == ")":
+            depth -= 1
+            buf.append(c)
+            i += 1
+            continue
+        if not quote and c == "`":
+            tick = not tick
+            buf.append(c)
+            i += 1
+            continue
+        if (depth or tick) and not quote and c not in "'\"":
+            buf.append(c)
+            i += 1
+            continue
         if quote:
             buf.append(c)
             if c == quote:
@@ -462,6 +561,8 @@ def chain(cmd: str) -> list[tuple[str, str]]:
             i += 1
         elif c == "&" and ((buf and buf[-1].endswith(">")) or cmd[i + 1:i + 2] == ">"):
             buf.append(c)                                   # 2>&1, >&2, &>file: a redirect
+        elif c == "|" and buf and buf[-1].endswith(">"):
+            buf.append(c)                                   # >| (clobber): a redirect
         elif c in ";|&\n":
             op = cmd[i:i + 2] if cmd[i:i + 2] in ("&&", "||") else c
             out.append(("".join(buf).strip(), op))
@@ -527,6 +628,23 @@ def is_gate_chain(cmd: str) -> bool:
     return False
 
 
+PGREP_F = r"pgrep\s+(?:-[A-Za-z]*\s+)*-[A-Za-z]*f"
+PS_GREP = r"ps\b[^|)]*\|\s*grep\b"
+
+
+def pgrep_feeds_kill(cmd: str) -> bool:
+    """`pgrep -f x | xargs kill`, `for p in $(pgrep -f x); do kill $p; done` (sibling sweep 2026-11-21)."""
+    steps = chain(cmd)
+    for i, (seg, op) in enumerate(steps):
+        argv = argv_of(seg)
+        if argv[:1] == ["pgrep"] and "-P" not in argv and ("--full" in argv or "f" in short_flags(argv[1:])) \
+                and op == "|" and i + 1 < len(steps) and argv_of(steps[i + 1][0])[:1] == ["kill"]:
+            return True
+    text = drop_bodies(cmd)           # a heredoc body is text unless a shell runs it (heredoc_inners)
+    return bool(re.search(r"\bfor\s+\w+\s+in\s+\$\(\s*(?:%s|%s)" % (PGREP_F, PS_GREP), text)
+                and re.search(r"(?:^|[\s;&|(])kill\s", text))
+
+
 def is_cmdline_kill(argv: list[str], seg: str) -> bool:
     """`pkill` selecting by the full command line, or `kill` fed by `pgrep -f`."""
     if not argv:
@@ -540,7 +658,7 @@ def is_cmdline_kill(argv: list[str], seg: str) -> bool:
             return False
         return "--full" in args or "f" in short_flags([a for a in args if not a[1:2].isdigit()])
     if tool == "kill":
-        return bool(re.search(r"\$\(\s*pgrep\s+(?:-[A-Za-z]*\s+)*-[A-Za-z]*f|`\s*pgrep\s+(?:-[A-Za-z]*\s+)*-[A-Za-z]*f", seg))
+        return bool(re.search(r"(?:\$\(|`)\s*(?:%s|%s)" % (PGREP_F, PS_GREP), seg))
     return False
 
 
@@ -575,13 +693,37 @@ def inner_command(argv: list[str]) -> str:
     return ""
 
 
+SHELLS = ("sh", "bash", "zsh", "dash", "ksh")
+# Classes an inner command passes up. Inner commands read no local git config (a remote
+# `git commit` is not this machine's commit.gpgSign): explicit flags only.
+INNER_CLASSES = {"cmdline_kill", "gate_chain", "sign", "registry"}
+
+
+def heredoc_inners(cmd: str) -> list[str]:
+    """Heredoc bodies that a shell executes: `ssh host <<EOF`, `ssh host bash -s <<EOF`,
+    `bash <<EOF` (sibling sweep 2026-11-21: `ssh vm <<'EOF'\npkill -f x\nEOF` classified as nothing)."""
+    out = []
+    for m in HEREDOC.finditer(cmd):
+        opener = cmd[cmd.rfind("\n", 0, m.start()) + 1:m.start()]
+        segs = chain(opener)
+        argv = argv_of(segs[-1][0]) if segs else []
+        if not argv:
+            continue
+        if argv[0] in SHELLS and not any(a.startswith("-") and "c" in a[1:] for a in argv[1:]):
+            out.append(m.group(4))
+        elif argv[0] in ("ssh", "autossh"):
+            rest = inner_command(argv).split()
+            if not rest or rest[0].rsplit("/", 1)[-1] in SHELLS:
+                out.append(m.group(4))
+    return out
+
+
 def classify(cmd: str, cwd: str | None = None, config=git_config_true, depth: int = 0) -> set[str]:
     found: set[str] = set()
     if depth < 2:
-        for seg, _op in chain(cmd):
-            inner = inner_command(argv_of(seg))
-            if inner:
-                found |= classify(inner, None, config, depth + 1) & {"cmdline_kill", "gate_chain"}
+        inners = [inner_command(argv_of(seg)) for seg, _op in chain(cmd)] + heredoc_inners(cmd)
+        for inner in filter(None, inners):
+            found |= classify(inner, None, lambda *_: False, depth + 1) & INNER_CLASSES
     if is_gate_chain(cmd):
         found.add("gate_chain")
     if ci_edit_in_text(cmd):
@@ -603,7 +745,7 @@ def classify(cmd: str, cwd: str | None = None, config=git_config_true, depth: in
         if is_scan(argv):
             found.add("scan")
     # chain() keeps `$( … )` inside its segment, so `kill $(pgrep -f x)` is seen whole
-    if any(is_cmdline_kill(argv_of(seg), seg) for seg, _op in chain(cmd)):
+    if any(is_cmdline_kill(argv_of(seg), seg) for seg, _op in chain(cmd)) or pgrep_feeds_kill(cmd):
         found.add("cmdline_kill")
     return found
 
@@ -674,12 +816,14 @@ def replay(root: str) -> int:
     calls = {c: 0 for c in CLASSES}
     sessions: dict[str, set[str]] = {c: set() for c in CLASSES}
     total, files = 0, 0
+    # One set across files: a forked subagent or a resumed session repeats the parent's tool_use ids
+    # in another transcript, and a per-file set counted each again (sibling sweep 2026-11-21).
+    seen: set[str] = set()
     for dp, _dn, fn in os.walk(os.path.expanduser(root), followlinks=True):
         for f in fn:
             if not f.endswith(".jsonl"):
                 continue
             files += 1
-            seen: set[str] = set()
             with open(os.path.join(dp, f), encoding="utf-8", errors="replace") as fh:
                 for line in fh:
                     try:
@@ -759,6 +903,35 @@ CASES = [
     ("git commit -m 'fix internal/intel/fetch.go'", (), set()),
     ("go test ./internal/... > test-output.txt", (), set()),
     ('S=/x/scratchpad; cd "$S/ans"\ncat > j.py <<\'EOF\'\nimport os\nEOF', (), {"src_edit"}),
+    # sibling sweep 2026-11-21: heredoc opener before the redirect, other write forms, read-only paths
+    ("cat <<'EOF' > .github/workflows/ci.yml\non: push\nEOF", (), {"ci_edit"}),
+    ("cat <<'EOF' > internal/a.go\npackage a\nEOF", (), {"src_edit"}),
+    ("echo x >| internal/a.go", (), {"src_edit"}),
+    ("install -m 644 /tmp/x.go -t internal/", (), {"src_edit"}),
+    ("dd if=/tmp/x of=internal/a.go", (), {"src_edit"}),
+    ("node -e \"require('fs').writeFileSync('src/a.ts','x')\"", (), {"src_edit"}),
+    ("python3 - <<'EOF'\nsrc = open('scripts/lib.py').read()\nopen('/tmp/out.txt', 'w').write(src)\nEOF", (), set()),
+    # wrappers with flag values, and inner commands through heredocs and -c
+    ("sudo -u root pkill -f worker", (), {"cmdline_kill"}),
+    ("nice -n 10 pkill -f worker", (), {"cmdline_kill"}),
+    ("timeout -s KILL 10 pkill -f worker", (), {"cmdline_kill"}),
+    ("ssh vm <<'EOF'\npkill -f worker\nEOF", (), {"cmdline_kill"}),
+    ("ssh vm bash -s <<'EOF'\ngh pr merge 1 | tail -1; git switch main\nEOF", (), {"gate_chain"}),
+    ("ssh vm 'cat > /tmp/notes.txt' <<'EOF'\npkill -f worker\nEOF", (), set()),
+    ("ssh host 'git tag -s v1 -m x'", (), {"sign"}),
+    ("bash -c 'git commit -m x'", ("commit.gpgSign",), set()),
+    ("pgrep -f worker | xargs -r kill -9", (), {"cmdline_kill"}),
+    ("for p in $(pgrep -f worker); do kill $p; done", (), {"cmdline_kill"}),
+    ("kill $(ps aux | grep worker | awk '{print $2}')", (), {"cmdline_kill"}),
+    ("pgrep -f worker | wc -l", (), set()),
+    ("F=internal/a.go; python3 - <<EOF\nopen(\"$F\", 'w').write('package a')\nEOF", (), {"src_edit"}),
+    ("python3 - <<'EOF'\np = 'scripts/hook.py'; s = open(p).read()\ncases = ['/w/Tests/A.swift', 'internal/a.go']\n"
+     "open(p, 'w').write(s)\nEOF", (), {"src_edit"}),
+    ("python3 - <<'EOF'\np = 'docs/notes.md'; s = open(p).read()\ncases = ['internal/a.go']\nopen(p, 'w').write(s)\nEOF",
+     (), set()),
+    ("command -v fido2-token ykman", (), set()),
+    ("ssh vm 'command -v ykman; fido2-token -L'", (), set()),
+    ("python3 - <<'EOF'\ncases = ['for p in $(pgrep -f w); do kill $p; done']\nEOF", (), set()),
     # gate_chain (2026-11-21 field report): the incident, verbatim apart from the names
     ("gh pr merge 42 --rebase 2>&1 | tail -2; git stash push -u -q -m wip && git switch -q main && "
      "git pull -q --ff-only && git switch -q -c feat/x && git stash pop -q", (), {"gate_chain"}),
@@ -852,6 +1025,11 @@ def self_test() -> int:
         if "code-rules hook" not in ctx or "rules/" not in ctx:
             fails += 1
             print("FAIL a Go file written by a heredoc did not get the code-rules note: %r" % ctx[:160])
+    got = src_paths("python3 - <<'EOF'\np = 'scripts/hook.py'; s = open(p).read()\ncases = ['/w/Tests/A.swift']\n"
+                    "open(p, 'w').write(s)\nEOF")
+    if got != ["scripts/hook.py"]:
+        fails += 1
+        print("FAIL a script's named write target was not the only path: %s" % got)
     got = src_paths('S=/x/scratchpad; cd "$S/ans"\ncat > j.py <<\'EOF\'\nimport os\nEOF')
     if got != ["/x/scratchpad/ans/j.py"]:
         fails += 1

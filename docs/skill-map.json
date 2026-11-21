@@ -323,7 +323,7 @@
     {
       "from": "sota-code-security",
       "to": "sota-testing",
-      "weight": 19,
+      "weight": 20,
       "targets": [
         "rules/02",
         "rules/02 \u00a72.10",
@@ -471,6 +471,17 @@
       ]
     },
     {
+      "from": "sota-detection-engineering",
+      "to": "sota-observability",
+      "weight": 12,
+      "targets": [
+        "rules/01",
+        "rules/01 \u00a77",
+        "rules/04",
+        "rules/04 \u00a74"
+      ]
+    },
+    {
       "from": "sota-javascript-typescript",
       "to": "sota-code-security",
       "weight": 12,
@@ -508,16 +519,6 @@
         "rules/10",
         "rules/11 \u00a74",
         "rules/11 \u00a76"
-      ]
-    },
-    {
-      "from": "sota-detection-engineering",
-      "to": "sota-observability",
-      "weight": 11,
-      "targets": [
-        "rules/01 \u00a77",
-        "rules/04",
-        "rules/04 \u00a74"
       ]
     },
     {
@@ -739,6 +740,32 @@
       ]
     },
     {
+      "from": "sota-devsecops",
+      "to": "sota-rust",
+      "weight": 8,
+      "targets": [
+        "rules/05 \u00a72",
+        "rules/07",
+        "rules/07 \u00a71a",
+        "rules/07 \u00a74a",
+        "rules/07 \u00a75"
+      ]
+    },
+    {
+      "from": "sota-golang",
+      "to": "sota-devsecops",
+      "weight": 8,
+      "targets": [
+        "rules/03 \u00a73.1",
+        "rules/03 \u00a73.7",
+        "rules/05 \u00a75.1",
+        "rules/09 \u00a72a",
+        "rules/10",
+        "rules/14 \u00a714.6",
+        "rules/16 \u00a716.2"
+      ]
+    },
+    {
       "from": "sota-identity-access",
       "to": "sota-network-security",
       "weight": 8,
@@ -930,6 +957,16 @@
     },
     {
       "from": "sota-devsecops",
+      "to": "sota-secrets-management",
+      "weight": 7,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/04",
+        "rules/04 \u00a71"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
       "to": "sota-network-security",
       "weight": 7,
       "targets": []
@@ -941,19 +978,6 @@
       "targets": [
         "rules/01 \u00a710",
         "rules/07 \u00a72"
-      ]
-    },
-    {
-      "from": "sota-golang",
-      "to": "sota-devsecops",
-      "weight": 7,
-      "targets": [
-        "rules/03 \u00a73.1",
-        "rules/03 \u00a73.7",
-        "rules/05 \u00a75.1",
-        "rules/10",
-        "rules/14 \u00a714.6",
-        "rules/16 \u00a716.2"
       ]
     },
     {
@@ -1118,27 +1142,6 @@
       "weight": 6,
       "targets": [
         "rules/05"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-secrets-management",
-      "weight": 6,
-      "targets": [
-        "rules/01 \u00a75",
-        "rules/04",
-        "rules/04 \u00a71"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-rust",
-      "weight": 6,
-      "targets": [
-        "rules/05 \u00a72",
-        "rules/07",
-        "rules/07 \u00a71a",
-        "rules/07 \u00a75"
       ]
     },
     {
@@ -4653,14 +4656,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1943,
+    "md link, other skill": 1949,
     "md link, outside skills/": 3,
-    "md link, same skill": 2869,
+    "md link, same skill": 2874,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 931,
+    "name+file (backticked)": 937,
     "name+file (bare)": 180,
-    "own rules/NN": 3091
+    "own rules/NN": 3098
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4670,9 +4673,9 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 926,
+    "name+file (backticked)": 932,
     "name+file (bare)": 168,
-    "own rules/NN": 2987
+    "own rules/NN": 2992
   },
   "rules_index_style": {
     "link": 42
@@ -6565,6 +6568,7 @@
       "router": [],
       "other": [
         "sota-code-security/rules/12-verifying-the-verifier.md",
+        "sota-golang/rules/07-tooling-ci.md",
         "sota-rust/rules/07-tooling-ci.md",
         "sota-rust/rules/09-formal-verification.md",
         "sota-shell-scripting/rules/02-robustness-correctness.md",
@@ -8565,6 +8569,7 @@
         "sota-rust/SKILL.md"
       ],
       "same": [
+        "sota-rust/rules/01-ownership-and-api-design.md",
         "sota-rust/rules/02-errors-and-panics.md",
         "sota-rust/rules/05-security-supply-chain.md",
         "sota-rust/rules/06-performance.md"
@@ -8574,6 +8579,7 @@
         "sota-devsecops/rules/02-provenance-signing.md",
         "sota-devsecops/rules/09-gates-that-hold.md",
         "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-devsecops/rules/13-vulnerability-remediation.md",
         "sota-testing/SKILL.md"
       ]
     },
@@ -8967,6 +8973,7 @@
       ],
       "same": [
         "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/03-security.md",
         "sota-shell-scripting/rules/05-constructs-and-cleanup.md",
         "sota-shell-scripting/rules/07-powershell.md",
         "sota-shell-scripting/rules/08-ad-hoc-side-effects.md",
@@ -9715,6 +9722,10 @@
       [
         "sota-report",
         "sota-audit"
+      ],
+      [
+        "sota-report",
+        "sota-close"
       ],
       [
         "sota-resume",

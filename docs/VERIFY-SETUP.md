@@ -244,13 +244,15 @@ Proving the secret gate *rejects* something needs a real commit attempt. Run it
 yourself — three lines, reversible:
 
 ```sh
-printf 'aws_secret_access_key = "AKIAIOSFODNN7EXAMPLE"\n' > leak-test.txt
+printf 'aws_secret_access_key = "AKIA%s"\n' "$(LC_ALL=C tr -dc 'A-Z2-7' </dev/urandom | head -c 16)" > leak-test.txt
 git add leak-test.txt && git commit -m "gate test"   # MUST be rejected
 git reset -q && rm -f leak-test.txt
 ```
 
 If that commit succeeds, check 8 was a false pass — you have a scanner in the
-config and no control on the commit path.
+config and no control on the commit path. Generate the key, never paste AWS's documented
+`AKIAIOSFODNN7EXAMPLE`: gitleaks allowlists it on purpose, so a working gate lets it through
+(measured 2026-11-21, gitleaks 8.30.1: exit 0 on the example, 1 on a random key of the same shape).
 
 ## Reading the report
 

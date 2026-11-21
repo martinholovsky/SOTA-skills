@@ -280,7 +280,7 @@ YAML
     hooks:
       - id: sota-shellcheck
         name: shellcheck
-        entry: shellcheck --severity=style --external-sources
+        entry: shellcheck --severity=style --external-sources --enable=check-set-e-suppressed,check-extra-masked-returns,check-unassigned-uppercase
         language: system
         types: [shell]
       - id: sota-shfmt

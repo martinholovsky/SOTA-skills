@@ -50,8 +50,10 @@ fail) own the general doctrine. What this file adds is the targeted procedure
 for a **security control**:
 
 1. Replace the control's body with the permissive no-op — `return []`,
-   `return True`, `pass`.
-2. Run the suite.
+   `return True`, `pass`. Do it as a file edit in a disposable copy or worktree, and revert by edit:
+   an inject-and-revert shell chain sent to the background can leave the mutant in place
+   ([`sota-testing` rules/06](../../sota-testing/rules/06-property-fuzzing-mutation.md) §6.3).
+2. Run the suite, in the foreground.
 3. **Nothing fails ⇒ that control is untested**, regardless of how many tests
    name it. Report it as a finding, not as a coverage note.
 

@@ -35,10 +35,14 @@ Probe:
 
 ```bash
 # From an unrelated namespace, traffic to a target must be REFUSED if default-deny works.
+# Print curl's own status: any failure (a typo'd host, a closed port, DNS) also "fails", so
+# `&& echo LEAKED || echo denied` reports "denied" with no policy at all (measured 2026-11-21).
 kubectl -n scratch run probe --rm -it --image=nicolaka/netshoot --restart=Never -- \
-  sh -c 'curl -sm3 http://target.othernamespace:8080 && echo LEAKED || echo denied'
-# Egress test: can a pod reach the internet when it shouldn't?
-kubectl -n payments exec deploy/api -- sh -c 'curl -sm3 https://example.com && echo EGRESS_OPEN'
+  sh -c 'curl -sS -m3 -o /dev/null -w "%{http_code}\n" http://target.othernamespace:8080; echo "rc=$?"'
+# rc=28 (timeout) is a drop by the policy; 7 is a refusal at the port or no route; 6 is a broken
+# probe (DNS). Run the same probe from a pod the policy ALLOWS first: it must connect.
+# Egress test: can a pod reach the internet when it shouldn't? (same reading of rc)
+kubectl -n payments exec deploy/api -- sh -c 'curl -sS -m3 -o /dev/null -w "%{http_code}\n" https://example.com; echo "rc=$?"'
 ```
 
 ## 2. The namespaced default-deny pattern (ingress AND egress)

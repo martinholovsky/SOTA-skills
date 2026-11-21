@@ -62,7 +62,8 @@ kubectl -n kube-system exec <cilium-pod-on-that-node> -c cilium-agent -- cilium-
 kubectl -n kube-system exec <cilium-pod-on-that-node> -c cilium-agent -- cilium-dbg bpf policy get <endpoint-id>
 hubble observe --to-pod openbao/ -f          # are unexpected sources getting through?
 # Generic: from an unrelated pod, can you reach the sensitive service?
-kubectl -n scratch exec deploy/test -- sh -c 'curl -sm3 https://openbao.vault:8200/v1/sys/health && echo REACHABLE'
+kubectl -n scratch exec deploy/test -- sh -c 'curl -sS -m3 -o /dev/null -w "%{http_code}\n" https://openbao.vault:8200/v1/sys/health; echo "rc=$?"'
+# read rc as in rules/03 R1 (28 drop, 7 refused, 6 broken probe), next to the same probe from an allowed pod
 # Firewall: hunt the broad rules
 grep -rEn '0\.0\.0\.0/0|::/0|\bany\b|\bworld\b' ./policies ./firewall
 ```
@@ -172,7 +173,9 @@ sheet, Zero Trust Architecture cheat sheet.
 - [ ] Are zones/tiers defined with deny-by-default *between* them, or is the network flat (any
       host reaching any other on any port, one subnet or namespace for everything, a security group
       allowing the whole VPC CIDR to itself)? Probe east-west, not only the edge: cross-tier
-      reachability (app pod → data tier on a non-declared port must fail) (§1, §2).
+      reachability (app pod → data tier on a non-declared port must fail **by the control's
+      own refusal** — a timeout or the policy's deny log, not any non-zero exit — while the
+      declared port from the same pod connects) (§1, §2).
 - [ ] Hunt over-broad rules: `grep -rEn '0\.0\.0\.0/0|::/0|\bany\b|\bworld\b' policies firewall`.
       For each hit touching a sensitive service (secrets/DB/registry/admin/PKI), prove reachability
       and rate Critical until fixed — a rule *named* `restrict` is judged by its effective policy,
