@@ -154,7 +154,8 @@ baseline — `sota-threat-modeling` rules/06 §1 calls that the audit's lasting 
 team that has never had one drawn it usually is.
 
 **Run the scanners after the threat model and before the lenses** — secrets over the full git
-history (checked for a shallow clone first, and run with redaction on — `gitleaks git --redact`;
+history (checked for a shallow clone first, and run with redaction on — `gitleaks git --redact --log-opts="--all --diff-merges=first-parent"`, since
+without the flag no merge commit's own diff is read (`sota-secrets-management` rules/04 §1);
 a scanner that verifies credentials live is a stop-and-ask action), dependency/SCA, SAST, IaC
 and CI workflows: one row of the `sota` router's `rules/01` §3 matrix per ecosystem, at the
 pinned commit, tool versions recorded, nothing installed unasked. Every Critical or High
@@ -205,7 +206,8 @@ evidence is ambiguous. Bound what the refuter receives and make its verdict a nu
 sweep is routinely where the strongest finding comes from.
 
 Absence claims get a refuter too, and carry the heavier burden: a negative needs a positive
-control in the same invocation and through the same input path, or a denominator where no
+control in the same invocation and through the same input path, drawn from where the scope is
+least likely to reach (a control from inside a too-narrow scope passes anyway), or a denominator where no
 control is available
 (`sota-shell-scripting` rules/06 §2, `sota-code-security` rules/11 §2.2).
 

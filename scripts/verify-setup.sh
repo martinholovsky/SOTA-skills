@@ -165,6 +165,23 @@ done
 # scope depends on the caller's cwd is the location-dependent silence in
 # `sota-code-security` rules/11 — committed here by the fix for it.
 LIB_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd) || LIB_ROOT=""
+# A plugin install's skills sit at plugins/cache/<marketplace>/<plugin>/<version>/skills/<name>,
+# six levels down, past the scan's -maxdepth 3, and walking deeper would count stale cache
+# versions. Read the installed paths the way check 1b does (sibling sweep 2026-11-21: a
+# plugin-only install, the README's primary one, read FAIL "contains no sota* skill").
+if [ -n "$LIB_ROOT" ] && [ -f "$LIB_ROOT/scripts/skill-listing-sources.sh" ]; then
+  while IFS=$'\t' read -r src _ f; do
+    case "$src" in plugin:*) ;; *) continue ;; esac
+    nm=$(basename "$(dirname "$f")")
+    case "$nm" in sota|sota-*) ;; *) continue ;; esac
+    case "$seen_names" in *$'\n'"$nm"$'\n'*) continue ;; esac
+    n_sota=$((n_sota + 1))
+    [ "$nm" = sota ] && router_seen=1
+    seen_names="$seen_names$nm"$'\n'
+  done <<EOF
+$(CLAUDE_CONFIG_DIR="$CLAUDE_HOME" bash "$LIB_ROOT/scripts/skill-listing-sources.sh" --list 2>/dev/null || true)
+EOF
+fi
 n_src=0
 missing_names=""
 if [ -n "$LIB_ROOT" ] && [ -d "$LIB_ROOT/skills" ]; then
@@ -869,11 +886,16 @@ else
 fi
 
 # INSTALLED vs merely configured — three distinct states, not two.
+# Ask git where hooks live: in a linked worktree `.git` is a file, and core.hooksPath may be relative.
+# `find -L` counts a hook that is a symlink (sibling sweep 2026-11-21: `ln -s ../../tools/pre-commit`
+# read as "no hook installed"; 2026-10-21 field report: find skips a link it meets while traversing).
+hookdir=$(git rev-parse --git-path hooks 2>/dev/null || true)
 hookspath=$(git config --get core.hooksPath 2>/dev/null || true)
-hookdir="${hookspath:-.git/hooks}"
+[ -n "$hookspath" ] && hookdir="$hookspath"
+hookdir="${hookdir:-.git/hooks}"
 installed=0
 if [ -d "$hookdir" ]; then
-  installed=$(find "$hookdir" -maxdepth 1 -type f ! -name '*.sample' 2>/dev/null | wc -l | tr -d ' ')
+  installed=$(find -L "$hookdir/" -maxdepth 1 -type f ! -name '*.sample' 2>/dev/null | wc -l | tr -d ' ')
 fi
 if [ "$installed" -gt 0 ]; then
   row "PASS" "9. hooks installed" "$installed non-sample hook(s) in $hookdir"

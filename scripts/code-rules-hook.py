@@ -93,7 +93,10 @@ CODE_EXT = {"py", "pyi", "go", "rs", "c", "h", "cc", "cpp", "cxx", "hpp", "java"
 CONFIG_EXT = {"yml", "yaml", "j2", "conf", "service", "toml"}
 # `test_x` and `test-x`, `x_test` and `x-test`: the hyphenated forms are this repository's own
 # convention (scripts/test-*.sh), which the underscore-only pattern missed (field report 2026-11-10).
-TEST_PATH = re.compile(r"(^|/)(tests?|spec|__tests__)/|(^|/)test[_-][^/]*$|[_-]test\.\w+$|\.(test|spec)\.\w+$")
+# Sibling sweep 2026-11-21: the languages this hook covers name tests other ways too (SwiftPM
+# `Tests/`, a .NET `Shop.Api.Tests/` project, RSpec `*_spec.rb`, JUnit/PHPUnit/xUnit `*Test.java`).
+TEST_PATH = re.compile(r"(^|/)(?i:tests?|spec|__tests__)/|(^|/)test[_-][^/]*$|[_-]test\.\w+$|\.(test|spec)\.\w+$"
+                       r"|[^/]\.Tests?/|_spec\.rb$|[a-z0-9](Test|Tests|Spec)\.(java|kt|kts|cs|swift|php|scala|groovy)$")
 # An agent's scratchpad holds proofs of concept and probes, not shipped code: the same reason tests
 # are skipped. Operator decision 2026-10-23, after 5 false triggers there and none useful.
 SCRATCH_PATH = re.compile(r"(^|/)scratchpad/")
@@ -186,11 +189,15 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
      [("sota-cli-ux", "02", "§1 the stream contract, §3 exit codes, §5 line-buffered stdout when piped")]),
     # 2026-11-07 field report: `done < <(select_items)` exited 0 on a failing producer, and a .sh
     # Write matched no row. `< <(` is the redirect-from-process-substitution form (while, mapfile, read).
+    # Widened 2026-11-21 (sibling sweep): an argument-position `<(…)` or an output `>(…)` loses the
+    # status the same way (`diff <(false) <(false)` says "same", rc 0, under pipefail too). Replayed
+    # over local Edit/Write: shell files 9 -> 11 hits, both new ones real (`grep -f <(…)`, `cmp <(…)`);
+    # other languages 5 -> 2, the old `<\s*<\(` also matching C++/Ruby `<<(`.
     ("reads from a process substitution, whose exit status is unreachable",
-     r"<\s*<\(",
+     r"(?:^|[\s;|&(])[<>]\(",
      [("sota-shell-scripting", "02", "§4, a process substitution's exit status is unreachable")]),
     ("calls a model API: output cap, stop reason and spend",
-     r"max_(completion_|output_)?tokens|finish_reason|stop_reason|chat\.completions",
+     r"max_?(completion_?|output_?)?tokens|max_?output_?token_?count|finish_?reason|stop_?reason|chat\.completions",
      [("sota-llm-engineering", "02", "§6, stop_reason before parsing and an explicit max_tokens"),
       ("sota-llm-engineering", "05", "§4 cost engineering")]),
     ("configures PAM, a login stack",
@@ -210,14 +217,14 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
      r"render_template|jinja|Template\(|innerHTML|dangerouslySetInnerHTML|text/html|Markup\(",
      [("sota-code-security", "05", "XSS and web security")]),
     ("checks a password or handles a login",
-     r"passw(or)?d|\blogin\b|authenticat|credential|sign_?in",
+     r"passw(or)?d|(?:\b|_)login(?:\b|_)|authenticat|credential|sign_?in",
      [("sota-code-security", "02", "§1, credential stuffing, lockout and enumeration")]),
     ("issues or checks a session or token",
-     r"session|\btokens?\b|cookie|remember_?me|\bjwt\b|bearer",
+     r"session|(?:\b|_)tokens?(?:\b|_)|cookie|remember_?me|(?:\b|_)jwt(?:\b|_)|bearer",
      [("sota-code-security", "17", "§2 session management"),
       ("sota-code-security", "02", "authentication")]),
     ("decides who may do what",
-     r"principal|permission|\broles?\b|_roles?\b|\broles?_|is_admin|\bowner\b|tenant|authoriz|forbidden|\b403\b",
+     r"principal|permission|\broles?\b|_roles?\b|\broles?_|is_admin|(?:\b|_)owner(?:\b|_)|tenant|authoriz|forbidden|\b403\b",
      [("sota-code-security", "03", "§1-§3 deny by default, IDOR, function-level authorization")]),
     ("sends or receives a webhook or callback",
      r"webhook|callback_?url|x-signature|signing_secret",
@@ -226,13 +233,13 @@ TRIGGERS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
      r"\blimit\b|\boffset\b|\bcursor\b|page_?size|next_page",
      [("sota-api-design", "01", "§4 pagination")]),
     ("moves money or must not run twice",
-     r"idempot|payment|\bcharge\b|refund|\btransfer\b",
+     r"idempot|payment|(?:\b|_)charge(?:\b|_)|refund|\btransfer\b",
      [("sota-api-design", "01", "§6 idempotency keys")]),
     ("calls something that can fail or hang",
      r"\bretr(y|ies)\b|backoff|timeout|time\.sleep|circuit|max_attempts",
      [("sota-architecture", "04", "§1-§3 timeouts, retries, circuit breakers")]),
     ("logs, returns errors, or returns records about people",
-     r"logger\.|logging\.|traceback|str\(e\)|repr\(e\)|\bemail\b|\bphone\b|password_hash",
+     r"logger\.|logging\.|traceback|str\(e\)|repr\(e\)|\bemail\b|(?:\b|_)phone(?:\b|_)|password_hash",
      [("sota-code-security", "07", "§1, §2 and §4: errors, logs, response over-exposure")]),
     ("adds a request handler or endpoint, which needs abuse control keyed to the caller",
      r"def \w+\(self,\s*(principal|req|request)\b|@(app|router|bp)\.(get|post|put|delete|patch|route)\(|"
@@ -256,7 +263,7 @@ EXCLUDE = {
     "issues or checks a session or token": re.compile(
         r"TokenStream\w*|proc_macro\w*|Token!\[[^\]\n]*\]|\bto_tokens\b|\btoken::\w+"
         r"|\btokens?\.(extend|append\w*)\b|rustc_session\w*"
-        r"|\b(max|input|output|prompt|completion|reasoning|thinking|total|cached?|cache_\w+)_?tokens?\b"
+        r"|(?:\b|_)(max|input|output|prompt|completion|reasoning|thinking|total|cached?|cache_\w+)_?tokens?\b"
         r"|\btokens?_?(count|usage|used|budget|limits?|logprob\w*)\b|\btokens? (count|usage|budget|limits?|bucket|per)\b"
         r"|token[- ]bucket|\btokeni[sz]\w*|\b\d[\d,.]*k?\+?\s*tokens?\b|tokens?/s\b|\bper[- ](\w+ )?tokens?\b|chars?/token"
         r"|\b(special|control|sentinel|canary|inert|benign|unique)[ _-](\w+[ _-])?tokens?\b"
@@ -632,6 +639,7 @@ def replay_language(root: str) -> int:
     files = with_edits = with_note = notes = zero_after = named_later = 0
     after: list[int] = []
     per: dict[str, int] = {}
+    seen: set[str] = set()     # across files: a forked or resumed transcript repeats ids (sweep 2026-11-21)
     for dp, _dn, fn in os.walk(os.path.expanduser(root), followlinks=True):
         for f in fn:
             if not f.endswith(".jsonl"):
@@ -647,8 +655,10 @@ def replay_language(root: str) -> int:
                         continue
                     c = (o.get("message") or {}).get("content") if isinstance(o, dict) else None
                     for b in c if isinstance(c, list) else []:
-                        if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("id") not in calls:
+                        if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("id") not in calls \
+                                and b.get("id") not in seen:
                             calls[b["id"]] = (str(o.get("timestamp") or ""), str(b.get("name")), b.get("input") or {})
+            seen |= set(calls)
             seq = sorted(calls.values(), key=lambda x: x[0])
             if not seq:
                 continue
@@ -768,6 +778,10 @@ def self_test() -> int:
                          # (own sessions: in s6 a first fire would hide the second, once per session)
                          ("test- prefix is silent", ev("s6a", "/w/scripts/test-export.sh", "import csv")),
                          ("-test suffix is silent", ev("s6b", "/w/scripts/export-test.sh", "import csv")),
+                         ("SwiftPM Tests/ is silent", ev("s6c", "/w/Tests/AppTests/StoreTests.swift", "import csv")),
+                         (".NET .Tests project is silent", ev("s6d", "/w/Shop.Api.Tests/OrderTests.cs", "import csv")),
+                         ("RSpec _spec.rb is silent", ev("s6e", "/w/lib/user_spec.rb", "import csv")),
+                         ("JUnit *Test.java is silent", ev("s6f", "/w/src/main/java/a/UserServiceTest.java", "import csv")),
                          ("scratchpad file is silent", ev("s6", "/tmp/claude-1/x/scratchpad/poc.py", "import csv")),
                          ("markdown is silent", ev("s6", "/w/README.md", "export as csv")),
                          ("no trigger is silent", ev("s6", "/w/a.py", "x = 1 + 2\n")),
@@ -784,7 +798,8 @@ def self_test() -> int:
         rc, c, _ = run(ev("s12", "/w/app/scratchpad_utils.py", "import csv\n"))
         check("a shipped file NAMED like scratchpad still fires (segment, not substring)", "01-" in c)
         # The test-name filter must not swallow shipped files that merely contain "test".
-        for i, path in enumerate(("/w/scripts/latest.sh", "/w/app/contest_x.py", "/w/app/testimony.py")):
+        for i, path in enumerate(("/w/scripts/latest.sh", "/w/app/contest_x.py", "/w/app/testimony.py",
+                                  "/w/src/Contest.java", "/w/app/Latest.swift")):
             rc, c, _ = run(ev("s13-%d" % i, path, "import csv\n"))
             check("a shipped file containing 'test' still fires: %s" % path.rsplit("/", 1)[1], "01-" in c)
         # ROADMAP 99: the language note, once per session, only when no tool call loaded the skill
@@ -996,6 +1011,8 @@ def self_test() -> int:
                          ("builds a command-line interface", "#[derive(clap::Parser)]"),
                          ("reads from a process substitution", 'done < <(select_items "$1")'),
                          ("reads from a process substitution", "mapfile -t rows < <(git rev-list -3 HEAD)"),
+                         ("reads from a process substitution", "if diff <(git show A:f) <(git show B:f); then :; fi"),
+                         ("reads from a process substitution", "tee >(sha256sum > sum.txt) < in > out"),
                          ("runs or configures a container", 'cmd = ["podman", "run", "--cap-drop=ALL", img]'),
                          ("runs or configures a container", "ctx.add_rule(SCMP_ACT_ERRNO(38), clone3)"),
                          ("configures PAM", 'line = "auth required pam_faillock.so preauth"'),
@@ -1004,6 +1021,19 @@ def self_test() -> int:
                          ("calls a model API", "r = client.messages.create(model=m, max_tokens=64000)"),
                          ("calls a model API", 'if r.choices[0].finish_reason == "length": raise Truncated')):
         check("hook-only row still fires in the hook: %s" % sample, fires(what, sample))
+    check("a shift `<<(` is not a process substitution", not fires("reads from a process substitution", "out<<(x + 1);"))
+    # sibling sweep 2026-11-21: `\bword\b` never matches inside snake_case, and SDKs spell fields in camelCase
+    for what, text in (("checks a password or handles a login", "@login_required\ndef view(req): ..."),
+                       ("issues or checks a session or token", "def rotate(refresh_token): ..."),
+                       ("issues or checks a session or token", "claims = verify_jwt(raw)"),
+                       ("decides who may do what", "if obj.owner_id != current_user.id: abort(404)"),
+                       ("moves money or must not run twice", "charge_card(amount)"),
+                       ("calls a model API", "client.messages.create({ model, maxTokens: 1024 })"),
+                       ("calls a model API", 'if (res.finishReason === "length") throw new Truncated()')):
+        check("snake/camel form fires: %s" % text.split(chr(10))[0], fires(what, text))
+    for what, text in (("issues or checks a session or token", "max_tokens=cfg.oracle_max_tokens"),
+                       ("calls a model API", "if ttl > MAX_TOKEN_LIFETIME: raise Expired")):
+        check("not this row's sense: %s" % text, not fires(what, text))
     for f in fails:
         print("FAIL:", f)
     print("%s: %d/%d" % ("FAIL" if fails else "PASS", n - len(fails), n))

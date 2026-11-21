@@ -61,7 +61,8 @@ spec:
 ```
 
 Verify it's actually STRICT and enforced: send plaintext to a meshed workload and confirm it's
-rejected (`kubectl exec ... curl http://svc` from an unmeshed pod must fail).
+rejected (`kubectl exec ... curl http://svc` from an unmeshed pod must fail with the mesh's
+reset or refusal, not a DNS or route error, while the same call from a meshed pod succeeds).
 
 ## 3. Workload identity (SPIFFE) is the foundation
 

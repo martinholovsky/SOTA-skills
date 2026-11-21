@@ -49,7 +49,7 @@ paths = ['''testdata/fake_keys\.json''']     # narrow, path-based; never allowli
 ```
 
 CI (gitleaks ≥ 8.19 subcommands): `gitleaks git --redact .` on PRs — diff-aware via
-`--log-opts="origin/main.."` for speed — plus a scheduled full-history scan with `--log-opts="--all -m"`
+`--log-opts="origin/main.. --diff-merges=first-parent"` for speed (a merge's own diff is out of scope without it, below) — plus a scheduled full-history scan with `--log-opts="--all -m"`
 (needs a `fetch-depth: 0` checkout) so old commits are rechecked as rules improve. The legacy
 `detect`/`protect` spellings still run but are deprecated aliases.
 

@@ -94,7 +94,8 @@ A. Check coverage in the LIBRARY'S vocabulary, not yours. These checks are sweep
 `rules/06` (ad-hoc commands). Before writing "nothing covers this", search for the words the library would use, not the words you would. A real example: a
 gap was declared after searching "one instance | a single observation" while the corpus said
 "one sample" in six files, including a named failure mode. Run a positive control in the same
-command (search a term you know is there); if the control returns nothing your instrument is
+command, through the same input path (same file list, same pipeline, only the needle differs), and
+drawn from where your scope is least likely to reach (search a term you know is there); if the control returns nothing your instrument is
 broken and the absence is worth nothing. A control proves the instrument works; it does not
 prove your query asks the corpus's question, **nor that your scope contains the answer**: draw
 it from where your search is least likely to reach (the router, `commands/`, a `SKILL.md`),
@@ -192,7 +193,9 @@ installed copy that block was written into** (an agent file outside the repo), a
 may match its exact words. List every hit, and say which ones you expect to change.
 
 G. **Has it happened before?** Search the intake ledger (`docs/ADOPTION-LOG.md`), `git log -S`
-on the key phrase, and **your own memory or notes store** for the same mechanism. A repeat with the
+on the key phrase, and **your own memory or notes store** for the same mechanism (with a control
+word you know is there: a symlinked store searched as `grep -r word dir` reads nothing on BSD grep,
+so search `dir/` — `/sota-close` step 1). A repeat with the
 rule already written down is evidence about the rule's *shape*, which is category 2 above. Print
 the commands and their hits, including zero.
 
@@ -245,8 +248,8 @@ write to disk, do not post) a short **extract** suitable for a public issue:
   stop. The gap between "I generalised it" and "a human confirmed it is safe to publish" is
   where a leak lives, and a public issue is indexed and cached before anyone notices.
 
-**Write the extract to `FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md`** — also gitignored by
-the same `*.local.md` rule — so the operator can read the exact bytes before anything is sent,
+**Write the extract to `FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md`**, beside the report
+(the same location rule above) — so the operator can read the exact bytes before anything is sent,
 and so the submit command can reference a file rather than a paste buffer.
 
 Then print both paths and stop:

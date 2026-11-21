@@ -217,7 +217,9 @@ first, gives no errors, and bash 3.2 `--norc -i` treats every line as a comment.
 handed-over line like `# then; kubectl delete …` **runs the delete** in a stock interactive zsh.
 
 - **Copy the command you ran and verified; never retype it.** Keep its timeouts, its
-  `</dev/null` (§5) and its flags, and give each step a visible exit status (`; echo "rc=$?"`).
+  `</dev/null` (§5) and its flags, and give each step a visible exit status that it still returns
+  (`; rc=$?; echo "rc=$rc"; exit "$rc"` — a bare trailing `echo` makes the step's status its own 0,
+  [rules/01](01-safety-baseline.md) §2).
   If you could not run it yourself, say so in the hand-off. When a failed attempt is
   expensive, rehearse first ([`sota-cli-ux` rules/03](../../sota-cli-ux/rules/03-behavior-lifecycle.md) §9).
 - **No `#` inside a block meant for pasting**, neither on its own line nor after a command. Put

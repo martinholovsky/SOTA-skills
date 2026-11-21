@@ -2,7 +2,9 @@
 r"""zsh-equals-hook.py — refuse a Bash command whose unquoted `=word` zsh would rewrite or abort on,
 or whose `set -- $scalar` zsh would not split, and (2026-10-27) four more bash habits zsh breaks:
 a variable named `path`/`status`, a spaced literal expanded unquoted as arguments, `PIPESTATUS`/
-`BASH_REMATCH`, and a `git grep` regex escape the platform reads as a plain letter.
+`BASH_REMATCH`, and a `git grep` regex escape the platform reads as a plain letter (since 2026-11-21
+also `git log -G`, `git log -E --grep`, `git diff -G`, behind a precommand or inside a local `bash -c`;
+measured: 5 new refusals over 43,731 recorded calls, all real).
 A Claude Code PreToolUse hook on Bash, ON by default since 2026-10-21 (operator decision, ADOPTION-LOG):
 the plugin registers it (hooks/hooks.json) and install.sh's routing setup offers it.
 
@@ -326,14 +328,78 @@ def _bad_escapes(pattern, ptype, darwin):
     return bad
 
 
+PARAM_DEFAULT_EQ = re.compile(r"\$\{[A-Za-z_][A-Za-z0-9_]*:?[-=+?](=[^}\s]*)\}")
+
+
+def _param_default_equals(word):
+    """`${x:-=zzz}` unquoted: zsh applies EQUALS to the default word, and `zzz not found` aborts
+    (sibling sweep 2026-11-21). Inside double quotes it is left alone."""
+    out, quote = [], None
+    for k, ch in enumerate(word):
+        if quote:
+            quote = None if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+        elif word.startswith("${", k):
+            m = PARAM_DEFAULT_EQ.match(word, k)
+            if m and len(m.group(1)) > 1:
+                out.append(m.group(1))
+    return out
+
+
+GIT_WRAPPERS = {"env", "command", "nice", "nohup", "time", "exec", "sudo", "xargs", "timeout", "builtin"}
+WRAPPER_VALUE = {"-n", "-u", "-g", "-s", "-k", "-I", "-P", "-L", "-d", "-C"}
+
+
+def _unwrap(dw):
+    """Drop precommands and their flags (`env X=1 git …`, `timeout 10 git …`, `xargs -0 git …`)."""
+    while dw and (dw[0] in GIT_WRAPPERS or ASSIGN.fullmatch(dw[0])):
+        w, dw = dw[0], dw[1:]
+        while dw and dw[0].startswith("-") and len(dw) > 1:
+            dw = dw[2:] if dw[0] in WRAPPER_VALUE else dw[1:]
+        if w == "timeout" and dw and re.fullmatch(r"[0-9.]+[smhd]?", dw[0]):
+            dw = dw[1:]
+    return dw
+
+
+def _git_log_regex(sub, args):
+    """`git log -G<re>` / `git diff -G <re>` (an ERE, measured 2026-11-21: `\b` matched nothing on
+    macOS git 2.55.0) and `--grep=<re>` under -E/-P."""
+    pats, gtype = [], "G"
+    j = 0
+    while j < len(args):
+        a = args[j]
+        if a == "--":
+            break
+        if a in ("-E", "--extended-regexp"):
+            gtype = "E"
+        elif a in ("-P", "--perl-regexp"):
+            gtype = "P"
+        elif a.startswith("-G"):
+            v = a[2:] or (args[j + 1] if j + 1 < len(args) else "")
+            j += 0 if a[2:] else 1
+            pats.append((v, "E"))
+        elif a.startswith("--grep"):
+            name, eq, v = a.partition("=")
+            if not eq:
+                v = args[j + 1] if j + 1 < len(args) else ""
+                j += 1
+            pats.append((v, None))
+        j += 1
+    return [(p, t or gtype) for p, t in pats]
+
+
 def _git_grep(dw, darwin):
     """dw: the dequoted words of one simple command. Return [(pattern, [escapes])] for a `git grep`
     whose pattern carries an escape the regex type cannot match on this platform."""
+    dw = _unwrap(dw)
     if not dw or dw[0] != "git":
         return []
     i = 1
     while i < len(dw) and dw[i].startswith("-"):
         i += 2 if dw[i] in {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env"} else 1
+    if i < len(dw) and dw[i] in ("log", "diff", "show", "whatchanged"):
+        return [(p, bad) for p, t in _git_log_regex(dw[i], dw[i + 1:]) for bad in [_bad_escapes(p, t, darwin)] if bad]
     if i >= len(dw) or dw[i] != "grep":
         return []
     ptype, pats, explicit, j = "G", [], False, i + 1
@@ -453,6 +519,12 @@ def _analyze(words, st, hits):
                 hits["cmdsub"].append(x)
         for pat, bad in _git_grep(dw[k:], st["darwin"]):
             hits["gitgrep"].append((pat, bad))
+        inner = _unwrap(dw[k:])
+        if inner and inner[0].rsplit("/", 1)[-1] in ("bash", "sh", "zsh", "dash"):
+            for n, a in enumerate(inner[1:-1], 1):
+                if a.startswith("-") and not a.startswith("--") and "c" in a[1:]:
+                    hits["gitgrep"].extend(_lex(inner[n + 1], st["darwin"])["gitgrep"])
+                    break
         if head in DECLARE:                     # `local v=$(…)`: the assignment follows the head
             for x in words[k + 1:]:             # (cmdsub only: argv was calibrated without these)
                 m = ASSIGN.fullmatch(x)
@@ -531,7 +603,10 @@ def _lex(cmd, darwin=None):
         if c in " \t":
             i, at_start = i + 1, True
             continue
-        if s.startswith("<<", i) and not s.startswith("<<<", i):
+        if s.startswith("<<<", i):              # a here-string; its operand is an ordinary word
+            i, at_start = i + 3, True
+            continue
+        if s.startswith("<<", i):
             delim, strip, i = _read_heredoc_word(s, i + 2)
             heredocs.append((delim, strip))
             at_start = True
@@ -581,6 +656,8 @@ def _lex(cmd, darwin=None):
                 cond -= 1
             elif word.startswith("=") and word != "=" and not (cond and word in COND_OPERATORS):
                 found.append(word)
+            elif not cond:
+                found.extend(_param_default_equals(word))
             i, at_start = end, False
             continue
         if c in "'\"":
@@ -744,6 +821,8 @@ def main():
 # self-test, and the verdict must agree: True = zsh cut the list or rewrote the word.
 CASES = [
     ("echo ===; echo AFTER", ["==="], True),
+    ("cat <<< ===; echo AFTER", ["==="], False),   # cat is skipped, AFTER runs
+    ("echo ${x:-=zzznosuchcmd}; echo AFTER", ["=zzznosuchcmd"], True),
     ("echo =====; echo AFTER", ["====="], True),
     ("echo a | head -1; echo ===; echo AFTER", ["==="], True),
     ("[ a == a ] && echo AFTER", ["=="], True),
@@ -877,6 +956,23 @@ GITGREP_CASES = [
     ("git grep -cP '\\bfoo'", [], []),
     ("git grep -cE '[[:space:]]53'", [], []),
     ("echo git grep -cE '\\bfoo' >/dev/null; git grep -c foo", [], []),
+    # sibling sweep 2026-11-21: behind a precommand, inside a local `bash -c`
+    ("env git grep -cE '\\bfoo'", [("\\bfoo", ["\\b"])], []),
+    ("timeout 10 git grep -cE '\\bfoo'", [("\\bfoo", ["\\b"])], []),
+    ("bash -c \"git grep -cE '\\bfoo'\"", [("\\bfoo", ["\\b"])], []),
+]
+
+# `git log`/`diff` regexes: lexer only (the git check above runs `git grep` output). Measured
+# 2026-11-21, git 2.55.0 macOS, a commit "add foo 53 bar": `log -G '\bfoo'` and
+# `log -E --grep='\bfoo'` printed nothing; `log -G foo` and `--grep=foo` printed the commit.
+GITLOG_CASES = [
+    ("git log -G '\\bfoo' --oneline", [("\\bfoo", ["\\b"])]),
+    ("git log -E --grep='\\bfoo' --oneline", [("\\bfoo", ["\\b"])]),
+    ("git diff -G 'foo\\s53' --stat", [("foo\\s53", ["\\s"])]),
+    ("git log --grep='\\bfoo' --oneline", []),
+    ("git log -P --grep='\\bfoo'", []),
+    ("git log -G foo --oneline", []),
+    ("ssh host \"git grep -cE '\\bfoo'\"", []),
 ]
 
 
@@ -921,8 +1017,14 @@ def self_test(require_zsh):
         if stray:
             tfails += 1
             print(f"FAIL {own} case trips {stray}: {cmd!r}")
+    for cmd, want in GITLOG_CASES:
+        got = _lex(cmd, True)
+        stray = [k for k in CHECKS if k != "gitgrep" and got[k]]
+        if got["gitgrep"] != want or stray:
+            tfails += 1
+            print(f"FAIL git log lexer {cmd!r}: want {want} got {got['gitgrep']} stray {stray}")
     fails += tfails
-    ntrap = len(TRAP_CASES) + 2 * len(GITGREP_CASES) + len(others)
+    ntrap = len(TRAP_CASES) + 2 * len(GITGREP_CASES) + len(GITLOG_CASES) + len(others)
     print(f"trap lexer: {ntrap - tfails}/{ntrap} cases (path/status, argv, bash vars, git grep, cross-talk)")
 
     zsh = shutil.which("zsh")

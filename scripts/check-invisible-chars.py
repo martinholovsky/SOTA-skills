@@ -21,10 +21,12 @@ import subprocess
 import sys
 import tempfile
 
-# Zero-width (U+200B-200D), bidi embeddings/overrides (U+202A-202E) and isolates
-# (U+2066-2069), the BOM / zero-width no-break space (U+FEFF), and tag characters
-# (U+E0000-E007F), the ranges rules/09 section 4 names.
-RANGES = ((0x200B, 0x200D), (0x202A, 0x202E), (0x2066, 0x2069), (0xFEFF, 0xFEFF), (0xE0000, 0xE007F))
+# Zero-width (U+200B-200D), the word joiner and invisible operators (U+2060-2064: zero-width, and
+# named by devsecops rules/05 section 5.6 itself; added by the 2026-11-21 sibling sweep), bidi
+# embeddings/overrides (U+202A-202E) and isolates (U+2066-2069), the BOM / zero-width no-break space
+# (U+FEFF), and tag characters (U+E0000-E007F), the ranges rules/09 section 4 names.
+RANGES = ((0x200B, 0x200D), (0x202A, 0x202E), (0x2060, 0x2064), (0x2066, 0x2069), (0xFEFF, 0xFEFF),
+          (0xE0000, 0xE007F))
 
 # Deliberate occurrences: path -> why. Each must still contain at least one hit.
 ALLOW = {
@@ -32,8 +34,10 @@ ALLOW = {
         "a known-bad fixture: a zero-width space inside a role comparison",
     "skills/sota-javascript-typescript/rules/02-language-idioms.md":
         "the str.length example counts a zero-width joiner sequence",
-    "scripts/probe-fixtures/sota-code-security/09-untrusted-data-ingestion/d4a6ea96ee/bad/role.go":
+    "scripts/probe-fixtures/sota-code-security/09-untrusted-data-ingestion/7f6c9f4cb9/bad/role.go":
         "a known-bad fixture: a zero-width space alone, the case an agent's ugrep wrapper missed",
+    "scripts/probe-fixtures/sota-code-security/09-untrusted-data-ingestion/7f6c9f4cb9/bad/joiner.go":
+        "a known-bad fixture: a word joiner (U+2060) alone, added by the 2026-11-21 sibling sweep",
 }
 
 

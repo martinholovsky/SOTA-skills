@@ -90,19 +90,25 @@ permissions: { contents: read, id-token: write, pull-requests: write }
 steps:
   - run: terraform plan -out=plan.bin -detailed-exitcode -input=false -lock-timeout=5m
   - uses: actions/upload-artifact@<sha>
-    with: { name: plan-${{ github.sha }}, path: plan.bin }
+    with: { name: "plan-${{ github.event.pull_request.head.sha }}", path: plan.bin }   # not github.sha: the PR's test-merge commit
 
 # apply.yml — on: push: {branches: [main]}; environment: tf-prod (required reviewers)
-permissions: { contents: read, id-token: write }
+permissions: { contents: read, id-token: write, actions: read }   # actions: read for another run's artifact
 steps:
-  - uses: actions/download-artifact@<sha>   # the SAME plan.bin reviewed on the PR
+  # the SAME plan.bin reviewed on the PR: by default download-artifact reads only the current
+  # run, so name the plan run explicitly, and bind it (head SHA = the merged PR's head, same repo);
+  # never look an artifact up by name across runs (rules/02 §2.5.2)
+  - uses: actions/download-artifact@<sha>
+    with: { name: "plan-${{ env.PR_HEAD_SHA }}", run-id: "${{ env.PLAN_RUN_ID }}", github-token: "${{ github.token }}" }
   - run: terraform apply -input=false plan.bin
     # apply fails if state changed since plan — that failure is the control working;
     # the response is re-plan + re-review, never force.
 ```
 
-Atlantis/TF Cloud/Spacelift implement this pattern as a product — fine, audit the same
-properties: read-only plan creds, saved-plan apply, reviewer gate, per-workspace roles.
+`PLAN_RUN_ID` and `PR_HEAD_SHA` come from the merged PR (`gh api` on the merge commit's PR and
+its successful `plan.yml` run for that head SHA), checked before download: the artifact name alone
+binds no producer ([rules/02](02-provenance-signing.md) §2.5.2). Atlantis/TF Cloud/Spacelift implement this pattern as a product — fine, audit the same
+properties: read-only plan creds, saved-plan apply bound to the reviewed run, reviewer gate, per-workspace roles.
 
 ## 6.3 Drift detection
 

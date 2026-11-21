@@ -378,7 +378,8 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       rustc's `unreachable_pub` (allow-by-default) lists `pub` items that should be
       `pub(crate)`.
 - [ ] Multi-crate repo without `[workspace.dependencies]` (§9) → version drift;
-      `cargo tree -d` to find duplicate dependency versions.
+      `cargo tree -d` to find duplicate dependency versions (in an audited checkout, with
+      `RUSTC_WRAPPER=` and a pinned `RUSTC`: it runs the repo's wrapper, [rules/07](07-tooling-ci.md) §4a).
 - [ ] Clippy gates for this file's concerns (§1): `clippy::needless_pass_by_value`,
       `clippy::trivially_copy_pass_by_ref`, `clippy::large_enum_variant`,
       `clippy::rc_buffer`, `clippy::mutable_key_type`.

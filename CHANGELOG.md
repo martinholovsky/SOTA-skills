@@ -31,6 +31,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `sota-sandboxing` rules/04 R2.4: polkit kept authorizations are per action and subject, `allow_active`
   excludes SSH, and `pkexec` prompts through the session's agent (polkit 128 source and man pages).
   Intake in ADOPTION-LOG, every claim labelled.
+- **Sibling sweep over every earlier field-report intake (56 entries, six read-only agents, each finding
+  re-verified before a fix).** Gates and hooks: verify-setup check 1 passes a plugin-only install
+  (it read FAIL) and check 9 counts a symlinked hook and a worktree's hooks dir; invariant 13 reads a
+  table row with an escaped `\|`; the invisible-character gate and the rules/09 probe cover U+2060–2064;
+  `init-gates.sh` installs shellcheck with the three checks rules/03 requires. The zsh hook catches a
+  here-string operand, `${x:-=…}`, and `git log -G`/`--grep -E`/`git diff -G` escapes, also behind a
+  precommand or in a local `bash -c` (5 new refusals in 43,731 calls, all real). The action-rules hook
+  reads heredocs fed to a shell, wrapper flags with values, more write and pgrep-to-kill forms, and
+  credits a script only with what it writes. The code-rules hook: process substitution in argument
+  position, snake_case and camelCase forms of six rows, more test layouts (SwiftPM, .NET, RSpec, JUnit).
+  The session-load audit counts `pushd`, `git -C … show`, scripts that `open()` a file, `xargs cat`, and
+  ignores a quoted `<<EOF`; both replays count a tool_use id once across files. Rules text, each claim
+  re-measured: gitleaks history scans carry `--diff-merges` and the working-tree pass uses `dir`; a
+  VERIFY-SETUP control no longer plants the allowlisted AWS example key; network probes require the
+  control's own refusal; `cd "${dir:?}"`; Go filename suffixes; `cargo tree` runs a checkout's wrapper;
+  a broken `-> Any` probe; and nine more (ADOPTION-LOG lists them).
 
 ## [1.57.1] - 2026-11-20
 

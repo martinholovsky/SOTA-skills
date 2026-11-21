@@ -69,8 +69,8 @@ db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.i
 - Protected parameters `$auth`, `$token`, `$session`, `$access` are set by
   the server and cannot be overwritten — build permissions on them.
 - Record IDs from user input: bind them too (`type::record($table, $id)` on 3.x —
-  renamed from 2.x's `type::thing`, a parse error since 3.0.0 — or a
-  bound record id), and whitelist table names — identifiers can't be bound,
+  renamed from 2.x's `type::thing`, a parse error since 3.0.0 — or an id bound as a
+  record value, not a string: next bullet), and whitelist table names — identifiers can't be bound,
   same rule as dynamic SQL identifiers in file 06.
 - **Bind the id in the form that keeps the index.** JSON has no record type, so over
   a JSON transport (HTTP `/rpc`, `/sql`) a bound id arrives as a **string**. Compared

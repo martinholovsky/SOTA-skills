@@ -124,8 +124,9 @@ unset IFS CDPATH ENV BASH_ENV GLOBIGNORE LD_PRELOAD LD_LIBRARY_PATH
 - Attack: attacker-writable dir earlier in PATH (or `.` in PATH) shadows `tar`, `service`,
   etc. Root cron with inherited PATH = privilege escalation.
 - `CDPATH` makes bare `cd dir` jump to unexpected locations — unset it in all scripts
-  (or always `cd ./dir`); check every `cd` (`cd "$dir" || die ...` — under `set -e` a
-  failed `cd` in a condition context still proceeds).
+  (or always `cd ./dir`); check every `cd` (`cd "${dir:?}" || die ...` — under `set -e` a
+  failed `cd` in a condition context still proceeds, and `cd ""` succeeds where `$dir` is empty:
+  exit 0 in bash 3.2, zsh and dash, an error only in bash 5, so the `:?` is the guard; [rules/06](06-ad-hoc-commands.md) §2b).
 - Never execute relative commands from a CWD you don't control; never `source` files
   writable by less-privileged users.
 

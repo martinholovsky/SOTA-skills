@@ -70,8 +70,12 @@ Use when asked to find secret leaks/misuse in an existing repo.
 
 ### Sweep procedure
 
-1. **Tooling pass (absent? ask the operator to install it, router principle 6):** run `gitleaks git --redact .` and/or
-   `trufflehog filesystem .` (and `git log` history scan when the repo has history). Treat tool
+1. **Tooling pass (absent? ask the operator to install it, router principle 6):** run `gitleaks dir --redact .` and/or
+   `trufflehog filesystem .` over the working tree (`gitleaks git` reads commits only, so an
+   uncommitted file is out of its scope: measured 2026-11-21, gitleaks 8.30.1, `git` mode exit 0
+   and `dir` mode exit 1 on the same uncommitted key), and the history scan when the repo has
+   history: `gitleaks git --redact `--log-opts="--all --diff-merges=first-parent"` .`, since a merge's own diff is
+   otherwise never read ([rules/04](rules/04-detection-and-remediation.md) §1). Treat tool
    output as candidates, not verdicts — verify each hit.
 2. **Manual grep pass** for what tools miss. Sweep at minimum:
    - High-entropy strings and known prefixes: `AKIA`, `ASIA`, `ghp_`, `gho_`, `ghs_`, `ghu_`,
