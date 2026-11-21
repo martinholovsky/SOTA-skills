@@ -273,6 +273,15 @@ except StorageError:
   detectors in [rules/02](02-typing-correctness.md) §2a.
 - Naive datetimes: always `datetime.now(tz=timezone.utc)`; `utcnow()` is deprecated and naive
   (ruff DTZ).
+- **Ansible and Jinja run these semantics outside `.py` files**, where no linter looks. Measured
+  2026-11-21 on ansible-core 2.21.6 (field report): `now(utc=true)` is a *naive* UTC datetime and
+  `.timestamp()` reads a naive value as local time, so `now(utc=true).timestamp()` was off by the
+  UTC offset (−3599 s against `date +%s` at UTC+1; `now().timestamp()` within 1 s). In a `when:`
+  or `that:` expression a Jinja string literal turns `'\b'` into U+0008 (`'\s'`, `'\w'` stay two
+  characters), so an inline regex `(?!Post\b)` became another pattern and the guard failed a
+  correct config. Inside a `{{ }}` template value Ansible kept it two characters, but plain
+  jinja2 3.1.6 turns it into U+0008 there too, so outside Ansible assume both. Pass a regex in
+  through a variable, and compare epochs from an aware or a local datetime.
 - `zip(a, b, strict=True)` (3.10+) when silent truncation would hide a length-mismatch bug.
 - Shadowing builtins (`list`, `id`, `type`, `input`) — rename (ruff A).
 - String building in loops: collect + `"".join(parts)` (perf details [rules/06](06-performance.md)).
@@ -415,6 +424,9 @@ fail to correctly resolve its value") is a `UserWarning`, and a blanket `error` 
       (unmanaged file handles [MEDIUM]); `grep -rn "\.close()" --include="*.py" src/ | head`
       (manual close → with-able?) ; `grep -rnE '\.acquire\(\)' --include='*.py' --exclude-dir=.venv .`
       (a lock taken by hand, not `with lock:` [MEDIUM])
+- [ ] **Ansible/Jinja templates and playbooks** (§12): no `now(utc=true)` fed to `.timestamp()`
+      or compared with an epoch, and no backslash regex written inline in a `when:`/`that:`
+      expression (it arrives through a variable) [MEDIUM]
 - [ ] **datetime & os.path modernization** (§5, §12) — `uvx ruff check --select DTZ,PTH --statistics .` ;
       `grep -rn "utcnow()" --include="*.py" src/` (naive UTC [MEDIUM])
 - [ ] **Identity misuse & list.pop(0)** (§12, §9) —

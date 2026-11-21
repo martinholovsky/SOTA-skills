@@ -5,6 +5,33 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Two shapes a note could not stop are now refused once per session (two field reports, 2026-11-21).**
+  A PreToolUse note arrives after the command has run, so `action-rules-hook.py` gains two refusing
+  classes. `gate_chain`: a merge, push, rebase, pull or apply joined to a later `switch`, `checkout`,
+  `stash`, `reset` or branch deletion by `;`, a newline or a pipe. `gh pr merge 42 --rebase | tail -2;
+  git stash push … && git switch main …` ran on after the merge failed and cut a branch from the wrong
+  base, with the always-loaded block's `&&` rule in context. `cmdline_kill`: `pkill -f` or
+  `kill $(pgrep -f …)` without `-P`, also inside `ssh host '…'`, `bash -c` and `exec`. Replayed over 42,507
+  local Bash calls: 30 calls in 11 sessions and 7 in 6. `set -e` and `pipefail` are read, so a script
+  that stops on failure is not refused, and `merge | tail -1 && switch` is (the `&&` tests `tail`).
+  The managed block now says a merge, push, checkout or apply is a gate too (re-run `install.sh --routing`; verify-setup 2e reports the old block as stale). A relative source write after
+  `cd` now resolves under that directory, so the scratchpad exemption sees it.
+- **`session-load-audit.py`: a rules file read through a variable counts as read**
+  (`F=<file>; sed … "$F"`, `S=<dir>; sed $S/09-….md`). Both reports read that way; one audit printed
+  "never read" for a file its own table listed. Refusals of the two new classes are followed when the
+  next command drops the shape. The 500-file `--diff` refusal now says when untracked files dominate and
+  how to run from a clean worktree (a report had 78,778 untracked against a 127-file diff). A note's
+  named file that the session only searched or mentioned now reads so, not "never read".
+  `code-rules-hook.py`: `DBUS_SESSION_BUS_ADDRESS` and `XDG_SESSION_*` no longer fire the session row.
+- **Rules text.** `sota-copywriting` rules/04 §1: a time, speed or rate claim is a distribution claim;
+  record its sample or drop "typically". `sota-python` rules/03 §12: Ansible's `now(utc=true)` is naive,
+  and a Jinja literal `'\b'` in `when:`/`that:` is a backspace (ansible-core 2.21.6, measured).
+  `sota-sandboxing` rules/04 R2.4: polkit kept authorizations are per action and subject, `allow_active`
+  excludes SSH, and `pkexec` prompts through the session's agent (polkit 128 source and man pages).
+  Intake in ADOPTION-LOG, every claim labelled.
+
 ## [1.57.1] - 2026-11-20
 
 **Front door checked:** written from the shell

@@ -8,7 +8,7 @@ pipeline templates through `python3 - <<EOF` scripts with `sota-devsecops` invok
 rules/09, 13 and 16 never opened. The code-rules hook sees Edit/Write only, and a description
 or a router row only helps when routing fires; this fires on the command itself.
 
-Five classes, each acted on at most once per session (src_edit once per rules file and language):
+Seven classes, each acted on at most once per session (src_edit once per rules file and language):
 
   sign      a command that signs or unlocks with a person's key (`git commit -S`, `git tag -s`,
             a commit or annotated tag when `commit.gpgSign`/`tag.gpgSign` is set, `gpg --sign`,
@@ -29,8 +29,19 @@ Five classes, each acted on at most once per session (src_edit once per rules fi
             one session, and a fail-open defect in one of the 126. The command text (heredoc body
             included) goes to the code-rules hook's own `respond()` as a Write event, so the same
             triggers, language note and once-per-session state apply as for an Edit.
+  gate_chain  a merge, push, rebase, pull, cherry-pick or apply (`gh pr merge` too) followed by a
+            step that moves the checkout or sets work aside (`switch`, `checkout`, `stash`,
+            `reset`, `clean`, `branch -D`, `worktree remove`) with only `;`, a newline or a pipe
+            between them. REFUSED once. Field report 2026-11-21: `gh pr merge 42 --rebase 2>&1 |
+            tail -2; git stash push … && git switch main && … git switch -c new` ran on after the
+            merge failed and cut the branch from the wrong base; the always-loaded block already
+            said to gate with `&&`, and it was in context.
+  cmdline_kill  `pkill -f`/`--full`, or `kill` over `pgrep -f`, not limited by `-P`. REFUSED
+            once: the pattern matches every shell whose arguments carry it, the issuing one
+            included on Linux (field reports 2026-10-24 and 2026-11-21; rules/09 §5c).
 
-The last four add context and never block.
+sign, gate_chain and cmdline_kill refuse; the other four add context and never block. A note
+would not do for the refusing three: it arrives after the command has run.
 
 The command is parsed into segments and argv, not grepped: a commit message, a grep pattern or
 `git log -S` (a pickaxe search) is not a signing step. Replay over one operator's transcripts
@@ -46,6 +57,15 @@ notes, at least 21 named a file the command writes; 4 named a file a script only
 another path in the same command. On the field report's own defect the note names the language
 skill and four `sota-code-security` files, not `sota-golang` rules/01: that session had already
 read the SKILL.md, so it is not shown to have prevented that one.
+gate_chain and cmdline_kill, replayed 2026-11-21 over 464 transcripts (42,507 Bash calls), nested commands
+(`ssh host '…'`, `bash -c '…'`, `podman exec`, `kubectl exec --`) included: gate_chain matches 30 calls in
+11 sessions, each the real shape on reading all 30 (most `gh pr merge … | tail -N; git switch -q main`,
+`… | tail -2 && git switch …`, whose `&&` tests tail, or `git pull … | tail -1; git switch -q -c <new>`);
+three `bash -c 'set -euo pipefail; …'` harnesses that matched before errexit was read are now exempt.
+cmdline_kill matches 7 calls in 6 sessions, among them the incident and `ssh root@vm '…; pkill -f
+unattended-upgrade …'`, which on Linux matches the remote shell itself; two `pkill -P <ppid> -f` calls
+are exempt. The managed block had already cut the cmdline rate from 5.30 to 1.26 per 1,000 Bash calls
+(pkill -f and pgrep -f, before and after 2026-10-25).
 
 Off with SOTA_ACTION_RULES_HOOK=off. Any internal error lets the command run (exit 0, no output):
 a hook must never break the shell. `--self-test` runs the labelled cases.
@@ -100,9 +120,29 @@ NOTES = {
         "carries it, for each architecture, is a separate check before a rebuild is promised. "
         "Owning rules: %s §13.6." % rf("sota-devsecops", "13-vulnerability-remediation.md")
     ),
+    "gate_chain": (
+        "sota action-rules: in this command a merge, push, rebase, pull or apply is followed by a "
+        "command that moves the checkout or sets work aside (switch, checkout, stash, reset, branch "
+        "deletion), joined so that it runs even when the merge failed: `;` or a newline, or a pipe, "
+        "after which `&&` tests `tail`, not the merge. A step whose success the next command assumes is a gate. It was not run; this "
+        "happens once per session, and the same command runs if it is issued again. Join the step to "
+        "what depends on it with `&&`, and read its status directly, not through `| tail` (which "
+        "returns tail's 0). Owning rules: %s §1b." % rf("sota-shell-scripting", "04-ci-and-operational.md")
+    ),
+    "cmdline_kill": (
+        "sota action-rules: this command signals processes selected by their command line (`pkill "
+        "-f`, or `kill` over `pgrep -f`). The pattern also matches every shell whose own arguments "
+        "carry it: on Linux that includes the shell running this command, or an ssh session's, and "
+        "BSD/macOS `pkill` spares only its own ancestors. It was not run; this happens once per "
+        "session, and the same command runs if it is issued again. Signal the PIDs you recorded at "
+        "launch (`$!`, a pid file), or list the matches first and pick by PID. Owning rules: %s §5c."
+        % rf("sota-shell-scripting", "09-listing-and-selection.md")
+    ),
 }
 
-CLASSES = ("sign", "registry", "ci_edit", "scan", "src_edit")
+CLASSES = ("sign", "registry", "ci_edit", "scan", "src_edit", "gate_chain", "cmdline_kill")
+# Classes that refuse the first matching command of a session; the rest add context only.
+REFUSE_ONCE = ("sign", "gate_chain", "cmdline_kill")
 
 # ---------------------------------------------------------------- parsing
 
@@ -328,15 +368,26 @@ def src_paths(cmd: str) -> list[str]:
     out: list[str] = []
     if SCRIPT_WRITE.search(cmd):
         out += [m.group(2) for m in SRC_PATH_QUOTED.finditer(cmd)]
+    # A relative path written after a `cd` in the same command is under that directory, so the
+    # scratchpad and test exemptions see `cd "$S/x"; cat > a.py` (2026-11-21, the intake's own
+    # probe: the note named `a.py` and the scratchpad exemption missed it).
+    here = ""
+
+    def at(p: str) -> str:
+        return p if not here or p.startswith(("/", "$", "~")) else here.rstrip("/") + "/" + p
+
     for seg in segments(cmd):
+        argv = argv_of(seg)
+        if argv[:1] == ["cd"] and len(argv) > 1:
+            here = at(argv[1])
+            continue
         for m in REDIRECT.finditer(seg):
             if SRC_PATH.search(m.group(2)):
-                out.append(m.group(2))
-        argv = argv_of(seg)
+                out.append(at(m.group(2)))
         if not argv:
             continue
         tool, args = argv[0], argv[1:]
-        files = [a for a in args if SRC_PATH.search(a)]
+        files = [at(a) for a in args if SRC_PATH.search(a)]
         if not files:
             continue
         if tool == "sed" and any(a.startswith("-i") or a.startswith("--in-place") for a in args):
@@ -346,7 +397,7 @@ def src_paths(cmd: str) -> list[str]:
         elif tool == "tee":
             out += files
         elif tool in ("cp", "mv", "install") and SRC_PATH.search(args[-1]):
-            out.append(args[-1])
+            out.append(at(args[-1]))
     # a path named through a variable assigned in the same command (`S=/…/scratchpad; cat > $S/x.py`)
     # resolves to its value, so the code-rules hook's scratchpad and test exemptions can see it
     env = dict(ASSIGN_VALUE.findall(cmd))
@@ -385,8 +436,154 @@ def is_scan(argv: list[str]) -> bool:
     return tool == "grype" and bool(args)
 
 
-def classify(cmd: str, cwd: str | None = None, config=git_config_true) -> set[str]:
+def chain(cmd: str) -> list[tuple[str, str]]:
+    """(segment, the separator after it) outside quotes, heredoc bodies removed. `&&`, `||`, `|`,
+    `;` and a newline are told apart; the `&` of a redirect (`2>&1`, `&>`) is not a separator, so
+    `git push 2>&1 | tail -1` stays one pipeline whose status `pipefail` can carry."""
+    cmd = HEREDOC.sub("<<HEREDOC\n", cmd)
+    out: list[tuple[str, str]] = []
+    buf: list[str] = []
+    quote = None
+    i = 0
+    while i < len(cmd):
+        c = cmd[i]
+        if quote:
+            buf.append(c)
+            if c == quote:
+                quote = None
+            elif c == "\\" and quote == '"' and i + 1 < len(cmd):
+                buf.append(cmd[i + 1])
+                i += 1
+        elif c in "'\"":
+            quote = c
+            buf.append(c)
+        elif c == "\\" and i + 1 < len(cmd):
+            buf.append(cmd[i:i + 2])
+            i += 1
+        elif c == "&" and ((buf and buf[-1].endswith(">")) or cmd[i + 1:i + 2] == ">"):
+            buf.append(c)                                   # 2>&1, >&2, &>file: a redirect
+        elif c in ";|&\n":
+            op = cmd[i:i + 2] if cmd[i:i + 2] in ("&&", "||") else c
+            out.append(("".join(buf).strip(), op))
+            buf = []
+            i += len(op) - 1
+        else:
+            buf.append(c)
+        i += 1
+    out.append(("".join(buf).strip(), ""))
+    return [(s, op) for s, op in out if s]
+
+
+def _git_step(argv: list[str]) -> str:
+    """'gate' for a step whose failure later commands must not ignore, 'move' for one that moves
+    the checkout or sets work aside, '' otherwise."""
+    if argv[:3] == ["gh", "pr", "merge"]:
+        return "gate"
+    if not argv or argv[0] != "git":
+        return ""
+    sub, rest, _ = git_sub(argv)
+    if sub in ("merge", "rebase", "pull", "push", "cherry-pick", "am", "apply") and not (
+            set(rest) & {"--abort", "--quit", "--help", "-h", "--dry-run", "-n"} if sub != "push" else
+            set(rest) & {"--help", "-h", "--dry-run", "-n"}):
+        return "gate"
+    if sub in ("switch", "checkout", "reset", "clean"):
+        return "move"
+    if sub == "stash":
+        return "" if rest[:1] and rest[0] in ("list", "show") else "move"
+    if sub == "branch" and set(rest) & {"-D", "-d", "--delete", "-f", "--force"}:
+        return "move"
+    if sub == "worktree" and rest[:1] == ["remove"]:
+        return "move"
+    return ""
+
+
+def is_gate_chain(cmd: str) -> bool:
+    """A gate (a merge, push, rebase, pull, apply) whose exit status does not reach a later step that
+    moves the checkout. The status reaches it through `&&`/`||`, or `;` under `set -e`; a pipe hands
+    on the last command's status unless `pipefail` is set, so `merge | tail -1 && switch` matches.
+    A fresh `&&`/`||` after the gate's own pipeline means something else was checked (field report
+    2026-11-21: a failed `gh pr merge … | tail -2;` went on to stash, switch and cut a branch from
+    the wrong base)."""
+    # Under `set -e` a failing step stops the script at `;` and a newline, and with `pipefail` at a
+    # pipe too: three `bash -c 'set -euo pipefail; …'` harnesses matched before this (2026-11-21).
+    errexit = bool(re.search(r"\bset\s+-[A-Za-z]*e|\bset\s+-o\s+errexit", cmd))
+    steps = [(_git_step(argv_of(s)), op) for s, op in chain(cmd)]
+    pipefail = bool(re.search(r"\bpipefail\b", cmd))
+    for i, (kind, _op) in enumerate(steps):
+        if kind != "gate":
+            continue
+        j, masked = i, False
+        while steps[j][1] == "|" and j + 1 < len(steps):   # the gate's own pipeline
+            j += 1
+            masked = masked or not pipefail                 # its status is now the last command's
+        end = steps[j][1]
+        if not masked and (end in ("&&", "||") or (errexit and end in (";", "\n"))):
+            continue                                        # the gate's status reaches what follows
+        for later, later_op in steps[j + 1:]:
+            if later == "move":
+                return True
+            if later_op in ("&&", "||"):                    # a fresh check gates the rest
+                break
+    return False
+
+
+def is_cmdline_kill(argv: list[str], seg: str) -> bool:
+    """`pkill` selecting by the full command line, or `kill` fed by `pgrep -f`."""
+    if not argv:
+        return False
+    tool, args = argv[0], argv[1:]
+    if set(args) & {"--help", "-h"}:
+        return False
+    if tool == "pkill":
+        # `-P <ppid>` limits the match to that parent's children, which the issuing shell is not
+        if "-P" in args or any(a.startswith("--parent") for a in args):
+            return False
+        return "--full" in args or "f" in short_flags([a for a in args if not a[1:2].isdigit()])
+    if tool == "kill":
+        return bool(re.search(r"\$\(\s*pgrep\s+(?:-[A-Za-z]*\s+)*-[A-Za-z]*f|`\s*pgrep\s+(?:-[A-Za-z]*\s+)*-[A-Za-z]*f", seg))
+    return False
+
+
+SSH_OPT_ARG = set("bcDEeFIiJLlmOoPpQRSWw")
+EXEC_OPT_ARG = {"-u", "--user", "-e", "--env", "-w", "--workdir", "--env-file", "-c", "--container", "-n", "--namespace"}
+
+
+def inner_command(argv: list[str]) -> str:
+    """The command another command runs: `ssh host '…'`, `bash -c '…'`, `podman exec ctr …`,
+    `kubectl exec pod -- …`. The 2026-10-24 incident was a `pkill -f` inside `ssh vm '…'`,
+    the case where it kills the remote shell (Linux), and the first cut of cmdline_kill missed it."""
+    if not argv:
+        return ""
+    tool, args = argv[0], argv[1:]
+    if tool in ("ssh", "autossh"):
+        i = 0
+        while i < len(args) and args[i].startswith("-"):
+            i += 2 if args[i][-1:] in SSH_OPT_ARG and len(args[i]) == 2 else 1
+        return " ".join(args[i + 1:])
+    if tool in ("sh", "bash", "zsh", "dash", "ksh"):
+        for i, a in enumerate(args):
+            if a.startswith("-") and not a.startswith("--") and "c" in a[1:]:
+                return args[i + 1] if i + 1 < len(args) else ""
+        return ""
+    if tool == "kubectl" and "exec" in args and "--" in args:
+        return " ".join(args[args.index("--") + 1:])
+    if tool in ("docker", "podman", "nerdctl") and args[:1] == ["exec"]:
+        i = 1
+        while i < len(args) and args[i].startswith("-"):
+            i += 2 if args[i] in EXEC_OPT_ARG else 1
+        return " ".join(args[i + 1:])
+    return ""
+
+
+def classify(cmd: str, cwd: str | None = None, config=git_config_true, depth: int = 0) -> set[str]:
     found: set[str] = set()
+    if depth < 2:
+        for seg, _op in chain(cmd):
+            inner = inner_command(argv_of(seg))
+            if inner:
+                found |= classify(inner, None, config, depth + 1) & {"cmdline_kill", "gate_chain"}
+    if is_gate_chain(cmd):
+        found.add("gate_chain")
     if ci_edit_in_text(cmd):
         found.add("ci_edit")
     if src_paths(cmd):
@@ -405,6 +602,9 @@ def classify(cmd: str, cwd: str | None = None, config=git_config_true) -> set[st
             found.add("ci_edit")
         if is_scan(argv):
             found.add("scan")
+    # chain() keeps `$( … )` inside its segment, so `kill $(pgrep -f x)` is seen whole
+    if any(is_cmdline_kill(argv_of(seg), seg) for seg, _op in chain(cmd)):
+        found.add("cmdline_kill")
     return found
 
 # ---------------------------------------------------------------- once per session
@@ -440,9 +640,10 @@ def decide(event: dict, sd: str | None = None, config=git_config_true) -> dict |
         return None
     if sd is None:
         sd = state_dir(str(event.get("session_id") or ""))
-    if "sign" in classes and claim(sd, "sign"):
-        return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
-                                       "permissionDecisionReason": NOTES["sign"]}}
+    for c in REFUSE_ONCE:
+        if c in classes and claim(sd, c):
+            return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                           "permissionDecisionReason": NOTES[c]}}
     notes = [NOTES[c] for c in ("registry", "ci_edit", "scan") if c in classes and claim(sd, c)]
     if "src_edit" in classes:
         cr = code_rules_note(src_paths(cmd), cmd, event)  # code-rules' own state: once per rules file
@@ -503,7 +704,7 @@ def replay(root: str) -> int:
                             sessions[c].add(str(o.get("sessionId")))
     print("transcripts %d, Bash calls %d (git signing config not read: explicit flags only)" % (files, total))
     for c in CLASSES:
-        print("  %-9s %5d calls in %3d sessions" % (c, calls[c], len(sessions[c])))
+        print("  %-12s %5d calls in %3d sessions" % (c, calls[c], len(sessions[c])))
     return 0 if files else 1
 
 
@@ -557,6 +758,45 @@ CASES = [
     ("cat internal/intel/fetch.go | head", (), set()),
     ("git commit -m 'fix internal/intel/fetch.go'", (), set()),
     ("go test ./internal/... > test-output.txt", (), set()),
+    ('S=/x/scratchpad; cd "$S/ans"\ncat > j.py <<\'EOF\'\nimport os\nEOF', (), {"src_edit"}),
+    # gate_chain (2026-11-21 field report): the incident, verbatim apart from the names
+    ("gh pr merge 42 --rebase 2>&1 | tail -2; git stash push -u -q -m wip && git switch -q main && "
+     "git pull -q --ff-only && git switch -q -c feat/x && git stash pop -q", (), {"gate_chain"}),
+    ("gh pr merge 47 --squash 2>&1 | tail -1; git switch -q main && git pull -q --ff-only", (), {"gate_chain"}),
+    ("git push -q origin feat\ngit switch main", (), {"gate_chain"}),
+    ("git pull --ff-only; git branch -D old", (), {"gate_chain"}),
+    ("gh pr merge 42 --rebase && git switch -q main && git pull -q --ff-only", (), set()),
+    ("gh pr merge 709 --squash; echo \"rc=$?\"; gh pr view 709 --json state; git pull -q --ff-only", (), set()),
+    ("gh pr merge 1; gh pr view 1 -q .state | grep -q MERGED && git switch main", (), set()),
+    ("git merge --abort; git switch main", (), set()),
+    ("git stash list; git switch main", (), set()),
+    ("git log --oneline -3; git switch main", (), set()),
+    ("echo 'gh pr merge 1; git switch main' > notes.txt", (), set()),
+    # cmdline_kill (2026-11-21 field report; rules/09 §5c)
+    ("pkill -INT -f 'pytest tests/ -q'; sleep 1", (), {"cmdline_kill"}),
+    ("pkill --full 'node server.js'", (), {"cmdline_kill"}),
+    ("kill $(pgrep -f 'python3 run.py')", (), {"cmdline_kill"}),
+    ("pkill -9 firefox", (), set()),
+    ("pkill -P $$ -f 'sleep 3000'", (), set()),
+    # nested and remote: the 2026-10-24 incident's shape (a remote shell carrying the pattern)
+    ("ssh vm 'pkill -f run_vllm.sh'", (), {"cmdline_kill"}),
+    ("ssh -p 2222 -o BatchMode=yes u@vm \"pkill -f 'python3 app.py'\"", (), {"cmdline_kill"}),
+    ("bash -lc 'pkill -f worker'", (), {"cmdline_kill"}),
+    ("podman exec -u root ctr pkill -f server", (), {"cmdline_kill"}),
+    ("kubectl exec pod-0 -- pkill -f server", (), {"cmdline_kill"}),
+    ("ssh vm 'cd repo && git pull; git switch -c x'", (), {"gate_chain"}),
+    ("ssh vm 'pgrep -f run_vllm.sh'", (), set()),
+    ("bash -c 'set -euo pipefail; git push -q origin x | tail -1; git switch main'", (), set()),
+    ("set -e; git pull --ff-only; git switch -c x", (), set()),
+    ("set -e; git pull --ff-only | tail -1; git switch -c x", (), {"gate_chain"}),
+    ("gh pr merge 5 --squash 2>&1 | tail -1 && git switch -q main", (), {"gate_chain"}),
+    ("set -euo pipefail; git push 2>&1 | tail -1; git switch main", (), set()),
+    ("set -o pipefail; git push | tail -1 && git switch main", (), set()),
+    ("ssh vm uptime", (), set()),
+    ("bash -c 'echo pkill -f x'", (), set()),
+    ("pgrep -f 'python3 run.py'", (), set()),
+    ("kill -INT \"$PID\"", (), set()),
+    ("grep -n 'pkill -f' docs/notes.md", (), set()),
 ]
 
 
@@ -591,6 +831,17 @@ def self_test() -> int:
         if decide({"tool_name": "Edit", "tool_input": {"command": "git commit -S"}}, sd) is not None:
             fails += 1
             print("FAIL a non-Bash tool was acted on")
+        for cls, cmd in (("gate_chain", "gh pr merge 3 --rebase | tail -1; git switch -q main"),
+                         ("cmdline_kill", "pkill -f 'pytest tests/'")):
+            evk = {"tool_name": "Bash", "tool_input": {"command": cmd}, "session_id": "t"}
+            first, second = decide(evk, sd), decide(evk, sd)
+            reason = ((first or {}).get("hookSpecificOutput") or {}).get("permissionDecisionReason", "")
+            if not (first and first["hookSpecificOutput"].get("permissionDecision") == "deny" and reason == NOTES[cls]):
+                fails += 1
+                print("FAIL the first %s command of a session was not refused with its note" % cls)
+            if second is not None:
+                fails += 1
+                print("FAIL a repeated %s command was refused again" % cls)
     with tempfile.TemporaryDirectory() as d:
         import uuid
         ev3 = {"tool_name": "Bash", "session_id": "t-" + uuid.uuid4().hex, "transcript_path": "",
@@ -601,6 +852,10 @@ def self_test() -> int:
         if "code-rules hook" not in ctx or "rules/" not in ctx:
             fails += 1
             print("FAIL a Go file written by a heredoc did not get the code-rules note: %r" % ctx[:160])
+    got = src_paths('S=/x/scratchpad; cd "$S/ans"\ncat > j.py <<\'EOF\'\nimport os\nEOF')
+    if got != ["/x/scratchpad/ans/j.py"]:
+        fails += 1
+        print("FAIL a relative write after cd did not resolve under that directory: %s" % got)
     # the extension list must match the code-rules hook's language map, or a language falls through
     import importlib.util
     spec = importlib.util.spec_from_file_location("crh", os.path.join(os.path.dirname(os.path.realpath(__file__)), "code-rules-hook.py"))
