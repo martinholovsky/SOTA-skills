@@ -1540,7 +1540,13 @@ CI redesign edited pipeline templates through `python3 - <<EOF` scripts with the
 refused **once per session** with what to settle first (does the project ask for this signature,
 the retry counter, every prompt in order); issued again, it runs. It refuses rather than adding a
 note because Claude Code places a PreToolUse note beside the tool *result*, after an attempt is
-spent. An image push or retag, a CI file written from the shell and a vulnerability scan get the
+spent. Since 2026-11-21 two more shapes are refused once per session on the same reasoning (two
+field reports): a merge, push, rebase or pull joined to a later `switch`, `checkout`, `stash`,
+`reset` or branch deletion by `;`, a newline or a pipe (`gh pr merge 42 --rebase | tail -2; git
+stash push … && git switch main …` ran on after the merge failed and cut a branch from the wrong
+base; 30 such calls in 11 sessions of 42,507 replayed; `set -e` and `pipefail` are read), and `pkill -f`
+or `kill $(pgrep -f …)` without `-P`, also inside `ssh host '…'` or `bash -c`, which matches its own
+shell on Linux (7 calls in 6 sessions). An image push or retag, a CI file written from the shell and a vulnerability scan get the
 owning rules files as context, once per session each, and are never blocked. **A source file
 written from the shell** (`cat > x.go <<EOF`, `sed -i`, a heredoc script that writes it) gets the
 code-rules hook's own note, as if it had been written with Edit, since 2026-11-20: a field report
@@ -1697,7 +1703,7 @@ change, prior occurrences, a verbatim appendix). Each one is a mistake actually 
 
 **What the session loaded, and what it built, are measured, not remembered** (v1.55.0).
 `scripts/session-load-audit.py` reads the session's transcript and lists the skills invoked and
-every rules file read, searched or edited (shell `cat`/`sed`/`grep` included, also relative to a `cd` into the library; a path written inside a heredoc shows as `Bash:heredoc`, not a read), whether each Audit
+every rules file read, searched or edited (shell `cat`/`sed`/`grep` included, also relative to a `cd` into the library or through a variable assigned in the same command, `F=<file>; sed … "$F"`; a path written inside a heredoc shows as `Bash:heredoc`, not a read), whether each Audit
 checklist was read and re-read after the last edit, and which probes ran. With `--diff BASE` it
 also runs the checklist probes over the code the session changed, counting hits on added lines
 only, and joins the two: a rule that was loaded and still hit points at its wording, one that was

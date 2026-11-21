@@ -32,6 +32,13 @@ other jurisdictions.)
   breach litigation.
 - Uptime/SLA marketing numbers come from measured data ([`sota-observability`](../../sota-observability/SKILL.md)
   SLOs), match the contractual SLA, and carry the measurement window.
+- **A measured number is only as good as its sample.** A time, speed or rate claim is a
+  distribution claim, and "typically" says so outright: the typicality rule §3 applies to
+  testimonials holds for your own benchmarks too. Record n, dates, configuration and the
+  longest run beside it in the claims register, or drop the adverb; re-measure when the product
+  changes what was measured (how to measure it: [`sota-performance` rules/01](../../sota-performance/rules/01-methodology.md) §3). Field-reported 2026-11-21: "typically under an hour" was written
+  from four watched runs (14–43 min); the next run took 2 h 21 min, and a census of 149 stored
+  runs had medians of 14–36 min and a longest of 5.1 h.
 - **EU green claims (Directive (EU) 2024/825, applied from 27 September
   2026)** add, among others, these per-se bans to the UCPD Annex I
   blacklist: **4a** a *generic* environmental claim ("eco-friendly", "green", "climate
@@ -211,7 +218,9 @@ Two regimes cover most senders; apply the stricter when audiences mix:
       `grep -rniwE '#1|best|leading|only|first|fastest|world-class|revolutionary|guaranteed|never|100%' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .` (§1)
 - [ ] Security/uptime claims state real, currently-true controls and
       measured numbers — no "bank-level/military-grade" filler; uptime figures
-      match the contractual SLA and state the measurement window; comparative
+      match the contractual SLA and state the measurement window; a time,
+      speed or rate claim (and any "typically") has its sample — n, dates,
+      configuration, longest run — in the claims register; comparative
       claims substantiate both sides, dated; health, financial, security, and
       earnings claims passed legal review (§1)
 - [ ] Every endorsement with a material connection carries a clear,

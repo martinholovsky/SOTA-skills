@@ -263,7 +263,7 @@ EXCLUDE = {
         r"|design[- ]system tokens?|\bDS tokens\b|tokens/[\w-]+\.css"
         r"|\bClientSession\b|requests\.Session\(\)|\bAsyncSession\b|\w*sessionmaker\b|\bget_session\(\)|\bdb\.session\b"
         r"|\bsession\.(add|commit|rollback|execute|query|flush|scalars?|begin|run)\(|\.session\(\)"
-        r"|\bprocess[_ ]groups?\b|\bsession leader\b|AVAudioSession\w*|\baudio ?session\w*|\bsession[- ]bus\b"
+        r"|\bprocess[_ ]groups?\b|\bsession leader\b|AVAudioSession\w*|\baudio ?session\w*|(?:\b|_)session[-_ ]bus(?:\b|_)|\bXDG_SESSION_\w+"
         r"|\bstack[ _]?cookies?\w*|\bStackCookie\b"
         r"|\b(next|prior|previous|working|debugging|chat|LLM|agent|coding|training|interactive|knowledge[- ]sharing) sessions?\b"
         r"|\bSession(Start|End)\b"
@@ -950,12 +950,17 @@ def self_test() -> int:
     sess = "issues or checks a session or token"
     for text in ("let ts = TokenStream::new();", "resp = client.create(max_tokens=256)",
                  "db.session.commit()", "let s = AVAudioSession.sharedInstance()",
-                 "fn configure(stack_cookie: u64)", "async with aiohttp.ClientSession() as s:"):
+                 "fn configure(stack_cookie: u64)", "async with aiohttp.ClientSession() as s:",
+                 # D-Bus's env var (field report 2026-11-21): `\b` cannot sit between `_` and SESSION
+                 'env = f"DBUS_SESSION_BUS_ADDRESS=unix:path={bus}"',
+                 # logind's session metadata, the same sense (checked while taking in that report)
+                 "if os.environ.get('XDG_SESSION_TYPE') == 'wayland':"):
         check("excluded sense alone does not fire the session row: %s" % text, not fires(sess, text))
     for text in ("resp = client.create(max_tokens=256)\nsession_start()",
                  "let ts = TokenStream::new();\nif token != expected { deny() }",
                  "db.session.commit()\n$_SESSION['uid'] = $id", "jwt.verify(token, key)",
-                 "res.cookie('sid', sid, { httpOnly: true })"):
+                 "res.cookie('sid', sid, { httpOnly: true })",
+                 'env = f"DBUS_SESSION_BUS_ADDRESS={bus}"\nsession.set_cookie("sid", token)'):
         check("an auth sense beside an excluded one still fires: %s" % text.split(chr(10))[-1], fires(sess, text))
     # 2026-11-11 (this hook on a transcript parser): a class named Session for a Claude Code session.
     # A known false trigger that must still fire: no word list separates it, the evidence line does.

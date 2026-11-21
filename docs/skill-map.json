@@ -3233,6 +3233,14 @@
     },
     {
       "from": "sota-copywriting",
+      "to": "sota-performance",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-copywriting",
       "to": "sota-network-security",
       "weight": 1,
       "targets": [
@@ -4223,6 +4231,14 @@
     },
     {
       "from": "sota-sandboxing",
+      "to": "sota-testing",
+      "weight": 1,
+      "targets": [
+        "rules/09 \u00a71"
+      ]
+    },
+    {
+      "from": "sota-sandboxing",
       "to": "sota-golang",
       "weight": 1,
       "targets": [
@@ -4637,12 +4653,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1941,
+    "md link, other skill": 1943,
     "md link, outside skills/": 3,
     "md link, same skill": 2869,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 929,
+    "name+file (backticked)": 931,
     "name+file (bare)": 180,
     "own rules/NN": 3091
   },
@@ -4654,7 +4670,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 924,
+    "name+file (backticked)": 926,
     "name+file (bare)": 168,
     "own rules/NN": 2987
   },
@@ -8021,6 +8037,7 @@
       "other": [
         "sota-code-security/rules/11-dead-path-diagnostics.md",
         "sota-code-security/rules/13-context-dependent-silence.md",
+        "sota-copywriting/rules/04-claims-legal-trust.md",
         "sota-devsecops/rules/11-after-the-gate-fails.md",
         "sota-observability/rules/02-metrics.md"
       ]
@@ -9346,6 +9363,7 @@
         "sota-code-security/rules/15-instruments-and-guards.md",
         "sota-identity-access/rules/03-authorization-models.md",
         "sota-llm-engineering/rules/07-code-generation-evals.md",
+        "sota-sandboxing/rules/04-process-app-sandboxing.md",
         "sota-shell-scripting/rules/06-ad-hoc-commands.md",
         "sota-threat-modeling/rules/05-outputs-operationalization.md"
       ]

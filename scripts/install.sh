@@ -296,9 +296,10 @@ MD
 ## Shell habits a rule re-read does not fix
 
 - **A newline is `;`.** In a multi-line command a failing line does not stop the
-  next one; join a check to the action it gates with `&&`. **A pipe defeats that
-  gate**: `check | tail -1 && act` runs `act` on `tail`'s 0, so set `pipefail`, read
-  `${pipestatus[1]}` (zsh) / `${PIPESTATUS[0]}` (bash), or drop the pipe.
+  next one; join a check to the action it gates with `&&`. A merge, push, checkout
+  or apply whose success the next command assumes is a gate too. **A pipe defeats
+  that gate**: `check | tail -1 && act` runs `act` on `tail`'s 0, so set `pipefail`,
+  read `${pipestatus[1]}` (zsh) / `${PIPESTATUS[0]}` (bash), or drop the pipe.
 - **Matching a process by its command line matches the selector.** `pkill -f`,
   `pgrep -f`, `ps | grep` and a `/proc/*/cmdline` loop also select the shell, or the
   `ssh`/`bash -c`, whose argv carries the pattern; act on PIDs you recorded.
