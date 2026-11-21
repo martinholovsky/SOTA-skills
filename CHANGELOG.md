@@ -63,6 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   waited 8,016 ms against a 300 ms budget (`sota-dotnet`); and `kubectl exec deploy/X` picks one pod
   by label selector (network rules/03, from source). Refuted: `/sota-resume`'s merge-tree check
   after a squash.
+- **This session's own two test mistakes, each turned into a check.** The zsh hook now refuses a
+  spaced scalar used as the command (`G='git -c …'; $G commit`, `command not found` in zsh), the
+  shape that broke a reproduction here: 7 new refusals over 43,731 recorded calls, and the 6 that
+  executed all failed for real. `sota-code-security` rules/12: the arms of a measurement share
+  nothing the first one spends (a shared 8 s token read 0 ms in the second arm).
 
 ## [1.57.1] - 2026-11-20
 
