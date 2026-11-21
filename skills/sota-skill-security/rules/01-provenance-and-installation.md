@@ -62,7 +62,11 @@ installed this:
 - **resources fetched at load or run time** — a skill that pulls a remote ruleset is
   a skill whose content is not what you reviewed;
 - **transitively installed things**: an MCP server the skill tells you to add, a
-  plugin it depends on.
+  plugin it depends on;
+- **anything you cannot read as text** — a binary, a minified or bundled script, an
+  archive, an image or PDF the skill tells the agent to open. Each one is an unreviewed
+  member of the closure, not a file to skip: decompile, unpack or render it, or record
+  the closure as *not reviewed*.
 
 The failure is not exotic. It is that you read a well-written `SKILL.md`, and the
 part that mattered was in a file you did not open.
@@ -101,6 +105,14 @@ not mean anyone read it adversarially, and it does not mean the version you inst
 today is the version that was listed. Treat a listing as discovery and do §1–§3
 anyway.
 
+**A scanner's pass is a floor, and read its exit rule before trusting its green.** A skill
+scanner reads patterns, not intent, and its default gate may be narrower than its report:
+NVIDIA's SkillSpector (read at `48e0f942ea1f`, 2026-11-22) exits 1 by default only when the
+risk score exceeds `RISK_THRESHOLD = 50`, so a scan that **reports findings** or **could not
+finish its analysis** exits 0 unless `--fail-on-findings`, `--fail-on-incomplete` or
+`--min-coverage` is passed. Pass them in any gate, treat a pass as "nothing obvious", and do
+§1–§3 anyway; a finding is a finding whatever the score.
+
 ---
 
 ## Audit checklist
@@ -122,3 +134,7 @@ anyway.
 - [ ] **Publisher identity and pulse recorded** (§1) — a stale skill pinning tool
       versions with known advisories treated as wrong, not neutral?
 - [ ] No entry whose provenance is "someone recommended it" (§1, §5)?
+- [ ] **Unreadable closure members** (§3) — binaries, bundles, archives — unpacked and
+      read, or the skill recorded as *not reviewed*?
+- [ ] **Any skill scanner used as a gate fails on findings and on incomplete analysis**,
+      not only on its score (§5)?

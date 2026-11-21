@@ -5,6 +5,32 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **This repo now runs zizmor, and its first run found a rule we break.** `.github/dependabot.yml` had no
+  `cooldown` although `sota-devsecops` tells every reader to set one; it now has 7 days (zizmor's floor; the
+  library's 5 is now stated beside it). The required "Shell lint" job installs zizmor hash-pinned and must see
+  it flag a committed known-bad before it scans `.github/`.
+- **Guards that are not guards** (`sota-devsecops` rules/01 §1.5b, rules/03 §3.7): a block-scalar `if: |`
+  around `${{ }}` is always true, `contains()` on a string is a substring test, `toJSON(secrets)` exposes every
+  secret, and Dependabot's `insecure-external-code-execution: allow` runs manifest code; five probes with fixtures.
+- **A probe's known miss is an executable case** (`todo-bad/`, `todo-ok/`, failure class F6 in
+  `check-probe-fixtures.py`), after Semgrep's `todoruleid`: it must keep missing, and CI fails once it is caught.
+- **Refutation and fix verification** (`sota` rules/03, rules/05): an ambiguous finding on a subject the
+  adversary wrote is not refuted by default; a refuter that strengthens a finding hands it to a fresh refuter;
+  a bypass variant whose root cause was not shown to differ counts as a bypass. `/sota-deep-audit` now stops
+  when a coverage critic names no uncovered surface, not when findings dry up.
+- **Reproductions** (`sota-code-security` rules/12 §1a.2): a PoC's own printed verdict, stubbed collaborators
+  and a bare exit code do not make a reproduction.
+- **Sandboxing** (`sota-sandboxing` rules/05 R7.4): image builds have network unless given `--network=none`
+  (measured, podman 5.8.9); a model-written compose file is regenerated from an allowlist.
+- **Skill security** (`sota-skill-security` rules/01, rules/03): a skill scanner's default exit rule can pass
+  a scan with findings (SkillSpector, read in source); unreadable closure members are unreviewed; a general
+  security review that drops `.md` findings is not skill coverage.
+- **A release tarball is diffed against its tag** (`sota-devsecops` rules/15 §15.3; a deferral this branch fired):
+  the xz backdoor (CVE-2024-3094) shipped in upstream tarballs, so every tarball-only file is accounted for.
+- Twelve sources and every verdict, rejections included: `docs/ADOPTION-LOG.md` (2026-11-22).
+
 ## [1.58.0] - 2026-11-21
 
 **Front door checked:** check-tools · pkill -f · gate_chain · plugin-only · U+2060

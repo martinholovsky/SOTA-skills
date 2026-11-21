@@ -788,6 +788,11 @@ CI scans the full git history, the pre-commit hook scans each commit.
     quoted `<Tag>` in a probe is pattern text and runs as written; only an unquoted `<name>` operand
     is replaced with a file called `empty`. Git keeps no empty directory: give a case with no files a
     `.keep`. The baseline has been empty since 2026-10-27, so a new probe ships with fixtures.
+    A **known limitation** is recorded as a case too, never as prose: `todo-bad/` is a defect the
+    probe misses today (it must still print nothing) and `todo-ok/` a correct tree it flags today
+    (it must still print). Neither fails while the limitation holds; the day one stops holding,
+    CI's full run fails with **F6** until the case moves to `bad/` or `good/` (since 2026-11-22,
+    after Semgrep's `todoruleid`/`todook`). The structural half (`--structure`) does not run cases.
     A probe that cannot tell a defect from the correct form is a **declared locator**: its item
     says it lists every site and each hit is read, not a finding, and its fixtures prove it finds
     the construct (bad/ has it, good/ does not). History: `docs/probe-defects-2026-10-26.json`.

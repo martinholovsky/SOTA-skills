@@ -1,0 +1,9 @@
+name: ci
+on: push
+permissions: {}
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains('refs/heads/main refs/heads/dev', github.ref)
+        run: ./x.sh

@@ -1704,7 +1704,7 @@
    "note": "devsecops owns cooldown across ecosystems; JS adds npm/Yarn/pnpm fail-open detail specific to its ecosystem.",
    "sample": "- **Cooldown**: Renovate `minimumReleaseAge: \"5 days\"` (Dependabot: cooldown config) for public packages — most maliciou",
    "members": [
-    "sota-devsecops/rules/03-dependencies.md#2ce562a65799",
+    "sota-devsecops/rules/03-dependencies.md#1b51b724b969",
     "sota-javascript-typescript/rules/05-security.md#fbaafb26dfe0"
    ]
   },

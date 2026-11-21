@@ -93,7 +93,10 @@ affordable:
   changelog: `npm diff --diff=<pkg>@<old> --diff=<pkg>@<new>`, `cargo vet diff <crate>
   <old> <new>` ([`sota-rust` rules/05](../../sota-rust/rules/05-security-supply-chain.md) §2), or a plain diff of the two unpacked archives.
   Compare the **published artifacts**, because the tarball can differ from the tagged
-  source.
+  source: the xz backdoor (CVE-2024-3094) was in the upstream release tarballs from 5.6.0,
+  per NVD's record (read 2026-11-22). Where you build from a release tarball, diff it against
+  a checkout of its tag and account for every file only the tarball carries — generated
+  `configure` scripts and `.m4` macros are where a build-time payload hides.
 - **Record the review** where the next reviewer will find it (a `cargo vet` audit entry,
   or a note in the PR that bumps the version), so that the same version is not reviewed
   twice or skipped because someone assumed it had been read.
@@ -129,5 +132,5 @@ security documentation before merging.
 
 - [ ] **New dependencies carry a recorded selection review (§15.1), Medium:** `git diff <base> -- package.json | grep -E '^\+[[:space:]]*"[^"]+":[[:space:]]*"[~^]?(0\.[0-9]|[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta|rc|pre|next|canary|dev))'` (and the equivalent for other manifests) prints nothing, or each hit has a written reason; each new direct dependency, action or CI plugin has its §15.1 answers in the PR, including whether it opens ports or widens token scopes
 - [ ] **Origin verified for adopted components (§15.2), Medium:** for new npm/PyPI dependencies, `curl -s https://api.deps.dev/v3/systems/npm/packages/<pkg>/versions/<ver> | jq -e '[.attestations[]? | select(.verified)] | length > 0'` exits `0`, or the absence of provenance is recorded and accepted; `npm audit signatures` passes in CI for npm projects; builds fetch only through the proxy
-- [ ] **High-risk dependencies read, not only scanned (§15.3), Medium:** a written risk scoping exists; adoption PRs for high-risk dependencies record a SAST run over the dependency's source, run from inside the package directory with a planted known hit reported; upgrade PRs for them record a published-artifact diff review (`npm diff`, `cargo vet diff`)
+- [ ] **High-risk dependencies read, not only scanned (§15.3), Medium:** a written risk scoping exists; adoption PRs for high-risk dependencies record a SAST run over the dependency's source, run from inside the package directory with a planted known hit reported; upgrade PRs for them record a published-artifact diff review (`npm diff`, `cargo vet diff`), and a component built from a release tarball has a tarball-vs-tag diff with every tarball-only file accounted for
 - [ ] **Security-relevant defaults set explicitly (§15.4), High on a trust boundary:** `grep -rn -E 'verify[[:space:]]*=[[:space:]]*False|InsecureSkipVerify:[[:space:]]*true|rejectUnauthorized:[[:space:]]*false|VERIFY_NONE|^[[:space:]]*DEBUG[[:space:]]*=[[:space:]]*True' .` over production code and config is empty; parser, deserialiser and client options are set in one reviewed wrapper

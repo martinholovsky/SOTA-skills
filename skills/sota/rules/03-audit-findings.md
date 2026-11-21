@@ -291,7 +291,8 @@ The pass:
    cannot verify.
 2. **Assign refuters, prompted to kill it.** The instruction is *find the reason
    this is wrong*, not *check this*. Default the verdict to REFUTED when the
-   evidence is ambiguous — an unrefutable finding must earn its survival.
+   evidence is ambiguous — an unrefutable finding must earn its survival — **unless the
+   subject was written by the adversary**, where ambiguity is the attack (§4a).
 3. **Use distinct lenses when a finding can fail in more than one way.** Three
    identical reviewers are worth less than three different questions:
    - **Correctness** — is the mechanism real? Read the full path, not the
@@ -308,9 +309,8 @@ The pass:
      no generator, no test and no `main`; the staged bytes land in a
      mode-`0700` directory the operator already owns. A finding that cannot
      name its execution primitive is reachability plus speculation.
-4. **Majority-refute kills it.** Survivors ship; the rest are dropped or
-   downgraded with the refutation recorded — a refuted finding is a result, not
-   waste, and stops the next auditor re-raising it.
+4. **Majority-refute kills it.** Survivors ship; the rest are dropped or downgraded with the refutation recorded — a refuted finding is a result, not waste, and stops the next auditor re-raising it.
+   **A refuter that *strengthens* a finding** — a new mechanism, a higher severity, a wider scope — has made a claim nobody has yet tried to kill: the strengthened version goes to a **fresh** refuter before it ships, never straight into the report.
 5. **A refuted finding is a template — sweep before you drop it.** The
    refutation hands you two reusable things: the *pattern*, and the *leg* that
    was missing. Grep the pattern across the whole repository — not just the
@@ -330,8 +330,7 @@ The pass:
 
 ### 4a. Bound what the refuter gets, and make its verdict a number
 
-Step 2 says *prompt it to kill the finding*. Three conditions decide whether that
-prompt does anything, and all three are cheap.
+Step 2 says *prompt it to kill the finding*. Three conditions decide whether that prompt does anything, and all three are cheap.
 
 **Give the refuter less than the finder had.** A refuter holding the finder's
 tools re-runs the finder's investigation and arrives where it arrived. Take the
@@ -364,13 +363,14 @@ one-off deep audit, where a missed Critical is the expensive error, sits lower
 and ships the near-misses marked "needs verification" rather than dropping them
 silently. Either way the cut is reviewable, which a paragraph of hedging is not.
 
-A number is not a fact. It is a forcing function that makes disagreement visible,
-and like every other number in this file it is a claim about a process you must
-have watched work ([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2).
+A number is not a fact. It is a forcing function that makes disagreement visible, and like every other number in this file it is a claim
+about a process you must have watched work ([`sota-code-security` rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2.2).
 
-Scale it to stakes: every Critical/High gets refuted, always. Mediums get a pass
-when the audit is high-stakes or the finding drives an expensive fix. Skip it for
-Low/Info hygiene items — the overhead outruns the value.
+**When the adversary wrote the subject, the ambiguity default flips.** Step 2's REFUTED-when-ambiguous fits code written in good faith, where an unclear path is usually an unreachable one.
+It points the wrong way when the thing under review was authored by the attacker — a skill or plugin from an untrusted publisher, a dependency's install script, an outside contributor's change to a gate, a payload in data — because there ambiguity is a design choice:
+obfuscation, a dormant branch, an instruction phrased to read as benign. An ambiguous finding on such a subject ships as "needs verification" with the ambiguity named, and is never dropped for being ambiguous.
+
+Scale it to stakes: every Critical/High gets refuted, always. Mediums get a pass when the audit is high-stakes or the finding drives an expensive fix. Skip it for Low/Info hygiene items — the overhead outruns the value.
 
 Two failure modes to avoid:
 

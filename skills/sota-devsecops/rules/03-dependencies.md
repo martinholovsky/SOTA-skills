@@ -310,9 +310,9 @@ rules/15](../../sota-code-security/rules/15-instruments-and-guards.md) §2, wher
 Unmanaged: drift until a CVE forces a terrifying 40-major-version jump. Unthrottled: you
 auto-install malware minutes after it's published. The strategy:
 
-- **Cooldown**: Renovate `minimumReleaseAge: "5 days"`, Dependabot `cooldown: {default-days: 5}` per
-  `updates:` entry (it defaults to 3 days unset; read 2026-11-18) for public packages — most malicious
-  versions are yanked within days. Exception: security updates bypass cooldown.
+- **Cooldown**: Renovate `minimumReleaseAge: "5 days"`, Dependabot `cooldown: {default-days: 5}` per `updates:` entry (it defaults to 3 days unset; read 2026-11-18; zizmor's `dependabot-cooldown` audit flags anything under 7, so 7 satisfies both)
+  for public packages — most malicious versions are yanked within days. Exception: security updates bypass cooldown. **Never `insecure-external-code-execution: allow`** (Dependabot, for bundler, mix and pip; read 2026-11-22):
+  the update job then runs code from the manifest it is updating, so a hijacked release executes in the bot's job before anyone reviews the PR (zizmor `dependabot-execution`).
   The bot gates only its own PRs; a hand-run `add`/`install` is gated by the package
   manager's own setting (read 2026-10-26): pnpm `minimumReleaseAge` (minutes, since 10.16;
   the 1440 default since 11 falls back when unmet, so set it explicitly), npm `min-release-age`
@@ -488,7 +488,7 @@ So require a second value that **cannot** be produced from plausibility:
       `first_patched_version` against the **resolved** graph rather than a bump's PR title
 - [ ] SBOM (one format org-wide, CycloneDX or SPDX) regenerated per build for each artifact from lockfile + image, with component hashes and PURLs, attached to the digest, queryable centrally (§3.5); none = Medium
 - [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
-- [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`) (§3.7), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned; hand-run installs also cooled down by the package manager's native setting where it has one (pnpm `minimumReleaseAge` set explicitly, npm `min-release-age`, Yarn `npmMinimalAgeGate`, uv `exclude-newer` duration, Bundler `cooldown`)
+- [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`) (§3.7) and no manifest code execution (`grep -rn 'insecure-external-code-execution:.*allow' .github` is empty), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned; hand-run installs also cooled down by the package manager's native setting where it has one (pnpm `minimumReleaseAge` set explicitly, npm `min-release-age`, Yarn `npmMinimalAgeGate`, uv `exclude-newer` duration, Bundler `cooldown`)
 - [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade; a hold is written at the pin, and before a pin moves the repo's own trackers and notes were searched for a hold on that component
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream) (§3.8)
 - [ ] **Does any support-matrix row infer a capability from a version number? (§3.9)** That

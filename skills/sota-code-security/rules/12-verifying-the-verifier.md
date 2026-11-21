@@ -216,7 +216,16 @@ found. Rate it as hardening only when reading every caller shows no entry point 
 the state. Where the called function *is* the exported API — a library, or a fuzz harness on
 an exported function — the direct call is the public path.
 
-Source: Google's Mantis toolkit (Apache-2.0) reproduction gates; adopted 2026-10-02.
+**An exploit script's own verdict is the claimant's report, not an observation.** A PoC that
+prints `VULNERABLE` from its own logic — after the status code it expected, the string it
+searched for — reports what its author believed would follow: the party under evaluation
+supplying the evidence ([`rules/15`](15-instruments-and-guards.md) §2). Observe the effect the script claims, from outside
+it: the file written, the row read, the process spawned. Two more ways a run proves less than
+it prints: **stubbed collaborators** (a mocked auth layer, a fake database, a disabled
+middleware) make it *reached in isolation*, as above, whatever the script says; and for a
+memory-safety defect, **read the sanitizer report, not the exit code** — a timeout, an OOM kill or an assertion in your own harness exits non-zero too, and only the report names the class and the frame.
+
+Source: Google's Mantis toolkit (Apache-2.0) reproduction gates, adopted 2026-10-02; the paragraph above, the knostic/OpenAnt intake (ideas only), 2026-11-22.
 
 ## 1b. Where the probe lives decides whether it survives
 
@@ -436,7 +445,9 @@ n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
       triggering state, plus a control arm?** (§1a.2) A build failure, exit 127, a missing
       input or a wrapper crash is *not attempted*; a marker written before launch proves only
       the launch. Is any direct-call-harness crash still marked *needs verification* until
-      a public path is found or every caller has been read?
+      a public path is found or every caller has been read? Does any "reproduced" rest on the
+      PoC's own printed verdict, on stubbed collaborators, or on an exit code where a
+      sanitizer report exists (§1a.2)?
 - [ ] **Does any probe mutate by a fixed delta *smaller than the cap it must cross*?** (§1d)
       That, not "a numeric threshold", is the shape that decays: the probe's strength is the
       subject's current slack, so improving the subject disarms it while the mutation still
