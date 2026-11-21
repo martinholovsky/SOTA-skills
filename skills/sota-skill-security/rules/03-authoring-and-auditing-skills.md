@@ -170,6 +170,13 @@ Sample rather than read everything, and sample where being wrong is expensive:
 6. **The bytes a reviewer cannot see.** Zero-width, bidi and tag characters
    ([`sota-code-security` rules/09](../../sota-code-security/rules/09-untrusted-data-ingestion.md) §4) in any file the [`rules/02`](02-trust-boundary-and-capability.md) §2 inventory lists.
 
+**A general code-security review is not a skill review.** Such tools commonly drop findings
+in documentation, and a skill's instructions *are* documentation by extension: Anthropic's
+`claude-code-security-review` filters out every finding in a `.md` file
+(`claudecode/findings_filter.py`, read at `0c6a49f1fa56`, 2026-11-22). A clean run over a
+repository says nothing about its `SKILL.md`, `AGENTS.md` or rules files; review those with
+this file's passes, and say in the report which tool covered which files.
+
 Report findings as `file:line | rule | severity | effort | fix`, and rate severity by
 **what an operator would do differently if they believed it**.
 
@@ -202,6 +209,8 @@ Report findings as `file:line | rule | severity | effort | fix`, and rate severi
       version-pinned facts, and anything instructing the agent to disable a check (§5)?
 - [ ] **Unreached files identified** — any rules file no index points at is inert by
       construction (§5)?
+- [ ] **Instruction files reviewed by something that reads them** (§5): a general
+      security reviewer's clean run is not cited as coverage of `.md` instruction files?
 - [ ] **No invisible code points in skill or agent files** (§5): `find -L <skill dirs> -type f -exec env LC_ALL=C grep -nHE $'\xe2\x80[\x8b-\x8d\xaa-\xae]|\xe2\x81[\xa6-\xa9]|\xef\xbb\xbf|\xf3\xa0[\x80-\x81]' {} +`
       (bash/zsh; `-L` because BSD `grep -r` skips symlinked skill dirs; 3/3 planted,
       0 false hits on accented text, BSD and GNU, 2026-09-26). Where `grep` on `PATH`

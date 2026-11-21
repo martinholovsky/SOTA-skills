@@ -1,9 +1,8 @@
 # Dependabot — keeps the ONE automation surface this repo has current.
 #
 # Scope is deliberately narrow. There are no application dependencies here: the
-# library is Markdown, and every script is stdlib-only Python or POSIX shell, so
-# there is no pip/npm manifest for Dependabot to watch. The single third-party
-# supply-chain surface is GitHub Actions — every `uses:` line in .github/workflows/,
+# library is Markdown, and every script is stdlib-only Python or POSIX shell. The
+# third-party supply-chain surfaces are GitHub Actions — every `uses:` line in .github/workflows/,
 # each SHA-pinned (`grep -n 'uses:' .github/workflows/*.yml` lists them; the count is
 # not written here because it went stale once already).
 #
@@ -15,7 +14,13 @@
 #
 # Added 2026-08-25 after an external scanner flagged DEPENDABOT_MISSING — the one
 # accurate finding out of eight it reported (the other seven were false positives;
-# see docs/ADOPTION-LOG.md 2026-08-25).
+# see docs/ADOPTION-LOG.md 2026-08-25). — and, since 2026-11-22, the one CI tool installed
+# from PyPI: zizmor, hash-pinned in scripts/ci/zizmor-requirements.txt (the second entry below).
+#
+# Both entries carry a 7-day cooldown (sota-devsecops rules/03 §3.7 sets 5 as the floor; zizmor's
+# `dependabot-cooldown` audit flags anything under 7, so 7 satisfies both): a version bumped the day it is
+# released is the hijacked-release window a pin exists to close. This file lacked it until zizmor
+# flagged `dependabot-cooldown` on 2026-11-22, while the library told every reader to set it.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -29,6 +34,8 @@ updates:
     # Low ceiling on purpose: a handful of first-party actions means a backlog here
     # is a signal that something is wrong, not routine noise to be triaged away.
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     groups:
       # One PR per week for routine bumps rather than one per action, so the
       # required checks run once and the diff is reviewable in a single pass.
@@ -38,3 +45,15 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  - package-ecosystem: "pip"
+    directory: "/scripts/ci"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 1
+    cooldown:
+      default-days: 7

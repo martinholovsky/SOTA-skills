@@ -406,13 +406,12 @@ child's **environment**, which inherits every API key the parent holds (R2.2).
 Per R6.1 the analysis sub-agent gets *less* scope than the orchestrator, never
 the same.
 
-**R7.4 — Egress is on unless something turned it off.** A container run with no
-`--network` flag has full outbound access. That is often a deliberate choice —
-dependency resolution needs the registry — but it is the leg that converts
-"executed some of the target's code" into "exfiltrated the operator's
-credentials". Where the analysis genuinely needs the network, R4.1's FQDN
-allowlist is the form it should take; where it does not, `--network=none` is one
-flag and the whole chain stops.
+**R7.4 — Egress is on unless something turned it off.** A container run with no `--network` flag has full outbound access. That is often a deliberate choice — dependency resolution needs the registry — but it is the leg that converts
+"executed some of the target's code" into "exfiltrated the operator's credentials". Where the analysis genuinely needs the network, R4.1's FQDN allowlist is the form it should take; where it does not, `--network=none` is one flag and the whole chain stops.
+**A build is a run too:** `RUN` steps have the network by default (measured 2026-11-22, podman 5.8.9: a `RUN` reached an outside host until the build itself was given `--network=none`), so building a Dockerfile the target supplied or a model wrote
+executes its code with egress before any `run` flag applies — pass `--network=none` to the build as well. Never use `apt-get update` as the egress probe: it exits 0 when every fetch failed (measured 2026-11-21, Debian image), so it passes with the network on or off.
+**A compose file the model wrote is rebuilt, not reviewed:** `network_mode: host`, `privileged`, `cap_add`, `devices`, `pid: host` and a bind mount of the socket or `$HOME` each undo every flag above, and reading for them is the check that misses one.
+Generate the file you run from an allowlist of keys and values and drop everything else.
 
 **The audit move is the intersection, not the list.** Each leg alone is a
 hardening note. Grep for all four across every ingest path — including the ones
@@ -482,7 +481,7 @@ where they coexist. Rate it with the chain named leg by leg ([`sota/rules/03`](.
       scripts and runs with dependency resolution working (a "buildless" mode is not
       evidence: R7.2); LLM steps over target source spawned
       tools-off, with an explicit `cwd` and a scrubbed environment; egress
-      `none` or FQDN-allowlisted. Flag the module where all four coexist (§7).
+      `none` or FQDN-allowlisted — **on the image build too**, and any model-written compose file regenerated from an allowlist (R7.4). Flag the module where all four coexist (§7).
 - [ ] **High** — An audit of a repository you did not write ran none of its tests, builds
       or install scripts unasked or unstaged (§7, first paragraph); `--collect-only` counts.
 - [ ] **High** — Each running agent instance (§3) holds its own short-lived

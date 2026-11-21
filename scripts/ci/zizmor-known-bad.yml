@@ -1,0 +1,20 @@
+# Known-bad for the zizmor step in .github/workflows/ci.yml (the "Shell lint (shellcheck)" job).
+# A gate that cannot fail verifies nothing (sota-devsecops rules/09 §2), so the step first runs
+# zizmor on this file and requires its `unsound-condition` audit to fire, by name: any non-zero
+# exit would also come from a parse error, and that is a catch for the wrong reason.
+#
+# The defect is the one sota-devsecops rules/01 §1.4 describes: a block scalar (`if: |`) keeps a
+# trailing newline after the `${{ }}`, so the condition is a non-empty string and always true.
+# This file is never run: it sits outside .github/workflows/.
+name: zizmor known-bad
+on: push
+permissions: {}
+jobs:
+  always-runs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: meant to run only on a tag, runs on every push
+        if: |
+          ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: echo "this step runs whatever the ref"

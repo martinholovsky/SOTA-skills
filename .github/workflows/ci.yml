@@ -422,6 +422,34 @@ jobs:
           # shellcheck disable=SC2086  # word splitting is intended: a file list
           shellcheck -S style --enable=check-unassigned-uppercase $files
 
+      - name: zizmor (GitHub Actions and Dependabot config), its known-bad first
+        # The library recommends zizmor in six places (sota-devsecops rules/01, rules/12) and this
+        # repo ran it nowhere until 2026-11-22, when its first run found the Dependabot cooldown the
+        # library tells every reader to set missing here. In this job because the job is a REQUIRED
+        # check: a new job is not, until branch protection names it.
+        # Installed hash-pinned from scripts/ci/zizmor-requirements.txt (Dependabot keeps it current);
+        # --offline: no token, so the online audits (impostor commits, known-vulnerable actions) are
+        # not run here. Default persona: the 8 auditor-only findings are recorded as accepted in
+        # docs/ADOPTION-LOG.md (2026-11-22).
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/zizmor"
+          "$RUNNER_TEMP/zizmor/bin/pip" install --quiet --disable-pip-version-check \
+            --require-hashes --only-binary :all: -r scripts/ci/zizmor-requirements.txt
+          z="$RUNNER_TEMP/zizmor/bin/zizmor"
+          "$z" --version
+          # The gate must be able to fail, for the RIGHT reason: its known-bad must raise the
+          # audit it was written for. A non-zero exit alone could be a parse error.
+          kb=0
+          out=$("$z" --offline --no-progress --format plain scripts/ci/zizmor-known-bad.yml 2>&1) || kb=$?
+          if [ "$kb" -eq 0 ] || ! printf '%s\n' "$out" | grep -q 'unsound-condition'; then
+            printf '%s\n' "$out"
+            echo "zizmor did not flag unsound-condition in its known-bad (exit $kb): the gate cannot fail"
+            exit 1
+          fi
+          echo "known-bad caught (exit $kb, unsound-condition)"
+          "$z" --offline --no-progress --format plain .github/
+
   secrets:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest

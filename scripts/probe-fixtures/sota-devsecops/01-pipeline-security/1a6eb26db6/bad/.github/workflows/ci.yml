@@ -1,0 +1,11 @@
+name: ci
+on: push
+permissions: {}
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    steps:
+      - name: deploy
+        if: |
+          ${{ github.ref == 'refs/heads/main' }}
+        run: ./deploy.sh

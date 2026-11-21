@@ -1,0 +1,11 @@
+name: ci
+on: push
+permissions: {}
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          ONE: ${{ secrets.DEPLOY_TOKEN }}
+          CTX: ${{ toJSON(github.event) }}
+        run: ./x.sh

@@ -201,7 +201,8 @@ Fan independent auditors across the four lenses, sub-splitting a large lens by s
 run an **adversarial verification pass**: every non-trivial finding, and every "this decision
 was unjustified" verdict, goes to a separate agent prompted to refute it, working from the code
 at the pinned commit rather than from the finder's write-up, defaulting to REFUTED where the
-evidence is ambiguous. Bound what the refuter receives and make its verdict a number
+evidence is ambiguous — except on a subject the adversary wrote, where an ambiguous finding ships as
+"needs verification". A refuter that *strengthens* a finding hands it to a fresh refuter. Bound what the refuter receives and make its verdict a number
 (`sota` router `rules/03` §4, §4a). Only survivors ship; the rest are dropped or downgraded
 **with the refutation recorded**, and the refuted pattern is swept elsewhere either way — that
 sweep is routinely where the strongest finding comes from.
@@ -212,8 +213,13 @@ least likely to reach (a control from inside a too-narrow scope passes anyway), 
 control is available
 (`sota-shell-scripting` rules/06 §2, `sota-code-security` rules/11 §2.2).
 
-Scale depth to what you find — loop on the lenses turning up real issues until new findings dry
-up. **Log what you deliberately did not cover.** No silent truncation.
+Scale depth to what you find, and **stop on coverage, not on yield.** "New findings dried up" is
+also what a lens says once it stopped looking, so it cannot end the audit. Before stopping, give a
+separate **coverage critic** the DFD, the control-presence matrix and each auditor's record of what
+it actually read (files, checklist items walked, commands run) — not the findings — and ask it to
+name the surfaces and trust boundaries nobody covered. Loop on what it names; stop when it names
+none with a reason to expect a finding there, and put its last answer in the report.
+**Log what you deliberately did not cover.** No silent truncation.
 
 ## Deliverables
 

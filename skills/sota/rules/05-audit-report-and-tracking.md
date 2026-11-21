@@ -120,7 +120,9 @@ to record a false "fixed":
 3. **Same-class bypass attempts, all of which fail — at least three, a chosen default.** Vary
    the input along the axis the fix guards — off-by-one lengths, zero and maximum sizes,
    another entry point, an alternate encoding. A variant that triggers a *different* defect is
-   a new finding, not a bypass. An empty or short attempt set is **verification incomplete**:
+   a new finding, not a bypass — **but only once the root cause is shown to differ**: an unclear
+   variant counts as a **bypass**, so the fix stays unverified. "A different bug" is the reading
+   that lets the fix pass, which is why it is the one that needs the proof. An empty or short attempt set is **verification incomplete**:
    "all attempts failed" is vacuously true of zero attempts ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §2.2).
 
 Check 3 targets a failure Mantis's authors call the dominant one for automated repair: a patch
@@ -158,7 +160,8 @@ Source: Google's Mantis toolkit (Apache-2.0) patch gate; adopted 2026-10-02 (ADO
 - [ ] **High** — Does every "fixed" with an executable reproduction record all three checks:
       baseline firing at `HEAD` with the fix reverted (or "resolved by `<sha>`"), identical
       instrumentation per comparison, and at least three failed same-class bypass attempts
-      (§5)? Fewer than three is "verification incomplete". A non-executable finding records
+      (§5)? Fewer than three is "verification incomplete"; a variant whose root cause was not
+      shown to differ was counted as a bypass. A non-executable finding records
       its observable check re-run at the fixed commit plus a fresh class search.
 - [ ] **Low** — Scope & methodology names the author, the reviewer and the checklist with
       its version (§3)? Expect three hits:
