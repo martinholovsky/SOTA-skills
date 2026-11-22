@@ -30,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A release tarball is diffed against its tag** (`sota-devsecops` rules/15 §15.3; a deferral this branch fired):
   the xz backdoor (CVE-2024-3094) shipped in upstream tarballs, so every tarball-only file is accounted for.
 - Twelve sources and every verdict, rejections included: `docs/ADOPTION-LOG.md` (2026-11-22).
+- **The zsh hook refuses an unbraced `$name:` before a modifier letter** (`git show $c:libs/x` reads `$c:l`,
+  lowercase): 11 hits over 44,718 recorded Bash calls, 10 real failures and one deliberate reproduction;
+  `$f:t`, `$f:t:r` and `${c}:` stay allowed.
+- **A probe that answered "clean" in an agent's shell**: `sota-ruby` rules/04's `find -newermt "6 months ago"`
+  is `-mtime -183`, because the agent's `find` is bfs, which rejects a relative date. `sota-shell-scripting`
+  rules/06 §2 now says to check `find` as well as `grep`, and §2f notes that macOS `sed` reads `\|`, `\+`
+  and `\?` as plain characters.
+- **Node 22 module hooks** (`sota-javascript-typescript` rules/04 §13): hooks registered from an `--import`
+  preload broke `require()` of an ES module on v22 (not on v24.22.3); register them from `--require`.
+- A field report from a vulnerability-discovery session, every claim labelled: `docs/ADOPTION-LOG.md` (2026-11-22).
 
 ## [1.58.0] - 2026-11-21
 
