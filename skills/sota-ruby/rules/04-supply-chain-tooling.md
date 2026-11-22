@@ -348,7 +348,7 @@ Run from repo root; verify each hit manually.
       `grep -rnE 'Oj\.load[[:space:](]|Erubi::Engine\.new' --include='*.rb' . | grep -vE 'mode:[[:space:]]*:strict|escape:[[:space:]]*true'`
 - [ ] **Lint posture** (§4) — `ls .rubocop.yml .standard.yml 2>/dev/null` ;
       `grep -rn "rubocop:disable Security" --include='*.rb' .` ;
-      `find . -name .rubocop_todo.yml -newermt "6 months ago" 2>/dev/null | head -1`
+      `find . -name .rubocop_todo.yml -mtime -183 2>/dev/null | head -1`
 - [ ] **Disables with no reason, stale-directive check off, cops switched off globally (§4) —
       LOW; MEDIUM for a `Security/*` or `Lint/*` cop** — first command prints each directive
       lacking a ` -- ` reason; second prints nothing when reasons are not enforced; third
