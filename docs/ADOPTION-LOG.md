@@ -10021,4 +10021,12 @@ loaded, and the same shapes found by looking for them elsewhere.
 | (awesome-security, awesome-pentest-cheat-sheets) | **rejected**: link lists with no technique to adopt; the second last pushed 2024-06-27 | — |
 | (operator-supplied security-auditing `SKILL.md`) | **rejected: already covered**; its hash-chain audit-log example is an unkeyed chain, which `sota-code-security` rules/18 l.19 names as the defect | — |
 
+**Corrections, 2026-11-22 (closure pass; rows above left as written).** Each checked against the session transcript or re-run:
+- The `podman build` network measurement ran at 2026-11-21 23:52 CET (transcript timestamp 22:52Z), not on 2026-11-22; `sota-sandboxing` rules/05 R7.4 now says 2026-11-21.
+- The `/dev/tcp` probe under dash was exposed by two probes giving contradictory answers, not by a positive-control arm.
+- The Mantis 75%/22% figure is rejected as a citation because it is one target with six runs per arm, self-reported: the reason recorded at intake, more specific than "not re-derivable here".
+- The reason given for rejecting Cloudflare's findings schema ("no audit here has failed on shape") is a judgement, not a measurement.
+- The operator-supplied skill's hash-chain example also raises `TypeError` as written (`asdict()` keeps an `Enum`, which `json.dumps` rejects), checked at intake with an equivalent snippet, not by running its code.
+- `sota-devsecops` rules/01 §1.5b says zizmor 1.32.0 was run on each shape; for `toJSON(secrets)` and `insecure-external-code-execution` that was written before it was run. Run in this pass on the committed fixtures: `overprovisioned-secrets` and `dependabot-execution` fire on `bad/`, neither on `good/`.
+
 ---

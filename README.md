@@ -546,7 +546,9 @@ because the same change added three more classes below):
   UNVERIFIABLE**, and any number one rests on is **re-measured this session**.
 - **Findings that don't survive contact** — every Critical/High gets an independent pass
   *prompted to kill it*, working from the code rather than the write-up and defaulting
-  to REFUTED when the evidence is ambiguous. Refutations are recorded, so the next
+  to REFUTED when the evidence is ambiguous — except where the adversary wrote the subject
+  (a hostile skill, an outside contributor's change to a gate), where ambiguity is the attack
+  and the finding ships as "needs verification". Refutations are recorded, so the next
   auditor doesn't re-raise them — and **swept before they're dropped**, because the
   refuted pattern routinely closes somewhere the audit's scope didn't cover. A severity
   also has to **name its chain** (reach → primitive → boundary crossing → channel), and
