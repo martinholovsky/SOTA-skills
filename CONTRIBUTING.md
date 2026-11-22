@@ -843,9 +843,12 @@ Adding a `skills/sota/rules/NN` file also touches the **library map** in `skills
 
 ### Dependency updates
 
-`.github/dependabot.yml` watches **`github-actions` only**. There is no pip or npm
-manifest here — the library is Markdown and every script is stdlib-only Python or
-POSIX shell — so Actions is the single third-party supply-chain surface.
+`.github/dependabot.yml` watches two surfaces. **`github-actions`** covers every `uses:`
+pin. **`pip` in `/scripts/ci`** covers the one CI tool installed from PyPI: zizmor,
+hash-pinned in `scripts/ci/zizmor-requirements.txt` (since 2026-11-22). There is no other
+pip or npm manifest: the library is Markdown and every script is stdlib-only Python or
+POSIX shell. Both entries carry a 7-day `cooldown`, the floor zizmor's
+`dependabot-cooldown` audit accepts (`sota-devsecops` rules/03 §3.7).
 
 Actions are pinned to **commit SHAs, not tags**, because a tag is mutable and a
 compromised upstream can move it (`sota-devsecops` rules/01). Dependabot handles SHA

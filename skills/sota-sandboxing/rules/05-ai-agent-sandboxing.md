@@ -408,7 +408,7 @@ the same.
 
 **R7.4 — Egress is on unless something turned it off.** A container run with no `--network` flag has full outbound access. That is often a deliberate choice — dependency resolution needs the registry — but it is the leg that converts
 "executed some of the target's code" into "exfiltrated the operator's credentials". Where the analysis genuinely needs the network, R4.1's FQDN allowlist is the form it should take; where it does not, `--network=none` is one flag and the whole chain stops.
-**A build is a run too:** `RUN` steps have the network by default (measured 2026-11-22, podman 5.8.9: a `RUN` reached an outside host until the build itself was given `--network=none`), so building a Dockerfile the target supplied or a model wrote
+**A build is a run too:** `RUN` steps have the network by default (measured 2026-11-21, podman 5.8.9: a `RUN` reached an outside host until the build itself was given `--network=none`), so building a Dockerfile the target supplied or a model wrote
 executes its code with egress before any `run` flag applies — pass `--network=none` to the build as well. Never use `apt-get update` as the egress probe: it exits 0 when every fetch failed (measured 2026-11-21, Debian image), so it passes with the network on or off.
 **A compose file the model wrote is rebuilt, not reviewed:** `network_mode: host`, `privileged`, `cap_add`, `devices`, `pid: host` and a bind mount of the socket or `$HOME` each undo every flag above, and reading for them is the check that misses one.
 Generate the file you run from an allowlist of keys and values and drop everything else.

@@ -354,7 +354,8 @@ Then four things a findings table cannot carry, and which are the point of this 
   a completed one are indistinguishable in a report.
 
 Before a Critical or High ships, try to kill it: re-read the code at the pinned commit rather
-than your own write-up, default to REFUTED where the evidence is ambiguous, and **sweep the
+than your own write-up, default to REFUTED where the evidence is ambiguous (unless the adversary
+wrote the subject: then an ambiguous finding ships as "needs verification"), and **sweep the
 pattern elsewhere either way** — a refuted finding routinely closes somewhere else, and that
 sweep is where the strongest finding usually comes from (`sota` router `rules/03` §4).
 
