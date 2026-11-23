@@ -4,7 +4,8 @@ or whose `set -- $scalar` zsh would not split, and (2026-10-27) four more bash h
 a variable named `path`/`status`, a spaced literal expanded unquoted as arguments, `PIPESTATUS`/
 `BASH_REMATCH`, and a `git grep` regex escape the platform reads as a plain letter (since 2026-11-21
 also `git log -G`, `git log -E --grep`, `git diff -G`, behind a precommand or inside a local `bash -c`;
-measured: 5 new refusals over 43,731 recorded calls, all real).
+measured: 5 new refusals over 43,731 recorded calls, all real), and (2026-11-22) an unbraced
+`$name:` before a modifier letter (`$c:libs/x` lowercases `$c`).
 A Claude Code PreToolUse hook on Bash, ON by default since 2026-10-21 (operator decision, ADOPTION-LOG):
 the plugin registers it (hooks/hooks.json) and install.sh's routing setup offers it.
 
@@ -46,6 +47,8 @@ its joined result; the ADOPTION-LOG 2026-10-27 rows carry the method and the exa
     unquoted as an argument or a `for … in` list (`C="--a x"; cmd $C`): zsh passes ONE word.
     Deliberately narrow (`cmd $file` is usually right): not `echo`/`print`/`[`/`test`/declarations,
     not `${=C}`, `"$C"`, or a name reassigned or assigned an array. 9 hits, 9 real (rules/06 §1).
+    Since 2026-11-23 a double-quoted value counts when a space survives outside its expansions
+    (`S="-o A=1 -i $HOME/k"; ssh $S`); before, any `$` exempted it. 3 more hits over 44,179 calls, 3 real.
   - `$PIPESTATUS`, `${PIPESTATUS[n]}`, `$BASH_REMATCH`, `${BASH_REMATCH[n]}`, unquoted or in double
     quotes: unset in zsh, so empty. Exempt: single quotes (`bash -c '…'`), `\$`, a `:-` fallback
     (`${pipestatus[1]:-$PIPESTATUS}`), and BASH_REMATCH after `setopt bash_rematch`. 8 hits, 8 real
@@ -77,6 +80,16 @@ a `noglob` command, and a command that sets `nonomatch`/`nullglob`. MEASURED ove
 local agent Bash calls (labels written first; data git-ignored): 159 such words, every one that
 zsh reached aborted (123 of 123; the other 36 sat after an abort in the same command). A glob
 OPERAND (`ls *.md`) was measured too and is NOT refused: only 187 of 4,632 aborted.
+
+ALSO FLAGS (2026-11-22, a field report's F3): an unbraced `$name:` followed by a zsh modifier letter
+(`a A c e h l P q Q r s t u`, measured over all 52 ASCII letters in zsh 5.9) and then another letter,
+unquoted or in double quotes: `git show $c:libs/x` reads `$c:l` (lowercase) + `ibs/x`, `$SP:ro`
+applies `:r`, `$rev:skills` is `:s` with `k` as delimiter (`bad substitution`), `$ref:container` is
+`:c` (a PATH search). Exempt: `${c}:`, single quotes, `\$`, a digit or `$` after the colon (`$h:8080`,
+`$a:$b`), and the deliberate idioms `$f:t`, `$f:t:r`, `$v:s/a/b/` (no second letter). MEASURED over
+44,718 unique local agent Bash calls in 500 transcripts, each hit read against its result: 11 hits in
+8 transcripts, 10 real (4 `bad substitution`, 4 a mangled revision git rejected, 1 silent zero, 1
+dropped mount option) and 1 a deliberate reproduction of this trap.
 
 ONLY UNDER zsh: it works out the shell Claude Code runs Bash commands in the way Claude Code does
 (CLAUDE_CODE_SHELL, then $SHELL, then the first zsh or bash on PATH; see agent_shell) and acts only
@@ -123,6 +136,18 @@ DECLARE = {"local", "typeset", "declare", "export", "readonly", "integer", "floa
 READ_VALUE_OPTS = set("dupitnNk")
 # bash-only variables that zsh leaves unset: `${pipestatus[1]}` and `$match` are the zsh names
 BASH_VARS = re.compile(r"\$\{?(PIPESTATUS|BASH_REMATCH)(?![A-Za-z0-9_])")
+# An unbraced `$name:` before a letter zsh reads as a history-style MODIFIER (2026-11-22). Measured
+# zsh 5.9: of the 52 ASCII letters, `a A c e h l P q Q r s t u` were consumed (`$v:lzz` printed `/a/b.czz`,
+# `$v:szz` errored), every other letter stayed literal. Only a modifier letter FOLLOWED BY ANOTHER
+# LETTER is flagged: `$c:libs` (`:l`), `$SP:ro` (`:r`), `$rev:skills` (`:s`), which is the shape of
+# every corpus hit, while the deliberate idioms `$f:t`, `$f:t:r` and `$v:s/a/b/` stay allowed.
+MODIFIER_REF = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*):([aAcehlPqQrstu][A-Za-z]+)")
+# The expansions inside a double-quoted value (2026-11-23, a field report's F3): a value is SPACED when a
+# space survives once these are removed. `"-o A=1 -i $HOME/k -p 22"` keeps its literal spaces and zsh
+# passes it as ONE word all the same; before this, any `$` or backtick in the value exempted it.
+# `"$(cmd a b)"`, `"$x"` and `"${x}"` stay exempt: their only spaces, if any, are inside an expansion,
+# whose value this lexer cannot know. Replayed over 44,179 local Bash calls: 3 new hits, all real.
+EXPANSION = re.compile(r"\\.|\$\{[^}]*\}|\$\((?:[^()]|\([^()]*\))*\)|`[^`]*`|\$[A-Za-z_][A-Za-z0-9_]*|\$[0-9#?@*$!-]")
 # The escapes `git grep` patterns silently fail on, measured 2026-10-27 over a file holding
 # `foo 53 bar`: on macOS (git 2.55.0, system regex) every one of these matches nothing under -E and
 # matches under the default BRE; on Debian (git 2.47.3, glibc) only `\d`/`\D` fail, under -E and BRE.
@@ -309,6 +334,35 @@ def _bash_vars(word):
             if m and not word.endswith((":-", ":="), 0, i):
                 end = word.find("}", i) + 1 if m.group(0).startswith("${") else m.end()
                 out.append(word[i:end or m.end()])
+        i += 1
+    return out
+
+
+def _modifier_refs(word):
+    """Unbraced `$name:<modifier letter><letter>…` zsh would expand in this raw word: unquoted or
+    inside double quotes, not escaped, not in single quotes (a `$( )` inside "" is lexed on its own)."""
+    out, i, dq = [], 0, False
+    while i < len(word):
+        c = word[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c == "'" and not dq:
+            j = word.find("'", i + 1)
+            i = len(word) if j < 0 else j + 1
+            continue
+        if c == '"':
+            dq, i = not dq, i + 1
+            continue
+        if c == "$" and word.startswith("$(", i) and not word.startswith("$((", i):
+            i = _skip_cmdsub(word, i + 2)
+            continue
+        if c == "$":
+            m = MODIFIER_REF.match(word, i)
+            if m:
+                out.append(m.group(0))
+                i = m.end()
+                continue
         i += 1
     return out
 
@@ -540,7 +594,7 @@ def _analyze(words, st, hits):
     for name, val in assigns:
         q = val[:1]
         if q in "'\"" and len(val) > 1 and val.endswith(q) and " " in val and \
-                not (q == '"' and ("$" in val or "`" in val)):
+                not (q == '"' and " " not in EXPANSION.sub("", val[1:-1])):
             st["spaced"].add(name)
         else:
             st["spaced"].discard(name)
@@ -569,7 +623,7 @@ def _set_split(words, arrays):
     return out
 
 
-CHECKS = ("equals", "split", "special", "argv", "bashvar", "gitgrep", "cmdsub", "nomatch")
+CHECKS = ("equals", "split", "special", "argv", "bashvar", "gitgrep", "cmdsub", "nomatch", "modifier")
 
 
 def _lex(cmd, darwin=None):
@@ -649,6 +703,7 @@ def _lex(cmd, darwin=None):
                 words.append(word)
             hits["bashvar"].extend(v for v in _bash_vars(word)
                                    if not (rematch_on and "BASH_REMATCH" in v))
+            hits["modifier"].extend(_modifier_refs(word))
             for inner in subs:
                 sub(inner)
             if word == "case":
@@ -771,9 +826,21 @@ def nomatch_reason(hits):
     )
 
 
+def modifier_reason(hits):
+    shown = ", ".join(f"`{w}`" for w in hits[:5])
+    return (
+        f"zsh modifier: {shown}. In zsh an unbraced `$name:` followed by a letter is a modifier, "
+        "even inside double quotes: `c=abc; echo $c:libs/x` prints `abcibs/x` (`:l`, lowercase), "
+        "`$SP:ro` drops the colon (`:r`), `$rev:skills` is `:s` with `k` as its delimiter (`bad "
+        "substitution`). The command then reads a path that does not exist, and a `2>/dev/null` "
+        "turns that into a silent zero. Brace the name: `\"${c}:libs/x\"`. Not run. "
+        "(sota-shell-scripting rules/06 §1, the unbraced `$var:` row; this hook: scripts/zsh-equals-hook.py)"
+    )
+
+
 REASONS = {"equals": reason, "split": split_reason, "special": special_reason, "argv": argv_reason,
            "bashvar": bashvar_reason, "gitgrep": gitgrep_reason, "cmdsub": cmdsub_reason,
-           "nomatch": nomatch_reason}
+           "nomatch": nomatch_reason, "modifier": modifier_reason}
 
 
 def active():
@@ -902,6 +969,12 @@ TRAP_CASES = [
     ("special", "cat <<'E' >/dev/null\nfor path in x\nE\nls / >/dev/null && echo AFTER", [], "AFTER"),
     ("special", "bash -c 'for path in a; do :; done; ls / >/dev/null' && echo AFTER", [], "AFTER"),
     ("argv", N + 'T="a b"; n $T', [("n", "$T")], "N=1"),
+    # 2026-11-23: a literal space beside an expansion is still a spaced value; a space only inside one is not
+    ("argv", N + 'T="-o A=1 -i $HOME/k -p 22"; n $T', [("n", "$T")], "N=1"),
+    ("argv", 'D=/tmp/x; Q="echo hi $D"; $Q', [("(as the command)", "$Q")], "!hi /tmp/x"),
+    ("argv", N + 'T="$(echo a b)"; n $T', [], "N=1"),
+    ("argv", N + 'a=x; T="$a"; n $T', [], "N=1"),
+    ("argv", N + 'a=x; T="${a}"; n $T', [], "N=1"),
     ("argv", N + "T='-x -y'; n ${T}", [("n", "${T}")], "N=1"),
     ("argv", 'T="a b"; c=0; for x in $T; do c=$((c+1)); done; echo N=$c', [("for", "$T")], "N=1"),
     ("argv", N + 'T="a b"; n ${=T}', [], "N=2"),
@@ -947,6 +1020,22 @@ TRAP_CASES = [
     ("nomatch", "setopt nonomatch; printf '%s\\n' --include=*.zzqq", [], "--include=*.zzqq"),
     ("nomatch", "case --x=1 in --x=*) echo C;; esac", [], "C"),
     ("nomatch", "[[ --x=1 == --x=* ]] && echo M", [], "M"),
+    # modifier (2026-11-22): a flagged word is rewritten (or aborts) in real zsh, so the literal
+    # line never prints; an exempt one prints what bash would
+    ("modifier", 'c=abc; echo "r=$c:libs/x"', ["$c:libs"], "!r=abc:libs/x"),
+    ("modifier", "SP=/a/b; echo v=$SP:ro", ["$SP:ro"], "!v=/a/b:ro"),
+    ("modifier", 'r=HEAD; echo "p=$r:scripts/x"', ["$r:scripts"], "!p=HEAD:scripts/x"),
+    ("modifier", 'd=/tmp/b; echo "p=$d:home"', ["$d:home"], "!p=/tmp/b:home"),
+    ("modifier", 'c=abc; echo "r=${c}:libs/x"', [], "r=abc:libs/x"),
+    ("modifier", "h=host; echo u=$h:8080", [], "u=host:8080"),
+    ("modifier", "a=x; b=y; echo u=$a:$b", [], "u=x:y"),
+    ("modifier", "f=/a/b.c; echo t=$f:t", [], "t=b.c"),
+    ("modifier", "f=/a/b.c; echo t=$f:t:r", [], "t=b"),
+    ("modifier", "v=aXb; echo r=$v:s/X/-/", [], "r=a-b"),
+    ("modifier", "c=abc; echo 'r=$c:libs'", [], "r=$c:libs"),
+    ("modifier", 'c=abc; echo "r=\\$c:libs"', [], "r=$c:libs"),
+    ("modifier", "bash -c 'c=abc; echo r=$c:libs'", [], "r=abc:libs"),
+    ("modifier", "v=ab; echo r=$v:xyz", [], "r=ab:xyz"),
     ("nomatch", "a=--include=*.zzqq; echo OK", [], "OK"),
     ("nomatch", "printf '%s\\n' --rc=$?", [], "--rc=0"),
     ("nomatch", "ls /zz*qq-none 2>/dev/null; echo AFTER", [], "AFTER"),   # an operand: measured, not refused
@@ -1203,6 +1292,8 @@ def check(paths):
             print(f"{path}: for … in {w} (assigned from $(…); zsh loops once)")
         for w in h["nomatch"]:
             print(f"{path}: {w} (unquoted glob in a flag value; zsh aborts: no matches found)")
+        for w in h["modifier"]:
+            print(f"{path}: {w} (zsh reads `:<letter>` as a modifier; brace the name)")
         if any(h.values()):
             rc = 1
     print(f"checked {len(paths)} file(s), {total} bytes: {'HITS' if rc else 'clean'}")

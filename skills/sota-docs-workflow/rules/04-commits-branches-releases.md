@@ -21,6 +21,12 @@ for those four operations.
 - **Don't commit what the build produces or the developer machine leaks**:
   artifacts, `.env`, editor droppings — enforce via `.gitignore` + pre-commit
   secret scanning (deeper treatment: [`sota-secrets-management`](../../sota-secrets-management/SKILL.md)).
+- **Stage by path while anything else writes into the tree.** `git add -A` stages whatever a
+  background job, a watcher or another agent has half-written at that moment, and the commit
+  carries it under an unrelated message. Field-reported 2026-11-22: a docs commit took a
+  running model pilot's partial result files, and the records ended up split across two
+  unrelated commits. Name the paths (`git add docs/design.md CHANGELOG.md`), then read
+  `git diff --cached --stat` before committing.
 
 ## §2 Commit messages and Conventional Commits
 
@@ -154,7 +160,7 @@ you're actually running.
 ## Audit checklist
 
 - [ ] History bisects: sampled main-branch commits build and pass tests; no WIP/broken commits on main (§1).
-- [ ] Commits are atomic — one logical change with its tests; mechanical changes isolated (and in `.git-blame-ignore-revs` where repo-wide); no build artifacts, `.env` or editor droppings tracked, kept out by `.gitignore` + pre-commit secret scanning (§1).
+- [ ] Commits are atomic — one logical change with its tests; mechanical changes isolated (and in `.git-blame-ignore-revs` where repo-wide); no build artifacts, `.env` or editor droppings tracked, kept out by `.gitignore` + pre-commit secret scanning; staged by path, not `git add -A`, while a background job writes into the tree (§1).
 - [ ] Subjects imperative, ≤72 chars, no trailing period; bodies on non-trivial commits explain why and link issues/incidents; sampled `git log` is readable as a narrative (§2).
 - [ ] If Conventional Commits: enforced by commitlint/PR-title check, types honest, and an automation pipeline actually consumes them; if not adopted, no half-applied `feat:` cargo-culting (§2).
 - [ ] Branches are short-lived (check age of open branches); no zombie long-lived feature branches; flags used for incomplete work (§3).

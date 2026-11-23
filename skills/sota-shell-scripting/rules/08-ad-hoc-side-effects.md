@@ -88,6 +88,26 @@ broken. **Say so before launching crash reproductions**, and attribute a report 
 launch time against the script's modification time (`stat -f '%Sm' -t '%H:%M:%S' <script>` on macOS,
 `stat -c %y` on Linux) and its stack against the script's last statement.
 
+## 3c. A symlink to a directory redirects `mv`, `ln -s` and `rm -r link/` into its target
+
+A path that "should not exist yet" is often a symlink an earlier session made. Then the command
+acts on the directory it points at, not on the name you typed. Measured 2026-11-23 with `link → real`,
+on macOS (BSD `mv`/`ln`/`rm`) and GNU coreutils 9.7 (Debian container):
+
+| Command | What happened |
+|---|---|
+| `mv src link` | `src` moved **into** `real/` (`real/src`), on both |
+| `ln -s other link` | the new link was created **inside** `real/` (`real/other`), on both; `ln -sfn other link` replaced the link |
+| `rm -r link/` (trailing slash) | macOS deleted **`real` itself** at exit 0, leaving `link` dangling; GNU deleted `real`'s **contents**, then refused the link (`Not a directory`, exit 1) |
+| `rm -r link` (no slash) | only the link went, on both |
+
+Before any `mv`, `ln`, `cp` or `rm` on a path that may already exist, run `ls -ld -- <path>` and
+`readlink -- <path>` on the source **and** the destination. Replace a link with `ln -sfn`, remove
+one by naming it without a trailing slash, and copy, compare and count before deleting the only
+real folder. Field-reported 2026-11-23: a "move the agent memory into the repository" step ran `mv`
+onto a path that was already a symlink, and the `rm -r` that followed deleted the only real copy of
+a project's notes ([`sota-docs-workflow` rules/06](../../sota-docs-workflow/rules/06-where-project-data-lives.md) §4).
+
 ## 4. The loop you left running exhausts the process table — and takes cleanup with it
 
 §3 is about a command that writes too much. This is the same idea aimed at a resource
@@ -228,6 +248,9 @@ handed-over line like `# then; kubectl delete …` **runs the delete** in a stoc
 
 ## Audit checklist
 
+- [ ] **No `mv`, `ln -s` or `rm -r` acts on a path that may be a symlink to a directory without
+      checking it first** (§3c): `ls -ld --` and `readlink --` were run on source and destination;
+      links are replaced with `ln -sfn` and removed without a trailing slash.
 - [ ] **Crash reproductions announced, and their artifacts attributed** (§3b): before a session
       runs programs that abort on purpose, the operator is told that crash reports will appear
       (`ls -lt ~/Library/Logs/DiagnosticReports/ | head`, `coredumpctl list`). A report found

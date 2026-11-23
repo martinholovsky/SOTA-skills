@@ -40,7 +40,10 @@ say so explicitly** — that is a valid answer, but it is also a claim, so it me
   line's wording) rather than the data's own spelling — field-reported 2026-10-24: `r_terse`
   in the tracker, `terse` in the data, and "the first live run" committed over an earlier one;
 - anything the user corrected you on, including corrections you accepted in passing;
-- any "should work", "that's fixed", "done" not followed by output.
+- any "should work", "that's fixed", "done" not followed by output;
+- any summary of a delegated report: a subagent's "not determined" collapses into your "every"
+  (field-reported 2026-11-23: "every runtime's API auth is off by default or partial", where one
+  of three runtimes was undetermined). Re-read the agent's own words before keeping the quantifier.
 
 **Then find where the claim went.** A wrong claim does not stay where you said it. It gets
 written into a commit message, a doc sentence, a code comment, a ledger row, a memory file, a
@@ -161,7 +164,8 @@ A number carried forward from earlier in the session is recall, and recall is th
 pass exists to compensate for.
 
 - **Count, do not compute.** "43 files, so 41 after the two deletions" is arithmetic on a
-  remembered 43.
+  remembered 43. Nor is a difference of two totals a count of the items that changed: "16 vs
+  8 blocked" is not "8 flipped". Count the transitions each way.
 - **Two derivations that disagree are a finding, not rounding.** Reconcile to a named cause
   before reporting either number — and note that the fix for one can silently change the
   population the other counted. (Measured here: 330 vs 339 merged PRs reconciled to a wrong
@@ -200,7 +204,7 @@ reach the defect is green and proves nothing — report the depth it actually re
 
 ## 6. Commit the evidence, then confirm it landed
 
-Three guards before anything is written:
+Four guards before anything is written:
 
 - **Is this repo yours to commit to?** On an upstream you do not own, a diff against a tracked
   file rides on every branch cut from it, into every later PR. Ask first, and keep agent
@@ -211,6 +215,12 @@ Three guards before anything is written:
 - **Do not commit private files.** Read `git status --porcelain` and the staged list by eye;
   never `git add -A` blind. Reports, transcripts, `*.local.*`, anything carrying a hostname,
   a customer, or a credential stays out.
+- **Move what you keep out of ephemeral space first.** Anything in the scratchpad, `/tmp` or
+  `$TMPDIR` that a commit, doc or result will cite, or that the next session needs, goes to the
+  project's declared tracked or kept-not-committed place (read `sota-docs-workflow` rules/06 if the
+  project declares none). Then
+  search the staged diff and the message for scratchpad and temp paths; a hit is a citation of
+  something that will vanish.
 
 The message carries the **evidence**, not a description of the change — the diff already
 describes the change:

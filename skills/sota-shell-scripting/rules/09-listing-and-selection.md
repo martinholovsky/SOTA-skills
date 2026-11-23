@@ -130,6 +130,16 @@ default". Each of the three is the correct answer to a question nobody asked.
   unused high port rather than a conventional alternative such as 2222 or 8022, which another
   VM may already hold. The remote-host side of trust on first use is
   [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md).
+- **A health probe on a port answers for whoever holds it, so a server that failed to bind
+  passes it.** Field-reported 2026-11-22: a second gateway was launched on a port the host's own
+  nginx already held. The server failed to bind and exited during warm-up. `/readyz` returned 200
+  through nginx from the session's *other* gateway, a read-back of the launched PID passed while it
+  was still alive, and a "positive control" (a request expected to be refused) passed too, because
+  the other gateway refused it as well. `ss -lptn` then named nginx on the port and the launched PID
+  gone. After warm-up, check that the port's owner (`ss -lptn 'sport = :PORT'`,
+  `lsof -nP -iTCP:<port> -sTCP:LISTEN`) is your PID. Make the positive control one whose outcome
+  only your server can produce, such as a log line only it writes or a config value only it carries
+  ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §5).
 
 ## 5b. A filter that drops the file you named
 
@@ -216,14 +226,65 @@ file, or the port's owner (`ss -lptn 'sport = :PORT'`, `lsof -ti :PORT`). If you
 print the list with PIDs and PPIDs first (`ps -axo pid=,ppid=,command=`). Drop your own `$$`,
 your ancestors, and anything whose command line is your own command. Then act on PIDs.
 
+**`$!` names what `&` put in the background, and after a list that is not your command in bash.**
+In `cd dir && cmd &`, the whole `&&` list is the background job. bash runs it in a subshell, so
+`$!` is that bash and `cmd` is its child; zsh returns `cmd` itself. Measured 2026-11-23 with
+`cd /tmp && true && sleep 7 &`: bash 3.2.57 and 5.3.15 gave a `bash` PID whose child was the
+`sleep`, and zsh 5.9 gave the `sleep`. A field session recorded such a PID over `ssh` (a bash
+remote shell), read `/proc/<pid>/environ` for a variable set on the command, and found nothing,
+because the assignment lives in the child (field-reported 2026-11-22). Background the command
+alone, `cd dir && { cmd & echo $! > pid; }`, which gave the `sleep` in all three shells. Or confirm
+that the PID owns the port before acting on it.
+
+## 5d. A watch waits for the members it can see, and an empty population is already done
+
+A watch or wait command reads its population when it starts. If nothing has registered yet,
+it has nothing to wait for and returns at once.
+`gh pr checks <pr> --watch` on a PR whose CI has not registered a check returns immediately
+with `no checks reported on the '<branch>' branch` and **exit 1** (gh 2.103.2: in
+`pkg/cmd/pr/checks/checks.go` the empty set is an error raised before the watch loop starts;
+measured 2026-11-23 on a public PR with no checks). The loop then ends as soon as nothing *it
+has seen* is pending, so a workflow that registers later is not waited for. A field session
+saw a watch return with a check still `pending` (field-reported 2026-11-22).
+
+- **Under `>/dev/null 2>&1; next-command` the empty case is invisible.** It reads as a watch
+  that finished. The same session ran 13 watches that way and caught the empty one only
+  because it read the buckets separately.
+- **`mergeStateStatus` `CLEAN` is not evidence that a check ran.** It read `CLEAN` on a PR with
+  zero checks, both in that session and on the public PR above. It reports what the merge
+  requires, not what ran.
+- **Wait for the population you expect, with a bound, then take the verdict from a separate
+  read.** `want` is the number of check runs a merged PR of this repo shows:
+
+```bash
+want=10; n=0
+for i in $(seq 1 60); do           # 60 x 10 s: a CI that never starts is a failure, not a hang
+  n=$(gh pr checks "$pr" --json name --jq length 2>/dev/null) || n=0
+  [ "${n:-0}" -ge "$want" ] && break
+  sleep 10
+done
+[ "${n:-0}" -ge "$want" ] || { echo "only ${n:-0} of $want checks registered" >&2; exit 1; }
+gh pr checks "$pr" --watch --interval 15 >/dev/null 2>&1
+gh pr checks "$pr" --json name,bucket --jq '.[] | "\(.bucket) \(.name)"'   # the verdict
+```
+
+Measured 2026-11-23 under bash and zsh: with all 10 checks done it printed `10 pass` at exit 0;
+on the PR with none it printed `only 0 of 1 checks registered` at exit 1.
+
 ## Audit checklist
 
+- [ ] **Does a merge, release or deploy step trust a watch's return?** (§5d) A
+      `gh pr checks --watch` that ran before CI registered a check exits 1 at once, and one that
+      ran before a later workflow registered returns with that workflow unseen. Discarding its
+      output and chaining with `;` makes both look finished, and `mergeStateStatus` `CLEAN`
+      holds with zero checks. Wait for the expected number of checks with a bound, then read
+      the buckets in a separate command.
 - [ ] **Does any kill or wait select processes by command-line substring?** (§5c) This means
       `pkill -f`, `pgrep -f`, `ps … | grep`, or a loop over `/proc/*/cmdline`. Each one
       matches the selecting shell, and in an agent harness or under `ssh host '…'` its parent
       too, whenever the plain pattern appears in their argv. Sweep for the shape with
       `grep -nE '(pkill|pgrep) -f|/proc/\*/cmdline|ps [^|]*\| *grep' <file>`, and act on PIDs taken
-      from `$!`, a PID file or a port. The same selection also misses a target whose argv[0]
+      from `$!` (of a lone command: after `a && cmd &`, bash's `$!` is a subshell), a PID file or a port. The same selection also misses a target whose argv[0]
       was rewritten (framework Python, `exec -a`), so an empty result never means "not running".
 
 - [ ] **A search filter next to a named file** (§5b): does any `grep` command combine
@@ -236,7 +297,7 @@ your ancestors, and anything whose command line is your own command. Then act on
       is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is
       not *blocks freed*, *not backing a running container* is not *reclaimable*, *a pod
       matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`), *the
-      process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), *a
+      process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), *a health probe on a port* is not *the server you just started* (check the port's owner after warm-up), *a
       path* is not *the volume* (`pwd -P`), a *prefix glob* is not *this name* (`X_*` matches `X_other_*`), and a
       *remote-tracking ref* is not *the remote* (`git ls-remote --heads`, not `%(upstream:track)`), and a *bare date* is not *midnight* (`git log --since=YYYY-MM-DD` takes the current clock time: write `'YYYY-MM-DD 00:00'` or a commit range), and a *distinct key* is not *a distinct line* (`sort -u -k…` keeps one line per key: dedupe with `sort -k… | uniq`, never with `-s`). Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to

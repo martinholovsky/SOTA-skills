@@ -54,7 +54,12 @@ rubric (data / model / infra / monitoring tests) is the backbone.
 - A **quantised, pruned or distilled** artifact is a new model. It passes the
   same quality, safety and slice suite, run against the compressed binary
   itself, before it deploys; results measured on the full-precision parent do
-  not carry over. OWASP: AISVS 3.2.2.
+  not carry over. OWASP: AISVS 3.2.2. **So is the same artifact at reduced precision on a
+  different device.** bf16 CPU and CUDA kernels round differently, so verdicts near a
+  threshold move. Field-reported 2026-11-22: a detector with identical model revisions and
+  `dtype: bfloat16` disagreed between CPU and CUDA on 2 of 21 cases, deterministically (a score
+  of 0.3966 against 0.5701 at a 0.5312 threshold), while both devices agreed 21/21 in float32.
+  Compare per case on the device you deploy on, or in float32, before calling two runs equal.
 - A model that can't pass the gate doesn't get promoted — no manual override
   without sign-off. Missing a validation gate is HIGH.
 - **Fit an operating threshold on held-out or out-of-fold scores, never on the rows

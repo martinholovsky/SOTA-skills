@@ -11,6 +11,13 @@ rules) gets an id: `<rules-file stem>#<sha1 of the normalised probe text, 10 hex
 live in scripts/probe-fixtures/<skill>/<rules-file stem>/<hash>/ as two directories:
   bad/   a minimal tree the probe must flag   -> stdout must be NON-empty
   good/  a near-miss the probe must not flag  -> stdout must be empty
+Two optional directories record what the probe is KNOWN to get wrong, as executable cases rather
+than prose (Semgrep's `todoruleid`/`todook`, intake 2026-11-22):
+  todo-bad/  a defect the probe misses today        -> stdout must still be EMPTY
+  todo-ok/   a correct tree the probe flags today   -> stdout must still be NON-empty
+They never fail while the limitation holds. The day one stops holding (the probe now catches its
+known miss, or stops flagging its known false hit), F6 fails until the case is promoted to bad/ or
+good/: a fixed blind spot is recorded, never silently forgotten.
 An optional `.expect` file in either directory replaces that rule with an exact expected stdout
 (for probes that always print, e.g. a count). The probe runs under bash with the case directory as
 its working directory; `<placeholder>`s become the file `empty`, which a fixture may provide. Exit
@@ -22,6 +29,7 @@ THE RATCHET. scripts/probe-fixture-baseline.json lists runnable probes that have
   F3  a baseline entry that now has fixtures, or whose probe no longer exists  (--tighten)
   F4  a fixture directory whose probe no longer exists: the probe was edited, so re-prove it
   F5  the baseline grew against the merge base
+  F6  a todo-bad/ the probe now catches, or a todo-ok/ it no longer flags: promote the case
 Because the id hashes the probe text, editing a probe orphans its fixture (F4) and, if the new
 text is unproven, raises F1 — an edited probe is re-proven, never grandfathered.
 
@@ -120,6 +128,20 @@ def check_case(span, case_dir, want_output):
     return None
 
 
+TODO_CASES = (("todo-bad", True, "known miss", "bad"), ("todo-ok", False, "known false flag", "good"))
+
+
+def check_todo(span, case_dir, want_output):
+    """None while the documented limitation still holds; "promote" when it no longer does;
+    any other string is a harness failure (rc 2), which fails like a bad/good case would."""
+    why = check_case(span, case_dir, want_output)
+    if why is None:
+        return "promote"
+    if why.startswith("rc "):
+        return why
+    return None
+
+
 def fixture_ids():
     out = set()
     for root, dirs, _ in os.walk(FIX):
@@ -160,6 +182,7 @@ def check(run=True):
         print("FAIL: %s missing — the ratchet has nothing to compare against" % BASELINE)
         return 1
     bad = []
+    todo = 0
     for pid, (f, span) in sorted(probes.items()):
         if pid in have:
             if not run:
@@ -168,6 +191,17 @@ def check(run=True):
             for case, want in (("bad", True), ("good", False)):
                 why = check_case(span, os.path.join(d, case), want)
                 if why:
+                    bad.append("F2 %s %s: %s — %s" % (pid, case, why, span[:90]))
+            for case, want, what, dest in TODO_CASES:
+                cd = os.path.join(d, case)
+                if not os.path.isdir(cd):
+                    continue
+                todo += 1
+                why = check_todo(span, cd, want)
+                if why == "promote":
+                    bad.append("F6 %s %s: the probe no longer shows its documented %s — move the case to %s/"
+                               % (pid, case, what, dest))
+                elif why:
                     bad.append("F2 %s %s: %s — %s" % (pid, case, why, span[:90]))
         elif pid not in base:
             bad.append("F1 %s (%s): a probe with no fixtures — add %s/{bad,good}/ — %s"
@@ -192,6 +226,8 @@ def check(run=True):
     print("    ok (%d runnable probes: %d with fixtures%s, %d baselined unproven; growth %s)"
           % (len(probes), proven, " (all pass)" if run else " (structure only; CI runs them)", len(base),
              "checked against the merge base" if mb is not None else "not checked"))
+    if run:
+        print("    %d documented limitation case(s) (todo-bad/, todo-ok/) still hold" % todo)
     return 0
 
 
@@ -267,6 +303,30 @@ def self_test():
             fh.write("_authToken=literal\n")
         if check_case("grep -n '_authToken=[^$]' ~/.npmrc", b, True) is not None:
             fails += 1; print("FAIL ~ did not resolve to the case directory")
+    # todo-bad/: a known miss holds (None), a caught one asks for promotion, an rc 2 is a failure
+    with tempfile.TemporaryDirectory() as d:
+        miss = os.path.join(d, "todo-bad"); os.makedirs(miss)
+        with open(os.path.join(miss, "a.py"), "w") as fh:
+            fh.write("ev" + "al (x)\n")            # a spacing the probe does not match
+        span = "grep -rn 'eval(' --include='*.py' ."
+        if check_todo(span, miss, True) is not None:
+            fails += 1; print("FAIL a todo-bad the probe still misses was not accepted")
+        with open(os.path.join(miss, "b.py"), "w") as fh:
+            fh.write("eval(x)\n")
+        if check_todo(span, miss, True) != "promote":
+            fails += 1; print("FAIL a todo-bad the probe now catches did not ask for promotion")
+        if not (check_todo("grep -rnE '(' .", miss, True) or "").startswith("rc "):
+            fails += 1; print("FAIL an rc-2 probe passed as a todo case")
+        flag = os.path.join(d, "todo-ok"); os.makedirs(flag)
+        with open(os.path.join(flag, "a.py"), "w") as fh:
+            fh.write("# eval(x) in a comment\n")      # correct code the probe flags
+        if check_todo(span, flag, False) is not None:
+            fails += 1; print("FAIL a todo-ok the probe still flags was not accepted")
+        os.remove(os.path.join(flag, "a.py"))
+        with open(os.path.join(flag, "a.py"), "w") as fh:
+            fh.write("x = 1\n")
+        if check_todo(span, flag, False) != "promote":
+            fails += 1; print("FAIL a todo-ok the probe no longer flags did not ask for promotion")
     # a span keeps the spaces inside a line: Gemfile.lock indents a locked gem by exactly four
     if ccp.probes_in("x\n## Audit checklist\n- `grep -nE '^    json \\(' Gemfile.lock`\n") != ["grep -nE '^    json \\(' Gemfile.lock"]:
         fails += 1; print("FAIL probes_in() collapsed the spaces inside a probe")
