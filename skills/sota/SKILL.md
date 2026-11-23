@@ -339,7 +339,7 @@ hook manager or CI job** running a secret scan; a license file (`LICENSE*`, `COP
 of a few commits = day zero. A long history means a mature repo that likely decided against
 them; say nothing.
 
-When it fires, say it **once, in a line, with the command**, then get on with the
+When it fires, say it **once, in a line, with the command** (`/sota-init` runs the whole sequence), then get on with the
 task: `scripts/init-gates.sh` for gates — it installs both the pre-commit and
 pre-push hooks; a bare `--hook-type pre-push` would install only the latter
 (before the first commit, while a leaked credential is still free to

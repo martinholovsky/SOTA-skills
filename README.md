@@ -76,12 +76,13 @@ stack comes from your profile or the skills' defaults (naming one is optional):
 
 More install options: [Installation](#installation) · more prompts: [Using it](#using-it).
 
-**Six slash commands ship with the library** — four bracket a working session, one is the heavy
-escalation, and `/sota-auto` works through the open items unattended. `scripts/install.sh` links them into `~/.claude/commands/`, so they work
+**Seven slash commands ship with the library** — `/sota-init` sets a repository up once, four bracket a
+working session, one is the heavy escalation, and `/sota-auto` works through the open items unattended. `scripts/install.sh` links them into `~/.claude/commands/`, so they work
 in **any** project, not just this one:
 
 | | When | What it does |
 |---|---|---|
+| **`/sota-init`** | **once**, in a new repo or one the library has not been applied to | Inventories what exists (licence, `.gitignore`, secret scanning, gates, agent file, where project data lives), agrees a plan, then **adds only what is missing**: never overwrites a file, never chooses your licence, creates conditional docs only when their trigger fires, and ends in **one commit `git revert` undoes** |
 | **`/sota-resume`** | **start** of a session | Finds the open work — every tracker, checkbox and `TODO` marker, swept with a **controlled** search — classifies it (ready · needs a decision · deferred · not an item · **already done and never ticked off, or made unnecessary by a control that already covers the gap**), shows you the table, then executes what you agree to against the project's own CI. |
 | **`/sota-auto`** | **unattended**, e.g. overnight | `/sota-resume`'s inventory without the stop: decides what is reversible, **queues** what is not (merges, releases, deletes, anything outside the repo, spend without a `budget=`), never waits on you, and ends with a **report of every decision taken on your behalf** (security decisions first), each with how to reverse it |
 | **`/sota-close`** | **end** of a session | The closure pass: **retract first**, record open items where the next session will trip over them, update what the session made false, **re-derive every number from its source**, say what is not done and blocked on whom, then commit the evidence. |
@@ -1246,6 +1247,7 @@ silently uninstalled until you re-run the installer.
 
 | Command | Run it when | What it does |
 |---|---|---|
+| **`/sota-init`** | **once**, in a new repo or one the library has not been applied to | Runs the day-zero sequence the router otherwise offers in one line, as one agreed pass: `.gitignore`, secret scanning and gates (`init-gates.sh`), the licence you choose, the agent file (`gen-agents-md.sh` plus a short project section holding only what an agent would get wrong), and **where project data lives**. It adds and never overwrites, runs `verify-setup.sh`, stages by path, and makes one commit, so `git revert` undoes the files and `pre-commit uninstall` the hooks. `CONTRIBUTING`, `SECURITY`, an ADR log and CI are offered only when their trigger fires |
 | **`/sota-report`** | at the **end** of a session, in your own project | Writes a gitignored field report on where the guidance failed, was absent, wrong, or right and did not fire — stamped with the version that produced it. Then writes a short generalised extract and prints a `gh issue create` line. It never posts anything. |
 | **`/sota-resume`** | at the **start** of a session, or when picking a project back up | Finds the open work: sweeps every tracker, checkbox and `TODO` marker with a **controlled** search (a clean "nothing found" is exactly the answer a skipped symlink tree, a `--replace` flag or a 30-row default page produces), classifies it — ready · needs a decision · deliberately deferred · not an item · **already done and never ticked off, or made unnecessary by a control that already covers the gap** — shows you the table, then executes what you agree to, one item at a time, against the project's own CI entry point. |
 | **`/sota-auto`** | when **no one will be there** to answer prompts, such as a late-evening run | Runs `/sota-resume`'s inventory and classification, then executes without asking. It **decides** what is reversible inside the repository and **queues** what is not: a merge (unless your own agent file already grants it), a force-push, a delete, a tag or release, anything that speaks for you outside the repository, a settings or credential change, and any spend not covered by a `budget=$N` argument. A security decision is taken only when the option is the more secure one by the library's rules **and** costs nothing you own (a breaking change, a dropped feature, a who-may-do-what model); otherwise it is queued with options. A refused command is retried only when its *form* was the problem; a refused *action* is never re-encoded to get past the refusal. It stops on its `items=`/`hours=` limits or after three environment failures in a row, runs `/sota-close`, and ends with a report: security decisions first, then everything awaiting you (ready to run), every decision with how to reverse it, refusals and workarounds, and spend. It cannot suppress Claude Code's own permission prompts: start it in a mode that does not prompt |
@@ -1260,7 +1262,7 @@ Both **load what they cite**: a step 0 invokes `sota-shell-scripting` and reads 
 before the first sweep, because a citation loads nothing — and invariant 40 fails any command
 that cites a skill's rules file without saying to load it.
 
-All six take free-text arguments to steer them (`/sota-close focus on the migration branch`).
+All seven take free-text arguments to steer them (`/sota-close focus on the migration branch`).
 They are prompts, not scripts: the text is in `commands/*.md` and nowhere else, so you can read
 exactly what your session is being told to do before you run it.
 
