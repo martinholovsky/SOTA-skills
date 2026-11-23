@@ -204,7 +204,7 @@ reach the defect is green and proves nothing — report the depth it actually re
 
 ## 6. Commit the evidence, then confirm it landed
 
-Three guards before anything is written:
+Four guards before anything is written:
 
 - **Is this repo yours to commit to?** On an upstream you do not own, a diff against a tracked
   file rides on every branch cut from it, into every later PR. Ask first, and keep agent
@@ -215,6 +215,12 @@ Three guards before anything is written:
 - **Do not commit private files.** Read `git status --porcelain` and the staged list by eye;
   never `git add -A` blind. Reports, transcripts, `*.local.*`, anything carrying a hostname,
   a customer, or a credential stays out.
+- **Move what you keep out of ephemeral space first.** Anything in the scratchpad, `/tmp` or
+  `$TMPDIR` that a commit, doc or result will cite, or that the next session needs, goes to the
+  project's declared tracked or kept-not-committed place (read `sota-docs-workflow` rules/06 if the
+  project declares none). Then
+  search the staged diff and the message for scratchpad and temp paths; a hit is a citation of
+  something that will vanish.
 
 The message carries the **evidence**, not a description of the change — the diff already
 describes the change:

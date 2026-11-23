@@ -328,7 +328,7 @@ exactly like the thing everyone assumes is written down.
 2. For every repository fact, **find its home**: an item ledger, a decision record, a results
    file, a changelog entry. Not "is it mentioned somewhere" — *which file owns it*.
 3. **Report the ones with no home as findings**, and fix them by moving the fact into the
-   repo, leaving the memory entry as a pointer.
+   repo, leaving the memory entry as a pointer. Where each class of project data should live, and the checks that nothing cites a place nobody keeps: [`sota-docs-workflow` rules/06](../../sota-docs-workflow/rules/06-where-project-data-lives.md).
 
 **This is an absence claim, so it carries §3's burden — and the naive form of it lies.**
 Measured on a 50-file store against a 16-million-character corpus: a literal scan of 148

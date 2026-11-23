@@ -60,6 +60,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeps only dev edges, so a dev-dependency's own dependencies are dropped (reproduced on cargo 1.97.1).
   `/sota-close` step 1 now also sweeps summaries of delegated reports, where a subagent's "not determined" became "every".
 - A field report from an EDR project session, every claim labelled: `docs/ADOPTION-LOG.md` (2026-11-23).
+- **Where project data lives** (`sota-docs-workflow` rules/06, new): five classes defined by what may happen to them
+  (tracked, kept-not-committed, rebuildable, ephemeral, external by design). Locations stay the project's or the
+  organisation's choice. A "Where project data lives" section belongs in the agent file. The audit checks hold wherever
+  data lives: no doc or result cites a temp path, no gate needs a rebuildable file, recorded inputs resolve.
+  `gen-agents-md.sh` adds one line pointing at the project's section. `/sota-close` step 6 moves kept files out of
+  scratch and checks the staged diff for temp paths. `sota` rules/01 §4a points to the new file.
+- **A symlink to a directory redirects `mv`, `ln -s` and `rm -r link/` into its target** (`sota-shell-scripting`
+  rules/08 §3c, measured on BSD and GNU): `rm -r link/` deleted the target directory on macOS at exit 0.
+- **This repo's own table** (`CONTRIBUTING.md`, "Where this repo's data lives"), with a pointer in `AGENTS.md`.
 
 ## [1.58.0] - 2026-11-21
 

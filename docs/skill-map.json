@@ -1178,6 +1178,17 @@
       ]
     },
     {
+      "from": "sota-docs-workflow",
+      "to": "sota-testing",
+      "weight": 6,
+      "targets": [
+        "rules/01 \u00a71.8",
+        "rules/06 \u00a76.3",
+        "rules/07 \u00a77.10",
+        "rules/08"
+      ]
+    },
+    {
       "from": "sota-dotnet",
       "to": "sota-devsecops",
       "weight": 6,
@@ -1363,16 +1374,6 @@
       "to": "sota-privacy-compliance",
       "weight": 5,
       "targets": []
-    },
-    {
-      "from": "sota-docs-workflow",
-      "to": "sota-testing",
-      "weight": 5,
-      "targets": [
-        "rules/01 \u00a71.8",
-        "rules/07 \u00a77.10",
-        "rules/08"
-      ]
     },
     {
       "from": "sota-dotnet",
@@ -1580,6 +1581,17 @@
       "to": "sota-architecture",
       "weight": 4,
       "targets": []
+    },
+    {
+      "from": "sota-docs-workflow",
+      "to": "sota-shell-scripting",
+      "weight": 4,
+      "targets": [
+        "rules/01 \u00a72",
+        "rules/02",
+        "rules/08 \u00a73c",
+        "rules/09 \u00a75a"
+      ]
     },
     {
       "from": "sota-jvm",
@@ -1938,6 +1950,14 @@
       "weight": 3,
       "targets": [
         "rules/04 \u00a73.1"
+      ]
+    },
+    {
+      "from": "sota-docs-workflow",
+      "to": "sota-secrets-management",
+      "weight": 3,
+      "targets": [
+        "rules/04"
       ]
     },
     {
@@ -2437,14 +2457,6 @@
       "targets": []
     },
     {
-      "from": "sota-docs-workflow",
-      "to": "sota-secrets-management",
-      "weight": 2,
-      "targets": [
-        "rules/04"
-      ]
-    },
-    {
       "from": "sota-dotnet",
       "to": "sota-async-concurrency",
       "weight": 2,
@@ -2802,6 +2814,15 @@
       "targets": [
         "rules/06 \u00a76.3",
         "rules/09 \u00a71"
+      ]
+    },
+    {
+      "from": "sota-shell-scripting",
+      "to": "sota-docs-workflow",
+      "weight": 2,
+      "targets": [
+        "rules/03 \u00a75",
+        "rules/06 \u00a74"
       ]
     },
     {
@@ -3423,14 +3444,6 @@
     },
     {
       "from": "sota-docs-workflow",
-      "to": "sota-shell-scripting",
-      "weight": 1,
-      "targets": [
-        "rules/09 \u00a75a"
-      ]
-    },
-    {
-      "from": "sota-docs-workflow",
       "to": "sota-threat-modeling",
       "weight": 1,
       "targets": [
@@ -3443,6 +3456,14 @@
       "weight": 1,
       "targets": [
         "rules/01 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-docs-workflow",
+      "to": "sota-privacy-compliance",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a72"
       ]
     },
     {
@@ -4447,14 +4468,6 @@
     },
     {
       "from": "sota-shell-scripting",
-      "to": "sota-docs-workflow",
-      "weight": 1,
-      "targets": [
-        "rules/03 \u00a75"
-      ]
-    },
-    {
-      "from": "sota-shell-scripting",
       "to": "sota-observability",
       "weight": 1,
       "targets": [
@@ -4669,14 +4682,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1955,
+    "md link, other skill": 1965,
     "md link, outside skills/": 3,
-    "md link, same skill": 2875,
-    "name (backticked)": 455,
+    "md link, same skill": 2876,
+    "name (backticked)": 456,
     "name (bare)": 240,
-    "name+file (backticked)": 943,
+    "name+file (backticked)": 950,
     "name+file (bare)": 180,
-    "own rules/NN": 3099
+    "own rules/NN": 3102
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4684,11 +4697,11 @@
     "md link, other skill": 0,
     "md link, outside skills/": 0,
     "md link, same skill": 0,
-    "name (backticked)": 440,
+    "name (backticked)": 441,
     "name (bare)": 196,
-    "name+file (backticked)": 938,
+    "name+file (backticked)": 945,
     "name+file (bare)": 168,
-    "own rules/NN": 2993
+    "own rules/NN": 2996
   },
   "rules_index_style": {
     "link": 42
@@ -6774,6 +6787,18 @@
         "sota-testing/rules/08-bdd-spec-by-example.md"
       ]
     },
+    "sota-docs-workflow/rules/06-where-project-data-lives.md": {
+      "index": [
+        "sota-docs-workflow/SKILL.md"
+      ],
+      "same": [],
+      "router": [
+        "sota/rules/01-audit-methodology.md"
+      ],
+      "other": [
+        "sota-shell-scripting/rules/08-ad-hoc-side-effects.md"
+      ]
+    },
     "sota-dotnet/rules/01-idioms.md": {
       "index": [
         "sota-dotnet/SKILL.md"
@@ -8214,6 +8239,7 @@
       ],
       "router": [],
       "other": [
+        "sota-docs-workflow/rules/06-where-project-data-lives.md",
         "sota-ml-engineering/rules/07-security-governance.md",
         "sota-security-compliance/rules/01-control-frameworks-as-code.md",
         "sota-security-compliance/rules/03-ssdf-secure-sdlc.md"
@@ -8251,6 +8277,7 @@
         "sota-code-security/rules/18-tamper-evident-logs.md",
         "sota-copywriting/rules/04-claims-legal-trust.md",
         "sota-databases/rules/06-security-and-compliance.md",
+        "sota-docs-workflow/rules/06-where-project-data-lives.md",
         "sota-frontend-design/rules/07-visual-craft-distinctiveness.md"
       ]
     },
@@ -8910,6 +8937,7 @@
         "sota-code-security/rules/11-dead-path-diagnostics.md",
         "sota-code-security/rules/15-instruments-and-guards.md",
         "sota-devsecops/rules/11-after-the-gate-fails.md",
+        "sota-docs-workflow/rules/06-where-project-data-lives.md",
         "sota-testing/rules/04-integration-contract-system.md",
         "sota-testing/rules/07-suite-health-and-ci.md"
       ]
@@ -8927,7 +8955,8 @@
       "router": [],
       "other": [
         "sota-code-security/rules/15-instruments-and-guards.md",
-        "sota-devsecops/rules/09-gates-that-hold.md"
+        "sota-devsecops/rules/09-gates-that-hold.md",
+        "sota-docs-workflow/rules/06-where-project-data-lives.md"
       ]
     },
     "sota-shell-scripting/rules/03-security.md": {
@@ -9032,6 +9061,7 @@
         "sota-c-cpp/rules/02-memory-safety.md",
         "sota-cli-ux/rules/03-behavior-lifecycle.md",
         "sota-devsecops/rules/07-runtime-ops.md",
+        "sota-docs-workflow/rules/06-where-project-data-lives.md",
         "sota-testing/rules/06-property-fuzzing-mutation.md",
         "sota-testing/rules/07-suite-health-and-ci.md"
       ]
@@ -9321,6 +9351,7 @@
         "sota-code-security/rules/12-verifying-the-verifier.md",
         "sota-code-security/rules/15-instruments-and-guards.md",
         "sota-code-security/rules/22-constant-time-comparison.md",
+        "sota-docs-workflow/rules/06-where-project-data-lives.md",
         "sota-dotnet/rules/06-build-tooling-ci.md",
         "sota-golang/rules/07-tooling-ci.md",
         "sota-javascript-typescript/rules/07-testing-and-tooling.md",
@@ -9619,6 +9650,7 @@
       "other": [
         "sota-devsecops/rules/05-analysis-gates.md",
         "sota-devsecops/rules/10-inert-dependencies.md",
+        "sota-docs-workflow/rules/06-where-project-data-lives.md",
         "sota-sandboxing/rules/05-ai-agent-sandboxing.md",
         "sota-threat-modeling/SKILL.md",
         "sota-threat-modeling/rules/06-audit-reconstruction.md"
