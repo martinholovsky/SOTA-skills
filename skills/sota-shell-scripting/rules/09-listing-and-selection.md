@@ -130,6 +130,16 @@ default". Each of the three is the correct answer to a question nobody asked.
   unused high port rather than a conventional alternative such as 2222 or 8022, which another
   VM may already hold. The remote-host side of trust on first use is
   [`sota-code-security` rules/04](../../sota-code-security/rules/04-cryptography.md).
+- **A health probe on a port answers for whoever holds it, so a server that failed to bind
+  passes it.** Field-reported 2026-11-22: a second gateway was launched on a port the host's own
+  nginx already held. The server failed to bind and exited during warm-up. `/readyz` returned 200
+  through nginx from the session's *other* gateway, a read-back of the launched PID passed while it
+  was still alive, and a "positive control" (a request expected to be refused) passed too, because
+  the other gateway refused it as well. `ss -lptn` then named nginx on the port and the launched PID
+  gone. After warm-up, check that the port's owner (`ss -lptn 'sport = :PORT'`,
+  `lsof -nP -iTCP:<port> -sTCP:LISTEN`) is your PID. Make the positive control one whose outcome
+  only your server can produce, such as a log line only it writes or a config value only it carries
+  ([`sota-code-security` rules/11](../../sota-code-security/rules/11-dead-path-diagnostics.md) §5).
 
 ## 5b. A filter that drops the file you named
 
@@ -216,6 +226,16 @@ file, or the port's owner (`ss -lptn 'sport = :PORT'`, `lsof -ti :PORT`). If you
 print the list with PIDs and PPIDs first (`ps -axo pid=,ppid=,command=`). Drop your own `$$`,
 your ancestors, and anything whose command line is your own command. Then act on PIDs.
 
+**`$!` names what `&` put in the background, and after a list that is not your command in bash.**
+In `cd dir && cmd &`, the whole `&&` list is the background job. bash runs it in a subshell, so
+`$!` is that bash and `cmd` is its child; zsh returns `cmd` itself. Measured 2026-11-23 with
+`cd /tmp && true && sleep 7 &`: bash 3.2.57 and 5.3.15 gave a `bash` PID whose child was the
+`sleep`, and zsh 5.9 gave the `sleep`. A field session recorded such a PID over `ssh` (a bash
+remote shell), read `/proc/<pid>/environ` for a variable set on the command, and found nothing,
+because the assignment lives in the child (field-reported 2026-11-22). Background the command
+alone, `cd dir && { cmd & echo $! > pid; }`, which gave the `sleep` in all three shells. Or confirm
+that the PID owns the port before acting on it.
+
 ## 5d. A watch waits for the members it can see, and an empty population is already done
 
 A watch or wait command reads its population when it starts. If nothing has registered yet,
@@ -264,7 +284,7 @@ on the PR with none it printed `only 0 of 1 checks registered` at exit 1.
       matches the selecting shell, and in an agent harness or under `ssh host '…'` its parent
       too, whenever the plain pattern appears in their argv. Sweep for the shape with
       `grep -nE '(pkill|pgrep) -f|/proc/\*/cmdline|ps [^|]*\| *grep' <file>`, and act on PIDs taken
-      from `$!`, a PID file or a port. The same selection also misses a target whose argv[0]
+      from `$!` (of a lone command: after `a && cmd &`, bash's `$!` is a subshell), a PID file or a port. The same selection also misses a target whose argv[0]
       was rewritten (framework Python, `exec -a`), so an empty result never means "not running".
 
 - [ ] **A search filter next to a named file** (§5b): does any `grep` command combine
@@ -277,7 +297,7 @@ on the PR with none it printed `only 0 of 1 checks registered` at exit 1.
       is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is
       not *blocks freed*, *not backing a running container* is not *reclaimable*, *a pod
       matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`), *the
-      process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), *a
+      process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), *a health probe on a port* is not *the server you just started* (check the port's owner after warm-up), *a
       path* is not *the volume* (`pwd -P`), a *prefix glob* is not *this name* (`X_*` matches `X_other_*`), and a
       *remote-tracking ref* is not *the remote* (`git ls-remote --heads`, not `%(upstream:track)`), and a *bare date* is not *midnight* (`git log --since=YYYY-MM-DD` takes the current clock time: write `'YYYY-MM-DD 00:00'` or a commit range), and a *distinct key* is not *a distinct line* (`sort -u -k…` keeps one line per key: dedupe with `sort -k… | uniq`, never with `-s`). Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to

@@ -181,6 +181,13 @@ Gate rules that work in practice:
   regression rule on incident-derived and safety-tagged cases.
 - **Gate cost and latency too** — a prompt change that doubles tokens "passes"
   quality and fails the budget.
+- **Compare two runs case by case, and count the transitions in each direction.** A difference
+  of totals ("blocked 16 vs 8") says nothing about how many cases changed: offsetting flips
+  cancel, and the pass-rate gate above cannot see them. Join the two runs on case id and report
+  pass→fail and fail→pass separately. Field-reported 2026-11-22: a net 40 written down as "40 of
+  97 flip" was 43 one way and 3 the other, and "8 of 13" was 9 and 1. Likewise, a feature present
+  in every flagged case is not the cause of the verdicts unless removing it removes them: a rule at
+  512/512 was reported as "the 100% is one rule" while a second rule also stood at 512/512.
 - **Run the suite against model-deprecation candidates** ahead of forced
   migrations, and against any model you intend to switch to ([rules/05](05-production-engineering.md)).
 - Keep a `fast` suite (assertions only, minutes) for every PR and a `full`
@@ -421,7 +428,7 @@ published claim rested on that 0.00 for several hours.
       addressed; the judge's consistency rate is reported beside accuracy (§3).
 - [ ] Evals run automatically in CI on prompt/template/retrieval-config/model/pipeline
       changes and block merge; baselines stored; zero-regression rule on incident/safety
-      tags; cost/latency gated alongside quality; the suite is run against
+      tags; a run-to-run comparison counts per-case transitions each way, never a difference of totals (§5); cost/latency gated alongside quality; the suite is run against
       model-deprecation candidates and any model being switched to (§5).
 - [ ] Eval runs persisted as artifacts (run ID, SHA, model versions,
       per-case results; image digest, grader logs and trajectories where the
