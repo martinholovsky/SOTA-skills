@@ -216,8 +216,49 @@ file, or the port's owner (`ss -lptn 'sport = :PORT'`, `lsof -ti :PORT`). If you
 print the list with PIDs and PPIDs first (`ps -axo pid=,ppid=,command=`). Drop your own `$$`,
 your ancestors, and anything whose command line is your own command. Then act on PIDs.
 
+## 5d. A watch waits for the members it can see, and an empty population is already done
+
+A watch or wait command reads its population when it starts. If nothing has registered yet,
+it has nothing to wait for and returns at once.
+`gh pr checks <pr> --watch` on a PR whose CI has not registered a check returns immediately
+with `no checks reported on the '<branch>' branch` and **exit 1** (gh 2.103.2: in
+`pkg/cmd/pr/checks/checks.go` the empty set is an error raised before the watch loop starts;
+measured 2026-11-23 on a public PR with no checks). The loop then ends as soon as nothing *it
+has seen* is pending, so a workflow that registers later is not waited for. A field session
+saw a watch return with a check still `pending` (field-reported 2026-11-22).
+
+- **Under `>/dev/null 2>&1; next-command` the empty case is invisible.** It reads as a watch
+  that finished. The same session ran 13 watches that way and caught the empty one only
+  because it read the buckets separately.
+- **`mergeStateStatus` `CLEAN` is not evidence that a check ran.** It read `CLEAN` on a PR with
+  zero checks, both in that session and on the public PR above. It reports what the merge
+  requires, not what ran.
+- **Wait for the population you expect, with a bound, then take the verdict from a separate
+  read.** `want` is the number of check runs a merged PR of this repo shows:
+
+```bash
+want=10; n=0
+for i in $(seq 1 60); do           # 60 x 10 s: a CI that never starts is a failure, not a hang
+  n=$(gh pr checks "$pr" --json name --jq length 2>/dev/null) || n=0
+  [ "${n:-0}" -ge "$want" ] && break
+  sleep 10
+done
+[ "${n:-0}" -ge "$want" ] || { echo "only ${n:-0} of $want checks registered" >&2; exit 1; }
+gh pr checks "$pr" --watch --interval 15 >/dev/null 2>&1
+gh pr checks "$pr" --json name,bucket --jq '.[] | "\(.bucket) \(.name)"'   # the verdict
+```
+
+Measured 2026-11-23 under bash and zsh: with all 10 checks done it printed `10 pass` at exit 0;
+on the PR with none it printed `only 0 of 1 checks registered` at exit 1.
+
 ## Audit checklist
 
+- [ ] **Does a merge, release or deploy step trust a watch's return?** (§5d) A
+      `gh pr checks --watch` that ran before CI registered a check exits 1 at once, and one that
+      ran before a later workflow registered returns with that workflow unseen. Discarding its
+      output and chaining with `;` makes both look finished, and `mergeStateStatus` `CLEAN`
+      holds with zero checks. Wait for the expected number of checks with a bound, then read
+      the buckets in a separate command.
 - [ ] **Does any kill or wait select processes by command-line substring?** (§5c) This means
       `pkill -f`, `pgrep -f`, `ps … | grep`, or a loop over `/proc/*/cmdline`. Each one
       matches the selecting shell, and in an agent harness or under `ssh host '…'` its parent
