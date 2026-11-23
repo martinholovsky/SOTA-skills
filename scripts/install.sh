@@ -1270,7 +1270,7 @@ fi
 
 # --- slash commands -----------------------------------------------------------
 # Every file in commands/ is installed, not just one: the set brackets a working session
-# (/sota-resume opens, /sota-close and /sota-report close it), plus /sota-audit and its
+# (/sota-resume opens, /sota-close and /sota-report close it), /sota-init, which sets a repo up once, plus /sota-audit and its
 # escalation /sota-deep-audit, and /sota-auto, which runs the open items unattended. `/sota-report` is the load-bearing one for the library
 # itself — it learns nothing from use unless a session that used it reports back (README,
 # "Found a gap?"), which is why verify-setup checks it by name (1c) and the rest by
