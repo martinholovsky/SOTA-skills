@@ -40,7 +40,10 @@ say so explicitly** — that is a valid answer, but it is also a claim, so it me
   line's wording) rather than the data's own spelling — field-reported 2026-10-24: `r_terse`
   in the tracker, `terse` in the data, and "the first live run" committed over an earlier one;
 - anything the user corrected you on, including corrections you accepted in passing;
-- any "should work", "that's fixed", "done" not followed by output.
+- any "should work", "that's fixed", "done" not followed by output;
+- any summary of a delegated report: a subagent's "not determined" collapses into your "every"
+  (field-reported 2026-11-23: "every runtime's API auth is off by default or partial", where one
+  of three runtimes was undetermined). Re-read the agent's own words before keeping the quantifier.
 
 **Then find where the claim went.** A wrong claim does not stay where you said it. It gets
 written into a commit message, a doc sentence, a code comment, a ledger row, a memory file, a
