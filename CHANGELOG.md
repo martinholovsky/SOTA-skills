@@ -56,6 +56,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   way and 3 the other. `/sota-close` step 4 says the same. **Reduced precision on another device is a model change**
   (`sota-ml-engineering` rules/04 §4): bf16 CPU and CUDA disagreed on 2 of 21 near-threshold verdicts.
 - A field report from an LLM guardrail proxy session, every claim labelled: `docs/ADOPTION-LOG.md` (2026-11-23).
+- **An empty `cargo tree -e dev -i <crate>` does not mean "not via dev"** (`sota-devsecops` rules/13 §13.1): `-e dev`
+  keeps only dev edges, so a dev-dependency's own dependencies are dropped (reproduced on cargo 1.97.1).
+  `/sota-close` step 1 now also sweeps summaries of delegated reports, where a subagent's "not determined" became "every".
+- A field report from an EDR project session, every claim labelled: `docs/ADOPTION-LOG.md` (2026-11-23).
 
 ## [1.58.0] - 2026-11-21
 
