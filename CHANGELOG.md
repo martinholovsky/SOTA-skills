@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.59.0] - 2026-11-23
+
+**Front door checked:** zizmor · where project data lives · bfs · rm -r link/
 
 - **This repo now runs zizmor, and its first run found a rule we break.** `.github/dependabot.yml` had no
   `cooldown` although `sota-devsecops` tells every reader to set one; it now has 7 days (zizmor's floor; the
@@ -68,7 +70,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scratch and checks the staged diff for temp paths. `sota` rules/01 §4a points to the new file.
 - **A symlink to a directory redirects `mv`, `ln -s` and `rm -r link/` into its target** (`sota-shell-scripting`
   rules/08 §3c, measured on BSD and GNU): `rm -r link/` deleted the target directory on macOS at exit 0.
-- **This repo's own table** (`CONTRIBUTING.md`, "Where this repo's data lives"), with a pointer in `AGENTS.md`.
+- **This repo's own table** (`CONTRIBUTING.md`, "Where this repo's data lives"), with a pointer in `AGENTS.md`. A maintainer's
+  agent memory kept in the checkout (`.claude-memory/`) is excluded through `.git/info/exclude`, never the tracked `.gitignore`.
+- **README:** a paragraph on the habits of the work itself (where project data lives, waiting for CI by the expected
+  checks, the shell traps an agent meets on its own machine, zizmor over this repo's own workflows).
 
 ## [1.58.0] - 2026-11-21
 
@@ -12379,6 +12384,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.59.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.59.0
 [1.58.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.58.0
 [1.57.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.57.1
 [1.57.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.57.0
