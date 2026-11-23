@@ -40,6 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Node 22 module hooks** (`sota-javascript-typescript` rules/04 §13): hooks registered from an `--import`
   preload broke `require()` of an ES module on v22 (not on v24.22.3); register them from `--require`.
 - A field report from a vulnerability-discovery session, every claim labelled: `docs/ADOPTION-LOG.md` (2026-11-22).
+- **A watch that returns because nothing has registered yet** (`sota-shell-scripting` rules/09 §5d):
+  `gh pr checks --watch` before CI registers a check exits 1 at once (read in gh 2.103.2's source and measured),
+  and `mergeStateStatus` reads `CLEAN` with zero checks. A bounded wait for the expected number of checks,
+  tested under bash and zsh, replaces trusting the watch.
+- **Stage by path while a background job writes into the tree** (`sota-docs-workflow` rules/04 §1): `git add -A`
+  took a running job's partial output into an unrelated commit.
+- A field report from a research-language session, every claim labelled: `docs/ADOPTION-LOG.md` (2026-11-23).
 
 ## [1.58.0] - 2026-11-21
 

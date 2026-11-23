@@ -128,7 +128,8 @@ index (invariant 10) in the same commit.
   split out of 06 in v1.42.2),
   09 listing & selection (a lister's default page read as a population, a selector answering a
   neighbouring question, a `--include` filter that drops the file you named, a process selected by
-  command-line substring selecting the selector — split out of 06 · v1.43.1)
+  command-line substring selecting the selector, a watch that returns because nothing has
+  registered yet — split out of 06 · v1.43.1)
 - **sota-docs-workflow/rules**: 01 documentation architecture, 02 API reference & changelogs, 03
   code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development
 - **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy & components, 03 errors
