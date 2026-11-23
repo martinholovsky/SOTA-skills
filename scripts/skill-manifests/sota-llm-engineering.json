@@ -92,7 +92,7 @@
     "evals",
     "feedback"
    ],
-   "index_row": "| [rules/01-evals.md](rules/01-evals.md) | Eval-first development, golden sets, assertion/rubric/pairwise evals, LLM-as-judge + judge validation, offline vs online, CI regression gates, production sampling into eval sets, error analysis, metric pitfalls (judge bias, contamination, **an arm blind to the treatment — its `+0.00` is structural, not a result**, and **a saturated measure — both arms at the ceiling is a fact about the instrument, never about the system**) | ...building ANY LLM feature (start here), changing a prompt/model, reviewing whether quality claims are real, setting up CI for an LLM repo |"
+   "index_row": "| [rules/01-evals.md](rules/01-evals.md) | Eval-first development, golden sets, assertion/rubric/pairwise evals, LLM-as-judge + judge validation, offline vs online, CI regression gates, production sampling into eval sets, error analysis, metric pitfalls (judge bias, contamination, **an arm blind to the treatment — its `+0.00` is structural, not a result**, and **a saturated measure — both arms at the ceiling is a fact about the instrument, never about the system**, and **two runs compared case by case, transitions counted each way, never a difference of totals**) | ...building ANY LLM feature (start here), changing a prompt/model, reviewing whether quality claims are real, setting up CI for an LLM repo |"
   },
   "02": {
    "build": [

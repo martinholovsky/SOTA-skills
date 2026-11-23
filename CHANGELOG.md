@@ -47,6 +47,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Stage by path while a background job writes into the tree** (`sota-docs-workflow` rules/04 §1): `git add -A`
   took a running job's partial output into an unrelated commit.
 - A field report from a research-language session, every claim labelled: `docs/ADOPTION-LOG.md` (2026-11-23).
+- **`$!` after `a && cmd &` names a bash subshell, not `cmd`** (`sota-shell-scripting` rules/09 §5c; bash 3.2.57
+  and 5.3.15, zsh 5.9 returns `cmd`): background the command alone. §5a: a health probe on a port answers for
+  whoever holds it, so a server that failed to bind passes it.
+- **The zsh hook counts a quoted value as spaced when a space survives outside its expansions**
+  (`S="-o A=1 -i $HOME/k"; ssh $S`); before, any `$` exempted it. 3 new hits over 44,179 recorded calls, all real.
+- **Compare two eval runs case by case** (`sota-llm-engineering` rules/01 §5): a difference of totals hid 43 flips one
+  way and 3 the other. `/sota-close` step 4 says the same. **Reduced precision on another device is a model change**
+  (`sota-ml-engineering` rules/04 §4): bf16 CPU and CUDA disagreed on 2 of 21 near-threshold verdicts.
+- A field report from an LLM guardrail proxy session, every claim labelled: `docs/ADOPTION-LOG.md` (2026-11-23).
 
 ## [1.58.0] - 2026-11-21
 

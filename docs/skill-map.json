@@ -302,13 +302,14 @@
     {
       "from": "sota-shell-scripting",
       "to": "sota-code-security",
-      "weight": 22,
+      "weight": 23,
       "targets": [
         "rules/04",
         "rules/10",
         "rules/10 \u00a71",
         "rules/11",
         "rules/11 \u00a72.2",
+        "rules/11 \u00a75",
         "rules/11 \u00a77",
         "rules/12 \u00a71a",
         "rules/12 \u00a71a.1",
@@ -4668,12 +4669,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1954,
+    "md link, other skill": 1955,
     "md link, outside skills/": 3,
     "md link, same skill": 2875,
     "name (backticked)": 455,
     "name (bare)": 240,
-    "name+file (backticked)": 942,
+    "name+file (backticked)": 943,
     "name+file (bare)": 180,
     "own rules/NN": 3099
   },
@@ -4685,7 +4686,7 @@
     "md link, same skill": 0,
     "name (backticked)": 440,
     "name (bare)": 196,
-    "name+file (backticked)": 937,
+    "name+file (backticked)": 938,
     "name+file (bare)": 168,
     "own rules/NN": 2993
   },

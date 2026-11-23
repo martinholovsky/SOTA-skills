@@ -161,7 +161,8 @@ A number carried forward from earlier in the session is recall, and recall is th
 pass exists to compensate for.
 
 - **Count, do not compute.** "43 files, so 41 after the two deletions" is arithmetic on a
-  remembered 43.
+  remembered 43. Nor is a difference of two totals a count of the items that changed: "16 vs
+  8 blocked" is not "8 flipped". Count the transitions each way.
 - **Two derivations that disagree are a finding, not rounding.** Reconcile to a named cause
   before reporting either number — and note that the fix for one can silently change the
   population the other counted. (Measured here: 330 vs 339 merged PRs reconciled to a wrong

@@ -47,6 +47,8 @@ its joined result; the ADOPTION-LOG 2026-10-27 rows carry the method and the exa
     unquoted as an argument or a `for … in` list (`C="--a x"; cmd $C`): zsh passes ONE word.
     Deliberately narrow (`cmd $file` is usually right): not `echo`/`print`/`[`/`test`/declarations,
     not `${=C}`, `"$C"`, or a name reassigned or assigned an array. 9 hits, 9 real (rules/06 §1).
+    Since 2026-11-23 a double-quoted value counts when a space survives outside its expansions
+    (`S="-o A=1 -i $HOME/k"; ssh $S`); before, any `$` exempted it. 3 more hits over 44,179 calls, 3 real.
   - `$PIPESTATUS`, `${PIPESTATUS[n]}`, `$BASH_REMATCH`, `${BASH_REMATCH[n]}`, unquoted or in double
     quotes: unset in zsh, so empty. Exempt: single quotes (`bash -c '…'`), `\$`, a `:-` fallback
     (`${pipestatus[1]:-$PIPESTATUS}`), and BASH_REMATCH after `setopt bash_rematch`. 8 hits, 8 real
@@ -140,6 +142,12 @@ BASH_VARS = re.compile(r"\$\{?(PIPESTATUS|BASH_REMATCH)(?![A-Za-z0-9_])")
 # LETTER is flagged: `$c:libs` (`:l`), `$SP:ro` (`:r`), `$rev:skills` (`:s`), which is the shape of
 # every corpus hit, while the deliberate idioms `$f:t`, `$f:t:r` and `$v:s/a/b/` stay allowed.
 MODIFIER_REF = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*):([aAcehlPqQrstu][A-Za-z]+)")
+# The expansions inside a double-quoted value (2026-11-23, a field report's F3): a value is SPACED when a
+# space survives once these are removed. `"-o A=1 -i $HOME/k -p 22"` keeps its literal spaces and zsh
+# passes it as ONE word all the same; before this, any `$` or backtick in the value exempted it.
+# `"$(cmd a b)"`, `"$x"` and `"${x}"` stay exempt: their only spaces, if any, are inside an expansion,
+# whose value this lexer cannot know. Replayed over 44,179 local Bash calls: 3 new hits, all real.
+EXPANSION = re.compile(r"\\.|\$\{[^}]*\}|\$\((?:[^()]|\([^()]*\))*\)|`[^`]*`|\$[A-Za-z_][A-Za-z0-9_]*|\$[0-9#?@*$!-]")
 # The escapes `git grep` patterns silently fail on, measured 2026-10-27 over a file holding
 # `foo 53 bar`: on macOS (git 2.55.0, system regex) every one of these matches nothing under -E and
 # matches under the default BRE; on Debian (git 2.47.3, glibc) only `\d`/`\D` fail, under -E and BRE.
@@ -586,7 +594,7 @@ def _analyze(words, st, hits):
     for name, val in assigns:
         q = val[:1]
         if q in "'\"" and len(val) > 1 and val.endswith(q) and " " in val and \
-                not (q == '"' and ("$" in val or "`" in val)):
+                not (q == '"' and " " not in EXPANSION.sub("", val[1:-1])):
             st["spaced"].add(name)
         else:
             st["spaced"].discard(name)
@@ -961,6 +969,12 @@ TRAP_CASES = [
     ("special", "cat <<'E' >/dev/null\nfor path in x\nE\nls / >/dev/null && echo AFTER", [], "AFTER"),
     ("special", "bash -c 'for path in a; do :; done; ls / >/dev/null' && echo AFTER", [], "AFTER"),
     ("argv", N + 'T="a b"; n $T', [("n", "$T")], "N=1"),
+    # 2026-11-23: a literal space beside an expansion is still a spaced value; a space only inside one is not
+    ("argv", N + 'T="-o A=1 -i $HOME/k -p 22"; n $T', [("n", "$T")], "N=1"),
+    ("argv", 'D=/tmp/x; Q="echo hi $D"; $Q', [("(as the command)", "$Q")], "!hi /tmp/x"),
+    ("argv", N + 'T="$(echo a b)"; n $T', [], "N=1"),
+    ("argv", N + 'a=x; T="$a"; n $T', [], "N=1"),
+    ("argv", N + 'a=x; T="${a}"; n $T', [], "N=1"),
     ("argv", N + "T='-x -y'; n ${T}", [("n", "${T}")], "N=1"),
     ("argv", 'T="a b"; c=0; for x in $T; do c=$((c+1)); done; echo N=$c', [("for", "$T")], "N=1"),
     ("argv", N + 'T="a b"; n ${=T}', [], "N=2"),
