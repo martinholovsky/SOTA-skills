@@ -5,6 +5,17 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **`/sota-init` (new slash command): set a repository up the way the library expects.** It inventories what
+  exists with a control (licence, `.gitignore`, secret scanning, gates, agent file, where project data lives), agrees a
+  plan, asks what is the user's (the licence, solo or shared, where kept data lives, CI), then adds only what is missing:
+  `.gitignore`, `init-gates.sh`, the chosen licence, `gen-agents-md.sh` plus a short project section, and the data-location
+  section. It never overwrites a file, creates `CONTRIBUTING`/`SECURITY`/an ADR log only when their trigger fires
+  (`sota-docs-workflow` rules/01 §8), runs `verify-setup.sh`, stages by path, and ends in one commit `git revert` undoes.
+  It replaces the maintainer's earlier scaffold repository (ledger, 2026-11-23). README, the getting-started guide,
+  `docs/INDEX.md` and the router's day-zero line now name seven commands.
+
 ## [1.59.0] - 2026-11-23
 
 **Front door checked:** zizmor · where project data lives · bfs · rm -r link/

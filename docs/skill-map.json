@@ -9732,6 +9732,7 @@
       "sota-auto",
       "sota-close",
       "sota-deep-audit",
+      "sota-init",
       "sota-report",
       "sota-resume"
     ],
