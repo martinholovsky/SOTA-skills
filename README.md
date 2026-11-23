@@ -158,6 +158,18 @@ why a skill can stop triggering with nothing about it changed (a length cap is
 enforced either by skipping or by silent truncation, and a shared **listing budget**
 means a neighbour's bloat eats the trigger words you wrote).
 
+And the habits of the work itself, which no standard covers and long agent sessions break:
+- **where project data lives** — five classes (tracked, kept-not-committed, rebuildable,
+  ephemeral, external by design), declared per project in its agent file, with checks that no doc
+  or result cites a temp path and no test passes only because an ignored file exists
+  (`sota-docs-workflow` rules/06). Locations stay the project's choice;
+- waiting for CI by the checks you expect: `gh pr checks --watch` returns at once before any
+  check registers, and the PR still reads `CLEAN` with zero checks (`sota-shell-scripting` rules/09 §5d);
+- the shell traps an agent meets on its own machine, each measured: `rm -r link/` deletes a
+  symlink's target directory on macOS at exit 0; `$!` after `cd d && cmd &` names a bash subshell;
+  an agent's `find` can be bfs, which rejects `-newermt "6 months ago"`.
+  This repository runs **zizmor** over its own workflows, and its first run found a rule it broke.
+
 **Measured, not asserted** — library vs. an *unguided model* (same model, no
 library); clean, blind-judged, stable across samples ([results & method →](docs/WHY-IT-WORKS.md)).
 **Every number below names the model it was measured on**, because a lift can be
