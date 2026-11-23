@@ -131,7 +131,9 @@ index (invariant 10) in the same commit.
   command-line substring selecting the selector, a watch that returns because nothing has
   registered yet — split out of 06 · v1.43.1)
 - **sota-docs-workflow/rules**: 01 documentation architecture, 02 API reference & changelogs, 03
-  code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development
+  code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development, 06 where
+  project data lives (data classes, the agent-file declaration, temp-path and rebuildable-file
+  checks, moving agent memory safely)
 - **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy & components, 03 errors
   & feedback, 04 accessibility & localization
 - **sota-copywriting/rules**: 01 positioning & value proposition, 02 headlines/landing pages/CTAs,

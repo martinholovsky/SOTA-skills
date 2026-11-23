@@ -137,6 +137,7 @@ equal `git rev-list --all --count`. The pre-commit hook scans each commit locall
 
 ## Pointers
 
+- [CONTRIBUTING.md § Where this repo's data lives](CONTRIBUTING.md#where-this-repos-data-lives) — read it **before creating, moving or deleting** anything git does not hold (field reports, `offline/`, `.denylist.local`, caches, worktrees)
 - [docs/INDEX.md](docs/INDEX.md) — **find-it-fast index**: where every topic is
   documented, organized by what you're trying to do (start here if lost)
 - [docs/CONTEXT-MANAGEMENT.md](docs/CONTEXT-MANAGEMENT.md) — how the library keeps

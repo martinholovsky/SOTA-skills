@@ -126,6 +126,11 @@ A state-of-the-art engineering skills library is available at \`$SKILLS_DIR\`.
 - **Keep docs current in the same change.** When you change code, behavior,
   config, or interfaces, update the affected docs (README, CHANGELOG, comments,
   runbooks, this AGENTS.md) in the same change, unprompted.
+- **Put project data where this repo says.** Before creating, moving or deleting
+  data outside version control (results, evidence, caches, scratch files, agent
+  memory), follow this file's "Where project data lives" section if it has one.
+  If it has none, do not invent a layout silently: ask, or see
+  \`$SKILLS_DIR/sota-docs-workflow/rules/06-where-project-data-lives.md\`.
 
 **For any task that builds, designs, refactors, debugs, reviews, or audits code**
 — in any language — apply the library before acting, regardless of phrasing:

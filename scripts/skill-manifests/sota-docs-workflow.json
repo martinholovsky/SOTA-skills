@@ -67,6 +67,11 @@
    "living spec",
    "acceptance criteria",
    "steering/constitution"
+  ],
+  "data-locations": [
+   "where project data lives",
+   "scratch and temp paths",
+   "agent memory moves"
   ]
  },
  "files": {
@@ -110,6 +115,12 @@
     "spec"
    ],
    "index_row": "| [`rules/05-spec-driven-development.md`](rules/05-spec-driven-development.md) | Driving non-trivial/agent-built work from a living spec: the intent→plan→tasks→implement→verify loop, separating what from how, testable acceptance criteria, `[NEEDS CLARIFICATION]` markers, specs-in-repo and spec-drift control, steering/constitution vs per-feature specs, linking ADRs/OpenAPI instead of copying, and when SDD is overhead. Pairs with [`sota-testing` rules/08](../sota-testing/rules/08-bdd-spec-by-example.md) (executable acceptance). |"
+  },
+  "06": {
+   "build": [
+    "data-locations"
+   ],
+   "index_row": "| [`rules/06-where-project-data-lives.md`](rules/06-where-project-data-lives.md) | Declaring **where project data lives**: five classes defined by what may happen to them (tracked, kept-not-committed, rebuildable, ephemeral, external by design) with locations left to the project or organisation; the \"Where project data lives\" section in the agent file; audit checks that hold wherever data lives (no doc or result cites a temp or scratchpad path, no gate depends on a rebuildable file, recorded input paths resolve); and moving or deleting kept data and agent memory safely (map symlinks first; copy, compare, count, then remove). |"
   }
  },
  "via": [],
@@ -194,6 +205,16 @@
     "03",
     "04",
     "05"
+   ]
+  },
+  {
+   "task": "decide where a project's run outputs, evidence, caches and the agent's memory should live, and document it for every session",
+   "mode": "build",
+   "tags": [
+    "data-locations"
+   ],
+   "must_load": [
+    "06"
    ]
   }
  ]
