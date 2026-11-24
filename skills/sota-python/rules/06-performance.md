@@ -261,4 +261,4 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
 - [ ] **Benchmarks exist for perf-critical code? (§1, §9)** —
       `grep -rqE 'pytest-benchmark|pyperf' pyproject.toml tests/ || echo "no benchmark harness"` ;
       `grep -rnE 'time\.time\(\)[[:space:]]*-[[:space:]]*[A-Za-z_]' --include='*.py' --exclude-dir=.venv .`
-      (a wall-clock delta used as a timer: `time.perf_counter()` [LOW])
+      (a wall-clock delta timing a benchmark or a hot path: `time.perf_counter()` [LOW]; a run-duration stamp written into a result is not one)

@@ -87,6 +87,12 @@ following `rm -r` deleted the only real copy of a project's notes. It came back 
   ([`sota-shell-scripting` rules/01](../../sota-shell-scripting/rules/01-safety-baseline.md) §2).
 - **`mv`, `ln -s` and `rm -r link/` act on the target of a symlink to a directory**, on BSD and GNU
   alike: [`sota-shell-scripting` rules/08](../../sota-shell-scripting/rules/08-ad-hoc-side-effects.md) §3c.
+- **Claude Code can point the store at a folder you choose, with no links.** `autoMemoryDirectory` in
+  the project's `.claude/settings.local.json` names the memory folder. Measured 2026-11-24 with Claude
+  Code 2.1.331 in headless mode: the session reported that path and wrote its memory files there,
+  none under the per-path key. The docs say a project-level value is honoured under the same
+  workspace-trust rule as hooks, so an interactive session needs the folder trusted. One setting
+  replaces the per-spelling links, and the folder is then class 2 like any other kept data.
 - **A guard on the store beats a note about it.** A pre-command hook that asks before any
   `rm`/`mv`/`ln` naming the memory folder is the structural form of this section, for the same
   reason the reminder-style rule failed.
