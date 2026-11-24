@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Field reports have one home: the machine's inbox.** `/sota-report` now writes the report and its extract to
+  `${SOTA_FIELD_REPORTS:-$HOME/.local/share/sota-skills/field-reports}`, outside every repository, instead of
+  "outside the target repo's working tree, unless…". On one maintainer's machine 21 reports sat in six kinds of
+  improvised location, one as two identical copies. Its closing message now prints both files' **absolute** paths;
+  before, it named only the extract, so the full report a maintainer takes in was never pointed to. Intake reads
+  a report in the inbox and never moves it or writes its filename into the ledger (`docs/FIELD-REPORT-PROMPT.md`);
+  reports already taken in stay at the checkout root (CONTRIBUTING's data tiers). Set `SOTA_FIELD_REPORTS` to
+  move the inbox.
 - **Field report intake, 2026-11-24: a wait that never ended, `find` reordering per run, phrase searches over wrapped
   prose.** `sota-shell-scripting` rules/09 §5d: `gh run list --commit` matches only a full SHA, and a short one
   returns `[]` at exit 0, so a polling loop waiting for `completed` never ends (gh 2.103.2; a field session polled
