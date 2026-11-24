@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Field report intake, 2026-11-24: a wait that never ended, `find` reordering per run, phrase searches over wrapped
+  prose.** `sota-shell-scripting` rules/09 §5d: `gh run list --commit` matches only a full SHA, and a short one
+  returns `[]` at exit 0, so a polling loop waiting for `completed` never ends (gh 2.103.2; a field session polled
+  for 26 hours). Pass the full SHA, fail on an empty match, and bound the loop (new checklist item). rules/06 now
+  points at rules/08 §4 and rules/09 §5d before any loop is backgrounded. rules/06 §2 and rules/02: the agent
+  shell's bfs `find` returns a different order on each run (5 of 5 runs over 350 files, stable on a 10-file
+  directory), so never pair two runs by line. rules/06 §2 and rules/09 §5a: a multi-word `-F` needle misses every
+  hard-wrapped copy; search one word. `/sota-close` step 1 and `/sota-report` checks F and G told you to search
+  a phrase and now say one word. rules/09 §5a's `du` row: `-h` sizes are binary, so sum `du -k`.
 - **Closure pass, 2026-11-24.** The freshness workflow's job had no `timeout-minutes`, so a hung run could hold a runner
   for the 360-minute default; it now has 2 (~3x its measured 8–13 s). `docs/MULTI-AGENT.md` named the MCP prompts as
   "the five commands" (stale since the sixth; there are seven): it now names `commands/*.md` without a count. The

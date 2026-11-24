@@ -7,7 +7,7 @@ product**, or damage the thing they were inspecting. Split out of [`rules/01`](0
 its zsh, sweep and blast-radius sections became §1, §2 and §3 here. The blast-radius and
 process-table sections moved on to [`rules/08`](08-ad-hoc-side-effects.md) at v1.42.2, keeping their numbers,
 and the listing and selection sections (§5, §5a) to [`rules/09`](09-listing-and-selection.md) (· v1.43.1) the same
-way. Quoting itself stays in [`rules/01`](01-safety-baseline.md) §3, which this file assumes you have read.
+way. Quoting itself stays in [`rules/01`](01-safety-baseline.md) §3, which this file assumes you have read. **Before you background any loop, read [`rules/08`](08-ad-hoc-side-effects.md) §4 and [`rules/09`](09-listing-and-selection.md) §5d**: no task is ever *about* its wait, so subject routing never loads them (field-reported 2026-11-24: an unbounded CI poll ran 26 hours; the next one, written after rules/09 §5d was read, finished in minutes).
 
 ## 1. zsh is not bash — the deviations that bite *pasted* commands
 
@@ -135,7 +135,7 @@ rather than starting at it: the kernel resolves every intermediate link, so `fin
 scope you searched passes whether or not that scope excludes the answer. Field-reported: `rg -l
 'positive control' skills/ --glob '**/rules/*.md'` returned 4 files, the real query returned 0
 and was reported as a gap, and the answer sat in `skills/sota/SKILL.md`, which that glob never
-matches. **Draw the control from where your scope is least likely to reach**, and print the file
+matches. **Nor does it prove the needle's shape: a phrase is not a word.** A multi-word `-F` needle over hard-wrapped prose (Markdown, commit bodies) misses every copy that crosses a line break, and single-word controls in the same loop pass anyway. Search the phrase's rarest word and read the hits ([`rules/09`](09-listing-and-selection.md) §5a; field-reported 2026-11-24: `git grep -F 'Time Machine backs up'` returned 0 two minutes after this section was re-read, and the copy sat wrapped at `Time` / `Machine`). **Draw the control from where your scope is least likely to reach**, and print the file
 count beside the zero: a denominator that is implausibly small for the corpus is the tell. **A control scoped to HEAD reads HEAD, never the working tree after `git stash`**: stash keeps untracked (and ignored) files, so the file you just added, the one the control must exclude, is still searched (reproduced 2026-11-03, git 2.55.0: after `git stash` the untracked file was still there; a sweep over `git ls-files` found 0 hits, the working tree 1; field-reported the same day). Iterate `git ls-files <pathspec>`, read `git show HEAD:<path>`, or search a throwaway `git worktree add --detach <dir> HEAD`.
 
 **Where you have nothing to control *with*, print a denominator instead.** A positive control
@@ -189,7 +189,7 @@ or `.githooks/`. Only `--hidden` reaches them (404 → 576 files, 2 → 4 matchi
 routinely alias it. In one measured case it was a shell *function* running `ugrep -G
 --ignore-files --hidden -I --exclude-dir=.git …` — so it honoured `.gitignore` (which GNU
 grep does not) and skipped binaries, neither of which appears in any manual the reader would
-consult. **An absence measured through an unexamined wrapper is not an absence.** A count that **gates** an action (`grep -c … && run`) is a control: search a literal needle with `-F` (§2f). Field-reported 2026-10-30: the wrapper's ugrep counted 0 for `'^RATCHET'` where `/usr/bin/grep` counted 1, so the gated measurement never ran. **The same snapshot makes `find` a function running bfs**, which rejects a relative date that BSD and GNU `find` accept: `find . -newermt "6 months ago"` gives `Invalid timestamp`, and behind `2>/dev/null` an empty, clean-looking result. `-mtime -183` works in all three (measured 2026-11-22: bfs in the agent shell, macOS `/usr/bin/find`, GNU findutils 4.10.0; field-reported the same day).
+consult. **An absence measured through an unexamined wrapper is not an absence.** A count that **gates** an action (`grep -c … && run`) is a control: search a literal needle with `-F` (§2f). Field-reported 2026-10-30: the wrapper's ugrep counted 0 for `'^RATCHET'` where `/usr/bin/grep` counted 1, so the gated measurement never ran. **The same snapshot makes `find` a function running bfs**, which rejects a relative date that BSD and GNU `find` accept: `find . -newermt "6 months ago"` gives `Invalid timestamp`, and behind `2>/dev/null` an empty, clean-looking result. `-mtime -183` works in all three (measured 2026-11-22: bfs in the agent shell, macOS `/usr/bin/find`, GNU findutils 4.10.0; field-reported the same day). **bfs also returns a different order on each run**, so never pair two runs by line (`paste <(find …) <(find … | xargs git hash-object)`): the counts agree and the rows are misaligned. Derive both columns from one list (`git hash-object --stdin-paths < list | paste - list`), or `sort` both (measured 2026-11-24, bfs 4.1.1: 5 runs over a 350-file tree gave 5 orders, `/usr/bin/find` and `find -s` gave 1; a 10-file directory gave 1, so a small test tree hides it; field-reported the same day, where it retracted a correct cause).
 
 **Two tools can answer to the same name.** Measured in one agent environment: `grep` was a
 shell *function* running **ugrep 7.8.4**, except that any `-z`/`-Z` argument was routed to

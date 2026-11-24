@@ -187,13 +187,14 @@ where it fires. A hook that ran and printed nothing leaves no record, so a row o
 evidence the hook was installed: check the settings before calling it absent.
 
 F. **Quote the text you propose to change, and find every copy.** Give `file:line` at the stamped
-commit, before and after. Then `git grep -nF '<a distinctive phrase>'` across the checkout and
-print the hit count. The same sentence often lives in a rules file, a generated block **and the
+commit, before and after. Then `git grep -nF '<its rarest word>'` across the checkout and
+print the hit count (one word, not a phrase: Markdown here is hard-wrapped, and a phrase misses
+every copy a line break splits). The same sentence often lives in a rules file, a generated block **and the
 installed copy that block was written into** (an agent file outside the repo), and a gate or probe
 may match its exact words. List every hit, and say which ones you expect to change.
 
 G. **Has it happened before?** Search the intake ledger (`docs/ADOPTION-LOG.md`), `git log -S`
-on the key phrase, and **your own memory or notes store** for the same mechanism (with a control
+on the key word (a phrase misses wrapped copies), and **your own memory or notes store** for the same mechanism (with a control
 word you know is there: a symlinked store searched as `grep -r word dir` reads nothing on BSD grep,
 so search `dir/` — `/sota-close` step 1). A repeat with the
 rule already written down is evidence about the rule's *shape*, which is category 2 above. Print
