@@ -121,5 +121,10 @@ undo it.
 - Anything installed on the machine (tools, the library itself): named, with the command that
   installed it.
 
+The agent hooks (the zsh command check, the code-rules and action-rules notes, the per-prompt
+reminder) are not part of this pass: they belong to the machine or account, not the repository.
+If `verify-setup.sh` reported any of them unregistered (its checks 2c–2f), name
+`<library>/scripts/install.sh --routing` as the one step that registers them.
+
 Say plainly what was not done: declined items, triggers you named and did not act on, commands
 you could not run.

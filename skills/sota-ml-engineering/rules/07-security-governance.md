@@ -254,7 +254,8 @@ rules/08](../../sota-code-security/rules/08-llm-ai-security.md) and [`sota-llm-e
       `grep -rniE 'spectral|activation.?cluster|influence|trigger.?(set|corpus)|backdoor' --include='*.py' . || echo "no poisoning screen or trigger-corpus gate"`
       ; a signature or provenance check alone does not satisfy this item
 - [ ] **Extraction detection and response (§1) — MEDIUM** —
-      `grep -rniE 'extraction|model.?steal|query.?(pattern|distance)' --include='*.py' . || echo "no extraction detector"`
+      `grep -rniE 'model.?(extraction|steal)|extraction.?(attack|monitor|detect)|query.?(pattern|distance)' --include='*.py' . || echo "no extraction detector"`
+      (the bare word *extraction* is left out: any parsing code says it, and a hit silences the warning)
       ; manual: limits sized per principal and globally, alerts carry principal/window/count,
       and a revoke/IR path exists
 - [ ] **ML-BOM, signed, per model (§2) — HIGH** —

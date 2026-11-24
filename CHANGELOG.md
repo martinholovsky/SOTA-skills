@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for the 360-minute default; it now has 2 (~3x its measured 8–13 s). `docs/MULTI-AGENT.md` named the MCP prompts as
   "the five commands" (stale since the sixth; there are seven): it now names `commands/*.md` without a count. The
   2026-11-23 data-location ledger row states the search scope it actually had.
+- **Follow-ups, 2026-11-24.** Three probes corrected after walking two field reports' skipped hits:
+  `sota-ml-engineering` rules/07's extraction-detector probe was silenced by the bare word *extraction* in any
+  parsing code (a false clean; now model-extraction terms only); `sota-copywriting` rules/04's superlative sweep
+  matched *only*, *first* and *never* in engineering Markdown (124 hits, none a claim; now the claim forms §1
+  names); `sota-javascript-typescript` rules/05's upload probe matched "file name" in prose (unescaped `.`, no
+  file-type filter). Each fixture is re-keyed, with a case the old probe failed. `sota-python` rules/06's benchmark
+  item no longer reads a run-duration stamp as a timer.
+- **Measured live:** a PostToolUse hook gets no `CLAUDE_FILE_PATH` (Claude Code 2.1.331; input is JSON on stdin);
+  `autoMemoryDirectory` in `.claude/settings.local.json` moves the memory store (headless), now in
+  `sota-docs-workflow` rules/06 §4; the Node `--import` hooks failure is v22.22.1, fixed by v22.23.2 for pass-through
+  hooks (`sota-javascript-typescript` rules/04 §13, narrowed). `/sota-init` names `install.sh --routing` when the
+  agent hooks are unregistered.
 
 ## [1.60.0] - 2026-11-24
 
