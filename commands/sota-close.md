@@ -48,7 +48,9 @@ say so explicitly** — that is a valid answer, but it is also a claim, so it me
 **Then find where the claim went.** A wrong claim does not stay where you said it. It gets
 written into a commit message, a doc sentence, a code comment, a ledger row, a memory file, a
 PR description. Grep its distinctive words across the tree *and* across this session's commits
-(`git log -S '<phrase>'`), **and across the agent's memory directory**, which lives outside the
+(`git log -S '<word>'`), **one word per search, never a phrase**: prose is hard-wrapped, and a
+phrase misses every copy a line break splits (field-reported 2026-11-24: 0 hits for a claim that
+sat in the agent file, wrapped mid-phrase), **and across the agent's memory directory**, which lives outside the
 repository (e.g. `~/.claude/projects/<slug>/memory/`), so neither search reaches it. A stale line
 there is an instruction the next session follows (field-reported 2026-10-22: a memory index line
 still called a negative result final after the session had overturned it). **That directory is

@@ -4684,12 +4684,12 @@
     "generic ('the language skill')": 22,
     "md link, other skill": 1965,
     "md link, outside skills/": 3,
-    "md link, same skill": 2876,
+    "md link, same skill": 2880,
     "name (backticked)": 456,
     "name (bare)": 240,
     "name+file (backticked)": 950,
     "name+file (bare)": 180,
-    "own rules/NN": 3102
+    "own rules/NN": 3107
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4701,7 +4701,7 @@
     "name (bare)": 196,
     "name+file (backticked)": 945,
     "name+file (bare)": 168,
-    "own rules/NN": 2996
+    "own rules/NN": 3000
   },
   "rules_index_style": {
     "link": 42
@@ -9018,6 +9018,7 @@
       ],
       "same": [
         "sota-shell-scripting/rules/01-safety-baseline.md",
+        "sota-shell-scripting/rules/02-robustness-correctness.md",
         "sota-shell-scripting/rules/03-security.md",
         "sota-shell-scripting/rules/05-constructs-and-cleanup.md",
         "sota-shell-scripting/rules/07-powershell.md",

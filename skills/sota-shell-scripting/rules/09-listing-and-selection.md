@@ -88,7 +88,8 @@ tenth on 2026-11-07:
 | the question | the selector typed | what it actually returns |
 |---|---|---|
 | "the kernel this release ships" | `sort -V \| tail -1` over the repo | the newest available — here a **backports** kernel, 6.12 for a 6.1 release |
-| "how much disk will this free" | `du -sh target` / the tool's own summary | apparent size / logical bytes deleted — **not** blocks returned to the filesystem |
+| "how much disk will this free" | `du -sh target` / the tool's own summary | apparent size / logical bytes deleted — **not** blocks returned to the filesystem. And `-h` suffixes are binary (1,000,000 bytes prints `980K`), so `999M` + `163M` is 1,162 MiB, not "1.16 GB": sum `du -k` and convert once (field-reported 2026-11-24, in a CHANGELOG) |
+| "every copy of this sentence" | `git grep -F '<a multi-word phrase>'` | only the copies that no line wrap splits: Markdown wrapped at ~100 columns hides the rest, at exit 1 like a true absence. Search the rarest single word and read the hits (field-reported 2026-11-24) |
 | "how much is reclaimable" | `podman system df` | images not backing a *running* container, with shared layers double-counted down the ancestry chain |
 | "what is this Deployment's pod logging" | `kubectl logs deploy/X` | **one** pod matching X's *label selector* — ownership is never checked, so it can be another workload's pod whose labels overlap |
 | "the VM I just started" | `ssh -p 2222 127.0.0.1` through a NAT forward | **whichever process bound the port first**, possibly another VM, whose host key `accept-new` then pins as this one's |
@@ -271,6 +272,14 @@ gh pr checks "$pr" --json name,bucket --jq '.[] | "\(.bucket) \(.name)"'   # the
 Measured 2026-11-23 under bash and zsh: with all 10 checks done it printed `10 pass` at exit 0;
 on the PR with none it printed `only 0 of 1 checks registered` at exit 1.
 
+**A selector that matches nothing makes a polling loop wait forever, not return.**
+`gh run list --commit <sha>` matches only a full SHA, though its help says just "SHA": a short
+SHA returns `[]` at exit 0 with empty stderr, `.[0]` renders `null null`, and an
+`until [ "$status" = completed ]` loop never sees `completed` (measured 2026-11-24, gh 2.103.2:
+a 7-character SHA gave 0 runs, its full SHA 2). A field session polled that way for 26 hours.
+Resolve the selector first (`sha=$(git rev-parse HEAD)`), treat an empty match inside the
+loop as an error rather than as "not yet", and bound the iterations as above.
+
 ## Audit checklist
 
 - [ ] **Does a merge, release or deploy step trust a watch's return?** (§5d) A
@@ -279,6 +288,9 @@ on the PR with none it printed `only 0 of 1 checks registered` at exit 1.
       output and chaining with `;` makes both look finished, and `mergeStateStatus` `CLEAN`
       holds with zero checks. Wait for the expected number of checks with a bound, then read
       the buckets in a separate command.
+- [ ] **Can a polling loop's selector match nothing?** (§5d) An abbreviated SHA given to
+      `gh run list --commit` returns `[]` at exit 0, and a loop waiting for `completed` then
+      never ends. Pass the full SHA, fail on an empty match, and bound the iterations.
 - [ ] **Does any kill or wait select processes by command-line substring?** (§5c) This means
       `pkill -f`, `pgrep -f`, `ps … | grep`, or a loop over `/proc/*/cmdline`. Each one
       matches the selecting shell, and in an agent harness or under `ssh host '…'` its parent
@@ -299,7 +311,7 @@ on the PR with none it printed `only 0 of 1 checks registered` at exit 1.
       matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`), *the
       process on a forwarded port* is not *the VM you started* (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), *a health probe on a port* is not *the server you just started* (check the port's owner after warm-up), *a
       path* is not *the volume* (`pwd -P`), a *prefix glob* is not *this name* (`X_*` matches `X_other_*`), and a
-      *remote-tracking ref* is not *the remote* (`git ls-remote --heads`, not `%(upstream:track)`), and a *bare date* is not *midnight* (`git log --since=YYYY-MM-DD` takes the current clock time: write `'YYYY-MM-DD 00:00'` or a commit range), and a *distinct key* is not *a distinct line* (`sort -u -k…` keeps one line per key: dedupe with `sort -k… | uniq`, never with `-s`). Nothing is
+      *remote-tracking ref* is not *the remote* (`git ls-remote --heads`, not `%(upstream:track)`), and a *bare date* is not *midnight* (`git log --since=YYYY-MM-DD` takes the current clock time: write `'YYYY-MM-DD 00:00'` or a commit range), and a *distinct key* is not *a distinct line* (`sort -u -k…` keeps one line per key: dedupe with `sort -k… | uniq`, never with `-s`), and a *phrase match* is not *every copy* (a hard-wrapped copy is missed: search one word). Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to
       the subject; read one full record before trusting the aggregate.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/
