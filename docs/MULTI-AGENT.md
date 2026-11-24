@@ -96,8 +96,8 @@ default (gemini-cli `docs/cli/gemini-md.md`, fetched 2026-10-06).
 
 `scripts/sota-mcp-server.py` serves the library **read-only** over MCP (stdio, standard library
 only): `list_skills` returns every skill's description so the agent's own model chooses,
-`get_skill` and `get_rules_file` return the files, the files are also MCP resources, and the five
-commands are MCP prompts. It does not route, write, execute anything or open a connection, and
+`get_skill` and `get_rules_file` return the files, the files are also MCP resources, and the slash
+commands (`commands/*.md`) are MCP prompts. It does not route, write, execute anything or open a connection, and
 every request is a lookup in an index built at startup, so no path is ever built from request
 input. Dual-era: it answers the 2026-07-28 protocol (`server/discover`, per-request `_meta`) and
 the older `initialize` handshake.
