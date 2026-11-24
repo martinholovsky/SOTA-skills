@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for the 360-minute default; it now has 2 (~3x its measured 8–13 s). `docs/MULTI-AGENT.md` named the MCP prompts as
   "the five commands" (stale since the sixth; there are seven): it now names `commands/*.md` without a count. The
   2026-11-23 data-location ledger row states the search scope it actually had.
+- **The per-prompt reminder skips background-task notifications** (`install.sh`'s hook and the plugin's
+  `plugin-routing-hook.sh`). A notification reaches `UserPromptSubmit` as a prompt beginning `<task-notification>`
+  (measured, Claude Code 2.1.331), and in one session 6 of 20 reminders landed on them. Any other input still prints the
+  reminder. Existing installs: `install.sh --update` offers the refreshed hook.
 - **Follow-ups, 2026-11-24.** Three probes corrected after walking two field reports' skipped hits:
   `sota-ml-engineering` rules/07's extraction-detector probe was silenced by the bare word *extraction* in any
   parsing code (a false clean; now model-extraction terms only); `sota-copywriting` rules/04's superlative sweep
