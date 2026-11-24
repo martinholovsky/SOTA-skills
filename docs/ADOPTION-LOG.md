@@ -10219,4 +10219,15 @@ The verdict stands; the first search's scope was narrower than written.
 | (E2) the verdict walk: §5a and §5d not met for the first loop, one unswept phrase, one unbraced `$var[` | **recorded**; the code is private, so the verdicts are **not reproducible here**. Process gap noted per procedure step 6: no loaded file's checklist was re-read after the last edit | — |
 | (G) no prior ledger hit for `--commit`; `bfs` only in the 2026-11-22 relative-date intake | **verified**: `rg -F -e '--commit'` over this ledger gave 0 before this entry; `bfs` appears only in rules/06:192 among skills | — |
 
+## 2026-11-24 — operator request: one location for field reports, and the full report's path in the closing message
+
+**Source:** operator request 2026-11-24 ("align a bit more where those field reports should be stored … some provide a link on [the] full report but [others the] extract only"). **Measured first:** `rg --files --hidden --no-ignore --max-depth 5 -g 'FIELD-REPORT*'` over the maintainer's projects folder (control: the 58 report files at this checkout's root, all found) listed 21 full reports outside this checkout in six kinds of place: a projects-folder root, two different sibling folders, a repo root, two repos' `evidence/field-reports/` and one repo's `scratchpad/<date>/`. Every in-repo copy was ignored (`git check-ignore`) and none tracked; one report existed as two identical copies (`cmp`). `/sota-report`'s closing block printed the extract's filename twice (as "Read it first" and as `--body-file`) and the full report's path never.
+
+| Claim / proposal | Verdict | Landed in |
+|---|---|---|
+| one default location | **adopted** (operator choice of three, 2026-11-24): `${SOTA_FIELD_REPORTS:-$HOME/.local/share/sota-skills/field-reports}`, outside every repository. Rejected: inside each project (every session must check an ignore rule and any directory scanner, and intake must search many repos); a hard-coded machine path (machine-specific text in a public library) | `commands/sota-report.md` "Where to put it"; README (three places); `docs/FIELD-REPORT-PROMPT.md` |
+| the closing message names the full report | **adopted**: both absolute paths are printed, the full report first | `commands/sota-report.md` |
+| where a report lives after intake | **adopted** (operator choice): it stays in the inbox; intake reads it there and records line count and hash, never the filename, which usually names a private project (the 2026-11-13 leak, PR #698) | `docs/FIELD-REPORT-PROMPT.md` step 1; `CONTRIBUTING.md` data tier 2 |
+| consolidate the existing scattered reports | **not done** (operator choice): only new reports follow the rule; earlier ledger entries already carry each report's hash | — |
+
 ---

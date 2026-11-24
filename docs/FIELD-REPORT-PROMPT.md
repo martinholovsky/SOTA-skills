@@ -53,7 +53,9 @@ paste it into a tool that has no slash commands, open that file.
 
 ## Two ways a report reaches the library
 
-`/sota-report` always writes a **private** `FIELD-REPORT-*.local.md`, then prints a short
+`/sota-report` always writes a **private** `FIELD-REPORT-*.local.md` to the machine's report inbox,
+`${SOTA_FIELD_REPORTS:-$HOME/.local/share/sota-skills/field-reports}` (outside every repository,
+so no ignore rule or secret scanner is involved, and one place for intake to look), then prints a short
 **extract** — finding, mechanism, whether the rule was already loaded, what caught it,
 proposed rule, confidence. It never posts anything.
 
@@ -171,6 +173,10 @@ ledger entry, with the command that produced the label: **verified** (reproduced
    recorded "336 lines" made a 366-line revision visible, and its 30 new lines were taken in;
    its companion recorded neither, and whether a re-sent copy was the same file could only be
    guessed from a file date.
+   **Read the report where it lies, in the inbox** (`${SOTA_FIELD_REPORTS:-$HOME/.local/share/sota-skills/field-reports}`),
+   and do not move or copy it into a checkout. **Never write its filename into the ledger:** the
+   `<PROJECT>` part usually names a private project, so describe the report instead ("a local
+   field report, not filed") and let the line count and hash identify it.
 2. **The stamp is a claim.** Run the triage above. If the stamp resolves to nothing, or the
    install type is `unknown`, treat every claim about library text as unverified until
    re-checked against `origin/main`.

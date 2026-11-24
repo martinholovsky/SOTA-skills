@@ -40,18 +40,23 @@ is one `git log` on the file you cite.
 internal service names, private hostnames, or customer data. Products appear only as neutral
 examples ("a Postgres instance", "an eBPF sensor").
 
-**Where to put it: outside the target repo's working tree, unless you have checked two things
-there.** `.local.md` is gitignored *in SOTA-skills*; that is a fact about that repo, and it
-does not travel with this instruction. In the repo you are reporting on, check (1) that the
-pattern is actually ignored — `git check-ignore -v <file>` answers it, exit 0 naming the rule
-that matched and exit 1 with no output when nothing does, and it reads `.git/info/exclude` as
-well as `.gitignore`, which is where agent scaffolding usually lives — and (2) that no
-**working-directory** scanner runs over the tree, because a directory scanner does not read
-`.gitignore` at all (`sota-secrets-management` rules/04, verified on gitleaks 8.30.1). Writing
-the report into the root of a repo mid-session otherwise dirties the tree and feeds an
-unreviewed file to a secret gate, which then fails on your own report. When in doubt write it
-outside and move it in afterwards — that is what a field session actually did on 2026-09-15,
-after this instruction's literal form cost it a red gate.
+**Where to put it: the machine's field-report inbox, never a repository.**
+
+```sh
+dir="${SOTA_FIELD_REPORTS:-$HOME/.local/share/sota-skills/field-reports}"
+mkdir -p "$dir" && cd "$dir" && pwd -P     # print the absolute path you will write to
+```
+
+Write both files (the report and, below, its extract) there, whichever project the session was
+in. One place per machine is what makes intake find a report: before this was named, sessions
+improvised six kinds of location (a repo root, a repo's `evidence/` or `scratchpad/<date>/`,
+two different sibling folders, the parent directory), and one report existed as two identical
+copies (counted 2026-11-24 on one maintainer's machine, 21 reports outside the library's checkout).
+**Do not write it inside the repo you are reporting on**, even an ignored path: a
+working-directory secret scanner does not read `.gitignore`
+(`sota-secrets-management` rules/04, verified on gitleaks 8.30.1), so the scanner fails on your own report, and an ignore rule is
+a fact about one repo that does not travel with this instruction (field-reported 2026-09-15, a
+red gate). Set `SOTA_FIELD_REPORTS` to move the inbox; do not pick a new place per session.
 
 ## What is worth reporting, in descending order of value
 
@@ -250,15 +255,18 @@ write to disk, do not post) a short **extract** suitable for a public issue:
   where a leak lives, and a public issue is indexed and cached before anyone notices.
 
 **Write the extract to `FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md`**, beside the report
-(the same location rule above) — so the operator can read the exact bytes before anything is sent,
+(the same inbox) — so the operator can read the exact bytes before anything is sent,
 and so the submit command can reference a file rather than a paste buffer.
 
-Then print both paths and stop:
+Then print **both files' absolute paths** and stop. The full report is the one a maintainer
+takes in, so it is never left out of this message, and a bare filename is useless to a reader
+in another directory:
 
-    Read it first:  FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md
+    Full report:    <inbox>/FIELD-REPORT-<PROJECT>-<DATE>.local.md
+    Extract:        <inbox>/FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md   (read it first)
     Submit it:      gh issue create --repo martinholovsky/SOTA-skills \
                       --title "[field-report] <one line>" \
-                      --body-file FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md \
+                      --body-file <inbox>/FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md \
                       --label field-report
     No gh?          https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml
 
