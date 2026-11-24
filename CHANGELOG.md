@@ -5,6 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Closure pass, 2026-11-24.** The freshness workflow's job had no `timeout-minutes`, so a hung run could hold a runner
+  for the 360-minute default; it now has 2 (~3x its measured 8–13 s). `docs/MULTI-AGENT.md` named the MCP prompts as
+  "the five commands" (stale since the sixth; there are seven): it now names `commands/*.md` without a count. The
+  2026-11-23 data-location ledger row states the search scope it actually had.
+
 ## [1.60.0] - 2026-11-24
 
 **Front door checked:** sota-init · git revert

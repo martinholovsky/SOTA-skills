@@ -10150,6 +10150,13 @@ loaded, and the same shapes found by looking for them elsewhere.
 | The memory-guard hook (asks before `rm`/`mv`/`ln` touching a memory folder; fails closed) | **DEFERRED — revisit trigger: a replay of the hook over the local transcripts, counting how often it would have asked and how many of those were real moves, as every shipped hook was measured before it shipped.** Generic for Claude Code users and well designed (asks, never blocks, asks on unparseable input), but unmeasured | — (deferral) |
 | `autoMemoryDirectory` as a replacement for per-path memory links | **not adopted**: marked unverified in the source prompt itself; nothing to state until it is tested in a session | — |
 
+**Correction, 2026-11-24 (closure pass; the row above left as written).** The "Audit checks" row says the absences were searched "over `skills/`, `commands/` and this log". That held for the vocabulary table (`local-durable`, `rebuildable`, `scratchpad`, …), not for the rest: the query for a test that passes only because an ignored file exists covered `skills/` alone, and "a rule about citing scratch paths" was not queried directly. Re-run on 2026-11-24:
+- **Ignored-file query over `commands/` and this log:** 1 hit, l.9191, ROADMAP 87 (a gate reusing its own pass under a key that missed untracked files). That is adjacent, not the same rule.
+- **`/tmp` lines in skill files:** 19 files carry `/tmp` at HEAD. Filtered for citing, docs, results or hand-offs, the only lines kept are rules/06's own; those lines are also the filter's control.
+- **`scratchpad` in `skills/` and `commands/`:** outside rules/06 and `/sota-close`, only the memory-poisoning lines (`sota-code-security` rules/08 l.124, `sota-threat-modeling` rules/03 l.279).
+
+The verdict stands; the first search's scope was narrower than written.
+
 ## 2026-11-23 — `/sota-init`: the day-zero sequence as one command, and the maintainer's earlier scaffold repository taken in before its deletion
 
 **Source:** operator request 2026-11-23 ("cut v1.59.0, then /sota-init"), and the maintainer's own public repository `martinholovsky/claude-project-scaffold`, read at `c2ba724` (2026-02-27; 53 entries, no licence file, maintainer-authored), which the operator plans to delete once `/sota-init` lands. Claude Code facts were checked against code.claude.com/docs/en/hooks and /memory on 2026-11-23, by a fetch agent quoting verbatim. Two ranges of the hooks page came back only as summaries, and one range was not read.

@@ -16,6 +16,9 @@ jobs:
   freshness:
     name: Rules-file freshness
     runs-on: ubuntu-latest
+    # ~3x the measured run (8–13 s over the last five monthly runs, 2026-07..11); the
+    # default is 360 minutes (sota-devsecops rules/16 §16.5)
+    timeout-minutes: 2
     steps:
       # actions/checkout, pinned by commit SHA (sota-devsecops rules/01). The version
       # lives in the trailing comment Dependabot maintains — naming it here goes stale,
