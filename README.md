@@ -164,12 +164,17 @@ And the habits of the work itself, which no standard covers and long agent sessi
 - **where project data lives** — five classes (tracked, kept-not-committed, rebuildable,
   ephemeral, external by design), declared per project in its agent file, with checks that no doc
   or result cites a temp path and no test passes only because an ignored file exists
-  (`sota-docs-workflow` rules/06). Locations stay the project's choice;
+  (`sota-docs-workflow` rules/06). Locations stay the project's choice. `/sota-init data` runs the
+  audit and fix, and the memory guard asks before anything moves an agent's memory;
+- operating-system metadata a deploy or archive copies along: a `.DS_Store` stores the names of
+  files in its folder (42 of 304 in a measured one), so a web root or release zip should never carry
+  one, nor a `Thumbs.db` (`sota-code-security` rules/07 §4, `sota-devsecops` rules/04);
 - waiting for CI by the checks you expect: `gh pr checks --watch` returns at once before any
   check registers, and the PR still reads `CLEAN` with zero checks (`sota-shell-scripting` rules/09 §5d);
 - the shell traps an agent meets on its own machine, each measured: `rm -r link/` deletes a
   symlink's target directory on macOS at exit 0; `$!` after `cd d && cmd &` names a bash subshell;
-  an agent's `find` can be bfs, which rejects `-newermt "6 months ago"`.
+  an agent's `find` can be bfs, which rejects `-newermt "6 months ago"` and reorders its output on
+  every run; `gh run list --commit` matches only a full SHA, so a wait on a short one never ends.
   This repository runs **zizmor** over its own workflows, and its first run found a rule it broke.
 
 **Measured, not asserted** — library vs. an *unguided model* (same model, no

@@ -1418,7 +1418,6 @@
    "sample": "- [ ] Are uploads content-validated (magic bytes or a real decoder; an extension allowlist that rejects double extension",
    "members": [
     "sota-code-security/rules/21-file-uploads.md#5dfa5fa27d5a",
-    "sota-javascript-typescript/rules/05-security.md#35bccbb8818f",
     "sota-ruby/rules/03-web-hardening.md#e8b1e417b1b4"
    ]
   },
