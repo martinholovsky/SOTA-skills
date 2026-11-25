@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`/sota-init data`: four lessons from its first field run** (2026-11-25, `sota-docs-workflow` rules/06 and P1–P5).
+  The audit's own working files are evidence too: copy them out of the session's scratchpad before the commit
+  (P5, rules/06 §3 and its checklist item). Map every memory key whose name contains the project's, not only the
+  keys its known spellings give: a session started in a subfolder or scratchpad gets its own, and keys turn `/`,
+  `_` and `.` into `-` (measured), so the `find` matches with one wildcard per non-alphanumeric character; an empty
+  extra goes with `rmdir --` on a yes (P3.1, rules/06 §4). Claude Code 2.1.332 headless resolved a symlinked parent
+  to one key from either spelling (measured on a throwaway project; interactive not measured); older versions'
+  per-spelling keys stay on disk, and the differential's control arm records which keys are used (P3.5). The save
+  step's invocation is recorded, with "without `--allowedTools`: not measured" and the measured trap that a prompt
+  placed after `--allowedTools` is read as a tool name.
 - **The memory guard ships with the library** (`scripts/memory-guard-hook.py`, a PreToolUse hook on Bash, on by
   default: the plugin registers it, `install.sh --routing` offers it). It **asks** before `rm`, `mv`, `rmdir`,
   `unlink` or `ln` touches an agent memory folder: a `<config>/projects/*/memory` key, the real folder behind a
