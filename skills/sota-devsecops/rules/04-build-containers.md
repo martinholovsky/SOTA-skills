@@ -108,7 +108,12 @@ Hard rules:
   (`docker history`), copied-then-deleted files persist in the layer. Any credential in an
   ARG/ENV/layer = High (Critical if the image is in a shared registry).
 - **`.dockerignore`** excluding `.git`, `.env*`, secrets, local configs, `node_modules` —
-  `COPY . .` without it ships your git history and whatever junk is on the build machine.
+  `COPY . .` without it ships your git history and whatever junk is on the build machine,
+  operating-system metadata included (`.DS_Store`, `._*`, `Thumbs.db`, `desktop.ini`): a
+  `.DS_Store` stores names of files in its folder. The same goes for a release archive: build
+  it from the commit (`git archive`), not by zipping a working folder. `ditto -c -k
+  --sequesterRsrc`, the macOS archiver, added `__MACOSX/<dir>/._<file>` for a file carrying an
+  extended attribute, and `git archive` of the same tree did not (measured 2026-11-25).
 - Order for cache correctness: manifests + frozen install first, then source. Never let a
   cache mount cross trust boundaries ([rules/01](01-pipeline-security.md) §1.6, [rules/16](16-fast-ci-without-blind-spots.md) §16.2).
 - No `apt-get upgrade` at build (unreproducible drift) — get fixes by bumping the base

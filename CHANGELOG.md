@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Operating-system metadata files, where each one bites.** `sota-code-security` rules/07 §4: a deployed web
+  root is swept for `.DS_Store`, `._*`, `Thumbs.db` and `desktop.ini` too (a `.DS_Store` stores names of files in its
+  folder, unlinked ones included: 42 of 304 names in a measured one), and the `find` sweep in its checklist names
+  them. `sota-devsecops` rules/04: the `.dockerignore` list includes them, and release archives come from
+  `git archive`, not a zipped folder (`ditto -c -k --sequesterRsrc` added `__MACOSX/…/._<file>`; `git archive` did
+  not). `sota-skill-security` rules/03 §4: publish a skill or plugin from the commit, not the folder (the plugin
+  directory refuses to list a plugin holding one). `/sota-init` adds a cross-OS `.gitignore` floor and warns that
+  GitHub's whole `Global/Windows.gitignore` ignores `*.msi`, `*.cab` and `*.lnk`. This repo's `.gitignore` gains
+  the same floor.
 - **Field report intake, 2026-11-25: the load audit's edit cutoff under a worktree, and a same-line AND read as
   a file-level absence.** `scripts/session-load-audit.py --diff` matched the session's Edit/Write calls against
   `--repo` alone, so running it from the clean worktree its own refusal recommends gave no cutoff and tabled

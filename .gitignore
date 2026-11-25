@@ -18,8 +18,13 @@ profiles/*
 *.local.txt
 *.local.json
 
-# OS / editor cruft
+# OS / editor cruft (the cross-OS floor /sota-init recommends)
 .DS_Store
+._*
+Thumbs.db
+desktop.ini
+.directory
+.Trash-*
 *.swp
 *~
 

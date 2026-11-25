@@ -75,7 +75,13 @@ the agent file, shown to the user first.
 
 1. **`.gitignore`**, before anything else can be committed: the language's standard entries
    plus `.env`, `*.local.*` and the project's class-3 folders. If one exists, list the missing
-   entries and ask before appending.
+   entries and ask before appending. Add a floor of **operating-system metadata** too, because
+   contributors' machines are unknown: `.DS_Store` and `._*` (macOS), `Thumbs.db` and
+   `desktop.ini` (Windows), `.directory` and `.Trash-*` (Linux). Do not paste GitHub's whole
+   `Global/*.gitignore` templates: the Windows one ignores `*.msi`, `*.cab` and `*.lnk`, and
+   the Linux one `*~` and `nohup.out`, so a project shipping an installer stops tracking it.
+   Patterns about one person's own tools belong in their `core.excludesFile` (default
+   `~/.config/git/ignore`, per `man gitignore`), not here.
 2. **Secret scanning and gates**: `<library>/scripts/init-gates.sh --dry-run`, show its output,
    then run it without `--dry-run`. It installs both the pre-commit and pre-push hooks. Install
    the tools it names as missing only with the user's agreement.
