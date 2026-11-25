@@ -216,7 +216,7 @@ empty and failed are genuinely the same outcome. **Say which, in a comment.**
 
 **`head -1` over unordered output is a coin flip with one side visible in development.**
 Tools that emit *sets* promise no order — `git notes list`, `git for-each-ref` without
-`--sort`, `find`, `ls` on some filesystems, `kubectl get` without sorting. Code that
+`--sort`, `find`, `ls` on some filesystems, `kubectl get` without sorting — and two runs of one tool need not agree (bfs `find` reorders per run: [rules/06](06-ad-hoc-commands.md) §2), so pairing two runs by line is the same bug. Code that
 takes "the" element is correct while exactly one exists and silently picks wrong
 afterwards. Sort by the field that defines *latest*/*best* and select explicitly, or fail
 when the count is not 1. **Test with two elements, never one** — a single-element fixture

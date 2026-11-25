@@ -151,6 +151,11 @@ author's certainty, including the parts the author never checked.
 - **Keep it generic.** Internal hostnames, project names and stack assumptions leak
   the author's employer into every consumer's context, and abbreviations leak just
   as effectively as full names.
+- **Publish from the commit, not the folder.** A working folder carries operating-system
+  metadata (`.DS_Store`, `._*`, `Thumbs.db`, `desktop.ini`) that the repository never held,
+  and `claude plugin validate` (Claude Code 2.1.332) warns that the plugin directory "cannot
+  scan or list a plugin that contains one". Package from a clean checkout or `git archive`,
+  and keep the names in `.gitignore`.
 - **Make the skill's own claims checkable.** Where a rule asserts a count, a cap or a
   file list, something should be able to verify it — the same standard the skill
   would impose on the code it audits.
@@ -204,7 +209,8 @@ Report findings as `file:line | rule | severity | effort | fix`, and rate severi
       rather than generalised (§3)?
 - [ ] **Numbers carry their sample size** where the skill quotes a measurement (§3)?
 - [ ] **No credentials, no unexplained network calls, no shell beyond the skill's
-      purpose, no internal names or stack assumptions** (§4)?
+      purpose, no internal names or stack assumptions, and no operating-system metadata in
+      what is published** (§4)?
 - [ ] **Audit sample weighted to expensive-if-wrong claims** — security prescriptions,
       version-pinned facts, and anything instructing the agent to disable a check (§5)?
 - [ ] **Unreached files identified** — any rules file no index points at is inert by

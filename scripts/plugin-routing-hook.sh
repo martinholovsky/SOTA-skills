@@ -27,6 +27,18 @@ case "${SOTA_ROUTING_HOOK:-on}" in
   off | OFF | 0 | false | FALSE | no) exit 0 ;;
 esac
 
+# NOT ON A BACKGROUND-TASK NOTIFICATION. A notification is not a decision point, and a reminder
+# repeated where it cannot apply is one more reason to stop reading it (field report 2026-11-23:
+# 6 of 20 reminders in one session landed on notifications). Claude Code sends the event as compact
+# JSON on stdin; measured 2026-11-24 (Claude Code 2.1.331, a logging hook): a notification fires
+# UserPromptSubmit with "prompt" beginning "<task-notification>". Anything else, including no input,
+# still prints the reminder, so a format change fails toward showing it. install.sh's HOOK_CMD
+# carries the same test as a `grep -qE … ||` guard.
+input="$(cat 2>/dev/null || true)"
+case "$input" in
+  *'"prompt":"<task-notification>'*) exit 0 ;;
+esac
+
 root="${CLAUDE_PLUGIN_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
 cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 proj="${CLAUDE_PROJECT_DIR:-$PWD}"
@@ -39,8 +51,8 @@ for s in "$cfg/settings.json" "$cfg/settings.local.json" \
   fi
 done
 
-line="$(grep -m1 '^readonly HOOK_CMD="echo '"'" "$root/scripts/install.sh" 2>/dev/null || true)"
-text="${line#readonly HOOK_CMD=\"echo \'}"
+line="$(grep -m1 '^readonly HOOK_CMD="' "$root/scripts/install.sh" 2>/dev/null || true)"
+text="${line#*echo \'}"
 text="${text%\'\"}"
 if [ -z "$line" ] || [ -z "$text" ] || [ "$text" = "$line" ]; then
   echo "sota-skills: plugin-routing-hook could not read HOOK_CMD from $root/scripts/install.sh — no routing reminder this prompt" >&2

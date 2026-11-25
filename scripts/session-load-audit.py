@@ -716,7 +716,9 @@ def diff_probes(repo: Path, base: str, lib: Path) -> tuple[dict, str]:
         if untracked * 2 > len(added):
             hint = (f"{untracked} of them are untracked files, which no base excludes: commit what the session "
                     f"wrote, then run from a clean worktree (git worktree add --detach <dir> HEAD; it sees "
-                    f"committed work only), or ignore the generated files")
+                    f"committed work only; the edit cutoff still matches through the repository's worktree list), or "
+                    f"ignore the generated files. Untracked files kept on purpose are not generated: the worktree "
+                    f"is the route for them")
         return {}, f"{len(added)} changed files exceeds {MAX_FILES}: {hint}"
     out = {"base": base, "changed_files": len(added), "added_lines": sum(map(len, added.values())),
            "staged_files": 0, "skipped_files": 0, "probes_total": 0, "probes_not_applicable": 0,
@@ -1045,11 +1047,33 @@ def code_edit_cutoff(s: Session, repo: Path, changed: Iterable[str]) -> str:
     OPEN (2026-11-16, not measured): a session that edits the diff's files partly through Bash
     (`sed -i`, a heredoc) gets a cutoff from its Edit/Write calls alone, which can be too EARLY, and
     a read made between that edit and a later Bash edit is then tabled as 'read only after the code
-    was written'. Resolving a Bash command's target files is what `accesses()` does for reads."""
-    targets = {str((repo / c).resolve()) for c in changed}
+    was written'. Resolving a Bash command's target files is what `accesses()` does for reads.
+    Every worktree of REPO's repository counts, not only REPO: the --diff refusal for a tree full of
+    untracked files recommends a clean `git worktree add`, while the session's edits are recorded
+    under the checkout it worked in, so matching REPO alone gave "" (2026-11-24 field report)."""
+    targets = {str((root / c).resolve()) for root in worktree_roots(repo) for c in changed}
     hits = [c.ts for c in s.calls if c.name in EDIT_TOOLS and c.ts and c.file_path
             and str(Path(c.file_path).resolve()) in targets]
     return max(hits, default="")
+
+
+def worktree_roots(repo: Path) -> list[Path]:
+    """REPO plus every worktree of the same repository (`git worktree list`); REPO alone outside git.
+    A worktree removed since the session is not listed, so its edits cannot be matched."""
+    roots = [repo.resolve()]
+    out = _git(repo, "worktree", "list", "--porcelain")
+    if out.returncode == 0:
+        roots += [Path(ln[len("worktree "):]).resolve() for ln in out.stdout.splitlines()
+                  if ln.startswith("worktree ")]
+    return list(dict.fromkeys(roots))
+
+
+def edits_outside(s: Session, roots: Iterable[Path]) -> int:
+    """How many Edit/Write calls touched a file under none of ROOTS: when the cutoff is empty, this
+    tells 'the session wrote code elsewhere' from 'the session wrote no code with Edit/Write'."""
+    prefixes = [str(r) + os.sep for r in roots]
+    return sum(1 for c in s.calls if c.name in EDIT_TOOLS and c.file_path
+               and not str(Path(c.file_path).resolve()).startswith(tuple(prefixes)))
 
 
 def join(r: dict | None, d: dict, cutoff: str = "") -> dict:
@@ -1109,8 +1133,12 @@ def diff_markdown(d: dict, j: dict, show_hits: bool) -> str:
     if "code_edit_cutoff" in j:
         L += ["", f"Loaded = first read at or before the last Edit/Write of a changed file "
                   f"({j['code_edit_cutoff']})." if j["code_edit_cutoff"] else
-              "No Edit/Write of a changed file in the transcript (written by Bash, or elsewhere): "
-              "loaded counts every read, including any made after the code was written."]
+              (f"No Edit/Write of a changed file under any worktree of --repo, but the session made "
+               f"{j['edits_elsewhere']} Edit/Write call(s) outside them: --repo is probably not the repository "
+               f"it edited (or that worktree was removed), so the cutoff cannot be computed and loaded counts "
+               f"every read, including any made after the code was written." if j.get("edits_elsewhere") else
+               "No Edit/Write of a changed file in the transcript (written by Bash, or elsewhere): "
+               "loaded counts every read, including any made after the code was written.")]
     L += ["", "| Rules file | Loaded x new hit |", "|---|---|"]
     L += [f"| `{q['rules_file']}` | {q['quadrant']} |" for q in j["quadrants"]] or ["| none | |"]
     L += ["", "Verdict walk (met / not met / not applicable with reason / not checked, per checklist item):"]
@@ -1187,6 +1215,8 @@ def main(argv: Sequence[str]) -> int:
     if d is not None and repo_top is not None:
         changed, _ = diff_scope(repo_top, a.diff)
         j = join(r, d, code_edit_cutoff(s, repo_top, changed))
+        if not j["code_edit_cutoff"]:
+            j["edits_elsewhere"] = edits_outside(s, worktree_roots(repo_top))
         if not a.show_hits:
             for h in d["hits"]:
                 h.pop("where")
@@ -1547,6 +1577,17 @@ def self_test() -> int:
                                   Call("e2", "Edit", "2026-11-15T21:40:00Z", 2, file_path=str(repo / "REPORT.md"))])
             check(code_edit_cutoff(sess, repo, ["app/new.go", "app/old.go"]) == "2026-11-15T19:35:00Z",
                   "cutoff is the last edit of a CHANGED file; a later edit to the report is ignored")
+            # --repo pointed at a clean worktree (what the --diff refusal recommends) while the session
+            # edited the main checkout: the cutoff must still be found (2026-11-24 field report)
+            wt = Path(d) / "wt"
+            subprocess.run(g + ["worktree", "add", "-q", "--detach", str(wt), "HEAD"], check=True)
+            check(code_edit_cutoff(sess, wt, ["app/new.go", "app/old.go"]) == "2026-11-15T19:35:00Z",
+                  "a linked worktree as --repo still matches edits recorded under the main checkout")
+            other = Path(d) / "elsewhere"
+            other.mkdir()
+            check(code_edit_cutoff(sess, other, ["app/new.go"]) == ""
+                  and edits_outside(sess, worktree_roots(other)) == 2,
+                  "a directory outside the repository finds no cutoff and counts both edits as elsewhere")
             for x in dp["hits"]:
                 x.pop("where", None)
             md5 = diff_markdown(dp, j_in, False)

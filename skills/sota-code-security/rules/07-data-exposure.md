@@ -297,7 +297,12 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
   filesystem. Serve only allowlisted extensions from the static root, so `.inc`,
   `.config`, `.bak`, `.old`, `.swp`, `~`, `.sql`, archives and source files are refused
   rather than sent as text. Sweep the deployed web root and public buckets for backup,
-  old and unreferenced files, and test every deny rule with variants (case changes,
+  old and unreferenced files, **and for operating-system metadata a deploy copied in**: a
+  macOS `.DS_Store` stores names of files in its folder, unlinked ones included (measured
+  2026-11-24: 42 of a folder's 304 names), `._*` (AppleDouble) files appear when a Mac writes
+  to a non-APFS volume or share, and a Windows `Thumbs.db` caches thumbnails of the folder's
+  images. Deploy from a build output or `git archive`, not
+  from a working folder. And test every deny rule with variants (case changes,
   percent-encoding, trailing slash or dot, path parameters) rather than trusting it.
   OWASP: ASVS 5.0 V13.4.3/V13.4.7, WSTG-CONF-03, WSTG-CONF-04, Go-SCP (system
   configuration).
@@ -430,7 +435,7 @@ resources :x without only:/except: | spring-boot-starter-data-rest | @Repository
       `grep -rnE 'autoindex[[:space:]]+on|Options([[:space:]]+[+]?[A-Za-z]+)*[[:space:]]+[+]?(Indexes|All)|directoryBrowse[[:space:]]+enabled="true"|http\.FileServer\(' .`
       ; `grep -rn -A1 'listings</param-name>' . | grep -i 'true'` (Tomcat); and over the
       deployed web root:
-      `find . -type f \( -name '*.bak' -o -name '*.old' -o -name '*.orig' -o -name '*.swp' -o -name '*~' -o -name '*.inc' -o -name '*.sql' -o -name '*.zip' -o -name '*.tar.gz' \)`
+      `find . -type f \( -name '*.bak' -o -name '*.old' -o -name '*.orig' -o -name '*.swp' -o -name '*~' -o -name '*.inc' -o -name '*.sql' -o -name '*.zip' -o -name '*.tar.gz' -o -name .DS_Store -o -name '._*' -o -name Thumbs.db -o -name desktop.ini \)`
       — a Go `http.FileServer` hit is fine only when every served directory has an index.
 - [ ] **Has the generated route table been dumped and trimmed to what the product uses
       (§6)?** MEDIUM:

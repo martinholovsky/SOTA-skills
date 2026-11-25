@@ -45,6 +45,9 @@
 #   scripts/install.sh --no-mcp        # skip the MCP offer
 #   scripts/install.sh --no-verify     # skip the reachability check that ends every run
 #   scripts/install.sh --yes           # assume the recommended answer to prompts
+#   scripts/install.sh --field-reports DIR  # where /sota-report writes field reports (default
+#                                      #   ~/.local/share/sota-skills/field-reports); recorded as
+#                                      #   env SOTA_FIELD_REPORTS in ~/.claude/settings.json
 #   scripts/install.sh --color=WHEN    # always | never | auto (default; --no-color = never)
 #   scripts/install.sh --help
 #
@@ -88,6 +91,7 @@ USE_COPY=0
 DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
 DO_MCP=-1       # -1 = offer, 0 = skip, 1 = force  (--mcp / --no-mcp)
 ASSUME_YES=0
+FIELD_REPORTS=""     # --field-reports DIR: where /sota-report writes (env SOTA_FIELD_REPORTS)
 COLOR_MODE=auto # auto | always | never  (--color=WHEN / --no-color)
 
 INTERACTIVE=0
@@ -229,7 +233,11 @@ trap 'for _t in $TMPFILES; do rm -f "$_t"; done' EXIT
 # Observed on a real install 2026-08-05. "sota-* skills" appears in every version
 # of this hook we have ever shipped and in hand-edited variants of it.
 readonly HOOK_SIG="sota-* skills"          # stable marker identifying our own hook
-readonly HOOK_CMD="echo 'sota standing rules (every answer): (1) VALIDATE — check any claim about code, system state, config, versions or facts against a primary source before asserting it, and label anything unverified. (2) KEEP DOCS CURRENT — update affected docs in the same change. (3) ROUTE BEFORE YOU ACT — if the turn touches code, a diff, a config or a build/CI file, invoke the sota skill FIRST and apply the matching sota-* skills. Reading a file counts. If you have already read code this session without routing, route now. Routing is per task SHAPE, not per session: if the work has changed shape since you last routed — different layer or language, or from building to verifying — route again. Treat ~/.claude/profiles as the stack baseline; stop and ask on security-relevant choices.'"
+# The guard before `echo` skips a background-task notification: its stdin JSON carries
+# "prompt":"<task-notification>… (measured 2026-11-24, Claude Code 2.1.331). `.` stands in for
+# the quotes so the command needs no escaping here or in the README's JSON (invariant 16), and any
+# other input, or a missing grep, still prints the reminder.
+readonly HOOK_CMD="grep -qE 'prompt.:.<task-notification>' || echo 'sota standing rules (every answer): (1) VALIDATE — check any claim about code, system state, config, versions or facts against a primary source before asserting it, and label anything unverified. (2) KEEP DOCS CURRENT — update affected docs in the same change. (3) ROUTE BEFORE YOU ACT — if the turn touches code, a diff, a config or a build/CI file, invoke the sota skill FIRST and apply the matching sota-* skills. Reading a file counts. If you have already read code this session without routing, route now. Routing is per task SHAPE, not per session: if the work has changed shape since you last routed — different layer or language, or from building to verifying — route again. Treat ~/.claude/profiles as the stack baseline; stop and ask on security-relevant choices.'"
 
 ask_yn() {  # $1 prompt, $2 default(y|n); honors --yes and non-interactive
   local def="${2:-y}" ans
@@ -607,6 +615,46 @@ setup_action_rules_hook() {
 # So this is not a tuning nicety, it is whether the skills can be selected at all. It is
 # still OFFERED and never imposed: it writes to the user's GLOBAL settings and reserves a
 # slice of every context window, which is their call, not ours.
+# --- memory guard ------------------------------------------------------------------
+# A PreToolUse hook on Bash that ASKS before rm, mv, rmdir, unlink or ln touches an agent memory
+# folder: a `<config>/projects/*/memory` key, the real folder behind it, or a folder named by
+# autoMemoryDirectory. Field-reported 2026-11-23: a memory "move" ran `mv` onto a path that was
+# already a symlink, and the next `rm -r` deleted the only copy of a project's notes, with the
+# warning already written down (sota-docs-workflow rules/06 §4). It never blocks; the person decides.
+setup_memory_guard_hook() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="python3 \"$REPO/scripts/memory-guard-hook.py\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping the memory guard"; return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found — skipping the memory guard"; return
+  fi
+  if ! py_at_least "$PY_HOOK_MIN"; then
+    warn "python3 is older than $PY_HOOK_MIN — skipping the memory guard (it would fail silently on every call)"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "memory-guard-hook.py" \
+      '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota memory guard already present — up to date"; return
+  fi
+  ask_yn "Add a hook that asks you before any rm, mv, rmdir, unlink or ln touches an agent memory folder (it never blocks; ~60 ms per command)?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.PreToolUse = ((.hooks.PreToolUse // []) + [{matcher:"Bash",hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added PreToolUse memory guard (silence it with SOTA_MEMORY_GUARD=off)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the memory guard"
+  fi
+  rm -f "$tmp"
+}
+
 setup_listing_budget() {
   local s="$HOME/.claude/settings.json" tmp need frac cur dup
   command -v jq >/dev/null 2>&1 || { warn "jq not found — skipping skill-listing budget"; return; }
@@ -675,6 +723,60 @@ setup_listing_budget() {
     mkdir -p "$(dirname "$s")"
     jq -n --argjson f "$frac" '{skillListingBudgetFraction: $f}' >"$s"
     ok "created ~/.claude/settings.json with skillListingBudgetFraction=$frac"
+  fi
+  rm -f "$tmp"
+}
+
+# --- field-report inbox ----------------------------------------------------------
+# /sota-report writes every report and its extract to ONE folder per machine, outside every
+# repository: ${SOTA_FIELD_REPORTS:-$HOME/.local/share/sota-skills/field-reports}. Recording the
+# folder as an `env` entry in ~/.claude/settings.json makes every Claude Code session see the
+# same value (measured 2026-11-25, Claude Code 2.1.332: a settings `env` entry reached the
+# session's Bash tool, and its absence printed nothing). Before the folder was named, one
+# machine held 21 reports in six kinds of improvised location. An existing setting is the
+# user's choice and is never changed unless --field-reports asks; reports already written are
+# never moved. Other agents have no such settings file: for them the command's default applies,
+# or an exported SOTA_FIELD_REPORTS in the shell profile.
+setup_field_reports() {
+  local s="$HOME/.claude/settings.json" tmp cur want def
+  def="$HOME/.local/share/sota-skills/field-reports"
+  command -v jq >/dev/null 2>&1 || { warn "jq not found — skipping the field-report inbox (default: $def)"; return; }
+  cur=""
+  [ -e "$s" ] && cur="$(jq -r '.env.SOTA_FIELD_REPORTS // empty' "$s" 2>/dev/null || true)"
+  want="${FIELD_REPORTS:-${cur:-$def}}"
+  case "$want" in
+    \~) want="$HOME" ;;      # a literal ~ the user typed in a quoted argument
+    \~/*) want="$HOME/${want#\~/}" ;;
+    /*) ;;
+    *) want="$PWD/$want" ;;
+  esac
+  want="${want%/}"
+
+  if [ -n "$cur" ] && [ "$cur" = "$want" ]; then
+    (umask 077; mkdir -p -- "$want") || { warn "cannot create $want"; return; }
+    log "field reports go to $want (SOTA_FIELD_REPORTS in ~/.claude/settings.json)"
+    return 0
+  fi
+  if [ -n "$cur" ]; then
+    log "SOTA_FIELD_REPORTS was $cur; reports already there are not moved"
+  elif [ -z "$FIELD_REPORTS" ]; then   # --field-reports already said where: no question
+    ask_yn "Record $want as the field-report inbox (SOTA_FIELD_REPORTS in ~/.claude/settings.json), so /sota-report writes every report to one place?" y || {
+      log "left unset — /sota-report still defaults to $def"; return; }
+  fi
+  (umask 077; mkdir -p -- "$want") || { warn "cannot create $want — left unchanged"; return; }
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg d "$want" '.env = ((.env // {}) + {SOTA_FIELD_REPORTS: $d})' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "field reports go to $want (SOTA_FIELD_REPORTS set in ~/.claude/settings.json; new sessions see it)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg d "$want" '{env: {SOTA_FIELD_REPORTS: $d}}' >"$s"
+    ok "created ~/.claude/settings.json with SOTA_FIELD_REPORTS=$want"
   fi
   rm -f "$tmp"
 }
@@ -932,6 +1034,7 @@ maybe_setup_routing() {
   setup_code_rules_hook || true
   setup_zsh_equals_hook || true
   setup_action_rules_hook || true
+  setup_memory_guard_hook || true
   return 0
 }
 
@@ -952,6 +1055,8 @@ while [ $# -gt 0 ]; do
     --mcp)        DO_MCP=1 ;;
     --no-mcp)     DO_MCP=0 ;;
     --yes|-y)     ASSUME_YES=1 ;;
+    --field-reports) shift; [ $# -gt 0 ] || die "--field-reports needs a directory"; FIELD_REPORTS="$1" ;;
+    --field-reports=*) FIELD_REPORTS="${1#*=}" ;;
     --color)      shift; [ $# -gt 0 ] || die "--color needs always|never|auto"; COLOR_MODE="$1" ;;
     --color=*)    COLOR_MODE="${1#*=}" ;;
     --no-color)   COLOR_MODE=never ;;
@@ -1317,6 +1422,8 @@ maybe_setup_mcp || true
 # is the only path and a name-only entry has nothing to match on.
 section '📏' 'Skill listing budget'
 setup_listing_budget || true
+section '📮' 'Field-report inbox'
+setup_field_reports || true
 maybe_setup_precommit
 
 section '✅' 'Done'

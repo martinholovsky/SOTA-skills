@@ -441,7 +441,7 @@ Run that job on Linux: on macOS, SIP and the hardened runtime strip `DYLD_INSERT
       — a call without both `httpOnly` and `secure` inline gets Express/Hono/Next's `Path=/` only
       (Fastify adds `SameSite=Lax`). Read calls whose options are a variable.
 - [ ] `grep -rnE "res\.redirect\([^)]*req\.|location(\.href)? *=.*(search|hash|params|get\()" --exclude-dir=node_modules .` with request-derived values — open redirect (§11) (MEDIUM, HIGH in a login/OAuth flow or on an SSRF-trusted host: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §11).
-- [ ] Upload handlers: extension/MIME-only validation, client filename used in path (`grep -rn "originalname\|file.name" --exclude-dir=node_modules .`) — HIGH. User uploads served inline without `Content-Disposition: attachment` + `nosniff`, or SVGs served unsanitized from the app origin, are HIGH; images not re-encoded is LOW (§11).
+- [ ] Upload handlers: extension/MIME-only validation, client filename used in path (`grep -rn -e 'originalname' -e 'file\.name' --include='*.js' --include='*.mjs' --include='*.cjs' --include='*.jsx' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules .`) — HIGH. User uploads served inline without `Content-Disposition: attachment` + `nosniff`, or SVGs served unsanitized from the app origin, are HIGH; images not re-encoded is LOW (§11).
 - [ ] **Template raw-output syntax (§3)** — in template files:
       `grep -rnE '<%-|!\{|^[[:space:]]*[[:alnum:]._#-]*!=|&attributes|\{\{\{|\{\{&' --include='*.ejs' --include='*.pug' --include='*.jade' --include='*.hbs' --include='*.handlebars' --include='*.mustache' .`
       — each hit fed user or DB content is stored/reflected XSS (HIGH/CRITICAL).

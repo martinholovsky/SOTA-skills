@@ -215,7 +215,10 @@ Two regimes cover most senders; apply the stricter when audiences mix:
       mapped to evidence, owner, and re-verify date — evidence on file before
       publication, not assembled after a challenge (§1, §6)
 - [ ] Superlative/absolute sweep clean or substantiated:
-      `grep -rniwE '#1|best|leading|only|first|fastest|world-class|revolutionary|guaranteed|never|100%' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .` (§1)
+      `grep -rniwE '#1|best|leading|the only|first to|fastest|world-class|revolutionary|guaranteed|never goes down|never fails|100%' --include='*.html' --include='*.md' --include='*.mdx' --include='*.tsx' --include='*.jsx' --include='*.mjml' --exclude-dir=node_modules .` (§1).
+      Bare *only*, *first* and *never* are left out: in engineering Markdown they are scope and order
+      words (field-reported 2026-11-22 and 2026-11-23: 124 new hits in two diffs, none a claim), so
+      read a marketing page for them by eye
 - [ ] Security/uptime claims state real, currently-true controls and
       measured numbers — no "bank-level/military-grade" filler; uptime figures
       match the contractual SLA and state the measurement window; a time,
