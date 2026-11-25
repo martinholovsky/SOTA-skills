@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Field report intake, 2026-11-25: the load audit's edit cutoff under a worktree, and a same-line AND read as
+  a file-level absence.** `scripts/session-load-audit.py --diff` matched the session's Edit/Write calls against
+  `--repo` alone, so running it from the clean worktree its own refusal recommends gave no cutoff and tabled
+  report-writing reads as loaded. It now matches every worktree of the repository (`git worktree list`), and
+  when there is still no cutoff it says how many edits were made elsewhere; two new self-test cases (87 checks).
+  `sota-shell-scripting` rules/09 §5a: `grep -l -E 'A.*B'` finds files where A and B share a line, not files that
+  do B to A; run `grep -l A | xargs grep -l B` beside it before reporting an absence (row + checklist clause).
 - **Field reports have one home: the machine's inbox.** `/sota-report` now writes the report and its extract to
   `${SOTA_FIELD_REPORTS:-$HOME/.local/share/sota-skills/field-reports}`, outside every repository, instead of
   "outside the target repo's working tree, unless…". On one maintainer's machine 21 reports sat in six kinds of

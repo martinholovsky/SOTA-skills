@@ -168,7 +168,9 @@ changed since the base, counts hits on **added lines only**, and joins them with
 - `read only after the code was written`: first read after your last Edit/Write of a changed file,
   usually while writing this report. It was not in front of you, so a hit is a routing gap too.
   The line above the table names the cutoff; code written through Bash leaves no cutoff, and then
-  every read counts as loaded, which the script says.
+  every read counts as loaded, which the script says. Running `--diff` from a clean worktree is
+  fine: every worktree of `--repo`'s repository is matched. If the line says Edit/Write calls were
+  made *outside* them, `--repo` is not the repository you edited.
 
 Then **walk every file listed under "Verdict walk"**: each Audit-checklist item marked met, not
 met, not applicable with the reason, or not checked. **Verdict only: fix nothing during the
