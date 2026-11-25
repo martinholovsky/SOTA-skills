@@ -56,7 +56,8 @@ copies (counted 2026-11-24 on one maintainer's machine, 21 reports outside the l
 working-directory secret scanner does not read `.gitignore`
 (`sota-secrets-management` rules/04, verified on gitleaks 8.30.1), so the scanner fails on your own report, and an ignore rule is
 a fact about one repo that does not travel with this instruction (field-reported 2026-09-15, a
-red gate). Set `SOTA_FIELD_REPORTS` to move the inbox; do not pick a new place per session.
+red gate). Set `SOTA_FIELD_REPORTS` to move the inbox (`install.sh --field-reports DIR` records it in
+`~/.claude/settings.json`, and install and update offer the default); do not pick a new place per session.
 
 ## What is worth reporting, in descending order of value
 

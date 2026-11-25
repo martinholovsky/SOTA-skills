@@ -58,6 +58,7 @@ git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
 ./scripts/install.sh --target all    # also ~/.agents/skills (Copilot, Codex, Cursor, Gemini CLI) + Antigravity's own dirs
 ./scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 ./scripts/install.sh --mcp           # optional: register the read-only MCP server for other agents
+./scripts/install.sh --field-reports DIR  # where /sota-report writes (default ~/.local/share/sota-skills/field-reports)
 ```
 
 The installer colour-codes what it did (`✓` done · `↻` changed or act on this ·

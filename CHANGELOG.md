@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`install.sh` and `update.sh` set up the field-report inbox.** A new step records `SOTA_FIELD_REPORTS` as an `env`
+  entry in `~/.claude/settings.json` (offered at the default `~/.local/share/sota-skills/field-reports`, or set with
+  `--field-reports DIR`) and creates the folder with mode 700. Every Claude Code session then sees the same inbox:
+  a settings `env` entry reached the session's Bash tool, and without it the variable was unset (measured
+  2026-11-25, Claude Code 2.1.332). An existing value is never changed without the flag, and reports already
+  written are never moved.
 - **Operating-system metadata files, where each one bites.** `sota-code-security` rules/07 §4: a deployed web
   root is swept for `.DS_Store`, `._*`, `Thumbs.db` and `desktop.ini` too (a `.DS_Store` stores names of files in its
   folder, unlinked ones included: 42 of 304 names in a measured one), and the `find` sweep in its checklist names
