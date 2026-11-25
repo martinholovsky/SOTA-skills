@@ -76,7 +76,10 @@ Each check below is location-agnostic. It holds whatever the declaration says.
 - **Evidence that exists only in class 4.** For each number or result a tracked doc states, find
   the run's output. A copy found only in a scratchpad or temp folder moves to class 2 now: copy it,
   compare it byte for byte, and cite it by name. A ledger that refuses failed runs is the usual
-  cause (field-reported 2026-11-25).
+  cause (field-reported 2026-11-25). **That includes the audit's own working files**: every count
+  the audit writes into the section or the CHANGELOG comes from a file in its own scratchpad, so
+  copy that file out before the commit (field-reported 2026-11-25: an audit's 42 inventory files,
+  about 53 MB, sat only in its scratchpad while its CHANGELOG quoted counts taken from them).
 - **Ignored folders `git status --ignored` does not show.** A folder holding only empty directories
   is hidden from the default listing; `git status --ignored=matching` lists it (measured
   2026-11-25, git 2.55.0). A fuzzer's `artifacts/` stays empty until the day it finds a crash.
@@ -99,8 +102,11 @@ Each check below is location-agnostic. It holds whatever the declaration says.
 ## 4. Moving or deleting kept data and agent memory
 
 Kept data is often reached through symlinks that earlier sessions made. An agent's memory store is
-keyed by path, so one repository reached by two path spellings (through a symlinked parent) gets
-two keys, and often a link from one to the other. Field-reported 2026-11-23: a "move the memory
+keyed by path. Older Claude Code versions gave one repository reached by two path spellings
+(through a symlinked parent) two keys, and those keys stay on disk, often with a link from one to
+the other. 2.1.332 headless resolved a symlinked parent to one key, from either spelling (measured
+2026-11-25 on a throwaway project, and field-reported the same day; interactive not measured).
+Which keys the current version uses is what the differential's control arm shows. Field-reported 2026-11-23: a "move the memory
 into the repository and symlink it" step ran `mv` onto a path that was already a symlink, and the
 following `rm -r` deleted the only real copy of a project's notes. It came back only from a backup.
 
@@ -108,6 +114,16 @@ following `rm -r` deleted the only real copy of a project's notes. It came back 
   and `realpath` to find the one real folder. Count its files. Names that start with `-` (agent
   memory keys often do) need `--` or a `./` prefix
   ([`sota-shell-scripting` rules/02](../../sota-shell-scripting/rules/02-robustness-correctness.md)).
+  **Map every key whose name contains the project's**, not only the keys its known spellings
+  produce: a session started in another folder, such as a scratchpad below the project's path, gets
+  a key of its own, and `autoMemoryDirectory`, read from the repository's settings, never reaches
+  it. Keys turn `/`, `_` and `.` into `-` (`my_proj.v2` became `…-my-proj-v2`, measured 2026-11-25),
+  so match with a wildcard per non-alphanumeric character:
+  `find ~/.claude/projects -mindepth 1 -maxdepth 1 -name "*$(printf %s "<name>" | tr -c 'A-Za-z0-9' '?')*"`.
+  A non-empty extra is compared with the real store and asked about; an empty one is removed on the
+  user's yes with `rmdir --`, which refuses a folder that is not empty (field-reported 2026-11-25:
+  an empty key from a session started in a scratchpad subfolder, missed by an earlier audit that
+  mapped only the two expected keys).
 - **Copy, compare, count, list through every path that should see it, and only then remove.** Run one
   destructive step per command. Gate it with `if …; then …; else echo STOP; exit 1; fi`, never a
   bare `[ … ] && [ … ]` under `set -e`
@@ -135,7 +151,11 @@ following `rm -r` deleted the only real copy of a project's notes. It came back 
     folder, every reading agrees whichever mechanism chose it. Point the setting at an empty scratch
     folder seeded with a canary line, start a session from every path spelling, and check the
     filesystem: the canary is quoted, a new memory lands only there, and the real store is
-    unchanged. Then point it back.
+    unchanged. Then point it back. The save step was run as
+    `claude -p "<save this memory …>" --allowedTools "Write" "Edit" "Read"`, and each spelling wrote
+    one file and one index line, only in the scratch folder (field-reported 2026-11-25); without
+    `--allowedTools`: not measured. Keep the prompt first: a prompt placed after `--allowedTools` is
+    read as another tool name (measured 2026-11-25, 2.1.332).
 - **A guard on the store beats a note about it.** A pre-command hook that asks before any
   `rm`/`mv`/`ln` naming the memory folder is the structural form of this section, for the same
   reason the reminder-style rule failed. The library ships one for Claude Code
@@ -161,7 +181,8 @@ following `rm -r` deleted the only real copy of a project's notes. It came back 
       script, CI step and tracked `rm -rf` was read against the declaration, and any log pruner
       skips the files a doc cites.
 - [ ] **No cited result exists only in class 4** (§3): each number a tracked doc states has its
-      run output in class 1 or 2, copied, compared byte for byte and cited by name.
+      run output in class 1 or 2, copied, compared byte for byte and cited by name, including the
+      working files the audit session itself counted from.
 - [ ] **The ignored-path inventory used `git status --ignored=matching`** (§3), so folders
       holding only empty directories were classified too, and fuzzer crash reproducers are
       class 2 (§1).

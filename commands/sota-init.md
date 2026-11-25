@@ -222,7 +222,11 @@ because then class-2 and agent files change gate results.
 
 1. **Map before you touch.** For every path key the agent may use: `ls -ld --`, `readlink --` and
    `realpath --` (keys often start with `-`). Find the ONE real folder and count its files. None,
-   or two that differ: stop and ask.
+   or two that differ: stop and ask. "Every key" means every key whose name contains the
+   project's, found with the `find` in rules/06 §4, not only the keys the known spellings give: a
+   session started in a subfolder or a scratchpad gets its own. A non-empty extra is compared
+   with the real store and asked about; an empty one goes on the user's yes with `rmdir --`
+   (folder, then key), which refuses anything not empty.
 2. **Mechanism, in this order:** a setting that names the folder (Claude Code:
    `autoMemoryDirectory` in `.claude/settings.local.json`, kept out of git through
    `.git/info/exclude` in a repository you do not own); then symlinks from every path key, which
@@ -236,7 +240,8 @@ because then class-2 and agent files change gate results.
    not the new one.
 5. **Prove it with a differential**, as rules/06 §4 describes: a scratch folder with a canary,
    from every path spelling, headless and interactive, checking the filesystem rather than the
-   session's report. Remove the scratch folder afterwards.
+   session's report. The control arm (no setting) is where you see which keys the current version
+   actually uses; record them in the report. Remove the scratch folder afterwards.
 6. **A guard.** If a hook that asks before `rm`, `mv`, `rmdir`, `unlink` or `ln` on the memory
    folder is installed, prove it is wired: run `rmdir -- <memory-folder>/sota-guard-probe` (a
    folder that does not exist, so nothing is lost if no guard asks), see it ask, and answer no. If
@@ -256,6 +261,9 @@ Self-test both cases and mutation-probe the helper.
   class with this project's places, a rebuild command per class-3 entry, the machine-bound list
   with recreate steps, and the move and delete rules (rules/06 §4). Its first line stays the
   trigger. Add a CHANGELOG entry, and fix every current-state doc the change made false.
+- Every number this phase writes into the section, the CHANGELOG or a doc comes from a file in
+  this session's scratchpad. Before the commit, copy each such working file into the class P1.4
+  decides, compare byte for byte, and cite it by name.
 - Run the suite and commit, staged by path: the section, and every file this phase placed in
   class 1. List the class-2 files separately with the backup that covers each. Ask before pushing.
 - Report, each with its output: the section exists and starts with the trigger; every memory key
