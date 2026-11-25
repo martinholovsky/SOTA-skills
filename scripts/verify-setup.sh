@@ -636,6 +636,55 @@ else
     "not installed — below the default setup. Without it a signing command (git commit -S, git tag -s, gpg --sign) runs before anyone has read the PIN counter or named the prompts, so a failed or timed-out attempt spends one of the person's tries, and a CI file written from the shell or an image push gets no pointer to its rules. Add it: $ar_fix"
 fi
 
+# --- 2g. the memory guard (on by default since 2026-11-25) ---
+# A PreToolUse hook on Bash that asks before rm, mv, rmdir, unlink or ln touches an agent memory
+# folder (sota-docs-workflow rules/06 §4: a memory "move" deleted the only copy of a project's notes
+# with the warning already written down). The plugin registers it; install.sh --routing offers it.
+# Same shape as 2f: absent is PARTIAL, absent and turned off on purpose (SOTA_MEMORY_GUARD=off) is
+# INFO, and a registration whose script is gone is PARTIAL. `grep . >/dev/null` reads the whole
+# stream, never `grep -q`, which can end a producer early and read as "no match" under pipefail.
+mg_have=""; mg_stale=""
+for s in "$CLAUDE_HOME/settings.json" "$CLAUDE_HOME/settings.local.json"; do
+  [ -f "$s" ] || continue
+  grep 'memory-guard-hook\.py' "$s" >/dev/null 2>&1 || continue
+  mg_have="${mg_have:+$mg_have, }$(basename "$s")"
+  while IFS= read -r mg_p; do
+    [ -n "$mg_p" ] && [ ! -f "$mg_p" ] && mg_stale="${mg_stale:+$mg_stale, }$mg_p"
+  done <<EOF_MG
+$(grep -o '/[^"]*memory-guard-hook\.py' "$s" 2>/dev/null || true)
+EOF_MG
+done
+mg_oldplugin=0
+if [ -d "$CLAUDE_HOME/plugins" ]; then
+  if find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*hooks/hooks.json' \
+       -exec grep -l 'memory-guard-hook\.py' {} + 2>/dev/null | grep . >/dev/null; then
+    mg_have="${mg_have:+$mg_have, }the plugin"
+  elif find -L "$CLAUDE_HOME/plugins" -maxdepth 7 -path '*sota-skills*/hooks/hooks.json' 2>/dev/null | grep . >/dev/null; then
+    mg_oldplugin=1   # the sota-skills plugin is here, in a version from before the guard
+  fi
+fi
+case "${SOTA_MEMORY_GUARD:-on}" in
+  off | OFF | 0 | false | FALSE | no) mg_off=1 ;;
+  *) mg_off=0 ;;
+esac
+if [ -n "$mg_stale" ]; then
+  row "PARTIAL" "2g. memory guard" \
+    "registered but the script is gone: $mg_stale — re-run scripts/install.sh --routing from your current checkout"
+elif [ -n "$mg_have" ] && [ "$mg_off" -eq 1 ]; then
+  row "INFO" "2g. memory guard" "registered ($mg_have) but turned off by SOTA_MEMORY_GUARD=${SOTA_MEMORY_GUARD}"
+elif [ -n "$mg_have" ] && ! command -v python3 >/dev/null 2>&1; then
+  row "PARTIAL" "2g. memory guard" "registered ($mg_have) but python3 is not on PATH — it cannot run"
+elif [ -n "$mg_have" ]; then
+  row "PASS" "2g. memory guard" "registered by: $mg_have"
+elif [ "$mg_off" -eq 1 ]; then
+  row "INFO" "2g. memory guard" "not installed, and turned off by SOTA_MEMORY_GUARD=${SOTA_MEMORY_GUARD} — a deliberate opt-out"
+else
+  mg_fix="scripts/install.sh --routing"
+  [ "$mg_oldplugin" -eq 1 ] && mg_fix="$mg_fix, or update the plugin (your copy predates the guard): /plugin update sota-skills@sota-skills"
+  row "PARTIAL" "2g. memory guard" \
+    "not installed — below the default setup. Without it nothing asks before rm, mv or ln changes an agent memory folder, and a move onto a path that is already a symlink deletes the real store. Add it: $mg_fix"
+fi
+
 # --- 2d. the zsh EQUALS hook (on by default since 2026-10-21) ---
 # A PreToolUse hook on Bash that refuses a command zsh would cut short: an unquoted `=word`
 # expands to a command path or aborts the whole list (`echo =====` -> "==== not found", and

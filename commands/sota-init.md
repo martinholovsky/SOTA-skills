@@ -140,9 +140,9 @@ undo it.
 - Anything installed on the machine (tools, the library itself): named, with the command that
   installed it.
 
-The agent hooks (the zsh command check, the code-rules and action-rules notes, the per-prompt
-reminder) are not part of this pass: they belong to the machine or account, not the repository.
-If `verify-setup.sh` reported any of them unregistered (its checks 2c–2f), name
+The agent hooks (the zsh command check, the code-rules and action-rules notes, the memory guard,
+the per-prompt reminder) are not part of this pass: they belong to the machine or account, not the
+repository. If `verify-setup.sh` reported any of them unregistered (its checks 2c–2g), name
 `<library>/scripts/install.sh --routing` as the one step that registers them.
 
 Say plainly what was not done: declined items, triggers you named and did not act on, commands
@@ -240,8 +240,9 @@ because then class-2 and agent files change gate results.
 6. **A guard.** If a hook that asks before `rm`, `mv`, `rmdir`, `unlink` or `ln` on the memory
    folder is installed, prove it is wired: run `rmdir -- <memory-folder>/sota-guard-probe` (a
    folder that does not exist, so nothing is lost if no guard asks), see it ask, and answer no. If
-   none is installed, say so in the report: the incident behind rules/06 §4 happened with the
-   warning already written down.
+   none is installed, say so in the report and name the library's (`<library>/scripts/install.sh
+   --routing` offers it): the incident behind rules/06 §4 happened with the warning already
+   written down.
 
 ## P4. Paths the project's own tools write into results
 

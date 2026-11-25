@@ -615,6 +615,46 @@ setup_action_rules_hook() {
 # So this is not a tuning nicety, it is whether the skills can be selected at all. It is
 # still OFFERED and never imposed: it writes to the user's GLOBAL settings and reserves a
 # slice of every context window, which is their call, not ours.
+# --- memory guard ------------------------------------------------------------------
+# A PreToolUse hook on Bash that ASKS before rm, mv, rmdir, unlink or ln touches an agent memory
+# folder: a `<config>/projects/*/memory` key, the real folder behind it, or a folder named by
+# autoMemoryDirectory. Field-reported 2026-11-23: a memory "move" ran `mv` onto a path that was
+# already a symlink, and the next `rm -r` deleted the only copy of a project's notes, with the
+# warning already written down (sota-docs-workflow rules/06 §4). It never blocks; the person decides.
+setup_memory_guard_hook() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="python3 \"$REPO/scripts/memory-guard-hook.py\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping the memory guard"; return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found — skipping the memory guard"; return
+  fi
+  if ! py_at_least "$PY_HOOK_MIN"; then
+    warn "python3 is older than $PY_HOOK_MIN — skipping the memory guard (it would fail silently on every call)"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "memory-guard-hook.py" \
+      '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota memory guard already present — up to date"; return
+  fi
+  ask_yn "Add a hook that asks you before any rm, mv, rmdir, unlink or ln touches an agent memory folder (it never blocks; ~60 ms per command)?" y || return
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.PreToolUse = ((.hooks.PreToolUse // []) + [{matcher:"Bash",hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "added PreToolUse memory guard (silence it with SOTA_MEMORY_GUARD=off)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    ok "created ~/.claude/settings.json with the memory guard"
+  fi
+  rm -f "$tmp"
+}
+
 setup_listing_budget() {
   local s="$HOME/.claude/settings.json" tmp need frac cur dup
   command -v jq >/dev/null 2>&1 || { warn "jq not found — skipping skill-listing budget"; return; }
@@ -994,6 +1034,7 @@ maybe_setup_routing() {
   setup_code_rules_hook || true
   setup_zsh_equals_hook || true
   setup_action_rules_hook || true
+  setup_memory_guard_hook || true
   return 0
 }
 

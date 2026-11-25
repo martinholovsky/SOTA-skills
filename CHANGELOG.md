@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The memory guard ships with the library** (`scripts/memory-guard-hook.py`, a PreToolUse hook on Bash, on by
+  default: the plugin registers it, `install.sh --routing` offers it). It **asks** before `rm`, `mv`, `rmdir`,
+  `unlink` or `ln` touches an agent memory folder: a `<config>/projects/*/memory` key, the real folder behind a
+  symlinked key, or an `autoMemoryDirectory` folder (user settings and the working directory's project settings).
+  It never blocks, asks on input it cannot parse, and is off with `SOTA_MEMORY_GUARD=off`. Self-test 17/17 in CI;
+  `verify-setup.sh` check 2g with three negative-control probes. On a machine with 953 memory keys it took about
+  82 ms on a deleting command and about 56 ms on any other. Generalised from the operator's own guard, which
+  `rules/06` §4 had recommended without the library shipping one.
 - **`/sota-init data`: audit and fix where an existing project's data lives.** `/sota-init` gains an opt-in
   second phase, folded in from a procedure written over two field runs (2026-11-23, 2026-11-25): discover the
   environment (path spellings, backup, temp lifetimes, agent memory, containers, interpreters), inventory, prove no
