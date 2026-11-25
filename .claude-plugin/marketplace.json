@@ -1,6 +1,9 @@
 {
   "name": "sota-skills",
-  "owner": { "name": "Martin Holovsky" },
+  "owner": {
+    "name": "Martin Holovsky"
+  },
+  "description": "The SOTA-skills library as one plugin: engineering skills for building and auditing software, one per domain or language, with a master router, slash commands and optional routing hooks.",
   "plugins": [
     {
       "name": "sota-skills",

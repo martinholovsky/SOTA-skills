@@ -44,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `sota-docs-workflow` rules/06 §4; the Node `--import` hooks failure is v22.22.1, fixed by v22.23.2 for pass-through
   hooks (`sota-javascript-typescript` rules/04 §13, narrowed). `/sota-init` names `install.sh --routing` when the
   agent hooks are unregistered.
+- **`claude plugin validate` passes with no warnings** (Claude Code 2.1.332). `marketplace.json` gains a top-level
+  `description` (count-free, so invariant 6 has nothing new to keep in step), and `plugin.json` declares
+  `network.hosts: []`: none of the seven plugin hooks makes a network request (their URLs are message text and
+  their HTTP names are trigger regexes). Removing the key brings back "Hosts not declared".
 
 ## [1.60.0] - 2026-11-24
 
