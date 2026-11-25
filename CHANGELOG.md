@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **`/sota-init data`: audit and fix where an existing project's data lives.** `/sota-init` gains an opt-in
+  second phase, folded in from a procedure written over two field runs (2026-11-23, 2026-11-25): discover the
+  environment (path spellings, backup, temp lifetimes, agent memory, containers, interpreters), inventory, prove no
+  gate depends on class 3, map and move the agent's memory store, then rewrite the section from what was measured.
+  It may move data git does not hold, one asked step at a time, and says that `git revert` does not undo those
+  moves. `sota-docs-workflow` rules/06: a cited file may be class 2 under a name that keeps it; class 2 is never
+  deleted wholesale; fuzzer crash reproducers are class 2; a temp-path hit is a finding when it says where
+  something is kept; new checks for commands that delete, evidence that exists only in a scratchpad, ignored
+  folders `git status --ignored` hides (`--ignored=matching` shows them, measured on git 2.55.0) and gates that
+  hash or scan ignored paths; §4 updates `autoMemoryDirectory` to a 2.1.332 differential across both path
+  spellings, headless and interactive, keeps the per-spelling links as a fallback, and separates what was measured
+  from what the docs say. Four new checklist items. Data moved into the repository gets its class decided first:
+  committed when small and not secret or private, ignored only when too large, private or generated, and then
+  covered by the backup. `/sota-init` now says it is safe to re-run: existing items are skipped, the library's
+  managed blocks are refreshed only on agreement (both scripts measured byte-identical on a second run), and
+  nothing missing means no commit.
 - **`install.sh` and `update.sh` set up the field-report inbox.** A new step records `SOTA_FIELD_REPORTS` as an `env`
   entry in `~/.claude/settings.json` (offered at the default `~/.local/share/sota-skills/field-reports`, or set with
   `--field-reports DIR`) and creates the folder with mode 700. Every Claude Code session then sees the same inbox:

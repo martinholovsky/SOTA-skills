@@ -10261,4 +10261,26 @@ The verdict stands; the first search's scope was narrower than written.
 | a `.gitignore` floor for new repositories | **adopted with a caution**: a short cross-OS floor, not GitHub's whole templates (the Windows one ignores `*.msi`, `*.cab`, `*.lnk`; the Linux one `*~`, `nohup.out`); personal patterns go to `core.excludesFile` | `commands/sota-init.md` step 1; this repo's `.gitignore` |
 | one canonical list instead of four | **not adopted**: each place names the subset its own risk needs, so a change to one does not have to travel to the others | — |
 
+## 2026-11-25 — operator request: the "where project data lives" audit-and-fix procedure, folded into `/sota-init` as phase 2
+
+**Source:** the operator's local procedure, version 2 dated 2026-11-25 (339 lines, `sha256` 60f7c5199cfab4ce), generalised from two field runs (2026-11-23 and 2026-11-25). Its last appendix holds one machine's facts and was **not** taken in. The part taken in (lines 1–307) was scanned for names, home paths and private project names: 0 hits, including the private denylist's 29 patterns (control: the excluded appendix, 10 and 1 hits). The three documentation quotes were re-read on code.claude.com/docs/en/memory (fetched 2026-11-25). Placement and every disagreement with rules/06 were the operator's decisions, recorded below.
+
+| Claim / proposal | Verdict | Landed in |
+|---|---|---|
+| where the procedure lives | **adopted as `/sota-init` phase 2, run alone as `/sota-init data`** (operator, 2026-11-25: fewer commands to know). A new command, a rules/06 section and a `docs/` file were the alternatives. Phase 2 carries its own contract, because phase 1's "adds only; one commit `git revert` undoes" cannot cover moving data git does not hold | `commands/sota-init.md`; README, `docs/GETTING-STARTED.md`, `docs/INDEX.md` |
+| (D1) a cited file may be class 2 under a name that keeps it | **adopted** (operator): rules/06 had required class 1 or a regenerate command; F5's fix copied scratchpad evidence into class 2 and cited it by name | rules/06 §1 |
+| (D2) a temp-path hit is a finding only when it says where something is kept | **adopted** (operator), with "read every hit" kept | rules/06 §3 |
+| (D3) keep per-spelling links beside `autoMemoryDirectory` | **adopted** (operator): rules/06 said one setting replaces them; the setting is not honoured in an untrusted folder, under `blockReadsOutsideWorkingDirectories`, or before v2.1.234 (all from the docs, not run) | rules/06 §4 |
+| (D4) the guard check | **adopted generically** (operator chose it over omitting the guard): if a guard is installed, prove it asks with `rmdir -- <memory>/sota-guard-probe`, a folder that does not exist. Checked against one real guard: it asked for that command on both memory-path forms and stayed silent for `ls -ld` of the same folder | `commands/sota-init.md` P3.6 |
+| ship a memory-guard hook in the library | **DEFERRED — revisit trigger: the follow-up PR the operator asked for on 2026-11-25 (port a guard into `scripts/` with install.sh wiring, a self-test and a negative control).** rules/06 recommends a guard the library does not ship | — |
+| (F3) a log pruner capped per gate deleted 7 of 21 cited logs | **adopted** into the deleters check | rules/06 §3 |
+| (F4) `make clean` deleted a folder already declared class 2 | **adopted**: audit the commands that delete, not only the data; checklist item | rules/06 §3 + checklist |
+| (F5) evidence only in a scratchpad | **adopted**; checklist item | rules/06 §3 + checklist |
+| (F6) fuzz artifacts are class 2 | **adopted** | rules/06 §1 + checklist |
+| ignored folders holding only empty directories are invisible to `git status` | **verified and adopted**: git 2.55.0, the default `--ignored` listing omitted such a folder and `--ignored=matching` listed it | rules/06 §3 + checklist |
+| gates that hash or scan ignored paths | **adopted** | rules/06 §3 |
+| (operator question, 2026-11-25) are important files moved into the repository also committed? | **a gap, fixed**: phase 2 copied scratchpad evidence "into class 2" and committed only the section. Now the class is decided first: class 1 (committed) when small and not secret or private; class 2 (ignored) only when too large, private or generated, and then covered by the backup | `commands/sota-init.md` P1.4, P5; rules/06 §1 |
+| (operator question, 2026-11-25) is `/sota-init` idempotent? | **true by design, now stated**: step 3 skips existing paths and `.gitignore` gets only missing entries. `gen-agents-md.sh` and `init-gates.sh` re-run in a scratch repo left their files byte-identical, with the user's own text and hook kept. Added: safe to re-run, managed blocks refreshed only on agreement, no commit when nothing is missing | `commands/sota-init.md` (description, intro, step 3.2); README, `docs/GETTING-STARTED.md` |
+| (F7) `autoMemoryDirectory` measured on 2.1.332 by differential, both spellings, headless and interactive; a session started before the setting named the symlink path | **adopted as field-reported** (the operator's measurement; not re-run here), beside the 2026-11-24 2.1.331 headless measurement; the docs' statements labelled as not run; other agents labelled not measured | rules/06 §4 + checklist |
+
 ---
