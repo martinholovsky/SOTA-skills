@@ -45,6 +45,9 @@
 #   scripts/install.sh --no-mcp        # skip the MCP offer
 #   scripts/install.sh --no-verify     # skip the reachability check that ends every run
 #   scripts/install.sh --yes           # assume the recommended answer to prompts
+#   scripts/install.sh --field-reports DIR  # where /sota-report writes field reports (default
+#                                      #   ~/.local/share/sota-skills/field-reports); recorded as
+#                                      #   env SOTA_FIELD_REPORTS in ~/.claude/settings.json
 #   scripts/install.sh --color=WHEN    # always | never | auto (default; --no-color = never)
 #   scripts/install.sh --help
 #
@@ -88,6 +91,7 @@ USE_COPY=0
 DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
 DO_MCP=-1       # -1 = offer, 0 = skip, 1 = force  (--mcp / --no-mcp)
 ASSUME_YES=0
+FIELD_REPORTS=""     # --field-reports DIR: where /sota-report writes (env SOTA_FIELD_REPORTS)
 COLOR_MODE=auto # auto | always | never  (--color=WHEN / --no-color)
 
 INTERACTIVE=0
@@ -683,6 +687,60 @@ setup_listing_budget() {
   rm -f "$tmp"
 }
 
+# --- field-report inbox ----------------------------------------------------------
+# /sota-report writes every report and its extract to ONE folder per machine, outside every
+# repository: ${SOTA_FIELD_REPORTS:-$HOME/.local/share/sota-skills/field-reports}. Recording the
+# folder as an `env` entry in ~/.claude/settings.json makes every Claude Code session see the
+# same value (measured 2026-11-25, Claude Code 2.1.332: a settings `env` entry reached the
+# session's Bash tool, and its absence printed nothing). Before the folder was named, one
+# machine held 21 reports in six kinds of improvised location. An existing setting is the
+# user's choice and is never changed unless --field-reports asks; reports already written are
+# never moved. Other agents have no such settings file: for them the command's default applies,
+# or an exported SOTA_FIELD_REPORTS in the shell profile.
+setup_field_reports() {
+  local s="$HOME/.claude/settings.json" tmp cur want def
+  def="$HOME/.local/share/sota-skills/field-reports"
+  command -v jq >/dev/null 2>&1 || { warn "jq not found — skipping the field-report inbox (default: $def)"; return; }
+  cur=""
+  [ -e "$s" ] && cur="$(jq -r '.env.SOTA_FIELD_REPORTS // empty' "$s" 2>/dev/null || true)"
+  want="${FIELD_REPORTS:-${cur:-$def}}"
+  case "$want" in
+    \~) want="$HOME" ;;      # a literal ~ the user typed in a quoted argument
+    \~/*) want="$HOME/${want#\~/}" ;;
+    /*) ;;
+    *) want="$PWD/$want" ;;
+  esac
+  want="${want%/}"
+
+  if [ -n "$cur" ] && [ "$cur" = "$want" ]; then
+    (umask 077; mkdir -p -- "$want") || { warn "cannot create $want"; return; }
+    log "field reports go to $want (SOTA_FIELD_REPORTS in ~/.claude/settings.json)"
+    return 0
+  fi
+  if [ -n "$cur" ]; then
+    log "SOTA_FIELD_REPORTS was $cur; reports already there are not moved"
+  elif [ -z "$FIELD_REPORTS" ]; then   # --field-reports already said where: no question
+    ask_yn "Record $want as the field-report inbox (SOTA_FIELD_REPORTS in ~/.claude/settings.json), so /sota-report writes every report to one place?" y || {
+      log "left unset — /sota-report still defaults to $def"; return; }
+  fi
+  (umask 077; mkdir -p -- "$want") || { warn "cannot create $want — left unchanged"; return; }
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg d "$want" '.env = ((.env // {}) + {SOTA_FIELD_REPORTS: $d})' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "field reports go to $want (SOTA_FIELD_REPORTS set in ~/.claude/settings.json; new sessions see it)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg d "$want" '{env: {SOTA_FIELD_REPORTS: $d}}' >"$s"
+    ok "created ~/.claude/settings.json with SOTA_FIELD_REPORTS=$want"
+  fi
+  rm -f "$tmp"
+}
+
 setup_hook() {
   local s="$HOME/.claude/settings.json" tmp
   if ! command -v jq >/dev/null 2>&1; then
@@ -956,6 +1014,8 @@ while [ $# -gt 0 ]; do
     --mcp)        DO_MCP=1 ;;
     --no-mcp)     DO_MCP=0 ;;
     --yes|-y)     ASSUME_YES=1 ;;
+    --field-reports) shift; [ $# -gt 0 ] || die "--field-reports needs a directory"; FIELD_REPORTS="$1" ;;
+    --field-reports=*) FIELD_REPORTS="${1#*=}" ;;
     --color)      shift; [ $# -gt 0 ] || die "--color needs always|never|auto"; COLOR_MODE="$1" ;;
     --color=*)    COLOR_MODE="${1#*=}" ;;
     --no-color)   COLOR_MODE=never ;;
@@ -1321,6 +1381,8 @@ maybe_setup_mcp || true
 # is the only path and a name-only entry has nothing to match on.
 section '📏' 'Skill listing budget'
 setup_listing_budget || true
+section '📮' 'Field-report inbox'
+setup_field_reports || true
 maybe_setup_precommit
 
 section '✅' 'Done'
