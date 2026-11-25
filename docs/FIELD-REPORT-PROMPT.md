@@ -212,7 +212,9 @@ ledger entry, with the command that produced the label: **verified** (reproduced
      *and* non-zero "Not resolved" counts explained, since those are reads it could not name.
      A diff section run after the session also counts the reporter's **report-writing reads**.
      Before 2026-11-15 it tabled them as `loaded`; it now prints a cutoff and marks them
-     `read only after the code was written`. Check first-read times in an older paste by hand.
+     `read only after the code was written`. Check first-read times in an older paste by hand,
+     and in any paste from before 2026-11-25 whose `--repo` was a separate worktree: it matched
+     edits under `--repo` alone, so it printed "No Edit/Write of a changed file" and no cutoff.
    - **Process gaps are findings about rule shape** (category 2): a rules file governing the
      work whose checklist was never read or never re-read after the last edit (BUILD step 4),
      or an audit session that ran none of a loaded file's probes. Record them even when the
