@@ -147,7 +147,7 @@ need any of them to get value from the library, but they help as your sessions g
 
 | Type this | When | What happens |
 |---|---|---|
-| `/sota-init` | Once, in a new project | Sets the repository up: `.gitignore`, secret scanning and checks, a licence you choose, the agent file, and where project data lives. It only adds what is missing and asks before committing |
+| `/sota-init` | In a new project, or again later: it adds only what is missing | Sets the repository up: `.gitignore`, secret scanning and checks, a licence you choose, the agent file, and where project data lives. It only adds what is missing and asks before committing. `/sota-init data` audits and fixes where an existing project's data lives, asking before every move |
 | `/sota-resume` | Starting a session | Finds the open work in the project (TODOs, checklists, trackers) and offers to do it |
 | `/sota-auto` | Nobody will be around to answer, e.g. overnight | Works through the open items without asking, holds back anything it cannot undo (merges, releases, spending without a `budget=$N`), and ends with a report of every decision it made for you |
 | `/sota-audit` | Finishing a piece of work | Reviews the code against the library's checklists |
