@@ -10249,4 +10249,16 @@ The verdict stands; the first search's scope was narrower than written.
 | (not proposed) routing before the inventory; a unit-mixing rule; the unfollowed hook notes | **agreed**. The unit case is now partly in rules/09 §5a's `du` row (the previous intake) | — |
 | (E2) 30 code hits read, none a deviation; checklist walk of 17 files not checked | **recorded**; the code is private, so **not reproducible here**. A process gap: the walk the procedure asks for was not done | — |
 
+## 2026-11-25 — operator request: operating-system metadata files (macOS, Windows, Linux) in the library
+
+**Source:** operator question 2026-11-25, after `claude plugin validate` flagged a `.DS_Store` in this checkout ("should we have that also as part of sota-skills? not only for mac, but same-like files in windows and linux"). **Measured first:** no skill, command or the init script mentioned `.DS_Store`, `Thumbs.db`, `desktop.ini`, `__MACOSX`, AppleDouble or `excludesFile` (control: `gitignore`, 25 files). File lists taken from GitHub's `Global/{macOS,Windows,Linux}.gitignore` (fetched raw the same day) and `man gitignore` (git 2.55.0) for `core.excludesFile`. A real `.DS_Store` (63,492 bytes) held 42 of its folder's 304 names as UTF-16BE (Python, with the `Bud1` magic as the control; a first shell attempt read 0 because command substitution drops the NUL bytes a UTF-16 pattern needs). `ditto -c -k --sequesterRsrc` zipped a file carrying an extended attribute with `__MACOSX/pkg/._a.txt` beside it; `git archive` of the same tree held only the file.
+
+| Claim / proposal | Verdict | Landed in |
+|---|---|---|
+| a deployed `.DS_Store` discloses filenames | **adopted**, measured as above; the web-root sweep's `find` gains the four names and was run on a planted tree (4 hits, `index.html` not flagged). `Thumbs.db` holding thumbnails of deleted images is widely reported but **not measured here** (no Windows), so the text says only that it caches the folder's thumbnails | `sota-code-security` rules/07 §4 + checklist sweep |
+| keep them out of images and release archives | **adopted** | `sota-devsecops` rules/04 (`.dockerignore` bullet) |
+| a plugin directory refuses a plugin holding one | **adopted**, quoting the validator (Claude Code 2.1.332) | `sota-skill-security` rules/03 §4 + checklist |
+| a `.gitignore` floor for new repositories | **adopted with a caution**: a short cross-OS floor, not GitHub's whole templates (the Windows one ignores `*.msi`, `*.cab`, `*.lnk`; the Linux one `*~`, `nohup.out`); personal patterns go to `core.excludesFile` | `commands/sota-init.md` step 1; this repo's `.gitignore` |
+| one canonical list instead of four | **not adopted**: each place names the subset its own risk needs, so a change to one does not have to travel to the others | — |
+
 ---
