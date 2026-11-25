@@ -298,6 +298,14 @@ jobs:
         # accepted and heredoc bodies parsed as commands each fail it.
         run: python3 scripts/action-rules-hook.py --self-test
 
+      - name: Prove the memory guard asks before a command changes an agent memory folder
+        # A PreToolUse hook on Bash, on by default (scripts/memory-guard-hook.py): rm, mv, rmdir,
+        # unlink or ln on a memory key, the real folder behind a symlinked key, or an
+        # autoMemoryDirectory folder gets permissionDecision "ask". The self-test builds those three
+        # in a temp tree and checks 15 commands (reads, copies and an unrelated rm must stay silent),
+        # plus fail-closed on unparseable input and the SOTA_MEMORY_GUARD=off opt-out.
+        run: python3 scripts/memory-guard-hook.py --self-test
+
       - name: Prove the MCP server answers correctly and refuses hostile input
         # scripts/sota-mcp-server.py serves the library read-only to agents without a skills
         # loader. The test drives it over real stdio: lifecycle, version negotiation, every

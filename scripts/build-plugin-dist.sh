@@ -16,7 +16,7 @@
 # REF fails the build: a silent drop would ship a plugin whose hook points at nothing.
 #
 # WHAT SHIPS, and why each script is here:
-#   - the six hook targets in hooks/hooks.json;
+#   - every hook target in hooks/hooks.json (counted nowhere: the number went stale once);
 #   - scripts/skill-listing-sources.sh, which plugin-budget-check.sh runs;
 #   - scripts/install.sh, read as TEXT by plugin-routing-hook.sh (it greps HOOK_CMD out of it,
 #     so the reminder has one source). It is not an installer here: it names files that do not
@@ -60,6 +60,7 @@ readonly ALLOW=(
   scripts/code-rules-hook.py
   scripts/zsh-equals-hook.py
   scripts/action-rules-hook.py
+  scripts/memory-guard-hook.py
   scripts/skill-listing-sources.sh
   scripts/install.sh
   scripts/statusline.sh

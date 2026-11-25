@@ -138,7 +138,9 @@ following `rm -r` deleted the only real copy of a project's notes. It came back 
     unchanged. Then point it back.
 - **A guard on the store beats a note about it.** A pre-command hook that asks before any
   `rm`/`mv`/`ln` naming the memory folder is the structural form of this section, for the same
-  reason the reminder-style rule failed.
+  reason the reminder-style rule failed. The library ships one for Claude Code
+  (`scripts/memory-guard-hook.py`, offered by `install.sh --routing`, registered by the plugin):
+  it guards the per-path keys, the real folders behind them and any `autoMemoryDirectory` folder.
 
 ## Audit checklist
 

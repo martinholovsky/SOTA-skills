@@ -32,7 +32,7 @@ plugin, where the hooks do run.
 
 ## Hooks: everything that runs on your machine
 
-Six hooks, all on by default in Cowork and Claude Code. **None makes a network request**: no
+Every hook below is on by default in Cowork and Claude Code. **None makes a network request**: no
 `curl`, no fetch, no `git fetch`/`pull`, no socket; every `git` call is local. Each
 fails open (an error is one line on stderr, and the hook exits 0) except where stated.
 
@@ -45,6 +45,7 @@ fails open (an error is one line on stderr, and the hook exits 0) except where s
 | PostToolUse (Edit, Write, MultiEdit) | `scripts/code-rules-hook.py` (needs `python3` 3.9+) | the text Claude just wrote | per-session claim files in your temp dir, so each rules file is named once | names the rules file for what that code does (an outbound fetch, a CSV writer, an archive, a handler), with the line that matched; and, once per session, the language skill's `SKILL.md` when no tool call has loaded it | `SOTA_CODE_RULES_HOOK=off` |
 | PreToolUse (Bash) | `scripts/action-rules-hook.py` (needs `python3` 3.9+) | the Bash command Claude is about to run | the owning rules files, once per session, for an image push, a CI file written from the shell or a vulnerability scan; for a source file written from the shell, the code-rules hook's note | **refuses once per session** a command that signs or unlocks with a person's key, with what to settle first; and, since 2026-11-21, a merge, push or pull joined to a switch, stash or reset by `;` or a pipe, and a `pkill -f`; issued again, each runs | `SOTA_ACTION_RULES_HOOK=off` |
 | PreToolUse (Bash) | `scripts/zsh-equals-hook.py` (needs `python3` 3.9+) | the Bash command Claude is about to run | nothing | **can block the command** (exit 2, with the reason) when zsh would silently rewrite or cut it, such as an unquoted `===` separator; acts only when the agent's shell is zsh | `SOTA_ZSH_EQUALS_HOOK=off` |
+| PreToolUse (Bash) | `scripts/memory-guard-hook.py` (needs `python3` 3.9+) | the Bash command Claude is about to run; for a command that runs `rm`, `mv`, `rmdir`, `unlink` or `ln`, the memory keys under `~/.claude/projects` (or `$CLAUDE_CONFIG_DIR`) and the `autoMemoryDirectory` in your user and project settings | nothing | **asks you** (never blocks) before such a command touches an agent memory folder, including the real folder behind a symlinked key; input it cannot parse also asks | `SOTA_MEMORY_GUARD=off` |
 
 The plugin data dir is `$CLAUDE_PLUGIN_DATA`, which Claude Code sets. Set the variables in
 `settings.json` under `"env"` or in your shell.
