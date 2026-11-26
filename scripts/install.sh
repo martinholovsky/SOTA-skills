@@ -316,7 +316,7 @@ MD
   `ssh`/`bash -c`, whose argv carries the pattern; act on PIDs you recorded.
 - **zsh is not bash.** An unquoted `$var` is not word-split (`set -- $p` sets one
   argument; write `${=p}`), an unquoted word starting with `=` is rewritten or
-  aborts the list (`echo ===`; separate with `echo ---`), and an unquoted glob that
+  aborts the list (`echo ===`): quote it like every other word, `echo "=== $x"`, and an unquoted glob that
   matches nothing aborts the whole command, valid operands included, so
   `rg x tools corpus/*.py | wc -l` prints 0 (quote it, or check the path exists).
 
