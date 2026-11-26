@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **The always-loaded shell habits say to quote a `=word`, not to work around it.** The block `install.sh
+  --routing` writes said "`echo ===`; separate with `echo ---`", which steered agents to a different separator
+  instead of the rule `sota-shell-scripting` already states (quote every word, rules/01 §3; the `=word` row of
+  rules/06 §1). It now says "quote it like every other word, `echo \"=== $x\"`" (operator, 2026-11-26, after a
+  session's `echo ====` was refused by the zsh hook). Existing installs pick it up with `install.sh --routing`;
+  `verify-setup.sh` check 2e reports an older block until then.
+
 - **The memory guard can guard a house folder by name** (`SOTA_MEMORY_GUARD_PATHS`, `:`-separated folder names).
   Before, it guarded only folders it could resolve: the memory keys, the real folders behind symlinked keys, and
   `autoMemoryDirectory` folders; a repository's `.claude-memory/` that no key links to yet was not asked about.
