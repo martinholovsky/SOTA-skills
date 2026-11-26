@@ -38,6 +38,21 @@ VERB = re.compile(r"(?:^|[\s;&|(`])(?:sudo\s+)?(?:command\s+)?(rm|mv|rmdir|unlin
 # resolved, so the two halves on one line count: asking about a few extra commands is the cheap side.
 LITERAL = re.compile(r"\.claude/projects\b[^\n]*?memory|memory[^\n]*?\.claude/projects")
 
+# A heredoc body is text unless a shell (or ssh) runs it: a Python heredoc that WRITES a note
+# mentioning `ln -s … .claude-memory` must not ask (field report 2026-11-25: 4 of 8 asks of a guard
+# were heredocs whose text named those commands). Same shape as action-rules-hook.py drop_bodies.
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1([^\n]*)\n(.*?)\n?[ \t]*\2[ \t]*(?=\n|$)", re.S)
+SHELL_RUNNER = re.compile(r"(?:^|[\s;&|(])(?:sudo\s+)?(?:bash|sh|zsh|dash|ksh|ssh)\b[^\n]*$")
+
+
+def drop_text_bodies(command: str) -> str:
+    """The command with every heredoc body removed unless the opener line feeds it to a shell."""
+    def repl(m: re.Match) -> str:
+        opener = command[:m.start()].rsplit("\n", 1)[-1]
+        return m.group(0) if SHELL_RUNNER.search(opener) else "<<HEREDOC" + m.group(3) + "\n"
+    return HEREDOC.sub(repl, command)
+
+
 REASON = (
     "This command changes an agent memory folder. Before approving, check that the session has: "
     "(1) mapped the source and destination with `ls -ld --` and `readlink --` (memory keys start with "
@@ -95,6 +110,7 @@ def _inside(path: str, roots: set[str]) -> bool:
 
 def decide(command: str, cwd: str, roots: set[str]) -> str | None:
     """'ask' when the command mutates (rm/mv/rmdir/unlink/ln) and names a memory folder."""
+    command = drop_text_bodies(command)
     if not VERB.search(command):
         return None
     if LITERAL.search(command):
@@ -155,6 +171,10 @@ def self_test() -> int:
             ("git commit -m 'rm the memory leak'", None),                         # words only
             ("grep -rn armor src/", None),                                        # 'rm' inside a word
             (f"cp -R {kept} {other}/backup", None),                               # copy is allowed
+            ("python3 - <<'PY'\nopen('N.md','a').write('ln -s ../.claude-memory ~/.claude/projects/-k/memory')\nPY", None),
+            (f"cat >> notes.md <<'EOF'\nthen rm -r {mem_a}\nEOF", None),           # heredoc text only
+            (f"bash <<'EOF'\nrm -r {mem_a}\nEOF", "ask"),                          # a shell runs it
+            (f"ssh host <<'EOF'\nrm -rf ~/.claude/projects/-k/memory\nEOF", "ask"),
         ]
         for cmd, want in cases:
             n += 1

@@ -1584,6 +1584,15 @@
     },
     {
       "from": "sota-docs-workflow",
+      "to": "sota-secrets-management",
+      "weight": 4,
+      "targets": [
+        "rules/04",
+        "rules/04 \u00a77"
+      ]
+    },
+    {
+      "from": "sota-docs-workflow",
       "to": "sota-shell-scripting",
       "weight": 4,
       "targets": [
@@ -1950,14 +1959,6 @@
       "weight": 3,
       "targets": [
         "rules/04 \u00a73.1"
-      ]
-    },
-    {
-      "from": "sota-docs-workflow",
-      "to": "sota-secrets-management",
-      "weight": 3,
-      "targets": [
-        "rules/04"
       ]
     },
     {
@@ -4682,12 +4683,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1965,
+    "md link, other skill": 1966,
     "md link, outside skills/": 3,
     "md link, same skill": 2880,
     "name (backticked)": 456,
     "name (bare)": 240,
-    "name+file (backticked)": 950,
+    "name+file (backticked)": 951,
     "name+file (bare)": 180,
     "own rules/NN": 3107
   },
@@ -4699,7 +4700,7 @@
     "md link, same skill": 0,
     "name (backticked)": 441,
     "name (bare)": 196,
-    "name+file (backticked)": 945,
+    "name+file (backticked)": 946,
     "name+file (bare)": 168,
     "own rules/NN": 3000
   },
@@ -8826,6 +8827,7 @@
         "sota-devsecops/rules/05-analysis-gates.md",
         "sota-devsecops/rules/12-scm-ci-platform-governance.md",
         "sota-docs-workflow/rules/01-documentation-architecture.md",
+        "sota-docs-workflow/rules/06-where-project-data-lives.md",
         "sota-ml-engineering/rules/07-security-governance.md",
         "sota-ruby/rules/04-supply-chain-tooling.md",
         "sota-skill-security/rules/02-trust-boundary-and-capability.md",

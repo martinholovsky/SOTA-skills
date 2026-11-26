@@ -1579,7 +1579,11 @@ field reports): a merge, push, rebase or pull joined to a later `switch`, `check
 stash push … && git switch main …` ran on after the merge failed and cut a branch from the wrong
 base; 30 such calls in 11 sessions of 42,507 replayed; `set -e` and `pipefail` are read), and `pkill -f`
 or `kill $(pgrep -f …)` without `-P`, also inside `ssh host '…'` or `bash -c`, which matches its own
-shell on Linux (7 calls in 6 sessions). An image push or retag, a CI file written from the shell and a vulnerability scan get the
+shell on Linux (7 calls in 6 sessions). Since 2026-11-26 a fourth, `secret_read`: a reader that prints
+content (`cat`, `cut`, `grep`, `jq`, `python3 -c`, …) given a secret-looking file (`.env*`, a private
+key, `credentials`, a service-account JSON, `.npmrc`; templates and `.pub` exempt), because a field
+session's `cut -d= -f1` over a JSON key file printed a private key into the transcript; replayed over
+44,314 Bash calls it acts on 88 in 15 sessions, every one naming a real secret-file type. An image push or retag, a CI file written from the shell and a vulnerability scan get the
 owning rules files as context, once per session each, and are never blocked. **A source file
 written from the shell** (`cat > x.go <<EOF`, `sed -i`, a heredoc script that writes it) gets the
 code-rules hook's own note, as if it had been written with Edit, since 2026-11-20: a field report

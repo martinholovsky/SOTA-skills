@@ -292,9 +292,10 @@ jobs:
         # A PreToolUse hook on Bash, on by default (scripts/action-rules-hook.py, ROADMAP 98): a
         # command that signs with a person's key is refused once per session, and an image push, a
         # CI file written from the shell and a vulnerability scan get the owning rules as context.
-        # The self-test classifies 35 labelled commands (pickaxe `git log -S`, a commit message
-        # and a heredoc body that only mention signing must not fire) and drives the once-per-
-        # session state. Mutation-checked 2026-11-18: `--no-gpg-sign` ignored, an unquoted CI path
+        # The self-test classifies its labelled commands (pickaxe `git log -S`, a commit message
+        # and a heredoc body that only mention signing must not fire; since 2026-11-26 secret-file
+        # reads, with grep patterns, jq filters, templates and public keys as near-misses) and
+        # drives the once-per-session state. Mutation-checked 2026-11-18: `--no-gpg-sign` ignored, an unquoted CI path
         # accepted and heredoc bodies parsed as commands each fail it.
         run: python3 scripts/action-rules-hook.py --self-test
 
