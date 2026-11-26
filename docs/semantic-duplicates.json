@@ -1241,7 +1241,7 @@
    "note": "Cross-language checklist, devsecops CI gate and JS-specific grep.",
    "sample": "- [ ] **Invisible code points in code and history (§4)**: does CI reject bidi and zero-width characters in source of eve",
    "members": [
-    "sota-code-security/rules/09-untrusted-data-ingestion.md#45469196c009",
+    "sota-code-security/rules/09-untrusted-data-ingestion.md#6ea055eb4b49",
     "sota-devsecops/rules/05-analysis-gates.md#d2481286029f",
     "sota-javascript-typescript/rules/05-security.md#6aa4535831ae"
    ]
