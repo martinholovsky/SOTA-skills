@@ -39,9 +39,18 @@ Seven classes, each acted on at most once per session (src_edit once per rules f
   cmdline_kill  `pkill -f`/`--full`, or `kill` over `pgrep -f`, not limited by `-P`. REFUSED
             once: the pattern matches every shell whose arguments carry it, the issuing one
             included on Linux (field reports 2026-10-24 and 2026-11-21; rules/09 §5c).
+  secret_read  a reader that prints content (cat, cut, grep, jq, sed, python -c, ...) given a
+            secret-looking file: `.env*`, a private key, `credentials`, a service-account JSON,
+            `.npmrc`/`.pypirc`/`.netrc`; templates (`.example`, `.sample`, ...) and `.pub` exempt, and
+            a grep pattern or jq filter is not a file. REFUSED once: a field session's
+            `cut -d= -f1` over a JSON key file printed a private key into the transcript
+            (field report 2026-11-25, F1; sota-secrets-management rules/05 §8, rules/04 §7).
+            Replayed 2026-11-26 over 521 transcripts (44,314 Bash calls): 88 calls in 15 sessions,
+            every one naming a real secret-file type (a first draft matched 131 in 25, most of them
+            grep patterns, jq filters and source files named *credentials*).
 
-sign, gate_chain and cmdline_kill refuse; the other four add context and never block. A note
-would not do for the refusing three: it arrives after the command has run.
+sign, gate_chain, cmdline_kill and secret_read refuse; the other four add context and never block.
+A note would not do for the refusing four: it arrives after the command has run.
 
 The command is parsed into segments and argv, not grepped: a commit message, a grep pattern or
 `git log -S` (a pickaxe search) is not a signing step. Replay over one operator's transcripts
@@ -140,6 +149,19 @@ NOTES = {
         "what depends on it with `&&`, and read its status directly, not through `| tail` (which "
         "returns tail's 0). Owning rules: %s §1b." % rf("sota-shell-scripting", "04-ci-and-operational.md")
     ),
+    "secret_read": (
+        "sota action-rules: this command reads a secret-looking file (a `.env`, a key, a credentials or "
+        "service-account file) with a tool that prints what it reads, and whatever it prints lands in "
+        "the session transcript, which is a credential store from then on. It was not run; this "
+        "happens once per session, and the same command runs if it is issued again. Learn what you "
+        "need from metadata first: `ls -l`, `git check-ignore -v`, `file`; for key NAMES, a parser "
+        "that emits only names (`jq 'keys'`, a `python3 -I` that prints `list(d)`). A reader that "
+        "assumes a format (`cut -d= -f1`, `grep -o '^[A-Z_]*='`) prints every line that does not "
+        "match it whole: a JSON key file through `cut -d=` printed a private key (field-reported "
+        "2026-11-23). Owning rules: %s §8; %s §7."
+        % (rf("sota-secrets-management", "05-credential-types.md"),
+           rf("sota-secrets-management", "04-detection-and-remediation.md"))
+    ),
     "cmdline_kill": (
         "sota action-rules: this command signals processes selected by their command line (`pkill "
         "-f`, or `kill` over `pgrep -f`). The pattern also matches every shell whose own arguments "
@@ -151,9 +173,9 @@ NOTES = {
     ),
 }
 
-CLASSES = ("sign", "registry", "ci_edit", "scan", "src_edit", "gate_chain", "cmdline_kill")
+CLASSES = ("sign", "registry", "ci_edit", "scan", "src_edit", "gate_chain", "cmdline_kill", "secret_read")
 # Classes that refuse the first matching command of a session; the rest add context only.
-REFUSE_ONCE = ("sign", "gate_chain", "cmdline_kill")
+REFUSE_ONCE = ("sign", "gate_chain", "cmdline_kill", "secret_read")
 
 # ---------------------------------------------------------------- parsing
 
@@ -645,6 +667,75 @@ def pgrep_feeds_kill(cmd: str) -> bool:
                 and re.search(r"(?:^|[\s;&|(])kill\s", text))
 
 
+# A file whose CONTENT is a secret by its name. Templates committed on purpose, public keys and
+# certificates are exempt, and so is source code that merely has "credentials" in its name.
+SECRET_NAME = re.compile(
+    r"(?:^|/)(?:\.env(?:[.-][^/]*)?|[^/]*\.(?:p12|pfx|key|keystore|jks)|[^/]*(?:key|private|secret)[^/]*\.pem"
+    r"|id_(?:rsa|ed25519|ecdsa|dsa)|credentials|\.git-credentials|[^/]*credentials[^/]*\.(?:json|ya?ml|ini|txt)"
+    r"|[^/]*service[-_]?account[^/]*\.json|\.npmrc|\.pypirc|\.netrc)$", re.I)
+SECRET_TEMPLATE = re.compile(r"\.(?:example|sample|template|dist)$|\.pub$", re.I)
+SECRET_READERS = {"cat", "head", "tail", "less", "more", "cut", "sed", "awk", "gawk", "grep", "egrep", "rg",
+                  "jq", "yq", "strings", "xxd", "od", "hexdump", "base64", "bat", "python", "python3",
+                  "node", "ruby", "perl", "sort", "uniq", "tr", "column"}
+# Tools whose first operand is a pattern or program, not a file, unless -e/-f supplied it.
+PROGRAM_FIRST = {"grep", "egrep", "rg", "jq", "yq", "sed", "awk", "gawk"}
+PROGRAM_FLAGS = {"-e", "-f", "--regexp", "--file", "--expression", "--from-file"}
+# Flags that take a value, per tool, so the value is not mistaken for the program or a file
+# (`grep -n` and `sed -n` take none; `head -n` and `cut -d` do).
+VALUE_FLAGS = {"grep": {"-A", "-B", "-C", "-m", "--max-count"}, "egrep": {"-A", "-B", "-C", "-m"},
+               "rg": {"-A", "-B", "-C", "-m", "-g", "--glob", "-t", "--type", "-T", "--type-not", "--max-count"},
+               "awk": {"-F", "-v"}, "gawk": {"-F", "-v"}, "cut": {"-d", "-f", "-c", "-b"},
+               "head": {"-n", "-c"}, "tail": {"-n", "-c"}, "sort": {"-k", "-t", "-o"}}
+TWO_VALUE_FLAGS = {"--arg", "--argjson", "--slurpfile", "--rawfile"}   # jq/yq: name, then value
+SECRET_IN_TEXT = re.compile(r"""(?:^|[\s'"(<=/])((?:\.env(?:[.-][A-Za-z0-9_.-]*)?|[A-Za-z0-9_.-]*\.(?:p12|key)"""
+                            r"""|id_(?:rsa|ed25519|ecdsa)|[A-Za-z0-9_.-]*service[-_]?account[A-Za-z0-9_.-]*\.json))(?=$|[\s'")])""", re.I)
+
+
+def _secret_file(word: str) -> bool:
+    w = word.rstrip("/")
+    return bool(SECRET_NAME.search(w)) and not SECRET_TEMPLATE.search(w)
+
+
+def _file_operands(argv: list[str]) -> list[str]:
+    """The arguments a reader treats as files: flags, their values, and (for grep/rg/jq/yq/sed/awk)
+    the leading pattern or program are skipped. jq's `--arg name value` takes two values."""
+    tool, args, out, skip, program_seen = argv[0], argv[1:], [], 0, False
+    if tool in PROGRAM_FIRST and any(a in PROGRAM_FLAGS or a.startswith(("-e", "--regexp=", "--expression=")) for a in args):
+        program_seen = True
+    for a in args:
+        if skip:
+            skip -= 1
+            continue
+        if a == "--":
+            continue
+        if a.startswith("-") and a != "-":
+            if tool in ("jq", "yq") and a in TWO_VALUE_FLAGS:
+                skip = 2
+            elif a in VALUE_FLAGS.get(tool, ()) or (a in PROGRAM_FLAGS and tool in PROGRAM_FIRST):
+                skip = 1        # the -e/-f value is the program, never a file to read
+            continue
+        if tool in PROGRAM_FIRST and not program_seen:
+            program_seen = True
+            continue
+        out.append(a)
+    return out
+
+
+def is_secret_read(argv: list[str], seg: str) -> bool:
+    """A reader that prints content, given a secret-looking file: as a file operand, through `<`, or
+    named inside an interpreter's -c/-e string. `ls`, `file`, `stat`, `wc` and `git check-ignore`
+    are not readers: they print metadata (field report 2026-11-25, F1)."""
+    if not argv or argv[0] not in SECRET_READERS:
+        return False
+    if any(_secret_file(a) for a in _file_operands(argv)):
+        return True
+    if any(_secret_file(m.group(2)) for m in re.finditer(r"<\s*(['\"]?)([^\s'\"<>|;&]+)\1", seg)):
+        return True
+    if argv[0] in ("python", "python3", "node", "ruby", "perl"):
+        return any(_secret_file(m.group(1)) for a in argv[1:] for m in SECRET_IN_TEXT.finditer(a))
+    return False
+
+
 def is_cmdline_kill(argv: list[str], seg: str) -> bool:
     """`pkill` selecting by the full command line, or `kill` fed by `pgrep -f`."""
     if not argv:
@@ -744,6 +835,8 @@ def classify(cmd: str, cwd: str | None = None, config=git_config_true, depth: in
             found.add("ci_edit")
         if is_scan(argv):
             found.add("scan")
+        if is_secret_read(argv, seg):
+            found.add("secret_read")
     # chain() keeps `$( … )` inside its segment, so `kill $(pgrep -f x)` is seen whole
     if any(is_cmdline_kill(argv_of(seg), seg) for seg, _op in chain(cmd)) or pgrep_feeds_kill(cmd):
         found.add("cmdline_kill")
@@ -853,6 +946,28 @@ def replay(root: str) -> int:
 
 
 CASES = [
+    # secret_read (field report 2026-11-25, F1): a reader given a secret-looking file is refused once
+    ("cut -d= -f1 .env; echo; cut -d= -f1 .env-gcloud | head", (), {"secret_read"}),
+    ("cat .env", (), {"secret_read"}),
+    ("head -5 config/service-account.json", (), {"secret_read"}),
+    ("grep -c . ~/.ssh/id_ed25519", (), {"secret_read"}),
+    ("jq keys < gcp-credentials.json", (), {"secret_read"}),
+    ("python3 -I -c \"import json;print(list(json.load(open('svc_service_account.json'))))\"", (), {"secret_read"}),
+    ("sed -n 1p tls/server.key", (), {"secret_read"}),
+    ("cat .env.example", (), set()),                  # a template committed on purpose
+    ("ls -l .env .env-gcloud", (), set()),            # metadata, not content
+    ("git check-ignore -v .env", (), set()),
+    ("file service-account.json", (), set()),
+    ("cat ~/.ssh/id_ed25519.pub", (), set()),          # a public key
+    ("grep -rn API_KEY src/", (), set()),             # no secret file named
+    ("grep -rn credentials src/", (), set()),         # a pattern, not a file
+    ("rg 'csrf|credentials:' web/", (), set()),
+    ("jq '.env.SOTA_FIELD_REPORTS' ~/.claude/settings.json", (), set()),   # a jq filter, not a file
+    ("sed -n 1,40p src/auth/credentials.ts", (), set()),                    # source code
+    ("cat certs/tsa-ca.pem", (), set()),                                    # a public certificate
+    ("grep -n DATABASE_URL .env", (), {"secret_read"}),                     # the file operand
+    ("grep -e PASS -- .env.e2e.local", (), {"secret_read"}),
+    ("cat ~/.aws/credentials", (), {"secret_read"}),
     # (command, config true for, expected classes)
     ('git commit -q -S -m "docs: release"', (), {"sign"}),
     ('git add a && git commit -S -F - <<\'EOF\'\nmsg\nEOF', (), {"sign"}),

@@ -195,7 +195,8 @@ with another project's work, ask before running the suite.
    a finding when it says where something is kept.
 3. Commands that delete: `clean` targets, cleanup scripts, CI steps, every tracked `rm -rf`, each
    read against the table, and any log pruner checked for cited names.
-4. Evidence that exists only in class 4: for every number a tracked doc states, find the run's
+4. Evidence that exists only in class 4: for every number a tracked doc or the agent's memory
+   store states, find the run's
    output. Copy it into the repository, compare byte for byte, cite it by name, and **decide its
    class before the copy is done**: class 1, committed, when it is small and holds nothing secret
    or private; class 2, ignored, only when it is too large, private or generated, and then P0's
@@ -209,6 +210,8 @@ with another project's work, ask before running the suite.
 8. Container objects: each is class 3 (with its rebuild command) or class 5 (archived, checksum
    beside it). Never another project's.
 9. Secrets: where keys live, whether a token sits in a class-3 folder, and what references it.
+   Inventory them by name and metadata, never by content (rules/06 §1): a format-assuming reader
+   such as `cut -d=` prints a JSON key file whole.
 
 ## P2. No gate depends on class 3
 
@@ -241,7 +244,8 @@ because then class-2 and agent files change gate results.
 5. **Prove it with a differential**, as rules/06 §4 describes: a scratch folder with a canary,
    from every path spelling, headless and interactive, checking the filesystem rather than the
    session's report. The control arm (no setting) is where you see which keys the current version
-   actually uses; record them in the report. Remove the scratch folder afterwards.
+   actually uses; record them in the report, and check from each transcript's `cwd` which key every
+   arm landed under: a `cd` through a symlinked parent gives a headless session the resolved path. Remove the scratch folder afterwards.
 6. **A guard.** If a hook that asks before `rm`, `mv`, `rmdir`, `unlink` or `ln` on the memory
    folder is installed, prove it is wired: run `rmdir -- <memory-folder>/sota-guard-probe` (a
    folder that does not exist, so nothing is lost if no guard asks), see it ask, and answer no. If

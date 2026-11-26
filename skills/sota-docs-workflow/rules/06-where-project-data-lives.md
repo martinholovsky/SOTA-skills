@@ -41,7 +41,13 @@ Add a **machine-bound** list: what does not travel with the project to a new mac
 are agent configuration and hooks, credentials, CLI logins, container-runtime registration, and
 path symlinks. Give the steps to recreate each one. Secrets in classes 2–5 follow
 [`sota-secrets-management`](../../sota-secrets-management/SKILL.md); the class only says where a
-reference to the secret lives.
+reference to the secret lives. **Inventory a secret by name and metadata, never by content**: `ls -l`,
+`git check-ignore -v` and `file` for the format, then a parser that prints only key names (`jq 'keys'`,
+a `python3 -I` that prints `list(d)`). A reader that assumes a format (`cut -d=`, `grep -o '^[A-Z_]*='`)
+prints every line that does not match it whole (field-reported 2026-11-23: a JSON key file through
+`cut -d= -f1` printed a private key into a transcript;
+[`sota-secrets-management` rules/04](../../sota-secrets-management/rules/04-detection-and-remediation.md) §7).
+The action-rules hook refuses the first such read of a session.
 
 ## 2. Declare it where agents and people will read it
 
@@ -73,7 +79,8 @@ Each check below is location-agnostic. It holds whatever the declaration says.
   (field-reported 2026-11-25: two days after a folder was declared class 2, `make clean` still ran
   `rm -rf` on it, cited logs included). A pruner that caps a log archive skips the names a doc cites
   (field-reported 2026-11-23: a cap of N per gate had deleted 7 of the 21 logs tracked docs cited).
-- **Evidence that exists only in class 4.** For each number or result a tracked doc states, find
+- **Evidence that exists only in class 4.** For each number or result a tracked doc **or the agent's
+  memory store** states, find
   the run's output. A copy found only in a scratchpad or temp folder moves to class 2 now: copy it,
   compare it byte for byte, and cite it by name. A ledger that refuses failed runs is the usual
   cause (field-reported 2026-11-25). **That includes the audit's own working files**: every count
@@ -135,8 +142,12 @@ following `rm -r` deleted the only real copy of a project's notes. It came back 
   - *Measured:* 2026-11-24 with Claude Code 2.1.331, headless: the session reported that path and
     wrote its memory there, none under the per-path key. Field-reported 2026-11-25 with 2.1.332, as
     a differential (no setting; a scratch folder seeded with a canary; the real folder): the canary
-    loaded and a new memory was written only to the scratch folder, from both path spellings of one
-    repository, headless and interactive. An interactive session started before the setting existed
+    loaded and a new memory was written only to the scratch folder, launched from both path spellings
+    of one repository, headless and interactive. **In headless mode the two spellings were one arm**:
+    `cd <alias> && claude -p` hands the session the resolved path (field-reported 2026-11-25: 8 of 8
+    transcripts, 4 launched from the alias, recorded the physical path under one key; reproduced the
+    same day on a throwaway project), so that run proved the setting from one key only. An
+    interactive session started before the setting existed
     named the per-key **symlink** path, so the harness does not resolve the link when it prints it.
   - *From the docs, not run* (code.claude.com/docs/en/memory, fetched 2026-11-25): the value "must be
     an absolute path or start with `~/`"; it needs v2.1.234 or later; a project-level value is
@@ -151,11 +162,17 @@ following `rm -r` deleted the only real copy of a project's notes. It came back 
     folder, every reading agrees whichever mechanism chose it. Point the setting at an empty scratch
     folder seeded with a canary line, start a session from every path spelling, and check the
     filesystem: the canary is quoted, a new memory lands only there, and the real store is
-    unchanged. Then point it back. The save step was run as
+    unchanged. Then point it back. **Check which key each arm actually used**, from the `cwd` its
+    transcript records or the folder its `.jsonl` landed in: an arm under the same key as the control
+    tests nothing new. The save step was run as
     `claude -p "<save this memory …>" --allowedTools "Write" "Edit" "Read"`, and each spelling wrote
     one file and one index line, only in the scratch folder (field-reported 2026-11-25); without
-    `--allowedTools`: not measured. Keep the prompt first: a prompt placed after `--allowedTools` is
-    read as another tool name (measured 2026-11-25, 2.1.332).
+    `--allowedTools`: not measured. Keep the prompt first: a prompt placed after a variadic flag
+    (`--allowedTools`, `--add-dir`) is read as one more of its values (measured 2026-11-25, 2.1.332).
+- **Before deleting a scratchpad, search the memory store as well as tracked files** for its session
+  id and for the word `scratchpad`, with a control. Field-reported 2026-11-24: a file cited only in
+  the memory store was deleted with an approved scratchpad cleanup, because the check had covered
+  tracked docs only.
 - **A guard on the store beats a note about it.** A pre-command hook that asks before any
   `rm`/`mv`/`ln` naming the memory folder is the structural form of this section, for the same
   reason the reminder-style rule failed. The library ships one for Claude Code
@@ -180,7 +197,7 @@ following `rm -r` deleted the only real copy of a project's notes. It came back 
 - [ ] **No command deletes class-2 data wholesale** (§1, §3): every `clean` target, cleanup
       script, CI step and tracked `rm -rf` was read against the declaration, and any log pruner
       skips the files a doc cites.
-- [ ] **No cited result exists only in class 4** (§3): each number a tracked doc states has its
+- [ ] **No cited result exists only in class 4** (§3): each number a tracked doc or the memory store states has its
       run output in class 1 or 2, copied, compared byte for byte and cited by name, including the
       working files the audit session itself counted from.
 - [ ] **The ignored-path inventory used `git status --ignored=matching`** (§3), so folders

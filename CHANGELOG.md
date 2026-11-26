@@ -5,6 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Field report intake, 2026-11-26: a private key printed by a secret-file read, memory left out of the
+  evidence check, a two-spelling differential that tested one key.** The action-rules hook gains
+  `secret_read`, refused once per session: a reader that prints content given a secret-looking file
+  (`.env*`, a private key, `credentials`, a service-account JSON, `.npmrc`); grep patterns, jq filters,
+  templates and `.pub` files are not matched. Replayed over 44,314 Bash calls it acts on 88 in 15 sessions,
+  every one a real secret-file read. `sota-docs-workflow` rules/06 §1 and `/sota-init` P1.9: inventory a secret
+  by name and metadata, never by content. rules/06 §3, its checklist and P1.4: the class-4 evidence check
+  covers what the agent's memory store states too, and §4 says to search the store before deleting a
+  scratchpad. rules/06 §4 and P3.5: a `cd` through a symlinked parent gives a headless session the
+  resolved path, so check which key each differential arm landed under; the 2026-11-25 "both spellings"
+  measurement is corrected to one key in headless mode. `--add-dir` swallows a following prompt like
+  `--allowedTools` (measured). `sota-shell-scripting` rules/09 §5a: per-folder `du` readings can sum to
+  more than their parent's (hard links, measured). The memory guard no longer asks about heredoc TEXT
+  that mentions memory commands; a heredoc a shell runs still asks (self-test 21/21).
+
 ## [1.61.0] - 2026-11-25
 
 **Front door checked:** memory guard · /sota-init data · --field-reports · .DS_Store · Thumbs.db · full SHA · background-task notification
