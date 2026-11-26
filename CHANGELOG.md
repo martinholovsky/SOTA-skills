@@ -5,6 +5,14 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **The memory guard can guard a house folder by name** (`SOTA_MEMORY_GUARD_PATHS`, `:`-separated folder names).
+  Before, it guarded only folders it could resolve: the memory keys, the real folders behind symlinked keys, and
+  `autoMemoryDirectory` folders; a repository's `.claude-memory/` that no key links to yet was not asked about.
+  With `SOTA_MEMORY_GUARD_PATHS=.claude-memory` the library guard agrees with the operator's previous personal
+  guard on all 12 of that guard's own self-test cases (11 of 12 without the setting). Self-test 22/22.
+
 ## [1.61.1] - 2026-11-26
 
 **Front door checked:** secret_read · memory store · Persian · known bad

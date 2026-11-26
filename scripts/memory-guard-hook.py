@@ -16,6 +16,8 @@ $CLAUDE_CONFIG_DIR or ~/.claude), keyed by the path a session started in, and an
     key into a repository protects the repository folder too);
   - every folder an `autoMemoryDirectory` setting names: user settings, and the project settings of
     the hook's working directory.
+  - any path component named in SOTA_MEMORY_GUARD_PATHS (`:`-separated folder names, e.g.
+    `.claude-memory`), for a house convention whose folders may not be linked from a key yet.
 A command is asked about when it runs rm, mv, rmdir, unlink or ln AND one of its words resolves to
 a guarded folder or a path inside one (relative words resolve against the working directory).
 
@@ -78,6 +80,12 @@ def _setting_dirs(path: str) -> list[str]:
     return []   # the docs reject any other form, so it names no folder
 
 
+def extra_names() -> list[str]:
+    """Folder names from SOTA_MEMORY_GUARD_PATHS; a path component equal to one is guarded."""
+    raw = os.environ.get("SOTA_MEMORY_GUARD_PATHS", "")
+    return [n for n in (x.strip().strip("/") for x in raw.split(":")) if n and "/" not in n]
+
+
 def guarded_roots(cwd: str, home_config: str | None = None) -> set[str]:
     cfg = home_config or config_dir()
     roots: set[str] = set()
@@ -115,9 +123,12 @@ def decide(command: str, cwd: str, roots: set[str]) -> str | None:
         return None
     if LITERAL.search(command):
         return "ask"
+    names = extra_names()
     for w in _words(command):
         if not w or w.startswith("-") and not w.startswith("-/"):
             continue
+        if names and any(part in names for part in w.split("/")):
+            return "ask"
         w = os.path.expanduser(w)
         p = w if os.path.isabs(w) else os.path.join(cwd or os.getcwd(), w)
         p = os.path.normpath(p)
@@ -181,6 +192,15 @@ def self_test() -> int:
             got = decide(cmd, repo, roots)
             if got != want:
                 fails.append(f"{cmd!r}: got {got}, want {want}")
+        # SOTA_MEMORY_GUARD_PATHS: a named house folder is guarded even when no key links to it
+        n += 1
+        os.environ["SOTA_MEMORY_GUARD_PATHS"] = ".claude-memory"
+        got = decide("rm /nowhere/p/.claude-memory/note.md", repo, roots)
+        quiet = decide("cat /nowhere/p/.claude-memory/MEMORY.md", repo, roots)
+        os.environ.pop("SOTA_MEMORY_GUARD_PATHS")
+        unset = decide("rm /nowhere/p/.claude-memory/note.md", repo, roots)
+        if (got, quiet, unset) != ("ask", None, None):
+            fails.append(f"SOTA_MEMORY_GUARD_PATHS: got {(got, quiet, unset)}, want ('ask', None, None)")
         # fail closed on unparseable input
         n += 1
         out = _run_main_with(b"not json")

@@ -1610,7 +1610,8 @@ project's notes, with the warning already written down (`sota-docs-workflow` rul
 60 ms per Bash call (a scan of the memory keys only when the command deletes or moves something), and a
 deleting command that merely mentions a memory path on the same line is asked about too. Turn it off with
 `SOTA_MEMORY_GUARD=off`; `install.sh --routing` offers it to clone installs, and `scripts/verify-setup.sh`
-reports it (check 2g).
+reports it (check 2g). A house convention for memory folders that no key links to yet (a repository's
+`.claude-memory/`, say) is guarded by name with `SOTA_MEMORY_GUARD_PATHS=.claude-memory` (`:`-separated).
 
 The plugin does **not** touch your global config or status line. To match the clone experience,
 opt in to any of these; the scripts ship *with* the plugin, under its cache dir:

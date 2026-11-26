@@ -303,8 +303,9 @@ jobs:
         # A PreToolUse hook on Bash, on by default (scripts/memory-guard-hook.py): rm, mv, rmdir,
         # unlink or ln on a memory key, the real folder behind a symlinked key, or an
         # autoMemoryDirectory folder gets permissionDecision "ask". The self-test builds those three
-        # in a temp tree and checks 15 commands (reads, copies and an unrelated rm must stay silent),
-        # plus fail-closed on unparseable input and the SOTA_MEMORY_GUARD=off opt-out.
+        # in a temp tree and checks its labelled commands (reads, copies, an unrelated rm and heredoc
+        # text must stay silent; a heredoc a shell runs must ask), plus fail-closed on unparseable
+        # input, the SOTA_MEMORY_GUARD=off opt-out and SOTA_MEMORY_GUARD_PATHS.
         run: python3 scripts/memory-guard-hook.py --self-test
 
       - name: Prove the MCP server answers correctly and refuses hostile input
