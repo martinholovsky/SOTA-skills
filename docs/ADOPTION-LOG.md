@@ -10330,4 +10330,13 @@ The verdict stands; the first search's scope was narrower than written.
 | (not proposed) a write-time hook for digits in Markdown diffs; the reporter's own `noqa` without a reason | **agreed** | — |
 | (E2) the verdict walk: one "not met" (a bare `noqa: E402`), the rest not applicable with reasons | **recorded**; the code is private, so **not reproducible here** | — |
 
+## 2026-11-26 — operator request: retire the personal memory guard once the library's covers it
+
+**Source:** operator request 2026-11-26 ("retire ~/.claude/hooks/memory-guard.py if we are sure it's not needed anymore"). **Measured first:** every real `.claude-memory` folder on the maintainer's machine (7) is guarded by the library's guard from any working directory, because 1 or 2 memory keys link to each. The personal guard's own 12 self-test commands, run through the library's guard: 11 of 12 agree; the twelfth, `rm …/.claude-memory/note.md` for a project no key links to, was asked about only by the personal guard, which matches the folder name.
+
+| Claim / proposal | Verdict | Landed in |
+|---|---|---|
+| the library guard supersedes the personal one | **not yet, one gap**: a house-named memory folder that no key links to (during setup, before the links exist) | — |
+| close the gap generically | **adopted**: `SOTA_MEMORY_GUARD_PATHS`, `:`-separated folder names guarded wherever they appear in a path; with it set to `.claude-memory`, 12 of 12 agree. A built-in `.claude-memory` pattern was **rejected**: it is one operator's naming, and the library defines classes, not locations (rules/06) | `scripts/memory-guard-hook.py`; README, `plugin/README.md`, rules/06 §4, CI comment |
+
 ---
