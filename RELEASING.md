@@ -349,7 +349,7 @@ workflow from the Actions tab with that tag; an unchanged tree is a no-op.
   requires `"icon": "./.claude-plugin/icon.png"`. `claude plugin validate` reports a field naming a
   missing file as ICON_INVALID **and still prints "Validation passed", exit 0**, so read its advice
   lines rather than its verdict.
-- **Plan B — DEFERRED.** Revisit trigger: the portal refuses `plugin-dist` with "Repository too
+- **Plan B — tried 2026-11-26, and it was not the cause.** A separate repository (`SOTA-skills-plugin`) holding only the built tree timed out too; the portal times out on any tree containing a shell script, so the open question is the scripts and the organisation's directory verification: ROADMAP item 104. The original text, kept for the record: Revisit trigger: the portal refuses `plugin-dist` with "Repository too
   large to validate" although the branch holds 465 entries, 374 of them files (built from 1.53.0 content plus an icon, 2026-11-01), meaning it counts the whole
   repository, not the tracked branch). Then publish to a separate repository instead
   (e.g. `SOTA-skills-plugin`): `publish-plugin-dist.sh` already takes a REMOTE, and the workflow
