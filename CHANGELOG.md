@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Field report intake, 2026-11-26: a gate graded on remembered runs, invisible-code-point probes that flag
+  Persian spelling.** `sota-code-security` rules/15 §2.2: a gate replayed on history is graded on every run already
+  known bad, listed from the record, including runs its own population filter cannot see, with the threshold in the
+  unit of the decision it protects. rules/09 §4 and its checklist item: U+200C/U+200D between two Arabic-script or
+  Indic letters are orthography (the Unicode Standard, chapter 23), not a hidden payload; the probe's hits there
+  are read, not counted as findings (reproduced: a Persian word's ZWNJ hits exactly like a planted U+200B).
+
 - **Field report intake, 2026-11-26: a private key printed by a secret-file read, memory left out of the
   evidence check, a two-spelling differential that tested one key.** The action-rules hook gains
   `secret_read`, refused once per session: a reader that prints content given a secret-looking file

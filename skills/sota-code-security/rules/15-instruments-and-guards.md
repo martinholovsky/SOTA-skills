@@ -197,7 +197,7 @@ answer on purpose.** Before its output is quoted anywhere:
   sweep reported 50 unearned claims ([rules/14](14-control-not-in-force.md) §1) where reading found 8.
 - **Validate on inputs where failure is possible.** "No false positives on three
   clean libraries" establishes nothing if none of them contains the construct the
-  control keys on: it could not have failed. Pick inputs that *can* fail.
+  control keys on: it could not have failed. Pick inputs that *can* fail. **A gate replayed on history is graded on EVERY run already known bad, listed from the project's record, not recalled**, including runs its own population filter cannot see ("only batteries that carry controls" silently drops one), and its threshold is stated in the unit of the decision it protects (attacks readable, requests wasted), not the unit it happens to count. Field-reported 2026-11-25: a pre-run gate replayed on three remembered bad runs passed a fourth, at 0% readable, that the record held.
 - **Read what your scanner's default configuration excludes, before quoting a clean run.**
   A tool can ship a default severity threshold that is silent about its most valuable
   detector. Field-reported: a constant-time analyser reports division and weak RNG by
