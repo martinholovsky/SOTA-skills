@@ -237,7 +237,7 @@ well-intentioned fix.
 ## 3. Quoting: quote every expansion (SC2086)
 
 Unquoted expansions undergo word splitting (on `$IFS`) **and** glob expansion. This is the
-single largest shell bug class.
+single largest shell bug class. **It is also a security boundary**: an unquoted value an attacker controls splits into extra arguments, its glob matches file names (a planted file named `-rf`), and a value starting with `-` becomes an option, which is argument injection (CWE-88). Measured 2026-11-26 in bash: `rm -- $f` with `f="a b"` removed two files, and `f="*"` handed the command a file named `-v`. Operators such as `&&` inside a value are not re-parsed (`echo $var` printed them); that happens only when the text reaches a parser again (`eval`, `sh -c`, `ssh host "$x"`): [rules/03](03-security.md) §1, CWE-78. Quote it, and put `--` before operands ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §3).
 
 **In zsh they do not** — and that inverts the bug. zsh's `SH_WORD_SPLIT`, *"Causes field
 splitting to be performed on unquoted parameter expansions"*, is **off** in native zsh
@@ -494,7 +494,7 @@ splitting/joining class** — no widely-adopted static analyser catches
       called from an `if`; if RAN prints, that whole call tree is unprotected.
 - [ ] Missing preamble (§2): `grep -rLn 'set -euo pipefail\|set -eu' --include='*.sh' .`
 - [ ] SC2086 (unquoted expansion) (§3) — treat every instance in a destructive command
-      (`rm`, `mv`, `cp`, `chmod`, `chown`, `ssh`, `kill`) as HIGH.
+      (`rm`, `mv`, `cp`, `chmod`, `chown`, `ssh`, `kill`) as HIGH; where the value can come from outside the script it is argument injection (CWE-88), not only a bug.
 - [ ] SC2155 (§2) — `grep -rn 'local [a-zA-Z_]*=\$(' --include='*.sh'` (masked exit status).
 - [ ] `set -e` false confidence (§2): grep for `if .*&&\|if [a-z_]*;` over functions with
       critical side effects; check `$(...)` in assignments without `inherit_errexit`.

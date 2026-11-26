@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Argument injection (CWE-88), stated as security in the shell skill and measured across languages.**
+  `sota-shell-scripting` rules/01 §3: quoting is a security boundary, not only a bug class. An unquoted value splits
+  into extra arguments, globs into file names (a planted `-rf`), and turns into options. Operators like `&&` in a
+  value are not re-parsed; that happens only through `eval`/`sh -c`/`ssh host "$x"` (rules/03 §1, CWE-78).
+  `sota-code-security` rules/01 §3: no language's argv API stops it. An argv array with `--output=…` made `git`
+  write a file from Python, Node, Ruby, Perl, PHP (`proc_open` array and `escapeshellarg`), Go, Rust, Swift and C,
+  and `--` stopped it. On Windows a batch file re-parses its arguments (CVE-2024-24576 Rust, CVE-2024-27980
+  Node.js, CVE-2024-1874 PHP; Java won't-fix). JVM, .NET, C/C++ and Swift, which never named it, now do, and
+  JS/TS and PHP carry their Windows CVEs.
+
 - **The always-loaded shell habits say to quote a `=word`, not to work around it.** The block `install.sh
   --routing` writes said "`echo ===`; separate with `echo ---`", which steered agents to a different separator
   instead of the rule `sota-shell-scripting` already states (quote every word, rules/01 §3; the `=word` row of

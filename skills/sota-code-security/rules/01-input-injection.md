@@ -131,7 +131,7 @@ cur.execute(f"SELECT * FROM logs ORDER BY {SORT_COLS[sort_key]}")  # KeyError = 
 - Argv arrays stop shell metacharacters but NOT argument injection (CWE-88):
   a filename of `--output=/etc/cron.d/x` or `-oProxyCommand=...` (ssh, git, curl,
   tar, find all have dangerous flags). Insert `--` before positional args and
-  validate that user-supplied args don't start with `-`.
+  validate that user-supplied args don't start with `-`. **No language's argv API prevents it**: measured 2026-11-26, `["git", "-C", repo, "log", value]` with `value = "--output=<dir>/pwned"` made `git` write the file from Python `subprocess`, Node `execFileSync`, Ruby and Perl `system`, PHP `proc_open` with an array **and** `escapeshellarg`, Go `exec.Command`, Rust `Command`, Swift `Process` and C `execlp`; with `--` before the value it did not (Java `ProcessBuilder` and .NET `ArgumentList` pass argv the same way, not run here). **On Windows a batch file is a shell**: `cmd.exe` re-parses a `.bat`/`.cmd` script's arguments, so an argv array to one is command injection (CVE-2024-24576 Rust, fixed 1.77.2; CVE-2024-27980 Node.js, the April 2024 releases; CVE-2024-1874 PHP `proc_open`, 8.1.28/8.2.18/8.3.6). The researchers' status table (flatt.tech "BatBadBut", fetched 2026-11-26) lists Java as won't-fix and Python, Go, Ruby and Erlang as documentation-only, so never pass untrusted input to a batch file; run the program it wraps directly.
 - If a shell is truly unavoidable, allowlist-validate every interpolated token
   against `^[A-Za-z0-9._-]+$` and still treat it as a code smell.
 

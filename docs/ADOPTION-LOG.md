@@ -10339,4 +10339,18 @@ The verdict stands; the first search's scope was narrower than written.
 | the library guard supersedes the personal one | **not yet, one gap**: a house-named memory folder that no key links to (during setup, before the links exist) | — |
 | close the gap generically | **adopted**: `SOTA_MEMORY_GUARD_PATHS`, `:`-separated folder names guarded wherever they appear in a path; with it set to `.claude-memory`, 12 of 12 agree. A built-in `.claude-memory` pattern was **rejected**: it is one operator's naming, and the library defines classes, not locations (rules/06) | `scripts/memory-guard-hook.py`; README, `plugin/README.md`, rules/06 §4, CI comment |
 
+## 2026-11-26 — operator request: argument injection as a security rule, across every supported language
+
+**Source:** operator remark 2026-11-26 (after a session's `echo ====` was refused): quoting `"${var}"` is a security requirement, not only a convention; then "explore to what other languages it applies". **Measured first:**
+- **In bash:** operators in a value are not re-parsed (`echo $var` printed `herewego && rm -rf important_file` and the file survived); unquoted values split (`rm -- $f`, `f="a b"`, removed two files), turn into options (`ls $f`, `f="-v keep.txt"`), and glob (`f="*"` matched a file named `-v`); `eval "$var"` executed `true && touch pwned`.
+- **Across languages (macOS):** `["git", "-C", repo, "log", value]` with `value = "--output=<dir>/pwned"` wrote the file from Python, Node, Ruby, Perl, PHP (`proc_open` array and `escapeshellarg`), Go, Rust, Swift and C `execlp`; with `--` before the value it did not. Java (no JDK here), .NET and PowerShell (not installed) were not run.
+- **Coverage before:** no `argument injection`/`CWE-88` in the shell, JVM, .NET, C/C++ or Swift rules; only Rust covered Windows batch files.
+- **Sources:** the Rust advisory (blog and GHSA-q455-m56c-85mh: CVE-2024-24576, patched 1.77.2), the Node.js April 2024 security release page (CVE-2024-27980), PHP GHSA-pc52-254m-w9w7 (CVE-2024-1874, patched 8.1.28/8.2.18/8.3.6) and flatt.tech's BatBadBut status table (Java won't-fix; Erlang, Go, Python and Ruby documentation update), all fetched 2026-11-26. None of the Windows cases was reproduced (no Windows here).
+
+| Claim / proposal | Verdict | Landed in |
+|---|---|---|
+| `"${var}"` stops `herewego && rm -rf …` | **corrected**: quoting is a security requirement, but against argument, glob and option injection (CWE-88); a variable's `&&` is never re-parsed, and command injection (CWE-78) comes from `eval`/`sh -c`/remote shells, which quoting does not fix (rules/03 §1 already says so) | `sota-shell-scripting` rules/01 §3 + checklist item |
+| the class reaches every language | **verified for 9 languages** on the measurement above, and adopted where it was missing | `sota-code-security` rules/01 §3; `sota-jvm` rules/04; `sota-dotnet` rules/04; `sota-c-cpp` rules/04; `sota-swift` rules/05; `sota-javascript-typescript` rules/08; `sota-php` rules/02 |
+| one shared CWE-mapped secure-coding principles file | **DEFERRED — revisit trigger: the detailed plan the operator asked for on 2026-11-26, due once this change lands.** The concept matrix already enforces 39 concepts per language with probes, but language skills cite almost no CWE ids (15 of the 2025 Top 25 are cited, all in `sota-code-security`). A crosswalk generated from the matrix, a Top 25 gate, CWE ids in checklist items, and per-language validation in CI, `/sota-audit` and `/sota-deep-audit` are its scope | — |
+
 ---

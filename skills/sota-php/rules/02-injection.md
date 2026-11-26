@@ -92,7 +92,7 @@ $cmd = 'ping -c1 ' . escapeshellarg($host);
 - `escapeshellarg()` escapes one argument; `escapeshellcmd()` escapes a whole
   command *but leaves argument splitting possible* — it is not a substitute.
 - Watch argument injection even with perfect quoting: a value starting with `-`
-  becomes an option. Prepend `--` where the tool supports it, or validate shape.
+  becomes an option. Prepend `--` where the tool supports it, or validate shape. Measured 2026-11-26: `escapeshellarg('--output=…')` still made `git log` write a file, and so did `proc_open` with an array. On Windows, `proc_open` with an array to a `.bat`/`.cmd` was command injection until 8.1.28/8.2.18/8.3.6 (CVE-2024-1874, GHSA-pc52-254m-w9w7).
 - `mail()`: the 4th/5th parameters historically enabled header/argument
   injection — validate/drop user input there; prefer a mailer library (e.g.
   Symfony Mailer) as a neutral example.

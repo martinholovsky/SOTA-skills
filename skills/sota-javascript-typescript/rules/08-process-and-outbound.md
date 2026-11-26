@@ -18,7 +18,8 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 ```
 
 - `exec`/`execSync` with any interpolated value is CRITICAL. `execFile`/`spawn` (no `shell`) pass args directly to the binary.
-- Still validate the arg itself: allowlist characters/paths (argument injection — `--flag`-shaped filenames — can still subvert tools; prepend `--` where supported).
+- Still validate the arg itself: allowlist characters/paths (argument injection — `--flag`-shaped filenames — can still subvert tools; prepend `--` where supported). Measured 2026-11-26: `execFileSync('git', ['-C', repo, 'log', value])` with `value = '--output=…'` made `git` write a file.
+- **On Windows, `spawn`/`execFile` of a `.bat`/`.cmd` re-parses its arguments through `cmd.exe`** (CVE-2024-27980, fixed in the April 2024 security releases of the 18.x, 20.x and 21.x lines). Never pass untrusted input to a batch file; run the program it wraps directly ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §3).
 - Path traversal cousin: joining user input into paths — `const p = path.resolve(base, name); if (!p.startsWith(base + path.sep)) reject();`
 - Same family: never interpolate into SQL (parameterized queries only), `Function`, or `vm`.
   **YAML:** in js-yaml **4.0.0 and later**, `load` is safe by default. The `!!js/function`
