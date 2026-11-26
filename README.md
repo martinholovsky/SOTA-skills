@@ -175,6 +175,9 @@ And the habits of the work itself, which no standard covers and long agent sessi
   symlink's target directory on macOS at exit 0; `$!` after `cd d && cmd &` names a bash subshell;
   an agent's `find` can be bfs, which rejects `-newermt "6 months ago"` and reorders its output on
   every run; `gh run list --commit` matches only a full SHA, so a wait on a short one never ends.
+- a gate replayed on history is graded on every run already known bad, listed from the record
+  rather than recalled (`sota-code-security` rules/15 §2.2); and a zero-width joiner between two
+  Persian or Indic letters is orthography, not a hidden payload (rules/09 §4).
   This repository runs **zizmor** over its own workflows, and its first run found a rule it broke.
 
 **Measured, not asserted** — library vs. an *unguided model* (same model, no
