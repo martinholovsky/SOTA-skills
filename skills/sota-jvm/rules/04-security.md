@@ -74,7 +74,7 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   only. String concatenation into a query is CRITICAL — no exceptions for
   "internal" values. `ORDER BY`/identifiers can't be bound: allowlist them.
 - **OS command**: `ProcessBuilder` with an argument **list** and no shell; never
-  `Runtime.exec("sh -c " + input)`. Validate/allowlist the program.
+  `Runtime.exec("sh -c " + input)`. Validate/allowlist the program. The list still reaches the program, which parses options: a value starting with `-` is argument injection (CWE-88), so put `--` before operands, and never pass untrusted input to a `.bat`/`.cmd` on Windows (Java's status for that is won't-fix): [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §3.
   **A non-zero exit is a return value, not an exception**: `waitFor()` returns the exit value
   and `exitValue()` reads it; nothing in `start()`, `waitFor()` or `exitValue()`'s documented
   throws concerns exit status (JDK 21 `Process` Javadoc). Compare it to `0` before trusting

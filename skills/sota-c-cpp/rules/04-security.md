@@ -81,7 +81,7 @@ Replace on sight (CERT STR/FIO; MISRA):
   *Improper Output Neutralization for Logs*): a forged line in a syslog-fed pipeline is an
   audit-trail defect. The user-controlled *format* is the bullet above.
 - **Command injection**: don't build shell strings. Use `posix_spawn`/`execve`
-  with an explicit argument vector and no shell; never `system("cmd " + input)`.
+  with an explicit argument vector and no shell; never `system("cmd " + input)`. The vector still reaches a program that parses options: put `--` before untrusted operands (CWE-88; measured with `execlp`, [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §3).
 - **SQL/other injection**: parameterized queries / prepared statements only
   (the DB client API), never string-concatenated SQL — see [`sota-databases`](../../sota-databases/SKILL.md).
   In the C client APIs the unsafe call is the one that takes a whole statement

@@ -100,7 +100,7 @@ network/file/DB/config as untrusted. Reference:
 ## 3. Command / path / other injection
 
 - **OS command**: avoid shelling out; if you must, use `ProcessStartInfo` with
-  `ArgumentList` (no `UseShellExecute`, no concatenated `Arguments`/shell).
+  `ArgumentList` (no `UseShellExecute`, no concatenated `Arguments`/shell). `ArgumentList` stops shell parsing, not option parsing: a value starting with `-` is argument injection (CWE-88), so put `--` before operands, and never pass untrusted input to a `.bat`/`.cmd` on Windows: [`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §3.
 - **Path traversal**: combine with a known root and verify the resolved `Path.GetFullPath` stays
   under it (compare against the root **plus a trailing separator**, or `/srv/up` admits
   `/srv/upload-evil`); reject `..`. Don't pass user input straight to file APIs.

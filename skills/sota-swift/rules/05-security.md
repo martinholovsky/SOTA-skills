@@ -76,6 +76,10 @@ was read from the library's source or docs on 2026-10-07; re-check before relyin
 - **Commands**: `Process` with `executableURL` and an `arguments` array (`launchPath` is legacy);
   never `/bin/sh -c` with interpolated input. swift-subprocess (1.0 with Swift 6.4) — prefer an
   absolute `.path(...)` executable over a PATH lookup by name.
+- **An `arguments` array stops shell parsing, not option parsing.** A value starting with `-` is
+  argument injection (CWE-88): measured 2026-11-26, `Process` with `["-C", repo, "log", value]`
+  let `value = "--output=…"` make `git` write a file. Put `--` before untrusted operands
+  ([`sota-code-security` rules/01](../../sota-code-security/rules/01-input-injection.md) §3).
 - **A failed child does not throw.** `Process.run()` throws only when the launch fails; after
   `waitUntilExit()` check `terminationReason == .exit` **and** `terminationStatus == 0` — on
   `.uncaughtSignal` the status holds the signal number (swift-corelibs-foundation
