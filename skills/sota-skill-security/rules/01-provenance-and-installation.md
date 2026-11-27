@@ -34,6 +34,15 @@ resolved to — the rule [`sota-devsecops`](../../sota-devsecops/SKILL.md) appli
 install mechanism cannot pin, record the SHA you reviewed somewhere you will diff
 against.
 
+**Pinning the installer does not pin what it installs.** A registry CLI at an exact
+version can still fetch the agents, hooks, MCP entries and settings it writes from a
+branch at install time, so the same command installs different bytes next week. A
+commit pin the installer reads *from that branch* (a manifest naming a SHA) is a branch
+pin one hop removed: whoever can push the branch chooses the commit. Read the installer's
+fetch URLs before trusting the version number, and treat a hook script written executable
+from a branch, with only *where* to install it shown at the prompt, as an unreviewed
+closure member (§3). Read in one such registry CLI's source, 2026-11-27.
+
 On update, **diff before adopting**, and weight the diff by where it lands:
 
 | Changed | Why it matters |
@@ -123,7 +132,9 @@ finish its analysis** exits 0 unless `--fail-on-findings`, `--fail-on-incomplete
       filesystem is not an inventory.
 - [ ] **Every installed skill pinned** to a full commit SHA, not a branch or a bare
       tag (§2)? Anything tracking a branch re-installs on every pull and is a
-      standing finding; a tag pin without its recorded SHA is a Medium.
+      standing finding; a tag pin without its recorded SHA is a Medium. For anything
+      installed by a CLI or registry, are the **installer's fetch URLs** pinned too, and
+      not only the installer's own version (§2)?
 - [ ] **Update diffs read, weighted by surface** (§2) — and a change to a
       **description/trigger** treated as a behaviour change rather than a docs edit?
 - [ ] **Closure reviewed, not just the entry point** (§3): referenced files, shipped

@@ -4689,12 +4689,12 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1972,
+    "md link, other skill": 1973,
     "md link, outside skills/": 3,
     "md link, same skill": 2881,
     "name (backticked)": 456,
     "name (bare)": 240,
-    "name+file (backticked)": 957,
+    "name+file (backticked)": 958,
     "name+file (bare)": 180,
     "own rules/NN": 3108
   },
@@ -4706,7 +4706,7 @@
     "md link, same skill": 0,
     "name (backticked)": 441,
     "name (bare)": 196,
-    "name+file (backticked)": 952,
+    "name+file (backticked)": 953,
     "name+file (bare)": 168,
     "own rules/NN": 3001
   },
@@ -5722,7 +5722,8 @@
         "sota-code-security/rules/15-instruments-and-guards.md"
       ],
       "router": [
-        "sota/SKILL.md"
+        "sota/SKILL.md",
+        "sota/rules/03-audit-findings.md"
       ],
       "other": [
         "sota-cli-ux/rules/03-behavior-lifecycle.md",

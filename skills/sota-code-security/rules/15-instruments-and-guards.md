@@ -195,6 +195,7 @@ answer on purpose.** Before its output is quoted anywhere:
 - **Sample and read before you count.** Report a count only after reading a
   sample of what it matched. A regex over prose over-counts hard — one such
   sweep reported 50 unearned claims ([rules/14](14-control-not-in-force.md) §1) where reading found 8.
+- **A zero carries its upper bound.** "0 failures in N runs" is not a 0% rate: quote the 95% upper bound beside it — about 3/N by the rule of three (exact one-sided: 1 − 0.05^(1/N)), so 0 of 6 still allows 39% and 0 of 187 allows 1.6% (computed 2026-11-27); Wilson's interval gives about 3.84/N, so name the one you used. "No false fires in six runs" is this shape, and so is a detector that caught every one of the N planted bads it was shown.
 - **Validate on inputs where failure is possible.** "No false positives on three
   clean libraries" establishes nothing if none of them contains the construct the
   control keys on: it could not have failed. Pick inputs that *can* fail. **A gate replayed on history is graded on EVERY run already known bad, listed from the project's record, not recalled**, including runs its own population filter cannot see ("only batteries that carry controls" silently drops one), and its threshold is stated in the unit of the decision it protects (attacks readable, requests wasted), not the unit it happens to count. Field-reported 2026-11-25: a pre-run gate replayed on three remembered bad runs passed a fourth, at 0% readable, that the record held.
@@ -476,7 +477,7 @@ condition being false.
 - [ ] Classifying harnesses carry a **negative control**, and a run producing no
       parsable summary **aborts** rather than reading as "nothing found" (§2.2)?
 - [ ] Counts reported only after **reading a sample** of what matched, and any
-      clean-corpus validation done on inputs that **could** have failed (§2.2)?
+      clean-corpus validation done on inputs that **could** have failed, and every "0 of N" quoted with its upper bound (§2.2)?
 - [ ] Any instrument changed **after** results were seen is disclosed with the
       before/after numbers and evidence that no ranking moved for another
       reason (§2.3)?
