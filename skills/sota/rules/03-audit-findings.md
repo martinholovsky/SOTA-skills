@@ -277,11 +277,7 @@ framework, build/deploy topology. Do not ledger-review every merged PR.
 
 ## 4. Adversarial verification — try to kill your own findings
 
-Re-reading your own finding is the weakest possible check: you re-run the
-reasoning that produced it and reach the same conclusion. Confirmation bias is
-not defeated by attention. Before a finding ships, someone — a separate agent, a
-colleague, or you in a deliberately hostile pass with fresh context — must try
-to **refute** it.
+Re-reading your own finding is the weakest possible check: you re-run the reasoning that produced it and reach the same conclusion. Confirmation bias is not defeated by attention. Before a finding ships, someone — a separate agent, a colleague, or you in a deliberately hostile pass with fresh context — must try to **refute** it.
 
 The pass:
 
@@ -311,10 +307,11 @@ The pass:
      name its execution primitive is reachability plus speculation.
 4. **Majority-refute kills it.** Survivors ship; the rest are dropped or downgraded with the refutation recorded — a refuted finding is a result, not waste, and stops the next auditor re-raising it.
    **A refuter that *strengthens* a finding** — a new mechanism, a higher severity, a wider scope — has made a claim nobody has yet tried to kill: the strengthened version goes to a **fresh** refuter before it ships, never straight into the report.
-5. **A refuted finding is a template — sweep before you drop it.** The
+   **Reasoning does not outvote an observed reproduction.** A refuter without tools (§4a) kills a reproduced finding only by naming the leg the reproduction did not show — reached in isolation, a stubbed collaborator, another commit or configuration ([`sota-code-security` rules/12](../../sota-code-security/rules/12-verifying-the-verifier.md) §1a.2); a majority that names none moves it to "needs verification", never drops it.
+5. **A finding is a template — sweep before you drop it, and before you ship it.** The
    refutation hands you two reusable things: the *pattern*, and the *leg* that
    was missing. Grep the pattern across the whole repository — not just the
-   audited scope — and check each hit for that leg. The strongest instance of a
+   audited scope — and check each hit for that leg. A **confirmed** finding is swept too, each hit a new candidate that needs its own legs. **Control the sweep before you trust its count:** the pattern must match the original `file:line` and must not match the fixed form — one that misses the original reports a zero about nothing. The strongest instance of a
    class is routinely **outside** the scope where you first noticed it: a
    diff-scoped review that refuted a symlink-dereferencing staging finding on
    the branch (nothing on that path executes the staged code) found the same
@@ -351,7 +348,7 @@ states it precisely: its grader reproduces each crash *"in a fresh container tha
 the find agent hasn't touched"*, and *"the only thing that crosses over from the
 find agent to the grader is the proof of concept it produced."* Where no artifact
 can be produced, that is itself the result: a finding with nothing to hand over
-is a finding you have not reproduced (§2).
+is a finding you have not reproduced (§2). **Test the bound, do not assume it:** put a marker only the parent holds in the parent's context and a second one in the refuter's prompt, and ask the refuter to list every marker it can see — the second is the positive control. Measured 2026-11-27 (Claude Code 2.1.332, one run each): the parent's marker did not cross, but a general-purpose subagent quoted the operator's agent files and memory index verbatim, which an Explore subagent did not receive. **Instruction files and memory cross regardless**, so a conclusion the finder wrote there reaches the refuter.
 
 **Score the verdict; do not narrate it.** A refuter that returns prose returns a
 judgement you then re-judge, which is the anchoring the pass exists to escape.
@@ -471,15 +468,17 @@ Deliver in exactly this order:
       refutations recorded (§4)?
 - [ ] Did each refuter get **less than the finder** — no execution, no writes —
       and did **only the artifact** cross over (the PoC, the failing command, the
-      `file:line`), rather than your write-up or your session (§4a)?
+      `file:line`), rather than your write-up or your session — and was that bound **tested**
+      with a parent-only marker and a positive control, not assumed (§4a)? Did a reproduced
+      finding survive unless a refuter named the leg its reproduction did not show (§4)?
 - [ ] Does each refutation carry a **number** against a threshold fixed *before* the
       findings were seen, with the threshold stated in the methodology (§4a)?
 - [ ] Is every finding whose evidence is a **behaviour** (crash, race, timing,
       agent- or model-produced) reproduced **N of N**, with both numbers reported
       rather than an unstated `1/1` (§2)?
-- [ ] Every **refuted or downgraded** finding **swept** across the repository for
-      the same pattern before it was dropped, with the sweep and its denominator
-      recorded beside the refutation (§4)?
+- [ ] Every **refuted, downgraded or confirmed** finding **swept** across the repository for
+      the same pattern, the pattern first shown to match the original and miss the fix, with
+      the sweep and its denominator recorded beside the finding (§4)?
 - [ ] Every **absence claim** ("no X found", "enforced everywhere") backed by a
       widened search plus a second independent method, with the search stated (§2)?
 - [ ] Positive observations evidenced by **effect** (a rejection, a log, a test

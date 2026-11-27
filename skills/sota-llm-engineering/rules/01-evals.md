@@ -279,6 +279,14 @@ Production is the only honest distribution. Build the loop:
   please the judge (longer, more confident, rubric-keyword-stuffed). Counter
   with periodic human calibration (§3) and pairwise checks against older
   baselines.
+- **Padding a claim-level score.** A metric that splits an answer into claims and
+  reports the supported fraction (FActScore-style factual precision, "every claim
+  grounded") rises when the answer adds obvious, restated or repeated claims, each
+  trivially supported. Jiang et al., *Core* (arXiv:2407.03572), show popular metrics
+  can be inflated this way and filter claims by uniqueness and informativeness before
+  scoring. Drop duplicates and restatements of the provided context before computing
+  the fraction, and report how many informative claims survived beside it: 100%
+  supported over three trivial claims is not a grounded answer.
 - **Aggregate masking:** a flat overall score can hide a new failure class
   offset by an improvement elsewhere. Always report per-tag/per-cluster
   scores alongside the aggregate.
@@ -454,6 +462,8 @@ published claim rested on that 0.00 for several hours.
       [rules/06](06-data-lifecycle.md).
 - [ ] Dev set ≠ gating set (§8); no prompt tuning against the held-out set; no
       model selection justified by public benchmarks alone.
+- [ ] A claim-level score (supported or grounded fraction) computed **after** dropping
+      duplicate and restated claims, with the count of informative claims beside it (§8)?
 - [ ] Injection and content classifiers evaluated per language, including
       unsupported and low-resource languages and translated attacks, with a
       stricter path for languages below threshold (§1). **High** where the

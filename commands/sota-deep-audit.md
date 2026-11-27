@@ -202,7 +202,7 @@ run an **adversarial verification pass**: every non-trivial finding, and every "
 was unjustified" verdict, goes to a separate agent prompted to refute it, working from the code
 at the pinned commit rather than from the finder's write-up, defaulting to REFUTED where the
 evidence is ambiguous — except on a subject the adversary wrote, where an ambiguous finding ships as
-"needs verification". A refuter that *strengthens* a finding hands it to a fresh refuter. Bound what the refuter receives and make its verdict a number
+"needs verification". A refuter that *strengthens* a finding hands it to a fresh refuter. A reproduced finding is dropped only by a refuter that names the leg its reproduction did not show; otherwise it ships as "needs verification". Bound what the refuter receives, **test that bound** with a parent-only marker and a positive control (agent files and memory reach a subagent regardless), and make its verdict a number
 (`sota` router `rules/03` §4, §4a). Only survivors ship; the rest are dropped or downgraded
 **with the refutation recorded**, and the refuted pattern is swept elsewhere either way — that
 sweep is routinely where the strongest finding comes from.

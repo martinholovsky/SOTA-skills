@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Six techniques from a 23-link review, each tested before it landed.** `sota/rules/03` §4: reasoning does
+  not outvote an observed reproduction (a refuter kills one only by naming the leg it did not show); confirmed
+  findings are swept too, with the pattern first shown to match the original and miss the fix; §4a: test the
+  refuter's isolation with a parent-only marker and a positive control — measured on Claude Code 2.1.332, the
+  marker stayed out but a general-purpose subagent received the operator's agent files and memory index.
+  `sota-code-security` rules/15 §2.2: a zero carries its 95% upper bound (0 of 6 still allows 39%).
+  `sota-skill-security` rules/01 §2: pinning an installer does not pin what it fetches from a branch.
+  `sota-llm-engineering` rules/01 §8: a claim-level grounded score is padded by trivial claims (CORE,
+  arXiv:2407.03572). Paraphrase-first document review was rejected on its own measurement (3/3 vs 3/3);
+  two review-workflow ideas are deferred with triggers. Details: `docs/ADOPTION-LOG.md`, 2026-11-27.
+
 - **Argument injection (CWE-88), stated as security in the shell skill and measured across languages.**
   `sota-shell-scripting` rules/01 §3: quoting is a security boundary, not only a bug class. An unquoted value splits
   into extra arguments, globs into file names (a planted `-rf`), and turns into options. Operators like `&&` in a
