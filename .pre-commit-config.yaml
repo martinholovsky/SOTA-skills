@@ -27,13 +27,31 @@
 default_install_hook_types: [pre-commit, pre-push]
 
 repos:
+  # Upstream hooks are pinned by full commit SHA, the tag as a `frozen:` comment
+  # (sota-devsecops rules/01 §1.3: a tag is mutable). Refresh with
+  # `pre-commit autoupdate --freeze`, which keeps this form.
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.0
+    rev: 6eaad039603a4de39fddd1cf5f727391efe9974e  # frozen: v8.30.0
     hooks:
       - id: gitleaks
         # Uses .gitleaks.toml in the repo root automatically.
         # Per-commit scope only. The FULL-history scan is CI's job (and CI asserts
         # that scope, because a shallow checkout scans 1 commit and exits 0).
+        stages: [pre-commit]
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: c7d31dc612dffdd4d3b2f2b88b9660d3ab057ee8  # frozen: v1.33.1
+    hooks:
+      - id: zizmor
+        # Workflows, dependabot.yml and this file, offline (no token, no network at
+        # commit time). CI's "Shell lint (shellcheck)" job is the gate; this is the
+        # early warning. pre-commit installs zizmor itself, with its own interpreter.
+        args: [--offline, --no-progress]
+        # The hook hands zizmor every staged path its `files:` regex matches, which
+        # bypasses zizmor's root-aware collection: without this, 111 deliberately bad
+        # probe fixtures and the CI known-bad are audited (454 findings, measured
+        # 2026-11-28), while `zizmor .` in CI collects none of them.
+        exclude: ^scripts/(probe-fixtures|ci)/
         stages: [pre-commit]
 
   - repo: local

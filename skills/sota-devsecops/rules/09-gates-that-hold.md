@@ -98,7 +98,12 @@ The mechanics that make everything above real:
 - **No `continue-on-error: true`, `|| true`, `set +e`, or `exit 0` tails on gate steps.**
   Audit grep across workflows; every hit on a security/test job is a finding (Medium-High).
   Same for tools invoked with their own "don't fail" flags (`--exit-code 0`, `--soft-fail`,
-  `npm audit || true`).
+  `npm audit || true`). **And for an output format that changes the exit code:** a scanner in
+  SARIF mode often exits 0 on findings by design, leaving the verdict to whoever reads the SARIF.
+  zizmor does (`--format=sarif`, measured on 1.33.1: five findings, exit 0), and its official
+  action defaults to SARIF, so a step that looks like a gate is a report ([rules/05](05-analysis-gates.md) §5.9). A SARIF
+  upload gates only if code-scanning results block the merge in the ruleset; otherwise run the
+  scanner a second time in a format that exits non-zero.
 - **On GitHub, a private repository on a free plan can have neither.** *"Protected branches are
   available in public repositories with GitHub Free and GitHub Free for organizations"*, and
   *"Rulesets are available in public repositories with GitHub Free and GitHub Free for
@@ -124,7 +129,8 @@ Audit greps for bypass patterns (run across `.github/workflows/`, CI config, Mak
 continue-on-error: true        # on gate jobs/steps
 || true     || exit 0     ; true
 set +e                         # without a matching set -e re-arm
---soft-fail   --exit-code 0   --no-fail   --exit-zero
+--soft-fail   --exit-code 0   --no-fail   --exit-zero   --no-exit-codes
+--format=sarif / --format sarif   # on the gating run, when nothing else fails the step
 npm audit || …    audit-level  none
 allow_failure: true            # GitLab equivalent
 failFast: false                # fine for matrices; check what consumes the result

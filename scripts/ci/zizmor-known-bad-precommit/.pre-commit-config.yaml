@@ -1,0 +1,12 @@
+# Known-bad for the zizmor step in .github/workflows/ci.yml (the "Shell lint (shellcheck)" job),
+# the pre-commit input half. zizmor audits pre-commit configs (experimental since 1.29.0); the step
+# runs zizmor on THIS file directly and requires its `insecure-url-scheme` audit to fire, by name:
+# a hook repo fetched over plain http can be swapped in transit. Never install from this file.
+#
+# zizmor's root-aware collection (1.32.0+) does not collect a nested .pre-commit-config.yaml, so the
+# whole-tree scan in the same step does not see this file; the step asserts that too.
+repos:
+  - repo: http://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace

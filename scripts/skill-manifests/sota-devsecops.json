@@ -126,7 +126,7 @@
    "build": [
     "scanners"
    ],
-   "index_row": "| [rules/05-analysis-gates.md](rules/05-analysis-gates.md) | The scanners themselves: SAST (Opengrep/CodeQL), secret scanning and push protection, IaC scanning (checkov/trivy/tfsec), DAST, license compliance, and flaky-test discipline; the PR gate stack | ...choosing and configuring what runs in CI |"
+   "index_row": "| [rules/05-analysis-gates.md](rules/05-analysis-gates.md) | The scanners themselves: SAST (Opengrep/CodeQL), secret scanning and push protection, IaC scanning (checkov/trivy/tfsec), DAST, license compliance, and flaky-test discipline; the PR gate stack; **workflow SAST (§5.9): zizmor as a required check over workflows, `action.yml`, `dependabot.yml` and pre-commit config — the invocation that gates, why its SARIF mode and its official action's default exit 0 on findings, offline vs online, and the pre-commit hook's fixture trap** | ...choosing and configuring what runs in CI |"
   },
   "06": {
    "build": [

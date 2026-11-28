@@ -432,15 +432,16 @@ jobs:
           # shellcheck disable=SC2086  # word splitting is intended: a file list
           shellcheck -S style --enable=check-unassigned-uppercase $files
 
-      - name: zizmor (GitHub Actions and Dependabot config), its known-bad first
-        # The library recommends zizmor in six places (sota-devsecops rules/01, rules/12) and this
-        # repo ran it nowhere until 2026-11-22, when its first run found the Dependabot cooldown the
-        # library tells every reader to set missing here. In this job because the job is a REQUIRED
-        # check: a new job is not, until branch protection names it.
-        # Installed hash-pinned from scripts/ci/zizmor-requirements.txt (Dependabot keeps it current);
-        # --offline: no token, so the online audits (impostor commits, known-vulnerable actions) are
-        # not run here. Default persona: the 8 auditor-only findings are recorded as accepted in
-        # docs/ADOPTION-LOG.md (2026-11-22).
+      - name: zizmor (workflows, Dependabot and pre-commit config), its known-bads first
+        # The library recommends zizmor in every CI/CD build and audit (sota-devsecops rules/05
+        # §"Workflow SAST"); this repo ran it nowhere until 2026-11-22, when its first run found the
+        # Dependabot cooldown the library tells every reader to set missing here. In this job because
+        # the job is a REQUIRED check: a new job is not, until branch protection names it.
+        # Installed hash-pinned from scripts/ci/zizmor-requirements.txt (Dependabot keeps it current).
+        # Operator decisions, 2026-11-28: --offline (no token, so impostor commits, known-vulnerable
+        # actions and confused refs are deliberately not checked), the regular persona (the auditor
+        # persona's findings are recorded as accepted in docs/ADOPTION-LOG.md, 2026-11-22), and
+        # --format github so findings annotate the PR — never SARIF, which exits 0 on findings.
         run: |
           set -euo pipefail
           python3 -m venv "$RUNNER_TEMP/zizmor"
@@ -448,17 +449,40 @@ jobs:
             --require-hashes --only-binary :all: -r scripts/ci/zizmor-requirements.txt
           z="$RUNNER_TEMP/zizmor/bin/zizmor"
           "$z" --version
-          # The gate must be able to fail, for the RIGHT reason: its known-bad must raise the
-          # audit it was written for. A non-zero exit alone could be a parse error.
-          kb=0
-          out=$("$z" --offline --no-progress --format plain scripts/ci/zizmor-known-bad.yml 2>&1) || kb=$?
-          if [ "$kb" -eq 0 ] || ! printf '%s\n' "$out" | grep -q 'unsound-condition'; then
-            printf '%s\n' "$out"
-            echo "zizmor did not flag unsound-condition in its known-bad (exit $kb): the gate cannot fail"
+          # The gate must be able to fail, for the RIGHT reason, on each input type it is credited
+          # with: each known-bad must raise the audit it was written for, at a findings exit code
+          # (11-14). A non-zero exit alone could be a parse error (1) or a usage error (2).
+          known_bad() {  # <file> <audit>
+            local rc=0 out
+            out=$("$z" --offline --no-progress --color=never --format plain "$1" 2>&1) || rc=$?
+            if [ "$rc" -lt 11 ] || ! grep -qF -- "$2" <<<"$out"; then
+              printf '%s\n' "$out"
+              echo "zizmor did not flag $2 in $1 (exit $rc): the gate cannot fail"
+              exit 1
+            fi
+            echo "known-bad caught: $1 (exit $rc, $2)"
+          }
+          known_bad scripts/ci/zizmor-known-bad.yml unsound-condition
+          known_bad scripts/ci/zizmor-known-bad-precommit/.pre-commit-config.yaml insecure-url-scheme
+          # The real scan: the whole tree, so .pre-commit-config.yaml is audited as well as .github/.
+          rc=0
+          "$z" --offline --no-progress --color=never --format github . 2>"$RUNNER_TEMP/zizmor.log" || rc=$?
+          cat "$RUNNER_TEMP/zizmor.log"
+          # Denominator: the scope must still hold the inputs this gate is credited with, and must
+          # not have collected a known-bad (that would fail for the wrong reason).
+          n=$(grep -c ' completed ' "$RUNNER_TEMP/zizmor.log" || true)
+          for want in ./.github/workflows/ci.yml ./.github/dependabot.yml ./.pre-commit-config.yaml; do
+            if ! grep -qF "completed $want" "$RUNNER_TEMP/zizmor.log"; then
+              echo "zizmor did not audit $want ($n inputs audited): the gate's scope shrank"
+              exit 1
+            fi
+          done
+          if grep -qF 'zizmor-known-bad' "$RUNNER_TEMP/zizmor.log"; then
+            echo "the whole-tree scan collected a known-bad: it would fail for the wrong reason"
             exit 1
           fi
-          echo "known-bad caught (exit $kb, unsound-condition)"
-          "$z" --offline --no-progress --format plain .github/
+          echo "zizmor audited $n inputs, exit $rc"
+          exit "$rc"
 
   secrets:
     name: Secret scan (gitleaks)

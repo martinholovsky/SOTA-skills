@@ -96,8 +96,10 @@ the agent file, shown to the user first.
    `~/.config/git/ignore`, per `man gitignore`), not here.
 2. **Secret scanning and gates**: `<library>/scripts/init-gates.sh --dry-run`, show its output,
    then run it without `--dry-run`. Where a gate config exists, run it only if the user agreed to
-   refresh the library's block in the plan. It installs both the pre-commit and pre-push hooks. Install
-   the tools it names as missing only with the user's agreement.
+   refresh the library's block in the plan. It installs both the pre-commit and pre-push hooks,
+   always including gitleaks and zizmor (SHA-pinned). Install the tools it names as missing only
+   with the user's agreement; a missing tool fails its hook rather than being skipped. Where it
+   prints the zizmor CI job, offer it as a required check (`sota-devsecops` rules/05 §5.9).
 3. **Licence**: the text the user chose, as `LICENSE` at the root.
 4. **Agent file**: `<library>/scripts/gen-agents-md.sh` writes the library's managed block.
    Add `--siblings` for a `CLAUDE.md` pointer. In a shared repository, pass a `--skills-dir`

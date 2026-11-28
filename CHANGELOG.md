@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **zizmor is the workflow-SAST gate in every CI/CD build and audit.** `sota-devsecops` rules/05 §5.9: a
+  required check over the repository root (workflows, `action.yml`, `dependabot.yml`, pre-commit config),
+  `--format=github` or `plain` for the verdict, because SARIF mode exits 0 on findings and the official
+  `zizmor-action` defaults to it (both measured on 1.33.1); offline or online by a recorded choice; a known-bad
+  per input type and a scope assertion; and the pre-commit hook, which hands zizmor fixture paths by name.
+  rules/09 names output formats that change the exit code; a new rules/05 probe flags `zizmor-action` left on
+  its SARIF default. `init-gates.sh` (and so `/sota-init`) now always writes the zizmor hook (offline, a
+  fixture exclude), pins both upstream hooks by commit SHA with a `# frozen:` tag (gitleaks was tag-pinned),
+  and prints a CI job where workflows exist. This repo's CI step scans the whole tree with a pre-commit
+  known-bad, and its own pre-commit config gains the hook. `sota-secrets-management` rules/04 no longer shows a
+  tag pin for the gitleaks hook.
+
 - **Six techniques from a 23-link review, each tested before it landed.** `sota/rules/03` §4: reasoning does
   not outvote an observed reproduction (a refuter kills one only by naming the leg it did not show); confirmed
   findings are swept too, with the pattern first shown to match the original and miss the fix; §4a: test the

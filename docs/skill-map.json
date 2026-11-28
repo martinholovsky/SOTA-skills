@@ -4689,14 +4689,14 @@
   "link_forms": {
     "@path import": 3,
     "generic ('the language skill')": 22,
-    "md link, other skill": 1973,
+    "md link, other skill": 1974,
     "md link, outside skills/": 3,
-    "md link, same skill": 2881,
+    "md link, same skill": 2889,
     "name (backticked)": 456,
     "name (bare)": 240,
-    "name+file (backticked)": 958,
+    "name+file (backticked)": 959,
     "name+file (bare)": 180,
-    "own rules/NN": 3108
+    "own rules/NN": 3116
   },
   "link_forms_linked": {
     "@path import": 0,
@@ -4706,9 +4706,9 @@
     "md link, same skill": 0,
     "name (backticked)": 441,
     "name (bare)": 196,
-    "name+file (backticked)": 953,
+    "name+file (backticked)": 954,
     "name+file (bare)": 168,
-    "own rules/NN": 3001
+    "own rules/NN": 3009
   },
   "rules_index_style": {
     "link": 42
@@ -6505,13 +6505,16 @@
         "sota-devsecops/SKILL.md"
       ],
       "same": [
+        "sota-devsecops/rules/01-pipeline-security.md",
         "sota-devsecops/rules/06-iac-deployment.md",
         "sota-devsecops/rules/07-runtime-ops.md",
         "sota-devsecops/rules/09-gates-that-hold.md",
         "sota-devsecops/rules/14-sbom-component-inventory.md",
         "sota-devsecops/rules/16-fast-ci-without-blind-spots.md"
       ],
-      "router": [],
+      "router": [
+        "sota/rules/01-audit-methodology.md"
+      ],
       "other": [
         "sota-c-cpp/rules/06-build-tooling-ci.md",
         "sota-code-security/rules/09-untrusted-data-ingestion.md",
@@ -6653,6 +6656,7 @@
       ],
       "same": [
         "sota-devsecops/rules/02-provenance-signing.md",
+        "sota-devsecops/rules/05-analysis-gates.md",
         "sota-devsecops/rules/09-gates-that-hold.md",
         "sota-devsecops/rules/15-dependency-adoption.md"
       ],

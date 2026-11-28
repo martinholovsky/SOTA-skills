@@ -268,6 +268,7 @@ PR opened ──► lint+unit (fast)            [required]
           ──► dependency review + license  [required]
           ──► secret scan (diff)           [required]
           ──► IaC scan (changed paths*)    [required, *with no-op fallback]
+          ──► workflow SAST (zizmor, §5.9) [required]
           ──► build + image scan           [required when Dockerfile/src changes]
 merge queue ─► full test suite on merge result
 post-merge ─► CodeQL full, DAST baseline on preview, scheduled deep scans
@@ -276,6 +277,55 @@ post-merge ─► CodeQL full, DAST baseline on preview, scheduled deep scans
 Latency budget matters: every gate over ~10 minutes generates organizational pressure to
 remove it. Diff-aware modes, caching, and tiering are how gates survive, and each can pass a required
 check that never ran: [rules/16](16-fast-ci-without-blind-spots.md) §16.3.
+
+## 5.9 Workflow SAST — zizmor as the gate
+
+The pipeline's own configuration is code an attacker targets first ([rules/01](01-pipeline-security.md)), and
+application SAST does not read it. **Every repository with GitHub Actions workflows, an
+`action.yml`, a `dependabot.yml` or a `.pre-commit-config.yaml` runs
+[zizmor](https://docs.zizmor.sh) as a required check.** It audits all four (pre-commit configs
+and hook definitions since 1.29.0, still marked experimental), and since 1.32.0 `zizmor .`
+collects only the inputs GitHub would actually use, so vendored copies and test fixtures are not
+read. Facts below were read in zizmor 1.33.1's docs and measured on 1.32.0 and 1.33.1
+(2026-11-28); zizmor adds audits in minor releases, so re-read its release notes when you bump it
+([rules/12](12-scm-ci-platform-governance.md) §12.8).
+
+- **The invocation that gates:** `zizmor --offline --no-progress --format=github .` (or
+  `--format=plain`). Exit codes: `0` clean, `11`–`14` findings (the highest severity, `14` =
+  high), `3` no inputs collected, `1` an error, `2` a usage error. Fail on any non-zero.
+- **SARIF never gates.** With `--format=sarif`, and with `--no-exit-codes`, zizmor exits `0`
+  whatever it found (measured: five findings in the SARIF, exit `0`). The official
+  `zizmorcore/zizmor-action` defaults to `advanced-security: true`, which is SARIF, so **its
+  default step is green on findings**. Set `advanced-security: false` and `annotations: true`
+  (findings annotate the PR and fail the step), or keep SARIF only beside a gating run, or make
+  code-scanning results block merges in the ruleset and verify that setting
+  ([rules/12](12-scm-ci-platform-governance.md)).
+- **Choose online or offline deliberately, and write the choice down.** zizmor goes online by
+  itself when `GH_TOKEN`, `GITHUB_TOKEN` or `ZIZMOR_GITHUB_TOKEN` is set, so the same command
+  behaves differently per runner and per laptop. Pass `--offline` (or `--no-online-audits`)
+  explicitly. Offline costs four of the 42 audits: `impostor-commit`, `known-vulnerable-actions`,
+  `ref-confusion` and `stale-action-refs`. Online needs a `contents: read` token and makes the gate
+  depend on the GitHub API. `ZIZMOR_OFFLINE` accepts only `true`/`false`; `ZIZMOR_OFFLINE=1` is a
+  usage error (exit `2`), although the docs say "if set".
+- **Persona:** the gate runs the default (`regular`). `--persona=auditor` is for an audit you
+  read, not a gate you keep; triage its findings once and record the accepted ones.
+- **Pin it like any other tool** ([rules/03](03-dependencies.md) §3.1): install from PyPI with
+  `--require-hashes`, or pin `zizmor-action` by full commit SHA. The action's `version: latest`
+  resolves to a hash-locked requirements file inside the action's own tree (read at v0.9.2), so
+  the action's SHA pins zizmor too.
+- **Prove it can fail, per input type, and print its scope** ([rules/09](09-gates-that-hold.md) §2): one committed
+  known-bad for each kind of input the gate is credited with (a workflow raising, say,
+  `unsound-condition`; a pre-commit config raising `insecure-url-scheme`), each required to name
+  its audit at an exit of 11 or more. Then assert from zizmor's `completed <path>` log lines that
+  the files you depend on were audited, and that no known-bad was.
+- **The pre-commit hook is an early warning, not the gate.** `zizmorcore/zizmor-pre-commit` is
+  `language: python`: pre-commit installs zizmor into a venv built with pre-commit's **own**
+  interpreter (measured: 3.14 while `PATH`'s `python3` was 3.9), which must be ≥ 3.11. Pin `rev:`
+  to the commit SHA with `# frozen: vX.Y.Z` (`pre-commit autoupdate --freeze`), and give it
+  `args: [--offline, --no-progress]`, since `args:` replaces the hook's default. **The hook hands
+  zizmor every staged path its `files:` regex matches, bypassing root-aware collection:** exclude
+  fixture and vendored directories (measured: one repository's 111 probe fixtures turned a clean
+  `zizmor .` into 454 findings). `--no-verify` skips it, so CI stays the gate.
 
 ## Audit checklist
 
@@ -289,5 +339,6 @@ check that never ran: [rules/16](16-fast-ci-without-blind-spots.md) §16.3.
 - [ ] **Deep DAST scan not throttled; disabled checks justified (§5.4), Medium:** `grep -n -i -E 'defaultStrength:[[:space:]]*low|defaultThreshold:[[:space:]]*high|threshold:[[:space:]]*off[[:space:]]*$' zap.yaml` over the deep-scan plan is empty (an `Off` with a trailing reason comment does not match)
 - [ ] **Agent PR gates (§5.6), High:** `git diff --name-only origin/main...HEAD | grep -E '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum|Cargo\.lock|poetry\.lock|uv\.lock)$|^\.github/|^\.gitlab-ci\.yml$|(^|/)tests?/|_test\.go$'` hits force a required reviewer; `git diff --name-only --diff-filter=d -z origin/main...HEAD | xargs -0 -r rg -H -n -- '[\x{202A}-\x{202E}\x{2066}-\x{2069}\x{200B}-\x{200D}\x{FEFF}]'` fails the check when its **stdout is non-empty** — never on its exit status (a deleted path makes `xargs` exit non-zero, and `rg` exits 1 on a clean diff)
 - [ ] License gate covers transitive deps (SBOM-based) and license *changes* on upgrades; unknown licenses block (§5.5)
-- [ ] All gates are required checks by exact name, each layer of the PR gate stack (lint+unit, SAST diff, dependency review + license, secret diff scan, IaC, build + image scan) its own check (§5.8); no `continue-on-error`/`|| true`/soft-fail on gate steps; path-filtered required checks have no-op fallbacks; rulesets apply to admins; merge queue (or equivalent) re-validates merge results
+- [ ] All gates are required checks by exact name, each layer of the PR gate stack (lint+unit, SAST diff, dependency review + license, secret diff scan, IaC, workflow SAST, build + image scan) its own check (§5.8); no `continue-on-error`/`|| true`/soft-fail on gate steps; path-filtered required checks have no-op fallbacks; rulesets apply to admins; merge queue (or equivalent) re-validates merge results
+- [ ] **Workflow SAST gates (§5.9), High where workflows handle secrets or write tokens, else Medium:** zizmor runs as a required check over the repository root, offline or online by a recorded choice, with a known-bad per input type; and `grep -rlE 'zizmorcore/zizmor-action@' .github/workflows/ | xargs -r grep -L -E 'advanced-security:[[:space:]]*["'\'']?false'` prints nothing (a file listed uses the action's SARIF default, which exits 0 on findings)
 - [ ] Flaky tests quarantined with owner+issue+deadline and a capped quarantine size; at most one automatic retry, recorded (a blanket `retry: 3` is High); skipped tests linked to issues; PR gate latency within budget (§5.7)
