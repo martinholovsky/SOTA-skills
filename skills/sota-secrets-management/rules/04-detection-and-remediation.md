@@ -31,7 +31,7 @@ by push protection, while the same key in plain source was flagged by both. Text
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/gitleaks/gitleaks
-    rev: vX.Y.Z      # an exact release tag (latest stable: github.com/gitleaks/gitleaks/releases) — pre-commit rejects a wildcard like v8.x
+    rev: <40-hex commit SHA>  # frozen: vX.Y.Z — the release's commit (latest stable: github.com/gitleaks/gitleaks/releases); a tag is mutable, `pre-commit autoupdate --freeze` writes this form
     hooks:
       - id: gitleaks   # runs `gitleaks git --pre-commit --redact --staged --verbose`
 ```

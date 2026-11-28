@@ -160,7 +160,7 @@ option where capability is equivalent.
 | SBOM | syft (generate) → grype (scan) | trivy can also emit SBOMs (CycloneDX/SPDX). |
 | Supply-chain signing & provenance | cosign verify (with `--certificate-identity` / `--certificate-oidc-issuer` for keyless); slsa-verifier | Verify provenance/attestations actually chain to the expected builder identity, not merely that a signature exists. |
 | IaC / K8s | checkov; trivy (misconfig scanning); kubescape; kube-linter | kubescape is CNCF-incubating; kube-linter is lightweight and CI-friendly. |
-| CI workflow security | zizmor | Static analysis of GitHub Actions workflows and actions (template injection, credential persistence, ref spoofing, excessive permissions), plus Dependabot and pre-commit configs. |
+| CI workflow security | zizmor | Static analysis of GitHub Actions workflows and actions (template injection, credential persistence, ref spoofing, excessive permissions), plus Dependabot and pre-commit configs. Run `zizmor --offline --no-progress --format=plain .` for the verdict; SARIF output exits 0 on findings ([`sota-devsecops` rules/05](../../sota-devsecops/rules/05-analysis-gates.md) §5.9). |
 | Licenses | cargo-deny (Rust); trivy license scan; syft SBOM license fields | Filter against the project's allowed-license policy. |
 
 Run each tool against the pinned commit; record the exact tool version and

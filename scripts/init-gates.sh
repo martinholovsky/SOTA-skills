@@ -18,12 +18,15 @@
 #   rust    cargo fmt · clippy -D warnings · cargo test · cargo audit
 #   js/ts   eslint · tsc --noEmit · <pm> audit
 #   shell   shellcheck · shfmt
-#   always  gitleaks (secret scanning)
+#   always  gitleaks (secret scanning) · zizmor (CI/CD config: workflows,
+#           actions, dependabot, and this pre-commit config itself)
 #
 # The hooks call your project's own toolchain (language: system) — install the
 # tools yourself; the script prints which ones each detected language needs.
-# It does not pin tool versions you don't control; run `pre-commit autoupdate`
-# to refresh the one upstream-pinned hook (gitleaks).
+# It does not pin tool versions you don't control; run `pre-commit autoupdate
+# --freeze` to refresh the two upstream-pinned hooks (gitleaks, zizmor), which
+# are pinned by commit SHA. A missing toolchain tool FAILS its hook
+# ("Executable `X` not found"); it is never skipped.
 #
 # Usage:
 #   scripts/init-gates.sh [--dry-run] [--no-install] [--docs-gate] [--help]
@@ -38,9 +41,22 @@ set -euo pipefail
 readonly CONFIG=".pre-commit-config.yaml"
 readonly BEGIN_MARK="  # >>> sota-gates (managed by init-gates.sh — edits here are overwritten) >>>"
 readonly END_MARK="  # <<< sota-gates <<<"
-# Pinned because gitleaks is an upstream-managed hook; `pre-commit autoupdate`
-# bumps it. Re-verify against the gitleaks releases page when you refresh.
-readonly GITLEAKS_REV="v8.30.0"
+# Upstream-managed hooks, pinned by full commit SHA with the tag as a comment
+# (sota-devsecops rules/01 §1.3: a tag is mutable). `pre-commit autoupdate
+# --freeze` bumps both and keeps that form. Re-verify each SHA against its tag
+# (gh api repos/<owner>/<repo>/git/ref/tags/<tag>, dereferencing an annotated
+# tag) when you refresh. Resolved 2026-11-28.
+readonly GITLEAKS_REV="6eaad039603a4de39fddd1cf5f727391efe9974e"  # v8.30.0
+readonly GITLEAKS_TAG="v8.30.0"
+# zizmor audits GitHub Actions workflows, action.yml, dependabot.yml and the
+# .pre-commit-config.yaml this script writes, so it always has an input.
+# The hook is `language: python`: pre-commit installs zizmor itself into a venv
+# built with pre-commit's OWN interpreter (measured 2026-11-28: a 3.14 pipx
+# pre-commit built it while PATH's python3 was 3.9), so that interpreter must be
+# >= 3.11 (the mirror's requires-python); no zizmor binary is needed. --offline: no token and
+# no network during a commit; CI is the backstop (--no-verify skips hooks).
+readonly ZIZMOR_REV="c7d31dc612dffdd4d3b2f2b88b9660d3ab057ee8"  # v1.33.1
+readonly ZIZMOR_TAG="v1.33.1"
 
 DRY_RUN=0
 DO_INSTALL=1
@@ -119,9 +135,18 @@ has '(^|/)bun\.lockb?$'     && JS_AUDIT="bun audit"   # bun.lock (>=1.2 text) or
 emit_block() {
   cat <<YAML
   - repo: https://github.com/gitleaks/gitleaks
-    rev: ${GITLEAKS_REV}
+    rev: ${GITLEAKS_REV}  # frozen: ${GITLEAKS_TAG}
     hooks:
       - id: gitleaks            # secret scanning — fast, every commit
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: ${ZIZMOR_REV}  # frozen: ${ZIZMOR_TAG}
+    hooks:
+      - id: zizmor              # CI/CD config security (workflows, actions, dependabot, pre-commit)
+        args: [--offline, --no-progress]
+        # The hook passes every matching path by name, bypassing zizmor's
+        # root-aware collection, so test fixtures and vendored copies would be
+        # audited as if GitHub ran them. Widen this if your fixtures live elsewhere.
+        exclude: (^|/)(vendor|third_party|testdata|fixtures?|probe-fixtures)/
 YAML
 
   if [ "$USE_PY" -eq 1 ]; then
@@ -404,7 +429,9 @@ if [ -z "$detected" ]; then
   warn "no supported languages detected (python/go/rust/js-ts/shell) — only the gitleaks secret-scan gate will be written"
 fi
 
-log "detected:$detected gitleaks$([ "$DOCS_GATE" -eq 1 ] && echo ' +docs-gate')"
+log "detected:$detected gitleaks zizmor$([ "$DOCS_GATE" -eq 1 ] && echo ' +docs-gate')"
+HAS_WORKFLOWS=0
+has '(^|/)\.github/workflows/[^/]+\.ya?ml$' && HAS_WORKFLOWS=1
 block_file="$(mktemp)"
 emit_block >"$block_file"
 assemble "$block_file"
@@ -437,9 +464,39 @@ fi
 cat <<'NEXT'
 
 Next steps:
-  - Install the per-language tools listed above (the hooks call your toolchain).
+  - Install the per-language tools listed above (the hooks call your toolchain;
+    a missing one fails its hook with "Executable `<tool>` not found", it is
+    never skipped). gitleaks and zizmor are installed by pre-commit itself;
+    zizmor needs pre-commit itself to run on Python >= 3.11.
   - Review .pre-commit-config.yaml — it is a SOTA-aligned starting point, not law.
   - Run once over everything:  pre-commit run --all-files
-  - Refresh the gitleaks pin:   pre-commit autoupdate
+  - Refresh the pinned hooks:  pre-commit autoupdate --freeze   (keeps SHA pins)
   - Re-run this script after adding a language; it updates only the managed block.
 NEXT
+
+if [ "$HAS_WORKFLOWS" -eq 1 ]; then
+  cat <<'CI'
+
+This repo has GitHub Actions workflows. A hook is skipped by --no-verify, so add
+zizmor to CI as a REQUIRED check too (sota-devsecops rules/05 §5.9):
+
+    permissions: {}
+    jobs:
+      zizmor:
+        runs-on: ubuntu-latest
+        permissions:
+          contents: read
+        steps:
+          - uses: actions/checkout@<full-sha>  # vX.Y.Z
+            with:
+              persist-credentials: false
+          - uses: zizmorcore/zizmor-action@<full-sha>  # vX.Y.Z
+            with:
+              advanced-security: false   # the default (true) emits SARIF, which exits 0 on findings
+              annotations: true          # findings inline on the PR, and the step fails
+              online-audits: false
+
+Pin both actions by full commit SHA; the action's `version: latest` is a
+hash-locked zizmor inside the action's own tree, so its SHA pins zizmor too.
+CI
+fi

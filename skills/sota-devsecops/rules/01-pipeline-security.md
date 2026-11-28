@@ -213,7 +213,7 @@ value, the fix is not to route attacker-controlled text into it at all.
 
 - In `actions/github-script`, same rule: pass via `env` and read `process.env`, or use the provided `context` object — never template untrusted strings into the JS body.
 - `github.head_ref` in cache keys, artifact names, or `docker tag` arguments also needs sanitization (branch names allow `/`, `$`, quotes).
-- Lint for this: `zizmor` and `actionlint` both flag expression injection — run them in CI over `.github/workflows/` (zizmor also reads `.github/dependabot.yml`).
+- Lint for this: `zizmor` and `actionlint` both flag expression injection — run them in CI as required checks (zizmor over the repository root, which also reads `action.yml`, `.github/dependabot.yml` and `.pre-commit-config.yaml`; the gating invocation and its SARIF trap: [rules/05](05-analysis-gates.md) §5.9).
 - Severity: injection reachable from a fork PR/issue into a secrets-bearing job = Critical; into a no-secret read-only job = Medium (still grants runner exec + token).
 
 ### 1.5b A condition that is always true, a membership test that is a substring test
@@ -327,8 +327,8 @@ configuration is usually valid YAML with no expression in it.
   *current* secrets — relevant after rotating a compromised workflow; revoke environments
   or disable old runs rather than assuming history is inert.
 - Lint the workflow estate continuously: `zizmor` (injection, pwn-requests, unpinned,
-  excessive permissions, `impostor-commit`) and `actionlint` as a required check on
-  `.github/workflows/**` changes — the linters encode most of §§1.1–1.5 and catch
+  excessive permissions; `impostor-commit` only online) and `actionlint` as required checks
+  ([rules/05](05-analysis-gates.md) §5.9) — the linters encode most of §§1.1–1.5 and catch
   regressions humans rubber-stamp. Add **CodeQL's `actions` language** (GA April 2025;
   auto-enabled in code-scanning *default setup* when workflow files are present, or add
   `actions` to the language matrix in advanced setup) — it does taint/data-flow analysis

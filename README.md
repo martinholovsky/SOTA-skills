@@ -1333,7 +1333,9 @@ cd /path/to/your/project
 It detects Python / Go / Rust / JS-TS / shell by manifest and extension, then
 writes the exact tools each skill prescribes — ruff·mypy·pytest·pip-audit,
 gofumpt·golangci-lint·govulncheck, clippy·cargo-audit, eslint·tsc·`<pm> audit`,
-shellcheck·shfmt, plus gitleaks everywhere. Fast checks (lint, format, secrets)
+shellcheck·shfmt, plus gitleaks and zizmor everywhere (zizmor audits workflows,
+`action.yml`, `dependabot.yml` and the pre-commit config itself; both upstream hooks are
+pinned by commit SHA). Fast checks (lint, format, secrets)
 run on **commit**; heavy ones (type-check, tests, vuln scans) run on **push** —
 the split `sota-python` rules/01 §6 and `sota-devsecops` rules/05 require, so
 commits stay quick.
@@ -1342,7 +1344,12 @@ It is **idempotent**: re-run it after adding a language and it rewrites only the
 block between its `# >>> sota-gates >>>` markers, leaving any hooks you added
 yourself in place. The hooks call your project's own toolchain, so install the
 per-language tools it lists on exit (and `pre-commit install` if the script
-couldn't).
+couldn't). **A missing tool fails its hook** (pre-commit prints "Executable `<tool>`
+not found" and exits 1; measured on pre-commit 4.6.0), it is never skipped. gitleaks and
+zizmor are installed by pre-commit itself; zizmor needs pre-commit to run on Python ≥ 3.11.
+Where the repo has GitHub Actions workflows the script also prints a CI job for zizmor,
+because `--no-verify` skips every hook and only a required check holds
+(`sota-devsecops` rules/05 §5.9).
 
 **Then check it actually took.** `init-gates.sh` sets things up; nothing
 verifies the result, and "configured" and "working" render identically — a
